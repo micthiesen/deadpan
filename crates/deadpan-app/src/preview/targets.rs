@@ -290,7 +290,7 @@ impl DeadpanApp {
     }
 
     /// A target by id, or by its label ignoring case.
-    fn resolve_target(&self, text: &str) -> Result<TargetId, String> {
+    pub(super) fn resolve_target(&self, text: &str) -> Result<TargetId, String> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
         let targets = workspace.document.targets();
         if let Some((id, _)) = targets.iter().find(|(id, _)| id.as_str() == text) {

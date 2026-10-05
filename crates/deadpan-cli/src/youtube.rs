@@ -13,6 +13,8 @@ pub mod acquire;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod helpers;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod macho_content;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod runner;
 
 use std::fmt;

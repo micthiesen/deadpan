@@ -451,6 +451,19 @@ Replay time controls UI time-dependent behavior. Monotonic elapsed time measures
 latency. Neither clock may substitute for the other. Waiting for a settled frame
 must not erase evidence of intermediate stale, missing or misleading feedback.
 
+Every scenario also traces egui layout retries (`request_discard`) through an
+end-of-pass hook, with each pass's reasons and source line. Two checks fail a
+scenario: a painted frame whose last allowed pass (the app allows three) still
+requested a retry, which egui ignores, and the same retry reason in three
+consecutive frames whose later frames brought no new input (an oscillating
+layout). Other runs of three or more retrying frames, where each frame has its
+own cause (new input or an asynchronous update), make debug builds paint
+egui's "request_discard has been called N frames in a row" warning; they and
+frames that settled only on a second retry are reported as warnings with their
+reasons. One replay key per
+60 Hz frame produces such runs (command open, command close, next prefix key);
+interactive typing leaves idle frames between keys.
+
 ## Implemented scenarios
 
 Every UI scenario starts by creating and displaying the small Original through
@@ -474,6 +487,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `targets` | Waits for the automatic shot analysis, then in Camera draws a target with `n`, Tab, counts, `h/j/k/l`, Shift and arrows, saves it with Enter, picks it with `f 1`, follows it with `t`, scales the follow, refuses a nudge, applies, reopens Camera on the follow (scale preview, Escape), tracks with Shift+`T` through the scripted worker seam, moves five pictures and corrects with `c`, then checks `:track` refusal, `:track-cancel` and Undo. Checks rectangle values, one revision per save with Camera continuing on it, picker order, painted state labels, inspector labels, that the committed follow equals the Camera preview exactly, progress, the entry-head save and a one-range correction. Only Vision observations are scripted. |
+| `zoom` | Waits for shot analysis. `,z` with no saved target punches in to 1.35× at the center and explains the fallback; Undo. Draws a target in Camera (`,f`, `n`, `8l`, Enter, Escape), then `,z` saves a Follow of it at 1.35× and the displayed pose centers on it. `:zoom 2 target=center curve=step` replaces it with a centered step; `:creep from=1 to=1.4 target=current` saves an eased path toward the target; a Visual-range `,z` refuses to flatten that path; `:zoom off` clears it; a Visual-range `,z` then changes exactly the range frames in the committed plan. `:hold 6f video=black` inserts six Background/Silence frames, one Undo removes them, and a recorded `:zoom 1.5 target=center` replays after Undo. Captures each framing result and the black pause. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |
 | `delayed-preview` | Holds a real decoder reply at a controlled delivery boundary, advances intent, resizes, releases the stale reply, checks newest-picture recovery, then injects a decoder failure and recovers. |
 | `rapid-input` | Requires all eight explicit Repeat wraps in one batch to commit separately, with exact nested results and per-wrap undo. Delays delivery of real writer updates to check a partial `rr` through queued commits, pointer context cancellation, sixteen-waiting capacity, explicit overflow and Escape. Checks painted notices at default/minimum sizes, 30 frame-navigation inputs, final intent and idle repaint. Restores the Original before navigation. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |

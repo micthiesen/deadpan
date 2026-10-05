@@ -13,6 +13,7 @@ pub(super) fn prepare(
     duration: FrameDuration,
     new_revision: RevisionId,
     id: NodeId,
+    black: bool,
     mut allocate: impl FnMut() -> NodeId,
 ) -> Result<CommandRequest, String> {
     let document = &workspace.document;
@@ -29,7 +30,13 @@ pub(super) fn prepare(
     let target = document
         .insert_time_target(at)
         .map_err(|error| error.to_string())?;
-    let (video, picture_context) = fallback(workspace, at)?;
+    // Black punctuation shows the project background: no picture is sampled
+    // or captured, so inner framing has nothing to retain.
+    let (video, picture_context) = if black {
+        (HoldVideo::Background, None)
+    } else {
+        fallback(workspace, at)?
+    };
     let identities = target
         .split
         .map(|split| (0..split.required_ids).map(|_| allocate()).collect())

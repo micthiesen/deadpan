@@ -18,8 +18,9 @@ The work directory must be empty. The builder verifies the pinned archive hash
 and release signature, disables GPL/nonfree/version-3 components and networking,
 and records build/license/library evidence. The Cargo build refuses an absent or
 incompatible prefix. It never falls back to a system FFmpeg installation.
-Keep the prefix available when running the app or development helper; its dynamic
-libraries have not yet been assembled into a portable signed app bundle.
+Keep the prefix available when running Cargo-built executables. A packaged
+`Deadpan.app` carries its own relocated copies of these libraries and never
+reads the prefix at run time; see [Packaging](#packaging).
 CI builds the same pinned dependency before running the complete gate.
 These developer tools must never become end-user requirements.
 
@@ -153,22 +154,44 @@ CI compiles, lints and tests the optional harness and shortcut contracts. Render
 replay requires a Metal-capable host; a missing adapter fails with a report rather
 than passing without images. Host GPU replay remains an agent verification step.
 
+## Packaging
+
+`cargo xtask bundle` builds a relocatable, hardened-runtime `Deadpan.app` with
+release executables, relocated FFmpeg libraries, the bundled downloader
+baseline, notices, an SBOM and provenance. It builds in its own path-remapped
+`target/bundle` directory, so it never disturbs `target/release`.
+`bundle-verify` exercises a copy in a scrubbed environment with an isolated
+`HOME`, including tampered and missing helper cases. It is ad hoc signed unless you pass a Developer ID
+identity, and notarization needs the owner's credentials. See
+[Packaging](PACKAGING.md) for the layout, runtime lookup, entitlements,
+notarization steps and current evidence.
+
+```sh
+export DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ffmpeg-dev/prefix
+cargo xtask bundle --output /tmp/deadpan-bundle
+cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
+```
+
+Run both after changing helper, worker, model or FFmpeg lookup, adding an
+executable, native library or runtime dependency, or changing signing. Never
+install the bundle into `/Applications` as part of a check.
+
 ## Native application smoke test
 
 The [Deadpan identity assets](design/brand/README.md) include the editable macOS
 icon, complete legacy iconset and logo exports. Bare Cargo launches use the
 embedded PNG. A bundle that declares its own icon keeps macOS appearance handling.
 
-To wrap an already-built executable in a native developer app:
+To wrap an already-built executable in a quick native developer app:
 
 ```sh
 python3 tools/build-app.py --binary target/debug/deadpan-app --output /tmp/Deadpan.app
 ```
 
 Choose a new output path. The script compiles the layered icon into the bundle
-and includes the ICNS fallback. This is a developer wrapper; external FFmpeg
-dependencies, release signing, notarization and distribution qualification remain
-separate work.
+and includes the ICNS fallback. It still loads FFmpeg from the build prefix and
+is not relocatable; use [`cargo xtask bundle`](#packaging) for a self-contained
+bundle.
 
 On a supported Apple Silicon Mac:
 

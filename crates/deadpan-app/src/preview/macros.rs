@@ -320,7 +320,7 @@ impl DeadpanApp {
                 | Action::Ungroup
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
-                | Action::Edit(BeatEdit::InsertHold(_))
+                | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep
@@ -364,7 +364,7 @@ impl DeadpanApp {
                 | Action::Ungroup
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
-                | Action::Edit(BeatEdit::InsertHold(_))
+                | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep
@@ -411,6 +411,9 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::Group)
             }
             Ok(navigation::command::Entry::Action(action)) => self.macro_action_allowed(*action),
+            // Recorded as the framing it commits, like ,z and ,c.
+            Ok(navigation::command::Entry::Zoom(_)) => self
+                .macro_action_allowed(Action::Framing(crate::navigation::FramingAction::PunchIn)),
             Ok(_) if self.macros.recording() || self.macros.is_pending() => {
                 self.error =
                     Some("This command cannot be recorded. Save or cancel the macro first.".into());

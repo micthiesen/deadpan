@@ -14,6 +14,13 @@
 //! | `DEADPAN_BRIDGE_FFPROBE` | `/opt/homebrew/bin/ffprobe` |
 //! | `DEADPAN_BRIDGE_WORKER` | `tools/model-qualification/worker.py` in this checkout |
 //!
+//! A packaged `Deadpan.app` carries no AI runtime and ignores all of this by
+//! default, so it never silently depends on a build machine's checkout,
+//! Homebrew installation or inherited variables. A developer may opt in with
+//! `DEADPAN_DEVELOPER_BRIDGE=1`; the packaged app then uses only explicitly
+//! set `DEADPAN_BRIDGE_*` variables, never the defaults (docs/PACKAGING.md).
+//! Developer wrapper bundles keep the development behavior.
+//!
 //! `deadpan-media-worker` must be installed beside the current executable.
 //! The worker verifies the runtime source tree and every model file against
 //! its pinned manifests on each attempt; this module checks only presence.
@@ -27,6 +34,44 @@ pub const MODEL_CACHE: &str = "DEADPAN_BRIDGE_MODEL_CACHE";
 pub const FFMPEG: &str = "DEADPAN_BRIDGE_FFMPEG";
 pub const FFPROBE: &str = "DEADPAN_BRIDGE_FFPROBE";
 pub const WORKER: &str = "DEADPAN_BRIDGE_WORKER";
+/// Explicit developer opt-in to the bridge variables inside a packaged app.
+pub const DEVELOPER_OPT_IN: &str = "DEADPAN_DEVELOPER_BRIDGE";
+
+/// How the bridge runtime may be located in this process.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Lookup {
+    /// Development build: variables, then development defaults.
+    Development,
+    /// Packaged app with the developer opt-in: explicit variables only.
+    PackagedExplicit,
+    /// Packaged app: no AI runtime.
+    PackagedDisabled,
+}
+
+impl Lookup {
+    pub fn describe(self) -> &'static str {
+        match self {
+            Self::Development => {
+                "development runtime from DEADPAN_BRIDGE_* variables and development defaults"
+            }
+            Self::PackagedExplicit => {
+                "developer opt-in: explicit DEADPAN_BRIDGE_* variables only; not bundled"
+            }
+            Self::PackagedDisabled => "not bundled; the packaged application has no AI runtime",
+        }
+    }
+}
+
+/// The lookup for the running executable.
+pub fn lookup() -> Lookup {
+    if crate::bundle::packaged_contents().is_none() {
+        Lookup::Development
+    } else if std::env::var_os(DEVELOPER_OPT_IN).is_some_and(|value| value == "1") {
+        Lookup::PackagedExplicit
+    } else {
+        Lookup::PackagedDisabled
+    }
+}
 
 /// The qualified `ltx-2-mlx` checkout and its private environment.
 pub const RUNTIME_COMMIT: &str = "3392d75934120b7e69eefbe55893f7ef82be92a4";
@@ -73,25 +118,45 @@ impl BridgeRuntime {
         let executable_directory = std::env::current_exe()
             .ok()
             .and_then(|path| path.parent().map(Path::to_path_buf));
-        Self::resolve(
+        Self::resolve_with(
             |name| std::env::var_os(name),
             std::env::var_os("HOME").map(PathBuf::from),
             executable_directory.as_deref(),
+            lookup(),
         )
     }
 
-    /// Resolve from an explicit environment, home and executable directory.
+    /// Resolve from an explicit environment, home and executable directory,
+    /// with the development defaults.
     pub fn resolve(
         variable: impl Fn(&str) -> Option<OsString>,
         home: Option<PathBuf>,
         executable_directory: Option<&Path>,
     ) -> Result<Self, RuntimeError> {
+        Self::resolve_with(variable, home, executable_directory, Lookup::Development)
+    }
+
+    /// As [`Self::resolve`] under an explicit [`Lookup`].
+    pub fn resolve_with(
+        variable: impl Fn(&str) -> Option<OsString>,
+        home: Option<PathBuf>,
+        executable_directory: Option<&Path>,
+        lookup: Lookup,
+    ) -> Result<Self, RuntimeError> {
+        if lookup == Lookup::PackagedDisabled {
+            return Err(RuntimeError {
+                missing: vec![format!(
+                    "this packaged Deadpan has no AI model runtime (developers: set {DEVELOPER_OPT_IN}=1 with explicit DEADPAN_BRIDGE_* paths)"
+                )],
+            });
+        }
+        let development_defaults = lookup == Lookup::Development;
         let mut missing = Vec::new();
         let chosen = |name: &str, default: Option<PathBuf>| {
             variable(name)
                 .filter(|value| !value.is_empty())
                 .map(PathBuf::from)
-                .or(default)
+                .or(default.filter(|_| development_defaults))
         };
         let cached = home.as_ref().map(|home| home.join(CACHED_RUNTIME_SOURCE));
         let default_source = match &cached {
@@ -105,12 +170,15 @@ impl BridgeRuntime {
             _ => cached.unwrap_or_else(|| TEMPORARY_RUNTIME_SOURCE.into()),
         };
         let runtime_source = chosen(RUNTIME_SOURCE, Some(default_source));
-        let python = chosen(
-            PYTHON,
-            runtime_source
-                .as_ref()
-                .map(|source| source.join(".venv/bin/python3")),
-        );
+        // Derived from the chosen source, so it applies to explicit sources too.
+        let python = variable(PYTHON)
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| {
+                runtime_source
+                    .as_ref()
+                    .map(|source| source.join(".venv/bin/python3"))
+            });
         let model_cache = chosen(
             MODEL_CACHE,
             home.map(|home| home.join("Library/Caches/Deadpan/ltx-qualification")),
@@ -300,6 +368,52 @@ mod tests {
             "present snapshot not reported"
         );
         assert_eq!(error.missing.len(), 7);
+    }
+
+    #[test]
+    fn bundles_use_only_explicit_variables() {
+        let root = tempfile::tempdir().unwrap();
+        // Without the opt-in, even explicit variables are ignored.
+        let source = root.path().join("source");
+        let variables = BTreeMap::from([(RUNTIME_SOURCE, source.clone())]);
+        let error = BridgeRuntime::resolve_with(
+            environment(&variables),
+            Some(root.path().into()),
+            None,
+            Lookup::PackagedDisabled,
+        )
+        .unwrap_err();
+        assert_eq!(error.missing.len(), 1);
+        assert!(error.missing[0].contains(DEVELOPER_OPT_IN));
+        let error = BridgeRuntime::resolve_with(
+            |_| None,
+            Some(root.path().into()),
+            None,
+            Lookup::PackagedExplicit,
+        )
+        .unwrap_err();
+        let message = error.to_string();
+        for absent in ["/opt/homebrew", "model-qualification", "/private/tmp"] {
+            assert!(!message.contains(absent), "{absent} in {message}");
+        }
+        for expected in [
+            "(set DEADPAN_BRIDGE_RUNTIME_SOURCE)",
+            "(set DEADPAN_BRIDGE_MODEL_CACHE)",
+            "(set DEADPAN_BRIDGE_FFMPEG)",
+            "(set DEADPAN_BRIDGE_WORKER)",
+        ] {
+            assert!(message.contains(expected), "{expected} in {message}");
+        }
+        // An explicit source still supplies its own environment's interpreter.
+        file(&source.join(".venv/bin/python3"));
+        let error = BridgeRuntime::resolve_with(
+            environment(&variables),
+            None,
+            None,
+            Lookup::PackagedExplicit,
+        )
+        .unwrap_err();
+        assert!(!error.to_string().contains("Python environment not found"));
     }
 
     #[test]

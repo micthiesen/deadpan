@@ -184,7 +184,17 @@ impl Inspector {
                     let scale = pose.scale.numerator() as f64 / pose.scale.denominator() as f64;
                     format!("Static · {scale:.3}×")
                 }
-                deadpan_core::FramingValue::Envelope { .. } => "Whole-beat motion".into(),
+                deadpan_core::FramingValue::Envelope { envelope } => {
+                    // The scale range keeps a ranged punch-in visible in the
+                    // narrow value column; the status line gives endpoints.
+                    let scales: Vec<f64> = std::iter::once(envelope.initial.scale)
+                        .chain(envelope.segments.iter().map(|segment| segment.pose.scale))
+                        .map(|ratio| ratio.numerator() as f64 / ratio.denominator() as f64)
+                        .collect();
+                    let low = scales.iter().copied().fold(f64::INFINITY, f64::min);
+                    let high = scales.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+                    format!("Path · {low:.2}–{high:.2}×")
+                }
                 deadpan_core::FramingValue::Follow { target, scale, .. } => {
                     let scale = scale.numerator() as f64 / scale.denominator() as f64;
                     format!("Follows {target} · {scale:.3}×")

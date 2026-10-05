@@ -6,7 +6,11 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 publish.workspace = true
-description = "Developer tasks: the full validation gate and build-directory hygiene"
+description = "Developer tasks: the full validation gate, build-directory hygiene and app bundling"
+
+[dependencies]
+serde_json.workspace = true
+sha2.workspace = true
 
 [lints]
 workspace = true

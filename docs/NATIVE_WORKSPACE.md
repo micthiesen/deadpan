@@ -360,8 +360,9 @@ counted zoom steps and numbered center/corner targets. Numeric fields use canvas
 percentages, preserve native text editing and expose validation before Apply.
 Enter applies one edit and keeps the cursor; Escape restores the entry framing.
 Ordinary Camera changes move the complete existing curve. Reset replaces it;
-`,z` creates a static 1.35× punch and `,c` creates a whole-beat smoothstep creep.
-The normal inspector distinguishes static framing from whole-beat motion.
+`,z` punches in to 1.35× on the selected target and `,c` creeps to 1.35×, over
+the Edit range inside the beat when there is one ([zoom and creep](FRAMING.md#zoom-and-creep-commands)).
+The normal inspector distinguishes static framing, follows and camera paths.
 Saved regions, tracking and native occurrence targets remain open.
 [Captured views](CAPTURED_FRAMING.md) retain existing framing when a native pause
 is inserted. Still and accepted-generated providers remain unsupported for this

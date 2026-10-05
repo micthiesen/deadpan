@@ -6,8 +6,14 @@
 //! and SHA-256 (and, for Deno, the extracted executable's size and SHA-256),
 //! then publishes one complete `<root>/<name>/<version>` directory by rename.
 //! A published version is never overwritten; every use re-verifies the
-//! executable bytes before running them. The release application must ship
-//! these helpers inside its signed bundle instead of downloading them.
+//! executable bytes before running them.
+//!
+//! A packaged `Deadpan.app` carries the same pinned releases as a read-only
+//! baseline under `Contents/Resources/helpers` with a manifest written by
+//! `cargo xtask bundle`. The running bundle's baseline is preferred; the managed
+//! Application Support root remains the update location (§15.2). Release
+//! signing may replace a helper's signature, so the manifest binds each pinned
+//! upstream hash to the exact shipped bytes. See docs/PACKAGING.md.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
@@ -16,7 +22,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_models::packs::{HttpsTransport, Transport};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::CliError;
@@ -48,6 +54,12 @@ pub struct HelperPin {
     pub executable: &'static str,
     pub executable_sha256: &'static str,
     pub executable_bytes: u64,
+    /// Signature-independent content hash ([`super::macho_content`]) of the
+    /// pinned executable. `Some` permits a bundle to ship it re-signed.
+    pub content_sha256: Option<&'static str>,
+    /// Code-signing requirement the upstream signature satisfies. A bundle
+    /// that ships the upstream bytes also checks this before every launch.
+    pub signer: Option<&'static str>,
 }
 
 /// yt-dlp's official macOS standalone build (universal2, PyInstaller one-file).
@@ -63,6 +75,9 @@ pub const YT_DLP: HelperPin = HelperPin {
     executable: "yt-dlp_macos",
     executable_sha256: "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
     executable_bytes: 37_146_048,
+    // Upstream is only ad hoc signed, so bundles re-sign it.
+    content_sha256: Some("97335294737302995ed4dc5cd8a81c709a88ff52fe12a27cb7abab47ef5373c7"),
+    signer: None,
 };
 
 /// Deno for Apple Silicon. Archive hash from the release's `.sha256sum`;
@@ -78,9 +93,363 @@ pub const DENO: HelperPin = HelperPin {
     executable: "deno",
     executable_sha256: "b73737579d5a84c160e3316487594783fa5c15f4e13252a6a07050b755317f1a",
     executable_bytes: 80_982_000,
+    // Bundles keep Deno Land's hardened Developer ID signature unchanged.
+    content_sha256: None,
+    signer: Some(
+        "anchor apple generic and identifier \"deno\" and certificate leaf[subject.OU] = \"2H4KBF436B\"",
+    ),
 };
 
 pub const BUNDLE: [HelperPin; 2] = [YT_DLP, DENO];
+
+/// Manifest naming the bundled baseline's exact shipped bytes.
+pub const BASELINE_MANIFEST: &str = "manifest.json";
+pub const BASELINE_SCHEMA: u32 = 1;
+const BASELINE_MANIFEST_LIMIT: u64 = 64 * 1024;
+
+/// Whether a bundled helper keeps its publisher's signature or carries the
+/// application's own (which changes the file bytes, never the pinned release).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BaselineSignature {
+    Upstream,
+    Resigned,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BaselineHelper {
+    pub name: String,
+    pub version: String,
+    pub executable: String,
+    /// The pinned upstream executable this file was produced from.
+    pub upstream_sha256: String,
+    pub upstream_bytes: u64,
+    /// The exact shipped file.
+    pub sha256: String,
+    pub bytes: u64,
+    pub signature: BaselineSignature,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BaselineManifest {
+    pub schema: u32,
+    pub helpers: Vec<BaselineHelper>,
+}
+
+impl BaselineManifest {
+    fn load(root: &Path) -> Result<Self, CliError> {
+        let path = root.join(BASELINE_MANIFEST);
+        let invalid = |problem: String| {
+            helper_error(
+                "DownloaderHelperInvalid",
+                format!("bundled downloader manifest {}: {problem}", path.display()),
+            )
+        };
+        let metadata = fs::symlink_metadata(&path).map_err(|error| invalid(error.to_string()))?;
+        if !metadata.file_type().is_file() || metadata.len() > BASELINE_MANIFEST_LIMIT {
+            return Err(invalid("not a bounded regular file".into()));
+        }
+        let mut bytes = Vec::new();
+        File::open(&path)?
+            .take(BASELINE_MANIFEST_LIMIT + 1)
+            .read_to_end(&mut bytes)?;
+        let manifest: Self =
+            serde_json::from_slice(&bytes).map_err(|error| invalid(error.to_string()))?;
+        if manifest.schema != BASELINE_SCHEMA {
+            return Err(invalid(format!("unsupported schema {}", manifest.schema)));
+        }
+        Ok(manifest)
+    }
+
+    /// The shipped entry for `pin`, which must name exactly that pinned release.
+    fn entry(&self, pin: &HelperPin) -> Result<&BaselineHelper, CliError> {
+        let entry = self
+            .helpers
+            .iter()
+            .find(|entry| entry.name == pin.name)
+            .ok_or_else(|| {
+                helper_error(
+                    "DownloaderHelperInvalid",
+                    format!("the bundled downloader baseline has no {}", pin.name),
+                )
+            })?;
+        let unchanged =
+            entry.sha256 == entry.upstream_sha256 && entry.bytes == entry.upstream_bytes;
+        if entry.version != pin.version
+            || entry.executable != pin.executable
+            || entry.upstream_sha256 != pin.executable_sha256
+            || entry.upstream_bytes != pin.executable_bytes
+            || entry.sha256.len() != 64
+            || (entry.signature == BaselineSignature::Upstream) != unchanged
+            || (entry.signature == BaselineSignature::Resigned && pin.content_sha256.is_none())
+        {
+            return Err(helper_error(
+                "DownloaderHelperInvalid",
+                format!(
+                    "the bundled {} does not match pinned {} {}",
+                    pin.name, pin.name, pin.version
+                ),
+            ));
+        }
+        Ok(entry)
+    }
+}
+
+/// Where a set of pinned helpers is read from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HelperSource {
+    /// Read-only baseline inside the running application bundle.
+    Bundled(PathBuf),
+    /// Managed install root (`downloader install`), the update location.
+    Managed(PathBuf),
+}
+
+impl HelperSource {
+    /// The running packaged bundle's baseline, otherwise the managed
+    /// Application Support root. Never depends on the working directory.
+    pub fn default_source() -> Result<Self, CliError> {
+        match bundled_root() {
+            Some(root) => Ok(Self::Bundled(root)),
+            None => Ok(Self::Managed(default_root()?)),
+        }
+    }
+
+    pub fn root(&self) -> &Path {
+        match self {
+            Self::Bundled(root) | Self::Managed(root) => root,
+        }
+    }
+
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::Bundled(_) => "bundled",
+            Self::Managed(_) => "managed",
+        }
+    }
+
+    /// The verified executable, `None` when its file is absent.
+    pub fn verified(&self, pin: &HelperPin) -> Result<Option<PathBuf>, CliError> {
+        match self {
+            Self::Managed(root) => pin.verified(root),
+            Self::Bundled(root) => {
+                let manifest = BaselineManifest::load(root)?;
+                let entry = manifest.entry(pin)?;
+                // Ancestors above the bundle (such as an admin-writable
+                // /Applications) are outside the application's control; the
+                // bundle's code signature seals its contents.
+                let boundary = root
+                    .ancestors()
+                    .find(|path| path.extension().is_some_and(|extension| extension == "app"));
+                let Some(path) =
+                    verify_file(pin, &pin.path(root), entry.bytes, &entry.sha256, boundary)?
+                else {
+                    return Ok(None);
+                };
+                // The manifest is not a trust root: tie the shipped file to the
+                // compiled pin and to its expected signer.
+                match entry.signature {
+                    BaselineSignature::Upstream => {
+                        // `entry` already equals the compiled pin's exact hash.
+                        if let Some(requirement) = pin.signer {
+                            signing::verify(&path, Some(requirement))?;
+                        }
+                    }
+                    BaselineSignature::Resigned => {
+                        let expected = pin.content_sha256.expect("checked by entry");
+                        let bytes = read_bounded(&path, entry.bytes)?;
+                        let content =
+                            super::macho_content::content_sha256(&bytes).map_err(|error| {
+                                helper_error(
+                                    "DownloaderHelperInvalid",
+                                    format!("bundled {}: {error}", pin.name),
+                                )
+                            })?;
+                        if content != expected {
+                            return Err(helper_error(
+                                "DownloaderHelperInvalid",
+                                format!(
+                                    "the bundled {} code differs from pinned {} {}",
+                                    pin.name, pin.name, pin.version
+                                ),
+                            ));
+                        }
+                        signing::verify(&path, signing::application_requirement()?.as_deref())?;
+                    }
+                }
+                Ok(Some(path))
+            }
+        }
+    }
+
+    /// Cheap presence and manifest check for diagnostics; no hashing.
+    pub fn inspect(&self, pin: &HelperPin) -> Result<PathBuf, CliError> {
+        let path = pin.path(self.root());
+        if let Self::Bundled(root) = self {
+            let manifest = BaselineManifest::load(root)?;
+            let entry = manifest.entry(pin)?;
+            let length = fs::symlink_metadata(&path)
+                .ok()
+                .filter(|metadata| metadata.file_type().is_file())
+                .map(|metadata| metadata.len());
+            if length != Some(entry.bytes) {
+                return Err(helper_error(
+                    "DownloaderHelperInvalid",
+                    format!(
+                        "{} is missing or damaged in the application bundle",
+                        pin.name
+                    ),
+                ));
+            }
+        } else if !path.is_file() {
+            return Err(helper_error(
+                "DownloaderNotInstalled",
+                format!("{} {} is not installed", pin.name, pin.version),
+            ));
+        }
+        Ok(path)
+    }
+}
+
+fn read_bounded(path: &Path, bytes: u64) -> Result<Vec<u8>, CliError> {
+    let mut content = Vec::new();
+    File::open(path)?
+        .take(bytes + 1)
+        .read_to_end(&mut content)?;
+    if content.len() as u64 != bytes {
+        return Err(helper_error(
+            "DownloaderHelperInvalid",
+            format!("{} changed while it was verified", path.display()),
+        ));
+    }
+    Ok(content)
+}
+
+/// Code-signature checks for bundled helpers through the system `codesign`.
+#[cfg(target_os = "macos")]
+mod signing {
+    use std::path::Path;
+    use std::process::{Command, Stdio};
+    use std::sync::OnceLock;
+    use std::time::{Duration, Instant};
+
+    use super::{CliError, helper_error};
+
+    const CODESIGN: &str = "/usr/bin/codesign";
+    const DEADLINE: Duration = Duration::from_secs(60);
+
+    fn run(arguments: &[&std::ffi::OsStr]) -> Result<(bool, String), CliError> {
+        let mut command = Command::new(CODESIGN);
+        command
+            .args(arguments)
+            .env_clear()
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped());
+        let mut child = deadpan_native_process::spawn(&mut command)?;
+        let started = Instant::now();
+        let status = loop {
+            if let Some(status) = child.try_wait()? {
+                break status;
+            }
+            if started.elapsed() > DEADLINE {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(helper_error(
+                    "DownloaderHelperInvalid",
+                    "code-signature verification timed out",
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        };
+        let mut diagnostics = String::new();
+        if let Some(mut stderr) = child.stderr.take() {
+            use std::io::Read;
+            let _ = (&mut stderr)
+                .take(64 * 1024)
+                .read_to_string(&mut diagnostics);
+        }
+        Ok((status.success(), diagnostics))
+    }
+
+    /// `codesign --verify --strict`, against `requirement` when given.
+    pub(super) fn verify(path: &Path, requirement: Option<&str>) -> Result<(), CliError> {
+        let tested = requirement.map(|requirement| format!("-R={requirement}"));
+        let mut arguments: Vec<&std::ffi::OsStr> = vec!["--verify".as_ref(), "--strict".as_ref()];
+        if let Some(tested) = &tested {
+            arguments.push(tested.as_ref());
+        }
+        arguments.push(path.as_os_str());
+        let (valid, diagnostics) = run(&arguments)?;
+        if valid {
+            Ok(())
+        } else {
+            Err(helper_error(
+                "DownloaderHelperInvalid",
+                format!(
+                    "{} failed code-signature verification: {}",
+                    path.display(),
+                    diagnostics.trim()
+                ),
+            ))
+        }
+    }
+
+    /// For a Developer ID signed application, the requirement that its own
+    /// re-signed helpers carry its team's Developer ID signature. Ad hoc
+    /// development bundles have no signer identity; `None` checks validity.
+    pub(super) fn application_requirement() -> Result<Option<String>, CliError> {
+        static TEAM: OnceLock<Option<String>> = OnceLock::new();
+        if let Some(team) = TEAM.get() {
+            return Ok(team.as_ref().map(|team| requirement(team)));
+        }
+        let executable = std::fs::canonicalize(std::env::current_exe()?)?;
+        let (_, details) = run(&[
+            "-dv".as_ref(),
+            "--verbose=2".as_ref(),
+            executable.as_os_str(),
+        ])?;
+        let team = details
+            .lines()
+            .find_map(|line| line.strip_prefix("TeamIdentifier="))
+            .map(str::trim)
+            .filter(|team| !team.is_empty() && team.chars().all(|c| c.is_ascii_alphanumeric()))
+            .map(str::to_owned);
+        let team = TEAM.get_or_init(|| team);
+        Ok(team.as_ref().map(|team| requirement(team)))
+    }
+
+    fn requirement(team: &str) -> String {
+        format!("anchor apple generic and certificate leaf[subject.OU] = \"{team}\"")
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+mod signing {
+    use std::path::Path;
+
+    use super::{CliError, helper_error};
+
+    pub(super) fn verify(_: &Path, _: Option<&str>) -> Result<(), CliError> {
+        Err(helper_error(
+            "DownloaderUnsupportedPlatform",
+            "bundled helpers exist only in macOS application bundles",
+        ))
+    }
+
+    pub(super) fn application_requirement() -> Result<Option<String>, CliError> {
+        Ok(None)
+    }
+}
+
+/// The running packaged bundle's `Contents/Resources/helpers`. Inside a
+/// packaged bundle this is the source even when it is missing or damaged, so
+/// verification fails instead of silently using another copy.
+pub fn bundled_root() -> Option<PathBuf> {
+    crate::bundle::packaged_contents()
+        .map(|contents| contents.join(crate::bundle::HELPERS_DIRECTORY))
+}
 
 /// `~/Library/Application Support/Deadpan/helpers` on macOS.
 pub fn default_root() -> Result<PathBuf, CliError> {
@@ -118,52 +487,73 @@ impl HelperPin {
     /// The published executable after a complete size and SHA-256 check.
     /// Symbolic links and other file types are refused.
     pub fn verified(&self, root: &Path) -> Result<Option<PathBuf>, CliError> {
-        let path = self.path(root);
-        let metadata = match fs::symlink_metadata(&path) {
-            Ok(metadata) => metadata,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
-            Err(error) => return Err(error.into()),
-        };
-        if !metadata.file_type().is_file() || metadata.len() != self.executable_bytes {
-            return Err(helper_error(
-                "DownloaderHelperInvalid",
-                format!(
-                    "{} {} at {} is not the pinned file",
-                    self.name,
-                    self.version,
-                    path.display()
-                ),
-            ));
-        }
-        let mut file = File::open(&path)?;
-        let (digest, length) = hash(&mut file, self.executable_bytes, None)?;
-        if digest != self.executable_sha256 || length != self.executable_bytes {
-            return Err(helper_error(
-                "DownloaderHelperInvalid",
-                format!(
-                    "{} {} at {} failed SHA-256 verification",
-                    self.name,
-                    self.version,
-                    path.display()
-                ),
-            ));
-        }
-        if metadata.permissions().mode() & 0o100 == 0 {
-            return Err(helper_error(
-                "DownloaderHelperInvalid",
-                format!("{} at {} is not executable", self.name, path.display()),
-            ));
-        }
-        not_shared(&path, &metadata)?;
-        Ok(Some(path))
+        verify_file(
+            self,
+            &self.path(root),
+            self.executable_bytes,
+            self.executable_sha256,
+            None,
+        )
     }
+}
+
+/// Exact size, SHA-256, owner-execute and private-directory checks. Directory
+/// checks stop after `boundary` when one is given.
+fn verify_file(
+    pin: &HelperPin,
+    path: &Path,
+    bytes: u64,
+    sha256: &str,
+    boundary: Option<&Path>,
+) -> Result<Option<PathBuf>, CliError> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error.into()),
+    };
+    if !metadata.file_type().is_file() || metadata.len() != bytes {
+        return Err(helper_error(
+            "DownloaderHelperInvalid",
+            format!(
+                "{} {} at {} is not the pinned file",
+                pin.name,
+                pin.version,
+                path.display()
+            ),
+        ));
+    }
+    let mut file = File::open(path)?;
+    let (digest, length) = hash(&mut file, bytes, None)?;
+    if digest != sha256 || length != bytes {
+        return Err(helper_error(
+            "DownloaderHelperInvalid",
+            format!(
+                "{} {} at {} failed SHA-256 verification",
+                pin.name,
+                pin.version,
+                path.display()
+            ),
+        ));
+    }
+    if metadata.permissions().mode() & 0o100 == 0 {
+        return Err(helper_error(
+            "DownloaderHelperInvalid",
+            format!("{} at {} is not executable", pin.name, path.display()),
+        ));
+    }
+    not_shared(path, &metadata, boundary)?;
+    Ok(Some(path.to_owned()))
 }
 
 /// Refuse a helper that another local user could replace: the executable and
 /// every directory above it must belong to this user or root and must not be
 /// group- or world-writable (a sticky world-writable directory such as /tmp
 /// cannot have its entries replaced by others and is allowed).
-fn not_shared(path: &Path, metadata: &fs::Metadata) -> Result<(), CliError> {
+fn not_shared(
+    path: &Path,
+    metadata: &fs::Metadata,
+    boundary: Option<&Path>,
+) -> Result<(), CliError> {
     use std::os::unix::fs::MetadataExt;
     let user = rustix::process::getuid().as_raw();
     let shared = |metadata: &fs::Metadata, directory: bool| {
@@ -184,9 +574,13 @@ fn not_shared(path: &Path, metadata: &fs::Metadata) -> Result<(), CliError> {
         return Err(refuse(path));
     }
     let directory = fs::canonicalize(path.parent().unwrap_or(Path::new("/")))?;
+    let boundary = boundary.map(fs::canonicalize).transpose()?;
     for ancestor in directory.ancestors() {
         if shared(&fs::metadata(ancestor)?, true) {
             return Err(refuse(ancestor));
+        }
+        if boundary.as_deref() == Some(ancestor) {
+            break;
         }
     }
     Ok(())
@@ -199,16 +593,26 @@ pub struct Helpers {
     pub yt_dlp_version: String,
     pub deno: PathBuf,
     pub deno_version: String,
-    /// The pinned install root to re-verify before each launch. `None` only
-    /// for explicitly supplied test stand-ins, which are not pinned.
-    pub pinned_root: Option<PathBuf>,
+    /// The pinned source to re-verify before each launch. `None` only for
+    /// explicitly supplied test stand-ins, which are not pinned.
+    pub pinned: Option<HelperSource>,
 }
 
 impl Helpers {
+    /// The pinned helpers under one explicit managed root.
     pub fn resolve(root: &Path) -> Result<Self, CliError> {
+        Self::resolve_source(&HelperSource::Managed(root.to_owned()))
+    }
+
+    /// The running bundle's baseline, otherwise the managed root.
+    pub fn resolve_default() -> Result<Self, CliError> {
+        Self::resolve_source(&HelperSource::default_source()?)
+    }
+
+    pub fn resolve_source(source: &HelperSource) -> Result<Self, CliError> {
         supported_platform()?;
-        let missing = |pin: &HelperPin| {
-            helper_error(
+        let missing = |pin: &HelperPin| match source {
+            HelperSource::Managed(root) => helper_error(
                 "DownloaderNotInstalled",
                 format!(
                     "{} {} is not installed under {}; run `deadpan-cli downloader install`",
@@ -216,14 +620,23 @@ impl Helpers {
                     pin.version,
                     root.display()
                 ),
-            )
+            ),
+            HelperSource::Bundled(root) => helper_error(
+                "DownloaderHelperInvalid",
+                format!(
+                    "{} {} is missing from the application bundle at {}; reinstall Deadpan",
+                    pin.name,
+                    pin.version,
+                    root.display()
+                ),
+            ),
         };
         Ok(Self {
-            yt_dlp: YT_DLP.verified(root)?.ok_or_else(|| missing(&YT_DLP))?,
+            yt_dlp: source.verified(&YT_DLP)?.ok_or_else(|| missing(&YT_DLP))?,
             yt_dlp_version: YT_DLP.version.into(),
-            deno: DENO.verified(root)?.ok_or_else(|| missing(&DENO))?,
+            deno: source.verified(&DENO)?.ok_or_else(|| missing(&DENO))?,
             deno_version: DENO.version.into(),
-            pinned_root: Some(root.to_owned()),
+            pinned: Some(source.clone()),
         })
     }
 
@@ -232,11 +645,11 @@ impl Helpers {
     /// this check and exec only through this user's own access, which the
     /// directory permission checks restrict to this user.
     pub fn recheck(&self) -> Result<(), CliError> {
-        let Some(root) = &self.pinned_root else {
+        let Some(source) = &self.pinned else {
             return Ok(());
         };
         for (pin, path) in [(&YT_DLP, &self.yt_dlp), (&DENO, &self.deno)] {
-            if pin.verified(root)?.as_ref() != Some(path) {
+            if source.verified(pin)?.as_ref() != Some(path) {
                 return Err(helper_error(
                     "DownloaderHelperInvalid",
                     format!("{} changed after it was verified", pin.name),
@@ -252,17 +665,25 @@ pub struct HelperStatus {
     pub name: &'static str,
     pub version: &'static str,
     pub license: &'static str,
+    /// The pinned upstream executable.
+    pub pinned_sha256: &'static str,
+    pub pinned_bytes: u64,
     pub path: PathBuf,
     pub installed: bool,
     pub verified: bool,
     pub problem: Option<String>,
 }
 
+/// Status of the helpers under one managed root.
 pub fn status(root: &Path) -> Vec<HelperStatus> {
+    status_source(&HelperSource::Managed(root.to_owned()))
+}
+
+pub fn status_source(source: &HelperSource) -> Vec<HelperStatus> {
     BUNDLE
         .iter()
         .map(|pin| {
-            let (installed, verified, problem) = match pin.verified(root) {
+            let (installed, verified, problem) = match source.verified(pin) {
                 Ok(Some(_)) => (true, true, None),
                 Ok(None) => (false, false, None),
                 Err(error) => (true, false, Some(error.to_string())),
@@ -271,7 +692,9 @@ pub fn status(root: &Path) -> Vec<HelperStatus> {
                 name: pin.name,
                 version: pin.version,
                 license: pin.license,
-                path: pin.path(root),
+                pinned_sha256: pin.executable_sha256,
+                pinned_bytes: pin.executable_bytes,
+                path: pin.path(source.root()),
                 installed,
                 verified,
                 problem,
@@ -554,26 +977,45 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
         }
     }
     let root = match root {
-        Some(root) if root.is_absolute() => root,
+        Some(root) if root.is_absolute() => Some(root),
         Some(_) => return Err(CliError::Usage("--root must be an absolute path".into())),
-        None => default_root()?,
+        None => None,
     };
     match *command {
         "status" => {
+            // An explicit root names a managed install; otherwise report what
+            // an import would use: the bundled baseline, else the managed root.
+            let source = match root {
+                Some(root) => HelperSource::Managed(root),
+                None => HelperSource::default_source()?,
+            };
+            let distribution = match source {
+                HelperSource::Bundled(_) => {
+                    "read-only baseline inside the application bundle; the managed root is the update location"
+                }
+                HelperSource::Managed(_) => {
+                    "managed install (development stand-in and future update location)"
+                }
+            };
             let mut report = serde_json::json!({
                 "protocol": 1,
-                "root": root,
+                "source": source.kind(),
+                "root": source.root(),
                 "ejs": { "version": EJS_VERSION, "packaging": "embedded in the official yt-dlp executable" },
-                "helpers": status(&root),
-                "distribution": "development stand-in; the release bundle must ship signed helpers",
+                "helpers": status_source(&source),
+                "distribution": distribution,
             });
             if probe {
-                let helpers = Helpers::resolve(&root)?;
+                let helpers = Helpers::resolve_source(&source)?;
                 report["probe"] = serde_json::to_value(super::acquire::probe(&helpers)?)?;
             }
             crate::write_json(&report)
         }
         "install" => {
+            let root = match root {
+                Some(root) => root,
+                None => default_root()?,
+            };
             supported_platform()?;
             let cancelled = super::acquire::interrupt_flag()?;
             let transport = HttpsTransport::with_user_agent(USER_AGENT);
@@ -638,6 +1080,8 @@ mod tests {
             executable: "tool",
             executable_sha256: sha(bytes),
             executable_bytes: bytes.len() as u64,
+            content_sha256: None,
+            signer: None,
         }
     }
 
@@ -847,6 +1291,214 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    /// A bundled baseline whose shipped `tool` differs from the pinned
+    /// upstream bytes only through re-signing.
+    fn baseline(
+        upstream: &[u8],
+        shipped: &[u8],
+        signature: BaselineSignature,
+    ) -> (tempfile::TempDir, PathBuf, HelperPin) {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory
+            .path()
+            .join("Deadpan.app/Contents/Resources/helpers");
+        let pin = raw_pin(upstream);
+        fs::create_dir_all(pin.directory(&root)).unwrap();
+        fs::write(pin.path(&root), shipped).unwrap();
+        fs::set_permissions(pin.path(&root), fs::Permissions::from_mode(0o755)).unwrap();
+        let manifest = BaselineManifest {
+            schema: BASELINE_SCHEMA,
+            helpers: vec![BaselineHelper {
+                name: pin.name.into(),
+                version: pin.version.into(),
+                executable: pin.executable.into(),
+                upstream_sha256: pin.executable_sha256.into(),
+                upstream_bytes: pin.executable_bytes,
+                sha256: sha(shipped).into(),
+                bytes: shipped.len() as u64,
+                signature,
+            }],
+        };
+        fs::write(
+            root.join(BASELINE_MANIFEST),
+            serde_json::to_vec(&manifest).unwrap(),
+        )
+        .unwrap();
+        (directory, root, pin)
+    }
+
+    fn write_manifest(root: &Path, pin: &HelperPin, shipped: &[u8], signature: BaselineSignature) {
+        let manifest = BaselineManifest {
+            schema: BASELINE_SCHEMA,
+            helpers: vec![BaselineHelper {
+                name: pin.name.into(),
+                version: pin.version.into(),
+                executable: pin.executable.into(),
+                upstream_sha256: pin.executable_sha256.into(),
+                upstream_bytes: pin.executable_bytes,
+                sha256: sha(shipped).into(),
+                bytes: shipped.len() as u64,
+                signature,
+            }],
+        };
+        fs::write(
+            root.join(BASELINE_MANIFEST),
+            serde_json::to_vec(&manifest).unwrap(),
+        )
+        .unwrap();
+    }
+
+    /// A real signed system executable as the "upstream" pin and an ad hoc
+    /// re-signed copy as the shipped baseline, inside a fake `.app`.
+    fn resigned_baseline() -> (tempfile::TempDir, PathBuf, HelperPin) {
+        let upstream = fs::read("/usr/bin/true").unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory
+            .path()
+            .join("Deadpan.app/Contents/Resources/helpers");
+        let pin = HelperPin {
+            content_sha256: Some(Box::leak(
+                super::super::macho_content::content_sha256(&upstream)
+                    .unwrap()
+                    .into_boxed_str(),
+            )),
+            ..raw_pin(&upstream)
+        };
+        fs::create_dir_all(pin.directory(&root)).unwrap();
+        let path = pin.path(&root);
+        fs::write(&path, &upstream).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        for arguments in [
+            vec!["--remove-signature"],
+            vec!["--force", "--options", "runtime", "-s", "-"],
+        ] {
+            let status = std::process::Command::new("/usr/bin/codesign")
+                .args(arguments)
+                .arg(&path)
+                .status()
+                .unwrap();
+            assert!(status.success());
+        }
+        let shipped = fs::read(&path).unwrap();
+        assert_ne!(shipped, upstream);
+        write_manifest(&root, &pin, &shipped, BaselineSignature::Resigned);
+        (directory, root, pin)
+    }
+
+    #[test]
+    fn bundled_baseline_binds_resigned_bytes_to_the_compiled_pin() {
+        let (_directory, root, pin) = resigned_baseline();
+        let source = HelperSource::Bundled(root.clone());
+        assert_eq!(source.verified(&pin).unwrap(), Some(pin.path(&root)));
+        // The managed rule would reject the re-signed bytes.
+        assert!(pin.verified(&root).is_err());
+        // A different pinned release never accepts this baseline.
+        let other = HelperPin {
+            version: "2.0",
+            ..pin
+        };
+        assert!(source.verified(&other).is_err());
+        // Re-signing requires a compiled content pin.
+        let unpinned = HelperPin {
+            content_sha256: None,
+            ..pin
+        };
+        assert!(source.verified(&unpinned).is_err());
+    }
+
+    #[test]
+    fn a_tampered_resigned_helper_fails_even_with_a_matching_manifest() {
+        let (_directory, root, pin) = resigned_baseline();
+        let source = HelperSource::Bundled(root.clone());
+        let path = pin.path(&root);
+        let original = fs::read(&path).unwrap();
+        // Change one byte of code inside the hashed content (not the
+        // signature), then rewrite the manifest to match the tampered file.
+        let mut tampered = original.clone();
+        let at = tampered.len() / 3;
+        tampered[at] ^= 0x5a;
+        fs::write(&path, &tampered).unwrap();
+        write_manifest(&root, &pin, &tampered, BaselineSignature::Resigned);
+        assert!(source.verified(&pin).is_err());
+        // Within the first slice's code, the compiled content pin rejects it
+        // even before the signature check.
+        let mut code = original.clone();
+        let first = u32::from_be_bytes(code[16..20].try_into().unwrap()) as usize;
+        let commands = u32::from_le_bytes(code[first + 20..first + 24].try_into().unwrap());
+        code[first + 32 + commands as usize + 4] ^= 0x5a;
+        fs::write(&path, &code).unwrap();
+        write_manifest(&root, &pin, &code, BaselineSignature::Resigned);
+        let error = source.verified(&pin).unwrap_err().to_string();
+        assert!(error.contains("differs from pinned"), "{error}");
+        // Appending data after the signature, with a matching manifest.
+        let mut appended = original;
+        appended.extend_from_slice(b"MEI\x0c\x0b\x0a\x0b\x0e");
+        fs::write(&path, &appended).unwrap();
+        write_manifest(&root, &pin, &appended, BaselineSignature::Resigned);
+        assert!(source.verified(&pin).is_err());
+    }
+
+    #[test]
+    fn an_upstream_signed_helper_must_satisfy_its_signer() {
+        let upstream = fs::read("/usr/bin/true").unwrap();
+        let (_directory, root, pin) = baseline(&upstream, &upstream, BaselineSignature::Upstream);
+        let source = HelperSource::Bundled(root.clone());
+        let apple = HelperPin {
+            signer: Some("anchor apple"),
+            ..pin
+        };
+        assert!(source.verified(&apple).unwrap().is_some());
+        let deno = HelperPin {
+            signer: DENO.signer,
+            ..pin
+        };
+        assert!(source.verified(&deno).is_err());
+    }
+
+    #[test]
+    fn inspection_reports_a_missing_bundle_baseline() {
+        let directory = tempfile::tempdir().unwrap();
+        let source = HelperSource::Bundled(directory.path().join("absent"));
+        assert!(source.inspect(&YT_DLP).is_err());
+        assert!(source.verified(&YT_DLP).is_err());
+    }
+
+    #[test]
+    fn bundled_baseline_rejects_inconsistent_or_missing_manifests() {
+        let upstream = b"#!/bin/sh\necho tool\n";
+        // Claims the publisher's signature but ships different bytes.
+        let (_directory, root, pin) = baseline(upstream, b"different", BaselineSignature::Upstream);
+        assert!(HelperSource::Bundled(root.clone()).verified(&pin).is_err());
+
+        let (_directory, root, pin) = baseline(upstream, upstream, BaselineSignature::Upstream);
+        let source = HelperSource::Bundled(root.clone());
+        assert!(source.verified(&pin).unwrap().is_some());
+        fs::remove_file(root.join(BASELINE_MANIFEST)).unwrap();
+        assert!(source.verified(&pin).is_err());
+        fs::write(
+            root.join(BASELINE_MANIFEST),
+            b"{\"schema\": 2, \"helpers\": []}",
+        )
+        .unwrap();
+        assert!(source.verified(&pin).is_err());
+    }
+
+    #[test]
+    fn bundled_permission_checks_stop_at_the_app() {
+        let upstream = b"#!/bin/sh\necho tool\n";
+        let (directory, root, pin) = baseline(upstream, upstream, BaselineSignature::Upstream);
+        let source = HelperSource::Bundled(root.clone());
+        // A group-writable folder above the bundle, like /Applications.
+        fs::set_permissions(directory.path(), fs::Permissions::from_mode(0o775)).unwrap();
+        assert!(source.verified(&pin).unwrap().is_some());
+        assert!(HelperSource::Managed(root.clone()).verified(&pin).is_err());
+        // Inside the bundle the private-directory rule still applies.
+        fs::set_permissions(pin.directory(&root), fs::Permissions::from_mode(0o777)).unwrap();
+        assert!(source.verified(&pin).is_err());
+        fs::set_permissions(pin.directory(&root), fs::Permissions::from_mode(0o755)).unwrap();
+        fs::set_permissions(directory.path(), fs::Permissions::from_mode(0o700)).unwrap();
     }
 
     #[test]

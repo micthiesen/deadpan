@@ -405,7 +405,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(target(d, "target-1").map(|target| target.corrections.len())),
     )?;
     d.report.skipped.push(
-        "Face/person proposals, the ,z target punch-in and :zoom target= are not implemented."
+        "Face/person proposals are not implemented; the ,z target punch-in and :zoom target= are covered by the zoom scenario."
             .into(),
     );
     d.capture("Targets after undo")

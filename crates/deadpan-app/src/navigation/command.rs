@@ -42,6 +42,8 @@ pub enum Entry {
         through_shots: bool,
     },
     TrackCancel,
+    /// `:zoom` and `:creep`: authored framing on the selected beat.
+    Zoom(super::zoom::ZoomInput),
     Empty,
 }
 
@@ -67,6 +69,43 @@ fn track<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     })
 }
 
+const HOLD_USAGE: &str = "Use :hold 0.5s or :hold 12f to insert a silent freeze at the cursor; video=black inserts black picture instead (audio=silence).";
+
+/// `:hold DURATION [video=freeze|black] [audio=silence]`.
+fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
+    let duration = DurationInput::parse(words.next().ok_or(HOLD_USAGE)?)?;
+    let mut video = None;
+    let mut audio = false;
+    for word in words {
+        match word.split_once('=') {
+            Some(("video", value)) if video.is_none() => {
+                video = Some(match value {
+                    "freeze" => false,
+                    "black" => true,
+                    "ai" => return Err(
+                        "Insert the pause first, then request an AI picture with ,a or :generate."
+                            .into(),
+                    ),
+                    _ => return Err("video is freeze or black.".into()),
+                });
+            }
+            Some(("audio", value)) if !audio => {
+                if value != "silence" {
+                    return Err("A new pause is silent (audio=silence); choose room tone afterwards with :room-tone.".into());
+                }
+                audio = true;
+            }
+            Some(("video" | "audio", _)) => return Err("Each parameter can be given once.".into()),
+            _ => return Err(HOLD_USAGE.into()),
+        }
+    }
+    Ok(Entry::Action(Action::Edit(if video == Some(true) {
+        BeatEdit::InsertBlack(duration)
+    } else {
+        BeatEdit::InsertHold(duration)
+    })))
+}
+
 pub fn parse(input: &str) -> Result<Entry, String> {
     let input = input.trim();
     let input = input.strip_prefix(':').unwrap_or(input).trim_start();
@@ -76,6 +115,12 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     };
     if verb.eq_ignore_ascii_case("group") {
         return super::group::parse(&input[verb.len()..]);
+    }
+    if verb.eq_ignore_ascii_case("zoom") {
+        return super::zoom::parse_zoom(&input[verb.len()..]).map(Entry::Zoom);
+    }
+    if verb.eq_ignore_ascii_case("creep") {
+        return super::zoom::parse_creep(&input[verb.len()..]).map(Entry::Zoom);
     }
     let verb = verb.to_ascii_lowercase();
     if verb == "scope" {
@@ -160,6 +205,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return super::cutaway::parse(&arguments)
             .map(|input| Entry::Action(Action::Edit(BeatEdit::Cutaway(input))));
     }
+    if verb == "hold" {
+        return hold(words);
+    }
     if verb == "repeat" {
         let arguments: Vec<&str> = words.clone().collect();
         if let Some(input) = super::escalation::parse(&arguments)? {
@@ -225,13 +273,6 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         | "sound-allow" | "sound-silence" => {
             return super::sound::parse(&verb, argument)
                 .map(|sound| Entry::Action(Action::Sound(sound)));
-        }
-        "hold" => {
-            let duration =
-                DurationInput::parse(argument.ok_or(
-                    "Use :hold 0.5s or :hold 12f to insert a silent freeze at the cursor.",
-                )?)?;
-            return Ok(Entry::Action(Action::Edit(BeatEdit::InsertHold(duration))));
         }
         "repeat" | "wrap-repeat" => {
             let count = argument
@@ -663,9 +704,35 @@ mod tests {
             "hold 12",
             "hold 12f extra",
             "hold 1s video=ai",
+            "hold 1s video=black video=black",
+            "hold 1s audio=room-tone",
+            "hold video=black",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }
+        assert_eq!(
+            parse("hold 12f video=freeze audio=silence"),
+            Ok(Entry::Action(Action::Edit(BeatEdit::InsertHold(
+                DurationInput::parse("12f").unwrap()
+            ))))
+        );
+        assert_eq!(
+            parse("hold 0.5s video=black"),
+            Ok(Entry::Action(Action::Edit(BeatEdit::InsertBlack(
+                DurationInput::parse("0.5s").unwrap()
+            ))))
+        );
+    }
+
+    #[test]
+    fn zoom_and_creep_commands_parse_through_the_command_line() {
+        assert!(matches!(
+            parse(":zoom 1.35 target=current curve=step"),
+            Ok(Entry::Zoom(input)) if input.target == super::super::zoom::TargetChoice::Current
+        ));
+        assert!(matches!(parse("creep from=1 to=1.4"), Ok(Entry::Zoom(_))));
+        assert!(matches!(parse("ZOOM off"), Ok(Entry::Zoom(_))));
+        assert!(parse("zoom").is_err());
     }
 
     #[test]

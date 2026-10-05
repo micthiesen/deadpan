@@ -881,15 +881,25 @@ impl Service {
         if let ProjectEdit::DeleteRange { parent, range } = edit {
             return self.delete_range(expected_revision, scope, parent, range);
         }
-        if let ProjectEdit::InsertTime { at, duration } = edit {
+        let black = matches!(edit, ProjectEdit::InsertBlack { .. });
+        if let ProjectEdit::InsertTime { at, duration }
+        | ProjectEdit::InsertBlack { at, duration } = edit
+        {
             if duration == deadpan_core::FrameDuration::ZERO {
                 self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
                 return Ok(());
             }
             scope.check_pause(workspace, at)?;
             let id = node();
-            let request =
-                super::pause::prepare(workspace, at, duration, revision(), id.clone(), node)?;
+            let request = super::pause::prepare(
+                workspace,
+                at,
+                duration,
+                revision(),
+                id.clone(),
+                black,
+                node,
+            )?;
             // As for every native edit, current generation requests require the
             // real host relevance resolver. Never invent observations here.
             let outcome = self.writer()?.commit(&request).map_err(display)?;
@@ -905,8 +915,9 @@ impl Service {
             });
             self.refresh()?;
             self.message = Some(format!(
-                "Inserted a {} frame silent pause at boundary {} and saved",
+                "Inserted a {} frame silent {} at boundary {} and saved",
                 duration.frames(),
+                if black { "black pause" } else { "pause" },
                 at.0
             ));
             return Ok(());
@@ -914,6 +925,7 @@ impl Service {
         let target = match &edit {
             ProjectEdit::Scoped { .. }
             | ProjectEdit::InsertTime { .. }
+            | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
                 unreachable!("range operation handled above")
             }
@@ -998,11 +1010,22 @@ impl Service {
                     "Gain updated and saved",
                 )
             }
-            ProjectEdit::SetFraming { node, framing } => (
-                Command::SetFraming { node, framing },
-                selected,
-                "Framing updated and saved",
-            ),
+            ProjectEdit::SetFraming { node, framing } => {
+                retime_message = Some(format!(
+                    "Framing saved: {}",
+                    crate::navigation::zoom::describe(framing.as_ref(), &|id| {
+                        document
+                            .targets()
+                            .get(id)
+                            .map_or_else(|| id.as_str().to_owned(), |target| target.label.clone())
+                    })
+                ));
+                (
+                    Command::SetFraming { node, framing },
+                    selected,
+                    "Framing updated and saved",
+                )
+            }
             ProjectEdit::SetCutaways {
                 node,
                 host,
@@ -1057,6 +1080,7 @@ impl Service {
             }
             ProjectEdit::Scoped { .. }
             | ProjectEdit::InsertTime { .. }
+            | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
                 unreachable!("range operation handled above")
             }

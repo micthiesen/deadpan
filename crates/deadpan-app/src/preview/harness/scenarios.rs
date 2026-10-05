@@ -21,6 +21,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "shots" => super::shots::run(d),
         "cutaway" => super::cutaway::run(d),
         "gags" => super::gags::run(d),
+        "zoom" => super::zoom::run(d),
         "original-layout" | "original-layout-long" => super::original_layout::run(d),
         "place-slice" => super::splice::run(d),
         "delete-range" => super::delete_range::run(d),
@@ -896,6 +897,10 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn menus(d: &mut Driver<'_>) -> Result<(), String> {
+    // File is disabled while the project service works on the preceding
+    // command. Show one idle frame so the accessibility tree is current.
+    d.wait_for("Project service idle", |app| !app.service.is_busy())?;
+    d.step("Idle frame before opening File", false)?;
     let before = d.revision();
     d.click("File")?;
     d.key(Key::D)?;

@@ -25,28 +25,125 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         "render_entrypoints": ["native-cmd-e-and-render-command", "closed-project-headless-render-and-recovery"],
         "render_preview_choices": ["commit-and-render", "discard-and-render", "keep-editing"],
         "downloader": downloader(),
-        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "native-youtube-import", "bundled-signed-downloader", "full-render-mastering", "hdr-render", "open-project-render-ipc", "native-render-recovery-browser", "distribution"],
+        "runtime": runtime(),
+        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "native-youtube-import", "full-render-mastering", "hdr-render", "open-project-render-ipc", "native-render-recovery-browser", "signed-downloader-updates", "developer-id-notarized-distribution"],
     }))
 }
 
-/// Pinned downloader helpers and whether they are present in the default
-/// development location. Presence is not verification; `downloader status`
-/// hashes the files and `downloader status --probe` runs them.
+/// Pinned downloader helpers and whether they are present where an import
+/// would read them: the running packaged bundle's baseline (a missing or
+/// damaged one is a reported problem, never a fallback), else the managed
+/// root. Presence is not verification; `downloader status` hashes the files and
+/// `downloader status --probe` runs them.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn downloader() -> serde_json::Value {
-    use crate::youtube::helpers::{BUNDLE, EJS_VERSION, default_root};
-    let root = default_root().ok();
+    use crate::youtube::helpers::{BUNDLE, EJS_VERSION, HelperSource};
+    let source = HelperSource::default_source().ok();
     serde_json::json!({
-        "helpers": BUNDLE.iter().map(|pin| serde_json::json!({
-            "name": pin.name, "version": pin.version, "license": pin.license,
-            "present": root.as_ref().is_some_and(|root| pin.path(root).is_file()),
-        })).collect::<Vec<_>>(),
+        "source": source.as_ref().map(HelperSource::kind),
+        "root": source.as_ref().map(HelperSource::root),
+        "helpers": BUNDLE.iter().map(|pin| {
+            let inspected = source.as_ref().map(|source| source.inspect(pin));
+            serde_json::json!({
+                "name": pin.name, "version": pin.version, "license": pin.license,
+                "present": matches!(inspected, Some(Ok(_))),
+                "path": source.as_ref().map(|source| pin.path(source.root())),
+                "problem": match inspected {
+                    Some(Err(error)) => Some(error.to_string()),
+                    _ => None,
+                },
+            })
+        }).collect::<Vec<_>>(),
         "ejs": EJS_VERSION,
-        "distribution": "development install; release bundling and signing remain open",
+        "distribution": match source {
+            Some(HelperSource::Bundled(_)) => "bundled read-only baseline; signed update manifests and rollback remain open",
+            _ => "managed development install; run inside Deadpan.app for the bundled baseline",
+        },
     })
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
 fn downloader() -> serde_json::Value {
+    serde_json::Value::Null
+}
+
+/// Where this process found its workers and FFmpeg libraries. Workers resolve
+/// beside the running executable. Loaded FFmpeg images are matched to the
+/// bundle's `Contents/Frameworks` files by mapped device and inode, so the
+/// report never trusts a path the loader did not actually map.
+#[cfg(target_os = "macos")]
+fn runtime() -> serde_json::Value {
+    use deadpan_encode::runtime::{RuntimeImageKind, RuntimeImageObservation};
+    use std::os::unix::fs::MetadataExt;
+    let executable = std::env::current_exe().and_then(std::fs::canonicalize).ok();
+    let contents = crate::bundle::running_contents();
+    let directory = executable.as_deref().and_then(std::path::Path::parent);
+    let workers = [
+        "deadpan-media-worker",
+        "deadpan-transcribe",
+        "deadpan-track",
+    ]
+    .map(|name| {
+        let path = directory.map(|directory| directory.join(name));
+        serde_json::json!({
+            "name": name,
+            "present": path.as_ref().is_some_and(|path| path.is_file()),
+            "inside_bundle": path.as_ref().zip(contents.as_ref())
+                .is_some_and(|(path, contents)| path.starts_with(contents)),
+            "path": path,
+        })
+    });
+    let frameworks: Vec<(std::path::PathBuf, u64, u64)> = contents
+        .as_ref()
+        .and_then(|contents| {
+            std::fs::read_dir(contents.join(crate::bundle::FRAMEWORKS_DIRECTORY)).ok()
+        })
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.ok()?.path();
+            let metadata = std::fs::metadata(&path).ok()?;
+            Some((path, metadata.dev(), metadata.ino()))
+        })
+        .collect();
+    let ffmpeg = [
+        ("avcodec", RuntimeImageKind::Avcodec),
+        ("avformat", RuntimeImageKind::Avformat),
+        ("avutil", RuntimeImageKind::Avutil),
+        ("swscale", RuntimeImageKind::Swscale),
+    ]
+    .map(
+        |(name, kind)| match RuntimeImageObservation::capture(kind) {
+            Ok(observation) => {
+                let identity = observation.identity();
+                let file = frameworks.iter().find(|(_, device, inode)| {
+                    *device == identity.device && *inode == identity.inode
+                });
+                serde_json::json!({
+                    "library": name,
+                    "loaded": true,
+                    "inside_bundle": file.is_some(),
+                    "path": file.map(|(path, _, _)| path),
+                })
+            }
+            Err(error) => serde_json::json!({
+                "library": name, "loaded": false, "problem": error.to_string(),
+            }),
+        },
+    );
+    serde_json::json!({
+        "executable": executable,
+        "bundle": contents.as_ref().and_then(|contents| contents.parent()),
+        "packaged": contents.as_deref().is_some_and(crate::bundle::is_packaged),
+        "workers": workers,
+        "ffmpeg": ffmpeg,
+        "models_root": crate::models::default_root().ok(),
+        "models": "downloaded on request into the models root; none ship in the bundle",
+        "ai_bridge_runtime": crate::generation::runtime::lookup().describe(),
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn runtime() -> serde_json::Value {
     serde_json::Value::Null
 }

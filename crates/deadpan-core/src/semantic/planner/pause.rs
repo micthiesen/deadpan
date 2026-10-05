@@ -16,6 +16,7 @@ where
         &mut self,
         trace_index: usize,
         length: crate::PauseLength,
+        black: bool,
     ) -> Result<(), EditError> {
         if self.context.visual_selection.is_some() {
             return Err(invalid(
@@ -31,7 +32,15 @@ where
                 "this boundary belongs to an enclosing group; insert the pause from that group",
             ));
         }
-        let provider = (self.resolve_pause)(&self.current, at)?;
+        // Black punctuation samples no picture and captures no framing.
+        let provider = if black {
+            super::PauseProvider {
+                video: crate::HoldVideo::Background,
+                picture_context: None,
+            }
+        } else {
+            (self.resolve_pause)(&self.current, at)?
+        };
         self.charge_step(false)?;
         let required = target.split.as_ref().map_or(0, |split| split.required_ids);
         let SemanticAllocation::InsertPause {

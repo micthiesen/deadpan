@@ -112,7 +112,10 @@ impl GagRecipe {
                     .and_then(|pose| pose.quantized())
                     .map_err(|error| invalid(&error.to_string()))?;
                 vec![
-                    SemanticInstruction::InsertPause { length: *pause },
+                    SemanticInstruction::InsertPause {
+                        length: *pause,
+                        black: false,
+                    },
                     SemanticInstruction::SetFraming {
                         framing: Some(Box::new(
                             Framing::creep(start, end, FramingCurve::Smoothstep)

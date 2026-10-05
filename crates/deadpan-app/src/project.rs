@@ -479,6 +479,11 @@ pub enum ProjectEdit {
         at: ProjectFrame,
         duration: FrameDuration,
     },
+    /// A silent pause with black picture (black-frame punctuation).
+    InsertBlack {
+        at: ProjectFrame,
+        duration: FrameDuration,
+    },
     Split {
         node: NodeId,
         /// Interior boundary in this selected beat's project-frame clock.

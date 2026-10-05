@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "retrieved": "2026-10-04",
+  "files": [
+    {
+      "path": "ffmpeg/COPYING.LGPLv2.1",
+      "component": "FFmpeg 8.0.3",
+      "source": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n8.0.3/COPYING.LGPLv2.1",
+      "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30"
+    },
+    {
+      "path": "ffmpeg/LICENSE.md",
+      "component": "FFmpeg 8.0.3",
+      "source": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n8.0.3/LICENSE.md",
+      "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af"
+    },
+    {
+      "path": "yt-dlp/LICENSE",
+      "component": "yt-dlp 2026.08.19",
+      "source": "https://raw.githubusercontent.com/yt-dlp/yt-dlp/2026.08.19/LICENSE",
+      "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+    },
+    {
+      "path": "yt-dlp/THIRD_PARTY_LICENSES.txt",
+      "component": "yt-dlp 2026.08.19 PyInstaller executable (Python and bundled libraries)",
+      "source": "https://raw.githubusercontent.com/yt-dlp/yt-dlp/2026.08.19/THIRD_PARTY_LICENSES.txt",
+      "sha256": "472aefe951c7db35e1657c1d13fd337140511ed6f2b329205105ad441c5a02b7"
+    },
+    {
+      "path": "yt-dlp-ejs/LICENSE",
+      "component": "yt-dlp-ejs 0.8.0 (embedded in yt-dlp)",
+      "source": "https://raw.githubusercontent.com/yt-dlp/ejs/0.8.0/LICENSE",
+      "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c"
+    },
+    {
+      "path": "deno/LICENSE.md",
+      "component": "Deno 2.9.7",
+      "source": "https://raw.githubusercontent.com/denoland/deno/v2.9.7/LICENSE.md",
+      "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+    },
+    {
+      "path": "spdx/MIT.txt",
+      "component": "SPDX MIT license text for crates that publish no license file",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "path": "spdx/Apache-2.0.txt",
+      "component": "SPDX Apache-2.0 license text for crates that publish no license file",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt",
+      "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
+    },
+    {
+      "path": "spdx/Zlib.txt",
+      "component": "SPDX Zlib license text for crates that publish no license file",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Zlib.txt",
+      "sha256": "bfb1112d49db5b1daecdfef24bd7e2f3ea0bafb33aa67aa0ab51e2bf8407c03d"
+    },
+    {
+      "path": "spdx/license-ids.txt",
+      "component": "SPDX License List 3.27.0 license identifiers (licenseId values, sorted)",
+      "source": "derived from https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/json/licenses.json",
+      "sha256": "3f274f4bdf8afc054e53088c2f81f6bb5a13f64ec5ea6dc6c3063d6245da78c8"
+    },
+    {
+      "path": "spdx/exception-ids.txt",
+      "component": "SPDX License List 3.27.0 exception identifiers (licenseExceptionId values, sorted)",
+      "source": "derived from https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/json/exceptions.json",
+      "sha256": "daa89db93fef17ed707c6d3418190b1d68f28e7cb07b7a27969bafefd15068f6"
+    }
+  ]
+}

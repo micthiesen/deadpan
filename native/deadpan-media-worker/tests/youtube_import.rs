@@ -89,7 +89,7 @@ cp '{audio}' 140.m4a
         yt_dlp_version: "2026.08.19".into(),
         deno: directory.join("deno"),
         deno_version: "2.9.7".into(),
-        pinned_root: None,
+        pinned: None,
     }
 }
 

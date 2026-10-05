@@ -39,6 +39,7 @@ mod sound;
 pub mod splice;
 pub mod trim;
 pub mod youtube;
+pub mod zoom;
 pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;
@@ -48,6 +49,8 @@ pub use camera::route_camera_key;
 pub enum BeatEdit {
     Split,
     InsertHold(duration::DurationInput),
+    /// `:hold … video=black`: a silent pause with black picture.
+    InsertBlack(duration::DurationInput),
     Repeat(u32),
     WrapRepeat(u32),
     /// Set the selected Repeat's per-play escalation.

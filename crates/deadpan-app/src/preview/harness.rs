@@ -47,6 +47,7 @@ mod transcript;
 mod trim;
 mod wake;
 mod youtube;
+mod zoom;
 
 use telemetry::{Event, InputOrigins, Outcome, PictureTelemetry};
 use wake::RepaintWake;
@@ -360,7 +361,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 input_origins: InputOrigins::default(),
                 last_input: None,
                 wake,
+                discards: DiscardTrace::default(),
             };
+            driver.discards.install(&driver.harness.ctx);
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 driver.step("Initial workspace", true)?;
                 if name == "generated-picture" {
@@ -419,6 +422,47 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         message: format!("Failure capture: {error}"),
                     });
                 }
+            }
+            driver.discards.close();
+            let streaks = std::mem::take(&mut driver.discards.streaks);
+            let unresolved = std::mem::take(&mut driver.discards.unresolved);
+            let oscillations = std::mem::take(&mut driver.discards.oscillations);
+            let second_retries = std::mem::take(&mut driver.discards.second_retries);
+            if !second_retries.is_empty() {
+                driver.report.findings.push(Finding {
+                    severity: Severity::Warning,
+                    message: format!(
+                        "{} frame(s) settled their layout only on a second retry: {}",
+                        second_retries.len(),
+                        json!(second_retries)
+                    ),
+                });
+            }
+            driver.report.checks.push(Check {
+                name: "Every painted frame has a settled layout (no ignored retry)".into(),
+                passed: unresolved.is_empty(),
+                expected: json!([]),
+                actual: json!(unresolved),
+            });
+            driver.report.checks.push(Check {
+                name: "No layout retry repeats for three frames without new input".into(),
+                passed: oscillations.is_empty(),
+                expected: json!([]),
+                actual: json!(oscillations),
+            });
+            // Three consecutive retrying frames paint egui's debug PERF
+            // warning. When each frame has its own cause (one replay key per
+            // 60 Hz frame, or an asynchronous update), each retry is
+            // legitimate; report the run so its cost stays visible.
+            if !streaks.is_empty() {
+                driver.report.findings.push(Finding {
+                    severity: Severity::Warning,
+                    message: format!(
+                        "egui discard warning: {} run(s) of 3+ consecutive retrying frames, each frame with its own cause: {}",
+                        streaks.len(),
+                        json!(streaks)
+                    ),
+                });
             }
             driver.report.skipped.extend([
                 "OS picker behavior: only its selected path is scripted".into(),
@@ -511,6 +555,115 @@ struct Driver<'a> {
     input_origins: InputOrigins,
     last_input: Option<Instant>,
     wake: Arc<RepaintWake>,
+    discards: DiscardTrace,
+}
+
+/// Layout retries per frame, recorded at the end of every egui pass. egui
+/// paints a PERF warning over the window once retries repeat for three
+/// consecutive frames; the replay treats that as a defect.
+/// The application's `max_passes` (`style::configure`).
+const MAX_LAYOUT_PASSES: usize = 3;
+
+#[derive(Default)]
+struct DiscardTrace {
+    /// Reasons requested by passes of the frame being stepped.
+    pending: Arc<std::sync::Mutex<Vec<String>>>,
+    /// The current run of consecutive multi-pass frames.
+    run: Vec<(u64, String, Vec<String>, bool)>,
+    /// Every run of three or more frames.
+    streaks: Vec<Value>,
+    /// Frames painted after egui ignored a final retry request.
+    unresolved: Vec<Value>,
+    /// Frames that settled only on a second retry.
+    second_retries: Vec<Value>,
+    /// Runs of three or more retrying frames where a later frame had no new
+    /// input.
+    oscillations: Vec<Value>,
+}
+
+impl DiscardTrace {
+    fn install(&self, context: &egui::Context) {
+        let pending = Arc::clone(&self.pending);
+        context.on_end_pass(
+            "deadpan-replay-discard-trace",
+            Arc::new(move |ui: &mut egui::Ui| {
+                let pass = ui.ctx().current_pass_index();
+                let reasons: Vec<String> = ui.ctx().output(|output| {
+                    output
+                        .request_discard_reasons
+                        .iter()
+                        .map(|cause| {
+                            format!(
+                                "pass {pass}: {} ({}:{})",
+                                cause.reason, cause.file, cause.line
+                            )
+                        })
+                        .collect()
+                });
+                if let Ok(mut pending) = pending.lock() {
+                    pending.extend(reasons);
+                }
+            }),
+        );
+    }
+
+    fn frame(&mut self, frame: u64, input: &str, passes: usize, has_input: bool) {
+        let reasons = self
+            .pending
+            .lock()
+            .map(|mut pending| std::mem::take(&mut *pending))
+            .unwrap_or_default();
+        // egui ignores a retry requested by the last allowed pass, so that
+        // frame paints a layout that never settled.
+        let last = format!("pass {}:", MAX_LAYOUT_PASSES - 1);
+        if passes >= MAX_LAYOUT_PASSES && reasons.iter().any(|reason| reason.starts_with(&last)) {
+            self.unresolved
+                .push(json!({"frame":frame,"input":input,"passes":passes,"reasons":reasons}));
+        } else if passes > 2 {
+            self.second_retries
+                .push(json!({"frame":frame,"input":input,"reasons":reasons}));
+        }
+        if passes > 1 {
+            self.run.push((frame, input.to_owned(), reasons, has_input));
+        } else {
+            self.close();
+        }
+    }
+
+    fn close(&mut self) {
+        let run = std::mem::take(&mut self.run);
+        if run.len() >= 3 {
+            // The same retry reason in three consecutive frames, after the
+            // first without new input, has no new cause: the layout keeps
+            // disagreeing with itself. Different reasons from asynchronous
+            // updates (a project load, a reply) are ordinary changes.
+            let cause = |reason: &String| {
+                reason
+                    .split_once(": ")
+                    .map_or(reason.as_str(), |(_, cause)| cause)
+                    .to_owned()
+            };
+            let uncaused = run.windows(3).any(|frames| {
+                frames.iter().skip(1).all(|(.., has_input)| !has_input)
+                    && frames[0].2.iter().map(cause).any(|reason| {
+                        frames[1..]
+                            .iter()
+                            .all(|frame| frame.2.iter().map(cause).any(|other| other == reason))
+                    })
+            });
+            let frames = run
+                .iter()
+                .map(|(frame, input, reasons, has_input)| {
+                    json!({"frame":frame,"input":input,"reasons":reasons,"new_input":has_input})
+                })
+                .collect::<Vec<_>>();
+            if uncaused {
+                self.oscillations.push(json!(frames));
+            } else {
+                self.streaks.push(json!(frames));
+            }
+        }
+    }
 }
 
 impl Driver<'_> {
@@ -578,6 +731,9 @@ impl Driver<'_> {
         let started = Instant::now();
         self.harness.step();
         let cpu_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let passes = self.harness.output().platform_output.num_completed_passes;
+        let frame = self.frame;
+        self.discards.frame(frame, input, passes, has_input);
         self.wake.finish_step(
             self.harness.ctx.cumulative_pass_nr(),
             self.harness.output().viewport_output[&egui::ViewportId::ROOT].repaint_delay,
@@ -990,5 +1146,54 @@ fn key_event(key: egui::Key, modifiers: egui::Modifiers, pressed: bool) -> egui:
         pressed,
         repeat: false,
         modifiers,
+    }
+}
+
+#[cfg(test)]
+mod discard_trace_tests {
+    use super::DiscardTrace;
+
+    fn step(trace: &mut DiscardTrace, frame: u64, passes: usize, input: bool) {
+        trace
+            .pending
+            .lock()
+            .unwrap()
+            .push(format!("pass 0: reason {frame}"));
+        trace.frame(frame, "input", passes, input);
+    }
+
+    #[test]
+    fn retries_are_classified_by_cause_and_convergence() {
+        let mut trace = DiscardTrace::default();
+        // Two retrying frames are below egui's warning.
+        step(&mut trace, 1, 2, true);
+        step(&mut trace, 2, 2, true);
+        step(&mut trace, 3, 1, true);
+        // Three input-driven retries in a row: egui would warn.
+        for frame in 4..7 {
+            step(&mut trace, frame, 2, true);
+        }
+        step(&mut trace, 7, 1, false);
+        // Different asynchronous causes without input are ordinary changes.
+        step(&mut trace, 20, 2, false);
+        step(&mut trace, 21, 2, false);
+        step(&mut trace, 22, 2, false);
+        step(&mut trace, 23, 1, false);
+        // The same retry repeating without new input is an oscillation.
+        for (frame, input) in [(8, true), (9, false), (10, false)] {
+            trace.pending.lock().unwrap().push("pass 0: same".into());
+            step(&mut trace, frame, 2, input);
+        }
+        // A second retry settles; a retry requested by the last pass is
+        // ignored by egui and leaves the painted frame unsettled.
+        step(&mut trace, 11, 3, true);
+        trace.pending.lock().unwrap().push("pass 2: ignored".into());
+        step(&mut trace, 12, 3, true);
+        trace.close();
+        assert_eq!(trace.streaks.len(), 2);
+        assert_eq!(trace.oscillations.len(), 1);
+        assert_eq!(trace.second_retries.len(), 1);
+        assert_eq!(trace.unresolved.len(), 1);
+        assert!(trace.pending.lock().unwrap().is_empty());
     }
 }

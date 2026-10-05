@@ -9,7 +9,7 @@ fn helpers(directory: &Path) -> Helpers {
         yt_dlp_version: "test".into(),
         deno: directory.join("deno dir/deno"),
         deno_version: "test".into(),
-        pinned_root: None,
+        pinned: None,
     }
 }
 

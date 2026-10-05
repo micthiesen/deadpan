@@ -75,6 +75,16 @@ frame at project start. It records that frame's original PTS and time base, not
 a project-frame number or inferred cadence. Background/audio-only content uses
 Background. Session and revision guards apply before preparation and commit.
 
+`:hold 12f video=black` (black-frame punctuation, specification §8.2) uses the
+same boundary, Split identities, sample reanchors and history as a freeze, but
+authors `HoldVideo::Background` with no sampled picture or captured framing.
+`audio=silence` is accepted and is the only choice at insertion; room tone is
+chosen afterwards. Macros record it as `InsertPause { length, black: true }`,
+which samples no picture (the field is omitted for freeze pauses). Covered by
+`black_pause_inserts_background_picture_and_silence_as_one_undo`,
+`a_black_pause_needs_no_picture_resolver_and_keeps_its_wire_form` and the
+`zoom` replay.
+
 [Captured framing](CAPTURED_FRAMING.md) retains the spatial composition entering
 the chosen insertion Sequence as well as that exact source frame. Descendant camera curves
 become their sampled static poses, with every intermediate crop preserved. The

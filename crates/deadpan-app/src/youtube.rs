@@ -217,6 +217,16 @@ impl Pinned {
             None => Ok(deadpan_cli::youtube::helpers::default_root()?),
         }
     }
+
+    /// An explicit root, otherwise the running bundle's read-only baseline
+    /// before the managed install root.
+    fn source(&self) -> Result<deadpan_cli::youtube::helpers::HelperSource, Failure> {
+        use deadpan_cli::youtube::helpers::HelperSource;
+        match &self.root {
+            Some(root) => Ok(HelperSource::Managed(root.clone())),
+            None => Ok(HelperSource::default_source()?),
+        }
+    }
 }
 
 impl Downloader for Pinned {
@@ -262,7 +272,7 @@ impl Downloader for Pinned {
         deadpan_cli::youtube::url::normalize(&request.url)
             .map_err(deadpan_cli::youtube::ImportError::from)
             .map_err(CliError::from)?;
-        let helpers = Helpers::resolve(&self.root()?)?;
+        let helpers = Helpers::resolve_source(&self.source()?)?;
         let media_worker = match &self.media_worker {
             Some(worker) => worker.clone(),
             None => acquire::media_worker()?,

@@ -1158,14 +1158,16 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
             _ => return Err(usage()),
         }
     }
-    let root = match root {
-        Some(root) if root.is_absolute() => root,
+    // An explicit root names a managed install; otherwise the running
+    // bundle's baseline is preferred over the managed root.
+    let source = match root {
+        Some(root) if root.is_absolute() => super::helpers::HelperSource::Managed(root),
         Some(_) => return Err(CliError::Usage("--helpers must be an absolute path".into())),
-        None => super::helpers::default_root()?,
+        None => super::helpers::HelperSource::default_source()?,
     };
     // Refuse malformed URLs before verifying helpers or touching the network.
     normalize(url).map_err(ImportError::from)?;
-    let helpers = Helpers::resolve(&root)?;
+    let helpers = Helpers::resolve_source(&source)?;
     let media_worker = media_worker()?;
     let cancelled = interrupt_flag()?;
     let created = create_from_url(

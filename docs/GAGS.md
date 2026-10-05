@@ -35,7 +35,8 @@ refuses a pause at a boundary that belongs to an enclosing group.
 
 `:gag long-answer|escalator|non-sequitur [parameters]` applies a recipe at the
 Edit cursor or selected beat. Macro recording records the recipe instruction,
-and `,h`, `,z` and `,c` now record as pauses and framing instead of refusing.
+and `,h`, `:hold … video=black`, `,z`, `,c`, `:zoom` and `:creep` record as
+pauses and framing instead of refusing (ranged framing is refused while recording).
 Recorded framing stores the applied absolute poses and replaces the replayed
 beat's framing, as the native keys do; framing a single Repeat play is not
 recordable yet.

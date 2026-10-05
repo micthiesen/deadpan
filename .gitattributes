@@ -7,3 +7,5 @@
 tools/**/evidence/**/*.log -whitespace
 tools/**/evidence/**/*.patch -whitespace
 tools/**/evidence/**/*.diff -whitespace
+# Upstream notice texts stay byte-identical to their pinned sources.
+packaging/notices/** -text

@@ -34,6 +34,7 @@ fn pause(frames: u32) -> SemanticInstruction {
         length: PauseLength::Frames {
             frames: NonZeroU32::new(frames).unwrap(),
         },
+        black: false,
     }
 }
 
@@ -89,6 +90,7 @@ fn a_pause_inside_a_beat_splits_it_and_milliseconds_round_once() {
             length: PauseLength::Milliseconds {
                 milliseconds: NonZeroU32::new(100).unwrap(),
             },
+            black: false,
         }],
     )
     .unwrap();
@@ -100,6 +102,7 @@ fn a_pause_inside_a_beat_splits_it_and_milliseconds_round_once() {
             length: PauseLength::Milliseconds {
                 milliseconds: NonZeroU32::new(10).unwrap(),
             },
+            black: false,
         }],
     )
     .unwrap_err();
@@ -116,6 +119,43 @@ fn a_pause_inside_a_beat_splits_it_and_milliseconds_round_once() {
         unresolved.message.contains("measured pictures"),
         "{unresolved:?}"
     );
+}
+
+#[test]
+fn a_black_pause_needs_no_picture_resolver_and_keeps_its_wire_form() {
+    let document = tree(&["a"], vec![("a", hold(10))]);
+    let black = SemanticInstruction::InsertPause {
+        length: PauseLength::Frames {
+            frames: NonZeroU32::new(3).unwrap(),
+        },
+        black: true,
+    };
+    // Plain planning has no picture resolver; a black pause does not ask.
+    let planned = plan(
+        &document,
+        context("root", 4),
+        vec![black.clone()],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 13);
+    let inserted = planned
+        .document
+        .nodes()
+        .values()
+        .find_map(|node| match &node.kind {
+            NodeKind::Hold { recipe } if recipe.duration.frames() == 3 => Some(recipe.clone()),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(inserted.video, HoldVideo::Background);
+    assert!(inserted.picture_context.is_none());
+    // Freeze pauses keep their earlier wire form; black adds one field.
+    let wire = serde_json::to_value(pause(2)).unwrap();
+    assert!(!wire.to_string().contains("black"), "{wire}");
+    let round: SemanticInstruction =
+        serde_json::from_value(serde_json::to_value(&black).unwrap()).unwrap();
+    assert_eq!(round, black);
 }
 
 #[test]

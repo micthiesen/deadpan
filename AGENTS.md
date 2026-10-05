@@ -36,6 +36,24 @@ references and exact prompts. Native bundles own their appearance-aware icon;
 the embedded PNG is for bare executable launches. The developer bundle wrapper
 does not establish signing, relocatable dependencies or release qualification.
 
+`cargo xtask bundle` builds the relocatable, hardened-runtime `Deadpan.app`;
+`bundle-verify` exercises a copy in a scrubbed environment. See
+[Packaging](docs/PACKAGING.md). Ship every executable in `Contents/MacOS` so
+workers keep resolving beside the running executable. Resolve read-only bundled
+resources through `deadpan_cli::bundle`, never the working directory or a
+build-time variable. Only `Info.plist`'s `DeadpanPackaging` key marks a
+packaged app; developer wrappers keep development behavior. A packaged app
+never falls back to compiled-in development locations or `DEADPAN_BRIDGE_*`
+without the explicit developer opt-in. It always uses its own helper baseline
+and fails rather than falling back when that baseline is damaged. Anchor
+bundled helpers to compiled pins, either exact bytes or a signature-independent
+content hash, and to their expected signer, never to the bundle's manifest
+alone. The managed Application Support root is the update location. Keep
+entitlements per process and minimal and add one only with measured failure
+evidence.
+Never weaken the app for a helper's runtime. An ad hoc bundle is not a
+notarized distribution or clean-machine evidence.
+
 - Preserve the editor's timing decisions. Use exact typed frame, sample, and source coordinates, half-open ranges, rational frame rates, checked arithmetic, and origin-based sample boundaries. Never accumulate rounded durations. Three plays means three total plays, with gaps only between them; a Hold inserts exactly its authored frames and preserves subsequent original speech.
 - Framing reshapes the Original without changing its timing. Evaluate camera paths in their declared owner clock and compose them from provider to root on the canonical canvas. Preserve intermediate clips, curve ownership and the distinction between source-percent motion and canvas-percent values. A pause retains the cropped view entering its parent; inherited group framing stays live and applies once. Captured geometry belongs to the Hold recipe independently of provider changes and new Camera settings. Temporary Camera state is visibly unsaved; Enter commits once and Escape restores the entry state. Never replace an existing path with a static pose as an incidental consequence of opening Camera.
 - Build composable structures. Source, Sequence, Hold, Repeat, and Retime form the small primitive set; attention, sound, captions, and cutaways attach to it. Gags expand to ordinary editable primitives. Keep repeats structural and occurrence identities stable.
@@ -136,7 +154,10 @@ Footer layout retries must preserve one outer frame's external state. Consume
 service, playback and dialog updates once; defer Repeat continuation and picture
 scheduling to the final pass, and do not render a discarded viewer size. Process
 native text before closing command mode. Measure complete key-label pairs before
-wrapped layout. See [footer qualification](docs/qualification/footer-layout-2026-09-27.md).
+wrapped layout. Never request a layout retry for every frame of a continuous
+gesture. Replay fails a frame painted after an ignored retry or the same
+retry repeating for three frames without new input. A newly opened egui Area or modal is sized in an
+invisible pass; do not remove retries that give it its first visible paint. See [footer qualification](docs/qualification/footer-layout-2026-09-27.md).
 
 Measure changing bottom-panel text before its first paint, including wrapping
 after resize; reuse that text geometry when drawing it. Keep empty structural
@@ -259,6 +280,15 @@ Its only secondary open is the same output descriptor for fast-start. Hardware
 and OS software are separate attempts; requested B frames and queried codec
 fields do not prove emitted behavior. Keep hardware B-frame PTS<DTS rejection
 evidence. Independent finished-file admission is required before publication.
+
+[Preview/export verification](docs/PREVIEW_EXPORT_VERIFICATION.md) (`verify-export`)
+compares a published movie with its committed revision: shared picture path read
+at the SDR encoder pixel boundary, limited audition bus, qualified decoders.
+Place decoded AAC by its own PTS after the declared priming edit and report the
+measured lag; never shift, trim or event-align to pass. Correlate stereo, not a
+mono sum; decide periodic ambiguity only from separated maxima and report it
+as unobservable, never as offset 0. Gate audio content per 10 ms block. Record new Section 8 export evidence in the coverage inventory's
+Export verified column; it is a diagnostic, not publication authority.
 
 The [automatic encoder probe](docs/AUTOMATIC_ENCODER_ADMISSION.md) is separate
 from project output. Require fresh bounded deterministic input at the actual

@@ -569,8 +569,8 @@ where
                     let expansion = SemanticProgram::new(recipe.expand(visual)?)?;
                     self.execute(&expansion)?;
                 }
-                SemanticInstruction::InsertPause { length } => {
-                    self.insert_pause(index, *length)?;
+                SemanticInstruction::InsertPause { length, black } => {
+                    self.insert_pause(index, *length, *black)?;
                 }
                 SemanticInstruction::SetFraming { framing } => {
                     self.set_framing(index, framing.as_deref().cloned())?;

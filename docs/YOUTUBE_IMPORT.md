@@ -156,11 +156,20 @@ between that check and exec therefore requires this user's own access. `download
 runtime and Deno versions they actually load, with `matches_pins`. `doctor`
 lists the pinned versions and their presence without hashing.
 
-This managed install is the development stand-in. The release application must
-ship these helpers inside its signed, notarized bundle and update them only
-through app-verified signed manifests with compatibility checks and rollback
+A packaged `Deadpan.app` (`cargo xtask bundle`) ships the same pinned files as
+a read-only baseline in `Contents/Resources/helpers`, and the running bundle
+prefers it over the managed root. Deno keeps its upstream signature and pinned
+bytes and its signer requirement. yt-dlp is re-signed with the hardened
+runtime and must match a compiled signature-independent content hash. Bundled
+files are verified before every launch. Inside a packaged app the baseline is
+always used, so a missing or damaged one reports `DownloaderHelperInvalid`
+instead of falling back
+([packaging](PACKAGING.md#downloader-baseline)). An explicit `--root` or
+`--helpers` names only a managed root. The managed install serves development
+builds and is the future update location. Updates through app-verified signed
+manifests with compatibility checks and rollback, and notarization, remain open
 (DP-22). Updating a pin is a source change with new hashes and a re-run of the
-tests and a real import.
+tests, the bundle check and a real import.
 
 ## Acquisition
 

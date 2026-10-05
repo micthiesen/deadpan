@@ -3,18 +3,27 @@
 //! `cargo xtask gate` runs the complete milestone gate from
 //! [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md), starting with
 //! build-directory hygiene. `cargo xtask hygiene` runs only that check.
+//! `cargo xtask bundle` assembles a relocatable `Deadpan.app`;
+//! `bundle-audit` and `bundle-verify` check one (docs/PACKAGING.md).
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
+mod bundle;
 mod target_hygiene;
 
 fn main() -> ExitCode {
-    let task = std::env::args().nth(1);
-    let result = match task.as_deref() {
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    let (task, rest) = arguments
+        .split_first()
+        .map_or((None, &[][..]), |(task, rest)| (Some(task.as_str()), rest));
+    let result = match task {
         Some("gate") => gate(),
         Some("hygiene") => target_hygiene::maintain(Path::new(".")),
-        _ => Err("usage: cargo xtask gate | cargo xtask hygiene".into()),
+        Some("bundle") => bundle::run(rest),
+        Some("bundle-audit") => bundle::audit_command(rest),
+        Some("bundle-verify") => bundle::verify::run(rest),
+        _ => Err("usage: cargo xtask gate | hygiene | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

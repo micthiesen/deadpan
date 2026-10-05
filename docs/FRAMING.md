@@ -114,8 +114,8 @@ selection, navigation scope and cursor changes revoke the draft.
 | `r` | Reset the temporary framing to neutral. Later adjustments create a new static pose; a follow stops. |
 | `Enter` | Apply one typed revision-guarded edit. Unchanged framing creates no history entry. |
 | `Escape` | Discard the draft and restore the entry operation. |
-| `,z` | Commit a constant 1.35× punch at the current center, replacing a prior curve. |
-| `,c` | Commit a whole-beat smoothstep creep from the current evaluated pose to 1.35×, replacing a prior curve. |
+| `,z` | Punch in to 1.35× on the selected target ([below](#zoom-and-creep-commands)). |
+| `,c` | Creep from the current evaluated pose to 1.35× over the beat or the Edit range inside it. |
 
 Normal Camera adjustments preserve an existing envelope: all centers and controls
 move by the same delta and every scale receives the same factor. The app validates
@@ -191,6 +191,65 @@ tickets. Enter retains the draft picture until the committed replacement is read
 a failed/stale commit cannot label the draft saved. GPU input uploads still occur
 on each framed submission; upload reuse and measured latency remain open.
 
+## Zoom and creep commands
+
+`,z`, `,c`, `:zoom` and `:creep` build one typed `SetFraming` edit for the
+selected direct child (or the inspected Repeat play) after its stopped picture
+is displayed, through the same Camera entry checks, macro recording and
+revision guard as Camera. The construction is pure and unit-tested in
+[`navigation/zoom.rs`](../crates/deadpan-app/src/navigation/zoom.rs).
+
+| Input | Result |
+| --- | --- |
+| `,z` | `:zoom 1.35 target=current`, except that with no saved target it punches in at the current center and says so. |
+| `,c` | `:creep to=1.35`. |
+| `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
+| `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | An envelope from the current center at `from` (default: the current scale) to `to` (default 1.35). |
+| `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
+
+`target=current` (and `,z`) means the target the beat already follows, else the
+only saved target covering the displayed picture; several refuse and name them.
+`target=center` is the Original's center; any other value is a target id or
+label (quote labels with spaces). A whole-beat step with a target follows it
+live. An eased or ranged edit uses a fixed point: the target's center exactly
+as a follow would resolve it (`deadpan_plan::follow_pose`) at the frame where a
+step lands (the range's first frame) or where a creep arrives (its last frame).
+The status line names that frame and says the framing does not follow. A target
+not visible at that frame refuses.
+
+Nothing flattens an existing path implicitly. On the whole beat:
+
+- a beat that follows a target keeps following when `:zoom S` or `,z` changes
+  only its scale (the fallback keeps its center; the clock is kept); a creep
+  without `target=` refuses, because a fixed center would stop the follow;
+- a camera path (envelope) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
+  command names `target=` explicitly, which replaces the path on request;
+  `:zoom off` always removes framing.
+
+With an Edit range inside the beat, only that range changes: Step segments hold
+the beat's static pose before it, the range gets the new pose, and a step
+returns to the previous pose after it. A ranged creep arrives at the range end
+and then holds its end pose to the end of the beat, which the status line says.
+A ranged edit needs a beat with no framing or one static pose on any clock (a
+static pose is constant); a follow or camera path refuses with its own reason.
+A range outside the beat refuses; a Repeat play is always framed whole.
+Envelope progress is exact (`frame / beat frames`, reduced, at most one million).
+
+`:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
+scope, cursor and Edit range when `:` opens, including their absence; any
+change before Enter refuses instead of retargeting. Macros record whole-beat
+results as `SetFraming`; ranged results are refused while recording, because
+an envelope in beat fractions would not mean the same range on another beat.
+
+The save message describes the committed framing (`Framing saved: 1.350×
+following Target 1`), and the inspector shows `Path · 1.00–1.35×` for camera
+paths. The `zoom` replay checks the center fallback and its message, the
+target follow and its displayed pose, `:zoom … target=center`, `:creep … target=current`,
+refusal to flatten a path, `:zoom off`, a ranged punch-in at exact frames,
+refusal of `,c` on a path, black punctuation, a recorded `:zoom` replayed after
+Undo, and the two-target refusal of `,z` followed by a quoted-label `:zoom`.
+
 ## Storage and remaining work
 
 Database 24 introduced core 18. Frozen core 17 rejects the new framing vocabulary even
@@ -205,8 +264,9 @@ recipe boundary and migration fixture.
 Saved region targets, keyboard region creation, following and selected-target
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
 Point targets, face/region detection, renaming targets, pointer dragging of
-rectangles, the `,z` target punch-in and `:zoom … target=`, and follow centers
-corrected for a letterboxed canvas remain required. Centered per-play scale
+rectangles, a live follow whose scale changes over time (a creep that tracks a
+moving target), and follow centers corrected for a letterboxed canvas remain
+required. Centered per-play scale
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
 framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)

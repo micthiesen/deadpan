@@ -113,8 +113,54 @@ pub(super) fn dispatch_key(
     )
 }
 
+/// What a framing key or command asks for once its picture is displayed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum FramingRequest {
+    Camera,
+    /// `,z`, `,c`, `:zoom` and `:creep`, with the Edit range captured inside
+    /// the beat at entry (beat-local frames).
+    Zoom {
+        input: crate::navigation::zoom::ZoomInput,
+        range: Option<(u64, u64)>,
+    },
+}
+
+/// The context `:zoom`/`:creep` captured at command entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct ZoomContext {
+    session: Option<u64>,
+    revision: Option<RevisionId>,
+    sequence: bool,
+    node: Option<NodeId>,
+    scoped: Result<Option<crate::project::scoped::Target>, String>,
+    cursor: u64,
+    scope: SequenceScope,
+    range: Option<deadpan_core::FrameRange>,
+}
+
+/// Admit a command only against the exact context it was entered in.
+pub(super) fn admit_zoom_context(
+    captured: Option<&ZoomContext>,
+    current: &ZoomContext,
+) -> Result<(), String> {
+    let captured =
+        captured.ok_or("Enter :zoom or :creep again to capture its beat; no edit was made.")?;
+    if captured != current {
+        return Err("The beat, range, cursor or revision changed after the command opened; enter it again. No edit was made.".into());
+    }
+    Ok(())
+}
+
+/// A status explanation for one submitted framing, shown with its commit.
+#[derive(Clone, Debug)]
+pub(super) struct ZoomNote {
+    pub(super) session: u64,
+    pub(super) base: RevisionId,
+    pub(super) text: String,
+}
+
 pub(super) struct CameraPending {
-    action: FramingAction,
+    request: FramingRequest,
     session: u64,
     revision: RevisionId,
     node: NodeId,
@@ -753,6 +799,76 @@ impl DeadpanApp {
     }
 
     pub(super) fn framing_action(&mut self, action: FramingAction, context: &egui::Context) {
+        use crate::navigation::zoom::ZoomInput;
+        let request = match action {
+            FramingAction::EnterCamera => FramingRequest::Camera,
+            FramingAction::PunchIn => FramingRequest::Zoom {
+                input: ZoomInput::punch_in(),
+                range: None,
+            },
+            FramingAction::Creep => FramingRequest::Zoom {
+                input: ZoomInput::creep(),
+                range: None,
+            },
+        };
+        self.framing_request(request, context);
+    }
+
+    /// The editor context a `:zoom`/`:creep` acts on, captured when `:`
+    /// opens, including absence of a beat, range or project.
+    pub(super) fn capture_zoom(&self) -> ZoomContext {
+        ZoomContext {
+            session: self.workspace.as_ref().map(|workspace| workspace.session),
+            revision: self
+                .workspace
+                .as_ref()
+                .map(|workspace| workspace.document.revision_id().clone()),
+            sequence: self.view == View::Sequence,
+            node: self.selected_beat.clone(),
+            scoped: self.scoped_target(),
+            cursor: self.sequence_cursor,
+            scope: self.sequence_scope.clone(),
+            range: self.selected_edit_range(),
+        }
+    }
+
+    /// `:zoom` / `:creep`, against the context captured at command entry. A
+    /// later selection, range, cursor or revision never retargets it.
+    pub(super) fn zoom_command(
+        &mut self,
+        captured: Option<ZoomContext>,
+        input: crate::navigation::zoom::ZoomInput,
+        context: &egui::Context,
+    ) {
+        let current = self.capture_zoom();
+        if let Err(error) = admit_zoom_context(captured.as_ref(), &current) {
+            self.error = Some(error);
+            return;
+        }
+        self.framing_request(FramingRequest::Zoom { input, range: None }, context);
+    }
+
+    /// The Edit range inside `node`'s row, in beat-local frames. A range
+    /// outside the beat is refused rather than silently ignored.
+    fn zoom_range(&self, node: &NodeId) -> Result<Option<(u64, u64)>, String> {
+        let Some(range) = self.selected_edit_range() else {
+            return Ok(None);
+        };
+        let row = self
+            .beat_rows
+            .iter()
+            .find(|row| &row.id == node)
+            .ok_or("Select a beat in the current group to frame.")?;
+        let (start, end) = (range.start().0, range.end().0);
+        let (row_start, row_end) = (row.start as i64, (row.start + row.frames) as i64);
+        if start < row_start || end > row_end || start >= end {
+            return Err("Select a range inside the selected beat; framing belongs to that beat. Escape clears the range to frame the whole beat.".into());
+        }
+        Ok(Some(((start - row_start) as u64, (end - row_start) as u64)))
+    }
+
+    fn framing_request(&mut self, mut request: FramingRequest, context: &egui::Context) {
+        self.zoom_note = None;
         if self.view != View::Sequence {
             self.error = Some("Camera edits Your edit. The Original stays intact.".into());
             return;
@@ -791,9 +907,28 @@ impl DeadpanApp {
             self.error = Some("Select a beat in the current group to frame.".into());
             return;
         };
+        if let FramingRequest::Zoom { range, .. } = &mut request {
+            let captured = if scoped.is_some() {
+                // A Repeat play is framed whole.
+                if self.selected_edit_range().is_some() {
+                    self.error = Some("A range cannot be framed inside one Repeat play yet; clear the range to frame the whole play.".into());
+                    return;
+                }
+                None
+            } else {
+                match self.zoom_range(node) {
+                    Ok(range) => range,
+                    Err(error) => {
+                        self.error = Some(error);
+                        return;
+                    }
+                }
+            };
+            *range = captured;
+        }
         self.service.set_preview_active(true);
         self.camera_pending = Some(CameraPending {
-            action,
+            request,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             node: node.clone(),
@@ -840,7 +975,7 @@ impl DeadpanApp {
             return;
         };
         let pending = self.camera_pending.take().expect("pending checked");
-        let action = pending.action;
+        let request = pending.request.clone();
         let session = match CameraSession::from_picture(self, pending, ticket) {
             Ok(session) => session,
             Err(error) => {
@@ -850,53 +985,200 @@ impl DeadpanApp {
         };
         self.error = None;
         self.message = None;
-        if action == FramingAction::EnterCamera {
+        let FramingRequest::Zoom { input, range } = request else {
             self.service.set_preview_active(true);
             self.camera = Some(session);
             self.pane = Pane::Viewer;
             context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
-        } else {
-            let start = session.entry_pose.unwrap_or_default();
-            let end = FramingPose {
-                scale: ExactRatio::new(27, 20).expect("constant ratio"),
-                ..start
-            };
-            let framing = if action == FramingAction::Creep {
-                Framing::creep(start, end, FramingCurve::Smoothstep)
-                    .map(Some)
-                    .map_err(|error| error.to_string())
-            } else {
-                // A smash is a constant 1.35× pose, replacing any prior curve.
-                Framing::static_pose(end)
-                    .map(Some)
-                    .map_err(|error| error.to_string())
-            };
-            match framing {
-                Ok(framing) if self.macros.recording() => {
-                    // Recorded as the semantic framing of the selected beat;
-                    // a scoped play has no semantic equivalent yet.
-                    if session.scoped.is_some() {
-                        self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
-                        return;
-                    }
-                    if framing == session.entry {
-                        self.message = Some("Framing is unchanged; no edit was made.".into());
-                        return;
-                    }
-                    let target = self.capture_macro_target();
-                    self.apply_recorded_instruction(
-                        target,
-                        Ok(deadpan_core::SemanticInstruction::SetFraming {
-                            framing: framing.map(Box::new),
-                        }),
-                    );
+            return;
+        };
+        match self.zoom_framing(&session, &input, range) {
+            Ok((framing, _)) if self.macros.recording() => {
+                // Recorded as the semantic framing of the selected beat;
+                // a scoped play has no semantic equivalent yet. A ranged
+                // envelope stores beat fractions, which would not mean the
+                // same range on another beat, so it is not recorded.
+                if session.scoped.is_some() {
+                    self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
+                    return;
                 }
-                Ok(framing) => {
-                    self.submit_framing(&session, framing);
+                if range.is_some() {
+                    self.error = Some("A zoom over a range cannot be recorded yet; clear the Visual range to record whole-beat framing. Save or cancel recording first.".into());
+                    return;
                 }
-                Err(error) => self.error = Some(error),
+                if framing == session.entry {
+                    self.message = Some("Framing is unchanged; no edit was made.".into());
+                    return;
+                }
+                let target = self.capture_macro_target();
+                self.apply_recorded_instruction(
+                    target,
+                    Ok(deadpan_core::SemanticInstruction::SetFraming {
+                        framing: framing.map(Box::new),
+                    }),
+                );
             }
+            Ok((framing, note)) => {
+                // An unchanged result submits nothing, so no note outlives it.
+                let changed = framing != session.entry;
+                if self.submit_framing(&session, framing)
+                    && changed
+                    && let Some(text) = note
+                {
+                    self.zoom_note = Some(ZoomNote {
+                        session: session.session,
+                        base: session.revision.clone(),
+                        text,
+                    });
+                }
+            }
+            Err(error) => self.error = Some(error),
         }
+    }
+
+    /// Resolve the target, sample its center where needed and build the
+    /// framing. The note explains a fallback or a sampled fixed center.
+    fn zoom_framing(
+        &self,
+        session: &CameraSession,
+        input: &crate::navigation::zoom::ZoomInput,
+        range: Option<(u64, u64)>,
+    ) -> Result<(Option<Framing>, Option<String>), String> {
+        use crate::navigation::zoom::{self, Center, Resolved, TargetChoice};
+        let followed = match &session.entry {
+            Some(Framing {
+                value: FramingValue::Follow { target, .. },
+                ..
+            }) => Some(target),
+            _ => None,
+        };
+        let shown: Vec<(TargetId, String)> = session
+            .picker
+            .iter()
+            .filter_map(|entry| {
+                entry
+                    .saved
+                    .as_ref()
+                    .map(|(id, ..)| (id.clone(), entry.label.clone()))
+            })
+            .collect();
+        let (resolved, mut note) = zoom::resolve(&input.target, followed, &shown, |text| {
+            self.resolve_target(text)
+        })?;
+        let frames = session.duration.frames() as u64;
+        let center = match resolved {
+            Resolved::Keep => Center::Keep,
+            Resolved::Center => Center::Point(
+                session
+                    .picker
+                    .iter()
+                    .find(|entry| entry.point == Some([0.5, 0.5]))
+                    .and_then(|entry| entry.center)
+                    .ok_or("The picture's center is clipped by inner framing here.")?,
+            ),
+            Resolved::Target(id) => match zoom::sample_frame(input.kind, range, frames) {
+                None => Center::Target { id, fixed: None },
+                Some(local) => {
+                    let (frame, fixed) = self.target_center_at(session, &id, local)?;
+                    note = Some(format!(
+                        "Centered on {} where it is at frame {}; this framing does not follow it.",
+                        self.target_label(&id),
+                        frame.0
+                    ));
+                    Center::Target {
+                        id,
+                        fixed: Some(fixed),
+                    }
+                }
+            },
+        };
+        let shot = zoom::Shot {
+            entry: session.entry.as_ref(),
+            current: session.entry_pose.unwrap_or_default(),
+            frames,
+            range,
+            explicit: !matches!(input.target, TargetChoice::Keep | TargetChoice::Selected),
+        };
+        let framing = zoom::build(input.kind, &center, &shot)?;
+        if let (Some((_, end)), zoom::ZoomKind::Creep { .. }) = (range, input.kind)
+            && end < frames
+        {
+            let held = format!(
+                "The creep arrives at frame {} and holds its end pose to the end of the beat.",
+                self.zoom_absolute(session, end).0
+            );
+            note = Some(match note {
+                Some(note) => format!("{note} {held}"),
+                None => held,
+            });
+        }
+        Ok((framing, note))
+    }
+
+    /// The absolute project frame of beat-local `local` for this Camera
+    /// scope. A Repeat play samples its displayed picture.
+    fn zoom_absolute(&self, session: &CameraSession, local: u64) -> ProjectFrame {
+        let last = self.sequence_length().saturating_sub(1);
+        if session.scoped.is_none()
+            && let Some(row) = self
+                .beat_rows
+                .iter()
+                .find(|row| row.id == session.scope.node)
+        {
+            return ProjectFrame((row.start + local).min(last) as i64);
+        }
+        ProjectFrame(session.cursor.min(last) as i64)
+    }
+
+    /// The target's center at `local`, exactly as a follow of it would
+    /// resolve there (`deadpan_plan::follow_pose`), in this operation's input.
+    fn target_center_at(
+        &self,
+        session: &CameraSession,
+        id: &TargetId,
+        local: u64,
+    ) -> Result<(ProjectFrame, [ExactRatio; 2]), String> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        let frame = self.zoom_absolute(session, local);
+        let label = self.target_label(id);
+        let sample = workspace
+            .plan
+            .picture(frame)
+            .map_err(|error| error.to_string())?;
+        if sample.picture_context.is_some() {
+            return Err(format!(
+                "This pause keeps its captured view, so {label} has no position in it. Frame it without a target."
+            ));
+        }
+        let layer = sample
+            .framing
+            .iter()
+            .position(|layer| !layer.escalation && layer.instance == session.scope)
+            .ok_or("The framed beat is not shown at the frame this framing samples.")?;
+        let target = workspace
+            .document
+            .targets()
+            .get(id)
+            .ok_or_else(|| format!("There is no saved target {label}."))?;
+        let pose = sample
+            .picture
+            .follow_point()
+            .and_then(|(asset, point)| {
+                deadpan_plan::follow_pose(
+                    target,
+                    asset,
+                    point,
+                    sample.framing[..layer].iter().map(|layer| layer.pose),
+                    ExactRatio::ONE,
+                )
+            })
+            .ok_or_else(|| {
+                format!(
+                    "{label} is not visible at frame {}, where this framing places its center.",
+                    frame.0
+                )
+            })?;
+        Ok((frame, [pose.center_x, pose.center_y]))
     }
 
     /// Continue Camera on the revision its own target save created, once that
@@ -943,7 +1225,7 @@ impl DeadpanApp {
             None => None,
         };
         let pending = CameraPending {
-            action: FramingAction::EnterCamera,
+            request: FramingRequest::Camera,
             session: old.session,
             revision,
             node: old.scope.node.clone(),
@@ -2304,6 +2586,71 @@ pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<Fram
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn zoom_commands_act_only_on_the_context_captured_at_entry() {
+        let captured = ZoomContext {
+            session: Some(7),
+            revision: Some(RevisionId::new("r1").unwrap()),
+            sequence: true,
+            node: Some(NodeId::new("beat").unwrap()),
+            scoped: Ok(None),
+            cursor: 12,
+            scope: SequenceScope::default(),
+            range: Some(deadpan_core::FrameRange::new(ProjectFrame(10), ProjectFrame(15)).unwrap()),
+        };
+        assert!(admit_zoom_context(Some(&captured), &captured).is_ok());
+        assert!(admit_zoom_context(None, &captured).is_err());
+        let changes = [
+            ZoomContext {
+                node: Some(NodeId::new("other").unwrap()),
+                ..captured.clone()
+            },
+            ZoomContext {
+                node: None,
+                ..captured.clone()
+            },
+            ZoomContext {
+                range: None,
+                ..captured.clone()
+            },
+            ZoomContext {
+                range: Some(
+                    deadpan_core::FrameRange::new(ProjectFrame(10), ProjectFrame(16)).unwrap(),
+                ),
+                ..captured.clone()
+            },
+            ZoomContext {
+                cursor: 13,
+                ..captured.clone()
+            },
+            ZoomContext {
+                revision: Some(RevisionId::new("r2").unwrap()),
+                ..captured.clone()
+            },
+            ZoomContext {
+                session: Some(8),
+                ..captured.clone()
+            },
+            ZoomContext {
+                sequence: false,
+                ..captured.clone()
+            },
+        ];
+        for current in changes {
+            assert!(
+                admit_zoom_context(Some(&captured), &current).is_err(),
+                "{current:?}"
+            );
+        }
+        // Captured absence is kept: a beat selected later cannot supply it.
+        let absent = ZoomContext {
+            node: None,
+            range: None,
+            ..captured.clone()
+        };
+        assert!(admit_zoom_context(Some(&absent), &captured).is_err());
+    }
 
     #[test]
     fn target_picker_tab_keeps_same_batch_digits_and_return_key_routable() {

@@ -213,6 +213,11 @@ pub struct DeadpanApp {
     deferred_text_input: Vec<egui::Event>,
     camera: Option<camera::CameraSession>,
     camera_pending: Option<camera::CameraPending>,
+    /// A fallback explanation appended to the next framing save message.
+    /// An explanation shown with the commit of one submitted framing.
+    zoom_note: Option<camera::ZoomNote>,
+    /// `:zoom`/`:creep` context captured when command entry opened.
+    zoom_command_target: Option<camera::ZoomContext>,
     ime_composing: bool,
     help_open: bool,
     help_scroll: help_scroll::HelpScroll,
@@ -377,6 +382,8 @@ impl DeadpanApp {
             deferred_text_input: Vec::new(),
             camera: None,
             camera_pending: None,
+            zoom_note: None,
+            zoom_command_target: None,
             ime_composing: false,
             help_open: false,
             help_scroll: help_scroll::HelpScroll::default(),
@@ -724,6 +731,32 @@ impl DeadpanApp {
                             .as_ref()
                             .is_some_and(|next| next.asset != i.asset)
                 });
+            // A zoom note belongs to the commit of its own base revision in
+            // its session; any other revision change or an error drops it.
+            let zoom_note = self.zoom_note.take().and_then(|note| {
+                let landed = Some(note.session) == new_session
+                    && old_revision.as_ref() == Some(&note.base)
+                    && new_revision
+                        .as_ref()
+                        .is_some_and(|revision| revision != &note.base)
+                    && update
+                        .committed
+                        .as_ref()
+                        .is_some_and(|commit| Some(&commit.revision) == new_revision.as_ref());
+                if landed {
+                    Some(note.text)
+                } else {
+                    // Updates without a workspace or with an unchanged head
+                    // (progress, queries) keep it for the pending commit.
+                    if update.error.is_none()
+                        && (new_session.is_none()
+                            || (new_revision == old_revision && new_session == old_session))
+                    {
+                        self.zoom_note = Some(note);
+                    }
+                    None
+                }
+            });
             self.workspace = update.workspace;
             self.receive_targets(update.targets.take());
             // A target save changes only the revision. Camera continues on
@@ -800,6 +833,12 @@ impl DeadpanApp {
             self.receive_render_history(update.render_history);
             self.project_error = update.error;
             self.message = update.message;
+            if let Some(note) = zoom_note {
+                self.message = Some(match self.message.take() {
+                    Some(message) => format!("{message}. {note}"),
+                    None => note,
+                });
+            }
             if old_session != new_session {
                 self.bindings.clear();
                 self.clear_picture();
@@ -1300,7 +1339,8 @@ impl DeadpanApp {
             self.repeat_command(Some(target), plays, matches!(edit, BeatEdit::Repeat(_)));
             return;
         }
-        if let BeatEdit::InsertHold(input) = edit {
+        if let BeatEdit::InsertHold(input) | BeatEdit::InsertBlack(input) = edit {
+            let black = matches!(edit, BeatEdit::InsertBlack(_));
             let Some(workspace) = &self.workspace else {
                 self.error = Some("Open a project before inserting a pause.".into());
                 return;
@@ -1329,7 +1369,10 @@ impl DeadpanApp {
                 let target = self.capture_macro_target();
                 self.apply_recorded_instruction(
                     target,
-                    length.map(|length| deadpan_core::SemanticInstruction::InsertPause { length }),
+                    length.map(|length| deadpan_core::SemanticInstruction::InsertPause {
+                        length,
+                        black,
+                    }),
                 );
                 return;
             }
@@ -1338,9 +1381,16 @@ impl DeadpanApp {
                 expected_revision: workspace.document.revision_id().clone(),
                 scope: self.sequence_scope.clone(),
                 cursor: ProjectFrame(self.sequence_cursor as i64),
-                edit: ProjectEdit::InsertTime {
-                    at: ProjectFrame(self.sequence_cursor as i64),
-                    duration,
+                edit: if black {
+                    ProjectEdit::InsertBlack {
+                        at: ProjectFrame(self.sequence_cursor as i64),
+                        duration,
+                    }
+                } else {
+                    ProjectEdit::InsertTime {
+                        at: ProjectFrame(self.sequence_cursor as i64),
+                        duration,
+                    }
                 },
             });
             return;
@@ -1351,7 +1401,9 @@ impl DeadpanApp {
         };
         let node = node.clone();
         let edit = match edit {
-            BeatEdit::InsertHold(_) => unreachable!("pause handled above"),
+            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) => {
+                unreachable!("pause handled above")
+            }
             BeatEdit::Split => {
                 let Some(at) =
                     selection::split_boundary(&self.beat_rows, &node, self.sequence_cursor)
@@ -1439,6 +1491,7 @@ impl DeadpanApp {
         self.hold_command_target = Some(self.capture_hold_command());
         self.ai.command = Some(self.ai_capture());
         self.targets.command = Some(self.capture_track());
+        self.zoom_command_target = Some(self.capture_zoom());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
@@ -2478,6 +2531,7 @@ impl DeadpanApp {
         let trim_target = self.trim_command_target.take();
         let ai_target = self.ai.command.take();
         let track_target = self.targets.command.take();
+        let zoom_target = self.zoom_command_target.take();
         self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
         let copy_register = self.copy_command_register.take();
@@ -2674,6 +2728,9 @@ impl DeadpanApp {
                 through_shots,
             }) => self.track_command(track_target, target, through_shots),
             Ok(navigation::command::Entry::TrackCancel) => self.track_cancel(),
+            Ok(navigation::command::Entry::Zoom(input)) => {
+                self.zoom_command(zoom_target, input, context)
+            }
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => self.show_original(context),
             Ok(navigation::command::Entry::Sequence) => self.show_edit(context),
@@ -3880,7 +3937,7 @@ impl DeadpanApp {
                             }
                             ui.collapsing("Framing presets", |ui| {
                                 for (label, key, action) in [
-                                    ("Punch in 1.35×", self.editor_key(EditorKey::PunchIn), navigation::FramingAction::PunchIn),
+                                    ("Punch in 1.35× on target", self.editor_key(EditorKey::PunchIn), navigation::FramingAction::PunchIn),
                                     ("Creep to 1.35×", self.editor_key(EditorKey::Creep), navigation::FramingAction::Creep),
                                 ] {
                                     if ui.add(style::row_action(ui, label, key)).clicked() {
@@ -3990,8 +4047,10 @@ impl DeadpanApp {
                 let pending = ui.input(|input| {
                     let dragging = input.pointer.is_decidedly_dragging();
                     input.events.iter().any(|event| match event {
+                        // A press or release can change the controls; moving
+                        // within an ongoing drag (a slider) cannot change
+                        // their reserved height, so it needs no retry.
                         egui::Event::PointerButton { pos, .. } => controls.contains(*pos) || dragging,
-                        egui::Event::PointerMoved(_) => dragging,
                         egui::Event::Key { key: egui::Key::Enter | egui::Key::Space, pressed: true, .. } => native_focus,
                         egui::Event::AccessKitActionRequest(request) => request.action == egui::accesskit::Action::Click,
                         _ => false,
@@ -4266,6 +4325,9 @@ impl DeadpanApp {
                         (format!("{} / :split", key(EditorKey::Split)), "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Hold), bindings.counted_label(EditorKey::Hold, 3)), format!("Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; {} opens its enclosing group when needed. At a group edge, {} returns to the seam's owner. {} undoes it.", key(EditorKey::EnterGroup), key(EditorKey::LeaveGroup), key(EditorKey::Undo))),
                         (":hold 1.5s".to_owned(), "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.".to_owned()),
+                        (":hold 12f video=black".to_owned(), "Insert silent black picture at the cursor: black-frame punctuation. It adds time like any pause and is one Undo; :hold-duration changes it later.".to_owned()),
+                        (":zoom 1.35 target=current".to_owned(), "Smash zoom on the selected beat: a step to the scale, following a saved target (target=current, an id or label) or at the current center; target=center centers the Original. curve=linear|smoothstep eases from the current framing instead. With an Edit range inside the beat, only that range changes, centered on the target where it is at the range's first frame (not following it). On a beat that follows a target, :zoom S keeps following at the new scale. A camera path is replaced only with an explicit target=. :zoom off returns to the full picture (abrupt return). One Undo.".to_owned()),
+                        (":creep from=1 to=1.4 target=current".to_owned(), "Creep over the selected beat, or the Edit range inside it, from the current (or from=) scale to to=, toward the target's position at the creep's last frame (a fixed point). curve=smoothstep (default) or linear. A ranged creep arrives at the range end and holds its end pose to the end of the beat; outside the range the beat keeps its static framing. Paths and follows are never flattened implicitly. One Undo.".to_owned()),
                         (format!("{} / :generate", key(EditorKey::GenerateAi)), "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. The inspector and footer show the stage and time; :cancel-ai stops it; Escape never cancels it.".to_owned()),
                         (":preview-ai · :accept-ai · :discard-ai".to_owned(), "Ready pictures never change your edit. Preview shows them in the viewer at the edit cursor (Esc returns), Accept makes them the pause's picture as one undoable edit, and Discard hides them for this session.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Repeat), bindings.counted_label(EditorKey::Repeat, 3)), "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps.".to_owned()),
@@ -4304,7 +4366,7 @@ impl DeadpanApp {
                         ("Camera n · c".to_owned(), "Draw a new target rectangle, or correct the chosen target at this picture. Tab moves between center, width and height; arrows or h/j/k/l change 1%, Shift 5%, counts repeat; Enter saves one undoable edit; Escape returns to framing.".to_owned()),
                         ("Camera T · :track ID".to_owned(), "Track a saved target through the Original in the background, stopping at the next stored shot boundary. :track ID through-shots crosses cuts; :track-cancel stops. Correcting a tracked target re-tracks only from that picture to its next correction.".to_owned()),
                         ("Camera r · Enter · Esc".to_owned(), "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve.".to_owned()),
-                        (key_labels::aliases_pair(&bindings, EditorKey::PunchIn, EditorKey::Creep, " / "), "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve.".to_owned()),
+                        (key_labels::aliases_pair(&bindings, EditorKey::PunchIn, EditorKey::Creep, " / "), "One undoable 1.35× punch-in on the selected target (the one this beat follows, or the only saved target in the picture; otherwise the current center) / smoothstep creep to 1.35×. Both apply to the Edit range inside the beat when there is one. A follow keeps following when ,z changes its scale; a camera path is never replaced without :zoom off or an explicit target=.".to_owned()),
                         (":hold-duration 11f".to_owned(), "Set a selected Hold to exactly 11 project frames.".to_owned()),
                         (format!("{} / :select · {} / :yank", key(EditorKey::Visual), key(EditorKey::Copy)), format!("Start or finish a half-open time selection in Original or Your edit. {}, counted motions and {} extend it; Edit {} also extends to beat boundaries. A finished range stays fixed. {} copies either range; without an Edit selection use the whole-beat copy binding, including for an empty group. Edit copies retain their captured revision through later edits and Undo. In Your edit, {} cuts a selected range and {} replaces it. Empty groups paste at explicit Sequence slots without adding time. {} clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection.", key_labels::aliases_pair(&bindings, EditorKey::FramePrevious, EditorKey::FrameNext, "/"), key_labels::aliases_pair(&bindings, EditorKey::First, EditorKey::Last, "/"), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Copy), key(EditorKey::CutRange), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"), key(EditorKey::Escape))),
                         (format!("{} · :paste / :paste-before", key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ")), format!("In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, {} pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail.", key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),

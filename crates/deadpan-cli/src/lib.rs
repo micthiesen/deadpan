@@ -4,11 +4,14 @@
 pub mod activity;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
+pub mod bundle;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod encoded_render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;
+#[cfg(target_os = "macos")]
+pub mod export_verification;
 pub mod generation;
 pub mod generation_context;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -84,6 +87,7 @@ const HELP: &str = "Deadpan headless commands:
   macro <project.deadpan> --json <request.json> [--dry-run]
   render <project.deadpan> --output <directory> [--name <movie.mp4>] [--expected <revision>]
   render <project.deadpan> --json <request.json>
+  verify-export <project.deadpan> --movie <movie.mp4> [--revision <id>] [--frames <N,N,...> | --every <N>] [--samples <START:END,...> | --no-audio] [--report <new.json>]
   render retry <project.deadpan> --job <job> --checkpoint <encoding-attempt> --output <directory> [--name <movie.mp4>]
   render reencode <project.deadpan> --job <job> --output <directory> [--name <movie.mp4>]
   render reconcile <project.deadpan> --publication <publication>
@@ -112,7 +116,7 @@ Rendering uses automatic SDR policy, emits bounded JSON lines, and requires a cl
 Open-project Render routing, the native recovery browser, full mastering and HDR output remain unavailable.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
 create-original and create-from-url make a new one-Original project with its full-source baseline.
-create-from-url uses the pinned yt-dlp/Deno helpers from `downloader install` (docs/YOUTUBE_IMPORT.md);
+create-from-url uses the pinned yt-dlp/Deno helpers bundled in Deadpan.app, else from `downloader install` (docs/YOUTUBE_IMPORT.md);
 cookies come only from an explicit file. You are responsible for having the rights to use imported videos.
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
@@ -175,6 +179,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Generation(#[from] generation::attempt::GenerationError),
+    #[cfg(target_os = "macos")]
+    #[error(transparent)]
+    ExportVerification(#[from] export_verification::VerifyError),
 }
 
 impl CliError {
@@ -242,6 +249,8 @@ impl CliError {
             Self::Tracking(_) => "TrackingFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Generation(error) => error.code(),
+            #[cfg(target_os = "macos")]
+            Self::ExportVerification(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ProjectAudio(error) => match error {
                 audio::ProjectAudioError::Store(error) => error.code(),
@@ -464,6 +473,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["macro", rest @ ..] => macros::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["render", rest @ ..] => render::run(rest).map_err(CliError::Render),
+        #[cfg(target_os = "macos")]
+        ["verify-export", rest @ ..] => export_verification::cli::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["models", rest @ ..] => models::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

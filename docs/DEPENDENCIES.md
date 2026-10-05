@@ -123,10 +123,17 @@ workflow and restore/recovery UI remain open.
 
 [YouTube import](YOUTUBE_IMPORT.md) runs external helper executables; none is
 linked into Deadpan. This build accepts only these exact upstream release files.
-`deadpan-cli downloader install` is the development stand-in that downloads and
-verifies them into `~/Library/Application Support/Deadpan/helpers`; the release
-application must ship them inside its signed bundle (DP-22) with signed update
-manifests and rollback, as specification §15.2 requires.
+`cargo xtask bundle` ships them as a read-only baseline in
+`Deadpan.app/Contents/Resources/helpers`, which the running bundle prefers.
+Deno keeps its upstream Developer ID signature and pinned bytes. yt-dlp is
+re-signed with the hardened runtime, with no entitlements (measured). Its
+compiled pin adds a signature-independent content hash, so the shipped file is
+anchored to the pinned release and not to the bundle manifest
+([packaging](PACKAGING.md#downloader-baseline)).
+`deadpan-cli downloader install` downloads and verifies the same files into
+`~/Library/Application Support/Deadpan/helpers`. That managed root serves
+development builds and is the future update location. Signed update manifests
+and rollback (§15.2) remain open.
 
 | Helper | Pinned release file | Size and SHA-256 | License | Notes |
 | --- | --- | --- | --- | --- |
@@ -137,8 +144,21 @@ manifests and rollback, as specification §15.2 requires.
 Merging separately delivered picture and sound uses Deadpan's own isolated media
 worker and pinned LGPL FFmpeg 8.0.3 libraries (stream copy, no codec), not an
 `ffmpeg` executable; the developer prefix intentionally builds no `ffmpeg` program.
-Release redistribution must carry the yt-dlp, PyInstaller/Python, yt-dlp-ejs and
-Deno license notices.
+The bundle carries the yt-dlp, PyInstaller/Python (`THIRD_PARTY_LICENSES.txt`),
+yt-dlp-ejs and Deno license notices, vendored byte-for-byte under
+[packaging/notices](../packaging/notices). Deno publishes no aggregated notice
+for its embedded V8 and crates; that gap remains open.
+
+## Packaged FFmpeg
+
+`cargo xtask bundle` copies the transitive libraries the executables load from
+the pinned prefix (`libavcodec.62`, `libavformat.62`, `libavutil.60`,
+`libswresample.6`, `libswscale.9`) into `Contents/Frameworks`. It rewrites them
+to `@rpath` and records their shipped hashes, the configure line and the exact
+source archive in the notices and SBOM. The build refuses a prefix that is not
+8.0.3 or that enables GPL, nonfree or version-3 components. An FFmpeg
+source-hosting or written-offer decision is still required before public
+distribution.
 
 ## Measured media candidates
 
@@ -269,7 +289,7 @@ Keep this log current; a selection in the spec is not a tested integration.
 | AI comparison | Pinned LTX MLX implementation and compatible weights | Same corpus, runtime/code/weight licenses, precision and endpoint support. |
 | Import | yt-dlp + EJS + Deno | Permitted-source import on a clean Mac, pinning, safe updates, interrupted downloads. |
 | Private runtime | python-build-standalone + pinned wheels if selected | Offline assembly, isolation, nested signing, no first-launch pip or user runtime. |
-| Distribution | Apple Silicon app, signed helpers and model manifests | Notarization, online/offline clean-machine checks, SBOM and notices. |
+| Distribution | Apple Silicon app, signed helpers and model manifests | Relocatable hardened bundle, notices and CycloneDX SBOM are built by `cargo xtask bundle` ([packaging](PACKAGING.md)); Developer ID signing, notarization, online/offline clean-machine checks and model manifests remain. |
 
 Do not add unused dependencies or placeholder crates to imply coverage. The
 remaining component map is in [ARCHITECTURE.md](ARCHITECTURE.md). Original Deadpan

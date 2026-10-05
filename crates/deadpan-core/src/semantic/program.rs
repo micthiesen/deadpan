@@ -207,9 +207,13 @@ pub enum SemanticInstruction {
         recipe: super::GagRecipe,
     },
     /// Insert a silent freeze pause at the cursor (`,h`, `:hold`). The host
-    /// resolves the frozen picture from the staged document.
+    /// resolves the frozen picture from the staged document. `black` inserts
+    /// the project background instead (`:hold … video=black`), with no
+    /// sampled picture.
     InsertPause {
         length: PauseLength,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        black: bool,
     },
     /// Replace the selected direct child's framing (`,c`, `,z`).
     SetFraming {

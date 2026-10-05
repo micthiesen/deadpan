@@ -83,6 +83,9 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   matches tracking, which starts from the selected picture and stops at the
   next cut; pictures earlier in the same shot are outside the target and a
   follow keeps its fallback there.
+- `,z` and `:zoom S target=…` follow a target from outside Camera, and
+  `:creep … target=…` eases toward its position at the displayed picture
+  ([zoom and creep](FRAMING.md#zoom-and-creep-commands)).
 - `t` follows the picked target; `c` corrects it at this picture; `T` tracks it.
   A correction of an untracked target replaces the initial rectangle at the
   span start or adds a manual correction at that picture. A correction of a

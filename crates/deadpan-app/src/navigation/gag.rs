@@ -121,7 +121,7 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
     Ok(input)
 }
 
-fn decimal(value: &str) -> Result<ExactRatio, String> {
+pub(super) fn decimal(value: &str) -> Result<ExactRatio, String> {
     let (whole, fraction) = value.split_once('.').unwrap_or((value, ""));
     if whole.is_empty() && fraction.is_empty()
         || !whole.bytes().all(|byte| byte.is_ascii_digit())

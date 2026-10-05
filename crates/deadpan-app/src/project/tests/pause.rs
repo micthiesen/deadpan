@@ -897,6 +897,7 @@ fn native_pause_descends_to_nested_sequence_and_keeps_its_framing_live() {
         duration,
         RevisionId::new("prepared-nested-pause").unwrap(),
         NodeId::new("prepared-nested-hold").unwrap(),
+        false,
         || {
             let id = NodeId::new(format!("prepared-split-{allocated}")).unwrap();
             allocated += 1;
@@ -993,6 +994,7 @@ fn native_pause_descends_to_nested_sequence_and_keeps_its_framing_live() {
         FrameDuration::new(3).unwrap(),
         RevisionId::new("prepared-nested-seam").unwrap(),
         NodeId::new("prepared-seam-hold").unwrap(),
+        false,
         || {
             seam_allocations += 1;
             NodeId::new(format!("unexpected-seam-split-{seam_allocations}")).unwrap()
@@ -1127,4 +1129,67 @@ fn native_pause_descends_to_nested_sequence_and_keeps_its_framing_live() {
     assert_eq!(held.framing[2].pose, Some(outer_pose));
     assert_eq!(held.framing[3].pose, Some(root_pose));
     command(&service, ProjectRequest::Close);
+}
+
+#[test]
+fn black_pause_inserts_background_picture_and_silence_as_one_undo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let before = initialized.workspace.unwrap();
+    let total = before.plan.duration().frames();
+    let inserted = edited(
+        &service,
+        &before,
+        ProjectEdit::InsertBlack {
+            at: ProjectFrame(30),
+            duration: FrameDuration::new(6).unwrap(),
+        },
+    );
+    assert!(inserted.error.is_none(), "{:?}", inserted.error);
+    assert_eq!(
+        inserted.message.as_deref(),
+        Some("Inserted a 6 frame silent black pause at boundary 30 and saved")
+    );
+    let hold = inserted.committed.unwrap().selected_node.unwrap();
+    let after = inserted.workspace.unwrap();
+    let NodeKind::Hold { recipe } = &after.document.nodes()[&hold].kind else {
+        panic!("pause")
+    };
+    assert_eq!(recipe.video, deadpan_core::HoldVideo::Background);
+    assert_eq!(recipe.audio, deadpan_core::HoldAudio::Silence);
+    assert!(recipe.picture_context.is_none());
+    assert_eq!(after.plan.duration().frames(), total + 6);
+    // The shared plan shows black inside the pause and the Original around it.
+    for (frame, black) in [(29, false), (30, true), (35, true), (36, false)] {
+        let picture = after.plan.picture(ProjectFrame(frame)).unwrap().picture;
+        assert_eq!(
+            matches!(picture, deadpan_plan::Picture::Background),
+            black,
+            "frame {frame}"
+        );
+    }
+    let restored = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(restored.plan.duration().frames(), total);
 }

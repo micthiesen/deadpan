@@ -1102,6 +1102,21 @@ It never opens a writer or performs recovery. A running closed-project headless
 invocation is cancelled through SIGINT or SIGTERM; it does not advertise a native
 service endpoint. Stale requests cannot cancel a later workflow.
 
+### Preview-versus-export verification
+
+```sh
+deadpan-cli verify-export /path/edit.deadpan --movie /path/Exports/edit.mp4 --revision REVISION_ID
+```
+
+This read-only diagnostic renders reference pictures for the committed
+revision through the shared picture path and SDR encoder pixel boundary, reads
+the limited audition bus, decodes the movie with the qualified decoders and
+reports per-frame PSNR/structure and per-window level, SNR and exact measured
+audio offset as JSON. `--frames`, `--every`, `--samples`, `--no-audio` and
+`--report` select coordinates and a new report file. It exits nonzero with
+`ExportVerificationMismatch` after printing the full report when any check
+fails. macOS only. See [preview/export verification](PREVIEW_EXPORT_VERIFICATION.md).
+
 ## History and checkpoints
 
 ```sh

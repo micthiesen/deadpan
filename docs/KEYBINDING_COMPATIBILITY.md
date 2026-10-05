@@ -49,6 +49,11 @@ Shot motions `]s`/`[s` share those prefixes, and `iS`/`aS` use Shift+`s`
 only after a pending `i` or `a`, so the plain `s` split binding is unchanged.
 `,e` joins the comma family (`,h`, `,i`, `,s`, `,f`, `,v`, `,g`, `,z`, `,c`)
 with no modifier; `e` alone keeps its word-end meaning.
+On 2026-10-04 `,z` and `,c` gained target and Edit-range behavior
+([zoom and creep](FRAMING.md#zoom-and-creep-commands)) and `:zoom`, `:creep`
+and `:hold … video=black` were added to the command line. No binding path,
+modifier or count policy changed, so the reserved-chord comparison is unchanged;
+the `zoom` replay's Kestrel audit passed against the compiled router.
 `,a` (`ai.generate`) generates AI pictures for the selected pause. It is Normal
 Edit only, refuses a count, does not repeat while held and yields to native
 text and composition; `a` alone keeps its text-object prefix. The production
