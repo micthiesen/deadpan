@@ -336,7 +336,7 @@ fn slip_rechecks_receipts_assets_and_ownership_even_for_zero_preview() -> Result
         database.execute("UPDATE original_media SET record=?1", [&ownership])?;
         database.execute(
             "UPDATE revisions SET document=?1 WHERE id='ready'",
-            [before.to_json()?],
+            [before.to_compact_json()?],
         )?;
     }
     assert_eq!(store.snapshot()?, before);

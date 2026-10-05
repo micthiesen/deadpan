@@ -624,9 +624,10 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
-    /// One guarded replacement keeps binding ownership and timing records atomic.
+    /// Guarded changed timing tables and owner bindings, applied atomically
+    /// with the rest of the patch; the complete result is validated together.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub audio_bindings: Option<ValueChange<crate::AudioBindingState>>,
+    pub audio_bindings: Option<crate::AudioBindingPatch>,
 }
 
 impl DocumentPatch {
@@ -640,7 +641,7 @@ impl DocumentPatch {
         }
     }
 
-    pub fn apply(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
+    fn check_bounds(&self, document: &ProjectDocument) -> Result<(), EditError> {
         check_revision(
             document,
             &self.project_id,
@@ -664,6 +665,11 @@ impl DocumentPatch {
                 "patch exceeds document limits",
             ));
         }
+        Ok(())
+    }
+
+    pub fn apply(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
+        self.check_bounds(document)?;
         crate::framing::validate_nodes(
             self.nodes
                 .values()
@@ -706,6 +712,18 @@ impl DocumentPatch {
                         .filter_map(|(id, node)| (!self.nodes.contains_key(id)).then_some(node)),
                 ),
         )?;
+        let result = self.apply_stored(document)?;
+        result.validate()?;
+        Ok(result)
+    }
+
+    /// Guarded application of a patch that the store already admitted, for
+    /// reconstructing an elided historical revision from its nearest stored
+    /// snapshot. Every before-value is still checked; per-value and complete
+    /// document validation is left to the caller, which validates the final
+    /// reconstructed revision once rather than every intermediate one.
+    pub fn apply_stored(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
+        self.check_bounds(document)?;
         let mut result = document.clone();
         if let Some(change) = &self.presentation {
             if document.presentation_state() != change.before {
@@ -739,22 +757,9 @@ impl DocumentPatch {
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
         if let Some(change) = &self.audio_bindings {
-            let (Some(before), Some(after)) = (&change.before, &change.after) else {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "audio binding state replacement requires both before and after values",
-                ));
-            };
-            if &document.audio_bindings != before {
-                return Err(EditError::new(
-                    EditErrorCode::PatchConflict,
-                    "audio binding patch before-value does not match the current document",
-                ));
-            }
-            result.audio_bindings = after.clone();
+            result.audio_bindings = change.apply(&document.audio_bindings)?;
         }
         result.revision_id = self.to_revision.clone();
-        result.validate()?;
         Ok(result)
     }
 
@@ -778,10 +783,10 @@ impl DocumentPatch {
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
-            audio_bindings: self.audio_bindings.as_ref().map(|change| ValueChange {
-                before: change.after.clone(),
-                after: change.before.clone(),
-            }),
+            audio_bindings: self
+                .audio_bindings
+                .as_ref()
+                .map(crate::AudioBindingPatch::inverse),
         }
     }
 }
@@ -1066,6 +1071,10 @@ pub fn apply(
         allowances.restore(&mut result)?;
     }
     crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding_lifecycle::compact_new_timings(
+        &document.audio_bindings,
+        &mut result.audio_bindings,
+    )?;
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
     net_transaction(document, &result, description(&request.command))
@@ -1078,7 +1087,9 @@ pub(crate) fn net_transaction(
     result: &ProjectDocument,
     description: &str,
 ) -> Result<EditTransaction, EditError> {
-    let before_duration = document.duration()?.frames();
+    // The entry revision was admitted and validated already; only the result
+    // needs the complete (binding-inclusive) validation here.
+    let before_duration = document.structural_durations()?[document.root()].frames();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
         project_id: document.project_id.clone(),
@@ -1101,10 +1112,10 @@ pub(crate) fn net_transaction(
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
-        audio_bindings: (document.audio_bindings != result.audio_bindings).then(|| ValueChange {
-            before: Some(document.audio_bindings.clone()),
-            after: Some(result.audio_bindings.clone()),
-        }),
+        audio_bindings: crate::AudioBindingPatch::between(
+            &document.audio_bindings,
+            &result.audio_bindings,
+        ),
     };
     let binding_changed_ids =
         changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings);
@@ -2819,10 +2830,10 @@ mod binding_patch_tests {
         )
         .unwrap();
         let mut forged = tx.forward;
-        forged.audio_bindings = Some(ValueChange {
-            before: Some(crate::AudioBindingState::default()),
-            after: Some(document.audio_bindings().clone()),
-        });
+        forged.audio_bindings = crate::AudioBindingPatch::between(
+            &crate::AudioBindingState::default(),
+            document.audio_bindings(),
+        );
         assert_eq!(
             forged.apply(&document).unwrap_err().code,
             EditErrorCode::PatchConflict
@@ -2831,48 +2842,75 @@ mod binding_patch_tests {
     }
 
     #[test]
-    fn binding_state_replacement_requires_both_guards_and_roundtrips() {
-        let before = ProjectDocument::new_automatic(
-            ProjectId::new("binding-patch").unwrap(),
-            RevisionId::new("initial").unwrap(),
-            NodeId::new("root").unwrap(),
-        )
-        .unwrap();
-        let tx = apply(
-            &before,
-            &CommandRequest {
-                project_id: before.project_id().clone(),
-                expected_revision: before.revision_id().clone(),
-                new_revision: RevisionId::new("renamed").unwrap(),
-                command: Command::Rename {
-                    node: before.root().clone(),
-                    label: "Renamed".into(),
-                },
-            },
-        )
-        .unwrap();
-        assert!(tx.forward.audio_bindings.is_none());
-        assert!(before.audio_bindings().is_empty());
-        assert!(!before.to_json().unwrap().contains("audio_bindings"));
-        for (before_guard, after_guard) in [(false, false), (false, true), (true, false)] {
-            let mut patch = tx.forward.clone();
-            patch.audio_bindings = Some(ValueChange {
-                before: before_guard.then(crate::AudioBindingState::default),
-                after: after_guard.then(crate::AudioBindingState::default),
-            });
-            assert_eq!(
-                patch.apply(&before).unwrap_err().code,
-                EditErrorCode::InvalidCommand
-            );
-        }
-        let mut patch = tx.forward;
-        patch.audio_bindings = Some(ValueChange {
-            before: Some(crate::AudioBindingState::default()),
-            after: Some(crate::AudioBindingState::default()),
+    fn binding_patch_records_only_changed_entries_and_roundtrips() {
+        let bound = bound_document();
+        let empty = crate::AudioBindingState::default();
+        let first = NodeId::new("first").unwrap();
+        // An empty change is never a valid transaction entry.
+        let mut patch = DocumentPatch {
+            project_id: bound.project_id().clone(),
+            from_revision: bound.revision_id().clone(),
+            to_revision: RevisionId::new("next").unwrap(),
+            presentation: None,
+            nodes: BTreeMap::new(),
+            assets: BTreeMap::new(),
+            marks: BTreeMap::new(),
+            sounds: BTreeMap::new(),
+            beat_sounds: BTreeMap::new(),
+            sound_routes: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
+            targets: BTreeMap::new(),
+            overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
+            audio_lineage: BTreeMap::new(),
+            audio_bindings: Some(crate::AudioBindingPatch::default()),
+        };
+        assert_eq!(
+            patch.apply(&bound).unwrap_err().code,
+            EditErrorCode::InvalidCommand
+        );
+        assert!(
+            serde_json::from_str::<crate::AudioBindingPatch>("{}").is_err(),
+            "an empty wire patch is rejected"
+        );
+        // Changing one owner's resume records that owner alone, with no
+        // timing table and no other binding.
+        let mut changed = bound.audio_bindings().clone();
+        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
+            local_boundary: crate::ExactRatio::ZERO,
+            phase: crate::AudioLocalPhase::default(),
         });
-        let after = patch.apply(&before).unwrap();
-        assert_eq!(patch.inverse().apply(&after).unwrap(), before);
-        let wire = serde_json::to_string(&patch).unwrap();
-        assert_eq!(serde_json::from_str::<DocumentPatch>(&wire).unwrap(), patch);
+        let single = crate::AudioBindingPatch::between(bound.audio_bindings(), &changed).unwrap();
+        assert!(single.timings.is_empty());
+        assert_eq!(single.bindings.keys().collect::<Vec<_>>(), vec![&first]);
+        patch.audio_bindings = Some(single.clone());
+        let after = patch.apply(&bound).unwrap();
+        assert_eq!(after.audio_bindings(), &changed);
+        assert_eq!(patch.inverse().apply(&after).unwrap(), bound);
+        // A complete installation still round-trips through the bounded wire.
+        let install = crate::AudioBindingPatch::between(&empty, bound.audio_bindings()).unwrap();
+        assert_eq!(
+            install.timings.len(),
+            bound.audio_bindings().timings().len()
+        );
+        assert_eq!(install.apply(&empty).unwrap(), *bound.audio_bindings());
+        assert_eq!(
+            install.inverse().apply(bound.audio_bindings()).unwrap(),
+            empty
+        );
+        let wire = serde_json::to_string(&install).unwrap();
+        assert_eq!(
+            serde_json::from_str::<crate::AudioBindingPatch>(&wire).unwrap(),
+            install
+        );
+        // Every before-value is a guard.
+        assert_eq!(
+            single.apply(&empty).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
+        assert_eq!(
+            install.apply(bound.audio_bindings()).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
     }
 }

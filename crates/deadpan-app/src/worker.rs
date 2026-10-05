@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
 use deadpan_media::source_index::SourceContentIdentity;
-use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
+use deadpan_media::source_session::{SourceSession, SourceSessionError, SourceSessionLimits};
 use deadpan_plan::RenderPlan;
 use deadpan_render::Rgba8Frame;
 #[cfg(test)]
@@ -781,6 +781,14 @@ fn media_source<'a>(
     Ok(registered)
 }
 
+/// Serve one Original picture through a progressively admitted session.
+/// An interrupted background verification (deadline, cancellation or I/O)
+/// drops the session and admits once more within this request, so it
+/// recovers without a visible error. A mismatch is permanent for these bytes:
+/// the failed session stays retained as a tombstone, so every request for
+/// this source fails at once with the same clear message instead of copying
+/// and re-measuring the Original again. A new project session or receipt
+/// admits afresh.
 fn registered_picture(
     media: PictureMedia<'_>,
     registered: &Arc<RegisteredSource>,
@@ -789,6 +797,108 @@ fn registered_picture(
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
 ) -> Result<Picture, String> {
+    match registered_picture_once(media, registered, id, canvas, cancelled, retained) {
+        Err(Served::Interrupted(_)) => {
+            *retained = None;
+            registered_picture_once(media, registered, id, canvas, cancelled, retained)
+                .map_err(Served::into_message)
+        }
+        result => result.map_err(Served::into_message),
+    }
+}
+
+enum Served {
+    Interrupted(String),
+    Failed(String),
+}
+
+impl Served {
+    fn into_message(self) -> String {
+        match self {
+            Self::Interrupted(message) | Self::Failed(message) => message,
+        }
+    }
+}
+
+impl From<String> for Served {
+    fn from(message: String) -> Self {
+        Self::Failed(message)
+    }
+}
+
+impl From<&str> for Served {
+    fn from(message: &str) -> Self {
+        Self::Failed(message.into())
+    }
+}
+
+/// Preview decoders: threaded serving, single-threaded measurement.
+fn preview_limits() -> SourceSessionLimits {
+    #[allow(unused_mut)]
+    let mut limits = SourceSessionLimits::interactive();
+    #[cfg(test)]
+    tests_support::adjust_limits(&mut limits);
+    limits
+}
+
+#[cfg(test)]
+pub(crate) mod tests_support {
+    use std::cell::Cell;
+    use std::time::Duration;
+
+    use deadpan_media::source_session::SourceSessionLimits;
+
+    thread_local! {
+        /// Admissions whose background measurement gets a 1 ns deadline.
+        pub static INTERRUPT_MEASUREMENTS: Cell<u32> = const { Cell::new(0) };
+        /// Progressive admissions started on this thread.
+        pub static ADMISSIONS: Cell<u32> = const { Cell::new(0) };
+        /// Admit with the receipt index's last duration changed by one tick.
+        pub static TAMPER_INDEX: Cell<bool> = const { Cell::new(false) };
+    }
+
+    pub(super) fn adjust_index(
+        index: deadpan_media::source_index::SourceIndexSnapshot,
+    ) -> deadpan_media::source_index::SourceIndexSnapshot {
+        if !TAMPER_INDEX.get() {
+            return index;
+        }
+        let mut frames = index.index().frames().to_vec();
+        let last = frames.last_mut().expect("nonempty index");
+        last.reported_duration = last.reported_duration.map(|value| value + 1);
+        deadpan_media::source_index::SourceIndexSnapshot::new(
+            index.content(),
+            index.stream_index(),
+            deadpan_core::SourceFrameIndex::new(
+                index.index().asset().clone(),
+                index.index().time_base(),
+                frames,
+                index.index().terminal_end(),
+                index.index().terminal_provenance(),
+            )
+            .expect("valid tampered index"),
+        )
+        .expect("valid tampered snapshot")
+    }
+
+    pub(super) fn adjust_limits(limits: &mut SourceSessionLimits) {
+        ADMISSIONS.set(ADMISSIONS.get() + 1);
+        let remaining = INTERRUPT_MEASUREMENTS.get();
+        if remaining > 0 {
+            INTERRUPT_MEASUREMENTS.set(remaining - 1);
+            limits.measurement_timeout = Duration::from_nanos(1);
+        }
+    }
+}
+
+fn registered_picture_once(
+    media: PictureMedia<'_>,
+    registered: &Arc<RegisteredSource>,
+    id: SourceFrameId,
+    canvas: Option<(u32, u32)>,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+) -> Result<Picture, Served> {
     media.check_slice_live(cancelled)?;
     let video = registered
         .receipt
@@ -820,7 +930,7 @@ fn registered_picture(
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
-        let limits = SourceSessionLimits::default();
+        let limits = preview_limits();
         limits
             .decode
             .validate()
@@ -836,27 +946,27 @@ fn registered_picture(
                 cancelled,
             )
             .map_err(|error| error.to_string())?;
-        let source = SourceSession::open_verified(
+        // Progressive admission: every served picture matches the receipt's
+        // measured index (checked against `expected` above), and a background
+        // decoder completes the fresh full measurement. The session's index
+        // and stream metadata are the receipt's, compared at open.
+        let source = SourceSession::open_admitted(
             &mut snapshot,
-            registered.receipt.snapshot().content(),
-            registered.asset.clone(),
+            Arc::new({
+                let index = video
+                    .index()
+                    .for_asset(registered.asset.clone())
+                    .map_err(|error| error.to_string())?;
+                #[cfg(test)]
+                let index = tests_support::adjust_index(index);
+                index
+            }),
+            video.interpretation(),
             limits,
             cancelled,
         )
         .map_err(|error| error.to_string())?;
         check_picture_limits(&source)?;
-        if source.index().content() != video.index().content()
-            || source.index().stream_index() != video.index().stream_index()
-            || source.info() != video.interpretation()
-            || source.index().index().asset() != expected.asset()
-            || !same_index_mapping(source.index().index(), expected, || {
-                cancelled.load(Ordering::Acquire)
-            })?
-        {
-            return Err(
-                "Decoded source disagrees with its immutable qualification receipt.".into(),
-            );
-        }
         *retained = Some(RetainedSession {
             key,
             source,
@@ -868,10 +978,19 @@ fn registered_picture(
         .ok_or("The source session could not be retained.")?;
     session.catalog = Some(Arc::clone(registered));
     let summary = Some(source_summary(&session.source));
-    let decoded = session
-        .source
-        .frame(id, FRAME_TIMEOUT, cancelled)
-        .map_err(|error| error.to_string())?;
+    let decoded =
+        session
+            .source
+            .frame(id, FRAME_TIMEOUT, cancelled)
+            .map_err(|error| match error {
+                SourceSessionError::MeasurementInterrupted(_) => {
+                    Served::Interrupted(error.to_string())
+                }
+                SourceSessionError::MeasurementMismatch(_) => {
+                    Served::Failed(format!("Source verification failed: {error}"))
+                }
+                _ => Served::Failed(error.to_string()),
+            })?;
     media.check_slice_live(cancelled)?;
     Ok(Picture {
         summary,
@@ -918,7 +1037,7 @@ fn check_picture_limits(source: &SourceSession) -> Result<(), String> {
 }
 
 fn open_source(path: &PathBuf, cancelled: &AtomicBool) -> Result<SourceSession, String> {
-    let limits = SourceSessionLimits::default();
+    let limits = SourceSessionLimits::interactive();
     let started = Instant::now();
     // Nonblocking open prevents a FIFO path from trapping this service before
     // the descriptor's regular-file check. Reads of regular files are unchanged.

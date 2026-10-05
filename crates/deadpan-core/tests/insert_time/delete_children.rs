@@ -40,49 +40,54 @@ fn fixture() -> ProjectDocument {
 
 #[test]
 fn every_exact_sibling_span_removes_endpoint_empties_and_has_one_inverse() {
-    let before = fixture();
-    let names = ["left", "a", "middle", "b", "right"];
-    let lengths = [0, 2, 0, 3, 0];
-    for first in 0..names.len() {
-        for last in first..names.len() {
-            let after = edit(&before, deletion(&before, names[first], names[last]));
-            let NodeKind::Sequence {
-                children: remaining,
-            } = &after.nodes()[&id("group")].kind
-            else {
-                panic!()
-            };
-            let expected: Vec<_> = names
-                .iter()
-                .enumerate()
-                .filter(|(index, _)| *index < first || *index > last)
-                .map(|(_, name)| id(name))
-                .collect();
-            assert_eq!(*remaining, expected, "{first}..={last}");
-            for name in &names[first..=last] {
-                assert!(!after.nodes().contains_key(&id(name)), "{name}");
-            }
-            let removed: i64 = lengths[first..=last].iter().sum();
-            assert_eq!(after.duration().unwrap(), duration(10 - removed));
-            assert_eq!(children(&after), children(&before));
-            if removed == 0 {
-                assert_eq!(after.audio_bindings(), before.audio_bindings());
-            } else {
-                for name in ["prefix", "a", "b", "tail"] {
-                    if !after.nodes().contains_key(&id(name)) {
-                        continue;
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = fixture();
+        let names = ["left", "a", "middle", "b", "right"];
+        let lengths = [0, 2, 0, 3, 0];
+        for first in 0..names.len() {
+            for last in first..names.len() {
+                let after = edit(&before, deletion(&before, names[first], names[last]));
+                let NodeKind::Sequence {
+                    children: remaining,
+                } = &after.nodes()[&id("group")].kind
+                else {
+                    panic!()
+                };
+                let expected: Vec<_> = names
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, _)| *index < first || *index > last)
+                    .map(|(_, name)| id(name))
+                    .collect();
+                assert_eq!(*remaining, expected, "{first}..={last}");
+                for name in &names[first..=last] {
+                    assert!(!after.nodes().contains_key(&id(name)), "{name}");
+                }
+                let removed: i64 = lengths[first..=last].iter().sum();
+                assert_eq!(after.duration().unwrap(), duration(10 - removed));
+                assert_eq!(children(&after), children(&before));
+                if removed == 0 {
+                    assert_eq!(after.audio_bindings(), before.audio_bindings());
+                } else {
+                    for name in ["prefix", "a", "b", "tail"] {
+                        if !after.nodes().contains_key(&id(name)) {
+                            continue;
+                        }
+                        assert_eq!(after.nodes()[&id(name)], before.nodes()[&id(name)]);
+                        let suffix = name == "tail" || (name == "b" && last < 3);
+                        assert_eq!(
+                            after.audio_bindings().bindings()[&id(name)].reanchors.len(),
+                            usize::from(suffix),
+                            "{name} after {first}..={last}"
+                        );
                     }
-                    assert_eq!(after.nodes()[&id(name)], before.nodes()[&id(name)]);
-                    let suffix = name == "tail" || (name == "b" && last < 3);
-                    assert_eq!(
-                        after.audio_bindings().bindings()[&id(name)].reanchors.len(),
-                        usize::from(suffix),
-                        "{name} after {first}..={last}"
-                    );
                 }
             }
         }
-    }
+    })
 }
 
 #[test]

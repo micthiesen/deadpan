@@ -44,6 +44,53 @@ complete source interpretation and measured frame index against fresh decoding
 of a private verified source snapshot. The index comparison includes terminal
 endpoint evidence and checks cancellation between bounded chunks.
 
+`SourceAdmission` chooses when that complete fresh measurement happens.
+`Complete`, the default of `open_revision` and the only mode export and other
+offline consumers use, measures the whole index before the first picture.
+`Progressive` (`open_revision_with`, and the native preview worker) is for
+interactive preview: after the verified copy and decoder open, it adopts the
+receipt's index (shared, not copied) and serves each picture only once its
+decoded PTS and reported duration equal that index entry, including every
+decoded preroll picture. A second decoder over the same verified bytes
+measures the complete index on a utility-priority background thread and
+compares it entry by entry, with the stream metadata, to the receipt.
+`source_measurement()` reports the state:
+
+- `Mismatch`: a fresh decode disagrees with the receipt or cannot decode.
+  The request in flight and every later one fail with
+  `MeasurementMismatch`. The native worker keeps the failed session as a
+  tombstone, so every request for that source fails at once with "Source
+  verification failed: …" without copying or measuring again.
+- `Interrupted`: deadline, cancellation or I/O. Requests fail with
+  `MeasurementInterrupted`; the native worker drops the session and admits
+  once more within the same request, so recovery is invisible.
+  `SourceSessionLimits::measurement_timeout` defaults to 24 hours because
+  utility-priority work can be starved under load. Dropping the session
+  cancels the measurement and joins it within one single-threaded codec call,
+  so no measurement outlives its session.
+
+Pictures served before completion are the receipt's exact pictures; the
+background measurement still establishes that a fresh decode of these bytes
+reproduces the whole receipt. The 2026-10-05
+[seek qualification](qualification/seek-2026-10-05.md) has the measurements.
+
+Index measurement, at registration, complete admission and in the
+background, always uses one codec thread, so a measured index never depends
+on the serving thread count. Serving decoders may thread:
+`SourceSessionLimits::interactive()` for preview, one per core up to
+`MAX_INTERACTIVE_DECODE_THREADS`; the default is one thread for import,
+export and other offline work. Seeks skip non-reference pictures whose
+packets precede the target only when every SPS declares
+`bitstream_restriction` (a fixed reorder depth, not one FFmpeg estimates from
+the POCs it sees) and `frame_mbs_only_flag`. Otherwise every preroll picture
+decodes. Pictures at or after the target always decode, so forward steps
+continue. Threading and skipping leave every returned picture bit-identical
+to a sequential single-threaded decode. Per-picture checks compare PTS and
+duration, which come from the picture's own packet. They skip the key flag
+and decode timestamp: H.264 reports the DTS of the packet that released a
+reordered picture, and recovery-point key marking depends on where decoding
+started.
+
 One session retains at most one source decoder, index and private input. A
 source switch releases the previous session before a new admission. Repeated
 reads may use the admitted immutable bytes even if a linked external path later

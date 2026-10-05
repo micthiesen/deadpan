@@ -211,7 +211,8 @@ fn capture(
                     .map(|(owner, p)| (owner.clone(), p.clone()))
                     .collect();
                 crate::insert_time::composite::append_anchored_steps(
-                    &mut working.audio_bindings.bindings,
+                    &mut working.audio_bindings,
+                    crate::AudioRecipeKind::Node,
                     nodes,
                     &group.owners,
                     group.anchor,
@@ -219,7 +220,8 @@ fn capture(
                     &mut entries,
                 )?;
                 crate::insert_time::composite::append_anchored_steps(
-                    &mut working.audio_bindings.gap_bindings,
+                    &mut working.audio_bindings,
+                    crate::AudioRecipeKind::RepeatGap,
                     gaps,
                     &group.owners,
                     group.anchor,

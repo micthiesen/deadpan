@@ -32,6 +32,7 @@ pub mod registers;
 pub mod render_jobs;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_media;
+mod revision_storage;
 mod schema;
 mod shot_analysis;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -158,7 +159,7 @@ impl ProjectStore {
     ) -> Result<Self, StoreError> {
         validate_extension(path)?;
         document.validate()?;
-        let json = document.to_json()?;
+        let json = document.to_compact_json()?;
         check_document_size(&json)?;
         ensure_generated_admission(None, document)?;
         ensure_source_admission(None, document, None, None)?;
@@ -308,14 +309,10 @@ impl ProjectStore {
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
-        schema::check_openable_version(&connection)?;
+        let version = schema::check_openable_version(&connection)?;
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
-            // The writer adds the speech activity, shot analysis and original
-            // provenance tables to a schema-59, 60 or 61 package; readers of
-            // one see no stored analyses or provenance until then.
-            schema::upgrade(&connection)?;
         } else {
             connection.pragma_update(None, "query_only", true)?;
         }
@@ -364,8 +361,24 @@ impl ProjectStore {
             writer_owner: None,
             _writer_lock: lock,
         };
-        store.validate()?;
+        if let Err(error) = store.validate() {
+            // Database 63 also changed how commands record retained audio
+            // timing, so an older package whose history contains such edits
+            // cannot be replayed by this build. Report the unsupported format,
+            // unchanged, rather than a history parse failure.
+            return Err(if version == schema::VERSION {
+                error
+            } else {
+                StoreError::UnsupportedSchema(version)
+            });
+        }
         if mode == AccessMode::ReadWrite {
+            // The writer adds the speech activity, shot analysis, original
+            // provenance and revision patch tables to a schema-59 through 62
+            // package; readers of one see no stored analyses or provenance
+            // until then. Upgrade only after the existing history validates,
+            // so a package this build cannot replay is refused unchanged.
+            schema::upgrade(&store.connection)?;
             generation_attempts::recover_nonterminal(&mut store.connection)?;
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_jobs::recover_nonterminal(&mut store.connection)?;
@@ -725,7 +738,7 @@ fn prepare_current_command_with_admission(
     let edit = deadpan_core::apply(&current, request)?;
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
-    check_document_size(&next.to_json()?)?;
+    check_document_size(&next.to_compact_json()?)?;
     let captured = slice_capture_revision(connection, request)?;
     validate_transition(
         connection,
@@ -882,7 +895,7 @@ fn write_command_plan(
 ) -> Result<CommitOutcome, StoreError> {
     compound::require_authored(&plan)?;
     generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
-    insert_revision(connection, &plan.current, &plan.next, "edit")?;
+    insert_revision(connection, &plan.current, &plan.next, "edit", None)?;
     let register_bank = match &plan.compound {
         Some(prepared) => {
             compound::write_steps(connection, plan.next.revision_id(), &prepared.steps)?;
@@ -1025,14 +1038,17 @@ fn ensure_unused_revisions(
     Ok(())
 }
 
+/// `patch` is the forward patch for undo/redo revisions; an edit's patch is
+/// its history entry. The parent's stored document may then be elided.
 fn insert_revision(
     connection: &Connection,
     before: &ProjectDocument,
     after: &ProjectDocument,
     kind: &str,
+    patch: Option<&deadpan_core::DocumentPatch>,
 ) -> Result<(), StoreError> {
     ensure_unused_revision(connection, after.revision_id())?;
-    let json = after.to_json()?;
+    let json = after.to_compact_json()?;
     check_document_size(&json)?;
     connection.execute(
         "INSERT INTO revisions(id,parent_id,kind,document) VALUES (?1,?2,?3,?4)",
@@ -1043,7 +1059,13 @@ fn insert_revision(
             json
         ],
     )?;
-    Ok(())
+    revision_storage::after_insert(
+        connection,
+        after.revision_id(),
+        before.revision_id(),
+        kind,
+        patch,
+    )
 }
 
 #[cfg(test)]

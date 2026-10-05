@@ -241,10 +241,11 @@ fn rebased_source_offsets_and_frozen_layout_survive_durable_undo_redo() -> Resul
     deleted.validate()?;
     let forward = saved.edit.forward.audio_bindings.as_ref().unwrap();
     let inverse = saved.edit.inverse.audio_bindings.as_ref().unwrap();
-    assert_eq!(forward.before.as_ref(), Some(initial.audio_bindings()));
-    assert_eq!(forward.after.as_ref(), Some(deleted.audio_bindings()));
-    assert_eq!(inverse.before, forward.after);
-    assert_eq!(inverse.after, forward.before);
+    assert_eq!(
+        Some(forward),
+        AudioBindingPatch::between(initial.audio_bindings(), deleted.audio_bindings()).as_ref()
+    );
+    assert_eq!(*inverse, forward.inverse());
     store.validate()?;
     drop(store);
 

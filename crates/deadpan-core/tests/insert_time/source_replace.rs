@@ -101,47 +101,52 @@ fn whole_replacement_preserves_endpoint_empty_groups_and_removes_interior_groups
 
 #[test]
 fn nested_replacement_removes_whole_composites_and_reanchors_outer_suffix_once() {
-    let original = tree(
-        &["prefix", "group", "tail"],
-        vec![
-            ("prefix", source(1)),
-            (
-                "group",
-                BeatNode::sequence("Group", vec![id("a"), id("composite"), id("b")]),
-            ),
-            ("a", source(3)),
-            (
-                "composite",
-                BeatNode::sequence("Middle", vec![id("middle")]),
-            ),
-            ("middle", BeatNode::hold("Held", recipe(2))),
-            ("b", source(3)),
-            ("tail", source(2)),
-        ],
-    );
-    assert_eq!(
-        original
-            .source_replacement(&id("group"), range(2, 8))
-            .unwrap()
-            .required_ids,
-        6
-    );
-    let after = edit(&original, replace(&original, "group", 2, 8, 4));
-    assert_eq!(sequence(&after, "root"), sequence(&original, "root"));
-    assert_eq!(after.duration().unwrap(), duration(9));
-    assert!(!after.nodes().contains_key(&id("composite")));
-    assert!(!after.nodes().contains_key(&id("middle")));
-    assert_eq!(
-        after.audio_bindings().bindings()[&id("tail")]
-            .reanchors
-            .len(),
-        1
-    );
-    assert!(
-        after.audio_bindings().bindings()[&id("prefix")]
-            .reanchors
-            .is_empty()
-    );
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let original = tree(
+            &["prefix", "group", "tail"],
+            vec![
+                ("prefix", source(1)),
+                (
+                    "group",
+                    BeatNode::sequence("Group", vec![id("a"), id("composite"), id("b")]),
+                ),
+                ("a", source(3)),
+                (
+                    "composite",
+                    BeatNode::sequence("Middle", vec![id("middle")]),
+                ),
+                ("middle", BeatNode::hold("Held", recipe(2))),
+                ("b", source(3)),
+                ("tail", source(2)),
+            ],
+        );
+        assert_eq!(
+            original
+                .source_replacement(&id("group"), range(2, 8))
+                .unwrap()
+                .required_ids,
+            6
+        );
+        let after = edit(&original, replace(&original, "group", 2, 8, 4));
+        assert_eq!(sequence(&after, "root"), sequence(&original, "root"));
+        assert_eq!(after.duration().unwrap(), duration(9));
+        assert!(!after.nodes().contains_key(&id("composite")));
+        assert!(!after.nodes().contains_key(&id("middle")));
+        assert_eq!(
+            after.audio_bindings().bindings()[&id("tail")]
+                .reanchors
+                .len(),
+            1
+        );
+        assert!(
+            after.audio_bindings().bindings()[&id("prefix")]
+                .reanchors
+                .is_empty()
+        );
+    })
 }
 
 #[test]

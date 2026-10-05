@@ -15,6 +15,9 @@ typedef struct {
     uint64_t max_pixels;
     uint32_t max_dimension;
     uint32_t max_packets_per_frame;
+    /* Decoder worker threads, 1..16. More than one enables FFmpeg's
+       deterministic frame/slice threading; output is unchanged. */
+    uint32_t threads;
 } DeadpanSourceLimits;
 typedef struct {
     int32_t stream_index;
@@ -51,6 +54,9 @@ typedef struct {
 } DeadpanExportFrame;
 typedef struct {
     uint64_t frames, packets, io_bytes;
+    /* Picture buffers the codec allocated: pictures actually decoded,
+       including preroll that is never returned. Skipped pictures add none. */
+    uint64_t pictures;
 } DeadpanDecodeWork;
 typedef struct {
     uint32_t avcodec, avformat, avutil, swscale;
@@ -73,6 +79,11 @@ int deadpan_source_copy(DeadpanSource *source, uint64_t timeout_ms,
     uint8_t *rgba, size_t rgba_length, DeadpanSourceError *error);
 int deadpan_source_seek(DeadpanSource *source, int64_t pts, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error);
+/* Seek like deadpan_source_seek, then skip decoding non-reference pictures
+   whose packet PTS precedes target_pts. Those pictures are never returned;
+   every returned picture is bit-identical to an ordinary forward decode. */
+int deadpan_source_seek_to(DeadpanSource *source, int64_t pts, int64_t target_pts, uint64_t timeout_ms,
+    DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error);
 int deadpan_source_restart_at_keyframe(DeadpanSource *source, int64_t pts, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error);
 int deadpan_source_next_i420(DeadpanSource *source, uint64_t timeout_ms,
@@ -84,4 +95,7 @@ int deadpan_source_copy_i420(DeadpanSource *source, uint64_t timeout_ms,
 void deadpan_source_work(const DeadpanSource *source, DeadpanDecodeWork *work);
 void deadpan_source_runtime(DeadpanDecoderRuntime *runtime);
 void deadpan_source_close(DeadpanSource *source);
+/* Lower the calling thread to utility QoS (macOS); codec threads it creates
+   afterwards inherit it. Returns 1 on success, 0 where unsupported. */
+int deadpan_source_lower_thread_priority(void);
 #endif

@@ -92,8 +92,10 @@ fold evaluated terms to an exact constant after the occurrence is isolated.
 
 Documents omit empty `audio_bindings`. Nonempty state has strict bounded JSON,
 unique timing records and owned binding keys, validated reference paths and
-clock roots, and no unused timing table entries. Every persisted replacement is
-an exactly guarded reversible patch. Timing and retained identity allocations
+clock roots, and no unused timing table entries. Every change is an exactly
+guarded reversible `AudioBindingPatch` of the changed tables and bindings, and
+each transaction slices its new timing tables to the aliases its placements
+name ([timing storage](TIMING_STORAGE.md)). Timing and retained identity allocations
 participate in the store's never-reused revision namespace.
 
 Transparent Split and occurrence isolation copy live owner/Repeat names in both

@@ -495,6 +495,100 @@ fn remap_template(template: &mut AudioPlacementTemplate, mapping: &BTreeMap<Node
     }
 }
 
+thread_local! {
+    static REFERENCE_REPRESENTATION: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Run `operation` with the uncompacted timing representation: every new
+/// timing table keeps the complete captured layout and every reanchor step is
+/// appended, even when it cannot change a resume. Commands then produce the
+/// representation used before compaction. This exists only as the oracle for
+/// equivalence qualification (identical resolved clocks and PCM); production
+/// code never calls it. The setting is thread-local and restored on return.
+#[doc(hidden)]
+pub fn with_reference_timing_representation<R>(operation: impl FnOnce() -> R) -> R {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            REFERENCE_REPRESENTATION.with(|flag| flag.set(self.0));
+        }
+    }
+    let _restore = Restore(REFERENCE_REPRESENTATION.with(|flag| flag.replace(true)));
+    operation()
+}
+
+pub(crate) fn compact_representation() -> bool {
+    !REFERENCE_REPRESENTATION.with(std::cell::Cell::get)
+}
+
+/// Slice every timing table introduced by this transaction to the aliases its
+/// binding placements name. Captures snapshot the whole structure, but a
+/// placement only projects its own alias through its ancestors; retaining the
+/// rest would grow every later revision with the project size. Existing tables
+/// are never rewritten, and tables named by sound clocks stay complete because
+/// those compile and compare whole processing subtrees.
+pub(crate) fn compact_new_timings(
+    before: &AudioBindingState,
+    after: &mut AudioBindingState,
+) -> Result<(), DocumentError> {
+    if !compact_representation() {
+        return Ok(());
+    }
+    let mut required: BTreeMap<AudioTimingId, BTreeSet<NodeId>> = after
+        .timings
+        .keys()
+        .filter(|timing| !before.timings.contains_key(*timing))
+        .map(|timing| (timing.clone(), BTreeSet::new()))
+        .collect();
+    if required.is_empty() {
+        return Ok(());
+    }
+    for journals in after.sound_clocks.values() {
+        for journal in journals.values() {
+            for reference in journal.clocks() {
+                required.remove(reference.timing());
+            }
+        }
+    }
+    for (_, _, binding) in after.owners() {
+        for template in binding.placements() {
+            let Some(aliases) = required.get_mut(&template.reference.timing) else {
+                continue;
+            };
+            aliases.insert(template.reference.physical.clone());
+            match &template.reference.root {
+                AudioClockRoot::ProjectRootRoundEven => {}
+                AudioClockRoot::PreserveInputPointCeil { stage } => {
+                    aliases.insert(stage.clone());
+                }
+                AudioClockRoot::DefinitionPointCeil { root } => {
+                    aliases.insert(root.clone());
+                }
+                AudioClockRoot::GapDefinitionPointCeil { repeat } => {
+                    aliases.insert(repeat.clone());
+                }
+            }
+            for argument in &template.arguments {
+                aliases.insert(argument.reference_repeat.clone());
+            }
+            for clause in &template.births {
+                aliases.insert(clause.definition_root.clone());
+                if let AudioBirthSurvivors::CapturedRepeat { repeat } = &clause.survivors {
+                    aliases.insert(repeat.clone());
+                }
+            }
+        }
+    }
+    for (timing, aliases) in required {
+        let layout = &after.timings[&timing];
+        let sliced = layout.sliced(&aliases)?;
+        if sliced.nodes().len() < layout.nodes().len() {
+            after.timings.insert(timing, sliced);
+        }
+    }
+    Ok(())
+}
+
 /// Removal never leaves dangling live owners or unreferenced timing objects.
 /// Phase expressions can reference more than the primary sampling lattice.
 pub(crate) fn prune(document: &mut ProjectDocument) {

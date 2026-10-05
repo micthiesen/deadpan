@@ -208,98 +208,105 @@ fn unchanged_count_still_uses_fresh_leaf_revisions_and_bounded_counted_calls() {
 
 #[test]
 fn setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound() {
-    let mut document = tree(
-        &["prefix", "group", "suffix"],
-        vec![
-            ("prefix", hold(2)),
-            ("group", BeatNode::sequence("Group", vec![node("repeated")])),
-            ("repeated", repeated("body", 3, Some(1))),
-            ("body", hold(3)),
-            ("suffix", hold(20)),
-        ],
-    );
-    let span = crate::SourceSpan::new(
-        crate::SourceTimestamp {
-            ticks: 0,
-            time_base: crate::SourceTimeBase::new(1, 48_000).unwrap(),
-        },
-        crate::SourceTimestamp {
-            ticks: 4_800,
-            time_base: crate::SourceTimeBase::new(1, 48_000).unwrap(),
-        },
-    )
-    .unwrap();
-    let asset = crate::AssetId::new("sound").unwrap();
-    document.assets.insert(
-        asset.clone(),
-        crate::AssetRecord {
-            label: "Sound".into(),
-            content_hash: "a".repeat(64),
-            video: None,
-            audio: Some(span),
-            still_image: false,
-            frame_count: None,
-            source_qualification: Some(crate::SourceQualificationId::new("b".repeat(64)).unwrap()),
-        },
-    );
-    let sound = crate::SoundId::new("sound").unwrap();
-    document.sounds.insert(
-        sound.clone(),
-        crate::SoundEvent {
-            owner: node("root"),
-            label: "Sound".into(),
-            source: crate::SourceAudio { asset, span },
-            mapping: crate::SourceAudioMapping::natural_rate(
-                span,
-                document.presentation_basis().frame_rate,
-            )
-            .unwrap(),
-            offset: crate::AudioSample(137),
-            gain_millidecibels: 0,
-            start_edge: crate::AudioEdgePolicy::Automatic,
-            end_edge: crate::AudioEdgePolicy::Automatic,
-            overflow: crate::SoundOverflowPolicy::Reject,
-        },
-    );
-    document.validate().unwrap();
-    for plays in [2, 4] {
-        let target = SemanticContext {
-            parent: node("group"),
-            ..entry(13)
-        };
-        let planned = plan(&document, target, vec![setter(plays)], &BTreeMap::new()).unwrap();
-        let request = CommandRequest {
-            project_id: document.project_id().clone(),
-            expected_revision: revision("base"),
-            new_revision: revision("leaf-0"),
-            command: Command::SetRepeatPlays {
-                node: node("repeated"),
-                plays,
-                timing: AudioTimingId {
-                    allocation: revision("leaf-0"),
-                    ordinal: 0,
-                },
-            },
-        };
-        let mut expected = crate::apply(&document, &request)
-            .unwrap()
-            .forward
-            .apply(&document)
-            .unwrap();
-        expected.revision_id = revision("outer");
-        assert_eq!(planned.document, expected);
-        assert_eq!(planned.document.sounds(), document.sounds());
-        assert_eq!(planned.document.sound_routes()[&sound].edits.len(), 1);
-        assert_eq!(
-            planned.document.audio_bindings().bindings()[&node("suffix")]
-                .reanchors
-                .len(),
-            1
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let mut document = tree(
+            &["prefix", "group", "suffix"],
+            vec![
+                ("prefix", hold(2)),
+                ("group", BeatNode::sequence("Group", vec![node("repeated")])),
+                ("repeated", repeated("body", 3, Some(1))),
+                ("body", hold(3)),
+                ("suffix", hold(20)),
+            ],
         );
-        assert_eq!(planned.trace[0].before_scope, range(2, 13));
-        assert_eq!(planned.context.parent, node("group"));
-        inverse(&document, &planned);
-    }
+        let span = crate::SourceSpan::new(
+            crate::SourceTimestamp {
+                ticks: 0,
+                time_base: crate::SourceTimeBase::new(1, 48_000).unwrap(),
+            },
+            crate::SourceTimestamp {
+                ticks: 4_800,
+                time_base: crate::SourceTimeBase::new(1, 48_000).unwrap(),
+            },
+        )
+        .unwrap();
+        let asset = crate::AssetId::new("sound").unwrap();
+        document.assets.insert(
+            asset.clone(),
+            crate::AssetRecord {
+                label: "Sound".into(),
+                content_hash: "a".repeat(64),
+                video: None,
+                audio: Some(span),
+                still_image: false,
+                frame_count: None,
+                source_qualification: Some(
+                    crate::SourceQualificationId::new("b".repeat(64)).unwrap(),
+                ),
+            },
+        );
+        let sound = crate::SoundId::new("sound").unwrap();
+        document.sounds.insert(
+            sound.clone(),
+            crate::SoundEvent {
+                owner: node("root"),
+                label: "Sound".into(),
+                source: crate::SourceAudio { asset, span },
+                mapping: crate::SourceAudioMapping::natural_rate(
+                    span,
+                    document.presentation_basis().frame_rate,
+                )
+                .unwrap(),
+                offset: crate::AudioSample(137),
+                gain_millidecibels: 0,
+                start_edge: crate::AudioEdgePolicy::Automatic,
+                end_edge: crate::AudioEdgePolicy::Automatic,
+                overflow: crate::SoundOverflowPolicy::Reject,
+            },
+        );
+        document.validate().unwrap();
+        for plays in [2, 4] {
+            let target = SemanticContext {
+                parent: node("group"),
+                ..entry(13)
+            };
+            let planned = plan(&document, target, vec![setter(plays)], &BTreeMap::new()).unwrap();
+            let request = CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: revision("base"),
+                new_revision: revision("leaf-0"),
+                command: Command::SetRepeatPlays {
+                    node: node("repeated"),
+                    plays,
+                    timing: AudioTimingId {
+                        allocation: revision("leaf-0"),
+                        ordinal: 0,
+                    },
+                },
+            };
+            let mut expected = crate::apply(&document, &request)
+                .unwrap()
+                .forward
+                .apply(&document)
+                .unwrap();
+            expected.revision_id = revision("outer");
+            assert_eq!(planned.document, expected);
+            assert_eq!(planned.document.sounds(), document.sounds());
+            assert_eq!(planned.document.sound_routes()[&sound].edits.len(), 1);
+            assert_eq!(
+                planned.document.audio_bindings().bindings()[&node("suffix")]
+                    .reanchors
+                    .len(),
+                1
+            );
+            assert_eq!(planned.trace[0].before_scope, range(2, 13));
+            assert_eq!(planned.context.parent, node("group"));
+            inverse(&document, &planned);
+        }
+    })
 }
 
 #[test]

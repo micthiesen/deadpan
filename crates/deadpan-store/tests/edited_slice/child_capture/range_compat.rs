@@ -66,84 +66,89 @@ fn restore_rows(path: &Path, original: &ProjectDocument, tables: &Value) -> Resu
 
 #[test]
 fn literal_range_command_shapes_match_on_test_only_current_header_documents() -> Result {
-    let literal = literal()?;
-    let original = current_test_document(text(&literal, "original"))?;
-    let slice = CapturedEditSlice::from_json(text(&literal, "capture"))?;
-    assert_eq!(
-        slice.selection(),
-        &SliceCaptureSelection::Range {
-            range: slice.range()
-        }
-    );
-    // Current slices explicitly serialize the new empty attachment map. Keep
-    // the historical literal intact and adapt only this expected test value.
-    let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
-    assert!(expected_capture.get("beat_sounds").is_none());
-    expected_capture["beat_sounds"] = serde_json::json!({});
-    assert_eq!(
-        serde_json::from_str::<Value>(&slice.to_json()?)?,
-        expected_capture
-    );
-    assert_eq!(capture(&original)?, slice);
-    assert_eq!(
-        serde_json::from_str::<Value>(&capture(&original)?.to_json()?)?,
-        expected_capture
-    );
-    assert!(serde_json::to_value(&slice)?.get("selection").is_none());
-    let removal: CommandRequest = serde_json::from_str(text(&literal, "removal_request"))?;
-    let removal_edit: EditTransaction =
-        serde_json::from_str(text(&literal, "removal_transaction"))?;
-    assert_eq!(apply(&original, &removal)?, removal_edit);
-    assert_eq!(
-        serde_json::to_string(&removal)?,
-        text(&literal, "removal_request")
-    );
-    assert_eq!(
-        serde_json::to_string(&removal_edit)?,
-        text(&literal, "removal_transaction")
-    );
-    assert_eq!(literal["cases"].as_array().unwrap().len(), 3);
-    for case in literal["cases"].as_array().unwrap() {
-        let before = current_test_document(text(case, "before"))?;
-        let after = current_test_document(text(case, "after"))?;
-        let command: CommandRequest = serde_json::from_str(text(case, "request"))?;
-        let expected: EditTransaction = serde_json::from_str(text(case, "transaction"))?;
-        assert_eq!(removal_edit.forward.apply(&original)?, before);
-        let embedded = match &command.command {
-            Command::SpliceSlice { slice, .. } => {
-                assert_eq!(case["kind"], "seam");
-                slice
-            }
-            Command::SpliceSliceAt { slice, .. } => {
-                assert_eq!(case["kind"], "interior");
-                slice
-            }
-            Command::ReplaceSlice { slice, .. } => {
-                assert_eq!(case["kind"], "replacement");
-                slice
-            }
-            _ => panic!("literal must cover each placement envelope"),
-        };
-        assert_eq!(embedded, &slice);
-        let mut expected_request: Value = serde_json::from_str(text(case, "request"))?;
-        assert!(
-            expected_request["command"]["slice"]
-                .get("beat_sounds")
-                .is_none()
-        );
-        expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
-        assert_eq!(serde_json::to_value(&command)?, expected_request);
-        let actual = apply(&before, &command)?;
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let literal = literal()?;
+        let original = current_test_document(text(&literal, "original"))?;
+        let slice = CapturedEditSlice::from_json(text(&literal, "capture"))?;
         assert_eq!(
-            actual, expected,
-            "complete transaction for {}",
-            case["kind"]
+            slice.selection(),
+            &SliceCaptureSelection::Range {
+                range: slice.range()
+            }
         );
-        assert_eq!(serde_json::to_string(&actual)?, text(case, "transaction"));
-        assert_eq!(actual.forward.apply(&before)?, after);
-        assert_eq!(actual.inverse.apply(&after)?, before);
-    }
-    Ok(())
+        // Current slices explicitly serialize the new empty attachment map. Keep
+        // the historical literal intact and adapt only this expected test value.
+        let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
+        assert!(expected_capture.get("beat_sounds").is_none());
+        expected_capture["beat_sounds"] = serde_json::json!({});
+        assert_eq!(
+            serde_json::from_str::<Value>(&slice.to_json()?)?,
+            expected_capture
+        );
+        assert_eq!(capture(&original)?, slice);
+        assert_eq!(
+            serde_json::from_str::<Value>(&capture(&original)?.to_json()?)?,
+            expected_capture
+        );
+        assert!(serde_json::to_value(&slice)?.get("selection").is_none());
+        let removal: CommandRequest = serde_json::from_str(text(&literal, "removal_request"))?;
+        let removal_edit: EditTransaction =
+            serde_json::from_str(text(&literal, "removal_transaction"))?;
+        assert_eq!(apply(&original, &removal)?, removal_edit);
+        assert_eq!(
+            serde_json::to_string(&removal)?,
+            text(&literal, "removal_request")
+        );
+        assert_eq!(
+            serde_json::to_string(&removal_edit)?,
+            text(&literal, "removal_transaction")
+        );
+        assert_eq!(literal["cases"].as_array().unwrap().len(), 3);
+        for case in literal["cases"].as_array().unwrap() {
+            let before = current_test_document(text(case, "before"))?;
+            let after = current_test_document(text(case, "after"))?;
+            let command: CommandRequest = serde_json::from_str(text(case, "request"))?;
+            let expected: EditTransaction = serde_json::from_str(text(case, "transaction"))?;
+            assert_eq!(removal_edit.forward.apply(&original)?, before);
+            let embedded = match &command.command {
+                Command::SpliceSlice { slice, .. } => {
+                    assert_eq!(case["kind"], "seam");
+                    slice
+                }
+                Command::SpliceSliceAt { slice, .. } => {
+                    assert_eq!(case["kind"], "interior");
+                    slice
+                }
+                Command::ReplaceSlice { slice, .. } => {
+                    assert_eq!(case["kind"], "replacement");
+                    slice
+                }
+                _ => panic!("literal must cover each placement envelope"),
+            };
+            assert_eq!(embedded, &slice);
+            let mut expected_request: Value = serde_json::from_str(text(case, "request"))?;
+            assert!(
+                expected_request["command"]["slice"]
+                    .get("beat_sounds")
+                    .is_none()
+            );
+            expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
+            assert_eq!(serde_json::to_value(&command)?, expected_request);
+            let actual = apply(&before, &command)?;
+            assert_eq!(
+                actual, expected,
+                "complete transaction for {}",
+                case["kind"]
+            );
+            assert_eq!(serde_json::to_string(&actual)?, text(case, "transaction"));
+            assert_eq!(actual.forward.apply(&before)?, after);
+            assert_eq!(actual.inverse.apply(&after)?, before);
+        }
+        Ok(())
+    })
 }
 
 #[test]

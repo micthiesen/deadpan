@@ -10,7 +10,10 @@
 mod anchor;
 mod audio_binding;
 mod audio_binding_lifecycle;
+mod audio_binding_patch;
 pub use audio_binding_lifecycle::capture_unbound_audio_bindings;
+#[doc(hidden)]
+pub use audio_binding_lifecycle::with_reference_timing_representation;
 mod audio_context;
 mod audio_edges;
 mod audio_gain;
@@ -72,6 +75,7 @@ mod video_mapping;
 
 pub use anchor::*;
 pub use audio_binding::*;
+pub use audio_binding_patch::{AudioBindingPatch, AudioTimingChange};
 pub use audio_context::*;
 pub use audio_edges::*;
 pub use audio_gain::*;

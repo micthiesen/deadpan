@@ -3,11 +3,12 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 62;
+pub const VERSION: u32 = 63;
 /// Earlier schemas a writer upgrades in place. 60 only added the
-/// `speech_activity` table, 61 `shot_analysis` and 62 only adds
-/// `original_provenance`, so no upgrade needs a backup.
-pub const UPGRADABLE_VERSIONS: [u32; 3] = [59, 60, 61];
+/// `speech_activity` table, 61 `shot_analysis`, 62 `original_provenance` and
+/// 63 only adds `revision_patches`, so no upgrade needs a backup. Existing
+/// revisions keep their complete documents.
+pub const UPGRADABLE_VERSIONS: [u32; 4] = [59, 60, 61, 62];
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -22,7 +23,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Database schema 62 adds remote-original provenance. Refuse prior unused development
+    // Database schema 63 adds stored revision patches. Refuse prior unused development
     // packages before writable open or document parsing.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
@@ -39,7 +40,7 @@ pub fn check_openable_version(connection: &Connection) -> Result<u32, StoreError
     Ok(version)
 }
 
-/// Upgrade a schema-59, 60 or 61 database to 62 in one immediate transaction.
+/// Upgrade a schema-59 through 62 database to 63 in one immediate transaction.
 /// Current databases are unchanged.
 pub fn upgrade(connection: &Connection) -> Result<(), StoreError> {
     let transaction =
@@ -51,11 +52,16 @@ pub fn upgrade(connection: &Connection) -> Result<(), StoreError> {
             crate::shot_analysis::create_tables(&transaction)?;
         }
         60 => crate::shot_analysis::create_tables(&transaction)?,
-        61 => {}
+        61 | 62 => {}
         version => return Err(StoreError::UnsupportedSchema(version)),
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::original_provenance::create_tables(&transaction)?;
+    if !crate::original_provenance::table_exists(&transaction)? {
+        crate::original_provenance::create_tables(&transaction)?;
+    }
+    if !crate::revision_storage::has_table(&transaction)? {
+        crate::revision_storage::create_tables(&transaction)?;
+    }
     transaction.pragma_update(None, "user_version", VERSION)?;
     transaction.commit()?;
     Ok(())
@@ -109,6 +115,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::transcripts::create_tables(&transaction)?;
     crate::speech_activity::create_tables(&transaction)?;
     crate::shot_analysis::create_tables(&transaction)?;
+    crate::revision_storage::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]

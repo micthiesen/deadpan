@@ -640,14 +640,16 @@ fn capture_audio(
                 .ok_or_else(|| limit("slice audio entries overflow"))
         })?;
     crate::insert_time::composite::append_steps(
-        &mut state.bindings,
+        &mut state,
+        crate::AudioRecipeKind::Node,
         captured.node_placements,
         &affected,
         window,
         &mut entries,
     )?;
     crate::insert_time::composite::append_steps(
-        &mut state.gap_bindings,
+        &mut state,
+        crate::AudioRecipeKind::RepeatGap,
         captured.gap_placements,
         &affected,
         window,

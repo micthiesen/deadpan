@@ -490,7 +490,7 @@ fn every_used_source_requires_its_receipt_and_original_even_when_overwrite_retir
             )?;
             database.execute(
                 "UPDATE revisions SET document=?1 WHERE id='ready'",
-                [before.to_json()?],
+                [before.to_compact_json()?],
             )?;
             assert_eq!(stored(&database)?, clean);
         }

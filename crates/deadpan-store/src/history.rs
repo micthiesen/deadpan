@@ -9,7 +9,7 @@ use crate::{
 pub(crate) struct NavigationPlan {
     current: ProjectDocument,
     pub next: ProjectDocument,
-    edit: EditTransaction,
+    pub(crate) edit: EditTransaction,
     entry: i64,
     pub next_cursor: Option<i64>,
 }
@@ -117,6 +117,7 @@ impl ProjectStore {
             &plan.current,
             &plan.next,
             if redo { "redo" } else { "undo" },
+            Some(&plan.edit.forward),
         )?;
         if redo {
             transaction.execute(
@@ -174,7 +175,7 @@ fn prepare_navigation(
     };
     ensure_unused_revision(connection, &next_revision)?;
     let plan = build_navigation(connection, current, next_revision, redo, cursor, entry)?;
-    check_document_size(&plan.next.to_json()?)?;
+    check_document_size(&plan.next.to_compact_json()?)?;
     check_document_size(&serde_json::to_string(&plan.edit)?)?;
     Ok(plan)
 }

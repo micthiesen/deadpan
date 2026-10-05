@@ -38,6 +38,10 @@ pub struct DecodeLimits {
     pub max_pixels: u64,
     pub max_dimension: u32,
     pub max_packets_per_frame: u32,
+    /// Codec worker threads, 1 to 16. More than one enables FFmpeg frame and
+    /// slice threading, which returns the same pictures bit for bit; it adds
+    /// pipeline delay and memory, not different output.
+    pub threads: u32,
 }
 
 impl Default for DecodeLimits {
@@ -51,6 +55,7 @@ impl Default for DecodeLimits {
             max_pixels: 16_777_216,
             max_dimension: 8192,
             max_packets_per_frame: 10_000,
+            threads: 1,
         }
     }
 }
@@ -67,6 +72,7 @@ impl DecodeLimits {
             || !(1..=8192 * 8192).contains(&self.max_pixels)
             || !(1..=8192).contains(&self.max_dimension)
             || !(1..=10_000).contains(&self.max_packets_per_frame)
+            || !(1..=16).contains(&self.threads)
         {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "source decode limits exceed hard bounds",
@@ -249,6 +255,9 @@ pub struct DecodeWork {
     pub frames: u64,
     pub packets: u64,
     pub io_bytes: u64,
+    /// Pictures the codec actually decoded (buffers it allocated), including
+    /// preroll that is never returned. Skipped pictures add none.
+    pub decoded_pictures: u64,
 }
 
 /// Actual linked-library version integers queried independently of any encoder.
@@ -388,6 +397,14 @@ mod opening_budget_tests {
             assert!(decoder.next_metadata(control).unwrap().is_some());
         }
     }
+}
+
+/// Lower the calling thread to utility scheduling priority; decoders it opens
+/// afterwards create codec threads at that priority. For background work such
+/// as complete index measurement that must not slow interactive decoding.
+/// Returns whether the platform applied it. Pictures are unaffected.
+pub fn lower_current_thread_priority() -> bool {
+    ffi::lower_thread_priority()
 }
 
 impl SourceDecoder {
@@ -572,7 +589,19 @@ impl SourceDecoder {
     /// Backward keyframe seek in original stream ticks. Decode forward to the
     /// desired indexed PTS; the first returned frame need not be the target.
     pub fn seek(&mut self, pts: i64, control: DecodeControl<'_>) -> Result<(), SourceDecodeError> {
-        self.inner.seek(pts, control)
+        self.inner.seek(pts, None, control)
+    }
+    /// Seek like [`Self::seek`] for a known target PTS. Non-reference pictures
+    /// whose packets precede `target` are not decoded and never returned; every
+    /// returned picture equals an ordinary forward decode, and pictures at or
+    /// after `target` all decode, so forward steps from the target continue.
+    pub fn seek_to(
+        &mut self,
+        pts: i64,
+        target: i64,
+        control: DecodeControl<'_>,
+    ) -> Result<(), SourceDecodeError> {
+        self.inner.seek(pts, Some(target), control)
     }
     /// Reuse the admitted descriptor/demuxer, replacing the entire codec context
     /// with a fresh H.264 decoder at this exact IDR key PTS. No preceding decoded
@@ -610,6 +639,7 @@ mod ffi {
         max_pixels: u64,
         max_dimension: u32,
         max_packets_per_frame: u32,
+        threads: u32,
     }
     const MAX_AUDIO_STREAMS: usize = MAX_SOURCE_AUDIO_STREAMS;
 
@@ -684,6 +714,7 @@ mod ffi {
         frames: u64,
         packets: u64,
         io_bytes: u64,
+        pictures: u64,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -779,6 +810,15 @@ mod ffi {
             opaque: *const c_void,
             error: *mut Error,
         ) -> c_int;
+        fn deadpan_source_seek_to(
+            source: *mut c_void,
+            pts: i64,
+            target: i64,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            error: *mut Error,
+        ) -> c_int;
         fn deadpan_source_restart_at_keyframe(
             source: *mut c_void,
             pts: i64,
@@ -810,6 +850,11 @@ mod ffi {
         fn deadpan_source_work(source: *const c_void, work: *mut Work);
         fn deadpan_source_runtime(runtime: *mut Runtime);
         fn deadpan_source_close(source: *mut c_void);
+        fn deadpan_source_lower_thread_priority() -> c_int;
+    }
+    pub(super) fn lower_thread_priority() -> bool {
+        // SAFETY: changes only the calling thread's scheduling class.
+        unsafe { deadpan_source_lower_thread_priority() == 1 }
     }
     extern "C" fn cancelled(opaque: *const c_void) -> c_int {
         // SAFETY: C only invokes this synchronously during an exported call.
@@ -848,7 +893,10 @@ mod ffi {
     }
     // SAFETY: all FFmpeg state is owned by this instance, no process-global
     // callbacks/state are installed, and access requires &mut self. Moving the
-    // instance preserves the heap context and descriptor addresses.
+    // instance preserves the heap context and descriptor addresses. Optional
+    // codec threads belong to the context, touch only its immutable limits and
+    // atomic failure code from callbacks, never the borrowed cancellation
+    // pointer, and are joined by deadpan_source_close before the file closes.
     unsafe impl Send for Decoder {}
     impl Drop for Decoder {
         fn drop(&mut self) {
@@ -892,6 +940,7 @@ mod ffi {
                 max_pixels: limits.max_pixels,
                 max_dimension: limits.max_dimension,
                 max_packets_per_frame: limits.max_packets_per_frame,
+                threads: limits.threads,
             };
             let mut pointer = std::ptr::null_mut();
             let mut info = Info::default();
@@ -1036,6 +1085,7 @@ mod ffi {
                 frames: work.frames,
                 packets: work.packets,
                 io_bytes: work.io_bytes,
+                decoded_pictures: work.pictures,
             }
         }
         pub(super) fn runtime_info(&self) -> DecoderRuntimeInfo {
@@ -1142,46 +1192,51 @@ mod ffi {
         pub(super) fn seek(
             &mut self,
             pts: i64,
+            target: Option<i64>,
             ctl: DecodeControl<'_>,
         ) -> Result<(), SourceDecodeError> {
-            self.seek_impl(pts, ctl, false)
+            self.seek_impl(pts, ctl, Seek::Keyframe(target))
         }
         pub(super) fn restart_at_keyframe(
             &mut self,
             pts: i64,
             ctl: DecodeControl<'_>,
         ) -> Result<(), SourceDecodeError> {
-            self.seek_impl(pts, ctl, true)
+            self.seek_impl(pts, ctl, Seek::Fresh)
         }
         fn seek_impl(
             &mut self,
             pts: i64,
             ctl: DecodeControl<'_>,
-            fresh: bool,
+            kind: Seek,
         ) -> Result<(), SourceDecodeError> {
             let (timeout, opaque) = control(ctl)?;
             let mut error = Error::default();
-            let function = if fresh {
-                deadpan_source_restart_at_keyframe
-            } else {
-                deadpan_source_seek
-            };
+            let context = self.pointer.as_ptr();
             // SAFETY: same exclusive context and synchronous control lifetime.
-            if unsafe {
-                function(
-                    self.pointer.as_ptr(),
-                    pts,
-                    timeout,
-                    cancelled,
-                    opaque,
-                    &mut error,
-                )
-            } != 1
-            {
+            let result = unsafe {
+                match kind {
+                    Seek::Keyframe(None) => {
+                        deadpan_source_seek(context, pts, timeout, cancelled, opaque, &mut error)
+                    }
+                    Seek::Keyframe(Some(target)) => deadpan_source_seek_to(
+                        context, pts, target, timeout, cancelled, opaque, &mut error,
+                    ),
+                    Seek::Fresh => deadpan_source_restart_at_keyframe(
+                        context, pts, timeout, cancelled, opaque, &mut error,
+                    ),
+                }
+            };
+            if result != 1 {
                 return Err(error.into_error());
             }
             Ok(())
         }
+    }
+    #[derive(Clone, Copy)]
+    enum Seek {
+        Keyframe(Option<i64>),
+        Fresh,
     }
     fn export_frame(frame: ExportFrame) -> Result<ExportFrameMetadata, SourceDecodeError> {
         let boolean = |value| match value {

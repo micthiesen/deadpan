@@ -2,7 +2,8 @@
   "producers": {
     "h264_clock_fixtures": "tools/media-qualification/compatible/media_probe.c (includes ../media_probe.c), pinned FFmpeg 8.0.3 h264_videotoolbox require_software; recorded source run /tmp/deadpan-media-compatible-probe-8efkj8h2 and compatible/results/qualification-2026-09-20.json",
     "ffv1_and_rotation": "tests/generate_color_fixtures.py, development-only ffmpeg 9.0.1 CLI; pinned FFmpeg 8.0.3 decoder validates emitted files",
-    "sdr_with_stream_hdr": "tests/generate_stream_hdr_fixture.c, pinned FFmpeg 8.0.3 libraries; bitexact Matroska remux of limited709.mkv without opening a decoder. Retains its 4x2 eight-bit FFV1 packet, BT.709 transfer/matrix/primary tags, and limited range; adds stream AV_PKT_DATA_CONTENT_LIGHT_LEVEL (MaxCLL=1000, MaxFALL=400). Pinned ffprobe confirms color_transfer=bt709 and Content light level metadata in streams[0].side_data_list."
+    "sdr_with_stream_hdr": "tests/generate_stream_hdr_fixture.c, pinned FFmpeg 8.0.3 libraries; bitexact Matroska remux of limited709.mkv without opening a decoder. Retains its 4x2 eight-bit FFV1 packet, BT.709 transfer/matrix/primary tags, and limited range; adds stream AV_PKT_DATA_CONTENT_LIGHT_LEVEL (MaxCLL=1000, MaxFALL=400). Pinned ffprobe confirms color_transfer=bt709 and Content light level metadata in streams[0].side_data_list.",
+    "x264_seek_skip_fixtures": "development-only Homebrew ffmpeg 9.0.1 libx264 (GPL, not linked by Deadpan): testsrc2 320x180 at 24 fps, yuv420p, x264-params colorprim/transfer/colormatrix=bt709, -color_range tv -chroma_sample_location left. pyramid-bframes.mp4: 96 frames, keyint=48, scenecut=0, bframes=3, b-pyramid=normal (reference B), ref=3; declares bitstream_restriction with frame_mbs_only_flag 1. fake-interlaced.mp4: 72 frames, keyint=36, bframes=2, fake-interlaced=1, so frame_mbs_only_flag 0 with progressive pictures. Pinned FFmpeg 8.0.3 decodes both in tests/threaded_seek.rs."
   },
   "known_source_limit": "vfr.mp4 final decoded duration is 1001, not authored 3003 ticks. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
@@ -15,6 +16,11 @@
       "name": "cfr-bframes.mp4",
       "bytes": 39157,
       "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "name": "fake-interlaced.mp4",
+      "bytes": 89226,
+      "sha256": "587ef7ed665ccf4d0d5a1fb642202a7b55b8882223ec6adb9aa1cc7daed9fdbe"
     },
     {
       "name": "full709.mkv",
@@ -40,6 +46,11 @@
       "name": "offset-bframes.mp4",
       "bytes": 39181,
       "sha256": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+    },
+    {
+      "name": "pyramid-bframes.mp4",
+      "bytes": 115831,
+      "sha256": "24220e03ddb8fb633f816f3b3be5cf4ef4a8c4033b405f0284a68859e3773080"
     },
     {
       "name": "rotated90.mp4",

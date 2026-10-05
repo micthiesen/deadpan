@@ -252,88 +252,95 @@ fn trim_both_edges_grows_only_the_physical_owner_and_round_trips_exactly() {
 
 #[test]
 fn trim_capture_precedes_growth_and_retains_effect_clocks_and_root_sound_once() {
-    let base = fixture(Some((0, 147000)), 0);
-    let old_timing = AudioTimingId {
-        allocation: RevisionId::new("old-clock").unwrap(),
-        ordinal: 0,
-    };
-    let bindings = capture_unbound_audio_bindings(&base, old_timing.clone()).unwrap();
-    let before = modify(&base, |v| {
-        v["audio_bindings"] = serde_json::to_value(&bindings).unwrap();
-        v["audio_lineage"] = json!({"source":{"allocation":"initial","origin":"old-source"}});
-        v["nodes"]["source"]["framing"] = serde_json::to_value(
-            Framing::creep(
-                FramingPose::identity(),
-                FramingPose::new(ratio(1, 2), ratio(1, 2), ExactRatio::integer(2)).unwrap(),
-                FramingCurve::Linear,
-            )
-            .unwrap(),
-        )
-        .unwrap();
-        v["nodes"]["root"]["framing"] = v["nodes"]["source"]["framing"].clone();
-        v["nodes"]["source"]["audio_treatments"] =
-            serde_json::to_value(AudioTreatments::from_clip_gain(
-                ClipGain::new(
-                    GainDb::new(-3000).unwrap(),
-                    false,
-                    vec![],
-                    vec![GainRange::new(ExactRatio::integer(2), ExactRatio::integer(3)).unwrap()],
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let base = fixture(Some((0, 147000)), 0);
+        let old_timing = AudioTimingId {
+            allocation: RevisionId::new("old-clock").unwrap(),
+            ordinal: 0,
+        };
+        let bindings = capture_unbound_audio_bindings(&base, old_timing.clone()).unwrap();
+        let before = modify(&base, |v| {
+            v["audio_bindings"] = serde_json::to_value(&bindings).unwrap();
+            v["audio_lineage"] = json!({"source":{"allocation":"initial","origin":"old-source"}});
+            v["nodes"]["source"]["framing"] = serde_json::to_value(
+                Framing::creep(
+                    FramingPose::identity(),
+                    FramingPose::new(ratio(1, 2), ratio(1, 2), ExactRatio::integer(2)).unwrap(),
+                    FramingCurve::Linear,
                 )
                 .unwrap(),
-            ))
+            )
             .unwrap();
-        v["sounds"] = json!({"sound":SoundEvent {
-            owner:id("root"),label:"Independent sound".into(),source:source(&base).audio.clone().unwrap(),
-            mapping:SourceAudioMapping::SelectedPlacement{start:ExactRatio::ZERO,frames:ExactRatio::integer(100),selection:ExactFrameRange::new(ExactRatio::integer(1),ExactRatio::integer(2)).unwrap()},
-            offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject,
-        }});
-    });
-    let after = edit(&before, trim(&before, "source", SourceTrimEdge::In, -3));
-    assert_eq!(
-        after.audio_bindings().timings()[&old_timing],
-        before.audio_bindings().timings()[&old_timing]
-    );
-    let old = &before.audio_bindings().bindings()[&id("source")];
-    let new = &after.audio_bindings().bindings()[&id("source")];
-    assert_eq!(
-        new.lattice,
-        old.rebase_local(ExactRatio::integer(3)).unwrap().lattice
-    );
-    assert_eq!(new.reanchors.len(), old.reanchors.len() + 1);
-    assert!(after.audio_lineage().is_empty());
-    let physical = &after.nodes()[&id("source")];
-    assert_eq!(
-        physical.framing,
-        Some(
+            v["nodes"]["root"]["framing"] = v["nodes"]["source"]["framing"].clone();
+            v["nodes"]["source"]["audio_treatments"] =
+                serde_json::to_value(AudioTreatments::from_clip_gain(
+                    ClipGain::new(
+                        GainDb::new(-3000).unwrap(),
+                        false,
+                        vec![],
+                        vec![
+                            GainRange::new(ExactRatio::integer(2), ExactRatio::integer(3)).unwrap(),
+                        ],
+                    )
+                    .unwrap(),
+                ))
+                .unwrap();
+            v["sounds"] = json!({"sound":SoundEvent {
+                owner:id("root"),label:"Independent sound".into(),source:source(&base).audio.clone().unwrap(),
+                mapping:SourceAudioMapping::SelectedPlacement{start:ExactRatio::ZERO,frames:ExactRatio::integer(100),selection:ExactFrameRange::new(ExactRatio::integer(1),ExactRatio::integer(2)).unwrap()},
+                offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject,
+            }});
+        });
+        let after = edit(&before, trim(&before, "source", SourceTrimEdge::In, -3));
+        assert_eq!(
+            after.audio_bindings().timings()[&old_timing],
+            before.audio_bindings().timings()[&old_timing]
+        );
+        let old = &before.audio_bindings().bindings()[&id("source")];
+        let new = &after.audio_bindings().bindings()[&id("source")];
+        assert_eq!(
+            new.lattice,
+            old.rebase_local(ExactRatio::integer(3)).unwrap().lattice
+        );
+        assert_eq!(new.reanchors.len(), old.reanchors.len() + 1);
+        assert!(after.audio_lineage().is_empty());
+        let physical = &after.nodes()[&id("source")];
+        assert_eq!(
+            physical.framing,
+            Some(
+                before.nodes()[&id("source")]
+                    .framing
+                    .as_ref()
+                    .unwrap()
+                    .prepend_owner_frames(frames(3), frames(10))
+                    .unwrap()
+            )
+        );
+        assert_eq!(
+            physical.audio_treatments,
             before.nodes()[&id("source")]
-                .framing
-                .as_ref()
+                .audio_treatments
+                .with_owner_prefix(frames(3))
                 .unwrap()
-                .prepend_owner_frames(frames(3), frames(10))
-                .unwrap()
-        )
-    );
-    assert_eq!(
-        physical.audio_treatments,
-        before.nodes()[&id("source")]
-            .audio_treatments
-            .with_owner_prefix(frames(3))
-            .unwrap()
-    );
-    assert_eq!(
-        after.nodes()[&id("root")].framing,
-        before.nodes()[&id("root")].framing
-    );
-    assert_eq!(after.sounds(), before.sounds());
-    let route = &after.sound_routes()[&SoundId::new("sound").unwrap()];
-    assert_eq!(route.edits.len(), 1);
-    assert_eq!(
-        route.edits[0].operation,
-        RootSoundOperation::Insert {
-            at: ProjectFrame(0),
-            duration: frames(3)
-        }
-    );
+        );
+        assert_eq!(
+            after.nodes()[&id("root")].framing,
+            before.nodes()[&id("root")].framing
+        );
+        assert_eq!(after.sounds(), before.sounds());
+        let route = &after.sound_routes()[&SoundId::new("sound").unwrap()];
+        assert_eq!(route.edits.len(), 1);
+        assert_eq!(
+            route.edits[0].operation,
+            RootSoundOperation::Insert {
+                at: ProjectFrame(0),
+                duration: frames(3)
+            }
+        );
+    })
 }
 
 fn add_mark(

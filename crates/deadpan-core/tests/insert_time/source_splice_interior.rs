@@ -48,72 +48,77 @@ fn splice_at(document: &ProjectDocument, target: NodeId, at: i64, name: &str) ->
 
 #[test]
 fn interior_source_and_hold_splices_keep_explicit_group_and_both_pre_split_clocks() {
-    for lead in [source(4), BeatNode::hold("Hold", recipe(4))] {
-        let before = fixture(lead);
-        assert_eq!(
-            before
-                .source_splice_interior(&id("group"), &id("lead"), duration(1))
-                .unwrap(),
-            SourceSpliceInterior {
-                index: 0,
-                boundary: ProjectFrame(2),
-                required_ids: 3
-            }
-        );
-        let command = splice_at(&before, id("lead"), 1, "splice");
-        let tx = apply(&before, &command).unwrap();
-        assert_eq!(tx.duration_delta, 1);
-        assert_eq!(tx.forward.from_revision, *before.revision_id());
-        assert_eq!(tx.forward.to_revision, revision("splice"));
-        let after = edit(&before, command);
-        assert_eq!(children(&after), children(&before));
-        let group = sequence(&after, "group");
-        assert_eq!(
-            group,
-            &[id("splice-0"), id("splice"), id("splice-1"), id("next")]
-        );
-        assert_eq!(after.nodes().len(), before.nodes().len() + 4);
-        assert_eq!(
-            after.nodes()[&id("splice")].label,
-            "Inserted Original slice"
-        );
-        let left = owner(&after, &group[0]);
-        let right = owner(&after, &group[2]);
-        let old = AudioTimingId {
-            allocation: revision("splice"),
-            ordinal: 0,
-        };
-        let placed = AudioTimingId {
-            allocation: revision("splice"),
-            ordinal: 1,
-        };
-        let bindings = after.audio_bindings();
-        assert_eq!(bindings.timings().len(), 2);
-        assert_eq!(
-            bindings.bindings()[&left].lattice,
-            bindings.bindings()[&right].lattice
-        );
-        assert_eq!(bindings.bindings()[&right].lattice.reference.timing, old);
-        assert!(!bindings.timings()[&old].nodes().contains_key(&right));
-        assert!(bindings.timings()[&placed].nodes().contains_key(&right));
-        for node in [&right, &id("next"), &id("tail")] {
-            assert_eq!(bindings.bindings()[node].reanchors.len(), 1);
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        for lead in [source(4), BeatNode::hold("Hold", recipe(4))] {
+            let before = fixture(lead);
             assert_eq!(
-                bindings.bindings()[node].reanchors[0]
-                    .placement
-                    .reference
-                    .timing,
-                placed
+                before
+                    .source_splice_interior(&id("group"), &id("lead"), duration(1))
+                    .unwrap(),
+                SourceSpliceInterior {
+                    index: 0,
+                    boundary: ProjectFrame(2),
+                    required_ids: 3
+                }
+            );
+            let command = splice_at(&before, id("lead"), 1, "splice");
+            let tx = apply(&before, &command).unwrap();
+            assert_eq!(tx.duration_delta, 1);
+            assert_eq!(tx.forward.from_revision, *before.revision_id());
+            assert_eq!(tx.forward.to_revision, revision("splice"));
+            let after = edit(&before, command);
+            assert_eq!(children(&after), children(&before));
+            let group = sequence(&after, "group");
+            assert_eq!(
+                group,
+                &[id("splice-0"), id("splice"), id("splice-1"), id("next")]
+            );
+            assert_eq!(after.nodes().len(), before.nodes().len() + 4);
+            assert_eq!(
+                after.nodes()[&id("splice")].label,
+                "Inserted Original slice"
+            );
+            let left = owner(&after, &group[0]);
+            let right = owner(&after, &group[2]);
+            let old = AudioTimingId {
+                allocation: revision("splice"),
+                ordinal: 0,
+            };
+            let placed = AudioTimingId {
+                allocation: revision("splice"),
+                ordinal: 1,
+            };
+            let bindings = after.audio_bindings();
+            assert_eq!(bindings.timings().len(), 2);
+            assert_eq!(
+                bindings.bindings()[&left].lattice,
+                bindings.bindings()[&right].lattice
+            );
+            assert_eq!(bindings.bindings()[&right].lattice.reference.timing, old);
+            assert!(!bindings.timings()[&old].nodes().contains_key(&right));
+            assert!(bindings.timings()[&placed].nodes().contains_key(&right));
+            for node in [&right, &id("next"), &id("tail")] {
+                assert_eq!(bindings.bindings()[node].reanchors.len(), 1);
+                assert_eq!(
+                    bindings.bindings()[node].reanchors[0]
+                        .placement
+                        .reference
+                        .timing,
+                    placed
+                );
+            }
+            assert!(bindings.bindings()[&left].reanchors.is_empty());
+            assert!(bindings.bindings()[&id("prefix")].reanchors.is_empty());
+            assert!(!bindings.bindings().contains_key(&id("splice")));
+            assert_eq!(
+                reference_at_anchor(&after, &right),
+                ExactRatio::integer(3203)
             );
         }
-        assert!(bindings.bindings()[&left].reanchors.is_empty());
-        assert!(bindings.bindings()[&id("prefix")].reanchors.is_empty());
-        assert!(!bindings.bindings().contains_key(&id("splice")));
-        assert_eq!(
-            reference_at_anchor(&after, &right),
-            ExactRatio::integer(3203)
-        );
-    }
+    })
 }
 
 #[test]

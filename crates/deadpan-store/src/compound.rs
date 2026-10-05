@@ -365,7 +365,7 @@ fn execute(
     }
     let mut steps: Vec<StepRecord> = Vec::new();
     let mut checkpoint_bytes = 0_usize;
-    let mut processed_bytes = current.to_json()?.len();
+    let mut processed_bytes = current.to_compact_json()?.len();
     let mut original_pastes = OriginalPasteMappings::default();
     let outcome =
         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
@@ -436,7 +436,7 @@ fn execute(
                         &mut original_pastes,
                     )?;
                 }
-                let json = visit.after.to_json()?;
+                let json = visit.after.to_compact_json()?;
                 processed_bytes = processed_bytes
                     .checked_add(json.len())
                     .filter(|bytes| *bytes <= MAX_PROCESSED_BYTES)
@@ -460,7 +460,7 @@ fn execute(
             }
             Ok(())
         })?;
-    crate::check_document_size(&outcome.document.to_json()?)?;
+    crate::check_document_size(&outcome.document.to_compact_json()?)?;
     Ok((outcome, steps))
 }
 

@@ -154,7 +154,9 @@ structure at that moment (`audio_bindings.timings[].layout.nodes`).
 Section 25.3 asks for storage roughly proportional to authored structure, so
 this is the largest algorithmic budget miss. It lives in the core audio clock
 design, which is under concurrent development, so it is listed rather than
-changed here.
+changed here. [Compact timing storage](../TIMING_STORAGE.md) has since
+removed this growth; see the
+[2026-10-05 record](timing-storage-2026-10-05.md).
 
 ### Where a 10,000-beat commit spends its time (run 1 profile)
 

@@ -15,7 +15,9 @@ use deadpan_core::{
     IndexedSourceFrame, IterationId, ProjectDocument, ProjectFrame, ProjectId, RevisionId,
     SourceFrameId, SourceQualificationId,
 };
-use deadpan_media::source_session::{SourceSession, SourceSessionError, SourceSessionLimits};
+use deadpan_media::source_session::{
+    IndexMeasurement, SourceSession, SourceSessionError, SourceSessionLimits,
+};
 use deadpan_plan::{Picture, PictureFraming, PlanError, RenderPlan};
 use deadpan_render::{FramingLayer, RenderError, Rgba8Frame};
 use deadpan_store::original_media::OriginalMediaLimits;
@@ -197,6 +199,20 @@ enum RetainedOrigin {
     Generated(Arc<GeneratedArtifact>),
 }
 
+/// How an Original's decoder is admitted against its revision's receipt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SourceAdmission {
+    /// Measure the complete index afresh and compare it with the receipt
+    /// before the first picture. Export and other offline consumers use this.
+    #[default]
+    Complete,
+    /// Interactive preview: serve each picture once its decoded identity
+    /// matches the receipt index, while the complete fresh measurement runs
+    /// in the background (`SourceSession::open_admitted`). A disagreement
+    /// fails the session's later requests.
+    Progressive,
+}
+
 /// Session-local picture counters for diagnostics and benchmarks. They are
 /// observations of this session only, never authored or persisted state.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -227,6 +243,7 @@ pub struct ProjectPictureSession {
     generated: deadpan_store::generated_media::GeneratedReadHandle,
     retained: Option<RetainedSource>,
     stats: PictureSessionStats,
+    admission: SourceAdmission,
 }
 
 impl ProjectPictureSession {
@@ -236,6 +253,17 @@ impl ProjectPictureSession {
         path: &Path,
         revision: &RevisionId,
         range: Option<FrameRange>,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, ProjectPictureError> {
+        Self::open_revision_with(path, revision, range, SourceAdmission::Complete, cancelled)
+    }
+
+    /// As [`Self::open_revision`], choosing how Original decoders are admitted.
+    pub fn open_revision_with(
+        path: &Path,
+        revision: &RevisionId,
+        range: Option<FrameRange>,
+        admission: SourceAdmission,
         cancelled: &AtomicBool,
     ) -> Result<Self, ProjectPictureError> {
         check_cancel(cancelled)?;
@@ -269,6 +297,7 @@ impl ProjectPictureSession {
             generated,
             retained: None,
             stats: PictureSessionStats::default(),
+            admission,
         })
     }
 
@@ -292,6 +321,20 @@ impl ProjectPictureSession {
     }
     pub const fn stats(&self) -> PictureSessionStats {
         self.stats
+    }
+    /// Complete-measurement state of the retained Original decoder, if any.
+    pub fn source_measurement(&self) -> Option<IndexMeasurement> {
+        self.retained
+            .as_ref()
+            .filter(|retained| matches!(retained.origin, RetainedOrigin::Original(_)))
+            .map(|retained| retained.source.measurement())
+    }
+    /// Wait up to `timeout` for the retained Original's complete measurement.
+    pub fn wait_source_measured(&self, timeout: Duration) -> Option<IndexMeasurement> {
+        self.retained
+            .as_ref()
+            .filter(|retained| matches!(retained.origin, RetainedOrigin::Original(_)))
+            .map(|retained| retained.source.wait_measured(timeout))
     }
 
     /// Prepare one exact project frame. Structural repeats remain compact and
@@ -463,7 +506,10 @@ impl ProjectPictureSession {
             .snapshot()
             .video()
             .ok_or_else(|| evidence("qualified video stream is absent"))?;
-        let limits = SourceSessionLimits::default();
+        let limits = match self.admission {
+            SourceAdmission::Complete => SourceSessionLimits::default(),
+            SourceAdmission::Progressive => SourceSessionLimits::interactive(),
+        };
         validate_raster(
             expected.interpretation().width,
             expected.interpretation().height,
@@ -492,20 +538,38 @@ impl ProjectPictureSession {
             return Err(evidence("verified original differs from receipt"));
         }
         check_cancel(cancelled)?;
-        let source = SourceSession::open_verified(
-            &mut snapshot,
-            expected.index().content(),
-            asset.clone(),
-            limits,
-            cancelled,
-        )?;
-        if source.index().content() != expected.index().content()
-            || source.index().stream_index() != expected.index().stream_index()
-            || source.info() != expected.interpretation()
-            || source.index().index().asset() != asset
-            || !same_index_mapping(source.index().index(), expected.index().index(), || {
-                cancelled.load(Ordering::Acquire)
-            })?
+        let source = match self.admission {
+            SourceAdmission::Complete => SourceSession::open_verified(
+                &mut snapshot,
+                expected.index().content(),
+                asset.clone(),
+                limits,
+                cancelled,
+            )?,
+            // Its index is the receipt's (under this revision's alias) and its
+            // stream metadata was compared at open; the fresh measurement runs
+            // in the background, so there is nothing further to compare here.
+            SourceAdmission::Progressive => SourceSession::open_admitted(
+                &mut snapshot,
+                Arc::new(
+                    expected
+                        .index()
+                        .for_asset(asset.clone())
+                        .map_err(SourceSessionError::from)?,
+                ),
+                expected.interpretation(),
+                limits,
+                cancelled,
+            )?,
+        };
+        if self.admission == SourceAdmission::Complete
+            && (source.index().content() != expected.index().content()
+                || source.index().stream_index() != expected.index().stream_index()
+                || source.info() != expected.interpretation()
+                || source.index().index().asset() != asset
+                || !same_index_mapping(source.index().index(), expected.index().index(), || {
+                    cancelled.load(Ordering::Acquire)
+                })?)
         {
             return Err(evidence(
                 "decoded stream, interpretation or measured index differs",

@@ -306,13 +306,17 @@ fn editing_after_undo_keeps_old_revisions_and_starts_a_new_branch() -> Result {
             .nodes()
             .contains_key(&NodeId::new("second")?)
     );
+    // r2 is no longer the newest revision, so it is stored as a patch and
+    // rebuilt from its nearest stored ancestor.
     let db = Connection::open(path.join("project.sqlite"))?;
     let saved: String =
         db.query_row("SELECT document FROM revisions WHERE id='r2'", [], |row| {
             row.get(0)
         })?;
+    assert_eq!(saved, "null");
     assert!(
-        ProjectDocument::from_json(&saved)?
+        store
+            .snapshot_at(&RevisionId::new("r2")?)?
             .nodes()
             .contains_key(&NodeId::new("second")?)
     );

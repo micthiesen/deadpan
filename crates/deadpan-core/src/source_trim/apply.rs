@@ -183,7 +183,8 @@ fn capture_timing(
             .remove(&resolved.physical_source)
             .ok_or_else(|| invalid("Source trim has no captured target allocation"))?;
         crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings.bindings,
+            &mut working.audio_bindings,
+            crate::AudioRecipeKind::Node,
             [(resolved.physical_source.clone(), placement)].into(),
             &target,
             window,
@@ -197,14 +198,16 @@ fn capture_timing(
             resolved.slot + 1,
         )?;
         crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings.bindings,
+            &mut working.audio_bindings,
+            crate::AudioRecipeKind::Node,
             captured.node_placements,
             &suffix,
             window,
             &mut entries,
         )?;
         crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings.gap_bindings,
+            &mut working.audio_bindings,
+            crate::AudioRecipeKind::RepeatGap,
             captured.gap_placements,
             &suffix,
             window,

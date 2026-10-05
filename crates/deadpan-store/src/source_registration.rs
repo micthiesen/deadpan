@@ -1407,12 +1407,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     }
     // Include abandoned branches, not only current head or active redo. Each
     // asset carries its own receipt ID even if its alias is reused after undo.
-    let mut statement = connection.prepare(
-        "SELECT CASE WHEN typeof(document)='text' AND length(CAST(document AS BLOB))<=?1 THEN document END FROM revisions ORDER BY rowid",
-    )?;
-    let mut rows = statement.query([crate::schema::MAX_DOCUMENT_BYTES as i64])?;
-    while let Some(row) = rows.next()? {
-        let document = ProjectDocument::from_json(&row.get::<_, String>(0)?)?;
+    crate::validation::for_each_revision_document(connection, |document| {
         for asset in document.assets().values() {
             let Some(id) = &asset.source_qualification else {
                 continue;
@@ -1453,8 +1448,8 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
                 ));
             }
         }
-    }
-    Ok(())
+        Ok(())
+    })
 }
 
 fn invalid(message: &str) -> StoreError {

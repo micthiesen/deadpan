@@ -4,7 +4,10 @@
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the
 code exposes. Results live in dated qualification records; the current one is
-[performance-2026-10-04](qualification/performance-2026-10-04.md). A target
+[performance-2026-10-04](qualification/performance-2026-10-04.md), with seek
+superseded by [seek-2026-10-05](qualification/seek-2026-10-05.md) and edit
+latency, storage and open time superseded by
+[timing-storage-2026-10-05](qualification/timing-storage-2026-10-05.md). A target
 without a measured workload is open, never passed.
 
 ## Run the suite
@@ -70,8 +73,8 @@ like workloads and the same summary schema.
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
 | Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (snapshot, plan compile) on real and 10,000-beat packages, without the picture. |
-| Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary, the persistent decoder and the shared Metal pipeline, on real long-GOP media at full canvas. |
-| Cold long-GOP seek, < 300 ms | `perf seek` cold samples (10) | Session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, freshly measured index, decoder, first picture), but the OS file cache is not purged. Progressive feedback (retaining the previous picture) is a UI property not measured here. |
+| Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary with progressive (preview) admission, the persistent threaded decoder and the shared Metal pipeline, on real long-GOP media at full canvas. Warm samples start after the background index measurement has verified; `measuring_seek` samples random seeks while it still runs. `decode_threads` records the serving codec thread count. |
+| Cold long-GOP seek, < 300 ms | `perf seek` cold samples (10 per admission mode) | Session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, decoder, first picture), but the OS file cache is not purged. `cold.progressive` is the preview path (receipt-verified pictures while the complete measurement runs; `verified_ms` is when it finishes); `cold.complete` is the export path, which measures the whole index before its first picture. Retaining the previous picture while loading is a UI property not measured here. |
 | Playback 1080p60 and 4K30 | `perf playback` on the generated fixtures; `perf seek` frame stepping | Real device audio; pictures follow the heard clock, newest frame wins, skipped frames count as dropped. Decode and Metal completion only: no window, compositor or display scanout. |
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |
 | Hold insertion fallback visible < 100 ms | ui `edit-latency` `hold_fallback_input_to_picture_complete_ms`; `perf edit` insert pause | The CLI stage commits the native `,h` freeze through the store. |
@@ -89,7 +92,8 @@ like workloads and the same summary schema.
 | Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost | Implemented as cumulative atomics; observations only. Not yet shown in the native app. |
 | Dropped video frames | `perf playback` (pictures skipped while following the heard clock) | Benchmark only. The native preview coalesces superseded requests without a counter. |
 | GPU submission and completion | `perf seek`/`perf playback`; ui-harness `ui_composition_*` and picture timings | Harness timings are feature-gated. |
-| Cache hit rate | `ProjectPictureSession::stats()`: cold decoder admissions and their time, retained-decoder reuses, decoded and Background pictures. `perf seek` reports them as `cold_session_stats` and `warm_session_stats`, with the decoder reuse rate. | Picture sessions only. PCM, limiter and thumbnail caches expose occupancy at most. |
+| Index measurement | `SourceSession::measurement()`, `ProjectPictureSession::source_measurement()`: Measuring, Verified, Mismatch or Interrupted for the retained Original; `DecodeWork::decoded_pictures` counts pictures the codec decoded | Not shown in the native app. A mismatch surfaces as the picture error; the preview worker retries an interruption once. |
+| Cache hit rate | `ProjectPictureSession::stats()`: cold decoder admissions and their time, retained-decoder reuses, decoded and Background pictures. `perf seek` reports them as `cold.<mode>.session_stats` and `warm_session_stats`, with the decoder reuse rate. | Picture sessions only. PCM, limiter and thumbnail caches expose occupancy at most. |
 | Decode queue depth | None | The picture path is single-flight by design; the playback preparation queue is bounded but not instrumented. |
 | File I/O | None | Open. |
 | Model memory | Pack manifests declare memory; the AI pause run measured RSS and footprint externally | Open as a live counter. |

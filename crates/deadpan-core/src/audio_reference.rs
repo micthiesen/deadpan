@@ -203,8 +203,19 @@ struct FrozenIndex {
 
 /// Admitted through capture or bounded JSON only. Cached structural indexes
 /// make projection independent of layout size and never expand Repeat plays.
-#[derive(Debug, Clone, Serialize)]
+///
+/// Layouts are immutable once admitted, so clones share one allocation.
+/// Copying a document, binding state or patch therefore never copies a large
+/// retained table, and comparing two copies of the same table is immediate.
+#[derive(Debug, Clone)]
 pub struct FrozenAudioLayout {
+    inner: Arc<FrozenAudioLayoutData>,
+}
+
+/// The shared contents of a [`FrozenAudioLayout`]; no fields are public.
+#[doc(hidden)]
+#[derive(Debug, Serialize)]
+pub struct FrozenAudioLayoutData {
     root: NodeId,
     rate: FrameRate,
     nodes: BTreeMap<NodeId, FrozenAudioNode>,
@@ -217,14 +228,28 @@ pub struct FrozenAudioLayout {
     index: FrozenIndex,
 }
 
+impl std::ops::Deref for FrozenAudioLayout {
+    type Target = FrozenAudioLayoutData;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl Serialize for FrozenAudioLayout {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.inner.serialize(serializer)
+    }
+}
+
 impl PartialEq for FrozenAudioLayout {
     fn eq(&self, other: &Self) -> bool {
-        self.root == other.root
-            && self.rate == other.rate
-            && self.nodes == other.nodes
-            && self.overrides == other.overrides
-            && self.gap_overrides == other.gap_overrides
-            && self.audio_lineage == other.audio_lineage
+        Arc::ptr_eq(&self.inner, &other.inner)
+            || (self.root == other.root
+                && self.rate == other.rate
+                && self.nodes == other.nodes
+                && self.overrides == other.overrides
+                && self.gap_overrides == other.gap_overrides
+                && self.audio_lineage == other.audio_lineage)
     }
 }
 impl Eq for FrozenAudioLayout {}
@@ -501,19 +526,147 @@ impl FrozenAudioLayout {
     }
 
     fn admit(wire: LayoutWire) -> Result<Self, DocumentError> {
-        let mut layout = Self {
-            root: wire.root,
-            rate: wire.rate,
-            nodes: wire.nodes,
-            overrides: wire.overrides,
-            gap_overrides: wire.gap_overrides,
-            audio_lineage: wire.audio_lineage,
-            index: FrozenIndex::default(),
+        Self::admit_sized(wire, true)
+    }
+
+    fn admit_sized(wire: LayoutWire, check_size: bool) -> Result<Self, DocumentError> {
+        let layout = Self {
+            inner: Arc::new(FrozenAudioLayoutData {
+                root: wire.root,
+                rate: wire.rate,
+                nodes: wire.nodes,
+                overrides: wire.overrides,
+                gap_overrides: wire.gap_overrides,
+                audio_lineage: wire.audio_lineage,
+                index: FrozenIndex::default(),
+            }),
         };
-        layout.index = layout.build_index()?;
+        let index = layout.build_index()?;
+        let mut data = Arc::into_inner(layout.inner).expect("a new layout has one owner");
+        data.index = index;
+        let layout = Self {
+            inner: Arc::new(data),
+        };
         // Capture and JSON admission share the serialized size ceiling.
-        layout.to_json()?;
+        if check_size {
+            layout.to_json()?;
+        }
         Ok(layout)
+    }
+
+    /// Retain only the structure that projects the `required` aliases: each
+    /// alias and its ancestors keep their exact nodes, override keys and
+    /// lineage. Every other subtree becomes a duration-preserving spacer under
+    /// its first alias, and runs of such Sequence siblings merge into one
+    /// spacer (or vanish when their total is zero). Offsets, Repeat play
+    /// layouts, Retime selections and ancestor crops are therefore unchanged
+    /// for every retained alias, so its placements resolve identically.
+    ///
+    /// Only binding timing tables use this. Sound clocks compile and compare
+    /// complete processing subtrees and must keep their full layout.
+    pub(crate) fn sliced<'a>(
+        &self,
+        required: impl IntoIterator<Item = &'a NodeId>,
+    ) -> Result<Self, DocumentError> {
+        let mut keep = BTreeSet::new();
+        for alias in required {
+            if !self.nodes.contains_key(alias) {
+                return Err(invalid("sliced frozen alias is missing"));
+            }
+            let mut current = alias;
+            while keep.insert(current.clone()) {
+                match self.index.parents.get(current) {
+                    Some((parent, _)) => current = parent,
+                    None => break,
+                }
+            }
+        }
+        let spacer = |duration: FrameDuration| FrozenAudioNode {
+            duration,
+            edges: AudioEdgePolicies::default(),
+            editorial_edges: Default::default(),
+            // A zero-duration leaf is invalid; an empty Sequence is the
+            // zero-length structure with no audio of its own.
+            kind: if duration == FrameDuration::ZERO {
+                FrozenAudioKind::Sequence {
+                    children: Vec::new(),
+                }
+            } else {
+                FrozenAudioKind::Hold {
+                    audio: ReferenceAudibility::Silence,
+                }
+            },
+        };
+        let mut nodes = BTreeMap::new();
+        let mut pending = vec![&self.root];
+        while let Some(id) = pending.pop() {
+            let mut node = self.nodes[id].clone();
+            match &mut node.kind {
+                FrozenAudioKind::Sequence { children } => {
+                    let mut retained = Vec::with_capacity(children.len());
+                    let mut run: Option<(NodeId, FrameDuration)> = None;
+                    let flush =
+                        |run: &mut Option<(NodeId, FrameDuration)>,
+                         retained: &mut Vec<NodeId>,
+                         nodes: &mut BTreeMap<NodeId, FrozenAudioNode>| {
+                            if let Some((first, duration)) = run.take()
+                                && duration != FrameDuration::ZERO
+                            {
+                                nodes.insert(first.clone(), spacer(duration));
+                                retained.push(first);
+                            }
+                        };
+                    for child in self.nodes[id].kind.children() {
+                        if keep.contains(child) {
+                            flush(&mut run, &mut retained, &mut nodes);
+                            retained.push(child.clone());
+                            pending.push(child);
+                        } else {
+                            let duration = self.nodes[child].duration;
+                            run = Some(match run.take() {
+                                Some((first, total)) => (first, total.checked_add(duration)?),
+                                None => (child.clone(), duration),
+                            });
+                        }
+                    }
+                    flush(&mut run, &mut retained, &mut nodes);
+                    *children = retained;
+                }
+                FrozenAudioKind::Repeat { .. } | FrozenAudioKind::Retime { .. } => {
+                    // Override and gap-branch roots keep their keys; only
+                    // their contents collapse when nothing below is required.
+                    for child in self.children(id) {
+                        if keep.contains(child) {
+                            pending.push(child);
+                        } else {
+                            nodes.insert(child.clone(), spacer(self.nodes[child].duration));
+                        }
+                    }
+                }
+                FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. } => {}
+            }
+            nodes.insert(id.clone(), node);
+        }
+        let retained_overrides = |overrides: &BTreeMap<NodeId, PlayOverrides>| {
+            overrides
+                .iter()
+                .filter(|(repeat, _)| keep.contains(*repeat))
+                .map(|(repeat, entries)| (repeat.clone(), entries.clone()))
+                .collect()
+        };
+        Self::admit(LayoutWire {
+            root: self.root.clone(),
+            rate: self.rate,
+            nodes,
+            overrides: retained_overrides(&self.overrides),
+            gap_overrides: retained_overrides(&self.gap_overrides),
+            audio_lineage: self
+                .audio_lineage
+                .iter()
+                .filter(|(id, _)| keep.contains(*id))
+                .map(|(id, lineage)| (id.clone(), lineage.clone()))
+                .collect(),
+        })
     }
 
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
@@ -521,7 +674,13 @@ impl FrozenAudioLayout {
             return Err(limit("frozen audio JSON exceeds byte limit"));
         }
         preflight::check(json)?;
-        Self::admit(serde_json::from_str(json).map_err(DocumentError::json)?)
+        // The input already met the byte bound. Its canonical form can differ
+        // only by a defaulted Tail effect, and every containing document is
+        // bounded again whenever it is serialized for storage.
+        Self::admit_sized(
+            serde_json::from_str(json).map_err(DocumentError::json)?,
+            false,
+        )
     }
 
     pub(crate) fn preflight_binding_counts(

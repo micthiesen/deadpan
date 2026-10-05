@@ -477,14 +477,16 @@ fn reanchor(
             })
             .collect();
         crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings.bindings,
+            &mut working.audio_bindings,
+            crate::AudioRecipeKind::Node,
             nodes,
             owners,
             window,
             &mut entries,
         )?;
         crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings.gap_bindings,
+            &mut working.audio_bindings,
+            crate::AudioRecipeKind::RepeatGap,
             gaps,
             owners,
             window,

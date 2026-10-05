@@ -126,7 +126,13 @@ cancel superseded work and reject stale source/request identities. Open local
 files nonblocking before checking regular-file metadata. `SourceSession` retains
 a private SHA-256-verified copy and an original-PTS index; validate native hard
 limits before starting that copy. Random seeks preroll
-metadata and convert only the selected frame. Native limits are cooperative,
+metadata and convert only the selected frame, skipping non-reference pictures
+presented before the target (`seek_to`) only when every SPS declares
+`bitstream_restriction` and `frame_mbs_only_flag`; never skip at or after it. Codec
+threads may run callbacks after an exported call returns, so callbacks read
+only immutable limits and report through the atomic failure code, never the
+borrowed cancellation pointer. Threading and skipping must keep pictures
+bit-identical to sequential single-threaded decode. Native limits are cooperative,
 not a preemptive wall-time guarantee. Never invent missing terminal duration or
 accept an unqualified color interpretation silently.
 
@@ -313,7 +319,13 @@ reconciliation preserve that decision while obtaining fresh verification.
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.
 Admit Original Source/Freeze frames against that revision's receipt, original
-bytes and complete freshly measured index. Retain at most one private source
+bytes and complete freshly measured index. Export and offline consumers measure
+before the first picture (`SourceAdmission::Complete`); interactive preview may
+use `Progressive`: serve only pictures whose decoded PTS and duration match
+the receipt entry while a single-threaded background decoder completes the
+fresh measurement. A mismatch fails every later request (the preview worker
+keeps a tombstone); an interruption re-admits. Measure indexes with one codec
+thread only, so receipts never depend on serving threads. Retain at most one private source
 decoder; a hot snapshot survives linked-path loss, while cold admission must
 revalidate it. Keep project frame/rate separate from original ordinal/PTS,
 preserve odd committed canvases and carry provider-to-root/captured framing
@@ -332,7 +344,7 @@ Legacy Accepted providers without this evidence, Still and HDR fail explicitly.
 Preparation is off the UI/audio threads and does not provide final-render isolation,
 encoder geometry normalization, complete muxing or verified publication.
 
-Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
+Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Revision rows store compact JSON; only the newest, the initial and every 16th revision keep a document, and the rest are rebuilt from the nearest stored ancestor through their stored forward patches (history entry, or `revision_patches` for undo/redo) with `DocumentPatch::apply_stored`, validating only the final document. Read historical documents through `snapshot_at` or `for_each_revision_document`, never the raw column. Binding changes are granular `AudioBindingPatch` entries with exact before-values. See [timing storage](docs/TIMING_STORAGE.md). Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through
 ordinary Sequence ancestors. Capture downstream sample entries before removing
@@ -434,7 +446,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 62 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance). A writer upgrades a schema-59, 60 or 61 package in place by only creating the missing empty `speech_activity`/`shot_analysis`/`original_provenance` tables; read-only opens of one see no stored analyses or provenance. Refuse schemas 1 through 58 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 63 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches). A writer upgrades a schema-59 through 62 package in place, after its history validates, by only creating the missing empty `speech_activity`/`shot_analysis`/`original_provenance`/`revision_patches` tables; read-only opens of one see no stored analyses or provenance. One whose history holds a timing-retaining edit cannot replay under the compact timing representation and is refused as `UnsupportedSchema` unchanged. Refuse schemas 1 through 58 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -1292,7 +1304,14 @@ clock. Root Source/ordinary Hold interiors before composite suffixes capture
 sampling lattices before Split and current placements afterward, under two
 consecutive checked timing ordinals. Never overwrite an inherited lattice with
 the copied graph. Never expand plays. Reanchor every shifted physical entry on
-its own pre-edit clock, not only a newly cut suffix.
+its own pre-edit clock, not only a newly cut suffix. Append steps only through
+the shared path, which omits a provably inert step (no Repeat argument, birth or
+gap in the binding and an entry equal to its anchor). Each transaction slices
+its new timing tables to the aliases its placements name, with
+duration-preserving spacers; sound-clock tables stay complete. Tests asserting
+step counts or complete layouts run inside `with_reference_timing_representation`;
+`deadpan-audio/tests/timing_representation.rs` proves the compact form
+PCM-identical. See [timing storage](docs/TIMING_STORAGE.md).
 Current raw recipe extent governs reads and fades independently of retained
 clock anchors; Hold duration edits must not reset RoomTone phase or captured
 Repeat origins. Keep new phase-only layouts private until referenced, then prune

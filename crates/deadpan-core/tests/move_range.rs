@@ -164,34 +164,39 @@ fn position(document: &ProjectDocument, id: &str) -> ExactRatio {
 
 #[test]
 fn whole_units_move_in_both_directions_without_new_authored_identities() {
-    let before = tree(
-        &["a", "b", "c"],
-        vec![("a", hold(2)), ("b", hold(3)), ("c", hold(4))],
-    );
-    let right = checked(
-        &before,
-        &request(&before, "right", "root", range(0, 2), seam("root", 3)),
-    );
-    assert_eq!(children(&right, "root"), ["b", "c", "a"]);
-    assert_eq!(
-        right.nodes().keys().collect::<Vec<_>>(),
-        before.nodes().keys().collect::<Vec<_>>()
-    );
-    for id in ["a", "b", "c"] {
-        assert_eq!(right.nodes()[&node(id)], before.nodes()[&node(id)]);
-    }
-    let back = checked(
-        &right,
-        &request(&right, "back", "root", range(7, 9), seam("root", 0)),
-    );
-    assert_eq!(back.nodes(), before.nodes());
-    assert_eq!(right.audio_bindings().timings().len(), 1);
-    for id in ["a", "b", "c"] {
-        assert_eq!(
-            right.audio_bindings().bindings()[&node(id)].reanchors.len(),
-            1
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = tree(
+            &["a", "b", "c"],
+            vec![("a", hold(2)), ("b", hold(3)), ("c", hold(4))],
         );
-    }
+        let right = checked(
+            &before,
+            &request(&before, "right", "root", range(0, 2), seam("root", 3)),
+        );
+        assert_eq!(children(&right, "root"), ["b", "c", "a"]);
+        assert_eq!(
+            right.nodes().keys().collect::<Vec<_>>(),
+            before.nodes().keys().collect::<Vec<_>>()
+        );
+        for id in ["a", "b", "c"] {
+            assert_eq!(right.nodes()[&node(id)], before.nodes()[&node(id)]);
+        }
+        let back = checked(
+            &right,
+            &request(&right, "back", "root", range(7, 9), seam("root", 0)),
+        );
+        assert_eq!(back.nodes(), before.nodes());
+        assert_eq!(right.audio_bindings().timings().len(), 1);
+        for id in ["a", "b", "c"] {
+            assert_eq!(
+                right.audio_bindings().bindings()[&node(id)].reanchors.len(),
+                1
+            );
+        }
+    })
 }
 
 #[test]

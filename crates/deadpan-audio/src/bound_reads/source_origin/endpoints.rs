@@ -86,10 +86,7 @@ fn endpoint_patch(
         overrides: BTreeMap::new(),
         gap_overrides: BTreeMap::new(),
         audio_lineage: BTreeMap::new(),
-        audio_bindings: Some(ValueChange {
-            before: Some(before.audio_bindings().clone()),
-            after: Some(bindings),
-        }),
+        audio_bindings: AudioBindingPatch::between(before.audio_bindings(), &bindings),
     }
 }
 

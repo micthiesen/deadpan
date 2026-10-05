@@ -5,9 +5,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    AudioPlacementTemplate, AudioReanchorStep, AudioTimingId, BeatNode, EditError, ExactFrameRange,
-    ExactRatio, MAX_AUDIO_BINDING_ENTRIES, MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId,
-    NodeKind, OwnedAudioBinding, PitchPolicy, ProjectDocument, ProjectFrame, RevisionId,
+    AudioBindingState, AudioPlacementTemplate, AudioReanchorStep, AudioRecipeKind, AudioTimingId,
+    BeatNode, EditError, ExactFrameRange, ExactRatio, MAX_AUDIO_BINDING_ENTRIES,
+    MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument,
+    ProjectFrame, RevisionId,
 };
 
 pub(super) struct Insertion<'a> {
@@ -95,14 +96,16 @@ pub(crate) fn prepare_owners(
             }
         }
         append_steps(
-            &mut working.audio_bindings.bindings,
+            &mut working.audio_bindings,
+            AudioRecipeKind::Node,
             captured.node_placements,
             affected,
             window,
             &mut entries,
         )?;
         append_steps(
-            &mut working.audio_bindings.gap_bindings,
+            &mut working.audio_bindings,
+            AudioRecipeKind::RepeatGap,
             captured.gap_placements,
             affected,
             window,
@@ -188,14 +191,16 @@ pub(crate) fn shifted_owners(
 }
 
 pub(crate) fn append_steps(
-    bindings: &mut BTreeMap<NodeId, OwnedAudioBinding>,
+    state: &mut AudioBindingState,
+    kind: AudioRecipeKind,
     placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     affected: &BTreeSet<NodeId>,
     window: ExactFrameRange,
     entries: &mut usize,
 ) -> Result<(), EditError> {
     append_anchored_steps(
-        bindings,
+        state,
+        kind,
         placements,
         affected,
         Default::default(),
@@ -206,8 +211,15 @@ pub(crate) fn append_steps(
 
 /// Shared bounded chronological append. Source endpoints keep window=None;
 /// validation of the complete binding enforces their captured Source owner.
+///
+/// A step that provably cannot change its owner's resolution in any
+/// occurrence is not stored (see `reanchor_step_is_inert`). Moving every
+/// suffix owner would otherwise add one step per owner per edit, and keep
+/// each edit's pre-edit timing table alive, although an unsplit owner's entry
+/// is already its resume anchor. Steps under Repeats are always kept.
 pub(crate) fn append_anchored_steps(
-    bindings: &mut BTreeMap<NodeId, OwnedAudioBinding>,
+    state: &mut AudioBindingState,
+    kind: AudioRecipeKind,
     placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     affected: &BTreeSet<NodeId>,
     anchor: crate::AudioReanchorAnchor,
@@ -223,7 +235,11 @@ pub(crate) fn append_anchored_steps(
         if !affected.contains(&owner) {
             continue;
         }
-        let binding = bindings.get_mut(&owner).ok_or_else(|| {
+        let bindings = match kind {
+            AudioRecipeKind::Node => &state.bindings,
+            AudioRecipeKind::RepeatGap => &state.gap_bindings,
+        };
+        let binding = bindings.get(&owner).ok_or_else(|| {
             super::invalid("composite pause is missing a captured physical binding")
         })?;
         let terms = binding
@@ -233,15 +249,30 @@ pub(crate) fn append_anchored_steps(
         if terms + binding.reanchors.len() >= MAX_AUDIO_BINDING_TERMS {
             return Err(super::limit("composite pause exceeds the reanchor limit"));
         }
-        *entries = entries
-            .checked_add(placement.entry_count())
-            .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
-            .ok_or_else(|| super::limit("composite pause binding entries"))?;
-        binding.reanchors.push(AudioReanchorStep {
+        let step = AudioReanchorStep {
             anchor,
             placement,
             window,
-        });
+        };
+        if kind == AudioRecipeKind::Node
+            && crate::audio_binding_lifecycle::compact_representation()
+            && state.reanchor_step_is_inert(&owner, binding, &step)
+        {
+            continue;
+        }
+        *entries = entries
+            .checked_add(step.placement.entry_count())
+            .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
+            .ok_or_else(|| super::limit("composite pause binding entries"))?;
+        let bindings = match kind {
+            AudioRecipeKind::Node => &mut state.bindings,
+            AudioRecipeKind::RepeatGap => &mut state.gap_bindings,
+        };
+        bindings
+            .get_mut(&owner)
+            .expect("binding was found above")
+            .reanchors
+            .push(step);
     }
     Ok(())
 }

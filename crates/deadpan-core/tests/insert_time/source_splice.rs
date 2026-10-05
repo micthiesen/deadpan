@@ -93,32 +93,37 @@ fn explicit_slot_retains_nested_edges_and_zero_duration_child_order() {
 
 #[test]
 fn nested_source_splice_transports_marks_and_each_later_owner_once() {
-    let mut wire = serde_json::to_value(fixture()).unwrap();
-    wire["marks"] = serde_json::to_value(BTreeMap::from([
-        ("left", mark(3, InsertionBias::Left, false)),
-        ("right", mark(3, InsertionBias::Right, false)),
-        ("tail", mark(5, InsertionBias::Right, false)),
-        ("pin", mark(5, InsertionBias::Right, true)),
-    ]))
-    .unwrap();
-    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let after = edit(&before, splice(&before, "group", 1, "moment"));
-    for (key, expected) in [("left", 3), ("right", 4), ("tail", 6), ("pin", 5)] {
-        assert_eq!(mark_position(&after, key), ExactRatio::integer(expected));
-    }
-    for key in ["b", "tail"] {
-        assert_eq!(
-            after.audio_bindings().bindings()[&id(key)].reanchors.len(),
-            1
-        );
-    }
-    for key in ["prefix", "a"] {
-        assert!(
-            after.audio_bindings().bindings()[&id(key)]
-                .reanchors
-                .is_empty()
-        );
-    }
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let mut wire = serde_json::to_value(fixture()).unwrap();
+        wire["marks"] = serde_json::to_value(BTreeMap::from([
+            ("left", mark(3, InsertionBias::Left, false)),
+            ("right", mark(3, InsertionBias::Right, false)),
+            ("tail", mark(5, InsertionBias::Right, false)),
+            ("pin", mark(5, InsertionBias::Right, true)),
+        ]))
+        .unwrap();
+        let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        let after = edit(&before, splice(&before, "group", 1, "moment"));
+        for (key, expected) in [("left", 3), ("right", 4), ("tail", 6), ("pin", 5)] {
+            assert_eq!(mark_position(&after, key), ExactRatio::integer(expected));
+        }
+        for key in ["b", "tail"] {
+            assert_eq!(
+                after.audio_bindings().bindings()[&id(key)].reanchors.len(),
+                1
+            );
+        }
+        for key in ["prefix", "a"] {
+            assert!(
+                after.audio_bindings().bindings()[&id(key)]
+                    .reanchors
+                    .is_empty()
+            );
+        }
+    })
 }
 
 #[test]

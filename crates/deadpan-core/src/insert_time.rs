@@ -202,12 +202,8 @@ pub(crate) fn apply(
             .map_or(resolved.lattice.local_support.start, |resume| {
                 resume.local_boundary
             });
-        let binding = working
-            .audio_bindings
-            .bindings
-            .get_mut(&owner)
-            .expect("captured physical owner");
-        if !binding.reanchors.is_empty() {
+        if !working.audio_bindings.bindings[&owner].reanchors.is_empty() {
+            let binding = &working.audio_bindings.bindings[&owner];
             let previous_terms = binding
                 .resume
                 .as_ref()
@@ -222,7 +218,7 @@ pub(crate) fn apply(
                 .ok_or_else(|| limit("pause resume work"))?;
             // Reanchor steps are chronological. A later pause must follow
             // them, not alter the legacy initial phase evaluated before them.
-            binding.reanchors.push(AudioReanchorStep {
+            let step = AudioReanchorStep {
                 anchor: Default::default(),
                 placement: AudioPlacementTemplate {
                     reference_local_offset: crate::ExactRatio::ZERO,
@@ -240,9 +236,29 @@ pub(crate) fn apply(
                     ExactRatio::integer(at.0),
                     ExactRatio::integer(total),
                 )?),
-            });
+            };
+            // An unmoved entry already is the resume anchor; see
+            // `reanchor_step_is_inert` for why omitting it is exact.
+            if !(crate::audio_binding_lifecycle::compact_representation()
+                && working
+                    .audio_bindings
+                    .reanchor_step_is_inert(&owner, binding, &step))
+            {
+                working
+                    .audio_bindings
+                    .bindings
+                    .get_mut(&owner)
+                    .expect("captured physical owner")
+                    .reanchors
+                    .push(step);
+            }
             continue;
         }
+        let binding = working
+            .audio_bindings
+            .bindings
+            .get_mut(&owner)
+            .expect("captured physical owner");
         let resume = binding.resume.get_or_insert_with(|| AudioResume {
             local_boundary: anchor,
             phase: AudioLocalPhase::default(),

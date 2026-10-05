@@ -123,7 +123,7 @@ impl ProjectStore {
             .ok_or_else(|| invalid("copied view requires captured edit content"))?;
         let edit = deadpan_core::apply(&empty, &request)?;
         let document = edit.forward.apply(&empty)?;
-        crate::check_document_size(&document.to_json()?)?;
+        crate::check_document_size(&document.to_compact_json()?)?;
         crate::check_document_size(&serde_json::to_string(&request)?)?;
         crate::check_document_size(&serde_json::to_string(&edit)?)?;
         crate::ensure_source_admission(None, &document, None, Some(&captured))?;

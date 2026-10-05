@@ -1133,6 +1133,17 @@ impl AudioBindingState {
         gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
         sound_clocks: BTreeMap<NodeId, BTreeMap<crate::SoundId, crate::SoundClockJournal>>,
     ) -> Result<Self, DocumentError> {
+        let state = Self::assemble(timings, bindings, gap_bindings, sound_clocks)?;
+        state.to_json()?;
+        Ok(state)
+    }
+
+    fn assemble(
+        timings: Vec<AudioTimingRecord>,
+        bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+        gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+        sound_clocks: BTreeMap<NodeId, BTreeMap<crate::SoundId, crate::SoundClockJournal>>,
+    ) -> Result<Self, DocumentError> {
         if timings.len() > MAX_AUDIO_BINDING_ENTRIES {
             return Err(limit("audio timing record count"));
         }
@@ -1142,14 +1153,12 @@ impl AudioBindingState {
                 return Err(invalid("duplicate audio timing identity"));
             }
         }
-        let state = Self {
+        Ok(Self {
             timings: unique,
             bindings,
             gap_bindings,
             sound_clocks,
-        };
-        state.to_json()?;
-        Ok(state)
+        })
     }
     pub fn is_empty(&self) -> bool {
         self.timings.is_empty()
@@ -1562,6 +1571,65 @@ impl AudioBindingState {
         let binding = bindings
             .get(owner)
             .ok_or_else(|| invalid("audio binding owner is missing"))?;
+        self.resolve_binding(binding, environment, maximum_work)
+    }
+
+    /// Whether appending `step` to the Node binding `binding` can never change
+    /// its resolution. This holds when no placement names a Repeat argument,
+    /// birth or gap (so every occurrence and definition resolves the same
+    /// clocks) and the step's entry equals the resume anchor it would replace,
+    /// or the step has no entry: its phase contribution is then exactly zero,
+    /// for every later step too. Anything else, including a failed trial,
+    /// keeps the step. Rebasing a local origin shifts both values equally.
+    pub(crate) fn reanchor_step_is_inert(
+        &self,
+        owner: &NodeId,
+        binding: &OwnedAudioBinding,
+        step: &AudioReanchorStep,
+    ) -> bool {
+        let independent = |template: &AudioPlacementTemplate| {
+            template.arguments.is_empty()
+                && template.births.is_empty()
+                && template.gap_after.is_none()
+                && template.reference.recipe == AudioRecipeKind::Node
+        };
+        if !binding
+            .placements()
+            .chain(std::iter::once(&step.placement))
+            .all(independent)
+        {
+            return false;
+        }
+        let instance = InstancePath {
+            node: owner.clone(),
+            repeats: Vec::new(),
+        };
+        let environment = AudioBindingEnvironment::Occurrence(&instance);
+        let mut extended = binding.clone();
+        extended.reanchors.push(step.clone());
+        let effective = |resolved: ResolvedAudioBinding| {
+            resolved.resume.map_or(
+                (resolved.lattice.local_support.start, ExactRatio::ZERO),
+                |resume| (resume.local_boundary, resume.reference_local_delta),
+            )
+        };
+        match (
+            self.resolve_binding(binding, environment, MAX_AUDIO_BINDING_ENTRIES),
+            self.resolve_binding(&extended, environment, MAX_AUDIO_BINDING_ENTRIES),
+        ) {
+            (Ok(before), Ok(after)) => {
+                before.lattice == after.lattice && effective(before) == effective(after)
+            }
+            _ => false,
+        }
+    }
+
+    fn resolve_binding(
+        &self,
+        binding: &OwnedAudioBinding,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+    ) -> Result<ResolvedAudioBinding, DocumentError> {
         let mut work = Work::new(maximum_work)?;
         work.spend(environment.instance().repeats.len() + 1)?;
         let resolve = |template: &AudioPlacementTemplate, work: &mut Work| {
@@ -1693,7 +1761,13 @@ impl AudioBindingState {
                 serde_json::from_str(raw.get()).map_err(DocumentError::json)?,
             );
         }
-        Self::new_with_sound_clocks(timings, bindings, gap_bindings, sound_clocks)
+        // The admitted input already met the byte bound; re-serializing every
+        // retained table on each document read only repeats it. Omitted
+        // defaults can add a few canonical bytes, and every containing document
+        // is bounded again whenever it is serialized for storage.
+        let state = Self::assemble(timings, bindings, gap_bindings, sound_clocks)?;
+        state.validate()?;
+        Ok(state)
     }
 
     pub fn to_json(&self) -> Result<String, DocumentError> {
@@ -1854,7 +1928,25 @@ fn compact_json_bytes(json: &str) -> usize {
     count
 }
 
-fn binding_wire_size(binding: &OwnedAudioBinding) -> Result<(), DocumentError> {
+/// Generous serialized-size bound for one counted placement entry: four fully
+/// escaped identities plus every fixed field, exact ratio and window.
+const MAX_ENTRY_WIRE_BYTES: usize = 4 * (6 * crate::MAX_IDENTITY_BYTES + 2) + 600;
+
+pub(crate) fn binding_wire_size(binding: &OwnedAudioBinding) -> Result<(), DocumentError> {
+    // Bindings are validated on every commit and refresh. When even the
+    // generous structural bound fits, serializing to count bytes cannot fail.
+    let bound = binding
+        .placements()
+        .try_fold(1000usize, |total, placement| {
+            placement
+                .entry_count()
+                .checked_mul(MAX_ENTRY_WIRE_BYTES)
+                .and_then(|bytes| bytes.checked_add(600))
+                .and_then(|bytes| total.checked_add(bytes))
+        });
+    if bound.is_some_and(|bound| bound <= MAX_BINDING_WIRE_BYTES) {
+        return Ok(());
+    }
     struct Count(usize);
     impl Write for Count {
         fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
@@ -1993,4 +2085,93 @@ fn invalid(message: &str) -> DocumentError {
 }
 fn limit(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::LimitExceeded, message)
+}
+
+#[cfg(test)]
+mod wire_bound_tests {
+    use super::*;
+
+    /// The structural shortcut in `binding_wire_size` must never accept a
+    /// binding whose actual JSON exceeds its bound.
+    #[test]
+    fn structural_wire_bound_exceeds_worst_case_serialization() {
+        let long = |prefix: &str| NodeId::new(format!("{prefix}{}", "x".repeat(127))).unwrap();
+        let revision = RevisionId::new("r".repeat(crate::MAX_IDENTITY_BYTES)).unwrap();
+        let huge = ExactRatio::new(i128::MAX / 3, i128::MAX / 2 + 1).unwrap();
+        let iteration = IterationId {
+            allocation: revision.clone(),
+            ordinal: u32::MAX,
+        };
+        let template = AudioPlacementTemplate {
+            reference: AudioReferenceClock {
+                timing: AudioTimingId {
+                    allocation: revision.clone(),
+                    ordinal: u32::MAX,
+                },
+                root: AudioClockRoot::PreserveInputPointCeil { stage: long("s") },
+                physical: long("p"),
+                recipe: AudioRecipeKind::RepeatGap,
+            },
+            reference_local_offset: huge,
+            gap_after: Some(AudioRepeatValue::Captured {
+                iteration: iteration.clone(),
+            }),
+            arguments: (0..15)
+                .map(|_| AudioRepeatArgument {
+                    reference_repeat: long("a"),
+                    value: AudioRepeatValue::Captured {
+                        iteration: iteration.clone(),
+                    },
+                })
+                .collect(),
+            births: (0..15)
+                .map(|_| AudioBirthClause {
+                    repeat: long("b"),
+                    survivors: AudioBirthSurvivors::Run {
+                        allocation: revision.clone(),
+                        first: u32::MAX,
+                        count: u32::MAX,
+                    },
+                    definition_root: long("d"),
+                })
+                .collect(),
+        };
+        let binding = OwnedAudioBinding {
+            lattice: template.clone(),
+            resume: Some(AudioResume {
+                local_boundary: huge,
+                phase: AudioLocalPhase {
+                    constant: huge,
+                    terms: vec![
+                        AudioPhaseTerm {
+                            placement: template.clone(),
+                            from_local: huge,
+                            to_local: huge,
+                        };
+                        2
+                    ],
+                },
+            }),
+            reanchors: vec![
+                AudioReanchorStep {
+                    placement: template,
+                    window: Some(ExactFrameRange {
+                        start: huge,
+                        end: huge,
+                    }),
+                    anchor: AudioReanchorAnchor::SourceEndpoint {
+                        endpoint: AudioSourceEndpoint::End,
+                    },
+                };
+                2
+            ],
+        };
+        let bound = binding.placements().fold(1000, |total, placement| {
+            total + placement.entry_count() * MAX_ENTRY_WIRE_BYTES + 600
+        });
+        assert!(bound <= MAX_BINDING_WIRE_BYTES, "the shortcut applies");
+        let actual = serde_json::to_vec(&binding).unwrap().len();
+        assert!(actual * 2 < bound, "{actual} bytes against bound {bound}");
+        binding_wire_size(&binding).unwrap();
+    }
 }

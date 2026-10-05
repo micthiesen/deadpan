@@ -1,14 +1,21 @@
 #define _POSIX_C_SOURCE 200809L
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
 #include "decoder.h"
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdatomic.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <pthread/qos.h>
+#endif
 #include <libavcodec/avcodec.h>
 #include <libavcodec/version.h>
 #include <libavformat/avformat.h>
@@ -46,6 +53,14 @@ struct DeadpanSource {
     int pending_first_frame, h264_length_bytes;
     int fresh_keyframe, fresh_key_packet_pending;
     int64_t fresh_key_pts;
+    // Packets whose PTS precedes this target may skip non-reference pictures,
+    // only while every admitted SPS makes that safe (see sps_allows_skip).
+    int skip_nonref, skip_safe;
+    _Atomic uint64_t pictures;
+    int64_t skip_before_pts;
+    // Set by codec callbacks, which may run on FFmpeg frame threads outside
+    // any exported call. Only this atomic code crosses that thread boundary.
+    _Atomic int async_failure;
     unsigned int stream_count;
     uint64_t frames, packets, io_bytes, deadline;
     DeadpanDecodeWork work;
@@ -53,7 +68,26 @@ struct DeadpanSource {
     const void *cancel_opaque;
     DeadpanSourceError *error;
 };
+enum { ASYNC_NONE, ASYNC_GEOMETRY, ASYNC_DEPTH, ASYNC_FORMAT };
+static void adopt_async(DeadpanSource *s) {
+    // A codec callback failure is the cause of whatever FFmpeg reports next.
+    if (!s->error || s->error->code[0]) return;
+    const char *code = NULL, *message = NULL;
+    switch (atomic_load(&s->async_failure)) {
+        case ASYNC_GEOMETRY: code = "resource_limit"; message = "decoder geometry exceeds max_dimension or max_pixels"; break;
+        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit SDR decode is qualified"; break;
+        case ASYNC_FORMAT: code = "unsupported_pixel_format"; message = "no bounded software picture format"; break;
+        default: return;
+    }
+    (void)snprintf(s->error->code, sizeof(s->error->code), "%s", code);
+    (void)snprintf(s->error->message, sizeof(s->error->message), "%s", message);
+}
+static void async_fail(DeadpanSource *s, int code) {
+    int none = ASYNC_NONE;
+    (void)atomic_compare_exchange_strong(&s->async_failure, &none, code);
+}
 static int fail(DeadpanSource *s, const char *code, const char *format, ...) {
+    adopt_async(s);
     if (s->error && !s->error->code[0]) {
         va_list args;
         (void)snprintf(s->error->code, sizeof(s->error->code), "%s", code);
@@ -79,6 +113,7 @@ static int check(DeadpanSource *s) {
     // Demuxers may turn an AVIO error into EOF or return buffered frames. A host
     // I/O/budget failure must still fail this operation instead of being hidden.
     if (s->error && s->error->code[0]) return -1;
+    if (atomic_load(&s->async_failure) != ASYNC_NONE) return fail(s, "internal_error", "codec callback failed");
     if (s->cancelled && s->cancelled(s->cancel_opaque)) return fail(s, "cancelled", "source decode cancelled");
     uint64_t now = monotonic_ns();
     if (now == UINT64_MAX || now >= s->deadline) return fail(s, "deadline_exceeded", "source decode exceeded its cooperative deadline");
@@ -304,36 +339,167 @@ static int capture_audio_inventory(DeadpanSource *s) {
     s->inventory_ready = 1;
     return 1;
 }
+static int geometry_ok(const DeadpanSourceLimits *limits, int width, int height) {
+    return width > 0 && height > 0 && (unsigned)width <= limits->max_dimension && (unsigned)height <= limits->max_dimension &&
+        (uint64_t)width * (uint64_t)height <= limits->max_pixels;
+}
 // These callbacks run on the controlled decoder. In pinned FFmpeg 8.0.3,
 // h264_init_ps calls get_format after installing SPS coded dimensions and before
 // h264_slice_header_init allocates macroblock tables. Frame-buffer max_pixels
 // alone is later than that allocation. No hidden probing decoder may bypass us.
+// With frame threading both callbacks may run on a codec thread after the
+// exported call has returned, so they read only immutable limits and report
+// through the atomic code. Deadline and cancellation stay on the caller.
 static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVPixelFormat *formats) {
     DeadpanSource *s = context->opaque;
-    if (check(s) < 0 || geometry(s, context->width, context->height, "decoder display") < 0 ||
-        geometry(s, context->coded_width, context->coded_height, "decoder coded") < 0) return AV_PIX_FMT_NONE;
+    if (atomic_load(&s->async_failure) != ASYNC_NONE) return AV_PIX_FMT_NONE;
+    if (!geometry_ok(&s->limits, context->width, context->height) ||
+        !geometry_ok(&s->limits, context->coded_width, context->coded_height)) {
+        async_fail(s, ASYNC_GEOMETRY);
+        return AV_PIX_FMT_NONE;
+    }
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
         const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
         for (unsigned int component = 0; component < pixel->nb_components; component++) {
             if (pixel->comp[component].depth != 8) {
-                fail(s, "unsupported_depth", "only eight-bit SDR decode is qualified");
+                async_fail(s, ASYNC_DEPTH);
                 return AV_PIX_FMT_NONE;
             }
         }
         return formats[i];
     }
-    fail(s, "unsupported_pixel_format", "no bounded software picture format");
+    async_fail(s, ASYNC_FORMAT);
     return AV_PIX_FMT_NONE;
 }
 static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
     DeadpanSource *s = context->opaque;
-    if (check(s) < 0 || geometry(s, frame->width, frame->height, "decoder frame buffer") < 0) return AVERROR(EINVAL);
+    if (atomic_load(&s->async_failure) != ASYNC_NONE) return AVERROR(EINVAL);
+    if (!geometry_ok(&s->limits, frame->width, frame->height)) {
+        async_fail(s, ASYNC_GEOMETRY);
+        return AVERROR(EINVAL);
+    }
+    atomic_fetch_add(&s->pictures, 1);
     return avcodec_default_get_buffer2(context, frame, flags);
+}
+// Bounded big-endian bit reader over an SPS RBSP (emulation bytes removed).
+typedef struct { const uint8_t *data; size_t bits, position; int failed; } Bits;
+static uint32_t bit(Bits *b) {
+    if (b->position >= b->bits) { b->failed = 1; return 0; }
+    uint32_t value = (b->data[b->position >> 3] >> (7 - (b->position & 7))) & 1;
+    b->position++;
+    return value;
+}
+static uint32_t bits(Bits *b, int count) {
+    uint32_t value = 0;
+    for (int i = 0; i < count; i++) value = (value << 1) | bit(b);
+    return value;
+}
+static uint32_t ue(Bits *b) {
+    int zeros = 0;
+    while (!b->failed && !bit(b)) if (++zeros > 31) { b->failed = 1; return 0; }
+    if (b->failed) return 0;
+    return (uint32_t)(((uint64_t)1 << zeros) - 1 + bits(b, zeros));
+}
+static void se(Bits *b) { (void)ue(b); }
+static void hrd(Bits *b) {
+    uint32_t count = ue(b) + 1;
+    if (count > 32) { b->failed = 1; return; }
+    (void)bits(b, 8);
+    for (uint32_t i = 0; i < count && !b->failed; i++) { (void)ue(b); (void)ue(b); (void)bit(b); }
+    (void)bits(b, 20);
+}
+// Skipping non-reference preroll is safe only when the decoder's reorder
+// depth is declared rather than estimated from the POCs it happens to see
+// (FFmpeg raises an estimated depth only without bitstream_restriction), and
+// when every picture is a frame (no PAFF/MBAFF field pairing). Returns 1 only
+// for a complete SPS proving both; anything unparsed or unusual returns 0.
+static int sps_allows_skip(const uint8_t *nal, size_t length) {
+    if (length < 4 || length > 4096 || (nal[0] & 31) != 7) return 0;
+    uint8_t rbsp[4096];
+    size_t size = 0, zeros = 0;
+    for (size_t i = 1; i < length; i++) {
+        if (zeros >= 2 && nal[i] == 3) { zeros = 0; continue; }
+        zeros = nal[i] ? 0 : zeros + 1;
+        rbsp[size++] = nal[i];
+    }
+    Bits b = {rbsp, size * 8, 0, 0};
+    uint32_t profile = bits(&b, 8);
+    (void)bits(&b, 16);
+    (void)ue(&b);
+    uint32_t chroma = 1;
+    if (profile == 100 || profile == 110 || profile == 122 || profile == 244 || profile == 44 || profile == 83 ||
+        profile == 86 || profile == 118 || profile == 128 || profile == 138 || profile == 139 || profile == 134 || profile == 135) {
+        chroma = ue(&b);
+        if (chroma == 3) (void)bit(&b);
+        (void)ue(&b); (void)ue(&b); (void)bit(&b);
+        if (bit(&b)) {
+            for (int i = 0; i < (chroma != 3 ? 8 : 12) && !b.failed; i++) {
+                if (!bit(&b)) continue;
+                int last = 8, next = 8;
+                for (int j = 0; j < (i < 6 ? 16 : 64) && !b.failed; j++) {
+                    if (next) {
+                        uint32_t code = ue(&b);
+                        int32_t delta = code & 1 ? (int32_t)((code + 1) / 2) : -(int32_t)(code / 2);
+                        next = (last + delta + 256) % 256;
+                    }
+                    last = next ? next : last;
+                }
+            }
+        }
+    }
+    (void)ue(&b);
+    uint32_t poc = ue(&b);
+    if (poc == 0) (void)ue(&b);
+    else if (poc == 1) {
+        (void)bit(&b); se(&b); se(&b);
+        uint32_t cycle = ue(&b);
+        if (cycle > 255) return 0;
+        for (uint32_t i = 0; i < cycle && !b.failed; i++) se(&b);
+    } else if (poc != 2) return 0;
+    (void)ue(&b); (void)bit(&b); (void)ue(&b); (void)ue(&b);
+    if (!bit(&b)) return 0;  // frame_mbs_only_flag
+    (void)bit(&b);
+    if (bit(&b)) { (void)ue(&b); (void)ue(&b); (void)ue(&b); (void)ue(&b); }
+    if (!bit(&b)) return 0;  // vui_parameters_present_flag
+    if (bit(&b) && bits(&b, 8) == 255) (void)bits(&b, 32);
+    if (bit(&b)) (void)bit(&b);
+    if (bit(&b)) { (void)bits(&b, 4); if (bit(&b)) (void)bits(&b, 24); }
+    if (bit(&b)) { (void)ue(&b); (void)ue(&b); }
+    if (bit(&b)) (void)bits(&b, 32), (void)bits(&b, 32), (void)bit(&b);
+    int nal_hrd = (int)bit(&b);
+    if (nal_hrd) hrd(&b);
+    int vcl_hrd = (int)bit(&b);
+    if (vcl_hrd) hrd(&b);
+    if (nal_hrd || vcl_hrd) (void)bit(&b);
+    (void)bit(&b);
+    int restricted = (int)bit(&b);  // bitstream_restriction_flag
+    if (restricted) {
+        (void)bit(&b);
+        for (int i = 0; i < 6; i++) (void)ue(&b);
+    }
+    return restricted && !b.failed;
+}
+// Every SPS in the admitted AVC configuration must allow skipping.
+static int avcc_allows_skip(const uint8_t *data, int size) {
+    if (size < 7) return 0;
+    int count = data[5] & 31, position = 6;
+    if (!count) return 0;
+    for (int i = 0; i < count; i++) {
+        if (position + 2 > size) return 0;
+        int length = (data[position] << 8) | data[position + 1];
+        position += 2;
+        if (length <= 0 || position + length > size || !sps_allows_skip(data + position, (size_t)length)) return 0;
+        position += length;
+    }
+    return 1;
 }
 static int receive_frame(DeadpanSource *s);
 static int check_frame(DeadpanSource *s);
 static int allocate_decoder(DeadpanSource *s) {
+    // Any previous codec and its threads are gone; a failure they reported
+    // poisoned that session, and a fresh codec starts clean.
+    atomic_store(&s->async_failure, ASYNC_NONE);
     AVStream *stream = s->format->streams[s->stream];
     const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!codec) return fail(s, "unsupported_codec", "required source software decoder is unavailable");
@@ -341,8 +507,10 @@ static int allocate_decoder(DeadpanSource *s) {
     if (!s->decoder) return fail(s, "resource_exhausted", "allocate source decode context");
     int result = avcodec_parameters_to_context(s->decoder, stream->codecpar);
     if (result < 0) return fferror(s, "copy source codec parameters", result);
-    s->decoder->thread_count = 1;
-    s->decoder->thread_type = 0;
+    // FFmpeg's frame and slice threading are deterministic: pictures match a
+    // single-threaded decode bit for bit. Threads join in avcodec_free_context.
+    s->decoder->thread_count = (int)s->limits.threads;
+    s->decoder->thread_type = s->limits.threads > 1 ? FF_THREAD_FRAME | FF_THREAD_SLICE : 0;
     s->decoder->opaque = s;
     s->decoder->get_format = bounded_format;
     s->decoder->get_buffer2 = bounded_buffer;
@@ -383,7 +551,8 @@ static int open_impl(DeadpanSource *s) {
         !s->limits.max_io_bytes_per_call || s->limits.max_io_bytes_per_call > 1024ULL*1024*1024 ||
         !s->limits.max_packet_bytes || s->limits.max_packet_bytes > 16ULL*1024*1024 ||
         !s->limits.max_pixels || s->limits.max_pixels > 8192ULL*8192 ||
-        !s->limits.max_dimension || s->limits.max_dimension > 8192 || !s->limits.max_packets_per_frame || s->limits.max_packets_per_frame > 10000)
+        !s->limits.max_dimension || s->limits.max_dimension > 8192 || !s->limits.max_packets_per_frame || s->limits.max_packets_per_frame > 10000 ||
+        !s->limits.threads || s->limits.threads > 16)
         return fail(s, "invalid_configuration", "source decode limits exceed hard bounds");
     struct stat status;
     if (fstat(s->fd, &status) || !S_ISREG(status.st_mode) || status.st_size != s->length || s->length <= 0 || (uint64_t)s->length > s->limits.max_input_bytes)
@@ -436,6 +605,7 @@ static int open_impl(DeadpanSource *s) {
         if (p->extradata_size < 7 || p->extradata[0] != 1)
             return fail(s, "unsupported_codec", "H264 source requires admitted AVC configuration");
         s->h264_length_bytes = (p->extradata[4] & 3) + 1;
+        s->skip_safe = avcc_allows_skip(p->extradata, p->extradata_size);
         if (s->h264_length_bytes == 3) return fail(s, "unsupported_codec", "unsupported AVC NAL length field");
     }
     s->packet = av_packet_alloc(); s->frame = av_frame_alloc();
@@ -687,6 +857,9 @@ static int packet_budget(DeadpanSource *s) {
                 return fail(s, "invalid_input", "H264 NAL escapes its packet");
             int type = data[position] & 31;
             if (type == 5) idr = 1;
+            // An in-band SPS governs the following pictures; it must also
+            // prove skipping safe, before this packet's skip decision.
+            if (type == 7 && !sps_allows_skip(data + position, amount)) s->skip_safe = 0;
             if (type >= 1 && type <= 4) other_vcl = 1;
             position += amount;
         }
@@ -738,6 +911,11 @@ static int receive_frame(DeadpanSource *s) {
                     av_packet_unref(s->packet);
                     return -1;
                 }
+                // A non-reference picture presented before the seek target is
+                // never returned and no other picture depends on it. Pictures at
+                // or after the target always decode, so forward steps continue.
+                s->decoder->skip_frame = s->skip_nonref && s->skip_safe && s->packet->pts != AV_NOPTS_VALUE &&
+                    s->packet->pts < s->skip_before_pts ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
                 // receive EAGAIN means send must accept this packet. Never drop a
                 // packet on send EAGAIN, which would corrupt reorder semantics.
                 result = avcodec_send_packet(s->decoder, s->packet);
@@ -774,17 +952,28 @@ int deadpan_source_copy(DeadpanSource *s, uint64_t timeout, DeadpanCancelled can
     metadata(s, frame);
     return finish(s, rgba(s, pixels, length));
 }
+static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
+    if (pts == AV_NOPTS_VALUE || (skip && target == AV_NOPTS_VALUE))
+        return fail(s, "invalid_timestamp", "seek timestamp is reserved for unknown PTS");
+    av_frame_unref(s->frame); av_packet_unref(s->packet);
+    s->pending_first_frame = 0;
+    s->skip_nonref = 0;
+    int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
+    if (result < 0) return fferror(s, "seek source", result);
+    avcodec_flush_buffers(s->decoder);
+    s->draining = 0; s->ended = 0; s->frames = 0; s->packets = 0;
+    s->skip_nonref = skip; s->skip_before_pts = target;
+    return check(s);
+}
 int deadpan_source_seek(DeadpanSource *s, int64_t pts, uint64_t timeout, DeadpanCancelled cancelled,
                         const void *opaque, DeadpanSourceError *error) {
     if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
-    if (pts == AV_NOPTS_VALUE) return finish(s, fail(s, "invalid_timestamp", "seek timestamp is reserved for unknown PTS"));
-    av_frame_unref(s->frame); av_packet_unref(s->packet);
-    s->pending_first_frame = 0;
-    int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
-    if (result < 0) return finish(s, fferror(s, "seek source", result));
-    avcodec_flush_buffers(s->decoder);
-    s->draining = 0; s->ended = 0; s->frames = 0; s->packets = 0;
-    return finish(s, check(s));
+    return finish(s, seek_impl(s, pts, 0, 0));
+}
+int deadpan_source_seek_to(DeadpanSource *s, int64_t pts, int64_t target, uint64_t timeout, DeadpanCancelled cancelled,
+                        const void *opaque, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    return finish(s, seek_impl(s, pts, 1, target));
 }
 int deadpan_source_restart_at_keyframe(DeadpanSource *s, int64_t pts, uint64_t timeout, DeadpanCancelled cancelled,
                         const void *opaque, DeadpanSourceError *error) {
@@ -793,6 +982,7 @@ int deadpan_source_restart_at_keyframe(DeadpanSource *s, int64_t pts, uint64_t t
     // Retain only admitted demux/index state. Replacing the whole codec, rather
     // than flushing it, removes every decoded reference picture and codec cache.
     avcodec_free_context(&s->decoder);
+    s->skip_nonref = 0;
     if (seek_fresh_keyframe(s, pts) < 0 || allocate_decoder(s) < 0)
         return finish(s, -1);
     int result = receive_frame(s);
@@ -824,10 +1014,18 @@ int deadpan_source_copy_i420(DeadpanSource *s, uint64_t timeout, DeadpanCancelle
 }
 void deadpan_source_work(const DeadpanSource *s, DeadpanDecodeWork *work) {
     *work = s->work;
+    work->pictures = atomic_load(&((DeadpanSource *)s)->pictures);
 }
 void deadpan_source_runtime(DeadpanDecoderRuntime *runtime) {
     *runtime = (DeadpanDecoderRuntime){
         .avcodec=avcodec_version(),.avformat=avformat_version(),
         .avutil=avutil_version(),.swscale=swscale_version()
     };
+}
+int deadpan_source_lower_thread_priority(void) {
+#ifdef __APPLE__
+    return pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0) == 0;
+#else
+    return 0;
+#endif
 }

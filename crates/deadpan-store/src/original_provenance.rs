@@ -204,6 +204,10 @@ fn decode(encoded: &str) -> Result<RemoteOriginalProvenance, StoreError> {
 }
 
 /// A read-only open of an older package has no table until a writer upgrades it.
+pub(crate) fn table_exists(connection: &Connection) -> Result<bool, StoreError> {
+    has_table(connection)
+}
+
 fn has_table(connection: &Connection) -> Result<bool, StoreError> {
     Ok(connection.query_row(
         "SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name='original_provenance')",

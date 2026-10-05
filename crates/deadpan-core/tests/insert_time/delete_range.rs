@@ -89,47 +89,52 @@ fn every_single_source_range_keeps_exact_fragments_and_one_inverse() {
 
 #[test]
 fn nested_range_keeps_outer_nodes_and_reanchors_every_surviving_suffix_once() {
-    let before = tree(
-        &["prefix", "group", "tail"],
-        vec![
-            ("prefix", source(1)),
-            (
-                "group",
-                BeatNode::sequence("Group", vec![id("a"), id("middle"), id("b")]),
-            ),
-            ("a", source(3)),
-            ("middle", BeatNode::sequence("Middle", vec![id("held")])),
-            ("held", BeatNode::hold("Held", recipe(2))),
-            ("b", source(3)),
-            ("tail", source(2)),
-        ],
-    );
-    let query = before.range_deletion(&id("group"), range(2, 8)).unwrap();
-    assert_eq!(
-        (query.start_index, query.end_index, query.required_ids),
-        (0, 3, 6)
-    );
-    let after = edit(&before, deletion(&before, "group", 2, 8, "deleted"));
-    assert_eq!(after.duration().unwrap(), duration(5));
-    assert_eq!(children(&after), children(&before));
-    assert_eq!(sequence(&after, "group").len(), 2);
-    assert!(!after.nodes().contains_key(&id("middle")));
-    assert!(!after.nodes().contains_key(&id("held")));
-    assert_eq!(after.nodes()[&id("prefix")], before.nodes()[&id("prefix")]);
-    assert_eq!(
-        after.audio_bindings().bindings()[&id("prefix")]
-            .reanchors
-            .len(),
-        0
-    );
-    assert_eq!(
-        after.audio_bindings().bindings()[&id("tail")]
-            .reanchors
-            .len(),
-        1
-    );
-    let right = owner(&after, &sequence(&after, "group")[1]);
-    assert_eq!(after.audio_bindings().bindings()[&right].reanchors.len(), 1);
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = tree(
+            &["prefix", "group", "tail"],
+            vec![
+                ("prefix", source(1)),
+                (
+                    "group",
+                    BeatNode::sequence("Group", vec![id("a"), id("middle"), id("b")]),
+                ),
+                ("a", source(3)),
+                ("middle", BeatNode::sequence("Middle", vec![id("held")])),
+                ("held", BeatNode::hold("Held", recipe(2))),
+                ("b", source(3)),
+                ("tail", source(2)),
+            ],
+        );
+        let query = before.range_deletion(&id("group"), range(2, 8)).unwrap();
+        assert_eq!(
+            (query.start_index, query.end_index, query.required_ids),
+            (0, 3, 6)
+        );
+        let after = edit(&before, deletion(&before, "group", 2, 8, "deleted"));
+        assert_eq!(after.duration().unwrap(), duration(5));
+        assert_eq!(children(&after), children(&before));
+        assert_eq!(sequence(&after, "group").len(), 2);
+        assert!(!after.nodes().contains_key(&id("middle")));
+        assert!(!after.nodes().contains_key(&id("held")));
+        assert_eq!(after.nodes()[&id("prefix")], before.nodes()[&id("prefix")]);
+        assert_eq!(
+            after.audio_bindings().bindings()[&id("prefix")]
+                .reanchors
+                .len(),
+            0
+        );
+        assert_eq!(
+            after.audio_bindings().bindings()[&id("tail")]
+                .reanchors
+                .len(),
+            1
+        );
+        let right = owner(&after, &sequence(&after, "group")[1]);
+        assert_eq!(after.audio_bindings().bindings()[&right].reanchors.len(), 1);
+    })
 }
 
 #[test]

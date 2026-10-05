@@ -961,13 +961,26 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     warm["p95"].as_f64().map(|ms| ms < 80.0),
                     base.clone().and(enough(warm, MIN_SEEKS)),
                 );
+                let progressive = &value["cold"]["progressive"];
                 push(
                     "Cold seek completion < 300 ms (informational)",
                     format!(
-                        "{fixture}: session-cold, page-cache-warm new picture session to first picture"
+                        "{fixture}: session-cold, page-cache-warm preview session (progressive admission) to first picture"
                     ),
-                    value["cold_total_ms"].clone(),
-                    value["cold_total_ms"]["max"].as_f64().map(|ms| ms < 300.0),
+                    progressive["total_ms"].clone(),
+                    progressive["total_ms"]["max"].as_f64().map(|ms| ms < 300.0),
+                    Err("session-cold but page-cache-warm; cache purge needs root".into()),
+                );
+                push(
+                    "Cold complete index admission (informational)",
+                    format!(
+                        "{fixture}: complete fresh index measurement, before the first picture (export) and in the preview background (verified_ms)"
+                    ),
+                    json!({
+                        "complete_total_ms": value["cold"]["complete"]["total_ms"],
+                        "progressive_verified_ms": progressive["verified_ms"],
+                    }),
+                    None,
                     Err("session-cold but page-cache-warm; cache purge needs root".into()),
                 );
                 push(
@@ -1216,7 +1229,7 @@ mod tests {
         let seek = |n: u64, success: bool, flagged: bool| {
             json!({"success": success, "load": {"flagged": flagged},
                 "warm_seek": {"total_ms": {"n": n, "p95": 10.0}},
-                "cold_total_ms": {"n": 10, "max": 10.0}})
+                "cold": {"progressive": {"total_ms": {"n": 10, "max": 10.0}}}})
         };
         let one = |value: Value| BTreeMap::from([("seek/x".to_owned(), value)]);
         assert_eq!(

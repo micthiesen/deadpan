@@ -900,3 +900,89 @@ fn revision_receipt_index_and_session_identity_are_checked() {
     // private decoder cannot cross a project-service session boundary.
     assert!(retained.is_none());
 }
+
+#[test]
+fn interrupted_index_verification_readmits_and_recovers() {
+    use deadpan_media::source_session::IndexMeasurement;
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let workspace = fixture.workspace(1);
+    let mut retained = None;
+    tests_support::ADMISSIONS.set(0);
+    tests_support::INTERRUPT_MEASUREMENTS.set(1);
+    // The first admission's background verification is interrupted. Whether
+    // that is observed during this request (retried at once) or the next one
+    // (dropped and re-admitted there), no request fails.
+    let first = perform(
+        &request(&workspace, source(20), 1),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
+    assert_eq!(first.id, SourceFrameId(20));
+    let state = retained
+        .as_ref()
+        .unwrap()
+        .source
+        .wait_measured(Duration::from_secs(30));
+    if tests_support::ADMISSIONS.get() == 1 {
+        assert!(
+            matches!(state, IndexMeasurement::Interrupted(_)),
+            "{state:?}"
+        );
+    }
+    let second = perform(
+        &request(&workspace, source(21), 2),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
+    assert_eq!(second.id, SourceFrameId(21));
+    assert_eq!(tests_support::ADMISSIONS.get(), 2);
+    assert_eq!(
+        retained
+            .as_ref()
+            .unwrap()
+            .source
+            .wait_measured(Duration::from_secs(30)),
+        IndexMeasurement::Verified
+    );
+    let again = perform(
+        &request(&workspace, source(20), 3),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
+    assert_eq!(again.frame.unwrap().bytes(), first.frame.unwrap().bytes());
+    assert_eq!(tests_support::ADMISSIONS.get(), 2);
+}
+
+#[test]
+fn mismatched_index_verification_fails_clearly_without_readmitting() {
+    use deadpan_media::source_session::IndexMeasurement;
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let workspace = fixture.workspace(1);
+    let mut retained = None;
+    tests_support::ADMISSIONS.set(0);
+    tests_support::TAMPER_INDEX.set(true);
+    // Frame 0 may be served before the background verdict; it is verified
+    // against the (unaffected) receipt entry either way.
+    let _ = perform(&request(&workspace, source(0), 1), &mut retained, &mut None);
+    tests_support::TAMPER_INDEX.set(false);
+    let state = retained
+        .as_ref()
+        .unwrap()
+        .source
+        .wait_measured(Duration::from_secs(30));
+    assert!(matches!(state, IndexMeasurement::Mismatch(_)), "{state:?}");
+    for serial in 2..5 {
+        let error = perform(
+            &request(&workspace, source(serial), serial),
+            &mut retained,
+            &mut None,
+        )
+        .err()
+        .unwrap();
+        assert!(error.starts_with("Source verification failed:"), "{error}");
+    }
+    assert_eq!(tests_support::ADMISSIONS.get(), 1);
+}

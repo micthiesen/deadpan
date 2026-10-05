@@ -89,62 +89,67 @@ fn assert_context_copies(before: &BeatNode, after: &ProjectDocument, count: usiz
 
 #[test]
 fn two_and_three_windows_split_one_child_with_exact_pools_and_full_context() {
-    for depth in [2, 3] {
-        let mut leaf = source(12);
-        leaf.label = "Retained physical recipe".into();
-        let before = nested(depth, leaf);
-        let query = before.range_deletion(&id("root"), range(2, 4)).unwrap();
-        assert_eq!((query.start_index, query.end_index), (0, 1));
-        assert_eq!(query.required_ids, 2 * (depth + 1));
-        // Establish that this is exactly an already-copyable endpoint family.
-        CapturedEditSlice::capture(
-            &before,
-            &id("root"),
-            range(2, 4),
-            AudioTimingId {
-                allocation: revision("copy"),
-                ordinal: 0,
-            },
-        )
-        .unwrap();
-        let after = edit(&before, exact_deletion(&before, 2, 4));
-        let selected = children(&after);
-        assert_eq!(selected.len(), 3);
-        let physical_start = i64::try_from(depth).unwrap();
-        for (node, expected_start, expected_length, reanchors) in [
-            (&selected[0], physical_start, 2, 0),
-            (&selected[1], physical_start + 4, 8 - 2 * physical_start, 1),
-        ] {
-            let (physical, start) = physical_window(&after, node);
-            assert_eq!(start, expected_start);
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        for depth in [2, 3] {
+            let mut leaf = source(12);
+            leaf.label = "Retained physical recipe".into();
+            let before = nested(depth, leaf);
+            let query = before.range_deletion(&id("root"), range(2, 4)).unwrap();
+            assert_eq!((query.start_index, query.end_index), (0, 1));
+            assert_eq!(query.required_ids, 2 * (depth + 1));
+            // Establish that this is exactly an already-copyable endpoint family.
+            CapturedEditSlice::capture(
+                &before,
+                &id("root"),
+                range(2, 4),
+                AudioTimingId {
+                    allocation: revision("copy"),
+                    ordinal: 0,
+                },
+            )
+            .unwrap();
+            let after = edit(&before, exact_deletion(&before, 2, 4));
+            let selected = children(&after);
+            assert_eq!(selected.len(), 3);
+            let physical_start = i64::try_from(depth).unwrap();
+            for (node, expected_start, expected_length, reanchors) in [
+                (&selected[0], physical_start, 2, 0),
+                (&selected[1], physical_start + 4, 8 - 2 * physical_start, 1),
+            ] {
+                let (physical, start) = physical_window(&after, node);
+                assert_eq!(start, expected_start);
+                assert_eq!(
+                    after.node_duration(node).unwrap(),
+                    duration(expected_length)
+                );
+                assert_eq!(after.nodes()[&physical], before.nodes()[&id("leaf")]);
+                let binding = &after.audio_bindings().bindings()[&physical];
+                assert_eq!(binding.lattice.reference.physical, id("leaf"));
+                assert_eq!(binding.lattice.reference.timing.ordinal, 0);
+                assert_eq!(binding.reanchors.len(), reanchors);
+            }
+            for index in 1..depth {
+                assert_context_copies(&before.nodes()[&id(&format!("window-{index}"))], &after, 2);
+            }
+            assert_eq!(after.nodes()[&id("tail")], before.nodes()[&id("tail")]);
             assert_eq!(
-                after.node_duration(node).unwrap(),
-                duration(expected_length)
+                after.audio_bindings().bindings()[&id("tail")]
+                    .reanchors
+                    .len(),
+                1
             );
-            assert_eq!(after.nodes()[&physical], before.nodes()[&id("leaf")]);
-            let binding = &after.audio_bindings().bindings()[&physical];
-            assert_eq!(binding.lattice.reference.physical, id("leaf"));
-            assert_eq!(binding.lattice.reference.timing.ordinal, 0);
-            assert_eq!(binding.reanchors.len(), reanchors);
+            assert!(
+                after
+                    .audio_bindings()
+                    .timings()
+                    .keys()
+                    .all(|clock| clock.ordinal <= 1)
+            );
         }
-        for index in 1..depth {
-            assert_context_copies(&before.nodes()[&id(&format!("window-{index}"))], &after, 2);
-        }
-        assert_eq!(after.nodes()[&id("tail")], before.nodes()[&id("tail")]);
-        assert_eq!(
-            after.audio_bindings().bindings()[&id("tail")]
-                .reanchors
-                .len(),
-            1
-        );
-        assert!(
-            after
-                .audio_bindings()
-                .timings()
-                .keys()
-                .all(|clock| clock.ordinal <= 1)
-        );
-    }
+    })
 }
 
 #[test]

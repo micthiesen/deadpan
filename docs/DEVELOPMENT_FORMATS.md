@@ -1,13 +1,27 @@
 # Supported development project formats
 
-The current package uses SQLite schema 62 and core document schema 46. This
-development build opens schemas 59 through 62. Schema 60 only added the
+The current package uses SQLite schema 63 and core document schema 46. This
+development build opens schemas 59 through 63. Schema 60 only added the
 [speech activity](SPEECH_ACTIVITY.md) table, schema 61 the
-[shot analysis](SHOT_DETECTION.md) table and schema 62 only adds the
-[remote-original provenance](YOUTUBE_IMPORT.md#provenance) table, so the first
-writer of a schema-59, 60 or 61 package creates the missing empty tables and
-sets the version in one immediate transaction, without a backup; a read-only
-open of such a package sees no stored activity, shots or provenance. It refuses schemas 1 through 58 with the
+[shot analysis](SHOT_DETECTION.md) table, schema 62 the
+[remote-original provenance](YOUTUBE_IMPORT.md#provenance) table and schema 63
+only adds the `revision_patches` table for [elided revision
+documents](TIMING_STORAGE.md#revision-storage-database-schema-63), so the first
+writer of a schema-59 through 62 package creates the missing empty tables and
+sets the version in one immediate transaction, without a backup, after its
+existing history validates; a read-only open of such a package sees no stored
+activity, shots or provenance. Existing revisions keep their complete
+documents; later writes store compact JSON and elide superseded revision
+documents. A schema-59 through 62 package whose history contains a
+timing-retaining edit (pause, ripple delete, move, splice or trim) cannot be
+replayed by the new timing representation and is refused as
+`UnsupportedSchema` without changes.
+
+History patches now record retained audio timing as granular
+`AudioBindingPatch` entries rather than two complete binding states, and new
+timing tables are sliced to the aliases their placements name. Both are
+breaking changes to the history and document representation of new edits.
+Stored literal fixtures that embedded complete binding states were converted. It refuses schemas 1 through 58 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
@@ -33,10 +47,10 @@ supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 62 performs read-only validation and reports
+Calling `project migrate` on schema 63 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
-native writer. On schema 59, 60 or 61 it takes the writer, performs the additive
-upgrade and reports `from_schema: 59` (or 60, 61), `to_schema: 62`, `backup: null`. Calling it on an older package returns `SchemaUnsupported`
+native writer. On schema 59 through 62 it takes the writer, performs the additive
+upgrade and reports `from_schema: 59` (or 60, 61, 62), `to_schema: 63`, `backup: null`. Calling it on an older package returns `SchemaUnsupported`
 before creating a backup or obtaining a writer. An open native endpoint only
 validates its already admitted current package.
 

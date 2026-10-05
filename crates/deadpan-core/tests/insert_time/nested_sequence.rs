@@ -78,50 +78,55 @@ fn preflight_finds_live_sequence_owner_and_exact_split_identity_count() {
 
 #[test]
 fn nested_pause_keeps_group_ownership_and_reanchors_every_ancestor_suffix_once() {
-    let before = fixture();
-    let after = edit(&before, insertion(&before, "nested", 2, 1));
-    assert_eq!(children(&after), children(&before));
-    assert_eq!(sequence(&after, "outer"), sequence(&before, "outer"));
-    assert_eq!(sequence(&after, "inner")[1], id("pause-nested"));
-    assert_eq!(after.node_duration(&id("inner")).unwrap(), duration(5));
-    assert_eq!(after.node_duration(&id("outer")).unwrap(), duration(6));
-    assert_eq!(after.nodes().len(), before.nodes().len() + 4);
-    let right = owner(&after, &sequence(&after, "inner")[2]);
-    for key in [&right, &id("b"), &id("outer-tail"), &id("repeated")] {
-        assert_eq!(
-            after.audio_bindings().bindings()[key].reanchors.len(),
-            1,
-            "{key}"
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = fixture();
+        let after = edit(&before, insertion(&before, "nested", 2, 1));
+        assert_eq!(children(&after), children(&before));
+        assert_eq!(sequence(&after, "outer"), sequence(&before, "outer"));
+        assert_eq!(sequence(&after, "inner")[1], id("pause-nested"));
+        assert_eq!(after.node_duration(&id("inner")).unwrap(), duration(5));
+        assert_eq!(after.node_duration(&id("outer")).unwrap(), duration(6));
+        assert_eq!(after.nodes().len(), before.nodes().len() + 4);
+        let right = owner(&after, &sequence(&after, "inner")[2]);
+        for key in [&right, &id("b"), &id("outer-tail"), &id("repeated")] {
+            assert_eq!(
+                after.audio_bindings().bindings()[key].reanchors.len(),
+                1,
+                "{key}"
+            );
+        }
+        assert!(
+            after.audio_bindings().bindings()[&id("prefix")]
+                .reanchors
+                .is_empty()
         );
-    }
-    assert!(
-        after.audio_bindings().bindings()[&id("prefix")]
-            .reanchors
-            .is_empty()
-    );
-    assert!(
-        after.audio_bindings().bindings()[&id("a")]
-            .reanchors
-            .is_empty()
-    );
-    assert_eq!(
-        after.audio_bindings().gap_bindings()[&id("repeat")]
-            .reanchors
-            .len(),
-        1
-    );
-    assert_eq!(after.nodes()[&id("repeat")], before.nodes()[&id("repeat")]);
-    assert_eq!(after.audio_bindings().timings().len(), 2);
-    // A second pause at the new inner seam consumes no split identities.
-    let mut again = insertion(&after, "again", 3, 1);
-    let Command::InsertTime { identities, .. } = &mut again.command else {
-        panic!()
-    };
-    identities.nodes.clear();
-    let again = edit(&after, again);
-    assert_eq!(sequence(&again, "inner")[2], id("pause-again"));
-    assert_eq!(again.audio_bindings().bindings()[&right].reanchors.len(), 2);
-    assert_eq!(again.nodes().len(), after.nodes().len() + 1);
+        assert!(
+            after.audio_bindings().bindings()[&id("a")]
+                .reanchors
+                .is_empty()
+        );
+        assert_eq!(
+            after.audio_bindings().gap_bindings()[&id("repeat")]
+                .reanchors
+                .len(),
+            1
+        );
+        assert_eq!(after.nodes()[&id("repeat")], before.nodes()[&id("repeat")]);
+        assert_eq!(after.audio_bindings().timings().len(), 2);
+        // A second pause at the new inner seam consumes no split identities.
+        let mut again = insertion(&after, "again", 3, 1);
+        let Command::InsertTime { identities, .. } = &mut again.command else {
+            panic!()
+        };
+        identities.nodes.clear();
+        let again = edit(&after, again);
+        assert_eq!(sequence(&again, "inner")[2], id("pause-again"));
+        assert_eq!(again.audio_bindings().bindings()[&right].reanchors.len(), 2);
+        assert_eq!(again.nodes().len(), after.nodes().len() + 1);
+    })
 }
 
 #[test]

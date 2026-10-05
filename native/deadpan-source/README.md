@@ -18,7 +18,28 @@ retains the next presented AVFrame without allocating/converting RGB.
 `copy_current_rgba` converts only that frame and copies into a Rust-owned `Vec`.
 `next_rgba` combines both operations. `seek` seeks backward in original stream
 ticks, flushes reorder state, and leaves exact indexed target selection to the
-host. Returned pixels survive subsequent decoding, seek, and session destruction.
+host. `seek_to` additionally names the target PTS: packets presented before it
+skip their non-reference pictures (`AVDISCARD_NONREF`), which are never
+returned and on which no other picture depends. Skipping applies only while
+every SPS, from the AVC configuration and in-band, declares
+`bitstream_restriction` and `frame_mbs_only_flag`: without a declared reorder
+depth FFmpeg estimates it from the pictures it sees, which skipping changes,
+and field pictures pair across packets. `DecodeWork::decoded_pictures` counts
+pictures the codec actually decoded. Pictures at or after the target
+always decode, so forward steps continue. Returned pixels survive subsequent
+decoding, seek, and session destruction.
+
+`DecodeLimits::threads` (1 to 16, default 1) enables FFmpeg frame and slice
+threading above one. Both threading and skipping return pictures bit-identical
+to a sequential single-threaded decode (`tests/threaded_seek.rs`); they change
+latency and memory only. With frame threading, `get_format` and `get_buffer2`
+run on codec threads, possibly after an exported call has returned. They
+therefore read only immutable limits and record a rejection in an atomic code
+that the next caller-thread check turns into its specific error; they never
+touch the borrowed cancellation pointer, deadline or error buffer. Codec threads
+are joined when the context is freed, and a replacement codec clears the code. `lower_current_thread_priority` sets the
+calling thread to utility QoS on macOS, so a background index measurement and
+its codec threads yield to interactive decoding.
 
 The safe Rust interface contains all unsafe code in its private FFI module. The
 C ABI owns its heap context and borrows the descriptor until Drop. Operation

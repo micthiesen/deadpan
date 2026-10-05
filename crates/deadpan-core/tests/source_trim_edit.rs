@@ -318,81 +318,91 @@ fn bound(d: &ProjectDocument) -> ProjectDocument {
 
 #[test]
 fn complete_ripple_intent_has_disjoint_old_owner_groups_and_one_history_patch() {
-    let before = wide(Some((0, 147000)));
-    let i = intent(2, 5, 3, -1, SourceTrimPolicy::Ripple);
-    let resolution = before
-        .source_trim_edit(&id("root"), &id("left"), Some(&id("right")), i)
-        .unwrap();
-    assert_eq!(resolution.geometry.target.output_after, range(10, 22));
-    assert_eq!(
-        resolution.right_after.as_ref().unwrap().output,
-        range(22, 43)
-    );
-    assert_eq!(resolution.reanchors.len(), 3);
-    assert_eq!(resolution.reanchors[0].window.unwrap().start, ratio(12, 1));
-    assert_eq!(resolution.reanchors[1].window.unwrap().start, ratio(20, 1));
-    assert_eq!(resolution.reanchors[2].window.unwrap().start, ratio(40, 1));
-    let (after, tx) = edit(&before, combined(&before, i));
-    assert_eq!(tx.duration_delta, 3);
-    for owner in ["left", "right", "suffix"] {
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = wide(Some((0, 147000)));
+        let i = intent(2, 5, 3, -1, SourceTrimPolicy::Ripple);
+        let resolution = before
+            .source_trim_edit(&id("root"), &id("left"), Some(&id("right")), i)
+            .unwrap();
+        assert_eq!(resolution.geometry.target.output_after, range(10, 22));
         assert_eq!(
-            after.audio_bindings().bindings()[&id(owner)]
-                .reanchors
-                .len(),
-            1
+            resolution.right_after.as_ref().unwrap().output,
+            range(22, 43)
         );
-    }
-    assert!(
-        after.audio_bindings().bindings()[&id("prefix")]
-            .reanchors
-            .is_empty()
-    );
-    assert_eq!(after.audio_bindings().timings().len(), 1);
-    assert_eq!(
-        source(&after, "left").video_mapping.start_frames(),
-        ratio(-43, 1)
-    );
+        assert_eq!(resolution.reanchors.len(), 3);
+        assert_eq!(resolution.reanchors[0].window.unwrap().start, ratio(12, 1));
+        assert_eq!(resolution.reanchors[1].window.unwrap().start, ratio(20, 1));
+        assert_eq!(resolution.reanchors[2].window.unwrap().start, ratio(40, 1));
+        let (after, tx) = edit(&before, combined(&before, i));
+        assert_eq!(tx.duration_delta, 3);
+        for owner in ["left", "right", "suffix"] {
+            assert_eq!(
+                after.audio_bindings().bindings()[&id(owner)]
+                    .reanchors
+                    .len(),
+                1
+            );
+        }
+        assert!(
+            after.audio_bindings().bindings()[&id("prefix")]
+                .reanchors
+                .is_empty()
+        );
+        assert_eq!(after.audio_bindings().timings().len(), 1);
+        assert_eq!(
+            source(&after, "left").video_mapping.start_frames(),
+            ratio(-43, 1)
+        );
+    })
 }
 
 #[test]
 fn disjoint_and_exact_touch_use_chronological_source_endpoints_not_invalid_scalar_edits() {
-    let before = wide(None);
-    for (i, o, r, expected) in [
-        (15, 0, 9, AudioSourceEndpoint::End),
-        (10, 10, 0, AudioSourceEndpoint::End),
-        (-10, -10, 0, AudioSourceEndpoint::Start),
-    ] {
-        let accepted = intent(i, o, 0, r, SourceTrimPolicy::Ripple);
-        let (after, _) = edit(&before, combined(&before, accepted));
-        assert_eq!(
-            after.audio_bindings().bindings()[&id("left")]
-                .reanchors
-                .last()
-                .unwrap()
-                .anchor,
-            AudioReanchorAnchor::SourceEndpoint { endpoint: expected }
-        );
-        assert!(
-            after.audio_bindings().bindings()[&id("left")]
-                .reanchors
-                .last()
-                .unwrap()
-                .window
-                .is_none()
-        );
-        if r == 9 {
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = wide(None);
+        for (i, o, r, expected) in [
+            (15, 0, 9, AudioSourceEndpoint::End),
+            (10, 10, 0, AudioSourceEndpoint::End),
+            (-10, -10, 0, AudioSourceEndpoint::Start),
+        ] {
+            let accepted = intent(i, o, 0, r, SourceTrimPolicy::Ripple);
+            let (after, _) = edit(&before, combined(&before, accepted));
             assert_eq!(
-                after.audio_bindings().bindings()[&id("right")]
+                after.audio_bindings().bindings()[&id("left")]
+                    .reanchors
+                    .last()
+                    .unwrap()
+                    .anchor,
+                AudioReanchorAnchor::SourceEndpoint { endpoint: expected }
+            );
+            assert!(
+                after.audio_bindings().bindings()[&id("left")]
                     .reanchors
                     .last()
                     .unwrap()
                     .window
-                    .unwrap()
-                    .start,
-                ratio(29, 1)
+                    .is_none()
             );
+            if r == 9 {
+                assert_eq!(
+                    after.audio_bindings().bindings()[&id("right")]
+                        .reanchors
+                        .last()
+                        .unwrap()
+                        .window
+                        .unwrap()
+                        .start,
+                    ratio(29, 1)
+                );
+            }
         }
-    }
+    })
 }
 
 #[test]

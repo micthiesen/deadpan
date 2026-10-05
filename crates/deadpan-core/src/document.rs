@@ -764,6 +764,23 @@ impl ProjectDocument {
     pub fn to_json(&self) -> Result<String, DocumentError> {
         self.to_json_with_limit(MAX_DOCUMENT_JSON_BYTES)
     }
+
+    /// The same document without indentation, for durable storage. Pretty
+    /// output roughly doubles every stored revision; readers accept both.
+    pub fn to_compact_json(&self) -> Result<String, DocumentError> {
+        let mut output = BoundedJson {
+            bytes: Vec::new(),
+            limit: MAX_DOCUMENT_JSON_BYTES,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer(&mut output, self);
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        String::from_utf8(output.bytes)
+            .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
+    }
     fn to_json_with_limit(&self, limit: usize) -> Result<String, DocumentError> {
         use std::io::Write;
 

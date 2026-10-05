@@ -762,3 +762,40 @@ fn shared_index_comparison_includes_terminal_evidence_and_cancels_in_chunks() ->
     assert!(!same_index_mapping(&index, &changed, || false)?);
     Ok(())
 }
+
+#[test]
+fn progressive_preview_admission_serves_the_complete_admission_pictures() -> Result {
+    let fixture = Fixture::source("cfr-bframes.mp4")?;
+    let head = fixture.store.snapshot()?.revision_id().clone();
+    let mut complete = fixture.open(None)?;
+    let mut preview = ProjectPictureSession::open_revision_with(
+        &fixture.path,
+        &head,
+        None,
+        SourceAdmission::Progressive,
+        &active(),
+    )?;
+    assert_eq!(preview.source_measurement(), None);
+    for at in [119, 0, 57, 58, 3, 90, 1] {
+        let expected = complete.prepare(ProjectFrame(at), &active())?;
+        let actual = preview.prepare(ProjectFrame(at), &active())?;
+        assert_eq!(decoded(&actual).0, decoded(&expected).0);
+        assert_eq!(
+            decoded(&actual).1.metadata(),
+            decoded(&expected).1.metadata()
+        );
+        assert_eq!(decoded(&actual).1.bytes(), decoded(&expected).1.bytes());
+    }
+    // Export's default admission measured everything before its first picture.
+    assert_eq!(
+        complete.source_measurement(),
+        Some(IndexMeasurement::Verified)
+    );
+    assert_eq!(
+        preview.wait_source_measured(Duration::from_secs(30)),
+        Some(IndexMeasurement::Verified)
+    );
+    let stats = preview.stats();
+    assert_eq!((stats.source_opens, stats.decoded_frames), (1, 7));
+    Ok(())
+}

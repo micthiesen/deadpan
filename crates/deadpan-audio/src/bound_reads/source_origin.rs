@@ -135,10 +135,7 @@ fn prefix_patch(
         overrides: BTreeMap::new(),
         gap_overrides: BTreeMap::new(),
         audio_lineage: BTreeMap::new(),
-        audio_bindings: Some(ValueChange {
-            before: Some(document.audio_bindings().clone()),
-            after: Some(bindings),
-        }),
+        audio_bindings: AudioBindingPatch::between(document.audio_bindings(), &bindings),
     }
 }
 

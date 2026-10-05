@@ -4,7 +4,7 @@
 use deadpan_core::{
     CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId,
 };
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::{StoreError, history};
 
@@ -35,6 +35,46 @@ pub(crate) fn check_stored_sizes(connection: &Connection, limit: usize) -> Resul
         return Err(StoreError::Integrity(
             "stored JSON or identity metadata exceeds its bound or has an invalid type".into(),
         ));
+    }
+    crate::revision_storage::check_stored_sizes(connection, limit)
+}
+
+/// Visit every revision document in chronological order, including abandoned
+/// branches, rebuilding elided ones from the preceding document. Callers that
+/// need full history validation run `validate_history` separately.
+pub(crate) fn for_each_revision_document(
+    connection: &Connection,
+    mut visit: impl FnMut(&ProjectDocument) -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
+    let count: i64 =
+        connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
+    let initial = read_initial_id(connection)?;
+    let (_, _, json) = read_revision_json(connection, &initial, crate::schema::MAX_DOCUMENT_BYTES)?;
+    let mut current = ProjectDocument::from_json(&json)?;
+    visit(&current)?;
+    for _ in 1..count {
+        let child: Option<String> = connection
+            .query_row(
+                "SELECT CASE WHEN typeof(id)='text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND ?2 THEN id END FROM revisions WHERE parent_id=?1 LIMIT 1",
+                params![current.revision_id().as_str(), MAX_IDENTITY_BYTES as i64],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let Some(child) = child else { break };
+        let child = checked_id(Some(child))?;
+        let (_, kind, json) =
+            read_revision_json(connection, &child, crate::schema::MAX_DOCUMENT_BYTES)?;
+        current = if json == crate::revision_storage::ELIDED {
+            crate::revision_storage::stored_patch(connection, &child, &kind)?
+                .ok_or_else(|| history_error("elided revision has no stored patch"))?
+                .apply_stored(&current)?
+        } else {
+            ProjectDocument::from_json(&json)?
+        };
+        if current.revision_id().as_str() != child {
+            return Err(history_error("revision identity disagrees with document"));
+        }
+        visit(&current)?;
     }
     Ok(())
 }
@@ -75,6 +115,11 @@ fn read_revision_bounded(
     limit: usize,
 ) -> Result<RevisionRecord, StoreError> {
     let (_, _, json) = read_revision_json(connection, id, limit)?;
+    if json == crate::revision_storage::ELIDED {
+        return Ok(RevisionRecord {
+            document: crate::revision_storage::reconstruct(connection, id)?,
+        });
+    }
     let document = ProjectDocument::from_json(&json)?;
     if document.revision_id().as_str() != id {
         return Err(StoreError::Integrity(
@@ -82,6 +127,14 @@ fn read_revision_bounded(
         ));
     }
     Ok(RevisionRecord { document })
+}
+
+/// Parent, kind and stored text (a document or the elision marker).
+pub(crate) fn read_revision_text(
+    connection: &Connection,
+    id: &str,
+) -> Result<(Option<String>, String, String), StoreError> {
+    read_revision_json(connection, id, crate::schema::MAX_DOCUMENT_BYTES)
 }
 
 fn read_revision_json(
@@ -163,17 +216,25 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
     replay(connection)
 }
 
+/// An elided revision has no stored document; replay recomputes it and then
+/// checks its stored patch instead.
 fn read_replay_revision(
     connection: &Connection,
     id: &str,
-) -> Result<(Option<String>, String, ProjectDocument), StoreError> {
+) -> Result<(Option<String>, String, Option<ProjectDocument>), StoreError> {
     let (parent, kind, json) =
         read_revision_json(connection, id, crate::schema::MAX_DOCUMENT_BYTES)?;
+    if json == crate::revision_storage::ELIDED {
+        if kind == "initial" {
+            return Err(history_error("initial revision document is elided"));
+        }
+        return Ok((parent, kind, None));
+    }
     let document = ProjectDocument::from_json(&json)?;
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
     }
-    Ok((parent, kind, document))
+    Ok((parent, kind, Some(document)))
 }
 pub(crate) fn read_initial_id(connection: &Connection) -> Result<String, StoreError> {
     let mut roots = connection.prepare("SELECT CASE WHEN typeof(id)='text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND ?1 THEN id END FROM revisions WHERE parent_id IS NULL LIMIT 2")?;
@@ -197,6 +258,7 @@ fn replay(connection: &Connection) -> Result<(), StoreError> {
     if kind != "initial" {
         return Err(history_error("root revision is not initial"));
     }
+    let first = first.ok_or_else(|| history_error("initial revision document is elided"))?;
     let mut current = first;
     crate::compound::validate_namespace(connection, &current)?;
     let mut admitted = std::collections::BTreeSet::from([current.revision_id().clone()]);
@@ -295,7 +357,7 @@ fn replay(connection: &Connection) -> Result<(), StoreError> {
                     &next_document,
                     &request,
                 )?;
-                if !matches_edit || next != next_document {
+                if !matches_edit || next.as_ref().is_some_and(|next| *next != next_document) {
                     return Err(history_error(
                         "stored command, patches, and revision disagree",
                     ));
@@ -317,12 +379,18 @@ fn replay(connection: &Connection) -> Result<(), StoreError> {
                 let plan = history::build_navigation(
                     connection,
                     current,
-                    next.revision_id().clone(),
+                    RevisionId::new(id.clone())?,
                     is_redo,
                     cursor,
                     entry,
                 )?;
-                if next != plan.next {
+                let stored = crate::revision_storage::stored_patch(connection, &id, kind)?;
+                if next.as_ref().is_some_and(|next| *next != plan.next)
+                    || stored
+                        .as_ref()
+                        .is_some_and(|stored| *stored != plan.edit.forward)
+                    || (next.is_none() && stored.is_none())
+                {
                     return Err(history_error(
                         "history navigation disagrees with its revision",
                     ));

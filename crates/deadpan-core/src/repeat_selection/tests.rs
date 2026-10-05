@@ -224,119 +224,129 @@ fn exact_child_identity_and_range_body_are_distinct_even_at_shared_empty_boundar
 
 #[test]
 fn partial_composite_ranges_keep_complete_contexts_and_compact_nested_iterations() {
-    let mut retime = BeatNode::sequence("Rate", vec![]);
-    retime.kind = NodeKind::Retime {
-        child: node("held"),
-        duration: frames(10),
-        mapping: range(1, 6),
-        pitch: PitchPolicy::Preserve,
-        purpose: RetimePurpose::Edit,
-    };
-    for (target, descendants) in [
-        (hold(10), vec![]),
-        (
-            BeatNode::sequence("Group", vec![node("held"), node("tail")]),
-            vec![("held", hold(6)), ("tail", hold(4))],
-        ),
-        (
-            repeated("held", 1_000_000_000, None),
-            vec![("held", hold(2))],
-        ),
-        (retime, vec![("held", hold(8))]),
-    ] {
-        let mut entries = vec![("target", target.clone()), ("suffix", hold(3))];
-        entries.extend(descendants);
-        let document = tree(&["target", "suffix"], entries);
-        let after = edit(&document, wrapped(&document, "root", selected(2, 7), 3));
-        assert_eq!(
-            after.duration().unwrap().frames(),
-            document.duration().unwrap().frames() + 10
-        );
-        assert_eq!(after.nodes()[&node("target")], target);
-        assert_eq!(after.durations().unwrap()[repeat(&after).0], frames(5));
-        assert_eq!(repeat(&after).1.len(), 3);
-        assert!(after.nodes().len() < 30);
-        assert!(!after.audio_bindings().is_empty());
-        let suffix = &after.audio_bindings().bindings()[&node("suffix")];
-        assert_eq!(suffix.reanchors.len(), 1);
-    }
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let mut retime = BeatNode::sequence("Rate", vec![]);
+        retime.kind = NodeKind::Retime {
+            child: node("held"),
+            duration: frames(10),
+            mapping: range(1, 6),
+            pitch: PitchPolicy::Preserve,
+            purpose: RetimePurpose::Edit,
+        };
+        for (target, descendants) in [
+            (hold(10), vec![]),
+            (
+                BeatNode::sequence("Group", vec![node("held"), node("tail")]),
+                vec![("held", hold(6)), ("tail", hold(4))],
+            ),
+            (
+                repeated("held", 1_000_000_000, None),
+                vec![("held", hold(2))],
+            ),
+            (retime, vec![("held", hold(8))]),
+        ] {
+            let mut entries = vec![("target", target.clone()), ("suffix", hold(3))];
+            entries.extend(descendants);
+            let document = tree(&["target", "suffix"], entries);
+            let after = edit(&document, wrapped(&document, "root", selected(2, 7), 3));
+            assert_eq!(
+                after.duration().unwrap().frames(),
+                document.duration().unwrap().frames() + 10
+            );
+            assert_eq!(after.nodes()[&node("target")], target);
+            assert_eq!(after.durations().unwrap()[repeat(&after).0], frames(5));
+            assert_eq!(repeat(&after).1.len(), 3);
+            assert!(after.nodes().len() < 30);
+            assert!(!after.audio_bindings().is_empty());
+            let suffix = &after.audio_bindings().bindings()[&node("suffix")];
+            assert_eq!(suffix.reanchors.len(), 1);
+        }
+    })
 }
 
 #[test]
 fn first_play_marks_keep_concrete_occurrences_and_suffix_resume_is_captured_once() {
-    let document = tree(
-        &["prefix", "a", "b", "suffix"],
-        vec![
-            ("prefix", hold(1)),
-            ("a", hold(3)),
-            ("b", hold(4)),
-            ("suffix", hold(5)),
-        ],
-    );
-    let document = edit(
-        &document,
-        Command::SetMark {
-            id: MarkId::new("mark").unwrap(),
-            owner: node("root"),
-            label: "Mark".into(),
-            boundary: BoundaryAnchor {
-                coordinate: Anchor::Occurrence {
-                    instance: InstancePath {
-                        node: node("b"),
-                        repeats: vec![],
-                    },
-                    position: ExactRatio::ONE,
-                },
-                bias: InsertionBias::Right,
-            },
-            loss_policy: AnchorLossPolicy::KeepUnresolved,
-        },
-    );
-    let after = edit(&document, wrapped(&document, "root", selected(1, 8), 3));
-    let mark = &after.marks()[&MarkId::new("mark").unwrap()];
-    let Anchor::Occurrence { instance, position } = &mark.boundary.coordinate else {
-        panic!()
-    };
-    assert_eq!(*position, ExactRatio::ONE);
-    assert_eq!(instance.node, node("b"));
-    assert_eq!(
-        instance.repeats,
-        vec![RepeatInstance {
-            node: node("wrapped"),
-            iteration: repeat(&after).1.at(0).unwrap()
-        }]
-    );
-    assert_eq!(mark.binding_count(), 1);
-    for owner in ["a", "b"] {
-        let resolved = after
-            .audio_bindings()
-            .resolve(
-                &node(owner),
-                &InstancePath {
-                    node: node(owner),
-                    repeats: vec![instance.repeats[0].clone()],
-                },
-                10_000,
-            )
-            .unwrap();
-        assert_eq!(
-            resolved.lattice.grid_rule,
-            AudioBindingGridRule::RootRoundEven
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let document = tree(
+            &["prefix", "a", "b", "suffix"],
+            vec![
+                ("prefix", hold(1)),
+                ("a", hold(3)),
+                ("b", hold(4)),
+                ("suffix", hold(5)),
+            ],
         );
-    }
-    assert_eq!(
-        after.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .len(),
-        1
-    );
-    let one = edit(&document, wrapped(&document, "root", selected(1, 8), 1));
-    assert_eq!(one.duration().unwrap(), document.duration().unwrap());
-    assert!(
-        one.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .is_empty()
-    );
+        let document = edit(
+            &document,
+            Command::SetMark {
+                id: MarkId::new("mark").unwrap(),
+                owner: node("root"),
+                label: "Mark".into(),
+                boundary: BoundaryAnchor {
+                    coordinate: Anchor::Occurrence {
+                        instance: InstancePath {
+                            node: node("b"),
+                            repeats: vec![],
+                        },
+                        position: ExactRatio::ONE,
+                    },
+                    bias: InsertionBias::Right,
+                },
+                loss_policy: AnchorLossPolicy::KeepUnresolved,
+            },
+        );
+        let after = edit(&document, wrapped(&document, "root", selected(1, 8), 3));
+        let mark = &after.marks()[&MarkId::new("mark").unwrap()];
+        let Anchor::Occurrence { instance, position } = &mark.boundary.coordinate else {
+            panic!()
+        };
+        assert_eq!(*position, ExactRatio::ONE);
+        assert_eq!(instance.node, node("b"));
+        assert_eq!(
+            instance.repeats,
+            vec![RepeatInstance {
+                node: node("wrapped"),
+                iteration: repeat(&after).1.at(0).unwrap()
+            }]
+        );
+        assert_eq!(mark.binding_count(), 1);
+        for owner in ["a", "b"] {
+            let resolved = after
+                .audio_bindings()
+                .resolve(
+                    &node(owner),
+                    &InstancePath {
+                        node: node(owner),
+                        repeats: vec![instance.repeats[0].clone()],
+                    },
+                    10_000,
+                )
+                .unwrap();
+            assert_eq!(
+                resolved.lattice.grid_rule,
+                AudioBindingGridRule::RootRoundEven
+            );
+        }
+        assert_eq!(
+            after.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .len(),
+            1
+        );
+        let one = edit(&document, wrapped(&document, "root", selected(1, 8), 1));
+        assert_eq!(one.duration().unwrap(), document.duration().unwrap());
+        assert!(
+            one.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .is_empty()
+        );
+    })
 }
 
 fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
@@ -387,71 +397,76 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
 
 #[test]
 fn root_sound_routes_and_concrete_allowances_follow_only_the_retained_first_play() {
-    let mut document = with_sound(tree(
-        &["a", "suffix"],
-        vec![("a", hold(40)), ("suffix", hold(40))],
-    ));
-    let sound = SoundId::new("effect").unwrap();
-    document.sound_allowances.insert(
-        sound.clone(),
-        SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
-            instance: InstancePath {
-                node: node("a"),
-                repeats: vec![],
-            },
-        }])
-        .unwrap(),
-    );
-    document.validate().unwrap();
-    let after = edit(&document, wrapped(&document, "root", child("a"), 3));
-    assert_eq!(after.sounds(), document.sounds());
-    assert_eq!(after.sound_routes()[&sound].edits.len(), 1);
-    assert_eq!(
-        after.sound_routes()[&sound].edits[0].operation,
-        RootSoundOperation::Insert {
-            at: ProjectFrame(40),
-            duration: frames(80)
-        }
-    );
-    let allowances = &after.sound_allowances()[&sound];
-    assert_eq!(allowances.len(), 1);
-    assert_eq!(
-        allowances.iter().next().unwrap().instance().repeats,
-        vec![RepeatInstance {
-            node: node("wrapped"),
-            iteration: repeat(&after).1.at(0).unwrap()
-        }]
-    );
-    let shrunk = set(&after, 1, "shrink");
-    assert_eq!(shrunk.sound_routes()[&sound].edits.len(), 2);
-    assert_eq!(
-        shrunk.sound_routes()[&sound].edits[1].operation,
-        RootSoundOperation::Delete {
-            range: range(40, 120)
-        }
-    );
-    assert_eq!(repeat(&shrunk).1.at(0), repeat(&after).1.at(0));
-    assert_eq!(shrunk.sound_allowances()[&sound], *allowances);
-    let grown = set(&shrunk, 2, "grow");
-    assert_eq!(grown.sound_routes()[&sound].edits.len(), 3);
-    assert_eq!(
-        grown.sound_routes()[&sound].edits[2].operation,
-        RootSoundOperation::Insert {
-            at: ProjectFrame(40),
-            duration: frames(40)
-        }
-    );
-    assert_ne!(repeat(&grown).1.at(1), repeat(&after).1.at(1));
-    assert_eq!(
-        grown.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .len(),
-        3
-    );
-    let unchanged = set(&grown, 2, "same");
-    let mut expected = grown.clone();
-    expected.revision_id = revision("same");
-    assert_eq!(unchanged, expected);
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let mut document = with_sound(tree(
+            &["a", "suffix"],
+            vec![("a", hold(40)), ("suffix", hold(40))],
+        ));
+        let sound = SoundId::new("effect").unwrap();
+        document.sound_allowances.insert(
+            sound.clone(),
+            SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
+                instance: InstancePath {
+                    node: node("a"),
+                    repeats: vec![],
+                },
+            }])
+            .unwrap(),
+        );
+        document.validate().unwrap();
+        let after = edit(&document, wrapped(&document, "root", child("a"), 3));
+        assert_eq!(after.sounds(), document.sounds());
+        assert_eq!(after.sound_routes()[&sound].edits.len(), 1);
+        assert_eq!(
+            after.sound_routes()[&sound].edits[0].operation,
+            RootSoundOperation::Insert {
+                at: ProjectFrame(40),
+                duration: frames(80)
+            }
+        );
+        let allowances = &after.sound_allowances()[&sound];
+        assert_eq!(allowances.len(), 1);
+        assert_eq!(
+            allowances.iter().next().unwrap().instance().repeats,
+            vec![RepeatInstance {
+                node: node("wrapped"),
+                iteration: repeat(&after).1.at(0).unwrap()
+            }]
+        );
+        let shrunk = set(&after, 1, "shrink");
+        assert_eq!(shrunk.sound_routes()[&sound].edits.len(), 2);
+        assert_eq!(
+            shrunk.sound_routes()[&sound].edits[1].operation,
+            RootSoundOperation::Delete {
+                range: range(40, 120)
+            }
+        );
+        assert_eq!(repeat(&shrunk).1.at(0), repeat(&after).1.at(0));
+        assert_eq!(shrunk.sound_allowances()[&sound], *allowances);
+        let grown = set(&shrunk, 2, "grow");
+        assert_eq!(grown.sound_routes()[&sound].edits.len(), 3);
+        assert_eq!(
+            grown.sound_routes()[&sound].edits[2].operation,
+            RootSoundOperation::Insert {
+                at: ProjectFrame(40),
+                duration: frames(40)
+            }
+        );
+        assert_ne!(repeat(&grown).1.at(1), repeat(&after).1.at(1));
+        assert_eq!(
+            grown.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .len(),
+            3
+        );
+        let unchanged = set(&grown, 2, "same");
+        let mut expected = grown.clone();
+        expected.revision_id = revision("same");
+        assert_eq!(unchanged, expected);
+    })
 }
 
 #[test]
@@ -509,79 +524,85 @@ fn count_setter_preserves_gap_and_sparse_survivors_and_activates_old_terminal_ga
 
 #[test]
 fn nested_sequence_terminal_repeat_moves_ancestor_suffix_and_refuses_repeated_scope() {
-    let document = tree(
-        &["prefix", "group", "suffix"],
-        vec![
-            ("prefix", hold(2)),
-            (
-                "group",
-                BeatNode::sequence("Group", vec![node("a"), node("b")]),
-            ),
-            ("a", hold(3)),
-            ("b", hold(4)),
-            ("suffix", hold(5)),
-        ],
-    );
-    let after = edit(&document, wrapped(&document, "group", selected(3, 9), 2));
-    assert_eq!(after.duration().unwrap(), frames(20));
-    assert_eq!(
-        after.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .len(),
-        1
-    );
-    assert!(
-        after.audio_bindings().bindings()[&node("prefix")]
-            .reanchors
-            .is_empty()
-    );
-    let grown = set(&after, 3, "grow-nested");
-    assert_eq!(grown.duration().unwrap(), frames(26));
-    assert_eq!(
-        grown.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .len(),
-        2
-    );
-    let Command::RepeatSelection { identities, .. } = wrapped(&document, "root", child("group"), 2)
-    else {
-        panic!()
-    };
-    let repeated = edit(
-        &document,
-        Command::RepeatSelection {
-            parent: node("root"),
-            selection: child("group"),
-            plays: 2,
-            identities,
-            timing: AudioTimingId {
-                allocation: revision("edit"),
-                ordinal: 0,
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let document = tree(
+            &["prefix", "group", "suffix"],
+            vec![
+                ("prefix", hold(2)),
+                (
+                    "group",
+                    BeatNode::sequence("Group", vec![node("a"), node("b")]),
+                ),
+                ("a", hold(3)),
+                ("b", hold(4)),
+                ("suffix", hold(5)),
+            ],
+        );
+        let after = edit(&document, wrapped(&document, "group", selected(3, 9), 2));
+        assert_eq!(after.duration().unwrap(), frames(20));
+        assert_eq!(
+            after.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .len(),
+            1
+        );
+        assert!(
+            after.audio_bindings().bindings()[&node("prefix")]
+                .reanchors
+                .is_empty()
+        );
+        let grown = set(&after, 3, "grow-nested");
+        assert_eq!(grown.duration().unwrap(), frames(26));
+        assert_eq!(
+            grown.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .len(),
+            2
+        );
+        let Command::RepeatSelection { identities, .. } =
+            wrapped(&document, "root", child("group"), 2)
+        else {
+            panic!()
+        };
+        let repeated = edit(
+            &document,
+            Command::RepeatSelection {
+                parent: node("root"),
+                selection: child("group"),
+                plays: 2,
+                identities,
+                timing: AudioTimingId {
+                    allocation: revision("edit"),
+                    ordinal: 0,
+                },
             },
-        },
-    );
-    assert!(
-        repeated
-            .repeat_selection(&node("group"), &child("a"), 2)
-            .is_err()
-    );
-    assert!(
-        crate::apply(
-            &repeated,
-            &request(
+        );
+        assert!(
+            repeated
+                .repeat_selection(&node("group"), &child("a"), 2)
+                .is_err()
+        );
+        assert!(
+            crate::apply(
                 &repeated,
-                Command::SetRepeatPlays {
-                    node: node("a"),
-                    plays: 2,
-                    timing: AudioTimingId {
-                        allocation: revision("refused"),
-                        ordinal: 0
-                    },
-                }
+                &request(
+                    &repeated,
+                    Command::SetRepeatPlays {
+                        node: node("a"),
+                        plays: 2,
+                        timing: AudioTimingId {
+                            allocation: revision("refused"),
+                            ordinal: 0
+                        },
+                    }
+                )
             )
-        )
-        .is_err()
-    );
+            .is_err()
+        );
+    })
 }
 
 #[test]
@@ -757,69 +778,74 @@ fn gaps(
 
 #[test]
 fn gap_setter_shortens_later_gaps_with_independent_holds_and_moves_the_suffix_once() {
-    let document = with_sound(tree(
-        &["wrapped", "suffix"],
-        vec![
-            ("wrapped", repeated("a", 3, None)),
-            ("a", hold(10)),
-            ("suffix", hold(40)),
-        ],
-    ));
-    let sound = SoundId::new("effect").unwrap();
-    let before = repeat(&document).1.clone();
-    // Three plays, then 6 frames after the first and 3 after the second.
-    let after = edit(
-        &document,
-        gaps(&document, Some(6), &[(1, "gap-2", 3)], "gaps"),
-    );
-    assert_eq!(after.durations().unwrap()[&node("wrapped")], frames(39));
-    assert_eq!(repeat(&after).1, &before, "stable plays survive");
-    assert!(matches!(
-        &after.nodes()[&node("wrapped")].kind,
-        NodeKind::Repeat { gap: Some(gap), .. } if gap == &silence(6)
-    ));
-    assert_eq!(
-        after.gap_overrides()[&node("wrapped")].get(&before.at(1).unwrap()),
-        Some(&node("gap-2"))
-    );
-    assert_eq!(after.nodes()[&node("gap-2")].label, "Gap");
-    assert_eq!(
-        after.sound_routes()[&sound].edits[0].operation,
-        RootSoundOperation::Insert {
-            at: ProjectFrame(30),
-            duration: frames(9)
-        }
-    );
-    assert!(
-        !after.audio_bindings().bindings()[&node("suffix")]
-            .reanchors
-            .is_empty(),
-        "the suffix keeps its pre-edit sampling clock"
-    );
-    // The request is the complete gap set: a default alone retires the
-    // ladder's branch, so the old gap after play 2 shows the default again.
-    let reset = edit(&after, gaps(&after, Some(5), &[], "reset"));
-    assert_eq!(reset.durations().unwrap()[&node("wrapped")], frames(40));
-    assert!(!reset.nodes().contains_key(&node("gap-2")));
-    assert!(reset.gap_overrides().get(&node("wrapped")).is_none());
-    // No gap at all removes the default and every branch.
-    let ladder = edit(&reset, gaps(&reset, Some(2), &[(1, "gap-3", 1)], "ladder"));
-    assert_eq!(ladder.durations().unwrap()[&node("wrapped")], frames(33));
-    let removed = edit(&ladder, gaps(&ladder, None, &[], "no-gaps"));
-    assert_eq!(removed.durations().unwrap()[&node("wrapped")], frames(30));
-    assert!(!removed.nodes().contains_key(&node("gap-3")));
-    // Restating the current set changes nothing beyond the revision.
-    let iterations = repeat(&ladder).1.clone();
-    assert!(ladder.repeat_gaps_unchanged(
-        &node("wrapped"),
-        Some(&silence(2)),
-        &[(iterations.at(1).unwrap(), silence(1))]
-    ));
-    assert!(!ladder.repeat_gaps_unchanged(&node("wrapped"), Some(&silence(2)), &[]));
-    let same = edit(&ladder, gaps(&ladder, Some(2), &[(1, "gap-4", 1)], "same"));
-    let mut expected = ladder.clone();
-    expected.revision_id = revision("same");
-    assert_eq!(same, expected);
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    crate::with_reference_timing_representation(|| {
+        let document = with_sound(tree(
+            &["wrapped", "suffix"],
+            vec![
+                ("wrapped", repeated("a", 3, None)),
+                ("a", hold(10)),
+                ("suffix", hold(40)),
+            ],
+        ));
+        let sound = SoundId::new("effect").unwrap();
+        let before = repeat(&document).1.clone();
+        // Three plays, then 6 frames after the first and 3 after the second.
+        let after = edit(
+            &document,
+            gaps(&document, Some(6), &[(1, "gap-2", 3)], "gaps"),
+        );
+        assert_eq!(after.durations().unwrap()[&node("wrapped")], frames(39));
+        assert_eq!(repeat(&after).1, &before, "stable plays survive");
+        assert!(matches!(
+            &after.nodes()[&node("wrapped")].kind,
+            NodeKind::Repeat { gap: Some(gap), .. } if gap == &silence(6)
+        ));
+        assert_eq!(
+            after.gap_overrides()[&node("wrapped")].get(&before.at(1).unwrap()),
+            Some(&node("gap-2"))
+        );
+        assert_eq!(after.nodes()[&node("gap-2")].label, "Gap");
+        assert_eq!(
+            after.sound_routes()[&sound].edits[0].operation,
+            RootSoundOperation::Insert {
+                at: ProjectFrame(30),
+                duration: frames(9)
+            }
+        );
+        assert!(
+            !after.audio_bindings().bindings()[&node("suffix")]
+                .reanchors
+                .is_empty(),
+            "the suffix keeps its pre-edit sampling clock"
+        );
+        // The request is the complete gap set: a default alone retires the
+        // ladder's branch, so the old gap after play 2 shows the default again.
+        let reset = edit(&after, gaps(&after, Some(5), &[], "reset"));
+        assert_eq!(reset.durations().unwrap()[&node("wrapped")], frames(40));
+        assert!(!reset.nodes().contains_key(&node("gap-2")));
+        assert!(reset.gap_overrides().get(&node("wrapped")).is_none());
+        // No gap at all removes the default and every branch.
+        let ladder = edit(&reset, gaps(&reset, Some(2), &[(1, "gap-3", 1)], "ladder"));
+        assert_eq!(ladder.durations().unwrap()[&node("wrapped")], frames(33));
+        let removed = edit(&ladder, gaps(&ladder, None, &[], "no-gaps"));
+        assert_eq!(removed.durations().unwrap()[&node("wrapped")], frames(30));
+        assert!(!removed.nodes().contains_key(&node("gap-3")));
+        // Restating the current set changes nothing beyond the revision.
+        let iterations = repeat(&ladder).1.clone();
+        assert!(ladder.repeat_gaps_unchanged(
+            &node("wrapped"),
+            Some(&silence(2)),
+            &[(iterations.at(1).unwrap(), silence(1))]
+        ));
+        assert!(!ladder.repeat_gaps_unchanged(&node("wrapped"), Some(&silence(2)), &[]));
+        let same = edit(&ladder, gaps(&ladder, Some(2), &[(1, "gap-4", 1)], "same"));
+        let mut expected = ladder.clone();
+        expected.revision_id = revision("same");
+        assert_eq!(same, expected);
+    })
 }
 
 #[test]

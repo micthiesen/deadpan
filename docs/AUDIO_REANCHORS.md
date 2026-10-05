@@ -49,6 +49,12 @@ phase. No alternate PCM pipeline is introduced.
 
 ## Commands and persistence
 
+The shared append path omits a step that cannot change its binding: no
+placement names a Repeat argument, birth or gap, and the step's entry equals
+the current anchor (or is absent). Its phase contribution is then exactly zero
+for every occurrence and later step. Steps under Repeats are always kept. See
+[timing storage](TIMING_STORAGE.md#inert-reanchor-steps).
+
 Split and occurrence isolation remap live arguments in every step while keeping
 historical aliases. Pruning retains step-only clocks. Allocation reservation and
 changed-owner reporting include them. A supported root `InsertTime` appends after

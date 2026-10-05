@@ -37,7 +37,8 @@ Creative fade geometry follows the current body on the retained clock.
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
 Repeat, Retime, owned gap branches and generated Hold owners can move together.
 Each physical or default-gap owner receives one compact chronological reanchor
-step in the pre-edit root window. Its placement is captured from the current
+step in the pre-edit root window, unless that step is provably inert
+([timing storage](TIMING_STORAGE.md#inert-reanchor-steps)). Its placement is captured from the current
 document even when the owner's lattice and prior steps are older. A partial
 Repeat fragment and later complete plays therefore resume at their own visible
 entries. Hidden allocations remain absent; newly born gaps keep their canonical

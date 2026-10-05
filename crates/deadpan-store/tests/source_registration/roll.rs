@@ -591,7 +591,7 @@ fn roll_rechecks_each_receipt_and_original_with_the_other_side_valid() -> Result
             )?;
             database.execute(
                 "UPDATE revisions SET document=?1 WHERE id='ready'",
-                [before.to_json()?],
+                [before.to_compact_json()?],
             )?;
             assert_eq!(stored(&database)?, clean_rows);
         }

@@ -151,6 +151,25 @@ impl SourceIndexSnapshot {
         &self.index
     }
 
+    /// The same measured mapping under another authored asset alias. A
+    /// receipt's index and the asset naming it in a revision may differ.
+    pub fn for_asset(&self, asset: AssetId) -> Result<Self, SourceIndexError> {
+        if self.index.asset() == &asset {
+            return Ok(self.clone());
+        }
+        Self::new(
+            self.content,
+            self.stream_index,
+            SourceFrameIndex::new(
+                asset,
+                self.index.time_base(),
+                self.index.frames().to_vec(),
+                self.index.terminal_end(),
+                self.index.terminal_provenance(),
+            )?,
+        )
+    }
+
     /// Apply the byte bound before parsing untrusted cache data. The complete
     /// index is then reconstructed through the core presentation invariants.
     pub fn from_json(bytes: &[u8]) -> Result<Self, SourceIndexError> {

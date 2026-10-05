@@ -3,10 +3,11 @@
 //! shared Metal picture pipeline. Read-only.
 
 use std::sync::atomic::AtomicBool;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-use deadpan_cli::picture::{PreparedPicture, ProjectPictureSession};
+use deadpan_cli::picture::{PreparedPicture, ProjectPictureSession, SourceAdmission};
 use deadpan_core::{NodeKind, ProjectFrame};
+use deadpan_media::source_session::{IndexMeasurement, interactive_decode_threads};
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
 
@@ -28,37 +29,94 @@ pub fn run(options: &Options) -> Result<Value> {
     drop(store);
     let mut gpu = Gpu::new(basis.width, basis.height)?;
 
-    // Cold: a fresh session (store, plan, private verified snapshot copy, full
-    // index scan, decoder open) to the first visible picture at a random frame.
-    let mut cold_open = Vec::new();
-    let mut cold_first = Vec::new();
-    let mut cold_total = Vec::new();
+    // Cold: a fresh session (store, plan, private verified snapshot copy,
+    // decoder open) to the first visible picture at a random frame. Complete
+    // admission (export) measures the whole index first; progressive
+    // admission (interactive preview) serves receipt-verified pictures while
+    // that measurement runs, and `verified_ms` records when it completes.
     let mut frames = 0;
-    let mut cold_stats = Vec::new();
-    for _ in 0..cold {
-        let started = Instant::now();
-        let mut session =
-            ProjectPictureSession::open_revision(package, &revision, None, &cancelled)?;
-        cold_open.push(ms(started));
-        frames = session.plan().duration().frames();
-        let frame = ProjectFrame(i64::try_from(random.below(u64::try_from(frames)?))?);
-        let prepared_at = Instant::now();
-        let prepared = session.prepare(frame, &cancelled)?;
-        gpu.present(&prepared)?;
-        cold_first.push(ms(prepared_at));
-        cold_total.push(ms(started));
-        cold_stats.push(stats(&session));
+    let mut cold_reports = serde_json::Map::new();
+    for (name, admission) in [
+        ("complete", SourceAdmission::Complete),
+        ("progressive", SourceAdmission::Progressive),
+    ] {
+        let mut cold_open = Vec::new();
+        let mut cold_first = Vec::new();
+        let mut cold_total = Vec::new();
+        let mut verified = Vec::new();
+        let mut cold_stats = Vec::new();
+        for _ in 0..cold {
+            let started = Instant::now();
+            let mut session = ProjectPictureSession::open_revision_with(
+                package, &revision, None, admission, &cancelled,
+            )?;
+            cold_open.push(ms(started));
+            frames = session.plan().duration().frames();
+            let frame = ProjectFrame(i64::try_from(random.below(u64::try_from(frames)?))?);
+            let prepared_at = Instant::now();
+            let prepared = session.prepare(frame, &cancelled)?;
+            gpu.present(&prepared)?;
+            cold_first.push(ms(prepared_at));
+            cold_total.push(ms(started));
+            match session.wait_source_measured(Duration::from_secs(300)) {
+                Some(IndexMeasurement::Verified) | None => verified.push(ms(started)),
+                Some(other) => return Err(format!("index measurement: {other:?}").into()),
+            }
+            cold_stats.push(stats(&session));
+        }
+        cold_reports.insert(
+            name.into(),
+            json!({
+                "session_open_ms": summary(&cold_open),
+                "first_picture_ms": summary(&cold_first),
+                "total_ms": summary(&cold_total),
+                "verified_ms": summary(&verified),
+                "session_stats": cold_stats,
+            }),
+        );
     }
 
-    // Warm: one open session, random non-adjacent frames (long-GOP seeks).
-    let mut session = ProjectPictureSession::open_revision(package, &revision, None, &cancelled)?;
+    // Warm: one open preview session, random non-adjacent frames (long-GOP
+    // seeks), sampled after its background measurement has completed.
+    let mut session = ProjectPictureSession::open_revision_with(
+        package,
+        &revision,
+        None,
+        SourceAdmission::Progressive,
+        &cancelled,
+    )?;
     session.prepare(ProjectFrame(0), &cancelled)?;
+    // What a user sees first: random seeks while the background measurement
+    // still runs (at most `measuring` samples, stopping when it finishes).
+    let measuring_limit = options.number("measuring", 100)?;
+    let mut measuring = Vec::new();
+    let mut previous = 0_i64;
+    while measuring.len() < usize::try_from(measuring_limit)?
+        && session.source_measurement() == Some(IndexMeasurement::Measuring)
+    {
+        let mut frame = i64::try_from(random.below(u64::try_from(frames)?))?;
+        if (frame - previous).abs() <= 1 {
+            frame = (frame + frames / 2) % frames;
+        }
+        previous = frame;
+        let started = Instant::now();
+        let prepared = session.prepare(ProjectFrame(frame), &cancelled)?;
+        gpu.present(&prepared)?;
+        measuring.push(ms(started));
+    }
+    let measured_after = session.source_measurement();
+    if !matches!(
+        session.wait_source_measured(Duration::from_secs(300)),
+        Some(IndexMeasurement::Verified) | None
+    ) {
+        return Err("warm session index measurement did not verify".into());
+    }
     let mut decode = Vec::new();
     let mut submit = Vec::new();
     let mut complete = Vec::new();
     let mut total = Vec::new();
     let mut slow = Vec::new();
-    let mut previous = 0_i64;
+    previous = 0;
     for _ in 0..warm {
         let mut frame = i64::try_from(random.below(u64::try_from(frames)?))?;
         if (frame - previous).abs() <= 1 {
@@ -103,11 +161,13 @@ pub fn run(options: &Options) -> Result<Value> {
         "frame_rate": basis.frame_rate,
         "project_frames": frames,
         "source_gop": gop,
-        "cold_state": "session-cold, page-cache-warm: each sample opens a new picture session (verified private snapshot copy, SHA-256, full measured index, decoder) but the OS file cache is not purged (that needs root), so only the first sample can include disk reads",
-        "cold_session_open_ms": summary(&cold_open),
-        "cold_first_picture_ms": summary(&cold_first),
-        "cold_total_ms": summary(&cold_total),
-        "cold_session_stats": cold_stats,
+        "decode_threads": interactive_decode_threads(),
+        "cold_state": "session-cold, page-cache-warm: each sample opens a new picture session (verified private snapshot copy, SHA-256, decoder; complete admission also measures the full index first) but the OS file cache is not purged (that needs root), so only the first sample can include disk reads",
+        "cold": cold_reports,
+        "measuring_seek": {
+            "total_ms": summary(&measuring),
+            "still_measuring_after_samples": measured_after == Some(IndexMeasurement::Measuring),
+        },
         "warm_session_stats": warm_stats,
         "warm_seek": {
             "decode_ms": summary(&decode),
