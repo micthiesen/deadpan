@@ -96,17 +96,43 @@ impl Retention {
         })
     }
 
+    /// Record the state; true only when it is worth publishing an update.
+    /// Housekeeping that does nothing (deferred, running, a pass that
+    /// expired and removed nothing) changes the status quietly, so it never
+    /// re-delivers feedback or makes a remote command wait for the UI; the
+    /// next update carries it. Expiry, removal, a clock anomaly, a failure,
+    /// or the end of an anomaly or failure are published.
     fn set(&mut self, session: u64, state: RetentionPassState) -> bool {
-        let status = RetentionPassStatus {
+        let previous = self
+            .status
+            .as_ref()
+            .filter(|status| status.session == session)
+            .map(|status| status.state.clone());
+        if previous.as_ref() == Some(&state) {
+            return false;
+        }
+        let notable = |state: &RetentionPassState| match state {
+            RetentionPassState::Done {
+                expired,
+                removed_files,
+                ..
+            } => *expired > 0 || *removed_files > 0,
+            RetentionPassState::ClockAnomaly(_) | RetentionPassState::Failed(_) => true,
+            RetentionPassState::Deferred(_) | RetentionPassState::Running => false,
+        };
+        let publish = notable(&state)
+            || previous.as_ref().is_some_and(|previous| {
+                matches!(
+                    previous,
+                    RetentionPassState::ClockAnomaly(_) | RetentionPassState::Failed(_)
+                )
+            });
+        self.status = Some(RetentionPassStatus {
             session,
             state,
             confirmation: None,
-        };
-        if self.status.as_ref() == Some(&status) {
-            return false;
-        }
-        self.status = Some(status);
-        true
+        });
+        publish
     }
 
     /// End the pass: the next one is due after the interval.
@@ -194,6 +220,16 @@ impl Service {
 impl Service {
     /// Why the writer must not run the retention pass now, if it must not.
     fn retention_blocked(&self) -> Option<&'static str> {
+        // A command the UI has submitted, or one being received, goes first.
+        if self.shared.busy.load(std::sync::atomic::Ordering::Acquire) {
+            Some("Waiting for the current command to finish.")
+        } else {
+            self.retention_jobs_running()
+        }
+    }
+
+    /// A job that could be writing media or the database is running.
+    fn retention_jobs_running(&self) -> Option<&'static str> {
         if self.active.is_some() || self.relinking.is_some() || self.host_preparation_active() {
             Some("Waiting for the import or relink to finish.")
         } else if self.render.is_some() || self.pending_session_change.is_some() {
@@ -209,9 +245,22 @@ impl Service {
         }
     }
 
-    /// Advance this session's automatic retention pass. True when its
-    /// published status changed.
+    /// Advance this session's automatic retention pass. True when the
+    /// change is worth publishing (see `Retention::set`).
     pub(super) fn pump_retention(&mut self) -> bool {
+        let publish = self.advance_retention();
+        #[cfg(test)]
+        if let Some(session) = self.retention.session {
+            *self
+                .shared
+                .retention_status
+                .lock()
+                .unwrap_or_else(|error| error.into_inner()) = self.retention.status(session);
+        }
+        publish
+    }
+
+    fn advance_retention(&mut self) -> bool {
         let Some((session, package)) = self
             .workspace
             .as_ref()
@@ -230,7 +279,12 @@ impl Service {
         let wake = self.shared.wake.clone();
         match std::mem::take(&mut self.retention.phase) {
             Phase::Idle => {
-                if self.retention.due.is_none_or(|due| Instant::now() < due) {
+                if self.retention.due.is_none_or(|due| Instant::now() < due)
+                    || !self
+                        .shared
+                        .automatic_retention
+                        .load(std::sync::atomic::Ordering::Acquire)
+                {
                     return false;
                 }
                 if let Some(reason) = self.retention_blocked() {
@@ -239,7 +293,19 @@ impl Service {
                         .set(session, RetentionPassState::Deferred(reason.into()));
                 }
                 self.retention.due = None;
+                #[cfg(test)]
+                let shared = self.shared.clone();
                 match spawn("deadpan-retention-plan", wake, move || {
+                    #[cfg(test)]
+                    while shared
+                        .retention_paused
+                        .load(std::sync::atomic::Ordering::Acquire)
+                    {
+                        shared
+                            .retention_waiting
+                            .store(true, std::sync::atomic::Ordering::Release);
+                        std::thread::sleep(Duration::from_millis(1));
+                    }
                     deadpan_store::ProjectStore::open(&package, deadpan_store::AccessMode::ReadOnly)
                         .and_then(|store| {
                             store.plan_generation_expiry(
@@ -275,7 +341,7 @@ impl Service {
                     ),
                     None => {
                         self.retention.phase = Phase::Applying(plan);
-                        self.pump_retention()
+                        self.advance_retention()
                     }
                 },
             },
@@ -346,7 +412,7 @@ impl Service {
                         expired,
                         previewed: outcome.removed,
                     };
-                    self.pump_retention()
+                    self.advance_retention()
                 }
             },
             Phase::Removing { expired, previewed } => {
@@ -419,7 +485,9 @@ impl Service {
         if plan.mode() != ExpiryMode::Explicit {
             return Err("Only a reviewed explicit plan confirms the clock.".into());
         }
-        if let Some(reason) = self.retention_blocked() {
+        // This request holds the command admission itself, so only jobs
+        // refuse it.
+        if let Some(reason) = self.retention_jobs_running() {
             return Err(format!("Not confirmed. {reason}"));
         }
         let store = self.store.as_mut().ok_or("Open a project first.")?;

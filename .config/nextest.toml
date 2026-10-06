@@ -1,0 +1,14 @@
+# Tests that attach a private APFS disk image and fill it. APFS releases
+# space asynchronously, and several images filling at once on the same
+# host keep each other from staying full, so they run one at a time.
+[test-groups]
+disk-images = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = """
+binary(storage_failures) | binary(storage_failures_media) | binary(proxy_disk_full)
+| test(=packs::disk_full_tests::a_volume_that_fills_during_a_download_fails_truthfully_and_resumes)
+| test(/a_full_destination_volume_publishes_nothing_and_keeps_the_candidate$/)
+| test(/a_full_disk_never_reports_saved_and_its_alert_clears_after_a_real_save$/)
+"""
+test-group = "disk-images"

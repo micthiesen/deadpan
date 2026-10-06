@@ -1081,6 +1081,20 @@ struct Shared {
     /// keeps the production interval.
     #[cfg(any(test, feature = "ui-harness"))]
     backup_interval_ms: std::sync::atomic::AtomicU64,
+    /// The automatic AI variant retention check runs (production default).
+    /// Off, a session never starts one; explicit cleanup and the Storage
+    /// panel's clock confirmation still work.
+    automatic_retention: AtomicBool,
+    /// Tests: hold the automatic check's off-writer planning thread, which
+    /// reports that it is waiting.
+    #[cfg(test)]
+    retention_paused: AtomicBool,
+    #[cfg(test)]
+    retention_waiting: AtomicBool,
+    /// Tests: the latest retention status, including quiet changes that are
+    /// not published.
+    #[cfg(test)]
+    retention_status: Mutex<Option<RetentionPassStatus>>,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
     /// The app's background job coordinator, shared with the UI's jobs.
@@ -1146,6 +1160,13 @@ impl ProjectService {
             storage_failure: AtomicBool::new(false),
             #[cfg(any(test, feature = "ui-harness"))]
             backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
+            automatic_retention: AtomicBool::new(true),
+            #[cfg(test)]
+            retention_paused: AtomicBool::new(false),
+            #[cfg(test)]
+            retention_waiting: AtomicBool::new(false),
+            #[cfg(test)]
+            retention_status: Mutex::new(None),
             update: Mutex::new(None),
             wake,
             job_board: crate::jobs::Jobs::new(),
@@ -1233,6 +1254,17 @@ impl ProjectService {
     #[cfg(feature = "ui-harness")]
     pub fn inject_storage_failure_for_check(&self) {
         self.shared.storage_failure.store(true, Ordering::Release);
+    }
+
+    /// Turn the automatic AI variant retention check on or off for the
+    /// sessions this service opens from now on (production leaves it on).
+    /// Tests and replays whose assertions count published updates turn it
+    /// off; a check already in progress finishes.
+    #[cfg(test)]
+    pub fn set_automatic_retention(&self, enabled: bool) {
+        self.shared
+            .automatic_retention
+            .store(enabled, Ordering::Release);
     }
 
     /// Tests: back up automatically after this interval instead of the

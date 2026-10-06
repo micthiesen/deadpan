@@ -250,6 +250,14 @@ reports `Deferred` with the reason). Each check
    only whole-database scan on the writer, and it happens only when there is
    something to remove.
 
+The check never takes the command admission, so it never makes a native or
+remote command wait or fail as busy: it also waits while a submitted command
+is pending, plans and scans off the writer, and its writer steps are short.
+A check that changes nothing (deferred, running, or done with nothing
+expired or removed) publishes no app update; its status travels with the
+next one. Expiry, removal, a clock anomaly, a failure or the end of one is
+published.
+
 Its status (`ProjectUpdate::storage_retention`: deferred, running, clock
 anomaly, done with variants expired and files and bytes removed, or failed)
 appears in the Storage panel's AI VARIANTS section as "Automatic check",

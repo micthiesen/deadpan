@@ -653,3 +653,65 @@ fn remote_render_cancel_is_exact_and_remains_available_during_native_admission()
     );
     shutdown(&harness);
 }
+
+/// The automatic retention check plans and scans off the writer: a remote
+/// edit arriving while it plans is admitted and gets its normal receipt, and
+/// a check that does nothing publishes no UI update.
+#[test]
+fn a_remote_edit_during_the_automatic_retention_check_is_not_refused() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("retention-remote.deadpan");
+    let harness = Harness::new();
+    harness
+        .service
+        .shared
+        .retention_paused
+        .store(true, Ordering::Release);
+    let initial = opened(&harness, &path);
+    until(|| {
+        harness
+            .service
+            .shared
+            .retention_waiting
+            .load(Ordering::Acquire)
+    });
+    let mut client = client(&path);
+    committed(
+        live_project::request(&mut client, change(&initial, "during-check", 9)).unwrap(),
+        "during-check",
+    );
+    let update = harness.service.take_update().expect("the edit's refresh");
+    assert_eq!(
+        update.workspace.unwrap().document.revision_id().as_str(),
+        "during-check"
+    );
+    harness
+        .service
+        .shared
+        .retention_paused
+        .store(false, Ordering::Release);
+    // The check finishes having done nothing: no update is published.
+    std::thread::sleep(Duration::from_millis(200));
+    assert!(harness.service.take_update().is_none());
+    // And a later remote edit is still admitted.
+    let later = Operation::Execute {
+        project_id: initial.document.project_id().clone(),
+        command: Box::new(ShortOperation::Edit {
+            request: Box::new(CommandRequest {
+                project_id: initial.document.project_id().clone(),
+                expected_revision: RevisionId::new("during-check").unwrap(),
+                new_revision: RevisionId::new("after-check").unwrap(),
+                command: Command::SetHoldDuration {
+                    node: node("a"),
+                    duration: FrameDuration::new(11).unwrap(),
+                },
+            }),
+            dry_run: false,
+        }),
+    };
+    committed(
+        live_project::request(&mut client, later).unwrap(),
+        "after-check",
+    );
+    shutdown(&harness);
+}

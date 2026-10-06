@@ -7,43 +7,59 @@ fn retention(update: &ProjectUpdate) -> Option<&RetentionPassStatus> {
     update.storage_retention.as_ref()
 }
 
+/// The latest retention status, including quiet changes the service does
+/// not publish, once `ready` holds.
+pub(super) fn quiet_status(
+    service: &ProjectService,
+    ready: impl Fn(&RetentionPassStatus) -> bool,
+) -> RetentionPassStatus {
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        if let Some(status) = service
+            .shared
+            .retention_status
+            .lock()
+            .unwrap()
+            .clone()
+            .filter(|status| ready(status))
+        {
+            return status;
+        }
+        assert!(Instant::now() < deadline, "retention status timed out");
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+
+fn done(status: &RetentionPassStatus, session: u64) -> bool {
+    status.session == session && matches!(status.state, RetentionPassState::Done { .. })
+}
+
 /// The pass waits while the session's import prepares, then runs once the
-/// writer is idle; reopening runs it again for the new session.
+/// writer is idle, without publishing an update when it does nothing;
+/// reopening runs it again for the new session.
 #[test]
 fn the_automatic_pass_defers_while_an_import_runs_and_runs_when_idle() {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::with_library(Some(
         ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
     ));
-    let deferred_by_import = |update: &ProjectUpdate| {
-        retention(update).is_some_and(|status| {
-            matches!(&status.state, RetentionPassState::Deferred(reason) if reason.contains("import"))
-        })
-    };
     let created = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
             path: fixture("cfr-bframes.mp4"),
         },
     );
+    let session = created.workspace.as_ref().unwrap().session;
     // The import's first preparation is held by the test: the pass waits.
     let job = harness.job();
-    let deferred = if deferred_by_import(&created) {
-        created
-    } else {
-        wait(&harness.service, deferred_by_import)
-    };
-    let session = deferred.workspace.as_ref().unwrap().session;
-    assert_eq!(retention(&deferred).unwrap().session, session);
+    quiet_status(&harness.service, |status| {
+        status.session == session
+            && matches!(&status.state, RetentionPassState::Deferred(reason) if reason.contains("import"))
+    });
     harness.finish(job);
     harness.finish(harness.job());
-    complete(&harness.service);
-    let done = wait(&harness.service, |update| {
-        retention(update)
-            .is_some_and(|status| matches!(status.state, RetentionPassState::Done { .. }))
-    });
-    let status = retention(&done).unwrap();
-    assert_eq!(status.session, session);
+    let completed = complete(&harness.service);
+    let status = quiet_status(&harness.service, |status| done(status, session));
     let RetentionPassState::Done {
         expired,
         removed_files,
@@ -54,21 +70,18 @@ fn the_automatic_pass_defers_while_an_import_runs_and_runs_when_idle() {
     };
     // A new project has no variants and nothing a day old.
     assert_eq!((expired, removed_files), (0, 0));
-    let path = done.workspace.as_ref().unwrap().path.clone();
+    // Doing nothing publishes nothing.
+    std::thread::sleep(Duration::from_millis(50));
+    assert!(harness.service.take_update().is_none());
+    let path = completed.path.clone();
 
     command(&harness.service, ProjectRequest::Close);
-    let reopened = command(&harness.service, ProjectRequest::Open(path));
+    let reopened = command(&harness.service, ProjectRequest::Open(path.clone()));
     let session = reopened.workspace.as_ref().unwrap().session;
-    let done = wait(&harness.service, |update| {
-        retention(update).is_some_and(|status| {
-            status.session == session && matches!(status.state, RetentionPassState::Done { .. })
-        })
-    });
-    assert!(done.error.is_none(), "{:?}", done.error);
-    let path = done.workspace.as_ref().unwrap().path.clone();
+    quiet_status(&harness.service, |status| done(status, session));
 
     // A clock earlier than the last recorded check expires and removes
-    // nothing, and says so.
+    // nothing, and says so in a published update.
     command(&harness.service, ProjectRequest::Close);
     let future = std::time::SystemTime::now() + Duration::from_secs(10 * 24 * 60 * 60);
     let future_ms = future
@@ -93,6 +106,34 @@ fn the_automatic_pass_defers_while_an_import_runs_and_runs_when_idle() {
     });
 }
 
+/// Off, a session never starts the automatic check.
+#[test]
+fn the_automatic_check_can_be_turned_off() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::new();
+    harness.service.set_automatic_retention(false);
+    let workspace = create(&harness.service, &scratch.path().join("off.deadpan"));
+    std::thread::sleep(Duration::from_millis(100));
+    assert!(
+        harness
+            .service
+            .shared
+            .retention_status
+            .lock()
+            .unwrap()
+            .is_none()
+    );
+    let watermark: Option<i64> = rusqlite::Connection::open(workspace.path.join("project.sqlite"))
+        .unwrap()
+        .query_row(
+            "SELECT max(last_pass_ms) FROM generation_retention_state",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(watermark, None);
+}
+
 /// The Storage panel's clock confirmation applies an explicit plan made off
 /// the writer: refused for another revision or a clock behind the records,
 /// accepted after a long gap, which advances the watermark.
@@ -103,10 +144,7 @@ fn confirming_the_clock_applies_a_reviewed_plan_and_refuses_a_clock_behind() {
     let path = scratch.path().join("clock.deadpan");
     let harness = Harness::new();
     let workspace = create(&harness.service, &path);
-    wait(&harness.service, |update| {
-        retention(update)
-            .is_some_and(|status| matches!(status.state, RetentionPassState::Done { .. }))
-    });
+    quiet_status(&harness.service, |status| done(status, workspace.session));
     let now_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()

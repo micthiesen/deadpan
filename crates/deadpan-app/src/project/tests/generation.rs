@@ -1708,14 +1708,24 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
         drop(database);
         let opened = command(&fixture.service, ProjectRequest::Open(path.clone()));
         let session = opened.workspace.unwrap().session;
-        wait(&fixture.service, |update| {
-            update.storage_retention.as_ref().is_some_and(|status| {
-                status.session == session && matches!(status.state, RetentionPassState::Done { .. })
-            })
-        })
+        let status = super::retention::quiet_status(&fixture.service, |status| {
+            status.session == session && matches!(status.state, RetentionPassState::Done { .. })
+        });
+        // A no-op operational request publishes the current candidates.
+        let update = generation(
+            &fixture.service,
+            GenerationOperation::Keep {
+                ticket: 100,
+                session,
+                request: candidate.request.clone(),
+                attempt: second.attempt.clone(),
+                keep: false,
+            },
+        );
+        (status, update)
     };
-    let reopened = age_all();
-    let RetentionPassState::Done { expired, .. } = reopened.storage_retention.unwrap().state else {
+    let (status, reopened) = age_all();
+    let RetentionPassState::Done { expired, .. } = status.state else {
         unreachable!()
     };
     assert_eq!(expired, 0);
@@ -1730,8 +1740,8 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
     let session = reopened.workspace.unwrap().session;
     let released = generation(&fixture.service, keep(4, session, false));
     assert!(refusal(&released).is_none(), "{:?}", refusal(&released));
-    let reopened = age_all();
-    let RetentionPassState::Done { expired, .. } = reopened.storage_retention.unwrap().state else {
+    let (status, reopened) = age_all();
+    let RetentionPassState::Done { expired, .. } = status.state else {
         unreachable!()
     };
     assert_eq!(expired, 1);

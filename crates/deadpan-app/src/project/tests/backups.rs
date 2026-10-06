@@ -350,7 +350,11 @@ fn opening_a_schema66_package_migrates_it_first() {
     {
         let connection = rusqlite::Connection::open(path.join("project.sqlite")).unwrap();
         connection
-            .execute_batch("DROP TABLE retired_identities;")
+            .execute_batch(
+                "DROP TABLE retired_identities;
+                 DROP TABLE generation_variant_retention;
+                 DROP TABLE generation_retention_state;",
+            )
             .unwrap();
         connection.pragma_update(None, "user_version", 66).unwrap();
     }
@@ -362,7 +366,7 @@ fn opening_a_schema66_package_migrates_it_first() {
             .message
             .as_deref()
             .unwrap()
-            .contains("Upgraded schema 66 to 67"),
+            .contains("Upgraded schema 66 to 68"),
         "{:?}",
         opened.message
     );

@@ -246,14 +246,26 @@ fn anomaly(app: &DeadpanApp) -> Option<Option<deadpan_store::generation_retentio
 fn clock(d: &mut Driver<'_>) -> Result<(), String> {
     use deadpan_store::generation_retention::ClockAnomaly;
     const DAY_MS: i64 = 24 * 60 * 60 * 1000;
-    // The session's own automatic check runs first; it must not race the seed.
-    d.wait_for("Automatic retention check finished", |app| {
-        app.storage.retention.as_ref().is_some_and(|status| {
-            matches!(
-                status.state,
-                crate::project::RetentionPassState::Done { .. }
-            )
-        })
+    // The session's own automatic check runs first and must not race the
+    // seed. It publishes nothing when it does nothing, so watch for the
+    // watermark it records.
+    let database = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("no project")?
+        .path
+        .join("project.sqlite");
+    d.wait_for("Automatic retention check recorded", move |_| {
+        rusqlite::Connection::open(&database)
+            .and_then(|connection| {
+                connection.query_row(
+                    "SELECT count(*) FROM generation_retention_state",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+            })
+            .is_ok_and(|rows| rows == 1)
     })?;
     let revision = d.revision();
 
