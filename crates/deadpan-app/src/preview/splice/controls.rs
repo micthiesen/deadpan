@@ -136,8 +136,8 @@ impl DeadpanApp {
                 if ui.add_enabled(audition_ready, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { action = Some(SpliceKey::Compare); }
                 if ui.add_enabled(audition_ready || self.transport.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).on_disabled_hover_text("Empty groups contain no pictures or audio. Select a nonempty destination to audition its context.").clicked() { action = Some(SpliceKey::Play); }
                 if ui.add_enabled(audition_ready, egui::Button::new(if empty_structure { "Loop destination · Shift Space" } else if draft.proposal.operation == Operation::Move { "Loop this join · Shift Space" } else { "Loop both joins · Shift Space" })).clicked() { action = Some(SpliceKey::Loop); }
-                if ui.add_enabled(ready, style::action("Place slice", "Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
-                if ui.add_enabled(!draft.applying, style::action("Cancel", "Esc")).clicked() { action = Some(SpliceKey::Cancel); }
+                if ui.add_enabled(ready, style::action("Place slice", crate::navigation::registry::mode_label("splice.apply")).fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
+                if ui.add_enabled(!draft.applying, style::action("Cancel", crate::navigation::registry::mode_label("splice.cancel"))).clicked() { action = Some(SpliceKey::Cancel); }
             });
             ui.weak(if empty_structure { "j/k chooses an exact destination slot, including slots at the same Edit frame. f then h/l inspects destination pictures. Enter inserts the group." } else if draft.proposal.operation == Operation::Move { "h/l adjusts frames; j/k chooses destination seams. Counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." } else { "h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." });
             if action.is_some() || !keys.is_empty() {

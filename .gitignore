@@ -11,6 +11,7 @@
 /models/*
 !/models/packs/
 !/models/licenses/
+!/models/update-keys.json
 /logs/
 __pycache__/
 *.pyc

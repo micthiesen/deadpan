@@ -9,6 +9,8 @@ fn helpers(directory: &Path) -> Helpers {
         yt_dlp_version: "test".into(),
         deno: directory.join("deno dir/deno"),
         deno_version: "test".into(),
+        ejs_version: "0.8.0".into(),
+        selection_note: None,
         pinned: None,
     }
 }
@@ -551,6 +553,40 @@ fn inspection_waits_for_confirmation_and_declining_transfers_nothing() {
     assert!(!directory.path().join("transferred").exists());
     assert!(!package.exists());
     assert!(cookies.exists());
+}
+
+#[test]
+fn a_passed_over_update_is_reported_before_metadata() {
+    let directory = tempfile::tempdir().unwrap();
+    let good = metadata(vec![
+        video_format("137", "avc1.640028", 1080, 24.0, "https"),
+        audio_format("140", "mp4a.40.2", 129.0, -1),
+    ]);
+    let body = format!("cat <<'JSON'\n{good}\nJSON");
+    let mut helpers = stub(directory.path(), &body);
+    helpers.selection_note = Some("installed downloader update 3 is not used".into());
+    let cancelled = AtomicBool::new(false);
+    let mut events = Vec::new();
+    inspect(
+        &Inspection {
+            url: "https://youtu.be/Z4C82eyhwgU",
+            cookies: None,
+            helpers: &helpers,
+            limits: ImportLimits::default(),
+            cancelled: &cancelled,
+        },
+        &mut |event| {
+            events.push(event);
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert_eq!(events[0]["event"], "downloader_note");
+    assert_eq!(
+        events[0]["note"],
+        "installed downloader update 3 is not used"
+    );
+    assert_eq!(events[1]["event"], "fetching_metadata");
 }
 
 #[test]

@@ -1,6 +1,7 @@
 //! The Models panel through real keys: `:models`, the AI PICTURES offer,
 //! license reading and acceptance, install, cancel, resume, an offline
-//! import failure and removal.
+//! import failure, removal, a refused and an applied signed update, and
+//! rollback.
 //!
 //! Only the installer is scripted (`model_packs::Backend::Scripted`): it
 //! never downloads. Progress, cancellation and failure are deterministic; a
@@ -44,6 +45,9 @@ pub(super) fn backend() -> Backend {
         run(6, Finish::WaitForCancel),
         run(6, Finish::Complete),
         run(3, Finish::Fail(import_failure())),
+        // The transcription pack, then its signed version 3.
+        run(3, Finish::Complete),
+        run(4, Finish::Complete),
     ])))
 }
 
@@ -332,6 +336,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"state":"absent"}),
         json!({"state":state(d, BRIDGE)}),
     )?;
+
+    signed_updates(d)?;
     d.key(Key::Escape)?;
     d.step("Closed", false)?;
     d.check(
@@ -340,4 +346,146 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"revision":paused}),
         json!({"revision":d.revision()}),
     )
+}
+
+fn widget_starting(d: &Driver<'_>, prefix: &str) -> Option<Value> {
+    d.widgets()
+        .as_array()?
+        .iter()
+        .find(|widget| {
+            widget["label"]
+                .as_str()
+                .is_some_and(|label| label.starts_with(prefix))
+        })
+        .cloned()
+}
+
+fn pack_version(d: &Driver<'_>, pack: &str) -> Option<String> {
+    d.app()
+        .models
+        .manager
+        .pack(pack)
+        .map(|manifest| manifest.pack_version.clone())
+}
+
+fn finished(app: &DeadpanApp, ending: impl Fn(&Ending) -> bool) -> bool {
+    app.models.manager.job().is_none()
+        && app
+            .models
+            .manager
+            .outcome()
+            .is_some_and(|outcome| ending(&outcome.ending))
+}
+
+/// UPDATES: an untrusted file is refused with its reason, a signed version 3
+/// of the transcription pack installs beside version 2 and is selected after
+/// its (scripted) test, and rollback selects version 2 again.
+fn signed_updates(d: &mut Driver<'_>) -> Result<(), String> {
+    // The failed offline import left partial bytes, so the pack resumes.
+    let whisper = if widget_starting(d, "Resume · ").is_some() {
+        "Resume · "
+    } else {
+        "Install · 149 MB"
+    };
+    tab_to(d, whisper)?;
+    d.key(Key::Enter)?;
+    d.wait_for("Transcription pack installed", |app| {
+        finished(app, |ending| *ending == Ending::Installed)
+    })?;
+    d.step("Transcription pack installed", false)?;
+    // Focus reveals the section at the end of the list.
+    tab_to(d, "Apply signed update…")?;
+    d.check(
+        "UPDATES shows the downloader's pinned versions and offers a signed update",
+        visible(d, "Updates")
+            && visible(
+                d,
+                "YouTube downloader: yt-dlp 2026.08.19 · Deno 2.9.7 · pinned baseline",
+            )
+            && widget(d, "Apply signed update…").is_some_and(|button| button["disabled"] == false)
+            && widget_starting(d, "Activate previous downloader").is_none()
+            && widget(d, "Use the baseline downloader").is_none(),
+        json!({"apply":true,"downloader_rollback":null}),
+        json!({"apply":widget(d, "Apply signed update…"),"widgets":d.widgets()}),
+    )?;
+    d.capture("Updates section")?;
+
+    d.key(Key::Space)?;
+    for frame in 0..2 {
+        d.step(&format!("Untrusted update chosen {frame}"), false)?;
+    }
+    let refusal = "This update was not applied: Signed update manifest names unknown signing key unknown-key.";
+    d.check(
+        "A file signed by an untrusted key is refused before any job starts",
+        d.app().models.manager.job().is_none()
+            && d.app().models.error.as_deref() == Some(refusal)
+            && visible(d, "This update was not applied")
+            && pack_version(d, WHISPER).as_deref() == Some("2"),
+        json!({"error":refusal,"version":"2"}),
+        json!({"error":d.app().models.error,"version":pack_version(d, WHISPER)}),
+    )?;
+    d.capture("Untrusted update refused")?;
+
+    tab_to(d, "Apply signed update…")?;
+    d.key(Key::Space)?;
+    for frame in 0..2 {
+        d.step(&format!("Signed update chosen {frame}"), false)?;
+    }
+    tab_to(d, "Apply update")?;
+    d.check(
+        "A verified update is held for review with its size and licenses; nothing runs yet",
+        d.app().models.manager.job().is_none()
+            && d.app()
+                .models
+                .manager
+                .pending()
+                .is_some_and(|pending| pending.target == WHISPER && pending.to_accept.is_empty())
+            && visible(d, "Review signed update")
+            && widget(d, "Cancel update").is_some(),
+        json!({"pending":WHISPER,"job":null}),
+        json!({"pending":format!("{:?}", d.app().models.manager.pending().map(|pending| &pending.summary))}),
+    )?;
+    d.capture("Signed update review")?;
+    d.key(Key::Space)?;
+    d.wait_for("Signed update applied", |app| {
+        finished(app, |ending| matches!(ending, Ending::Updated(_)))
+    })?;
+    for frame in 0..2 {
+        d.step(&format!("Update applied {frame}"), false)?;
+    }
+    // Focus reveals the transcription pack's card.
+    tab_to(d, "Activate version 2")?;
+    d.check(
+        "A signed version 3 installs beside version 2 and is selected after its test",
+        pack_version(d, WHISPER).as_deref() == Some("3")
+            && d.app().models.manager.previous(WHISPER) == Some("2")
+            && state(d, WHISPER) == "installed"
+            && visible(d, "Active version 3 · version 2 kept for rollback")
+            && !scenarios::text_paint_visibility(d, "Updated to version 3, tested and activated.")
+                .is_empty()
+            && widget(d, "Activate version 2").is_some()
+            && widget(d, "Remove version 2").is_some(),
+        json!({"version":"3","previous":"2","activate":"Activate version 2","remove":"Remove version 2"}),
+        json!({"version":pack_version(d, WHISPER),"previous":d.app().models.manager.previous(WHISPER),"state":state(d, WHISPER)}),
+    )?;
+    d.capture("Signed update applied")?;
+
+    d.key(Key::Space)?;
+    d.wait_for("Rolled back", |app| {
+        finished(app, |ending| matches!(ending, Ending::RolledBack(_)))
+    })?;
+    for frame in 0..2 {
+        d.step(&format!("Rolled back {frame}"), false)?;
+    }
+    d.check(
+        "Rollback selects version 2 again and keeps version 3 installed",
+        pack_version(d, WHISPER).as_deref() == Some("2")
+            && d.app().models.manager.previous(WHISPER) == Some("3")
+            && !scenarios::text_paint_visibility(d, "Activated version 2. Nothing was deleted.")
+                .is_empty()
+            && widget(d, "Activate version 3").is_some(),
+        json!({"version":"2","previous":"3"}),
+        json!({"version":pack_version(d, WHISPER),"previous":d.app().models.manager.previous(WHISPER)}),
+    )?;
+    d.capture("Rolled back")
 }

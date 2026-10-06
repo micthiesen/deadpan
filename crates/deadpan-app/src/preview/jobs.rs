@@ -386,15 +386,17 @@ impl DeadpanApp {
                         *modifiers,
                         super::editor_input::companion_text(*key, events.peek()),
                     )
-                    && modifiers.is_none()
-                    && let Some(action) = match key {
-                        egui::Key::ArrowDown | egui::Key::J => Some('j'),
-                        egui::Key::ArrowUp | egui::Key::K => Some('k'),
-                        egui::Key::X => Some('x'),
-                        egui::Key::R => Some('r'),
-                        egui::Key::D => Some('d'),
-                        _ => None,
-                    }
+                    && let Some(action) =
+                        crate::navigation::panels::jobs_key(key, modifiers).map(|action| {
+                            use crate::navigation::panels::JobsKey;
+                            match action {
+                                JobsKey::Next => 'j',
+                                JobsKey::Previous => 'k',
+                                JobsKey::Cancel => 'x',
+                                JobsKey::Retry => 'r',
+                                JobsKey::Discard => 'd',
+                            }
+                        })
                 {
                     if !repeat || matches!(action, 'j' | 'k') {
                         actions.push(action);

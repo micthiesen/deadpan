@@ -157,19 +157,33 @@ runtime and Deno versions they actually load, with `matches_pins`. `doctor`
 lists the pinned versions and their presence without hashing.
 
 A packaged `Deadpan.app` (`cargo xtask bundle`) ships the same pinned files as
-a read-only baseline in `Contents/Resources/helpers`, and the running bundle
-prefers it over the managed root. Deno keeps its upstream signature and pinned
-bytes and its signer requirement. yt-dlp is re-signed with the hardened
-runtime and must match a compiled signature-independent content hash. Bundled
-files are verified before every launch. Inside a packaged app the baseline is
-always used, so a missing or damaged one reports `DownloaderHelperInvalid`
-instead of falling back
-([packaging](PACKAGING.md#downloader-baseline)). An explicit `--root` or
-`--helpers` names only a managed root. The managed install serves development
-builds and is the future update location. Updates through app-verified signed
-manifests with compatibility checks and rollback, and notarization, remain open
-(DP-22). Updating a pin is a source change with new hashes and a re-run of the
-tests, the bundle check and a real import.
+a read-only baseline in `Contents/Resources/helpers`. Deno keeps its upstream
+signature and pinned bytes and its signer requirement. yt-dlp is re-signed with
+the hardened runtime and must match a compiled signature-independent content
+hash. Bundled files are verified before every launch; a missing or damaged
+baseline reports `DownloaderHelperInvalid` instead of falling back
+([packaging](PACKAGING.md#downloader-baseline)).
+
+Newer helpers arrive as [signed updates](UPDATES.md#downloader-updates):
+`downloader update --manifest <file|https-url>` (or **Apply signed update…** in
+the Models panel) verifies the Ed25519 signature against the compiled key, the
+minimum app version and platform, installs each release into its own
+`<root>/<name>/<version>/` directory under the managed root (never inside the
+bundle), runs the probe on the new set and only then switches
+`updates/state.json`. `downloader rollback [--baseline]` switches back; the
+previous set and the baseline stay installed. Helpers older than the baseline
+or a replayed lower serial need `--allow-downgrade`. Precedence on every use:
+a compatible active signed update under the managed root, else the bundled
+baseline, else (development) the managed root's compiled pins. An update this
+build cannot use (untrusted key, newer minimum app version, older than the
+baseline, a replayed older serial) is passed over, and `downloader status`,
+`doctor`, import events (`downloader_note`), the app's confirmation step and
+the Original's provenance (`downloader_note`) say why; a
+changed file or envelope refuses imports with `DownloaderHelperInvalid`. An
+explicit `--root` or `--helpers` names a managed root and honors its own active
+update. Provenance records the versions actually used, including the update's
+`yt-dlp-ejs` version. Changing the compiled baseline remains a source change
+with new hashes and a re-run of the tests, the bundle check and a real import.
 
 ## Acquisition
 
@@ -377,7 +391,9 @@ line in the message.
 ## Remaining work
 
 - A thumbnail in the confirmation step (needs an image decoder for the app).
-- Helpers shipped and signed in the application bundle, signed update
-  manifests, compatibility checks and rollback; Linux and Intel builds.
+- Linux and Intel helper builds. A hosted update channel (no URL is
+  published; updates come from a file or an explicit `https://` URL), and
+  applying a signed update to a packaged app on a second Mac (To verify,
+  owner).
 - VP9/AV1 and above-1080p originals need decoder qualification first.
 - Resumable transfers, clean-machine acceptance and a broader failure corpus.

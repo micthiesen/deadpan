@@ -80,6 +80,10 @@ pub struct RemoteOriginalProvenance {
     pub formats: Vec<SelectedFormat>,
     /// How selected formats became one container, for example a stream-copy remux.
     pub assembly: String,
+    /// Why an installed signed downloader update was passed over for these
+    /// helpers, when one was.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub downloader_note: Option<String>,
 }
 
 impl RemoteOriginalProvenance {
@@ -109,6 +113,7 @@ impl RemoteOriginalProvenance {
                 &self.license,
                 &self.upload_date,
                 &self.thumbnail_url,
+                &self.downloader_note,
             ]
             .into_iter()
             .all(optional)

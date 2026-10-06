@@ -1040,6 +1040,14 @@ impl DeadpanApp {
             rows.push(("License", license.as_str()));
         }
         style::value_grid(ui, "youtube-confirm", rows);
+        if let Some(note) = &preview.downloader_note {
+            // The import uses the baseline helpers instead of an installed
+            // signed update; never silently.
+            ui.colored_label(
+                style::WARNING,
+                format!("Downloader: {note}. Check Models (:models) to roll back or update."),
+            );
+        }
         ui.label(
             egui::RichText::new("You are responsible for having the rights to use this video.")
                 .size(12.0)

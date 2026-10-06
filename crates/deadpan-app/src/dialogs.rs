@@ -26,6 +26,8 @@ pub enum DialogKind {
     ModelPackFolder,
     /// An uncompressed tar archive of a model pack, for an offline install.
     ModelPackArchive,
+    /// A signed model-pack or downloader update manifest (.json).
+    SignedUpdate,
     /// Where File › Save Portable Copy… writes a new self-contained package.
     PortableCopy,
 }
@@ -263,6 +265,12 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
             rfd::AsyncFileDialog::new()
                 .set_title("Choose a model pack archive (.tar)")
                 .add_filter("Uncompressed tar archive", &["tar"])
+                .pick_file(),
+        ),
+        DialogKind::SignedUpdate => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Choose a signed Deadpan update (.json)")
+                .add_filter("Signed update manifest", &["json"])
                 .pick_file(),
         ),
         DialogKind::ImportSound => Box::pin(

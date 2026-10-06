@@ -7,6 +7,10 @@
 //! between its controls, Space or Enter activates the focused one, and Escape
 //! closes it without changing anything. An install keeps running after the
 //! panel closes and across project changes.
+//!
+//! UPDATES applies a signed update file (a model-pack version or a downloader
+//! helper set) through the same job slot and offers rollback to the previous
+//! version of each pack and of the downloader.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -14,7 +18,8 @@ use deadpan_models::packs::{Operation, PackManifest, PackState};
 
 use super::*;
 use crate::model_packs::{
-    Backend, Ending, Manager, Work, format_bytes, install_blocker, install_label, remaining,
+    Backend, DOWNLOADER, Ending, Manager, Work, format_bytes, install_blocker, install_label,
+    remaining,
 };
 
 /// How often an open panel or a visible offer re-reads the pack directory,
@@ -195,6 +200,222 @@ impl DeadpanApp {
         }
     }
 
+    fn choose_signed_update(&mut self, context: &egui::Context) {
+        if let Err(error) = self.dialogs.start(DialogKind::SignedUpdate, context) {
+            self.models.error = Some(error);
+        }
+    }
+
+    /// A chosen signed update file is verified and applied.
+    pub(super) fn receive_signed_update(
+        &mut self,
+        path: Option<std::path::PathBuf>,
+        error: Option<String>,
+        context: &egui::Context,
+    ) {
+        if let Some(error) = error {
+            self.models.error = Some(error);
+            return;
+        }
+        let Some(path) = path else {
+            return;
+        };
+        // Verified now and held for review; nothing runs until Apply update.
+        self.models.error = self.models.manager.review_update(&path).err();
+        context.request_repaint();
+    }
+
+    /// The reviewed update: what changes, its licenses with acceptance where
+    /// needed, then Apply update or Cancel.
+    fn model_update_review(&mut self, ui: &mut egui::Ui, busy: bool) {
+        let Some(pending) = self.models.manager.pending().cloned() else {
+            return;
+        };
+        ui.add_space(6.0);
+        ui.label(style::semibold("Review signed update"));
+        ui.label(&pending.summary);
+        let accepted = self
+            .models
+            .accepted
+            .entry(pending.target.clone())
+            .or_default();
+        if let Some(pack) = &pending.pack {
+            for license in &pack.licenses {
+                ui.add_space(4.0);
+                ui.label(style::semibold(&license.title));
+                ui.label(egui::RichText::new(&license.terms).size(12.5));
+                ui.label(egui::RichText::new(&license.attribution).size(11.5).weak());
+                let link =
+                    ui.hyperlink_to(format!("License source: {}", license.url), &license.url);
+                reveal(&link);
+                if pending.to_accept.contains(&license.id) {
+                    let mut checked = accepted.contains(&license.id);
+                    let label = if license.acceptance_required {
+                        format!("I accept the {}", license.title)
+                    } else {
+                        format!(
+                            "I accept the {} (new or changed in this update)",
+                            license.title
+                        )
+                    };
+                    let checkbox = ui.checkbox(&mut checked, label);
+                    reveal(&checkbox);
+                    if checkbox.changed() {
+                        if checked {
+                            accepted.insert(license.id.clone());
+                        } else {
+                            accepted.remove(&license.id);
+                        }
+                    }
+                }
+            }
+        }
+        let ready = pending.to_accept.iter().all(|id| accepted.contains(id));
+        let mut apply = false;
+        let mut cancel = false;
+        ui.horizontal_wrapped(|ui| {
+            let button = ui.add_enabled(
+                ready && !busy,
+                egui::Button::new("Apply update").fill(style::SELECTED),
+            );
+            reveal(&button);
+            apply = button.clicked();
+            let button = ui.button("Cancel update");
+            reveal(&button);
+            cancel = button.clicked();
+        });
+        if !ready {
+            ui.weak("Accept each license marked above to apply this update.");
+        }
+        if cancel {
+            self.models.manager.cancel_pending();
+        }
+        if apply {
+            let repaint = ui.ctx().clone();
+            self.models.error = self
+                .models
+                .manager
+                .apply_pending(&self.models.accepted, move || repaint.request_repaint())
+                .err();
+        }
+    }
+
+    /// Downloader versions, signed updates and rollback.
+    fn model_updates_section(&mut self, ui: &mut egui::Ui, picker_open: bool) {
+        let job = self.models.manager.job().cloned();
+        let busy = job.is_some() || picker_open;
+        let view = self.models.manager.downloader().cloned();
+        let outcome = self
+            .models
+            .manager
+            .outcome()
+            .filter(|outcome| outcome.pack_id == DOWNLOADER)
+            .cloned();
+        egui::Frame::new()
+            .fill(style::PANEL)
+            .stroke(egui::Stroke::new(1.0, accessibility::border(ui.ctx())))
+            .corner_radius(6)
+            .inner_margin(egui::Margin::same(12))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                accessibility::group(ui, "Updates");
+                ui.label(style::semibold("Updates").size(14.0));
+                ui.label(
+                    egui::RichText::new(
+                        "Apply a signed update file to install a newer model pack or YouTube downloader. Deadpan checks its signature, compatibility and every file, tests it on this Mac, and only then switches; the previous version stays installed for rollback.",
+                    )
+                    .size(12.0)
+                    .weak(),
+                );
+                ui.add_space(6.0);
+                if let Some(view) = &view {
+                    ui.label(format!("YouTube downloader: {}", view.summary));
+                    if let Some(note) = &view.note {
+                        ui.colored_label(style::WARNING, note);
+                    }
+                    if let Some(problem) = &view.problem {
+                        ui.colored_label(style::ERROR, problem);
+                    }
+                }
+                if let Some(job) = job.as_ref().filter(|job| job.pack_id == DOWNLOADER) {
+                    ui.label(if job.installing() {
+                        format!(
+                            "{} · {} / {}",
+                            job.label(),
+                            format_bytes(job.progress.completed_bytes),
+                            format_bytes(job.progress.total_bytes)
+                        )
+                    } else {
+                        format!("{}…", job.label())
+                    });
+                    ui.add(
+                        egui::ProgressBar::new(job.fraction())
+                            .desired_height(4.0)
+                            .fill(style::LAVENDER),
+                    );
+                }
+                let mut apply = false;
+                let mut roll_back = false;
+                let mut baseline = false;
+                ui.horizontal_wrapped(|ui| {
+                    let button = ui
+                        .add_enabled(!busy, egui::Button::new("Apply signed update…"))
+                        .on_hover_text(
+                            "A .json update signed with Deadpan's update key, for a model pack or the YouTube downloader. You review it before anything installs.",
+                        );
+                    reveal(&button);
+                    apply = button.clicked();
+                    if let Some(previous) = view.as_ref().and_then(|view| view.previous.clone()) {
+                        let button = ui.add_enabled(
+                            !busy,
+                            egui::Button::new(format!("Activate previous downloader: {previous}")),
+                        );
+                        reveal(&button);
+                        roll_back = button.clicked();
+                    }
+                    if view.as_ref().is_some_and(|view| view.baseline_available) {
+                        let button = ui
+                            .add_enabled(!busy, egui::Button::new("Use the baseline downloader"))
+                            .on_hover_text(
+                                "Switch to the downloader bundled with Deadpan, rewriting an unreadable update state. Installed updates stay for later.",
+                            );
+                        reveal(&button);
+                        baseline = button.clicked();
+                    }
+                });
+                self.model_update_review(ui, busy);
+                if let Some(outcome) = &outcome {
+                    let (text, color) = match &outcome.ending {
+                        Ending::Updated(version) => (
+                            format!("Downloader updated to {version} and tested."),
+                            style::SAVED,
+                        ),
+                        Ending::RolledBack(version) => (
+                            format!("Downloader switched to {version}."),
+                            style::SAVED,
+                        ),
+                        Ending::Cancelled => ("Update cancelled.".to_owned(), style::muted(ui)),
+                        Ending::Failed(error) => {
+                            (format!("Downloader update failed: {error}"), style::ERROR)
+                        }
+                        _ => (String::new(), style::muted(ui)),
+                    };
+                    if !text.is_empty() {
+                        ui.colored_label(color, text);
+                    }
+                }
+                if apply {
+                    self.choose_signed_update(ui.ctx());
+                }
+                if roll_back {
+                    self.start_model_job(DOWNLOADER, Work::Rollback, ui.ctx());
+                }
+                if baseline {
+                    self.start_model_job(DOWNLOADER, Work::Baseline, ui.ctx());
+                }
+            });
+    }
+
     /// A chosen folder or archive starts that pack's offline install.
     pub(super) fn receive_model_source(
         &mut self,
@@ -257,6 +478,7 @@ impl DeadpanApp {
                         self.model_pack_card(ui, pack, picker_open);
                         ui.add_space(8.0);
                     }
+                    self.model_updates_section(ui, picker_open);
                 });
             if let Some(error) = &self.models.error {
                 ui.colored_label(style::ERROR, error);
@@ -340,6 +562,21 @@ impl DeadpanApp {
                     .size(12.0)
                     .weak(),
                 );
+                let previous = self.models.manager.previous(&id).map(str::to_owned);
+                ui.label(
+                    egui::RichText::new(match &previous {
+                        Some(previous) => format!(
+                            "Active version {} · version {previous} kept for rollback",
+                            pack.pack_version
+                        ),
+                        None => format!("Version {}", pack.pack_version),
+                    })
+                    .size(11.5)
+                    .weak(),
+                );
+                if let Some(note) = self.models.manager.note(&id) {
+                    ui.colored_label(style::WARNING, note);
+                }
                 let accepted = self.models.accepted.entry(id.clone()).or_default();
                 for license in &pack.licenses {
                     ui.add_space(6.0);
@@ -483,6 +720,27 @@ impl DeadpanApp {
                 let mut pick = None;
                 ui.horizontal_wrapped(|ui| {
                     if installed {
+                        // The active version stays until another one is
+                        // activated; the kept version can be activated or removed.
+                        if let Some(previous) = &previous {
+                            let rollback = ui.add_enabled(
+                                !busy,
+                                egui::Button::new(format!("Activate version {previous}")),
+                            );
+                            claim(&rollback, true);
+                            if rollback.clicked() {
+                                action = Some(Work::Rollback);
+                            }
+                            let remove = ui.add_enabled(
+                                !busy,
+                                egui::Button::new(format!("Remove version {previous}")),
+                            );
+                            claim(&remove, false);
+                            if remove.clicked() {
+                                action = Some(Work::RemoveVersion(previous.clone()));
+                            }
+                            return;
+                        }
                         let remove = ui.add_enabled(!busy, egui::Button::new(format!("Remove · frees {}", format_bytes(pack.total_bytes()))));
                         claim(&remove, true);
                         if remove.clicked() {
@@ -527,6 +785,14 @@ impl DeadpanApp {
                         Ending::Installed => ("Installed and tested.".to_owned(), style::SAVED),
                         Ending::Removed => ("Removed. Projects are unchanged.".to_owned(), style::muted(ui)),
                         Ending::Discarded => ("Partial download discarded.".to_owned(), style::muted(ui)),
+                        Ending::Updated(version) => (
+                            format!("Updated to {version}, tested and activated. The previous version stays installed."),
+                            style::SAVED,
+                        ),
+                        Ending::RolledBack(version) => (
+                            format!("Activated {version}. Nothing was deleted."),
+                            style::SAVED,
+                        ),
                         Ending::Cancelled => (
                             match current {
                                 Some(PackState::Partial { bytes }) => format!(

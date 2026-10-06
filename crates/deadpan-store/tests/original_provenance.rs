@@ -46,6 +46,7 @@ fn provenance() -> RemoteOriginalProvenance {
             byte_length: 10,
         }],
         assembly: "deadpan-media-worker-remux-v1".into(),
+        downloader_note: None,
     }
 }
 

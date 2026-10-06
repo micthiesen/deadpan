@@ -1180,6 +1180,33 @@ impl Compiled {
         parts.push(if compact { "Esc" } else { "Esc cancels" }.into());
         Some(parts.join(" · "))
     }
+    /// The configured paths of one action (a prefix family's own prefix).
+    #[cfg(test)]
+    pub fn definition_paths(&self, id: BindingId) -> Vec<Vec<Stroke>> {
+        self.definitions
+            .iter()
+            .find(|definition| definition.id == id)
+            .map(|definition| definition.paths.clone())
+            .unwrap_or_default()
+    }
+    /// Whether this path reaches the action in one compiled map.
+    #[cfg(test)]
+    pub fn routes(
+        &self,
+        path: &[Stroke],
+        selection: EditSelection,
+        domain: RoutingDomain,
+        id: BindingId,
+    ) -> bool {
+        let Some(node) = self.map(selection, domain).resolve(path) else {
+            return false;
+        };
+        node.terminal()
+            .is_some_and(|binding| binding.value.id() == id)
+            || node
+                .prefix()
+                .is_some_and(|prefix| PrefixKind::for_binding(id) == Some(prefix.value))
+    }
     #[cfg(any(test, feature = "ui-harness"))]
     pub fn prefix_paths(&self) -> Vec<Vec<Stroke>> {
         let mut prefixes = Vec::new();

@@ -267,8 +267,12 @@ impl DeadpanApp {
             self.transcription.status = Status::Failed("Model storage is unavailable.".into());
             return;
         };
-        match store.installed(&pack) {
-            Ok(Some(installed)) => self.start_transcription(context, &pack, &installed),
+        // The selected version: an activated signed update, else compiled.
+        match store.current(&pack.pack_id) {
+            Ok(Some(installed)) => {
+                let pack = installed.manifest.clone();
+                self.start_transcription(context, &pack, &installed)
+            }
             Ok(None) => self.transcription.status = Status::NeedsModel,
             Err(error) => self.transcription.status = Status::Failed(error.to_string()),
         }

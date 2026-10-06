@@ -558,11 +558,7 @@ impl DeadpanApp {
                     repeat: false,
                     modifiers,
                     ..
-                } if *modifiers == egui::Modifiers::CTRL => match key {
-                    egui::Key::O => Some(false),
-                    egui::Key::I => Some(true),
-                    _ => None,
-                },
+                } => crate::navigation::panels::marks_key(*key, *modifiers),
                 _ => None,
             });
             if let Some(forward) = forward {

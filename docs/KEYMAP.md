@@ -160,6 +160,85 @@ policy. Proper prefixes carry separate notifications and semantic capture roles.
 Normal Edit operator terminals resolve typed selectors through the shared
 semantic planner and native project service.
 
+## Action registry
+
+Every user action is described once in the
+[action registry](../crates/deadpan-app/src/navigation/registry/entries.rs):
+its id, name, keys, command verbs and usage, the contexts where it applies,
+macro and dot behaviour, its headless equivalent ([parity](PARITY.md)) and its
+help text. Configurable keys are named by action id, and help text names keys
+by placeholder (`{cut.operator!}{object.inner_pause!}`), so a personal keymap
+changes the Keys sheet, footer teaching and examples together. The command
+parser admits exactly the registry's verbs and completion lists their usages.
+[COMMANDS.md](COMMANDS.md) is generated from it by a test that fails when it is
+stale. `DEADPAN_UPDATE_COMMANDS_MD=1 cargo test -p deadpan-app --bin deadpan-app
+commands_reference` rewrites it and then fails so the diff is reviewed; under
+`CI` it refuses.
+
+Fixed mode keys are declared there as exact chords: Camera, Trim, Slip, Place
+slice, room tone, the Gain draft, transcript corrections, the Marks, Jobs and
+Storage panels and the Keys sheet. A test drives every egui key through 11
+modifier combinations (including Control+Option, Control+⌘, Option+⌘ and each
+⌘ chord with and without macOS's separate Command flag) and every router state
+flag through each mode's real router. It requires that the router acts on
+exactly the declared chords, that each chord has one owner, and that the
+owner is the action the router actually takes. The Marks, Jobs and Storage
+panels and the Keys sheet read their keys from those declarations through
+typed tables that a test proves cover exactly them; mode footers and
+Apply/Cancel buttons take their key labels from them, and a test checks every
+label the interface paints. Mode keys are not configurable: the specification
+fixes Camera's and Trim's keys, and the panels follow the same rule. Native
+shortcuts (menus, ⌘ chords, Models and YouTube panel controls) are described
+in the registry but not router-verified.
+
+`routing_matches_the_pre_registry_baseline` compares a checked-in snapshot.
+Its first part was taken before the registry existed: every shipped trie path
+in logical and physical modes, labels, prefix teaching, count resolutions, the
+former verbs with their usages, about 560 parse results, completions, and the
+pure Camera, Trim, Slip, Place slice, room-tone, Gain and corrections router
+decisions. Later sections were appended without changing those lines: more
+modifier combinations, Camera under text and composition, Camera's
+`dispatch_key` (field, activation and global-chord answers), `mode_key`'s
+companion-text translation for 16 typed characters, held-key state through
+`Bindings::route_event`, and the registry-driven panels. It does not pin
+digit-count accumulation inside the Trim, Place slice or Camera drafts beyond
+the router decisions, native menu shortcuts, or the Models and YouTube panels.
+An intended change regenerates it with `DEADPAN_UPDATE_ROUTING_BASELINE=1`
+(the test then fails until rerun, and refuses under `CI`) and a reviewed diff;
+added verbs leave it unchanged. Two changes have been made this way: corrections
+⌘⇧Z (below) and the appended sections.
+
+The Keys sheet (`?`) lists every action by section with its live keys and
+verbs. Each row is one accessible label: name, help, then notes marking in
+lavender what works in the current context, its contexts elsewhere,
+macro/dot behaviour and headless parity; hovering shows the headless form.
+`/` opens the "Search actions" field: every word must match. A term equal to a
+key path (`dd`, `,h`, `G`, case-sensitive) ranks first, then a verb, a name,
+and any text. A query of only terms under three characters is a key lookup:
+it matches keys and exact verbs, never prose or verb prefixes, so `dd` lists
+only the whole-beat cut and `s` only Split; with a longer word present, short
+words match prose too. `:` alone lists every verb and `:ho` matches verb
+prefixes. The result
+count is a live region announced as it changes, and the key line names the
+field's own keys while it has focus. Enter keeps the filter and returns to
+scrolling; Escape in the field leaves it, including when `/`, text and Escape
+arrive in one batch (what follows the Escape is Help's again), and Escape again
+closes the sheet. A held `/` never echoes into the field. A layout that shifts
+`/` reaches search by its typed character. While the field has focus it owns
+every key and IME event; no widget drawn before it sees them.
+
+Router facts the registry made explicit: Slip's `h`/`l`/arrows and Place
+slice's Shift-Space use egui's `shift_only`, which also admits Control; this is
+preserved. The corrections sheet compared ⌘⇧Z with egui's `COMMAND | SHIFT`
+exactly, so a macOS press, which also sets the separate Command flag, did not
+redo there. It now uses the app's shared `navigation::native_command` test, as
+the editor's ⌘ shortcuts do, so ⌘Z undoes and ⌘⇧Z and ⌘R redo with either flag
+form. The Storage panel formerly used egui's logical key match, which ignores
+Option and Shift, so Kestrel's Option+P and Option+S acted as Preview and Save
+copy and Shift+R confirmed a removal. Storage keys now act only unmodified, are
+read by their typed character like Jobs (so non-Latin layouts reach them at
+their positions), and a held key never repeats an action.
+
 ## Input ownership
 
 The host gives native controls, text and IME priority before an editor command
@@ -169,7 +248,8 @@ normalization, even when the delivered logical key differs. Camera, Trim,
 Gain, room-tone and Place slice keep their own mode routers. Camera's keys,
 including the target keys `n` (new rectangle), `t` (follow), `c` (correct
 here) and Shift+`T` (track), are fixed in its router and not part of the
-configurable trie; `:track` and `:track-cancel` are ordinary commands.
+configurable trie; the registry declares them and a test proves the router
+matches; `:track` and `:track-cancel` are ordinary commands.
 
 Native Command shortcuts are fixed: `⌘N` (choose video), `⌘⇧N` (start from a
 YouTube URL, also `:youtube`), `⌘O`, `⌘I`, `⌘E`, `⌘Z` and `⌘⇧Z`. The YouTube
@@ -222,11 +302,12 @@ any composition event prevents editor submit/cancel for that batch.
 
 While the command line holds only a partial verb, the footer lists the
 matching commands with their usage (`:cap` shows `:caption TEXT [at=top|center]
-[delay=4f]`), from the `COMMANDS` table in
-[`command.rs`](../crates/deadpan-app/src/navigation/command.rs). A unit test
-checks that every listed verb parses, and a drift test scans the parser's verb
-literals so a new verb missing from the sorted table fails. Commands without a key path are therefore
-discoverable by typing their first letters, besides the Keys sheet. `:close`
+[delay=4f]`), from the [action registry](#action-registry) that also admits
+verbs in [`command.rs`](../crates/deadpan-app/src/navigation/command.rs). A unit
+test checks that every listed verb parses, and a drift test scans the parser's
+verb literals so a parsed verb missing from the registry fails. Commands without
+a key path are therefore discoverable by typing their first letters, besides the
+Keys sheet and its search. `:close`
 closes the open project with the same readiness as File › Close Project (it refuses,
 naming them, while unsaved previews such as Camera, Gain or Trim drafts, a Render
 decision, a recording, a save or an open panel are pending, and never discards a
@@ -307,6 +388,10 @@ retains the original held-key regression.
 ## Remaining work
 
 Current configuration covers Normal and timeline Visual paths and their teaching.
+Mode keys are declared and verified in the registry but fixed. Command
+arguments still use per-verb parsers rather than a schema-driven typed-unit
+grammar, completion lists verbs but not parameters or the default selector,
+and the searchable Keys sheet describes actions without executing them.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
 drives Russian ЙЦУКЕН letters at their physical positions, and composes

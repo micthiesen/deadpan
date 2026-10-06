@@ -102,6 +102,84 @@ pub const DENO: HelperPin = HelperPin {
 
 pub const BUNDLE: [HelperPin; 2] = [YT_DLP, DENO];
 
+/// How a release file becomes the executable; the owned form of [`Packaging`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ReleasePackaging {
+    Executable,
+    ZipEntry { entry: String },
+}
+
+/// One helper release: a compiled pin, or one named by a verified signed
+/// downloader update manifest ([`super::updates`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HelperRelease {
+    pub name: String,
+    pub version: String,
+    pub license: String,
+    pub url: String,
+    pub download_sha256: String,
+    pub download_bytes: u64,
+    pub packaging: ReleasePackaging,
+    pub executable: String,
+    pub executable_sha256: String,
+    pub executable_bytes: u64,
+    /// Signature-independent Mach-O content hash of the executable, checked
+    /// at installation; required for yt-dlp so a bundle may re-sign it.
+    #[serde(default)]
+    pub content_sha256: Option<String>,
+    /// Code-signing requirement checked before every launch.
+    #[serde(default)]
+    pub signer: Option<String>,
+}
+
+impl From<&HelperPin> for HelperRelease {
+    fn from(pin: &HelperPin) -> Self {
+        Self {
+            name: pin.name.into(),
+            version: pin.version.into(),
+            license: pin.license.into(),
+            url: pin.url.into(),
+            download_sha256: pin.download_sha256.into(),
+            download_bytes: pin.download_bytes,
+            packaging: match pin.packaging {
+                Packaging::Executable => ReleasePackaging::Executable,
+                Packaging::ZipEntry { entry } => ReleasePackaging::ZipEntry {
+                    entry: entry.into(),
+                },
+            },
+            executable: pin.executable.into(),
+            executable_sha256: pin.executable_sha256.into(),
+            executable_bytes: pin.executable_bytes,
+            content_sha256: pin.content_sha256.map(str::to_owned),
+            signer: pin.signer.map(str::to_owned),
+        }
+    }
+}
+
+impl HelperRelease {
+    pub fn directory(&self, root: &Path) -> PathBuf {
+        root.join(&self.name).join(&self.version)
+    }
+
+    pub fn path(&self, root: &Path) -> PathBuf {
+        self.directory(root).join(&self.executable)
+    }
+
+    /// The published executable after a complete size and SHA-256 check.
+    pub fn verified(&self, root: &Path) -> Result<Option<PathBuf>, CliError> {
+        verify_file(
+            &self.name,
+            &self.version,
+            &self.path(root),
+            self.executable_bytes,
+            &self.executable_sha256,
+            None,
+        )
+    }
+}
+
 /// Manifest naming the bundled baseline's exact shipped bytes.
 pub const BASELINE_MANIFEST: &str = "manifest.json";
 pub const BASELINE_SCHEMA: u32 = 1;
@@ -202,23 +280,54 @@ impl BaselineManifest {
 pub enum HelperSource {
     /// Read-only baseline inside the running application bundle.
     Bundled(PathBuf),
-    /// Managed install root (`downloader install`), the update location.
+    /// Managed install root with the compiled pins (`downloader install`).
     Managed(PathBuf),
+    /// An active signed update installed under a managed root.
+    Update(Box<super::updates::ActiveUpdate>),
 }
 
 impl HelperSource {
-    /// The running packaged bundle's baseline, otherwise the managed
-    /// Application Support root. Never depends on the working directory.
+    /// The helpers an import uses: a compatible active signed update under the
+    /// managed Application Support root, otherwise the baseline (the running
+    /// packaged bundle's, else the managed root's compiled pins). Never
+    /// depends on the working directory.
     pub fn default_source() -> Result<Self, CliError> {
+        Ok(Self::default_selection()?.source)
+    }
+
+    /// [`Self::default_source`] with the reason an active update was not used.
+    pub fn default_selection() -> Result<super::updates::Selection, CliError> {
+        let baseline = Self::default_baseline()?;
+        match default_root() {
+            Ok(root) => super::updates::select(&root, baseline),
+            // Without a home directory there is no update location.
+            Err(_) if matches!(baseline, Self::Bundled(_)) => Ok(super::updates::Selection {
+                source: baseline,
+                note: None,
+            }),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// The baseline alone: the running bundle's, else the managed root's
+    /// compiled pins.
+    pub fn default_baseline() -> Result<Self, CliError> {
         match bundled_root() {
             Some(root) => Ok(Self::Bundled(root)),
             None => Ok(Self::Managed(default_root()?)),
         }
     }
 
+    /// An explicit managed root: its compatible active update, otherwise its
+    /// compiled pins.
+    pub fn for_root(root: &Path) -> Result<Self, CliError> {
+        Ok(super::updates::select(root, Self::Managed(root.to_owned()))?.source)
+    }
+
     pub fn root(&self) -> &Path {
         match self {
             Self::Bundled(root) | Self::Managed(root) => root,
+            Self::Update(update) => &update.root,
         }
     }
 
@@ -226,6 +335,23 @@ impl HelperSource {
         match self {
             Self::Bundled(_) => "bundled",
             Self::Managed(_) => "managed",
+            Self::Update(_) => "update",
+        }
+    }
+
+    /// The release this source provides for `pin`'s helper.
+    pub fn release(&self, pin: &HelperPin) -> Result<HelperRelease, CliError> {
+        match self {
+            Self::Bundled(_) | Self::Managed(_) => Ok(HelperRelease::from(pin)),
+            Self::Update(update) => update.release(pin.name).cloned(),
+        }
+    }
+
+    /// The yt-dlp-ejs version embedded in this source's yt-dlp.
+    pub fn ejs_version(&self) -> String {
+        match self {
+            Self::Bundled(_) | Self::Managed(_) => EJS_VERSION.into(),
+            Self::Update(update) => update.manifest.ejs_version.clone(),
         }
     }
 
@@ -233,6 +359,7 @@ impl HelperSource {
     pub fn verified(&self, pin: &HelperPin) -> Result<Option<PathBuf>, CliError> {
         match self {
             Self::Managed(root) => pin.verified(root),
+            Self::Update(update) => update.verified(pin.name),
             Self::Bundled(root) => {
                 let manifest = BaselineManifest::load(root)?;
                 let entry = manifest.entry(pin)?;
@@ -242,8 +369,14 @@ impl HelperSource {
                 let boundary = root
                     .ancestors()
                     .find(|path| path.extension().is_some_and(|extension| extension == "app"));
-                let Some(path) =
-                    verify_file(pin, &pin.path(root), entry.bytes, &entry.sha256, boundary)?
+                let Some(path) = verify_file(
+                    pin.name,
+                    pin.version,
+                    &pin.path(root),
+                    entry.bytes,
+                    &entry.sha256,
+                    boundary,
+                )?
                 else {
                     return Ok(None);
                 };
@@ -285,6 +418,24 @@ impl HelperSource {
 
     /// Cheap presence and manifest check for diagnostics; no hashing.
     pub fn inspect(&self, pin: &HelperPin) -> Result<PathBuf, CliError> {
+        if let Self::Update(update) = self {
+            let release = update.release(pin.name)?;
+            let path = release.path(&update.root);
+            let length = fs::symlink_metadata(&path)
+                .ok()
+                .filter(|metadata| metadata.file_type().is_file())
+                .map(|metadata| metadata.len());
+            if length != Some(release.executable_bytes) {
+                return Err(helper_error(
+                    "DownloaderHelperInvalid",
+                    format!(
+                        "{} {} of the active downloader update is missing or damaged; run `deadpan-cli downloader rollback`",
+                        release.name, release.version
+                    ),
+                ));
+            }
+            return Ok(path);
+        }
         let path = pin.path(self.root());
         if let Self::Bundled(root) = self {
             let manifest = BaselineManifest::load(root)?;
@@ -328,7 +479,7 @@ fn read_bounded(path: &Path, bytes: u64) -> Result<Vec<u8>, CliError> {
 
 /// Code-signature checks for bundled helpers through the system `codesign`.
 #[cfg(target_os = "macos")]
-mod signing {
+pub(crate) mod signing {
     use std::path::Path;
     use std::process::{Command, Stdio};
     use std::sync::OnceLock;
@@ -374,7 +525,7 @@ mod signing {
     }
 
     /// `codesign --verify --strict`, against `requirement` when given.
-    pub(super) fn verify(path: &Path, requirement: Option<&str>) -> Result<(), CliError> {
+    pub(crate) fn verify(path: &Path, requirement: Option<&str>) -> Result<(), CliError> {
         let tested = requirement.map(|requirement| format!("-R={requirement}"));
         let mut arguments: Vec<&std::ffi::OsStr> = vec!["--verify".as_ref(), "--strict".as_ref()];
         if let Some(tested) = &tested {
@@ -399,7 +550,7 @@ mod signing {
     /// For a Developer ID signed application, the requirement that its own
     /// re-signed helpers carry its team's Developer ID signature. Ad hoc
     /// development bundles have no signer identity; `None` checks validity.
-    pub(super) fn application_requirement() -> Result<Option<String>, CliError> {
+    pub(crate) fn application_requirement() -> Result<Option<String>, CliError> {
         static TEAM: OnceLock<Option<String>> = OnceLock::new();
         if let Some(team) = TEAM.get() {
             return Ok(team.as_ref().map(|team| requirement(team)));
@@ -426,19 +577,19 @@ mod signing {
 }
 
 #[cfg(not(target_os = "macos"))]
-mod signing {
+pub(crate) mod signing {
     use std::path::Path;
 
     use super::{CliError, helper_error};
 
-    pub(super) fn verify(_: &Path, _: Option<&str>) -> Result<(), CliError> {
+    pub(crate) fn verify(_: &Path, _: Option<&str>) -> Result<(), CliError> {
         Err(helper_error(
             "DownloaderUnsupportedPlatform",
             "bundled helpers exist only in macOS application bundles",
         ))
     }
 
-    pub(super) fn application_requirement() -> Result<Option<String>, CliError> {
+    pub(crate) fn application_requirement() -> Result<Option<String>, CliError> {
         Ok(None)
     }
 }
@@ -488,7 +639,8 @@ impl HelperPin {
     /// Symbolic links and other file types are refused.
     pub fn verified(&self, root: &Path) -> Result<Option<PathBuf>, CliError> {
         verify_file(
-            self,
+            self.name,
+            self.version,
             &self.path(root),
             self.executable_bytes,
             self.executable_sha256,
@@ -500,7 +652,8 @@ impl HelperPin {
 /// Exact size, SHA-256, owner-execute and private-directory checks. Directory
 /// checks stop after `boundary` when one is given.
 fn verify_file(
-    pin: &HelperPin,
+    name: &str,
+    version: &str,
     path: &Path,
     bytes: u64,
     sha256: &str,
@@ -515,9 +668,7 @@ fn verify_file(
         return Err(helper_error(
             "DownloaderHelperInvalid",
             format!(
-                "{} {} at {} is not the pinned file",
-                pin.name,
-                pin.version,
+                "{name} {version} at {} is not the pinned file",
                 path.display()
             ),
         ));
@@ -528,9 +679,7 @@ fn verify_file(
         return Err(helper_error(
             "DownloaderHelperInvalid",
             format!(
-                "{} {} at {} failed SHA-256 verification",
-                pin.name,
-                pin.version,
+                "{name} {version} at {} failed SHA-256 verification",
                 path.display()
             ),
         ));
@@ -538,7 +687,7 @@ fn verify_file(
     if metadata.permissions().mode() & 0o100 == 0 {
         return Err(helper_error(
             "DownloaderHelperInvalid",
-            format!("{} at {} is not executable", pin.name, path.display()),
+            format!("{name} at {} is not executable", path.display()),
         ));
     }
     not_shared(path, &metadata, boundary)?;
@@ -593,20 +742,37 @@ pub struct Helpers {
     pub yt_dlp_version: String,
     pub deno: PathBuf,
     pub deno_version: String,
+    /// The yt-dlp-ejs version embedded in this yt-dlp.
+    pub ejs_version: String,
+    /// Why an installed signed update was passed over for this set, shown to
+    /// the user and recorded in provenance.
+    pub selection_note: Option<String>,
     /// The pinned source to re-verify before each launch. `None` only for
     /// explicitly supplied test stand-ins, which are not pinned.
     pub pinned: Option<HelperSource>,
 }
 
 impl Helpers {
-    /// The pinned helpers under one explicit managed root.
+    /// The helpers under one explicit managed root: its compatible active
+    /// update, otherwise its compiled pins.
     pub fn resolve(root: &Path) -> Result<Self, CliError> {
-        Self::resolve_source(&HelperSource::Managed(root.to_owned()))
+        Self::resolve_selection(&super::updates::select(
+            root,
+            HelperSource::Managed(root.to_owned()),
+        )?)
     }
 
-    /// The running bundle's baseline, otherwise the managed root.
+    /// A compatible active signed update, otherwise the baseline, keeping
+    /// the reason an update was passed over.
     pub fn resolve_default() -> Result<Self, CliError> {
-        Self::resolve_source(&HelperSource::default_source()?)
+        Self::resolve_selection(&HelperSource::default_selection()?)
+    }
+
+    pub fn resolve_selection(selection: &super::updates::Selection) -> Result<Self, CliError> {
+        Ok(Self {
+            selection_note: selection.note.clone(),
+            ..Self::resolve_source(&selection.source)?
+        })
     }
 
     pub fn resolve_source(source: &HelperSource) -> Result<Self, CliError> {
@@ -630,12 +796,23 @@ impl Helpers {
                     root.display()
                 ),
             ),
+            HelperSource::Update(update) => helper_error(
+                "DownloaderHelperInvalid",
+                format!(
+                    "{} of downloader update {} is missing under {}; run `deadpan-cli downloader rollback`",
+                    pin.name,
+                    update.serial,
+                    update.root.display()
+                ),
+            ),
         };
         Ok(Self {
             yt_dlp: source.verified(&YT_DLP)?.ok_or_else(|| missing(&YT_DLP))?,
-            yt_dlp_version: YT_DLP.version.into(),
+            yt_dlp_version: source.release(&YT_DLP)?.version,
             deno: source.verified(&DENO)?.ok_or_else(|| missing(&DENO))?,
-            deno_version: DENO.version.into(),
+            deno_version: source.release(&DENO)?.version,
+            ejs_version: source.ejs_version(),
+            selection_note: None,
             pinned: Some(source.clone()),
         })
     }
@@ -662,11 +839,11 @@ impl Helpers {
 
 #[derive(Debug, Serialize)]
 pub struct HelperStatus {
-    pub name: &'static str,
-    pub version: &'static str,
-    pub license: &'static str,
+    pub name: String,
+    pub version: String,
+    pub license: String,
     /// The pinned upstream executable.
-    pub pinned_sha256: &'static str,
+    pub pinned_sha256: String,
     pub pinned_bytes: u64,
     pub path: PathBuf,
     pub installed: bool,
@@ -674,7 +851,7 @@ pub struct HelperStatus {
     pub problem: Option<String>,
 }
 
-/// Status of the helpers under one managed root.
+/// Status of the compiled pins under one managed root.
 pub fn status(root: &Path) -> Vec<HelperStatus> {
     status_source(&HelperSource::Managed(root.to_owned()))
 }
@@ -683,18 +860,21 @@ pub fn status_source(source: &HelperSource) -> Vec<HelperStatus> {
     BUNDLE
         .iter()
         .map(|pin| {
+            let release = source
+                .release(pin)
+                .unwrap_or_else(|_| HelperRelease::from(pin));
             let (installed, verified, problem) = match source.verified(pin) {
                 Ok(Some(_)) => (true, true, None),
                 Ok(None) => (false, false, None),
                 Err(error) => (true, false, Some(error.to_string())),
             };
             HelperStatus {
-                name: pin.name,
-                version: pin.version,
-                license: pin.license,
-                pinned_sha256: pin.executable_sha256,
-                pinned_bytes: pin.executable_bytes,
-                path: pin.path(source.root()),
+                path: release.path(source.root()),
+                name: release.name,
+                version: release.version,
+                license: release.license,
+                pinned_sha256: release.executable_sha256,
+                pinned_bytes: release.executable_bytes,
                 installed,
                 verified,
                 problem,
@@ -707,6 +887,24 @@ pub fn status_source(source: &HelperSource) -> Vec<HelperStatus> {
 /// Returns whether this call published it.
 pub fn install(
     pin: &HelperPin,
+    root: &Path,
+    transport: &dyn Transport,
+    cancelled: &AtomicBool,
+    progress: impl FnMut(u64),
+) -> Result<bool, CliError> {
+    install_release(
+        &HelperRelease::from(pin),
+        root,
+        transport,
+        cancelled,
+        progress,
+    )
+}
+
+/// [`install`] for any release, including one from a verified signed update
+/// manifest. A release with a Mach-O content pin must also match it.
+pub fn install_release(
+    pin: &HelperRelease,
     root: &Path,
     transport: &dyn Transport,
     cancelled: &AtomicBool,
@@ -736,7 +934,7 @@ pub fn install(
             .create_new(true)
             .mode(0o600)
             .open(&download)?;
-        let response = transport.fetch(pin.url, 0)?;
+        let response = transport.fetch(&pin.url, 0)?;
         if response.offset != 0 {
             return Err(helper_error(
                 "DownloaderInstallFailed",
@@ -793,10 +991,10 @@ pub fn install(
     }
     let published = staging.path().join("publish");
     fs::create_dir(&published)?;
-    let executable = published.join(pin.executable);
-    match pin.packaging {
-        Packaging::Executable => fs::rename(&download, &executable)?,
-        Packaging::ZipEntry { entry } => {
+    let executable = published.join(&pin.executable);
+    match &pin.packaging {
+        ReleasePackaging::Executable => fs::rename(&download, &executable)?,
+        ReleasePackaging::ZipEntry { entry } => {
             let archive = fs::read(&download)?;
             let mut output = OpenOptions::new()
                 .write(true)
@@ -820,6 +1018,18 @@ pub fn install(
                 pin.name
             ),
         ));
+    }
+    if let Some(expected) = &pin.content_sha256 {
+        let bytes = read_bounded(&executable, pin.executable_bytes)?;
+        let content = super::macho_content::content_sha256(&bytes).map_err(|error| {
+            helper_error("DownloaderInstallFailed", format!("{}: {error}", pin.name))
+        })?;
+        if &content != expected {
+            return Err(helper_error(
+                "DownloaderInstallFailed",
+                format!("{} code differs from its content pin", pin.name),
+            ));
+        }
     }
     fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))?;
     File::open(&published)?.sync_all()?;
@@ -953,24 +1163,39 @@ fn extract_single_entry(
 
 fn usage() -> CliError {
     CliError::Usage(
-        "usage: downloader install [--root <dir>] | downloader status [--root <dir>] [--probe]"
+        "usage: downloader install [--root <dir>] | downloader status [--root <dir>] [--probe] | downloader update --manifest <file|https-url> [--allow-downgrade] [--root <dir>] | downloader rollback [--baseline] [--root <dir>]"
             .into(),
     )
 }
 
-/// `downloader install|status`
+/// `downloader install|status|update|rollback`
 pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
     let (command, mut options) = arguments.split_first().ok_or_else(usage)?;
     let mut root = None;
     let mut probe = false;
+    let mut manifest = None;
+    let mut allow_downgrade = false;
+    let mut to_baseline = false;
     while let Some((option, rest)) = options.split_first() {
-        match (*option, rest) {
-            ("--root", [value, rest @ ..]) if root.is_none() => {
+        match (*command, *option, rest) {
+            (_, "--root", [value, rest @ ..]) if root.is_none() => {
                 root = Some(PathBuf::from(value));
                 options = rest;
             }
-            ("--probe", rest) if *command == "status" && !probe => {
+            ("status", "--probe", rest) if !probe => {
                 probe = true;
+                options = rest;
+            }
+            ("update", "--manifest", [value, rest @ ..]) if manifest.is_none() => {
+                manifest = Some(*value);
+                options = rest;
+            }
+            ("update", "--allow-downgrade", rest) if !allow_downgrade => {
+                allow_downgrade = true;
+                options = rest;
+            }
+            ("rollback", "--baseline", rest) if !to_baseline => {
+                to_baseline = true;
                 options = rest;
             }
             _ => return Err(usage()),
@@ -981,28 +1206,35 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
         Some(_) => return Err(CliError::Usage("--root must be an absolute path".into())),
         None => None,
     };
+    // An explicit root names a managed install (its compatible active update,
+    // else its compiled pins); otherwise report what an import would use.
+    let (managed, baseline) = match &root {
+        Some(root) => (root.clone(), HelperSource::Managed(root.clone())),
+        None => (default_root()?, HelperSource::default_baseline()?),
+    };
     match *command {
         "status" => {
-            // An explicit root names a managed install; otherwise report what
-            // an import would use: the bundled baseline, else the managed root.
-            let source = match root {
-                Some(root) => HelperSource::Managed(root),
-                None => HelperSource::default_source()?,
-            };
-            let distribution = match source {
+            let selection = super::updates::select(&managed, baseline.clone())?;
+            let source = selection.source.clone();
+            let distribution = match &source {
                 HelperSource::Bundled(_) => {
-                    "read-only baseline inside the application bundle; the managed root is the update location"
+                    "read-only baseline inside the application bundle; signed updates install under the managed root"
                 }
                 HelperSource::Managed(_) => {
-                    "managed install (development stand-in and future update location)"
+                    "managed install of the compiled pins (development baseline)"
+                }
+                HelperSource::Update(_) => {
+                    "signed update under the managed root; the baseline stays installed for rollback"
                 }
             };
             let mut report = serde_json::json!({
                 "protocol": 1,
                 "source": source.kind(),
                 "root": source.root(),
-                "ejs": { "version": EJS_VERSION, "packaging": "embedded in the official yt-dlp executable" },
+                "baseline": { "source": baseline.kind(), "root": baseline.root() },
+                "ejs": { "version": source.ejs_version(), "packaging": "embedded in the official yt-dlp executable" },
                 "helpers": status_source(&source),
+                "updates": super::updates::report(&managed, &selection),
                 "distribution": distribution,
             });
             if probe {
@@ -1012,10 +1244,6 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
             crate::write_json(&report)
         }
         "install" => {
-            let root = match root {
-                Some(root) => root,
-                None => default_root()?,
-            };
             supported_platform()?;
             let cancelled = super::acquire::interrupt_flag()?;
             let transport = HttpsTransport::with_user_agent(USER_AGENT);
@@ -1026,7 +1254,7 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
                     "bytes": pin.download_bytes, "license": pin.license, "url": pin.url,
                 }))?;
                 let mut reported = 0u64;
-                let published = install(pin, &root, &transport, &cancelled, |done| {
+                let published = install(pin, &managed, &transport, &cancelled, |done| {
                     if done >= reported + pin.download_bytes / 10 || done == pin.download_bytes {
                         reported = done;
                         let _ = super::emit(&serde_json::json!({
@@ -1036,11 +1264,57 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
                     }
                 })?;
                 installed.push(serde_json::json!({
-                    "name": pin.name, "version": pin.version, "path": pin.path(&root),
+                    "name": pin.name, "version": pin.version, "path": pin.path(&managed),
                     "already_installed": !published,
                 }));
             }
             crate::write_json(&serde_json::json!({ "protocol": 1, "installed": installed }))
+        }
+        "update" => {
+            supported_platform()?;
+            let manifest = manifest.ok_or_else(usage)?;
+            let signed = crate::update_signing::read_signed(manifest, USER_AGENT)?;
+            let cancelled = super::acquire::interrupt_flag()?;
+            let transport = HttpsTransport::with_user_agent(USER_AGENT);
+            let mut last = std::collections::HashMap::new();
+            let outcome = super::updates::update(
+                &managed,
+                &signed,
+                super::updates::UpdateOptions {
+                    keys: &deadpan_models::updates::trusted_keys(),
+                    allow_downgrade,
+                },
+                &transport,
+                &cancelled,
+                &super::acquire::probe,
+                &mut |event| {
+                    // Bounded progress: about every tenth of each download.
+                    if event["event"] == "progress" {
+                        let name = event["name"].as_str().unwrap_or_default().to_owned();
+                        let done = event["completed_bytes"].as_u64().unwrap_or(0);
+                        let total = event["total_bytes"].as_u64().unwrap_or(1).max(1);
+                        let previous = last.get(&name).copied().unwrap_or(0u64);
+                        if done < previous + total / 10 && done != total {
+                            return;
+                        }
+                        last.insert(name, done);
+                    }
+                    let _ = super::emit(&event);
+                },
+            )?;
+            crate::write_json(&serde_json::json!({ "protocol": 1, "updated": outcome }))
+        }
+        "rollback" => {
+            supported_platform()?;
+            let outcome = super::updates::rollback(
+                &managed,
+                &baseline,
+                &deadpan_models::updates::trusted_keys(),
+                to_baseline,
+            )?;
+            crate::write_json(&serde_json::json!({
+                "protocol": 1, "state": outcome.state, "recovered": outcome.recovered,
+            }))
         }
         _ => Err(usage()),
     }

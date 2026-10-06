@@ -77,7 +77,7 @@ impl Failure {
             }
             "DownloaderNotInstalled" => "Install the downloader to continue.",
             "DownloaderHelperInvalid" => {
-                "A downloader file was changed or damaged. Deadpan never replaces it automatically: remove the folder named above, then install again."
+                "A downloader file was changed or damaged. Deadpan never replaces it automatically: roll back the downloader in Models (:models), or remove the folder named above and install again."
             }
             "DownloaderUnsupportedPlatform" => {
                 "The pinned downloader runs only on Apple Silicon Macs."
@@ -146,6 +146,9 @@ pub struct Request {
 pub struct Preview {
     pub metadata: VideoMetadata,
     pub estimated_bytes: Option<u64>,
+    /// Why an installed signed downloader update is not used for this
+    /// import, shown as a warning before any transfer.
+    pub downloader_note: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -218,13 +221,18 @@ impl Pinned {
         }
     }
 
-    /// An explicit root, otherwise the running bundle's read-only baseline
-    /// before the managed install root.
-    fn source(&self) -> Result<deadpan_cli::youtube::helpers::HelperSource, Failure> {
+    /// An explicit managed root (its compatible active signed update, else
+    /// its compiled pins); otherwise a compatible signed update under the
+    /// managed root, else the running bundle's read-only baseline, else the
+    /// managed root's compiled pins.
+    fn selection(&self) -> Result<deadpan_cli::youtube::updates::Selection, Failure> {
         use deadpan_cli::youtube::helpers::HelperSource;
         match &self.root {
-            Some(root) => Ok(HelperSource::Managed(root.clone())),
-            None => Ok(HelperSource::default_source()?),
+            Some(root) => Ok(deadpan_cli::youtube::updates::select(
+                root,
+                HelperSource::Managed(root.clone()),
+            )?),
+            None => Ok(HelperSource::default_selection()?),
         }
     }
 }
@@ -272,7 +280,7 @@ impl Downloader for Pinned {
         deadpan_cli::youtube::url::normalize(&request.url)
             .map_err(deadpan_cli::youtube::ImportError::from)
             .map_err(CliError::from)?;
-        let helpers = Helpers::resolve_source(&self.source()?)?;
+        let helpers = Helpers::resolve_selection(&self.selection()?)?;
         let media_worker = match &self.media_worker {
             Some(worker) => worker.clone(),
             None => acquire::media_worker()?,
@@ -296,6 +304,7 @@ impl Downloader for Pinned {
         let preview = Preview {
             metadata: inspected.metadata().clone(),
             estimated_bytes: inspected.estimated_bytes(),
+            downloader_note: helpers.selection_note.clone(),
         };
         let package = confirm(&preview)?;
         progress(Stage::Downloading {
@@ -912,6 +921,7 @@ pub mod scripted {
                 },
             },
             estimated_bytes: Some(55_105_605),
+            downloader_note: None,
         }
     }
 

@@ -368,17 +368,38 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 (DialogKind::Cookies, Some(cookies.clone())),
                             ]);
                         }
-                        // Replay never sees models installed on this Mac.
+                        // Replay never sees models or downloader updates
+                        // installed on this Mac.
                         app.models.manager.set_root(models.clone());
+                        app.models.manager.set_helpers_root(models.join("helpers"));
                         if name == "model-packs" {
                             // Only the installer is scripted: the panel, its
                             // gating, the store's state and its receipts are real.
                             app.models
                                 .manager
                                 .set_backend(model_packs::backend());
+                            // Signed updates are verified for real against a
+                            // fresh replay key; the other file's key is not trusted.
+                            let (update, key) = crate::model_packs::scripted::signed_pack_update(
+                                &models.join("signed"),
+                                "whisper-base-en",
+                                "3",
+                                "replay-key",
+                            )
+                            .map_err(|error| error.to_string())?;
+                            let (untrusted, _) = crate::model_packs::scripted::signed_pack_update(
+                                &models.join("untrusted"),
+                                "whisper-base-en",
+                                "4",
+                                "unknown-key",
+                            )
+                            .map_err(|error| error.to_string())?;
+                            app.models.manager.set_trusted_keys(vec![key]);
                             app.dialogs = Dialogs::scripted(vec![
                                 (DialogKind::CreateProject, Some(fixture.to_owned())),
                                 (DialogKind::ModelPackFolder, Some(models.join("offline"))),
+                                (DialogKind::SignedUpdate, Some(untrusted)),
+                                (DialogKind::SignedUpdate, Some(update)),
                             ]);
                         }
                         Ok(app)

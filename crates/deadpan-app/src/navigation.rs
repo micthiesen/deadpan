@@ -29,8 +29,10 @@ mod mark_tests;
 mod object_tests;
 #[cfg(test)]
 mod operator_tests;
+pub mod panels;
 #[cfg(test)]
 mod register_tests;
+pub mod registry;
 #[cfg(test)]
 mod repeat_last_tests;
 #[cfg(test)]
@@ -47,6 +49,14 @@ pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;
 pub use camera::route_camera_key;
+
+/// A native ⌘ chord, with or without Shift: egui sets `command` and macOS
+/// also sets `mac_cmd`, so either flag counts. Option and Control+⌘ do not.
+pub fn native_command(modifiers: Modifiers) -> bool {
+    (modifiers.command || modifiers.mac_cmd)
+        && !modifiers.alt
+        && !(modifiers.ctrl && modifiers.mac_cmd)
+}
 
 /// Normalize a press for the fixed mode routers by its immediate companion
 /// text; `None` is a character none of them names. See `keymap_config`.
@@ -1029,10 +1039,7 @@ impl Bindings {
             self.clear();
             return (!text).then_some(Action::Redo);
         }
-        if (modifiers.command || modifiers.mac_cmd)
-            && !modifiers.alt
-            && !(modifiers.ctrl && modifiers.mac_cmd)
-        {
+        if native_command(modifiers) {
             self.clear();
             return match (key, modifiers.shift) {
                 (Key::N, false) => Some(Action::New),

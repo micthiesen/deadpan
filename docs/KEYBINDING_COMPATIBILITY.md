@@ -304,8 +304,13 @@ structural branch rather than maintaining a separate list. Counted branches
 with no valid edit show the refusal. Held motion keys cannot consume or complete
 any pending prefix; this fixes held `h` becoming a comma-Hold edit. Native
 control protection follows the typed cut and preserves mark names.
-User overrides now load through the compiled map; the remaining mode-map
-migration is still open.
+User overrides now load through the compiled map. Every fixed mode key
+(Camera, Trim, Slip, Place slice, room tone, Gain draft, transcript
+corrections, Marks, Jobs, Storage and the Keys sheet) is declared once in the
+[action registry](KEYMAP.md#action-registry); tests prove each router acts on
+exactly the declared chords, and the Marks, Jobs and Storage panels and the Keys
+sheet read their keys from those declarations. They stay fixed, as the
+specification gives Camera and Trim.
 See [qualification and exact source identities](qualification/declarative-bindings-2026-10-01.md).
 
 ## Source Slip preview
@@ -510,6 +515,15 @@ cargo test --locked -p deadpan-app navigation::
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
 text-action, inspector, room-tone, Gain, Marks, Place slice, Slip and Trim routers,
 including `Bindings::key_with_selection` for empty and nonempty Edit selections.
+On 2026-10-06 it gained the transcript corrections router and the registry
+lookups of the Jobs, Storage, Marks and Keys-sheet panels (21,884,016 cases).
+That extension found a real conflict: Storage matched keys with egui's logical
+comparison, which ignores Option, so Kestrel's Option+P (`OPT+N/P` previous)
+and Option+S (`OPT+S` group) acted as Preview and Save copy. Storage keys now
+act only unmodified (Shift no longer confirms a removal) and are read through
+`mode_key` like Jobs, so the audit checks Storage under every mode companion;
+it passes. The corrections router's ⌘ chords now use the shared
+`navigation::native_command` test, so ⌘⇧Z redoes on macOS.
 The prior Slip integration passed 280 routing cases per reservation, or 17,360 total,
 including pending prefixes, counts and overflow, text/IME and repeat/focus
 combinations. Its execution and matching live-source digest are retained in the

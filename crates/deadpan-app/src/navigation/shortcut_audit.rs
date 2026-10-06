@@ -251,6 +251,21 @@ fn audit_reservation_for(
         for companion in MODE_COMPANIONS {
             audit_modes(reservation, report, text, ime, companion);
         }
+        // Marks and the Keys sheet match the delivered key itself.
+        let panels = [
+            super::panels::marks_key(reservation.key, reservation.modifiers)
+                .map(|forward| format!("marks forward={forward}")),
+            super::panels::help_key(reservation.key, reservation.modifiers)
+                .map(|action| format!("keys sheet={action:?}")),
+        ];
+        for (name, response) in ["Marks", "Keys sheet"].into_iter().zip(panels) {
+            record(
+                report,
+                reservation,
+                format!("{name} panel text={text} ime={ime}"),
+                response,
+            );
+        }
         let text_action = super::text_action(reservation.key, reservation.modifiers, text, ime);
         let inspector = super::inspector_parameter_key(
             reservation.key,
@@ -331,6 +346,35 @@ fn audit_modes(
                 reservation,
                 format!("Trim {detail}"),
                 trim.map(|action| format!("trim={action:?}")),
+            );
+            // The corrections sheet's word field and chosen edge stand in for
+            // the drafts' field and background states.
+            let corrections = routed.and_then(|(key, modifiers)| {
+                super::corrections::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Corrections {detail}"),
+                corrections.map(|action| format!("corrections={action:?}")),
+            );
+        }
+        // Jobs and Storage read the typed character too; repeat never acts.
+        if !repeat {
+            let jobs = routed.and_then(|(key, modifiers)| super::panels::jobs_key(key, modifiers));
+            record(
+                report,
+                reservation,
+                format!("Jobs companion={companion:?} text={text} ime={ime}"),
+                jobs.map(|action| format!("jobs={action:?}")),
+            );
+            let storage =
+                routed.and_then(|(key, modifiers)| super::panels::storage_key(key, modifiers));
+            record(
+                report,
+                reservation,
+                format!("Storage companion={companion:?} text={text} ime={ime}"),
+                storage.map(|action| format!("storage={action:?}")),
             );
         }
         let camera = routed.and_then(|(key, modifiers)| {
@@ -443,10 +487,11 @@ mod tests {
             );
         }
         let editor_cases = prefix_cases * 4 * 4; // Normal/Empty/Range/Object × text/IME.
-        // Five drafts × repeat/background and Camera × repeat under each mode
-        // companion, plus native input, each under all four text/IME
+        // Five drafts and corrections × repeat/background, Camera × repeat
+        // and Jobs under each mode companion, plus native input and the
+        // Marks and Keys sheet panels (Storage with Jobs), each under all four text/IME
         // combinations.
-        let mode_cases = 4 * (MODE_COMPANIONS.len() * (5 * 2 * 2 + 2) + 1);
+        let mode_cases = 4 * (MODE_COMPANIONS.len() * (6 * 2 * 2 + 2 + 2) + 1 + 2);
         // Includes paired logical @, brackets, quotes, digits and letters.
         let layout_cases = prefix_cases * 4 * 4 * LAYOUT_TEXT_CASES;
         assert_eq!(

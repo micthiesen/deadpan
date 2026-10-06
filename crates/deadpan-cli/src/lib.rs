@@ -52,6 +52,8 @@ pub mod storage;
 pub mod tracking;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod transcription;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod update_signing;
 pub mod youtube;
 
 use std::fs::File;
@@ -264,6 +266,8 @@ impl CliError {
                 deadpan_models::packs::PackError::ImportIncomplete { .. }
                 | deadpan_models::packs::PackError::Verification { .. },
             ) => "ModelPackVerification",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::Update { code, .. }) => code,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(_) => "ModelPackFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -520,6 +524,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["models", rest @ ..] => models::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["downloader", rest @ ..] => youtube::helpers::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["update-signing", rest @ ..] => update_signing::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "create-from-url", rest @ ..] => youtube::acquire::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

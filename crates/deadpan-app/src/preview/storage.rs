@@ -508,18 +508,47 @@ impl DeadpanApp {
         context.input(|input| help_scroll::observe_composition(&input.events, composing));
         self.bindings.clear();
         if !self.ime_composing {
-            let pressed =
-                |key| context.input_mut(|input| input.consume_key(egui::Modifiers::NONE, key));
-            if pressed(egui::Key::P) {
-                self.preview_storage_cleanup();
-            } else if pressed(egui::Key::R) {
-                self.confirm_storage_cleanup();
-            } else if pressed(egui::Key::C) {
-                self.clean_user_caches();
-            } else if pressed(egui::Key::S) {
-                self.start_portable_copy(context);
-            } else if pressed(egui::Key::U) {
-                self.refresh_storage();
+            use crate::navigation::panels::{StorageKey, storage_key};
+            // Keys are read by their typed character, as in Jobs, so a
+            // non-Latin layout reaches them at their positions. The first
+            // fresh press in the batch acts; held repeats never act, and every
+            // registered press is consumed with its companion text.
+            let mut pressed = None;
+            context.input_mut(|input| {
+                let mut events = std::mem::take(&mut input.events).into_iter().peekable();
+                while let Some(event) = events.next() {
+                    if let egui::Event::Key {
+                        key,
+                        modifiers,
+                        pressed: true,
+                        repeat,
+                        ..
+                    } = &event
+                        && let Some((key, modifiers)) = crate::navigation::mode_key(
+                            *key,
+                            *modifiers,
+                            super::editor_input::companion_text(*key, events.peek()),
+                        )
+                        && let Some(action) = storage_key(key, modifiers)
+                    {
+                        if !repeat && pressed.is_none() {
+                            pressed = Some(action);
+                        }
+                        if matches!(events.peek(), Some(egui::Event::Text(_))) {
+                            events.next();
+                        }
+                        continue;
+                    }
+                    input.events.push(event);
+                }
+            });
+            match pressed {
+                Some(StorageKey::Preview) => self.preview_storage_cleanup(),
+                Some(StorageKey::Remove) => self.confirm_storage_cleanup(),
+                Some(StorageKey::CleanCaches) => self.clean_user_caches(),
+                Some(StorageKey::PortableCopy) => self.start_portable_copy(context),
+                Some(StorageKey::Refresh) => self.refresh_storage(),
+                None => {}
             }
         }
         true

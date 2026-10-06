@@ -103,6 +103,35 @@ converters' licenses (mlx-forge, mlx-vlm) do not replace the weight licenses.
    replaces is already an incomplete copy.
    Other versions stay installed as known-good fallbacks until removed.
 
+### Signed updates and rollback
+
+A newer pack version can arrive without an app rebuild as a
+[signed model-pack update](UPDATES.md#model-pack-updates): an Ed25519-signed
+envelope whose payload is a complete schema-2 manifest for a pack family this
+build compiles, with the same runtime and a runtime version this build ships.
+`models update <file|https-url> [--from <folder|archive.tar>]
+[--accept-license] [--allow-downgrade]` verifies it, installs the version
+beside the existing ones through the steps above (so the previous version is
+never touched until the new one passes its smoke test) and only then retains
+the envelope under `.updates/<pack>/<version>.json` and records the version as
+active in `.active/<pack>.json` with the version previously in effect. `models rollback <pack>`
+selects the previous version again; nothing is deleted, and `models remove`
+refuses the active version until it is rolled back. Consumers use the selected
+version: the pointer's when it is verified and installed, otherwise the
+compiled approved version. Bridge packs are excluded because the AI worker
+verifies its compiled weight receipt; they change with an app update.
+
+### Gated weights
+
+No approved pack is gated: whisper (MIT) and both bridge repositories
+(`dgrauet/ltx-2.3-mlx-q4`, `mlx-community/gemma-3-12b-it-4bit`) download
+anonymously from Hugging Face (rechecked 2026-10-05). Their license terms
+that require acceptance are enforced in the app and CLI before staging, but no
+token or sign-in exists or is needed. Manifests accept only anonymous HTTPS
+URLs; a future gated pack would need a reviewed token flow (an explicit token
+file or Keychain item, never stored by Deadpan without the owner's choice)
+before its manifest could validate.
+
 `installed` accepts a pack only when its receipt matches the approved manifest
 and every file has its exact size; the consuming worker hashes the file again
 before loading it. `state` reports Installed, Partial (bytes an install would
@@ -114,6 +143,36 @@ plain HTTP including redirects, follows at most five redirects and sends the
 user agent `OpenAI File Downloader, XaiImageApiFetch/1.0`. Hugging Face
 redirects large files to its CDN (`us.aws.cdn.hf.co`), which honors range
 requests; hash verification covers every byte regardless of the serving host.
+Server certificates go through `rustls-platform-verifier` (macOS trust
+evaluation). Before 2026-10-05 the agent silently used ureq's default bundled
+Mozilla roots instead; it now selects the platform verifier explicitly.
+
+Resumes are conditional: the first response's strong `ETag` (else
+`Last-Modified`) is kept beside the `.part` file and sent as `If-Range`, so a
+resource that changed answers from zero and the file restarts instead of
+splicing two versions (the validator is removed when the file completes). A
+`206` from an offset the request did not ask for keeps the partial bytes and
+fails that attempt.
+
+`HttpsTransport::with_trusted_roots(user_agent, &[der])` builds the same
+HTTPS-only, redirect-bounded transport trusting only the given DER roots, for
+tests against a local server; production code uses `default` or
+`with_user_agent`; it exists only in test builds (`#[cfg(test)]`).
+`crates/deadpan-models/src/packs/interrupted_download_tests.rs` uses it to prove resume over the real transport (ureq, rustls, range
+requests, `Content-Range` parsing, `.part` resume and size/SHA-256
+verification). A local rustls server with a committed test-only CA
+(`tests/fixtures`) serves a deterministic 48 MiB file and drops each
+connection after 5 to 9 MiB of body by closing TCP without a TLS
+`close_notify`; an adapter rewrites `https://huggingface.co/...` to it. Each
+repeated `stage` resumes with `Range` equal to the bytes already staged, never
+from zero, and every byte is served exactly once before verification. Further
+cases cover Cancel then Resume, a server answering 200 to a range (clean
+restart), a corrupted resumed byte (verification failure deletes the part),
+and rejection of the test CA by the system trust store and of plain HTTP. An
+ignored network test resumes the last 1,000 bytes of the Silero file from
+Hugging Face through the system trust store (passed 2026-10-05). The real
+36 GB bridge download over Hugging Face with a physical interruption remains
+To verify (owner).
 
 ### Offline installation
 
@@ -138,8 +197,11 @@ A source missing any file fails with `ImportIncomplete` (CLI
 `ModelPackVerification`) naming the count and an example; a hash mismatch fails
 verification. Neither activates anything. `PackStore::export` writes an
 installed pack as `<pack>/<version>/<name>` pax entries, published by rename,
-which `import` and the system `tar` both read; that is the form a full offline
-distribution would carry (specification §14.1).
+which `import` and the system `tar` both read. The full offline distribution
+(specification §14.1) carries packs in exactly this form: `cargo xtask
+offline-dist` exports them with the bundled app's own CLI, and
+`offline-dist-verify` imports them back in a scrubbed environment
+([Offline distribution](PACKAGING.md#offline-distribution)).
 
 The developer qualification cache `~/Library/Caches/Deadpan/ltx-qualification`
 already has the bridge pack's folder layout, so `models import
@@ -163,6 +225,15 @@ import. A running job shows its phase, bytes and Cancel install; afterwards
 the panel offers Remove or Discard partial download and states the outcome.
 Nothing downloads without one of these explicit actions.
 
+Each card shows the selected version and, after a signed update, the version
+kept for rollback; such a pack offers Roll back to version N instead of
+Remove. The UPDATES section shows the YouTube downloader's versions and origin
+(bundled, pinned baseline or signed update N) with any reason an installed
+update is not used, Apply signed update… (a native picker for the `.json`
+file, verified before any job starts; a refusal names its reason) and Roll
+back downloader to … when a previous selection exists. Updates and rollbacks
+use the same single job, progress and outcome lines ([updates](UPDATES.md#in-the-app)).
+
 One job runs at a time on its own thread (`model_packs::Manager`) through the
 same `install_pack` the CLI uses. It continues when the panel closes or the
 project changes, Cancel keeps partial bytes for Resume, and quitting cancels
@@ -182,7 +253,10 @@ sections re-check when a job finishes.
 The `model-packs` UI replay drives these paths with real keyboard input
 through a harness-only scripted backend that reports progress, honors Cancel
 and materializes a sparse installed pack; removal and discard use the real
-store ([UI feedback](UI_FEEDBACK.md)).
+store ([UI feedback](UI_FEEDBACK.md)). It also refuses a file signed by an
+untrusted key, applies a signed version 3 of the transcription pack (real
+signature and admission against a replay key) and rolls it back to version 2
+(26 checks on 2026-10-06).
 
 ## Commands
 
@@ -193,15 +267,23 @@ store ([UI feedback](UI_FEEDBACK.md)).
 | `models install <pack> [--accept-license]` | Download, verify, smoke-test, activate |
 | `models import <pack> <folder-or-archive.tar> [--accept-license]` | The same from an offline source |
 | `models export <pack> <archive.tar>` | Write an installed pack as an offline archive |
-| `models remove <pack> [--partial]` | Remove the installed version, or with `--partial` discard staged bytes |
+| `models remove <pack> [--partial]` | Remove the installed version, or with `--partial` discard staged bytes; refuses the active version of an updated pack |
+| `models update <signed.json\|https-url> [--from <folder-or-archive.tar>] [--accept-license] [--allow-downgrade]` | Verify a signed pack update, install its version beside the current one, smoke-test, then select it |
+| `models rollback <pack>` | Select the previous version again |
 
-All take an optional `--root` (default `~/Library/Application Support/Deadpan/Models` on
+`license`, `install`, `import`, `export` and `remove` act on the selected
+version, or on `--version <v>` from the catalog (compiled packs and verified
+retained updates). `models list` lists that catalog with `origin`
+(`compiled` or `signed_update`), `selected` and `previous`. All take an optional `--root` (default `~/Library/Application Support/Deadpan/Models` on
 macOS, `$XDG_DATA_HOME/deadpan/models` on Linux). `--accept-license` accepts
 every license of the pack after the user has read them (`models license`);
 without it, a pack whose licenses require acceptance refuses with
 `ModelPackLicense` after announcing its size and licenses. Other failure codes:
 `ModelPackCancelled`, `ModelPackBusy`, `ModelPackSpace`, `ModelPackVerification`
-(missing, mismatched or hostile offline files) and `ModelPackFailed`. Install
+(missing, mismatched or hostile offline files) and `ModelPackFailed`; updates
+add `UpdateUntrusted`, `UpdateSignatureInvalid`, `UpdateManifestInvalid`,
+`UpdateIncompatible`, `UpdateDowngrade`, `ModelPackNoPrevious`,
+`ModelPackNotInstalled` and `ModelPackActive`. Install
 and import report JSON lines (`installing` with size and licenses, bounded
 `progress`, `smoke_test`, `smoke_test_passed` with the runtime report for the
 bridge pack, `activating`) and end with the installed directory.
@@ -211,8 +293,9 @@ the installed bridge pack (see [AI pauses](AI_HOLDS.md#runtime)).
 
 ## Remaining
 
-Signed update manifests and a rollback policy for packs, a built full offline
-distribution that carries exported packs as data, gated-weight sign-in flows
-(no approved pack is gated today), per-hardware pack qualification beyond the
-reference M5 Max, a "Fast" label (no pack meets the §13.4 target), and the
-clean-machine interrupted-install test of §26.6 on a second Mac.
+Signed updates of the bridge pack (refused until the AI worker reads its
+receipt from the selected manifest), a gated-weight flow if a future pack
+needs one, per-hardware pack qualification beyond the reference M5 Max, a
+"Fast" label (no pack meets the §13.4 target), and, To verify (owner), the
+real 36 GB download with a physical interruption and the clean-machine
+interrupted-install test of §26.6 on a second Mac.

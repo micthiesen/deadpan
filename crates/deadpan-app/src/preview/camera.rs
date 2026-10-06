@@ -61,6 +61,20 @@ fn cycle_camera_focus(
     context.memory_mut(|memory| memory.request_focus(ids[next]));
 }
 
+/// `dispatch_key` as text, for the routing baseline.
+#[cfg(test)]
+pub(crate) fn dispatch_debug(
+    key: egui::Key,
+    modifiers: egui::Modifiers,
+    flags: [bool; 5],
+) -> String {
+    let [text, ime, repeat, field, activation] = flags;
+    format!(
+        "{:?}",
+        dispatch_key(key, modifiers, text, ime, repeat, field, activation)
+    )
+}
+
 pub(super) fn dispatch_key(
     key: egui::Key,
     modifiers: egui::Modifiers,
@@ -2585,31 +2599,33 @@ impl DeadpanApp {
                 style::key_hint(ui, "Esc", "back");
             }
             _ => {
+                // Camera's fixed keys are named by the action registry.
+                use crate::navigation::registry::{mode_label as key, mode_label_at as key_at};
                 if camera.follow.is_none() {
-                    style::key_hint(ui, "h j k l", "move 1%");
+                    style::key_hint(ui, key("camera.pan"), "move 1%");
                     style::key_hint(ui, "H J K L", "move 5%");
                 }
-                style::key_hint(ui, "+ −", "scale ×1.05");
+                style::key_hint(ui, key("camera.scale"), "scale ×1.05");
                 style::key_hint(ui, "3+", "three steps");
-                style::key_hint(ui, "f", "targets");
-                style::key_hint(ui, "n", "new target");
+                style::key_hint(ui, key("camera.targets"), "targets");
+                style::key_hint(ui, key_at("camera.region", 0), "new target");
                 if camera.acting_target().is_some() {
                     style::key_hint(
                         ui,
-                        "t",
+                        key("camera.follow"),
                         if camera.follow.is_some() {
                             "stop following"
                         } else {
                             "follow"
                         },
                     );
-                    style::key_hint(ui, "c", "correct here");
-                    style::key_hint(ui, "T", "track");
+                    style::key_hint(ui, key_at("camera.region", 1), "correct here");
+                    style::key_hint(ui, key("track"), "track");
                 }
-                style::key_hint(ui, "Tab", "fields");
-                style::key_hint(ui, "Enter", "apply");
-                style::key_hint(ui, "r", "reset");
-                style::key_hint(ui, "Esc", "cancel");
+                style::key_hint(ui, key("camera.fields"), "fields");
+                style::key_hint(ui, key("camera.apply"), "apply");
+                style::key_hint(ui, key("camera.reset"), "reset");
+                style::key_hint(ui, key("camera.cancel"), "cancel");
             }
         });
         if let Some(error) = self

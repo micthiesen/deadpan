@@ -63,7 +63,8 @@ pub fn route_key(
     }
     let shift = modifiers == Modifiers::SHIFT;
     let plain = modifiers == Modifiers::NONE;
-    let command = modifiers.command_only();
+    // The app's shared ⌘ test: a macOS press also carries `mac_cmd`.
+    let command = super::native_command(modifiers);
     // Held arrows and h/l repeat; everything else acts once per press.
     let movement = match key {
         Key::ArrowLeft | Key::H if plain => Some(if editing_edge {
@@ -105,9 +106,9 @@ pub fn route_key(
         Key::P if plain => Some(CorrectionKey::AddPause),
         Key::U if plain => Some(CorrectionKey::Undo),
         Key::U if shift => Some(CorrectionKey::Redo),
-        Key::R if command => Some(CorrectionKey::Redo),
-        Key::Z if command => Some(CorrectionKey::Undo),
-        Key::Z if modifiers == Modifiers::COMMAND | Modifiers::SHIFT => Some(CorrectionKey::Redo),
+        Key::R if command && !modifiers.shift => Some(CorrectionKey::Redo),
+        Key::Z if command && !modifiers.shift => Some(CorrectionKey::Undo),
+        Key::Z if command => Some(CorrectionKey::Redo),
         Key::Escape if plain => Some(CorrectionKey::Cancel),
         _ => None,
     }
@@ -215,6 +216,24 @@ mod tests {
                 route_key(key, Modifiers::NONE, false, false, false, true),
                 None
             );
+        }
+    }
+
+    #[test]
+    fn command_shift_z_redoes_with_and_without_the_macos_command_flag() {
+        let route = |modifiers| route_key(Key::Z, modifiers, false, false, false, false);
+        for command in [Modifiers::COMMAND, Modifiers::MAC_CMD | Modifiers::COMMAND] {
+            assert_eq!(route(command), Some(CorrectionKey::Undo), "{command:?}");
+            assert_eq!(
+                route(command | Modifiers::SHIFT),
+                Some(CorrectionKey::Redo),
+                "{command:?}"
+            );
+            assert_eq!(
+                route_key(Key::R, command, false, false, false, false),
+                Some(CorrectionKey::Redo)
+            );
+            assert_eq!(route(command | Modifiers::ALT | Modifiers::SHIFT), None);
         }
     }
 }

@@ -512,8 +512,8 @@ impl DeadpanApp {
                 ui.separator();
                 ui.weak("Apply changes only this pause's sound. One edit, one undo.");
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add_enabled(ready && !changed && !busy, style::action("Apply room tone", "Enter").fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
-                    if ui.add(style::action("Cancel", "Esc")).clicked() { action = Some(SheetAction::Cancel); }
+                    if ui.add_enabled(ready && !changed && !busy, style::action("Apply room tone", crate::navigation::registry::mode_label("room-tone.apply")).fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
+                    if ui.add(style::action("Cancel", crate::navigation::registry::mode_label("room-tone.cancel"))).clicked() { action = Some(SheetAction::Cancel); }
                 });
                 ui.weak("Tab / Shift+Tab moves through controls. Escape discards the draft.");
             });

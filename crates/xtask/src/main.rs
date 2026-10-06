@@ -5,6 +5,8 @@
 //! build-directory hygiene. `cargo xtask hygiene` runs only that check.
 //! `cargo xtask bundle` assembles a relocatable `Deadpan.app`;
 //! `bundle-audit` and `bundle-verify` check one (docs/PACKAGING.md).
+//! `cargo xtask offline-dist` builds a full offline distribution with model
+//! packs from such a bundle; `offline-dist-verify` checks and imports it.
 //! `cargo xtask replays` builds the ui-harness app once and replays every
 //! UI scenario in its own report directory (docs/UI_FEEDBACK.md).
 //! `cargo xtask perf` runs the release Section 25 benchmark suite on copied
@@ -17,6 +19,7 @@ use std::process::{Command, ExitCode};
 
 mod bundle;
 mod chaos;
+mod offline_dist;
 mod percentile;
 mod perf;
 mod replays;
@@ -33,10 +36,12 @@ fn main() -> ExitCode {
         Some("bundle") => bundle::run(rest),
         Some("bundle-audit") => bundle::audit_command(rest),
         Some("bundle-verify") => bundle::verify::run(rest),
+        Some("offline-dist") => offline_dist::run(rest),
+        Some("offline-dist-verify") => offline_dist::verify_command(rest),
         Some("replays") => replays::run(rest),
         Some("perf") => perf::run(rest),
         Some("chaos") => chaos::run(rest),
-        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
+        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app> | offline-dist --app <Deadpan.app> --output <new dir> --pack <id>[=<models root>]... | offline-dist-verify <dist dir>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

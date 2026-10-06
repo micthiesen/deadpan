@@ -26,6 +26,7 @@ use sha2::Digest;
 use thiserror::Error;
 
 pub mod archive;
+pub mod updates;
 
 pub const MANIFEST_SCHEMA: u32 = 2;
 /// Largest single pack file accepted from a manifest.
@@ -103,6 +104,10 @@ pub enum PackError {
     LicenseNotAccepted { title: String },
     #[error("the offline source lacks {missing} of this pack's files, for example {example}")]
     ImportIncomplete { missing: usize, example: String },
+    /// A signed pack update or the active-version selection refused, with a
+    /// stable code (`UpdateUntrusted`, `UpdateDowngrade`, …).
+    #[error("{message}")]
+    Update { code: &'static str, message: String },
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
@@ -399,6 +404,22 @@ pub struct Download {
 /// answer from offset zero; the installer then restarts that file.
 pub trait Transport {
     fn fetch(&self, url: &str, offset: u64) -> Result<Download, PackError>;
+
+    /// [`Self::fetch`] that resumes only while the resource still matches
+    /// `validator` (HTTP `If-Range` with the strong `ETag` or `Last-Modified`
+    /// of the response that started the file), and returns the response's own
+    /// validator. A changed resource answers from offset zero, so a partial
+    /// file is never spliced from two versions. Transports without validators
+    /// ignore it.
+    fn fetch_resumable(
+        &self,
+        url: &str,
+        offset: u64,
+        validator: Option<&str>,
+    ) -> Result<(Download, Option<String>), PackError> {
+        let _ = validator;
+        Ok((self.fetch(url, offset)?, None))
+    }
 }
 
 /// Bytes downloaded and verified so far across the whole pack.
@@ -994,9 +1015,22 @@ impl PackStore {
         }
     }
 
-    /// Remove one installed version. Project media never lives here.
+    /// Remove one installed version. Project media never lives here. The
+    /// version an update selected stays until it is rolled back.
     pub fn remove(&self, manifest: &PackManifest) -> Result<(), PackError> {
         manifest.validate()?;
+        if self
+            .pointer(&manifest.pack_id)?
+            .is_some_and(|pointer| pointer.version == manifest.pack_version)
+        {
+            return Err(PackError::Update {
+                code: "ModelPackActive",
+                message: format!(
+                    "{} {} is the active version; roll back first, or remove another installed version with --version <v>",
+                    manifest.pack_id, manifest.pack_version
+                ),
+            });
+        }
         match std::fs::remove_dir_all(self.active(manifest)) {
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
             result => Ok(result?),
@@ -1055,23 +1089,39 @@ fn download_file(
         .write(true)
         .truncate(false)
         .open(partial)?;
+    let validator_path = validator_path(partial);
     let mut offset = output.metadata()?.len();
     if offset > file.bytes {
         output.set_len(0)?;
         offset = 0;
     }
     if offset == file.bytes {
+        remove_if_present(&validator_path)?;
         return Ok(());
     }
-    let download = transport.fetch(&file.url, offset)?;
+    let stored = if offset > 0 {
+        read_validator(&validator_path)
+    } else {
+        None
+    };
+    let (download, validator) = transport.fetch_resumable(&file.url, offset, stored.as_deref())?;
     if download.offset != offset {
-        // A full response restarts here; any other offset restarts next time.
+        if download.offset != 0 {
+            // A range the request did not ask for: keep the partial bytes
+            // and try again later rather than discarding them.
+            return Err(PackError::Transport(
+                "server resumed from an unexpected offset; the partial download is kept".into(),
+            ));
+        }
+        // A full response (range ignored, or the resource changed since the
+        // partial bytes were written) restarts the file here.
         output.set_len(0)?;
         offset = 0;
-        if download.offset != 0 {
-            return Err(PackError::Transport(
-                "server resumed from an unexpected offset; the download will restart".into(),
-            ));
+    }
+    if offset == 0 {
+        match &validator {
+            Some(validator) => write_synced(&validator_path, validator.as_bytes())?,
+            None => remove_if_present(&validator_path)?,
         }
     }
     output.seek(SeekFrom::Start(offset))?;
@@ -1118,7 +1168,35 @@ fn download_file(
             file.bytes
         )));
     }
+    remove_if_present(&validator_path)?;
     Ok(())
+}
+
+/// The resume validator beside a `.part` file. Manifest path components never
+/// start with a dot, so it cannot collide with a pack file.
+fn validator_path(partial: &Path) -> PathBuf {
+    let name = partial
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    partial.with_file_name(format!(".{name}.validator"))
+}
+
+fn read_validator(path: &Path) -> Option<String> {
+    let mut text = String::new();
+    File::open(path)
+        .ok()?
+        .take(1024)
+        .read_to_string(&mut text)
+        .ok()?;
+    (!text.is_empty() && text.len() < 1024 && !text.chars().any(char::is_control)).then_some(text)
+}
+
+fn remove_if_present(path: &Path) -> io::Result<()> {
+    match std::fs::remove_file(path) {
+        Err(error) if error.kind() != io::ErrorKind::NotFound => Err(error),
+        _ => Ok(()),
+    }
 }
 
 /// How often a download checks for cancellation while waiting for data.
@@ -1215,6 +1293,7 @@ pub fn available_space(path: &Path) -> io::Result<u64> {
 /// HTTPS pack downloads with range resume. Redirects stay on HTTPS; the
 /// manifest's host allowlist covers the first request, and every byte is
 /// checked against the manifest hash regardless of where it came from.
+/// Server certificates are checked against the system trust store.
 pub struct HttpsTransport {
     agent: ureq::Agent,
 }
@@ -1228,10 +1307,26 @@ impl Default for HttpsTransport {
 impl HttpsTransport {
     /// The same HTTPS-only, redirect-bounded transport with another user agent.
     pub fn with_user_agent(user_agent: &str) -> Self {
+        Self::build(user_agent, ureq::tls::RootCerts::PlatformVerifier)
+    }
+
+    /// The same transport trusting only the given DER root certificates
+    /// instead of the system trust store, so tests can exercise it against a
+    /// local HTTPS server. Plain HTTP stays refused.
+    #[cfg(test)]
+    pub fn with_trusted_roots(user_agent: &str, roots: &[&[u8]]) -> Self {
+        let roots = roots
+            .iter()
+            .map(|der| ureq::tls::Certificate::from_der(der).to_owned());
+        Self::build(user_agent, ureq::tls::RootCerts::from(roots))
+    }
+
+    fn build(user_agent: &str, roots: ureq::tls::RootCerts) -> Self {
         let agent = ureq::Agent::config_builder()
             .https_only(true)
             .max_redirects(5)
             .user_agent(user_agent)
+            .tls_config(ureq::tls::TlsConfig::builder().root_certs(roots).build())
             .timeout_connect(Some(std::time::Duration::from_secs(20)))
             .timeout_recv_response(Some(std::time::Duration::from_secs(60)))
             .build()
@@ -1242,9 +1337,21 @@ impl HttpsTransport {
 
 impl Transport for HttpsTransport {
     fn fetch(&self, url: &str, offset: u64) -> Result<Download, PackError> {
+        Ok(self.fetch_resumable(url, offset, None)?.0)
+    }
+
+    fn fetch_resumable(
+        &self,
+        url: &str,
+        offset: u64,
+        validator: Option<&str>,
+    ) -> Result<(Download, Option<String>), PackError> {
         let mut request = self.agent.get(url);
         if offset > 0 {
             request = request.header("Range", format!("bytes={offset}-"));
+            if let Some(validator) = validator {
+                request = request.header("If-Range", validator);
+            }
         }
         let response = request
             .call()
@@ -1259,10 +1366,25 @@ impl Transport for HttpsTransport {
                 .ok_or_else(|| PackError::Transport("partial response lacks its range".into()))?,
             status => return Err(PackError::Transport(format!("HTTP status {status}"))),
         };
-        Ok(Download {
-            offset: start,
-            body: Box::new(response.into_body().into_reader()),
-        })
+        // If-Range needs a strong entity tag, else the modification date.
+        let header = |name: &str| {
+            response
+                .headers()
+                .get(name)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+                .filter(|value| value.len() < 1024 && !value.chars().any(char::is_control))
+        };
+        let validator = header("etag")
+            .filter(|tag| !tag.starts_with("W/"))
+            .or_else(|| header("last-modified"));
+        Ok((
+            Download {
+                offset: start,
+                body: Box::new(response.into_body().into_reader()),
+            },
+            validator,
+        ))
     }
 }
 
@@ -1276,5 +1398,7 @@ fn content_range_start(value: &str) -> Option<u64> {
         .ok()
 }
 
+#[cfg(test)]
+mod interrupted_download_tests;
 #[cfg(test)]
 mod tests;

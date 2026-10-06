@@ -110,33 +110,48 @@ pub fn report() -> Result<serde_json::Value, CliError> {
     }))
 }
 
-/// Pinned downloader helpers and whether they are present where an import
-/// would read them: the running packaged bundle's baseline (a missing or
-/// damaged one is a reported problem, never a fallback), else the managed
-/// root. Presence is not verification; `downloader status` hashes the files and
+/// Downloader helpers and whether they are present where an import would
+/// read them: a compatible active signed update under the managed root, else
+/// the running packaged bundle's baseline (a missing or damaged one is a
+/// reported problem, never a fallback), else the managed root's compiled pins.
+/// Presence is not verification; `downloader status` hashes the files and
 /// `downloader status --probe` runs them.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn downloader() -> serde_json::Value {
-    use crate::youtube::helpers::{BUNDLE, EJS_VERSION, HelperSource};
-    let source = HelperSource::default_source().ok();
+    use crate::youtube::helpers::{BUNDLE, HelperSource, default_root};
+    let selection = HelperSource::default_selection();
+    let source = selection.as_ref().ok().map(|selection| &selection.source);
     serde_json::json!({
-        "source": source.as_ref().map(HelperSource::kind),
-        "root": source.as_ref().map(HelperSource::root),
+        "source": source.map(HelperSource::kind),
+        "root": source.map(HelperSource::root),
         "helpers": BUNDLE.iter().map(|pin| {
-            let inspected = source.as_ref().map(|source| source.inspect(pin));
+            let inspected = source.map(|source| source.inspect(pin));
+            let release = source
+                .and_then(|source| source.release(pin).ok())
+                .unwrap_or_else(|| pin.into());
             serde_json::json!({
-                "name": pin.name, "version": pin.version, "license": pin.license,
+                "name": pin.name,
+                "version": release.version.clone(),
+                "license": release.license.clone(),
                 "present": matches!(inspected, Some(Ok(_))),
-                "path": source.as_ref().map(|source| pin.path(source.root())),
+                "path": source.map(|source| release.path(source.root())),
                 "problem": match inspected {
                     Some(Err(error)) => Some(error.to_string()),
                     _ => None,
                 },
             })
         }).collect::<Vec<_>>(),
-        "ejs": EJS_VERSION,
+        "ejs": source.map_or_else(|| crate::youtube::helpers::EJS_VERSION.into(), HelperSource::ejs_version),
+        "baseline": HelperSource::default_baseline().ok().map(|baseline| baseline.kind()),
+        "update": match &selection {
+            Ok(selection) => default_root()
+                .map(|root| crate::youtube::updates::report(&root, selection))
+                .unwrap_or_default(),
+            Err(error) => serde_json::json!({ "problem": error.to_string() }),
+        },
         "distribution": match source {
-            Some(HelperSource::Bundled(_)) => "bundled read-only baseline; signed update manifests and rollback remain open",
+            Some(HelperSource::Bundled(_)) => "bundled read-only baseline; signed updates install under the managed root",
+            Some(HelperSource::Update(_)) => "signed update under the managed root; the baseline stays installed",
             _ => "managed development install; run inside Deadpan.app for the bundled baseline",
         },
     })
@@ -223,7 +238,8 @@ fn runtime() -> serde_json::Value {
     })
 }
 
-/// Approved model packs and whether each is installed in the models root.
+/// Approved model packs, the version selected for each (an activated signed
+/// update, else the compiled one) and whether it is installed.
 #[cfg(target_os = "macos")]
 fn models() -> serde_json::Value {
     let Ok(root) = crate::models::default_root() else {
@@ -233,10 +249,18 @@ fn models() -> serde_json::Value {
     serde_json::Value::Array(
         deadpan_models::packs::approved_packs()
             .into_iter()
-            .map(|manifest| {
+            .map(|approved| {
+                let manifest = store
+                    .selected(&approved.pack_id)
+                    .ok()
+                    .flatten()
+                    .unwrap_or(approved);
+                let pointer = store.pointer(&manifest.pack_id).ok().flatten();
                 serde_json::json!({
                     "pack_id": manifest.pack_id,
                     "pack_version": manifest.pack_version,
+                    "previous_version": pointer.and_then(|pointer| pointer.previous),
+                    "note": store.selection_note(&manifest.pack_id).ok().flatten(),
                     "bytes": manifest.total_bytes(),
                     "installed": store.installed(&manifest).ok().flatten().map(|pack| pack.directory),
                 })

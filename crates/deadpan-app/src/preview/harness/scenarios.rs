@@ -1027,6 +1027,7 @@ fn menus(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"offset_less_than":end_offset,"painted_help_changed":true}),
         json!({"scroll":wheel_scroll,"painted_help":wheel_content}),
     )?;
+    help_search(d)?;
     d.key(Key::Escape)?;
     d.key(Key::Colon)?;
     d.events(
@@ -1443,40 +1444,88 @@ fn scroll_value(snapshot: &Value, name: &str) -> Result<f64, String> {
 
 /// Observe actual clipped help text paint, independently of retained scroll
 /// state. Marker rectangles change even when a short wheel keeps the same rows.
+/// `/` searches the registry-driven reference by key, verb or name; Escape
+/// leaves the field before it closes Help.
+fn help_search(d: &mut Driver<'_>) -> Result<(), String> {
+    let revision = d.revision();
+    d.events(
+        "Slash opens Help search and the typed key path filters it",
+        vec![
+            egui::Event::Key {
+                key: Key::Slash,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+            egui::Event::Text("/".into()),
+            egui::Event::Text("dd".into()),
+        ],
+    )?;
+    for frame in 0..4 {
+        d.step(&format!("Help search transition {frame}"), true)?;
+    }
+    let row = text_paint_visibility(d, "Cut the selected beat");
+    let unrelated = text_paint_visibility(d, "Insert a pause");
+    d.check(
+        "Searching dd lists the whole-beat cut and hides unrelated actions",
+        d.app().help_open
+            && row.iter().any(|part| part["fully_visible"] == true)
+            && unrelated.is_empty()
+            && d.revision() == revision,
+        json!({"visible":"Cut the selected beat","hidden":"Insert a pause"}),
+        json!({"row":row,"unrelated":unrelated}),
+    )?;
+    d.capture("Help search for dd")?;
+    d.events(
+        "Replace the search with a command verb",
+        vec![
+            egui::Event::Key {
+                key: Key::Backspace,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+            egui::Event::Key {
+                key: Key::Backspace,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+            egui::Event::Text(":hold".into()),
+        ],
+    )?;
+    for frame in 0..4 {
+        d.step(&format!("Help verb search transition {frame}"), true)?;
+    }
+    let hold = text_paint_visibility(d, "Insert a pause");
+    let usage = text_paint_visibility(d, ",h · :hold 0.5s [video=black]");
+    d.check(
+        "Searching :hold shows the pause action with its key and usage",
+        hold.iter().any(|part| part["fully_visible"] == true) && !usage.is_empty(),
+        json!("Insert a pause, ,h · :hold 0.5s [video=black]"),
+        json!({"name":hold,"keys":usage}),
+    )?;
+    d.capture("Help search for :hold")?;
+    d.key(Key::Escape)?;
+    let kept = text_paint_visibility(d, "Insert a pause");
+    d.check(
+        "The first Escape leaves the search field and keeps Help and its filter",
+        d.app().help_open && !kept.is_empty(),
+        json!({"help_open":true,"filter_kept":true}),
+        json!({"help_open":d.app().help_open,"row":kept}),
+    )?;
+    Ok(())
+}
+
 fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
-    const MARKERS: &[&str] = &[
-        "START & MOVE",
-        "RESHAPE THE SELECTED BEAT",
-        "⌘N / ⌘O",
-        ":monitor 25%",
-        "h / ← · l / →",
-        "gg / G",
-        ":source / :sequence",
-        "Tab / Shift+Tab",
-        "s / :split",
-        ",h / 3,h",
-        ":hold 1.5s",
-        "rr / 3rr",
-        "dd / :delete",
-        ":repeat 3",
-        ":wrap-repeat 3",
-        "Enter in Inspector",
-        "Camera + / −",
-        "Camera f · 1–5",
-        "Camera r · Enter · Esc",
-        ",z / ,c",
-        ":hold-duration 11f",
-        ",i / :insert",
-        "u / Ctrl R",
-        ": / Enter / Esc",
-        "? / :help / Esc",
-        "REGISTERS",
-        "SEMANTIC MACROS",
-        "yy / dd",
-        "q + letter · :record a",
-        "q · :record-stop",
-        "@ + letter · :macro a 3",
-    ];
+    // Section titles come from the action registry and span the sheet.
+    let markers: Vec<&str> = crate::navigation::registry::Section::ALL
+        .iter()
+        .map(|section| section.title())
+        .collect();
     d.harness
         .output()
         .shapes
@@ -1487,7 +1536,7 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
             };
             let label = text.galley.text();
             let rect = text.visual_bounding_rect();
-            (MARKERS.contains(&label) && clipped.clip_rect.intersect(rect).is_positive()).then(
+            (markers.contains(&label) && clipped.clip_rect.intersect(rect).is_positive()).then(
                 || {
                     (
                         label.to_owned(),

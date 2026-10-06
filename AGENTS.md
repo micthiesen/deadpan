@@ -1161,6 +1161,15 @@ outer frame, never on a layout retry. Preserve whole-batch IME ownership.
 Headless/worker and replay paths never read personal keymaps.
 See [bindings](docs/KEYMAP.md).
 
+Describe every user action once in the action registry
+(`navigation/registry/entries.rs`): keys by binding id or exact mode chord,
+verbs and usage, contexts, macro/dot behaviour, headless parity and help with
+`{binding.id}` placeholders. The parser admits only registry verbs; the Keys
+sheet, completion and generated `docs/COMMANDS.md` read it. Declare every
+fixed mode chord there; the router-equivalence test must keep passing.
+Regenerate the routing baseline only for an intended binding change and
+review its diff.
+
 Native accessibility: whatever egui focuses must have an AccessKit node in
 that pass, or the macOS adapter aborts. Tab skips panes the layout does not
 draw, focus on an undrawn pane moves to a drawn one, and painted panes carry
@@ -1507,6 +1516,14 @@ unused tables before validation. Nested Sequence insertion retains the actual pa
 occurrence isolation, Visual replacement and the complete authoring lifecycle
 remain required. See [pause insertion](docs/INSERT_TIME.md).
 See [owned bindings](docs/OWNED_AUDIO_BINDINGS.md).
+
+Downloader helpers and model packs update only through
+[signed manifests](docs/UPDATES.md) verified against the compiled
+`models/update-keys.json`; the private key never enters the repository. Install
+each version beside the others outside the app bundle, select it only after
+its probe or smoke test, keep the previous version and the baseline for
+rollback, and pass over an incompatible update with a reported reason while
+refusing integrity failures.
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
 described in [Development](docs/DEVELOPMENT.md). During implementation, run

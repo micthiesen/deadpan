@@ -520,13 +520,18 @@ fn cancelling_a_stalled_download_returns_promptly_and_keeps_its_bytes() {
 }
 
 #[test]
-fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
+fn unexpected_resume_offsets_keep_the_partial_and_installs_are_exclusive() {
     struct Shifted(Vec<u8>, Mutex<Vec<u64>>);
     impl Transport for Shifted {
         fn fetch(&self, _url: &str, offset: u64) -> Result<Download, PackError> {
-            self.1.lock().unwrap().push(offset);
-            // Answers a resume from the wrong place, and a fresh start fully.
-            let start = if offset > 0 { offset / 2 } else { 0 };
+            let mut offsets = self.1.lock().unwrap();
+            offsets.push(offset);
+            // Answers the first resume from the wrong place, later ones right.
+            let start = if offsets.len() == 1 {
+                offset / 2
+            } else {
+                offset
+            };
             Ok(Download {
                 offset: start,
                 body: Box::new(io::Cursor::new(self.0[start as usize..].to_vec())),
@@ -552,11 +557,12 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
         )
         .unwrap_err();
     assert!(matches!(error, PackError::Transport(_)), "{error}");
+    // A bad Content-Range never discards the bytes already verified so far.
     assert_eq!(
         std::fs::metadata(staging.join("model.bin.part"))
             .unwrap()
             .len(),
-        0
+        1_000_000
     );
     let staged = store
         .stage(
@@ -568,7 +574,7 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
             |_| {},
         )
         .unwrap();
-    assert_eq!(*transport.1.lock().unwrap(), [1_000_000, 0]);
+    assert_eq!(*transport.1.lock().unwrap(), [1_000_000, 1_000_000]);
 
     // The staged pack holds the install lock until it is activated.
     let second = store.stage(

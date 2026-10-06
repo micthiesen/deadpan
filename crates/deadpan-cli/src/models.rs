@@ -14,9 +14,10 @@ use std::time::{Duration, Instant};
 
 use deadpan_jobs::Sha256;
 use deadpan_jobs::transcription::{Language, ModelInput};
+use deadpan_models::packs::updates::PackUpdate;
 use deadpan_models::packs::{
     HttpsTransport, ImportSource, InstallProgress, InstalledPack, Operation, PackFile,
-    PackManifest, PackState, PackStore, StagedPack, approved_packs, available_space, license_text,
+    PackManifest, PackState, PackStore, StagedPack, available_space, license_text,
 };
 
 use crate::CliError;
@@ -41,17 +42,30 @@ pub fn default_root() -> Result<PathBuf, CliError> {
     Ok(data.join("deadpan/models"))
 }
 
-const USAGE: &str = "usage: models list | models license <pack> | models install <pack> [--accept-license] | models import <pack> <folder-or-archive.tar> [--accept-license] | models export <pack> <archive.tar> | models remove <pack> [--partial]; every command takes [--root <dir>]";
+const USAGE: &str = "usage: models list | models license <pack> | models install <pack> [--accept-license] | models import <pack> <folder-or-archive.tar> [--accept-license] | models export <pack> <archive.tar> | models remove <pack> [--partial] | models update <signed-manifest|https-url> [--from <folder-or-archive.tar>] [--accept-license] [--allow-downgrade] | models rollback <pack>; install, import, export, license and remove take [--version <v>]; every command takes [--root <dir>]";
 
 fn usage() -> CliError {
     CliError::Usage(USAGE.into())
 }
 
-fn pack(id: &str) -> Result<PackManifest, CliError> {
-    approved_packs()
-        .into_iter()
-        .find(|pack| pack.pack_id == id)
-        .ok_or_else(|| CliError::Usage(format!("no approved model pack named {id}")))
+/// The selected version of a pack (an activated signed update, else the
+/// compiled approved version), or an explicit catalog version.
+fn pack(store: &PackStore, id: &str, version: Option<&str>) -> Result<PackManifest, CliError> {
+    let found = match version {
+        Some(version) => store.catalog_manifest(id, version),
+        None => store.selected(id)?,
+    };
+    found.ok_or_else(|| {
+        CliError::Usage(match version {
+            Some(version) => format!("no approved or verified update of {id} version {version}"),
+            None => format!("no approved model pack named {id}"),
+        })
+    })
+}
+
+/// Parse a signed pack update's payload (used before signing it).
+pub fn parse_pack_update(payload: &str) -> Result<PackUpdate, CliError> {
+    Ok(PackUpdate::parse(payload)?)
 }
 
 struct Options<'a> {
@@ -59,6 +73,9 @@ struct Options<'a> {
     root: Option<PathBuf>,
     accept_license: bool,
     partial: bool,
+    version: Option<&'a str>,
+    from: Option<&'a str>,
+    allow_downgrade: bool,
 }
 
 fn options<'a>(arguments: &[&'a str]) -> Result<Options<'a>, CliError> {
@@ -67,6 +84,9 @@ fn options<'a>(arguments: &[&'a str]) -> Result<Options<'a>, CliError> {
         root: None,
         accept_license: false,
         partial: false,
+        version: None,
+        from: None,
+        allow_downgrade: false,
     };
     let mut rest = arguments;
     while let Some((first, tail)) = rest.split_first() {
@@ -77,7 +97,21 @@ fn options<'a>(arguments: &[&'a str]) -> Result<Options<'a>, CliError> {
                 rest = tail;
                 continue;
             }
+            "--version" | "--from" => {
+                let (value, tail) = tail.split_first().ok_or_else(usage)?;
+                let slot = if *first == "--version" {
+                    &mut parsed.version
+                } else {
+                    &mut parsed.from
+                };
+                if slot.replace(*value).is_some() {
+                    return Err(usage());
+                }
+                rest = tail;
+                continue;
+            }
             "--accept-license" => parsed.accept_license = true,
+            "--allow-downgrade" => parsed.allow_downgrade = true,
             "--partial" => parsed.partial = true,
             flag if flag.starts_with("--") => return Err(usage()),
             value => parsed.positional.push(value),
@@ -96,14 +130,33 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
     let store = PackStore::new(root.clone());
     match parsed.positional.as_slice() {
         ["list"] => list(&store),
-        ["license", id] => license(&pack(id)?),
-        ["install", id] => install(&store, &pack(id)?, None, parsed.accept_license),
+        ["license", id] => license(&pack(&store, id, parsed.version)?),
+        ["install", id] => install(
+            &store,
+            &pack(&store, id, parsed.version)?,
+            None,
+            parsed.accept_license,
+        ),
         ["import", id, source] => {
             let source = ImportSource::at(Path::new(source))?;
-            install(&store, &pack(id)?, Some(source), parsed.accept_license)
+            install(
+                &store,
+                &pack(&store, id, parsed.version)?,
+                Some(source),
+                parsed.accept_license,
+            )
+        }
+        ["update", manifest] => update(&store, manifest, &parsed),
+        ["rollback", id] => {
+            let installed = store.rollback(id)?;
+            crate::write_json(&serde_json::json!({
+                "protocol": 1, "pack_id": id,
+                "active_version": installed.manifest.pack_version,
+                "installed": installed.directory,
+            }))
         }
         ["export", id, archive] => {
-            let manifest = pack(id)?;
+            let manifest = pack(&store, id, parsed.version)?;
             store.export(
                 &manifest,
                 Path::new(archive),
@@ -116,7 +169,7 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
             }))
         }
         ["remove", id] => {
-            let manifest = pack(id)?;
+            let manifest = pack(&store, id, parsed.version)?;
             if parsed.partial {
                 store.discard_partial(&manifest)?;
             } else {
@@ -150,13 +203,29 @@ fn list(store: &PackStore) -> Result<(), CliError> {
     let free = std::fs::create_dir_all(store.root())
         .ok()
         .and_then(|()| available_space(store.root()).ok());
-    let packs = approved_packs()
+    let packs = store
+        .catalog()
         .into_iter()
         .map(|manifest| {
             let state = store.state(&manifest)?;
+            let selected = store.selected(&manifest.pack_id)?;
+            let pointer = store.pointer(&manifest.pack_id)?;
             Ok(serde_json::json!({
                 "pack_id": manifest.pack_id,
                 "pack_version": manifest.pack_version,
+                "origin": if deadpan_models::packs::approved_pack(&manifest.pack_id)
+                    .is_some_and(|approved| approved == manifest)
+                {
+                    "compiled"
+                } else {
+                    "signed_update"
+                },
+                "selected": selected.as_ref() == Some(&manifest),
+                // Why a recorded active version is not the one in use.
+                "note": store.selection_note(&manifest.pack_id)?,
+                "previous": pointer
+                    .as_ref()
+                    .is_some_and(|pointer| pointer.previous.as_deref() == Some(manifest.pack_version.as_str())),
                 "title": manifest.title,
                 "bytes": manifest.total_bytes(),
                 "files": manifest.files.len(),
@@ -219,6 +288,61 @@ fn progress_lines() -> impl FnMut(InstallProgress) {
             }));
         }
     }
+}
+
+/// `models update`: verify a signed pack update, show its size and licenses,
+/// install its version side by side (download, or `--from` an offline
+/// source), smoke-test it, then retain the envelope and select it. The
+/// previous version stays installed for rollback.
+fn update(store: &PackStore, source: &str, options: &Options<'_>) -> Result<(), CliError> {
+    let signed = crate::update_signing::read_signed(source, deadpan_models::packs::USER_AGENT)?;
+    let keys = deadpan_models::updates::trusted_keys();
+    let pack = deadpan_models::packs::updates::inspect_update(&signed, &keys)?.pack;
+    let to_accept = deadpan_models::packs::updates::licenses_to_accept(&pack);
+    // Size and licenses are shown before any check that could refuse, and
+    // before any byte is staged.
+    emit(&serde_json::json!({
+        "event": "update", "pack_id": pack.pack_id, "pack_version": pack.pack_version,
+        "bytes": pack.total_bytes(), "remaining_bytes": store.remaining_bytes(&pack),
+        "licenses": license_json(&pack),
+        // Layers that require acceptance, or are new or changed against the
+        // compiled pack: `--accept-license` accepts them after reading.
+        "licenses_to_accept": to_accept,
+    }))?;
+    let accepted = if options.accept_license {
+        pack.license_ids()
+    } else {
+        Vec::new()
+    };
+    let manifest = store.admit_update(&signed, &keys, &accepted, options.allow_downgrade)?;
+    let import = options
+        .from
+        .map(|from| ImportSource::at(Path::new(from)))
+        .transpose()?;
+    let installed = match store.installed(&manifest)? {
+        Some(installed) => installed,
+        None => install_pack(
+            store,
+            &manifest,
+            &accepted,
+            import.as_ref(),
+            &AtomicBool::new(false),
+            progress_lines(),
+            |event| {
+                let _ = emit(&serde_json::json!({ "event": event }));
+            },
+        )?,
+    };
+    // Retained and selected only after its smoke test passed (or it was
+    // already installed, which required one).
+    store.activate_update(&signed, &keys, &accepted, options.allow_downgrade)?;
+    let pointer = store.pointer(&manifest.pack_id)?;
+    crate::write_json(&serde_json::json!({
+        "protocol": 1, "pack_id": manifest.pack_id,
+        "active_version": manifest.pack_version,
+        "previous_version": pointer.and_then(|pointer| pointer.previous),
+        "installed": installed.directory,
+    }))
 }
 
 fn install(
@@ -377,11 +501,14 @@ fn installed_model(
     select: fn(&PackManifest) -> Option<&PackFile>,
 ) -> Result<Option<ModelInput>, CliError> {
     let store = PackStore::new(root.to_path_buf());
-    for manifest in approved_packs() {
-        let Some(file) = select(&manifest) else {
+    for manifest in deadpan_models::packs::approved_packs() {
+        if select(&manifest).is_none() {
             continue;
-        };
-        if let Some(installed) = store.installed(&manifest)? {
+        }
+        // The selected version: an activated signed update, else compiled.
+        if let Some(installed) = store.current(&manifest.pack_id)?
+            && let Some(file) = select(&installed.manifest)
+        {
             return model_input(file, installed.file(&file.name)).map(Some);
         }
     }

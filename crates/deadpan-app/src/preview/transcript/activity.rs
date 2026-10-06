@@ -180,8 +180,9 @@ impl DeadpanApp {
                 ActivityStatus::Failed("Model storage is unavailable.".into());
             return;
         };
-        let vad = match store.installed(&pack) {
-            Ok(Some(installed)) => vad_model(&pack, &installed),
+        // The selected version: an activated signed update, else compiled.
+        let vad = match store.current(&pack.pack_id) {
+            Ok(Some(installed)) => vad_model(&installed.manifest, &installed),
             Ok(None) => None,
             Err(error) => {
                 self.transcription.activity.status = ActivityStatus::Failed(error.to_string());

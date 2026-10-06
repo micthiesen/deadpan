@@ -22,6 +22,7 @@ pub use conditioning::*;
 
 pub mod packs;
 mod provider;
+pub mod updates;
 pub use provider::SelectedBridgeProvider;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]

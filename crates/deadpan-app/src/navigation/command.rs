@@ -218,135 +218,14 @@ fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     })))
 }
 
-/// Every command verb with a short usage, for completion while typing in
-/// the command line. Parameters in brackets are optional. The help sheet
-/// (`?`) keeps the full explanations.
-pub const COMMANDS: &[(&str, &str)] = &[
-    ("accept-ai", ":accept-ai  use the chosen AI pictures"),
-    ("audio-lag", ":audio-lag 3f  sound later (or earlier=)"),
-    ("audition", ":audition  loop the selection"),
-    ("audition-ai", ":audition-ai  hear the AI preview"),
-    (
-        "audition-context",
-        ":audition-context lead=500ms follow=750ms",
-    ),
-    ("bleep", ":bleep [880Hz] [level=-6dB]"),
-    ("cancel-ai", ":cancel-ai"),
-    ("caption", ":caption TEXT [at=top|center] [delay=4f]"),
-    ("close", ":close  close this project"),
-    ("correct", ":correct  fix transcript words and pauses"),
-    ("creep", ":creep from=1 to=1.4 [target=current]"),
-    ("cutaway", ":cutaway register=a"),
-    ("delete", ":delete [role=audio|video]"),
-    ("delete-frames", ":delete-frames 12f"),
-    ("diagnostics", ":diagnostics"),
-    ("discard-ai", ":discard-ai"),
-    (
-        "duplicate",
-        ":duplicate  copy the beat or range after itself",
-    ),
-    ("edge", ":edge hard|auto [start|end|both]"),
-    ("enter", ":enter  open the selected group"),
-    ("explode", ":explode  turn a Repeat into its plays"),
-    ("framing-save", ":framing-save a"),
-    ("gag", ":gag NAME [key=value …]"),
-    ("gag-inspect", ":gag-inspect NAME"),
-    ("gag-presets", ":gag-presets"),
-    ("gag-save", ":gag-save NAME"),
-    ("gag-set", ":gag-set NAME key=value"),
-    ("gain", ":gain +3dB | +=3dB | mute | +3dB range=4-10"),
-    ("gain-mute", ":gain-mute  mute or unmute the beat"),
-    ("generate", ":generate [N]  AI pictures for the pause"),
-    ("generate-ai", ":generate-ai [N]  same as :generate"),
-    ("group", ":group name=\"the answer\""),
-    ("help", ":help  all keys and commands"),
-    ("hold", ":hold 0.5s [video=black]"),
-    ("hold-duration", ":hold-duration 11f"),
-    ("hold-silence", ":hold-silence"),
-    ("import", ":import  add a sound"),
-    ("insert", ":insert  reuse the whole Original"),
-    ("jcut", ":jcut 6f"),
-    ("jobs", ":jobs  background jobs, progress and cancel"),
-    ("jump", ":jump a"),
-    ("jump-back", ":jump-back"),
-    ("jump-forward", ":jump-forward"),
-    ("lcut", ":lcut 200ms"),
-    ("lift", ":lift  cut and leave a black pause"),
-    ("macro", ":macro a"),
-    ("mark", ":mark a"),
-    ("marks", ":marks"),
-    ("models", ":models"),
-    ("monitor", ":monitor 25%"),
-    ("new", ":new  choose a video"),
-    ("new-url", ":new-url  same as :youtube"),
-    ("next-ai", ":next-ai"),
-    ("open", ":open"),
-    ("parent", ":parent  leave the group"),
-    ("paste", ":paste"),
-    ("paste-before", ":paste-before"),
-    ("pick-ai", ":pick-ai N"),
-    ("ping-pong", ":ping-pong 12f"),
-    ("pitch", ":pitch +5st"),
-    ("play", ":play"),
-    (
-        "portable-copy",
-        ":portable-copy  save a self-contained copy",
-    ),
-    ("prev-ai", ":prev-ai"),
-    ("preview-ai", ":preview-ai"),
-    ("previous-ai", ":previous-ai  same as :prev-ai"),
-    ("proxies", ":proxies on|off|retry"),
-    ("recipe", ":recipe a"),
-    ("recipe-inspect", ":recipe-inspect a"),
-    ("recipe-save", ":recipe-save a"),
-    ("record", ":record a"),
-    ("record-cancel", ":record-cancel"),
-    ("record-stop", ":record-stop"),
-    ("recovery", ":recovery"),
-    ("redo", ":redo"),
-    ("register", ":register a"),
-    ("registers", ":registers"),
-    ("relink", ":relink"),
-    ("render", ":render"),
-    ("renders", ":renders"),
-    ("repeat", ":repeat 3 [gap=6f gap-step=-2f]"),
-    ("retime", ":retime 0.75 pitch=preserve"),
-    ("reverse", ":reverse 8f"),
-    ("roll", ":roll +2f"),
-    ("room-tone", ":room-tone"),
-    ("saturate", ":saturate 12dB | off"),
-    ("scope", ":scope all | play N | plays 2-3"),
-    ("select", ":select role=audio|video"),
-    ("sequence", ":sequence  Your edit"),
-    ("slip", ":slip +5f"),
-    ("sound-allow", ":sound-allow  in this pause"),
-    ("sound-at", ":sound-at 274000  start sample (48 kHz)"),
-    ("sound-channels", ":sound-channels mono|stereo|none"),
-    ("sound-cut", ":sound-cut  end the sound here"),
-    ("sound-delete", ":sound-delete  remove the placed sound"),
-    ("sound-edges", ":sound-edges soft|hard"),
-    ("sound-gain", ":sound-gain -3  dB"),
-    ("sound-place", ":sound-place"),
-    ("sound-silence", ":sound-silence  in this pause"),
-    ("sounds", ":sounds  placed sounds"),
-    ("source", ":source  Original"),
-    ("splice", ":splice  place a copy"),
-    ("split", ":split"),
-    ("sting", ":sting  add a sting sound"),
-    ("storage", ":storage  project storage and cleanup"),
-    ("tail", ":tail [1s] [effect=reverb]"),
-    ("track", ":track [TARGET] [through-shots]"),
-    ("track-cancel", ":track-cancel"),
-    ("trim", ":trim"),
-    ("undo", ":undo"),
-    ("ungroup", ":ungroup"),
-    ("unmark", ":unmark a"),
-    ("wrap-repeat", ":wrap-repeat 2"),
-    ("wrap-retime", ":wrap-retime 0.5"),
-    ("yank", ":yank"),
-    ("youtube", ":youtube  start from a URL"),
-    ("zoom", ":zoom 2 [target=center] [curve=step]"),
-];
+/// Every command verb with a short usage, sorted by verb, for admission and
+/// completion while typing in the command line. Parameters in brackets are
+/// optional. The table is derived from the action registry
+/// ([`super::registry`]), which also drives the Keys sheet and the generated
+/// reference, so a verb cannot be accepted without its help.
+pub fn commands() -> &'static [(&'static str, &'static str)] {
+    &super::registry::VERBS
+}
 
 /// Usages of the commands whose verb starts with the typed first word,
 /// in table order. Nothing is listed once arguments follow the verb.
@@ -360,7 +239,7 @@ pub fn completions(input: &str) -> Vec<&'static str> {
     if typed.is_empty() {
         return Vec::new();
     }
-    COMMANDS
+    commands()
         .iter()
         .filter(|(verb, _)| verb.starts_with(&typed))
         .map(|(_, usage)| *usage)
@@ -374,9 +253,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     let Some(verb) = words.next() else {
         return Ok(Entry::Empty);
     };
-    // COMMANDS is the one verb table: completion, help and admission all
+    // The registry is the one verb table: completion, help and admission all
     // read it, so a verb the parser accepts can never be missing from it.
-    if !COMMANDS
+    if !commands()
         .iter()
         .any(|(known, _)| known.eq_ignore_ascii_case(verb))
     {
@@ -1781,7 +1660,7 @@ mod tests {
 
     #[test]
     fn every_completion_names_a_command_the_parser_knows() {
-        for (verb, usage) in COMMANDS {
+        for (verb, usage) in commands() {
             assert!(usage.starts_with(&format!(":{verb}")), "{verb}: {usage}");
             if let Err(error) = parse(verb) {
                 assert!(!error.starts_with("Unknown command"), "{verb}: {error}");
@@ -1796,16 +1675,16 @@ mod tests {
         assert!(completions("re").len() > 5);
     }
 
-    /// Drift guard: every verb the parser accepts must be in `COMMANDS`.
+    /// Drift guard: every verb the parser accepts must be in the registry's `commands()`.
     /// Candidates are the string literals in this module's source.
     #[test]
     fn parser_verbs_and_completion_table_agree() {
-        let verbs = COMMANDS.iter().map(|(verb, _)| *verb).collect::<Vec<_>>();
+        let verbs = commands().iter().map(|(verb, _)| *verb).collect::<Vec<_>>();
         let mut sorted = verbs.clone();
         sorted.sort_unstable();
         sorted.dedup();
-        assert_eq!(verbs, sorted, "COMMANDS must be sorted and unique");
-        // Admission reads COMMANDS (see `parse`), so the parser cannot accept
+        assert_eq!(verbs, sorted, "commands() must be sorted and unique");
+        // Admission reads commands() (see `parse`), so the parser cannot accept
         // an unlisted verb; every listed verb must reach a real parser arm.
         let unparsed: Vec<_> = verbs
             .iter()
@@ -1813,7 +1692,7 @@ mod tests {
             .collect();
         assert!(
             unparsed.is_empty(),
-            "COMMANDS verbs the parser does not handle: {unparsed:?}"
+            "registry verbs the parser does not handle: {unparsed:?}"
         );
         for unknown in ["xyzzy", "jobsx", "stor", "renderz", "-", "--help"] {
             assert!(

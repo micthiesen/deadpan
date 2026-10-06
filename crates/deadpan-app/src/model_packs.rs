@@ -8,8 +8,15 @@
 //! or offline import, smoke test, activation) on its own thread, so it keeps
 //! running when the project changes. Cancellation is cooperative and keeps
 //! partial bytes for Resume. Quitting cancels and waits briefly.
+//!
+//! The same job slot applies signed updates and rollbacks (docs/UPDATES.md):
+//! a signed model-pack update installs its version beside the current one and
+//! is selected only after its smoke test; a signed downloader update installs
+//! a new helper set under the managed root and is selected only after the
+//! real probe. Rollback selects the previous version again; nothing is
+//! deleted.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -18,9 +25,16 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use deadpan_cli::CliError;
+use deadpan_cli::youtube::helpers::{DENO, HelperSource, YT_DLP};
+use deadpan_cli::youtube::updates as downloader_updates;
+use deadpan_models::packs::updates::PackUpdate;
 use deadpan_models::packs::{
     ImportSource, InstallProgress, PackError, PackManifest, PackState, PackStore, approved_packs,
 };
+use deadpan_models::updates::{SignedManifest, TrustedKey, UpdateKind, trusted_keys};
+
+/// The job target of downloader updates and rollbacks.
+pub const DOWNLOADER: &str = "downloader";
 
 /// Space the installer keeps free beyond the remaining download.
 pub const SPACE_MARGIN: u64 = deadpan_models::packs::FREE_SPACE_MARGIN;
@@ -33,7 +47,33 @@ pub enum Work {
         source: Option<PathBuf>,
     },
     Remove,
+    /// Remove an installed version other than the selected one.
+    RemoveVersion(String),
     Discard,
+    /// Apply one reviewed signed update: a model-pack version or a
+    /// downloader helper set. The verified bytes travel with the job; the
+    /// chosen file is never read again.
+    Update {
+        signed: Arc<Vec<u8>>,
+    },
+    /// Select the previous version again; nothing is deleted.
+    Rollback,
+    /// Select the downloader baseline, recovering an unreadable state file.
+    Baseline,
+}
+
+/// A verified signed update file waiting for the user's review.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PendingUpdate {
+    /// A pack identifier or [`DOWNLOADER`].
+    pub target: String,
+    /// One line naming what changes, in app terms.
+    pub summary: String,
+    /// The update's pack manifest, for its licenses and size.
+    pub pack: Option<PackManifest>,
+    /// License identifiers needing explicit acceptance before it installs.
+    pub to_accept: Vec<String>,
+    signed: Arc<Vec<u8>>,
 }
 
 /// The visible step of a running job.
@@ -45,6 +85,9 @@ pub enum Phase {
     Activating,
     Removing,
     Discarding,
+    /// Running the updated downloader to confirm its versions.
+    Probing,
+    RollingBack,
 }
 
 /// A running job as the panel shows it.
@@ -61,11 +104,27 @@ impl Job {
     pub fn label(&self) -> &'static str {
         match (self.phase, &self.work) {
             (Phase::Transferring, Work::Install { source: Some(_) }) => "Copying and verifying",
+            (Phase::Transferring, Work::Update { .. }) => "Downloading and verifying the update",
             (Phase::Transferring, _) => "Downloading and verifying",
             (Phase::SmokeTest, _) => "Testing the model on this Mac",
             (Phase::Activating, _) => "Activating",
             (Phase::Removing, _) => "Removing",
             (Phase::Discarding, _) => "Discarding the partial download",
+            (Phase::Probing, _) => "Running the updated downloader on this Mac",
+            (Phase::RollingBack, Work::Baseline) => "Switching to the baseline",
+            (Phase::RollingBack, _) => "Rolling back",
+        }
+    }
+
+    /// What kind of job this is, for "another job is running" messages.
+    pub fn kind(&self) -> &'static str {
+        match (&self.work, self.pack_id == DOWNLOADER) {
+            (Work::Update { .. }, true) => "Downloader update",
+            (Work::Update { .. }, false) => "Model update",
+            (Work::Rollback | Work::Baseline, _) => "Rollback",
+            (Work::Install { .. }, _) => "Model install",
+            (Work::Remove | Work::RemoveVersion(_), _) => "Model removal",
+            (Work::Discard, _) => "Discarding a partial download",
         }
     }
 
@@ -74,7 +133,7 @@ impl Job {
     }
 
     pub fn installing(&self) -> bool {
-        matches!(self.work, Work::Install { .. })
+        matches!(self.work, Work::Install { .. } | Work::Update { .. })
     }
 }
 
@@ -84,8 +143,27 @@ pub enum Ending {
     Installed,
     Removed,
     Discarded,
+    /// A signed update was installed, tested and selected.
+    Updated(String),
+    /// The previous version was selected again.
+    RolledBack(String),
     Cancelled,
     Failed(String),
+}
+
+/// The downloader helpers as the panel shows them.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DownloaderView {
+    pub summary: String,
+    /// Why an installed update is not used, when it is not.
+    pub note: Option<String>,
+    /// A verification failure that makes imports refuse.
+    pub problem: Option<String>,
+    /// The selection a rollback would restore.
+    pub previous: Option<String>,
+    /// Whether switching to the baseline would change anything (an update
+    /// is active, or the state is unreadable).
+    pub baseline_available: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,7 +198,12 @@ pub enum Backend {
 /// The pack states and free space last read from the store.
 struct Snapshot {
     states: Vec<Result<PackState, String>>,
+    /// Each pack's previous version, kept for rollback.
+    previous: Vec<Option<String>>,
+    /// Why each pack's recorded active version is not in use, if it is not.
+    notes: Vec<Option<String>>,
     free: Result<u64, String>,
+    downloader: DownloaderView,
     at: Instant,
 }
 
@@ -133,6 +216,12 @@ pub struct Manager {
     outcome: Option<Outcome>,
     /// Increments whenever a job finishes, so consumers re-check packs.
     changes: u64,
+    /// Keys that verify signed updates: the compiled ones outside tests.
+    keys: Vec<TrustedKey>,
+    /// The managed downloader root where signed updates install.
+    helpers_root: Result<PathBuf, String>,
+    /// A verified update file the user is reviewing.
+    pending: Option<PendingUpdate>,
 }
 
 impl Manager {
@@ -146,7 +235,25 @@ impl Manager {
             running: None,
             outcome: None,
             changes: 0,
+            keys: trusted_keys(),
+            helpers_root: deadpan_cli::youtube::helpers::default_root()
+                .map_err(|error| error.to_string()),
+            pending: None,
         }
+    }
+
+    /// Verify updates with these keys (replay signs with a test key).
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub fn set_trusted_keys(&mut self, keys: Vec<TrustedKey>) {
+        self.keys = keys;
+        self.snapshot = None;
+    }
+
+    /// Use a private downloader root.
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub fn set_helpers_root(&mut self, root: PathBuf) {
+        self.helpers_root = Ok(root);
+        self.snapshot = None;
     }
 
     /// Use a private model directory, for example an empty one in replay.
@@ -181,6 +288,43 @@ impl Manager {
     /// receipt and a stat per file, never a hash.
     pub fn refresh(&mut self) {
         let store = self.store();
+        // Each family's selected version: an activated signed update, else
+        // the compiled one.
+        self.packs = approved_packs()
+            .into_iter()
+            .map(|approved| {
+                store
+                    .as_ref()
+                    .and_then(|store| {
+                        store
+                            .selected_with_keys(&approved.pack_id, &self.keys)
+                            .ok()
+                            .flatten()
+                    })
+                    .unwrap_or(approved)
+            })
+            .collect();
+        let previous = self
+            .packs
+            .iter()
+            .map(|pack| {
+                store
+                    .as_ref()
+                    .and_then(|store| store.pointer(&pack.pack_id).ok().flatten())
+                    .and_then(|pointer| pointer.previous)
+            })
+            .collect();
+        let notes = self
+            .packs
+            .iter()
+            .map(|pack| {
+                store.as_ref().and_then(|store| {
+                    store
+                        .selection_note_with_keys(&pack.pack_id, &self.keys)
+                        .unwrap_or_else(|error| Some(error.to_string()))
+                })
+            })
+            .collect();
         let states = self
             .packs
             .iter()
@@ -195,7 +339,10 @@ impl Manager {
         };
         self.snapshot = Some(Snapshot {
             states,
+            previous,
+            notes,
             free,
+            downloader: downloader_view(&self.helpers_root, &self.keys),
             at: Instant::now(),
         });
     }
@@ -219,6 +366,21 @@ impl Manager {
 
     pub fn installed(&self, pack_id: &str) -> bool {
         matches!(self.state(pack_id), Some(Ok(PackState::Installed(_))))
+    }
+
+    /// The version a rollback of this pack would select again.
+    pub fn previous(&self, pack_id: &str) -> Option<&str> {
+        let index = self.packs.iter().position(|pack| pack.pack_id == pack_id)?;
+        self.snapshot.as_ref()?.previous.get(index)?.as_deref()
+    }
+
+    pub fn note(&self, pack_id: &str) -> Option<&str> {
+        let index = self.packs.iter().position(|pack| pack.pack_id == pack_id)?;
+        self.snapshot.as_ref()?.notes.get(index)?.as_deref()
+    }
+
+    pub fn downloader(&self) -> Option<&DownloaderView> {
+        self.snapshot.as_ref().map(|snapshot| &snapshot.downloader)
     }
 
     pub fn free_space(&self) -> Option<&Result<u64, String>> {
@@ -254,20 +416,22 @@ impl Manager {
     ) -> Result<(), String> {
         if let Some(job) = self.job() {
             return Err(format!(
-                "Another model job is running ({}). Wait for it or cancel it first.",
+                "Another model job is running: {} ({}). Wait for it or cancel it first.",
+                job.kind(),
                 job.label().to_lowercase()
             ));
+        }
+        if pack_id == DOWNLOADER {
+            if !matches!(work, Work::Rollback | Work::Baseline) {
+                return Err("The downloader is updated from a signed update file.".into());
+            }
+            return self.spawn(pack_id, None, work, Vec::new(), 0, 0, repaint);
         }
         let manifest = self
             .pack(pack_id)
             .cloned()
             .ok_or_else(|| format!("{pack_id} is not an approved model pack."))?;
-        let store = self.store().ok_or_else(|| {
-            format!(
-                "Model storage is unavailable: {}",
-                self.root.clone().err().unwrap_or_default()
-            )
-        })?;
+        let store = self.store().ok_or_else(|| self.storage_unavailable())?;
         let accepted: Vec<String> = accepted.iter().cloned().collect();
         if matches!(work, Work::Install { .. }) {
             manifest
@@ -279,13 +443,149 @@ impl Manager {
             Ok(PackState::Partial { bytes }) => bytes,
             _ => 0,
         };
+        self.spawn(
+            pack_id,
+            Some(manifest),
+            work,
+            accepted,
+            completed,
+            total,
+            repaint,
+        )
+    }
+
+    /// Verify a chosen signed update file and hold it for review: its
+    /// signature, kind and target are checked here, so a refused file starts
+    /// nothing, and nothing runs until [`Self::apply_pending`].
+    pub fn review_update(&mut self, path: &Path) -> Result<(), String> {
+        self.pending = None;
+        let bytes = read_update(path)?;
+        let envelope =
+            SignedManifest::parse(&bytes).map_err(|error| update_refusal(&error.to_string()))?;
+        let payload = envelope
+            .verify_with(envelope.kind, &self.keys)
+            .map_err(|error| update_refusal(&error.to_string()))?;
+        let pending = match envelope.kind {
+            UpdateKind::Downloader => {
+                let manifest = downloader_updates::DownloaderManifest::parse(payload)
+                    .map_err(|error| update_refusal(&error.to_string()))?;
+                let helpers = manifest
+                    .helpers
+                    .iter()
+                    .map(|release| format!("{} {}", release.name, release.version))
+                    .collect::<Vec<_>>()
+                    .join(" · ");
+                PendingUpdate {
+                    target: DOWNLOADER.into(),
+                    summary: format!(
+                        "YouTube downloader update {} ({}): {helpers}",
+                        manifest.serial, manifest.issued
+                    ),
+                    pack: None,
+                    to_accept: Vec::new(),
+                    signed: Arc::new(bytes),
+                }
+            }
+            UpdateKind::ModelPack => {
+                let update = PackUpdate::parse(payload)
+                    .map_err(|error| update_refusal(&error.to_string()))?;
+                let pack = update.pack;
+                PendingUpdate {
+                    target: pack.pack_id.clone(),
+                    summary: format!(
+                        "{} version {} · {}",
+                        pack.title,
+                        pack.pack_version,
+                        format_bytes(pack.total_bytes())
+                    ),
+                    to_accept: deadpan_models::packs::updates::licenses_to_accept(&pack),
+                    pack: Some(pack),
+                    signed: Arc::new(bytes),
+                }
+            }
+        };
+        self.pending = Some(pending);
+        Ok(())
+    }
+
+    pub fn pending(&self) -> Option<&PendingUpdate> {
+        self.pending.as_ref()
+    }
+
+    pub fn cancel_pending(&mut self) {
+        self.pending = None;
+    }
+
+    /// Start the reviewed update. A pack update needs every license of
+    /// `to_accept` in `accepted`; the store checks again before staging.
+    pub fn apply_pending(
+        &mut self,
+        accepted: &BTreeMap<String, BTreeSet<String>>,
+        repaint: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), String> {
+        if let Some(job) = self.job() {
+            return Err(format!(
+                "{} is running ({}). Wait for it or cancel it first.",
+                job.kind(),
+                job.label().to_lowercase()
+            ));
+        }
+        let pending = self
+            .pending
+            .clone()
+            .ok_or_else(|| "Choose a signed update file first.".to_owned())?;
+        let accepted: Vec<String> = accepted
+            .get(&pending.target)
+            .map(|ids| ids.iter().cloned().collect())
+            .unwrap_or_default();
+        if let Some(missing) = pending.to_accept.iter().find(|id| !accepted.contains(id)) {
+            let title = pending
+                .pack
+                .as_ref()
+                .and_then(|pack| pack.licenses.iter().find(|license| &license.id == missing))
+                .map_or(missing.clone(), |license| license.title.clone());
+            return Err(format!("Accept the {title} to apply this update."));
+        }
+        let work = Work::Update {
+            signed: Arc::clone(&pending.signed),
+        };
+        let total = match &pending.pack {
+            Some(pack) => pack.total_bytes(),
+            None => 0,
+        };
+        let target = pending.target.clone();
+        self.spawn(&target, pending.pack, work, accepted, 0, total, repaint)?;
+        self.pending = None;
+        Ok(())
+    }
+
+    fn storage_unavailable(&self) -> String {
+        format!(
+            "Model storage is unavailable: {}",
+            self.root.clone().err().unwrap_or_default()
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn spawn(
+        &mut self,
+        target: &str,
+        manifest: Option<PackManifest>,
+        work: Work,
+        accepted: Vec<String>,
+        completed: u64,
+        total: u64,
+        repaint: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), String> {
+        let store = self.store().ok_or_else(|| self.storage_unavailable())?;
         let phase = match work {
-            Work::Install { .. } => Phase::Transferring,
-            Work::Remove => Phase::Removing,
+            Work::Install { .. } | Work::Update { .. } => Phase::Transferring,
+            Work::Remove | Work::RemoveVersion(_) => Phase::Removing,
             Work::Discard => Phase::Discarding,
+            Work::Rollback | Work::Baseline => Phase::RollingBack,
         };
         let job = Job {
-            pack_id: pack_id.to_owned(),
+            pack_id: target.to_owned(),
             work: work.clone(),
             phase,
             progress: InstallProgress {
@@ -294,10 +594,18 @@ impl Manager {
             },
             cancelling: false,
         };
+        let context = Context {
+            backend: self.backend.clone(),
+            store,
+            target: target.to_owned(),
+            manifest,
+            accepted,
+            keys: self.keys.clone(),
+            helpers_root: self.helpers_root.clone(),
+        };
         let (sender, events) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
         let thread_cancel = Arc::clone(&cancel);
-        let backend = self.backend.clone();
         let repaint = Arc::new(repaint);
         let thread = std::thread::Builder::new()
             .name("deadpan-model-pack".into())
@@ -306,15 +614,7 @@ impl Manager {
                     let _ = sender.send(event);
                     repaint();
                 };
-                let ending = run(
-                    &backend,
-                    &store,
-                    &manifest,
-                    &work,
-                    &accepted,
-                    &thread_cancel,
-                    &send,
-                );
+                let ending = run(&context, &work, &thread_cancel, &send);
                 send(Event::Done(ending));
             })
             .map_err(|error| format!("The model job did not start: {error}"))?;
@@ -396,40 +696,43 @@ impl Manager {
     }
 }
 
-fn run(
-    backend: &Backend,
-    store: &PackStore,
+/// Everything a job thread needs, captured when it starts.
+struct Context {
+    backend: Backend,
+    store: PackStore,
+    /// A pack identifier or [`DOWNLOADER`].
+    target: String,
+    manifest: Option<PackManifest>,
+    accepted: Vec<String>,
+    keys: Vec<TrustedKey>,
+    helpers_root: Result<PathBuf, String>,
+}
+
+fn failed(error: CliError, cancel: &AtomicBool) -> Ending {
+    match error {
+        _ if cancel.load(Ordering::Acquire) => Ending::Cancelled,
+        CliError::ModelPack(PackError::Cancelled) => Ending::Cancelled,
+        CliError::Import(error) if error.code == "DownloaderInstallCancelled" => Ending::Cancelled,
+        CliError::ModelPack(error) => Ending::Failed(pack_failure(&error)),
+        error => Ending::Failed(sentence(&error.to_string())),
+    }
+}
+
+/// Install a pack version through the configured backend.
+fn install_with(
+    context: &Context,
     manifest: &PackManifest,
-    work: &Work,
-    accepted: &[String],
+    source: Option<&Path>,
     cancel: &AtomicBool,
     send: &dyn Fn(Event),
-) -> Ending {
-    let source = match work {
-        Work::Install { source } => source,
-        Work::Remove => {
-            return match store.remove(manifest) {
-                Ok(()) => Ending::Removed,
-                Err(error) => Ending::Failed(sentence(&error.to_string())),
-            };
-        }
-        Work::Discard => {
-            return match store.discard_partial(manifest) {
-                Ok(()) => Ending::Discarded,
-                Err(error) => Ending::Failed(pack_failure(&error)),
-            };
-        }
-    };
-    let result = match backend {
+) -> Result<(), CliError> {
+    match &context.backend {
         Backend::Real => {
-            let source = match source.as_deref().map(ImportSource::at).transpose() {
-                Ok(source) => source,
-                Err(error) => return Ending::Failed(pack_failure(&error)),
-            };
+            let source = source.map(ImportSource::at).transpose()?;
             deadpan_cli::models::install_pack(
-                store,
+                &context.store,
                 manifest,
-                accepted,
+                &context.accepted,
                 source.as_ref(),
                 cancel,
                 |progress| send(Event::Progress(progress)),
@@ -443,17 +746,241 @@ fn run(
             .map(|_| ())
         }
         #[cfg(any(test, feature = "ui-harness"))]
-        Backend::Scripted(script) => {
-            script.install(store, manifest, accepted, cancel, &|event| send(event))
-        }
+        Backend::Scripted(script) => script.install(
+            &context.store,
+            manifest,
+            &context.accepted,
+            cancel,
+            &|event| send(event),
+        ),
+    }
+}
+
+fn run(context: &Context, work: &Work, cancel: &AtomicBool, send: &dyn Fn(Event)) -> Ending {
+    let store = &context.store;
+    if context.target == DOWNLOADER {
+        return match work {
+            Work::Update { signed } => update_downloader(context, signed, cancel, send),
+            Work::Rollback => rollback_downloader(context, false),
+            Work::Baseline => rollback_downloader(context, true),
+            _ => Ending::Failed("The downloader supports only update and rollback.".into()),
+        };
+    }
+    let Some(manifest) = &context.manifest else {
+        return Ending::Failed("No model pack was named.".into());
     };
+    match work {
+        Work::Install { source } => {
+            match install_with(context, manifest, source.as_deref(), cancel, send) {
+                Ok(()) => Ending::Installed,
+                Err(error) => failed(error, cancel),
+            }
+        }
+        Work::Remove => match store.remove(manifest) {
+            Ok(()) => Ending::Removed,
+            Err(error) => Ending::Failed(sentence(&error.to_string())),
+        },
+        Work::RemoveVersion(version) => {
+            let other = store
+                .catalog_with_keys(&context.keys)
+                .into_iter()
+                .find(|known| known.pack_id == manifest.pack_id && &known.pack_version == version);
+            match other.map(|other| store.remove(&other)) {
+                Some(Ok(())) => Ending::Removed,
+                Some(Err(error)) => Ending::Failed(sentence(&error.to_string())),
+                None => Ending::Failed(format!(
+                    "Version {version} is not a known version of this pack."
+                )),
+            }
+        }
+        Work::Baseline => Ending::Failed("Packs roll back to a version, not a baseline.".into()),
+        Work::Discard => match store.discard_partial(manifest) {
+            Ok(()) => Ending::Discarded,
+            Err(error) => Ending::Failed(pack_failure(&error)),
+        },
+        Work::Update { signed } => {
+            let result = (|| -> Result<String, CliError> {
+                let admitted =
+                    store.admit_update(signed, &context.keys, &context.accepted, false)?;
+                if store.installed(&admitted)?.is_none() {
+                    install_with(context, &admitted, None, cancel, send)?;
+                }
+                // Retained and selected only after its smoke test passed.
+                store.activate_update(signed, &context.keys, &context.accepted, false)?;
+                Ok(admitted.pack_version)
+            })();
+            match result {
+                Ok(version) => Ending::Updated(format!("version {version}")),
+                Err(error) => failed(error, cancel),
+            }
+        }
+        Work::Rollback => match store.rollback_with_keys(&manifest.pack_id, &context.keys) {
+            Ok(installed) => {
+                Ending::RolledBack(format!("version {}", installed.manifest.pack_version))
+            }
+            Err(error) => Ending::Failed(pack_failure(&error)),
+        },
+    }
+}
+
+fn update_downloader(
+    context: &Context,
+    bytes: &[u8],
+    cancel: &AtomicBool,
+    send: &dyn Fn(Event),
+) -> Ending {
+    if !matches!(context.backend, Backend::Real) {
+        return Ending::Failed("Replay never runs the downloader.".into());
+    }
+    let root = match &context.helpers_root {
+        Ok(root) => root,
+        Err(error) => return Ending::Failed(sentence(error)),
+    };
+    use deadpan_cli::youtube::helpers::USER_AGENT;
+    let transport = deadpan_models::packs::HttpsTransport::with_user_agent(USER_AGENT);
+    let mut base = 0u64;
+    let mut current = 0u64;
+    let mut total = 0u64;
+    let result = downloader_updates::update(
+        root,
+        bytes,
+        downloader_updates::UpdateOptions {
+            keys: &context.keys,
+            allow_downgrade: false,
+        },
+        &transport,
+        cancel,
+        &deadpan_cli::youtube::acquire::probe,
+        &mut |event| match event["event"].as_str() {
+            Some("installing") => {
+                base += current;
+                current = event["bytes"].as_u64().unwrap_or(0);
+                total = total.max(base + current);
+            }
+            Some("progress") => send(Event::Progress(InstallProgress {
+                completed_bytes: base + event["completed_bytes"].as_u64().unwrap_or(0),
+                total_bytes: total.max(1),
+            })),
+            Some("probing") => send(Event::Phase(Phase::Probing)),
+            _ => {}
+        },
+    );
     match result {
-        Ok(()) => Ending::Installed,
-        Err(_) if cancel.load(Ordering::Acquire) => Ending::Cancelled,
-        Err(CliError::ModelPack(PackError::Cancelled)) => Ending::Cancelled,
-        Err(CliError::ModelPack(error)) => Ending::Failed(pack_failure(&error)),
+        Ok(outcome) => Ending::Updated(format!("signed update {}", outcome.serial)),
+        Err(error) => failed(error, cancel),
+    }
+}
+
+fn rollback_downloader(context: &Context, to_baseline: bool) -> Ending {
+    let root = match &context.helpers_root {
+        Ok(root) => root,
+        Err(error) => return Ending::Failed(sentence(error)),
+    };
+    let result = HelperSource::default_baseline().and_then(|baseline| {
+        downloader_updates::rollback(root, &baseline, &context.keys, to_baseline)
+    });
+    match result {
+        Ok(outcome) => Ending::RolledBack(match outcome.recovered {
+            Some(problem) => format!(
+                "{} (replaced an unreadable state: {problem})",
+                selected_label(outcome.state.active)
+            ),
+            None => selected_label(outcome.state.active),
+        }),
         Err(error) => Ending::Failed(sentence(&error.to_string())),
     }
+}
+
+fn selected_label(selected: downloader_updates::Selected) -> String {
+    match selected {
+        downloader_updates::Selected::Baseline => "the baseline".into(),
+        downloader_updates::Selected::Update { serial } => format!("signed update {serial}"),
+    }
+}
+
+/// The downloader's selected helpers, read without hashing.
+fn downloader_view(root: &Result<PathBuf, String>, keys: &[TrustedKey]) -> DownloaderView {
+    let unavailable = |problem: String| DownloaderView {
+        summary: "Downloader state is unavailable.".into(),
+        note: None,
+        problem: Some(problem),
+        previous: None,
+        baseline_available: false,
+    };
+    let root = match root {
+        Ok(root) => root,
+        Err(error) => return unavailable(error.clone()),
+    };
+    let baseline = match HelperSource::default_baseline() {
+        Ok(baseline) => baseline,
+        Err(error) => return unavailable(error.to_string()),
+    };
+    let state = downloader_updates::state(root);
+    let previous = state
+        .as_ref()
+        .ok()
+        .and_then(Option::as_ref)
+        .and_then(|state| state.previous)
+        .map(selected_label);
+    // An active update, or an unreadable state file, can always be left for
+    // the baseline (which also rewrites the state).
+    let off_baseline = match &state {
+        Ok(state) => state
+            .as_ref()
+            .is_some_and(|state| state.active != downloader_updates::Selected::Baseline),
+        Err(_) => true,
+    };
+    match downloader_updates::select_with_keys(root, baseline, keys) {
+        Ok(selection) => {
+            let version = |pin| {
+                selection
+                    .source
+                    .release(pin)
+                    .map(|release| release.version)
+                    .unwrap_or_default()
+            };
+            let origin = match &selection.source {
+                HelperSource::Bundled(_) => "bundled with Deadpan".to_owned(),
+                HelperSource::Managed(_) => "pinned baseline".to_owned(),
+                HelperSource::Update(update) => format!("signed update {}", update.serial),
+            };
+            DownloaderView {
+                summary: format!(
+                    "yt-dlp {} · Deno {} · {origin}",
+                    version(&YT_DLP),
+                    version(&DENO)
+                ),
+                note: selection.note,
+                problem: None,
+                previous,
+                baseline_available: off_baseline,
+            }
+        }
+        Err(error) => DownloaderView {
+            previous,
+            baseline_available: true,
+            ..unavailable(sentence(&error.to_string()))
+        },
+    }
+}
+
+/// A bounded read of a chosen signed update file.
+fn read_update(path: &Path) -> Result<Vec<u8>, String> {
+    use std::io::Read;
+    let limit = deadpan_models::updates::MAX_SIGNED_BYTES;
+    let mut bytes = Vec::new();
+    std::fs::File::open(path)
+        .and_then(|file| file.take(limit + 1).read_to_end(&mut bytes))
+        .map_err(|error| format!("The update file could not be read: {error}."))?;
+    if bytes.len() as u64 > limit {
+        return Err("The update file is larger than 256 KiB, so it is not a signed update.".into());
+    }
+    Ok(bytes)
+}
+
+/// A refused update file in app terms.
+fn update_refusal(reason: &str) -> String {
+    format!("This update was not applied: {}", sentence(reason))
 }
 
 /// A pack error in app terms.
@@ -707,6 +1234,46 @@ pub mod scripted {
         Ok(())
     }
 
+    /// A newer version of an approved pack signed with a fresh test key,
+    /// written to `directory`. Returns the file and the key that verifies it.
+    pub fn signed_pack_update(
+        directory: &Path,
+        pack_id: &str,
+        version: &str,
+        key_id: &str,
+    ) -> std::io::Result<(PathBuf, TrustedKey)> {
+        let invalid = |error: String| std::io::Error::other(error);
+        let (pkcs8, public_key) =
+            deadpan_models::updates::generate_key().map_err(|error| invalid(error.to_string()))?;
+        let mut pack = deadpan_models::packs::approved_pack(pack_id)
+            .ok_or_else(|| invalid(format!("no approved pack {pack_id}")))?;
+        pack.pack_version = version.into();
+        let update = PackUpdate {
+            schema: deadpan_models::packs::updates::UPDATE_SCHEMA,
+            serial: 1,
+            issued: "2026-10-06".into(),
+            min_app_version: "0.1.0".into(),
+            pack,
+        };
+        let signed = SignedManifest::sign(
+            UpdateKind::ModelPack,
+            serde_json::to_string(&update).map_err(|error| invalid(error.to_string()))?,
+            key_id,
+            &pkcs8,
+        )
+        .map_err(|error| invalid(error.to_string()))?;
+        std::fs::create_dir_all(directory)?;
+        let path = directory.join(format!("{pack_id}-{version}.signed.json"));
+        std::fs::write(&path, signed.to_bytes())?;
+        Ok((
+            path,
+            TrustedKey {
+                id: key_id.into(),
+                public_key,
+            },
+        ))
+    }
+
     /// A sparse installed copy and receipt in the format `installed` accepts.
     pub fn install(
         store: &PackStore,
@@ -841,6 +1408,107 @@ mod tests {
             assert!(Instant::now() < deadline, "scripted job did not finish");
             std::thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    #[test]
+    fn signed_pack_updates_install_select_and_roll_back() {
+        let root = tempfile::tempdir().unwrap();
+        let complete = || Run {
+            steps: 2,
+            interval: Duration::from_millis(1),
+            finish: Finish::Complete,
+        };
+        let script = Script::new([complete(), complete()]);
+        let mut manager = Manager::new(Backend::Scripted(Arc::new(script)));
+        manager.set_root(root.path().join("models"));
+        manager.set_helpers_root(root.path().join("helpers"));
+        let (path, key) =
+            super::scripted::signed_pack_update(root.path(), WHISPER, "3", "test-key").unwrap();
+        let (untrusted, _) = super::scripted::signed_pack_update(
+            &root.path().join("other"),
+            WHISPER,
+            "4",
+            "other-key",
+        )
+        .unwrap();
+        manager.set_trusted_keys(vec![key]);
+        manager.refresh();
+        let none = BTreeMap::new();
+        let refused = manager.review_update(&untrusted).unwrap_err();
+        assert!(manager.pending().is_none());
+        assert!(
+            refused.contains("not applied") && refused.contains("unknown signing key"),
+            "{refused}"
+        );
+        assert!(manager.job().is_none());
+
+        manager
+            .start(
+                WHISPER,
+                Work::Install { source: None },
+                &accepted(&[]),
+                || {},
+            )
+            .unwrap();
+        wait(&mut manager);
+        assert_eq!(manager.pack(WHISPER).unwrap().pack_version, "2");
+        // Reviewing holds the verified update; nothing runs yet.
+        manager.review_update(&path).unwrap();
+        let pending = manager.pending().unwrap();
+        assert_eq!(pending.target, WHISPER);
+        assert!(pending.to_accept.is_empty());
+        assert!(manager.job().is_none());
+        // The chosen file may change or vanish; the verified bytes travel.
+        std::fs::remove_file(&path).unwrap();
+        manager.apply_pending(&none, || {}).unwrap();
+        assert!(manager.pending().is_none());
+        assert_eq!(manager.job().unwrap().pack_id, WHISPER);
+        wait(&mut manager);
+        assert_eq!(
+            manager.outcome().unwrap().ending,
+            Ending::Updated("version 3".into())
+        );
+        assert_eq!(manager.pack(WHISPER).unwrap().pack_version, "3");
+        assert_eq!(manager.previous(WHISPER), Some("2"));
+        assert!(manager.installed(WHISPER));
+
+        manager
+            .start(WHISPER, Work::Rollback, &accepted(&[]), || {})
+            .unwrap();
+        wait(&mut manager);
+        assert_eq!(
+            manager.outcome().unwrap().ending,
+            Ending::RolledBack("version 2".into())
+        );
+        assert_eq!(manager.pack(WHISPER).unwrap().pack_version, "2");
+        assert_eq!(manager.previous(WHISPER), Some("3"));
+        // Both versions stay installed.
+        assert!(
+            root.path()
+                .join("models/whisper-base-en/2/receipt.json")
+                .is_file()
+        );
+        assert!(
+            root.path()
+                .join("models/whisper-base-en/3/receipt.json")
+                .is_file()
+        );
+
+        // Outside a bundle the downloader baseline is the compiled pins.
+        let view = manager.downloader().unwrap();
+        assert!(view.summary.contains("yt-dlp 2026.08.19"), "{view:?}");
+        assert!(view.summary.contains("pinned baseline"), "{view:?}");
+        assert_eq!(view.previous, None);
+        assert!(
+            manager
+                .start(DOWNLOADER, Work::Rollback, &accepted(&[]), || {})
+                .is_ok()
+        );
+        wait(&mut manager);
+        assert!(matches!(
+            manager.outcome().unwrap().ending,
+            Ending::Failed(_)
+        ));
     }
 
     #[test]

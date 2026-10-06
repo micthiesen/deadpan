@@ -1,10 +1,32 @@
 //! Keyboard scrolling uses the last measured viewport and the actual pointer
 //! offset. It never installs an offset on an otherwise pointer-driven frame.
+//! `/` moves the keyboard to the sheet's search field, which then owns every
+//! event until egui's own Enter or Escape leaves it.
 
 use eframe::egui::{self, Event, Key, Modifiers};
 
+use crate::navigation::panels::{HelpKey, help_key};
+use crate::navigation::registry::mode_label;
+
 const LINE: f32 = 28.0;
-const HINT: &str = "j/k · Up/Down scroll     PgUp/PgDn page     Home/End ends     Esc close";
+pub(super) const SEARCH_ID: &str = "keys-reference-search";
+
+/// The key line, which names the field's own keys while it owns the keyboard.
+fn hint(searching: bool) -> String {
+    if searching {
+        format!(
+            "Type to filter     Enter keep filter     {} leave search",
+            mode_label("help.close")
+        )
+    } else {
+        format!(
+            "{} search     {} scroll     {} close",
+            mode_label("help.search"),
+            mode_label("help.scroll"),
+            mode_label("help.close")
+        )
+    }
+}
 
 #[derive(Default)]
 pub(super) struct HelpScroll {
@@ -12,6 +34,44 @@ pub(super) struct HelpScroll {
     viewport: f32,
     content: f32,
     requested: Option<f32>,
+    /// The search text, kept until Help closes.
+    query: String,
+    /// `/` was pressed: focus the field before it is drawn this frame.
+    focus_search: bool,
+    /// Keyboard input owned by the field, withheld from every widget drawn
+    /// before it and restored only while it is drawn.
+    field_events: Vec<Event>,
+    /// The field held focus when last drawn. egui drops a plain Escape's focus
+    /// before routing, so this, not the live focus, says who owns Escape.
+    field_focused: bool,
+    /// An Escape left the field: release focus when it is drawn.
+    leave_search: bool,
+    /// The query the results were last drawn for; a new one starts at the top.
+    shown_query: String,
+}
+
+fn plain_escape(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Key {
+            key: Key::Escape,
+            modifiers: Modifiers::NONE,
+            pressed: true,
+            ..
+        }
+    )
+}
+
+fn keyboard_event(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Key { .. }
+            | Event::Text(_)
+            | Event::Ime(_)
+            | Event::Paste(_)
+            | Event::Copy
+            | Event::Cut
+    )
 }
 
 pub(super) enum RoutedInput {
@@ -70,39 +130,77 @@ impl HelpScroll {
     }
 
     fn key(&mut self, key: Key, modifiers: Modifiers) {
-        if modifiers != Modifiers::NONE {
-            return;
-        }
         let offset = self.requested.unwrap_or(self.offset);
-        let next = match key {
-            Key::J | Key::ArrowDown => offset + LINE,
-            Key::K | Key::ArrowUp => offset - LINE,
-            Key::PageDown => offset + self.viewport * 0.9,
-            Key::PageUp => offset - self.viewport * 0.9,
-            Key::Home => 0.0,
-            Key::End => self.maximum(),
+        let next = match help_key(key, modifiers) {
+            Some(HelpKey::LineDown) => offset + LINE,
+            Some(HelpKey::LineUp) => offset - LINE,
+            Some(HelpKey::PageDown) => offset + self.viewport * 0.9,
+            Some(HelpKey::PageUp) => offset - self.viewport * 0.9,
+            Some(HelpKey::Top) => 0.0,
+            Some(HelpKey::Bottom) => self.maximum(),
             _ => return,
         };
         self.requested = Some(next.clamp(0.0, self.maximum()));
+    }
+
+    fn take_field_events(&mut self, events: &mut Vec<Event>) {
+        let (field, rest): (Vec<_>, Vec<_>) =
+            std::mem::take(events).into_iter().partition(keyboard_event);
+        self.field_events.extend(field);
+        *events = rest;
+    }
+
+    /// The current search text.
+    #[cfg(test)]
+    pub(super) fn query(&self) -> &str {
+        &self.query
     }
 
     /// Return whether Escape closed help. Events before that boundary belong to
     /// help, including repeated key presses; events after it retain their order
     /// for the editor/command router. Pointer events reach help while it stays
     /// open; closing help discards its entire prefix, including owned clicks.
-    pub(super) fn route_events(&mut self, events: &mut Vec<Event>) -> bool {
-        let close = events.iter().position(|event| {
+    /// While the search field has focus it owns every event, so its own Enter
+    /// and Escape leave the field rather than Help. A `/` press, by key or by
+    /// its typed character on a layout that shifts it, moves the keyboard to
+    /// the field and leaves the ordered suffix for it.
+    pub(super) fn route_events(&mut self, events: &mut Vec<Event>, search_focused: bool) -> bool {
+        let escape = events.iter().position(plain_escape);
+        if search_focused || (self.field_focused && escape.is_some()) {
+            let Some(index) = escape else {
+                self.take_field_events(events);
+                return false;
+            };
+            // Escape leaves the field, never Help; the field keeps what was
+            // typed before it, and Help routes what follows.
+            let mut rest = events.split_off(index + 1);
+            events.pop();
+            self.take_field_events(events);
+            self.field_focused = false;
+            self.leave_search = true;
+            let closed = self.route_events(&mut rest, false);
+            events.append(&mut rest);
+            return closed;
+        }
+        let boundary = events.iter().enumerate().position(|(index, event)| {
+            let Event::Key {
+                key,
+                modifiers,
+                pressed: true,
+                ..
+            } = event
+            else {
+                return false;
+            };
             matches!(
-                event,
-                Event::Key {
-                    key: Key::Escape,
-                    modifiers: Modifiers::NONE,
-                    pressed: true,
-                    ..
-                }
-            )
+                help_key(*key, *modifiers),
+                Some(HelpKey::Close | HelpKey::Search)
+            ) || (!modifiers.command
+                && !modifiers.ctrl
+                && !modifiers.mac_cmd
+                && matches!(events.get(index + 1), Some(Event::Text(text)) if text == "/"))
         });
-        for event in events.iter().take(close.unwrap_or(events.len())) {
+        for event in events.iter().take(boundary.unwrap_or(events.len())) {
             if let Event::Key {
                 key,
                 modifiers,
@@ -113,8 +211,55 @@ impl HelpScroll {
                 self.key(*key, *modifiers);
             }
         }
-        if let Some(index) = close {
+        let close = boundary.is_some_and(|index| {
+            matches!(
+                events[index],
+                Event::Key {
+                    key: Key::Escape,
+                    modifiers: Modifiers::NONE,
+                    ..
+                }
+            )
+        });
+        if let Some(index) = boundary
+            && !close
+        {
+            let opener = match &events[index] {
+                Event::Key { key, .. } => *key,
+                _ => unreachable!("the boundary is a key press"),
+            };
             events.drain(..=index);
+            // The opener's own character is not search text, and a held
+            // opener's repeats (with their characters) never echo into it.
+            loop {
+                match events.first() {
+                    Some(Event::Text(text)) if text == "/" => {
+                        events.remove(0);
+                    }
+                    Some(Event::Key {
+                        key, repeat: true, ..
+                    }) if *key == opener => {
+                        events.remove(0);
+                    }
+                    Some(Event::Key {
+                        key,
+                        pressed: false,
+                        ..
+                    }) if *key == opener => {
+                        events.remove(0);
+                    }
+                    _ => break,
+                }
+            }
+            self.focus_search = true;
+            // The suffix belongs to the field, split at its own Escape like
+            // any focused batch: what follows Escape is Help's again.
+            self.field_focused = true;
+            self.route_events(events, true)
+        } else if let Some(index) = boundary {
+            events.drain(..=index);
+            self.query.clear();
+            self.focus_search = false;
             true
         } else {
             events.retain(|event| {
@@ -138,10 +283,11 @@ impl HelpScroll {
         &mut self,
         open: &mut bool,
         events: &mut std::vec::IntoIter<Event>,
+        search_focused: bool,
     ) -> RoutedInput {
         if *open {
             let mut remaining: Vec<_> = events.by_ref().collect();
-            *open = !self.route_events(&mut remaining);
+            *open = !self.route_events(&mut remaining, search_focused);
             *events = remaining.clone().into_iter();
             RoutedInput::Help(remaining)
         } else if let Some(event) = events.next() {
@@ -161,8 +307,16 @@ impl HelpScroll {
         &mut self,
         context: &egui::Context,
         open: &mut bool,
-        contents: impl FnOnce(&mut egui::Ui) -> R,
+        contents: impl FnOnce(&mut egui::Ui, &str) -> R,
     ) -> Option<egui::InnerResponse<Option<R>>> {
+        if !*open {
+            // However Help closed, nothing typed for it survives.
+            self.query.clear();
+            self.focus_search = false;
+            self.field_events.clear();
+            self.field_focused = false;
+            self.leave_search = false;
+        }
         let available = (context.input(|input| input.content_rect().height()) - 80.0).max(140.0);
         egui::Window::new("Keys · reshape one Original")
             .open(open)
@@ -175,8 +329,38 @@ impl HelpScroll {
             .show(context, |ui| {
                 // Spoken when Help opens: the keyboard stays with Help until
                 // Escape, while focus remains on the pane it returns to.
-                let hint = ui.weak(HINT);
+                let hint = ui.weak(hint(self.field_focused || self.focus_search));
                 super::accessibility::live(&hint, false);
+                let id = egui::Id::new(SEARCH_ID);
+                // Text typed before an Escape in the same batch still lands:
+                // focus for the draw, then release.
+                if std::mem::take(&mut self.focus_search)
+                    || (self.leave_search && !self.field_events.is_empty())
+                {
+                    // Before drawing, so the field reads the rest of this batch.
+                    ui.memory_mut(|memory| memory.request_focus(id));
+                }
+                ui.horizontal(|ui| {
+                    // Its accessible name is the visible label.
+                    let label = ui
+                        .label(egui::RichText::new("Search actions").color(super::style::LAVENDER));
+                    let owned = std::mem::take(&mut self.field_events);
+                    let start = ui.input(|input| input.events.len());
+                    ui.ctx().input_mut(|input| input.events.extend(owned));
+                    let field = ui
+                        .add(
+                            egui::TextEdit::singleline(&mut self.query)
+                                .id(id)
+                                .hint_text("Search by name, key (dd, ,h) or command (:hold)")
+                                .desired_width(f32::INFINITY),
+                        )
+                        .labelled_by(label.id);
+                    ui.ctx().input_mut(|input| input.events.truncate(start));
+                    if std::mem::take(&mut self.leave_search) {
+                        field.surrender_focus();
+                    }
+                    self.field_focused = field.has_focus();
+                });
                 ui.separator();
                 let mut area = egui::ScrollArea::vertical()
                     .id_salt("keys-reference-scroll")
@@ -187,7 +371,12 @@ impl HelpScroll {
                 if let Some(offset) = self.requested.take() {
                     area = area.vertical_scroll_offset(offset);
                 }
-                let output = area.show(ui, contents);
+                let query = self.query.clone();
+                if query != self.shown_query {
+                    area = area.vertical_scroll_offset(0.0);
+                    self.shown_query.clone_from(&query);
+                }
+                let output = area.show(ui, |ui| contents(ui, &query));
                 self.measured(
                     output.state.offset.y,
                     output.inner_rect.height(),
@@ -242,7 +431,7 @@ mod tests {
         scroll.measured(0.0, 200.0, 950.0);
         let mut events = vec![event(Key::J, false, Modifiers::NONE)];
         events.extend((0..8).map(|_| event(Key::J, true, Modifiers::NONE)));
-        assert!(!scroll.route_events(&mut events));
+        assert!(!scroll.route_events(&mut events, false));
         assert!(events.is_empty());
         assert_eq!(scroll.requested.take(), Some(LINE * 9.0));
         for modifiers in [
@@ -256,7 +445,7 @@ mod tests {
                 event(Key::End, false, modifiers),
                 event(Key::Escape, false, modifiers),
             ];
-            assert!(!scroll.route_events(&mut events));
+            assert!(!scroll.route_events(&mut events, false));
             assert!(events.is_empty());
             assert_eq!(scroll.requested, None);
         }
@@ -280,7 +469,7 @@ mod tests {
             event(Key::Escape, false, Modifiers::NONE),
         ];
         events.extend(suffix.clone());
-        assert!(HelpScroll::default().route_events(&mut events));
+        assert!(HelpScroll::default().route_events(&mut events, false));
         assert_eq!(events, suffix);
         let mut bindings = Bindings::default();
         let mut command_open = false;
@@ -344,7 +533,7 @@ mod tests {
             let mut actions = Vec::new();
             let mut command = false;
             loop {
-                match scroll.next_event(&mut open, &mut events) {
+                match scroll.next_event(&mut open, &mut events, false) {
                     RoutedInput::Editor(Event::Key {
                         key,
                         modifiers,
@@ -384,7 +573,7 @@ mod tests {
                 event(Key::Colon, false, Modifiers::SHIFT),
                 Event::Text("source".into()),
             ];
-            assert!(HelpScroll::default().route_events(&mut events));
+            assert!(HelpScroll::default().route_events(&mut events, false));
             assert!(!super::super::pointer_focus_transition(&events));
             let ime_event = events.iter().any(|event| matches!(event, Event::Ime(_)));
             assert!(!ime_event);
@@ -397,7 +586,7 @@ mod tests {
         // A pointer event is still usable by the ScrollArea while help stays open.
         let pointer = Event::PointerMoved(egui::pos2(100.0, 100.0));
         let mut events = vec![event(Key::J, false, Modifiers::NONE), pointer.clone()];
-        assert!(!HelpScroll::default().route_events(&mut events));
+        assert!(!HelpScroll::default().route_events(&mut events, false));
         assert_eq!(events, vec![pointer]);
     }
 
@@ -454,7 +643,10 @@ mod tests {
                     } else {
                         let mut events = context.input(|input| input.events.clone()).into_iter();
                         loop {
-                            match self.scroll.next_event(&mut self.help_open, &mut events) {
+                            match self
+                                .scroll
+                                .next_event(&mut self.help_open, &mut events, false)
+                            {
                                 RoutedInput::Help(remaining) => {
                                     context.input_mut(|input| input.events = remaining);
                                     if self.help_open {
@@ -489,7 +681,7 @@ mod tests {
                             egui::Popup::default_response_id(&response.response),
                         );
                     });
-                    self.scroll.show(context, &mut self.help_open, |ui| {
+                    self.scroll.show(context, &mut self.help_open, |ui, _| {
                         for i in 0..100 {
                             ui.label(format!("Reference row {i}"));
                         }
@@ -608,7 +800,7 @@ mod tests {
         let mut output = context.run_ui(input, |ui| {
             let mut open = true;
             let shown = scroll
-                .show(ui.ctx(), &mut open, |ui| {
+                .show(ui.ctx(), &mut open, |ui, _| {
                     for i in 0..100 {
                         last = ui.label(format!("Reference row {i}")).rect;
                     }
@@ -671,5 +863,160 @@ mod tests {
         scroll.key(Key::Home, Modifiers::NONE);
         frame(&context, &mut scroll, vec![]);
         assert_eq!(scroll.offset, 0.0);
+    }
+
+    fn key_event(key: Key, modifiers: Modifiers) -> Event {
+        event(key, false, modifiers)
+    }
+
+    /// One frame in the application's order: route, then draw the sheet.
+    fn search_frame(
+        context: &egui::Context,
+        scroll: &mut HelpScroll,
+        open: &mut bool,
+        events: Vec<Event>,
+    ) -> bool {
+        let mut closed = false;
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(900.0, 720.0),
+                )),
+                events,
+                ..Default::default()
+            },
+            |_| {
+                let focused = context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
+                closed = context.input_mut(|input| scroll.route_events(&mut input.events, focused));
+                *open &= !closed;
+                scroll.show(context, open, |ui, query| {
+                    ui.label(format!("query {query}"));
+                });
+            },
+        );
+        output.textures_delta.clear();
+        closed
+    }
+
+    #[test]
+    fn slash_searches_and_escape_leaves_the_field_before_closing_help() {
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        search_frame(&context, &mut scroll, &mut open, vec![]);
+        // The opener and the text typed after it arrive in one batch.
+        search_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![
+                key_event(Key::J, Modifiers::NONE),
+                key_event(Key::Slash, Modifiers::NONE),
+                Event::Text("/".into()),
+                Event::Text("dd".into()),
+            ],
+        );
+        assert_eq!(scroll.query(), "dd");
+        assert!(context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+        // Scroll keys are text while the field owns the keyboard.
+        search_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::K, Modifiers::NONE), Event::Text("k".into())],
+        );
+        assert_eq!(scroll.query(), "ddk");
+        assert!(!search_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::Escape, Modifiers::NONE)]
+        ));
+        assert!(open, "the first Escape leaves the field");
+        assert!(!context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+        assert_eq!(scroll.query(), "ddk", "the filter stays");
+        assert!(search_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::Escape, Modifiers::NONE)]
+        ));
+        assert!(!open);
+        assert_eq!(scroll.query(), "", "closing clears the search");
+    }
+
+    #[test]
+    fn a_shifted_slash_layout_reaches_search_by_its_typed_character() {
+        // QWERTZ types `/` with Shift+7.
+        let mut scroll = HelpScroll::default();
+        let mut events = vec![
+            key_event(Key::Num7, Modifiers::SHIFT),
+            Event::Text("/".into()),
+            Event::Text("hold".into()),
+        ];
+        assert!(!scroll.route_events(&mut events, false));
+        assert!(scroll.focus_search);
+        assert!(
+            events.is_empty(),
+            "no widget drawn before the field sees its text"
+        );
+        assert_eq!(scroll.field_events, vec![Event::Text("hold".into())]);
+        // Command chords never open search.
+        let mut scroll = HelpScroll::default();
+        let mut events = vec![key_event(Key::Slash, Modifiers::COMMAND)];
+        assert!(!scroll.route_events(&mut events, false));
+        assert!(!scroll.focus_search);
+    }
+
+    #[test]
+    fn escape_after_slash_in_one_batch_leaves_search_and_routes_the_rest_to_help() {
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        search_frame(&context, &mut scroll, &mut open, vec![]);
+        let closed = search_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![
+                key_event(Key::Slash, Modifiers::NONE),
+                Event::Text("/".into()),
+                Event::Text("a".into()),
+                key_event(Key::Escape, Modifiers::NONE),
+                key_event(Key::Colon, Modifiers::SHIFT),
+                Event::Text(":".into()),
+            ],
+        );
+        assert!(!closed && open, "the Escape leaves the field, not Help");
+        assert_eq!(scroll.query(), "a", "text before the Escape is kept");
+        assert!(!context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+        // A later Escape in the same batch closes Help and keeps its suffix.
+        let mut scroll = HelpScroll::default();
+        let mut events = vec![
+            key_event(Key::Slash, Modifiers::NONE),
+            Event::Text("/".into()),
+            key_event(Key::Escape, Modifiers::NONE),
+            key_event(Key::Escape, Modifiers::NONE),
+            key_event(Key::Colon, Modifiers::SHIFT),
+        ];
+        assert!(scroll.route_events(&mut events, false));
+        assert_eq!(events, vec![key_event(Key::Colon, Modifiers::SHIFT)]);
+    }
+
+    #[test]
+    fn a_held_slash_never_echoes_into_the_search_field() {
+        let mut scroll = HelpScroll::default();
+        let mut events = vec![
+            key_event(Key::Slash, Modifiers::NONE),
+            Event::Text("/".into()),
+            event(Key::Slash, true, Modifiers::NONE),
+            Event::Text("/".into()),
+            event(Key::Slash, true, Modifiers::NONE),
+            Event::Text("/".into()),
+            Event::Text("x".into()),
+        ];
+        assert!(!scroll.route_events(&mut events, false));
+        assert_eq!(scroll.field_events, vec![Event::Text("x".into())]);
     }
 }

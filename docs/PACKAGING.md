@@ -121,14 +121,15 @@ from `tools/build-app.py` therefore keep development behavior.
   each loaded libavcodec, libavformat, libavutil and libswscale image to a
   `Contents/Frameworks` file by mapped device and inode, so it reports where the
   loader actually mapped them.
-- Downloader: inside a packaged bundle the source is always its own
-  `Contents/Resources/helpers`. When that baseline is missing or damaged,
-  `downloader status`, `--probe`, imports and `doctor` report
-  `DownloaderHelperInvalid` and never fall back to another copy. Outside a
-  packaged bundle the source is the managed
-  `~/Library/Application Support/Deadpan/helpers` root. An explicit
-  `--root`/`--helpers` names a managed root only. `downloader install` always
-  writes the managed root, which remains the update location (§15.2).
+- Downloader: a compatible active [signed update](UPDATES.md#downloader-updates)
+  under `~/Library/Application Support/Deadpan/helpers` comes first. Otherwise
+  a packaged bundle uses its own `Contents/Resources/helpers`; when that
+  baseline is missing or damaged, `downloader status`, `--probe`, imports and
+  `doctor` report `DownloaderHelperInvalid` and never fall back to another
+  copy. Outside a packaged bundle the baseline is the managed root's compiled
+  pins. An explicit `--root`/`--helpers` names a managed root (with its own
+  active update). `downloader install` and `downloader update` write only the
+  managed root, never the bundle (§15.2).
 - Models: whisper.cpp, the AI pause weights and other packs stay in
   `~/Library/Application Support/Deadpan/Models`, installed on explicit request
   by download or offline import ([model packs](MODEL_PACKS.md)). None ship in
@@ -256,8 +257,9 @@ Before every launch a bundled helper must pass these checks:
    the superblob bytes. An ad hoc development bundle has no signer identity, so
    only signature validity and the content pin apply.
 
-Signed update manifests, compatibility checks and rollback are not
-implemented, so nothing yet selects a newer managed version.
+Newer helpers never replace these files. [Signed updates](UPDATES.md)
+install under the managed Application Support root and take precedence only
+while compatible; rollback returns to the previous selection or this baseline.
 ## Signing
 
 Signing proceeds inside out with `--options runtime`: FFmpeg libraries, the
@@ -497,16 +499,163 @@ Not verified:
 
 This is not the clean-machine release test in specification §26.6.
 
+## Offline distribution
+
+Specification §14.1 calls for a separate full offline distribution that
+carries approved model packs as data and needs no external installation
+command. `cargo xtask offline-dist` builds one from an existing `bundle`
+output; it never rebuilds the app, so the distributed app is exactly the one
+that `bundle` signed and `bundle-verify` exercised.
+
+```sh
+cargo xtask offline-dist --app /tmp/deadpan-bundle/Deadpan.app \
+  --output /tmp/Deadpan-offline \
+  --pack whisper-base-en [--pack ltx-2.3-q4-bridge=<models root>] \
+  [--models-root <models root>]
+cargo xtask offline-dist-verify /tmp/Deadpan-offline [--keep]
+```
+
+`--pack ID[=ROOT]` names an approved pack and, optionally, the models root
+holding its installed copy; otherwise `--models-root`, otherwise
+`~/Library/Application Support/Deadpan/Models`. Roots are only read.
+
+Layout:
+
+| Path | Contents |
+| --- | --- |
+| `Deadpan.app` | `ditto` copy of the bundle, signature intact. |
+| `Packs/<pack>-<version>.tar` | The pax archive written by the copied app's own `deadpan-cli models export <pack> <tar> --root <root>` (`PackStore::export`). |
+| `Licenses/<pack>-<version>.txt` | The app's `models license <pack>` output (summary, attribution, access, link and every compiled full text), plus the bundle's standard SPDX text for each SPDX license the app has no compiled text for. |
+| `Deadpan.app.SHA256SUMS`, `Deadpan.sbom.cdx.json`, `Deadpan.release.json` | Copied from beside the bundle when present. |
+| `distribution.json` | Schema 1, kind `deadpan-offline-distribution`: app version, commit, tracked-change flag, signature kind and AI runtime presence (from `build-provenance.json`); each pack's id, version, title, archive name, archive bytes and SHA-256, installed bytes, license file, license ids with SPDX, `acceptance_required` and `redistribution`, and whether its smoke test needs the AI runtime. |
+| `README.txt` | Plain install steps: open Models (`:models`), Install from archive…, choose the tar; or `deadpan-cli models import`. |
+| `SHA256SUMS` | `shasum -a 256 -c` format over `distribution.json`, `README.txt`, every archive and license file and the copied sidecars. |
+
+Build steps and refusals:
+
+- The app must carry the `DeadpanPackaging` marker and pass `codesign
+  --verify --deep --strict`, before and after the `ditto` copy.
+- Each pack's selected version must be a compiled one. A version from a
+  [signed update](UPDATES.md#model-pack-updates) is refused with the
+  rollback command to use, because installing it would also need its
+  envelope and `models update --from`, which Install from archive… does not
+  run. Apps with signed updates are asked for the selected version
+  (`selected`) and export and describe exactly that version (`--version`).
+- Each pack must be compiled into that app and reported installed (receipt
+  matches the approved manifest, every file of exact size) by the copied
+  app's `models list --root ROOT`. Otherwise the build refuses and names the
+  `models install`/`import` command.
+- A pack with any license whose `redistribution` is false is refused.
+- A pack whose smoke test needs the AI runtime (`bridge_hold`) is refused when
+  the app was built `--without-ai-runtime`, since it could not be installed.
+- Repeated pack ids and an existing `--output` are refused. Assembly runs in
+  the hidden sibling `.<name>.staging-<pid>`; the build runs the verifier's file
+  checks on it and publishes by rename. A failure removes the staging folder
+  and publishes nothing.
+- The copied app's CLI runs with only `HOME`, `PATH=/usr/bin:/bin` and `TMPDIR`
+  set to fresh directories.
+
+`offline-dist-verify` checks, in order:
+
+1. `distribution.json` parses as schema 1 with contained relative paths;
+   `SHA256SUMS` matches every listed file and covers the manifest, README,
+   every archive and license file; each archive's size and SHA-256 match the
+   manifest; `Deadpan.app.SHA256SUMS`, when carried, matches every app file
+   (internal links must resolve inside the folder).
+2. `codesign --verify --deep --strict` on the app, its packaging marker, and
+   its provenance version and commit against the manifest and AI runtime
+   presence.
+3. For each pack, the distribution's own
+   `Deadpan.app/Contents/MacOS/deadpan-cli models import <pack> <tar> --root
+   <fresh root> --accept-license`, with `env_clear()` and only a fresh `HOME`,
+   `PATH=/usr/bin:/bin` and a fresh `TMPDIR`. Import never downloads; its
+   smoke test runs locally (whisper in-process, the bridge pack through the
+   bundled runtime). `models list` must then report the version installed
+   inside the fresh root. A pack that needs an absent AI runtime is reported
+   as skipped (the build already refuses that combination).
+
+`--accept-license` in the verifier stands for the owner's prior acceptance
+of the pack licenses; it installs only into a throwaway root that is deleted
+afterwards (`--keep` retains it). Real users accept in the Models panel or
+with `models import` after `models license`. The verifier prints a JSON
+report with each pack's installed directory and import time.
+
+Unit tests (`cargo test -p xtask offline`) cover the manifest round trip and
+rejection of other schemas, escaping paths, mismatched archive names and
+uppercase hashes; checksum parsing; and refusal of a tampered archive, a
+missing license file, checksums that omit an archive, an edited manifest, a
+link escaping the folder, an existing output and repeated pack ids.
+
+### 2026-10-05 offline distribution result
+
+Apple M5 Max, macOS 26.5.2. The app was the existing ad hoc 2026-10-05 bundle
+with the AI runtime (commit `131bd088` plus uncommitted changes, 710 MiB).
+The xtask ran from `c3479acc` plus uncommitted changes. whisper-base-en
+version 2 was imported into a scratch models root first; the owner's models
+folder holds only version 1 and was not used.
+
+- `offline-dist ... --pack whisper-base-en=<scratch root>` took 9.1 s: the
+  export took 0.8 s for a 148,853,760-byte archive (SHA-256
+  `28f15a7a…3636db`) of the 148,849,309-byte pack. The folder is 854 MiB.
+- A second run with the same `--output` was refused without changes.
+- `offline-dist-verify` passed in 11.6 s. The checksums (including all
+  app files in `Deadpan.app.SHA256SUMS`) and codesign passed, and the scrubbed import with the whisper smoke test took
+  6.1 s into a fresh temporary root.
+- A distribution copy with one archive byte changed was refused (`SHA256SUMS:
+  Packs/whisper-base-en-2.tar does not match its SHA-256`). A bridge pack not
+  installed in the named root was refused before anything was published.
+
+Bridge pack (2026-10-06, same stale AI-runtime bundle): the 36.15 GB
+`ltx-2.3-q4-bridge` pack was imported by clone from the qualification cache
+into a scratch root (14.7 s including the bundled runtime's smoke test; the
+cache was only read). `offline-dist --pack ltx-2.3-q4-bridge=<root>` wrote a
+36,152,920,576-byte archive (SHA-256 `2f672a6f…5d721`) in 787 s, dominated by
+the debug xtask's hashing. `offline-dist-verify` passed in 412 s: checksums
+and codesign, then the scrubbed import with the bundled AI runtime's smoke
+test in 22.4 s. The 72 GB of scratch output was deleted afterwards.
+
+Not verified:
+
+- a second Mac, a clean account or a quarantined copy of the folder;
+- installing through the Models panel's Install from archive… from the
+  distribution (the panel uses the same `install_pack`).
+
+The pack license files reproduce the standard MIT text with its
+`<year> <copyright holders>` placeholders and name the holders in the
+attribution line. The exact upstream copyright notices of OpenAI Whisper and
+Silero VAD are not compiled into Deadpan yet. Add them before redistributing
+the folder to anyone else.
+
+To verify (owner):
+
+1. Bridge pack from a current AI-runtime bundle (verified on 2026-10-06 with
+   the older bundle above): install it into the default root by clone, then
+   build and verify. This needs about 2 × 36 GB free for the archive and the
+   verifier's import.
+
+   ```sh
+   deadpan-cli models import ltx-2.3-q4-bridge ~/Library/Caches/Deadpan/ltx-qualification --accept-license
+   cargo xtask offline-dist --app <bundle>/Deadpan.app --output <new dir> \
+     --pack whisper-base-en --pack ltx-2.3-q4-bridge
+   cargo xtask offline-dist-verify <new dir>
+   ```
+
+2. Second Mac: copy the folder offline (for example on an external drive, or
+   download it so it is quarantined) and run `shasum -a 256 -c SHA256SUMS`
+   in it. Then open `Deadpan.app` with the network off, run `:models` →
+   Install from archive… → `Packs/whisper-base-en-2.tar`, and transcribe a
+   project. Record the macOS version, quarantine state and timings.
+
 ## Remaining work
 
 - Developer ID signing, notarization, stapling and a signed distribution
   container. These need the owner's credentials.
 - Clean-machine online and offline acceptance under quarantine (§26.6).
-- Downloader updates: signed manifests, compatibility checks, rollback, and
-  selection of a newer managed version over the baseline.
 - The owner's GPL decision for the AI runtime's `ffmpeg`/`ffprobe` and a
   Developer ID/notarized run of the nested Python code (library validation).
-- The app update mechanism and separate app, helper and model version identities.
+- The app update mechanism. Helper and model updates have their own signed
+  manifests, version identities and rollback ([updates](UPDATES.md)); the app
+  itself is still updated by rebuilding.
 - An FFmpeg source-hosting or written-offer decision, and aggregated Deno and V8
   notices.
 - Bit-for-bit reproducibility: comparing two builds, deterministic signing and

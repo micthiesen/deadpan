@@ -29,7 +29,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::ImportError;
-use super::helpers::{DENO, EJS_VERSION, Helpers, YT_DLP};
+use super::helpers::{DENO, Helpers, YT_DLP};
 pub use super::runner::{
     HelperCommand, HelperRun, PrivateCookies, Workspace, environment, run_helper,
 };
@@ -618,14 +618,17 @@ pub fn probe(helpers: &Helpers) -> Result<ProbeReport, CliError> {
         .lines()
         .next()
         .map(|line| line.trim().chars().take(200).collect::<String>());
+    // The versions of the resolved set: the compiled pins or a verified update.
     let matches_pins = yt_dlp
         .as_deref()
-        .is_some_and(|v| v.contains(YT_DLP.version))
-        && ejs.as_deref() == Some(EJS_VERSION)
-        && js_runtimes.as_deref() == Some(&format!("deno-{}", DENO.version))
+        .and_then(|v| v.split_whitespace().next())
+        .and_then(|token| token.rsplit('@').next())
+        == Some(helpers.yt_dlp_version.as_str())
+        && ejs.as_deref() == Some(helpers.ejs_version.as_str())
+        && js_runtimes.as_deref() == Some(&format!("deno-{}", helpers.deno_version))
         && deno
             .as_deref()
-            .is_some_and(|v| v.starts_with(&format!("deno {}", DENO.version)));
+            .is_some_and(|v| v.starts_with(&format!("deno {} ", helpers.deno_version)));
     Ok(ProbeReport {
         yt_dlp,
         ejs,
@@ -817,6 +820,10 @@ pub fn inspect(
         .transpose()?;
     let cookie_path = cookies.as_ref().map(PrivateCookies::path);
 
+    // An installed signed update that was passed over is never silent.
+    if let Some(note) = &request.helpers.selection_note {
+        events(serde_json::json!({ "event": "downloader_note", "note": note }))?;
+    }
     events(
         serde_json::json!({ "event": "fetching_metadata", "video_id": id.as_str(), "source_url": id.watch_url() }),
     )?;
@@ -1064,7 +1071,7 @@ pub fn download_and_create(
             },
             HelperVersion {
                 name: "yt-dlp-ejs".into(),
-                version: EJS_VERSION.into(),
+                version: import.helpers.ejs_version.clone(),
             },
             HelperVersion {
                 name: DENO.name.into(),
@@ -1076,6 +1083,7 @@ pub fn download_and_create(
             role(FormatRole::Audio, &selection.audio, audio_bytes),
         ],
         assembly: ASSEMBLY.into(),
+        downloader_note: import.helpers.selection_note.clone(),
     };
     provenance.validate()?;
     events(serde_json::json!({ "event": "creating_project", "package": import.package }))?;
@@ -1158,16 +1166,19 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
             _ => return Err(usage()),
         }
     }
-    // An explicit root names a managed install; otherwise the running
-    // bundle's baseline is preferred over the managed root.
-    let source = match root {
-        Some(root) if root.is_absolute() => super::helpers::HelperSource::Managed(root),
+    // An explicit root names a managed install (its compatible active update,
+    // else its compiled pins); otherwise a compatible signed update under the
+    // managed root, else the running bundle's baseline.
+    let selection = match root {
+        Some(root) if root.is_absolute() => {
+            super::updates::select(&root, super::helpers::HelperSource::Managed(root.clone()))?
+        }
         Some(_) => return Err(CliError::Usage("--helpers must be an absolute path".into())),
-        None => super::helpers::HelperSource::default_source()?,
+        None => super::helpers::HelperSource::default_selection()?,
     };
     // Refuse malformed URLs before verifying helpers or touching the network.
     normalize(url).map_err(ImportError::from)?;
-    let helpers = Helpers::resolve_source(&source)?;
+    let helpers = Helpers::resolve_selection(&selection)?;
     let media_worker = media_worker()?;
     let cancelled = interrupt_flag()?;
     let created = create_from_url(
@@ -1182,9 +1193,10 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
         },
         &mut |event| super::emit(&event),
     )?;
-    crate::write_json(
-        &serde_json::json!({ "protocol": 1, "created": created.created, "provenance": created.provenance }),
-    )
+    crate::write_json(&serde_json::json!({
+        "protocol": 1, "created": created.created, "provenance": created.provenance,
+        "downloader_note": helpers.selection_note,
+    }))
 }
 
 /// The isolated media worker installed beside this executable.
