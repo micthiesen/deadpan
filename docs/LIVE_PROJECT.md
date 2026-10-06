@@ -22,6 +22,11 @@ readers.
 | Render cancellation | Require the exact job, attempt and cancellation token. |
 | AI pause generation (`generate-hold`) | `Generate` starts the app's own AI job for the submitted Hold, revision, variant count and optional seed, exactly as `:generate N`; `GenerationStatus` observes and `CancelGeneration` cancels exactly that job. |
 | AI pause acceptance (`accept-hold`) | `AcceptHold` optionally selects the submitted Ready variant, then accepts the request's selected bundle in one transaction with the owner's relevance resolver. |
+| AI variant choices (`select-hold`, `keep-hold`, `discard-hold`, `dismiss-attempt`) | `GenerationVariant` checks the variant is offered and selects, keeps, releases or discards it; `DismissInterruptedAttempt` stops offering an interrupted attempt. Operational, not edits; the app rereads its candidates and closes a preview the change made stale. |
+| Transcript corrections (`corrections`) | `Corrections` applies one versioned change with the closed command's checks; the app republishes its corrected transcript and pauses. |
+| Original copies (`macro` `yank_original`) | A Macro operation: checks revision and bank version, saves the copy and adds the same runtime value to the app's bank. |
+| Storage cleanup and clock confirmation (`project storage --clean`, `--confirm-clock`) | `CleanStorage` and `ConfirmVariantClock` plan and scan on read-only opens in their own threads while the service keeps serving, apply only the rechecked expiry and exactly the scanned files on the writer, and answer the admitted request when done. A file `plan` (Storage R) runs on the writer at once. Refused with `StorageBusy` while another storage job, a job that could publish media or the automatic retention check runs; the app schedules its automatic check again. |
+| Backup restore (`project restore`) | `RestoreBackup` runs the app's own restore (refusals, safety backup, verification, new session), refused with `RestoreDraftOpen` while a preview, draft or unshown edit receipt is open. The restore revokes the owner the request authenticated against, so the replaced endpoint is retired: it closes its listener, writes the already admitted replies, refuses the rest of its batch with `HostOwnerChanged`, and the app binds a new endpoint for the restored state. Up to four retired endpoints drain at once; shutdown waits up to two seconds for them. A database that changed but could not be verified or shown is reported as `BackupRestoredUnverified` or `BackupRestoredNotShown`, with the restored head as `committed_revision` when known and the safety backup's id. |
 
 The CLI first attempts its existing closed-project operation. Only an actual
 writer-lock conflict selects the live owner. A writer without an authenticated
@@ -29,9 +34,12 @@ endpoint returns `HostOwnerUnavailable`. The current-schema migration fast path
 does not acquire a writer or contact the owner. The explicit IPC `Migrate`
 operation can report an admitted owner's current schema without releasing its
 writer; it does not migrate a legacy store. Older closed packages retain their
-existing explicit migration path. This boundary does not complete DP-21 or add
-analysis or the remaining editor commands. Named Macro access
-implements bounded motions, frame cuts, beat copies, register pastes and calls.
+existing explicit migration path. Named Macro access implements bounded
+motions, frame cuts, beat copies, Original copies, register pastes and calls.
+Every headless write in the [parity inventory](PARITY.md) takes this route;
+read-only reports and dry runs use their own readers. Long operations
+(cleanup, clock confirmation, restore) give the client a 290-second reply
+deadline instead of 30 seconds.
 
 ## Ownership and authentication
 
@@ -96,7 +104,10 @@ take the same short admission slot as UI commands; status and exact cancellation
 remain available while that slot is busy. They cannot clear another command's
 admission flag.
 A remote short edit returns `HostBusy` while a native edit, copy or Macro
-continuation remains unread by the UI, preserving its cursor and selection.
+continuation remains unread by the UI, preserving its cursor and selection. Unread means the UI has not yet taken an update carrying
+that receipt (identified by its revision or request identity); later
+background publishes, such as AI job progress, re-send it so it survives, but
+do not make it unread again.
 Prepared background operations use the same publication guard. Motion-only
 remote Macros return their explicit resolved position without publishing a
 native cursor change or writing the project.

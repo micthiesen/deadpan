@@ -11,7 +11,9 @@ record covers:
   accepted Generated Holds and larger media;
 - stress runs: 10,000-beat playback, seek storms and jumpy playback through
   the real preview worker, and a proxy build, playback and export together;
-- the legacy Accepted/Still reader decision.
+- the legacy Accepted/Still reader decision;
+- [decode-ahead at cuts](#decode-ahead-at-cuts-follow-up-2026-10-06), a
+  later follow-up removing the 1080p60 cut-edit drops.
 
 These are engineering measurements on one machine, not release
 qualification. Acoustic synchronization and physical display latency are not
@@ -232,13 +234,115 @@ measured.
   `deadpan-diagnostics`, `deadpan-cli`, `xtask` and `deadpan-app` with and
   without `ui-harness`.
 
+## Decode-ahead at cuts (follow-up, 2026-10-06)
+
+The 1080p60 cut edit above dropped 19–20 pictures per 30 s because each
+Repeat restart needed a keyframe seek of the serving decoder and 1080p
+Originals have no proxy. Edit playback now decodes ahead of discontinuities
+at every raster ([decode-ahead](../PLAYBACK.md#audio-clock-and-pictures),
+`deadpan_media::lookahead`): after each picture the plan is scanned up to
+4 s ahead for the next picture that does not continue the Original (a
+backward jump or a forward jump of more than eight pictures), a companion
+decoder of the same Original (shared verified snapshot, receipt index and
+background measurement; same codec threads) is positioned at its exact
+picture on its own thread, and the two decoders swap roles when playback
+reaches it. Only which decoder produces the exact picture changes.
+
+| Item | Value |
+| --- | --- |
+| Source | HEAD `90b2905b` plus this change and another agent's concurrent uncommitted headless/live-endpoint work (deadpan-cli, app project service, store registers), tracked diff `c9ba512a…`; none of that work is on these paths |
+| Run | `cargo xtask perf --stages playback` (`deadpan-cli` `8ff95bdba050`, `deadpan-media-worker` `fc0c03ffd9e1`, `perf` `8b7440d69492`). Every stage started below the 3.0 load gate (2.19–2.95); none was flagged. Hardware and toolchain as above |
+| Fixtures | The same `gen-1080p60` and `gen-4k30` movies, imported again with this build (the earlier packages are schema 67, refused by the current store), and the same `-cuts` derivation (`make-cuts --every 24 --plays 3 --seconds 40`) |
+| Comparison | `perf playback --lookahead off` on the same cut package: the previous behaviour |
+
+| Workload | Policy | Look-ahead | Presented | Dropped | Exact / proxy | Serving seeks | Decode + Metal p50 / p95 / max ms | Interval p95 / max ms | Peak footprint |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| gen-1080p60 | original | on | 1,801 | 0 | 1,801 / 0 | 0 | 4.6 / 6.3 / 10.9 | 18.5 / 24.8 | 550 MB |
+| gen-1080p60 | adaptive | on | 1,800 | 0 | 1,800 / 0 | 0 | 4.6 / 5.9 / 10.7 | 18.5 / 23.7 | 552 MB |
+| gen-1080p60-cuts | original | off | 1,786 | **14** | 1,786 / 0 | 37 | 4.6 / 6.3 / 60.0 | 18.6 / 68.8 | 567 MB |
+| **gen-1080p60-cuts** | original | **on** | 1,800 | **0** | 1,800 / 0 | 0 | 4.5 / 4.7 / 6.3 | 18.3 / 20.2 | 685 MB |
+| **gen-1080p60-cuts** | adaptive | **on** | 1,801 | **0** | 1,801 / 0 | 0 | 4.5 / 4.7 / 6.3 | 18.2 / 19.7 | 697 MB |
+| gen-4k30 | original | on | 900 | 0 | 900 / 0 | 0 | 15.8 / 16.2 / 20.4 | 35.5 / 39.1 | 1,172 MB |
+| gen-4k30 | adaptive | on | 901 | 0 | 901 / 0 | 0 | 15.7 / 16.2 / 21.2 | 35.9 / 39.4 | 1,148 MB |
+| gen-4k30-cuts | original | off | 878 | **22** | 878 / 0 | 18 | 15.7 / 26.2 / 175.6 | 36.2 / 187.7 | 1,343 MB |
+| **gen-4k30-cuts** | original | **on** | 900 | **0** | 900 / 0 | 0 | 15.6 / 16.5 / 21.5 | 35.9 / 38.8 | 1,861 MB |
+| **gen-4k30-cuts** | adaptive | **on** | 901 | **0** | 901 / 0 | 0 | 15.5 / 16.2 / 22.0 | 35.7 / 39.5 | 1,883 MB |
+
+"Serving seeks" counts exact playback pictures that the serving decoder
+reached by a keyframe seek (or more than eight forward pictures): cuts the
+look-ahead did not cover. Peak footprint is the whole `perf` process
+(`/usr/bin/time -l`).
+
+- **Target met.** Both cut edits drop nothing with the look-ahead, in both
+  policies, against 14 (1080p60) and 22 (4K) without it in the same run
+  (the earlier run: 19–20 and 19). Decode plus Metal never exceeded 6.3 ms
+  at 1080p60 and 22.0 ms at 4K30; the heard clock was never ahead of a
+  completed picture (lag 0 at every completion). Audio: 0 underruns,
+  0 faults, every interval covered, at most one trailing frame.
+- **Every cut was served ahead.** 1080p60: 38 jobs started, 38 reached,
+  37 swaps (adaptive: 39 started, one stopped by retargeting, 38 swaps);
+  4K: 19 started, 19 reached, 18 swaps in both policies; one companion
+  opened per run, no failure. A reached job without a swap positioned the
+  companion for a cut the 30 s ended before.
+- **The 4K cut edit no longer needs the proxy.** With the look-ahead every
+  restart is exact (901 / 0 against 813 / 87 proxy pictures before); the
+  proxy remains the fallback for a picture the companion did not reach.
+- **Memory.** The companion decoder costs 118 MB at 1080p60 (567 →
+  685 MB) and 518 MB at 4K30 (1,343 → 1,861 MB): a second 16-thread 4K
+  decoder's frame pool. It exists only during edit playback with a
+  discontinuity in the horizon, at most one per retained Original, and is
+  closed after the first request that is not playback. Sequential
+  playback opens none (the uncut rows equal the earlier record).
+- Start latency 205–258 ms and picture session open 94–132 ms, as before.
+
+Tests: `deadpan-media` `lookahead` unit tests (7: continuity rule, scan
+reuse, incremental extension within its 1,024-frame bound, background
+pass-over, errors, swap preference) and `tests/lookahead.rs` on real media
+(`pyramid-bframes.mp4` and `cfr-bframes.mp4` at one and eight threads:
+every picture of an edit with backward restarts, forward jumps and a jump
+into the last keyframe group equals a sequential single-threaded decode, in
+order, each cut served by the companion's current picture; retargeting,
+cancel, release and drop while positioning are bounded). `deadpan-app`
+`worker::project_tests::lookahead_tests`: a split and Repeated
+`pyramid-bframes.mp4` played through the real preview worker returns every
+picture in order, the restart (95 → 30) and its neighbours equal an
+independent exact decode, the look-ahead swap counter advances; and only
+the next playback picture keeps a running job (a stopped request, cancel,
+clear and shutdown set its stop flag). All 38 `worker::` tests pass (the
+stress test ignored), `deadpan-media`, `deadpan-diagnostics` and `xtask`
+tests pass, strict Clippy (`--all-targets -D warnings`) passes for
+`deadpan-media`, `deadpan-diagnostics`, `deadpan-cli`, `xtask` and
+`deadpan-app` with and without `ui-harness`, and the `workspace`,
+`playback-feedback`, `proxy-seek`, `original-playback` and `diagnostics`
+replays pass (the `:diagnostics` panel shows the new Look-ahead row).
+
+An independent review found no material defect and three minor issues,
+fixed after the run above: a target whose positioning failed was retried
+on every picture (now once per target); a stop arriving while the same
+target was re-requested waited one picture before restarting; and the
+harness scheduled the look-ahead (plan scan and job start) inside the
+measured picture time and failed the run on a plan error. The measured
+decode plus Metal times above therefore include the scan, a conservative
+difference; the worker always scheduled after publishing its reply.
+Focused tests and strict Clippy were rerun after the fixes; the perf run
+was not.
+
+Not covered by this follow-up: selection-loop seams and Original audition
+are not looked ahead (a loop seam still seeks); crossing a Generated Hold
+still closes the Original session; the companion uses the serving decoder's
+thread count, so 4K memory could be lowered with fewer companion threads at
+an unmeasured cost to forward decoding after a swap; the stress stage
+(10,000-beat and concurrent proxy/export playback) and the seek-storm
+worker stress test were not rerun; lower hardware tiers and memory pressure.
+
 ## Not covered
 
 - Acoustic synchronization of pictures with sound and physical display
   latency (To verify (owner)): all picture timings end at Metal completion,
   without the window, compositor or scanout.
-- 1080p60 edits with cuts still drop pictures (above); a reduced tier or
-  lookahead decoding at 1080p is not implemented.
+- 1080p60 edits with cuts dropped pictures in the runs above; the
+  [decode-ahead follow-up](#decode-ahead-at-cuts-follow-up-2026-10-06)
+  removes those drops.
 - The native app's playback was exercised through the real preview worker
   and replays with simulated delivery, not a physical audition in a native
   window.

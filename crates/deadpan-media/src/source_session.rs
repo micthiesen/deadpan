@@ -191,7 +191,64 @@ pub struct SourceSession {
     /// An incremental move of the decoder toward a later picture, decoded in
     /// bounded steps between other work (see [`SourceSession::begin_reposition`]).
     reposition: Option<Reposition>,
-    measurement: Option<BackgroundMeasurement>,
+    /// Shared with [`SourceSession::companion`] decoders, so a mismatch or
+    /// interruption fails every decoder of these bytes. The last owner's
+    /// drop cancels and joins the measurement.
+    measurement: Option<Arc<BackgroundMeasurement>>,
+}
+
+/// Everything needed to open another serving decoder over the same verified
+/// bytes, retained index and complete-measurement state, on any thread:
+/// a look-ahead decoder (see [`crate::lookahead`]). Its pictures are checked
+/// against the shared index exactly as the original session's are.
+#[derive(Clone)]
+pub struct CompanionSpec {
+    input: VerifiedSourceInput,
+    index: Arc<SourceIndexSnapshot>,
+    info: SourceStreamInfo,
+    decode_limits: DecodeLimits,
+    maximum_seek_frames: usize,
+    measurement: Option<Arc<BackgroundMeasurement>>,
+}
+
+impl CompanionSpec {
+    /// Open the companion decoder. Opening probes the shared private
+    /// snapshot again; it does not copy, hash or measure anything.
+    pub fn open(
+        &self,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<SourceSession, SourceSessionError> {
+        if timeout.is_zero() || timeout > Duration::from_secs(60) {
+            return Err(SourceSessionError::Limits(
+                "open timeout must be in (0, 60 seconds]",
+            ));
+        }
+        let deadline = Deadline {
+            end: Instant::now() + timeout,
+            cancelled,
+        };
+        let decoder = SourceDecoder::open(
+            self.input.decoder_file()?,
+            self.decode_limits,
+            control(&deadline)?,
+        )?;
+        if decoder.info() != &self.info || decoder.info().stream_index != self.index.stream_index()
+        {
+            return Err(SourceSessionError::IndexMismatch);
+        }
+        Ok(SourceSession {
+            decoder,
+            input: self.input.clone(),
+            decode_limits: self.decode_limits,
+            reopen_decoder: false,
+            index: Arc::clone(&self.index),
+            maximum_seek_frames: self.maximum_seek_frames,
+            last_frame: None,
+            reposition: None,
+            measurement: self.measurement.clone(),
+        })
+    }
 }
 
 /// The state of an unfinished [`SourceSession::begin_reposition`]: the
@@ -234,10 +291,10 @@ pub enum RepositionProgress {
 }
 
 /// One owned thread measuring the complete index on its own single-threaded
-/// decoder over the shared verified bytes. Dropping the session cancels it
-/// and joins: cancellation is observed on every packet read and between
-/// codec calls, so the join waits for at most one single-threaded codec call.
-/// At most one measurement therefore outlives no session.
+/// decoder over the shared verified bytes. Dropping the session and its
+/// companions cancels it and joins: cancellation is observed on every packet
+/// read and between codec calls, so the join waits for at most one
+/// single-threaded codec call. No measurement outlives every session.
 struct BackgroundMeasurement {
     cancelled: Arc<AtomicBool>,
     state: Arc<(Mutex<IndexMeasurement>, Condvar)>,
@@ -472,7 +529,7 @@ impl SourceSession {
             maximum_seek_frames: limits.maximum_seek_frames,
             last_frame: None,
             reposition: None,
-            measurement: Some(measurement),
+            measurement: Some(Arc::new(measurement)),
         })
     }
 
@@ -542,11 +599,26 @@ impl SourceSession {
         &self.input
     }
 
+    /// The specification of a companion decoder: same bytes, index, serving
+    /// limits and shared complete-measurement state.
+    pub fn companion(&self) -> CompanionSpec {
+        CompanionSpec {
+            input: self.input.clone(),
+            index: Arc::clone(&self.index),
+            info: self.decoder.info().clone(),
+            decode_limits: self.decode_limits,
+            maximum_seek_frames: self.maximum_seek_frames,
+            measurement: self.measurement.clone(),
+        }
+    }
+
     /// State of the complete fresh index measurement.
     pub fn measurement(&self) -> IndexMeasurement {
         self.measurement
             .as_ref()
-            .map_or(IndexMeasurement::Verified, BackgroundMeasurement::state)
+            .map_or(IndexMeasurement::Verified, |measurement| {
+                measurement.state()
+            })
     }
 
     /// Wait up to `timeout` for the complete measurement to finish; the

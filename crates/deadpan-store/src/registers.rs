@@ -86,6 +86,60 @@ impl ProjectStore {
         Ok(bank)
     }
 
+    /// [`Self::save_register`] that also requires the register bank version
+    /// the caller observed. Headless copies use it so a stale bank refuses.
+    pub fn save_register_at(
+        &mut self,
+        expected_project: &ProjectId,
+        expected_revision: &RevisionId,
+        expected_bank_version: u64,
+        name: RegisterName,
+        value: RegisterValue,
+    ) -> Result<RegisterBank, StoreError> {
+        self.require_writer()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let prepared = prepare_copy(
+            &transaction,
+            expected_project,
+            expected_revision,
+            expected_bank_version,
+            name,
+            value,
+        )?;
+        write_prepared_bank(&transaction, &prepared, expected_project)?;
+        transaction.commit()?;
+        Ok(prepared.bank)
+    }
+
+    /// The bank [`Self::save_register_at`] would write, with the same guards
+    /// and content validation, without writing.
+    pub fn preview_register(
+        &self,
+        expected_project: &ProjectId,
+        expected_revision: &RevisionId,
+        expected_bank_version: u64,
+        name: RegisterName,
+        value: RegisterValue,
+    ) -> Result<RegisterBank, StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let prepared = prepare_copy(
+            &transaction,
+            expected_project,
+            expected_revision,
+            expected_bank_version,
+            name,
+            value,
+        )?;
+        for content in prepared.contents.values() {
+            if !content.validated {
+                validate_value(&transaction, &content.value, expected_project)?;
+            }
+        }
+        Ok(prepared.bank)
+    }
+
     /// Replace only one named macro, binding the complete entry workspace and bank.
     /// Saving a macro leaves copied contents, timeline history and Redo intact.
     pub fn save_macro(
@@ -533,6 +587,36 @@ pub(crate) struct PreparedBank {
     pub bank: RegisterBank,
     contents: BTreeMap<String, CanonicalContent>,
     slots: BTreeMap<RegisterName, String>,
+}
+
+fn prepare_copy(
+    connection: &Connection,
+    expected_project: &ProjectId,
+    expected_revision: &RevisionId,
+    expected_bank_version: u64,
+    name: RegisterName,
+    value: RegisterValue,
+) -> Result<PreparedBank, StoreError> {
+    if matches!(value, RegisterValue::Macro { .. }) {
+        return Err(invalid("macros are saved through save_macro"));
+    }
+    let current = crate::read_head_project(connection)?;
+    if current.project_id() != expected_project {
+        return Err(invalid("copy belongs to another project"));
+    }
+    if current.revision_id() != expected_revision {
+        return Err(StoreError::RevisionConflict {
+            expected: expected_revision.as_str().into(),
+            current: current.revision_id().as_str().into(),
+        });
+    }
+    let prepared = prepare_bank(connection)?;
+    if prepared.bank.version != expected_bank_version {
+        return Err(invalid("register bank version changed"));
+    }
+    let value = Arc::new(value);
+    let writes = BTreeMap::from([(RegisterName::unnamed(), Arc::clone(&value)), (name, value)]);
+    prepare_writes_from(prepared, &writes)
 }
 
 fn prepare_macro(

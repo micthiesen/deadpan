@@ -16,7 +16,7 @@ use deadpan_analysis::{
     edges_in_centiseconds, measured_edges,
 };
 use deadpan_store::{AccessMode, CorrectionChange, CorrectionsKey, ProjectStore};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::live_project::LiveError;
@@ -24,12 +24,9 @@ use crate::speech::StoredWords;
 
 const MAX_REQUEST_BYTES: u64 = 64 * 1024;
 
-/// Why a committing request is refused while the app holds the writer.
-const ALREADY_OPEN: &str = "The project is open in Deadpan, which holds its writer. Make the correction there with :correct, or close the project and run corrections again. Inspection and --dry-run work while it is open.";
-
 const USAGE: &str = "usage: corrections <project.deadpan> [--asset <id>] | corrections <project.deadpan> --json <request.json> [--dry-run]";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Request {
     pub protocol: u32,
@@ -47,7 +44,7 @@ pub struct Request {
 /// positions in the corrected `transcript` and `pauses` outputs; the
 /// `expected_*` fields repeat what the caller saw there, so a change computed
 /// against an older transcript or detection is refused.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Change {
     /// Replace a word's text; several words split it at measured edges.
@@ -593,27 +590,31 @@ pub fn inspect(
     Ok(Loaded::read(&store, asset)?.report())
 }
 
+/// Read-only dry runs open their own reader; a committing change uses the
+/// writer, or the open app's live endpoint, which saves it on its own writer
+/// and refreshes its transcript and pauses.
 pub fn execute(package: &Path, request: &Request) -> Result<Value, crate::CliError> {
-    let store = ProjectStore::open(
+    Ok(crate::live_project::dispatch_short(
         package,
-        if request.dry_run {
-            AccessMode::ReadOnly
-        } else {
-            AccessMode::ReadWrite
+        None,
+        crate::live_project::ShortOperation::Corrections {
+            request: Box::new(request.clone()),
         },
-    )
-    .map_err(|error| match error {
-        // Corrections are not routed through the live endpoint: the app's
-        // sheet owns them while the project is open.
-        deadpan_store::StoreError::AlreadyOpen => {
-            crate::CliError::from(LiveError::new("ProjectAlreadyOpen", ALREADY_OPEN))
-        }
-        error => error.into(),
-    })?;
-    let loaded = Loaded::read(&store, request.asset.as_ref())?;
+    )?)
+}
+
+/// One versioned correction on whichever process holds `store`.
+pub fn execute_on(store: &ProjectStore, request: &Request) -> Result<Value, LiveError> {
+    if request.protocol != 1 {
+        return Err(LiveError::new(
+            "ProtocolUnsupported",
+            "Corrections protocol must be 1",
+        ));
+    }
+    let loaded = Loaded::read(store, request.asset.as_ref()).map_err(cli_error)?;
     let version = loaded.version();
     if version != request.expected_version {
-        return Err(conflict(version, request.expected_version).into());
+        return Err(conflict(version, request.expected_version));
     }
     let (change, label) = loaded.change(&request.change)?;
     if request.dry_run {
@@ -626,10 +627,19 @@ pub fn execute(package: &Path, request: &Request) -> Result<Value, crate::CliErr
             "version": version, "proposed": proposed,
         }));
     }
-    let stored = store.change_analysis_corrections(&loaded.key, version, change)?;
+    let stored = store
+        .change_analysis_corrections(&loaded.key, version, change)
+        .map_err(LiveError::store)?;
     Ok(json!({
         "protocol": 1, "committed": true, "dry_run": false, "label": label,
         "before_version": version, "version": stored.version,
         "undo": stored.undo, "redo": stored.redo, "corrections": stored.corrections,
     }))
+}
+
+fn cli_error(error: crate::CliError) -> LiveError {
+    match error {
+        crate::CliError::LiveProject(error) => error,
+        error => LiveError::new(error.code(), &error),
+    }
 }

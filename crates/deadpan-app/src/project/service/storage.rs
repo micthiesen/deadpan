@@ -75,6 +75,19 @@ impl Retention {
         };
     }
 
+    /// The automatic check is planning, applying, scanning or removing.
+    pub(super) fn running(&self) -> bool {
+        !matches!(self.phase, Phase::Idle)
+    }
+
+    /// Run the automatic check again as soon as the writer is idle, after a
+    /// remote cleanup or clock confirmation changed what it would find.
+    pub(super) fn recheck_soon(&mut self) {
+        if matches!(self.phase, Phase::Idle) && self.session.is_some() {
+            self.due = Some(Instant::now());
+        }
+    }
+
     pub(super) fn status(&self, session: u64) -> Option<RetentionPassStatus> {
         if self.session != Some(session) {
             return None;
@@ -199,8 +212,9 @@ impl Service {
             || self.render.is_some()
             || self.generation.active()
             || self.targets.active()
+            || self.remote_storage_active()
         {
-            Err("Wait for the current import, render, AI pause or tracking to finish, then clean up again.".to_owned())
+            Err("Wait for the current import, render, AI pause, tracking or command-line cleanup to finish, then clean up again.".to_owned())
         } else {
             match self.store.as_mut() {
                 None => Err("Open a project first.".to_owned()),
@@ -219,7 +233,7 @@ impl Service {
 
 impl Service {
     /// Why the writer must not run the retention pass now, if it must not.
-    fn retention_blocked(&self) -> Option<&'static str> {
+    pub(super) fn retention_blocked(&self) -> Option<&'static str> {
         // A command the UI has submitted, or one being received, goes first.
         if self.shared.busy.load(std::sync::atomic::Ordering::Acquire) {
             Some("Waiting for the current command to finish.")
@@ -229,7 +243,7 @@ impl Service {
     }
 
     /// A job that could be writing media or the database is running.
-    fn retention_jobs_running(&self) -> Option<&'static str> {
+    pub(super) fn retention_jobs_running(&self) -> Option<&'static str> {
         if self.active.is_some() || self.relinking.is_some() || self.host_preparation_active() {
             Some("Waiting for the import or relink to finish.")
         } else if self.render.is_some() || self.pending_session_change.is_some() {
@@ -240,6 +254,8 @@ impl Service {
             Some("Waiting for tracking to finish.")
         } else if self.backups.running() {
             Some("Waiting for the backup to finish.")
+        } else if self.remote_storage_active() {
+            Some("Waiting for the command-line storage operation to finish.")
         } else {
             None
         }

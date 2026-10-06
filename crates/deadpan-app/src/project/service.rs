@@ -40,6 +40,7 @@ mod marks;
 mod moment;
 mod recovery;
 mod registers;
+mod remote_storage;
 mod render;
 mod render_history;
 mod room_tone;
@@ -127,6 +128,10 @@ struct Service {
     render_history: Option<super::render_history::Update>,
     pending_session_change: Option<render::PendingSessionChange>,
     host: Option<headless::Host>,
+    /// Owners a restore replaced, kept only to write their admitted replies.
+    retired_hosts: Vec<(headless::Host, std::time::Instant)>,
+    /// Command-line cleanup or clock confirmation running off this thread.
+    remote_storage: Option<remote_storage::Job>,
     // Kept across session replacement until the shared worker drains its reply.
     host_preparing: Option<(u64, Arc<AtomicBool>)>,
     generation: generation::State,
@@ -216,6 +221,8 @@ pub(super) fn run(
         render_history: None,
         pending_session_change: None,
         host: None,
+        retired_hosts: Vec::new(),
+        remote_storage: None,
         host_preparing: None,
         generation: generation::State::new(backend),
         targets: targets::State::new(tracking),
@@ -249,7 +256,8 @@ pub(super) fn run(
             | service.pump_generation()
             | service.pump_tracking()
             | service.finish_session_change()
-            | service.pump_retention();
+            | service.pump_retention()
+            | service.pump_remote_storage();
         if changed {
             service.reconcile_slip();
             service.reconcile_trim();
@@ -362,9 +370,11 @@ pub(super) fn run(
     }
     service.cancel();
     service.backup_before_session_change();
-    // Revoke handles and release the lock before waiting for cooperative decoding.
-    service.host = None;
+    // Revoke handles and release the lock before waiting for cooperative
+    // decoding; replies already produced get a bounded chance to be written.
+    service.retire_host();
     service.store = None;
+    service.drain_hosts_before_exit();
     service.backups.finish_on_exit();
     service.workspace = None;
     service.cached = None;

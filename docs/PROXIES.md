@@ -440,6 +440,10 @@ Timing, audio, the heard clock and the requested frames never depend on it.
   exact picture after the rest. A pause requests its own stopped picture
   instead. The proxy chip and the "· proxy preview"
   label show while proxy pixels are on screen during playback too.
+- **Look-ahead first.** Before the tier is chosen, a companion decoder
+  already positioned at a cut serves it exactly
+  ([decode-ahead](PLAYBACK.md#audio-clock-and-pictures)); the proxy serves
+  only pictures the companion did not reach in time.
 - **Opening.** Playback never opens a proxy; one opened for an earlier
   stopped seek is used. A project opened straight into playback plays
   exact pictures until a stopped seek opens the proxy.

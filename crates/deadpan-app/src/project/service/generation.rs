@@ -13,9 +13,7 @@ use deadpan_cli::generation::attempt::{
 };
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
-use deadpan_core::HoldVideo;
 use deadpan_jobs::{AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, RequestId};
-use deadpan_store::generation_attempts::CandidateAvailability;
 use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
 use super::*;
@@ -145,6 +143,30 @@ impl State {
     /// Stored variants changed outside this module; reread the candidates.
     pub(super) fn variants_changed(&mut self) {
         self.epoch += 1;
+    }
+
+    /// A remote client changed one offered variant through the live
+    /// endpoint: reread the candidates and drop a preview that no longer
+    /// shows the request's chosen, offered variant, as the native change does.
+    pub(super) fn remote_variant_changed(
+        &mut self,
+        request: &RequestId,
+        attempt: &AttemptId,
+        action: deadpan_cli::generation::variants::VariantAction,
+    ) {
+        use deadpan_cli::generation::variants::VariantAction;
+        self.epoch += 1;
+        let stale = self.preview.as_ref().is_some_and(|preview| {
+            preview.request() == request
+                && match action {
+                    VariantAction::Select => preview.attempt() != attempt,
+                    VariantAction::Discard => preview.attempt() == attempt,
+                    VariantAction::Keep | VariantAction::Release => false,
+                }
+        });
+        if stale {
+            self.preview = None;
+        }
     }
 
     /// A job thread is live; the writer must not be released.
@@ -1381,91 +1403,48 @@ impl Service {
 
 /// Every current bridge request's present Ready variants that its Hold has
 /// not accepted, by Hold.
+/// The shared definition of offered variants, with the inspector's derived
+/// thumbnail fields.
 fn candidates(
     store: &ProjectStore,
     document: &ProjectDocument,
 ) -> std::result::Result<BTreeMap<NodeId, Candidate>, StoreError> {
-    let mut found = BTreeMap::new();
-    for request in store.current_generation_requests()? {
-        if request.bridge_plan.is_none() {
-            continue;
-        }
-        let hold = request.binding.hold_id.clone();
-        let Some(NodeKind::Hold { recipe }) = document.nodes().get(&hold).map(|node| &node.kind)
-        else {
-            continue;
-        };
-        let accepted = match &recipe.video {
-            HoldVideo::Generated { accepted } => Some(&accepted.artifact.sampled_object),
-            _ => None,
-        };
-        let retention = store.generation_variant_retention(&request.request_id)?;
-        let store_selected = store
-            .selected_generation_bundle(&request.request_id)?
-            .map(|selected| selected.identity.attempt_id);
-        let mut variants = Vec::new();
-        let mut after = 0;
-        loop {
-            let page = store.generation_attempts(&request.request_id, after, 256)?;
-            let Some(last) = page.last() else {
-                break;
-            };
-            after = last.ordinal;
-            for attempt in &page {
-                let Some(receipt) = attempt.bundle_receipt.as_ref() else {
-                    continue;
-                };
-                if attempt.checkpoint.state != JobState::Ready
-                    || receipt.availability() != CandidateAvailability::Present
-                    || accepted == Some(receipt.sampled_object())
-                {
-                    continue;
-                }
-                let video = receipt.sampled_video();
-                let attempt_id = &attempt.checkpoint.identity.attempt_id;
-                let record = retention
-                    .iter()
-                    .find(|record| &record.identity.attempt_id == attempt_id);
-                variants.push(Variant {
-                    attempt: attempt_id.clone(),
-                    ordinal: attempt.ordinal,
-                    seed: receipt.provider().seed,
-                    sampled: receipt.sampled_object().clone(),
-                    sampled_frames: u32::try_from(video.frames().frames()).unwrap_or(u32::MAX),
-                    sampled_size: (video.width(), video.height()),
-                    receipt: std::sync::Arc::new(receipt.clone()),
-                    ready_at: record.map_or(std::time::UNIX_EPOCH, |record| record.ready_at),
-                    kept: record.is_some_and(|record| record.kept),
-                    picked: record.is_some_and(|record| record.picked),
-                    // The store's own selection never expires.
-                    expires_at: record
-                        .filter(|_| store_selected.as_ref() != Some(attempt_id))
-                        .and_then(|record| record.expires_at(DEFAULT_VARIANT_RETENTION)),
-                });
-            }
-            if page.len() < 256 {
-                break;
-            }
-        }
-        let Some(newest) = variants.last() else {
-            continue;
-        };
-        let selected = store_selected
-            .filter(|attempt| variants.iter().any(|variant| &variant.attempt == attempt))
-            .unwrap_or_else(|| newest.attempt.clone());
-        found.insert(
-            hold.clone(),
-            Candidate {
-                request: request.request_id.clone(),
+    Ok(deadpan_cli::generation::variants::offered(store, document)?
+        .into_iter()
+        .map(|(hold, offered)| {
+            let variants = offered
+                .variants
+                .into_iter()
+                .map(|variant| {
+                    let video = variant.receipt.sampled_video();
+                    Variant {
+                        attempt: variant.attempt,
+                        ordinal: variant.ordinal,
+                        seed: variant.seed,
+                        sampled: variant.receipt.sampled_object().clone(),
+                        sampled_frames: u32::try_from(video.frames().frames()).unwrap_or(u32::MAX),
+                        sampled_size: (video.width(), video.height()),
+                        receipt: variant.receipt,
+                        ready_at: variant.ready_at,
+                        kept: variant.kept,
+                        picked: variant.picked,
+                        expires_at: variant.expires_at,
+                    }
+                })
+                .collect();
+            (
                 hold,
-                origin: request.origin_revision.clone(),
-                frames: request.constraints.video.frames().frames(),
-                variants,
-                selected,
-            },
-        );
-    }
-    Ok(found)
+                Candidate {
+                    request: offered.request,
+                    hold: offered.hold,
+                    origin: offered.origin,
+                    frames: offered.frames,
+                    variants,
+                    selected: offered.selected,
+                },
+            )
+        })
+        .collect())
 }
 
 fn revision_id() -> RevisionId {

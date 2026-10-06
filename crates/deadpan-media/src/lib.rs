@@ -28,6 +28,9 @@ pub mod picture_scan;
 pub mod playback_pictures;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod lookahead;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod proxy;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]

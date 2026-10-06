@@ -790,6 +790,18 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
+Headless parity has two statuses: every registry action is `Equivalent` or
+`GuiOnly`, and a new action needs a headless form or a reason before it ships.
+Derive what the app reads from focus with the shared deadpan-cli functions
+(`sound_events`, `generation::variants`, `gags`, `macros`), never a parallel
+copy; route operational writes as live short operations through `execute_short`
+and refresh the affected native state. Long remote work (cleanup, clock
+confirmation) plans and scans on read-only opens off the service thread and
+answers its admitted ticket later; only rechecked writes use the writer. A
+restore retires the replaced endpoint: close its listener, write only already
+admitted replies, refuse the rest of that batch, drain on shutdown. See
+[parity](docs/PARITY.md).
+
 Database schema 57 stores core schema 45 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured

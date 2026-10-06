@@ -157,7 +157,10 @@ the footer teach the actions:
 and `,n` (`ai.next`) to the comma family with the same contract (Normal Edit
 only, no count, no key repeat, yielding to text and composition); see the
 [compatibility record](KEYBINDING_COMPATIBILITY.md). The rest of the workflow
-is command-only.
+is command-only. Headless, `ai-variants` lists the offered variants (with
+`--joins`, the comparison's join readings) and `select-hold`, `keep-hold`,
+`discard-hold` and `dismiss-attempt` make the same choices, on the app's
+writer when it has the project open ([headless](HEADLESS.md#choosing-keeping-and-discarding-variants)).
 
 `project::generation` defines the requests and published state, and
 `project/service/generation.rs` runs them:
@@ -300,8 +303,8 @@ is command-only.
 - **Retention.** Offered variants follow a visible retention policy (§19.2,
   [storage](STORAGE.md#retention-of-unaccepted-ai-variants)). A variant that is
   neither kept (`:keep-ai`, Keep variant, `GenerationOperation::Keep`,
-  `deadpan-cli keep-hold`), picked by the person (Choose, Preview or `accept-hold
-  --attempt`; protection moves only with another pick or a discard), its
+  `deadpan-cli keep-hold`), picked by the person (Choose, Preview, `select-hold`
+  or `accept-hold --attempt`; protection moves only with another pick or a discard), its
   request's chosen variant, nor accepted stops being offered 7 days after it
   became Ready; each row shows `kept`, `picked by you` or `expires in N days`,
   and the service warns when a newer variant takes the selection from one only
@@ -309,7 +312,7 @@ is command-only.
   every 6 hours (deferred while an import, render, AI pause, tracking job or
   backup runs); a clock behind recorded times or more than one retention
   period past the last check is treated as a clock anomaly that expires and
-  removes nothing until it is confirmed: after a long gap since the last check, the Storage panel's E shows which variants would stop being offered (count and bytes, planned off the writer) and a second E confirms the clock, as `project storage --clean` does; a clock behind the project's records is shown but never confirmed, and one check
+  removes nothing until it is confirmed: after a long gap since the last check, the Storage panel's E shows which variants would stop being offered (count and bytes, planned off the writer) and a second E confirms the clock, as `project storage --confirm-clock` (or `--clean`) does; a clock behind the project's records is shown but never confirmed, and one check
   expires at most 32 variants. Each check expires due variants (recorded as
   `expired`, separately from `discarded`) and then removes their unreferenced
   `Media/Generated` masters through the reference-tracked cleanup after the

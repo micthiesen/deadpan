@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 #[cfg(test)]
 use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
+use deadpan_media::lookahead::{DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead};
 use deadpan_media::playback_pictures::{PictureClock, PictureSource, PlaybackPictures};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{
@@ -191,6 +192,10 @@ struct Mailbox {
     reply: Option<Reply>,
     clear_requested: bool,
     shutdown: bool,
+    /// The running look-ahead job's stop flag: anything other than the next
+    /// playback picture (a stopped request, cancel, clear, shutdown) stops
+    /// it without waiting for the worker.
+    lookahead: Option<Arc<AtomicBool>>,
     /// This worker's pending plus in-progress work in process diagnostics,
     /// including idle proxy preparation.
     depth: Option<deadpan_diagnostics::Share>,
@@ -209,6 +214,9 @@ impl Mailbox {
             return false;
         }
         self.cancel_active();
+        if ticket.transport.is_none() || !matches!(work, Work::Project { .. }) {
+            self.stop_lookahead();
+        }
         self.latest = Some(ticket);
         self.pending = Some(Request {
             ticket,
@@ -275,8 +283,15 @@ impl Mailbox {
         }
     }
 
+    fn stop_lookahead(&mut self) {
+        if let Some(stop) = self.lookahead.take() {
+            stop.store(true, Ordering::Release);
+        }
+    }
+
     fn stop(&mut self) {
         self.shutdown = true;
+        self.stop_lookahead();
         self.cancel_active();
         self.pending = None;
         self.reply = None;
@@ -290,6 +305,7 @@ impl Mailbox {
 
     fn cancel(&mut self) {
         self.cancel_active();
+        self.stop_lookahead();
         self.latest = None;
         self.pending = None;
         self.reply = None;
@@ -504,12 +520,22 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
         let published = publish_reply(&shared, &context, &request, picture, started);
         if playback {
+            // Position the look-ahead decoder at the edit's next
+            // discontinuity, after this picture was published.
+            schedule_lookahead(&shared, &request, &mut session);
             // Between playback pictures, move the Original decoder toward a
             // picture ahead of the heard clock so exact pictures resume.
             if refine {
                 reposition(&shared, &request, &mut session);
             }
             continue;
+        }
+        // Playback has ended: close the look-ahead decoder after the reply.
+        if let Some(lookahead) = session
+            .as_mut()
+            .and_then(|session| session.ahead.lookahead.as_mut())
+        {
+            lookahead.release();
         }
         if !published || !refine {
             continue;
@@ -724,6 +750,20 @@ struct RetainedSession {
     /// Where to reposition this decoder after the last proxy playback
     /// picture, so exact pictures can resume.
     reposition: Option<SourceFrameId>,
+    /// Decode-ahead at the edit's next discontinuity during playback.
+    ahead: Ahead,
+}
+
+/// The look-ahead decoder of a retained Original session and the scan of
+/// the playback plan it follows (see `deadpan_media::lookahead`). At most
+/// one companion decoder per retained Original; it is released by any
+/// request that is not playback and dropped with the session.
+#[derive(Default)]
+struct Ahead {
+    lookahead: Option<LookAhead>,
+    scan: DiscontinuityScan,
+    /// The workspace session and revision whose plan `scan` examined.
+    plan: Option<(u64, deadpan_core::RevisionId)>,
 }
 
 /// Always the exact picture; see [`perform_with`] for proxy pictures.
@@ -831,6 +871,7 @@ fn perform_with(
                 catalog: None,
                 costs: PlaybackPictures::default(),
                 reposition: None,
+                ahead: Ahead::default(),
             });
             (Some(summary), SourceFrameId(0))
         }
@@ -1112,6 +1153,7 @@ fn generated_picture(
             catalog: None,
             costs: PlaybackPictures::default(),
             reposition: None,
+            ahead: Ahead::default(),
         });
     }
     let session = retained
@@ -1229,6 +1271,7 @@ fn registered_picture(
             slot,
             picture_period,
         }) => {
+            swap_lookahead(retained, &key, id);
             if let Some(picture) = playback_proxy_picture(
                 media,
                 registered,
@@ -1252,6 +1295,116 @@ fn registered_picture(
         None => {}
     }
     exact_picture(media, registered, id, canvas, cancelled, retained, &key)
+}
+
+/// Serve playback picture `id` from the look-ahead decoder when the serving
+/// decoder would seek there (a cut) and the look-ahead reaches it sooner; the
+/// two decoders swap roles. Only the decoder changes: the picture, its
+/// identity and its index check are those of an exact decode.
+fn swap_lookahead(retained: &mut Option<RetainedSession>, key: &SessionKey, id: SourceFrameId) {
+    let Some(session) = retained.as_mut().filter(|session| session.key == *key) else {
+        return;
+    };
+    let Some(lookahead) = session.ahead.lookahead.as_mut() else {
+        return;
+    };
+    let serving = session.source.decode_plan(id);
+    if let Some(companion) = lookahead.take_for(id, serving) {
+        let previous = std::mem::replace(&mut session.source, companion);
+        lookahead.keep(previous);
+        // A proxy reposition target belonged to the previous decoder.
+        session.reposition = None;
+    }
+}
+
+/// After a published edit playback picture, find the plan's next
+/// discontinuity within [`LOOKAHEAD_HORIZON`] and position the retained
+/// Original's look-ahead decoder there (or stop it when there is none).
+/// Never decodes on this thread.
+fn schedule_lookahead(shared: &Shared, request: &Request, retained: &mut Option<RetainedSession>) {
+    let Work::Project {
+        workspace,
+        view: ProjectView::Sequence { frame },
+    } = &request.work
+    else {
+        return;
+    };
+    let Some(session) = retained.as_mut() else {
+        return;
+    };
+    let SessionKey::Project {
+        session: media_session,
+        asset,
+        ..
+    } = &session.key
+    else {
+        return;
+    };
+    if *media_session != workspace.session {
+        return;
+    }
+    let plan = &workspace.plan;
+    let revision = (workspace.session, plan.metadata().revision_id.clone());
+    if session.ahead.plan.as_ref() != Some(&revision) {
+        session.ahead.scan.reset();
+        session.ahead.plan = Some(revision);
+    }
+    let rate = workspace.document.presentation_basis().frame_rate;
+    let horizon = i64::try_from(
+        u64::from(rate.numerator()) * LOOKAHEAD_HORIZON.as_secs() / u64::from(rate.denominator()),
+    )
+    .unwrap_or(i64::MAX);
+    let through = frame
+        .0
+        .saturating_add(horizon)
+        .min(plan.duration().frames().saturating_sub(1));
+    let index = session.source.shared_index();
+    let target = session
+        .ahead
+        .scan
+        .next(frame.0, through, |next| {
+            lookahead_ordinal(plan, index.index(), asset, next)
+        })
+        .ok()
+        .flatten()
+        .map(|found| found.target);
+    let source = &session.source;
+    let lookahead = session
+        .ahead
+        .lookahead
+        .get_or_insert_with(|| LookAhead::new(source.companion(), FRAME_TIMEOUT));
+    lookahead.request(target);
+    let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
+    mailbox.lookahead = lookahead.stop_flag();
+    // Stopped, cancelled or cleared since this picture: stop it right away.
+    if mailbox.shutdown
+        || mailbox.clear_requested
+        || mailbox
+            .latest
+            .is_none_or(|latest| latest.transport.is_none())
+    {
+        mailbox.stop_lookahead();
+    }
+}
+
+/// The Original ordinal project frame `frame` shows from `asset`; None for
+/// pictures this decoder does not serve.
+fn lookahead_ordinal(
+    plan: &RenderPlan,
+    index: &SourceFrameIndex,
+    asset: &AssetId,
+    frame: i64,
+) -> Result<Option<SourceFrameId>, deadpan_plan::PlanError> {
+    let sample = plan.picture(ProjectFrame(frame))?;
+    match &sample.picture {
+        deadpan_plan::Picture::Source { asset: shown, .. }
+        | deadpan_plan::Picture::Freeze { asset: shown, .. }
+            if shown == asset =>
+        {
+            Ok(Some(sample.picture.select_source_frame(index)?.identity))
+        }
+        _ => Ok(None),
+    }
 }
 
 /// The proxy picture for a playback request when the retained Original
@@ -1539,6 +1692,7 @@ fn registered_picture_once(
             catalog: Some(Arc::clone(registered)),
             costs: PlaybackPictures::default(),
             reposition: None,
+            ahead: Ahead::default(),
         });
     }
     let session = retained

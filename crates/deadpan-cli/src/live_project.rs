@@ -121,17 +121,65 @@ pub enum ShortOperation {
         expected_revision: Option<RevisionId>,
         new_revision: RevisionId,
     },
+    /// Select, discard, keep or release one offered AI variant: durable
+    /// operational metadata, not an edit (`:pick-ai`, `:discard-ai`, `:keep-ai`).
+    GenerationVariant {
+        request: deadpan_jobs::RequestId,
+        attempt: deadpan_jobs::AttemptId,
+        action: crate::generation::variants::VariantAction,
+    },
+    /// Stop offering one AI attempt a crash interrupted for retry (Jobs `d`).
+    /// Operational, not an edit; the pause is unchanged.
+    DismissInterruptedAttempt { request: String, attempt: String },
+    /// One versioned transcript or pause correction (`:correct`).
+    Corrections {
+        request: Box<crate::corrections::Request>,
+    },
+    /// Remove unreferenced project files unchanged for the grace period
+    /// (Storage P/R). With `expire_variants`, first expire due AI variants,
+    /// confirming the clock, so their files are removable in the same run.
+    CleanStorage {
+        grace_seconds: u64,
+        expire_variants: bool,
+        dry_run: bool,
+        /// Remove exactly a dry run's files (Storage R after P).
+        #[serde(default)]
+        plan: Option<Box<crate::storage::CleanupPlan>>,
+    },
+    /// Expire due AI variants under the current clock, confirming it so the
+    /// app's automatic checks resume (Storage E).
+    ConfirmVariantClock { dry_run: bool },
+    /// Replace the project's state with one verified backup after backing up
+    /// the current state. The owner's live endpoint is replaced afterwards.
+    RestoreBackup {
+        id: String,
+        expected_revision: Option<RevisionId>,
+    },
 }
 
 impl ShortOperation {
     pub fn is_preview(&self) -> bool {
         matches!(self, Self::Macro { request } if request.dry_run)
+            || matches!(self, Self::Corrections { request } if request.dry_run)
             || matches!(
                 self,
                 Self::Edit { dry_run: true, .. }
                     | Self::History { dry_run: true, .. }
                     | Self::AdoptPrimaryGeometry { dry_run: true, .. }
+                    | Self::CleanStorage { dry_run: true, .. }
+                    | Self::ConfirmVariantClock { dry_run: true }
             )
+    }
+
+    /// How long a client waits for the owner's reply. Cleanup rescans
+    /// references and restore copies and verifies the database twice.
+    pub fn client_timeout(&self) -> std::time::Duration {
+        match self {
+            Self::CleanStorage { .. }
+            | Self::ConfirmVariantClock { .. }
+            | Self::RestoreBackup { .. } => std::time::Duration::from_secs(290),
+            _ => std::time::Duration::from_secs(30),
+        }
     }
 }
 
@@ -269,8 +317,21 @@ impl Request {
 }
 
 pub fn request(client: &mut Client, operation: Operation) -> Result<Reply, LiveError> {
+    request_within(client, operation, std::time::Duration::from_secs(30))
+}
+
+/// [`request`] with an explicit reply deadline.
+pub fn request_within(
+    client: &mut Client,
+    operation: Operation,
+    timeout: std::time::Duration,
+) -> Result<Reply, LiveError> {
     let payload = serde_json::to_value(Request::new(operation)).map_err(LiveError::json)?;
-    let value = client.request(payload)?;
+    let value = client.request_until(
+        uuid::Uuid::new_v4(),
+        payload,
+        std::time::Instant::now() + timeout,
+    )?;
     let reply: Reply = serde_json::from_value(value).map_err(LiveError::json)?;
     match reply {
         Reply::Failed { error } => Err(error),
@@ -329,12 +390,14 @@ pub fn dispatch_short(
                 Some(project) => project,
                 None => inspect(&mut client)?.0.project_id,
             };
-            match request(
+            let timeout = operation.client_timeout();
+            match request_within(
                 &mut client,
                 Operation::Execute {
                     project_id,
                     command: Box::new(operation),
                 },
+                timeout,
             )? {
                 Reply::Completed {
                     mut output,
@@ -527,6 +590,57 @@ pub fn execute_short(
                 serde_json::json!({"protocol":1,"committed":true,"outcome":outcome}),
                 Some(revision),
             )
+        }
+        ShortOperation::GenerationVariant {
+            request,
+            attempt,
+            action,
+        } => (
+            crate::generation::variants::apply(store, request, attempt, *action)?,
+            None,
+        ),
+        ShortOperation::DismissInterruptedAttempt { request, attempt } => {
+            store
+                .dismiss_interrupted_generation(request, attempt)
+                .map_err(LiveError::store)?;
+            let remaining = store
+                .interrupted_generation_attempts()
+                .map_err(LiveError::store)?;
+            (
+                serde_json::json!({"protocol":1,"dismissed":{"request_id":request,"attempt_id":attempt},
+                    "interrupted":remaining.attempts,"warning":remaining.warning}),
+                None,
+            )
+        }
+        ShortOperation::Corrections { request } => {
+            (crate::corrections::execute_on(store, request)?, None)
+        }
+        ShortOperation::CleanStorage {
+            grace_seconds,
+            expire_variants,
+            dry_run,
+            plan,
+        } => (
+            crate::storage::clean_project(
+                store,
+                std::time::Duration::from_secs(*grace_seconds),
+                *expire_variants,
+                *dry_run,
+                plan.as_deref(),
+            )?,
+            None,
+        ),
+        ShortOperation::ConfirmVariantClock { dry_run } => {
+            (crate::storage::confirm_clock(store, *dry_run)?, None)
+        }
+        ShortOperation::RestoreBackup {
+            id,
+            expected_revision,
+        } => {
+            // A restore replaces the session rather than adding an authored
+            // revision; its output names the restored head.
+            let outcome = crate::backups::restore_on(store, id, expected_revision.as_ref())?;
+            (serde_json::json!({"protocol":1,"restored":outcome}), None)
         }
         ShortOperation::Migrate => {
             // An admitted store is already at the current schema. Never release

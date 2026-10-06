@@ -275,7 +275,59 @@ pub struct RemovedEntry {
     identity: Option<(i128, i128)>,
 }
 
+/// A previewed entry in a form a caller can retain and send back, including
+/// the device and inode that bind a removal to exactly the listed file.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PlannedRemoval {
+    pub namespace: String,
+    pub name: String,
+    pub bytes: u64,
+    /// Decimal device and inode, both or neither.
+    pub identity: Option<[String; 2]>,
+}
+
 impl RemovedEntry {
+    /// This entry as a retained plan line.
+    pub fn planned(&self) -> PlannedRemoval {
+        PlannedRemoval {
+            namespace: self.namespace.to_owned(),
+            name: self.name.clone(),
+            bytes: self.bytes,
+            identity: self
+                .identity
+                .map(|(device, inode)| [device.to_string(), inode.to_string()]),
+        }
+    }
+
+    /// A retained plan line, for [`ProjectStore::clean_previewed_storage`],
+    /// which removes it only if a fresh scan still finds that exact file
+    /// (namespace, name, device and inode) removable.
+    pub fn from_planned(planned: &PlannedRemoval) -> Result<Self, StoreError> {
+        let invalid = || StoreError::Storage("the cleanup plan names an unknown entry".into());
+        let namespace = NAMESPACES
+            .iter()
+            .map(|(_, name)| *name)
+            .find(|name| *name == planned.namespace)
+            .ok_or_else(invalid)?;
+        let identity = planned
+            .identity
+            .as_ref()
+            .map(|[device, inode]| {
+                Ok::<_, StoreError>((
+                    device.parse().map_err(|_| invalid())?,
+                    inode.parse().map_err(|_| invalid())?,
+                ))
+            })
+            .transpose()?;
+        Ok(Self {
+            namespace,
+            name: planned.name.clone(),
+            bytes: planned.bytes,
+            identity,
+        })
+    }
+
     #[doc(hidden)]
     pub fn for_test(namespace: &'static str, name: &str, bytes: u64) -> Self {
         Self {

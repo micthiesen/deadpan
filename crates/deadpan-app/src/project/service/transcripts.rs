@@ -195,6 +195,34 @@ impl Service {
     }
 }
 
+impl Service {
+    /// Reread the Original's corrections after a remote client changed them
+    /// through the live endpoint, and republish the corrected transcript and
+    /// pauses exactly as a native `:correct` save does. An open correction
+    /// sheet's next change then sees a newer version and is refused.
+    pub(super) fn reload_corrections(&mut self) -> Result<()> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let store = self.store.as_ref().ok_or("Open a project first")?;
+        let Some(corrections) = super::original_corrections(
+            store,
+            workspace.single_source.as_ref(),
+            &workspace.sources,
+        ) else {
+            return Ok(());
+        };
+        let transcript =
+            super::original_transcript(store, workspace.single_source.as_ref(), &workspace.sources);
+        let activity =
+            super::original_activity(store, workspace.single_source.as_ref(), &workspace.sources);
+        self.workspace = Some(Arc::new(workspace.with_corrections(
+            corrections,
+            transcript,
+            activity,
+        )));
+        Ok(())
+    }
+}
+
 /// Analyses are saved only for the session's ready Original and the audio
 /// stream it was analysed from, so the published annotation always describes
 /// the media on screen.

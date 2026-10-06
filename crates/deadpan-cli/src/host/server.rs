@@ -23,13 +23,17 @@ struct Connection {
 /// bounded per poll. At most four admitted payloads may be outstanding; the
 /// owner must finish or reject each ticket. This is not a command replay cache.
 pub struct Endpoint {
-    listener: OwnedFd,
+    /// Closed when retired, so new clients fail at once.
+    listener: Option<OwnedFd>,
     namespace: Lease,
     discovery: Discovery,
     owner: WriterOwnerHandle,
     connections: Vec<Connection>,
     serial: u64,
     round_robin: usize,
+    /// The owner was replaced (a restore revoked it). Only already admitted
+    /// replies are still written; nothing new is accepted or read.
+    retired: bool,
 }
 impl Endpoint {
     pub fn bind(store: &mut ProjectStore) -> Result<Self, HostError> {
@@ -71,14 +75,50 @@ impl Endpoint {
             }
         };
         Ok(Self {
-            listener,
+            listener: Some(listener),
             namespace,
             discovery,
             owner,
             connections: Vec::new(),
             serial: 0,
             round_robin: 0,
+            retired: false,
         })
+    }
+
+    /// Stop serving after the owner was replaced, keeping admitted requests
+    /// answerable: the replacing operation's own reply must still reach its
+    /// client although the writer ownership it authenticated against is now
+    /// revoked. Unread and unanswered connections are dropped at the next poll.
+    pub fn retire(&mut self) {
+        self.retired = true;
+        self.listener = None;
+        self.connections
+            .retain(|connection| !matches!(connection.state, State::Reading(_)));
+    }
+
+    /// A retired endpoint still has replies to write.
+    pub fn draining(&self) -> bool {
+        self.connections
+            .iter()
+            .any(|connection| matches!(connection.state, State::Writing(_)))
+    }
+
+    fn flush_retired(&mut self) {
+        let mut budget = Budget::new();
+        let now = Instant::now();
+        self.connections.retain_mut(|connection| {
+            if now >= connection.deadline {
+                return false;
+            }
+            match &mut connection.state {
+                State::Writing(writer) => matches!(
+                    writer.poll(&mut connection.stream, &mut budget, connection.deadline),
+                    Ok(false)
+                ),
+                State::Reading(_) | State::Awaiting => false,
+            }
+        });
     }
     pub fn owner_id(&self) -> Uuid {
         self.discovery.owner_id
@@ -91,13 +131,20 @@ impl Endpoint {
     }
 
     pub fn poll(&mut self) -> Vec<Incoming> {
+        if self.retired {
+            self.flush_retired();
+            return Vec::new();
+        }
         if self.owner.is_closed() || self.namespace.recheck(&self.discovery).is_err() {
             self.connections.clear();
             return Vec::new();
         }
         let mut budget = Budget::new();
         while self.connections.len() < MAX_CONNECTIONS && budget.call() {
-            match wire::accept(&self.listener) {
+            let Some(listener) = &self.listener else {
+                break;
+            };
+            match wire::accept(listener) {
                 Ok(stream) => {
                     let Some(serial) = self.serial.checked_add(1) else {
                         break;
@@ -232,7 +279,7 @@ impl Endpoint {
         self.reply(ticket, ResponseResult::Error { error })
     }
     fn reply(&mut self, ticket: ConnectionTicket, result: ResponseResult) -> Result<(), HostError> {
-        if self.owner.is_closed() {
+        if self.owner.is_closed() && !self.retired {
             return Err(HostError::stale());
         }
         let index = self

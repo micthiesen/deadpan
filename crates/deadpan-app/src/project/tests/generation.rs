@@ -1405,6 +1405,110 @@ mod ready_fixture {
         assert!(undone.error.is_none(), "{:?}", undone.error);
         assert!(offered(&undone, &hold).is_none());
     }
+
+    /// `select-hold`, `keep-hold` and `discard-hold` against the open app go
+    /// through its live endpoint, change exactly what `:pick-ai`, `:keep-ai`
+    /// and `:discard-ai` change and refresh the native inspector; the same
+    /// operation on the closed project runs on its own writer.
+    #[test]
+    fn live_variant_choices_refresh_the_inspector_and_match_the_closed_command() {
+        use deadpan_cli::generation::variants::VariantAction;
+        use deadpan_cli::live_project::{self, Operation, Reply, ShortOperation};
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("live-variants.deadpan");
+        let (hold, request, attempts) = seed(&path, 3);
+        let (service, workspace, opened) = open(&path);
+        assert_eq!(offered(&opened, &hold).unwrap().1, attempts[2]);
+        let project = workspace.document.project_id().clone();
+        let mut client = deadpan_cli::host::Client::discover(&path)
+            .unwrap()
+            .expect("native owner discovery");
+        let mut remote = |attempt: &AttemptId, action: VariantAction| {
+            live_project::request(
+                &mut client,
+                Operation::Execute {
+                    project_id: project.clone(),
+                    command: Box::new(ShortOperation::GenerationVariant {
+                        request: request.clone(),
+                        attempt: attempt.clone(),
+                        action,
+                    }),
+                },
+            )
+        };
+        let output = |reply: Reply| match reply {
+            Reply::Completed {
+                output,
+                committed_revision: None,
+                committed_registers: None,
+                refresh_error: None,
+            } => output,
+            other => panic!("expected an operational receipt, got {other:?}"),
+        };
+
+        let chosen = output(remote(&attempts[0], VariantAction::Select).unwrap());
+        assert_eq!(chosen["changed"], true, "{chosen}");
+        assert_eq!(
+            chosen["offered"]["selected_attempt"],
+            serde_json::json!(attempts[0])
+        );
+        wait(&service, |update| {
+            offered(update, &hold).is_some_and(|(_, selected)| selected == attempts[0])
+        });
+        let kept = output(remote(&attempts[1], VariantAction::Keep).unwrap());
+        assert_eq!(kept["offered"]["variants"][1]["kept"], true, "{kept}");
+        let shown = wait(&service, |update| {
+            update
+                .generation
+                .as_ref()
+                .is_some_and(|generation| generation.candidates[&hold].variants[1].kept)
+        });
+        assert!(shown.message.unwrap().contains("command line"));
+        let discarded = output(remote(&attempts[2], VariantAction::Discard).unwrap());
+        assert_eq!(
+            discarded["offered"]["variants"].as_array().unwrap().len(),
+            2,
+            "{discarded}"
+        );
+        wait(&service, |update| {
+            offered(update, &hold).is_some_and(|(variants, _)| variants == attempts[..2])
+        });
+        // A discarded variant is no longer offered, so nothing can change it.
+        let refused = remote(&attempts[2], VariantAction::Keep).unwrap_err();
+        assert_eq!(refused.code, "GenerationVariantUnavailable");
+        // None of these is an edit.
+        assert_eq!(
+            reader(&workspace).snapshot().unwrap().revision_id(),
+            workspace.document.revision_id()
+        );
+
+        service.shutdown();
+        let deadline = Instant::now() + TIMEOUT;
+        while !service.is_shutdown_complete() {
+            assert!(Instant::now() < deadline, "service shutdown timed out");
+            std::thread::yield_now();
+        }
+        drop(service);
+        // Closed: the same operation on the project's own writer.
+        let released = live_project::dispatch_short(
+            &path,
+            None,
+            ShortOperation::GenerationVariant {
+                request: request.clone(),
+                attempt: attempts[1].clone(),
+                action: VariantAction::Release,
+            },
+        )
+        .unwrap();
+        assert_eq!(released["changed"], true, "{released}");
+        assert_eq!(released["offered"]["variants"][1]["kept"], false);
+        let store = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+        let listed =
+            deadpan_cli::generation::variants::offered(&store, &store.snapshot().unwrap()).unwrap();
+        assert_eq!(listed[&hold].selected, attempts[0]);
+        assert_eq!(listed[&hold].variants.len(), 2);
+        assert!(!listed[&hold].variants[1].kept);
+    }
 }
 
 /// `generate-hold` and `accept-hold` against an open project: the live
@@ -1475,6 +1579,8 @@ mod live {
             .unwrap()
             .expect("native owner discovery");
         let project = fixture.workspace.document.project_id().clone();
+        // The UI reads the published state first, as it does between frames.
+        while fixture.service.take_update().is_some() {}
         let refused = live_project::request(
             &mut client,
             Operation::Generate {
@@ -1607,6 +1713,153 @@ mod live {
             NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. })
         ));
         assert!(workspace.can_undo);
+    }
+
+    /// While the app's AI job runs, a remote variant change is still
+    /// admitted and checked against the offered set (the running attempt is
+    /// not offered), the job keeps running, and storage cleanup waits.
+    #[test]
+    fn remote_variant_and_storage_requests_while_a_job_runs() {
+        use deadpan_cli::generation::variants::VariantAction;
+        // One step, then the job waits for cancellation without publishing
+        // progress, so the UI's mailbox can be read empty.
+        let fixture = project_with_pause(scripted(waiting(1)));
+        let started = generation(&fixture.service, start(&fixture, 7));
+        assert_eq!(refusal(&started), None);
+        let running = job_until(&fixture.service, |job| {
+            job.running() && job.request.is_some() && job.phase.steps() == Some((1, 1))
+        });
+        let request = running.generation.unwrap().job.unwrap().request.unwrap();
+        let attempt = reader(&fixture.workspace)
+            .generation_attempts(&request, 0, 8)
+            .unwrap()[0]
+            .checkpoint
+            .identity
+            .attempt_id
+            .clone();
+        let mut client = Client::discover(&fixture.workspace.path)
+            .unwrap()
+            .expect("native owner discovery");
+        let project = fixture.workspace.document.project_id().clone();
+        let refused = live_project::request(
+            &mut client,
+            Operation::Execute {
+                project_id: project.clone(),
+                command: Box::new(ShortOperation::GenerationVariant {
+                    request: request.clone(),
+                    attempt,
+                    action: VariantAction::Keep,
+                }),
+            },
+        )
+        .unwrap_err();
+        assert_eq!(refused.code, "GenerationVariantUnavailable", "{refused}");
+        let busy = live_project::request(
+            &mut client,
+            Operation::Execute {
+                project_id: project,
+                command: Box::new(ShortOperation::CleanStorage {
+                    grace_seconds: 24 * 60 * 60,
+                    expire_variants: false,
+                    dry_run: false,
+                    plan: None,
+                }),
+            },
+        )
+        .unwrap_err();
+        assert_eq!(busy.code, "StorageBusy", "{busy}");
+        // The job was not disturbed: it still ends by cancellation.
+        generation(
+            &fixture.service,
+            GenerationOperation::Cancel {
+                ticket: 11,
+                session: fixture.workspace.session,
+                job: 7,
+            },
+        );
+        let cancelled = job_until(&fixture.service, |job| !job.running());
+        assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
+    }
+
+    /// While the AI job keeps publishing progress, a native edit receipt
+    /// blocks remote edits only until the UI has taken it once; background
+    /// publishes that merely re-send it do not keep remote edits out.
+    #[test]
+    fn a_consumed_native_receipt_does_not_block_remote_edits_during_job_progress() {
+        let fixture = project_with_pause(scripted(waiting(1_000_000)));
+        let started = generation(&fixture.service, start(&fixture, 7));
+        assert_eq!(refusal(&started), None);
+        job_until(&fixture.service, |job| {
+            job.running() && job.request.is_some()
+        });
+        // A native edit whose receipt the UI has not read yet.
+        fixture
+            .service
+            .submit(edit_request_in(
+                &fixture.workspace,
+                SequenceScope::default(),
+                ProjectFrame(30),
+                ProjectEdit::InsertTime {
+                    at: ProjectFrame(30),
+                    duration: FrameDuration::new(3).unwrap(),
+                },
+            ))
+            .unwrap();
+        let deadline = Instant::now() + TIMEOUT;
+        while fixture.service.is_busy() {
+            assert!(Instant::now() < deadline, "native edit timed out");
+            std::thread::yield_now();
+        }
+        let head = reader(&fixture.workspace).head_revision().unwrap();
+        assert_ne!(&head, fixture.workspace.document.revision_id());
+        let project = fixture.workspace.document.project_id().clone();
+        let mut client = Client::discover(&fixture.workspace.path)
+            .unwrap()
+            .expect("native owner discovery");
+        let undo = |revision: &str| Operation::Execute {
+            project_id: project.clone(),
+            command: Box::new(ShortOperation::History {
+                direction: live_project::HistoryDirection::Undo,
+                expected_revision: head.clone(),
+                new_revision: RevisionId::new(revision).unwrap(),
+                dry_run: false,
+            }),
+        };
+        let blocked = live_project::request(&mut client, undo("blocked-undo")).unwrap_err();
+        assert_eq!(blocked.code, "HostBusy", "{blocked}");
+        assert!(blocked.message.contains("unread"), "{blocked}");
+        // The UI takes the receipt once; progress keeps re-sending it.
+        let taken = wait(&fixture.service, |update| {
+            update
+                .committed
+                .as_ref()
+                .is_some_and(|committed| committed.revision == head)
+        });
+        assert!(taken.generation.unwrap().job.unwrap().running());
+        let progressed = wait(&fixture.service, |update| {
+            update
+                .committed
+                .as_ref()
+                .is_some_and(|committed| committed.revision == head)
+        });
+        assert!(progressed.generation.unwrap().job.unwrap().running());
+        let reply = live_project::request(&mut client, undo("remote-undo")).unwrap();
+        let Reply::Completed {
+            committed_revision, ..
+        } = reply
+        else {
+            panic!("expected a committed undo")
+        };
+        assert_eq!(committed_revision.unwrap().as_str(), "remote-undo");
+        generation(
+            &fixture.service,
+            GenerationOperation::Cancel {
+                ticket: 11,
+                session: fixture.workspace.session,
+                job: 7,
+            },
+        );
+        job_until(&fixture.service, |job| !job.running());
     }
 
     #[test]

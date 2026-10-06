@@ -15,6 +15,9 @@ use serde_json::{Value, json};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "support/live_owner.rs"]
+mod live_owner;
+
 fn cli(arguments: &[&str]) -> Result<Output> {
     Ok(Command::new(env!("CARGO_BIN_EXE_deadpan-cli"))
         .args(arguments)
@@ -305,14 +308,14 @@ fn pause_corrections_check_the_seen_bounds_and_dry_runs_write_nothing() -> Resul
 }
 
 #[test]
-fn committing_while_the_app_holds_the_writer_is_refused_with_guidance() -> Result {
+fn committing_while_the_app_holds_the_writer_runs_on_its_live_endpoint() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = registered(scratch.path())?;
     let path = package.to_str().unwrap();
     let empty = success(&["corrections", path, "--asset", "speech"])?;
     let audio_stream = u32::try_from(empty["key"]["audio_stream"].as_u64().unwrap())?;
     // Stands in for the native app: it keeps the writer lock while open.
-    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     writer.save_transcript(
         &TranscriptKey {
             content: empty["key"]["content"].as_str().unwrap().to_owned(),
@@ -346,19 +349,35 @@ fn committing_while_the_app_holds_the_writer_is_refused_with_guidance() -> Resul
     let preview = json_of(&change(scratch.path(), &package, &edit, true)?)?;
     assert_eq!(preview["committed"], false, "{preview}");
 
+    // A writer without an authenticated endpoint cannot be reached.
     let output = change(scratch.path(), &package, &edit, false)?;
     assert!(!output.status.success());
-    let refused = json_of(&output)?;
-    assert_eq!(refused["error"]["code"], "ProjectAlreadyOpen");
-    assert_eq!(
-        refused["error"]["message"],
-        "ProjectAlreadyOpen: The project is open in Deadpan, which holds its writer. Make the correction there with :correct, or close the project and run corrections again. Inspection and --dry-run work while it is open."
-    );
+    assert_eq!(json_of(&output)?["error"]["code"], "HostOwnerUnavailable");
     assert_eq!(rows(&package)?, before);
-    drop(writer);
 
-    // Once the app closes, the same request commits.
-    let applied = json_of(&change(scratch.path(), &package, &edit, false)?)?;
+    // The owner's endpoint saves it on the owner's writer, exactly once.
+    let mut endpoint = deadpan_cli::host::Endpoint::bind(&mut writer)?;
+    let (output, executed) = live_owner::serve(&mut writer, &mut endpoint, || {
+        change(scratch.path(), &package, &edit, false).unwrap()
+    });
+    let applied = json_of(&output)?;
     assert_eq!(applied["committed"], true, "{applied}");
+    assert_eq!(applied["version"], 1, "{applied}");
+    assert_eq!(executed, 1);
+    let corrected = success(&["corrections", path, "--asset", "speech"])?;
+    assert_eq!(corrected["words"][0]["text"], "hello", "{corrected}");
+
+    // A stale version is refused by the owner and writes nothing.
+    let after = rows(&package)?;
+    let (output, _) = live_owner::serve(&mut writer, &mut endpoint, || {
+        change(scratch.path(), &package, &edit, false).unwrap()
+    });
+    assert_eq!(
+        json_of(&output)?["error"]["code"],
+        "AnalysisCorrectionsConflict"
+    );
+    assert_eq!(rows(&package)?, after);
+    drop(endpoint);
+    drop(writer);
     Ok(())
 }

@@ -18,6 +18,8 @@ pub mod conditioning;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod joins;
 pub mod runtime;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod variants;
 
 use deadpan_core::FrameRate;
 use deadpan_jobs::{

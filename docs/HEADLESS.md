@@ -350,6 +350,70 @@ Inserting a subtree remaps its Repeat plays to the actual insertion revision,
 preserving their count. An imported initial document reserves its existing
 allocation names, so later revisions cannot resurrect retired identities.
 
+## Edits the app derives from its focus
+
+These commands take, as explicit input, the context the app reads from its
+focus, and derive the same request through the same shared code. Each derives
+against a read-only snapshot at `expected_revision` and commits through the
+ordinary revision-checked path, so a request computed against an older head is
+refused. Each works on a closed project and, through the
+[live endpoint](LIVE_PROJECT.md), on one the app has open. See
+[parity](PARITY.md).
+
+### Placed sounds
+
+```sh
+cargo run --locked -p deadpan-cli -- sound /tmp/example.deadpan --json /tmp/sound.json [--dry-run]
+cargo run --locked -p deadpan-cli -- sound --write-sting /tmp/sting.wav
+```
+
+```json
+{"protocol": 1, "expected_revision": "REVISION",
+ "edit": {"type": "place", "asset": "ASSET", "at": {"frame": 120}}}
+```
+
+`edit` is one of `place` (`asset`, `at`, optional new `id`), `move` (`id`,
+`at`), `nudge` (`id`, `frames`), `set` (`id` and any of `gain_millidecibels`,
+`gain_step_millidecibels`, `edges`: `automatic` or `hard`), `cut` (`id`, Edit
+frame `at`), `allowance` (`id`, Edit frame `at`, `allowed`) and `delete`
+(`id`). `at` is `{"frame": N}`, the Edit frame boundary `,s` uses at the
+cursor, or `{"sample": N}`, the exact 48 kHz onset of `:sound-at`. The event
+comes from `deadpan_cli::sound_events`, the same functions the app's `,s`,
+`:sound-*`, `h`/`l` and `:sound-cut` call: the complete measured catalog span
+at natural rate, translated or cut in its exact frame clock, refused when it
+would leave Your edit or when the sound follows retained timeline cuts
+(`SoundEditRefused`). The result is the `command` output plus `sound_id`.
+`--write-sting` writes the bytes `:sting` synthesizes (never replacing a
+different file); `project retain-original` and `register-source` with
+`audio_only` streams then add it to the catalog.
+
+### Original copies and whole-Original reuse
+
+A Macro request with `"operation": {"type": "yank_original", "register": "a",
+"ordinals": {"start": S, "end": E}}` copies the half-open picture ordinals
+`[S, E)` of the project's ready Original (or an explicit registered `asset`)
+into the unnamed register and `a`, exactly as `y` in Original. It names the
+expected revision and register bank version, writes only the bank, and returns
+`committed_registers`; the store validates the range against the qualified
+index. A later `paste`, `replace_selection`, `set_room_tone` or `set_cutaway`
+instruction uses it as it would a native copy.
+
+```sh
+cargo run --locked -p deadpan-cli -- project insert-original /tmp/example.deadpan --parent NODE --index 1 --expected REVISION [--dry-run]
+```
+
+`insert-original` is `,i`: it derives the app's registration of the whole
+Original (same content, asset, label and qualified streams, a fresh Source
+node at `index` of `parent`) and admits it through `register-source`'s path,
+which reuses the existing qualification and asset.
+
+### Gag inspection
+
+`gag-inspect <project.deadpan> --json <recipe.json> [--visual]` lists the step
+lines `:gag-inspect` shows for an explicit `gag` instruction recipe at the
+project's frame rate, with the expanded instructions. `--visual` expands it
+for a Visual range. Nothing is written.
+
 ## Source Slip
 
 `slip_source` takes an explicit ordinary Sequence `parent`, its direct child
@@ -1169,7 +1233,10 @@ fails. macOS only. See [preview/export verification](PREVIEW_EXPORT_VERIFICATION
 ```sh
 cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan
 cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean --dry-run --grace-hours 0
-cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean --files-only --dry-run > /tmp/plan.json
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean --files-only --plan /tmp/plan.json
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean [--files-only]
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --confirm-clock [--dry-run]
 cargo run --locked -p deadpan-cli -- project copy-portable /tmp/example.deadpan /tmp/elsewhere/Example.deadpan
 cargo run --locked -p deadpan-cli -- cache status
 cargo run --locked -p deadpan-cli -- cache clean --dry-run
@@ -1180,7 +1247,28 @@ kinds of row that name it), unreferenced, unfinished or kept aside, plus the
 database, checkpoints and per-user caches. It opens read-only and works while
 the app holds the project. `--clean` removes unreferenced objects and
 unfinished writes unchanged for the grace period (default 24 hours) that no
-reader holds; it refuses an open project. `copy-portable` writes a verified
+reader holds. Storage P then R is a dry run with `--files-only`, whose output
+carries a `plan` (project, head revision, grace and each file's name, device and
+inode) named by `plan_hash`, then `--clean --files-only --plan <that output>`:
+it removes exactly the planned files that a fresh reference scan still finds
+removable and reports the others, and refuses a plan for another head
+(`StoragePlanStale`) or one that does not match its hash (`StoragePlanInvalid`).
+Without a plan, `--clean` is a convenience with no native counterpart: it
+expires due AI variants under the current clock (unless `--files-only`) and
+removes what a fresh scan finds unreferenced at that moment. `--confirm-clock`
+only expires due variants and confirms the clock so the app's automatic checks
+resume. A clock earlier than the project's records is refused there
+(`RetentionClockBehind`, dry runs included); cleanup then expires nothing but
+still removes files. `variant_expiry.status` is `not_requested`, `skipped`
+(with `reason` and `clock_anomaly`), `previewed` or `applied` (with the expiry
+counts). Dry runs read on their own connection and write nothing. While the app
+has the project open, these run through its live endpoint: plans and reference
+scans on read-only opens off its service thread, which keeps serving edits,
+and only the rechecked writes on its writer; the reply follows when the job
+finishes. One such job runs at a time; it is refused with `StorageBusy` while
+an import, render, AI pause, tracking, backup or the automatic retention check
+could be publishing media.
+`copy-portable` writes a verified
 self-contained copy with managed originals and only referenced media, and
 refuses when a referenced object is missing. `cache` covers proxies and
 abandoned downloader staging (grace at least one hour) and only reports model
@@ -1282,15 +1370,19 @@ validate, promote atomically; a failure after the backup returns
 ```sh
 cargo run --locked -p deadpan-cli -- project backups /tmp/example.deadpan [--verify]
 cargo run --locked -p deadpan-cli -- project backup /tmp/example.deadpan
-cargo run --locked -p deadpan-cli -- project restore /tmp/example.deadpan BACKUP_ID [--dry-run]
+cargo run --locked -p deadpan-cli -- project restore /tmp/example.deadpan BACKUP_ID [--expected REVISION] [--dry-run]
 cargo run --locked -p deadpan-cli -- project view /tmp/example.deadpan
 cargo run --locked -p deadpan-cli -- project relink-moved /tmp/example.deadpan
 ```
 
 `backups` lists verified backups newest first with the revision, beats, length
 and edit count each holds; `backup` makes one beside an open app; `restore`
-needs the writer (`ProjectAlreadyOpen` while the app has the project) and backs
-up the current state first; `--dry-run` verifies without writing.
+backs up the current state first, and with `--expected` refuses unless that is
+the head revision; `--dry-run` verifies without writing. While the app has the
+project open, the restore runs on its writer through the live endpoint
+(`BackupRestoreFailed` carries the app's refusal), starts the app's new
+session at the restored state and replies before the replaced owner's endpoint
+stops; later commands discover the new owner.
 `relink-moved` follows the bookmarks of missing linked originals and relinks
 only identical content. Error codes: `BackupNotFound`, `BackupOtherProject`,
 `BackupInvalid`, `BackupCancelled`, `BackupDeadline`, `DiskFull`. See
@@ -1351,12 +1443,11 @@ different stored version returns `AnalysisCorrectionsConflict`; a different
 target returns `CorrectionTargetChanged`. Neither writes. A dry run returns the
 label and proposed corrections without writing. Corrections never create a
 document revision. Inspection and dry runs only read, so they work while the
-app has the project open. A committing change needs the project writer: while
-the app holds it, the command writes nothing and returns `ProjectAlreadyOpen`
-with the message "The project is open in Deadpan, which holds its writer. Make
-the correction there with :correct, or close the project and run corrections
-again. Inspection and --dry-run work while it is open." The live endpoint does
-not carry corrections.
+app has the project open. While the app holds the writer, a committing change
+runs on it through the [live endpoint](LIVE_PROJECT.md) with the same version
+and target checks, and the app republishes its corrected transcript and pauses;
+an open correction sheet then sees the newer version and refuses its stale
+change.
 
 ## AI pauses
 
@@ -1376,3 +1467,31 @@ own AI job. Errors use `GenerationUnavailable`, `GenerationInputsUnavailable`,
 (`srgb_codes_unchanged`, `rec709_codes_as_srgb` or `authored_black`) and
 `approximate: true` when BT.709-transfer codes were read as sRGB without a
 transfer conversion. See [AI Holds](AI_HOLDS.md).
+
+### Choosing, keeping and discarding variants
+
+```sh
+cargo run --locked -p deadpan-cli -- ai-variants /tmp/example.deadpan [--hold NODE] [--joins]
+cargo run --locked -p deadpan-cli -- select-hold /tmp/example.deadpan --request REQUEST --attempt ATTEMPT
+cargo run --locked -p deadpan-cli -- keep-hold /tmp/example.deadpan --request REQUEST --attempt ATTEMPT [--off]
+cargo run --locked -p deadpan-cli -- discard-hold /tmp/example.deadpan --request REQUEST --attempt ATTEMPT
+cargo run --locked -p deadpan-cli -- dismiss-attempt /tmp/example.deadpan --request REQUEST --attempt ATTEMPT
+```
+
+`ai-variants` lists each pause's offered variants exactly as the inspector
+does (`deadpan_cli::generation::variants::offered`, shared with the app): the
+request, the selected attempt, and per variant its number, seed, sampled size,
+Ready time, `kept`, `picked`, `selected` and `expires_unix_seconds`, plus the
+attempts a crash interrupted. `--joins` adds the advisory join readings
+`:compare-ai` shows, decoded read-only from the request's origin revision; a
+reading that cannot be made reports its `error` in place. It writes nothing and
+works beside an open app.
+
+`select-hold`, `keep-hold [--off]` and `discard-hold` make the `:pick-ai`,
+`:keep-ai` and `:discard-ai` changes; `dismiss-attempt` is the Jobs panel's
+discard of an interrupted attempt. Each first checks that the variant is
+offered (`GenerationVariantUnavailable` otherwise), applies one durable
+operational store change, and returns `changed` and the pause's offered
+variants afterwards. None is an edit or undoable. With the project open they
+run on the app's writer and refresh its inspector; a preview of a discarded
+variant, or of another variant than a newly selected one, closes.

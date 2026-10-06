@@ -11,6 +11,10 @@
 //! measured decode cost fits the picture budget, otherwise the verified
 //! preview proxy picture, while the Original decoder repositions ahead in
 //! bounded steps between pictures. `--pictures original` never uses a proxy.
+//! As in the native worker, a look-ahead decoder positions itself at the
+//! edit's next discontinuity (cut, Repeat restart) while the serving decoder
+//! continues, and the two swap roles there (`deadpan_media::lookahead`);
+//! `--lookahead off` disables it for comparison.
 //! Opens PACKAGE writable (the engine needs the original import handle), so
 //! run it on a copy. Monitor gain is low; timing does not depend on it.
 
@@ -23,8 +27,11 @@ use std::time::{Duration, Instant};
 use deadpan_cli::picture::{render_layers, source_to_render_frame};
 use deadpan_cli::proxy::cache::ProxyCache;
 use deadpan_core::{AssetId, AudioSample, MIX_SAMPLE_RATE, ProjectFrame, SourceFrameId};
+use deadpan_media::lookahead::{DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead, MAX_FORWARD_STEP};
 use deadpan_media::playback_pictures::{PictureClock, PictureSource, PlaybackPictures};
-use deadpan_media::source_session::{RepositionProgress, SourceSession, SourceSessionLimits};
+use deadpan_media::source_session::{
+    DecodePlan, RepositionProgress, SourceSession, SourceSessionLimits,
+};
 use deadpan_plan::{Picture, RenderPlan};
 use deadpan_playback::{Engine, Phase, Snapshot, SourceEntry};
 use deadpan_store::original_media::OriginalMediaLimits;
@@ -48,6 +55,11 @@ pub fn run(options: &Options) -> Result<Value> {
     if !matches!(policy, "original" | "adaptive") {
         return Err("--pictures must be original or adaptive".into());
     }
+    let lookahead = match options.text("lookahead").unwrap_or("on") {
+        "on" => true,
+        "off" => false,
+        _ => return Err("--lookahead must be on or off".into()),
+    };
     let store = ProjectStore::open(package, AccessMode::ReadWrite)?;
     let document = Arc::new(store.snapshot()?);
     let rate = document.presentation_basis().frame_rate;
@@ -68,7 +80,7 @@ pub fn run(options: &Options) -> Result<Value> {
     ));
 
     let opened = Instant::now();
-    let mut pictures = Pictures::open(package, &store, policy == "adaptive", options)?;
+    let mut pictures = Pictures::open(package, &store, policy == "adaptive", lookahead, options)?;
     let open_ms = ms(opened);
     let mut gpu = Gpu::new(basis.width, basis.height)?;
     let frames = pictures.plan.duration().frames();
@@ -181,6 +193,8 @@ pub fn run(options: &Options) -> Result<Value> {
         let started = Instant::now();
         let shown = pictures.present(&mut gpu, ProjectFrame(frame), true)?;
         picture_ms.push(ms(started));
+        // As the native worker does after publishing the picture.
+        pictures.schedule_lookahead(ProjectFrame(frame));
         presented_at.push(ms(requested));
         tiers.record(shown, ms(requested));
         // How far the heard clock had moved on when this picture completed.
@@ -195,6 +209,8 @@ pub fn run(options: &Options) -> Result<Value> {
     }
     let heard_seconds =
         heard.map(|sample| (sample.0 - start_sample.0) as f64 / f64::from(MIX_SAMPLE_RATE));
+    // Stopping releases the look-ahead decoder, as the native worker does.
+    let lookahead_report = pictures.release_lookahead();
     engine.stop();
     let stop_requested = Instant::now();
     while stop_requested.elapsed() < Duration::from_secs(5) {
@@ -294,6 +310,8 @@ pub fn run(options: &Options) -> Result<Value> {
                 "started": pictures.repositions,
                 "reached": pictures.repositions_reached,
             },
+            "seek_pictures": pictures.seek_pictures,
+            "lookahead": lookahead_report,
         },
     }))
 }
@@ -370,6 +388,14 @@ struct Pictures {
     reposition: Option<SourceFrameId>,
     repositions: u64,
     repositions_reached: u64,
+    /// Exact playback pictures the serving decoder reached by a keyframe
+    /// seek (or a long forward decode): discontinuities the look-ahead did
+    /// not cover.
+    seek_pictures: u64,
+    /// The look-ahead decoder and the plan scan it follows; None when off.
+    lookahead: Option<(LookAhead, DiscontinuityScan)>,
+    /// Whether the look-ahead held a companion decoder while playing.
+    lookahead_seen: bool,
     cancelled: AtomicBool,
 }
 
@@ -384,6 +410,7 @@ impl Pictures {
         package: &Path,
         store: &ProjectStore,
         adaptive: bool,
+        lookahead: bool,
         options: &Options,
     ) -> Result<Self> {
         let cancelled = AtomicBool::new(false);
@@ -449,6 +476,12 @@ impl Pictures {
             u128::from(basis.frame_rate.denominator()) * 1_000_000_000
                 / u128::from(basis.frame_rate.numerator()),
         )?);
+        let lookahead = source.as_ref().filter(|_| lookahead).map(|source| {
+            (
+                LookAhead::new(source.original.companion(), FRAME_TIMEOUT),
+                DiscontinuityScan::default(),
+            )
+        });
         Ok(Self {
             plan,
             canvas: [basis.width, basis.height],
@@ -459,6 +492,9 @@ impl Pictures {
             reposition: None,
             repositions: 0,
             repositions_reached: 0,
+            seek_pictures: 0,
+            lookahead,
+            lookahead_seen: false,
             cancelled,
         })
     }
@@ -496,6 +532,15 @@ impl Pictures {
             .picture
             .select_source_frame(source.original.index().index())?
             .identity;
+        // A cut: serve from the look-ahead decoder when it is there sooner.
+        if playing && let Some((lookahead, _)) = self.lookahead.as_mut() {
+            let serving = source.original.decode_plan(id);
+            if let Some(companion) = lookahead.take_for(id, serving) {
+                let previous = std::mem::replace(&mut source.original, companion);
+                lookahead.keep(previous);
+                self.reposition = None;
+            }
+        }
         let ordinal_period = picture_duration(source.original.index().index(), id)
             .ok_or("Original picture has no duration")?;
         let clock = PictureClock {
@@ -525,6 +570,14 @@ impl Pictures {
                 (rgba, PictureSource::Reduced)
             }
             _ => {
+                let seeks = match plan {
+                    DecodePlan::Seek { .. } => true,
+                    DecodePlan::Forward { pictures } => pictures > MAX_FORWARD_STEP,
+                    DecodePlan::Current | DecodePlan::Resume { .. } => false,
+                };
+                if playing && seeks {
+                    self.seek_pictures += 1;
+                }
                 let reopening = source.original.reopening();
                 let decoded = source.original.frame(id, FRAME_TIMEOUT, &self.cancelled)?;
                 let rgba = source_to_render_frame(decoded, source.original.info())?;
@@ -541,6 +594,61 @@ impl Pictures {
             tier: shown,
             background: false,
             decode_ms,
+        })
+    }
+
+    /// Position the look-ahead decoder at the plan's next discontinuity
+    /// within the horizon after `frame`, as the native worker does after
+    /// each published playback picture.
+    /// A plan error stops positioning, as in the worker.
+    fn schedule_lookahead(&mut self, frame: ProjectFrame) {
+        let (Some((lookahead, scan)), Some(source)) = (self.lookahead.as_mut(), &self.source)
+        else {
+            return;
+        };
+        let horizon =
+            i64::try_from(LOOKAHEAD_HORIZON.as_nanos() / self.picture_period.as_nanos().max(1))
+                .unwrap_or(i64::MAX);
+        let through = frame
+            .0
+            .saturating_add(horizon)
+            .min(self.plan.duration().frames() - 1);
+        let index = source.original.index().index();
+        let plan = &self.plan;
+        let target = scan
+            .next(frame.0, through, |next| -> Result<Option<SourceFrameId>> {
+                let sample = plan.picture(ProjectFrame(next))?;
+                Ok(match &sample.picture {
+                    Picture::Source { asset, .. } | Picture::Freeze { asset, .. }
+                        if *asset == source.asset =>
+                    {
+                        Some(sample.picture.select_source_frame(index)?.identity)
+                    }
+                    _ => None,
+                })
+            })
+            .ok()
+            .flatten()
+            .map(|found| found.target);
+        lookahead.request(target);
+        self.lookahead_seen |= lookahead.holds_decoder();
+    }
+
+    /// Release the look-ahead decoder and report its counts.
+    fn release_lookahead(&mut self) -> Value {
+        let Some((lookahead, _)) = self.lookahead.as_mut() else {
+            return json!("off");
+        };
+        lookahead.release();
+        let stats = lookahead.stats();
+        json!({
+            "opened": stats.opened,
+            "started": stats.started,
+            "reached": stats.reached,
+            "stopped": stats.stopped,
+            "failed": stats.failed,
+            "swaps": stats.swaps,
+            "held_decoder": self.lookahead_seen,
         })
     }
 

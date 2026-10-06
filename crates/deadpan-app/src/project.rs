@@ -393,6 +393,51 @@ pub struct ImportStatus {
     pub asset: Option<AssetId>,
 }
 
+/// The identities of the native continuations one update carries: an edit
+/// receipt by its never-reused revision, copies, cuts and Macros by their
+/// request identities.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ContinuationKey {
+    committed: Option<RevisionId>,
+    macros: Option<macros::Id>,
+    captured_slice: Option<slice::CopyId>,
+    captured_original: Option<slice::CopyId>,
+    cut_slice: Option<slice::CopyId>,
+}
+
+impl ContinuationKey {
+    /// Whether `self` (a pending update's continuations) holds one that the
+    /// UI has not taken yet, given what it has taken.
+    pub(crate) fn unread_since(&self, delivered: &Self) -> bool {
+        fn fresh<T: PartialEq>(pending: &Option<T>, taken: &Option<T>) -> bool {
+            pending.is_some() && pending != taken
+        }
+        fresh(&self.committed, &delivered.committed)
+            || fresh(&self.macros, &delivered.macros)
+            || fresh(&self.captured_slice, &delivered.captured_slice)
+            || fresh(&self.captured_original, &delivered.captured_original)
+            || fresh(&self.cut_slice, &delivered.cut_slice)
+    }
+}
+
+impl ProjectUpdate {
+    pub(crate) fn continuation_key(&self) -> ContinuationKey {
+        ContinuationKey {
+            committed: self.committed.as_ref().map(|edit| edit.revision.clone()),
+            macros: self.macros.as_ref().map(|update| update.id.clone()),
+            captured_slice: self.captured_slice.as_ref().map(|update| update.id.clone()),
+            captured_original: self
+                .captured_original
+                .as_ref()
+                .map(|update| update.id.clone()),
+            cut_slice: self
+                .cut_slice
+                .as_ref()
+                .map(|update| update.request.id.clone()),
+        }
+    }
+}
+
 pub struct ProjectUpdate {
     pub workspace: Option<Arc<Workspace>>,
     pub import: Option<ImportStatus>,
@@ -1091,11 +1136,29 @@ struct Shared {
     retention_paused: AtomicBool,
     #[cfg(test)]
     retention_waiting: AtomicBool,
+    /// Tests: hold command-line storage threads, which report waiting.
+    #[cfg(test)]
+    remote_storage_paused: AtomicBool,
+    #[cfg(test)]
+    remote_storage_waiting: AtomicBool,
+    /// Tests: leave admitted live requests unread, so several arrive in one batch.
+    #[cfg(test)]
+    host_poll_paused: AtomicBool,
+    /// Tests: keep retired endpoints' replies unwritten.
+    #[cfg(test)]
+    retired_drain_paused: AtomicBool,
+    /// Tests: fail showing a restored backup after the database changed.
+    #[cfg(test)]
+    restore_show_failure: AtomicBool,
     /// Tests: the latest retention status, including quiet changes that are
     /// not published.
     #[cfg(test)]
     retention_status: Mutex<Option<RetentionPassStatus>>,
     update: Mutex<Option<ProjectUpdate>>,
+    /// The native continuations the UI has already taken once. The service
+    /// re-sends its current receipts with every update so they survive
+    /// background publishes; only ones the UI has not taken are unread.
+    delivered: Mutex<ContinuationKey>,
     wake: Arc<dyn Fn() + Send + Sync>,
     /// The app's background job coordinator, shared with the UI's jobs.
     job_board: crate::jobs::Jobs,
@@ -1166,8 +1229,19 @@ impl ProjectService {
             #[cfg(test)]
             retention_waiting: AtomicBool::new(false),
             #[cfg(test)]
+            remote_storage_paused: AtomicBool::new(false),
+            #[cfg(test)]
+            remote_storage_waiting: AtomicBool::new(false),
+            #[cfg(test)]
+            host_poll_paused: AtomicBool::new(false),
+            #[cfg(test)]
+            retired_drain_paused: AtomicBool::new(false),
+            #[cfg(test)]
+            restore_show_failure: AtomicBool::new(false),
+            #[cfg(test)]
             retention_status: Mutex::new(None),
             update: Mutex::new(None),
+            delivered: Mutex::new(ContinuationKey::default()),
             wake,
             job_board: crate::jobs::Jobs::new(),
         });
@@ -1222,7 +1296,16 @@ impl ProjectService {
     }
 
     pub fn take_update(&self) -> Option<ProjectUpdate> {
-        self.shared.update.try_lock().ok()?.take()
+        let mut pending = self.shared.update.try_lock().ok()?;
+        let update = pending.take()?;
+        // Recorded while the mailbox is still locked, so the service never
+        // sees an empty mailbox with an unrecorded delivery.
+        *self
+            .shared
+            .delivered
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = update.continuation_key();
+        Some(update)
     }
 
     /// A user command is pending or in flight. Background annotation saves

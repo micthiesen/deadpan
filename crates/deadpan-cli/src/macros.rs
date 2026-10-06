@@ -3,11 +3,11 @@
 use std::{fs::File, io::Read, num::NonZeroU32, path::Path, sync::Arc};
 
 use deadpan_core::{
-    AssetRecord, EditError, EditErrorCode, FrameRate, MarkId, NodeId, OccurrenceIdentities,
-    ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue, RevisionId,
-    SemanticAllocation, SemanticAllocationRequest, SemanticContext, SemanticInstruction,
-    SemanticPlan, SemanticProgram, SemanticRegisterBank, SemanticVisualSelection,
-    SlicePasteIdentities, SourceNode, SplitIdentities,
+    AssetId, AssetRecord, EditError, EditErrorCode, FrameRate, MarkId, NodeId,
+    OccurrenceIdentities, ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue,
+    RevisionId, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
+    SemanticInstruction, SemanticPlan, SemanticProgram, SemanticRegisterBank,
+    SemanticVisualSelection, SlicePasteIdentities, SourceNode, SplitIdentities,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -63,6 +63,18 @@ pub enum Operation {
         visual_selection: Option<SemanticVisualSelection>,
         #[serde(default)]
         new_revision: Option<RevisionId>,
+    },
+    /// Copy one half-open range of an Original's measured pictures, exactly
+    /// as `y` in Original: into the unnamed register and, when named, into
+    /// `register`. The bank changes; the timeline and its history do not.
+    YankOriginal {
+        #[serde(default = "RegisterName::unnamed")]
+        register: RegisterName,
+        /// A registered source; omitted for the project's ready Original.
+        #[serde(default)]
+        asset: Option<AssetId>,
+        /// Picture ordinals of its qualified index, `[start, end)`.
+        ordinals: std::ops::Range<u64>,
     },
 }
 
@@ -122,6 +134,15 @@ impl Request {
             Operation::Run { register, .. } => Some(register),
             Operation::Apply { program, .. } => {
                 program.validate().map_err(edit_error)?;
+                None
+            }
+            Operation::YankOriginal { ordinals, .. } => {
+                if ordinals.start >= ordinals.end {
+                    return Err(LiveError::new(
+                        "InvalidCommand",
+                        "An Original copy needs a nonempty [start, end) range of picture ordinals",
+                    ));
+                }
                 None
             }
         };
@@ -225,6 +246,23 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 &program,
                 new_revision.as_ref(),
             )?
+        }
+        Operation::YankOriginal {
+            register,
+            asset,
+            ordinals,
+        } => {
+            let value = original_value(store, &document, asset.as_ref(), ordinals.clone())?;
+            let bank = store
+                .preview_register(
+                    &request.project_id,
+                    &request.expected_revision,
+                    request.expected_bank_version,
+                    *register,
+                    value,
+                )
+                .map_err(LiveError::store)?;
+            (bank, None, None)
         }
         Operation::Apply {
             program,
@@ -504,6 +542,46 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
     })
 }
 
+/// The register value of an Original copy at the current revision. Content
+/// and range are validated against the qualified index by the store.
+fn original_value(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    asset: Option<&AssetId>,
+    ordinals: std::ops::Range<u64>,
+) -> Result<RegisterValue, LiveError> {
+    let asset = match asset {
+        Some(asset) => asset.clone(),
+        None => match store.single_source_state().map_err(LiveError::store)? {
+            Some(deadpan_store::single_source::SingleSourceState::Ready { asset, .. }) => asset,
+            _ => {
+                return Err(LiveError::new(
+                    "OriginalUnavailable",
+                    "The project has no ready Original; name a registered source with asset",
+                ));
+            }
+        },
+    };
+    let record = document.assets().get(&asset).ok_or_else(|| {
+        LiveError::new(
+            "RegisterInvalid",
+            "The asset is not registered in this revision",
+        )
+    })?;
+    let qualification = record.source_qualification.clone().ok_or_else(|| {
+        LiveError::new(
+            "RegisterInvalid",
+            "The asset has no measured source qualification",
+        )
+    })?;
+    Ok(RegisterValue::Original {
+        revision: document.revision_id().clone(),
+        asset,
+        qualification,
+        ordinals,
+    })
+}
+
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn original_source(
     store: &ProjectStore,
@@ -597,6 +675,30 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
                 }),
             )
         }
+        Operation::YankOriginal { register, .. } => {
+            // Exactly the value preview validated, read back from its bank.
+            let value =
+                prepared.final_bank.entries.get(register).ok_or_else(|| {
+                    LiveError::new("RegisterInvalid", "The prepared copy is missing")
+                })?;
+            let bank = store
+                .save_register_at(
+                    &prepared.request.project_id,
+                    &prepared.request.expected_revision,
+                    prepared.request.expected_bank_version,
+                    *register,
+                    value.as_ref().clone(),
+                )
+                .map_err(LiveError::store)?;
+            (
+                None,
+                Some(RegisterReceipt {
+                    project_id: prepared.request.project_id.clone(),
+                    revision_id: prepared.request.expected_revision.clone(),
+                    bank_version: bank.version,
+                }),
+            )
+        }
         Operation::Run { .. } | Operation::Apply { .. } => {
             if let Some(command) = prepared
                 .plan
@@ -657,6 +759,21 @@ impl Prepared {
             Operation::Apply { program, .. } => {
                 output["operation"] = json!("apply");
                 output["instruction_count"] = json!(program.instructions().len());
+            }
+            Operation::YankOriginal { register, .. } => {
+                output["operation"] = json!("yank_original");
+                output["register"] = json!(register);
+                if let Some(RegisterValue::Original {
+                    revision,
+                    asset,
+                    qualification,
+                    ordinals,
+                }) = self.final_bank.entries.get(register).map(AsRef::as_ref)
+                {
+                    output["original"] = json!({"capture_revision":revision,"asset":asset,
+                        "qualification":qualification,"ordinals":ordinals});
+                }
+                return output;
             }
         }
         if let Some(plan) = &self.plan {

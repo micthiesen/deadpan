@@ -223,3 +223,50 @@ fn failed_large_reply_keeps_ticket_and_compact_receipt_capacity() -> TestResult 
     drop(peers);
     Ok(())
 }
+
+#[test]
+fn a_retired_endpoint_answers_only_its_admitted_request_after_the_owner_closes() -> TestResult {
+    for retire in [false, true] {
+        let (temp, store, mut endpoint) = fixture()?;
+        let mut client = Client::discover(&temp.path().join("project.deadpan"))?.unwrap();
+        let worker = thread::spawn(move || client.request(Value::Null));
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let incoming = loop {
+            assert!(Instant::now() < deadline);
+            if let Some(incoming) = endpoint.poll().pop() {
+                break incoming;
+            }
+            thread::yield_now();
+        };
+        // The operation replaced the owner, as a restore does.
+        drop(store);
+        if retire {
+            endpoint.retire();
+            endpoint.respond(incoming.ticket, true.into())?;
+            assert!(endpoint.draining());
+            // The listener is closed: a new client fails at once.
+            let started = Instant::now();
+            let late = Client::discover(&temp.path().join("project.deadpan"))
+                .ok()
+                .flatten()
+                .map(|mut late| late.request(Value::Null));
+            assert!(late.is_none_or(|reply| reply.is_err()));
+            assert!(started.elapsed() < Duration::from_secs(2));
+        } else {
+            assert!(endpoint.respond(incoming.ticket, true.into()).is_err());
+        }
+        while !worker.is_finished() {
+            assert!(Instant::now() < deadline);
+            assert!(endpoint.poll().is_empty(), "nothing new is admitted");
+            thread::yield_now();
+        }
+        let reply = worker.join().unwrap();
+        if retire {
+            assert_eq!(reply?, Value::Bool(true));
+            assert!(!endpoint.draining());
+        } else {
+            assert!(reply.is_err());
+        }
+    }
+    Ok(())
+}

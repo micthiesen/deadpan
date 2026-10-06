@@ -4,12 +4,14 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+use deadpan_core::RevisionId;
 use deadpan_store::backups::{
-    BackupLimits, BackupPolicy, BackupReason, create_backup, list_backups, preview_backup,
-    verify_backup,
+    BackupLimits, BackupPolicy, BackupReason, RestoreOutcome, create_backup, list_backups,
+    preview_backup, verify_backup,
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
+use crate::live_project::{LiveError, ShortOperation};
 use crate::{CliError, write_json};
 
 /// `project backups <package> [--verify]`: every backup, newest first, with
@@ -62,19 +64,19 @@ pub fn run_create(arguments: &[&str]) -> Result<(), CliError> {
     write_json(&serde_json::json!({ "protocol": 1, "created": outcome }))
 }
 
-/// `project restore <package> <backup-id> [--dry-run]`: replace the project's
-/// database with a verified backup after backing up the current state.
-/// Needs the writer: refused while the app has the project open.
+/// `project restore <package> <backup-id> [--expected <revision>] [--dry-run]`:
+/// replace the project's database with a verified backup after backing up
+/// the current state. While the app has the project open, the restore runs
+/// on its writer through the live endpoint, which then serves the restored
+/// state from a new owner.
 pub fn run_restore(arguments: &[&str]) -> Result<(), CliError> {
     let usage = || {
         CliError::Usage(
-            "usage: project restore <project.deadpan> <backup-id> [--dry-run | --damaged [--force-project <id>]]"
+            "usage: project restore <project.deadpan> <backup-id> [--expected <revision>] [--dry-run] | project restore <project.deadpan> <backup-id> --damaged [--force-project <id>]"
                 .into(),
         )
     };
-    let (path, id, dry_run) = match arguments {
-        [path, id] => (*path, *id, false),
-        [path, id, "--dry-run"] => (*path, *id, true),
+    let (path, id, rest) = match arguments {
         [path, id, "--damaged", rest @ ..] => {
             // The database no longer opens: replace it without reading it.
             let force = match rest {
@@ -89,11 +91,23 @@ pub fn run_restore(arguments: &[&str]) -> Result<(), CliError> {
             )?;
             return write_json(&serde_json::json!({ "protocol": 1, "replaced_damaged": replaced }));
         }
+        [path, id, rest @ ..] => (*path, *id, rest),
+        _ => return Err(usage()),
+    };
+    let (expected, dry_run) = match rest {
+        [] => (None, false),
+        ["--dry-run"] => (None, true),
+        ["--expected", revision] => (Some(RevisionId::new(*revision)?), false),
+        ["--expected", revision, "--dry-run"] | ["--dry-run", "--expected", revision] => {
+            (Some(RevisionId::new(*revision)?), true)
+        }
         _ => return Err(usage()),
     };
     if dry_run {
         // Read-only: works beside an open app and writes nothing.
         let store = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?;
+        let current = store.head_revision()?;
+        check_expected(&current, expected.as_ref())?;
         let info = store
             .backups()?
             .into_iter()
@@ -107,17 +121,46 @@ pub fn run_restore(arguments: &[&str]) -> Result<(), CliError> {
             "protocol": 1,
             "dry_run": true,
             "would_restore": preview,
-            "current_revision": store.head_revision()?,
+            "current_revision": current,
         }));
     }
-    let mut store = ProjectStore::open(Path::new(path), AccessMode::ReadWrite)?;
-    let outcome = store.restore_backup(
-        id,
-        &BackupPolicy::default(),
-        BackupLimits::default(),
-        &AtomicBool::new(false),
-    )?;
-    write_json(&serde_json::json!({ "protocol": 1, "restored": outcome }))
+    write_json(&crate::live_project::dispatch_short(
+        Path::new(path),
+        None,
+        ShortOperation::RestoreBackup {
+            id: id.to_owned(),
+            expected_revision: expected,
+        },
+    )?)
+}
+
+fn check_expected(current: &RevisionId, expected: Option<&RevisionId>) -> Result<(), LiveError> {
+    match expected {
+        Some(expected) if expected != current => {
+            Err(LiveError::store(StoreError::RevisionConflict {
+                expected: expected.as_str().into(),
+                current: current.as_str().into(),
+            }))
+        }
+        _ => Ok(()),
+    }
+}
+
+/// The restore itself, on whichever process holds the writer.
+pub(crate) fn restore_on(
+    store: &mut ProjectStore,
+    id: &str,
+    expected: Option<&RevisionId>,
+) -> Result<RestoreOutcome, LiveError> {
+    check_expected(&store.head_revision().map_err(LiveError::store)?, expected)?;
+    store
+        .restore_backup(
+            id,
+            &BackupPolicy::default(),
+            BackupLimits::default(),
+            &AtomicBool::new(false),
+        )
+        .map_err(|error| LiveError::new(error.code(), &error))
 }
 
 /// `project view <package>`: a read-only summary that also opens packages a

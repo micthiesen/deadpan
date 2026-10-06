@@ -29,6 +29,9 @@ mod proxy_tests;
 #[path = "stress_tests.rs"]
 mod stress_tests;
 
+#[path = "lookahead_tests.rs"]
+mod lookahead_tests;
+
 #[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{

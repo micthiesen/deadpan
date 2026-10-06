@@ -39,9 +39,6 @@ const fn gui(form: &'static str, anchor: &'static str) -> Headless {
 const fn eq(form: &'static str, anchor: &'static str) -> Headless {
     h(Parity::Equivalent, form, anchor)
 }
-const fn part(form: &'static str, anchor: &'static str) -> Headless {
-    h(Parity::Partial, form, anchor)
-}
 
 const fn mode(mode: Mode, label: &'static str, chords: &'static [super::Chord]) -> Keys {
     Keys::Mode {
@@ -563,7 +560,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("yank", ":yank")],
         contexts: C::ORIGINAL.or(C::VISUAL),
         replay: Replay::Recorded,
-        headless: part("yank_selection instruction; Original copy is a Gap", SEL),
+        headless: eq(
+            "yank / yank_selection instructions; Original moments: macro yank_original",
+            SEL,
+        ),
         help: "Copy the selected Original moment or Edit range into the selected register. Without an Edit selection use {copy.beat}, including for an empty group. Edit copies retain their captured revision through later edits and Undo. Copying leaves edit history unchanged.",
     },
     Spec {
@@ -668,7 +668,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("splice", ":splice  place a copy")],
         contexts: C::YOUR_EDIT,
         replay: Replay::NotRecorded,
-        headless: part("splice_slice / replace_slice / move_range commands", STRUCT),
+        headless: gui(
+            "panel; splice/replace/move commands --dry-run preview",
+            STRUCT,
+        ),
         help: "Preview a copied Original or Edit slice at the Edit cursor before placing it; see Place slice for its keys. Open the destination group before opening placement to target it.",
     },
     Spec {
@@ -679,7 +682,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("insert", ":insert  reuse the whole Original")],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
-        headless: part("command insert with the Original Source node", SEL),
+        headless: eq(
+            "project insert-original <p> --parent <id> --index <N> --expected <rev>",
+            SEL,
+        ),
         help: "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source.",
     },
     // RESHAPE
@@ -870,7 +876,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("room-tone", ":room-tone")],
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::NotRecorded,
-        headless: part("command set_hold_audio with a RoomTone range", HOLDS),
+        headless: gui(
+            "the sheet prepares and auditions; set_room_tone applies a yank_original range",
+            HOLDS,
+        ),
         help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
     },
     Spec {
@@ -918,7 +927,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::NotRecorded,
-        headless: part("command set_framing with an explicit pose", CAM),
+        headless: gui("set_framing --dry-run previews the explicit pose", CAM),
         help: "Camera preview on the selected beat. Parent framing stays live. See Camera mode for its keys; Enter saves one undoable edit and Escape restores entry framing.",
     },
     Spec {
@@ -1066,7 +1075,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sound-place", ":sound-place")],
         contexts: C::EDIT.or(C::CATALOG),
         replay: Replay::NotRecorded,
-        headless: part("command set_sound with a complete event", SOUNDS),
+        headless: eq("sound <p> --json place", SOUNDS),
         help: "Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier.",
     },
     Spec {
@@ -1088,7 +1097,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sound-at", ":sound-at 274000  start sample (48 kHz)")],
         contexts: C::PLACED,
         replay: Replay::NotRecorded,
-        headless: part("command set_sound / replace_sound", SOUNDS),
+        headless: eq("sound <p> --json move | nudge", SOUNDS),
         help: "{frame.previous}/{frame.next} move an uncut sound by exact project frames without accumulated rounding; Enter or :sound-at 137 chooses an exact sample onset. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet.",
     },
     Spec {
@@ -1099,7 +1108,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sound-gain", ":sound-gain -3  dB")],
         contexts: C::PLACED,
         replay: Replay::NotRecorded,
-        headless: part("command set_sound / replace_sound", SOUNDS),
+        headless: eq("sound <p> --json set (gain or gain step)", SOUNDS),
         help: "{gain.up}/{gain.down} change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the step; Monitor and Original levels stay unchanged.",
     },
     Spec {
@@ -1110,7 +1119,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sound-edges", ":sound-edges soft|hard")],
         contexts: C::PLACED,
         replay: Replay::NotRecorded,
-        headless: part("command set_sound / replace_sound", SOUNDS),
+        headless: eq("sound <p> --json set (edges)", SOUNDS),
         help: "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts.",
     },
     Spec {
@@ -1121,7 +1130,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sound-cut", ":sound-cut  end the sound here")],
         contexts: C::PLACED.or(C::EDIT),
         replay: Replay::NotRecorded,
-        headless: part("command set_sound / replace_sound", SOUNDS),
+        headless: eq("sound <p> --json cut", SOUNDS),
         help: "End the selected placed sound abruptly at the Edit cursor with a hard edge. Its onset, source phase and gain stay; one Undo. Sounds that follow timeline cuts refuse.",
     },
     Spec {
@@ -1160,7 +1169,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("sting", ":sting  add a sting sound")],
         contexts: C::EDITOR,
         replay: Replay::NotRecorded,
-        headless: part("register-source of a caller-supplied file", SOUNDS),
+        headless: eq(
+            "sound --write-sting <file>, then retain-original and register-source audio_only",
+            SOUNDS,
+        ),
         help: "Add Deadpan's own triumphant sting, synthesized here (no third-party sound), to the sound catalog; place it on a quiet moment with {sound.place} and adjust it like any sound.",
     },
     // AI PAUSES
@@ -1202,10 +1214,7 @@ pub static SPECS: &[Spec] = &[
         ],
         contexts: C::EDIT,
         replay: Replay::Ignored,
-        headless: part(
-            "accept-hold --attempt <id> selects as part of acceptance",
-            AI,
-        ),
+        headless: eq("select-hold <p> --request <id> --attempt <id>", AI),
         help: "Choose which Ready AI variant of the selected pause Preview, Audition and Accept use; the inspector numbers them with a picture from each. Choosing while previewing or comparing shows the newly chosen variant at the same frame, and an audition continues from the same heard sample.",
     },
     Spec {
@@ -1219,7 +1228,7 @@ pub static SPECS: &[Spec] = &[
         )],
         contexts: C::EDIT,
         replay: Replay::Ignored,
-        headless: gui("none needed", AI),
+        headless: gui("ai-variants <p> --joins reports the join readings", AI),
         help: "Compare at the same frame and heard sample: {ai.compare} switches the viewer and audition between the pause as it is now (Before: its freeze or accepted pictures) and the chosen AI variant, previewing it first when needed; {ai.next} shows the next variant. :compare-ai before / :compare-ai N choose directly. Playing or paused, the switch keeps the exact heard position. Nothing is saved; Esc returns to your edit.",
     },
     Spec {
@@ -1255,7 +1264,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("discard-ai", ":discard-ai")],
         contexts: C::EDIT,
         replay: Replay::Ignored,
-        headless: h(Parity::Gap, "none", AI),
+        headless: eq("discard-hold <p> --request <id> --attempt <id>", AI),
         help: "Remove the chosen variant from the list for good, also after reopening; its files are removed by the next storage cleanup after the grace period. The pause is unchanged.",
     },
     Spec {
@@ -1269,7 +1278,7 @@ pub static SPECS: &[Spec] = &[
         )],
         contexts: C::EDIT,
         replay: Replay::Ignored,
-        headless: h(Parity::Gap, "none", AI),
+        headless: eq("keep-hold <p> --request <id> --attempt <id> [--off]", AI),
         help: "Keep the chosen Ready variant offered and its files in the project for good, or release it again. Variants that are not kept, chosen or accepted expire after the retention period shown in the inspector and Storage, and a later cleanup removes their files. Accepted pictures and everything Undo can restore are never removed.",
     },
     // GAGS, CAPTIONS & CUTAWAYS
@@ -1292,7 +1301,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("gag-inspect", ":gag-inspect NAME")],
         contexts: C::EDIT,
         replay: Replay::Ignored,
-        headless: part("apply dry run of the gag instruction", GAGS),
+        headless: eq("gag-inspect <p> --json <recipe> [--visual]", GAGS),
         help: "List the exact ordinary steps a gag expands to with these parameters, including its resolved gaps, pause lengths and pinned label, in this reference, without applying anything.",
     },
     Spec {
@@ -1470,8 +1479,8 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("recovery", ":recovery")],
         contexts: C::EDITOR,
         replay: Replay::Ignored,
-        headless: part(
-            "project validate, project originals, verify-original",
+        headless: gui(
+            "session report; project validate, originals, render status read the same facts",
             PROJECT,
         ),
         help: "Show what opening this project recovered.",
@@ -1509,7 +1518,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("storage", ":storage  project storage and cleanup")],
         contexts: C::ANYWHERE,
         replay: Replay::Ignored,
-        headless: part("project storage, cache status|clean", PROJECT),
+        headless: eq("project storage <p> [--clean], cache status|clean", PROJECT),
         help: "Show what this project and Deadpan's caches use: originals, AI pause media, render candidates, the database, proxies, downloads and model packs, and what nothing references any more.",
     },
     Spec {
@@ -1520,7 +1529,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("backups", ":backups  backups and restore")],
         contexts: C::ANYWHERE,
         replay: Replay::Ignored,
-        headless: part("project backups|backup|restore <p>", PROJECT),
+        headless: eq("project backups|backup|restore <p>", PROJECT),
         help: "Open Storage on the project's backups: what each one holds, back up now, and restore one.",
     },
     Spec {
@@ -1534,7 +1543,7 @@ pub static SPECS: &[Spec] = &[
         )],
         contexts: C::EDITOR,
         replay: Replay::Ignored,
-        headless: part("project copy-portable <p> <dest>", PROJECT),
+        headless: eq("project copy-portable <p> <dest>", PROJECT),
         help: "Save a verified self-contained copy of this project: linked originals become managed copies, only referenced media is copied, history is kept, and the copy renders without its source or any model.",
     },
     Spec {
@@ -1577,7 +1586,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::CAMERA,
         replay: Replay::Ignored,
-        headless: part("command set_framing", CAM),
+        headless: gui("draft only; pass the final pose to set_framing", CAM),
         help: "Move 1% of the uncropped Original; uppercase H J K L moves 5%. Counts repeat: 3l is three steps. Held keys repeat.",
     },
     Spec {
@@ -1592,7 +1601,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::CAMERA,
         replay: Replay::Ignored,
-        headless: part("command set_framing", CAM),
+        headless: gui("draft only; pass the final pose to set_framing", CAM),
         help: "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps.",
     },
     Spec {
@@ -1617,7 +1626,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::CAMERA,
         replay: Replay::Ignored,
-        headless: part("command set_framing", CAM),
+        headless: gui("draft only; pass the target envelope to set_framing", CAM),
         help: "Follow the chosen saved target: it supplies the center at every picture; + / − change the follow scale. t again stops following at the pose shown. Enter saves.",
     },
     Spec {
@@ -1676,7 +1685,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::CAMERA,
         replay: Replay::NotRecorded,
-        headless: part("command set_framing", CAM),
+        headless: eq("command set_framing", CAM),
         help: "Apply the framing once as one undoable edit.",
     },
     Spec {
@@ -1699,8 +1708,8 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("trim", ":trim")],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
-        headless: part(
-            "command apply_source_trim / trim_source / roll_sources",
+        headless: gui(
+            "panel; apply_source_trim / trim_source / roll_sources --dry-run preview",
             REP,
         ),
         help: "Open Trim for the selected Source beat or neutral Source fragment in an ordinary Sequence in Your edit. Clear any active or retained Visual range first. Use {trim} without a count; holding it does not reopen Trim. Bare :trim starts with four zero values and Ripple policy; :trim edge=in|out|slip|roll delta=-3f mode=ripple|overwrite sets the initial amount (each once, in any order).",
@@ -1713,7 +1722,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("roll", ":roll +2f")],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
-        headless: part("command roll_sources", REP),
+        headless: gui("panel; command roll_sources --dry-run previews", REP),
         help: "Open Trim on the selected source beat with Roll active and the cut after it moved 2 frames later (or earlier with -), keeping both beats' total length; the same as :trim edge=roll delta=+2f.",
     },
     Spec {
@@ -1805,7 +1814,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::TRIM,
         replay: Replay::NotRecorded,
-        headless: part("command apply_source_trim", REP),
+        headless: eq("command apply_source_trim", REP),
         help: "Apply one nonzero edit after all input is acknowledged and the current Proposed pair displays. Native fields and buttons keep Tab and activation, and IME keeps Enter/Escape.",
     },
     Spec {
@@ -1828,7 +1837,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("slip", ":slip +5f")],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
-        headless: part("command slip_source", REP),
+        headless: gui("panel; command slip_source --dry-run previews", REP),
         help: "Preview linked media movement inside the selected Source beat while keeping its duration, Edit cursor and Original cursor. Clear Visual selection first. Stopped pictures only.",
     },
     Spec {
@@ -1890,7 +1899,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::SLIP,
         replay: Replay::NotRecorded,
-        headless: part("command slip_source", REP),
+        headless: eq("command slip_source", REP),
         help: "Apply once after the current Proposed picture displays.",
     },
     Spec {
@@ -1916,7 +1925,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::SPLICE,
         replay: Replay::Ignored,
-        headless: part("move_range / replace_slice commands", STRUCT),
+        headless: gui("choose move_range or replace_slice instead", STRUCT),
         help: "Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination.",
     },
     Spec {
@@ -2004,7 +2013,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::SPLICE,
         replay: Replay::NotRecorded,
-        headless: part("splice_slice / splice_source commands", STRUCT),
+        headless: eq("splice_slice / splice_source commands", STRUCT),
         help: "Commit once. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes.",
     },
     Spec {
@@ -2042,7 +2051,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::ROOM_TONE,
         replay: Replay::NotRecorded,
-        headless: part("command set_hold_audio", HOLDS),
+        headless: eq(
+            "command set_hold_audio, or set_room_tone instruction",
+            HOLDS,
+        ),
         help: "Apply the prepared range to the pause as one undoable edit. Tab / Shift+Tab move through controls.",
     },
     Spec {
@@ -2076,7 +2088,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::GAIN,
         replay: Replay::NotRecorded,
-        headless: part("command set_audio_treatments / edit_scoped", AUDIO),
+        headless: eq("command set_audio_treatments / edit_scoped", AUDIO),
         help: "On the heading, apply the exact owner-output envelopes and mute ranges once.",
     },
     Spec {
@@ -2297,7 +2309,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::JOBS,
         replay: Replay::Ignored,
-        headless: h(Parity::Gap, "none", AI),
+        headless: eq("dismiss-attempt <p> --request <id> --attempt <id>", AI),
         help: "Discard an AI attempt a crash interrupted.",
     },
     Spec {
@@ -2320,7 +2332,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::STORAGE,
         replay: Replay::Ignored,
-        headless: part("project storage <p> --clean --dry-run", PROJECT),
+        headless: eq(
+            "project storage <p> --clean --files-only --dry-run",
+            PROJECT,
+        ),
         help: "Preview a cleanup of unreferenced project files unchanged for a day.",
     },
     Spec {
@@ -2331,7 +2346,10 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::STORAGE,
         replay: Replay::Ignored,
-        headless: part("project storage <p> --clean (closed project)", PROJECT),
+        headless: eq(
+            "project storage <p> --clean --files-only --plan <dry run>",
+            PROJECT,
+        ),
         help: "Remove exactly the previewed files.",
     },
     Spec {
@@ -2353,7 +2371,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::STORAGE,
         replay: Replay::Ignored,
-        headless: part("project copy-portable <p> <dest>", PROJECT),
+        headless: eq("project copy-portable <p> <dest>", PROJECT),
         help: "Save a portable copy, as :portable-copy does.",
     },
     Spec {
@@ -2406,7 +2424,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::STORAGE,
         replay: Replay::Ignored,
-        headless: part("project restore <p> <backup> (closed project)", PROJECT),
+        headless: eq("project restore <p> <backup> [--expected <rev>]", PROJECT),
         help: "Press twice to replace the project with the chosen backup, history included. What you have now is backed up first, so restoring that backup goes back.",
     },
     Spec {
@@ -2417,7 +2435,7 @@ pub static SPECS: &[Spec] = &[
         commands: &[],
         contexts: C::STORAGE,
         replay: Replay::Ignored,
-        headless: part("project storage <p> --clean (closed project)", PROJECT),
+        headless: eq("project storage <p> --confirm-clock [--dry-run]", PROJECT),
         help: "After a long gap since the last retention check, press once to see which AI variants would stop being offered, twice to confirm the clock so automatic checks resume. Their files go after the normal grace period.",
     },
     Spec {

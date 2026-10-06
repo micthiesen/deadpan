@@ -321,11 +321,14 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
                 &format!("make-cuts-{name}"),
             )?;
             results.insert(format!("fixture/{name}-cuts"), made);
-            for (label, template, policy) in [
-                (name.clone(), &copy, "original"),
-                (format!("{name}+proxy"), &copy, "adaptive"),
-                (format!("{name}-cuts"), &cuts, "original"),
-                (format!("{name}-cuts+proxy"), &cuts, "adaptive"),
+            // The native look-ahead decoder is on; one cuts run without it
+            // measures what it changes.
+            for (label, template, policy, lookahead) in [
+                (name.clone(), &copy, "original", "on"),
+                (format!("{name}+proxy"), &copy, "adaptive", "on"),
+                (format!("{name}-cuts"), &cuts, "original", "on"),
+                (format!("{name}-cuts+proxy"), &cuts, "adaptive", "on"),
+                (format!("{name}-cuts-nolookahead"), &cuts, "original", "off"),
             ] {
                 // Each run opens its own copy writable.
                 let package = &work.join(format!("playback-run-{label}.deadpan"));
@@ -338,6 +341,8 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
                     &seconds,
                     "--pictures",
                     policy,
+                    "--lookahead",
+                    lookahead,
                 ];
                 if policy == "adaptive" {
                     arguments.extend([
@@ -1342,6 +1347,17 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     pictures.clone(),
                     Some(complete && clean),
                     base.clone().and(covered),
+                );
+                push(
+                    "Playback look-ahead decoding (informational)",
+                    format!("{fixture}: decoder pre-positioned at cuts"),
+                    json!({
+                        "lookahead": pictures["lookahead"],
+                        "seek_pictures": pictures["seek_pictures"],
+                        "peak_footprint_bytes": value["resources"]["peak_footprint_bytes"],
+                    }),
+                    None,
+                    base.clone(),
                 );
                 if value["picture_policy"] == "adaptive" {
                     push(

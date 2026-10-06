@@ -175,6 +175,17 @@ pub(super) fn rows(
             ),
         ),
         (
+            "PLAYBACK",
+            "Look-ahead",
+            format!(
+                "{} started · {} reached · {} swapped at cuts · {} failed",
+                counters.playback_pictures.lookahead_started,
+                counters.playback_pictures.lookahead_reached,
+                counters.playback_pictures.lookahead_swaps,
+                counters.playback_pictures.lookahead_failed
+            ),
+        ),
+        (
             "DECODE QUEUES",
             "Picture preview",
             level(counters.queues.picture_preview),

@@ -23,11 +23,17 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, SystemTime};
 
-use deadpan_store::generation_retention::{DEFAULT_VARIANT_RETENTION, ExpiryMode};
-use deadpan_store::storage::{CleanupPolicy, DEFAULT_GRACE, StorageReport};
-use deadpan_store::{AccessMode, ProjectStore, StoreError};
-use serde::Serialize;
+use deadpan_store::generation_retention::{
+    ClockAnomaly, DEFAULT_VARIANT_RETENTION, ExpiryMode, ExpiryPlan, VariantExpiry,
+};
+use deadpan_store::storage::{
+    CleanupOutcome, CleanupPolicy, DEFAULT_GRACE, PlannedRemoval, RemovedEntry, StorageReport,
+};
+use deadpan_store::{AccessMode, ProjectStore};
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 
+use crate::live_project::{LiveError, ShortOperation};
 use crate::proxy::cache::{DEFAULT_PROXY_BUDGET_BYTES, ProxyCache, ProxyCleanupPolicy};
 use crate::{CliError, write_json};
 
@@ -374,6 +380,257 @@ impl UserStorage {
     }
 }
 
+/// What an explicit expiry found to do, planned on any store (read-only
+/// included) so that the reference scan never holds the writer.
+#[derive(Debug, Clone)]
+pub enum PlannedExpiry {
+    /// `--files-only`: AI variants are left alone, as Storage P/R does.
+    NotRequested,
+    /// The clock is behind the project's records: nothing may expire.
+    Skipped {
+        reason: String,
+        clock_anomaly: ClockAnomaly,
+    },
+    Planned(ExpiryPlan),
+}
+
+/// The typed `variant_expiry` of every cleanup and clock confirmation reply.
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum ExpiryStatus {
+    NotRequested,
+    Skipped {
+        reason: String,
+        clock_anomaly: ClockAnomaly,
+    },
+    /// A dry run: what applying the plan would expire.
+    Previewed {
+        #[serde(flatten)]
+        expiry: VariantExpiry,
+    },
+    Applied {
+        #[serde(flatten)]
+        expiry: VariantExpiry,
+    },
+}
+
+/// Plan an explicit expiry under the current clock, with the app's clock
+/// check: a clock behind the project's records is never confirmed.
+pub fn plan_expiry(store: &ProjectStore) -> Result<PlannedExpiry, LiveError> {
+    if let Some(anomaly @ ClockAnomaly::Behind { .. }) = store
+        .generation_retention_clock(SystemTime::now(), DEFAULT_VARIANT_RETENTION)
+        .map_err(LiveError::store)?
+    {
+        return Ok(PlannedExpiry::Skipped {
+            reason: "This computer's clock is earlier than times this project recorded; correct the date and time first".into(),
+            clock_anomaly: anomaly,
+        });
+    }
+    Ok(PlannedExpiry::Planned(
+        store
+            .plan_generation_expiry(
+                SystemTime::now(),
+                DEFAULT_VARIANT_RETENTION,
+                ExpiryMode::Explicit,
+            )
+            .map_err(LiveError::store)?,
+    ))
+}
+
+/// Preview `planned` (any store) or apply it on the writer, which rechecks
+/// every planned row in one short transaction.
+pub fn settle_expiry(
+    store: &mut ProjectStore,
+    planned: &PlannedExpiry,
+    dry_run: bool,
+) -> Result<ExpiryStatus, LiveError> {
+    Ok(match planned {
+        PlannedExpiry::NotRequested => ExpiryStatus::NotRequested,
+        PlannedExpiry::Skipped {
+            reason,
+            clock_anomaly,
+        } => ExpiryStatus::Skipped {
+            reason: reason.clone(),
+            clock_anomaly: *clock_anomaly,
+        },
+        PlannedExpiry::Planned(plan) if dry_run => ExpiryStatus::Previewed {
+            expiry: plan.preview(),
+        },
+        PlannedExpiry::Planned(plan) => ExpiryStatus::Applied {
+            expiry: store
+                .apply_generation_expiry(plan, false)
+                .map_err(LiveError::store)?,
+        },
+    })
+}
+
+/// A clock confirmation refuses, rather than skips, a clock behind the
+/// project's records, including in a dry run.
+pub fn require_planned(planned: &PlannedExpiry) -> Result<(), LiveError> {
+    match planned {
+        PlannedExpiry::Skipped { reason, .. } => {
+            Err(LiveError::new("RetentionClockBehind", reason))
+        }
+        _ => Ok(()),
+    }
+}
+
+/// The reply of `--confirm-clock`.
+pub fn clock_output(status: &ExpiryStatus) -> Value {
+    json!({ "protocol": 1, "variant_expiry": status })
+}
+
+/// Storage E on whichever process holds `store`.
+pub fn confirm_clock(store: &mut ProjectStore, dry_run: bool) -> Result<Value, LiveError> {
+    let planned = plan_expiry(store)?;
+    require_planned(&planned)?;
+    Ok(clock_output(&settle_expiry(store, &planned, dry_run)?))
+}
+
+/// Exactly the files a dry run listed, bound to the project, head revision
+/// and grace period it was computed under. Removal goes through
+/// [`ProjectStore::clean_previewed_storage`], which removes a listed file only
+/// if a fresh scan still finds that same file removable: the Storage panel's
+/// R after its P.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CleanupPlan {
+    pub project_id: deadpan_core::ProjectId,
+    pub revision_id: deadpan_core::RevisionId,
+    pub grace_seconds: u64,
+    pub entries: Vec<PlannedRemoval>,
+}
+
+impl CleanupPlan {
+    pub fn of(
+        store: &ProjectStore,
+        grace: Duration,
+        preview: &CleanupOutcome,
+    ) -> Result<Self, LiveError> {
+        let document = store.snapshot().map_err(LiveError::store)?;
+        Ok(Self {
+            project_id: document.project_id().clone(),
+            revision_id: document.revision_id().clone(),
+            grace_seconds: grace.as_secs(),
+            entries: preview.removed.iter().map(RemovedEntry::planned).collect(),
+        })
+    }
+
+    /// The SHA-256 of the plan's canonical JSON, which names it.
+    pub fn hash(&self) -> String {
+        use sha2::Digest;
+        let bytes = serde_json::to_vec(self).expect("plan serializes");
+        sha2::Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    /// Refuse a plan for another project or an older or newer head.
+    pub fn check(&self, store: &ProjectStore) -> Result<Vec<RemovedEntry>, LiveError> {
+        let document = store.snapshot().map_err(LiveError::store)?;
+        if document.project_id() != &self.project_id || document.revision_id() != &self.revision_id
+        {
+            return Err(LiveError {
+                current_revision: Some(document.revision_id().clone()),
+                ..LiveError::new(
+                    "StoragePlanStale",
+                    "The cleanup plan was previewed for another project state; preview again",
+                )
+            });
+        }
+        self.entries
+            .iter()
+            .map(RemovedEntry::from_planned)
+            .collect::<Result<_, _>>()
+            .map_err(LiveError::store)
+    }
+}
+
+/// The reply of `--clean`: the typed expiry, the file outcome and, for a
+/// dry run, the plan a later `--plan` removes exactly.
+pub fn clean_output(
+    status: &ExpiryStatus,
+    cleanup: &CleanupOutcome,
+    plan: Option<&CleanupPlan>,
+) -> Value {
+    json!({
+        "protocol": 1,
+        "variant_expiry": status,
+        "cleanup": cleanup,
+        "plan": plan,
+        "plan_hash": plan.map(CleanupPlan::hash),
+    })
+}
+
+/// Explicit project cleanup on whichever process holds `store`.
+///
+/// - Dry run: preview expiry and files on any store and return the plan.
+/// - `plan`: remove exactly the planned files still removable (Storage R).
+/// - Otherwise (convenience): expire due variants first, so their masters go
+///   in the same run, then remove what a fresh scan finds unreferenced now.
+pub fn clean_project(
+    store: &mut ProjectStore,
+    grace: Duration,
+    expire_variants: bool,
+    dry_run: bool,
+    plan: Option<&CleanupPlan>,
+) -> Result<Value, LiveError> {
+    if let Some(plan) = plan {
+        if dry_run || expire_variants || plan.grace_seconds != grace.as_secs() {
+            return Err(LiveError::new(
+                "InvalidInput",
+                "A cleanup plan removes files only: use --files-only without --dry-run and the plan's own grace period",
+            ));
+        }
+        let previewed = plan.check(store)?;
+        let cleanup = store
+            .clean_previewed_storage(grace, &previewed)
+            .map_err(LiveError::store)?;
+        return Ok(clean_output(&ExpiryStatus::NotRequested, &cleanup, None));
+    }
+    let planned = if expire_variants {
+        plan_expiry(store)?
+    } else {
+        PlannedExpiry::NotRequested
+    };
+    let status = settle_expiry(store, &planned, dry_run)?;
+    if dry_run {
+        let cleanup = store
+            .preview_storage_cleanup(grace)
+            .map_err(LiveError::store)?;
+        let plan = CleanupPlan::of(store, grace, &cleanup)?;
+        return Ok(clean_output(&status, &cleanup, Some(&plan)));
+    }
+    let cleanup = store
+        .clean_storage(CleanupPolicy::everything(grace, false))
+        .map_err(LiveError::store)?;
+    Ok(clean_output(&status, &cleanup, None))
+}
+
+/// Read a `--plan` file: a dry run's whole output or just its plan. A given
+/// `plan_hash` must match.
+fn read_plan(path: &Path) -> Result<CleanupPlan, CliError> {
+    let value: Value = serde_json::from_str(&crate::read_request(path)?)?;
+    let (plan, hash) = match value.get("plan") {
+        Some(plan) => (plan.clone(), value.get("plan_hash").cloned()),
+        None => (value, None),
+    };
+    let plan: CleanupPlan = serde_json::from_value(plan)?;
+    if let Some(hash) = hash
+        && hash != json!(plan.hash())
+    {
+        return Err(LiveError::new(
+            "StoragePlanInvalid",
+            "The cleanup plan does not match its plan_hash",
+        )
+        .into());
+    }
+    Ok(plan)
+}
+
+const USAGE: &str = "usage: project storage <project.deadpan> [--grace-hours N] [--clean [--files-only] [--dry-run] [--plan <dry-run.json>] | --confirm-clock [--dry-run]]";
+
 /// `--grace-hours N` (default 24) followed by the remaining flags.
 fn grace<'a>(arguments: &[&'a str]) -> Result<(Duration, Vec<&'a str>), CliError> {
     let mut grace = DEFAULT_GRACE;
@@ -426,88 +683,46 @@ pub(crate) fn run_project(arguments: &[&str]) -> Result<(), CliError> {
                 user: &user,
             })
         }
-        [package, "--clean", flags @ ..] if flags.iter().all(|flag| *flag == "--dry-run") => {
-            let dry_run = !flags.is_empty();
-            let mut store = match ProjectStore::open(Path::new(package), AccessMode::ReadWrite) {
-                Err(StoreError::AlreadyOpen) => {
-                    return Err(CliError::Usage(
-                        "The project is open in Deadpan. Use its Storage panel (:storage), or close it and run cleanup again.".into(),
-                    ));
+        [package, "--clean", flags @ ..] => {
+            let mut dry_run = false;
+            let mut files_only = false;
+            let mut plan = None;
+            let mut flags = flags.iter();
+            while let Some(flag) = flags.next() {
+                match *flag {
+                    "--dry-run" => dry_run = true,
+                    "--files-only" => files_only = true,
+                    "--plan" => {
+                        let path = flags.next().ok_or_else(|| CliError::Usage(USAGE.into()))?;
+                        plan = Some(read_plan(Path::new(path))?);
+                    }
+                    _ => return Err(CliError::Usage(USAGE.into())),
                 }
-                store => store?,
-            };
-            // Expire offered AI variants first, so their now unreferenced
-            // masters are removable in the same run. A dry run only lists
-            // the variants that would expire.
-            // Explicit: this confirms the current clock, even after the
-            // app's automatic pass deferred for a clock anomaly.
-            let expiry = store.expire_generation_variants(
-                SystemTime::now(),
-                DEFAULT_VARIANT_RETENTION,
-                ExpiryMode::Explicit,
-                dry_run,
-            )?;
-            let outcome = store.clean_storage(CleanupPolicy::everything(grace, dry_run))?;
-            write_json(
-                &serde_json::json!({ "protocol": 1, "variant_expiry": expiry, "cleanup": outcome }),
-            )
+            }
+            write_json(&crate::live_project::dispatch_short(
+                Path::new(package),
+                None,
+                ShortOperation::CleanStorage {
+                    grace_seconds: grace.as_secs(),
+                    expire_variants: !files_only,
+                    dry_run,
+                    plan: plan.map(Box::new),
+                },
+            )?)
         }
-        _ => Err(CliError::Usage(
-            "usage: project storage <project.deadpan> [--clean [--dry-run]] [--grace-hours N]"
-                .into(),
-        )),
+        [package, "--confirm-clock", flags @ ..]
+            if flags.iter().all(|flag| *flag == "--dry-run") =>
+        {
+            write_json(&crate::live_project::dispatch_short(
+                Path::new(package),
+                None,
+                ShortOperation::ConfirmVariantClock {
+                    dry_run: !flags.is_empty(),
+                },
+            )?)
+        }
+        _ => Err(CliError::Usage(USAGE.into())),
     }
-}
-
-/// `keep-hold <project> --request <id> --attempt <id> [--off]`: keep (pin)
-/// one offered AI variant so the retention policy never expires it, or with
-/// `--off` let it expire again. Operational, not undoable; needs a closed
-/// project.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-pub(crate) fn run_keep_hold(arguments: &[&str]) -> Result<(), CliError> {
-    let usage = || {
-        CliError::Usage(
-            "usage: keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]"
-                .into(),
-        )
-    };
-    let (package, request, attempt, keep) = match arguments {
-        [package, "--request", request, "--attempt", attempt] => (package, request, attempt, true),
-        [package, "--request", request, "--attempt", attempt, "--off"] => {
-            (package, request, attempt, false)
-        }
-        _ => return Err(usage()),
-    };
-    let identity = deadpan_jobs::MessageIdentity::new(
-        deadpan_jobs::RequestId::new(*request).map_err(|_| usage())?,
-        deadpan_jobs::AttemptId::new(*attempt).map_err(|_| usage())?,
-    );
-    let mut store = match ProjectStore::open(Path::new(package), AccessMode::ReadWrite) {
-        Err(StoreError::AlreadyOpen) => {
-            return Err(CliError::Usage(
-                "The project is open in Deadpan. Keep the variant there (:keep-ai), or close it and run keep-hold again.".into(),
-            ));
-        }
-        store => store?,
-    };
-    let outcome = store.keep_generation_bundle_variant(&identity, keep)?;
-    let record = store
-        .generation_variant_retention(&identity.request_id)?
-        .into_iter()
-        .find(|record| record.identity == identity);
-    let expires = record
-        .as_ref()
-        .and_then(|record| record.expires_at(DEFAULT_VARIANT_RETENTION))
-        .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
-        .map(|at| at.as_secs());
-    write_json(&serde_json::json!({
-        "protocol": 1,
-        "request_id": request,
-        "attempt_id": attempt,
-        "kept": keep,
-        "changed": outcome == deadpan_store::generation_attempts::AttemptMutationOutcome::Applied,
-        "expires_unix_seconds": expires,
-    }))
 }
 
 /// `project copy-portable <package> <destination.deadpan>`.

@@ -19,6 +19,12 @@ use crate::project::{
 
 const MAX_OBSERVERS: usize = 8;
 const TERMINAL_RETENTION: Duration = Duration::from_secs(10 * 60);
+/// How long a replaced owner's endpoint may take to write its last replies.
+const RETIRED_DRAIN: Duration = Duration::from_secs(15);
+/// Replaced owners whose last replies may drain at once.
+const MAX_RETIRED: usize = 4;
+/// How long shutdown waits for produced replies to be written.
+const SHUTDOWN_DRAIN: Duration = Duration::from_secs(2);
 
 mod preparation;
 
@@ -61,24 +67,122 @@ impl Drop for Host {
 }
 
 impl Service {
+    /// Keep a replaced owner's endpoint only to write already admitted
+    /// replies. Several can drain at once; the oldest beyond a small bound
+    /// is dropped, which its client observes as an unknown outcome.
+    pub(super) fn retire_host(&mut self) {
+        if let Some(mut host) = self.host.take() {
+            host.endpoint.retire();
+            if self.retired_hosts.len() >= MAX_RETIRED {
+                self.retired_hosts.remove(0);
+            }
+            self.retired_hosts
+                .push((host, Instant::now() + RETIRED_DRAIN));
+        }
+    }
+
+    /// Write retired endpoints' last replies; forget the finished ones.
+    fn drain_retired_hosts(&mut self) {
+        #[cfg(test)]
+        if self.shared.retired_drain_paused.load(Ordering::Acquire) {
+            return;
+        }
+        let now = Instant::now();
+        self.retired_hosts.retain_mut(|(host, until)| {
+            host.endpoint.poll();
+            host.endpoint.draining() && now < *until
+        });
+    }
+
+    /// On shutdown: give retired endpoints, and the current one once
+    /// retired, a bounded chance to write replies already produced.
+    pub(super) fn drain_hosts_before_exit(&mut self) {
+        self.retire_host();
+        self.abandon_remote_storage();
+        let deadline = Instant::now() + SHUTDOWN_DRAIN;
+        #[cfg(test)]
+        self.shared
+            .retired_drain_paused
+            .store(false, Ordering::Release);
+        while !self.retired_hosts.is_empty() && Instant::now() < deadline {
+            self.drain_retired_hosts();
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        self.retired_hosts.clear();
+    }
+
+    /// Reply to an admitted request on the endpoint that admitted it, if it
+    /// is still current or retired and draining.
+    pub(super) fn respond_on(
+        &mut self,
+        owner: uuid::Uuid,
+        ticket: deadpan_cli::host::ConnectionTicket,
+        reply: HostReply,
+    ) {
+        let fallback = reply_failure(&reply);
+        let endpoint = match &mut self.host {
+            Some(host) if host.endpoint.owner_id() == owner => Some(&mut host.endpoint),
+            _ => self
+                .retired_hosts
+                .iter_mut()
+                .find(|(host, _)| host.endpoint.owner_id() == owner)
+                .map(|(host, _)| &mut host.endpoint),
+        };
+        if let Some(endpoint) = endpoint {
+            let sent = serde_json::to_value(reply)
+                .ok()
+                .is_some_and(|value| endpoint.respond(ticket, value).is_ok());
+            if !sent && let Ok(value) = serde_json::to_value(fallback) {
+                // Socket loss can still make the outcome unknowable. A
+                // locally rejected large reply must retain its receipt.
+                let _ = endpoint.respond(ticket, value);
+            }
+        }
+    }
+
     pub(super) fn pump_host(&mut self) {
+        self.drain_retired_hosts();
+        #[cfg(test)]
+        if self.shared.host_poll_paused.load(Ordering::Acquire) {
+            return;
+        }
         let Some(host) = &mut self.host else { return };
         host.expire();
+        let source = host.endpoint.owner_id();
         let requests = host.endpoint.poll();
         for incoming in requests {
-            let reply = Request::from_value(incoming.payload)
-                .and_then(|request| self.host_request(request.operation))
-                .unwrap_or_else(|error| HostReply::Failed { error });
-            let fallback = reply_failure(&reply);
-            if let Some(host) = &mut self.host {
-                let sent = serde_json::to_value(reply)
-                    .ok()
-                    .is_some_and(|value| host.endpoint.respond(incoming.ticket, value).is_ok());
-                if !sent && let Ok(value) = serde_json::to_value(fallback) {
-                    // Socket loss can still make the outcome unknowable. A
-                    // locally rejected large reply must retain its receipt.
-                    let _ = host.endpoint.respond(incoming.ticket, value);
+            // A restore earlier in this batch replaced the owner these
+            // requests authenticated against; never run them on its successor.
+            let current = self.host.as_ref().map(|host| host.endpoint.owner_id());
+            let reply = if current == Some(source) {
+                match Request::from_value(incoming.payload) {
+                    Ok(Request {
+                        operation:
+                            Operation::Execute {
+                                project_id,
+                                command,
+                            },
+                        ..
+                    }) if super::remote_storage::deferred(&command) => {
+                        // Long storage work runs off this thread; the reply
+                        // follows when it finishes.
+                        self.start_remote_storage(source, incoming.ticket, &project_id, &command)
+                            .err()
+                            .map(|error| HostReply::Failed { error })
+                    }
+                    request => Some(
+                        request
+                            .and_then(|request| self.host_request(request.operation))
+                            .unwrap_or_else(|error| HostReply::Failed { error }),
+                    ),
                 }
+            } else {
+                Some(HostReply::Failed {
+                    error: owner_changed(),
+                })
+            };
+            if let Some(reply) = reply {
+                self.respond_on(source, incoming.ticket, reply);
             }
             // A peer cannot consume an unbounded stream of admissions before
             // a render gets another chance to advance or observe cancellation.
@@ -88,7 +192,9 @@ impl Service {
         }
     }
 
-    fn host_request(&mut self, operation: Operation) -> std::result::Result<HostReply, LiveError> {
+    /// The owner still holds the writer this endpoint was bound to and is
+    /// not closing or replacing its session.
+    pub(super) fn check_host_admission(&self) -> std::result::Result<(), LiveError> {
         let store = self.store.as_ref().ok_or_else(owner_changed)?;
         let host = self.host.as_ref().ok_or_else(owner_changed)?;
         store
@@ -97,6 +203,12 @@ impl Service {
         if self.shared.stopping.load(Ordering::Acquire) || self.pending_session_change.is_some() {
             return Err(owner_changed());
         }
+        Ok(())
+    }
+
+    fn host_request(&mut self, operation: Operation) -> std::result::Result<HostReply, LiveError> {
+        self.check_host_admission()?;
+        let store = self.store.as_ref().ok_or_else(owner_changed)?;
         match operation {
             Operation::Inspect => Ok(HostReply::Context {
                 context: RenderContext::from_document(&store.snapshot().map_err(LiveError::store)?),
@@ -192,7 +304,10 @@ impl Service {
         }
     }
 
-    fn check_host_project(&self, project: &ProjectId) -> std::result::Result<(), LiveError> {
+    pub(super) fn check_host_project(
+        &self,
+        project: &ProjectId,
+    ) -> std::result::Result<(), LiveError> {
         // Project identity cannot change inside an admitted store session.
         // Polling progress must not decode the entire document every 50 ms.
         if self
@@ -220,12 +335,56 @@ impl Service {
             let pending = self.shared.update.try_lock().map_err(|_| {
                 LiveError::new("HostBusy", "The native app is receiving an edit result")
             })?;
-            if pending.as_ref().is_some_and(has_native_continuation) {
+            if pending
+                .as_ref()
+                .is_some_and(|update| self.unread_native_continuation(update))
+            {
                 return Err(LiveError::new(
                     "HostBusy",
                     "The native app has an unread edit or register receipt",
                 ));
             }
+        }
+        use deadpan_cli::live_project::ShortOperation as Short;
+        match command {
+            Short::RestoreBackup {
+                id,
+                expected_revision,
+            } => {
+                self.check_host_project(project)?;
+                return Ok(HostReply::Completed {
+                    output: self.host_restore(id, expected_revision.as_ref())?,
+                    committed_revision: None,
+                    committed_registers: None,
+                    refresh_error: None,
+                });
+            }
+            // Only a file plan reaches here (Storage R); other cleanup runs
+            // as an off-thread job (see `remote_storage`).
+            Short::CleanStorage { .. } | Short::ConfirmVariantClock { .. } => {
+                // The same refusal as the Storage panel's removal: no job may
+                // be publishing media meanwhile.
+                if let Some(reason) = self.retention_jobs_running() {
+                    return Err(LiveError::new("StorageBusy", reason));
+                }
+                if self.retention.running() {
+                    return Err(LiveError::new(
+                        "StorageBusy",
+                        "The automatic AI variant check is running; try again when it finishes",
+                    ));
+                }
+                // Like the panel, an open project keeps at least the default
+                // grace period; a shorter one needs the writer exclusively.
+                if let Short::CleanStorage { grace_seconds, .. } = command
+                    && *grace_seconds < deadpan_store::storage::DEFAULT_GRACE.as_secs()
+                {
+                    return Err(LiveError::new(
+                        "StorageGraceRefused",
+                        "Deadpan has this project open, so cleanup keeps at least the default 24-hour grace period. Close the project to use a shorter one.",
+                    ));
+                }
+            }
+            _ => {}
         }
         let execution = match command {
             deadpan_cli::live_project::ShortOperation::Macro { request } => {
@@ -264,6 +423,9 @@ impl Service {
             committed_registers,
         } = execution;
         let mut refresh_error = None;
+        if !command.is_preview() {
+            self.host_operational_change(command, &output);
+        }
         if let Some(revision) = &committed_revision {
             use deadpan_cli::live_project::ShortOperation;
             let preserved_from = match command {
@@ -316,6 +478,65 @@ impl Service {
             committed_registers,
             refresh_error,
         })
+    }
+
+    /// Native state that a remote operational change (outside authored
+    /// history) makes stale: offered AI variants, analysis corrections and
+    /// the retention status. Published at once, like a native change.
+    fn host_operational_change(
+        &mut self,
+        command: &deadpan_cli::live_project::ShortOperation,
+        output: &serde_json::Value,
+    ) {
+        use deadpan_cli::generation::variants::VariantAction;
+        use deadpan_cli::live_project::ShortOperation as Short;
+        let message = match command {
+            Short::GenerationVariant {
+                request,
+                attempt,
+                action,
+            } => {
+                self.generation
+                    .remote_variant_changed(request, attempt, *action);
+                match action {
+                    VariantAction::Select => "Chose an AI variant from the command line.",
+                    VariantAction::Discard => {
+                        "Discarded an AI variant from the command line. The pause is unchanged."
+                    }
+                    VariantAction::Keep => "Kept an AI variant from the command line.",
+                    VariantAction::Release => {
+                        "Stopped keeping an AI variant from the command line."
+                    }
+                }
+            }
+            Short::DismissInterruptedAttempt { .. } => {
+                self.generation.variants_changed();
+                "Discarded an interrupted AI attempt from the command line. The pause is unchanged."
+            }
+            Short::Corrections { .. } => {
+                if let Err(error) = self.reload_corrections() {
+                    self.error = Some(error);
+                }
+                "Saved a transcript correction from the command line."
+            }
+            Short::CleanStorage { .. } | Short::ConfirmVariantClock { .. } => {
+                if output["variant_expiry"]["expired"]
+                    .as_array()
+                    .is_some_and(|expired| !expired.is_empty())
+                {
+                    self.generation.variants_changed();
+                }
+                self.retention.recheck_soon();
+                if matches!(command, Short::CleanStorage { .. }) {
+                    "Cleaned up project storage from the command line."
+                } else {
+                    "Confirmed the clock for AI variant retention from the command line."
+                }
+            }
+            _ => return,
+        };
+        self.message = Some(message.into());
+        self.publish();
     }
 
     fn host_render(&mut self, request: RenderRequest) -> std::result::Result<HostReply, LiveError> {
@@ -515,15 +736,22 @@ impl Service {
     }
 }
 
-fn has_native_continuation(update: &ProjectUpdate) -> bool {
-    update.committed.is_some()
-        || update.macros.is_some()
-        || update.captured_slice.is_some()
-        || update.captured_original.is_some()
-        || update.cut_slice.is_some()
+impl Service {
+    /// A native edit, copy, cut or Macro receipt in the pending update that
+    /// the UI has not taken yet. Receipts it already took and that background
+    /// publishes merely re-send are read.
+    pub(super) fn unread_native_continuation(&self, update: &ProjectUpdate) -> bool {
+        update.continuation_key().unread_since(
+            &self
+                .shared
+                .delivered
+                .lock()
+                .unwrap_or_else(|error| error.into_inner()),
+        )
+    }
 }
 
-fn owner_changed() -> LiveError {
+pub(super) fn owner_changed() -> LiveError {
     LiveError::new(
         "HostOwnerChanged",
         "The project owner is closing or unavailable",

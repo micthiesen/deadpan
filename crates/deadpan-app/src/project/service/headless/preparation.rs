@@ -306,7 +306,7 @@ impl Service {
         let available = self.shared.update.try_lock().is_ok_and(|pending| {
             pending
                 .as_ref()
-                .is_none_or(|update| !has_native_continuation(update))
+                .is_none_or(|update| !self.unread_native_continuation(update))
         });
         if available {
             self.finish_host_preparation(index);

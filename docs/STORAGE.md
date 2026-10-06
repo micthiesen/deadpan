@@ -120,8 +120,10 @@ project commands while it runs, typically well under a second and longer
 for very long histories), waits at most two seconds for the render namespace
 lock, and removes the intersection. The service refuses while an import,
 relink, render, AI pause or tracking job runs, and always uses the default
-grace period. `project storage --clean` refuses an open project. Because it
-then holds the writer exclusively, it accepts `--grace-hours 0`; per-user
+grace period. `project storage --clean` on a project the app has open runs
+on the app's writer through its live endpoint with the same refusals and at
+least the default grace period (`StorageGraceRefused` otherwise). On a closed
+project it holds the writer exclusively, so it accepts `--grace-hours 0`; per-user
 `cache clean` requires at least one hour, since other Deadpan processes write
 those caches without a lock it can observe.
 
@@ -304,8 +306,9 @@ merged.
 | Command | Effect |
 |---|---|
 | `project storage <pkg> [--grace-hours N]` | JSON report: database, each namespace's entries with state (`referenced` with reasons, `unreferenced`, `pending`, `damaged`, `unexpected`), sizes, what cleanup would remove, the history's own size (`history`: revisions, edits, keyframes and their bytes) and checkpoint, backup and report bytes (`auxiliary_bytes`); plus the per-user report. Read-only; works while the app has the project open. |
-| `project storage <pkg> --clean [--dry-run] [--grace-hours N]` | First expire offered AI variants past the retention period, confirming the clock (`variant_expiry`; a dry run only lists them with their bytes), then remove (or list) unreferenced objects and unfinished writes older than the grace period. Needs a closed project. |
-| `keep-hold <pkg> --request <id> --attempt <id> [--off]` | Keep one offered AI variant so it never expires, or with `--off` let it expire again. Operational, not undoable; needs a closed project. |
+| `project storage <pkg> --clean [--files-only] [--dry-run] [--plan <dry-run.json>] [--grace-hours N]` | A `--files-only` dry run is the panel's P and prints a `plan`; `--files-only --plan` is R: exactly the planned files a fresh scan still finds removable, refused for another head. Without a plan (a convenience), first expire offered AI variants past the retention period, confirming the clock (`variant_expiry.status`; `--files-only` skips this), then remove (or list) unreferenced objects and unfinished writes older than the grace period. Dry runs read only. With the app open, runs through the live endpoint, planning and scanning off its service thread (default grace at least). |
+| `project storage <pkg> --confirm-clock [--dry-run]` | Storage E: expire due variants under the current clock and confirm it, so automatic checks resume. A clock behind the project's records is refused. Live-routed like `--clean`. |
+| `keep-hold <pkg> --request <id> --attempt <id> [--off]` | Keep one offered AI variant so it never expires, or with `--off` let it expire again. `select-hold`, `discard-hold` and `dismiss-attempt` make the other inspector choices, and `ai-variants` lists them. Operational, not undoable; live-routed when the app has the project open. |
 | `project copy-portable <pkg> <new.deadpan>` | Verified self-contained copy. |
 | `cache status` / `cache clean [--dry-run] [--grace-hours N]` | Per-user caches: proxies unused for the grace period, then least recently used ones while the cache exceeds its budget (the dry run lists both), and abandoned downloader staging. The grace period is at least one hour. Reports, never touches, model packs, AI runtimes and qualification weights. |
 

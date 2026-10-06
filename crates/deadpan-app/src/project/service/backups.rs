@@ -147,7 +147,7 @@ impl Service {
     /// The store revoked its writer ownership with the replaced state; the
     /// live command endpoint is bound again to the restored one.
     fn rebind_host_after_restore(&mut self) {
-        self.host = None;
+        self.retire_host();
         if let Some(store) = self.store.as_mut()
             && store.access_mode() == AccessMode::ReadWrite
         {
@@ -392,6 +392,87 @@ impl Service {
     }
 
     fn restore(&mut self, expected_session: u64, id: &str) -> Result<String> {
+        self.restore_outcome(expected_session, id)
+            .map(|(message, _)| message)
+            .map_err(|failure| failure.message)
+    }
+
+    /// A restore requested through the live endpoint: the same refusals,
+    /// safety backup, verification and session replacement as Storage R.
+    /// Its reply is written by the replaced owner's retired endpoint.
+    pub(super) fn host_restore(
+        &mut self,
+        id: &str,
+        expected: Option<&deadpan_core::RevisionId>,
+    ) -> std::result::Result<serde_json::Value, deadpan_cli::live_project::LiveError> {
+        use deadpan_cli::live_project::LiveError;
+        // Like closing, a restore never discards work in progress: an open
+        // draft or preview, or an edit receipt the app has not shown yet.
+        // Pending key operators live in the UI and are cancelled by the
+        // session change, as for a native restore.
+        let unsaved = [
+            (
+                self.shared.preview_active.load(Ordering::Acquire),
+                "a Camera, Gain or Room tone preview",
+            ),
+            (self.splice_draft.is_some(), "a Place slice proposal"),
+            (self.slip_draft.is_some(), "a Slip proposal"),
+            (self.trim_draft.is_some(), "a Trim draft"),
+            (self.room_tone.is_some(), "a prepared room-tone range"),
+            (self.gain.is_some(), "a Gain draft"),
+            (
+                self.committed.is_some(),
+                "an edit the app has not shown yet",
+            ),
+        ];
+        if let Some((_, what)) = unsaved.iter().find(|(open, _)| *open) {
+            return Err(LiveError::new(
+                "RestoreDraftOpen",
+                format!(
+                    "Deadpan has {what} open; apply or cancel it in the app, then restore again"
+                ),
+            ));
+        }
+        if let Some(expected) = expected {
+            let current = self
+                .store
+                .as_ref()
+                .ok_or_else(|| LiveError::new("HostOwnerChanged", "No project is open"))?
+                .head_revision()
+                .map_err(LiveError::store)?;
+            if &current != expected {
+                return Err(LiveError::store(
+                    deadpan_store::StoreError::RevisionConflict {
+                        expected: expected.as_str().into(),
+                        current: current.as_str().into(),
+                    },
+                ));
+            }
+        }
+        let session = self.session;
+        let result = self.restore_outcome(session, id);
+        let reply = match result {
+            Ok((message, outcome)) => {
+                self.message = Some(format!("{message} Requested from the command line."));
+                Ok(serde_json::json!({ "protocol": 1, "restored": outcome }))
+            }
+            Err(failure) => {
+                self.error = Some(failure.message.clone());
+                Err(LiveError {
+                    committed_revision: failure.restored_revision,
+                    ..LiveError::new(failure.code, failure.message)
+                })
+            }
+        };
+        self.publish();
+        reply
+    }
+
+    fn restore_outcome(
+        &mut self,
+        expected_session: u64,
+        id: &str,
+    ) -> std::result::Result<(String, deadpan_store::backups::RestoreOutcome), RestoreFailure> {
         if expected_session != self.session || self.workspace.is_none() {
             return Err("The project changed; choose the backup again.".into());
         }
@@ -401,9 +482,10 @@ impl Service {
             || self.render.is_some()
             || self.generation.active()
             || self.targets.active()
+            || self.remote_storage_active()
         {
             return Err(
-                "Wait for the current import, render, AI pause or tracking to finish, then restore."
+                "Wait for the current import, render, AI pause, tracking or command-line cleanup to finish, then restore."
                     .into(),
             );
         }
@@ -434,20 +516,32 @@ impl Service {
             Err(error @ deadpan_store::backups::BackupError::RestoredButUnverified { .. }) => {
                 // The database already changed: never keep the old session
                 // over it. Close and ask for a reopen.
-                let message = error.to_string();
+                let deadpan_store::backups::BackupError::RestoredButUnverified { safety, .. } =
+                    &error
+                else {
+                    unreachable!()
+                };
+                let failure = RestoreFailure {
+                    code: "BackupRestoredUnverified",
+                    message: format!(
+                        "The project database was replaced, but the restored state could not be verified ({error}). The project was closed; reopen it. The state before restoring is in backup {safety}."
+                    ),
+                    restored_revision: None,
+                };
                 self.cancel();
-                self.host = None;
+                self.retire_host();
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
                 self.clear_copied_slice();
                 self.clear_marks();
-                return Err(message);
+                return Err(failure);
             }
             Err(error) => {
-                // Handles may already be revoked; serve the endpoint afresh.
+                // Nothing changed. Handles may already be revoked; serve the
+                // endpoint afresh.
                 self.rebind_host_after_restore();
-                return Err(describe(&error));
+                return Err(describe(&error).into());
             }
         };
         self.rebind_host_after_restore();
@@ -459,7 +553,19 @@ impl Service {
             .ok_or("Project session identities exhausted")?;
         self.cancel();
         let store = self.store.as_ref().ok_or("Open a project first")?;
-        let prepared = snapshot(store, next, path, None).and_then(|workspace| {
+        #[cfg(test)]
+        let injected = self
+            .shared
+            .restore_show_failure
+            .swap(false, Ordering::AcqRel);
+        #[cfg(not(test))]
+        let injected = false;
+        let prepared = if injected {
+            Err("Injected failure showing the restored project".to_owned())
+        } else {
+            snapshot(store, next, path, None)
+        }
+        .and_then(|workspace| {
             let registers = registers::restore(store, next)?;
             let report = Arc::new(recovery::open_report(store, &workspace));
             Ok((workspace, registers, report))
@@ -469,16 +575,20 @@ impl Service {
             Err(error) => {
                 // The database is already the backup's: never leave the old
                 // session showing it. Close and ask for a reopen.
-                self.host = None;
+                self.retire_host();
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
                 self.clear_copied_slice();
                 self.clear_marks();
-                return Err(format!(
-                    "The backup was restored, but the project could not be shown ({error}). Reopen it; the state before restoring is in backup {}.",
-                    outcome.safety.backup.id
-                ));
+                return Err(RestoreFailure {
+                    code: "BackupRestoredNotShown",
+                    message: format!(
+                        "The backup was restored, but the project could not be shown ({error}). Reopen it; the state before restoring is in backup {}.",
+                        outcome.safety.backup.id
+                    ),
+                    restored_revision: Some(outcome.restored.revision_id.clone()),
+                });
             }
         };
         self.session = next;
@@ -512,6 +622,31 @@ impl Service {
             age(outcome.restored.info.created_unix_ms)
         );
         self.message = Some(message.clone());
-        Ok(message)
+        Ok((message, outcome))
+    }
+}
+
+/// Why a restore did not leave the restored project showing. A refusal
+/// changed nothing; the other codes mean the database already changed.
+pub(super) struct RestoreFailure {
+    code: &'static str,
+    message: String,
+    /// The head the database now holds, when known.
+    restored_revision: Option<deadpan_core::RevisionId>,
+}
+
+impl From<String> for RestoreFailure {
+    fn from(message: String) -> Self {
+        Self {
+            code: "BackupRestoreRefused",
+            message,
+            restored_revision: None,
+        }
+    }
+}
+
+impl From<&str> for RestoreFailure {
+    fn from(message: &str) -> Self {
+        message.to_owned().into()
     }
 }

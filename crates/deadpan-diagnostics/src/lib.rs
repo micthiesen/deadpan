@@ -242,6 +242,15 @@ pub struct PlaybackPictures {
     pub repositions_reached: Counter,
     /// Repositions that failed; the decoder reopens for its next picture.
     pub repositions_failed: Counter,
+    /// Look-ahead decoder positioning jobs started at an upcoming
+    /// discontinuity (cut, Repeat restart).
+    pub lookahead_started: Counter,
+    /// Look-ahead jobs that reached their target picture.
+    pub lookahead_reached: Counter,
+    /// Look-ahead opens or jobs that failed.
+    pub lookahead_failed: Counter,
+    /// Pictures at which the look-ahead decoder became the serving one.
+    pub lookahead_swaps: Counter,
 }
 
 pub static PLAYBACK_PICTURES: PlaybackPictures = PlaybackPictures {
@@ -252,6 +261,10 @@ pub static PLAYBACK_PICTURES: PlaybackPictures = PlaybackPictures {
     repositions: Counter::new(),
     repositions_reached: Counter::new(),
     repositions_failed: Counter::new(),
+    lookahead_started: Counter::new(),
+    lookahead_reached: Counter::new(),
+    lookahead_failed: Counter::new(),
+    lookahead_swaps: Counter::new(),
 };
 
 /// One observation of [`PLAYBACK_PICTURES`].
@@ -264,6 +277,10 @@ pub struct PlaybackPictureTotals {
     pub repositions: u64,
     pub repositions_reached: u64,
     pub repositions_failed: u64,
+    pub lookahead_started: u64,
+    pub lookahead_reached: u64,
+    pub lookahead_failed: u64,
+    pub lookahead_swaps: u64,
 }
 
 impl PlaybackPictures {
@@ -276,6 +293,10 @@ impl PlaybackPictures {
             repositions: self.repositions.get(),
             repositions_reached: self.repositions_reached.get(),
             repositions_failed: self.repositions_failed.get(),
+            lookahead_started: self.lookahead_started.get(),
+            lookahead_reached: self.lookahead_reached.get(),
+            lookahead_failed: self.lookahead_failed.get(),
+            lookahead_swaps: self.lookahead_swaps.get(),
         }
     }
 }

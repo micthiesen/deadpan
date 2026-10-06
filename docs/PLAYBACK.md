@@ -217,6 +217,44 @@ stopped transport replaces a displayed proxy picture with the exact one.
 The transport counts requested and skipped (dropped) frames and the worker
 counts exact and proxy pictures (`:diagnostics`, PLAYBACK).
 
+At any raster, edit playback decodes ahead of cuts
+(`deadpan_media::lookahead`). After each published playback picture the
+worker scans the immutable plan up to four seconds ahead
+(`LOOKAHEAD_HORIZON`) for the next picture that does not continue the
+Original sequentially: a backward jump (a cut or Repeat restart) or a
+forward jump of more than eight pictures (`MAX_FORWARD_STEP`; holds,
+background pictures and fast Retimes continue). The scan reuses the frames
+it already examined while playback moves through them, examines at most
+1,024 frames per call and restarts on a seek or a new revision. A companion
+decoder of the same Original (`SourceSession::companion`: the same verified
+snapshot, receipt index and shared background measurement) is positioned
+there on its own thread: a keyframe seek, then forward decoding to the
+exact picture, checking a stop flag between pictures. The serving decoder
+keeps decoding sequential pictures meanwhile. When a request's serving plan
+would seek (or decode more than eight pictures forward) and the companion
+reaches the picture with less work, the two swap roles; the old serving
+decoder becomes the companion for the next discontinuity. Sequential
+pictures always stay on the serving decoder.
+
+There is at most one companion decoder and one positioning thread per
+retained Original. A newer target, a stopped request, cancel, clear and
+shutdown stop the job within one native decoder call without the worker
+waiting; any request that is not playback closes the companion after its
+reply, and dropping the session joins the thread. A request reaching the
+cut before the companion waits for it only when the companion is already
+decoding forward and the serving decoder would otherwise seek; a companion
+still opening or seeking is ignored. Requests, generations, presentation
+identity, stale-reply rejection and the one-picture-in-flight rule are
+unchanged: only which decoder produces the exact picture changes, and
+every picture still passes the receipt-index check. The proxy fallback
+stays for pictures the companion did not reach. A failed companion reopens
+its decoder on next use, a target whose positioning failed is not retried
+until the target changes, and two failed opens disable it for the session.
+Original audition (sequential) and selection-loop seams are not looked
+ahead, and crossing a Generated Hold closes the Original session as
+before. `:diagnostics` counts look-ahead jobs started, reached, swapped and
+failed.
+
 The current device adapter requires the default route's existing 48 kHz stereo
 float configuration. Automatic device-rate conversion, full route recovery,
 acoustic synchronization/listening qualification, long-source preparation

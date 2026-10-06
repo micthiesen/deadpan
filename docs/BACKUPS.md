@@ -196,7 +196,7 @@ revision with a `before-restore` backup), then the newer-package view below.
 |---|---|
 | `project backups <p> [--verify]` | Every backup, newest first, with what it holds (`--verify` runs the complete verification on each). Read-only; works beside the app. |
 | `project backup <p>` | One verified manual backup, then rotation. Works beside the app (it uses its own read connection). |
-| `project restore <p> <id> [--dry-run \| --damaged]` | Restore, as above; `--damaged` replaces a database that no longer opens. Needs the writer, so it refuses a project the app has open (`ProjectAlreadyOpen`). `--dry-run` verifies and describes the backup and writes nothing. |
+| `project restore <p> <id> [--expected <rev>] [--dry-run \| --damaged]` | Restore, as above; `--damaged` replaces a database that no longer opens. `--expected` refuses unless that is the head revision. With the app open, it restores on the app's writer through the live endpoint, which starts the app's new session; the reply comes from the replaced owner before its endpoint stops. `--dry-run` verifies and describes the backup and writes nothing. |
 | `project view <p>` | Read-only summary that also opens newer packages and says why they are read-only. |
 
 ## Packages a newer Deadpan saved

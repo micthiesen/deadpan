@@ -20,6 +20,8 @@ pub mod export_picture;
 pub mod export_verification;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod faces;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod gags;
 pub mod generation;
 pub mod generation_context;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -45,6 +47,8 @@ pub mod render_worker;
 pub mod shots;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod single_original;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod sound_events;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod source_registration;
 pub mod speech;
@@ -85,13 +89,16 @@ const HELP: &str = "Deadpan headless commands:
   project view <project.deadpan>
   project backups <project.deadpan> [--verify]
   project backup <project.deadpan>
-  project restore <project.deadpan> <backup-id> [--dry-run | --damaged [--force-project <id>]]
-  project storage <project.deadpan> [--clean [--dry-run]] [--grace-hours N]
+  project restore <project.deadpan> <backup-id> [--expected <revision>] [--dry-run]
+  project restore <project.deadpan> <backup-id> --damaged [--force-project <id>]
+  project storage <project.deadpan> [--clean [--files-only] [--dry-run]] [--grace-hours N]
+  project storage <project.deadpan> --confirm-clock [--dry-run]
   project copy-portable <project.deadpan> <new-copy.deadpan>
   cache status [--grace-hours N]
   cache clean [--dry-run] [--grace-hours N]
   project retain-original <project.deadpan> <absolute-source> [--linked]
   project register-source <project.deadpan> --request-json <request.json> [--dry-run]
+  project insert-original <project.deadpan> --parent <node-id> --index <N> --expected <revision> [--dry-run]
   project adopt-primary-geometry <project.deadpan> --request-json <request.json> [--dry-run]
   project originals <project.deadpan> [--after <blake3-digest>]
   project original-provenance <project.deadpan> <blake3-digest>
@@ -109,6 +116,9 @@ const HELP: &str = "Deadpan headless commands:
   command <project.deadpan> --json <request.json> [--dry-run]
   macro inspect <project.deadpan> [--register a]
   macro <project.deadpan> --json <request.json> [--dry-run]
+  sound <project.deadpan> --json <request.json> [--dry-run]
+  sound --write-sting <new.wav>
+  gag-inspect <project.deadpan> --json <recipe.json> [--visual]
   render <project.deadpan> --output <directory> [--name <movie.mp4>] [--expected <revision>]
   render <project.deadpan> --json <request.json>
   verify-export <project.deadpan> --movie <movie.mp4> [--revision <id>] [--frames <N,N,...> | --every <N>] [--samples <START:END,...> | --no-audio] [--report <new.json>]
@@ -139,13 +149,18 @@ const HELP: &str = "Deadpan headless commands:
   detect-faces <project.deadpan> --at <pts> [--asset <id>]
   generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
   accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
+  ai-variants <project.deadpan> [--hold <node-id>] [--joins]
+  select-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
+  discard-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
   keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]
+  dismiss-attempt <project.deadpan> --request <request-id> --attempt <attempt-id>
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
 Rendering uses automatic SDR policy, emits bounded JSON lines, and requires a closed project on qualified macOS/APFS. SIGINT/SIGTERM requests cancellation and drain.
 Open-project Render routing, the native recovery browser, full mastering and HDR output remain unavailable.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
+While Deadpan.app has the project open, writes (command, macro, sound, corrections, undo/redo, register-source, insert-original, the AI hold commands, storage cleanup and restore) run through its live endpoint and refresh the app.
 create-original and create-from-url make a new one-Original project with its full-source baseline.
 create-from-url uses the pinned yt-dlp/Deno helpers bundled in Deadpan.app, else from `downloader install` (docs/YOUTUBE_IMPORT.md);
 cookies come only from an explicit file. You are responsible for having the rights to use imported videos.
@@ -590,7 +605,19 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["accept-hold", rest @ ..] => generation::command::run_accept(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
-        ["keep-hold", rest @ ..] => storage::run_keep_hold(rest),
+        ["keep-hold", rest @ ..] => generation::variants::run_action(rest, "keep-hold"),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["select-hold", rest @ ..] => generation::variants::run_action(rest, "select-hold"),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["discard-hold", rest @ ..] => generation::variants::run_action(rest, "discard-hold"),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["dismiss-attempt", rest @ ..] => generation::variants::run_action(rest, "dismiss-attempt"),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["ai-variants", rest @ ..] => generation::variants::run_report(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["sound", rest @ ..] => sound_events::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["gag-inspect", rest @ ..] => gags::run(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())
@@ -810,6 +837,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["project", "create-original", path, source] => {
             single_original::run(Path::new(path), Path::new(source))
         }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "insert-original", rest @ ..] => source_registration::run_insert_original(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         [
             "project",

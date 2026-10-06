@@ -60,6 +60,28 @@ impl Service {
                     .insert(register.as_char(), Value::Macro(program.clone()));
                 bank
             }
+            RemoteOperation::YankOriginal { register, .. } => {
+                // The same runtime value a native `y` in Original saves.
+                let Some(deadpan_core::RegisterValue::Original {
+                    asset,
+                    qualification,
+                    ordinals,
+                    ..
+                }) = prepared.final_bank.entries.get(register).map(AsRef::as_ref)
+                else {
+                    return Err("Remote Original copy has no prepared value".into());
+                };
+                let value = Value::Original {
+                    asset: asset.clone(),
+                    qualification: qualification.clone(),
+                    ordinals: ordinals.clone(),
+                };
+                let mut bank = runtime.clone();
+                bank.version = prepared.final_bank.version;
+                bank.entries.insert('"', value.clone());
+                bank.entries.insert(register.as_char(), value);
+                bank
+            }
             RemoteOperation::Run { .. } | RemoteOperation::Apply { .. } => {
                 let plan = prepared.plan.as_ref().ok_or("Remote macro has no plan")?;
                 prepare_runtime_bank(&id, runtime, &prepared.bank, &prepared.final_bank, plan)?

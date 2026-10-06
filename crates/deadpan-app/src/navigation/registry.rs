@@ -280,11 +280,12 @@ impl Replay {
 }
 
 /// Headless parity status, as in [PARITY](../../../../docs/PARITY.md).
+/// Every action is either reachable headlessly through the same typed path
+/// or has no project write to reach; a new action that is neither needs a
+/// headless form before it ships.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Parity {
     Equivalent,
-    Partial,
-    Gap,
     GuiOnly,
 }
 
@@ -292,8 +293,6 @@ impl Parity {
     pub fn label(self) -> &'static str {
         match self {
             Self::Equivalent => "Equivalent",
-            Self::Partial => "Partial",
-            Self::Gap => "Gap",
             Self::GuiOnly => "GUI-only",
         }
     }
