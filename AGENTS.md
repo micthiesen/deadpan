@@ -4,6 +4,17 @@ Deadpan is a native macOS structural editor for massaging one original video int
 
 ## Product authority and current scope
 
+Verification scope (owner decision 2026-10-05; spec §29.1): Deadpan is used
+primarily on this Mac. Requirements are complete when implemented and verified
+with what the agent can exercise here (tests, replays, real-media runs, release
+builds and measurements on this machine, the Accessibility API without
+screenshots). Anything needing a clean or second Mac, other hardware tiers,
+physical keyboards/OS input methods, VoiceOver speech, listening or human
+judgement, rights-cleared real-person footage, physical power/display tests or
+unavailable accounts goes on the To verify (owner) list in
+[REQUIREMENTS.md](docs/REQUIREMENTS.md#to-verify-owner) with exact steps and
+does not block completion. Do not thrash on it; never stub the implementation.
+
 For the ongoing development goal/session, the user confirmed on 2026-09-30 that
 the project has no users and will remain unused. Breaking project-format and
 schema changes are authorized; omit migrations and compatibility with existing
@@ -1115,6 +1126,19 @@ retain their normal rejection and revision behavior. See
 [the workspace contract](docs/NATIVE_WORKSPACE.md).
 
 The native UI submits typed project requests through one bounded service mailbox. Background analysis saves use their own one-request lane and never occupy the user-command slot or its error. User actions refused while another project command holds the writer (file pickers, playback, room tone) state why; per-frame dispatchers retain and retry their work. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes, except for a matching completion in the UI-owned explicit Repeat chain. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
+
+Every background job registers with the app's job coordinator
+(`crate::jobs`, `service.jobs()`) and holds its `JobHandle` for its whole
+life. Editing and preview/audio are never jobs and never wait for one. Wait for
+admission only where the job holds no project writer and after any short
+revision-bound capture, so queueing cannot stale it; record durable attempts
+before waiting. Yield only at real safe boundaries (`checkpoint`, or
+`pause_reason` for a suspendable worker); never promise to pause a model
+mid-step. Panel cancellation sets the job's own cancel flag and sends its
+existing cancel request; a cancelled runner keeps its slot until it drains.
+Shutdown releases waiters before each job's own shutdown joins it. New job
+kinds get a fixed priority, resource and yield rule in `JobKind::rules` and a
+row in [jobs](docs/JOBS.md).
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.

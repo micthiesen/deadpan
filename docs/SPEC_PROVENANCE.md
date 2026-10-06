@@ -60,6 +60,14 @@ signature is needed, with the owner's local signing identity from dotfiles
 Licensing notices and the SBOM remain, since the bundle still ships
 third-party code.
 
+On 2026-10-05 the owner also limited required verification to what can be
+exercised on this machine (§29.1 Verification scope). Checks needing a clean or
+second Mac, other hardware tiers, physical keyboards/IMEs, VoiceOver speech,
+listening or human judgement, rights-cleared real-person footage, physical
+power/display tests or unavailable accounts are recorded as To verify (owner)
+and do not block completion; §13.4, §25.1, §26.2 fixture text and §26.6 were
+revised to match. Implementation scope is unchanged.
+
 Source archive SHA-256: `7c44444cdbabaa7196910fb7affefc03f0c920169f2ffa2a710ea6bccd236046`.
 
 | File | Bytes | SHA-256 |

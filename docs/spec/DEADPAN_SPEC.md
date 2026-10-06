@@ -764,7 +764,7 @@ Likewise, a model's advertised throughput on a datacenter GPU does not establish
 
 ## 13.4 Required bake-off
 
-Use a rights-cleared fixture corpus with at least 30 short source moments: one person, two people, off-center faces, glasses, hands near faces, existing background motion, low light, compression, camera movement, and non-face details. Include 0.5, 1, 2, and 3-second holds, plus entry/exit seams.
+Where rights-cleared footage is available, use a fixture corpus with at least 30 short source moments (gathering and judging it is To verify (owner) under §29.1): one person, two people, off-center faces, glasses, hands near faces, existing background motion, low light, compression, camera movement, and non-face details. Include 0.5, 1, 2, and 3-second holds, plus entry/exit seams.
 
 For each hardware tier and candidate, record cold/warm latency, p50/p95 time-to-first-usable-candidate, peak unified-memory pressure, swap growth, thermal state, UI frame times during inference, output resolution, failure rate, and human acceptability. Count failed generations in performance results; timing only the successful sample is misleading.
 
@@ -1310,7 +1310,7 @@ These are **engineering targets**, not measured results for a program that alrea
 
 ## 25.1 Reference tiers
 
-The primary optimization target is the user's M5 Max / 128 GB machine. Qualification also includes a lower-memory Apple Silicon tier, initially 16–24 GB, and an intermediate 32–64 GB tier. The smaller tier must support the complete conventional editor and a clearly reported compatible AI pack where feasible; it must not attempt to load a large pack beyond its qualified memory envelope.
+The primary optimization target is the user's M5 Max / 128 GB machine. Qualification also includes a lower-memory Apple Silicon tier, initially 16–24 GB, and an intermediate 32–64 GB tier. The smaller tier must support the complete conventional editor and a clearly reported compatible AI pack where feasible; it must not attempt to load a large pack beyond its qualified memory envelope. Measurements on tiers other than the owner's machine are To verify (owner) under §29.1.
 
 Support Apple Silicon natively. Set the core application's initial deployment baseline to macOS 15, subject to dependency qualification. Model packs requiring newer macOS versions advertise that independently; do not make the whole editor require a newer OS solely because one optional backend does. Intel, Windows, Linux, and iPad ports are not required by this macOS product specification.
 
@@ -1352,7 +1352,7 @@ Test that grouping/ungrouping and exploding a repeat preserve rendered output. V
 
 Generate original fixture videos with visible frame numbers, moving geometric targets, known color patches, sharp cuts, and timed audio impulses. Include integer and fractional frame rates, VFR, non-zero/negative starting PTS, B-frames, rotated video, anamorphic samples, 44.1 kHz source audio, mono/stereo/multichannel layouts, long GOPs, and interlaced material.
 
-For AI and face tracking, use rights-cleared real-person footage with documented consent/source license. Synthetic geometric fixtures alone cannot establish identity preservation in generated human video. Keep AI quality tests separate from deterministic engine tests.
+For AI and face tracking, use rights-cleared real-person footage with documented consent/source license when available; its collection and human review are To verify (owner) under §29.1. Synthetic geometric fixtures alone cannot establish identity preservation in generated human video. Keep AI quality tests separate from deterministic engine tests.
 
 ## 26.3 Required integration tests
 
@@ -1394,7 +1394,7 @@ Include one-source onboarding into Documents/Deadpan from different launch direc
 
 Install the self-contained bundle on a supported Mac with no Homebrew, system Python setup, FFmpeg, yt-dlp, Deno, Xcode command-line tools, or preexisting model cache. Import local media, import a permitted YouTube source, download the approved model through the app, generate/accept a hold, save, restart, disconnect networking, reopen, and render.
 
-Also test the full offline distribution from initial launch with networking disabled. Verify every nested executable/library loads under hardened runtime. A build that works only on the developer's machine does not pass.
+Also test the full offline distribution from initial launch with networking disabled. Verify every nested executable/library loads under hardened runtime. The agent approximates this on the owner's machine (relocated bundle, scrubbed environment, isolated home and caches, network denied); the true clean-machine run is To verify (owner) under §29.1.
 
 # 27. Security, licensing, and distribution
 
@@ -1450,6 +1450,12 @@ Do not encode an entire intermediate movie after every edit. Do not store frame 
 # 29. Requirements traceability
 
 The implementation tracker must map every requirement to code, tests, and a demonstrable acceptance result. The following IDs define the release surface; the detailed sections remain normative.
+
+## 29.1 Verification scope
+
+Deadpan is a personal application used primarily on the owner's M5 Max (owner decision, 2026-10-05). A requirement is complete when its implementation exists, passes its automated and harness evidence, and is verified with whatever can be exercised on this machine by the implementing agent: unit, integration, property and adversarial tests, deterministic replay harnesses, real-media runs on available files, release builds and measurements on this Mac, and the macOS Accessibility API without screenshots.
+
+Verification that needs anything unavailable to the agent here is recorded as **To verify (owner)** with exact steps, and does not block completion. This includes: a clean or second Mac; lower-memory or other hardware tiers; physical keyboard delivery, real OS input methods and non-US hardware layouts beyond replayed events; VoiceOver speech and other assistive-technology output; listening, perceptual and human-acceptability judgements; rights-cleared real-person footage and human video quality review; physical display, power-loss and thermal tests; and anything requiring accounts or credentials the agent does not hold. The implementation itself remains in scope: features must still be built, never stubbed, and the To verify list states what was not exercised.
 
 | ID | Requirement | Primary evidence |
 |---|---|---|
