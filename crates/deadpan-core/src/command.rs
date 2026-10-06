@@ -511,6 +511,33 @@ define_commands! {
         edit: crate::ScopedNodeEdit,
         identities: OccurrenceIdentities,
     },
+    /// Value edits on several explicit scoped targets in one transaction, such
+    /// as one node in plays 2 and 3 only. Each target has its own value and
+    /// fresh pool, sized by `scoped_many_requirements`; unchanged targets
+    /// take an empty pool. Partial-range values (a ranged gain envelope)
+    /// apply inside each selected play only.
+    EditScopedMany {
+        edits: Vec<crate::ScopedTargetEdit>,
+        identities: Vec<OccurrenceIdentities>,
+    },
+    /// Convert a Repeat into an ordinary Sequence of independent plays,
+    /// preserving every current picture, sample, timing, override and
+    /// attachment. `timing` names a materialized default gap's captured clock.
+    Explode {
+        node: NodeId,
+        identities: OccurrenceIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Copy a direct child, sibling span or range of an ordinary Sequence
+    /// immediately after itself, with fresh identities and shared media.
+    Duplicate {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        identities: crate::SlicePasteIdentities,
+        #[serde(default, skip_serializing_if = "crate::SplitIdentities::is_empty")]
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
 
 }
 impl<'de> Deserialize<'de> for Command {
@@ -998,6 +1025,33 @@ fn apply_with_durations(
         &request.expected_revision,
         &request.new_revision,
     )?;
+    if let Command::Duplicate {
+        parent,
+        selection,
+        identities,
+        split_identities,
+        timing,
+    } = &request.command
+    {
+        // Duplicate is paste of this exact revision's own capture. Resolving it
+        // here lets every placement transform (marks, clocks, root sounds,
+        // allowances) run once through the established slice path.
+        let command = crate::duplicate::resolve(
+            document,
+            parent,
+            selection,
+            identities,
+            split_identities,
+            timing,
+        )?;
+        let resolved = CommandRequest {
+            command,
+            ..request.clone()
+        };
+        let (mut edit, result, validation) = apply_with_durations(document, &resolved, previous)?;
+        edit.description = description(&request.command).into();
+        return Ok((edit, result, validation));
+    }
     if matches!(request.command, Command::Compound { .. }) {
         let outcome = crate::replay_compound::<EditError>(document, request, |_| Ok(()))?;
         let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
@@ -1249,6 +1303,14 @@ fn apply_with_durations(
             edit,
             identities,
         } => crate::scoped_edit::apply(input, target, edit, identities, context)?,
+        Command::EditScopedMany { edits, identities } => {
+            crate::scoped_edit::apply_many(input, edits, identities, context)?
+        }
+        Command::Explode {
+            node,
+            identities,
+            timing,
+        } => crate::explode::apply(input, node, identities, timing, context)?,
         command => {
             let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
@@ -1788,10 +1850,18 @@ pub(crate) fn reduce(
                 "splits require the retained-context entrypoint",
             ));
         }
-        Command::EditOccurrence { .. } | Command::EditScoped { .. } => {
+        Command::EditOccurrence { .. }
+        | Command::EditScoped { .. }
+        | Command::EditScopedMany { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "occurrence edits require the isolation entrypoint",
+            ));
+        }
+        Command::Explode { .. } | Command::Duplicate { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "explode and duplicate require their retained-clock entrypoints",
             ));
         }
         Command::Insert {
@@ -3068,6 +3138,9 @@ fn description(command: &Command) -> &'static str {
         Command::ClearGapOverride { .. } => "Clear gap override",
         Command::EditOccurrence { .. } => "Edit selected occurrence",
         Command::EditScoped { .. } => "Edit scoped value",
+        Command::EditScopedMany { .. } => "Edit scoped value in several plays",
+        Command::Explode { .. } => "Explode repeat",
+        Command::Duplicate { .. } => "Duplicate",
     }
 }
 

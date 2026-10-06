@@ -161,9 +161,30 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             marks.extend(&identities.marks);
             occurrence(edit, nodes);
         }
-        Command::EditScoped { identities, .. } => {
+        Command::EditScopedMany { identities, .. } => {
+            for pool in identities {
+                nodes.extend(&pool.nodes);
+                marks.extend(&pool.marks);
+            }
+        }
+        Command::EditScoped { identities, .. } | Command::Explode { identities, .. } => {
             nodes.extend(&identities.nodes);
             marks.extend(&identities.marks);
+        }
+        Command::Duplicate {
+            identities,
+            split_identities,
+            ..
+        } => {
+            nodes.extend(
+                identities
+                    .authored
+                    .nodes
+                    .iter()
+                    .chain(&identities.aliases)
+                    .chain(&split_identities.nodes),
+            );
+            marks.extend(&identities.authored.marks);
         }
         Command::Compound { .. }
         | Command::SlipSource { .. }

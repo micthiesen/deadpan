@@ -866,3 +866,56 @@ fn occurrence_audio_setter_retires_only_the_isolated_hold_permission() {
     assert_eq!(isolated.sounds(), allowed.sounds());
     assert_eq!(isolated.sound_routes(), allowed.sound_routes());
 }
+
+#[test]
+fn explode_moves_concrete_and_default_gap_permissions_to_their_new_holds() {
+    let original = fixture(true);
+    let outer0 = play(&original, "outer", 0);
+    let outer1 = play(&original, "outer", 1);
+    let inner = |index| play(&original, "inner", index);
+    let gap = SoundHoldIssuer::RepeatGap {
+        instance: InstancePath {
+            node: node("inner"),
+            repeats: vec![outer0.clone()],
+        },
+        gap_after: inner(0).iteration,
+    };
+    let mut allowed = original.clone();
+    for issuer in [
+        address("hold", vec![outer0.clone(), inner(0)]),
+        address("hold", vec![outer0.clone(), inner(1)]),
+        address("hold", vec![outer1.clone(), inner(2)]),
+        gap,
+    ] {
+        allowed = allow(&allowed, issuer);
+    }
+    let needs = allowed.explode_requirements(&node("inner")).unwrap();
+    // Two copied plays and two materialized gaps.
+    assert_eq!(needs.nodes, 4);
+    let exploded = edit(
+        &allowed,
+        Command::Explode {
+            node: node("inner"),
+            identities: OccurrenceIdentities {
+                nodes: (0..needs.nodes).map(|n| node(&format!("x-n{n}"))).collect(),
+                marks: vec![],
+            },
+            timing: AudioTimingId {
+                allocation: RevisionId::new(format!("{}x", allowed.revision_id())).unwrap(),
+                ordinal: 0,
+            },
+        },
+    )
+    .0;
+    let values = &exploded.sound_allowances()[&sound()];
+    assert_eq!(values.len(), 4);
+    for issuer in [
+        address("hold", vec![outer0.clone()]),
+        address("x-n1", vec![outer0.clone()]),
+        address("x-n3", vec![outer1]),
+        address("x-n0", vec![outer0]),
+    ] {
+        assert!(values.contains(&issuer), "{issuer:?}");
+    }
+    assert_eq!(exploded.sounds(), allowed.sounds());
+}

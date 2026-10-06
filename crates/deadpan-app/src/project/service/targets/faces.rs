@@ -126,9 +126,16 @@ impl Service {
             asset: Some(asset),
             at_pts: pts,
         };
+        let handle = self.shared.job_board.register(
+            crate::jobs::JobSpec::new(crate::jobs::JobKind::Faces, Some(session))
+                .detail("the displayed picture")
+                .cancel_flag(&cancelled),
+        );
         let thread = std::thread::Builder::new()
             .name("deadpan-faces".into())
             .spawn(move || {
+                // Registered until the detector has returned.
+                let _handle = handle;
                 job_thread(
                     detector,
                     package,

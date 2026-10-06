@@ -450,6 +450,27 @@ impl DeadpanApp {
         }
     }
 
+    /// `:gain +3dB range=4-10`: a constant step over exactly those local
+    /// frames of the captured beat, keeping its other gain and saturation.
+    /// Inside Repeat contents it changes only the selected play or plays.
+    pub(super) fn gain_range_captured(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        millidecibels: i32,
+        range: deadpan_core::GainRange,
+    ) {
+        let result = target
+            .unwrap_or_else(|| Err("No gain target was captured on command entry.".into()))
+            .and_then(|target| {
+                let recipe = crate::gain::ranged_step(&target.entry, range, millidecibels)?;
+                Ok((target, recipe))
+            });
+        match result {
+            Ok((target, recipe)) => self.commit_gain(target, recipe),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     /// `:saturate 12dB` / `:saturate off`: the captured beat's saturation
     /// stage, after its clip gain, as one Undo. A whole beat in the current
     /// group is changed through the semantic path, so `.` repeats it and a

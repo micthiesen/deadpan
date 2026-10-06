@@ -29,8 +29,10 @@ pub use command_work::{binding_wire_check_for_tests, diff_for_tests, with_refere
 mod compound;
 mod cutaway;
 mod document;
+mod duplicate;
 mod edit_slice;
 mod exact;
+mod explode;
 mod framing;
 mod gap_override;
 mod generated;
@@ -93,11 +95,13 @@ pub use command::*;
 pub use compound::*;
 pub use cutaway::*;
 pub use document::*;
+pub use duplicate::DuplicateRequirements;
 pub use edit_slice::{
     CapturedEditSlice, SequenceChildrenPlan, SliceCaptureSelection, SliceIdentityRequirements,
     SlicePasteIdentities,
 };
 pub use exact::ExactRatio;
+pub use explode::ExplodeRequirements;
 pub use framing::*;
 pub use generated::*;
 pub use group_selection::{GroupSelectionIdentities, GroupSelectionPlan, validate_group_label};
@@ -116,8 +120,9 @@ pub use repeat_escalation::*;
 pub use repeat_layout::*;
 pub use repeat_selection::{RepeatGapHold, RepeatSelectionIdentities, RepeatSelectionPlan};
 pub use scoped_edit::{
-    PreparedScopedEdit, RepeatEditBranch, RepeatEditStep, ScopedEditRequirements, ScopedNodeEdit,
-    ScopedNodeTarget, prepare_scoped_edit,
+    MAX_SCOPED_TARGETS, PreparedScopedEdit, RepeatEditBranch, RepeatEditStep,
+    ScopedEditRequirements, ScopedNodeEdit, ScopedNodeTarget, ScopedTargetEdit,
+    prepare_scoped_edit,
 };
 pub use semantic::*;
 pub use sound_allowance::*;

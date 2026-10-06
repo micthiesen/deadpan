@@ -51,6 +51,12 @@ pub enum RepeatableEdit {
         label: String,
     },
     Ungroup,
+    /// `:explode`: the selected Repeat becomes an ordinary Sequence of plays.
+    Explode,
+    /// `:duplicate`: copy the selected beat or the current Visual range in place.
+    Duplicate {
+        selector: SemanticSelector,
+    },
     /// A creative edit of the selected beat or at the cursor that keeps its
     /// exact parameters: gain and saturation, pauses, reverse and ping-pong
     /// pauses, tails, framing, cutaways, captions, speed, pitch, pause
@@ -138,6 +144,14 @@ impl LastEdit {
                 label: label.clone(),
             },
             RepeatableEdit::Ungroup => SemanticInstruction::Ungroup,
+            RepeatableEdit::Explode => SemanticInstruction::Explode,
+            RepeatableEdit::Duplicate { selector } => SemanticInstruction::Duplicate {
+                selector: if context.visual_selection.is_some() {
+                    SemanticSelector::VisualSelection
+                } else {
+                    *selector
+                },
+            },
             RepeatableEdit::Parameter(instruction) => instruction.clone(),
         }
     }
@@ -161,6 +175,20 @@ impl LastEdit {
         if let SemanticInstruction::Ungroup = instruction {
             return Some(Self {
                 operation: RepeatableEdit::Ungroup,
+                register: None,
+            });
+        }
+        if let SemanticInstruction::Explode = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::Explode,
+                register: None,
+            });
+        }
+        if let SemanticInstruction::Duplicate { selector } = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::Duplicate {
+                    selector: *selector,
+                },
                 register: None,
             });
         }
@@ -228,7 +256,7 @@ impl Snapshot {
             return Err("The saved project changed. Reopen it before repeating an edit.".into());
         }
         self.edit.as_ref().ok_or_else(|| {
-            "No repeatable edit is available. Cut, group, ungroup, wrap a Repeat or set its play count first.".into()
+            "No repeatable edit is available. Cut, group, ungroup, explode, duplicate, wrap a Repeat or set its play count first.".into()
         })
     }
 }

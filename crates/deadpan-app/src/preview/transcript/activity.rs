@@ -199,12 +199,26 @@ impl DeadpanApp {
         self.transcription.events = Some(receiver);
         self.transcription.activity.start();
         let repaint = context.clone();
+        let handle = self.service.jobs().register(
+            crate::jobs::JobSpec::new(
+                crate::jobs::JobKind::SpeechActivity,
+                self.transcription.session,
+            )
+            .detail("the Original")
+            .cancel_flag(&cancel),
+        );
         let spawned = std::thread::Builder::new()
             .name("deadpan-speech-activity".into())
             .spawn(move || {
                 let deadline = std::time::Instant::now() + Duration::from_secs(60 * 60);
-                let result =
-                    prepare(&package, &cancel, deadline).and_then(|(analysis, runtime)| {
+                let result = handle
+                    .wait_admitted(Some(&cancel))
+                    .map_err(|stopped| format!("pause detection was {stopped} before it started"))
+                    .and_then(|()| {
+                        handle.set_progress("Detecting speech", None);
+                        prepare(&package, &cancel, deadline)
+                    })
+                    .and_then(|(analysis, runtime)| {
                         detect(&runtime, &vad, &analysis, &cancel, deadline)
                     });
                 let _ = sender.send(Event::Detected { result, last: true });

@@ -479,6 +479,19 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 nodes: nodes(required_split_ids)?,
             },
         },
+        SemanticAllocationRequest::Explode {
+            nodes: count,
+            marks,
+            ..
+        } => SemanticAllocation::Explode {
+            new_revision: crate::new_revision()?,
+            identities: OccurrenceIdentities {
+                nodes: nodes(count)?,
+                marks: (0..marks)
+                    .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
+                    .collect::<Result<_, _>>()?,
+            },
+        },
         SemanticAllocationRequest::PasteOriginal {
             required_split_ids, ..
         } => SemanticAllocation::PasteOriginal {

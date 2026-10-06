@@ -171,6 +171,10 @@ pub enum Action {
     LeaveGroup,
     Group,
     Ungroup,
+    /// `:explode`: the selected Repeat becomes an ordinary Sequence of its plays.
+    Explode,
+    /// `:duplicate`: copy the selected beat or Visual range after itself.
+    Duplicate,
     /// `,e`: wrap the selected beat or Visual range in an escalating Repeat.
     EscalatingRepeat,
     /// `,m`: mute the Visual range inside the selected beat, or toggle the
@@ -741,6 +745,8 @@ impl Bindings {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::Explode
+                | Action::Duplicate
                 | Action::MacroExecute { .. },
             ) => true,
             Some(Action::Operator { cut: true, .. }) => true,

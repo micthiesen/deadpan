@@ -70,6 +70,17 @@ impl Capture {
         groups::instruction(&self.base.document, &self.context, label)
     }
 
+    /// `:explode` (true) or `:duplicate` (false) at the captured target.
+    pub(super) fn structure_instruction(
+        &self,
+        explode: bool,
+    ) -> Result<SemanticInstruction, String> {
+        if self.scope.resolve(&self.base)?.owner != &self.context.parent {
+            return Err("The captured target differs from its ordinary Sequence scope.".into());
+        }
+        groups::structure_instruction(&self.base.document, &self.context, explode)
+    }
+
     pub(super) fn repeat_count_instruction(
         &self,
         plays: NonZeroU32,
@@ -335,6 +346,8 @@ impl DeadpanApp {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::Explode
+                | Action::Duplicate
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
                 | Action::Reverse { .. }
@@ -376,7 +389,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -399,6 +412,8 @@ impl DeadpanApp {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::Explode
+                | Action::Duplicate
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
                 | Action::Reverse { .. }
@@ -929,6 +944,13 @@ impl DeadpanApp {
             }
             if matches!(
                 edit.operation,
+                crate::project::semantic::RepeatableEdit::Explode
+            ) && captured.context.visual_selection.is_some()
+            {
+                return Err("Clear the Visual range before repeating Explode.".into());
+            }
+            if matches!(
+                edit.operation,
                 crate::project::semantic::RepeatableEdit::SetRepeatPlays { .. }
             ) && captured.context.visual_selection.is_some()
             {
@@ -959,6 +981,8 @@ impl DeadpanApp {
                     } | crate::project::semantic::RepeatableEdit::Group {
                         selector: deadpan_core::SemanticSelector::VisualSelection,
                         ..
+                    } | crate::project::semantic::RepeatableEdit::Duplicate {
+                        selector: deadpan_core::SemanticSelector::VisualSelection,
                     }
                 ) =>
                 {

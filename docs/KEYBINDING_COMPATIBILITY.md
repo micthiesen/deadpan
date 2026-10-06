@@ -10,6 +10,8 @@ into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
 Named Group uses `,g` (`group.create`) to open captured command entry.
+`structure.explode` and `structure.duplicate` are configurable with no default
+key path; `:explode` and `:duplicate` are their command aliases and take no count.
 `group.ungroup` is configurable and has no default key path; `:ungroup` is its
 command alias. Neither accepts a count or held activation. The comma prefix
 teaches `g`, and the terminal key's native text companion is consumed before

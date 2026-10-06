@@ -28,6 +28,7 @@ mod generated_picture;
 mod group_pixels;
 mod groups;
 mod hold_effects;
+mod jobs;
 mod keymap;
 mod layouts;
 mod macros;
@@ -58,6 +59,7 @@ mod sound_playback;
 mod splice;
 mod split_edits;
 mod storage;
+mod structure_copies;
 mod targets;
 mod telemetry;
 mod transcript;
@@ -310,6 +312,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(library),
                             if name == "ai-pause" {
                                 ai_pause::backend()
+                            } else if name == "jobs" {
+                                jobs::backend()
                             } else if name == "ai-variants" || name == "full-session" {
                                 ai_pause::variants_backend()
                             } else {

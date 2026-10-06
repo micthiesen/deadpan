@@ -453,6 +453,7 @@ fn scoped_render_preview_validates_captured_context_and_retains_mapped_commit_af
             }],
         },
         presentation: None,
+        also: Vec::new(),
         cursor: ProjectFrame(4),
     };
     let rows = saved_receipts::counts(&path);
@@ -463,7 +464,7 @@ fn scoped_render_preview_validates_captured_context_and_retains_mapped_commit_af
             "scoped-unchanged",
             ticket,
             ProjectEdit::Scoped {
-                target: target.clone(),
+                target: Box::new(target.clone()),
                 edit: ScopedNodeEdit::SetFraming { framing: None },
             },
         );
@@ -492,7 +493,7 @@ fn scoped_render_preview_validates_captured_context_and_retains_mapped_commit_af
         "scoped-bad-limits",
         3,
         ProjectEdit::Scoped {
-            target: target.clone(),
+            target: Box::new(target.clone()),
             edit: ScopedNodeEdit::SetFraming {
                 framing: Some(
                     deadpan_core::Framing::static_pose(deadpan_core::FramingPose::default())

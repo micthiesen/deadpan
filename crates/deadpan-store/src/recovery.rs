@@ -17,6 +17,8 @@ use serde::{Deserialize, Serialize};
 use crate::StoreError;
 
 const PENDING_NAME: &str = "recovery-pending.json";
+/// Interrupted generation attempts the person discarded from the retry list.
+const DISMISSED_NAME: &str = "dismissed-interruptions.json";
 const MAX_PENDING_BYTES: u64 = 256 * 1024;
 
 /// Bound on the attempts one report lists; the counts stay exact.
@@ -202,4 +204,91 @@ pub(crate) fn clear_pending(package: &Path) -> Result<(), StoreError> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error.into()),
     }
+}
+
+/// The most dismissals one record keeps. Dismissals are pruned to offered
+/// attempts (one per current request), so this is far above real use.
+pub const MAX_DISMISSED_GENERATIONS: usize = 1024;
+
+/// Interrupted generation attempts offered for retry or discard.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InterruptedGenerations {
+    pub attempts: Vec<InterruptedGeneration>,
+    /// Why earlier dismissals could not be read, when they could not; every
+    /// offered attempt is then listed.
+    pub warning: Option<String>,
+}
+
+/// `(request, attempt)` identities dismissed from the interrupted-generation
+/// list, and why they could not be read, if so.
+pub(crate) struct Dismissals {
+    pub(crate) entries: Vec<(String, String)>,
+    pub(crate) warning: Option<String>,
+}
+
+/// Read the dismissal record. Never fails: a missing record means none, and
+/// an unreadable, oversized or corrupt one hides nothing (with a warning)
+/// and is replaced by the next dismissal.
+pub(crate) fn read_dismissed_generations(package: &Path) -> Dismissals {
+    let path = package.join("Reports").join(DISMISSED_NAME);
+    let read = || -> Result<Option<Vec<(String, String)>>, String> {
+        let metadata = match fs::symlink_metadata(&path) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error.to_string()),
+            Ok(metadata) => metadata,
+        };
+        if !metadata.file_type().is_file() {
+            return Err("it is not a regular file".into());
+        }
+        let mut bytes = Vec::new();
+        // One byte past the limit tells an oversized record from a full one;
+        // a truncated record is never parsed.
+        fs::File::open(&path)
+            .and_then(|file| file.take(MAX_PENDING_BYTES + 1).read_to_end(&mut bytes))
+            .map_err(|error| error.to_string())?;
+        if bytes.len() as u64 > MAX_PENDING_BYTES {
+            return Err(format!("it is larger than {MAX_PENDING_BYTES} bytes"));
+        }
+        let entries: Vec<(String, String)> =
+            serde_json::from_slice(&bytes).map_err(|error| error.to_string())?;
+        if entries.len() > MAX_DISMISSED_GENERATIONS {
+            return Err(format!(
+                "it lists more than {MAX_DISMISSED_GENERATIONS} attempts"
+            ));
+        }
+        Ok(Some(entries))
+    };
+    match read() {
+        Ok(entries) => Dismissals {
+            entries: entries.unwrap_or_default(),
+            warning: None,
+        },
+        Err(reason) => Dismissals {
+            entries: Vec::new(),
+            warning: Some(format!(
+                "Earlier discarded AI attempts could not be read ({reason}), so every interrupted attempt is listed again. Discarding one rewrites the record."
+            )),
+        },
+    }
+}
+
+pub(crate) fn write_dismissed_generations(
+    package: &Path,
+    dismissed: &[(String, String)],
+) -> Result<(), StoreError> {
+    if dismissed.len() > MAX_DISMISSED_GENERATIONS {
+        return Err(StoreError::GenerationAttempt(format!(
+            "more than {MAX_DISMISSED_GENERATIONS} interrupted attempts are dismissed"
+        )));
+    }
+    let directory = reports(package)?;
+    let mut temporary = tempfile::NamedTempFile::new_in(&directory)?;
+    serde_json::to_writer(&mut temporary, dismissed)?;
+    temporary.write_all(b"\n")?;
+    temporary.as_file().sync_all()?;
+    temporary
+        .persist(directory.join(DISMISSED_NAME))
+        .map_err(|error| error.error)?;
+    fs::File::open(&directory)?.sync_all()?;
+    Ok(())
 }

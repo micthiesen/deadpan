@@ -122,7 +122,7 @@ the footer teach the actions:
 | --- | --- | --- |
 | Generate | `,a`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant |
 | Generate several | `:generate N` (1 to 4) | One job that generates N variants, one attempt after another |
-| Cancel | `:cancel-ai` (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
+| Cancel | `:cancel-ai`, or X in the Jobs panel (`:jobs`) (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
 | Choose | `:next-ai`, `:prev-ai`, `:pick-ai N`, a click on a variant row | Choose which variant Preview, Audition and Accept use; stored as the request's selection, never an edit |
 | Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the chosen variant's pictures in the viewer at the edit cursor |
 | Audition | `:audition-ai`, Audition; Space while previewing | Play the pause with the chosen variant's pictures and the pause's own sound |
@@ -140,6 +140,17 @@ the rest of the workflow is command-only, so the
 - **Start** captures session, revision, Hold and the variant count. The service resolves
   `BridgeRuntime::from_environment` first. A missing runtime ends the job as
   Unavailable with the runtime's own text, records nothing and starts no thread.
+- **Queueing.** The job registers with the [job coordinator](JOBS.md). Its
+  model run needs the single AI model slot: while transcription (or another
+  model) holds it, the job conditions and records its attempt at once, then
+  shows `Queued for the AI model` until admitted. Each attempt holds the slot
+  only while its worker runs and releases it before publication. After
+  waiting, the job rereads its request; if edits made it stale, the model is
+  not loaded and the attempt ends Cancelled with a note. Edits continue meanwhile;
+  `:cancel-ai` or the Jobs panel cancels a queued job, whose attempt ends
+  Cancelled without a worker. After a crash, the Jobs panel lists the
+  interrupted attempt with Retry (a new variant through `:generate`) and
+  Discard.
 - One bounded job thread per project (`deadpan-ai-pause`) runs
   `conditioning::prepare` (read-only store) and then `run_worker`. Allocation,
   every `AttemptRecord`, `finish` and acceptance run on the service's writer

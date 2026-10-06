@@ -274,6 +274,17 @@ impl DeadpanApp {
                 request,
                 attempt,
             },
+            GenerationOperation::DismissInterrupted {
+                session,
+                request,
+                attempt,
+                ..
+            } => GenerationOperation::DismissInterrupted {
+                ticket,
+                session,
+                request,
+                attempt,
+            },
             accept @ GenerationOperation::Accept { .. } => accept,
         };
         match self.service.submit(ProjectRequest::Generation(operation)) {
@@ -328,6 +339,79 @@ impl DeadpanApp {
             job,
         });
         Ok(())
+    }
+
+    /// The Jobs panel's Cancel: the same request as `:cancel-ai`.
+    pub(super) fn ai_cancel_running(&mut self) -> Result<(), String> {
+        self.ai_cancel()
+    }
+
+    /// Interrupted attempts offered for retry, for the published session.
+    pub(super) fn ai_interrupted(&self) -> Vec<crate::project::generation::Interrupted> {
+        let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        self.ai
+            .update
+            .as_ref()
+            .filter(|update| Some(update.session) == session)
+            .map(|update| update.interrupted.as_ref().clone())
+            .unwrap_or_default()
+    }
+
+    /// Why earlier discards of interrupted attempts could not be read.
+    pub(super) fn ai_interrupted_warning(&self) -> Option<String> {
+        let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        self.ai
+            .update
+            .as_ref()
+            .filter(|update| Some(update.session) == session)
+            .and_then(|update| update.interrupted_warning.clone())
+    }
+
+    /// Retry an interrupted attempt: generate one variant for its pause, as
+    /// `:generate` does with that pause selected. Unchanged boundary
+    /// pictures add an attempt to the same request (reusing its validated
+    /// inputs); otherwise a new request replaces it.
+    pub(super) fn ai_retry_interrupted(&mut self, hold: &str) -> Result<(), String> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("Open a project before using AI pictures.")?;
+        let hold = NodeId::new(hold.to_owned()).map_err(|error| error.to_string())?;
+        let candidate = self.ai_candidate(&hold).cloned();
+        let target = Target {
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            hold: Some(hold),
+            candidate,
+            auditioning: false,
+            cursor: ProjectFrame(i64::try_from(self.sequence_cursor).unwrap_or(i64::MAX)),
+            scope: self.sequence_scope.clone(),
+        };
+        self.ai_generate(target, 1)
+    }
+
+    /// Durably stop offering an interrupted attempt.
+    pub(super) fn ai_dismiss_interrupted(
+        &mut self,
+        item: &crate::project::generation::Interrupted,
+    ) -> Result<(), String> {
+        let session = self
+            .workspace
+            .as_ref()
+            .ok_or("Open a project first.")?
+            .session;
+        self.ai_submit(GenerationOperation::DismissInterrupted {
+            ticket: 0,
+            session,
+            request: item.request.clone(),
+            attempt: item.attempt.clone(),
+        })
+        .map(|_| ())
+        .ok_or_else(|| {
+            self.error
+                .clone()
+                .unwrap_or_else(|| "The project is busy.".into())
+        })
     }
 
     fn ai_target_candidate(target: &Target) -> Result<&Candidate, String> {

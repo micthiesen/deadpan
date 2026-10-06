@@ -1414,6 +1414,98 @@ impl ProjectStore {
         Ok(AttemptMutationOutcome::Applied)
     }
 
+    /// Interrupted attempts the person has not dismissed and that are still
+    /// the newest attempt of a current request: what an app offers to retry
+    /// or discard after reopening. A retry starts a later attempt (or a new
+    /// request), which removes the entry here; Discard records a dismissal.
+    /// At most [`crate::recovery::MAX_REPORTED_ATTEMPTS`], ordered by request
+    /// ID. An unreadable dismissal record hides nothing: every offered
+    /// attempt is listed again and `warning` says why.
+    pub fn interrupted_generation_attempts(
+        &self,
+    ) -> Result<crate::recovery::InterruptedGenerations, StoreError> {
+        let dismissed = crate::recovery::read_dismissed_generations(&self.package);
+        let attempts = self
+            .offered_interruptions()?
+            .into_iter()
+            .filter(|attempt| {
+                !dismissed.entries.iter().any(|(request, id)| {
+                    *request == attempt.request_id && *id == attempt.attempt_id
+                })
+            })
+            .take(crate::recovery::MAX_REPORTED_ATTEMPTS)
+            .collect();
+        Ok(crate::recovery::InterruptedGenerations {
+            attempts,
+            warning: dismissed.warning,
+        })
+    }
+
+    /// Every interrupted attempt that is the newest of a current request,
+    /// dismissed or not.
+    fn offered_interruptions(
+        &self,
+    ) -> Result<Vec<crate::recovery::InterruptedGeneration>, StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let found = transaction
+            .prepare(
+                "SELECT a.request_id,a.attempt_id,r.hold_id FROM generation_attempts a
+                 JOIN generation_requests r ON r.request_id=a.request_id
+                 WHERE a.state='failed' AND a.failure_origin='host'
+                   AND a.failure_code='interrupted' AND r.relevance='current'
+                   AND NOT EXISTS (SELECT 1 FROM generation_attempts later
+                       WHERE later.request_id=a.request_id AND later.ordinal>a.ordinal)
+                 ORDER BY a.request_id,a.ordinal",
+            )?
+            .query_map([], |row| {
+                Ok(crate::recovery::InterruptedGeneration {
+                    request_id: row.get(0)?,
+                    attempt_id: row.get(1)?,
+                    hold_id: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        transaction.commit()?;
+        Ok(found)
+    }
+
+    /// Record that the person discarded an interrupted attempt from the list
+    /// above. The attempt keeps its failed `interrupted` record; this is an
+    /// operational dismissal outside history, kept beside the recovery report.
+    /// An unreadable earlier record is replaced.
+    pub fn dismiss_interrupted_generation(
+        &mut self,
+        request_id: &str,
+        attempt_id: &str,
+    ) -> Result<(), StoreError> {
+        self.require_writer()?;
+        let offered = self.offered_interruptions()?;
+        let is_offered = |request: &str, attempt: &str| {
+            offered
+                .iter()
+                .any(|offer| offer.request_id == request && offer.attempt_id == attempt)
+        };
+        if !is_offered(request_id, attempt_id) {
+            return Err(attempt_error(
+                "the attempt is not an interrupted attempt offered for retry",
+            ));
+        }
+        // Keep only dismissals that still hide an offered attempt (the
+        // newest interrupted attempt of a current request), so the record is
+        // bounded by the offers themselves.
+        let mut dismissed: Vec<(String, String)> =
+            crate::recovery::read_dismissed_generations(&self.package)
+                .entries
+                .into_iter()
+                .filter(|(request, attempt)| {
+                    is_offered(request, attempt)
+                        && !(request == request_id && attempt == attempt_id)
+                })
+                .collect();
+        dismissed.push((request_id.to_owned(), attempt_id.to_owned()));
+        crate::recovery::write_dismissed_generations(&self.package, &dismissed)
+    }
+
     pub fn generation_attempt(
         &self,
         identity: &MessageIdentity,

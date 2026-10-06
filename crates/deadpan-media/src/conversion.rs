@@ -427,7 +427,7 @@ impl OwnedProcess {
     /// stall period is stopped: a hung platform encoder must not hold a
     /// background job until its deadline. The watch's pause flag suspends
     /// the whole group (SIGSTOP) and resumes it (SIGCONT); paused time never
-    /// counts as a stall.
+    /// counts as a stall, and extends the deadline by the time suspended.
     fn collect(
         &mut self,
         deadline: &Deadline<'_>,
@@ -448,7 +448,18 @@ impl OwnedProcess {
         let mut exited_at = None;
         let mut progress = (0_u64, Instant::now());
         let mut suspended = false;
+        // Suspended time, completed and current: a suspended worker makes no
+        // progress, so its deadline moves by that much.
+        let mut suspended_total = Duration::ZERO;
+        let mut suspended_since: Option<Instant> = None;
         loop {
+            let extended = Deadline {
+                end: deadline.end
+                    + suspended_total
+                    + suspended_since.map_or(Duration::ZERO, |since| since.elapsed()),
+                cancelled: deadline.cancelled,
+            };
+            let deadline = &extended;
             deadline.check()?;
             let mut heartbeat = false;
             if !eof {
@@ -470,6 +481,11 @@ impl OwnedProcess {
                     deadpan_native_process::suspend_owned_group(&self.child, pause)?;
                     suspended = pause;
                     progress.1 = Instant::now();
+                    if pause {
+                        suspended_since = Some(Instant::now());
+                    } else if let Some(since) = suspended_since.take() {
+                        suspended_total += since.elapsed();
+                    }
                 }
                 if written != progress.0 || heartbeat || suspended {
                     progress = (written, Instant::now());
@@ -690,6 +706,40 @@ mod tests {
         resumer.join().unwrap();
         assert!(status.success());
         assert!(started.elapsed() >= Duration::from_millis(1500));
+    }
+
+    #[test]
+    fn suspended_time_extends_the_deadline() {
+        let output = tempfile::tempfile().unwrap();
+        let child = Command::new("/bin/sh")
+            .args(["-c", "sleep 0.5; exit 0"])
+            .stderr(Stdio::piped())
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let mut process = OwnedProcess::new(child);
+        let cancelled = AtomicBool::new(false);
+        // The deadline alone (1.2 s) is shorter than the 1.5 s suspension
+        // plus the 0.5 s run; suspended time must not count against it.
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_millis(1200),
+            cancelled: &cancelled,
+        };
+        let pause = std::sync::Arc::new(AtomicBool::new(true));
+        let release = std::sync::Arc::clone(&pause);
+        let resumer = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(1500));
+            release.store(false, Ordering::Release);
+        });
+        let watch = Watch {
+            stall: Duration::from_secs(5),
+            pause: Some(&pause),
+        };
+        let (status, _) = process
+            .collect(&deadline, &output, 1024, Some(&watch))
+            .unwrap();
+        resumer.join().unwrap();
+        assert!(status.success());
     }
 
     impl Read for PendingPipe {

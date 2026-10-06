@@ -674,19 +674,21 @@ pub fn hex(bytes: &[u8]) -> String {
 }
 
 struct Control<'a> {
-    end: Instant,
+    /// Moves later by the time spent waiting while paused.
+    end: std::cell::Cell<Instant>,
     cancelled: &'a AtomicBool,
     pause: Option<&'a AtomicBool>,
 }
 
 impl Control<'_> {
-    /// Fail on cancellation or deadline; wait while paused.
+    /// Fail on cancellation or deadline; wait while paused. Paused time
+    /// extends the deadline: nothing runs meanwhile.
     fn check(&self) -> Result<(), ProxyError> {
         loop {
             if self.cancelled.load(Ordering::Acquire) {
                 return Err(ProxyError::Cancelled);
             }
-            if Instant::now() >= self.end {
+            if Instant::now() >= self.end.get() {
                 return Err(ProxyError::Deadline);
             }
             if !self
@@ -695,12 +697,14 @@ impl Control<'_> {
             {
                 return Ok(());
             }
+            let waited = Instant::now();
             std::thread::sleep(Duration::from_millis(100));
+            self.end.set(self.end.get() + waited.elapsed());
         }
     }
     fn remaining(&self) -> Result<Duration, ProxyError> {
         self.check()?;
-        Ok(self.end.saturating_duration_since(Instant::now()))
+        Ok(self.end.get().saturating_duration_since(Instant::now()))
     }
 }
 
@@ -747,7 +751,7 @@ fn hash_file(file: &File, control: &Control<'_>) -> Result<([u8; 32], String, u6
 /// SHA-256 of a whole published proxy, for re-verifying a cache entry.
 pub fn sha256_file(file: &File, cancelled: &AtomicBool) -> Result<String, ProxyError> {
     let control = Control {
-        end: Instant::now() + Duration::from_secs(3600),
+        end: std::cell::Cell::new(Instant::now() + Duration::from_secs(3600)),
         cancelled,
         pause: None,
     };
@@ -770,7 +774,7 @@ pub fn verify_proxy(
 ) -> Result<ProxySidecar, ProxyError> {
     let cancelled = control.cancelled;
     let control = Control {
-        end: Instant::now() + control.timeout,
+        end: std::cell::Cell::new(Instant::now() + control.timeout),
         cancelled,
         pause: control.pause,
     };

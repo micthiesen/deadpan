@@ -197,6 +197,15 @@ pub enum SemanticInstruction {
     },
     #[serde(deserialize_with = "deserialize_empty")]
     Ungroup,
+    /// Convert the selected Repeat into an ordinary Sequence of independent
+    /// plays (`:explode`), preserving every picture, sample and attachment.
+    #[serde(deserialize_with = "deserialize_empty")]
+    Explode,
+    /// Copy the selected beat, sibling span or Visual range immediately after
+    /// itself (`:duplicate`), with fresh identities and shared media.
+    Duplicate {
+        selector: SemanticSelector,
+    },
     Repeat {
         selector: SemanticSelector,
         plays: NonZeroU32,

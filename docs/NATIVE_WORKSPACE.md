@@ -381,6 +381,17 @@ an edit. Existing child-index Insert
 retains its distinct semantics. [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md)
 record the wider scope still required.
 
+`:explode` turns the selected direct-child Repeat into an ordinary group of its
+plays through the semantic Apply path: time, cursor and selection stay, gaps
+become pauses, escalated plays become groups carrying their gain and scale, and
+one Undo restores the Repeat. `:duplicate` copies the current Visual range, or
+else the selected beat, immediately after itself as a new "Copied contents"
+group with fresh identities and shared media, then selects the copy; registers
+are unchanged. Both refuse an empty Visual range, Explode refuses every Visual
+range, both are recorded by macros and `.` repeats them at the new target. They
+have command aliases only (`structure.explode`, `structure.duplicate` can be
+mapped). The `structure-copies` replay covers them with `:scope plays`.
+
 `,f` opens a temporary [Camera draft](FRAMING.md) on the selected direct child in
 Your edit. The stopped picture previews source-relative `h/j/k/l` movement,
 counted zoom steps and numbered center/corner targets. Numeric fields use canvas

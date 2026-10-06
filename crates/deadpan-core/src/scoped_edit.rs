@@ -10,7 +10,8 @@ use crate::{
 };
 
 mod isolation;
-pub(crate) use isolation::{apply, matches_prefix};
+pub use isolation::MAX_SCOPED_TARGETS;
+pub(crate) use isolation::{apply, apply_many, matches_prefix};
 
 /// Default follows the authored template, even when no current play uses it.
 /// Play follows that stable iteration's effective child or explicitly owned gap.
@@ -96,6 +97,15 @@ impl ScopedNodeTarget {
             && instance.repeats.len() == self.repeats.len()
             && matches_prefix(instance, &self.repeats))
     }
+}
+
+/// One target of a multi-target scoped edit with its own value, so a relative
+/// change (such as +3 dB over a range) keeps each play's existing recipe.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScopedTargetEdit {
+    pub target: ScopedNodeTarget,
+    pub edit: ScopedNodeEdit,
 }
 
 /// Value edits preserve every duration and source coordinate. Temporal edits
@@ -213,6 +223,15 @@ impl ProjectDocument {
         edit: &ScopedNodeEdit,
     ) -> Result<ScopedEditRequirements, EditError> {
         isolation::preflight(self, target, edit).map(|plan| plan.requirements)
+    }
+
+    /// Exact per-target needs of [`Command::EditScopedMany`], staged in order
+    /// so a later target sees the isolation an earlier one performed.
+    pub fn scoped_many_requirements(
+        &self,
+        edits: &[ScopedTargetEdit],
+    ) -> Result<Vec<ScopedEditRequirements>, EditError> {
+        isolation::many_requirements(self, edits)
     }
 }
 

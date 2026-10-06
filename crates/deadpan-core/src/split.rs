@@ -23,6 +23,12 @@ pub struct SplitIdentities {
     pub nodes: Vec<NodeId>,
 }
 
+impl SplitIdentities {
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+}
+
 pub(crate) fn apply(
     document: &ProjectDocument,
     target: &NodeId,

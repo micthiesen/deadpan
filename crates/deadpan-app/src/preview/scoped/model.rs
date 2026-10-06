@@ -3,9 +3,9 @@
 use std::{collections::BTreeMap, ops::Range, sync::Arc};
 
 use deadpan_core::{
-    ExactRatio, FrameDuration, InsertionBias, InstancePath, MAX_DOCUMENT_DEPTH, NodeId, NodeKind,
-    ProjectDocument, ProjectFrame, RepeatEditBranch, RepeatEditStep, RepeatInstance, RepeatLayout,
-    ScopedNodeTarget,
+    ExactRatio, FrameDuration, InsertionBias, InstancePath, IterationId, MAX_DOCUMENT_DEPTH,
+    NodeId, NodeKind, ProjectDocument, ProjectFrame, RepeatEditBranch, RepeatEditStep,
+    RepeatInstance, RepeatLayout, ScopedNodeTarget,
 };
 use deadpan_plan::RenderPlan;
 
@@ -49,6 +49,9 @@ struct Level {
     owner: ScopedNodeTarget,
     branch: RepeatEditBranch,
     selected: usize,
+    /// `:scope plays 2-3`: further plays edited together with `branch`,
+    /// in play order. Browsing shows `branch`; edits address every play.
+    also: Vec<IterationId>,
 }
 
 #[derive(Clone)]
@@ -136,6 +139,7 @@ impl State {
                 owner,
                 branch: RepeatEditBranch::Default,
                 selected: 0,
+                also: Vec::new(),
             }],
         };
         state.refresh_selected()?;
@@ -254,8 +258,34 @@ impl State {
                 .as_ref()
                 .map(|p| p.instance.clone()),
             cursor,
+            also: self.also_targets()?,
         };
         Ok(target)
+    }
+
+    /// The selected node in every further selected play, by structure.
+    fn also_targets(&self) -> Result<Vec<ScopedNodeTarget>, String> {
+        let Some(level) = self.levels.iter().find(|level| !level.also.is_empty()) else {
+            return Ok(Vec::new());
+        };
+        let step = self
+            .selected
+            .repeats
+            .iter()
+            .position(|step| step.repeat == level.owner.node)
+            .ok_or("Select contents of the multi-play Repeat before editing them.")?;
+        level
+            .also
+            .iter()
+            .map(|iteration| {
+                crate::project::scoped::retarget(
+                    &self.index.document,
+                    &self.selected,
+                    step,
+                    iteration,
+                )
+            })
+            .collect()
     }
 
     pub fn rows(&self, workspace: &Workspace) -> Result<Arc<Vec<Row>>, String> {
@@ -347,6 +377,7 @@ impl State {
             owner: self.selected.clone(),
             branch: RepeatEditBranch::Default,
             selected: 0,
+            also: Vec::new(),
         });
         next.refresh_selected()?;
         *self = next;
@@ -388,6 +419,47 @@ impl State {
             .and_then(|index| iterations.at(index))
             .ok_or("Play number is outside this Repeat")?;
         self.switch_in(RepeatEditBranch::Play { iteration })
+    }
+    /// `:scope plays 2-3`: browse the first listed play and address every
+    /// listed play in later value edits. At least two distinct plays.
+    pub fn switch_plays(&mut self, workspace: &Workspace, one_based: &[u32]) -> Result<(), String> {
+        self.check(workspace)?;
+        self.switch_plays_in(one_based)
+    }
+    fn switch_plays_in(&mut self, one_based: &[u32]) -> Result<(), String> {
+        let mut plays = one_based.to_vec();
+        plays.sort_unstable();
+        plays.dedup();
+        let [first, rest @ ..] = plays.as_slice() else {
+            return Err("Name at least two plays, such as :scope plays 2-3.".into());
+        };
+        if rest.is_empty() {
+            return Err(
+                "Name at least two plays, such as :scope plays 2-3, or use :scope play N.".into(),
+            );
+        }
+        let level = self
+            .repeat_level()
+            .ok_or("This level has no Repeat scope")?;
+        let NodeKind::Repeat { iterations, .. } =
+            &self.index.document.nodes()[&self.levels[level].owner.node].kind
+        else {
+            unreachable!()
+        };
+        let also = rest
+            .iter()
+            .map(|play| {
+                play.checked_sub(1)
+                    .and_then(|index| iterations.at(index))
+                    .ok_or_else(|| format!("Play {play} is outside this Repeat."))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut next = self.clone();
+        next.switch_play_in(*first)?;
+        next.levels[level].also = also;
+        next.refresh_labels()?;
+        *self = next;
+        Ok(())
     }
     /// `]r`/`[r`: step the nearest Repeat through All plays, then play
     /// 1..N, clamped at both ends. Returns false when already at the end.
@@ -440,6 +512,9 @@ impl State {
             .ok_or("This level has no Repeat scope")?;
         let mut next = self.clone();
         next.levels.truncate(level + 1);
+        for level in &mut next.levels {
+            level.also.clear();
+        }
         next.levels[level].branch = branch;
         next.levels[level].selected = 0;
         next.preferred = None;
@@ -556,12 +631,25 @@ impl State {
                 ),
             };
             let plays = iterations.len();
+            let together: Vec<u32> = level
+                .also
+                .iter()
+                .filter_map(|iteration| iterations.position(iteration).map(|index| index + 1))
+                .collect();
             let choice = RepeatChoice {
                 owner_label: node.label.clone(),
-                label: one_based.map_or_else(
-                    || "all plays".into(),
-                    |index| format!("play {index}/{plays}"),
-                ),
+                label: match one_based {
+                    None => "all plays".into(),
+                    Some(index) if !together.is_empty() => format!(
+                        "plays {}/{plays}",
+                        std::iter::once(index)
+                            .chain(together)
+                            .map(|play| play.to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                    Some(index) => format!("play {index}/{plays}"),
+                },
                 one_based,
                 plays,
             };
@@ -613,6 +701,13 @@ impl State {
         {
             return Ok(false);
         }
+        // A multi-play choice survives the edit it made: its Repeat keeps its
+        // identity and stable play IDs while its plays gain owned branches.
+        let carried = self
+            .levels
+            .iter()
+            .find(|level| !level.also.is_empty())
+            .map(|level| (level.owner.node.clone(), level.also.clone()));
         let mut next = self.clone();
         next.index = Arc::new(index);
         if !next
@@ -653,6 +748,11 @@ impl State {
                 },
                 branch,
                 selected: 0,
+                also: carried
+                    .as_ref()
+                    .filter(|(repeat, _)| repeat == &pair[0])
+                    .map(|(_, also)| also.clone())
+                    .unwrap_or_default(),
             });
             let row = next
                 .row_targets()?

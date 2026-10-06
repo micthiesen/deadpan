@@ -45,6 +45,7 @@ pub(crate) mod harness;
 mod help_scroll;
 mod hold_effects;
 mod inspector;
+mod jobs;
 mod key_labels;
 mod macros;
 mod marks;
@@ -276,6 +277,8 @@ pub struct DeadpanApp {
     diagnostics: diagnostics::State,
     /// `:storage`: project and cache usage, cleanup and portable copies.
     storage: storage::State,
+    /// `:jobs`: background jobs, queued state, cancel and interrupted AI.
+    jobs: jobs::State,
     /// The user's gag presets, shared by every project.
     gag_presets: crate::gag_presets::GagPresets,
     /// Where bundled synthesized sounds are written before import.
@@ -456,6 +459,7 @@ impl DeadpanApp {
             models: model_packs::Models::default(),
             diagnostics: diagnostics::State::default(),
             storage: storage::State::default(),
+            jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             bundled_sounds: crate::keymap_file::application_support_directory()
                 .ok()
@@ -1888,6 +1892,8 @@ impl DeadpanApp {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::Explode
+                | Action::Duplicate
                 | Action::RepeatLast
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
@@ -1975,6 +1981,8 @@ impl DeadpanApp {
             Action::Insert => self.insert(),
             Action::Group => self.open_command("group name=".into(), context),
             Action::Ungroup => self.group_command(Some(self.capture_macro_target()), None),
+            Action::Explode => self.structure_command(Some(self.capture_macro_target()), true),
+            Action::Duplicate => self.structure_command(Some(self.capture_macro_target()), false),
             Action::Undo => self.history(false),
             Action::Redo => self.history(true),
             Action::Playback => {
@@ -2313,6 +2321,9 @@ impl DeadpanApp {
             return None;
         }
         if self.storage_keyboard(context) {
+            return None;
+        }
+        if self.jobs_keyboard(context) {
             return None;
         }
         if self.render_keyboard(context) {
@@ -2842,6 +2853,12 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Action(Action::Ungroup)) => {
                 self.group_command(macro_target, None);
             }
+            Ok(navigation::command::Entry::Action(Action::Explode)) => {
+                self.structure_command(macro_target, true);
+            }
+            Ok(navigation::command::Entry::Action(Action::Duplicate)) => {
+                self.structure_command(macro_target, false);
+            }
             Ok(navigation::command::Entry::Scope(choice)) => {
                 self.scoped_command(choice, scoped_target, context);
             }
@@ -2932,6 +2949,10 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::GainStep(delta)) => {
                 self.gain_step_captured(gain_target, delta)
             }
+            Ok(navigation::command::Entry::GainRange {
+                millidecibels,
+                range,
+            }) => self.gain_range_captured(gain_target, millidecibels, range),
             Ok(navigation::command::Entry::Saturate(stage)) => {
                 self.saturate_command(gain_target, macro_target, stage)
             }
@@ -3020,6 +3041,7 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
             Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
             Ok(navigation::command::Entry::Storage) => self.open_storage(context),
+            Ok(navigation::command::Entry::Jobs) => self.open_jobs(context),
             Ok(navigation::command::Entry::PortableCopy) => self.start_portable_copy(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
             Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
@@ -3127,6 +3149,7 @@ impl DeadpanApp {
                 MenuCommand::Keys => self.action(Action::Help, context),
                 MenuCommand::Models => self.open_models(None, context),
                 MenuCommand::Storage => self.open_storage(context),
+                MenuCommand::Jobs => self.open_jobs(context),
                 MenuCommand::PortableCopy => self.start_portable_copy(context),
                 MenuCommand::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
             }
@@ -3156,6 +3179,7 @@ impl DeadpanApp {
                 && !self.models.open
                 && !self.diagnostics.open
                 && !self.storage.open
+                && !self.jobs.open
                 && !self.help_open
                 && !self.macros.recording()
                 && !self.macros.is_pending()
@@ -3584,7 +3608,7 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "Repeat play");
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
-                        hints.push((":scope".into(), "all / play N".into()));
+                        hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {
                         // Tiers decide what survives the two rows (see
@@ -4836,6 +4860,8 @@ impl DeadpanApp {
                         (":marks · :mark a · :jump a · :unmark a".to_owned(), "Browse marks, save the captured position, jump to a saved letter, or remove it. Commands capture their project and target on entry.".to_owned()),
                         (format!("{} · :enter / :parent", key_labels::aliases_pair(&bindings, EditorKey::EnterGroup, EditorKey::LeaveGroup, " / ")), "Open a selected Sequence, Repeat or Retime / return to its parent. Inside Repeat and Retime contents, navigate children and edit gain, Camera or pause audio. Timing edits and range copying still require an ordinary Sequence.".to_owned()),
                         (":scope all / :scope play N".to_owned(), "Inside a Repeat, choose the shared definition or one stable play by its current one-based number. All plays preserves existing independent overrides. Browsing never creates an override; a changed value isolates only the selected play. Nested scope choices remain explicit.".to_owned()),
+                        (":scope plays 2-3 · :scope plays 1,3".to_owned(), "Inside a Repeat, select several stable plays together. The viewer shows the first; Gain, Camera and pause-audio changes then apply to the same beat in every selected play in one Undo, isolating only those plays. A gain change is carried over as the same step, so each play keeps its own recipe; a play whose gain recipe or structure differs refuses with a message. :scope all or :scope play N ends the multi-play choice.".to_owned()),
+                        (":gain +3dB range=4-10".to_owned(), "Add a constant gain step over exactly those local frames of the selected beat, keeping its trim, other ranges and saturation. Inside Repeat contents it changes only the selected play or plays (partial range within a play); one Undo. Not recorded in macros.".to_owned()),
                         (":source / :sequence".to_owned(), "Browse unchanged Original / work on Your edit.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::PaneNext, EditorKey::PanePrevious, " / "), "Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus.".to_owned()),
                         (key(EditorKey::Search), "Search the Original's transcript once it is ready (Enter steps through matches); otherwise find a sound, or a source in a legacy project.".to_owned()),
@@ -4930,8 +4956,11 @@ impl DeadpanApp {
                         (format!("{} / Ctrl R", key(EditorKey::Undo)), "Undo / redo. Native ⌘Z / ⌘Shift Z also work.".to_owned()),
                         ("⌘E / :render".to_owned(), "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.".to_owned()),
                         (":renders".to_owned(), "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing.".to_owned()),
+                        (":explode".to_owned(), "Turn the selected Repeat into an ordinary group of independent plays: every picture, sample, gap, play override and escalation step stays exactly as it was; gaps become pauses and escalated plays become groups carrying their gain and scale. Copies get fresh identities and share the media. Clear every Visual range first. One Undo restores the Repeat; macros record it and dot repeats it on the newly selected Repeat.".to_owned()),
+                        (":duplicate".to_owned(), "Copy the current Visual range, or else the selected beat, immediately after itself as a new \"Copied contents\" group with fresh identities, shared media and its own marks, sounds and overrides; nothing stays linked to the original. The copy becomes the selected beat. Registers are unchanged. Macros record it and dot repeats it at the new selection.".to_owned()),
                         (":diagnostics".to_owned(), "Show live counters for this app process beside the picture: audio underruns and faults, decode queue depths, GPU submission latency, PCM cache hits and residency, file reads and writes, model worker memory and UI frames. Updates twice a second; playback continues. Escape closes. Nothing is saved with the project.".to_owned()),
                         (":storage".to_owned(), "Show what this project and Deadpan's caches use: originals, AI pause media, render candidates, the database, proxies, downloads and model packs, and what nothing references any more. P previews a cleanup of unreferenced project files unchanged for a day and R removes exactly those; C cleans rebuildable caches; S saves a portable copy. Escape closes.".to_owned()),
+                        (":jobs".to_owned(), "Show every background job (AI pictures, transcription, pause and shot detection, tracking, proxies, renders, downloads, model installs, copies) with its state, progress and elapsed time. One AI model runs at a time; others wait their turn, visibly. Up/Down choose, X cancels, R retries and D discards an AI attempt a crash interrupted. Escape closes.".to_owned()),
                         (":portable-copy".to_owned(), "Save a verified self-contained copy of this project (also File › Save Portable Copy…): linked originals become managed copies, only referenced media is copied, history is kept, and the copy renders without its source or any model.".to_owned()),
                         (":models".to_owned(), "Install, resume, cancel or remove the models AI pauses and transcription use, also in the Deadpan menu. Each pack shows its size, free space, memory and licenses before anything downloads; licenses that need acceptance are accepted there. Install from a folder or .tar works offline. Tab moves between controls; Escape closes and an install keeps running.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
@@ -5013,6 +5042,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_shots(&context);
             self.reconcile_proxies(&context);
             self.reconcile_youtube(&context);
+            self.reconcile_jobs(&context);
             if self.close_pending {
                 self.junction_pictures.clear();
             }
@@ -5030,6 +5060,8 @@ impl eframe::App for DeadpanApp {
             self.invalidate_trim_media(true);
             self.stop_playback();
             self.cancel_gain_waveform();
+            // Release queued and paused background jobs so they drain.
+            self.service.jobs().shutdown();
             self.service.shutdown();
             let youtube_drained = self.youtube_drained();
             if !self.service.is_shutdown_complete() || !youtube_drained {
@@ -5163,6 +5195,7 @@ impl eframe::App for DeadpanApp {
             self.models_window(&context);
             self.diagnostics_window(&context);
             self.storage_window(&context);
+            self.jobs_window(&context);
             self.youtube_window(&context);
         }
         // Drawn even over Trim, whose close question it may be asking.
@@ -5283,6 +5316,9 @@ impl eframe::App for DeadpanApp {
         self.trim_prefix_target = None;
         self.trim_abandon.clear();
         self.playback.shutdown();
+        // Release every queued or paused job first, so each job's own
+        // shutdown below joins a thread that is already draining.
+        self.service.jobs().shutdown();
         self.service.shutdown();
         self.worker.shutdown();
         self.endpoint_worker.shutdown();

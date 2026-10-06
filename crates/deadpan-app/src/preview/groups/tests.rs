@@ -146,3 +146,124 @@ fn ungroup_requires_an_explicit_direct_sequence_and_refuses_visual() {
     wrong_scope.parent = node("beat");
     assert!(instruction(&document, &wrong_scope, None).is_err());
 }
+
+fn with_repeat() -> ProjectDocument {
+    let document = fixture();
+    apply(
+        &document,
+        &CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("wrapped").unwrap(),
+            command: Command::WrapRepeat {
+                node: node("beat"),
+                id: node("repeat"),
+                plays: 3,
+                gap: None,
+                anchor_policy: Default::default(),
+            },
+        },
+    )
+    .unwrap()
+    .forward
+    .apply(&document)
+    .unwrap()
+}
+
+#[test]
+fn explode_requires_a_selected_direct_repeat_and_refuses_visual() {
+    let document = with_repeat();
+    assert_eq!(
+        structure_instruction(&document, &context(Some("repeat")), true).unwrap(),
+        SemanticInstruction::Explode
+    );
+    for selected in [None, Some("group"), Some("beat"), Some("missing")] {
+        assert!(structure_instruction(&document, &context(selected), true).is_err());
+    }
+    let mut visual = context(Some("repeat"));
+    visual.visual_selection = Some(SemanticVisualSelection::Time {
+        anchor: ProjectFrame(0),
+        head: ProjectFrame(2),
+        extending: false,
+    });
+    assert!(structure_instruction(&document, &visual, true).is_err());
+}
+
+#[test]
+fn duplicate_prefers_a_visual_range_then_the_selected_beat() {
+    let document = with_repeat();
+    for selected in ["repeat", "group", "empty"] {
+        assert_eq!(
+            structure_instruction(&document, &context(Some(selected)), false).unwrap(),
+            SemanticInstruction::Duplicate {
+                selector: SemanticSelector::SelectedBeat
+            }
+        );
+    }
+    assert!(structure_instruction(&document, &context(None), false).is_err());
+    assert!(structure_instruction(&document, &context(Some("inner")), false).is_err());
+    for (anchor, head) in [(0, 3), (0, 0)] {
+        let mut visual = context(None);
+        visual.visual_selection = Some(SemanticVisualSelection::Time {
+            anchor: ProjectFrame(anchor),
+            head: ProjectFrame(head),
+            extending: false,
+        });
+        let result = structure_instruction(&document, &visual, false);
+        if anchor == head {
+            assert!(result.is_err());
+        } else {
+            assert_eq!(
+                result.unwrap(),
+                SemanticInstruction::Duplicate {
+                    selector: SemanticSelector::VisualSelection
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn explode_and_duplicate_parse_record_and_repeat_as_semantic_intent() {
+    use crate::navigation::{Action, command, command::Entry};
+    use crate::project::semantic::{LastEdit, RepeatableEdit};
+    assert_eq!(
+        command::parse(":explode"),
+        Ok(Entry::Action(Action::Explode))
+    );
+    assert_eq!(
+        command::parse(":duplicate"),
+        Ok(Entry::Action(Action::Duplicate))
+    );
+    assert!(command::parse("explode extra").is_err());
+    let explode = LastEdit::from_instruction(&SemanticInstruction::Explode).unwrap();
+    assert_eq!(explode.operation, RepeatableEdit::Explode);
+    assert_eq!(explode.register, None);
+    let duplicate = LastEdit::from_instruction(&SemanticInstruction::Duplicate {
+        selector: SemanticSelector::SelectedBeat,
+    })
+    .unwrap();
+    // Dot follows a current Visual range like Group, else the saved selector.
+    let mut visual = context(Some("group"));
+    assert_eq!(
+        duplicate.instruction(&visual, deadpan_core::RegisterName::unnamed()),
+        SemanticInstruction::Duplicate {
+            selector: SemanticSelector::SelectedBeat
+        }
+    );
+    visual.visual_selection = Some(SemanticVisualSelection::Time {
+        anchor: ProjectFrame(0),
+        head: ProjectFrame(2),
+        extending: false,
+    });
+    assert_eq!(
+        duplicate.instruction(&visual, deadpan_core::RegisterName::unnamed()),
+        SemanticInstruction::Duplicate {
+            selector: SemanticSelector::VisualSelection
+        }
+    );
+    assert_eq!(
+        explode.instruction(&visual, deadpan_core::RegisterName::unnamed()),
+        SemanticInstruction::Explode
+    );
+}

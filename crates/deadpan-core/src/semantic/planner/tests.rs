@@ -6,6 +6,7 @@ use crate::{
 use std::num::NonZeroU32;
 
 mod content;
+mod explode;
 mod gag_edit;
 mod group;
 mod objects;
@@ -128,6 +129,21 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         },
         SemanticAllocationRequest::Ungroup { step_index } => SemanticAllocation::Ungroup {
             new_revision: revision(&format!("leaf-{step_index}")),
+        },
+        SemanticAllocationRequest::Explode {
+            step_index,
+            nodes,
+            marks,
+        } => SemanticAllocation::Explode {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: crate::OccurrenceIdentities {
+                nodes: (0..nodes)
+                    .map(|n| node(&format!("explode-{step_index}-{n}")))
+                    .collect(),
+                marks: (0..marks)
+                    .map(|n| crate::MarkId::new(format!("explode-{step_index}-{n}")).unwrap())
+                    .collect(),
+            },
         },
         SemanticAllocationRequest::SetRepeatPlays { step_index } => {
             SemanticAllocation::SetRepeatPlays {

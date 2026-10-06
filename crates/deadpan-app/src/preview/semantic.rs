@@ -92,6 +92,21 @@ fn repeat_instruction_hint(
                 "ungroup selected neutral Sequence".into()
             };
         }
+        RepeatableEdit::Explode => {
+            return if selection != crate::navigation::EditSelection::None {
+                "repeat unavailable: clear Visual range".into()
+            } else if selected_repeat {
+                "explode selected Repeat".into()
+            } else {
+                "select Repeat to explode".into()
+            };
+        }
+        RepeatableEdit::Duplicate { selector } => {
+            if let Some(hint) = visual_hint("duplicate selection".into()) {
+                return hint;
+            }
+            ("duplicate".to_owned(), selector)
+        }
         RepeatableEdit::Parameter(instruction) => {
             let text = applied_text(instruction).unwrap_or_else(|| "the last edit".into());
             let mut chars = text.chars();
@@ -389,6 +404,10 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return (!matches!(selector, SemanticSelector::VisualSelection))
                 .then(|| format!("Grouped {} as {label:?}", selector_text(selector)));
         }
+        I::Explode => {
+            return Some("Exploded the Repeat into independent plays; Undo restores it".into());
+        }
+        I::Duplicate { selector } => ("Duplicated", selector),
         _ => return None,
     };
     (!matches!(selector, SemanticSelector::VisualSelection))

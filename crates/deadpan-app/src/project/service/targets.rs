@@ -397,6 +397,11 @@ impl Service {
         let cancelled = Arc::new(AtomicBool::new(false));
         let (events, receive) = mpsc::sync_channel(EVENT_CAPACITY);
         let thread_cancelled = cancelled.clone();
+        let handle = self.shared.job_board.register(
+            crate::jobs::JobSpec::new(crate::jobs::JobKind::Tracking, Some(session))
+                .detail(job.label.clone())
+                .cancel_flag(&cancelled),
+        );
         let thread = std::thread::Builder::new()
             .name("deadpan-track".into())
             .spawn(move || {
@@ -408,6 +413,7 @@ impl Service {
                     correct_at,
                     thread_cancelled,
                     events,
+                    &handle,
                 );
             })
             .map_err(|error| format!("Could not start tracking: {error}"))?;
@@ -585,7 +591,9 @@ fn job_thread(
     correct_at: Option<i64>,
     cancelled: Arc<AtomicBool>,
     events: SyncSender<Event>,
+    handle: &crate::jobs::JobHandle,
 ) {
+    handle.set_progress("Preparing pictures", None);
     let result = (|| -> std::result::Result<Finished, Failure> {
         let deadline = Instant::now() + DEADLINE;
         // Read-only throughout; the writer saves the result.
@@ -609,6 +617,7 @@ fn job_thread(
             ));
         }
         let progress = |percent: u8| {
+            handle.set_progress("Tracking", Some(f32::from(percent.min(100)) / 100.0));
             // Display-only; a full queue drops one report, never the worker.
             let _ = events.try_send(Event::Progress(percent));
         };

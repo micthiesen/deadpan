@@ -46,9 +46,64 @@ pub(crate) fn isolate(
     {
         return Err(invalid("selected play has no following gap"));
     }
+    if document.audio_bindings().timings().contains_key(timing) {
+        return Err(invalid("gap isolation timing identity already exists"));
+    }
     let mut result = document.clone();
-    result.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    let mut binding = result.audio_bindings.gap_bindings[repeat].clone();
+    capture_gap_clock(&mut result, repeat, timing)?;
+    materialize(&mut result, repeat, after, id, recipe, &beat.audio_edges)?;
+    // No duration, picture mapping or existing anchor coordinate changes.
+    // Ordinary replacement transforms would incorrectly retire gap content.
+    result.validate()?;
+    Ok(result)
+}
+
+/// Bind only `repeat`'s own gap clock, when it is still implicit. Every other
+/// unbound owner keeps its implicit clock: gap materialization moves nothing,
+/// and binding the whole project would turn a local edit into a project-wide
+/// clock change.
+pub(crate) fn capture_gap_clock(
+    result: &mut ProjectDocument,
+    repeat: &NodeId,
+    timing: &AudioTimingId,
+) -> Result<(), EditError> {
+    if result.audio_bindings.gap_bindings.contains_key(repeat) {
+        return Ok(());
+    }
+    let mut captured = crate::capture_unbound_audio_bindings(result, timing.clone())?;
+    let binding = captured
+        .gap_bindings
+        .remove(repeat)
+        .ok_or_else(|| invalid("could not capture the Repeat's gap clock"))?;
+    let layout = captured
+        .timings
+        .remove(timing)
+        .ok_or_else(|| invalid("could not capture the Repeat's gap clock"))?;
+    result.audio_bindings.timings.insert(timing.clone(), layout);
+    result
+        .audio_bindings
+        .gap_bindings
+        .insert(repeat.clone(), binding);
+    Ok(())
+}
+
+/// Install one default gap as an owned Hold in `result`, whose binding state
+/// already captures the Repeat's gap clock. Several gaps of one Repeat can share
+/// one capture; the caller validates the final document.
+pub(crate) fn materialize(
+    result: &mut ProjectDocument,
+    repeat: &NodeId,
+    after: &IterationId,
+    id: &NodeId,
+    recipe: &crate::HoldRecipe,
+    edges: &AudioEdgePolicies,
+) -> Result<(), EditError> {
+    let mut binding = result
+        .audio_bindings
+        .gap_bindings
+        .get(repeat)
+        .cloned()
+        .ok_or_else(|| invalid("gap isolation requires a captured gap clock"))?;
     close(&mut binding.lattice, &result.audio_bindings.timings, after)?;
     if let Some(resume) = &mut binding.resume {
         for term in &mut resume.phase.terms {
@@ -64,8 +119,8 @@ pub(crate) fn isolate(
     }
     let mut hold = BeatNode::hold("Gap", recipe.clone());
     hold.audio_edges = AudioEdgePolicies {
-        node_start: beat.audio_edges.repeat_gap_start,
-        node_end: beat.audio_edges.repeat_gap_end,
+        node_start: edges.repeat_gap_start,
+        node_end: edges.repeat_gap_end,
         ..Default::default()
     };
     result.nodes.insert(id.clone(), hold);
@@ -75,10 +130,7 @@ pub(crate) fn isolate(
         .or_default()
         .insert(after.clone(), id.clone());
     result.audio_bindings.bindings.insert(id.clone(), binding);
-    // No duration, picture mapping or existing anchor coordinate changes.
-    // Ordinary replacement transforms would incorrectly retire gap content.
-    result.validate()?;
-    Ok(result)
+    Ok(())
 }
 
 /// Returns true only when closing a new gap discards an enclosing old scope.

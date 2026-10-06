@@ -19,6 +19,9 @@ new node and timing identities; the current document supplies the recipe. Its
 occurrence form first isolates outer repeated ancestors. The new Hold retains
 the current captured picture context and gap-edge choices. Surrounding Repeat
 framing and effects remain on the Repeat, outside the independent branch.
+It binds only the Repeat's own implicit gap clock under its timing identity;
+every other implicit owner keeps its clock, so isolating one gap is a local
+change rather than a project-wide binding.
 
 `SetRepeatGaps { node, gap, branches, timing }` sets the default gap and
 replaces the gaps after named plays with fresh independent Holds in one

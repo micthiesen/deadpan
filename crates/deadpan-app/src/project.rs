@@ -708,7 +708,7 @@ pub enum ProjectSoundEdit {
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
     Scoped {
-        target: scoped::Target,
+        target: Box<scoped::Target>,
         edit: deadpan_core::ScopedNodeEdit,
     },
     SetAudioTreatments {
@@ -999,6 +999,8 @@ struct Shared {
     storage_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
+    /// The app's background job coordinator, shared with the UI's jobs.
+    job_board: crate::jobs::Jobs,
 }
 
 pub struct ProjectService {
@@ -1060,6 +1062,7 @@ impl ProjectService {
             storage_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
+            job_board: crate::jobs::Jobs::new(),
         });
         let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (jobs, results, worker) = worker::spawn()?;
@@ -1104,6 +1107,11 @@ impl ProjectService {
             return Err(format!("Project command was not queued: {error}"));
         }
         Ok(())
+    }
+
+    /// The background job coordinator every job of this app registers with.
+    pub fn jobs(&self) -> &crate::jobs::Jobs {
+        &self.shared.job_board
     }
 
     pub fn take_update(&self) -> Option<ProjectUpdate> {

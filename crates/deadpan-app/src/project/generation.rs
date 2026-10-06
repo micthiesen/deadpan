@@ -77,6 +77,25 @@ pub enum GenerationOperation {
         request: RequestId,
         attempt: AttemptId,
     },
+    /// Discard an interrupted attempt from the Jobs panel's retry list. The
+    /// attempt keeps its failed record; it is just no longer offered.
+    DismissInterrupted {
+        ticket: u64,
+        session: u64,
+        request: String,
+        attempt: String,
+    },
+}
+
+/// An attempt a previous app session left unfinished, offered for retry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Interrupted {
+    pub request: String,
+    pub attempt: String,
+    pub hold: String,
+    /// The pause's label when it is still a pause in the current edit, so a
+    /// retry can generate for it.
+    pub pause: Option<String>,
 }
 
 /// Where a running job is.
@@ -84,6 +103,9 @@ pub enum GenerationOperation {
 pub enum Phase {
     /// Decoding the boundary pictures (read-only, job thread).
     Conditioning,
+    /// Recorded and waiting for the AI model: another inference holds it
+    /// (see `crate::jobs`). Edits continue meanwhile.
+    Queued,
     /// Writing and capturing the conditioning inputs.
     Preparing,
     Stage(WorkerStage),
@@ -103,6 +125,7 @@ impl Phase {
     pub fn label(&self) -> &'static str {
         match self {
             Self::Conditioning => "Reading boundary pictures",
+            Self::Queued => "Queued for the AI model",
             Self::Preparing => "Preparing inputs",
             Self::Stage(stage) | Self::Step { stage, .. } => stage_label(*stage),
             Self::Qualifying => "Checking pictures",
@@ -347,6 +370,10 @@ pub struct Update {
     /// The latest independent command's ticket and refusal, if any. Accept
     /// reports through the ordinary edit receipt instead.
     pub reply: Option<(u64, Option<String>)>,
+    /// Interrupted attempts offered for retry or discard.
+    pub interrupted: Arc<Vec<Interrupted>>,
+    /// Why earlier discards could not be read, when they could not.
+    pub interrupted_warning: Option<String>,
 }
 
 /// How the project service runs the AI worker. Production always uses the

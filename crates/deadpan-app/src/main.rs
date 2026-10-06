@@ -3,6 +3,7 @@
 mod dialogs;
 mod gag_presets;
 mod gain;
+mod jobs;
 mod keymap;
 mod keymap_file;
 mod library;

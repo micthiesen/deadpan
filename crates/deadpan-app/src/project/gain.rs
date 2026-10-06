@@ -57,7 +57,7 @@ impl Target {
     pub fn edit(&self, treatments: AudioTreatments) -> super::ProjectEdit {
         match &self.scoped {
             Some(target) => super::ProjectEdit::Scoped {
-                target: target.clone(),
+                target: Box::new(target.clone()),
                 edit: deadpan_core::ScopedNodeEdit::SetAudioTreatments { treatments },
             },
             None => super::ProjectEdit::SetAudioTreatments {

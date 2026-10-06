@@ -23,8 +23,10 @@ the ordinal minus one, below 2^32 (`ProviderSelection::for_attempt`), and its
 bundle receipt must carry that exact provider. Regeneration with different
 inputs allocates a new request instead.
 Only a current request can start an attempt, and only one attempt per request
-can be nonterminal. These are storage rules; the global one-generation-at-a-time
-scheduler is still unimplemented.
+can be nonterminal. These are storage rules. In the app, the
+[job coordinator](JOBS.md) admits one model job (generation or transcription)
+at a time; a queued generation keeps its recorded attempt nonterminal until
+it runs or is cancelled.
 
 The pure lifecycle exports validated checkpoints for queued, preflight, loading,
 running, validating, ready, failed, cancelling, and cancelled states. Relevance
@@ -49,6 +51,11 @@ Recovery is atomic. Read-only opens leave those attempts untouched. No stored
 PID is used to find, resume, or kill a process, so opening a copied project cannot
 claim a process belonging to another project or machine. Existing terminal
 attempts and ready candidates survive recovery.
+`interrupted_generation_attempts` lists interrupted attempts that are still
+the newest attempt of a current request and were not dismissed;
+`dismiss_interrupted_generation` records a dismissal outside history
+(`Reports/dismissed-interruptions.json`). The app's Jobs panel offers Retry
+and Discard for them ([jobs](JOBS.md)).
 
 Starting a retry retains an earlier selected ready candidate. When the latest
 attempt becomes ready, its receipt and selection commit together. Earlier ready

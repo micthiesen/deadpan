@@ -50,6 +50,10 @@ and `:gag-set` records `SetGag` ([gags](GAGS.md#changing-parameters-after-insert
 [Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
 requires a selected neutral Sequence with no Visual selection. Both preserve the
 copy bank and pending register choice, and use one atomic history entry per run.
+`Explode` converts the selected direct-child Repeat and refuses every Visual
+selection; `Duplicate { selector }` copies the selected beat or Visual range
+after itself and selects the copy. Both leave the register bank unchanged
+([explode and duplicate](EXPLODE_DUPLICATE.md)).
 See [operator qualification](qualification/operator-motions-2026-10-02.md) for
 typed selectors, pending input, exact capture provenance and receipt ownership.
 See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the

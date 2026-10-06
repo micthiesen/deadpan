@@ -22,12 +22,16 @@ use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+#[path = "composite_insert/bound_preserve.rs"]
+mod bound_preserve;
 #[path = "composite_insert/delete.rs"]
 mod delete;
 #[path = "composite_insert/delete_range.rs"]
 mod delete_range;
 #[path = "composite_insert/edited_slice.rs"]
 mod edited_slice;
+#[path = "composite_insert/explode.rs"]
+mod explode;
 #[path = "composite_insert/group_selection.rs"]
 mod group_selection;
 #[path = "composite_insert/nested_sequence.rs"]

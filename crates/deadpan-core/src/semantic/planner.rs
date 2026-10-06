@@ -136,6 +136,12 @@ pub enum SemanticAllocationRequest {
     WrapRetime {
         step_index: usize,
     },
+    /// Fresh identities for one Explode, per [`crate::ExplodeRequirements`].
+    Explode {
+        step_index: usize,
+        nodes: usize,
+        marks: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -195,6 +201,10 @@ pub enum SemanticAllocation {
     WrapRetime {
         new_revision: RevisionId,
         id: NodeId,
+    },
+    Explode {
+        new_revision: RevisionId,
+        identities: crate::OccurrenceIdentities,
     },
 }
 
@@ -606,6 +616,10 @@ where
                     self.group(index, *selector, label)?;
                 }
                 SemanticInstruction::Ungroup => self.ungroup(index)?,
+                SemanticInstruction::Explode => self.explode(index)?,
+                SemanticInstruction::Duplicate { selector } => {
+                    self.duplicate(index, *selector)?;
+                }
                 SemanticInstruction::Repeat {
                     selector,
                     plays,
@@ -848,6 +862,8 @@ where
                         | SemanticInstruction::SetCaption { .. }
                         | SemanticInstruction::Group { .. }
                         | SemanticInstruction::Ungroup
+                        | SemanticInstruction::Explode
+                        | SemanticInstruction::Duplicate { .. }
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::YankSelection { .. }

@@ -297,8 +297,138 @@ pub(crate) fn apply(
     target: &ScopedNodeTarget,
     edit: &ScopedNodeEdit,
     identities: &OccurrenceIdentities,
+    context: crate::command::EditContext<'_>,
+) -> Result<ProjectDocument, EditError> {
+    apply_mapped(document, target, edit, identities, context).map(|(result, _)| result)
+}
+
+/// Bound for one multi-target scoped edit, such as "plays 2-3 only".
+pub const MAX_SCOPED_TARGETS: usize = 1024;
+
+/// Apply one value edit to several explicit targets in order, as one result.
+/// Each target isolates only its own selected plays; a later target follows
+/// the identities an earlier isolation gave its shared ancestors. Targets
+/// whose value is already current are skipped and take an empty pool.
+pub(crate) fn apply_many(
+    document: &ProjectDocument,
+    edits: &[ScopedTargetEdit],
+    identities: &[OccurrenceIdentities],
     mut context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    if edits.is_empty() || edits.len() > MAX_SCOPED_TARGETS {
+        return Err(limit("a multi-target scoped edit names 1..=1024 targets"));
+    }
+    if identities.len() != edits.len() {
+        return Err(invalid(
+            "a multi-target scoped edit needs one pool per target",
+        ));
+    }
+    let mut pending: Vec<_> = edits.iter().map(|edit| edit.target.clone()).collect();
+    let mut result = document.clone();
+    let mut changed = false;
+    for index in 0..pending.len() {
+        let target = pending[index].clone();
+        let edit = &edits[index].edit;
+        if preflight(&result, &target, edit)?.requirements.unchanged {
+            if !identities[index].nodes.is_empty() || !identities[index].marks.is_empty() {
+                return Err(invalid(
+                    "an unchanged scoped target requires an empty identity pool",
+                ));
+            }
+            continue;
+        }
+        let (next, mappings) = apply_mapped(
+            &result,
+            &target,
+            edit,
+            &identities[index],
+            crate::command::EditContext {
+                allocation: context.allocation,
+                allowances: context.allowances.as_deref_mut(),
+            },
+        )?;
+        for later in &mut pending[index + 1..] {
+            remap_target(later, &mappings);
+        }
+        result = next;
+        changed = true;
+    }
+    if !changed {
+        return Err(invalid("scoped edit does not change any selected value"));
+    }
+    Ok(result)
+}
+
+fn remap_target(target: &mut ScopedNodeTarget, mappings: &[IsolationMap]) {
+    for mapping in mappings {
+        if target.repeats.len() >= mapping.prefix.len()
+            && target.repeats[..mapping.prefix.len()] == mapping.prefix[..]
+        {
+            if let Some(node) = mapping.nodes.get(&target.node) {
+                target.node = node.clone();
+            }
+            for scope in &mut target.repeats {
+                if let Some(repeat) = mapping.nodes.get(&scope.repeat) {
+                    scope.repeat = repeat.clone();
+                }
+            }
+        }
+    }
+}
+
+/// Exact per-target identity needs of [`apply_many`], staged in order.
+pub(crate) fn many_requirements(
+    document: &ProjectDocument,
+    edits: &[ScopedTargetEdit],
+) -> Result<Vec<ScopedEditRequirements>, EditError> {
+    if edits.is_empty() || edits.len() > MAX_SCOPED_TARGETS {
+        return Err(limit("a multi-target scoped edit names 1..=1024 targets"));
+    }
+    let allocation = crate::RevisionId::new("scoped-preflight")?;
+    let mut pending: Vec<_> = edits.iter().map(|edit| edit.target.clone()).collect();
+    let mut staged = document.clone();
+    let mut output = Vec::with_capacity(edits.len());
+    for index in 0..pending.len() {
+        let target = pending[index].clone();
+        let edit = &edits[index].edit;
+        let requirements = preflight(&staged, &target, edit)?.requirements;
+        output.push(requirements);
+        if requirements.unchanged {
+            continue;
+        }
+        let placeholders = OccurrenceIdentities {
+            nodes: (0..requirements.nodes)
+                .map(|n| NodeId::new(format!("scoped-preflight-{index}-{n}")))
+                .collect::<Result<_, _>>()?,
+            marks: (0..requirements.marks)
+                .map(|n| crate::MarkId::new(format!("scoped-preflight-{index}-{n}")))
+                .collect::<Result<_, _>>()?,
+        };
+        let (next, mappings) = apply_mapped(
+            &staged,
+            &target,
+            edit,
+            &placeholders,
+            crate::command::EditContext {
+                allocation: &allocation,
+                allowances: None,
+            },
+        )?;
+        for later in &mut pending[index + 1..] {
+            remap_target(later, &mappings);
+        }
+        staged = next;
+    }
+    Ok(output)
+}
+
+fn apply_mapped(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    edit: &ScopedNodeEdit,
+    identities: &OccurrenceIdentities,
+    mut context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, Vec<IsolationMap>), EditError> {
     let plan = preflight(document, target, edit)?;
     let unchanged = plan.requirements.unchanged;
     let resolved = plan.resolve(document, target, identities)?;
@@ -350,5 +480,5 @@ pub(crate) fn apply(
     // Value edits do not move marks. Isolation already moved concrete bindings
     // and copied owned definitions, including dormant and unresolved intent.
     crate::compound::wire::size(&result, crate::MAX_DOCUMENT_JSON_BYTES)?;
-    Ok(result)
+    Ok((result, resolved.mappings))
 }

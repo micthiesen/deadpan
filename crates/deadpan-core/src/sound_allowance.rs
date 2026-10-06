@@ -284,6 +284,85 @@ impl SoundAllowanceEdit {
         Ok(())
     }
 
+    /// Explode copies one play of `repeat`: its concrete issuers move to the copy.
+    pub(crate) fn explode_play(
+        &mut self,
+        repeat: &NodeId,
+        iteration: &IterationId,
+        mapping: &BTreeMap<NodeId, NodeId>,
+    ) -> Result<(), EditError> {
+        for allowances in self.values.values_mut() {
+            let mut values = allowances.0.clone();
+            for issuer in &mut values {
+                if issuer
+                    .instance()
+                    .repeats
+                    .iter()
+                    .any(|step| &step.node == repeat && &step.iteration == iteration)
+                    && mapping.contains_key(&issuer.instance().node)
+                {
+                    crate::occurrence_edit::remap_instance(issuer.instance_mut(), mapping);
+                }
+            }
+            *allowances = SoundHoldAllowances::try_from(values)?;
+        }
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
+    /// Explode materializes one default gap as Hold `id`; its permissions
+    /// follow that Hold, still addressed below the play it belongs to.
+    pub(crate) fn explode_gap(
+        &mut self,
+        repeat: &NodeId,
+        after: &IterationId,
+        id: &NodeId,
+    ) -> Result<(), EditError> {
+        for allowances in self.values.values_mut() {
+            let mut values = allowances.0.clone();
+            for issuer in &mut values {
+                if let SoundHoldIssuer::RepeatGap {
+                    instance,
+                    gap_after,
+                } = issuer
+                    && &instance.node == repeat
+                    && gap_after == after
+                {
+                    let mut repeats = instance.repeats.clone();
+                    repeats.push(RepeatInstance {
+                        node: repeat.clone(),
+                        iteration: after.clone(),
+                    });
+                    *issuer = SoundHoldIssuer::Node {
+                        instance: InstancePath {
+                            node: id.clone(),
+                            repeats,
+                        },
+                    };
+                }
+            }
+            *allowances = SoundHoldAllowances::try_from(values)?;
+        }
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
+    /// After explode, `repeat` is an ordinary Sequence and leaves every path.
+    pub(crate) fn strip_repeat(&mut self, repeat: &NodeId) -> Result<(), EditError> {
+        for allowances in self.values.values_mut() {
+            let mut values = allowances.0.clone();
+            for issuer in &mut values {
+                issuer
+                    .instance_mut()
+                    .repeats
+                    .retain(|step| &step.node != repeat);
+            }
+            *allowances = SoundHoldAllowances::try_from(values)?;
+        }
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
     /// Default ancestors match every concrete use of the selected definition.
     /// Physical ownership excludes overrides; no wildcard becomes a new grant.
     pub(crate) fn isolate_scoped(

@@ -356,6 +356,16 @@ impl DeadpanApp {
             self.transcription.activity.start();
         }
         let repaint = context.clone();
+        let handle = self.service.jobs().register(
+            crate::jobs::JobSpec::new(
+                crate::jobs::JobKind::Transcription,
+                self.transcription.session,
+            )
+            // Reading the sound and detecting pauses need no model slot.
+            .deferred()
+            .detail("the Original")
+            .cancel_flag(&cancel),
+        );
         let spawned = std::thread::Builder::new()
             .name("deadpan-transcription".into())
             .spawn(move || {
@@ -371,6 +381,7 @@ impl DeadpanApp {
                     &model,
                     vad.as_ref(),
                     &cancel,
+                    &handle,
                     detected,
                     |percent| {
                         let _ = sender.send(Event::Progress(percent));
@@ -644,9 +655,19 @@ impl DeadpanApp {
         ui.label(style::section_title("TRANSCRIPT", false));
         match self.transcription.status.clone() {
             Status::Unchecked | Status::Preparing => {
+                let waiting = self.service.jobs().waiting_for(
+                    crate::jobs::JobKind::Transcription,
+                    self.transcription.session,
+                );
                 ui.horizontal(|ui| {
                     crate::preview::accessibility::busy(ui);
-                    ui.weak("Preparing the Original’s audio…");
+                    match waiting {
+                        // Pauses are still detected while it waits.
+                        Some(holder) => ui.weak(format!(
+                            "Transcription waits for {holder} to finish; :jobs shows the queue."
+                        )),
+                        None => ui.weak("Preparing the Original’s audio…"),
+                    };
                 });
             }
             Status::NeedsModel => {
@@ -902,10 +923,12 @@ fn run_transcription(
     model: &deadpan_jobs::transcription::ModelInput,
     vad: Option<&deadpan_jobs::transcription::ModelInput>,
     cancel: &AtomicBool,
+    handle: &crate::jobs::JobHandle,
     detected: impl FnOnce(activity::Detection),
-    progress: impl FnMut(u8),
+    mut progress: impl FnMut(u8),
 ) -> Result<(TranscriptKey, Transcript), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
+    handle.set_progress("Reading the Original's sound", None);
     let prepared = activity::prepare(package, cancel, deadline);
     let (analysis, runtime) = match prepared {
         Ok(prepared) => prepared,
@@ -917,8 +940,19 @@ fn run_transcription(
         }
     };
     if let Some(vad) = vad {
+        handle.set_progress("Detecting speech", None);
         detected(activity::detect(&runtime, vad, &analysis, cancel, deadline));
     }
+    // Only whisper itself needs the AI model slot; reading the sound and
+    // detecting pauses (CPU) run while another model holds it.
+    handle
+        .acquire(Some(cancel))
+        .map_err(|stopped| format!("transcription was {stopped} while waiting for the AI model"))?;
+    handle.set_progress("Transcribing", None);
+    let progress = |percent: u8| {
+        handle.set_progress("Transcribing", Some(f32::from(percent.min(100)) / 100.0));
+        progress(percent);
+    };
     let language = Language::Code("en".into());
     let label: String = language.clone().into();
     let attempt = uuid::Uuid::new_v4().simple().to_string();

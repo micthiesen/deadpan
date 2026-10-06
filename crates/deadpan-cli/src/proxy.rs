@@ -114,6 +114,10 @@ pub struct BuildControl<'a> {
     /// While set the worker's process group is suspended and verification
     /// waits; paused time never counts as a stall.
     pub pause: Option<&'a AtomicBool>,
+    /// Total time the build has been paused, kept by whoever sets `pause`;
+    /// it extends the build's overall deadline (each step also extends its
+    /// own deadline by the pauses it observes).
+    pub paused: Option<&'a std::sync::atomic::AtomicU64>,
     pub stall: Duration,
 }
 
@@ -122,6 +126,7 @@ impl<'a> BuildControl<'a> {
         Self {
             cancelled,
             pause: None,
+            paused: None,
             stall: deadpan_media::PROXY_STALL_TIMEOUT,
         }
     }
@@ -309,7 +314,7 @@ pub fn build_proxy_with_plan(
         &mut source,
         video.index().content(),
         original.object().byte_length().max(1),
-        remaining(started)?,
+        remaining(started, &control)?,
         control.cancelled,
     )?;
     drop(source);
@@ -319,7 +324,7 @@ pub fn build_proxy_with_plan(
         info,
         frames,
         &plan,
-        remaining(started)?,
+        remaining(started, &control)?,
     )?;
     // One VideoToolbox proxy session per user at a time, across processes:
     // its encoder service has hung under many concurrent sessions.
@@ -350,7 +355,7 @@ pub fn build_proxy_with_plan(
         info,
         plan.reason,
         VerifyControl {
-            timeout: remaining(started)?,
+            timeout: remaining(started, &control)?,
             cancelled: control.cancelled,
             pause: control.pause,
         },
@@ -371,8 +376,13 @@ fn check_space(volume: &'static str, available: u64, bytes: u64) -> Result<(), P
     Ok(())
 }
 
-fn remaining(started: Instant) -> Result<Duration, ProxyBuildError> {
-    let left = PROXY_BUILD_TIMEOUT.saturating_sub(started.elapsed());
+fn remaining(started: Instant, control: &BuildControl<'_>) -> Result<Duration, ProxyBuildError> {
+    let paused = Duration::from_millis(
+        control
+            .paused
+            .map_or(0, |paused| paused.load(Ordering::Acquire)),
+    );
+    let left = (PROXY_BUILD_TIMEOUT + paused).saturating_sub(started.elapsed());
     if left.is_zero() {
         return Err(deadpan_media::ConversionError::Deadline.into());
     }

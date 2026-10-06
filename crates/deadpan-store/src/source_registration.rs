@@ -1332,6 +1332,15 @@ pub(crate) fn validate_hold_audio_source(
             edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
             ..
         } => audio,
+        // Each changed Hold target uses the same admission as a single edit.
+        Command::EditScopedMany { edits, .. } => {
+            for scoped in edits {
+                if let deadpan_core::ScopedNodeEdit::SetHoldAudio { audio } = &scoped.edit {
+                    validate_hold_audio_recipe(connection, current, next, audio)?;
+                }
+            }
+            return Ok(());
+        }
         // A new pause can carry reversed audio, which reads qualified
         // Original samples. (Room tone has always been chosen with
         // SetHoldAudio, so earlier histories keep their admission; tails and
@@ -1343,6 +1352,15 @@ pub(crate) fn validate_hold_audio_source(
         }
         _ => return Ok(()),
     };
+    validate_hold_audio_recipe(connection, current, next, audio)
+}
+
+fn validate_hold_audio_recipe(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+    audio: &deadpan_core::HoldAudio,
+) -> Result<(), StoreError> {
     let source = match audio {
         deadpan_core::HoldAudio::Silence
         | deadpan_core::HoldAudio::Tone { .. }

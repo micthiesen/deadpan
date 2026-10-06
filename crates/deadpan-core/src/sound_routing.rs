@@ -425,6 +425,8 @@ impl RootSoundEditCapture {
                 document.source_roll(parent, left, right, *delta_frames)?;
                 true
             }
+            // Explode changes structure only; every play keeps its root time.
+            Command::Explode { .. } => true,
             _ => false,
         };
         if fixed_duration {

@@ -407,6 +407,26 @@ fn digits(input: &str) -> bool {
     !input.is_empty() && input.bytes().all(|byte| byte.is_ascii_digit())
 }
 
+/// `recipe` with a constant ranged step, keeping trim, mutes and saturation.
+pub(crate) fn ranged_step(
+    recipe: &deadpan_core::AudioTreatments,
+    range: deadpan_core::GainRange,
+    millidecibels: i32,
+) -> Result<deadpan_core::AudioTreatments, String> {
+    let clip = recipe
+        .clip_gain()
+        .cloned()
+        .unwrap_or_default()
+        .adjust_range(range, millidecibels)
+        .map_err(|error| error.to_string())?;
+    let mut order = recipe.order().to_vec();
+    if !order.contains(&deadpan_core::AudioTreatmentStage::ClipGain) {
+        order.insert(0, deadpan_core::AudioTreatmentStage::ClipGain);
+    }
+    deadpan_core::AudioTreatments::with_stages(order, Some(clip), recipe.saturation())
+        .map_err(|error| error.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1269,6 +1269,16 @@ successful admission. Temporal edits, implicit gap recipes and occurrence macros
 remain open. See
 [scoped editing](docs/SCOPED_EDITING.md).
 
+`Explode` converts a Repeat in place: overrides stay, the first default play
+keeps the definition, other default plays get transparent copies, default gaps
+become IsolateGap-style Holds and non-identity escalation becomes one group per
+play and its gap. Close retained clocks for the concrete play (Captured
+argument, or the birth clause's definition root); never recompute them, and
+capture only the Repeat's own gap clock. Duplicate resolves to the exact paste
+command of its own capture. `EditScopedMany` carries a value per target and
+remaps later targets through earlier isolation. Prove changes with decoded PCM
+and golden-hash equality. See [explode and duplicate](docs/EXPLODE_DUPLICATE.md).
+
 ## Validation and delivery
 
 Retime edits keep input selection and output allocation distinct. WrapRetime

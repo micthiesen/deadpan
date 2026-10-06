@@ -285,6 +285,7 @@ impl DeadpanApp {
             match choice {
                 ScopeChoice::All => state.switch_all(workspace),
                 ScopeChoice::Play(play) => state.switch_play(workspace, play),
+                ScopeChoice::Plays(plays) => state.switch_plays(workspace, &plays),
             }
         })();
         match result {
@@ -454,6 +455,18 @@ impl DeadpanApp {
                 self.pane = Pane::Sequence;
             }
             if let Some(choice) = choice {
+                if let Some(plays) = choice.label.strip_prefix("plays ") {
+                    let plays = plays.split('/').next().unwrap_or(plays);
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Plays {plays} edited together  :scope plays"
+                        ))
+                        .strong(),
+                    )
+                    .on_hover_text(
+                        "Gain, Camera and pause-audio changes apply to this beat in every selected play, in one Undo.",
+                    );
+                }
                 ui.horizontal_wrapped(|ui| {
                     if ui
                         .selectable_label(choice.one_based.is_none(), "All plays  :scope all")
@@ -616,6 +629,8 @@ fn scoped_structural_action(action: Action) -> bool {
         Action::Insert
             | Action::Group
             | Action::Ungroup
+            | Action::Explode
+            | Action::Duplicate
             | Action::OfferInsert
             | Action::Edit(_)
             | Action::Trim

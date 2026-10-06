@@ -27,11 +27,12 @@ pub enum MenuCommand {
     Keys,
     Models,
     Storage,
+    Jobs,
     PortableCopy,
     Quit,
 }
 
-const COMMANDS: [(&str, MenuCommand); 16] = [
+const COMMANDS: [(&str, MenuCommand); 17] = [
     ("deadpan.file.new", MenuCommand::New),
     ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
@@ -46,6 +47,7 @@ const COMMANDS: [(&str, MenuCommand); 16] = [
     ("deadpan.help.keys", MenuCommand::Keys),
     ("deadpan.app.models", MenuCommand::Models),
     ("deadpan.app.storage", MenuCommand::Storage),
+    ("deadpan.app.jobs", MenuCommand::Jobs),
     ("deadpan.file.portable-copy", MenuCommand::PortableCopy),
     ("deadpan.app.quit", MenuCommand::Quit),
 ];
@@ -96,7 +98,10 @@ impl MenuState {
             | MenuCommand::PortableCopy => self.ready && self.project,
             MenuCommand::Undo => self.ready && self.can_undo,
             MenuCommand::Redo => self.ready && self.can_redo,
-            MenuCommand::ViewOriginal | MenuCommand::Models | MenuCommand::Storage => self.ready,
+            MenuCommand::ViewOriginal
+            | MenuCommand::Models
+            | MenuCommand::Storage
+            | MenuCommand::Jobs => self.ready,
             MenuCommand::ViewEdit => self.ready && self.project,
             MenuCommand::Keys => self.help_allowed,
             MenuCommand::Quit => true,
@@ -158,6 +163,8 @@ impl MenuBar {
         let models = item("deadpan.app.models", "Models…", None);
         // Project and per-user storage; works without a project too.
         let storage = item("deadpan.app.storage", "Storage…", None);
+        // Background jobs of this project and app-wide ones.
+        let jobs = item("deadpan.app.jobs", "Jobs…", None);
         let portable = item("deadpan.file.portable-copy", "Save Portable Copy…", None);
         // Quit asks the window to close so unfinished project work completes
         // through the app's ordinary close path.
@@ -171,6 +178,7 @@ impl MenuBar {
                 &PredefinedMenuItem::separator(),
                 &models,
                 &storage,
+                &jobs,
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::services(None),
                 &PredefinedMenuItem::separator(),
@@ -246,6 +254,7 @@ impl MenuBar {
                 (MenuCommand::Keys, keys),
                 (MenuCommand::Models, models),
                 (MenuCommand::Storage, storage),
+                (MenuCommand::Jobs, jobs),
                 (MenuCommand::PortableCopy, portable),
                 (MenuCommand::Quit, quit),
             ],

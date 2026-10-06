@@ -289,7 +289,15 @@ impl DeadpanApp {
                 Event::State(state) => self.proxies.state = state,
                 Event::Done(state) => {
                     self.proxies.events = None;
-                    self.proxies.state = state;
+                    // A cancellation in this session came from the Jobs
+                    // panel; do not rebuild at once.
+                    self.proxies.state = if state == ProxyState::Unchecked
+                        && self.proxies.cancel.load(Ordering::Acquire)
+                    {
+                        ProxyState::Failed("cancelled; :proxies retry builds it again".into())
+                    } else {
+                        state
+                    };
                 }
             }
             context.request_repaint();
@@ -328,6 +336,11 @@ impl DeadpanApp {
         self.proxies.state = ProxyState::Building;
         let busy = Arc::clone(&self.proxies.busy);
         let repaint = context.clone();
+        let handle = self.service.jobs().register(
+            crate::jobs::JobSpec::new(crate::jobs::JobKind::Proxy, session)
+                .detail("the Original")
+                .cancel_flag(&cancel),
+        );
         let spawned = std::thread::Builder::new()
             .name("deadpan-proxy".into())
             .spawn(move || {
@@ -343,6 +356,7 @@ impl DeadpanApp {
                     worker.as_deref(),
                     &cancel,
                     &busy,
+                    &handle,
                     &send,
                 );
                 send(Event::Done(state));
@@ -359,6 +373,7 @@ impl DeadpanApp {
 
 /// The job thread: check, then build with a monitor that suspends the
 /// worker while the app is busy or the machine should rest.
+#[allow(clippy::too_many_arguments)]
 fn build(
     cache: &ProxyCache,
     registered: &Arc<crate::project::RegisteredSource>,
@@ -366,6 +381,7 @@ fn build(
     worker: Option<&std::path::Path>,
     cancel: &AtomicBool,
     busy: &AtomicBool,
+    handle: &crate::jobs::JobHandle,
     send: &(dyn Fn(Event) + Sync),
 ) -> ProxyState {
     let Some(video) = registered.receipt.snapshot().video() else {
@@ -393,23 +409,35 @@ fn build(
         return ProxyState::Unavailable("the media worker is not installed beside the app".into());
     };
     let pause = AtomicBool::new(false);
+    // Milliseconds paused so far; the build's overall deadline moves by it.
+    let paused = std::sync::atomic::AtomicU64::new(0);
     let done = AtomicBool::new(false);
     std::thread::scope(|scope| {
         scope.spawn(|| {
             let mut power: Option<(std::time::Instant, Option<String>)> = None;
             let mut reported: Option<Option<String>> = None;
+            let mut last = std::time::Instant::now();
             while !done.load(Ordering::Acquire) && !cancel.load(Ordering::Acquire) {
+                if pause.load(Ordering::Acquire) {
+                    let since = u64::try_from(last.elapsed().as_millis()).unwrap_or(u64::MAX);
+                    paused.fetch_add(since, Ordering::AcqRel);
+                }
+                last = std::time::Instant::now();
                 if power
                     .as_ref()
                     .is_none_or(|(checked, _)| checked.elapsed() >= POWER_POLL)
                 {
                     power = Some((std::time::Instant::now(), power_guard()));
                 }
-                let reason = if busy.load(Ordering::Acquire) {
-                    Some("the edit is playing or rendering".to_owned())
-                } else {
-                    power.as_ref().and_then(|(_, reason)| reason.clone())
-                };
+                // The coordinator's yield rules (playback, render, an AI
+                // model, tracking), then the UI's own busy signal and power.
+                let reason = handle
+                    .pause_reason()
+                    .or_else(|| {
+                        busy.load(Ordering::Acquire)
+                            .then(|| "the edit is playing or rendering".to_owned())
+                    })
+                    .or_else(|| power.as_ref().and_then(|(_, reason)| reason.clone()));
                 pause.store(reason.is_some(), Ordering::Release);
                 if reported.as_ref() != Some(&reason) {
                     send(Event::State(match &reason {
@@ -441,6 +469,7 @@ fn build(
             }),
             BuildControl {
                 pause: Some(&pause),
+                paused: Some(&paused),
                 ..BuildControl::new(cancel)
             },
         );

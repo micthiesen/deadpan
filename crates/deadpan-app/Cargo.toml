@@ -10,7 +10,7 @@ publish.workspace = true
 
 [features]
 # Developer-only whole-workspace replay. The shipped app does not include the runner.
-ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:tempfile", "deadpan-cli/synthetic-worker"]
+ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:rusqlite", "dep:tempfile", "deadpan-cli/synthetic-worker"]
 
 [dependencies]
 deadpan-diagnostics.workspace = true
@@ -37,6 +37,8 @@ image = { version = "=0.25.10", default-features = false, features = ["png"], op
 serde.workspace = true
 serde_json.workspace = true
 tempfile = { workspace = true, optional = true }
+# Replay crash copies take the live database through SQLite's backup API.
+rusqlite = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Validate system font faces with the same parser already used by epaint.

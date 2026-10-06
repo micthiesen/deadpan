@@ -139,9 +139,13 @@ stops the worker. The build respects the user and the machine:
 - **Setting.** `:proxies off` disables automatic proxies and `:proxies on`
   enables them. The setting is remembered per user in
   `~/Library/Application Support/Deadpan/proxies.json`.
-- **Pause.** A monitor thread suspends the worker while the edit plays or a
-  render runs. It also suspends it while `pmset` reports battery power, Low
-  Power Mode or thermal pressure, rechecked every 30 s.
+- **Pause.** A monitor thread suspends the worker while the edit plays, a
+  render runs, an AI model (generation or transcription) runs, or tracking or
+  face detection runs ([job coordinator](JOBS.md) yield rules). It also
+  suspends it while `pmset` reports battery power, Low Power Mode or thermal
+  pressure, rechecked every 30 s.
+- **Cancel.** The Jobs panel (`:jobs`) cancels a build; it is not rebuilt
+  until `:proxies retry`.
 - **Retry.** `:proxies retry` forgets a remembered failure and builds again.
 - **Status.** The Original card shows "preparing seek proxy", "seek proxy
   paused", "seek proxy failed" or "no seek proxy", with the reason on hover.

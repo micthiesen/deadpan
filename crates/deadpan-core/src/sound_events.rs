@@ -459,6 +459,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetMark { .. }
         | Command::DeleteMark { .. }
         | Command::EditScoped { .. }
+        | Command::EditScopedMany { .. }
         | Command::Group { .. }
         | Command::GroupSelection { .. }
         | Command::Ungroup { .. } => true,
@@ -530,6 +531,11 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetGapOverride { .. }
         | Command::IsolateGap { .. }
         | Command::ClearGapOverride { .. } => false,
+        // Explode keeps every play at its root time; a change inside a
+        // retained beat sound scope refuses before this point.
+        Command::Explode { .. } => true,
+        // Duplicate resolves to its exact placement command before this check.
+        Command::Duplicate { .. } => false,
     }
 }
 

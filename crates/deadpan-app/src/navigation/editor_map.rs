@@ -76,6 +76,8 @@ pub enum BindingId {
     LeaveGroup,
     Group,
     Ungroup,
+    Explode,
+    Duplicate,
     Visual,
     InnerGroup,
     AroundGroup,
@@ -132,7 +134,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 77] = [
+    pub const ALL: [Self; 79] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -157,6 +159,8 @@ impl BindingId {
         Self::LeaveGroup,
         Self::Group,
         Self::Ungroup,
+        Self::Explode,
+        Self::Duplicate,
         Self::Visual,
         Self::InnerGroup,
         Self::AroundGroup,
@@ -236,6 +240,8 @@ impl BindingId {
             Self::EnterGroup => "group.enter",
             Self::Group => "group.create",
             Self::Ungroup => "group.ungroup",
+            Self::Explode => "structure.explode",
+            Self::Duplicate => "structure.duplicate",
             Self::LeaveGroup => "group.leave",
             Self::Visual => "visual",
             Self::InnerGroup => "object.inner_group",
@@ -664,6 +670,8 @@ impl Rule {
             Action::LeaveGroup => I::LeaveGroup,
             Action::Group => I::Group,
             Action::Ungroup => I::Ungroup,
+            Action::Explode => I::Explode,
+            Action::Duplicate => I::Duplicate,
             Action::VisualMoment => I::Visual,
             Action::SelectObject(deadpan_core::SemanticTextObject::InnerGroup) => I::InnerGroup,
             Action::SelectObject(deadpan_core::SemanticTextObject::AroundGroup) => I::AroundGroup,
@@ -848,6 +856,35 @@ impl Compiled {
             },
             overridden: false,
         });
+        // Explode and Duplicate are command aliases with optional configured
+        // paths, like Ungroup: no unmodified default key is assigned.
+        for (id, action, count, short) in [
+            (
+                BindingId::Explode,
+                Action::Explode,
+                "Explode once, without a count.",
+                "explode a Repeat into its plays",
+            ),
+            (
+                BindingId::Duplicate,
+                Action::Duplicate,
+                "Duplicate once, without a count.",
+                "duplicate a beat or range",
+            ),
+        ] {
+            definitions.push(Definition {
+                id,
+                paths: Vec::new(),
+                rule: Rule {
+                    action,
+                    count: CountPolicy::Refuse(count),
+                    short,
+                    repeatable: false,
+                    interrupt: false,
+                },
+                overridden: false,
+            });
+        }
         // The primary labels are the familiar editor paths, with native aliases following.
         for definition in &mut definitions {
             if definition.id == BindingId::First || definition.id == BindingId::Last {

@@ -846,3 +846,122 @@ fn copy_directory(source: &Path, destination: &Path) -> Result {
     }
     Ok(())
 }
+
+#[test]
+fn interrupted_attempts_are_offered_until_retried_or_dismissed() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("interrupted-list.deadpan");
+    let mut store = ProjectStore::create(&path, &document(3)?)?;
+    let first = allocate(&mut store, "first-request", 0, 1)?;
+    let second = allocate(&mut store, "second-request", 1, 2)?;
+    let third = allocate(&mut store, "third-request", 2, 3)?;
+    begin(&mut store, &first, "attempt")?;
+    begin(&mut store, &second, "attempt")?;
+    let third_attempt = begin(&mut store, &third, "attempt")?;
+    assert!(store.interrupted_generation_attempts()?.attempts.is_empty());
+    drop(store);
+
+    // A writable open interrupts all three; read-only opens list them too.
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let listed = |store: &ProjectStore| -> Result<Vec<String>> {
+        Ok(store
+            .interrupted_generation_attempts()?
+            .attempts
+            .into_iter()
+            .map(|attempt| format!("{}/{}", attempt.request_id, attempt.hold_id))
+            .collect())
+    };
+    assert_eq!(
+        listed(&store)?,
+        [
+            "first-request/hold-0",
+            "second-request/hold-1",
+            "third-request/hold-2"
+        ]
+    );
+    // Retry: a later attempt of the same request supersedes the entry.
+    begin(&mut store, &first, "attempt-2")?;
+    // Discard: durable across reopen, and only for offered attempts.
+    store.dismiss_interrupted_generation(
+        third_attempt.request_id.as_str(),
+        third_attempt.attempt_id.as_str(),
+    )?;
+    assert!(matches!(
+        store.dismiss_interrupted_generation("second-request", "not-an-attempt"),
+        Err(StoreError::GenerationAttempt(_))
+    ));
+    assert_eq!(listed(&store)?, ["second-request/hold-1"]);
+    // Acknowledging the recovery report does not hide the retry list.
+    store.acknowledge_recovery()?;
+    drop(store);
+    let read_only = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(listed(&read_only)?, ["second-request/hold-1"]);
+    assert!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?
+            .dismiss_interrupted_generation("second-request", "attempt")
+            .is_err()
+    );
+    // A new request makes the old one stale; its attempt is no longer offered.
+    drop(read_only);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    allocate(&mut store, "second-replacement", 1, 4)?;
+    // The retry itself was still queued when that writer closed, so this
+    // open interrupted it; it is offered in its request's place.
+    assert_eq!(listed(&store)?, ["first-request/hold-0"]);
+    // The next dismissal prunes the entry that no longer hides an offer
+    // (the third request's attempt is still offered and stays dismissed).
+    store.dismiss_interrupted_generation("first-request", "attempt-2")?;
+    let record = path.join("Reports/dismissed-interruptions.json");
+    let kept: Vec<(String, String)> = serde_json::from_slice(&fs::read(&record)?)?;
+    assert_eq!(
+        kept,
+        [
+            ("third-request".to_owned(), "attempt".to_owned()),
+            ("first-request".to_owned(), "attempt-2".to_owned())
+        ]
+    );
+    assert!(listed(&store)?.is_empty());
+    Ok(())
+}
+
+#[test]
+fn an_unreadable_dismissal_record_hides_nothing_and_is_rewritten() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("corrupt-dismissals.deadpan");
+    let mut store = ProjectStore::create(&path, &document(2)?)?;
+    let first = allocate(&mut store, "first-request", 0, 1)?;
+    let second = allocate(&mut store, "second-request", 1, 2)?;
+    begin(&mut store, &first, "attempt")?;
+    begin(&mut store, &second, "attempt")?;
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.dismiss_interrupted_generation("first-request", "attempt")?;
+    assert_eq!(store.interrupted_generation_attempts()?.attempts.len(), 1);
+    let record = path.join("Reports/dismissed-interruptions.json");
+    for (bytes, reason) in [
+        (b"{not json".to_vec(), "expected"),
+        // Valid JSON beyond the bound is refused, never truncated and parsed.
+        (
+            {
+                let mut big = b"[".to_vec();
+                big.extend(std::iter::repeat_n(b' ', 300 * 1024));
+                big.extend(b"]");
+                big
+            },
+            "larger than",
+        ),
+    ] {
+        fs::write(&record, bytes)?;
+        let listed = store.interrupted_generation_attempts()?;
+        assert_eq!(listed.attempts.len(), 2, "nothing is hidden");
+        let warning = listed.warning.expect("the person is told");
+        assert!(warning.contains(reason), "{warning}");
+        // Discarding rewrites the record.
+        store.dismiss_interrupted_generation("second-request", "attempt")?;
+        let rewritten = store.interrupted_generation_attempts()?;
+        assert_eq!(rewritten.warning, None);
+        assert_eq!(rewritten.attempts.len(), 1);
+        assert_eq!(rewritten.attempts[0].request_id, "first-request");
+    }
+    Ok(())
+}

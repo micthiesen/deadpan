@@ -9,6 +9,26 @@ edit one stable play by its current one-based number. These choices apply at the
 nearest displayed Repeat level. Nested Repeat choices remain separate. All
 plays preserves existing overrides. Browsing never creates an override.
 
+`:scope plays 2-3` (or a list such as `:scope plays 1,3` or `1,3-5`, at least
+two distinct plays) selects several stable plays of the nearest displayed Repeat
+together. The viewer browses the first; the inspector shows "Plays 2, 3 edited
+together" and the breadcrumb `[plays 2, 3/N]`. Gain, Camera and pause-audio
+changes then commit one `EditScopedMany` transaction: the same beat in every
+selected play, located structurally in each play's owned branch or the shared
+definition, with only those plays isolated and one Undo. A gain change carries
+over as the same trim step or ranged step, so each play keeps its own recipe; a
+play whose gain recipe differs in another way, or whose owned contents differ
+in structure, refuses with a message instead of being overwritten. Camera and
+pause-audio values are set as chosen in each play. Nested contents entered
+below the multi-play level keep the choice; `:scope all`, `:scope play N` and
+`]r`/`[r` end it. The choice survives its own commit, because the Repeat keeps
+its identity and stable play IDs.
+
+`:gain +3dB range=4-10` adds a constant step over exactly those local frames of
+the selected beat, keeping its trim, other ranges and saturation. Inside Repeat
+contents it is a partial-range edit within the selected play or plays. It is
+not recorded in macros.
+
 `]r` and `[r` step the nearest displayed Repeat through All plays, then play 1
 to N, clamped at both ends; a count steps further (`3[r` returns to All plays
 from play 3). On a selected Repeat beat in Your edit, `]r` opens it at play 1
@@ -83,7 +103,8 @@ for test, rendered and native evidence, source provenance and remaining limits.
 ## Remaining work
 
 Implicit default gaps have no authored node, so neither `j` nor `]r` selects
-them; they need their own recipe controls. This boundary does not implement occurrence-local cuts, replacement, Repeat
+them; they need their own recipe controls. Multi-play selection is chosen only
+by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
 count changes, Retime changes, implicit gap recipe editing, semantic recording
 inside occurrences or complete definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

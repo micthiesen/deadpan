@@ -547,6 +547,7 @@ fn unrelated_revision_rejects_and_exact_receipt_rebases_without_entry_cursor_equ
         target: state.selected.clone(),
         presentation: Some(presentation(&state).instance.clone()),
         cursor: ProjectFrame(2),
+        also: Vec::new(),
     };
     let commit = Commit {
         before,
@@ -624,6 +625,7 @@ fn nested_play_isolation_receipt_rebuilds_only_the_mapped_authored_path() {
         target: state.selected.clone(),
         presentation: Some(presentation(&state).instance.clone()),
         cursor: ProjectFrame(6),
+        also: Vec::new(),
     };
     let edit = ScopedNodeEdit::Rename {
         label: "Isolated leaf".into(),
@@ -1082,4 +1084,51 @@ fn play_steps_refuse_contents_without_a_repeat() {
     );
     let mut state = state(document, "speed", 0);
     assert!(state.step_play_in(true, 1).is_err());
+}
+
+#[test]
+fn several_plays_browse_the_first_and_address_each_selected_play() {
+    let document = fixture(
+        "outer",
+        vec![
+            repeat("outer", "group", 3, None),
+            sequence("group", &["first", "inner"]),
+            hold("first", 2),
+            repeat("inner", "leaf", 2, None),
+            hold("leaf", 2),
+        ],
+        BTreeMap::new(),
+        BTreeMap::new(),
+    );
+    let mut state = state(document.clone(), "outer", 6);
+    assert!(state.switch_plays_in(&[2]).is_err());
+    assert!(state.switch_plays_in(&[2, 9]).is_err());
+    state.switch_plays_in(&[3, 2, 3]).unwrap();
+    assert_eq!(state.scope_label, "outer · plays 2, 3/3");
+    assert_eq!(
+        state.selected.repeats,
+        [branch(&document, "outer", Some(1))]
+    );
+    state.enter_in().unwrap();
+    state.select_in(1).unwrap();
+    state.enter_in().unwrap();
+    // Nested contents keep the outer choice; the further play mirrors it.
+    let also = state.also_targets().unwrap();
+    assert_eq!(also.len(), 1);
+    assert_eq!(also[0].node, state.selected.node);
+    assert_eq!(
+        also[0].repeats,
+        [
+            branch(&document, "outer", Some(2)),
+            branch(&document, "inner", None)
+        ]
+    );
+    assert_eq!(
+        state.scope_label,
+        "outer · plays 2, 3/3 › inner · all plays"
+    );
+    // Any single scope choice ends the multi-play selection.
+    state.switch_play_in(1).unwrap();
+    assert!(state.also_targets().unwrap().is_empty());
+    assert_eq!(state.scope_label, "outer · play 2/3 › inner · play 1/2");
 }

@@ -502,9 +502,9 @@ fn walk(
     if depth > deadpan_core::MAX_DOCUMENT_DEPTH {
         return Err(PlanError::AudioQueryLimit("owner binding depth"));
     }
-    let probe_label =
+    let mut probe_label =
         AudioSample(i64::try_from(position.at.floor()).map_err(|_| TimeError::Overflow)?);
-    let (probe, bias) = state.grid.probe(probe_label)?;
+    let (mut probe, mut bias) = state.grid.probe(probe_label)?;
     loop {
         budget.spend(1 + state.repeats.len())?;
         budget.lookup.visited_nodes += 1;
@@ -546,6 +546,24 @@ fn walk(
         }
         let allocated =
             state.grid.boundary(state.extent.start)?..state.grid.boundary(state.extent.end)?;
+        // A retained clock receives this sample's start transferred from its
+        // consumer, for example a RoundEven output allocation that begins a
+        // fraction of an output sample before the owner's exact origin, mapped
+        // onto a Preserve input's PointCeil grid. That first output sample
+        // still overlaps the allocation and belongs to its first sample, as on
+        // the current clock; only a sample wholly before it is outside.
+        if probe_label.0.checked_add(1) == Some(allocated.start.0)
+            && allocated.start < allocated.end
+            && matches!(origin, AudioOwnerClockOrigin::Retained { .. })
+            && position
+                .at
+                .checked_add(position.step)?
+                .compare_integer(allocated.start.0)
+                .is_gt()
+        {
+            probe_label = allocated.start;
+            (probe, bias) = state.grid.probe(probe_label)?;
+        }
         if !allocated.contains(&probe_label) {
             if state.allow_inactive && matches!(origin, AudioOwnerClockOrigin::Retained { .. }) {
                 if probe_label < allocated.start {

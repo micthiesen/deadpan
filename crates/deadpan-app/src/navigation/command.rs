@@ -4,10 +4,49 @@ use deadpan_core::FrameDuration;
 
 use super::{Action, BeatEdit, duration::DurationInput};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScopeChoice {
     All,
     Play(u32),
+    /// `:scope plays 2-3` / `1,3`: several one-based plays edited together,
+    /// distinct and ascending.
+    Plays(Vec<u32>),
+}
+
+/// `2-3`, `1,3` or `1,3-5`: at least two distinct positive play numbers.
+fn scope_plays(input: &str) -> Result<Vec<u32>, String> {
+    const USAGE: &str =
+        "Use :scope plays 2-3 or :scope plays 1,3 with at least two positive play numbers.";
+    let number = |value: &str| {
+        (!value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit()))
+            .then(|| value.parse::<u32>().ok())
+            .flatten()
+            .filter(|value| *value > 0)
+            .ok_or(USAGE)
+    };
+    let mut plays = Vec::new();
+    for item in input.split(',') {
+        let (first, last) = match item.split_once('-') {
+            Some((first, last)) => (number(first)?, number(last)?),
+            None => {
+                let play = number(item)?;
+                (play, play)
+            }
+        };
+        if first > last
+            || (u64::from(last) - u64::from(first) + 1) + plays.len() as u64
+                > deadpan_core::MAX_SCOPED_TARGETS as u64
+        {
+            return Err(USAGE.into());
+        }
+        plays.extend(first..=last);
+    }
+    plays.sort_unstable();
+    plays.dedup();
+    if plays.len() < 2 {
+        return Err(USAGE.into());
+    }
+    Ok(plays)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,6 +69,8 @@ pub enum Entry {
     Diagnostics,
     /// `:storage`: open the project and cache storage panel.
     Storage,
+    /// `:jobs`: every background job, its state, progress and cancel.
+    Jobs,
     /// `:portable-copy`: save a verified self-contained copy of the project.
     PortableCopy,
     /// `:close`: close the open project, as File > Close Project does.
@@ -47,6 +88,12 @@ pub enum Entry {
     Gain(Option<deadpan_core::GainDb>),
     /// `:gain +=3dB` / `:gain -=3dB`: change the trim by a signed amount.
     GainStep(i32),
+    /// `:gain +3dB range=4-10`: a constant step over exactly those local
+    /// frames of the selected beat; inside Repeat contents, of each selected play.
+    GainRange {
+        millidecibels: i32,
+        range: deadpan_core::GainRange,
+    },
     GainMute,
     /// `:saturate 12dB` sets the selected beat's drive; `:saturate off`
     /// removes the stage.
@@ -194,15 +241,20 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("delete-frames", ":delete-frames 12f"),
     ("diagnostics", ":diagnostics"),
     ("discard-ai", ":discard-ai"),
+    (
+        "duplicate",
+        ":duplicate  copy the beat or range after itself",
+    ),
     ("edge", ":edge hard|auto [start|end|both]"),
     ("enter", ":enter  open the selected group"),
+    ("explode", ":explode  turn a Repeat into its plays"),
     ("framing-save", ":framing-save a"),
     ("gag", ":gag NAME [key=value …]"),
     ("gag-inspect", ":gag-inspect NAME"),
     ("gag-presets", ":gag-presets"),
     ("gag-save", ":gag-save NAME"),
     ("gag-set", ":gag-set NAME key=value"),
-    ("gain", ":gain +3dB | +=3dB | mute"),
+    ("gain", ":gain +3dB | +=3dB | mute | +3dB range=4-10"),
     ("gain-mute", ":gain-mute  mute or unmute the beat"),
     ("generate", ":generate [N]  AI pictures for the pause"),
     ("generate-ai", ":generate-ai [N]  same as :generate"),
@@ -214,6 +266,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("import", ":import  add a sound"),
     ("insert", ":insert  reuse the whole Original"),
     ("jcut", ":jcut 6f"),
+    ("jobs", ":jobs  background jobs, progress and cancel"),
     ("jump", ":jump a"),
     ("jump-back", ":jump-back"),
     ("jump-forward", ":jump-forward"),
@@ -262,7 +315,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("roll", ":roll +2f"),
     ("room-tone", ":room-tone"),
     ("saturate", ":saturate 12dB | off"),
-    ("scope", ":scope all | play N"),
+    ("scope", ":scope all | play N | plays 2-3"),
     ("select", ":select role=audio|video"),
     ("sequence", ":sequence  Your edit"),
     ("slip", ":slip +5f"),
@@ -321,6 +374,17 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     let Some(verb) = words.next() else {
         return Ok(Entry::Empty);
     };
+    // COMMANDS is the one verb table: completion, help and admission all
+    // read it, so a verb the parser accepts can never be missing from it.
+    if !COMMANDS
+        .iter()
+        .any(|(known, _)| known.eq_ignore_ascii_case(verb))
+    {
+        return Err(format!(
+            "Unknown command: {}. Use :help for available commands.",
+            verb.to_ascii_lowercase()
+        ));
+    }
     if verb.eq_ignore_ascii_case("group") {
         return super::group::parse(&input[verb.len()..]);
     }
@@ -348,7 +412,16 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                     .ok_or("Use :scope play N with a positive one-based play number.")?;
                 ScopeChoice::Play(play)
             }
-            _ => return Err("Use :scope all or :scope play N inside a Repeat.".into()),
+            Some("plays") => ScopeChoice::Plays(scope_plays(
+                words
+                    .next()
+                    .ok_or("Use :scope plays 2-3 or :scope plays 1,3.")?,
+            )?),
+            _ => {
+                return Err(
+                    "Use :scope all, :scope play N or :scope plays 2-3 inside a Repeat.".into(),
+                );
+            }
         };
         if words.next().is_some() {
             return Err("Extra arguments are not supported by this command.".into());
@@ -524,6 +597,26 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         if let Some(input) = super::escalation::parse(&arguments)? {
             return Ok(Entry::Action(Action::Edit(BeatEdit::Escalate(input))));
         }
+    }
+    if verb == "gain"
+        && let [amount, range] = words.clone().collect::<Vec<_>>().as_slice()
+        && let Some(range) = range.strip_prefix("range=")
+    {
+        const USAGE: &str =
+            "Use :gain +3dB range=4-10 with the selected beat's local frames, start before end.";
+        let millidecibels = crate::gain::parse_db(strip_db(amount))?.millidecibels();
+        let (start, end) = range.split_once('-').ok_or(USAGE)?;
+        let frames =
+            |value: &str| crate::gain::parse_frames(value.strip_suffix('f').unwrap_or(value));
+        let range = deadpan_core::GainRange::new(frames(start)?, frames(end)?)
+            .map_err(|_| USAGE.to_owned())?;
+        if millidecibels == 0 {
+            return Err("A ranged gain step must change the gain.".into());
+        }
+        return Ok(Entry::GainRange {
+            millidecibels,
+            range,
+        });
     }
     let argument = words.next();
     if words.next().is_some() {
@@ -740,6 +833,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "enter" => Action::EnterGroup,
         "parent" => Action::LeaveGroup,
         "ungroup" => Action::Ungroup,
+        "explode" => Action::Explode,
+        "duplicate" => Action::Duplicate,
         "select" => Action::VisualMoment,
         "yank" => Action::CopyMoment,
         "paste" => Action::PasteMoment { before: false },
@@ -756,7 +851,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
         | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "portable-copy"
+        | "storage" | "portable-copy" | "jobs"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -768,6 +863,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "models" => Entry::Models,
                 "diagnostics" => Entry::Diagnostics,
                 "storage" => Entry::Storage,
+                "jobs" => Entry::Jobs,
                 "portable-copy" => Entry::PortableCopy,
                 "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
@@ -778,7 +874,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
         | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "portable-copy" => {
+        | "storage" | "portable-copy" | "jobs" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1007,6 +1103,53 @@ mod tests {
         assert_eq!(parse(":gag-presets"), Ok(Entry::GagPresets));
         assert_eq!(parse(":sting"), Ok(Entry::Sting));
         assert!(parse(":sting loud").is_err());
+    }
+
+    #[test]
+    fn ranged_gain_takes_a_step_and_local_frames() {
+        assert_eq!(
+            parse(":gain -6dB range=4-10f"),
+            Ok(Entry::GainRange {
+                millidecibels: -6000,
+                range: deadpan_core::GainRange::new(
+                    deadpan_core::ExactRatio::integer(4),
+                    deadpan_core::ExactRatio::integer(10)
+                )
+                .unwrap()
+            })
+        );
+        for input in [
+            "gain +3dB range=10-4",
+            "gain +0dB range=1-2",
+            "gain +3dB range=4",
+            "gain +3dB span=1-2",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn scoped_multi_play_commands_list_distinct_plays() {
+        assert_eq!(
+            parse(":scope plays 2-3"),
+            Ok(Entry::Scope(ScopeChoice::Plays(vec![2, 3])))
+        );
+        assert_eq!(
+            parse(":scope plays 3,1,2-3"),
+            Ok(Entry::Scope(ScopeChoice::Plays(vec![1, 2, 3])))
+        );
+        for input in [
+            "scope plays",
+            "scope plays 2",
+            "scope plays 2-2",
+            "scope plays 3-2",
+            "scope plays 0-2",
+            "scope plays 1,,2",
+            "scope plays 1-2 extra",
+            "scope plays 1-5000",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
     }
 
     #[test]
@@ -1592,6 +1735,7 @@ mod tests {
             (":models", Entry::Models),
             (":diagnostics", Entry::Diagnostics),
             (":storage", Entry::Storage),
+            (":jobs", Entry::Jobs),
             (":portable-copy", Entry::PortableCopy),
             (":splice", Entry::Splice),
             ("source", Entry::Source),
@@ -1661,28 +1805,21 @@ mod tests {
         sorted.sort_unstable();
         sorted.dedup();
         assert_eq!(verbs, sorted, "COMMANDS must be sorted and unique");
-        let source = include_str!("command.rs");
-        let mut missing = std::collections::BTreeSet::new();
-        for literal in source.split('"').skip(1).step_by(2) {
-            if literal.is_empty()
-                || !literal
-                    .bytes()
-                    .all(|byte| byte.is_ascii_lowercase() || byte == b'-')
-                || verbs.contains(&literal)
-            {
-                continue;
-            }
-            let known = match parse(literal) {
-                Ok(_) => true,
-                Err(error) => !error.starts_with("Unknown command"),
-            };
-            if known {
-                missing.insert(literal);
-            }
-        }
+        // Admission reads COMMANDS (see `parse`), so the parser cannot accept
+        // an unlisted verb; every listed verb must reach a real parser arm.
+        let unparsed: Vec<_> = verbs
+            .iter()
+            .filter(|verb| parse(verb).is_err_and(|error| error.starts_with("Unknown command")))
+            .collect();
         assert!(
-            missing.is_empty(),
-            "verbs missing from COMMANDS: {missing:?}"
+            unparsed.is_empty(),
+            "COMMANDS verbs the parser does not handle: {unparsed:?}"
         );
+        for unknown in ["xyzzy", "jobsx", "stor", "renderz", "-", "--help"] {
+            assert!(
+                parse(unknown).is_err_and(|error| error.starts_with("Unknown command")),
+                "{unknown} must be refused as unknown"
+            );
+        }
     }
 }

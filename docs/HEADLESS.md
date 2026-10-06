@@ -545,6 +545,35 @@ Inheritance follows the owner: an externally owned Local mark referencing a
 copied host remains on its original authored host. It is not implicitly copied.
 See [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
 
+## Explode, duplicate and several plays
+
+`explode` converts one Repeat into an ordinary Sequence of independent plays;
+`duplicate` copies an ordinary Sequence child, sibling span or range after
+itself; `edit_scoped_many` applies one value per explicit scoped target, such
+as one node in plays 2 and 3 only. Hosts size the identity pools with the
+read-only core queries `explode_requirements`, `duplicate_requirements` and
+`scoped_many_requirements`; `timing.allocation` names the new revision.
+
+For three plays of a one-Hold definition with a gap, nodes are consumed per
+play: the first gap, the second play's copy and its gap, then the third copy.
+
+```json
+{"command": "explode", "node": "repeat",
+ "identities": {"nodes": ["gap-1", "copy-2", "gap-2", "copy-3"], "marks": []},
+ "timing": {"allocation": "NEW_REVISION", "ordinal": 0}}
+```
+
+```json
+{"command": "duplicate", "parent": "root",
+ "selection": {"type": "child", "node": "word"},
+ "identities": {"authored": {"nodes": ["copy", "copy-word"], "marks": []}, "aliases": []},
+ "timing": {"allocation": "NEW_REVISION", "ordinal": 0}}
+```
+
+Both are ordinary revision-bound edits with dry-run, one history entry and an
+exact Undo. See [explode and duplicate](EXPLODE_DUPLICATE.md) for the full
+contract, including attachment and retained-clock rules.
+
 ## Source-stage audio inspection
 
 ```sh

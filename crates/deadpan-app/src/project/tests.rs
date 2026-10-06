@@ -17,6 +17,7 @@ mod edited_slice;
 mod gain;
 mod generation;
 mod headless;
+mod jobs;
 mod macros;
 mod marks;
 mod moment;
@@ -678,6 +679,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         storage_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
+        job_board: crate::jobs::Jobs::new(),
     });
     let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
     let service = ProjectService {
@@ -755,6 +757,7 @@ fn held_shared() -> Arc<Shared> {
         storage_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
+        job_board: crate::jobs::Jobs::new(),
     })
 }
 
@@ -1047,6 +1050,7 @@ impl Harness {
             storage_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
+            job_board: crate::jobs::Jobs::new(),
         });
         let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (sender, jobs) = mpsc::sync_channel(1);

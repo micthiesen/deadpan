@@ -33,6 +33,13 @@ const EVENT_CAPACITY: usize = 64;
 /// (disconnected channel), cancels and fails the attempt.
 enum Event {
     Prepared(std::result::Result<Box<BridgeInputs>, String>),
+    /// The recorded attempt waits for the coordinator's inference slot.
+    Queued,
+    /// The coordinator admitted the job; its worker starts now.
+    Admitted,
+    /// While it waited, edits made the request stale; the attempt is
+    /// cancelled without loading the model.
+    Superseded,
     Progress(AttemptProgress),
     Record(AttemptRecord, SyncSender<std::result::Result<(), String>>),
 }
@@ -71,6 +78,9 @@ pub(super) struct State {
     job: Option<Job>,
     candidates: Arc<BTreeMap<NodeId, Candidate>>,
     candidates_key: Option<(u64, RevisionId, u64)>,
+    /// Interrupted attempts offered for retry, read with the candidates.
+    interrupted: Arc<Vec<crate::project::generation::Interrupted>>,
+    interrupted_warning: Option<String>,
     epoch: u64,
     preview: Option<Arc<CandidatePreview>>,
     reply: Option<(u64, Option<String>)>,
@@ -142,6 +152,8 @@ impl State {
         self.job = None;
         self.candidates = Arc::default();
         self.candidates_key = None;
+        self.interrupted = Arc::default();
+        self.interrupted_warning = None;
         self.preview = None;
         self.reply = None;
         self.finished_remote.clear();
@@ -176,7 +188,8 @@ impl Service {
             | GenerationOperation::Cancel { ticket, .. }
             | GenerationOperation::Select { ticket, .. }
             | GenerationOperation::Preview { ticket, .. }
-            | GenerationOperation::Discard { ticket, .. } => *ticket,
+            | GenerationOperation::Discard { ticket, .. }
+            | GenerationOperation::DismissInterrupted { ticket, .. } => *ticket,
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
             }
@@ -231,11 +244,39 @@ impl Service {
                 attempt,
                 ..
             } => self.discard_variant(session, &request, &attempt),
+            GenerationOperation::DismissInterrupted {
+                session,
+                request,
+                attempt,
+                ..
+            } => self.dismiss_interrupted(session, &request, &attempt),
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
             }
         };
         self.generation.reply = Some((ticket, result.err()));
+    }
+
+    /// Stop offering an interrupted attempt for retry; durable, not undoable.
+    fn dismiss_interrupted(&mut self, session: u64, request: &str, attempt: &str) -> Result<()> {
+        if self.generation.session != session
+            || self
+                .workspace
+                .as_ref()
+                .is_none_or(|workspace| workspace.session != session)
+        {
+            return Err("Project session changed before the request".into());
+        }
+        self.store
+            .as_mut()
+            .ok_or("Open a project first")?
+            .dismiss_interrupted_generation(request, attempt)
+            .map_err(display)?;
+        self.generation.epoch += 1;
+        self.message = Some(
+            "Discarded the interrupted AI attempt from the list. The pause is unchanged.".into(),
+        );
+        Ok(())
     }
 
     /// The offered candidate of `request` that contains `attempt`.
@@ -368,6 +409,12 @@ impl Service {
         ) {
             return Err("AI pictures fill a pause. Select a pause (Hold) beat first.".into());
         }
+        let label = workspace
+            .document
+            .nodes()
+            .get(&hold)
+            .map(|node| node.label.clone())
+            .unwrap_or_default();
         let package = workspace.path.clone();
         let job = Job {
             ticket,
@@ -410,6 +457,19 @@ impl Service {
         let (allocation, receive_allocation) = mpsc::sync_channel(1);
         let thread_cancelled = cancelled.clone();
         let revision = revision.clone();
+        // Registered before the thread starts, so the Jobs panel and the
+        // inference budget see the job from its first instant.
+        let handle = self.shared.job_board.register(
+            crate::jobs::JobSpec::new(crate::jobs::JobKind::AiPause, Some(session))
+                // Conditioning and publication run without the model slot.
+                .deferred()
+                .detail(if variants > 1 {
+                    format!("{label} · {variants} variants")
+                } else {
+                    label
+                })
+                .cancel_flag(&cancelled),
+        );
         let thread = std::thread::Builder::new()
             .name("deadpan-ai-pause".into())
             .spawn(move || {
@@ -424,6 +484,7 @@ impl Service {
                         finished,
                         allocation: receive_allocation,
                     },
+                    handle,
                 );
             })
             .map_err(|error| format!("Could not start the AI pause job: {error}"))?;
@@ -569,6 +630,34 @@ impl Service {
         let Some(store) = &self.store else {
             return Arc::default();
         };
+        let (interrupted, warning) = match store.interrupted_generation_attempts() {
+            Ok(found) => (found.attempts, found.warning),
+            Err(error) => (
+                Vec::new(),
+                Some(format!(
+                    "Interrupted AI attempts could not be read: {error}"
+                )),
+            ),
+        };
+        self.generation.interrupted_warning = warning;
+        self.generation.interrupted = Arc::new(
+            interrupted
+                .into_iter()
+                .map(|attempt| {
+                    let pause = NodeId::new(attempt.hold_id.clone())
+                        .ok()
+                        .and_then(|hold| workspace.document.nodes().get(&hold))
+                        .filter(|node| matches!(node.kind, NodeKind::Hold { .. }))
+                        .map(|node| node.label.clone());
+                    crate::project::generation::Interrupted {
+                        request: attempt.request_id,
+                        attempt: attempt.attempt_id,
+                        hold: attempt.hold_id,
+                        pause,
+                    }
+                })
+                .collect(),
+        );
         match candidates(store, &workspace.document) {
             Ok(found) => {
                 self.generation.candidates = Arc::new(found);
@@ -603,6 +692,8 @@ impl Service {
             candidates,
             preview,
             reply: self.generation.reply.clone(),
+            interrupted: self.generation.interrupted.clone(),
+            interrupted_warning: self.generation.interrupted_warning.clone(),
         })
     }
 
@@ -642,24 +733,34 @@ impl Service {
     fn generation_event(&mut self, event: Event) {
         match event {
             Event::Prepared(prepared) => self.generation_prepared(prepared),
+            Event::Queued => {
+                if let Some(job) = &mut self.generation.job
+                    && job.phase != Phase::Cancelling
+                {
+                    job.phase = Phase::Queued;
+                }
+            }
+            Event::Admitted => {
+                if let Some(job) = &mut self.generation.job
+                    && job.phase == Phase::Queued
+                {
+                    job.phase = Phase::Preparing;
+                }
+            }
+            Event::Superseded => {
+                if let Some(job) = &mut self.generation.job {
+                    let note = "The pause changed while this attempt waited for the AI model, so the model was not started. Generate again.";
+                    job.note = Some(match job.note.take() {
+                        Some(earlier) => format!("{earlier} {note}"),
+                        None => note.into(),
+                    });
+                }
+            }
             Event::Progress(progress) => {
                 if let Some(job) = &mut self.generation.job
                     && job.phase != Phase::Cancelling
                 {
-                    job.phase = match progress {
-                        AttemptProgress::Preparing => Phase::Preparing,
-                        AttemptProgress::Stage(stage) => Phase::Stage(stage),
-                        AttemptProgress::Step {
-                            stage,
-                            completed,
-                            total,
-                        } => Phase::Step {
-                            stage,
-                            completed,
-                            total,
-                        },
-                        AttemptProgress::Qualifying => Phase::Qualifying,
-                    };
+                    job.phase = progress_phase(progress);
                 }
             }
             Event::Record(record, acknowledge) => {
@@ -1285,6 +1386,23 @@ enum Worker {
     },
 }
 
+fn progress_phase(progress: AttemptProgress) -> Phase {
+    match progress {
+        AttemptProgress::Preparing => Phase::Preparing,
+        AttemptProgress::Stage(stage) => Phase::Stage(stage),
+        AttemptProgress::Step {
+            stage,
+            completed,
+            total,
+        } => Phase::Step {
+            stage,
+            completed,
+            total,
+        },
+        AttemptProgress::Qualifying => Phase::Qualifying,
+    }
+}
+
 fn job_thread(
     mut worker: Worker,
     package: PathBuf,
@@ -1292,6 +1410,7 @@ fn job_thread(
     hold: NodeId,
     cancelled: Arc<AtomicBool>,
     channels: Channels,
+    handle: crate::jobs::JobHandle,
 ) {
     let Channels {
         events,
@@ -1303,10 +1422,35 @@ fn job_thread(
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;
     }
+    // Conditioning, allocation and publication are short reads and records;
+    // only each model run holds the inference slot, so an edit made while
+    // queued cannot stale the captured boundary pictures, and a finished run
+    // releases the model before the writer publishes it.
     // One attempt per allocation; the writer drops the sender when no
     // further variant follows.
     while let Ok(Ok(allocated)) = allocation.recv() {
+        // Claim the model; tell the writer only when it must wait.
+        handle.claim();
+        if !handle.admitted() {
+            let _ = events.try_send(Event::Queued);
+        }
+        if handle.wait_admitted(Some(&cancelled)).is_err() {
+            // Cancelled or closing while queued: the worker never starts
+            // and the attempt is recorded Cancelled below.
+            cancelled.store(true, Ordering::Release);
+        } else if !request_current(&package, &allocated.request.request_id) {
+            // Edits while it waited made the request stale; loading the model
+            // now would only produce pictures nobody can accept.
+            let _ = events.try_send(Event::Superseded);
+            cancelled.store(true, Ordering::Release);
+        }
+        let _ = events.try_send(Event::Admitted);
         let progress = |progress: AttemptProgress| {
+            let phase = progress_phase(progress.clone());
+            let fraction = phase
+                .steps()
+                .map(|(completed, total)| completed as f32 / total.max(1) as f32);
+            handle.set_progress(phase.label(), fraction);
             // Display-only; a full queue drops one step, never the worker.
             let _ = events.try_send(Event::Progress(progress));
         };
@@ -1333,12 +1477,27 @@ fn job_thread(
                 ),
             },
         };
+        // The worker has exited: the next waiter may load its model while the
+        // writer publishes this run.
+        handle.release();
         // The one-slot channel is empty: the writer consumed the previous
         // run before allocating this attempt.
         if finished.send(run).is_err() {
             return;
         }
     }
+}
+
+/// Whether `request` is still the current request of its pause, read without
+/// the writer. A read failure keeps it: the writer rechecks on its records.
+fn request_current(package: &std::path::Path, request: &RequestId) -> bool {
+    let Ok(store) = ProjectStore::open(package, AccessMode::ReadOnly) else {
+        return true;
+    };
+    !matches!(
+        store.generation_request(request),
+        Ok(Some(stored)) if stored.relevance != deadpan_jobs::Relevance::Current
+    )
 }
 
 /// The deterministic replacement for the model worker. It reports progress

@@ -726,7 +726,7 @@ impl CameraSession {
     fn edit(&self, framing: Option<Framing>) -> ProjectEdit {
         match &self.scoped {
             Some(target) => ProjectEdit::Scoped {
-                target: target.clone(),
+                target: Box::new(target.clone()),
                 edit: deadpan_core::ScopedNodeEdit::SetFraming { framing },
             },
             None => ProjectEdit::SetFraming {

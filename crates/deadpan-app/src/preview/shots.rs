@@ -119,8 +119,13 @@ impl ShotJob {
 fn scan(
     package: &std::path::Path,
     cancel: &AtomicBool,
+    handle: &crate::jobs::JobHandle,
     send: impl Fn(Event),
 ) -> Result<(ShotAnalysisKey, ShotAnalysis), String> {
+    handle
+        .wait_admitted(Some(cancel))
+        .map_err(|stopped| format!("shot detection was {stopped} before it started"))?;
+    handle.set_progress("Reading the Original", None);
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
     let store = ProjectStore::open(package, AccessMode::ReadOnly).map_err(|e| e.to_string())?;
     let input = deadpan_cli::shots::prepare_shot_input(&store, None, cancel, deadline)
@@ -138,6 +143,11 @@ fn scan(
         deadline,
         options,
         |done, total| {
+            // A safe boundary between pictures: wait while the edit plays,
+            // a render runs or tracking runs. A stop here is the scan's own
+            // cancellation, which the scanner observes next.
+            let _ = handle.checkpoint(Some(cancel));
+            handle.set_progress("Finding shots", Some(done as f32 / total.max(1) as f32));
             let percent = (done * 100 / total.max(1)) as u8;
             if percent != reported {
                 reported = percent;
@@ -237,10 +247,15 @@ impl DeadpanApp {
         self.shots.events = Some(receiver);
         self.shots.status = Status::Scanning(0);
         let repaint = context.clone();
+        let handle = self.service.jobs().register(
+            crate::jobs::JobSpec::new(crate::jobs::JobKind::Shots, session)
+                .detail("the Original")
+                .cancel_flag(&cancel),
+        );
         let spawned = std::thread::Builder::new()
             .name("deadpan-shots".into())
             .spawn(move || {
-                let result = scan(&package, &cancel, |event| {
+                let result = scan(&package, &cancel, &handle, |event| {
                     let _ = sender.send(event);
                     repaint.request_repaint();
                 });
@@ -337,6 +352,15 @@ impl DeadpanApp {
         let frames = self.source_length();
         match self.shots.status.clone() {
             Status::Unchecked => format!("{frames} frames · finding shots"),
+            Status::Scanning(0)
+                if self
+                    .service
+                    .jobs()
+                    .waiting_for(crate::jobs::JobKind::Shots, self.shots.session)
+                    .is_some() =>
+            {
+                format!("{frames} frames · shots queued")
+            }
             Status::Scanning(percent) => format!("{frames} frames · shots {percent}%"),
             Status::Saving(_) => format!("{frames} frames · shots 100%"),
             Status::Ready => match self.shot_count() {

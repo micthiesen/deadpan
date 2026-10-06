@@ -120,6 +120,8 @@ struct Service {
     jobs: SyncSender<Job>,
     library: Option<ProjectLibrary>,
     render: Option<render::NativeRender>,
+    /// The render's Jobs-panel registration while it owns the render slot.
+    render_registration: Option<crate::jobs::JobHandle>,
     render_update: Option<super::ProjectRenderUpdate>,
     render_history: Option<super::render_history::Update>,
     pending_session_change: Option<render::PendingSessionChange>,
@@ -202,6 +204,7 @@ pub(super) fn run(
         jobs,
         library,
         render: None,
+        render_registration: None,
         render_update: None,
         render_history: None,
         pending_session_change: None,
@@ -240,6 +243,7 @@ pub(super) fn run(
             service.reconcile_trim();
             service.publish();
         }
+        service.reconcile_render_registration();
         service.pump_host();
         service.pump_host_preparation();
         if service.shared.stopping.load(Ordering::Acquire)
@@ -1023,7 +1027,7 @@ impl Service {
                 &scope,
                 cursor,
             )?;
-            return self.edit_scoped(target, edit);
+            return self.edit_scoped(*target, edit);
         }
         if let ProjectEdit::DeleteRange { parent, range } = edit {
             return self.delete_range(expected_revision, scope, parent, range);

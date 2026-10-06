@@ -76,7 +76,6 @@ impl State {
     pub fn blocking(&self) -> bool {
         self.flow.is_some() || self.history.open
     }
-    #[cfg(feature = "ui-harness")]
     pub(super) fn error(&self) -> Option<&str> {
         self.error.as_deref()
     }
@@ -595,20 +594,54 @@ impl DeadpanApp {
                 if !status.cleanup_confirmed { ui.weak("Finishing worker cleanup; this render still owns its slot."); }
             });
         self.render.open = open;
-        if let Some((context, identity)) = cancel
-            && let Some(ticket) = self.next_serial()
-        {
-            match self
-                .service
-                .submit(ProjectRequest::Render(ProjectRenderRequest {
-                    ticket,
-                    context: context.clone(),
-                    operation: ProjectRenderOperation::Cancel(identity),
-                })) {
-                Ok(()) => self.render.cancel_ticket = Some((context, ticket)),
-                Err(error) => self.render.error = Some(error),
-            }
+        if let Some((context, identity)) = cancel {
+            self.submit_render_cancel(context, identity);
         }
+    }
+
+    fn submit_render_cancel(
+        &mut self,
+        context: crate::project::ProjectRenderContext,
+        identity: deadpan_cli::encoded_render::workflow::WorkflowIdentity,
+    ) {
+        let Some(ticket) = self.next_serial() else {
+            return;
+        };
+        match self
+            .service
+            .submit(ProjectRequest::Render(ProjectRenderRequest {
+                ticket,
+                context: context.clone(),
+                operation: ProjectRenderOperation::Cancel(identity),
+            })) {
+            Ok(()) => self.render.cancel_ticket = Some((context, ticket)),
+            Err(error) => self.render.error = Some(error),
+        }
+    }
+
+    /// The Jobs panel's Cancel for the running render: the same request as
+    /// the Render window's Cancel render. False when nothing can be cancelled.
+    pub(super) fn cancel_running_render(&mut self) -> bool {
+        let Some(workflow) = self
+            .render_job
+            .as_ref()
+            .and_then(|render| render.workflow.as_ref())
+        else {
+            return false;
+        };
+        let status = &workflow.status;
+        if status.outcome.is_some()
+            || status.cancellation_requested
+            || status.stage == WorkflowStage::Unresolved
+        {
+            return false;
+        }
+        let Some(identity) = status.identity.clone() else {
+            return false;
+        };
+        let context = workflow.context.clone();
+        self.submit_render_cancel(context, identity);
+        true
     }
 }
 

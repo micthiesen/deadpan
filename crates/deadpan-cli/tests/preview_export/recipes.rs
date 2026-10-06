@@ -910,6 +910,179 @@ pub fn escalating_repeat(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// Explode `repeat` in place through the public command path.
+fn explode(project: &mut Project, repeat: &str) -> Result<ProjectDocument> {
+    project.apply(|project, document, revision| {
+        let needs = document.explode_requirements(&node(repeat)?)?;
+        Ok(Command::Explode {
+            node: node(repeat)?,
+            identities: deadpan_core::OccurrenceIdentities {
+                nodes: project.fresh(needs.nodes)?,
+                marks: (0..needs.marks)
+                    .map(|n| deadpan_core::MarkId::new(format!("{revision}-mark-{n}")))
+                    .collect::<std::result::Result<_, _>>()?,
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })
+}
+
+/// [`repeat_with_gap`] with a quieter second play (an override), then
+/// `:explode`: an ordinary Sequence of three independent plays and two gap
+/// Holds whose pictures and timing are the Repeat's.
+pub fn exploded_repeat(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "exploded-repeat")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    project.split_root(24)?;
+    let document = project.apply(|_, document, _| {
+        Ok(Command::WrapRepeat {
+            node: root_child_at(document, 12)?.0,
+            id: node("repeat")?,
+            plays: 3,
+            gap: Some(silent(6, HoldVideo::Background)?),
+            anchor_policy: WrapAnchorPolicy::First,
+        })
+    })?;
+    let NodeKind::Repeat {
+        child, iterations, ..
+    } = &document.nodes()[&node("repeat")?].kind
+    else {
+        return Err("repeat".into());
+    };
+    let (child, second) = (child.clone(), iterations.at(1).ok_or("second play")?);
+    project.apply(|project, _, _| {
+        Ok(Command::EditOccurrence {
+            instance: deadpan_core::InstancePath {
+                node: child,
+                repeats: vec![deadpan_core::RepeatInstance {
+                    node: node("repeat")?,
+                    iteration: second,
+                }],
+            },
+            edit: deadpan_core::OccurrenceEdit::SetAudioTreatments {
+                treatments: AudioTreatments::from_clip_gain(ClipGain::new(
+                    GainDb::new(-6_000)?,
+                    false,
+                    Vec::new(),
+                    Vec::new(),
+                )?),
+            },
+            identities: deadpan_core::OccurrenceIdentities {
+                nodes: project.fresh(4)?,
+                marks: Vec::new(),
+            },
+        })
+    })?;
+    let exploded = explode(&mut project, "repeat")?;
+    if !matches!(
+        exploded.nodes()[&node("repeat")?].kind,
+        NodeKind::Sequence { ref children } if children.len() == 5
+    ) {
+        return Err("explode makes three plays and two gaps".into());
+    }
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    for play in 0..3u64 {
+        let start = 12 + 18 * play;
+        expectations.extend([
+            (start, original(24)),
+            (start + 6, original(30)),
+            (start + 11, original(35)),
+        ]);
+        if play < 2 {
+            expectations.extend([
+                (start + 12, Expected::Background),
+                (start + 17, Expected::Background),
+            ]);
+        }
+    }
+    expectations.extend([(60, original(36)), (65, original(41))]);
+    project.finish(REPEAT_ROWS.to_vec(), expectations, Vec::new())
+}
+
+/// [`escalating_repeat`] exploded: per-play scale and gain become explicit
+/// groups around plays two and three, with the same pictures and timing.
+pub fn exploded_escalation(dir: &Path) -> Result<Fixture> {
+    let mut fixture = escalating_repeat(dir)?;
+    fixture.revision = explode_fixture(&fixture, "escalator")?;
+    fixture.name = "exploded-escalation";
+    Ok(fixture)
+}
+
+/// Commit `:explode` of `repeat` to an already built fixture and return the
+/// new revision. Rendering it must equal rendering the fixture before.
+pub fn explode_fixture(fixture: &Fixture, repeat: &str) -> Result<String> {
+    let document = ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.snapshot()?;
+    let asset = document
+        .assets()
+        .iter()
+        .find(|(_, record)| record.video.is_some())
+        .map(|(id, _)| id.clone())
+        .ok_or("fixture has a picture asset")?;
+    let mut project = Project {
+        name: fixture.name,
+        directory: fixture
+            .package
+            .parent()
+            .ok_or("fixture package has a parent")?
+            .to_owned(),
+        package: fixture.package.clone(),
+        step: 80,
+        ids: 8000,
+        asset,
+    };
+    Ok(explode(&mut project, repeat)?.revision_id().to_string())
+}
+
+/// `:duplicate` of Edit [12, 24): the copy enters at Edit 24 inside the base
+/// beat, so Original 24..36 plays twice: 12 + 12 + 12 + 6 = 42 frames.
+pub fn duplicated_range(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "duplicated-range")?;
+    project.shorten()?;
+    project.apply(|project, document, revision| {
+        let selection = deadpan_core::SliceCaptureSelection::Range {
+            range: FrameRange::new(ProjectFrame(12), ProjectFrame(24))?,
+        };
+        let timing = AudioTimingId {
+            allocation: revision.clone(),
+            ordinal: 0,
+        };
+        let needs = document.duplicate_requirements(document.root(), &selection, &timing)?;
+        Ok(Command::Duplicate {
+            parent: document.root().clone(),
+            selection,
+            identities: deadpan_core::SlicePasteIdentities {
+                authored: deadpan_core::OccurrenceIdentities {
+                    nodes: project.fresh(needs.slice.nodes)?,
+                    marks: (0..needs.slice.marks)
+                        .map(|n| deadpan_core::MarkId::new(format!("{revision}-mark-{n}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+                aliases: project.fresh(needs.slice.aliases)?,
+            },
+            split_identities: SplitIdentities {
+                nodes: project.fresh(needs.split_nodes)?,
+            },
+            timing,
+        })
+    })?;
+    let expectations = vec![
+        (0, base(0)),
+        (11, base(11)),
+        (12, original(24)),
+        (23, original(35)),
+        (24, original(24)),
+        (30, original(30)),
+        (35, original(35)),
+        (36, original(36)),
+        (41, original(41)),
+    ];
+    project.finish(vec!["Callback"], expectations, Vec::new())
+}
+
 /// A whole-beat +6 dB clip-gain trim on the base beat. Pictures are unchanged.
 pub fn gain_trim(dir: &Path) -> Result<Fixture> {
     let mut project = Project::create(dir, "gain-trim")?;
@@ -2240,7 +2413,7 @@ pub fn role_repeat(dir: &Path) -> Result<Fixture> {
 /// Build every fixture, each in its own subdirectory of `dir`.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     type Builder = fn(&Path) -> Result<Fixture>;
-    let builders: [(&str, Builder); 35] = [
+    let builders: [(&str, Builder); 38] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
@@ -2274,6 +2447,9 @@ pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
         ("framing", framing),
         ("cutaway", cutaway),
         ("escalating-repeat", escalating_repeat),
+        ("exploded-repeat", exploded_repeat),
+        ("exploded-escalation", exploded_escalation),
+        ("duplicated-range", duplicated_range),
         ("gain-trim", gain_trim),
         ("sound-event", sound_event),
     ];

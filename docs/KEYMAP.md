@@ -70,12 +70,13 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `playback`, `audition` | Play/pause and selection loop |
 | `group.enter`, `group.leave` | Group navigation; exact event position in Placed sounds |
 | `group.create`, `group.ungroup` | Name a selected beat/range with `,g`; neutral Ungroup has a command alias and no shipped key path |
+| `structure.explode`, `structure.duplicate` | `:explode` turns the selected Repeat into an ordinary group of its plays; `:duplicate` copies the Visual range, or else the selected beat, after itself. Command aliases only, no shipped key path or count; both are recordable and dot-repeatable |
 | `visual`, `copy` | Select time; immediate Original or Visual copy |
 | `object.inner_group`, `object.around_group` | `ig` / `ag`: Visual group contents / whole group; also compose after `y`, `d`, `r` |
 | `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit |
 | `paste.after`, `paste.before` | Paste, or replace a captured Time range or group Object |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
-| `edit.repeat-last` | Repeat a picture cut, Repeat wrap/count change, Group or Ungroup at the current eligible target; default `.`, no count or held activation |
+| `edit.repeat-last` | Repeat a picture cut, Repeat wrap/count change, Group, Ungroup, Explode or Duplicate at the current eligible target; default `.`, no count or held activation |
 | `repeat`, `hold` | Total plays and inserted pause |
 | `insert`, `sound.place` | Reuse the Original and place a catalog sound |
 | `gain.up`, `gain.down` | Gain steps |

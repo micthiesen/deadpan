@@ -51,6 +51,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "repeat-setters",
     "groups",
     "scoped-plays",
+    "structure-copies",
     "macros",
     "original-playback",
     "sound-playback",
@@ -73,6 +74,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "accessibility",
     "diagnostics",
     "storage",
+    "jobs",
     "full-session",
     "layouts",
 ];

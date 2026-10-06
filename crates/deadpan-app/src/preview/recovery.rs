@@ -294,6 +294,7 @@ impl DeadpanApp {
                 || self.models.open
                 || self.diagnostics.open
                 || self.storage.open
+                || self.jobs.open
                 || self.help_open,
         });
         match refusal {

@@ -26,7 +26,7 @@ impl Target {
     fn edit(&self, audio: HoldAudio) -> ProjectEdit {
         match &self.scoped {
             Some(target) => ProjectEdit::Scoped {
-                target: target.clone(),
+                target: Box::new(target.clone()),
                 edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
             },
             None => ProjectEdit::HoldAudio {

@@ -169,6 +169,8 @@ impl Service {
                             SemanticInstruction::SetCaption { .. } => "Add caption",
                             SemanticInstruction::Group { .. } => "Group beats",
                             SemanticInstruction::Ungroup => "Ungroup beats",
+                            SemanticInstruction::Explode => "Explode Repeat",
+                            SemanticInstruction::Duplicate { .. } => "Duplicate",
                             SemanticInstruction::Gag { .. } => "Apply gag",
                             SemanticInstruction::SetGag { .. } => "Change gag parameters",
                             SemanticInstruction::SetAudioEdges { .. } => "Change sound edges",

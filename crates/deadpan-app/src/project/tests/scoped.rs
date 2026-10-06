@@ -70,6 +70,7 @@ fn capture(workspace: &Workspace, outer: RepeatEditBranch, inner: RepeatEditBran
         },
         presentation: None,
         cursor: ProjectFrame(12),
+        also: Vec::new(),
     }
 }
 
@@ -108,7 +109,7 @@ fn request(target: &Target, edit: ScopedNodeEdit) -> ProjectRequest {
         scope: target.scope.clone(),
         cursor: target.cursor,
         edit: ProjectEdit::Scoped {
-            target: target.clone(),
+            target: Box::new(target.clone()),
             edit,
         },
     }
@@ -486,4 +487,143 @@ fn scoped_gain_proposals_preview_the_same_branches_and_commit_without_reusing_dr
     );
     assert!(stale.gain.unwrap().result.is_err());
     assert_eq!(*stale.workspace.unwrap().document, *after.document);
+}
+
+fn inner_treatments(workspace: &Workspace, outer: u32, inner: u32) -> AudioTreatments {
+    let document = &workspace.document;
+    let effective = |repeat: &NodeId, ordinal: u32, revision: &str| {
+        let NodeKind::Repeat { child, .. } = &document.nodes()[repeat].kind else {
+            panic!()
+        };
+        document
+            .overrides()
+            .get(repeat)
+            .and_then(|entries| entries.get(&iteration(revision, ordinal)))
+            .unwrap_or(child)
+            .clone()
+    };
+    let retime = effective(&node("outer"), outer, "outer-plays");
+    let NodeKind::Retime {
+        child: inner_repeat,
+        ..
+    } = &document.nodes()[&retime].kind
+    else {
+        panic!()
+    };
+    let a = effective(inner_repeat, inner, "inner-plays");
+    document.nodes()[&a].audio_treatments.clone()
+}
+
+#[test]
+fn multi_play_scope_commits_one_edit_in_every_selected_play_and_carries_steps() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("plays.deadpan");
+    seed(&path);
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let before = command(&service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let mut target = capture(&before, RepeatEditBranch::Default, play("inner-plays", 0));
+    target.also = vec![
+        crate::project::scoped::retarget(
+            &before.document,
+            &target.target,
+            1,
+            &iteration("inner-plays", 1),
+        )
+        .unwrap(),
+    ];
+    let rows = counts(&path);
+    let updated = command(
+        &service,
+        request(
+            &target,
+            ScopedNodeEdit::SetAudioTreatments {
+                treatments: gain(-6000),
+            },
+        ),
+    );
+    assert!(updated.error.is_none(), "{:?}", updated.error);
+    assert_eq!(
+        counts(&path),
+        (rows.0 + 1, rows.1 + 1),
+        "one revision, one Undo"
+    );
+    let receipt = updated.committed.unwrap().scoped.unwrap();
+    let after = updated.workspace.unwrap();
+    for outer in 0..2 {
+        for inner in 0..2 {
+            assert_eq!(inner_treatments(&after, outer, inner), gain(-6000));
+        }
+    }
+    // Continue with both plays: each is now its own override, and the
+    // second play follows the first structurally.
+    let mut next = continued(&after, &receipt);
+    next.also = vec![
+        crate::project::scoped::retarget(
+            &after.document,
+            &next.target,
+            1,
+            &iteration("inner-plays", 1),
+        )
+        .unwrap(),
+    ];
+    next.validate(&after).unwrap();
+    let again = command(
+        &service,
+        request(
+            &next,
+            ScopedNodeEdit::SetAudioTreatments {
+                treatments: gain(-3000),
+            },
+        ),
+    );
+    assert!(again.error.is_none(), "{:?}", again.error);
+    let again = again.workspace.unwrap();
+    assert_eq!(inner_treatments(&again, 0, 0), gain(-3000));
+    assert_eq!(inner_treatments(&again, 0, 1), gain(-3000));
+}
+
+#[test]
+fn carried_gain_keeps_each_plays_recipe_or_refuses() {
+    use crate::project::scoped::transfer;
+    let beat = |treatments: AudioTreatments| {
+        let mut node = deadpan_core::BeatNode::sequence("a", vec![]);
+        node.audio_treatments = treatments;
+        node
+    };
+    let edit = |treatments| ScopedNodeEdit::SetAudioTreatments { treatments };
+    // A trim step carries as the same step onto a play with another trim.
+    assert_eq!(
+        transfer(
+            &edit(gain(-3000)),
+            &beat(gain(-6000)),
+            &beat(gain(-1000)),
+            2
+        )
+        .unwrap(),
+        edit(gain(2000))
+    );
+    // A ranged step carries onto a play's own recipe.
+    let range = deadpan_core::GainRange::new(
+        deadpan_core::ExactRatio::integer(1),
+        deadpan_core::ExactRatio::integer(3),
+    )
+    .unwrap();
+    let ranged = |base: i32| crate::gain::ranged_step(&gain(base), range, -6000).unwrap();
+    assert_eq!(
+        transfer(&edit(ranged(0)), &beat(gain(0)), &beat(gain(-1000)), 2).unwrap(),
+        edit(ranged(-1000))
+    );
+    // Mute differs: refuse rather than overwrite the other play's recipe.
+    let muted = AudioTreatments::from_clip_gain(
+        ClipGain::new(GainDb::UNITY, true, vec![], vec![]).unwrap(),
+    );
+    assert!(transfer(&edit(muted), &beat(gain(0)), &beat(gain(-1000)), 3).is_err());
+    // Other values are set as chosen.
+    let label = ScopedNodeEdit::Rename { label: "x".into() };
+    assert_eq!(
+        transfer(&label, &beat(gain(0)), &beat(gain(-1000)), 2).unwrap(),
+        label
+    );
 }

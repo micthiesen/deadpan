@@ -271,8 +271,8 @@ impl Service {
                     target.validate_request(workspace, request.context.session, &start.revision, scope, *cursor)
                         .map_err(|error| native_error("RenderInvalidRequest", error))?;
                     self.check_scoped_head(target).map_err(|error| native_error("RenderInvalidRequest", error))?;
-                    workspace.document.scoped_edit_requirements(&target.target, edit)
-                        .map_err(|error| native_error("RenderInvalidRequest", error.to_string()))?.unchanged
+                    super::scoped::unchanged(workspace, target, edit)
+                        .map_err(|error| native_error("RenderInvalidRequest", error))?
                 }
                 ProjectEdit::SetFraming { node, framing } => workspace.document.nodes()
                     .get(node).is_some_and(|beat| &beat.framing == framing),
@@ -593,4 +593,52 @@ fn workflow_error(error: WorkflowError) -> ProjectRenderError {
         WorkflowError::Io(_) => "RenderIoFailure",
     };
     native_error(code, error)
+}
+
+impl Service {
+    /// Keep the render registered with the job coordinator while it owns
+    /// the render slot, so proxies and analysis yield and the Jobs panel
+    /// lists it. Cancellation stays the render's own request.
+    pub(super) fn reconcile_render_registration(&mut self) {
+        if self.render.is_none() {
+            self.render_registration = None;
+            return;
+        }
+        let session = self.session;
+        let board = &self.shared.job_board;
+        let handle = self.render_registration.get_or_insert_with(|| {
+            board.register(
+                crate::jobs::JobSpec::new(crate::jobs::JobKind::Render, Some(session))
+                    .detail("a saved edit"),
+            )
+        });
+        let Some(status) = self
+            .render_update
+            .as_ref()
+            .and_then(|update| update.workflow.as_ref())
+        else {
+            return;
+        };
+        use deadpan_cli::encoded_render::workflow::WorkflowProgress;
+        let fraction = |done: u64, total: u64| (total > 0).then(|| done as f32 / total as f32);
+        let (stage, fraction) = match &status.status.progress {
+            Some(WorkflowProgress::Qualification {
+                completed_frames,
+                total_frames,
+                ..
+            }) => (
+                "Qualifying the encoder",
+                fraction(*completed_frames, *total_frames),
+            ),
+            Some(WorkflowProgress::Encoding {
+                completed_frames,
+                total_frames,
+                ..
+            }) => ("Encoding", fraction(*completed_frames, *total_frames)),
+            Some(WorkflowProgress::Verification(_)) => ("Verifying the movie", None),
+            Some(WorkflowProgress::Publication(_)) => ("Saving the movie", None),
+            None => ("Preparing", None),
+        };
+        handle.set_progress(stage, fraction);
+    }
 }
