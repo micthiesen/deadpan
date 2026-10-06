@@ -55,6 +55,7 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `sentence.next`, `sentence.previous` | `W` / `B`: recognized sentence starts |
 | `object.inner_word`, `object.around_word`, `object.inner_sentence`, `object.around_sentence` | `iw` / `aw` / `is` / `as`: Visual word or sentence at the Edit cursor, with up to 80 ms pause handles for `a`; also compose after `y`, `d`, `r` |
 | `pause.next`, `pause.previous` | `]p` / `[p`: start of the next / previous detected pause, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
+| `play.next`, `play.previous` | `]r` / `[r`: step the nearest open Repeat through All plays, then play 1..N (counts step further); on a selected Repeat beat, `]r` opens play 1 and `[r` the last play. Navigation only: operators never compose with it and Macros do not record it |
 | `object.inner_pause`, `object.around_pause` | `ip` / `ap`: Visual pause at the Edit cursor, with up to 80 ms of the adjoining speech for `a`; also compose after `y`, `d`, `r` |
 | `shot.next`, `shot.previous` | `]s` / `[s`: start of the next / previous detected shot occurrence, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
 | `ai.generate` | `,a`: generate AI pictures for the selected pause (Hold) in Your edit, in the background; Normal Edit only, no count. `:generate [N]`, `:cancel-ai`, `:next-ai`, `:prev-ai`, `:pick-ai N`, `:preview-ai`, `:audition-ai`, `:accept-ai` and `:discard-ai` complete the workflow |
@@ -88,13 +89,30 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 ## Logical and physical keys
 
 One `key_mode` applies to the complete map. `logical` follows the delivered egui
-key identity. The pinned egui-winit adapter falls back to a physical identity
-when a character or dead key has no named egui key. This is a known limit; it
-does not establish strict logical-key behavior for every layout.
+key identity. The pinned egui-winit 0.36 adapter falls back to a physical identity
+when a character or dead key has no named egui key: AZERTY `&` arrives as Num1,
+QWERTZ `"` as Shift+Num2 and QWERTZ `ö` as Semicolon. In logical mode the
+press's immediate `Text` companion therefore decides. `@`, `"`, `'`, `_` and `>`
+map to their existing strokes whatever Shift the layout needed. Text that names
+the delivered key keeps ordinary modifier handling, so AZERTY Shift+3 is a count.
+Any other companion means a character no binding can name, and the press is
+inert: AZERTY `&é(§çà`, QWERTZ `üöäß#`, US `#` and `<` and US Option+`[`
+(`“`) neither count nor act. QWERTZ `'` (Shift+`#`) is a mark jump, not `"`.
+A press without companion text keeps the delivered identity. If macOS reports
+a dead key such as French `^` as a key press, it can still reach the binding at
+its position; dead keys are not replayed.
+Brackets join the logical symbols, so QWERTZ Option+6 and AZERTY
+Shift+Option+`)` produce `]`.
 
-Egui uses `Quote` for both apostrophe and double quote, so Quote preserves Shift
-in both key modes: plain apostrophe opens mark jump and Shift+Quote opens register
-selection. Option+Quote remains with native input. This fallback does not prove
+Kestrel reservations are checked on the physical position first, so some layout
+characters stay unavailable while Kestrel runs: QWERTZ `[` (Option+5) and `@`
+(Option+L), and AZERTY `[` (Shift+Option+5). AZERTY `@` is unshifted and works.
+Mode routers for Camera, Trim, Gain, room tone and Place slice still read the
+delivered key only.
+
+Egui uses `Quote` for both apostrophe and double quote. In logical mode the
+companion text decides; without it, and in physical mode, Quote preserves Shift:
+plain apostrophe opens mark jump and Shift+Quote opens register selection. Option+Quote remains with native input. This fallback does not prove
 quote behavior on every physical layout.
 
 `physical` requires the native physical key field and never substitutes a
@@ -175,6 +193,15 @@ frame. Layout retries cannot replay that suffix. Existing whole-batch IME priori
 remains conservative:
 any composition event prevents editor submit/cancel for that batch.
 
+While the command line holds only a partial verb, the footer lists the
+matching commands with their usage (`:cap` shows `:caption TEXT [at=top|center]
+[delay=4f]`), from the `COMMANDS` table in
+[`command.rs`](../crates/deadpan-app/src/navigation/command.rs). A unit test
+checks that every listed verb parses. Commands without a key path are therefore
+discoverable by typing their first letters, besides the Keys sheet. `:close`
+closes the open project and `:sound-channels mono|stereo|none` sets how the next
+sound without a declared speaker layout is heard, so neither needs the pointer.
+
 ## Counts, repetition and teaching
 
 Count policies preserve the existing distinctions between absent count, zero,
@@ -191,6 +218,12 @@ count; later repeats move one unit. Thus holding the final `h` in a custom `ah`
 forward motion keeps moving forward even when root `h` means backward. Held
 input cannot enter or consume a new pending path. Holding `h` while pressing
 comma cannot insert a Hold; release and a fresh press are required.
+
+The Normal Your edit footer also teaches the operator prefixes (`d / y` with
+any motion or object), Macro record/run, punch-in/creep and, on a selected
+Repeat, `]r [r`. Within a footer tier earlier hints win the two-row budget, so
+the operator and Macro pairs precede Camera, Trim, gain, register and group
+hints; the Keys sheet keeps every path.
 
 Prefix hints derive their next keys and explanations from the declarations.
 Counted comma teaching exposes its valid Hold continuation. A count that leaves
@@ -243,8 +276,13 @@ retains the original held-key regression.
 ## Remaining work
 
 Current configuration covers Normal and timeline Visual paths and their teaching.
-The remaining mode routers, strict logical provenance and physical layout/IME
-qualification remain open. Settings are file-based and require a restart; a
+The `layouts` replay drives German QWERTZ and French AZERTY presses, as
+egui-winit 0.36 delivers them on macOS, through the production router, and
+composes Japanese text in Command (`:caption`), the transcript word field and
+the YouTube URL field. During composition, Escape keeps the word and URL fields
+focused, as Command already did, so the commit lands in the field. egui-winit
+0.36 emits no IME Enabled/Disabled events. The remaining mode routers, dead keys,
+physical keyboards and a real OS input method remain open. Settings are file-based and require a restart; a
 native settings editor and live map replacement are not implemented. Semantic
 [dot-repeat supports picture cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
 support frame/beat/group motions, Visual selections, copies, cuts, pastes and

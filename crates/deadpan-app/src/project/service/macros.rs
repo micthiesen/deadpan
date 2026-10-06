@@ -60,7 +60,7 @@ impl Service {
                     .insert(register.as_char(), Value::Macro(program.clone()));
                 bank
             }
-            RemoteOperation::Run { .. } => {
+            RemoteOperation::Run { .. } | RemoteOperation::Apply { .. } => {
                 let plan = prepared.plan.as_ref().ok_or("Remote macro has no plan")?;
                 prepare_runtime_bank(&id, runtime, &prepared.bank, &prepared.final_bank, plan)?
             }

@@ -766,7 +766,7 @@ fn gain_inspector_reachable(d: &mut Driver<'_>, width: f32, height: f32) -> Resu
     let revision = d.revision();
     let nodes = document(d)?.nodes().clone();
     let editor = editor_state(d);
-    for label in ["−3 dB  -", "+3 dB  +", "Mute", "Edit envelope…  :gain"] {
+    for label in ["−3 dB  -", "+3 dB  +", "Mute  ,m", "Edit envelope…  :gain"] {
         // Use the accessibility input route, not direct egui memory or scroll
         // mutation. Normal workspace Tab intentionally cycles visible panes.
         {

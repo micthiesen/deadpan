@@ -26,6 +26,8 @@ pub enum DialogKind {
     ModelPackFolder,
     /// An uncompressed tar archive of a model pack, for an offline install.
     ModelPackArchive,
+    /// Where File › Save Portable Copy… writes a new self-contained package.
+    PortableCopy,
 }
 
 pub struct SaveMovie {
@@ -249,6 +251,13 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
                 .set_title("Choose a folder holding the model pack's files")
                 .set_can_create_directories(false)
                 .pick_folder(),
+        ),
+        DialogKind::PortableCopy => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Save a portable copy of this project")
+                .set_file_name("Portable copy.deadpan")
+                .add_filter("Deadpan project", &["deadpan"])
+                .save_file(),
         ),
         DialogKind::ModelPackArchive => Box::pin(
             rfd::AsyncFileDialog::new()

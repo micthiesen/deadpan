@@ -80,7 +80,9 @@ its Ready API relies on this independent host qualification.
 
 Provenance records the worker's asset/runtime claims. Parsing and matching these
 claims does not independently prove which model bytes executed. Installed-pack
-attestation and source-clock/color checks remain required. Extra bounded backend diagnostics are retained without granting
+attestation and measured source colour metadata remain required; the retained
+conditioning's source-clock binding is checked by
+[re-derivation](STORAGE.md#source-clock-and-colour-evidence). Extra bounded backend diagnostics are retained without granting
 them authority. Host decoded-media results remain separate from worker reports.
 
 The standalone `retain_bridge_conditioning` example captures prepared input bytes

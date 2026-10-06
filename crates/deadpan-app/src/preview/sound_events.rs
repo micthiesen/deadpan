@@ -267,7 +267,7 @@ impl DeadpanApp {
             let asset = self
                 .selected_sound
                 .clone()
-                .ok_or("Choose a sound in the sound-effects catalog first.")?;
+                .ok_or("Choose a sound in the sound-effects catalog first: Tab to the Original and sounds pane, then j/k selects a sound.")?;
             let cursor = i64::try_from(self.sequence_cursor)
                 .map_err(|_| "Edit cursor exceeds the supported range.")?;
             let at = workspace

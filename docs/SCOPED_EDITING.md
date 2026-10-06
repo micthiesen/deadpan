@@ -9,6 +9,15 @@ edit one stable play by its current one-based number. These choices apply at the
 nearest displayed Repeat level. Nested Repeat choices remain separate. All
 plays preserves existing overrides. Browsing never creates an override.
 
+`]r` and `[r` step the nearest displayed Repeat through All plays, then play 1
+to N, clamped at both ends; a count steps further (`3[r` returns to All plays
+from play 3). On a selected Repeat beat in Your edit, `]r` opens it at play 1
+and `[r` at its last play. Inside a play, `j`/`k` reach that play's owned gap
+branch when it has one, and `Enter` descends into nested groups and Repeats,
+whose plays `]r` then steps independently. `Backspace` keeps each outer play
+choice. The inspector's Previous/Next buttons and the footer teach the keys.
+Stepping is read-only, like `:scope`, and Macros do not record it.
+
 Gain, Camera and Hold audio use the captured scope. Changing a shared node in
 This play isolates only the necessary selected ancestors, then applies the
 value in the same reversible transaction. An unchanged value creates no
@@ -72,7 +81,8 @@ for test, rendered and native evidence, source provenance and remaining limits.
 
 ## Remaining work
 
-This boundary does not implement occurrence-local cuts, replacement, Repeat
+Implicit default gaps have no authored node, so neither `j` nor `]r` selects
+them; they need their own recipe controls. This boundary does not implement occurrence-local cuts, replacement, Repeat
 count changes, Retime changes, implicit gap recipe editing, semantic recording
 inside occurrences or complete definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

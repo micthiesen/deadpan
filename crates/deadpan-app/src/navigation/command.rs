@@ -28,6 +28,15 @@ pub enum Entry {
     Models,
     /// `:diagnostics`: open the live process counters panel.
     Diagnostics,
+    /// `:storage`: open the project and cache storage panel.
+    Storage,
+    /// `:portable-copy`: save a verified self-contained copy of the project.
+    PortableCopy,
+    /// `:close`: close the open project, as File > Close Project does.
+    Close,
+    /// `:sound-channels mono|stereo|none`: how the next imported sound with
+    /// unlabelled channels (such as a plain WAV) is heard; `none` refuses it.
+    SoundChannels(Option<crate::project::AudioLayoutInterpretation>),
     Splice,
     Slip(i64),
     Trim(super::trim::TrimInput),
@@ -160,6 +169,139 @@ fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     } else {
         BeatEdit::InsertHold(duration)
     })))
+}
+
+/// Every command verb with a short usage, for completion while typing in
+/// the command line. Parameters in brackets are optional. The help sheet
+/// (`?`) keeps the full explanations.
+pub const COMMANDS: &[(&str, &str)] = &[
+    ("accept-ai", ":accept-ai  use the chosen AI pictures"),
+    ("audio-lag", ":audio-lag 3f  sound later (or earlier=)"),
+    ("audition", ":audition  loop the selection"),
+    ("audition-ai", ":audition-ai  hear the AI preview"),
+    (
+        "audition-context",
+        ":audition-context lead=500ms follow=750ms",
+    ),
+    ("bleep", ":bleep [880Hz] [level=-6dB]"),
+    ("cancel-ai", ":cancel-ai"),
+    ("caption", ":caption TEXT [at=top|center] [delay=4f]"),
+    ("close", ":close  close this project"),
+    ("correct", ":correct  fix transcript words and pauses"),
+    ("creep", ":creep from=1 to=1.4 [target=current]"),
+    ("cutaway", ":cutaway register=a"),
+    ("delete", ":delete [role=audio|video]"),
+    ("delete-frames", ":delete-frames 12f"),
+    ("diagnostics", ":diagnostics"),
+    ("discard-ai", ":discard-ai"),
+    ("edge", ":edge hard|auto [start|end|both]"),
+    ("enter", ":enter  open the selected group"),
+    ("framing-save", ":framing-save a"),
+    ("gag", ":gag NAME [key=value …]"),
+    ("gag-inspect", ":gag-inspect NAME"),
+    ("gag-presets", ":gag-presets"),
+    ("gag-save", ":gag-save NAME"),
+    ("gag-set", ":gag-set NAME key=value"),
+    ("gain", ":gain +3dB | +=3dB | mute"),
+    ("generate", ":generate [N]  AI pictures for the pause"),
+    ("group", ":group name=\"the answer\""),
+    ("help", ":help  all keys and commands"),
+    ("hold", ":hold 0.5s [video=black]"),
+    ("hold-duration", ":hold-duration 11f"),
+    ("hold-silence", ":hold-silence"),
+    ("import", ":import  add a sound"),
+    ("insert", ":insert  reuse the whole Original"),
+    ("jcut", ":jcut 6f"),
+    ("lcut", ":lcut 200ms"),
+    ("jump", ":jump a"),
+    ("jump-back", ":jump-back"),
+    ("jump-forward", ":jump-forward"),
+    ("lift", ":lift  cut and leave a black pause"),
+    ("macro", ":macro a"),
+    ("mark", ":mark a"),
+    ("marks", ":marks"),
+    ("models", ":models"),
+    ("monitor", ":monitor 25%"),
+    ("new", ":new  choose a video"),
+    ("youtube", ":youtube  start from a URL"),
+    ("next-ai", ":next-ai"),
+    ("open", ":open"),
+    ("parent", ":parent  leave the group"),
+    ("paste", ":paste"),
+    ("paste-before", ":paste-before"),
+    ("pick-ai", ":pick-ai N"),
+    ("ping-pong", ":ping-pong 12f"),
+    ("pitch", ":pitch +5st"),
+    ("play", ":play"),
+    ("prev-ai", ":prev-ai"),
+    ("preview-ai", ":preview-ai"),
+    ("proxies", ":proxies on|off|retry"),
+    ("recipe", ":recipe a"),
+    ("recipe-inspect", ":recipe-inspect a"),
+    ("recipe-save", ":recipe-save a"),
+    ("record", ":record a"),
+    ("record-cancel", ":record-cancel"),
+    ("record-stop", ":record-stop"),
+    ("recovery", ":recovery"),
+    ("redo", ":redo"),
+    ("register", ":register a"),
+    ("registers", ":registers"),
+    ("relink", ":relink"),
+    ("render", ":render"),
+    ("renders", ":renders"),
+    ("repeat", ":repeat 3 [gap=6f gap-step=-2f]"),
+    ("retime", ":retime 0.75 pitch=preserve"),
+    ("reverse", ":reverse 8f"),
+    ("roll", ":roll +2f"),
+    ("room-tone", ":room-tone"),
+    ("saturate", ":saturate 12dB | off"),
+    ("scope", ":scope all | play N"),
+    ("select", ":select role=audio|video"),
+    ("sequence", ":sequence  Your edit"),
+    ("slip", ":slip +5f"),
+    ("sound-allow", ":sound-allow"),
+    ("sound-at", ":sound-at"),
+    ("sound-channels", ":sound-channels mono|stereo|none"),
+    ("sound-cut", ":sound-cut"),
+    ("sound-edges", ":sound-edges"),
+    ("sound-gain", ":sound-gain -6dB"),
+    ("sound-place", ":sound-place"),
+    ("sound-silence", ":sound-silence"),
+    ("sounds", ":sounds  placed sounds"),
+    ("source", ":source  Original"),
+    ("splice", ":splice  place a copy"),
+    ("split", ":split"),
+    ("sting", ":sting"),
+    ("tail", ":tail [1s] [effect=reverb]"),
+    ("track", ":track [TARGET] [through-shots]"),
+    ("track-cancel", ":track-cancel"),
+    ("trim", ":trim"),
+    ("undo", ":undo"),
+    ("ungroup", ":ungroup"),
+    ("unmark", ":unmark a"),
+    ("wrap-repeat", ":wrap-repeat 2"),
+    ("wrap-retime", ":wrap-retime 0.5"),
+    ("yank", ":yank"),
+    ("zoom", ":zoom 2 [target=center] [curve=step]"),
+];
+
+/// Usages of the commands whose verb starts with the typed first word,
+/// in table order. Nothing is listed once arguments follow the verb.
+pub fn completions(input: &str) -> Vec<&'static str> {
+    let input = input.trim_start();
+    let input = input.strip_prefix(':').unwrap_or(input);
+    if input.contains(char::is_whitespace) {
+        return Vec::new();
+    }
+    let typed = input.to_ascii_lowercase();
+    if typed.is_empty() {
+        return Vec::new();
+    }
+    COMMANDS
+        .iter()
+        .filter(|(verb, _)| verb.starts_with(&typed))
+        .map(|(_, usage)| *usage)
+        .collect()
 }
 
 pub fn parse(input: &str) -> Result<Entry, String> {
@@ -569,6 +711,19 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 Entry::Action(Action::Edit(BeatEdit::AudioLag { earlier, amount }))
             });
         }
+        "sound-channels" => {
+            use crate::project::AudioLayoutInterpretation as Layout;
+            return match argument {
+                Some("mono") => Ok(Entry::SoundChannels(Some(Layout::Mono))),
+                Some("stereo" | "stereo_left_right") => {
+                    Ok(Entry::SoundChannels(Some(Layout::StereoLeftRight)))
+                }
+                Some("none") => Ok(Entry::SoundChannels(None)),
+                _ => Err("Use :sound-channels mono, stereo or none: how the next sound without a speaker layout is heard.".into()),
+            };
+        }
+        "close" if argument.is_none() => return Ok(Entry::Close),
+        "close" => return Err("This command takes no arguments.".into()),
         "insert" => Action::Insert,
         "play" => Action::Playback,
         "audition" => Action::Audition,
@@ -591,6 +746,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
         | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
+        | "storage" | "portable-copy"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -601,6 +757,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "recovery" => Entry::Recovery,
                 "models" => Entry::Models,
                 "diagnostics" => Entry::Diagnostics,
+                "storage" => Entry::Storage,
+                "portable-copy" => Entry::PortableCopy,
                 "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
                 "correct" => Entry::Correct,
@@ -609,7 +767,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             });
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct" => {
+        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
+        | "storage" | "portable-copy" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1422,9 +1581,12 @@ mod tests {
             ("recovery", Entry::Recovery),
             (":models", Entry::Models),
             (":diagnostics", Entry::Diagnostics),
+            (":storage", Entry::Storage),
+            (":portable-copy", Entry::PortableCopy),
             (":splice", Entry::Splice),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
+            ("close", Entry::Close),
             ("help", Entry::Help),
             ("room-tone", Entry::RoomTone),
             (":correct", Entry::Correct),
@@ -1443,8 +1605,40 @@ mod tests {
             "models ltx",
             "diagnostics now",
             "splice 12",
+            "close now",
+            "sound-channels",
+            "sound-channels 5.1",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }
+        use crate::project::AudioLayoutInterpretation as Layout;
+        for (input, expected) in [
+            ("sound-channels mono", Some(Layout::Mono)),
+            (":sound-channels stereo", Some(Layout::StereoLeftRight)),
+            (
+                "sound-channels stereo_left_right",
+                Some(Layout::StereoLeftRight),
+            ),
+            ("sound-channels none", None),
+        ] {
+            assert_eq!(parse(input), Ok(Entry::SoundChannels(expected)), "{input}");
+        }
+    }
+
+    #[test]
+    fn every_completion_names_a_command_the_parser_knows() {
+        for (verb, usage) in COMMANDS {
+            assert!(usage.starts_with(&format!(":{verb}")), "{verb}: {usage}");
+            if let Err(error) = parse(verb) {
+                assert!(!error.starts_with("Unknown command"), "{verb}: {error}");
+            }
+        }
+        assert_eq!(
+            completions(":cap"),
+            vec![":caption TEXT [at=top|center] [delay=4f]"]
+        );
+        assert!(completions("caption Hi").is_empty());
+        assert!(completions(":").is_empty());
+        assert!(completions("re").len() > 5);
     }
 }

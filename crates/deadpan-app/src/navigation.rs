@@ -260,6 +260,12 @@ pub enum Action {
         forward: bool,
         count: u32,
     },
+    /// Repeat plays of the nearest open Repeat (`]r`, `[r`): All plays,
+    /// then play 1..N; on a selected Repeat it opens play 1 or the last.
+    Play {
+        forward: bool,
+        count: u32,
+    },
     /// Detected pause starts (`]p`, `[p`).
     Pause {
         forward: bool,
@@ -830,8 +836,18 @@ impl Bindings {
         if modifiers.ctrl || modifiers.command || modifiers.mac_cmd {
             return None;
         }
-        if self.map.mode == KeyMode::Logical && logical_text == Some("@") {
-            return Some(Stroke::At);
+        if self.map.mode == KeyMode::Logical
+            && let Some(text) = logical_text
+        {
+            // egui-winit falls back to the physical position when a layout's
+            // character has no egui key: AZERTY `&` arrives as Num1, QWERTZ `"`
+            // as Shift+Num2 and `ö` as Semicolon. The immediate companion text
+            // is the layout's actual character, so it decides the stroke.
+            match keymap_config::companion_stroke(key, text) {
+                keymap_config::Companion::Stroke(stroke) => return Some(stroke),
+                keymap_config::Companion::Unnamed => return None,
+                keymap_config::Companion::Delivered => {}
+            }
         }
         let key = if self.map.mode == KeyMode::Physical {
             physical_key?
@@ -2082,6 +2098,152 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// One press as egui-winit 0.36 delivers it on macOS: the logical key, or
+    /// the physical position when egui cannot name the character, plus the
+    /// immediate companion text.
+    fn layout_press(
+        bindings: &mut Bindings,
+        key: Key,
+        physical: Key,
+        modifiers: Modifiers,
+        text: &str,
+    ) -> Option<Action> {
+        bindings.route_event_with_logical_text(
+            key,
+            Some(physical),
+            modifiers,
+            false,
+            false,
+            false,
+            true,
+            EditSelection::None,
+            Some(text),
+        )
+    }
+
+    #[test]
+    fn layout_companion_text_names_fallback_characters() {
+        let step = |count| Action::Step {
+            forward: true,
+            count,
+        };
+        // AZERTY top row: unshifted symbols arrive as Num1..Num0 fallbacks and
+        // never become counts. Shift produces the actual digit.
+        for (key, text) in [
+            (Key::Num1, "&"),
+            (Key::Num2, "é"),
+            (Key::Num5, "("),
+            (Key::Num6, "§"),
+            (Key::Num9, "ç"),
+            (Key::Num0, "à"),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                layout_press(&mut bindings, key, key, Modifiers::NONE, text),
+                None
+            );
+            assert!(bindings.pending().is_empty(), "{text}");
+            assert_eq!(
+                layout_press(&mut bindings, Key::L, Key::L, Modifiers::NONE, "l"),
+                Some(step(1))
+            );
+        }
+        let mut bindings = Bindings::default();
+        layout_press(&mut bindings, Key::Num3, Key::Num3, Modifiers::SHIFT, "3");
+        assert_eq!(bindings.pending(), "3");
+        assert_eq!(
+            layout_press(&mut bindings, Key::L, Key::L, Modifiers::NONE, "l"),
+            Some(step(3))
+        );
+        // US Shift+3 is `#`, not a count; QWERTZ ö, ä, ü and ß are not the
+        // Semicolon, Quote, bracket or Minus bindings at their positions.
+        for (key, modifiers, text) in [
+            (Key::Num3, Modifiers::SHIFT, "#"),
+            (Key::Semicolon, Modifiers::NONE, "ö"),
+            (Key::Quote, Modifiers::NONE, "ä"),
+            (Key::OpenBracket, Modifiers::NONE, "ü"),
+            (Key::Minus, Modifiers::NONE, "ß"),
+            (Key::Comma, Modifiers::SHIFT, "<"),
+            (Key::CloseBracket, Modifiers::NONE, "$"),
+            (Key::OpenBracket, Modifiers::ALT, "“"),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(layout_press(&mut bindings, key, key, modifiers, text), None);
+            assert!(bindings.pending().is_empty(), "{text}");
+        }
+        // Without companion text the delivered identity still decides.
+        let mut bindings = Bindings::default();
+        bindings.key(Key::Num3, Modifiers::SHIFT, false, false);
+        assert_eq!(bindings.pending(), "3");
+    }
+
+    #[test]
+    fn layout_companion_text_selects_quotes_brackets_and_macros() {
+        // QWERTZ `"` is Shift+2 and AZERTY `"` is unshifted 3: both select a
+        // register instead of starting a count.
+        for (key, modifiers) in [(Key::Num2, Modifiers::SHIFT), (Key::Num3, Modifiers::NONE)] {
+            let mut bindings = Bindings::default();
+            assert_eq!(layout_press(&mut bindings, key, key, modifiers, "\""), None);
+            assert_eq!(bindings.pending(), "\"");
+        }
+        // QWERTZ `'` is Shift+# (physical Backslash): a mark jump, not `"`.
+        let mut bindings = Bindings::default();
+        layout_press(
+            &mut bindings,
+            Key::Quote,
+            Key::Backslash,
+            Modifiers::SHIFT,
+            "'",
+        );
+        assert_eq!(bindings.pending(), "'");
+        // QWERTZ `]` is Option+6; AZERTY `]` is Shift+Option at physical Minus.
+        for (physical, modifiers) in [
+            (Key::Num6, Modifiers::ALT),
+            (Key::Minus, Modifiers::ALT | Modifiers::SHIFT),
+        ] {
+            let mut bindings = Bindings::default();
+            layout_press(&mut bindings, Key::CloseBracket, physical, modifiers, "]");
+            assert_eq!(bindings.pending(), "]");
+            assert_eq!(
+                layout_press(&mut bindings, Key::P, Key::P, Modifiers::NONE, "p"),
+                Some(Action::Pause {
+                    forward: true,
+                    count: 1
+                })
+            );
+        }
+        // Kestrel keeps Option+5 (QWERTZ `[`), Shift+Option+5 (AZERTY `[`) and
+        // Option+L (QWERTZ `@`) even though the produced character is valid.
+        for (key, physical, modifiers, text) in [
+            (Key::OpenBracket, Key::Num5, Modifiers::ALT, "["),
+            (
+                Key::OpenBracket,
+                Key::Num5,
+                Modifiers::ALT | Modifiers::SHIFT,
+                "[",
+            ),
+            (Key::L, Key::L, Modifiers::ALT, "@"),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                layout_press(&mut bindings, key, physical, modifiers, text),
+                None
+            );
+            assert!(bindings.pending().is_empty(), "{text}");
+        }
+        // AZERTY `@` is unshifted at the top-left position.
+        let mut bindings = Bindings::default();
+        layout_press(
+            &mut bindings,
+            Key::Backtick,
+            Key::Backtick,
+            Modifiers::NONE,
+            "@",
+        );
+        assert_eq!(bindings.pending(), "@");
+        assert!(bindings.macro_pending());
     }
 
     #[test]

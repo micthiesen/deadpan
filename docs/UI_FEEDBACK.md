@@ -113,6 +113,46 @@ The [qualification](qualification/configurable-bindings-2026-10-01.md) records
 actual results, review corrections and remaining physical-input limits. No native
 window is left running after testing.
 
+The `full-session` replay (124 checks) is one keyboard-only editorial session
+through the production router: no pointer event is sent, and only the ⌘N,
+⌘I, ⌘E and ⌘O pickers and the AI model worker (the synthetic Ready worker)
+are scripted. From the start screen it creates the project with ⌘N, moves both
+clocks, copies Original [10,24) with `v14ly` and pastes it with `p`, trims its
+In by one frame with `,v` `l` Enter, cuts five frames with `d5l`, inserts a
+pause with `,h`, wraps the moment with `:repeat 3 gap=6f gap-step=-2f`, walks
+the Repeat with Enter, `]r`, `]r`, `j` (play 2's owned gap), `3[r` and
+Backspace, saves a Camera target and follows it with `,z`, captions a beat,
+imports a sound (`:sound-channels stereo`, ⌘I, Tab, `j`, `,s`), raises gain
+and mutes with `+` and `,m`, undoes and redoes, records `qa 2l x q`, runs
+`@a`, cuts with `x` and repeats it with `.`, generates, previews and accepts AI
+pictures, renders with ⌘E, independently passes `verify-export` on the
+published movie, then closes with `:close` and reopens with ⌘O to the exact
+revision, document and Macro register. Before each step a check requires the
+step's key to be fully painted where the action lives. That found eight
+teaching gaps, now fixed: no `d`/`y` operator hint, `,z`/`,c` only inside a
+collapsed inspector section, Mute without `,m`, Macro hints pushed out of the
+footer budget, no keyboard path for a WAV's speaker interpretation, a `,s`
+refusal that did not say how to choose a sound, no visible `:caption` or
+`:close` (the command line now lists matching commands while a verb is typed),
+and Repeat play buttons without keys. The same run passed `layouts`, `keymap`,
+`workspace`, `editing`, `zoom`, `scoped-plays`, `room-tone`, `sound-placement`,
+`gain`, `recipes`, `macros`, `dot-repeat`, `groups`, `nested-pause`,
+`captions`, `ai-variants`, `sound-playback` and `menus` (19 scenarios, 2,779
+scenario checks). Inspected captures show the completion line under `:cap`,
+play 2/3 with its gap selected and the `]r`/`[r` buttons.
+
+The `layouts` replay (130 checks) sends German QWERTZ and French AZERTY presses
+as egui-winit 0.36 delivers them on macOS, with physical fallbacks and companion
+text, through the production router. It checks exact cursors for `gg`, counts,
+`h`/`l`, `G`, `w`/`b`, `]p`, `k`/`j`, Visual `v` plus counted motion and logical
+`y` (physical Z on QWERTZ), AZERTY marks, `:split`, `:hold 12f` and Undo. Unnamed
+fallback characters (`&é(üöäß`) are inert, `"` selects a register and Kestrel's
+Option+5 and Option+L keep QWERTZ `[` and `@`. Japanese composition fills Command
+(`:caption`), the transcript word field and the YouTube URL field; Enter and Escape
+during composition neither submit nor cancel, and the committed `日本語` lands
+exactly. Picture captions still draw CJK as .notdef boxes with the bundled Inter
+font. See [keymaps](KEYMAP.md#logical-and-physical-keys).
+
 The [Original layout increment](qualification/original-layout-2026-10-02.md)
 restores a 141-point stopped picture in the selected/copied 960×640 fixture.
 Compact Original shows the actual placed-sound count beside Beats; focusing it
@@ -595,6 +635,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `ai-pause` | Selects a pause made with `,h`, refuses `,a` on a picture beat, then drives `,a`, `:generate`, inspector Escape and `,a` again through a scripted worker seam (unavailable runtime, eight progress steps until cancellation, worker failure). Checks inspector/footer teaching, exact runtime reason, stage/step/elapsed progress, recorded cancellation and failure, and that the revision never changes. Conditioning, request allocation and durable transitions are real; the seam cannot produce Ready pictures. |
 | `model-packs` | Opens Models with `:models`, checks painted size, license titles and terms, keeps Install disabled until both bridge-pack licenses are accepted by keyboard, then installs through a harness-only scripted backend: progress, Cancel to a partial download, Resume to Installed, and the AI PICTURES offer disappearing. Also opens the panel from the AI PICTURES offer focused on the first license. Nothing downloads; Remove and Discard use the real store. |
 | `diagnostics` | Opens the Diagnostics panel with `:diagnostics` through real keys, checks the labelled dialog, focus on Close and accessible "label: value" rows for every section, counted GPU submissions with a completion latency, a 2 Hz resample without input, that editor keys (`x`, `j`, `dd`) neither edit nor move while it is open, and that Escape closes it, returns focus to the pane and stops sampling. Audio device, worker and decoder-cache rows stay idle in replay. |
+| `storage` | Opens the Storage panel with `:storage` through real keys and checks the labelled dialog, focus on Preview cleanup and accessible project and cache rows. P previews a cleanup on a read-only open off the writer and R removes nothing without a removable preview of the current revision. Editor keys (`x`, `j`, `dd`) neither edit nor move while it is open. C removes only an abandoned download in the replay's private cache root, never the person's real caches. S saves a verified portable copy through the scripted save sheet, which reopens with full validation at the current revision. Escape closes the panel without an edit. |
 | `ai-variants` | Inserts a pause with `,h`, runs `:generate 2` through the scripted seam's Ready ending (synthetic footage; real host qualification, publication and Ready; needs `ffmpeg` and `deadpan-media-worker`), and checks the variant progress, two listed variants with rendered thumbnails and the newest chosen, `:prev-ai`, `:preview-ai` and `:next-ai` while previewing (footer names the variant), `:audition-ai` looping the pause from the proposed acceptance admitted against the current revision with the candidate picture at an injected heard sample inside the pause, a second `:audition-ai` pausing at that sample, `:accept-ai` of variant 2 keeping variant 1 offered, `:discard-ai` writing a durable eviction, and Undo offering the accepted variant again. Delivery is simulated; nothing is heard. |
 | `ai-pause-ready` | Requires `--project /absolute/project.deadpan` whose last edit accepted real AI pictures with a current request. Replays a private copy: Undo offers the retained Ready candidate, `:preview-ai` shows decoded generated frames in the viewer at the cursor and ten frames later, Escape restores the edit, `:accept-ai` commits one undoable edit with the pause selected, and `:discard-ai` durably discards a re-offered candidate. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. Minimum-size checks cover empty Sounds focus, strict parent-action text/hit clips and pointer/keyboard navigation preserving revision, scope, selection and both cursors. The final compact run passes 73 checks plus the audit on `78395620`. |

@@ -469,7 +469,7 @@ fn actual_export(d: &mut Driver<'_>, movie: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn wait_terminal(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn wait_terminal(d: &mut Driver<'_>) -> Result<(), String> {
     let started = Instant::now();
     let deadline = started + Duration::from_secs(240);
     loop {

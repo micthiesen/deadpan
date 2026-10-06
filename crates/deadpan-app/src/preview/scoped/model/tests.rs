@@ -1014,3 +1014,72 @@ fn mark_rebase_rejects_every_identity_mismatch_without_touching_navigation() {
     assert!(Arc::ptr_eq(&stale_state.index, &retained.index));
     assert_same_inspector_navigation(&retained, &stale_state);
 }
+
+#[test]
+fn play_steps_walk_all_plays_then_each_play_of_the_nearest_repeat() {
+    let document = fixture(
+        "outer",
+        vec![
+            repeat("outer", "group", 3, Some(1)),
+            sequence("group", &["first", "inner"]),
+            hold("first", 2),
+            repeat("inner", "leaf", 2, None),
+            hold("leaf", 2),
+            hold("owned-gap", 3),
+        ],
+        BTreeMap::new(),
+        [overrides("outer", &[(1, "owned-gap")])].into(),
+    );
+    let mut state = state(document, "outer", 0);
+    let outer = |state: &State, position: Option<u32>| {
+        vec![branch(&state.index.document, "outer", position)]
+    };
+    // Backward from All plays stays put; forward walks 1..3 and clamps.
+    assert!(!state.step_play_in(false, 1).unwrap());
+    assert!(state.step_play_in(true, 1).unwrap());
+    assert_eq!(state.selected.repeats, outer(&state, Some(0)));
+    assert!(state.step_play_in(true, 1).unwrap());
+    // Play 2 owns its gap branch, reachable with j.
+    assert_eq!(state.rows.len(), 2);
+    state.step_in(true, 1).unwrap();
+    assert_eq!(state.selected.node, node("owned-gap"));
+    assert!(state.step_play_in(true, 5).unwrap());
+    assert_eq!(state.selected.repeats, outer(&state, Some(2)));
+    assert!(!state.step_play_in(true, 1).unwrap());
+    // A count steps back several plays; past play 1 is All plays again.
+    assert!(state.step_play_in(false, 2).unwrap());
+    assert_eq!(state.selected.repeats, outer(&state, Some(0)));
+    assert!(state.step_play_in(false, 1).unwrap());
+    assert_eq!(state.selected.repeats, outer(&state, None));
+    // Inside the nested group, ]r steps the inner Repeat, not the outer one.
+    state.step_play_in(true, 2).unwrap();
+    state.select_in(0).unwrap();
+    assert!(state.enter_in().unwrap());
+    state.step_in(true, 1).unwrap();
+    assert_eq!(state.selected.node, node("inner"));
+    assert!(state.enter_in().unwrap());
+    assert!(state.step_play_in(true, 2).unwrap());
+    assert_eq!(
+        state.selected.repeats,
+        vec![
+            branch(&state.index.document, "outer", Some(1)),
+            branch(&state.index.document, "inner", Some(1))
+        ]
+    );
+    // Backspace keeps the outer play choice.
+    assert!(state.leave_in().unwrap());
+    assert!(state.leave_in().unwrap());
+    assert_eq!(state.selected.repeats, outer(&state, Some(1)));
+}
+
+#[test]
+fn play_steps_refuse_contents_without_a_repeat() {
+    let document = fixture(
+        "speed",
+        vec![retime("speed", "body", 0, 4, 8), hold("body", 4)],
+        BTreeMap::new(),
+        BTreeMap::new(),
+    );
+    let mut state = state(document, "speed", 0);
+    assert!(state.step_play_in(true, 1).is_err());
+}

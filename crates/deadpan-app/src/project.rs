@@ -458,6 +458,17 @@ pub struct ProjectUpdate {
     pub storage: Option<crate::recovery::StorageAlert>,
     /// The latest Original relink, matched by its request ticket.
     pub relink: Option<RelinkStatus>,
+    /// The latest explicit storage cleanup, matched by its request ticket.
+    pub storage_cleanup: Option<StorageCleanupStatus>,
+}
+
+/// The outcome of one explicit `:storage` cleanup request. Operational; it
+/// never changes authored history.
+#[derive(Clone, Debug)]
+pub struct StorageCleanupStatus {
+    pub ticket: u64,
+    pub session: u64,
+    pub result: Result<deadpan_store::storage::CleanupOutcome, String>,
 }
 
 /// What a writable open recovered, plus the presence of every registered
@@ -882,6 +893,16 @@ pub enum ProjectRequest {
         content: deadpan_store::original_media::OriginalContentId,
         expected_version: u64,
         path: PathBuf,
+    },
+    /// Remove exactly the previewed entries that a fresh scan on the writer
+    /// still finds unreferenced and older than the default grace period.
+    /// The preview itself runs off the writer on a read-only open. Refused
+    /// while any import, relink, render, AI pause or tracking job could be
+    /// writing media.
+    CleanStorage {
+        ticket: u64,
+        expected_session: u64,
+        previewed: Vec<deadpan_store::storage::RemovedEntry>,
     },
     Import {
         path: PathBuf,

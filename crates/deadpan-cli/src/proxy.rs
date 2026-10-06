@@ -488,6 +488,8 @@ mod tests {
             "crates/deadpan-cli/src/proxy/cache.rs",
             "crates/deadpan-cli/src/proxy/cache_tests.rs",
             "crates/deadpan-cli/src/lib.rs",
+            // Explicit cache cleanup: removes entries, never reads pictures.
+            "crates/deadpan-cli/src/storage.rs",
             "crates/deadpan-media/src/proxy.rs",
             "crates/deadpan-media/src/conversion/proxy.rs",
             "crates/deadpan-media/src/conversion.rs",

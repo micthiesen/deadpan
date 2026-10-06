@@ -26,10 +26,12 @@ pub enum MenuCommand {
     ViewEdit,
     Keys,
     Models,
+    Storage,
+    PortableCopy,
     Quit,
 }
 
-const COMMANDS: [(&str, MenuCommand); 14] = [
+const COMMANDS: [(&str, MenuCommand); 16] = [
     ("deadpan.file.new", MenuCommand::New),
     ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
@@ -43,6 +45,8 @@ const COMMANDS: [(&str, MenuCommand); 14] = [
     ("deadpan.view.edit", MenuCommand::ViewEdit),
     ("deadpan.help.keys", MenuCommand::Keys),
     ("deadpan.app.models", MenuCommand::Models),
+    ("deadpan.app.storage", MenuCommand::Storage),
+    ("deadpan.file.portable-copy", MenuCommand::PortableCopy),
     ("deadpan.app.quit", MenuCommand::Quit),
 ];
 
@@ -86,12 +90,13 @@ impl MenuState {
         match command {
             MenuCommand::New | MenuCommand::NewFromUrl | MenuCommand::Open => self.ready,
             MenuCommand::Import => self.ready && self.project && !self.importing,
-            MenuCommand::Close | MenuCommand::Render | MenuCommand::Renders => {
-                self.ready && self.project
-            }
+            MenuCommand::Close
+            | MenuCommand::Render
+            | MenuCommand::Renders
+            | MenuCommand::PortableCopy => self.ready && self.project,
             MenuCommand::Undo => self.ready && self.can_undo,
             MenuCommand::Redo => self.ready && self.can_redo,
-            MenuCommand::ViewOriginal | MenuCommand::Models => self.ready,
+            MenuCommand::ViewOriginal | MenuCommand::Models | MenuCommand::Storage => self.ready,
             MenuCommand::ViewEdit => self.ready && self.project,
             MenuCommand::Keys => self.help_allowed,
             MenuCommand::Quit => true,
@@ -151,6 +156,9 @@ impl MenuBar {
         let keys = item("deadpan.help.keys", "Keyboard Reference", None);
         // Packs are global, so the panel needs no project.
         let models = item("deadpan.app.models", "Models…", None);
+        // Project and per-user storage; works without a project too.
+        let storage = item("deadpan.app.storage", "Storage…", None);
+        let portable = item("deadpan.file.portable-copy", "Save Portable Copy…", None);
         // Quit asks the window to close so unfinished project work completes
         // through the app's ordinary close path.
         let quit = item("deadpan.app.quit", "Quit Deadpan", command_key(Code::KeyQ));
@@ -162,6 +170,7 @@ impl MenuBar {
                 &PredefinedMenuItem::about(Some("About Deadpan"), None),
                 &PredefinedMenuItem::separator(),
                 &models,
+                &storage,
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::services(None),
                 &PredefinedMenuItem::separator(),
@@ -185,6 +194,8 @@ impl MenuBar {
                 &PredefinedMenuItem::separator(),
                 &render,
                 &renders,
+                &PredefinedMenuItem::separator(),
+                &portable,
                 &PredefinedMenuItem::separator(),
                 &close,
             ],
@@ -234,6 +245,8 @@ impl MenuBar {
                 (MenuCommand::ViewEdit, edit),
                 (MenuCommand::Keys, keys),
                 (MenuCommand::Models, models),
+                (MenuCommand::Storage, storage),
+                (MenuCommand::PortableCopy, portable),
                 (MenuCommand::Quit, quit),
             ],
             import,
@@ -322,6 +335,8 @@ mod tests {
         assert!(empty.enabled(MenuCommand::NewFromUrl));
         assert!(empty.enabled(MenuCommand::ViewOriginal));
         assert!(empty.enabled(MenuCommand::Models));
+        assert!(empty.enabled(MenuCommand::Storage));
+        assert!(!empty.enabled(MenuCommand::PortableCopy));
         assert!(!empty.enabled(MenuCommand::Import));
         assert!(!empty.enabled(MenuCommand::Render));
         assert!(!empty.enabled(MenuCommand::ViewEdit));

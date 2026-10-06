@@ -70,8 +70,11 @@ Durable filesystem publication precedes the SQLite transaction. A database
 failure leaves a verified unreferenced original available for retry. It never
 deletes user data to simulate cross-filesystem/database atomicity. Records are
 written only by the project writer; read-only inventory and snapshots may coexist.
-Inventory uses bounded keyset pages. All retained originals are currently kept;
-history-based reference collection and eviction policy are not implemented.
+Inventory uses bounded keyset pages. Every original with an inventory record is
+kept. Explicit [storage cleanup](STORAGE.md) removes only a managed copy that no
+record or other row names (for example after a failed retention commit), once
+it is older than the grace period. A [portable copy](STORAGE.md#portable-copies)
+turns every linked original into a verified managed copy and drops the link.
 
 Schemas 1 through 18 migrate on a consistent backup/copy into schema 19.
 Schema-10-through-18 original records are preserved. For schemas 1 through 9, the new

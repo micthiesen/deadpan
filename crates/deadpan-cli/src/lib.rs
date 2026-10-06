@@ -7,6 +7,8 @@ mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
 pub mod bundle;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod corrections;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod encoded_render;
@@ -45,6 +47,8 @@ pub mod single_original;
 mod source_registration;
 pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod storage;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod tracking;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod transcription;
@@ -74,6 +78,10 @@ const HELP: &str = "Deadpan headless commands:
   project redo <project.deadpan> --expected <revision> [--dry-run]
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
+  project storage <project.deadpan> [--clean [--dry-run]] [--grace-hours N]
+  project copy-portable <project.deadpan> <new-copy.deadpan>
+  cache status [--grace-hours N]
+  cache clean [--dry-run] [--grace-hours N]
   project retain-original <project.deadpan> <absolute-source> [--linked]
   project register-source <project.deadpan> --request-json <request.json> [--dry-run]
   project adopt-primary-geometry <project.deadpan> --request-json <request.json> [--dry-run]
@@ -112,6 +120,8 @@ const HELP: &str = "Deadpan headless commands:
   models remove <pack> [--partial] [--root <dir>]
   transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
+  corrections <project.deadpan> [--asset <id>]
+  corrections <project.deadpan> --json <request.json> [--dry-run]
   pauses <project.deadpan> [--asset <id>]
   detect-shots <project.deadpan> [--asset <id>] [--decode-threads <1-16>]
   shots <project.deadpan> [--asset <id>]
@@ -513,9 +523,17 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "create-from-url", rest @ ..] => youtube::acquire::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "storage", rest @ ..] => storage::run_project(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "copy-portable", rest @ ..] => storage::run_copy(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["cache", rest @ ..] => storage::run_cache(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcript", rest @ ..] => transcription::run_transcript(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["corrections", rest @ ..] => corrections::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["pauses", rest @ ..] => activity::run_pauses(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

@@ -102,6 +102,24 @@ Dry-run uses complete store admission; a counted authored run saves one Undo.
 The same commands use the authenticated native owner when the project is open.
 See the [request examples and receipt contract](SEMANTIC_MACROS.md#headless-inspection-save-and-run).
 
+An `apply` operation plans and commits one inline program once, the same path
+as a native single recorded action, without saving it as a Macro. Use it for
+the GUI edits that resolve through semantic instructions, such as gags
+(`gag`, `set_gag`), pauses (`insert_pause`), `bleep`, `lift`, `tail`,
+captions, cutaways, framing presets and `set_audio` gain steps:
+
+```json
+{"type": "apply", "program": {"instructions": [{"type": "repeat", "selector": {"type": "visual_selection"}, "plays": 3}]},
+ "parent": "SEQUENCE_NODE_ID", "cursor": 4, "selected_child": null,
+ "visual_selection": {"type": "time", "anchor": 18, "head": 4, "extending": true}}
+```
+
+It binds the same revision and bank version, supports `--dry-run`, saves one
+Undo step and reports `operation: "apply"`, the trace and the edit summary.
+Register writes come only from the program's own yanks and cuts. `macro
+inspect` also returns an edited register's `outline`, which `:recipe-inspect`
+shows. [Parity](PARITY.md) maps every GUI action to its headless form.
+
 `delete` takes `node` and resolves to `DeleteRipple` before preview or dispatch,
 with timing allocation equal to the new revision and ordinal zero. Explicit
 `delete_ripple` takes `node` and `timing`. Both retain the old sample entry of
@@ -1117,6 +1135,28 @@ audio offset as JSON. `--frames`, `--every`, `--samples`, `--no-audio` and
 `ExportVerificationMismatch` after printing the full report when any check
 fails. macOS only. See [preview/export verification](PREVIEW_EXPORT_VERIFICATION.md).
 
+## Storage, cleanup and portable copies
+
+```sh
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean --dry-run --grace-hours 0
+cargo run --locked -p deadpan-cli -- project storage /tmp/example.deadpan --clean
+cargo run --locked -p deadpan-cli -- project copy-portable /tmp/example.deadpan /tmp/elsewhere/Example.deadpan
+cargo run --locked -p deadpan-cli -- cache status
+cargo run --locked -p deadpan-cli -- cache clean --dry-run
+```
+
+`project storage` reports every media namespace entry as referenced (with the
+kinds of row that name it), unreferenced, unfinished or kept aside, plus the
+database, checkpoints and per-user caches. It opens read-only and works while
+the app holds the project. `--clean` removes unreferenced objects and
+unfinished writes unchanged for the grace period (default 24 hours) that no
+reader holds; it refuses an open project. `copy-portable` writes a verified
+self-contained copy with managed originals and only referenced media, and
+refuses when a referenced object is missing. `cache` covers proxies and
+abandoned downloader staging (grace at least one hour) and only reports model
+packs and AI runtimes. See [storage](STORAGE.md).
+
 ## History and checkpoints
 
 ```sh
@@ -1246,6 +1286,32 @@ transcript as an annotation outside history. It needs the project's writer.
 transcripts or phrase matches with exact source sample bounds. Errors use
 `TranscriptionUnavailable`, `TranscriptionCancelled` and `TranscriptionFailed`.
 See [local transcription](TRANSCRIPTION.md).
+
+## Analysis corrections
+
+`corrections <project.deadpan> [--asset <id>]` reads the Original's stored
+corrections: the version, Undo/Redo labels, unreadable values, regions that no
+longer apply, and the corrected words and pauses with their indexes.
+`corrections <project.deadpan> --json <request.json> [--dry-run]` makes one
+`:correct` change through the same `deadpan_analysis::Corrections` operations
+and `change_analysis_corrections` store call as the sheet:
+
+```json
+{"protocol": 1, "expected_version": 0,
+ "change": {"type": "edit_word", "word": 0, "expected_text": "helo", "text": "hello"}}
+```
+
+Change types are `edit_word`, `remove_word`, `join_words`,
+`set_word_bounds` (`start_cs`, `end_cs`), `add_pause_after`, `remove_pause`,
+`set_pause_bounds` (analysis samples `start`, `end`), `drop_inapplicable`,
+`discard_unreadable`, `undo` and `redo`. Word changes repeat the word's current
+`expected_text`; pause changes repeat `expected_start` and `expected_end`. A
+different stored version returns `AnalysisCorrectionsConflict`; a different
+target returns `CorrectionTargetChanged`. Neither writes. A dry run returns the
+label and proposed corrections without writing. Corrections never create a
+document revision. Changes need the project writer: while the app holds the
+project the command returns `ProjectAlreadyOpen`, because the live endpoint
+does not carry corrections yet.
 
 ## AI pauses
 

@@ -829,6 +829,7 @@ impl DeadpanApp {
                 .add(
                     egui::TextEdit::singleline(&mut self.youtube.url)
                         .id(egui::Id::new(URL_ID))
+                        .event_filter(super::editor_input::field_filter(self.ime_composing))
                         .hint_text("https://youtu.be/… or https://www.youtube.com/watch?v=…")
                         .return_key(None)
                         .desired_width((ui.available_width() - button_width).max(120.0))

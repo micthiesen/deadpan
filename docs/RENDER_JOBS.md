@@ -54,7 +54,12 @@ survive reopen. No automatic retry or publication occurs on open.
 `RenderObjectRef` is a distinct type; these objects are not Generated Hold media.
 Each checkpoint also records the exact SHA-256 and byte length of both objects.
 There is no automatic orphan eviction. Objects already published into this
-namespace survive a later manifest or database failure.
+namespace survive a later manifest or database failure. Explicit
+[storage cleanup](STORAGE.md) removes unreferenced objects and the candidates of
+jobs whose movie publication was confirmed or whose latest attempt ended
+Failed or Cancelled, under the namespace lock and a grace period. A later
+explicit retry of such a job reports its candidate missing. Interrupted,
+active and verified-but-unpublished jobs keep their candidates.
 
 Connection-free `RenderWriteHandle::prepare_retention` runs on an I/O worker.
 It checks the expected movie length and SHA-256, retains both objects durably,

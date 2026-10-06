@@ -27,6 +27,8 @@ pub mod original_media;
 pub mod original_provenance;
 mod output_color;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod portable;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod publication;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod publication_durability;
@@ -45,6 +47,8 @@ pub mod single_source;
 pub mod slice_preview;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod storage;
 pub use shot_analysis::{MAX_SHOT_ANALYSES, ShotAnalysisKey};
 pub mod analysis_corrections;
 pub use analysis_corrections::{

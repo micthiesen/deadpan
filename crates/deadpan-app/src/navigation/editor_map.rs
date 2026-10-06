@@ -65,6 +65,8 @@ pub enum BindingId {
     PausePrevious,
     ShotNext,
     ShotPrevious,
+    PlayNext,
+    PlayPrevious,
     First,
     Last,
     Undo,
@@ -130,7 +132,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 75] = [
+    pub const ALL: [Self; 77] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -144,6 +146,8 @@ impl BindingId {
         Self::PausePrevious,
         Self::ShotNext,
         Self::ShotPrevious,
+        Self::PlayNext,
+        Self::PlayPrevious,
         Self::First,
         Self::Last,
         Self::Undo,
@@ -222,6 +226,8 @@ impl BindingId {
             Self::PausePrevious => "pause.previous",
             Self::ShotNext => "shot.next",
             Self::ShotPrevious => "shot.previous",
+            Self::PlayNext => "play.next",
+            Self::PlayPrevious => "play.previous",
             Self::First => "first",
             Self::Last => "last",
             Self::Undo => "undo",
@@ -533,6 +539,10 @@ impl Rule {
                     forward,
                     count: count.unwrap_or(1).max(1),
                 },
+                Action::Play { forward, .. } => Action::Play {
+                    forward,
+                    count: count.unwrap_or(1).max(1),
+                },
                 _ => unreachable!("motion declarations carry a motion action"),
             },
             CountPolicy::Frames => match count {
@@ -635,6 +645,8 @@ impl Rule {
             Action::Pause { forward: false, .. } => I::PausePrevious,
             Action::Shot { forward: true, .. } => I::ShotNext,
             Action::Shot { forward: false, .. } => I::ShotPrevious,
+            Action::Play { forward: true, .. } => I::PlayNext,
+            Action::Play { forward: false, .. } => I::PlayPrevious,
             Action::SelectSpeech(deadpan_core::SpeechObject::InnerWord) => I::InnerWord,
             Action::SelectSpeech(deadpan_core::SpeechObject::AroundWord) => I::AroundWord,
             Action::SelectSpeech(deadpan_core::SpeechObject::InnerSentence) => I::InnerSentence,
@@ -1785,6 +1797,20 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         add(
             &[plain(key), plain(Key::S)],
             Action::Shot { forward, count: 1 },
+            C::Motion,
+            short,
+            true,
+        );
+    }
+    // Repeat plays: All plays, then play 1..N of the nearest open Repeat.
+    // Navigation only; operators never compose with it.
+    for (key, forward, short) in [
+        (Key::CloseBracket, true, "next Repeat play"),
+        (Key::OpenBracket, false, "previous Repeat play"),
+    ] {
+        add(
+            &[plain(key), plain(Key::R)],
+            Action::Play { forward, count: 1 },
             C::Motion,
             short,
             true,

@@ -66,6 +66,7 @@ mod shots;
 mod slip;
 mod sound_events;
 mod splice;
+mod storage;
 mod style;
 mod targets;
 mod thumbnails;
@@ -273,6 +274,8 @@ pub struct DeadpanApp {
     models: model_packs::Models,
     /// `:diagnostics`: live process counters.
     diagnostics: diagnostics::State,
+    /// `:storage`: project and cache usage, cleanup and portable copies.
+    storage: storage::State,
     /// The user's gag presets, shared by every project.
     gag_presets: crate::gag_presets::GagPresets,
     /// Where bundled synthesized sounds are written before import.
@@ -452,6 +455,7 @@ impl DeadpanApp {
             recovery: recovery::RecoveryUi::default(),
             models: model_packs::Models::default(),
             diagnostics: diagnostics::State::default(),
+            storage: storage::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             bundled_sounds: crate::keymap_file::application_support_directory()
                 .ok()
@@ -887,6 +891,7 @@ impl DeadpanApp {
                 update.storage.take(),
                 update.relink.take(),
             );
+            self.receive_storage_cleanup(update.storage_cleanup.take());
             self.project_error = update.error;
             self.message = update.message;
             if let Some(note) = zoom_note {
@@ -1188,6 +1193,7 @@ impl DeadpanApp {
                 DialogKind::Cookies => "Choose cookies",
                 DialogKind::RelinkOriginal => "Locate Original",
                 DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => "Choose model pack",
+                DialogKind::PortableCopy => "Save portable copy",
             };
             self.refuse_while_busy(action);
             return;
@@ -1267,6 +1273,14 @@ impl DeadpanApp {
             self.receive_model_source(result.path, result.error, context);
             return;
         }
+        if result.kind == DialogKind::PortableCopy {
+            if let Some(error) = result.error {
+                self.message = Some(error);
+            } else if let Some(path) = result.path {
+                self.receive_portable_copy_dialog(path);
+            }
+            return;
+        }
         if let Some(error) = result.error {
             if result.kind == DialogKind::Render {
                 self.render_dialog_failed(error);
@@ -1306,6 +1320,7 @@ impl DeadpanApp {
             DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => {
                 unreachable!("model pack sources return to the Models panel")
             }
+            DialogKind::PortableCopy => unreachable!("portable copies return to Storage"),
             DialogKind::InitializeSource | DialogKind::ImportSound => {
                 let Some(intent) = intent else {
                     return;
@@ -2084,6 +2099,7 @@ impl DeadpanApp {
             Action::Shot { forward, count } => {
                 self.analysis_motion(deadpan_core::SpeechUnit::Shot, forward, count)
             }
+            Action::Play { forward, count } => self.scoped_play(forward, count, context),
             Action::SelectSpeech(object) => self.select_speech(object),
             Action::First | Action::Last => {
                 let end = action == Action::Last;
@@ -2296,6 +2312,9 @@ impl DeadpanApp {
         if self.diagnostics_keyboard(context) {
             return None;
         }
+        if self.storage_keyboard(context) {
+            return None;
+        }
         if self.render_keyboard(context) {
             return None;
         }
@@ -2414,9 +2433,17 @@ impl DeadpanApp {
                 }
                 let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
-                // egui has no Key::At. Only this key's immediate native text
+                // egui has no Key::At, and egui-winit reports a physical
+                // fallback for other characters it cannot name (AZERTY `&`,
+                // QWERTZ `"`). Only a printable key's immediate native text
                 // companion proves the logical character on the current layout.
-                let logical_text = matches!(events.as_slice().first(), Some(egui::Event::Text(text)) if text == "@").then_some("@");
+                let logical_text = match events.as_slice().first() {
+                    Some(egui::Event::Text(text)) if editor_input::printable(key) => {
+                        Some(text.clone())
+                    }
+                    _ => None,
+                };
+                let logical_text = logical_text.as_deref();
                 if self.camera.is_some() && !self.sound_focused() {
                     match camera::dispatch_key(
                         key,
@@ -2970,8 +2997,28 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
             Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
+            Ok(navigation::command::Entry::Storage) => self.open_storage(context),
+            Ok(navigation::command::Entry::PortableCopy) => self.start_portable_copy(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
             Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
+            Ok(navigation::command::Entry::Close) => {
+                if self.workspace.is_none() {
+                    self.error = Some("No project is open.".into());
+                } else {
+                    self.stop_playback();
+                    self.submit(ProjectRequest::Close);
+                }
+            }
+            Ok(navigation::command::Entry::SoundChannels(choice)) => {
+                self.sound_interpretation = choice;
+                self.message = Some(match choice {
+                    Some(choice) => format!(
+                        "Sounds without a speaker layout will be heard as {}. Add one with ⌘I.",
+                        choice.label()
+                    ),
+                    None => "Sounds without a speaker layout will be refused.".into(),
+                });
+            }
             Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
                 context,
                 placement_target.unwrap_or_else(|| {
@@ -3064,6 +3111,8 @@ impl DeadpanApp {
                 MenuCommand::ViewEdit => self.show_edit(context),
                 MenuCommand::Keys => self.action(Action::Help, context),
                 MenuCommand::Models => self.open_models(None, context),
+                MenuCommand::Storage => self.open_storage(context),
+                MenuCommand::PortableCopy => self.start_portable_copy(context),
                 MenuCommand::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
             }
         }
@@ -3091,6 +3140,7 @@ impl DeadpanApp {
                 && !self.marks.open
                 && !self.models.open
                 && !self.diagnostics.open
+                && !self.storage.open
                 && !self.help_open
                 && !self.macros.recording()
                 && !self.macros.is_pending()
@@ -3439,6 +3489,15 @@ impl DeadpanApp {
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
+                let matches = navigation::command::completions(&self.command);
+                if !matches.is_empty() {
+                    // Completion teaching: the first few matching commands.
+                    let mut text = matches.iter().take(4).copied().collect::<Vec<_>>().join("  ·  ");
+                    if matches.len() > 4 {
+                        text.push_str(&format!("  ·  +{} more", matches.len() - 4));
+                    }
+                    ui.add(egui::Label::new(egui::RichText::new(text).monospace().size(11.0).color(style::LAVENDER)).truncate());
+                }
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
                     style::key_hint(ui, "Esc", "cancel entry");
@@ -3497,6 +3556,7 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "child");
                         self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "enter contents");
                         self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "Repeat play");
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
                         hints.push((":scope".into(), "all / play N".into()));
@@ -3536,6 +3596,7 @@ impl DeadpanApp {
                         if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         hints.tier(key_labels::Tier::Context);
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
+                        if self.selected_repeat() { self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "open a play"); }
                         if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
                         if selection != navigation::EditSelection::None {
                             if words {
@@ -3550,15 +3611,18 @@ impl DeadpanApp {
                         hints.tier(key_labels::Tier::More);
                         self.add_editor_hint(&mut hints, EditorKey::Split, "split");
                         self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
+                        // Within a tier earlier hints win the row budget.
+                        if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
+                            // Operators take any motion or object: d3l, y]s.
+                            self.add_editor_pair_hint(&mut hints, EditorKey::CutOperator, EditorKey::YankOperator, " / ", "+ motion: cut / copy");
+                            self.add_editor_pair_hint(&mut hints, EditorKey::MacroRecord, EditorKey::MacroExecute, " / ", "+ letter: record / run macro");
+                        }
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                         self.add_editor_hint(&mut hints, EditorKey::Trim, "Trim beat");
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", if selection == navigation::EditSelection::None { "gain 3 dB" } else { "range gain 3 dB" });
                         self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
-                        if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
-                            self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record macro");
-                            self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
-                        }
                     } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         hints.tier(key_labels::Tier::Context);
@@ -3813,7 +3877,7 @@ impl DeadpanApp {
                                     for option in crate::project::AudioLayoutInterpretation::ALL { ui.selectable_value(&mut self.sound_interpretation, Some(option), choice(Some(option))); }
                                 });
                                 ui.small("Automatic selects the first actual audio stream. Advanced indices refer to the container, not the audio-track order.");
-                                ui.small("Unlabelled channels: how to hear a file that declares no speaker layout, such as a plain WAV. Not chosen refuses such a file; Deadpan never guesses speakers from the channel count. A declared layout is used as is.");
+                                ui.small("Unlabelled channels: how to hear a file that declares no speaker layout, such as a plain WAV. Not chosen refuses such a file; Deadpan never guesses speakers from the channel count. A declared layout is used as is. Keyboard: :sound-channels mono|stereo|none.");
                                 ui.small("Admitted: PCM16 WAV or qualified MP4 audio.");
                             }
                             ui.checkbox(&mut self.linked_import, "Link to original location");
@@ -4313,7 +4377,8 @@ impl DeadpanApp {
                             {
                                 self.edit(BeatEdit::Delete);
                             }
-                            ui.collapsing("Framing presets", |ui| {
+                            let presets = format!("Framing presets  {}", self.editor_pair(EditorKey::PunchIn, EditorKey::Creep, " / "));
+                            ui.collapsing(presets, |ui| {
                                 for (label, key, action) in [
                                     ("Punch in 1.35× on target", self.editor_key(EditorKey::PunchIn), navigation::FramingAction::PunchIn),
                                     ("Creep to 1.35×", self.editor_key(EditorKey::Creep), navigation::FramingAction::Creep),
@@ -4841,6 +4906,8 @@ impl DeadpanApp {
                         ("⌘E / :render".to_owned(), "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.".to_owned()),
                         (":renders".to_owned(), "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing.".to_owned()),
                         (":diagnostics".to_owned(), "Show live counters for this app process beside the picture: audio underruns and faults, decode queue depths, GPU submission latency, PCM cache hits and residency, file reads and writes, model worker memory and UI frames. Updates twice a second; playback continues. Escape closes. Nothing is saved with the project.".to_owned()),
+                        (":storage".to_owned(), "Show what this project and Deadpan's caches use: originals, AI pause media, render candidates, the database, proxies, downloads and model packs, and what nothing references any more. P previews a cleanup of unreferenced project files unchanged for a day and R removes exactly those; C cleans rebuildable caches; S saves a portable copy. Escape closes.".to_owned()),
+                        (":portable-copy".to_owned(), "Save a verified self-contained copy of this project (also File › Save Portable Copy…): linked originals become managed copies, only referenced media is copied, history is kept, and the copy renders without its source or any model.".to_owned()),
                         (":models".to_owned(), "Install, resume, cancel or remove the models AI pauses and transcription use, also in the Deadpan menu. Each pack shows its size, free space, memory and licenses before anything downloads; licenses that need acceptance are accepted there. Install from a folder or .tar works offline. Tab moves between controls; Escape closes and an install keeps running.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
@@ -4916,6 +4983,7 @@ impl eframe::App for DeadpanApp {
             self.receive_trim_media();
             self.reconcile_models(&context);
             self.reconcile_diagnostics(&context);
+            self.reconcile_storage(&context);
             self.reconcile_transcription(&context);
             self.reconcile_shots(&context);
             self.reconcile_proxies(&context);
@@ -5069,6 +5137,7 @@ impl eframe::App for DeadpanApp {
             self.marks_window(&context);
             self.models_window(&context);
             self.diagnostics_window(&context);
+            self.storage_window(&context);
             self.youtube_window(&context);
         }
         // Drawn even over Trim, whose close question it may be asking.

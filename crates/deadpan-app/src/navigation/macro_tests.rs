@@ -113,22 +113,27 @@ fn logical_at_requires_its_text_companion_and_preserves_shifted_digit_counts() {
             count: 1
         })
     );
-    bindings.clear();
-    assert_eq!(
-        bindings.route_event_with_logical_text(
-            Key::Num2,
-            Some(Key::Num2),
-            Modifiers::SHIFT,
-            false,
-            false,
-            false,
-            true,
-            EditSelection::None,
-            Some("not @"),
-        ),
-        None
-    );
-    assert_eq!(bindings.pending(), "2");
+    // A shifted digit whose companion is the digit (AZERTY) stays a count;
+    // other companions never become `@`.
+    for (text, pending) in [("2", "2"), ("é", "")] {
+        bindings.clear();
+        assert_eq!(
+            bindings.route_event_with_logical_text(
+                Key::Num2,
+                Some(Key::Num2),
+                Modifiers::SHIFT,
+                false,
+                false,
+                false,
+                true,
+                EditSelection::None,
+                Some(text),
+            ),
+            None
+        );
+        assert_eq!(bindings.pending(), pending);
+        assert!(!bindings.macro_pending());
+    }
 }
 
 #[test]

@@ -205,7 +205,9 @@ refers to a proxy.
 
   The current Original's entry is retained. An entry whose movie a reader
   holds (an exclusive non-blocking `flock` fails) is never removed, in this
-  or any other process.
+  or any other process. Explicit [cache cleanup](STORAGE.md) (`cache clean`,
+  `:storage` then C) runs the same cleanup with a one-day unused and staging
+  grace; it removes entries but never reads proxy pictures.
 - **Safety.** Deleting the directory at any time loses only time.
 
 ## Preview reader

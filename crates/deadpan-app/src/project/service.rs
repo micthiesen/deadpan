@@ -47,6 +47,7 @@ mod semantic;
 mod shots;
 mod slip;
 mod splice;
+mod storage;
 mod targets;
 mod transcripts;
 mod trim;
@@ -135,6 +136,7 @@ struct Service {
     /// One relink on the import worker, kept until its reply drains.
     relinking: Option<recovery::Relinking>,
     relink: Option<super::RelinkStatus>,
+    storage_cleanup: Option<super::StorageCleanupStatus>,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -212,6 +214,7 @@ pub(super) fn run(
         storage_watch: Default::default(),
         relinking: None,
         relink: None,
+        storage_cleanup: None,
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -417,6 +420,7 @@ impl Service {
             }),
             storage: self.current_storage_alert(),
             relink: self.relink.clone(),
+            storage_cleanup: self.storage_cleanup.clone(),
         };
         *self
             .shared
@@ -628,6 +632,14 @@ impl Service {
                 expected_version,
                 path,
             } => self.relink_original(ticket, expected_session, &content, expected_version, path),
+            ProjectRequest::CleanStorage {
+                ticket,
+                expected_session,
+                previewed,
+            } => {
+                self.clean_storage(ticket, expected_session, &previewed);
+                Ok(())
+            }
             ProjectRequest::Close => {
                 self.cancel();
                 self.host = None;

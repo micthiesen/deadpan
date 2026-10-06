@@ -21,6 +21,7 @@ mod delete_range;
 mod diagnostics;
 mod edit_latency;
 mod faces;
+mod full_session;
 mod gags;
 mod gain;
 mod generated_picture;
@@ -28,6 +29,7 @@ mod group_pixels;
 mod groups;
 mod hold_effects;
 mod keymap;
+mod layouts;
 mod macros;
 mod marks;
 mod model_packs;
@@ -55,6 +57,7 @@ mod sound_placement;
 mod sound_playback;
 mod splice;
 mod split_edits;
+mod storage;
 mod targets;
 mod telemetry;
 mod transcript;
@@ -307,12 +310,12 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(library),
                             if name == "ai-pause" {
                                 ai_pause::backend()
-                            } else if name == "ai-variants" {
+                            } else if name == "ai-variants" || name == "full-session" {
                                 ai_pause::variants_backend()
                             } else {
                                 crate::project::generation::Backend::Environment
                             },
-                            if name == "targets" {
+                            if name == "targets" || name == "full-session" {
                                 targets::backend()
                             } else if name == "faces" {
                                 faces::backend()
@@ -439,6 +442,10 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 }
                 if name == "accessibility" {
                     return accessibility::run(&mut driver);
+                }
+                if name == "full-session" {
+                    // Keyboard only from the start screen: ⌘N, not a click.
+                    return full_session::run(&mut driver);
                 }
                 driver.click("Choose video…  ⌘N")?;
                 driver.wait_for("Original initialized and displayed", |app| {

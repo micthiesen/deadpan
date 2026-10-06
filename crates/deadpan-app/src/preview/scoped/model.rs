@@ -389,6 +389,51 @@ impl State {
             .ok_or("Play number is outside this Repeat")?;
         self.switch_in(RepeatEditBranch::Play { iteration })
     }
+    /// `]r`/`[r`: step the nearest Repeat through All plays, then play
+    /// 1..N, clamped at both ends. Returns false when already at the end.
+    pub fn step_play(
+        &mut self,
+        workspace: &Workspace,
+        forward: bool,
+        count: u32,
+    ) -> Result<bool, String> {
+        self.check(workspace)?;
+        self.step_play_in(forward, count)
+    }
+    fn step_play_in(&mut self, forward: bool, count: u32) -> Result<bool, String> {
+        let level = self.repeat_level().ok_or(
+            "These contents have no Repeat plays. Select a Repeat and press Enter, then ]r.",
+        )?;
+        let NodeKind::Repeat { iterations, .. } =
+            &self.index.document.nodes()[&self.levels[level].owner.node].kind
+        else {
+            unreachable!()
+        };
+        // Position 0 is All plays; position N is play N.
+        let plays = iterations.len();
+        let current = match &self.levels[level].branch {
+            RepeatEditBranch::Default => 0,
+            RepeatEditBranch::Play { iteration } => iterations
+                .position(iteration)
+                .ok_or("Selected play retired")?
+                .checked_add(1)
+                .ok_or("Repeat position overflow")?,
+        };
+        let next = if forward {
+            current.saturating_add(count).min(plays)
+        } else {
+            current.saturating_sub(count)
+        };
+        if next == current {
+            return Ok(false);
+        }
+        if next == 0 {
+            self.switch_in(RepeatEditBranch::Default)?;
+        } else {
+            self.switch_play_in(next)?;
+        }
+        Ok(true)
+    }
     fn switch_in(&mut self, branch: RepeatEditBranch) -> Result<(), String> {
         let level = self
             .repeat_level()

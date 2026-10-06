@@ -46,6 +46,8 @@ flate2 = "=1.1.10"
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 
 [dev-dependencies]
+# Integration tests build accepted AI pauses with the synthetic worker.
+deadpan-cli = { path = ".", features = ["synthetic-worker"] }
 deadpan-chaos.workspace = true
 tempfile.workspace = true
 rusqlite.workspace = true

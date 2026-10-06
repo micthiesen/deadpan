@@ -229,9 +229,10 @@ the rest of the workflow is command-only, so the
   Evicted, so it is never offered again, also after reopening, and Undo does
   not restore it; only if it was the request's selection does the newest
   other present Ready variant become selected, otherwise the selection is
-  kept. Its files stay under `Media/Generated` until a cleanup removes
-  unreferenced candidates; no such retention policy exists yet, so discard
-  frees no disk space.
+  kept. Its files stay under `Media/Generated` until an explicit
+  [storage cleanup](STORAGE.md) (`:storage`, then P and R) removes them, once
+  no retained revision or live receipt names them and the grace period has
+  passed; stale variants of a superseded request are removable the same way.
 - **Accept** is the only authored change: `acceptance::accept` through the
   ordinary edit receipt, selecting the Hold and keeping the cursor.
 - Stale session, revision, ticket and request identities are refused. Close,

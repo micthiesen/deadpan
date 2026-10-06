@@ -150,6 +150,8 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
 /// These egui identities are symbols, independent of the Shift/Option keys a
 /// layout used to produce them. Minus, Quote and Period stay modifier-sensitive:
 /// egui can use those identities for underscore, double quote and greater-than.
+/// Brackets need Option on QWERTZ and AZERTY; a US Option+bracket produces a
+/// typographic quote, which its companion text refuses before this check.
 pub(super) fn logical_symbol(key: Key) -> bool {
     matches!(
         key,
@@ -160,9 +162,38 @@ pub(super) fn logical_symbol(key: Key) -> bool {
             | Key::Plus
             | Key::Pipe
             | Key::Exclamationmark
+            | Key::OpenBracket
+            | Key::CloseBracket
             | Key::OpenCurlyBracket
             | Key::CloseCurlyBracket
     )
+}
+
+/// How a logical key press's immediate native text companion identifies it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Companion {
+    /// A character egui cannot name, mapped to its existing logical stroke.
+    Stroke(Stroke),
+    /// The text names the delivered key; interpret its modifiers as usual.
+    Delivered,
+    /// egui-winit delivered a physical fallback for a character that no
+    /// binding can name, such as AZERTY `&`, QWERTZ `ö` or US `#`.
+    Unnamed,
+}
+
+/// `text` must be the press's immediate companion. egui has one Quote key for
+/// both quote characters and no `@`, `_` or `>` identities; the produced
+/// character decides those, independently of the Shift a layout needed.
+pub(super) fn companion_stroke(key: Key, text: &str) -> Companion {
+    match text {
+        "@" => Companion::Stroke(Stroke::At),
+        "\"" => Companion::Stroke(Stroke::Key(Key::Quote, true)),
+        "'" => Companion::Stroke(Stroke::Key(Key::Quote, false)),
+        "_" => Companion::Stroke(Stroke::Key(Key::Minus, true)),
+        ">" => Companion::Stroke(Stroke::Key(Key::Period, true)),
+        _ if Key::from_name(text) == Some(key) => Companion::Delivered,
+        _ => Companion::Unnamed,
+    }
 }
 
 pub(super) fn modifier_key(key: Key) -> bool {

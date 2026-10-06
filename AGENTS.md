@@ -78,7 +78,7 @@ evidence.
 Current crates:
 
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
-- `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
+- `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, database checkpoints, storage reference tracking with explicit cleanup, and verified portable copies.
 - `crates/deadpan-plan`: immutable indexed picture mappings and bounded audio spans through structural beats, retaining original source identities, exact transforms and absolute sample boundaries; no decoding or DSP.
 - `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference remains open.
 - `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, immutable host provenance, and verified model packs (approved manifests, license layers, resumable download, offline folder/tar import and export). Audition and the remaining application integration remain open.
@@ -874,6 +874,22 @@ unreferenced object if a later database commit fails. A verified byte object is
 not proof of canonical media or user acceptance. Read through verified snapshots;
 do not reopen a worker path or treat generated objects as evictable cache entries.
 See [generated-object storage](docs/GENERATED_MEDIA.md).
+
+Package storage cleanup is explicit, never automatic. An object is referenced
+when its digest appears in any retained row: every revision, patch and step,
+registers, inventory, a live bundle receipt (present and current, or naming an
+accepted master), a render job that is not published or terminally
+failed/cancelled, or any `Snapshots/` checkpoint database. Keep that text scan
+a superset; over-retention is the only acceptable error. Preview off the
+writer; remove only the previewed entries a fresh writer scan still finds
+removable, under the render namespace lock, after the grace period (mtime and
+ctime; dedupe hits refresh ctime), with an exclusive non-blocking `flock`
+against readers' shared locks and an identity-rechecked single unlink. Every
+object read keeps its shared lock. Portable copies take references from the
+copied database, list source media only after that snapshot, require every
+typed reference to resolve, convert originals to verified managed copies,
+verify the reopened copy fully and publish by one no-replace rename. Replay and tests use private cache roots; never touch real
+user caches or qualification weights. See [storage](docs/STORAGE.md).
 
 Generated Hold intent retains sampled/native master references, an immutable
 provenance object, the original compact exact bridge sampling map, and a captured

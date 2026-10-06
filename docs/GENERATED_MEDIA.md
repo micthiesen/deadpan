@@ -51,10 +51,12 @@ a failure. The authored acceptance transaction must run only after this
 method returns success. If that SQLite transaction fails, the object remains
 unreferenced. No existing media is deleted to roll back an authored transaction.
 
-This module performs no eviction or abandoned-temporary cleanup. A later cleanup
-policy must trace every retained revision and active reader, and apply a grace
-period. Objects in this directory are never disposable merely because they are
-absent from the current document.
+This module performs no automatic eviction. Explicit [storage cleanup](STORAGE.md)
+traces every retained revision, register and live receipt, skips objects a
+reader holds (every read takes a shared `flock`) and applies a grace period to
+unreferenced objects and abandoned `.pending-*` temporaries. Objects in this
+directory are never disposable merely because they are absent from the current
+document.
 
 ## Readback
 
@@ -89,8 +91,8 @@ The current API is implemented on macOS and Linux. [Native bundle qualification]
 now composes media conversion, provenance and verified Ready publication. The
 dedicated [acceptance API](GENERATION_ACCEPTANCE.md) rechecks all six dependencies
 and commits derived assets and the selected provider in one reversible transaction.
-History reference tracking, qualified application acceptance, cache cleanup,
-portable project copying and complete offline playback/export remain open.
+[Storage](STORAGE.md) adds history reference tracking, explicit cleanup,
+verified portable copies and an offline render test of an accepted AI pause.
 
 The integration tests cover writer ownership, read-only coexistence, retained
 worker snapshots, deduplication, relocation, immutable readback, corruption,

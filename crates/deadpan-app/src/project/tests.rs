@@ -2048,3 +2048,61 @@ fn lost_import_worker_reports_failure_without_closing_project() {
     assert!(command(&service, ProjectRequest::Close).workspace.is_none());
     drop(jobs);
 }
+
+/// Confirmed cleanup runs on the writer and removes only previewed entries
+/// that a fresh scan still finds removable: the default grace period keeps
+/// a just-published object even when a preview named it, and a stale
+/// session is refused without removing anything.
+#[test]
+fn storage_cleanup_removes_only_previewed_entries_that_are_still_removable() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("storage.deadpan");
+    let mut store = seed_holds(&path, &["a"]);
+    let orphan = b"never recorded";
+    let reference = deadpan_core::GeneratedObjectRef::new(
+        deadpan_core::GeneratedContentId::new(blake3::hash(orphan).to_hex().to_string()).unwrap(),
+        orphan.len() as u64,
+    )
+    .unwrap();
+    store
+        .promote_generated_object(
+            &mut std::io::Cursor::new(orphan),
+            &reference,
+            deadpan_store::generated_media::GeneratedMediaLimits::new(1024).unwrap(),
+        )
+        .unwrap();
+    drop(store);
+    let object = path
+        .join("Media/Generated")
+        .join(format!("blake3-{}", reference.content().digest()));
+    // A preview taken off the writer, without a grace period, names it.
+    let preview = ProjectStore::open(&path, AccessMode::ReadOnly)
+        .unwrap()
+        .preview_storage_cleanup(Duration::ZERO)
+        .unwrap();
+    assert_eq!(preview.removed.len(), 1);
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let workspace = command(&service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    let cleanup = |ticket, session| {
+        command(
+            &service,
+            ProjectRequest::CleanStorage {
+                ticket,
+                expected_session: session,
+                previewed: preview.removed.clone(),
+            },
+        )
+        .storage_cleanup
+        .unwrap()
+    };
+    let stale = cleanup(1, workspace.session + 1);
+    assert_eq!(stale.ticket, 1);
+    assert!(stale.result.unwrap_err().contains("project changed"));
+    // The writer's fresh scan applies the default grace period.
+    let confirmed = cleanup(2, workspace.session);
+    assert_eq!(confirmed.ticket, 2);
+    assert!(confirmed.result.unwrap().removed.is_empty());
+    assert!(object.exists());
+}

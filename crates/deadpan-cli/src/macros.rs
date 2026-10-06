@@ -49,6 +49,21 @@ pub enum Operation {
         #[serde(default)]
         new_revision: Option<RevisionId>,
     },
+    /// Plan and commit one inline program once, exactly as a native single
+    /// recorded action (`Apply`) or an explicit sequence of them. Nothing is
+    /// saved as a Macro; register writes come only from the program's own
+    /// Yank/Cut instructions.
+    Apply {
+        program: Arc<SemanticProgram>,
+        parent: NodeId,
+        cursor: ProjectFrame,
+        #[serde(default)]
+        selected_child: Option<NodeId>,
+        #[serde(default)]
+        visual_selection: Option<SemanticVisualSelection>,
+        #[serde(default)]
+        new_revision: Option<RevisionId>,
+    },
 }
 
 /// A bank-only save has no new authored revision. Its exact durable context is
@@ -98,14 +113,19 @@ impl Request {
                 "Macro protocol must be 1",
             ));
         }
+        // An inline Apply program is not saved, so it names no register.
         let register = match &self.operation {
             Operation::Save { register, program } => {
                 program.validate().map_err(edit_error)?;
-                register
+                Some(register)
             }
-            Operation::Run { register, .. } => register,
+            Operation::Run { register, .. } => Some(register),
+            Operation::Apply { program, .. } => {
+                program.validate().map_err(edit_error)?;
+                None
+            }
         };
-        if *register == RegisterName::unnamed() {
+        if register.is_some_and(|register| *register == RegisterName::unnamed()) {
             return Err(LiveError::new(
                 "InvalidCommand",
                 "Macros require a named register a-z",
@@ -192,35 +212,40 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 count: *count,
             }])
             .map_err(edit_error)?;
-            let revision = new_revision
-                .clone()
-                .map(Ok)
-                .unwrap_or_else(crate::new_revision)
-                .map_err(|error| edit_error(error.into()))?;
-            let plan = plan_program(
+            plan_and_preview(
                 store,
                 &document,
                 &bank,
-                &SemanticContext {
+                SemanticContext {
                     parent: parent.clone(),
                     cursor: *cursor,
                     selected_child: selected_child.clone(),
                     visual_selection: visual_selection.clone(),
                 },
                 &program,
-                revision,
-            )?;
-            let preview = plan
-                .request
-                .as_ref()
-                .map(|command| store.preview_compound(command))
-                .transpose()
-                .map_err(LiveError::store)?;
-            let final_bank = preview
-                .as_ref()
-                .map_or_else(|| bank.clone(), |preview| preview.register_bank.clone());
-            (final_bank, Some(plan), preview)
+                new_revision.as_ref(),
+            )?
         }
+        Operation::Apply {
+            program,
+            parent,
+            cursor,
+            selected_child,
+            visual_selection,
+            new_revision,
+        } => plan_and_preview(
+            store,
+            &document,
+            &bank,
+            SemanticContext {
+                parent: parent.clone(),
+                cursor: *cursor,
+                selected_child: selected_child.clone(),
+                visual_selection: visual_selection.clone(),
+            },
+            program,
+            new_revision.as_ref(),
+        )?,
     };
     Ok(Prepared {
         request: request.clone(),
@@ -230,6 +255,34 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
         plan,
         preview,
     })
+}
+
+type PlannedPreview = (RegisterBank, Option<SemanticPlan>, Option<CompoundPreview>);
+
+fn plan_and_preview(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    bank: &RegisterBank,
+    context: SemanticContext,
+    program: &SemanticProgram,
+    new_revision: Option<&RevisionId>,
+) -> Result<PlannedPreview, LiveError> {
+    let revision = new_revision
+        .cloned()
+        .map(Ok)
+        .unwrap_or_else(crate::new_revision)
+        .map_err(|error| edit_error(error.into()))?;
+    let plan = plan_program(store, document, bank, &context, program, revision)?;
+    let preview = plan
+        .request
+        .as_ref()
+        .map(|command| store.preview_compound(command))
+        .transpose()
+        .map_err(LiveError::store)?;
+    let final_bank = preview
+        .as_ref()
+        .map_or_else(|| bank.clone(), |preview| preview.register_bank.clone());
+    Ok((final_bank, Some(plan), preview))
 }
 
 /// Shared host preparation for named calls and single recorded actions. The
@@ -531,7 +584,7 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
                 }),
             )
         }
-        Operation::Run { .. } => {
+        Operation::Run { .. } | Operation::Apply { .. } => {
             if let Some(command) = prepared
                 .plan
                 .as_ref()
@@ -582,37 +635,44 @@ impl Prepared {
                 output["operation"] = json!("save");
                 output["register"] = json!(register);
                 output["instruction_count"] = json!(program.instructions().len());
+                return output;
             }
             Operation::Run { register, .. } => {
                 output["operation"] = json!("run");
                 output["register"] = json!(register);
-                if let Some(plan) = &self.plan {
-                    // Final plan differences, including retained fragments and
-                    // unresolved reasons, not per-instruction loss claims.
-                    let mark_ids: std::collections::BTreeSet<_> = self
-                        .document
-                        .marks()
-                        .keys()
-                        .chain(plan.document.marks().keys())
-                        .collect();
-                    output["mark_changes"] = Value::Array(
-                        mark_ids
-                            .into_iter()
-                            .filter_map(|id| {
-                                let before = self.document.marks().get(id);
-                                let after = plan.document.marks().get(id);
-                                if before == after {
-                                    None
-                                } else {
-                                    Some(json!({"id":id,"before":before,"after":after}))
-                                }
-                            })
-                            .collect(),
-                    );
-                    output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
+            }
+            Operation::Apply { program, .. } => {
+                output["operation"] = json!("apply");
+                output["instruction_count"] = json!(program.instructions().len());
+            }
+        }
+        if let Some(plan) = &self.plan {
+            // Final plan differences, including retained fragments and
+            // unresolved reasons, not per-instruction loss claims.
+            let mark_ids: std::collections::BTreeSet<_> = self
+                .document
+                .marks()
+                .keys()
+                .chain(plan.document.marks().keys())
+                .collect();
+            output["mark_changes"] = Value::Array(
+                mark_ids
+                    .into_iter()
+                    .filter_map(|id| {
+                        let before = self.document.marks().get(id);
+                        let after = plan.document.marks().get(id);
+                        if before == after {
+                            None
+                        } else {
+                            Some(json!({"id":id,"before":before,"after":after}))
+                        }
+                    })
+                    .collect(),
+            );
+            output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
                         "selected_child":plan.selected_child,
                         "visual_selection":plan.context.visual_selection});
-                    output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
+            output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
                         "after_parent":row.after.parent,
@@ -626,17 +686,14 @@ impl Prepared {
                         "resolved_selection":row.resolved_selection,
                         "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
                     })).collect());
-                    output["register_writes"] =
-                        json!(plan.register_writes.keys().collect::<Vec<_>>());
-                }
-                output["edit"] = self.preview.as_ref().and_then(|preview| preview.edit.as_ref())
+            output["register_writes"] = json!(plan.register_writes.keys().collect::<Vec<_>>());
+        }
+        output["edit"] = self.preview.as_ref().and_then(|preview| preview.edit.as_ref())
                     .map_or(Value::Null, |edit| json!({
                         "new_revision": self.plan.as_ref().and_then(|plan| plan.request.as_ref()).map(|request| &request.new_revision),
                         "duration_delta":edit.duration_delta,"changed_ids":edit.changed_ids,
                         "description":edit.description,
                     }));
-            }
-        }
         output
     }
 }
@@ -658,7 +715,8 @@ pub fn inspect(store: &ProjectStore, register: Option<RegisterName>) -> Result<V
                 "register":name,"type":"original","capture_revision":revision,
                 "asset":asset,"qualification":qualification,"ordinals":ordinals}),
             RegisterValue::Edited { slice } => json!({"register":name,"type":"edited",
-                "capture_revision":slice.revision_id(),"parent":slice.parent(),"selection":slice.selection()}),
+                "capture_revision":slice.revision_id(),"parent":slice.parent(),"selection":slice.selection(),
+                "outline":slice.outline()}),
         }).collect();
     Ok(
         json!({"protocol":PROTOCOL_VERSION,"project_id":document.project_id(),

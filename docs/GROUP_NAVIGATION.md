@@ -35,8 +35,9 @@ scope/revision/session targets. See [range deletion](AUDIO_REANCHORS.md#selected
 
 `Enter` also opens selected Repeat/Retime contents through a separate
 [scoped inspector](SCOPED_EDITING.md). It supports explicit All plays/This play
-gain, Camera and Hold audio edits. It does not turn `SequenceScope` into an
-occurrence timeline; temporal operations inside those contents remain open.
+gain, Camera and Hold audio edits, and `]r`/`[r` step its plays. It does not
+turn `SequenceScope` into an occurrence timeline; temporal operations inside
+those contents remain open.
 
 ## Command ownership
 

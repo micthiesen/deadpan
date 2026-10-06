@@ -14,6 +14,19 @@ impl DeadpanApp {
         }
     }
 
+    /// The selected visible beat is a Repeat, whose plays `]r`/`[r` open.
+    pub(super) fn selected_repeat(&self) -> bool {
+        self.selected_beat.as_ref().is_some_and(|id| {
+            self.beat_rows.iter().any(|row| &row.id == id)
+                && self.workspace.as_ref().is_some_and(|workspace| {
+                    matches!(
+                        workspace.document.nodes().get(id).map(|node| &node.kind),
+                        Some(NodeKind::Repeat { .. })
+                    )
+                })
+        })
+    }
+
     pub(super) fn selected_group(&self) -> bool {
         self.selected_beat.as_ref().is_some_and(|id| {
             self.beat_rows.iter().any(|row| &row.id == id)

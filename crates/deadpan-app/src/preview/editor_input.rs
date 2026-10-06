@@ -1,6 +1,6 @@
 //! Ordered boundary between an editor binding and newly focused native text.
 
-use eframe::egui::{Event, Key, Modifiers};
+use eframe::egui::{Event, EventFilter, Key, Modifiers};
 
 #[derive(Default)]
 pub(super) struct TextEntryGate {
@@ -64,6 +64,18 @@ impl TextEntryGate {
     }
 }
 
+/// A text field's egui focus filter. egui surrenders focus on Escape before
+/// the app routes it; during an active composition that Escape belongs to the
+/// IME, so the field keeps focus and the later commit still lands in it.
+pub(super) fn field_filter(composing: bool) -> EventFilter {
+    EventFilter {
+        horizontal_arrows: true,
+        vertical_arrows: true,
+        tab: false,
+        escape: composing,
+    }
+}
+
 /// Keep only events before the first field submit/cancel. The caller dispatches
 /// the returned suffix after closing the field, in the next outer UI frame.
 pub(super) fn take_field_tail(events: &mut Vec<Event>, boundary: &Event) -> Vec<Event> {
@@ -92,7 +104,7 @@ pub(super) fn field_suffix(key: Key, modifiers: Modifiers, suffix: &[Event]) -> 
     }
 }
 
-fn printable(key: Key) -> bool {
+pub(super) fn printable(key: Key) -> bool {
     // name() is one ASCII character only for letters and digits. Arrow glyphs
     // from symbol_or_name() would incorrectly count as printable text here.
     key.name().len() == 1

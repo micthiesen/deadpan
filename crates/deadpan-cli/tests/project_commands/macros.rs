@@ -2,6 +2,8 @@ use super::*;
 use deadpan_cli::macros::{MAX_REQUEST_BYTES, Request};
 use deadpan_core::{RegisterName, RegisterValue, RevisionId};
 
+#[path = "macros/apply.rs"]
+mod apply;
 #[path = "macros/groups.rs"]
 mod groups;
 

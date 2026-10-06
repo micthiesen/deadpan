@@ -1137,7 +1137,10 @@ impl DeadpanApp {
                     self.gain_step(3000, ui.ctx());
                 }
                 if ui
-                    .button(if edit.muted() { "Unmute" } else { "Mute" })
+                    .add(style::action(
+                        if edit.muted() { "Unmute" } else { "Mute" },
+                        self.editor_key(EditorKey::Mute),
+                    ))
                     .on_hover_text(":gain-mute · true silence")
                     .reveal_on_focus()
                     .clicked()

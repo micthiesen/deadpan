@@ -178,7 +178,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     Ok(())
 }
 
-fn save_activity(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn save_activity(d: &mut Driver<'_>) -> Result<(), String> {
     let workspace = d.app().workspace.as_ref().ok_or("No project")?;
     let asset = original_asset(workspace).ok_or("No Original")?;
     let source = workspace

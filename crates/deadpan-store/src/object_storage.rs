@@ -312,6 +312,7 @@ impl GeneratedStorage {
                 control,
                 || {},
             )?;
+            refresh_reuse_time(&existing)?;
             durability(&directories, &existing)?;
             confirm_named_file(&directories.generated, &target, &existing)?;
             return Ok(expected.clone());
@@ -404,6 +405,7 @@ impl GeneratedStorage {
                     control,
                     || {},
                 )?;
+                refresh_reuse_time(&existing)?;
                 durability(&directories, &existing)?;
                 confirm_named_file(&directories.generated, &target, &existing)?;
                 return Ok(expected.clone());
@@ -648,10 +650,20 @@ impl GeneratedStorage {
         after_open: impl FnOnce(),
     ) -> Result<File, ObjectStorageError> {
         control.check()?;
+        // A reader holds a shared lock for as long as it reads, so storage
+        // cleanup (which needs an exclusive one) never removes an object in use.
+        reader_lock(&source)?;
         let before = fstat(&source).map_err(|source| ObjectStorageError::System {
             operation: "inspect generated object",
             source,
         })?;
+        // Cleanup removed it while this reader waited for its lock: the
+        // object is gone, which is not a damaged or aliased object.
+        if before.st_nlink == 0 {
+            return Err(ObjectStorageError::MissingObject(
+                expected.content().clone(),
+            ));
+        }
         self.validate_object_metadata(&before, expected, limits)?;
         after_open();
         let mut source = File::from(source);
@@ -1464,6 +1476,7 @@ impl ObjectStorage {
             control,
             || {},
         )?;
+        refresh_reuse_time(&existing)?;
         self.inner.complete_durability(&directories, &existing)?;
         confirm_named_file(&directories.generated, &target, &existing)?;
         Ok(true)
@@ -1835,6 +1848,260 @@ fn confirm_named_file(
     Ok(())
 }
 
+/// A deduplicated write reuses an existing object. Restating its read-only
+/// mode refreshes the status-change time (never content, mtime or the state
+/// `same_file_state` compares), so storage cleanup's grace period restarts
+/// before the caller commits the row that will name it.
+fn refresh_reuse_time(file: &File) -> Result<(), ObjectStorageError> {
+    fchmod(file, FINAL_MODE).map_err(|source| ObjectStorageError::System {
+        operation: "refresh reused media object",
+        source,
+    })
+}
+
+/// Take the shared reader lock on an open object. Filesystems without
+/// `flock` support read unprotected rather than failing the read.
+fn reader_lock(file: &impl AsFd) -> Result<(), ObjectStorageError> {
+    match rustix::fs::flock(file, rustix::fs::FlockOperation::LockShared) {
+        Ok(()) | Err(rustix::io::Errno::OPNOTSUPP | rustix::io::Errno::NOLCK) => Ok(()),
+        Err(source) => Err(ObjectStorageError::System {
+            operation: "lock media object for reading",
+            source,
+        }),
+    }
+}
+
+/// What one namespace directory entry is, from its name alone.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum EntryKind {
+    /// A published object, named by its BLAKE3 digest.
+    Object(String),
+    /// An unpublished `.pending-*` temporary of an interrupted or running write.
+    Pending,
+    /// A `.damaged-*` object moved aside by restore, kept for diagnosis.
+    Damaged,
+    /// Anything else, including a non-regular entry. Never removed.
+    Unexpected,
+}
+
+/// One entry of a content-addressed namespace, with the file state that a
+/// later removal must still observe.
+#[derive(Debug, Clone)]
+pub(crate) struct NamespaceEntry {
+    pub(crate) name: String,
+    pub(crate) kind: EntryKind,
+    pub(crate) bytes: u64,
+    /// The later of modification and status change: a just-published or
+    /// just-cloned object is never older than its publication.
+    pub(crate) changed: std::time::SystemTime,
+    state: Option<(i128, i128)>,
+}
+
+impl NamespaceEntry {
+    /// Device and inode of a regular entry, as listed.
+    pub(crate) fn identity(&self) -> Option<(i128, i128)> {
+        self.state
+    }
+}
+
+/// The result of removing one namespace entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Removal {
+    Removed,
+    /// A reader holds its lock.
+    InUse,
+    /// It no longer is the entry that was listed.
+    Changed,
+    Missing,
+}
+
+fn entry_kind(name: &str) -> EntryKind {
+    if let Some(digest) = name.strip_prefix("blake3-")
+        && digest.len() == 64
+        && digest
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        return EntryKind::Object(digest.to_owned());
+    }
+    if name.starts_with(".pending-") {
+        EntryKind::Pending
+    } else if name.starts_with(".damaged-") {
+        EntryKind::Damaged
+    } else {
+        EntryKind::Unexpected
+    }
+}
+
+fn changed_time(state: &Stat) -> std::time::SystemTime {
+    let seconds = |seconds: i64, nanos: i64| {
+        let seconds = u64::try_from(seconds).unwrap_or(0);
+        let nanos = u32::try_from(nanos).unwrap_or(0);
+        std::time::UNIX_EPOCH + Duration::new(seconds, nanos.min(999_999_999))
+    };
+    #[allow(clippy::useless_conversion)]
+    let modified = seconds(state.st_mtime.into(), state.st_mtime_nsec.into());
+    #[allow(clippy::useless_conversion)]
+    let status = seconds(state.st_ctime.into(), state.st_ctime_nsec.into());
+    modified.max(status)
+}
+
+impl GeneratedStorage {
+    /// Every entry of this namespace, or an empty list when the namespace
+    /// does not exist. Lists without hashing or opening objects.
+    pub(crate) fn list_entries(&self) -> Result<Vec<NamespaceEntry>, ObjectStorageError> {
+        let directories = match self.open_directories() {
+            Err(ObjectStorageError::MissingStorageComponent(_)) => return Ok(Vec::new()),
+            directories => directories?,
+        };
+        let directory = Dir::read_from(&directories.generated).map_err(|source| {
+            ObjectStorageError::System {
+                operation: "enumerate media namespace",
+                source,
+            }
+        })?;
+        let mut entries = Vec::new();
+        for entry in directory {
+            let entry = entry.map_err(|source| ObjectStorageError::System {
+                operation: "read media namespace entry",
+                source,
+            })?;
+            let raw = entry.file_name();
+            if raw.to_bytes() == b"." || raw.to_bytes() == b".." {
+                continue;
+            }
+            let name = raw.to_string_lossy().into_owned();
+            let state = match statat(&directories.generated, raw, AtFlags::SYMLINK_NOFOLLOW) {
+                Ok(state) => state,
+                Err(rustix::io::Errno::NOENT) => continue,
+                Err(source) => {
+                    return Err(ObjectStorageError::System {
+                        operation: "inspect media namespace entry",
+                        source,
+                    });
+                }
+            };
+            let regular = FileType::from_raw_mode(state.st_mode).is_file()
+                && raw.to_str().is_ok()
+                && self.validate_contained(&state, &name).is_ok();
+            let kind = if regular {
+                entry_kind(&name)
+            } else {
+                EntryKind::Unexpected
+            };
+            entries.push(NamespaceEntry {
+                name,
+                kind,
+                bytes: u64::try_from(state.st_size).unwrap_or(0),
+                changed: changed_time(&state),
+                state: regular.then(|| (i128::from(state.st_dev), i128::from(state.st_ino))),
+            });
+        }
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(entries)
+    }
+
+    /// Remove one listed regular entry, unless a reader holds it or it is no
+    /// longer the file that was listed. The exclusive lock is held across the
+    /// unlink, so a reader that opened the object first keeps reading its
+    /// complete bytes and a later reader finds no object.
+    pub(crate) fn remove_entry(
+        &self,
+        entry: &NamespaceEntry,
+    ) -> Result<Removal, ObjectStorageError> {
+        let Some((device, inode)) = entry.state else {
+            return Ok(Removal::Changed);
+        };
+        if entry.kind == EntryKind::Unexpected {
+            return Ok(Removal::Changed);
+        }
+        let directories = match self.open_directories() {
+            Err(ObjectStorageError::MissingStorageComponent(_)) => return Ok(Removal::Missing),
+            directories => directories?,
+        };
+        let file = match openat(
+            &directories.generated,
+            entry.name.as_str(),
+            OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC,
+            Mode::empty(),
+        ) {
+            Ok(file) => file,
+            Err(rustix::io::Errno::NOENT) => return Ok(Removal::Missing),
+            Err(rustix::io::Errno::LOOP) => return Ok(Removal::Changed),
+            Err(source) => {
+                return Err(ObjectStorageError::System {
+                    operation: "open media object for removal",
+                    source,
+                });
+            }
+        };
+        let state = fstat(&file).map_err(|source| ObjectStorageError::System {
+            operation: "inspect media object for removal",
+            source,
+        })?;
+        if !FileType::from_raw_mode(state.st_mode).is_file()
+            || i128::from(state.st_dev) != device
+            || i128::from(state.st_ino) != inode
+            || u64::try_from(state.st_size).ok() != Some(entry.bytes)
+            || changed_time(&state) > entry.changed
+        {
+            return Ok(Removal::Changed);
+        }
+        match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
+            Ok(()) => {}
+            Err(rustix::io::Errno::WOULDBLOCK) => return Ok(Removal::InUse),
+            Err(source) => {
+                return Err(ObjectStorageError::System {
+                    operation: "lock media object for removal",
+                    source,
+                });
+            }
+        }
+        let named = match statat(
+            &directories.generated,
+            entry.name.as_str(),
+            AtFlags::SYMLINK_NOFOLLOW,
+        ) {
+            Ok(named) => named,
+            Err(rustix::io::Errno::NOENT) => return Ok(Removal::Missing),
+            Err(source) => {
+                return Err(ObjectStorageError::System {
+                    operation: "confirm media object for removal",
+                    source,
+                });
+            }
+        };
+        if named.st_dev != state.st_dev || named.st_ino != state.st_ino {
+            return Ok(Removal::Changed);
+        }
+        unlinkat(
+            &directories.generated,
+            entry.name.as_str(),
+            AtFlags::empty(),
+        )
+        .map_err(|source| ObjectStorageError::System {
+            operation: "remove media object",
+            source,
+        })?;
+        sync_directory(&directories.generated, "sync media namespace after removal")?;
+        drop(file);
+        Ok(Removal::Removed)
+    }
+}
+
+impl ObjectStorage {
+    pub(crate) fn list_entries(&self) -> Result<Vec<NamespaceEntry>, ObjectStorageError> {
+        self.inner.list_entries()
+    }
+
+    pub(crate) fn remove_entry(
+        &self,
+        entry: &NamespaceEntry,
+    ) -> Result<Removal, ObjectStorageError> {
+        self.inner.remove_entry(entry)
+    }
+}
+
 /// Identity, permissions, links, size and modification time. Change time is
 /// deliberately excluded: macOS File Provider domains such as iCloud Drive's
 /// Documents and Desktop add extended attributes to files and directories at
@@ -2200,6 +2467,111 @@ mod tests {
         assert!(matches!(
             storage.snapshot(&expected, limits()),
             Err(ObjectStorageError::UnsafeStorageComponent(component)) if component == "Media"
+        ));
+    }
+
+    #[test]
+    fn a_reader_that_lost_the_race_to_removal_reports_a_missing_object() {
+        let package_root = package();
+        let storage = GeneratedStorage::open(package_root.path()).unwrap();
+        let expected = object(b"removed under a reader");
+        storage
+            .promote(
+                &mut Cursor::new(b"removed under a reader"),
+                &expected,
+                limits(),
+            )
+            .unwrap();
+        let directories = storage.open_directories().unwrap();
+        let opened = storage
+            .open_object_optional(
+                &directories.generated,
+                &object_name(expected.content()),
+                &expected,
+            )
+            .unwrap()
+            .unwrap();
+        fs::remove_file(object_path(package_root.path(), &expected)).unwrap();
+        assert!(matches!(
+            storage.verify_open_object_controlled(
+                opened,
+                &expected,
+                limits(),
+                io::sink(),
+                ObjectControl::unbounded(),
+                || {},
+            ),
+            Err(ObjectStorageError::MissingObject(_))
+        ));
+    }
+
+    #[test]
+    fn a_deduplicated_write_restarts_the_cleanup_grace_period() {
+        let package_root = package();
+        let storage = GeneratedStorage::open(package_root.path()).unwrap();
+        let expected = object(b"reused bytes");
+        storage
+            .promote(&mut Cursor::new(b"reused bytes"), &expected, limits())
+            .unwrap();
+        let before = storage.list_entries().unwrap()[0].clone();
+        let modified = fs::metadata(object_path(package_root.path(), &expected))
+            .unwrap()
+            .modified()
+            .unwrap();
+        std::thread::sleep(Duration::from_millis(20));
+        storage
+            .promote(&mut Cursor::new(b"reused bytes"), &expected, limits())
+            .unwrap();
+        let after = storage.list_entries().unwrap()[0].clone();
+        assert!(after.changed > before.changed);
+        assert_eq!(
+            fs::metadata(object_path(package_root.path(), &expected))
+                .unwrap()
+                .modified()
+                .unwrap(),
+            modified,
+            "content time is unchanged, so freshness guards still match"
+        );
+        // A removal planned before the reuse no longer applies.
+        assert_eq!(storage.remove_entry(&before).unwrap(), Removal::Changed);
+    }
+
+    #[test]
+    fn readers_hold_a_shared_lock_that_defeats_removal() {
+        let package_root = package();
+        let storage = GeneratedStorage::open(package_root.path()).unwrap();
+        let expected = object(b"being read");
+        storage
+            .promote(&mut Cursor::new(b"being read"), &expected, limits())
+            .unwrap();
+        let listed = storage.list_entries().unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(
+            listed[0].kind,
+            EntryKind::Object(expected.content().digest().to_owned())
+        );
+        let entry = listed[0].clone();
+        let mut removal = None;
+        let mut snapshot = storage
+            .snapshot_after_open(&expected, limits(), || {
+                removal = Some(storage.remove_entry(&entry).unwrap());
+            })
+            .unwrap();
+        assert_eq!(removal, Some(Removal::InUse));
+        let mut bytes = Vec::new();
+        snapshot.read_to_end(&mut bytes).unwrap();
+        assert_eq!(bytes, b"being read");
+        // Once the reader is done, the same listed entry is removable; an
+        // entry that was replaced since listing is not.
+        assert_eq!(storage.remove_entry(&entry).unwrap(), Removal::Removed);
+        assert_eq!(storage.remove_entry(&entry).unwrap(), Removal::Missing);
+        storage
+            .promote(&mut Cursor::new(b"being read"), &expected, limits())
+            .unwrap();
+        assert_eq!(storage.remove_entry(&entry).unwrap(), Removal::Changed);
+        assert!(matches!(
+            storage.snapshot(&expected, limits()),
+            Ok(snapshot) if snapshot.reference() == &expected
         ));
     }
 

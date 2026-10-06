@@ -219,6 +219,58 @@ impl DeadpanApp {
         context.request_repaint();
     }
 
+    /// `]r`/`[r`. Inside contents it steps the nearest Repeat's plays; on a
+    /// selected Repeat it opens play 1 (or its last play) read-only.
+    pub(super) fn scoped_play(&mut self, forward: bool, count: u32, context: &egui::Context) {
+        if self.scoped.is_none() {
+            let repeat = self.view == View::Sequence
+                && self
+                    .workspace
+                    .as_ref()
+                    .zip(self.selected_beat.as_ref())
+                    .is_some_and(|(workspace, node)| {
+                        workspace
+                            .document
+                            .nodes()
+                            .get(node)
+                            .is_some_and(|node| matches!(node.kind, NodeKind::Repeat { .. }))
+                    });
+            if !repeat {
+                self.error = Some(
+                    "]r and [r step through a Repeat's plays. Select a Repeat beat first.".into(),
+                );
+                return;
+            }
+            if !self.enter_scoped(context) || self.scoped.is_none() {
+                return;
+            }
+            // Opening starts at All plays; [r opens the last play.
+            self.scoped_play(true, if forward { count } else { u32::MAX }, context);
+            return;
+        }
+        let result = self
+            .workspace
+            .as_ref()
+            .ok_or_else(|| "Open a project first.".to_owned())
+            .and_then(|workspace| {
+                self.scoped
+                    .as_mut()
+                    .expect("scope checked")
+                    .step_play(workspace, forward, count)
+            });
+        match result {
+            Ok(true) => self.scoped_changed(context),
+            Ok(false) => {
+                self.message = Some(if forward {
+                    "Already at the last play.".into()
+                } else {
+                    "Already at All plays.".into()
+                })
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     fn scoped_choose(&mut self, choice: ScopeChoice, context: &egui::Context) {
         let result = (|| {
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
@@ -294,6 +346,7 @@ impl DeadpanApp {
         }
         match action {
             Action::EnterGroup => { self.enter_scoped(context); }
+            Action::Play { forward, count } => self.scoped_play(forward, count, context),
             Action::LeaveGroup => self.scoped_leave(context),
             Action::Beat { forward, count } => {
                 let result = self.workspace.as_ref().ok_or_else(|| "Open a project first.".to_owned())
@@ -419,19 +472,25 @@ impl DeadpanApp {
                     {
                         self.scoped_choose(ScopeChoice::Play(play), ui.ctx());
                     }
+                    let previous =
+                        format!("Previous  {}", self.editor_key(EditorKey::PlayPrevious));
                     if ui
-                        .add_enabled(play > 1, egui::Button::new("Previous"))
-                        .on_hover_text("Previous play")
+                        .add_enabled(choice.one_based.is_some(), egui::Button::new(previous))
+                        .on_hover_text("Previous play; before play 1 it returns to All plays")
                         .clicked()
                     {
-                        self.scoped_choose(ScopeChoice::Play(play - 1), ui.ctx());
+                        self.scoped_play(false, 1, ui.ctx());
                     }
+                    let next = format!("Next  {}", self.editor_key(EditorKey::PlayNext));
                     if ui
-                        .add_enabled(play < choice.plays, egui::Button::new("Next"))
-                        .on_hover_text("Next play")
+                        .add_enabled(
+                            choice.one_based.is_none_or(|play| play < choice.plays),
+                            egui::Button::new(next),
+                        )
+                        .on_hover_text("Next play; from All plays it opens play 1")
                         .clicked()
                     {
-                        self.scoped_choose(ScopeChoice::Play(play + 1), ui.ctx());
+                        self.scoped_play(true, 1, ui.ctx());
                     }
                 });
             }

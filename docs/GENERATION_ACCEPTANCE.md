@@ -86,12 +86,15 @@ a captured real model result in a fresh synthetic Hold project, then relocates,
 reopens, undoes, redoes, reverts and reads back all dependencies. Its context
 reconciler is fixture-specific. It is not an app context resolver or a user audition.
 
-Prepared frames remain opaque retained bytes. Exact source-clock context, image
-decoding/color qualification, installed-model attestation, useful motion and seam
-quality remain required. The store trusts the host's qualification receipt; it
-does not independently decode media or parse provenance. Reference inventory,
-history-aware cleanup of discarded variants, portable copy and source joins
-remain open. The native app's scheduling, variant choice, audition and
+Prepared frames remain opaque retained bytes to the store. The offline test
+re-derives them from the request's origin revision on a portable copy and
+reproduces the bound manifest exactly ([source-clock evidence](STORAGE.md#source-clock-and-colour-evidence)).
+Measured source colour metadata in the manifest, cross-build determinism,
+installed-model attestation, useful motion and seam quality remain required.
+The store trusts the host's qualification receipt; it does not independently
+decode media or parse provenance. [Storage](STORAGE.md) adds the reference
+inventory, cleanup of discarded and stale variants and portable copies;
+source joins remain open. The native app's scheduling, variant choice, audition and
 interactive acceptance are described in [AI Holds](AI_HOLDS.md#native-app-workflow). The
 headless chain, its measured real run and the symmetric conditioning and
 presentation raster policy are in [AI Holds](AI_HOLDS.md).

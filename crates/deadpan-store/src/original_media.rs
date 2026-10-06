@@ -843,6 +843,42 @@ impl ProjectStore {
         })
     }
 
+    /// Drop the linked location of an original that also has a managed copy
+    /// present in this package, so the package no longer refers outside
+    /// itself. Used when building a portable copy; the managed copy has
+    /// already been verified against the record's identity.
+    pub(crate) fn detach_original_link(
+        &mut self,
+        content: &OriginalContentId,
+    ) -> Result<OriginalMediaRecord, StoreError> {
+        require_writer(self)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let mut record =
+            read_record(&transaction, content)?.ok_or(OriginalMediaError::MissingRecord)?;
+        if record.linked.is_none() {
+            return Ok(record);
+        }
+        if !record.managed
+            || self
+                .original_storage
+                .probe(record.object.identity()?)
+                .map_err(OriginalMediaError::from)?
+                != Some(record.object.byte_length())
+        {
+            return Err(OriginalMediaError::InvalidRecord(
+                "a link is dropped only after its managed copy is present",
+            )
+            .into());
+        }
+        record.linked = None;
+        record.version = next_version(record.version)?;
+        write_record(&transaction, &record)?;
+        transaction.commit()?;
+        Ok(record)
+    }
+
     /// Keyset paging bounds UI/headless inventory memory independently of project size.
     pub fn original_records(
         &self,

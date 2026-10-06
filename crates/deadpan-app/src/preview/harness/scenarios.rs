@@ -53,6 +53,9 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "relink" => super::recovery::relink(d),
         "storage-failure" => super::recovery::storage_failure(d),
         "diagnostics" => super::diagnostics::run(d),
+        "storage" => super::storage::run(d),
+        "full-session" => super::full_session::run(d),
+        "layouts" => super::layouts::run(d),
         _ => Err(format!("Unknown scenario {name}")),
     }
 }
