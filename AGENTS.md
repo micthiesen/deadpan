@@ -255,6 +255,15 @@ retain full canonical DSP context across seams. Original playback cannot move
 the edit cursor or grow Visual selection. Monitor gain follows canonical limiting and remains independent of
 authored/export gain; never clip or normalize PCM to conceal a preparation failure.
 
+Playback pictures may come from the verified preview proxy only through
+`deadpan_media::playback_pictures`: exact when the retained decoder's
+`decode_plan` cost, measured per decoder, fits the picture budget; otherwise
+the proxy picture of the same ordinal while the Original repositions between
+requests one picture at a time. Never cancel a decode midway, never let the
+tier change the heard clock, requested frames or audio, and replace a
+displayed proxy picture with the exact one when the transport stops. See
+[playback pictures](docs/PROXIES.md#playback-pictures).
+
 Catalog Sound audition has a separate selected asset and exact sample cursor.
 Only focused Sources routes its playback keys to that sound. Keep the retained
 picture, caption, geometry, Original/edit cursors and beat/group selection intact;
@@ -426,9 +435,9 @@ recovers as opening does; the app starts a new session and endpoint. Only
 unreadable). A newer `user_version` opens read-only for viewing only:
 never take the writer, validate its history or write. Release migrations go
 through `migration::migrate_package_with` (lock, raw backup, migrate a copy,
-validate, fold WAL, rename). Database schema 67 is current; 66 migrates
-through the one production step (adding `retired_identities`); 1 through 65
-are still refused. Add a step whenever a schema change would otherwise strand
+validate, fold WAL, rename). Database schema 68 is current; 66 and 67 migrate
+through the production steps (adding `retired_identities`, then AI variant
+retention records); 1 through 65 are still refused. Add a step whenever a schema change would otherwise strand
 the owner's packages. Linked media keeps a system bookmark; a resolved
 bookmark is only a candidate for the content-verified relink. Every revision is
 retained; see [backups](docs/BACKUPS.md) for history limits and kill tests.

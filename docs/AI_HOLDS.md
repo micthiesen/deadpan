@@ -67,6 +67,28 @@ ends in Ready, Failed or Cancelled.
   current request, so the accepted request stays `Resolved` with its own hash.
   `relevance_plan(store, before, after)` is public for other explicit writes.
 
+### Source and colour context
+
+Conditioning writes context manifest schema 2 (`deadpan_models::BridgeContext`,
+[bundles](GENERATION_BUNDLES.md)). For each side of the pause it records what
+the committed picture path showed at the origin revision: for an Original
+frame, the asset, receipt, measured index ordinal and exact source PTS plus the
+decoder's measured codec, pixel format, geometry, SAR, rotation, bit depth,
+transfer, primaries, matrix and range; for an accepted generated Hold, its
+sampled master and provenance objects; for an authored Background, authored
+black. It states the model-input conversion of each picture and declares the
+model colour space (full-range sRGB, BT.709 primaries, RGB). Conditioning
+refuses pictures that decoded full-range RGB8 read as sRGB does not cover
+(rotated, PQ/HLG, 16-bit, linear, BT.2020 or Display P3 primaries), and
+qualification and stored-evidence admission fail with a colour interpretation
+mismatch when the declared model space differs from the canonical FFV1
+masters. Schema-1 contexts stay admissible for already retained bundles; a
+request conditioned with schema 1 gets new variants only through a new
+request. `tests/bridge_conditioning.rs` checks the record against an
+independent decoder and a fresh picture-path preparation. BT.709 codes read as
+sRGB is a stated approximation, and the model's own colour handling remains a
+worker claim.
+
 ## Headless commands
 
 ```sh
@@ -126,13 +148,16 @@ the footer teach the actions:
 | Choose | `:next-ai`, `:prev-ai`, `:pick-ai N`, a click on a variant row | Choose which variant Preview, Audition and Accept use; stored as the request's selection, never an edit |
 | Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the chosen variant's pictures in the viewer at the edit cursor |
 | Audition | `:audition-ai`, Audition; Space while previewing | Play the pause with the chosen variant's pictures and the pause's own sound |
+| Compare | `,x`, `:compare-ai [before\|N]`, Compare before / after; `,n` next variant | Switch the viewer and audition between the pause as committed (Before) and a variant at the same frame and heard sample |
 | Accept | `:accept-ai` | One undoable edit with the chosen variant; the pause stays selected |
 | Discard | `:discard-ai` | Durably discard the chosen variant; not undoable, the pause is unchanged |
 | Install the model pack | Install AI models…, `:models` | Open the Models panel on the bridge pack; shown when it is not installed |
 
-No key binding was added or changed: `,a` keeps its single-variant meaning and
-the rest of the workflow is command-only, so the
-[compatibility audit](KEYBINDING_COMPATIBILITY.md) is unchanged.
+`,a` keeps its single-variant meaning. Comparison adds `,x` (`ai.compare`)
+and `,n` (`ai.next`) to the comma family with the same contract (Normal Edit
+only, no count, no key repeat, yielding to text and composition); see the
+[compatibility record](KEYBINDING_COMPATIBILITY.md). The rest of the workflow
+is command-only.
 
 `project::generation` defines the requests and published state, and
 `project/service/generation.rs` runs them:
@@ -235,15 +260,83 @@ the rest of the workflow is command-only, so the
   while that loop plays (captured before command entry pauses it), it pauses.
   Choosing another variant during the loop restarts it with the new pictures.
   Leaving the preview stops its audition. Nothing is saved.
+- **Comparing variants.** <a id="comparing-variants"></a> `,x` (or
+  `:compare-ai`) switches between the pause as committed, *Before* (its
+  freeze fallback, or pictures accepted earlier), and the chosen variant;
+  without a preview it previews the chosen variant first. `,n`, `:next-ai`,
+  `:prev-ai`, `:pick-ai N` and `:compare-ai N` show another variant;
+  `:compare-ai before` shows Before. Every switch keeps the edit cursor, so
+  the viewer shows the same frame. A playing audition (`:audition-ai` or
+  Space while comparing) stops and restarts the newly shown content in the
+  same window from the exact content sample heard at the switch; a paused one
+  keeps its exact sample (`transport::Resume::retarget`), and Space resumes
+  there. Before plays the committed snapshot; a variant plays its proposed
+  acceptance snapshot, so both carry the pause's own, identical sound and only
+  the pictures change. The previously shown variant's admitted preview stays
+  ready (up to eight, same request, session and base revision), so switching
+  back is immediate and only writes the store's selection; a variant not yet
+  admitted is prepared by the service first while the current audition keeps
+  playing, then continues from the sample heard when it arrives. Edits, Undo,
+  session changes and a discarded or no longer offered variant drop retained
+  previews; Esc leaves the comparison. The footer names the state (`AI
+  COMPARE · BEFORE · NOT SAVED` or the variant) with the `,x`/`,n` hints.
+  Choose, Accept, Keep and Discard act on the variant shown (or being
+  prepared), not on a store selection still in flight, so two `,n` in one
+  input batch advance twice. Only one selection write is in flight; a newer
+  switch waits and is sent when it is answered. If the store refuses the
+  selection, the view returns to what was shown before and says why.
+  The comparison is a toggle at one frame, not a split screen: both pictures
+  are never on screen at once.
 - **Discard** removes the chosen variant from the list for good with one store
   transaction (`discard_generation_bundle_variant`): its bundle becomes
   Evicted, so it is never offered again, also after reopening, and Undo does
   not restore it; only if it was the request's selection does the newest
   other present Ready variant become selected, otherwise the selection is
-  kept. Its files stay under `Media/Generated` until an explicit
-  [storage cleanup](STORAGE.md) (`:storage`, then P and R) removes them, once
-  no retained revision or live receipt names them and the grace period has
-  passed; stale variants of a superseded request are removable the same way.
+  kept. Its files stay under `Media/Generated` until a
+  [storage cleanup](STORAGE.md) (the automatic pass below, or `:storage`,
+  then P and R) removes them, once no retained revision or live receipt names
+  them and the grace period has passed; stale variants of a superseded request
+  are removable the same way.
+- **Retention.** Offered variants follow a visible retention policy (§19.2,
+  [storage](STORAGE.md#retention-of-unaccepted-ai-variants)). A variant that is
+  neither kept (`:keep-ai`, Keep variant, `GenerationOperation::Keep`,
+  `deadpan-cli keep-hold`), picked by the person (Choose, Preview or `accept-hold
+  --attempt`; protection moves only with another pick or a discard), its
+  request's chosen variant, nor accepted stops being offered 7 days after it
+  became Ready; each row shows `kept`, `picked by you` or `expires in N days`,
+  and the service warns when a newer variant takes the selection from one only
+  that selection protected. The service checks when idle after opening and
+  every 6 hours (deferred while an import, render, AI pause, tracking job or
+  backup runs); a clock behind recorded times or more than one retention
+  period past the last check is treated as a clock anomaly that expires and
+  removes nothing until it is confirmed: after a long gap since the last check, the Storage panel's E shows which variants would stop being offered (count and bytes, planned off the writer) and a second E confirms the clock, as `project storage --clean` does; a clock behind the project's records is shown but never confirmed, and one check
+  expires at most 32 variants. Each check expires due variants (recorded as
+  `expired`, separately from `discarded`) and then removes their unreferenced
+  `Media/Generated` masters through the reference-tracked cleanup after the
+  24-hour grace period. Keep is operational, durable across reopen and not
+  undoable. Accepted media, including media history names after Undo, is
+  never expired or removed. The Storage panel's AI VARIANTS rows and `project
+  storage` show the period, offered, kept, chosen and expiring counts, the
+  next expiry, discarded and expired variants awaiting cleanup with their
+  bytes, and the last automatic pass.
+- **Colour.** The chosen variant's row notes how its conditioning colour
+  reached the model (`ConditioningColour::describe` of the retained
+  manifest), for example that BT.709 codes were read as sRGB with no transfer
+  conversion; `generate-hold` reports it as `colour`.
+- **Joins.** Each variant row also shows an advisory reading of its two joins
+  with the Original (`joins smooth / jump`; the hover gives both mean RGB
+  differences). `generation::joins::measure_request_joins` compares the
+  committed pictures at f-1 and f+N (decoded at the request's origin revision)
+  with the sampled master's first and last frames, cropped as presentation
+  crops them, in one comparison region shared with `generate-hold`, on a
+  background thread, one variant at a time and at most once per session
+  (cancelled when the session ends; a panic or failure records an error
+  instead of retrying) (classes below
+  6 and 20 out of 255; the thresholds are uncalibrated). It is a §12.5
+  heuristic only: it never accepts, rejects or orders a variant.
+  `generate-hold` reports the same reading per Ready attempt as `ready.joins`.
+  The joins themselves are hard cuts at exact frames; see
+  [source joins](GENERATED_HOLDS.md#source-joins).
 - **Accept** is the only authored change: `acceptance::accept` through the
   ordinary edit receipt, selecting the Hold and keeping the cursor.
 - Stale session, revision, ticket and request identities are refused. Close,
@@ -322,6 +415,20 @@ offline_portable`; `cargo xtask gate` enables it for the workspace runs.
   produced different sampled masters (`a953f79e…`, `68cd3e4f…`). Preview and
   Accept of variant 1 passed and variant 2 stayed offered. `/usr/bin/time -l`
   maximum RSS 14.5 GB. Generated pictures were not inspected for quality.
+- `ai-compare` replay (scripted Ready variants through real qualification,
+  simulated delivery): `,x` previews and toggles Before/variant at one frame
+  with the committed picture shown for Before; while auditioning, `,x` and
+  `,n` restart Before, the variant, a newly prepared variant and a retained
+  one from the exact injected heard sample in the same window; a paused
+  switch retargets the exact sample and Space resumes Before there; Esc leaves
+  without an edit. Navigation tests cover `,x`/`,n` routing, counts, domains,
+  text/IME and `:compare-ai` parsing.
+- On 2026-10-06 (M5 Max, debug, the same opt-in test on `cfr-bframes`, 30
+  frames) the real worker accepted the schema-2 colour-context manifest:
+  variant 1 Ready at 85.5 s, variant 2 at 184.8 s (seeds 1262662453 and
+  1262662454, sampled masters `fee483c3…` and `411a04c0…`); Preview and
+  Accept of variant 1 passed; maximum RSS 14.5 GB. Pictures were not
+  inspected for quality.
 - UI replay: `ai-pause` (scripted worker), `ai-variants` (scripted Ready
   variants through real qualification: list with thumbnails, choose, preview,
   audition with simulated delivery, accept, durable discard, Undo) and
@@ -459,12 +566,12 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-Comparing two variants side by side or toggling Before/Proposed at the same
-heard sample (Preview shows one variant at a time), an undoable or reversible
-Discard and a visible retention policy for discarded variants' objects
-(§19.2), audition of acceptance through the device in a qualified listening
-check (replays simulate delivery), a Generate entry inside scoped
-Repeat/Retime inspection, composed framing in conditioning, source/colour context qualification, native
+A split-screen comparison (comparison is a same-frame toggle), an undoable or
+reversible Discard, a retention period setting, audition of acceptance
+through the device in a qualified listening check (replays simulate
+delivery), a Generate entry inside scoped Repeat/Retime inspection, composed
+framing in conditioning, a transfer conversion instead of reading BT.709 codes
+as sRGB, calibrated join thresholds and real-model seam quality, native
 physical-input, VoiceOver and real-window checks of the AI controls, the
 §13.4 qualification corpus and bake-off, a Developer ID/notarized run of the
 bundled runtime, and the clean-machine download-and-generate test of §26.6.

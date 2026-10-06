@@ -352,9 +352,11 @@ fn invalid_suffix_never_restarts_at_a_root_binding() {
             count: 1
         })
     );
+    // `q` alone begins a macro recording prefix; as an invalid suffix it
+    // must not restart there.
     let mut bindings = enter(&[Key::Comma]);
     assert!(matches!(
-        bindings.key(Key::X, Modifiers::NONE, false, false),
+        bindings.key(Key::Q, Modifiers::NONE, false, false),
         Some(Action::Invalid(_))
     ));
     assert!(bindings.pending().is_empty());

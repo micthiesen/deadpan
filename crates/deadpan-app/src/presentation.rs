@@ -481,6 +481,20 @@ impl Presentation {
         })
     }
 
+    /// The committed view of a displayed proxy picture. A stopping transport
+    /// replaces it with the exact picture: a proxy never remains on screen
+    /// once nothing will refine it.
+    pub fn displayed_proxy_view(&self) -> Option<ProjectView> {
+        let displayed = self.displayed.as_ref()?;
+        if displayed.tier != PictureTier::Proxy {
+            return None;
+        }
+        match &displayed.request.location {
+            Location::Project { view, .. } => Some(view.clone()),
+            _ => None,
+        }
+    }
+
     /// The tier of the picture last submitted to the GPU.
     pub fn displayed_tier(&self) -> Option<PictureTier> {
         self.displayed.as_ref().map(|displayed| displayed.tier)

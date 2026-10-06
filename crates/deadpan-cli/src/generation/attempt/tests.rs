@@ -86,7 +86,8 @@ fn inputs() -> BridgeInputs {
         motion: MotionAmount::Still,
     };
     // Prepared pictures are opaque retained bytes to capture and the store.
-    conditioning::assemble(plan, constraints, b"left".to_vec(), b"right".to_vec()).unwrap()
+    let (left, right) = conditioning::opaque_boundaries(&plan, b"left".to_vec(), b"right".to_vec());
+    conditioning::assemble(plan, constraints, left, right).unwrap()
 }
 
 fn allocated(store: &mut ProjectStore) -> Allocated {
@@ -309,13 +310,9 @@ fn picture_inputs() -> BridgeInputs {
         bytes
     };
     let template = inputs();
-    conditioning::assemble(
-        template.plan,
-        template.constraints,
-        png([200, 40, 40]),
-        png([40, 40, 200]),
-    )
-    .unwrap()
+    let (left, right) =
+        conditioning::opaque_boundaries(&template.plan, png([200, 40, 40]), png([40, 40, 200]));
+    conditioning::assemble(template.plan, template.constraints, left, right).unwrap()
 }
 
 fn run_synthetic(

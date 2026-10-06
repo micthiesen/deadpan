@@ -9,7 +9,10 @@ use std::time::{Duration, Instant};
 
 use super::{ConversionError, Deadline, OwnedProcess, Watch};
 use crate::protocol::{MAX_REPLY_BYTES, MAX_REQUEST_BYTES};
-use crate::proxy::{PROXY_ARGUMENT, ProxyReply, ProxyReport, ProxyRequest};
+use crate::proxy::{
+    MAX_PROXY_ASSEMBLE_REQUEST_BYTES, PROXY_ARGUMENT, PROXY_ASSEMBLE_ARGUMENT, ProxyAssembleReply,
+    ProxyAssembleReport, ProxyAssembleRequest, ProxyReply, ProxyReport, ProxyRequest,
+};
 use crate::source_input::VerifiedSourceInput;
 
 /// A proxy worker that neither writes output nor sends a heartbeat for this
@@ -37,9 +40,11 @@ impl Default for ProxyEncodeOptions<'_> {
 }
 
 /// Run the isolated worker on verified Original bytes and leave the encoded
-/// proxy in `output`, which must be an empty private regular file. The child
-/// receives no path or environment; it lowers its own scheduling priority.
-/// The result is unverified: call [`crate::proxy::verify_proxy`] next.
+/// proxy (or the request's range of it) in `output` at the request's output
+/// offset, which must be the private regular file's current length. The
+/// child receives no path or environment; it lowers its own scheduling
+/// priority. The result is unverified: call [`crate::proxy::verify_proxy`]
+/// on a complete proxy next.
 pub fn encode_proxy(
     executable: &Path,
     input: &VerifiedSourceInput,
@@ -63,9 +68,9 @@ pub fn encode_proxy(
         return Err(ConversionError::InputIdentity);
     }
     let metadata = output.metadata()?;
-    if metadata.len() != 0 || !metadata.is_file() {
+    if metadata.len() != request.output_offset || !metadata.is_file() {
         return Err(ConversionError::Protocol(
-            "proxy output must be an empty regular file".into(),
+            "proxy output must be a regular file ending at the output offset".into(),
         ));
     }
     let serialized = serde_json::to_string(request)
@@ -75,42 +80,95 @@ pub fn encode_proxy(
             "request exceeded wire budget".into(),
         ));
     }
-    let child = deadpan_native_process::spawn(
-        Command::new(executable)
-            .arg(PROXY_ARGUMENT)
-            .arg(serialized)
-            .env_clear()
-            .current_dir(std::env::temp_dir())
-            .stdin(Stdio::from(input.decoder_file()?))
-            .stdout(Stdio::from(output.try_clone()?))
-            .stderr(Stdio::piped())
-            .process_group(0),
+    let reply = run_worker(
+        executable,
+        PROXY_ARGUMENT,
+        serialized,
+        input.decoder_file()?,
+        output,
+        request
+            .output_offset
+            .saturating_add(request.max_output_bytes),
+        &deadline,
+        options,
     )?;
-    let mut process = OwnedProcess::new(child);
-    // Output grows with every packet and the worker sends a heartbeat for
-    // every decoded picture; a hung VideoToolbox session does neither.
-    let watch = Watch {
-        stall: options.stall,
-        pause: options.pause,
-    };
-    let (status, reply) =
-        process.collect(&deadline, output, request.max_output_bytes, Some(&watch))?;
-    if reply.len() > MAX_REPLY_BYTES {
-        return Err(ConversionError::Protocol("oversized proxy reply".into()));
-    }
-    let reply: ProxyReply = serde_json::from_slice(&reply)
-        .map_err(|error| ConversionError::Protocol(error.to_string()))?;
-    let report = match reply {
-        ProxyReply::Failure { code, message } => {
-            if code.is_empty() || code.len() > 128 || message.is_empty() || message.len() > 2048 {
-                return Err(ConversionError::Protocol(
-                    "invalid failure diagnostic".into(),
-                ));
-            }
-            return Err(ConversionError::Worker { code, message });
-        }
+    let (status, bytes) = reply;
+    let report = match serde_json::from_slice::<ProxyReply>(&bytes)
+        .map_err(|error| ConversionError::Protocol(error.to_string()))?
+    {
+        ProxyReply::Failure { code, message } => return Err(worker_failure(code, message)),
         ProxyReply::Success { report } if status.success() => report,
         ProxyReply::Success { .. } => {
+            return Err(ConversionError::Protocol(format!(
+                "success followed by {status}"
+            )));
+        }
+    };
+    report.validate_for(request)?;
+    if output.metadata()?.len() != request.output_offset.saturating_add(report.output_bytes) {
+        return Err(ConversionError::Protocol(
+            "output length differs from report".into(),
+        ));
+    }
+    deadline.check()?;
+    Ok(report)
+}
+
+/// Join encoded proxy ranges into one movie in the isolated worker. `ranges`
+/// holds every range at its offset (the worker reads it only); `output` must
+/// be an empty private regular file. The worker requires every packet to be
+/// an intra picture at exactly its range's expected times, and identical
+/// decoder configurations; the result is still unverified: call
+/// [`crate::proxy::verify_proxy`] next.
+pub fn assemble_proxy(
+    executable: &Path,
+    ranges: &File,
+    request: &ProxyAssembleRequest,
+    output: &File,
+    cancelled: &AtomicBool,
+    options: ProxyEncodeOptions<'_>,
+) -> Result<ProxyAssembleReport, ConversionError> {
+    request.validate()?;
+    let deadline = Deadline {
+        end: Instant::now() + Duration::from_millis(request.timeout_ms),
+        cancelled,
+    };
+    deadline.check()?;
+    if ranges.metadata()?.len() != request.input_byte_length {
+        return Err(ConversionError::InputIdentity);
+    }
+    let metadata = output.metadata()?;
+    if metadata.len() != 0 || !metadata.is_file() {
+        return Err(ConversionError::Protocol(
+            "proxy output must be an empty regular file".into(),
+        ));
+    }
+    let serialized = serde_json::to_string(request)
+        .map_err(|error| ConversionError::Protocol(error.to_string()))?;
+    if serialized.len() > MAX_PROXY_ASSEMBLE_REQUEST_BYTES {
+        return Err(ConversionError::Protocol(
+            "request exceeded wire budget".into(),
+        ));
+    }
+    let reply = run_worker(
+        executable,
+        PROXY_ASSEMBLE_ARGUMENT,
+        serialized,
+        ranges.try_clone()?,
+        output,
+        request.max_output_bytes,
+        &deadline,
+        options,
+    )?;
+    let (status, bytes) = reply;
+    let report = match serde_json::from_slice::<ProxyAssembleReply>(&bytes)
+        .map_err(|error| ConversionError::Protocol(error.to_string()))?
+    {
+        ProxyAssembleReply::Failure { code, message } => {
+            return Err(worker_failure(code, message));
+        }
+        ProxyAssembleReply::Success { report } if status.success() => report,
+        ProxyAssembleReply::Success { .. } => {
             return Err(ConversionError::Protocol(format!(
                 "success followed by {status}"
             )));
@@ -124,6 +182,73 @@ pub fn encode_proxy(
     }
     deadline.check()?;
     Ok(report)
+}
+
+/// Code of a worker stopped by SIGKILL or SIGTERM from outside, for example
+/// by the system under memory pressure or by a user. Not a verdict about the
+/// media; a resumable build keeps its completed ranges.
+pub const WORKER_TERMINATED: &str = "worker_terminated";
+
+fn worker_failure(code: String, message: String) -> ConversionError {
+    if code.is_empty() || code.len() > 128 || message.is_empty() || message.len() > 2048 {
+        return ConversionError::Protocol("invalid failure diagnostic".into());
+    }
+    ConversionError::Worker { code, message }
+}
+
+/// Spawn one proxy worker mode with `input` on stdin and `output` on stdout
+/// in its own process group, supervised for deadline, cancellation, output
+/// bound, stalls and pause, and return its reply.
+#[allow(clippy::too_many_arguments)]
+fn run_worker(
+    executable: &Path,
+    mode: &str,
+    serialized: String,
+    input: File,
+    output: &File,
+    max_output_length: u64,
+    deadline: &Deadline<'_>,
+    options: ProxyEncodeOptions<'_>,
+) -> Result<(std::process::ExitStatus, Vec<u8>), ConversionError> {
+    use std::os::unix::process::ExitStatusExt;
+    let child = deadpan_native_process::spawn(
+        Command::new(executable)
+            .arg(mode)
+            .arg(serialized)
+            .env_clear()
+            .current_dir(std::env::temp_dir())
+            .stdin(Stdio::from(input))
+            .stdout(Stdio::from(output.try_clone()?))
+            .stderr(Stdio::piped())
+            .process_group(0),
+    )?;
+    let mut process = OwnedProcess::new(child);
+    // Output grows with every packet and the worker sends a heartbeat for
+    // every decoded picture; a hung VideoToolbox session does neither.
+    let watch = Watch {
+        stall: options.stall,
+        pause: options.pause,
+    };
+    let (status, reply) = process.collect(deadline, output, max_output_length, Some(&watch))?;
+    if reply.len() > MAX_REPLY_BYTES {
+        return Err(ConversionError::Protocol("oversized proxy reply".into()));
+    }
+    if reply.is_empty()
+        && let Some(signal) = status.signal()
+    {
+        let terminated = signal == rustix::process::Signal::KILL.as_raw()
+            || signal == rustix::process::Signal::TERM.as_raw();
+        return Err(ConversionError::Worker {
+            code: if terminated {
+                WORKER_TERMINATED
+            } else {
+                "worker_crashed"
+            }
+            .into(),
+            message: format!("the proxy worker was stopped by signal {signal}"),
+        });
+    }
+    Ok((status, reply))
 }
 
 /// Whether a failed attempt may be retried once in a new process: a refused

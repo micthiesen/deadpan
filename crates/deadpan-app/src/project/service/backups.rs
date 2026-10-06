@@ -84,6 +84,11 @@ impl Default for State {
 }
 
 impl State {
+    /// A backup is copying the database.
+    pub(super) fn running(&self) -> bool {
+        self.running.is_some()
+    }
+
     pub(super) fn update(&self) -> Update {
         self.update.clone()
     }

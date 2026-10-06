@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, SystemTime};
 
+use deadpan_store::generation_retention::{DEFAULT_VARIANT_RETENTION, ExpiryMode};
 use deadpan_store::storage::{CleanupPolicy, DEFAULT_GRACE, StorageReport};
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 use serde::Serialize;
@@ -322,6 +323,17 @@ impl UserStorage {
                 outcome.removed_bytes += bytes;
                 outcome.removed.push(proxies.join(name));
             }
+            // Completed ranges of unfinished builds, unless retained.
+            for (path, bytes) in stale_helper_staging(&proxies.join(".partial"), grace) {
+                let name = path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned());
+                if name.is_some_and(|name| retained.contains(&name)) {
+                    continue;
+                }
+                outcome.removed_bytes += bytes;
+                outcome.removed.push(path);
+            }
         } else if proxies.is_dir() {
             let before: Vec<_> = proxy_entries(&proxies);
             let cache = ProxyCache::at(&proxies)
@@ -332,10 +344,16 @@ impl UserStorage {
                     ProxyCleanupPolicy {
                         staging_grace: grace,
                         unused_grace: grace,
+                        partial_grace: grace,
                         budget_bytes: DEFAULT_PROXY_BUDGET_BYTES,
                     },
                 )
                 .map_err(|error| CliError::Usage(format!("proxy cache: {error}")))?;
+            // Completed ranges of unfinished builds.
+            outcome.removed_bytes += report.removed_partial_bytes;
+            for name in report.removed_partials {
+                outcome.removed.push(proxies.join(".partial").join(name));
+            }
             for name in report.removed_entries {
                 outcome.removed_bytes += before
                     .iter()
@@ -418,14 +436,78 @@ pub(crate) fn run_project(arguments: &[&str]) -> Result<(), CliError> {
                 }
                 store => store?,
             };
+            // Expire offered AI variants first, so their now unreferenced
+            // masters are removable in the same run. A dry run only lists
+            // the variants that would expire.
+            // Explicit: this confirms the current clock, even after the
+            // app's automatic pass deferred for a clock anomaly.
+            let expiry = store.expire_generation_variants(
+                SystemTime::now(),
+                DEFAULT_VARIANT_RETENTION,
+                ExpiryMode::Explicit,
+                dry_run,
+            )?;
             let outcome = store.clean_storage(CleanupPolicy::everything(grace, dry_run))?;
-            write_json(&serde_json::json!({ "protocol": 1, "cleanup": outcome }))
+            write_json(
+                &serde_json::json!({ "protocol": 1, "variant_expiry": expiry, "cleanup": outcome }),
+            )
         }
         _ => Err(CliError::Usage(
             "usage: project storage <project.deadpan> [--clean [--dry-run]] [--grace-hours N]"
                 .into(),
         )),
     }
+}
+
+/// `keep-hold <project> --request <id> --attempt <id> [--off]`: keep (pin)
+/// one offered AI variant so the retention policy never expires it, or with
+/// `--off` let it expire again. Operational, not undoable; needs a closed
+/// project.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub(crate) fn run_keep_hold(arguments: &[&str]) -> Result<(), CliError> {
+    let usage = || {
+        CliError::Usage(
+            "usage: keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]"
+                .into(),
+        )
+    };
+    let (package, request, attempt, keep) = match arguments {
+        [package, "--request", request, "--attempt", attempt] => (package, request, attempt, true),
+        [package, "--request", request, "--attempt", attempt, "--off"] => {
+            (package, request, attempt, false)
+        }
+        _ => return Err(usage()),
+    };
+    let identity = deadpan_jobs::MessageIdentity::new(
+        deadpan_jobs::RequestId::new(*request).map_err(|_| usage())?,
+        deadpan_jobs::AttemptId::new(*attempt).map_err(|_| usage())?,
+    );
+    let mut store = match ProjectStore::open(Path::new(package), AccessMode::ReadWrite) {
+        Err(StoreError::AlreadyOpen) => {
+            return Err(CliError::Usage(
+                "The project is open in Deadpan. Keep the variant there (:keep-ai), or close it and run keep-hold again.".into(),
+            ));
+        }
+        store => store?,
+    };
+    let outcome = store.keep_generation_bundle_variant(&identity, keep)?;
+    let record = store
+        .generation_variant_retention(&identity.request_id)?
+        .into_iter()
+        .find(|record| record.identity == identity);
+    let expires = record
+        .as_ref()
+        .and_then(|record| record.expires_at(DEFAULT_VARIANT_RETENTION))
+        .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|at| at.as_secs());
+    write_json(&serde_json::json!({
+        "protocol": 1,
+        "request_id": request,
+        "attempt_id": attempt,
+        "kept": keep,
+        "changed": outcome == deadpan_store::generation_attempts::AttemptMutationOutcome::Applied,
+        "expires_unix_seconds": expires,
+    }))
 }
 
 /// `project copy-portable <package> <destination.deadpan>`.

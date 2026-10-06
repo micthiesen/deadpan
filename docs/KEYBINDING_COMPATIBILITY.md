@@ -72,6 +72,19 @@ needed. Escape leaves an AI preview only after register choice, macro, Visual
 and pending-key owners have none left to clear, and never cancels a
 generation.
 
+`,x` (`ai.compare`) and `,n` (`ai.next`) join the comma family on 2026-10-06
+for AI variant comparison: `,x` switches the selected pause between its
+committed picture (Before) and the chosen variant, `,n` shows the next
+variant, both at the same frame and heard sample. Both have the `,a` contract:
+unmodified, Normal Edit only (Visual, Original and Sound never reach them),
+refuse a count, do not repeat while held, and yield to native text and
+composition; `x` and `n` alone keep their meanings. Their `,` ancestor
+captures the AI target like `,a`. `:compare-ai [before|N]` is the command
+form. Neither adds a modified chord, so no Kestrel reservation can apply. The
+`ai-compare` replay's production audit passed all 62 reservations over
+21,884,016 routing cases with no conflicts, and the live Kestrel source digest
+matched the fixture (`368c01df…`). `:keep-ai` is command-only.
+
 `,m` (`gain.mute`) and `,r` (`cutaway.pick`) join the comma family on
 2026-10-04. Both are unmodified, Your edit only (Normal and Visual), refuse a
 count, do not repeat while held and yield to native text and composition; `m`

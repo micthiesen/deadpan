@@ -8,6 +8,9 @@
 //!             [--proxy-cache NEW_DIR --worker MEDIA_WORKER]
 //!   perf proxy-build PACKAGE --proxy-cache DIR --worker MEDIA_WORKER
 //!   perf playback PACKAGE [--seconds N] [--start-frame N]
+//!             [--pictures original|adaptive --proxy-cache DIR --worker MEDIA_WORKER]
+//!   perf make-cuts PACKAGE [--every N] [--plays N] [--seconds N]
+//!   perf make-long PACKAGE [--fragments N] [--every N] [--plays N]
 //!   perf edit PACKAGE [--cycles N] [--seed N] [--kinds split,pause,wrap]
 //!   perf make-large NEW_PACKAGE [--beats N]
 //!   perf scale [--sizes 1000,10000,...] [--source PACKAGE --fragments N]
@@ -24,6 +27,8 @@ use serde_json::{Value, json};
 
 #[path = "perf/edit.rs"]
 mod edit;
+#[path = "perf/fixtures.rs"]
+mod fixtures;
 #[path = "perf/gpu.rs"]
 mod gpu;
 #[path = "../../xtask/src/percentile.rs"]
@@ -51,6 +56,8 @@ fn main() -> Result<()> {
         "playback" => playback::run(&options)?,
         "edit" => edit::run(&options)?,
         "make-large" => edit::make_large(&options)?,
+        "make-cuts" => fixtures::make_cuts(&options)?,
+        "make-long" => fixtures::make_long(&options)?,
         "scale" => scale::run(&options)?,
         "proxy-build" => proxy::build_stage(&options)?,
         other => return Err(format!("unknown perf stage {other}").into()),

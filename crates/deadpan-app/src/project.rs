@@ -466,6 +466,9 @@ pub struct ProjectUpdate {
     pub relink: Option<RelinkStatus>,
     /// The latest explicit storage cleanup, matched by its request ticket.
     pub storage_cleanup: Option<StorageCleanupStatus>,
+    /// This session's automatic AI variant retention pass, for the Storage
+    /// panel. Operational; never changes authored history.
+    pub storage_retention: Option<RetentionPassStatus>,
     /// Automatic and explicit backups and restores of this session.
     pub backups: backups::Update,
 }
@@ -477,6 +480,51 @@ pub struct StorageCleanupStatus {
     pub ticket: u64,
     pub session: u64,
     pub result: Result<deadpan_store::storage::CleanupOutcome, String>,
+}
+
+/// The automatic retention pass a writable session runs when the service is
+/// first idle after opening, then every six hours while idle: expire offered
+/// AI variants past the retention period, then remove unreferenced
+/// `Media/Generated` objects older than the cleanup grace period.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RetentionPassStatus {
+    pub session: u64,
+    pub state: RetentionPassState,
+    /// The latest Storage-panel clock confirmation of this session, matched
+    /// by its request ticket.
+    pub confirmation: Option<ClockConfirmation>,
+}
+
+/// The reply to [`ProjectRequest::ConfirmVariantClock`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClockConfirmation {
+    pub ticket: u64,
+    pub result: Result<deadpan_store::generation_retention::VariantExpiry, String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RetentionPassState {
+    /// Waiting for an import, relink, render, AI pause, tracking job or
+    /// backup to finish; the reason reads as a sentence.
+    Deferred(String),
+    /// Planning expiry or finding unreferenced files on a read-only open,
+    /// off the writer.
+    Running,
+    /// The clock looks wrong (behind recorded times, or more than one
+    /// retention period past the last check): nothing was expired or
+    /// removed. The text says what to do.
+    ClockAnomaly(String),
+    Done {
+        /// Variants that stopped being offered in this pass.
+        expired: u64,
+        removed_files: u64,
+        removed_bytes: u64,
+        /// Unreferenced files kept because a reader held them or they
+        /// changed meanwhile; a later pass retries.
+        kept_files: u64,
+        finished: std::time::SystemTime,
+    },
+    Failed(String),
 }
 
 /// What a writable open recovered, plus the presence of every registered
@@ -920,6 +968,21 @@ pub enum ProjectRequest {
         ticket: u64,
         expected_session: u64,
         previewed: Vec<deadpan_store::storage::RemovedEntry>,
+    },
+    /// Confirm the wall clock for AI variant expiry after the automatic
+    /// check found a long gap since the last check (`ClockAnomaly::Ahead`),
+    /// with the same semantics as `project storage --clean`'s explicit
+    /// expiry: apply `plan` (an `ExpiryMode::Explicit` plan computed on a
+    /// read-only open, off the writer), rechecking every row, and record the
+    /// watermark so automatic checks resume. Files are left to cleanup and
+    /// its grace period. Refused for another session or revision, while any
+    /// job runs, or when the clock is behind the project's records. Replies
+    /// through `RetentionPassStatus::confirmation`.
+    ConfirmVariantClock {
+        ticket: u64,
+        expected_session: u64,
+        expected_revision: RevisionId,
+        plan: Box<deadpan_store::generation_retention::ExpiryPlan>,
     },
     Import {
         path: PathBuf,

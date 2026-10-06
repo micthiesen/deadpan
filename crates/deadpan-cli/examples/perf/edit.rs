@@ -20,9 +20,9 @@ use crate::{Lcg, Options, Result, ms, summary};
 
 const PAUSE_FRAMES: i64 = 12;
 
-struct Ids(u64);
+pub struct Ids(pub u64);
 impl Ids {
-    fn node(&mut self) -> Result<NodeId> {
+    pub fn node(&mut self) -> Result<NodeId> {
         self.0 += 1;
         Ok(NodeId::new(format!(
             "perf-{}-{}",
@@ -30,7 +30,7 @@ impl Ids {
             self.0
         ))?)
     }
-    fn revision(&mut self) -> Result<RevisionId> {
+    pub fn revision(&mut self) -> Result<RevisionId> {
         self.0 += 1;
         Ok(RevisionId::new(format!(
             "perf-rev-{}-{}",
@@ -280,14 +280,18 @@ fn refresh(
     Ok(())
 }
 
-fn root_children(document: &ProjectDocument) -> Vec<NodeId> {
+pub fn root_children(document: &ProjectDocument) -> Vec<NodeId> {
     match &document.nodes()[document.root()].kind {
         NodeKind::Sequence { children } => children.clone(),
         _ => Vec::new(),
     }
 }
 
-fn split_command(document: &ProjectDocument, at: i64, ids: &mut Ids) -> Result<Option<Command>> {
+pub fn split_command(
+    document: &ProjectDocument,
+    at: i64,
+    ids: &mut Ids,
+) -> Result<Option<Command>> {
     let durations = document.durations()?;
     let mut start = 0;
     for child in root_children(document) {

@@ -176,7 +176,50 @@ impl Fixture {
         SelectedBridgeProvider::new(self.declaration.provider.clone(), capability())
     }
 
+    /// The retained version-1 grammar: bundles captured before measured
+    /// boundary evidence must still qualify and admit.
     fn new() -> Self {
+        Self::with_context(|left, right| {
+            json!({
+                "schema_version":1, "model_color":"srgb", "plan":plan(),
+                "left":left, "right":right,
+                "input_color_interpretation":"fixture RGB"
+            })
+        })
+    }
+
+    /// A version-2 context whose model declares `model_color_space`.
+    fn measured(model_color_space: serde_json::Value) -> Self {
+        Self::with_context(|left, right| {
+            json!({
+                "schema_version":2, "model_color_space":model_color_space, "plan":plan(),
+                "left":left, "right":right,
+                "input_color_interpretation":"fixture RGB",
+                "boundaries":{
+                    "left":{"original":{
+                        "project_frame":9, "asset":"original", "qualification":"d".repeat(64),
+                        "picture":{
+                            "source_frame":9,
+                            "pts":{"ticks":9009, "time_base":{"numerator":1, "denominator":30000}},
+                            "stream":{
+                                "codec":"h264", "pixel_format":"yuv420p", "width":320,
+                                "height":180, "sample_aspect":[1,1], "rotation_quarter_turns":0,
+                                "decoded_sample_bits":8,
+                                "color":{"transfer":"bt709", "primaries":"bt709",
+                                    "matrix":"bt709", "range":"limited"}
+                            },
+                            "model_input":"rec709_codes_as_srgb"
+                        }
+                    }},
+                    "right":{"authored_black":{"project_frame":40}}
+                }
+            })
+        })
+    }
+
+    fn with_context(
+        context: impl FnOnce(WorkspaceArtifact, WorkspaceArtifact) -> serde_json::Value,
+    ) -> Self {
         let directory = tempfile::tempdir().unwrap();
         fs::create_dir(directory.path().join("outputs")).unwrap();
         fs::create_dir(directory.path().join("inputs")).unwrap();
@@ -186,12 +229,10 @@ impl Fixture {
         let right = b"prepared right image";
         fs::write(directory.path().join("inputs/left.png"), left).unwrap();
         fs::write(directory.path().join("inputs/right.png"), right).unwrap();
-        let context = json!({
-            "schema_version":1, "model_color":"srgb", "plan":plan(),
-            "left":declared("inputs/left.png", left),
-            "right":declared("inputs/right.png", right),
-            "input_color_interpretation":"fixture RGB"
-        });
+        let context = context(
+            declared("inputs/left.png", left),
+            declared("inputs/right.png", right),
+        );
         let context_bytes = serde_json::to_vec_pretty(&context).unwrap();
         fs::write(directory.path().join("inputs/context.json"), &context_bytes).unwrap();
         let manifest = declared("inputs/context.json", &context_bytes);
@@ -326,6 +367,46 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         envelope["sampled"],
         serde_json::to_value(sampled_ref).unwrap()
     );
+}
+
+#[test]
+fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec() {
+    let canonical = json!({"transfer":"srgb", "primaries":"bt709", "matrix":"rgb", "range":"full"});
+    let fixture = Fixture::measured(canonical);
+    let provider = fixture.selected_provider();
+    let bundle = qualify_bridge(
+        Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+        &fixture.workspace,
+        fixture.qualification(&provider),
+        limits(),
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let boundaries = bundle.conditioning().context().boundaries().unwrap();
+    assert_eq!(boundaries.left.project_frame(), 9);
+    assert_eq!(bundle.conditioning().context().schema_version(), 2);
+
+    // A model declared to emit wide-gamut PQ would have its pictures silently
+    // reinterpreted as the canonical sRGB masters; qualification refuses it
+    // before starting a codec.
+    let foreign = Fixture::measured(
+        json!({"transfer":"pq", "primaries":"bt2020", "matrix":"rgb", "range":"full"}),
+    );
+    let provider = foreign.selected_provider();
+    let Err(QualificationError::Request(reason)) = qualify_bridge(
+        Path::new("/missing/codec"),
+        &foreign.workspace,
+        foreign.qualification(&provider),
+        limits(),
+        &AtomicBool::new(false),
+    ) else {
+        panic!("a foreign model colour space must fail qualification")
+    };
+    assert!(
+        reason.contains("colour interpretation mismatch"),
+        "{reason}"
+    );
+    assert!(reason.contains("pq transfer, bt2020 primaries"), "{reason}");
 }
 
 #[test]

@@ -669,3 +669,312 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Undo offers the accepted variant")?;
     Ok(())
 }
+
+/// The transport's content, window and heard content sample.
+fn heard(
+    d: &Driver<'_>,
+) -> Option<(
+    deadpan_playback::ContentIdentity,
+    deadpan_playback::Window,
+    deadpan_core::AudioSample,
+)> {
+    let run = d.app().transport.as_ref()?;
+    Some((
+        run.content.clone(),
+        *run.window(),
+        run.content_sample().ok()?,
+    ))
+}
+
+/// Before / variant comparison at the same frame and the same heard sample,
+/// through the production `,x` and `,n` keys, both stopped and auditioning.
+pub(super) fn compare(d: &mut Driver<'_>) -> Result<(), String> {
+    use deadpan_playback::ContentIdentity;
+    if let Err(reason) = crate::project::generation::synthetic_tools() {
+        d.report.skipped.push(format!(
+            "ai-compare needs the synthetic Ready worker's tools: {reason}"
+        ));
+        return Ok(());
+    }
+    d.report.skipped.push(
+        "The model is the synthetic test worker; conditioning, host qualification, publication, Ready and preview are real. Audition delivery is simulated: no audio device opens and nothing is heard, so the heard sample is injected.".into(),
+    );
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::H])?;
+    d.changed(&before)?;
+    d.settled()?;
+    let paused = d.revision();
+    let hold = d.app().ai_hold().ok_or("The new pause is not selected")?;
+    d.command("generate 2")?;
+    d.wait_for("Both variants Ready", |app| {
+        app.ai.job().is_some_and(|job| !job.running()) && app.ai.variant_count() == 2
+    })?;
+    d.wait_for("Variant thumbnails rendered", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|workspace| app.thumbnails.rendered_candidates(workspace.session) == 2)
+    })?;
+    d.step("Variants listed", false)?;
+    let widgets = widget_text(d);
+    d.check(
+        "The footer and inspector teach ,x before / after and ,n next variant",
+        widgets.contains("AI before / after")
+            && widgets.contains("next AI variant")
+            && widgets.contains("Compare before / after")
+            && d.revision() == paused,
+        json!({",x":"AI before / after",",n":"next AI variant"}),
+        json!({"widgets":widgets}),
+    )?;
+    let second = d.app().ai.chosen_variant().ok_or("No chosen variant")?.1;
+
+    // Stopped: `,x` previews the chosen variant, then switches to Before and
+    // back at the same frame.
+    d.chord(&[Key::Comma, Key::X])?;
+    d.wait_for("Chosen variant previewed", |app| {
+        app.ai.preview_attempt() == Some(&second)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.chord(&[Key::L, Key::L, Key::L])?;
+    let frame = d.app().sequence_cursor;
+    let (start, end) = d
+        .app()
+        .beat_rows
+        .iter()
+        .find(|row| row.id == hold)
+        .map(|row| (row.start, row.start + row.frames))
+        .ok_or("The pause is not a visible beat")?;
+    d.wait_for("Variant picture at the inspected frame", |app| {
+        app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.step("Variant 2 inside the pause", false)?;
+    d.check(
+        ",x shows the chosen variant inside the pause and teaches the switch back",
+        (start..end).contains(&frame)
+            && widget_text(d).contains("AI PREVIEW · VARIANT 2 OF 2 · NOT SAVED")
+            && widget_text(d).contains("show before"),
+        json!({"footer":"AI PREVIEW · VARIANT 2 OF 2 · NOT SAVED","hint":"show before"}),
+        json!({"frame":frame,"pause":[start,end],"snapshot":d.snapshot()}),
+    )?;
+    d.capture("Comparing: variant 2")?;
+
+    d.chord(&[Key::Comma, Key::X])?;
+    d.check(
+        ",x switches to Before at once, at the same frame, without an edit",
+        d.app().ai.comparing_before()
+            && d.app().sequence_cursor == frame
+            && d.app().ai.preview_attempt() == Some(&second)
+            && d.revision() == paused,
+        json!({"before":true,"frame":frame}),
+        json!({"before":d.app().ai.comparing_before(),"frame":d.app().sequence_cursor}),
+    )?;
+    d.wait_for("Committed picture at the same frame", |app| {
+        !app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.step("Before at the same frame", false)?;
+    d.check(
+        "Before shows the committed pause picture and names the comparison",
+        widget_text(d).contains("AI COMPARE · BEFORE · NOT SAVED")
+            && widget_text(d).contains("Showing Before")
+            && d.app().sequence_cursor == frame,
+        json!({"footer":"AI COMPARE · BEFORE · NOT SAVED"}),
+        json!({"snapshot":d.snapshot()}),
+    )?;
+    d.capture("Comparing: Before")?;
+    d.chord(&[Key::Comma, Key::X])?;
+    d.wait_for("Variant picture again", |app| {
+        !app.ai.comparing_before()
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.check(
+        ",x returns to the variant at the same frame",
+        d.app().sequence_cursor == frame,
+        json!({"frame":frame}),
+        json!({"frame":d.app().sequence_cursor}),
+    )?;
+
+    // Auditioning: every switch continues from the exact heard sample.
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let rate = workspace.document.presentation_basis().frame_rate;
+    let inside = rate
+        .audio_boundary(deadpan_core::ProjectFrame(
+            i64::try_from(frame).map_err(|error| error.to_string())?,
+        ))
+        .map_err(|error| error.to_string())?;
+    let inside = deadpan_core::AudioSample(inside.0 + 137);
+    d.app_mut().feedback.simulate_playback = true;
+    d.command("audition-ai")?;
+    d.step("Audition started", false)?;
+    let window = *d.app().transport.as_ref().ok_or("No audition")?.window();
+    let (mut feed, _callback) = deadpan_output::channel().map_err(|error| error.to_string())?;
+    let generation = feed
+        .restart(window.start().0)
+        .map_err(|error| error.to_string())?;
+    let update = {
+        let run = d.app().transport.as_ref().ok_or("No audition")?;
+        deadpan_playback::Update {
+            ticket: run.ticket,
+            session: run.session,
+            project_id: run.project.clone(),
+            revision_id: run.revision.clone(),
+            content: run.content.clone(),
+            phase: deadpan_playback::Phase::Playing,
+            sample: Some(inside),
+            generation: Some(generation),
+            error: None,
+        }
+    };
+    d.app_mut().feedback.playback_updates.push_back(update);
+    d.wait_for("Heard inside the pause", |app| {
+        app.sequence_cursor == frame
+            && app
+                .transport
+                .as_ref()
+                .is_some_and(|run| run.content_sample().ok() == Some(inside))
+    })?;
+    let variant_content = d.app().ai.preview_content().cloned();
+    d.chord(&[Key::Comma, Key::X])?;
+    d.step("Before while auditioning", false)?;
+    let now = heard(d);
+    d.check(
+        ",x while auditioning plays Before from the same heard sample in the same window",
+        now.as_ref().is_some_and(|(content, now_window, sample)| {
+            *content == ContentIdentity::Committed && *now_window == window && *sample == inside
+        }) && d.app().ai.comparing_before()
+            && d.app().sequence_cursor == frame,
+        json!({"content":"Committed","sample":inside.0,"window":format!("{window:?}")}),
+        json!({"heard":format!("{now:?}"),"frame":d.app().sequence_cursor}),
+    )?;
+    d.capture("Auditioning Before at the heard sample")?;
+    d.chord(&[Key::Comma, Key::X])?;
+    let now = heard(d);
+    d.check(
+        ",x again plays the variant from the same heard sample",
+        now.as_ref().is_some_and(|(content, now_window, sample)| {
+            Some(content) == variant_content.as_ref() && *now_window == window && *sample == inside
+        }),
+        json!({"content":format!("{variant_content:?}"),"sample":inside.0}),
+        json!({"heard":format!("{now:?}")}),
+    )?;
+    d.chord(&[Key::Comma, Key::N])?;
+    d.wait_for("Variant 1 admitted and continuing", |app| {
+        app.ai
+            .preview_attempt()
+            .is_some_and(|attempt| attempt != &second)
+            && app
+                .transport
+                .as_ref()
+                .is_some_and(|run| Some(&run.content) == app.ai.preview_content())
+    })?;
+    let first = d.app().ai.preview_attempt().cloned().ok_or("No preview")?;
+    let now = heard(d);
+    d.check(
+        ",n prepares the next variant and continues the audition from the same heard sample",
+        now.as_ref()
+            .is_some_and(|(_, now_window, sample)| *now_window == window && *sample == inside)
+            && d.app().ai.retained_previews() == 1
+            && d.app()
+                .ai
+                .chosen_variant()
+                .is_some_and(|(number, _)| number == 1),
+        json!({"variant":1,"sample":inside.0,"retained":1}),
+        json!({"heard":format!("{now:?}"),"retained":d.app().ai.retained_previews()}),
+    )?;
+    d.capture("Auditioning variant 1 at the heard sample")?;
+    d.chord(&[Key::Comma, Key::N])?;
+    let now = heard(d);
+    d.check(
+        ",n back to an already admitted variant switches at once at the same heard sample",
+        d.app().ai.preview_attempt() == Some(&second)
+            && now.as_ref().is_some_and(|(content, now_window, sample)| {
+                Some(content) == d.app().ai.preview_content()
+                    && *now_window == window
+                    && *sample == inside
+            }),
+        json!({"variant":2,"sample":inside.0}),
+        json!({"preview":format!("{:?}", d.app().ai.preview_attempt()),"heard":format!("{now:?}")}),
+    )?;
+    d.wait_for("The store records the chosen variant", |app| {
+        app.ai
+            .chosen_variant()
+            .is_some_and(|(_, attempt)| attempt == second)
+    })?;
+    // Two `,n` in one input batch advance twice from what is shown, before
+    // the store's selection reply: 2 -> 1 -> 2.
+    let key = |key, pressed| super::key_event(key, egui::Modifiers::NONE, pressed);
+    d.events(
+        "Batched ,n,n",
+        vec![
+            key(Key::Comma, true),
+            key(Key::Comma, false),
+            key(Key::N, true),
+            key(Key::N, false),
+            key(Key::Comma, true),
+            key(Key::Comma, false),
+            key(Key::N, true),
+            key(Key::N, false),
+        ],
+    )?;
+    let now = heard(d);
+    d.check(
+        "Batched ,n,n advance twice from the shown variant at the same heard sample",
+        d.app().ai.preview_attempt() == Some(&second)
+            && now
+                .as_ref()
+                .is_some_and(|(_, now_window, sample)| *now_window == window && *sample == inside),
+        json!({"variant":2,"sample":inside.0}),
+        json!({"preview":format!("{:?}", d.app().ai.preview_attempt()),"heard":format!("{now:?}")}),
+    )?;
+    d.wait_for("The store records the twice-advanced variant", |app| {
+        app.ai
+            .chosen_variant()
+            .is_some_and(|(_, attempt)| attempt == second)
+    })?;
+
+    // Paused: the exact sample survives the switch and Space resumes there.
+    d.command("audition-ai")?;
+    d.step("Audition paused", false)?;
+    let paused_at = d.app().resume.is_some() && d.app().transport.is_none();
+    d.chord(&[Key::Comma, Key::X])?;
+    let retargeted = d.app().resume.as_ref().is_some_and(|resume| {
+        resume.shows(
+            workspace.document.revision_id(),
+            &ContentIdentity::Committed,
+        )
+    });
+    d.key(Key::Space)?;
+    let now = heard(d);
+    d.check(
+        "A paused comparison keeps its exact sample: Before resumes there with Space",
+        paused_at
+            && retargeted
+            && now.as_ref().is_some_and(|(content, _, sample)| {
+                *content == ContentIdentity::Committed && *sample == inside
+            }),
+        json!({"paused":true,"retargeted":true,"resumed":inside.0}),
+        json!({"paused":paused_at,"retargeted":retargeted,"heard":format!("{now:?}")}),
+    )?;
+    d.app_mut().feedback.simulate_playback = false;
+    d.key(Key::Escape)?;
+    d.key(Key::Escape)?;
+    d.wait_for("Back to your edit", |app| {
+        app.ai.preview_request().is_none() && !app.ai.comparing_before()
+    })?;
+    d.check(
+        "Esc leaves the comparison without an edit; both variants stay offered",
+        d.revision() == paused && d.app().ai.variant_count() == 2 && first != second,
+        json!({"revision":paused,"offered":2}),
+        json!({"revision":d.revision(),"offered":d.app().ai.variant_count()}),
+    )?;
+    d.capture("Comparison closed")?;
+    Ok(())
+}

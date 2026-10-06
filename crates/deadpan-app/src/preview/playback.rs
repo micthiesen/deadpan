@@ -91,6 +91,13 @@ impl DeadpanApp {
     /// Revoke before navigation/editing; never restore an old audio position
     /// over a new command target.
     pub(super) fn stop_playback(&mut self) -> bool {
+        self.stop_playback_with(true)
+    }
+
+    /// `replace_proxy`: when the displayed picture is a proxy picture of the
+    /// current view, request that frame's stopped picture, so no proxy stays
+    /// on screen once nothing refines it. A pause requests its own picture.
+    fn stop_playback_with(&mut self, replace_proxy: bool) -> bool {
         self.resume = None;
         self.playback.stop();
         let Some(run) = self.transport.take() else {
@@ -100,8 +107,25 @@ impl DeadpanApp {
             draft.position = run.content_sample().ok();
         }
         if !run.domain().is_audio_only() {
+            let proxy = replace_proxy
+                .then(|| self.presentation.displayed_proxy_view())
+                .flatten();
             self.worker.cancel();
             self.presentation.invalidate_pending();
+            let frame = match (proxy, self.view) {
+                (Some(ProjectView::Sequence { frame }), View::Sequence) => {
+                    u64::try_from(frame.0).ok()
+                }
+                (Some(ProjectView::Source { asset, frame }), View::Source)
+                    if self.selected_source.as_ref() == Some(&asset) =>
+                {
+                    Some(frame.0)
+                }
+                _ => None,
+            };
+            if frame.is_some() {
+                self.request_picture_for_transport_at(false, None, frame);
+            }
         }
         true
     }
@@ -116,10 +140,13 @@ impl DeadpanApp {
         };
         let resume = run.resume(position.cursor);
         let sound = run.domain().is_audio_only();
-        if self.stop_playback() {
+        // Without a picture of its own (sound, Trim), a pause still replaces
+        // a displayed proxy picture.
+        let picture = !sound && self.trim.is_none();
+        if self.stop_playback_with(!picture) {
             self.resume = Some(resume);
             // Cursor can name excluded Out, but the picture must not.
-            if !sound && self.trim.is_none() {
+            if picture {
                 self.request_picture_for_transport_at(false, None, Some(position.picture));
             }
         }
@@ -292,14 +319,26 @@ impl DeadpanApp {
                 };
                 (window, window.start())
             } else {
+                // While an AI preview is shown, Your edit plays its proposed
+                // acceptance; a paused position resumes only for that content.
+                let shown = matches!(domain, Domain::Sequence { .. })
+                    .then(|| self.ai_preview_audio(&workspace))
+                    .flatten();
+                let (revision, content) = shown.as_ref().map_or(
+                    (
+                        workspace.document.revision_id(),
+                        &ContentIdentity::Committed,
+                    ),
+                    |snapshot| (snapshot.document.revision_id(), &snapshot.content),
+                );
                 let resumed = self.resume.as_ref().and_then(|resume| {
                     resume
                         .sample_for_domain(
                             ContentRef {
                                 session: workspace.session,
                                 project: workspace.document.project_id(),
-                                revision: workspace.document.revision_id(),
-                                content: &ContentIdentity::Committed,
+                                revision,
+                                content,
                             },
                             &domain,
                             resume.window(),

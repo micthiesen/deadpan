@@ -49,7 +49,9 @@ fn plan_picture(picture: &Value) -> Result<Expected> {
             source_ordinal: u64::try_from(ordinal_of(&picture["point"])?)?,
         },
         "background" => Expected::Background,
-        "accepted" => Expected::Generated,
+        "accepted" => Expected::Generated {
+            sampled_frame: picture["frame"].as_u64().ok_or("accepted frame")?,
+        },
         other => return Err(format!("unexpected plan picture {other}").into()),
     })
 }
@@ -299,7 +301,9 @@ fn check_provenance(fixture: &Fixture, report: &Value) -> Result {
                 source_ordinal: provenance["source_frame"].as_u64().ok_or("ordinal")?,
             },
             Some("background") => Expected::Background,
-            Some("generated") => Expected::Generated,
+            Some("generated") => Expected::Generated {
+                sampled_frame: provenance["source_frame"].as_u64().ok_or("sampled frame")?,
+            },
             _ => return Err(format!("unknown provenance {provenance}").into()),
         };
         assert_eq!(actual, *expected, "{} frame {frame}", fixture.name);
@@ -521,7 +525,12 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let mut rows = Vec::new();
     let mut failed = Vec::new();
-    for fixture in recipes::all(&root.join("fixtures"))? {
+    let (fixtures, skipped) = recipes::all_with_skips(&root.join("fixtures"))?;
+    for (name, reason) in &skipped {
+        eprintln!("SKIPPED fixture {name}: {reason}");
+        rows.push(json!({"fixture": name, "skipped": reason}));
+    }
+    for fixture in fixtures {
         let started = std::time::Instant::now();
         let movie = render(&fixture, &root.join("exports"))?;
         let rendered = started.elapsed();
@@ -535,6 +544,26 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
             failed.push(fixture.name);
         }
         rows.push(row);
+        if fixture.name == "generated-pause" {
+            // Against the revision before acceptance (the Background Hold
+            // the generated pictures replaced), exactly the Hold differs.
+            let (stale, passed) = verify(
+                &fixture,
+                &movie,
+                "generated-pause-r03",
+                &["--frames", "14,15,20,26,27", "--no-audio"],
+            )?;
+            assert!(!passed, "{stale}");
+            for picture in stale["pictures"].as_array().ok_or("pictures")? {
+                let frame = picture["output_frame"].as_u64().ok_or("frame")?;
+                let flagged = picture["flags"].as_array().is_some_and(|f| !f.is_empty());
+                assert_eq!(
+                    flagged,
+                    (15..27).contains(&frame),
+                    "generated-pause frame {frame} against Background: {picture}"
+                );
+            }
+        }
         if fixture.name == "delayed-caption" {
             // The exported pictures carry the caption: against a revision
             // without it, only the captioned frames differ.

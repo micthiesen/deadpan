@@ -1,9 +1,10 @@
 //! Release migrations: backed up, run on a copy, validated, then promoted.
 //!
-//! The production chain [`MIGRATIONS`] holds one step, 66 to 67 (adding the
-//! empty `retired_identities` table), so packages of the previous build keep
-//! opening. Under the 2026-09-30 development-format authorization every
-//! earlier development schema is still refused as `UnsupportedSchema` before
+//! The production chain [`MIGRATIONS`] holds two steps, 66 to 67 (adding the
+//! empty `retired_identities` table) and 67 to 68 (adding AI variant
+//! retention records), so packages of the previous builds keep opening.
+//! Under the 2026-09-30 development-format authorization every earlier
+//! development schema is still refused as `UnsupportedSchema` before
 //! a writer, backup or parse, and current packages only validate. The runner below is the release
 //! mechanism the specification (20.4) requires, exercised by a synthetic
 //! N to N+1 migration in this module's tests:
@@ -67,16 +68,29 @@ pub type MigrationValidator = fn(&Connection) -> Result<(), StoreError>;
 /// Production migrations, oldest first. Development formats may still break
 /// without one; a step is added when existing packages would otherwise be
 /// stranded.
-pub const MIGRATIONS: &[Migration] = &[Migration {
-    from: 66,
-    apply: add_retired_identities,
-}];
+pub const MIGRATIONS: &[Migration] = &[
+    Migration {
+        from: 66,
+        apply: add_retired_identities,
+    },
+    Migration {
+        from: 67,
+        apply: add_variant_retention,
+    },
+];
 
 /// 66 to 67: restores now record what they discarded. A schema-66 package
 /// never restored anything that could have freed an identity (restore and
 /// the table arrived together), so the table starts empty.
 fn add_retired_identities(transaction: &Transaction<'_>) -> Result<(), StoreError> {
     crate::retired::create_tables(transaction)
+}
+
+/// 67 to 68: every AI variant gets a retention record. Present variants
+/// count their retention period from the upgrade, so none expires sooner
+/// than a full period afterwards.
+fn add_variant_retention(transaction: &Transaction<'_>) -> Result<(), StoreError> {
+    crate::generation_retention::migrate(transaction, std::time::SystemTime::now())
 }
 
 /// Whether this build can migrate a package of `found` to its own schema.
@@ -505,11 +519,11 @@ mod tests {
         ));
         assert_eq!(database_bytes(&path)?, before);
         assert!(crate::backups::list_backups(&path)?.is_empty());
-        // The production chain is empty: development formats stay refused.
-        // Only the previous schema migrates; older development formats are
-        // still refused.
+        // Only the two previous schemas migrate; older development formats
+        // are still refused.
         assert!(chain(MIGRATIONS, schema::VERSION - 1, schema::VERSION).is_some());
-        assert!(chain(MIGRATIONS, schema::VERSION - 2, schema::VERSION).is_none());
+        assert!(chain(MIGRATIONS, schema::VERSION - 2, schema::VERSION).is_some());
+        assert!(chain(MIGRATIONS, schema::VERSION - 3, schema::VERSION).is_none());
         Ok(())
     }
 }

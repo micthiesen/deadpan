@@ -554,3 +554,130 @@ fn unqualified_tags_and_corrupt_frames_cannot_create_a_source_session() {
         );
     }
 }
+
+fn source_fixture(name: &str) -> Vec<u8> {
+    std::fs::read(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-source/tests/fixtures")
+            .join(name),
+    )
+    .unwrap()
+}
+
+/// Forward continuation past skipped pictures, incremental repositioning with
+/// yields, finishing a reposition through a later request and seeking before
+/// an unfinished target all return exactly the pictures of a sequential
+/// single-threaded decode.
+#[test]
+fn forward_continuation_and_repositioning_return_sequential_pictures() {
+    use deadpan_media::source_session::{DecodePlan, RepositionProgress};
+    let cancelled = AtomicBool::new(false);
+    let timeout = Duration::from_secs(20);
+    for name in [
+        "cfr-bframes.mp4",
+        "pyramid-bframes.mp4",
+        "offset-bframes.mp4",
+        "vfr.mp4",
+    ] {
+        let bytes = source_fixture(name);
+        let mut reference = open(&bytes, SourceSessionLimits::default());
+        let count = reference.index().index().frames().len() as u64;
+        assert!(count >= 12, "{name} has {count} pictures");
+        let expected: Vec<_> = (0..count)
+            .map(|frame| {
+                blake3::hash(
+                    &reference
+                        .frame(SourceFrameId(frame), timeout, &cancelled)
+                        .unwrap()
+                        .rgba,
+                )
+            })
+            .collect();
+        for threads in [1, 8] {
+            let mut limits = SourceSessionLimits::interactive();
+            limits.decode.threads = threads;
+            let mut session = open(&bytes, limits);
+            let check = |session: &mut SourceSession, frame: u64| {
+                let picture = session
+                    .frame(SourceFrameId(frame), timeout, &cancelled)
+                    .unwrap();
+                assert_eq!(
+                    blake3::hash(&picture.rgba),
+                    expected[frame as usize],
+                    "{name}, {threads} threads, picture {frame}"
+                );
+            };
+            check(&mut session, 0);
+            assert_eq!(session.decode_plan(SourceFrameId(0)), DecodePlan::Current);
+            assert_eq!(
+                session.decode_plan(SourceFrameId(1)),
+                DecodePlan::Forward { pictures: 1 }
+            );
+            // Skipped pictures: whatever the plan, the picture is exact.
+            for frame in [2, 4, 7] {
+                check(&mut session, frame);
+            }
+            // Reposition toward a late target in single-picture steps.
+            let target = count - 3;
+            session
+                .begin_reposition(SourceFrameId(target), timeout, &cancelled)
+                .unwrap();
+            assert_eq!(session.repositioning(), Some(SourceFrameId(target)));
+            let mut steps = 0;
+            loop {
+                let mut budget = 1;
+                let progress = session
+                    .advance_reposition(timeout, &cancelled, &mut || {
+                        if budget == 0 {
+                            return true;
+                        }
+                        budget -= 1;
+                        false
+                    })
+                    .unwrap();
+                steps += 1;
+                assert!(steps < 10_000);
+                if matches!(progress, RepositionProgress::Reached { .. }) {
+                    break;
+                }
+            }
+            assert_eq!(session.repositioning(), None);
+            assert_eq!(
+                session.decode_plan(SourceFrameId(target)),
+                DecodePlan::Current
+            );
+            check(&mut session, target);
+            check(&mut session, target + 2);
+            // An unfinished reposition finished by a later request.
+            session
+                .begin_reposition(SourceFrameId(5), timeout, &cancelled)
+                .unwrap();
+            let progress = session
+                .advance_reposition(timeout, &cancelled, &mut || true)
+                .unwrap();
+            assert_eq!(progress, RepositionProgress::Pending { ordinals: 0 });
+            assert!(matches!(
+                session.decode_plan(SourceFrameId(6)),
+                DecodePlan::Resume { after: 2, .. } | DecodePlan::Seek { .. }
+            ));
+            check(&mut session, 6);
+            // A request before an unfinished target seeks afresh.
+            session
+                .begin_reposition(SourceFrameId(count - 1), timeout, &cancelled)
+                .unwrap();
+            assert!(matches!(
+                session.decode_plan(SourceFrameId(3)),
+                DecodePlan::Seek { .. }
+            ));
+            check(&mut session, 3);
+            assert_eq!(session.repositioning(), None);
+            // Advancing without a reposition is refused, not guessed.
+            assert!(
+                session
+                    .advance_reposition(timeout, &cancelled, &mut || false)
+                    .is_err()
+            );
+            check(&mut session, 4);
+        }
+    }
+}

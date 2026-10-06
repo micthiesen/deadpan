@@ -66,6 +66,9 @@ pub enum StorageKey {
     NextBackup,
     PreviousBackup,
     Restore,
+    /// After a long gap since the last retention check: review, then
+    /// confirm the clock (press twice).
+    ConfirmClock,
 }
 
 pub(super) const STORAGE: &[(&str, Key, StorageKey)] = &[
@@ -88,6 +91,7 @@ pub(super) const STORAGE: &[(&str, Key, StorageKey)] = &[
         StorageKey::PreviousBackup,
     ),
     ("storage.restore", Key::O, StorageKey::Restore),
+    ("storage.confirm-clock", Key::E, StorageKey::ConfirmClock),
 ];
 
 /// A Storage panel press, after `mode_key` has read its typed character, as
@@ -164,6 +168,8 @@ mod tests {
             Key::J | Key::ArrowDown => Some(StorageKey::NextBackup),
             Key::K | Key::ArrowUp => Some(StorageKey::PreviousBackup),
             Key::O => Some(StorageKey::Restore),
+            // Added with the AI variant retention clock check.
+            Key::E => Some(StorageKey::ConfirmClock),
             _ => None,
         }
     }

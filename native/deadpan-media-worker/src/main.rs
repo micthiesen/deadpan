@@ -9,7 +9,10 @@ use deadpan_media::protocol::{
     ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, REMUX_ARGUMENT, REMUX_PROTOCOL_VERSION,
     REPORT_PROTOCOL_VERSION, RemuxReply, RemuxReport, RemuxRequest, WorkerReply, WorkerRequest,
 };
-use deadpan_media::proxy::{PROXY_ARGUMENT, ProxyReply, ProxyRequest};
+use deadpan_media::proxy::{
+    MAX_PROXY_ASSEMBLE_REQUEST_BYTES, PROXY_ARGUMENT, PROXY_ASSEMBLE_ARGUMENT, ProxyAssembleReply,
+    ProxyAssembleRequest, ProxyReply, ProxyRequest,
+};
 
 #[allow(unsafe_code)]
 mod ffi {
@@ -122,6 +125,7 @@ mod ffi {
         pub frames: u64,
         pub max_output_bytes: u64,
         pub timeout_ms: u64,
+        pub output_offset: u64,
     }
 
     #[repr(C)]
@@ -130,6 +134,44 @@ mod ffi {
         pub output_bytes: u64,
         pub packets: u64,
         pub keyframes: u64,
+        pub width: u32,
+        pub height: u32,
+        pub extradata_sha256: [u8; 32],
+    }
+
+    #[repr(C)]
+    pub struct ProxySegment {
+        pub offset: u64,
+        pub length: u64,
+        pub frames: u64,
+        pub start_pts: i64,
+        pub end_pts: i64,
+    }
+
+    #[repr(C)]
+    pub struct ProxyAssembleRequest {
+        pub input_byte_length: u64,
+        pub width: u32,
+        pub height: u32,
+        pub time_base_num: u32,
+        pub time_base_den: u32,
+        pub sar_num: u32,
+        pub sar_den: u32,
+        pub rotation_quarter_turns: u32,
+        pub transfer: u32,
+        pub primaries: u32,
+        pub frames: u64,
+        pub segments: *const ProxySegment,
+        pub segment_count: u64,
+        pub max_output_bytes: u64,
+        pub timeout_ms: u64,
+    }
+
+    #[repr(C)]
+    #[derive(Default)]
+    pub struct ProxyAssembleReport {
+        pub output_bytes: u64,
+        pub packets: u64,
         pub width: u32,
         pub height: u32,
     }
@@ -151,6 +193,13 @@ mod ffi {
         fn deadpan_proxy_finish(
             output_fd: c_int,
             report: *mut ProxyReport,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_proxy_assemble(
+            input_fd: c_int,
+            output_fd: c_int,
+            request: *const ProxyAssembleRequest,
+            report: *mut ProxyAssembleReport,
             error: *mut Error,
         ) -> c_int;
         fn deadpan_remux(
@@ -206,6 +255,26 @@ mod ffi {
         // SAFETY: both pointers reference initialized repr(C) values that remain
         // exclusively borrowed for this synchronous call.
         unsafe { deadpan_proxy_finish(output_fd, report, error) }
+    }
+
+    #[allow(unsafe_code)]
+    pub fn proxy_assemble(
+        input_fd: c_int,
+        output_fd: c_int,
+        segments: &[ProxySegment],
+        request: &ProxyAssembleRequest,
+        report: &mut ProxyAssembleReport,
+        error: &mut Error,
+    ) -> c_int {
+        if request.segments != segments.as_ptr() || request.segment_count != segments.len() as u64 {
+            return 1;
+        }
+        // SAFETY: the request's segment pointer and count were just checked
+        // to describe `segments`, an initialized slice borrowed for this
+        // synchronous call; every other pointer references an initialized
+        // repr(C) value exclusively borrowed for the call. The adapter
+        // retains no pointer or descriptor.
+        unsafe { deadpan_proxy_assemble(input_fd, output_fd, request, report, error) }
     }
 
     #[allow(unsafe_code)]
@@ -413,6 +482,26 @@ fn parse_proxy(
     Ok(request)
 }
 
+fn parse_proxy_assembly(
+    argument: Option<OsString>,
+    extra: Option<OsString>,
+) -> Result<ProxyAssembleRequest, String> {
+    if extra.is_some() {
+        return Err("proxy assembly requires exactly one JSON argument".into());
+    }
+    let encoded = argument
+        .ok_or("proxy assembly requires exactly one JSON argument")?
+        .into_string()
+        .map_err(|_| "proxy assembly request is not UTF-8")?;
+    if encoded.len() > MAX_PROXY_ASSEMBLE_REQUEST_BYTES {
+        return Err("proxy assembly request exceeds the wire limit".into());
+    }
+    let request: ProxyAssembleRequest = serde_json::from_str(&encoded)
+        .map_err(|error| format!("invalid proxy assembly JSON: {error}"))?;
+    request.validate().map_err(|error| error.to_string())?;
+    Ok(request)
+}
+
 mod proxy;
 
 fn remux(request: &RemuxRequest) -> RemuxReply {
@@ -509,6 +598,21 @@ fn main() -> ExitCode {
             },
         };
         let success = matches!(reply, ProxyReply::Success { .. });
+        return if emit_json(serde_json::to_vec(&reply)).is_ok() && success {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        };
+    }
+    if mode.as_deref() == Some(std::ffi::OsStr::new(PROXY_ASSEMBLE_ARGUMENT)) {
+        let reply = match parse_proxy_assembly(arguments.next(), arguments.next()) {
+            Ok(request) => proxy::assemble(&request),
+            Err(message) => ProxyAssembleReply::Failure {
+                code: "invalid_request".into(),
+                message,
+            },
+        };
+        let success = matches!(reply, ProxyAssembleReply::Success { .. });
         return if emit_json(serde_json::to_vec(&reply)).is_ok() && success {
             ExitCode::SUCCESS
         } else {

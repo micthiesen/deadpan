@@ -13,14 +13,17 @@
 //! while a render runs, on battery, in Low Power Mode or under thermal
 //! pressure. Free space and the cache budget are checked first, and a
 //! failed build is remembered for that Original and recipe until
-//! `:proxies retry`. The Original card says what the job is doing and why.
+//! `:proxies retry`. A cancelled or interrupted build keeps its completed
+//! ranges, so `:proxies retry` or the next opening encodes only the rest.
+//! The Original card says what the job is doing and why.
 
 use std::path::PathBuf;
 use std::sync::mpsc;
 
 use deadpan_cli::proxy::cache::{ProxyCache, ProxyCleanupPolicy};
 use deadpan_cli::proxy::{
-    BuildControl, ProxyStatus, build_proxy, media_worker, power_guard, proxy_key, proxy_status,
+    BuildControl, ProxyProgress, ProxyStatus, build_proxy, media_worker, power_guard, proxy_key,
+    proxy_status,
 };
 use deadpan_store::original_media::OriginalMediaLimits;
 
@@ -294,7 +297,10 @@ impl DeadpanApp {
                     self.proxies.state = if state == ProxyState::Unchecked
                         && self.proxies.cancel.load(Ordering::Acquire)
                     {
-                        ProxyState::Failed("cancelled; :proxies retry builds it again".into())
+                        ProxyState::Failed(
+                            "cancelled; :proxies retry continues it from its completed ranges"
+                                .into(),
+                        )
                     } else {
                         state
                     };
@@ -412,6 +418,9 @@ fn build(
     // Milliseconds paused so far; the build's overall deadline moves by it.
     let paused = std::sync::atomic::AtomicU64::new(0);
     let done = AtomicBool::new(false);
+    // Completed ranges, including those an earlier cancelled or interrupted
+    // build left; shown in the Jobs panel.
+    let progress = ProxyProgress::default();
     std::thread::scope(|scope| {
         scope.spawn(|| {
             let mut power: Option<(std::time::Instant, Option<String>)> = None;
@@ -439,6 +448,20 @@ fn build(
                     })
                     .or_else(|| power.as_ref().and_then(|(_, reason)| reason.clone()));
                 pause.store(reason.is_some(), Ordering::Release);
+                let counts = progress.snapshot();
+                if counts.pictures > 0 {
+                    handle.set_progress(
+                        if counts.reused_ranges > 0 {
+                            format!(
+                                "Encoding ranges ({} of {} kept from before)",
+                                counts.reused_ranges, counts.ranges
+                            )
+                        } else {
+                            "Encoding ranges".to_owned()
+                        },
+                        Some(counts.completed_pictures as f32 / counts.pictures as f32),
+                    );
+                }
                 if reported.as_ref() != Some(&reason) {
                     send(Event::State(match &reason {
                         Some(reason) => ProxyState::Paused(reason.clone()),
@@ -470,6 +493,7 @@ fn build(
             BuildControl {
                 pause: Some(&pause),
                 paused: Some(&paused),
+                progress: Some(&progress),
                 ..BuildControl::new(cancel)
             },
         );

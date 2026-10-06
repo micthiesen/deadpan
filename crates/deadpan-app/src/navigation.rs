@@ -365,6 +365,23 @@ pub enum AiAction {
     Audition,
     Accept,
     Discard,
+    /// Compare at the same picture frame and heard sample: switch the
+    /// viewer and audition between the pause's committed picture (Before)
+    /// and a Ready variant, previewing the chosen variant first when needed.
+    Compare(CompareChoice),
+    /// Keep the chosen variant from automatic expiry, or release it.
+    Keep,
+}
+
+/// What an AI comparison shows next.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CompareChoice {
+    /// Before when a variant shows, otherwise the chosen variant.
+    Toggle,
+    /// The pause's committed picture (its freeze or accepted pictures).
+    Before,
+    /// 1-based, as the inspector numbers them.
+    Variant(u8),
 }
 
 /// Which Ready AI variant to choose.
@@ -657,16 +674,20 @@ impl Bindings {
             motion: self.motion_count,
         }
     }
-    /// The pending path can still complete `ai.generate`.
+    /// The pending path can still complete an AI pause binding.
     pub fn ai_pending(&self) -> bool {
         self.count.is_none()
             && !self.count_overflow
-            && self.map.has_descendant(
-                &self.path,
-                self.active_selection(),
+            && [
                 BindingId::GenerateAi,
-                self.domain,
-            )
+                BindingId::CompareAi,
+                BindingId::NextAi,
+            ]
+            .into_iter()
+            .any(|id| {
+                self.map
+                    .has_descendant(&self.path, self.active_selection(), id, self.domain)
+            })
     }
     pub fn trim_pending(&self) -> bool {
         self.count.is_none()
@@ -1620,7 +1641,7 @@ mod tests {
         ));
         bindings.key(Key::Comma, Modifiers::NONE, false, false);
         assert!(matches!(
-            bindings.key(Key::X, Modifiers::NONE, false, false),
+            bindings.key(Key::Q, Modifiers::NONE, false, false),
             Some(Action::Invalid(_))
         ));
         assert!(bindings.pending().is_empty());

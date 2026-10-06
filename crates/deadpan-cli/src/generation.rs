@@ -15,6 +15,8 @@ pub mod attempt;
 pub(crate) mod command;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod conditioning;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod joins;
 pub mod runtime;
 
 use deadpan_core::FrameRate;

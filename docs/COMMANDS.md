@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-191 actions, 116 command verbs.
+194 actions, 118 command verbs.
 
 ## Start & View
 
@@ -162,10 +162,12 @@ Headless status links to [PARITY](PARITY.md).
 | --- | --- | --- | --- | --- | --- |
 | **Generate AI pictures** (`ai.generate`)<br>Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. :generate 3 makes several variants (1 to 4), each from a different seed; when the neighbouring pictures are unchanged, new variants join the ones already offered. The inspector and footer show the stage and time; Escape never cancels it. | `,a` (`ai.generate`) | `:generate [N]`, `:generate-ai [N]` | Your edit | edits; not recorded | [Equivalent](PARITY.md#ai-pauses): `generate-hold <p> --hold <id> [--variants N]` |
 | **Cancel AI generation** (`ai.cancel`)<br>Stop the selected pause's running AI generation. | - | `:cancel-ai` | Your edit | not recorded | [Equivalent](PARITY.md#ai-pauses): `SIGINT / live CancelGeneration` |
-| **Choose an AI variant** (`ai.choose`)<br>Choose which Ready AI variant of the selected pause Preview, Audition and Accept use; the inspector numbers them with a picture from each. Choosing while previewing shows the newly chosen variant. | - | `:next-ai`, `:prev-ai`, `:previous-ai`, `:pick-ai N` | Your edit | not recorded | [Partial](PARITY.md#ai-pauses): `accept-hold --attempt <id> selects as part of acceptance` |
+| **Choose an AI variant** (`ai.choose`)<br>Choose which Ready AI variant of the selected pause Preview, Audition and Accept use; the inspector numbers them with a picture from each. Choosing while previewing or comparing shows the newly chosen variant at the same frame, and an audition continues from the same heard sample. | - | `:next-ai`, `:prev-ai`, `:previous-ai`, `:pick-ai N` | Your edit | not recorded | [Partial](PARITY.md#ai-pauses): `accept-hold --attempt <id> selects as part of acceptance` |
+| **Compare AI pictures** (`ai.compare`)<br>Compare at the same frame and heard sample: ,x switches the viewer and audition between the pause as it is now (Before: its freeze or accepted pictures) and the chosen AI variant, previewing it first when needed; ,n shows the next variant. :compare-ai before / :compare-ai N choose directly. Playing or paused, the switch keeps the exact heard position. Nothing is saved; Esc returns to your edit. | `,x` (`ai.compare`), `,n` (`ai.next`) | `:compare-ai [before\|N]` | Your edit | not recorded | [GUI-only](PARITY.md#ai-pauses): `none needed` |
 | **Preview / audition AI pictures** (`ai.preview`)<br>Ready pictures never change your edit. Preview shows the chosen variant in the viewer at the edit cursor (Esc returns); while previewing, playback plays the pause's own sound with those pictures, and :audition-ai loops the pause with its lead-in and follow-through. | - | `:preview-ai`, `:audition-ai` | Your edit | not recorded | [GUI-only](PARITY.md#ai-pauses): `none needed` |
 | **Accept AI pictures** (`ai.accept`)<br>Make the chosen pictures the pause's picture as one undoable edit. | - | `:accept-ai` | Your edit | edits; not recorded | [Equivalent](PARITY.md#ai-pauses): `accept-hold <p> --request <id> [--attempt <id>]` |
-| **Discard an AI variant** (`ai.discard`)<br>Remove the chosen variant from the list for good, also after reopening (its files stay until a cleanup); the pause is unchanged. | - | `:discard-ai` | Your edit | not recorded | [Gap](PARITY.md#ai-pauses): `none` |
+| **Discard an AI variant** (`ai.discard`)<br>Remove the chosen variant from the list for good, also after reopening; its files are removed by the next storage cleanup after the grace period. The pause is unchanged. | - | `:discard-ai` | Your edit | not recorded | [Gap](PARITY.md#ai-pauses): `none` |
+| **Keep an AI variant** (`ai.keep`)<br>Keep the chosen Ready variant offered and its files in the project for good, or release it again. Variants that are not kept, chosen or accepted expire after the retention period shown in the inspector and Storage, and a later cleanup removes their files. Accepted pictures and everything Undo can restore are never removed. | - | `:keep-ai` | Your edit | not recorded | [Gap](PARITY.md#ai-pauses): `none` |
 
 ## Gags, Captions & Cutaways
 
@@ -322,6 +324,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Back up now** (`storage.backup`)<br>Make a verified backup of the project's saved state now. Deadpan also backs up every 15 minutes while you edit, when you close a project, and before a restore. | `b` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `project backup <p>` |
 | **Choose a backup** (`storage.backup-select`)<br>Choose a backup; the panel shows its revision, beats, length and edits. | `j / k · Up / Down` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `project backups <p>` |
 | **Restore a backup** (`storage.restore`)<br>Press twice to replace the project with the chosen backup, history included. What you have now is backed up first, so restoring that backup goes back. | `o` (fixed) | - | Storage | not recorded | [Partial](PARITY.md#project-and-files): `project restore <p> <backup> (closed project)` |
+| **Confirm the clock for AI variant expiry** (`storage.confirm-clock`)<br>After a long gap since the last retention check, press once to see which AI variants would stop being offered, twice to confirm the clock so automatic checks resume. Their files go after the normal grace period. | `e` (fixed) | - | Storage | not recorded | [Partial](PARITY.md#project-and-files): `project storage <p> --clean (closed project)` |
 | **Close storage** (`storage.close`)<br>Close the panel. Tab and Space/Enter stay native. Nothing here edits the project or its history, except restoring a backup. | `Esc` (native) | - | Storage | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 
 ## Models Panel

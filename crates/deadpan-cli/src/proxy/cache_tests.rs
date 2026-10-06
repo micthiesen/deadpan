@@ -250,6 +250,7 @@ fn cleanup_keeps_retained_and_in_use_entries_and_enforces_grace_and_budget() {
     let immediate = ProxyCleanupPolicy {
         staging_grace: Duration::ZERO,
         unused_grace: Duration::ZERO,
+        partial_grace: Duration::ZERO,
         budget_bytes: DEFAULT_PROXY_BUDGET_BYTES,
     };
     let report = cache
@@ -432,4 +433,148 @@ fn process_kills_during_publication_leave_whole_entries_or_none() {
             .unwrap();
     }
     assert!(seen > 0, "no round published anything");
+}
+
+/// Write `ranges` and a journal into `key`'s partial state and release it.
+fn partial_with(cache: &ProxyCache, key: &ProxyKey, ranges: &[u8], journal: &[u8]) {
+    use std::io::Write;
+    let partial = cache.partial(key, &not_cancelled()).unwrap();
+    partial.data().write_all(ranges).unwrap();
+    partial.write_journal(journal).unwrap();
+}
+
+#[test]
+fn partial_state_is_private_locked_and_never_an_entry() {
+    use std::io::Write;
+    let scratch = tempfile::tempdir().unwrap();
+    let cache = cache(scratch.path());
+    let current = key('a');
+    let partial = cache.partial(&current, &not_cancelled()).unwrap();
+    partial.data().write_all(b"range bytes").unwrap();
+    assert_eq!(partial.journal(), None);
+    partial.write_journal(b"{\"first\":1}").unwrap();
+    partial.write_journal(b"{\"second\":2}").unwrap();
+    assert_eq!(partial.journal().as_deref(), Some(&b"{\"second\":2}"[..]));
+    let directory = scratch
+        .path()
+        .join("Proxies/.partial")
+        .join(current.directory());
+    let mode = |path: &Path| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode(&directory), 0o700);
+    assert_eq!(mode(&directory.join("segments.bin")), 0o600);
+    assert_eq!(mode(&directory.join("ranges.json")), 0o600);
+    assert!(!directory.join("ranges.json.tmp").exists());
+    // Never readable as a proxy, but counted in the cache's usage.
+    assert!(cache.lookup(&current).unwrap().is_none());
+    assert!(cache.usage().unwrap() >= 11);
+    assert_eq!(
+        cache.partial_bytes(&current),
+        Some(11 + b"{\"second\":2}".len() as u64)
+    );
+    // A second build of the same key waits; cancellation ends the wait.
+    let cancelled = AtomicBool::new(true);
+    assert!(matches!(
+        cache.partial(&current, &cancelled),
+        Err(ProxyCacheError::Proxy(
+            deadpan_media::proxy::ProxyError::Cancelled
+        ))
+    ));
+    // Neither removal nor cleanup touches a held partial.
+    assert!(!cache.remove_partial(&current).unwrap());
+    let report = cache
+        .cleanup(
+            &[],
+            ProxyCleanupPolicy {
+                partial_grace: Duration::ZERO,
+                budget_bytes: 0,
+                ..ProxyCleanupPolicy::default()
+            },
+        )
+        .unwrap();
+    assert!(report.removed_partials.is_empty());
+    // A duplicate of the ranges descriptor, as a worker holds it, keeps the
+    // lock after the build's own handle is gone.
+    let worker = partial.data().try_clone().unwrap();
+    drop(partial);
+    assert!(matches!(
+        cache.partial(&current, &cancelled),
+        Err(ProxyCacheError::Proxy(_))
+    ));
+    drop(worker);
+    let partial = cache.partial(&current, &not_cancelled()).unwrap();
+    assert_eq!(partial.data().metadata().unwrap().len(), 11);
+    partial.truncate(5).unwrap();
+    assert_eq!(partial.data().metadata().unwrap().len(), 5);
+    partial.remove().unwrap();
+    assert!(!directory.exists());
+    assert_eq!(cache.partial_bytes(&current), None);
+}
+
+#[test]
+fn cleanup_handles_partial_state_by_recipe_publication_age_and_budget() {
+    let scratch = tempfile::tempdir().unwrap();
+    let cache = cache(scratch.path());
+    let partials = scratch.path().join("Proxies/.partial");
+    let (current, published, old, other) = (key('1'), key('2'), key('3'), key('4'));
+    for each in [&current, &published, &old, &other] {
+        partial_with(&cache, each, &[7; 100], b"{}");
+    }
+    publish(&cache, &published, &[2; 100]);
+    // Another recipe's partial state.
+    let stale_recipe = format!("v{}-{}-s0", PROXY_RECIPE_VERSION + 1, "5".repeat(64));
+    std::fs::create_dir(partials.join(&stale_recipe)).unwrap();
+    // Within the grace: only the other recipe's and the published key's go.
+    let report = cache
+        .cleanup(
+            std::slice::from_ref(&current),
+            ProxyCleanupPolicy::default(),
+        )
+        .unwrap();
+    let mut removed = report.removed_partials.clone();
+    removed.sort();
+    let mut expected = vec![published.directory(), stale_recipe];
+    expected.sort();
+    assert_eq!(removed, expected);
+    assert_eq!(report.removed_partial_bytes, 102);
+    assert!(cache.lookup(&published).unwrap().is_some(), "entries stay");
+    // Over budget, the least recently used unretained partial goes first;
+    // the retained one stays.
+    let report = cache
+        .cleanup(
+            std::slice::from_ref(&current),
+            ProxyCleanupPolicy {
+                budget_bytes: 1,
+                ..ProxyCleanupPolicy::default()
+            },
+        )
+        .unwrap();
+    assert!(report.removed_partials.contains(&old.directory()));
+    assert!(report.removed_partials.contains(&other.directory()));
+    assert!(cache.partial_bytes(&current).is_some());
+    // Past the grace, an unretained partial goes; the retained one stays
+    // until its own build publishes or fails.
+    partial_with(&cache, &old, &[7; 10], b"{}");
+    let immediate = ProxyCleanupPolicy {
+        partial_grace: Duration::ZERO,
+        ..ProxyCleanupPolicy::default()
+    };
+    let report = cache
+        .cleanup(std::slice::from_ref(&current), immediate)
+        .unwrap();
+    assert_eq!(report.removed_partials, vec![old.directory()]);
+    assert!(cache.partial_bytes(&current).is_some());
+    let report = cache.cleanup(&[], immediate).unwrap();
+    assert_eq!(report.removed_partials, vec![current.directory()]);
+    // A symbolic link in place of a partial is removed, never followed.
+    let outside = scratch.path().join("outside");
+    std::fs::create_dir(&outside).unwrap();
+    std::fs::write(outside.join("keep"), b"x").unwrap();
+    std::os::unix::fs::symlink(&outside, partials.join(key('6').directory())).unwrap();
+    assert!(matches!(
+        cache.partial(&key('6'), &not_cancelled()),
+        Err(ProxyCacheError::Unsafe(_))
+    ));
+    cache.cleanup(&[], immediate).unwrap();
+    assert!(outside.join("keep").exists());
+    assert!(!partials.join(key('6').directory()).exists());
 }

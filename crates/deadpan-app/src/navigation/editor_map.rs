@@ -105,6 +105,8 @@ pub enum BindingId {
     RepeatRange,
     EscalatingRepeat,
     GenerateAi,
+    CompareAi,
+    NextAi,
     Hold,
     Insert,
     PlaceSound,
@@ -134,7 +136,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 79] = [
+    pub const ALL: [Self; 81] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -188,6 +190,8 @@ impl BindingId {
         Self::RepeatRange,
         Self::EscalatingRepeat,
         Self::GenerateAi,
+        Self::CompareAi,
+        Self::NextAi,
         Self::Hold,
         Self::Insert,
         Self::PlaceSound,
@@ -270,6 +274,8 @@ impl BindingId {
             Self::RepeatRange => "repeat.range",
             Self::EscalatingRepeat => "repeat.escalating",
             Self::GenerateAi => "ai.generate",
+            Self::CompareAi => "ai.compare",
+            Self::NextAi => "ai.next",
             Self::Hold => "hold",
             Self::Insert => "insert",
             Self::PlaceSound => "sound.place",
@@ -687,6 +693,8 @@ impl Rule {
             Action::Edit(BeatEdit::InsertHold(_)) => I::Hold,
             Action::EscalatingRepeat => I::EscalatingRepeat,
             Action::Ai(AiAction::Generate { variants: 1 }) => I::GenerateAi,
+            Action::Ai(AiAction::Compare(CompareChoice::Toggle)) => I::CompareAi,
+            Action::Ai(AiAction::Choose(VariantChoice::Next)) => I::NextAi,
             Action::Insert => I::Insert,
             Action::Sound(SoundAction::Place) => I::PlaceSound,
             Action::GainStep(step) if step > 0 => I::GainUp,
@@ -1337,7 +1345,10 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     if id == BindingId::EscalatingRepeat {
         return domain == RoutingDomain::Edit;
     }
-    if id == BindingId::GenerateAi {
+    if matches!(
+        id,
+        BindingId::GenerateAi | BindingId::CompareAi | BindingId::NextAi
+    ) {
         return domain == RoutingDomain::Edit && !visual;
     }
     if matches!(
@@ -2124,6 +2135,18 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             Action::Ai(AiAction::Generate { variants: 1 }),
             C::Refuse("Generate AI pictures once, without a count."),
             "AI pictures",
+        ),
+        (
+            Key::X,
+            Action::Ai(AiAction::Compare(CompareChoice::Toggle)),
+            C::Refuse("Compare AI pictures without a count."),
+            "AI before / after",
+        ),
+        (
+            Key::N,
+            Action::Ai(AiAction::Choose(VariantChoice::Next)),
+            C::Refuse("Choose the next AI variant without a count."),
+            "next AI variant",
         ),
         (
             Key::F,

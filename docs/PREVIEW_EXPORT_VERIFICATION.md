@@ -110,8 +110,8 @@ with references `n-1` and `n+1`. Defaults (`Thresholds::default()`):
 
 | Check | Default | Rationale |
 | --- | --- | --- |
-| Luma PSNR (SDR, peak 255) | >= 32 dB | Measured 53.1–62.2 dB minimum per fixture; a different picture of the moving fixture measures 15–27 dB. |
-| Chroma PSNR (SDR, Cb and Cr) | >= 32 dB | Measured 53.5–60.1 dB. |
+| Luma PSNR (SDR, peak 255) | >= 32 dB | Measured 53.1–62.2 dB minimum per small fixture, 38.3 dB (1080p) and 44.4 dB (2160p) on the large test patterns; a different picture of the moving fixture measures 15–27 dB. |
+| Chroma PSNR (SDR, Cb and Cr) | >= 32 dB | Measured 53.5–60.1 dB; 40.1 dB (1080p) and 44.6 dB (2160p). |
 | Luma PSNR (HDR, ten-bit PQ/HLG codes, peak 1023) | >= 30 dB | Gross mismatch only. Correct encodes measured 59.9 dB (PQ) and 60.4 dB (HLG) on the clean recipes and 44.5 dB (PQ) and 43.6 dB (HLG) on the grain recipes; the 1.35x reframe negatives measured 11.7–18.7 dB. About 13.6 dB below the lowest correct encode and 11.3 dB above the highest gross negative. Small wrong regions are the local gate's job: a missing caption measured 34.3–39.2 dB and cannot be separated from grainy correct encodes by whole-picture PSNR. |
 | Chroma PSNR (HDR) | >= 40 dB | Measured 66.6 dB (PQ) and 67.9 dB (HLG) clean, 52.4 dB and 51.2 dB on grain (11.2 dB margin). |
 | HDR local structure: largest 4x4-cell luma mean difference | <= 40 ten-bit codes (`local_structure_mismatch`) | Averaging 4x4 cells removes most grain and coding noise but not a missing graphic. Correct encodes measured at most 3.9 (PQ) and 4.3 (HLG) codes clean and 8.4 and 12.6 codes on grain (3.2x below the gate); the missing caption measured 157.6–325.0 codes (3.9x above) and the reframe 422.9–868.3. A missing element that covers one full cell with more than 40 codes of contrast fails whatever the picture size; a two-pixel stroke split across cells needs about 160. SDR pictures report `local_luma_error` (eight-bit codes) without a gate. |
@@ -238,24 +238,64 @@ them with public `render` and verify them with `verify-export`:
   HDR table. `deadpan_cli::export_verification::reference_pictures` renders
   single references for such checks.
 - `every_recipe_export_matches_its_committed_preview` exports every recipe
-  fixture (31).
+  fixture (44: 38 on `cfr-bframes.mp4`, four accepted Generated Holds and two
+  larger generated Originals, below).
   Debug renders cost about four seconds per output second, so it is ignored in
   debug builds. The release-mode gate is
-  `cargo test --release --locked -p deadpan-cli --test preview_export` (about
-  67 s for 31 fixtures on an M5 Max). `DEADPAN_PREVIEW_EXPORT_RESULTS=<new.json>` records the table, and
+  `cargo test --release --locked -p deadpan-cli --features synthetic-worker --test preview_export`
+  (about 213 s on an M5 Max, of which the two large fixtures take about 82 s
+  of render and verification). It needs a development `ffmpeg` with
+  `libx264` (`DEADPAN_BRIDGE_FFMPEG`, else `/opt/homebrew/bin/ffmpeg`) and a
+  `deadpan-media-worker` beside the tested `deadpan-cli`
+  (`cargo build --release --locked -p deadpan-media-worker`, or
+  `DEADPAN_MEDIA_WORKER`). A fixture whose tool or feature is missing is
+  reported `SKIPPED` on stderr and as a `skipped` row in the results file,
+  never silently dropped; record results only from a run with none skipped.
+  `DEADPAN_PREVIEW_EXPORT_RESULTS=<new.json>` records the table, and
   `DEADPAN_PREVIEW_EXPORT_KEEP=1` keeps packages and movies.
+- [Generated Hold fixtures](../crates/deadpan-cli/tests/preview_export/generated.rs)
+  (`--features synthetic-worker`) fill `black_pause`'s 12-frame Hold with the
+  synthetic worker and accept it: real conditioning from the committed
+  boundary pictures, the durable attempt lifecycle, `deadpan-media-worker`
+  bundle qualification, generated-object publication and
+  `accept_generation_bundle`; only the model is replaced. The result is an
+  ordinary schema-3 Generated Hold with all six retained objects, and the
+  export reads its sampled master through the shared cold reader.
+  `generated-pause` (the accepted Hold in place), `generated-repeat` (wrapped
+  as two plays with a 4-frame Background gap), `generated-reframe` (static
+  1.35x live Hold framing) and `generated-prefix` (shortened to 7 frames,
+  reusing the accepted sampled prefix) expect Hold-local frame `k` to show
+  sampled frame `k` (`provenance.kind = generated`, `source_frame = k`) in
+  every play. The `generated-pause` movie is also verified against the
+  pre-acceptance Background revision and must fail on exactly the 12 Hold
+  frames.
+- Larger media: `large-1080p` and `large-2160p` generate their Original in
+  the test (deterministic `testsrc2` with 48 kHz stereo AAC aperiodic chirps,
+  long-GOP H.264 High with GOP 150, three B frames with pyramid references,
+  BT.709 limited range, left chroma; generator in
+  [recipes](../crates/deadpan-cli/tests/preview_export/recipes.rs)), so
+  nothing large is committed. `large-1080p` is 1920x1080, 180 Original
+  frames, cut to 150 with a 15-frame freeze pause, a two-play Repeat and a
+  1.35x zoom (195 output frames); `large-2160p` is 3840x2160, 60 frames with
+  an 8-frame freeze pause and a 1.35x zoom (68 output frames).
   `DEADPAN_PREVIEW_EXPORT_ONLY=saturation,j-cut` builds only the named
   fixtures for a focused rerun, prints how many it skipped, refuses unknown
   names and refuses to run when `CI` is set; record results from a full run.
 
 Measured results are in the
-[qualification record](qualification/preview-export-2026-10-04.md) and, for HDR,
+[qualification record](qualification/preview-export-2026-10-04.md), the
+[Generated Hold and large-media record](qualification/preview-export-2026-10-06.md) and, for HDR,
 the [HDR record](qualification/hdr-preview-export-2026-10-05.md). The harness
 does not cover HDR display or EDR presentation (the comparison is in encoded
 code values), native key paths (fixtures use the headless command API that
-the keys resolve to), accepted Generated Holds (no headless fixture exists
-without the model runtime), or physical playback/listening; device audio
-and display remain separate qualification. Captions are drawn by the shared
+the keys resolve to), real model output (Generated Hold fixtures use the
+synthetic worker's blended footage; the model is replaced, the acceptance and
+picture paths are not), Generated Holds in HDR projects (accepted footage
+forces the SDR branch, which no fixture exercises), or physical
+playback/listening; device audio and display remain separate qualification.
+The large fixtures are synthetic test patterns of at most six seconds: they
+exercise 1080p and 2160p geometry, long-GOP B-frame decode and encode, but not
+camera footage, long programs or decode/encode throughput limits. Captions are drawn by the shared
 picture session on both sides; the `delayed-caption` fixture additionally
 verifies its movie against a later caption-free revision and requires exactly
 the captioned frame to be flagged.

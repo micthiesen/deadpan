@@ -14,7 +14,7 @@ Sections 19.2 and 20.1 set the storage classes. The code is
 |---|---|---|---|
 | Originals | `Media/Originals/blake3-…` | No while any row names it | Never automatic; orphaned copies (no inventory record or other row) after the grace period |
 | Accepted AI media | `Media/Generated/blake3-…` | No while any retained revision names it | Never |
-| Offered AI variants | `Media/Generated/blake3-…` | No while their request is current and the variant is present | Explicit cleanup once discarded or stale |
+| Offered AI variants | `Media/Generated/blake3-…` | No while their request is current and the variant is offered; a variant that is not kept, picked, chosen or accepted stops being offered 7 days after it became Ready ([retention](#retention-of-unaccepted-ai-variants)) | The app's automatic check or explicit cleanup, once discarded, expired or stale |
 | Render candidates | `Media/RenderCandidates/blake3-…` | Yes after the job's movie is confirmed published, or its latest attempt ended Failed or Cancelled | Explicit cleanup |
 | Unfinished writes | `.pending-*` in any namespace | Yes after the grace period | Explicit cleanup |
 | Damaged copies | `.damaged-*` (set aside by restore) | Kept for diagnosis | Never |
@@ -42,7 +42,8 @@ maximal runs of exactly 64 lowercase hexadecimal digits:
   current request (it can still be chosen and accepted), or naming its own
   sampled, native or provenance object that another row already names (an
   accepted variant keeps all six objects, which picture admission verifies).
-  A discarded (`evicted`) or stale variant's receipt pins nothing.
+  A discarded or expired (`evicted`) or stale variant's receipt pins
+  nothing.
 - For render candidates, a checkpoint, attempt or publication of a job that
   can still need its candidate. A job releases it when its movie and report
   were published and confirmed, or when its latest attempt ended `failed` or
@@ -124,6 +125,137 @@ then holds the writer exclusively, it accepts `--grace-hours 0`; per-user
 `cache clean` requires at least one hour, since other Deadpan processes write
 those caches without a lock it can observe.
 
+## Retention of unaccepted AI variants
+
+Specification Section 19.2 makes unaccepted candidates evictable under a
+visible retention policy. The code is
+[`deadpan_store::generation_retention`](../crates/deadpan-store/src/generation_retention.rs).
+
+Every Ready bridge variant has an operational retention record (database
+schema 68, `generation_variant_retention`), written in the transaction that
+records its receipt: when it became Ready, whether the person *kept* or
+*picked* it, whether an acceptance of it committed or an expiry found it
+named elsewhere, and, once its receipt is evicted, why (`discarded` or
+`expired`) and when. `generation_retention_state` holds the watermark: when
+the last expiry pass that trusted the clock ran. These records are not
+authored history: Undo and Redo never change them, and they survive reopen,
+backups, restores and portable copies with the database. A clock before
+1970 records time zero instead of failing a Ready receipt.
+
+An *offered* variant (a present Ready bundle of a current request)
+**expires** `DEFAULT_VARIANT_RETENTION` (7 days) after it became Ready unless
+it is:
+
+- **kept**: `keep_generation_bundle_variant(identity, true)`, the app's
+  Keep (`GenerationOperation::Keep`) or `keep-hold`. Un-keeping makes it
+  expirable again, counted from when it became Ready, not from the un-keep;
+- **picked**: the person explicitly chose it (`select_generation_bundle_variant`,
+  which the app's Select and Preview and `accept-hold --attempt` use). The
+  pick stays when a later Ready variant takes the selection, and moves only
+  when the person picks another variant of the request, or ends with a
+  discard. A variant that only the automatic selection protected loses that
+  protection when a newer variant becomes the selection; the app then says
+  so (`Job::unprotected`);
+- its request's **selection**, which is what Preview and Accept use, so
+  every request keeps at least the variant it would accept;
+- **accepted**: flagged when an acceptance commits (Undo keeps the flag;
+  the upgrade from schema 67 sets it from the rows that name each variant);
+- **named elsewhere**: when a due variant's objects are named by any
+  retained row other than its own receipt (history, a register, a
+  checkpointed edit), expiry records that instead of expiring it, so later
+  passes skip it without scanning.
+
+Expiry has two steps. `plan_generation_expiry(now, retention, mode)` runs on
+any store, read-only included, in one read snapshot: it finds due,
+unprotected variants and, only when some exist, scans the non-receipt rows
+for their objects. `apply_generation_expiry(&plan, dry_run)` runs on the
+writer in one short transaction: it rechecks each planned row (still
+offered, unprotected, unselected, same Ready time, due) and evicts it
+exactly as Discard does, with reason `expired`, or records it as named
+elsewhere; the whole-database scan never runs inside the write transaction.
+`expire_generation_variants(now, retention, mode, dry_run)` does both on a
+writer, for `project storage --clean`. A dry run reports the same list,
+with each variant's object bytes (`expired_bytes`), and writes nothing.
+
+An expired variant is no longer offered, cannot be selected, kept or
+accepted, and its receipt no longer pins its six objects. Nothing is deleted
+then: the masters stay until a cleanup finds them unreferenced and older than
+the grace period, under every rule of [Cleanup](#cleanup). An accepted
+variant's objects stay referenced by history and are never removed. Media
+named by a published backup or recovery checkpoint stays pinned until that
+copy is rotated away, so an upgrade's `before-migration` backup keeps the
+variants it names for as long as it is kept.
+
+### The clock
+
+The policy runs on the wall clock, so an `Automatic` plan first checks it.
+It expires nothing when the clock is before 1970, more than an hour
+(`CLOCK_BEHIND_TOLERANCE`) before the newest recorded Ready, eviction or
+pass time (`Behind`), or more than one retention period after all of them
+(`Ahead`: a clock set forward, or a project not checked for a week). It
+also caps itself at `MAX_AUTOMATIC_EXPIRY` (32) variants, oldest first;
+the rest wait for the next pass (`deferred_by_cap`). An `Explicit` expiry
+(`project storage --clean`) skips these checks and confirms the clock: it
+records the watermark, so automatic passes resume. Every applied pass that
+trusted the clock, including one that expired nothing, advances the
+watermark.
+
+In the app, a long gap (`Ahead`) can be confirmed from the Storage panel,
+whose Clock row says which kind of anomaly the report finds. E (or the
+Confirm clock button, shown only for a long gap) plans an `Explicit` expiry
+on a read-only open, off the writer, and shows how many AI variants would
+stop being offered and their bytes (`ExpiryPlan::preview`); nothing is
+written. A second E sends exactly that plan
+(`ProjectRequest::ConfirmVariantClock`). The service refuses it for another
+session or revision, while any import, relink, render, AI pause, tracking
+job or backup runs, or when the clock is behind the project's records; it
+then applies the plan with every row rechecked and records the watermark,
+as `project storage --clean`'s explicit expiry does. Files are left to
+cleanup and its grace period. A clock behind the project's records
+(`Behind`, including before 1970) is shown and never offered for
+confirmation: correct the date and time, and expiry resumes on its own.
+
+The storage report's `variant_retention` section states the policy and its
+state: `retention_seconds`, `offered`, `kept`, `picked`, `selected`,
+`accepted` (accepted or named elsewhere), `expiring` (offered and none of
+those), `due` and `due_bytes` (past their expiry, waiting for a pass, with
+their object bytes), `soonest_expiry_unix_seconds`,
+`last_pass_unix_seconds`, `clock_anomaly` (what an automatic pass would
+find now), the `discarded` and `expired` counts, and
+`evicted_awaiting_cleanup` with its bytes (evicted variants whose own
+objects are still present and unreferenced).
+
+### Automatic check
+
+A writable app session runs an automatic retention check when its project
+service is first idle after opening or creating the project, then every six
+hours of the session (`RETENTION_PASS_INTERVAL`), each time only while no
+import, relink, render, AI pause, tracking job or backup runs (it waits and
+reports `Deferred` with the reason). Each check
+
+1. plans expiry on a read-only open in its own thread, off the writer;
+2. on a clock anomaly, stops: nothing is expired and no file removed, since
+   a wrong clock also defeats the cleanup grace period. It reports
+   `ClockAnomaly` with what to do;
+3. otherwise applies the plan on the writer (one short, rechecked
+   transaction) and advances the watermark;
+4. lists removable `Media/Generated` objects on another read-only open,
+   using the generated-only cleanup scope (`CleanupPolicy::generated_only`,
+   default 24-hour grace; originals, render candidates and unfinished writes
+   are left to explicit cleanup);
+5. only if that finds something, and once the writer is idle again, removes
+   exactly those objects through `clean_previewed_storage_with`, which
+   rescans references on the writer, honours reader locks and checks each
+   file's identity, like a confirmed explicit cleanup. This rescan is the
+   only whole-database scan on the writer, and it happens only when there is
+   something to remove.
+
+Its status (`ProjectUpdate::storage_retention`: deferred, running, clock
+anomaly, done with variants expired and files and bytes removed, or failed)
+appears in the Storage panel's AI VARIANTS section as "Automatic check",
+with the policy rows and a Clock row when the report finds an anomaly. A
+failure changes nothing and is retried at the next check.
+
 ## Portable copies
 
 `copy_portable(source, destination)` builds a new package that needs nothing
@@ -164,7 +296,8 @@ merged.
 | Command | Effect |
 |---|---|
 | `project storage <pkg> [--grace-hours N]` | JSON report: database, each namespace's entries with state (`referenced` with reasons, `unreferenced`, `pending`, `damaged`, `unexpected`), sizes, what cleanup would remove, the history's own size (`history`: revisions, edits, keyframes and their bytes) and checkpoint, backup and report bytes (`auxiliary_bytes`); plus the per-user report. Read-only; works while the app has the project open. |
-| `project storage <pkg> --clean [--dry-run] [--grace-hours N]` | Remove (or list) unreferenced objects and unfinished writes older than the grace period. Needs a closed project. |
+| `project storage <pkg> --clean [--dry-run] [--grace-hours N]` | First expire offered AI variants past the retention period, confirming the clock (`variant_expiry`; a dry run only lists them with their bytes), then remove (or list) unreferenced objects and unfinished writes older than the grace period. Needs a closed project. |
+| `keep-hold <pkg> --request <id> --attempt <id> [--off]` | Keep one offered AI variant so it never expires, or with `--off` let it expire again. Operational, not undoable; needs a closed project. |
 | `project copy-portable <pkg> <new.deadpan>` | Verified self-contained copy. |
 | `cache status` / `cache clean [--dry-run] [--grace-hours N]` | Per-user caches: proxies unused for the grace period, then least recently used ones while the cache exceeds its budget (the dry run lists both), and abandoned downloader staging. The grace period is at least one hour. Reports, never touches, model packs, AI runtimes and qualification weights. |
 
@@ -172,7 +305,12 @@ In the app, `:storage` or Deadpan › Storage… opens the Storage panel beside
 the picture; `:backups` opens it on its [backups](BACKUPS.md#app). It shows the project's and Deadpan's usage with accessible
 "label: value" rows. P previews a project cleanup off the writer, R removes
 exactly the previewed files that are still removable (refused without a
-preview of the current session and revision), C cleans
+preview of the current session and revision), E reviews then confirms the
+clock after a long gap since the last retention check. Its AI VARIANTS section shows
+the retention policy, offered, kept, picked and chosen variants, when the
+next one expires (and the bytes of those due), discarded and expired
+variants awaiting cleanup with their bytes, any clock anomaly, and this
+session's latest automatic check. C cleans
 rebuildable caches and S (also File › Save Portable Copy… and
 `:portable-copy`) saves a verified portable copy on a background thread
 while editing continues. Escape closes it.
@@ -203,36 +341,74 @@ it with the real `deadpan-cli`:
 
 ## Source-clock and colour evidence
 
-DP-19 listed "source-clock/colour evidence" for accepted media. The bridge
-context manifest records the plan, both prepared pictures' SHA-256 and the
-stated colour interpretation (`rec709-sdr-full-range-rgb8-interpreted-as-srgb`);
-it names no source asset, receipt or timestamp. Conditioning decodes the
-frames on both sides of the pause from the request's origin revision through
-the shared project picture path, and refuses HDR, 10-bit and rotated
-pictures. The request binds the manifest's SHA-256 and the receipt retains
-its bytes.
+DP-19 listed "source-clock/colour evidence" for accepted media. Conditioning
+decodes the frames on both sides of the pause from the request's origin
+revision through the shared project picture path. The bridge context manifest
+(schema 2) binds the plan and both prepared pictures' SHA-256, declares the
+model's colour space (full-range sRGB, BT.709 primaries, RGB) and records, for
+each side, what the picture path showed:
 
-The offline test now checks this binding by re-derivation. On the portable
-copy, with the source gone, `conditioning::prepare` at the request's origin
-revision reproduces the manifest whose SHA-256 the request binds, and the
-retained manifest object is byte-identical. The retained conditioning is
-therefore exactly what the project's own committed pictures produce, and the
-copy carries everything needed to show it.
+- an Original frame: its asset, receipt (qualification) ID, measured index
+  identity, exact source PTS and time base, and the decoder's measured codec,
+  pixel format, dimensions, SAR, rotation, decoded bit depth, transfer,
+  primaries, matrix and range;
+- a frame of an accepted generated Hold: its sampled asset, sampled master and
+  provenance objects and the same measurements of that master;
+- authored black (Background/Blank), with nothing decoded.
 
-What this does not establish, and what moves out of DP-19 into AI pause
-qualification: the manifest still states the colour interpretation instead of
-recording measured source colour metadata, the Lanczos fit and PNG encoding
-are deterministic on this build but not specified across builds, and the
-model's own colour handling is a worker claim. Accepted media portability does
-not depend on any of these: rendering reads the verified FFV1 masters, never
-the conditioning.
+Each decoded side also names the conversion applied for the model: the
+decoder's full-range RGB8 (declared matrix and range applied) passes its codes
+unchanged, either sRGB codes as sRGB or BT.709-transfer codes read as sRGB, a
+stated approximation. Conditioning refuses, with the reason, any picture this
+does not cover: rotated pictures, PQ/HLG HDR, sixteen-bit decodes,
+linear-light transfer, and BT.2020 or Display P3 primaries (no gamut or
+transfer conversion exists). Every matrix and range the source decoder admits
+is covered because the decoder applies it. The request binds the manifest's
+SHA-256 and the receipt retains its bytes.
+
+Qualification requires the declared model colour space to equal the canonical
+masters' full-range sRGB BT.709 RGB, which the FFV1 converter writes and
+verifies and the candidate/accepted master decoders re-check; a mismatch fails
+as a colour interpretation mismatch. Contexts captured before schema 2 state
+only `"srgb"` and an interpretation string; they remain admissible because
+their bytes are bound by hash, and carry no measured source evidence.
+
+The re-derivation checks: on the portable copy, with the source gone,
+`conditioning::prepare` at the request's origin revision reproduces the
+manifest whose SHA-256 the request binds, and the retained manifest object is
+byte-identical (offline test). `tests/bridge_conditioning.rs` compares the
+recorded colour, pixel format, geometry, frame identity and PTS with an
+independent decoder of the fixture and with a fresh picture-path preparation
+at the origin revision, including a generated neighbour, and checks the HDR
+refusal. Because the manifest changed grammar, a request conditioned by an
+earlier build cannot gain another variant (`--another`); generating again
+creates a new request. Accepted and Ready bundles are unaffected.
+
+What this does not establish: the Lanczos fit and PNG encoding are
+deterministic on this build but not specified across builds; the BT.709-as-sRGB
+reading is an approximation, not a transfer conversion; and the model's own
+colour handling is a worker claim. Accepted media portability does not depend
+on any of these: rendering reads the verified FFV1 masters, never the
+conditioning.
 
 ## Limits
 
-- Cleanup is never automatic.
+- The only automatic cleanup is the app's retention check (after opening,
+  then every six hours while idle), limited to unreferenced
+  `Media/Generated` objects past the grace period. Originals, render
+  candidates and unfinished writes are removed only by explicit cleanup. A
+  session that is never idle defers it.
 - Cleaning a project open in the app goes through the app; the headless
-  command does not route through the live endpoint. Nothing schedules it, and the app's proxy
-  builder keeps its own budget-driven cleanup.
+  command does not route through the live endpoint. Nothing schedules the
+  headless command, and the app's proxy builder keeps its own budget-driven
+  cleanup.
+- The retention clock is the machine's wall clock. Automatic checks refuse
+  a clock behind recorded times or more than a week past the last check,
+  but a clock set ahead by less than a week shortens the period by that
+  much. Opening a project after more than a week away also defers automatic
+  expiry until the Storage panel's E or `project storage --clean` (with the
+  project closed) confirms the clock. There is no
+  per-project or per-user setting for the period.
 - An unreferenced original copy is removable after the grace period. A
   retained but unregistered original is referenced by its inventory record and
   is kept.

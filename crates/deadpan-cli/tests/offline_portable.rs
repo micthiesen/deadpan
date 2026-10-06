@@ -239,6 +239,12 @@ fn accepted_ai_pause_renders_offline_and_from_a_portable_copy() -> Result {
     let mut found = unreferenced.clone();
     found.sort_unstable();
     assert_eq!(found, expected);
+    // The retention section counts the discard and its waiting masters.
+    let retention = &report["project"]["variant_retention"];
+    assert_eq!(retention["retention_seconds"], 7 * 24 * 60 * 60);
+    assert_eq!(retention["discarded"], 1, "{retention}");
+    assert_eq!(retention["expired"], 0, "{retention}");
+    assert_eq!(retention["evicted_awaiting_cleanup"], 1, "{retention}");
     let cleanup = json(
         &offline(
             &["project", "storage", path, "--clean", "--grace-hours", "0"],
@@ -250,6 +256,8 @@ fn accepted_ai_pause_renders_offline_and_from_a_portable_copy() -> Result {
         cleanup["cleanup"]["removed"].as_array().map(Vec::len),
         Some(3)
     );
+    // Nothing is old enough to expire; the accepted variant never does.
+    assert_eq!(cleanup["variant_expiry"]["expired"], serde_json::json!([]));
 
     // Render with no model anywhere, after cleanup.
     let movie = render(

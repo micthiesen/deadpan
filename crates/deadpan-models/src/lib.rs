@@ -16,6 +16,11 @@ mod stored_bridge;
 pub use stored_bridge::{AcceptedBridgeEvidence, StoredBridgeProvenance};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod bridge_color;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use bridge_color::*;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod conditioning;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use conditioning::*;

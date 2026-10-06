@@ -134,7 +134,9 @@ its transport.
 - **Not cancellable.** Portable copies have no safe cancellation yet. The
   panel says so instead of pretending.
 - **Proxies.** A proxy cancelled from the panel is not rebuilt at once. It
-  shows "cancelled; :proxies retry builds it again".
+  shows "cancelled; :proxies retry continues it from its completed ranges":
+  the ranges already encoded are kept and reused
+  ([preview proxies](PROXIES.md#resuming)).
 - **Shots.** A cancelled shot scan shows Try again.
 
 ## Jobs panel

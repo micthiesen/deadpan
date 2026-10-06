@@ -899,6 +899,7 @@ impl DeadpanApp {
                 update.relink.take(),
             );
             self.receive_storage_cleanup(update.storage_cleanup.take());
+            self.receive_storage_retention(update.storage_retention.take());
             self.receive_backups(std::mem::take(&mut update.backups));
             self.project_error = update.error;
             self.message = update.message;
@@ -2660,11 +2661,10 @@ impl DeadpanApp {
                     self.trim_prefix_target = Some(self.capture_trim_target());
                 }
                 if !ai_pending
-                    && (self.bindings.ai_pending()
-                        || action
-                            == Some(Action::Ai(navigation::AiAction::Generate { variants: 1 })))
+                    && (self.bindings.ai_pending() || matches!(action, Some(Action::Ai(_))))
                 {
-                    // Capture at the first `,a` ancestor, including absence.
+                    // Capture at the first `,a`/`,x`/`,n` ancestor, including
+                    // absence.
                     self.ai.prefix = Some(self.ai_capture());
                 }
                 if let Some(action) = action {
@@ -3652,7 +3652,15 @@ impl DeadpanApp {
                         if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         let shots = self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some());
                         if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
-                        if self.ai_hold().is_some() { self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pictures"); }
+                        if let Some(hold) = self.ai_hold() {
+                            match self.ai_offered_variants(&hold) {
+                                0 => self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pictures"),
+                                count => {
+                                    self.add_editor_hint(&mut hints, EditorKey::CompareAi, "AI before / after");
+                                    if count > 1 { self.add_editor_hint(&mut hints, EditorKey::NextAi, "next AI variant"); }
+                                }
+                            }
+                        }
                         hints.tier(key_labels::Tier::Core);
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });

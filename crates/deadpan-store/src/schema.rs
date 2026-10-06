@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 67;
+pub const VERSION: u32 = 68;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,7 +18,8 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Database schema 67 adds identities retired by restores (66 added
+    // Database schema 68 adds AI variant retention records; 67 added
+    // identities retired by restores (66 added
     // manual analysis corrections and resumable shot
     // scan progress (65 added the register bank digest; 64 keyframe metadata
     // and history receipts). Refuse prior unused development packages
@@ -88,6 +89,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::compound::create_tables(&transaction)?;
     crate::registers::create_tables(&transaction)?;
     crate::generation_attempts::create_tables(&transaction)?;
+    crate::generation_retention::create_tables(&transaction)?;
     crate::transcripts::create_tables(&transaction)?;
     crate::speech_activity::create_tables(&transaction)?;
     crate::shot_analysis::create_tables(&transaction)?;

@@ -700,7 +700,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             "stored generation attempt metadata exceeds its bounds or has the wrong type",
         ));
     }
-    Ok(())
+    crate::generation_retention::check_stored_sizes(connection)
 }
 
 pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
@@ -820,7 +820,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     if invalid_heads != 0 || missing_heads != 0 {
         return Err(integrity("generation attempt head is inconsistent"));
     }
-    Ok(())
+    crate::generation_retention::validate_store(connection)
 }
 
 impl ProjectStore {
@@ -1197,6 +1197,11 @@ impl ProjectStore {
             .host_bundle_validation_succeeded(identity, declaration)
             .map_err(lifecycle_error)?;
         insert_bundle_receipt(&transaction, identity, &receipt)?;
+        crate::generation_retention::record_ready(
+            &transaction,
+            identity,
+            std::time::SystemTime::now(),
+        )?;
         stored.checkpoint = lifecycle.checkpoint();
         stored.bundle_receipt = Some(receipt);
         write_attempt(&transaction, &stored)?;
@@ -1268,7 +1273,10 @@ impl ProjectStore {
         Ok(AttemptMutationOutcome::Applied)
     }
 
-    /// Selects a retained, host-validated V2 bundle for comparison.
+    /// Selects a retained, host-validated V2 bundle for comparison. This is
+    /// the person's explicit choice: it also marks the variant picked, which
+    /// protects it from retention expiry until another variant of the
+    /// request is picked or it is discarded.
     ///
     /// This changes operational metadata only. Callers must still verify the
     /// three generated objects and perform a separate authored acceptance
@@ -1308,15 +1316,20 @@ impl ProjectStore {
                 "selected attempt is not a present Ready bridge bundle",
             ));
         }
-        if stored.selected {
-            return Ok(AttemptMutationOutcome::Duplicate);
-        }
-        transaction.execute(
-            "UPDATE generation_attempt_heads SET selected_ready_attempt_id=?1 WHERE request_id=?2",
-            params![identity.attempt_id.as_str(), identity.request_id.as_str()],
-        )?;
+        // An explicit choice protects the variant from retention expiry
+        // even after a later Ready variant becomes the selection.
+        crate::generation_retention::record_picked(&transaction, identity)?;
+        let outcome = if stored.selected {
+            AttemptMutationOutcome::Duplicate
+        } else {
+            transaction.execute(
+                "UPDATE generation_attempt_heads SET selected_ready_attempt_id=?1 WHERE request_id=?2",
+                params![identity.attempt_id.as_str(), identity.request_id.as_str()],
+            )?;
+            AttemptMutationOutcome::Applied
+        };
         transaction.commit()?;
-        Ok(AttemptMutationOutcome::Applied)
+        Ok(outcome)
     }
 
     pub fn mark_generation_bundle_evicted(
@@ -1327,7 +1340,12 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let outcome = evict_bundle(&transaction, identity)?;
+        let outcome = evict_bundle(
+            &transaction,
+            identity,
+            crate::generation_retention::VariantEviction::Discarded,
+            std::time::SystemTime::now(),
+        )?;
         transaction.commit()?;
         Ok(outcome)
     }
@@ -1352,7 +1370,12 @@ impl ProjectStore {
             ));
         }
         let selected_before = selected_attempt(&transaction, &identity.request_id)?;
-        evict_bundle(&transaction, identity)?;
+        evict_bundle(
+            &transaction,
+            identity,
+            crate::generation_retention::VariantEviction::Discarded,
+            std::time::SystemTime::now(),
+        )?;
         if selected_before.as_deref() == Some(identity.attempt_id.as_str())
             && request.relevance == Relevance::Current
         {
@@ -1648,10 +1671,13 @@ fn selected_attempt(
         .flatten())
 }
 
-/// Mark one bundle receipt evicted and clear a matching selection.
-fn evict_bundle(
+/// Mark one bundle receipt evicted for `reason` and clear a matching
+/// selection. Its retention record keeps the reason.
+pub(crate) fn evict_bundle(
     transaction: &Connection,
     identity: &MessageIdentity,
+    reason: crate::generation_retention::VariantEviction,
+    now: std::time::SystemTime,
 ) -> Result<AttemptMutationOutcome, StoreError> {
     let stored = read_attempt(transaction, identity)?;
     let Some(mut receipt) = stored.bundle_receipt else {
@@ -1681,6 +1707,7 @@ fn evict_bundle(
     if updated != 1 {
         return Err(attempt_error("bundle receipt disappeared during eviction"));
     }
+    crate::generation_retention::record_eviction(transaction, identity, reason, now)?;
     transaction.execute(
         "UPDATE generation_attempt_heads SET selected_ready_attempt_id=NULL
              WHERE request_id=?1 AND selected_ready_attempt_id=?2",

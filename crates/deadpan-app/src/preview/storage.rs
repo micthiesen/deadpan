@@ -16,6 +16,7 @@
 use std::sync::mpsc;
 
 use deadpan_cli::storage::{UserCleanupOutcome, UserStorage, UserStorageReport};
+use deadpan_store::generation_retention::{ClockAnomaly, ExpiryPlan, VariantExpiry};
 use deadpan_store::portable::PortableCopyReport;
 use deadpan_store::storage::{CleanupOutcome, DEFAULT_GRACE, StorageReport};
 
@@ -54,6 +55,20 @@ pub(super) struct State {
     pub(super) user: Option<UserStorage>,
     /// The BACKUPS section.
     pub(super) backups: super::backups::View,
+    /// This session's automatic AI variant retention pass.
+    pub(super) retention: Option<crate::project::RetentionPassStatus>,
+    /// The two-press clock confirmation (E) after a long gap.
+    pub(super) clock: Option<ClockStep>,
+}
+
+/// Where the E clock confirmation is.
+pub(super) enum ClockStep {
+    /// Planning an explicit expiry on a read-only open, off the writer.
+    Planning(u64, String, mpsc::Receiver<Result<ExpiryPlan, String>>),
+    /// Reviewed: a second E confirms exactly this plan.
+    Ready(u64, String, Box<ExpiryPlan>),
+    /// Sent to the project service with this ticket.
+    Pending(u64),
 }
 
 impl State {
@@ -139,6 +154,134 @@ pub(super) fn project_rows(report: &StorageReport) -> Vec<(String, String)> {
     rows
 }
 
+fn days(seconds: u64) -> String {
+    let days = seconds / (24 * 60 * 60);
+    if days == 1 {
+        "1 day".into()
+    } else if days > 0 {
+        format!("{days} days")
+    } else {
+        format!("{} hours", seconds / 3600)
+    }
+}
+
+/// Rows of the AI VARIANTS section: the retention policy for offered,
+/// unaccepted AI variants, its current state and the last automatic pass.
+pub(super) fn retention_rows(
+    report: &deadpan_store::generation_retention::VariantRetentionReport,
+    grace_seconds: u64,
+    pass: Option<&crate::project::RetentionPassState>,
+    now: std::time::SystemTime,
+) -> Vec<(String, String)> {
+    let mut rows = vec![(
+        "Retention".to_owned(),
+        format!(
+            "variants you have not kept, chosen or accepted stop being offered {} after they were generated; their files go at least {} later",
+            days(report.retention_seconds),
+            days(grace_seconds)
+        ),
+    )];
+    let mut offered = format!("{} offered", report.offered);
+    if report.kept > 0 {
+        offered.push_str(&format!(" · {} kept", report.kept));
+    }
+    if report.picked > 0 {
+        offered.push_str(&format!(" · {} picked", report.picked));
+    }
+    if report.selected > 0 {
+        offered.push_str(&format!(" · {} chosen", report.selected));
+    }
+    if report.accepted > 0 {
+        offered.push_str(&format!(" · {} accepted", report.accepted));
+    }
+    rows.push(("Variants".to_owned(), offered));
+    let expiring = match report.soonest_expiry_unix_seconds {
+        _ if report.expiring == 0 => "none".to_owned(),
+        _ if report.due > 0 => format!(
+            "{} of {} due now ({}), at the next automatic check",
+            report.due,
+            report.expiring,
+            bytes(report.due_bytes)
+        ),
+        Some(at) => {
+            let at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(at);
+            let left = at.duration_since(now).unwrap_or_default().as_secs();
+            let when = if left >= 24 * 60 * 60 {
+                format!("in {}", days(left))
+            } else {
+                format!("in {} hours", left / 3600)
+            };
+            format!("{} · the first {when}", report.expiring)
+        }
+        None => report.expiring.to_string(),
+    };
+    rows.push(("Expiring".to_owned(), expiring));
+    rows.push((
+        "No longer offered".to_owned(),
+        format!(
+            "{} discarded · {} expired · {} awaiting cleanup ({})",
+            report.discarded,
+            report.expired,
+            report.evicted_awaiting_cleanup,
+            bytes(report.evicted_awaiting_cleanup_bytes)
+        ),
+    ));
+    if let Some(anomaly) = &report.clock_anomaly {
+        rows.push(("Clock".to_owned(), clock_row(anomaly)));
+    }
+    use crate::project::RetentionPassState;
+    let pass = match pass {
+        None => "not run yet in this session; runs when idle after opening, then every 6 hours"
+            .to_owned(),
+        Some(RetentionPassState::ClockAnomaly(text)) => format!("skipped. {text}"),
+        Some(RetentionPassState::Deferred(reason)) => format!("deferred. {reason}"),
+        Some(RetentionPassState::Running) => "running…".to_owned(),
+        Some(RetentionPassState::Done {
+            expired,
+            removed_files,
+            removed_bytes,
+            kept_files,
+            ..
+        }) => {
+            let mut text = format!(
+                "expired {expired} variants, removed {removed_files} files ({})",
+                bytes(*removed_bytes)
+            );
+            if *kept_files > 0 {
+                text.push_str(&format!("; {kept_files} in use or changed were kept"));
+            }
+            text
+        }
+        Some(RetentionPassState::Failed(error)) => format!("failed: {error}"),
+    };
+    rows.push(("Automatic check".to_owned(), pass));
+    rows
+}
+
+/// The Clock row: a long gap can be confirmed with E; a clock behind the
+/// project's records cannot.
+pub(super) fn clock_row(anomaly: &ClockAnomaly) -> String {
+    match anomaly {
+        ClockAnomaly::Behind { .. } => "earlier than times this project recorded; nothing expires until the date and time are right".into(),
+        ClockAnomaly::Ahead {
+            now_unix_ms,
+            last_seen_unix_ms,
+        } => format!(
+            "long gap since the last check ({}); automatic expiry waits. E reviews and confirms the clock",
+            days(u64::try_from(now_unix_ms.saturating_sub(*last_seen_unix_ms) / 1000).unwrap_or(0))
+        ),
+    }
+}
+
+fn expiry_summary(expiry: &VariantExpiry) -> String {
+    format!(
+        "{} AI variant{} ({})",
+        expiry.expired.len(),
+        if expiry.expired.len() == 1 { "" } else { "s" },
+        bytes(expiry.expired_bytes)
+    )
+}
+
 fn summary(outcome: &CleanupOutcome) -> String {
     let mut text = format!(
         "{} {} files ({})",
@@ -213,6 +356,7 @@ impl DeadpanApp {
         // A preview describes one session and revision; any change, such as
         // an edit, Undo or another project, discards it.
         let current = self.current_context();
+        self.reconcile_clock(current.as_ref(), context);
         if self
             .storage
             .preview
@@ -315,6 +459,186 @@ impl DeadpanApp {
                 }
                 Err(mpsc::TryRecvError::Disconnected) => self.storage.copy = None,
             }
+        }
+    }
+
+    /// Admit this session's automatic retention pass status. A finished
+    /// pass refreshes an open panel's report.
+    pub(super) fn receive_storage_retention(
+        &mut self,
+        status: Option<crate::project::RetentionPassStatus>,
+    ) {
+        if status == self.storage.retention {
+            return;
+        }
+        let finished = status.as_ref().is_some_and(|status| {
+            matches!(
+                status.state,
+                crate::project::RetentionPassState::Done { .. }
+            )
+        });
+        let confirmation = status
+            .as_ref()
+            .and_then(|status| status.confirmation.clone());
+        self.storage.retention = status;
+        if let Some(confirmation) = confirmation
+            && matches!(self.storage.clock, Some(ClockStep::Pending(ticket)) if ticket == confirmation.ticket)
+        {
+            self.storage.clock = None;
+            self.storage.status = Some(match confirmation.result {
+                Ok(expiry) => format!(
+                    "Confirmed the clock: {} stopped being offered; their files go after the grace period. Automatic checks resume.",
+                    expiry_summary(&expiry)
+                ),
+                Err(error) => error,
+            });
+            self.refresh_storage();
+        } else if finished && self.storage.open {
+            self.refresh_storage();
+        }
+    }
+
+    /// E: after a long gap since the last retention check, the first press
+    /// plans an explicit expiry on a read-only open and shows what would
+    /// stop being offered; the second confirms exactly that plan on the
+    /// writer, which rechecks every row and records the watermark. A clock
+    /// behind the project's records is shown, never confirmed.
+    fn confirm_clock(&mut self) {
+        let Some((session, revision)) = self.current_context() else {
+            self.storage.status = Some("Open a project first.".into());
+            return;
+        };
+        if let Some(reason) = self.workspace.as_ref().and_then(|w| w.read_only.clone()) {
+            self.storage.status = Some(format!("Not confirmed: {reason}"));
+            return;
+        }
+        match &self.storage.clock {
+            Some(ClockStep::Pending(_) | ClockStep::Planning(..)) => return,
+            Some(ClockStep::Ready(plan_session, plan_revision, _))
+                if *plan_session == session && *plan_revision == revision =>
+            {
+                let Some(ClockStep::Ready(_, _, plan)) = self.storage.clock.take() else {
+                    return;
+                };
+                self.storage.ticket += 1;
+                let ticket = self.storage.ticket;
+                match self
+                    .service
+                    .submit(crate::project::ProjectRequest::ConfirmVariantClock {
+                        ticket,
+                        expected_session: session,
+                        expected_revision: deadpan_core::RevisionId::new(revision)
+                            .expect("a workspace revision is valid"),
+                        plan,
+                    }) {
+                    Ok(()) => {
+                        self.storage.clock = Some(ClockStep::Pending(ticket));
+                        self.storage.status = Some("Confirming the clock…".into());
+                    }
+                    Err(error) => self.storage.status = Some(error),
+                }
+                return;
+            }
+            _ => {}
+        }
+        let anomaly = match &self.storage.snapshot {
+            Some(Snapshot {
+                project: Some(Ok(report)),
+                ..
+            }) => report.variant_retention.clock_anomaly,
+            _ => {
+                self.storage.status = Some("Storage is still being measured.".into());
+                return;
+            }
+        };
+        match anomaly {
+            None => {
+                self.storage.status =
+                    Some("The clock needs no confirmation: automatic checks trust it.".into());
+                return;
+            }
+            Some(ClockAnomaly::Behind { .. }) => {
+                self.storage.status = Some(
+                    "This Mac's clock is earlier than times this project recorded. Correct the date and time; there is nothing to confirm.".into(),
+                );
+                return;
+            }
+            Some(ClockAnomaly::Ahead { .. }) => {}
+        }
+        let Some(package) = self.workspace.as_ref().map(|w| w.path.clone()) else {
+            return;
+        };
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let spawned = std::thread::Builder::new()
+            .name("deadpan-clock-review".into())
+            .spawn(move || {
+                let _ = sender.send(
+                    deadpan_store::ProjectStore::open(
+                        &package,
+                        deadpan_store::AccessMode::ReadOnly,
+                    )
+                    .and_then(|store| {
+                        store.plan_generation_expiry(
+                            std::time::SystemTime::now(),
+                            deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION,
+                            deadpan_store::generation_retention::ExpiryMode::Explicit,
+                        )
+                    })
+                    .map_err(|error| error.to_string()),
+                );
+            });
+        match spawned {
+            Ok(_) => {
+                self.storage.clock = Some(ClockStep::Planning(session, revision, receiver));
+                self.storage.status =
+                    Some("Finding which AI variants would stop being offered…".into());
+            }
+            Err(error) => self.storage.status = Some(error.to_string()),
+        }
+    }
+
+    /// Poll the clock review and discard it when the project changes.
+    fn reconcile_clock(&mut self, current: Option<&(u64, String)>, context: &egui::Context) {
+        let stale =
+            |session: &u64, revision: &String| current != Some(&(*session, revision.clone()));
+        match &self.storage.clock {
+            Some(ClockStep::Ready(session, revision, _)) if stale(session, revision) => {
+                self.storage.clock = None;
+                if self.storage.open {
+                    self.storage.status =
+                        Some("The project changed; review the clock again with E.".into());
+                }
+            }
+            Some(ClockStep::Planning(session, revision, receiver)) => {
+                let stale = stale(session, revision);
+                match receiver.try_recv() {
+                    Ok(result) => {
+                        let (session, revision) = (*session, revision.clone());
+                        self.storage.clock = None;
+                        match result {
+                            Ok(_) if stale => {
+                                self.storage.status = Some(
+                                    "The project changed during the review; press E again.".into(),
+                                );
+                            }
+                            Ok(plan) => {
+                                self.storage.status = Some(format!(
+                                    "Confirm this Mac's clock? {} would stop being offered now; their files go after the normal grace period. Automatic checks then resume. Press E again to confirm.",
+                                    expiry_summary(&plan.preview())
+                                ));
+                                self.storage.clock =
+                                    Some(ClockStep::Ready(session, revision, Box::new(plan)));
+                            }
+                            Err(error) => self.storage.status = Some(error),
+                        }
+                    }
+                    Err(mpsc::TryRecvError::Empty) => {
+                        context.request_repaint_after(std::time::Duration::from_millis(100))
+                    }
+                    Err(mpsc::TryRecvError::Disconnected) => self.storage.clock = None,
+                }
+            }
+            _ => {}
         }
     }
 
@@ -574,6 +898,7 @@ impl DeadpanApp {
                             | StorageKey::Remove
                             | StorageKey::CleanCaches
                             | StorageKey::PortableCopy
+                            | StorageKey::ConfirmClock
                     )
                 )
             {
@@ -589,6 +914,7 @@ impl DeadpanApp {
                 Some(StorageKey::NextBackup) => self.move_backup_selection(true),
                 Some(StorageKey::PreviousBackup) => self.move_backup_selection(false),
                 Some(StorageKey::Restore) => self.restore_selected_backup(),
+                Some(StorageKey::ConfirmClock) => self.confirm_clock(),
                 None => {}
             }
         }
@@ -612,6 +938,13 @@ impl DeadpanApp {
             .is_some_and(|(_, _, outcome)| !outcome.removed.is_empty());
         let focus = std::mem::take(&mut self.storage.focus_pending);
         let mut backup_action = None;
+        let long_gap = matches!(
+            &self.storage.snapshot,
+            Some(Snapshot {
+                project: Some(Ok(report)),
+                ..
+            }) if matches!(report.variant_retention.clock_anomaly, Some(ClockAnomaly::Ahead { .. }))
+        );
         let modal = egui::Modal::new(egui::Id::new("storage-window"))
             .backdrop_color(egui::Color32::TRANSPARENT)
             .area(
@@ -670,7 +1003,22 @@ impl DeadpanApp {
                             ui.add_space(6.0);
                         };
                         match &snapshot.project {
-                            Some(Ok(report)) => section(ui, "THIS PROJECT", project_rows(report)),
+                            Some(Ok(report)) => {
+                                section(ui, "THIS PROJECT", project_rows(report));
+                                section(
+                                    ui,
+                                    "AI VARIANTS",
+                                    retention_rows(
+                                        &report.variant_retention,
+                                        report.grace_seconds,
+                                        self.storage
+                                            .retention
+                                            .as_ref()
+                                            .map(|status| &status.state),
+                                        std::time::SystemTime::now(),
+                                    ),
+                                );
+                            }
                             Some(Err(error)) => section(
                                 ui,
                                 "THIS PROJECT",
@@ -732,6 +1080,9 @@ impl DeadpanApp {
                     if ui.add(style::action("Clean caches", "C")).clicked() {
                         action = Some('c');
                     }
+                    if long_gap && ui.add(style::action("Confirm clock", "E")).clicked() {
+                        action = Some('e');
+                    }
                     if ui
                         .add_enabled(project && !self.storage.copying(), style::action("Save portable copy…", "S"))
                         .clicked()
@@ -749,6 +1100,7 @@ impl DeadpanApp {
             Some('p') => self.preview_storage_cleanup(),
             Some('r') => self.confirm_storage_cleanup(),
             Some('c') => self.clean_user_caches(),
+            Some('e') => self.confirm_clock(),
             Some('s') => self.start_portable_copy(context),
             _ => {}
         }
@@ -762,6 +1114,68 @@ impl DeadpanApp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retention_rows_state_the_policy_and_the_last_pass() {
+        let now = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_000_000);
+        let report = deadpan_store::generation_retention::VariantRetentionReport {
+            retention_seconds: 7 * 24 * 3600,
+            offered: 3,
+            kept: 1,
+            selected: 1,
+            expiring: 1,
+            soonest_expiry_unix_seconds: Some(1_000_000 + 2 * 24 * 3600),
+            discarded: 2,
+            expired: 1,
+            evicted_awaiting_cleanup: 1,
+            evicted_awaiting_cleanup_bytes: 2048,
+            ..Default::default()
+        };
+        let pass = crate::project::RetentionPassState::Done {
+            expired: 1,
+            removed_files: 3,
+            removed_bytes: 4096,
+            kept_files: 0,
+            finished: now,
+        };
+        let rows = retention_rows(&report, 24 * 3600, Some(&pass), now);
+        let text: Vec<String> = rows
+            .iter()
+            .map(|(label, value)| format!("{label}: {value}"))
+            .collect();
+        assert_eq!(
+            text,
+            vec![
+                "Retention: variants you have not kept, chosen or accepted stop being offered 7 days after they were generated; their files go at least 1 day later",
+                "Variants: 3 offered · 1 kept · 1 chosen",
+                "Expiring: 1 · the first in 2 days",
+                "No longer offered: 2 discarded · 1 expired · 1 awaiting cleanup (2.0 KiB)",
+                "Automatic check: expired 1 variants, removed 3 files (4.0 KiB)",
+            ]
+        );
+        let anomaly = deadpan_store::generation_retention::VariantRetentionReport {
+            expiring: 2,
+            due: 1,
+            due_bytes: 1024,
+            clock_anomaly: Some(deadpan_store::generation_retention::ClockAnomaly::Ahead {
+                now_unix_ms: 0,
+                last_seen_unix_ms: 0,
+            }),
+            ..Default::default()
+        };
+        let rows = retention_rows(&anomaly, 3600, None, now);
+        assert_eq!(
+            rows[2].1,
+            "1 of 2 due now (1.0 KiB), at the next automatic check"
+        );
+        assert_eq!(rows[4].0, "Clock");
+        let deferred = crate::project::RetentionPassState::Deferred(
+            "Waiting for the AI pause to finish.".into(),
+        );
+        let rows = retention_rows(&Default::default(), 3600, Some(&deferred), now);
+        assert_eq!(rows[2].1, "none");
+        assert_eq!(rows[4].1, "deferred. Waiting for the AI pause to finish.");
+    }
 
     #[test]
     fn sizes_and_cleanup_summaries_read_plainly() {

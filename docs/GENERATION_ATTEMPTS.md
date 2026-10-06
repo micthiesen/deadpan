@@ -63,8 +63,14 @@ variants remain available for explicit selection. Stale or detached requests
 cannot yield a selected candidate for use, and late messages from another
 attempt cannot select it. Eviction marks availability separately, clears a
 matching selection, and retains the attempt's terminal record; the native app
-and its live endpoint use it as the durable Discard of a variant. This
-metadata operation does not delete a file or implement cache retention policy.
+and its live endpoint use it as the durable Discard of a variant. A bridge
+variant's eviction also records its reason (`discarded` or `expired`) in its
+[retention record](STORAGE.md#retention-of-unaccepted-ai-variants); the
+retention policy expires offered variants that are neither kept, picked,
+selected nor accepted through the same eviction. An explicit
+`select_generation_bundle_variant` also marks the variant picked, which
+protects it after a later Ready variant takes the selection. Neither deletes a file: reference-tracked
+storage cleanup removes the masters later.
 
 ## Host validation boundary
 

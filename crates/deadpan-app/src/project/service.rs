@@ -140,6 +140,8 @@ struct Service {
     relinking: Option<recovery::Relinking>,
     relink: Option<super::RelinkStatus>,
     storage_cleanup: Option<super::StorageCleanupStatus>,
+    /// The automatic AI variant retention pass of this session.
+    retention: storage::Retention,
     /// Missing linked originals whose bookmark candidate was tried this
     /// session.
     auto_relinked: std::collections::BTreeSet<deadpan_store::original_media::OriginalContentId>,
@@ -223,6 +225,7 @@ pub(super) fn run(
         relinking: None,
         relink: None,
         storage_cleanup: None,
+        retention: storage::Retention::default(),
         auto_relinked: Default::default(),
         backups: backups::State::default(),
         #[cfg(test)]
@@ -245,7 +248,8 @@ pub(super) fn run(
             | service.pump_render()
             | service.pump_generation()
             | service.pump_tracking()
-            | service.finish_session_change();
+            | service.finish_session_change()
+            | service.pump_retention();
         if changed {
             service.reconcile_slip();
             service.reconcile_trim();
@@ -435,6 +439,7 @@ impl Service {
             storage: self.current_storage_alert(),
             relink: self.relink.clone(),
             storage_cleanup: self.storage_cleanup.clone(),
+            storage_retention: self.retention.status(self.session),
             backups: self.backups.update(),
         };
         *self
@@ -658,6 +663,15 @@ impl Service {
                 previewed,
             } => {
                 self.clean_storage(ticket, expected_session, &previewed);
+                Ok(())
+            }
+            ProjectRequest::ConfirmVariantClock {
+                ticket,
+                expected_session,
+                expected_revision,
+                plan,
+            } => {
+                self.confirm_variant_clock(ticket, expected_session, &expected_revision, &plan);
                 Ok(())
             }
             ProjectRequest::Close => {
@@ -996,6 +1010,7 @@ impl Service {
         self.clear_marks();
         self.import = None;
         self.begin_backup_session();
+        self.retention.begin_session(next);
         self.initialize_source(next, document.revision_id().clone(), path)
     }
 
@@ -1536,6 +1551,7 @@ impl Service {
         self.storage_watch = Default::default();
         self.clear_marks();
         self.begin_backup_session();
+        self.retention.begin_session(self.session);
         self.auto_relinked.clear();
         self.relink_moved_originals();
         Ok(())

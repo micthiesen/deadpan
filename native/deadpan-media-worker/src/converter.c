@@ -289,7 +289,7 @@ static int descriptor_write(void *opaque, const uint8_t *buffer, int buffer_size
     }
     while (written < buffer_size) {
         ssize_t count = pwrite(io->fd, buffer + written, (size_t)(buffer_size - written),
-                               (off_t)(io->position + written));
+                               (off_t)(io->base + io->position + written));
         if (count < 0 && errno == EINTR) {
             continue;
         }
@@ -1905,6 +1905,8 @@ typedef struct {
     uint64_t packets;
     uint64_t keyframes;
     int64_t last_pts;
+    int64_t first_pts;
+    int64_t end_pts;
     int64_t timing_pts[PROXY_TIMING_QUEUE];
     int64_t timing_duration[PROXY_TIMING_QUEUE];
     uint32_t timing_head;
@@ -1939,7 +1941,8 @@ static int proxy_validate(const DeadpanProxyRequest *request) {
     if (request->frames == 0 || request->frames > PROXY_MAX_FRAMES ||
         request->max_output_bytes == 0 || request->max_output_bytes > (uint64_t)INT64_MAX ||
         request->timeout_ms == 0 || request->timeout_ms > 24ULL * 60ULL * 60ULL * 1000ULL ||
-        request->quality == 0 || request->quality > 100) {
+        request->quality == 0 || request->quality > 100 ||
+        request->output_offset > (uint64_t)INT64_MAX - request->max_output_bytes) {
         return fail("invalid_request", "proxy frame, byte, time or quality budget is invalid");
     }
     return 1;
@@ -1951,6 +1954,137 @@ static int proxy_validate(const DeadpanProxyRequest *request) {
    VTCompressionSessionCompleteFrames or VTCompressionSessionInvalidate
    (inside avcodec_free_context), which would hide the classified error behind
    the host's stall watch. The process exit releases the session. */
+/* Replace any display matrix with exactly the one the source decoder maps
+   to these quarter turns (deadpan-source decoder.c, rotation()); none for
+   an upright picture. */
+static int proxy_set_rotation(AVCodecParameters *parameters, uint32_t quarter_turns) {
+    av_packet_side_data_remove(parameters->coded_side_data, &parameters->nb_coded_side_data,
+                               AV_PKT_DATA_DISPLAYMATRIX);
+    if (quarter_turns == 0) {
+        return 1;
+    }
+    AVPacketSideData *side = av_packet_side_data_new(
+        &parameters->coded_side_data, &parameters->nb_coded_side_data, AV_PKT_DATA_DISPLAYMATRIX,
+        sizeof(int32_t) * 9, 0);
+    if (side == NULL) {
+        return fail("resource_exhausted", "allocate proxy display matrix");
+    }
+    static const int32_t linear[4][4] = {
+        {65536, 0, 0, 65536}, {0, 65536, -65536, 0}, {-65536, 0, 0, -65536}, {0, -65536, 65536, 0}};
+    const int32_t *turn = linear[quarter_turns & 3U];
+    int32_t matrix[9] = {turn[0], turn[1], 0, turn[2], turn[3], 0, 0, 0, 1 << 30};
+    memcpy(side->data, matrix, sizeof(matrix));
+    return 1;
+}
+
+/* Exact equality of two times in different rational clocks. */
+static int proxy_same_time(int64_t a, AVRational a_base, int64_t b, AVRational b_base) {
+    return (__int128)a * a_base.num * b_base.den == (__int128)b * b_base.num * a_base.den;
+}
+
+/* `value` in `from` units as an exact count of `to` units. */
+static int proxy_exact(int64_t value, AVRational from, AVRational to, int64_t *result) {
+    __int128 numerator = (__int128)value * from.num * to.den;
+    __int128 denominator = (__int128)from.den * to.num;
+    if (denominator == 0 || numerator % denominator != 0) {
+        return 0;
+    }
+    __int128 quotient = numerator / denominator;
+    if (quotient > INT64_MAX || quotient < INT64_MIN) {
+        return 0;
+    }
+    *result = (int64_t)quotient;
+    return 1;
+}
+
+static void proxy_digest_extradata(const AVCodecParameters *parameters, uint8_t digest[32]) {
+    struct AVSHA *sha = av_sha_alloc();
+    memset(digest, 0, 32);
+    if (sha == NULL || av_sha_init(sha, 256) < 0) {
+        av_free(sha);
+        return;
+    }
+    if (parameters->extradata_size > 0) {
+        av_sha_update(sha, parameters->extradata, (size_t)parameters->extradata_size);
+    }
+    av_sha_final(sha, digest);
+    av_free(sha);
+}
+
+/* Open one proxy movie at [base, base + length) of `fd`: exactly one H.264
+   picture stream of the planned raster with its decoder configuration. */
+static int proxy_movie_open(RemuxInput *input, int fd, int64_t base, int64_t length,
+                            uint32_t width, uint32_t height) {
+    if (!remux_open(input, fd, base, length, AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H264, "h264")) {
+        return 0;
+    }
+    const AVCodecParameters *parameters = input->format->streams[0]->codecpar;
+    if (parameters->width != (int)width || parameters->height != (int)height) {
+        return fail("invalid_media", "proxy range raster differs from the plan");
+    }
+    return 1;
+}
+
+/* Read every packet of an opened proxy movie. Each must be an intra picture
+   with a positive duration, starting at `start` and following its
+   predecessor without gap or overlap, all exactly in `clock`; the last must
+   end at `end` after `frames` pictures. With an output each packet is
+   written to `stream` with DTS equal to its PTS. */
+static int proxy_movie_read(RemuxInput *input, AVRational clock, int64_t start, int64_t end,
+                            uint64_t frames, AVFormatContext *output, AVStream *stream,
+                            uint64_t *written) {
+    AVRational base = input->format->streams[0]->time_base;
+    int64_t expected = start;
+    uint64_t count = 0;
+    for (;;) {
+        int code = av_read_frame(input->format, input->pending);
+        if (code == AVERROR_EOF) {
+            break;
+        }
+        if (code < 0) {
+            return fail_ffmpeg("read proxy range packet", code);
+        }
+        AVPacket *packet = input->pending;
+        int64_t duration;
+        if (packet->stream_index != 0 || packet->pts == AV_NOPTS_VALUE ||
+            !(packet->flags & AV_PKT_FLAG_KEY) || packet->duration <= 0 ||
+            count >= frames || !proxy_same_time(packet->pts, base, expected, clock) ||
+            !proxy_exact(packet->duration, base, clock, &duration) ||
+            expected > INT64_MAX - duration) {
+            int64_t pts = packet->pts;
+            av_packet_unref(packet);
+            return fail("invalid_media",
+                        "proxy range picture %" PRIu64 " is not an intra picture at its time "
+                        "(pts %" PRId64 ", expected %" PRId64 ")",
+                        count, pts, expected);
+        }
+        expected += duration;
+        count++;
+        if (output != NULL) {
+            packet->dts = packet->pts;
+            av_packet_rescale_ts(packet, base, stream->time_base);
+            packet->stream_index = stream->index;
+            packet->pos = -1;
+            code = av_interleaved_write_frame(output, packet);
+            if (code < 0) {
+                av_packet_unref(packet);
+                return fail_ffmpeg("write assembled proxy packet", code);
+            }
+            (*written)++;
+        }
+        av_packet_unref(packet);
+        if (!within_deadline()) {
+            return 0;
+        }
+    }
+    if (count != frames || expected != end) {
+        return fail("invalid_media",
+                    "proxy range holds %" PRIu64 " of %" PRIu64 " pictures or ends early",
+                    count, frames);
+    }
+    return 1;
+}
+
 static void proxy_abandon(void) {
     proxy.abandoned = 1;
 }
@@ -2079,9 +2213,11 @@ int deadpan_proxy_open(int output_fd, const DeadpanProxyRequest *request,
     if (!verify_runtime()) {
         goto failed;
     }
-    if (fstat(output_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) || metadata.st_size != 0 ||
-        metadata.st_uid != geteuid() || (metadata.st_mode & 077) != 0) {
-        fail("invalid_descriptor", "proxy output must be a private empty regular file");
+    if (fstat(output_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) ||
+        (uint64_t)metadata.st_size != request->output_offset || metadata.st_uid != geteuid() ||
+        (metadata.st_mode & 077) != 0) {
+        fail("invalid_descriptor",
+             "proxy output must be a private regular file ending at the output offset");
         goto failed;
     }
     code = avformat_alloc_output_context2(&proxy.format, NULL, "mp4", NULL);
@@ -2092,6 +2228,7 @@ int deadpan_proxy_open(int output_fd, const DeadpanProxyRequest *request,
     if (!owned_avio_open(&proxy.io, output_fd, 0, (int64_t)request->max_output_bytes, 1)) {
         goto failed;
     }
+    proxy.io.descriptor.base = (int64_t)request->output_offset;
     proxy.format->pb = proxy.io.avio;
     proxy.format->flags |= AVFMT_FLAG_CUSTOM_IO;
     proxy.format->interrupt_callback.callback = deadline_interrupt;
@@ -2185,21 +2322,8 @@ int deadpan_proxy_open(int output_fd, const DeadpanProxyRequest *request,
         goto failed;
     }
     proxy.stream->codecpar->sample_aspect_ratio = proxy.encoder->sample_aspect_ratio;
-    if (request->rotation_quarter_turns != 0) {
-        AVPacketSideData *side = av_packet_side_data_new(
-            &proxy.stream->codecpar->coded_side_data, &proxy.stream->codecpar->nb_coded_side_data,
-            AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9, 0);
-        if (side == NULL) {
-            fail("resource_exhausted", "allocate proxy display matrix");
-            goto failed;
-        }
-        /* Exactly the matrix the source decoder maps to these quarter turns
-           (deadpan-source decoder.c, rotation()). */
-        static const int32_t linear[4][4] = {
-            {65536, 0, 0, 65536}, {0, 65536, -65536, 0}, {-65536, 0, 0, -65536}, {0, -65536, 65536, 0}};
-        const int32_t *turn = linear[request->rotation_quarter_turns];
-        int32_t matrix[9] = {turn[0], turn[1], 0, turn[2], turn[3], 0, 0, 0, 1 << 30};
-        memcpy(side->data, matrix, sizeof(matrix));
+    if (!proxy_set_rotation(proxy.stream->codecpar, request->rotation_quarter_turns)) {
+        goto failed;
     }
     {
         int timescale = (int)request->time_base_den;
@@ -2273,6 +2397,7 @@ int deadpan_proxy_push(const uint8_t *rgba, uint64_t rgba_bytes, uint64_t stride
         goto failed;
     }
     if (proxy.pushed >= proxy.request.frames || duration <= 0 || pts <= proxy.last_pts ||
+        pts > INT64_MAX - duration ||
         stride < (uint64_t)proxy.request.source_width * 4ULL ||
         stride > (uint64_t)INT_MAX ||
         rgba_bytes < stride * (uint64_t)proxy.request.source_height) {
@@ -2304,7 +2429,11 @@ int deadpan_proxy_push(const uint8_t *rgba, uint64_t rgba_bytes, uint64_t stride
     proxy.timing_pts[tail] = pts;
     proxy.timing_duration[tail] = duration;
     proxy.timing_count++;
+    if (proxy.pushed == 0) {
+        proxy.first_pts = pts;
+    }
     proxy.last_pts = pts;
+    proxy.end_pts = pts + duration;
     proxy.pushed++;
     code = avcodec_send_frame(proxy.encoder, proxy.picture);
     if (code < 0) {
@@ -2371,9 +2500,32 @@ int deadpan_proxy_finish(int output_fd, DeadpanProxyReport *report,
         fail_ffmpeg("flush proxy MP4 output", proxy.io.avio->error);
         goto failed;
     }
-    if (ftruncate(output_fd, (off_t)proxy.io.descriptor.length) != 0 || fsync(output_fd) != 0) {
+    if (ftruncate(output_fd, (off_t)(proxy.io.descriptor.base + proxy.io.descriptor.length)) != 0 ||
+        fsync(output_fd) != 0) {
         fail(io_code(errno), "finalize proxy output: %s", strerror(errno));
         goto failed;
+    }
+    {
+        /* Read the finished movie back as the assembler and the verifier
+           will: every picture intra at its exact time, and the decoder
+           configuration a later join compares. */
+        RemuxInput check;
+        uint64_t unused = 0;
+        AVRational clock = {(int)proxy.request.time_base_num, (int)proxy.request.time_base_den};
+        memset(&check, 0, sizeof(check));
+        int checked = proxy_movie_open(&check, output_fd, proxy.io.descriptor.base,
+                                       proxy.io.descriptor.length, proxy.request.width,
+                                       proxy.request.height) &&
+                      proxy_movie_read(&check, clock, proxy.first_pts, proxy.end_pts,
+                                       proxy.request.frames, NULL, NULL, &unused);
+        if (checked) {
+            proxy_digest_extradata(check.format->streams[0]->codecpar,
+                                   report->extradata_sha256);
+        }
+        remux_close(&check);
+        if (!checked) {
+            goto failed;
+        }
     }
     report->output_bytes = (uint64_t)proxy.io.descriptor.length;
     report->packets = proxy.packets;
@@ -2393,4 +2545,234 @@ failed:
         fail("internal_error", "proxy finish failed without a classified error");
     }
     return 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Proxy assembly: join range movies at packet level without re-encoding.
+ * ------------------------------------------------------------------------- */
+
+#define PROXY_MAX_SEGMENTS 1024U
+
+static int proxy_assemble_validate(const DeadpanProxyAssembleRequest *request) {
+    if (request->width < 2 || request->height < 2 || request->width > PROXY_MAX_DIMENSION ||
+        request->height > PROXY_MAX_DIMENSION || (request->width & 1) || (request->height & 1) ||
+        request->time_base_num == 0 || request->time_base_den == 0 ||
+        request->time_base_num > INT_MAX || request->time_base_den > INT_MAX ||
+        request->sar_num == 0 || request->sar_den == 0 || request->sar_num > INT_MAX ||
+        request->sar_den > INT_MAX || request->rotation_quarter_turns > 3 ||
+        !proxy_valid_color(request->transfer, request->primaries)) {
+        return fail("invalid_request", "proxy assembly stream is invalid");
+    }
+    if (request->frames == 0 || request->frames > PROXY_MAX_FRAMES || request->segments == NULL ||
+        request->segment_count == 0 || request->segment_count > PROXY_MAX_SEGMENTS ||
+        request->input_byte_length == 0 || request->input_byte_length > (uint64_t)INT64_MAX ||
+        request->max_output_bytes == 0 || request->max_output_bytes > (uint64_t)INT64_MAX ||
+        request->timeout_ms == 0 || request->timeout_ms > 24ULL * 60ULL * 60ULL * 1000ULL) {
+        return fail("invalid_request", "proxy assembly budget is invalid");
+    }
+    uint64_t frames = 0;
+    for (uint64_t index = 0; index < request->segment_count; index++) {
+        const DeadpanProxySegment *segment = &request->segments[index];
+        uint64_t end;
+        if (segment->length == 0 || segment->frames == 0 ||
+            segment->start_pts >= segment->end_pts ||
+            !checked_add_u64(segment->offset, segment->length, &end) ||
+            end > request->input_byte_length ||
+            (index > 0 && request->segments[index - 1].end_pts != segment->start_pts) ||
+            !checked_add_u64(frames, segment->frames, &frames)) {
+            return fail("invalid_request", "proxy assembly range %" PRIu64 " is invalid", index);
+        }
+    }
+    if (frames != request->frames) {
+        return fail("invalid_request", "proxy assembly ranges miss pictures");
+    }
+    return 1;
+}
+
+int deadpan_proxy_assemble(int input_fd, int output_fd, const DeadpanProxyAssembleRequest *request,
+                           DeadpanProxyAssembleReport *report, DeadpanConversionError *error) {
+    RemuxInput input;
+    RemuxInput check;
+    AVFormatContext *output = NULL;
+    AVStream *stream = NULL;
+    OwnedAvio output_io;
+    struct stat metadata;
+    uint8_t *extradata = NULL;
+    int extradata_size = 0;
+    uint64_t start;
+    uint64_t timeout_ns;
+    uint64_t written = 0;
+    int header_written = 0;
+    int success = 0;
+    int code;
+    AVRational clock;
+
+    memset(&input, 0, sizeof(input));
+    memset(&check, 0, sizeof(check));
+    memset(&output_io, 0, sizeof(output_io));
+    memset(report, 0, sizeof(*report));
+    memset(error, 0, sizeof(*error));
+    memset(&state, 0, sizeof(state));
+    state.error = error;
+    if (!proxy_assemble_validate(request)) {
+        return 1;
+    }
+    clock = (AVRational){(int)request->time_base_num, (int)request->time_base_den};
+    start = monotonic_ns();
+    if (start == UINT64_MAX || !checked_mul_u64(request->timeout_ms, 1000000ULL, &timeout_ns) ||
+        !checked_add_u64(start, timeout_ns, &state.deadline_ns)) {
+        fail("invalid_request", "proxy assembly deadline overflow");
+        return 1;
+    }
+    av_log_set_level(AV_LOG_ERROR);
+    av_log_set_callback(worker_log);
+    av_max_alloc(128U * 1024U * 1024U);
+    if (!verify_runtime()) {
+        goto cleanup;
+    }
+    if (fstat(input_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) ||
+        (uint64_t)metadata.st_size != request->input_byte_length) {
+        fail("invalid_request", "proxy assembly input has another length");
+        goto cleanup;
+    }
+    if (fstat(output_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) || metadata.st_size != 0 ||
+        metadata.st_uid != geteuid() || (metadata.st_mode & 077) != 0) {
+        fail("invalid_descriptor", "proxy output must be a private empty regular file");
+        goto cleanup;
+    }
+    code = avformat_alloc_output_context2(&output, NULL, "mp4", NULL);
+    if (code < 0 || output == NULL) {
+        fail_ffmpeg("create assembled proxy MP4", code < 0 ? code : AVERROR_UNKNOWN);
+        goto cleanup;
+    }
+    if (!owned_avio_open(&output_io, output_fd, 0, (int64_t)request->max_output_bytes, 1)) {
+        goto cleanup;
+    }
+    output->pb = output_io.avio;
+    output->flags |= AVFMT_FLAG_CUSTOM_IO;
+    output->interrupt_callback.callback = deadline_interrupt;
+    output->interrupt_callback.opaque = &state;
+    output->io_open = deny_external_io;
+    output->protocol_whitelist = av_strdup("");
+    if (output->protocol_whitelist == NULL) {
+        fail("resource_exhausted", "allocate FFmpeg output protocol denylist");
+        goto cleanup;
+    }
+    for (uint64_t index = 0; index < request->segment_count; index++) {
+        const DeadpanProxySegment *segment = &request->segments[index];
+        if (!proxy_movie_open(&input, input_fd, (int64_t)segment->offset,
+                              (int64_t)segment->length, request->width, request->height)) {
+            goto cleanup;
+        }
+        const AVCodecParameters *parameters = input.format->streams[0]->codecpar;
+        if (index == 0) {
+            extradata_size = parameters->extradata_size;
+            extradata = av_memdup(parameters->extradata, (size_t)extradata_size);
+            stream = avformat_new_stream(output, NULL);
+            if (extradata == NULL || stream == NULL) {
+                fail("resource_exhausted", "allocate assembled proxy stream");
+                goto cleanup;
+            }
+            code = avcodec_parameters_copy(stream->codecpar, parameters);
+            if (code < 0) {
+                fail_ffmpeg("copy proxy stream parameters", code);
+                goto cleanup;
+            }
+            /* The recipe's interpretation, as a single-range encoding
+               writes it, whatever the range movie's own boxes said. */
+            stream->codecpar->codec_tag = 0;
+            stream->codecpar->sample_aspect_ratio =
+                (AVRational){(int)request->sar_num, (int)request->sar_den};
+            stream->codecpar->color_range = AVCOL_RANGE_MPEG;
+            stream->codecpar->color_space = AVCOL_SPC_BT709;
+            stream->codecpar->color_trc = (enum AVColorTransferCharacteristic)request->transfer;
+            stream->codecpar->color_primaries = (enum AVColorPrimaries)request->primaries;
+            stream->codecpar->chroma_location = AVCHROMA_LOC_LEFT;
+            stream->sample_aspect_ratio = stream->codecpar->sample_aspect_ratio;
+            stream->time_base = clock;
+            if (!proxy_set_rotation(stream->codecpar, request->rotation_quarter_turns)) {
+                goto cleanup;
+            }
+            AVDictionary *options = NULL;
+            int timescale = (int)request->time_base_den;
+            if (av_dict_set_int(&options, "video_track_timescale", timescale, 0) < 0 ||
+                av_dict_set_int(&options, "movie_timescale", timescale, 0) < 0) {
+                av_dict_free(&options);
+                fail("resource_exhausted", "configure assembled proxy MP4 clock");
+                goto cleanup;
+            }
+            code = avformat_write_header(output, &options);
+            av_dict_free(&options);
+            if (code < 0) {
+                fail_ffmpeg("write assembled proxy MP4 header", code);
+                goto cleanup;
+            }
+            header_written = 1;
+        } else if (parameters->extradata_size != extradata_size ||
+                   memcmp(parameters->extradata, extradata, (size_t)extradata_size) != 0) {
+            fail("segment_mismatch",
+                 "proxy range %" PRIu64 " has another decoder configuration", index);
+            goto cleanup;
+        }
+        if (!proxy_movie_read(&input, clock, segment->start_pts, segment->end_pts,
+                              segment->frames, output, stream, &written)) {
+            goto cleanup;
+        }
+        remux_close(&input);
+    }
+    code = av_write_trailer(output);
+    header_written = 0;
+    if (code < 0) {
+        fail_ffmpeg("write assembled proxy MP4 trailer", code);
+        goto cleanup;
+    }
+    avio_flush(output_io.avio);
+    if (output_io.avio->error < 0) {
+        fail_ffmpeg("flush assembled proxy MP4", output_io.avio->error);
+        goto cleanup;
+    }
+    if (ftruncate(output_fd, (off_t)output_io.descriptor.length) != 0 || fsync(output_fd) != 0) {
+        fail(io_code(errno), "finalize assembled proxy: %s", strerror(errno));
+        goto cleanup;
+    }
+    /* Read the joined movie back: one configuration, every picture intra,
+       contiguous from the first range's start to the last range's end. */
+    {
+        uint64_t unused = 0;
+        if (!proxy_movie_open(&check, output_fd, 0, output_io.descriptor.length, request->width,
+                              request->height) ||
+            !proxy_movie_read(&check, clock, request->segments[0].start_pts,
+                              request->segments[request->segment_count - 1].end_pts,
+                              request->frames, NULL, NULL, &unused)) {
+            goto cleanup;
+        }
+        const AVCodecParameters *parameters = check.format->streams[0]->codecpar;
+        if (parameters->extradata_size != extradata_size ||
+            memcmp(parameters->extradata, extradata, (size_t)extradata_size) != 0) {
+            fail("verification_failed", "assembled proxy changed its decoder configuration");
+            goto cleanup;
+        }
+    }
+    report->output_bytes = (uint64_t)output_io.descriptor.length;
+    report->packets = written;
+    report->width = request->width;
+    report->height = request->height;
+    success = within_deadline();
+
+cleanup:
+    if (header_written && output != NULL) {
+        (void)av_write_trailer(output);
+    }
+    if (output != NULL) {
+        output->pb = NULL;
+        avformat_free_context(output);
+    }
+    owned_avio_close(&output_io);
+    remux_close(&input);
+    remux_close(&check);
+    av_free(extradata);
+    if (!success && error->code[0] == '\0') {
+        fail("internal_error", "proxy assembly failed without a classified error");
+    }
+    return success ? 0 : 1;
 }

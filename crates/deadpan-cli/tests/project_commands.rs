@@ -50,7 +50,7 @@ fn success(arguments: &[&str]) -> Result<Value> {
 fn doctor_reports_sound_document_and_database_schemas() -> Result {
     let report = success(&["doctor"])?;
     assert_eq!(report["document_schema"], 46);
-    assert_eq!(report["database_schema"], 67);
+    assert_eq!(report["database_schema"], 68);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-57-development-format-refusal",
@@ -1304,5 +1304,46 @@ fn obsolete_schema_cli_validation_and_migration_refuse_without_writes_or_backup(
             assert_eq!(fs::read_dir(&package)?.count(), 2);
         }
     }
+    Ok(())
+}
+
+#[test]
+fn storage_report_states_the_ai_variant_retention_policy() -> Result {
+    let root = tempfile::tempdir()?;
+    let package = create(root.path())?;
+    let path = package.to_str().ok_or("UTF-8")?;
+    let report = success(&["project", "storage", path])?;
+    let retention = &report["project"]["variant_retention"];
+    assert_eq!(retention["retention_seconds"], 7 * 24 * 60 * 60, "{report}");
+    for field in [
+        "offered",
+        "kept",
+        "selected",
+        "accepted",
+        "expiring",
+        "due",
+        "discarded",
+        "expired",
+        "evicted_awaiting_cleanup",
+        "evicted_awaiting_cleanup_bytes",
+    ] {
+        assert_eq!(retention[field], 0, "{field}");
+    }
+    assert!(retention.get("soonest_expiry_unix_seconds").is_none());
+    let cleanup = success(&["project", "storage", path, "--clean", "--dry-run"])?;
+    assert_eq!(cleanup["variant_expiry"]["dry_run"], true);
+    assert_eq!(cleanup["variant_expiry"]["expired"], json!([]));
+    // Keeping names an offered variant; an unknown one is refused.
+    let refused = cli(&[
+        "keep-hold",
+        path,
+        "--request",
+        "no-such-request",
+        "--attempt",
+        "no-such-attempt",
+    ])?;
+    assert!(!refused.status.success());
+    let usage = cli(&["keep-hold", path, "--request", "r"])?;
+    assert!(!usage.status.success());
     Ok(())
 }

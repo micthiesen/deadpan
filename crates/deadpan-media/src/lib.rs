@@ -25,6 +25,9 @@ pub mod source_session;
 pub mod picture_scan;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod playback_pictures;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod proxy;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -38,6 +41,7 @@ mod conversion;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use conversion::{
     CanonicalBridge, CanonicalMedia, ConversionError, InputIdentity, PROXY_STALL_TIMEOUT,
-    ProxyEncodeOptions, RemuxLimits, append_for_remux, canonicalize, canonicalize_bridge,
-    encode_proxy, encode_proxy_retrying, remux_av, remux_joined, retryable, sample_bridge,
+    ProxyEncodeOptions, RemuxLimits, WORKER_TERMINATED, append_for_remux, assemble_proxy,
+    canonicalize, canonicalize_bridge, encode_proxy, encode_proxy_retrying, remux_av, remux_joined,
+    retryable, sample_bridge,
 };

@@ -20,8 +20,13 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
-const USAGE: &str = "usage: cargo xtask perf [--output NEW_DIR] [--fixture NAME=PACKAGE]... [--generate] [--ui] [--stages doctor,scale,seek,edit,playback,export,ui] [--audition-seconds N] [--max-load L] [--quick]";
+const USAGE: &str = "usage: cargo xtask perf [--output NEW_DIR] [--fixture NAME=PACKAGE]... [--generate] [--ui] [--stages doctor,scale,seek,edit,playback,export,stress,ui] [--audition-seconds N] [--max-load L] [--quick]";
 const ALL_STAGES: [&str; 6] = ["doctor", "scale", "seek", "edit", "playback", "export"];
+/// Stages run only when named in `--stages` (or `--ui`).
+const OPT_IN_STAGES: [&str; 2] = ["stress", "ui"];
+/// Fragment length and plays of the jumpy `-cuts` playback fixture.
+const CUT_EVERY: &str = "24";
+const CUT_PLAYS: &str = "3";
 /// Minimum samples before a distribution can PASS or FAIL a target.
 const MIN_SEEKS: u64 = 100;
 const MIN_EDITS: u64 = 20;
@@ -82,11 +87,10 @@ fn parse(arguments: &[String]) -> Result<Options, String> {
                     }
                     "--stages" => {
                         options.stages = value.split(',').map(str::to_owned).collect();
-                        if let Some(unknown) = options
-                            .stages
-                            .iter()
-                            .find(|stage| !ALL_STAGES.contains(&stage.as_str()) && *stage != "ui")
-                        {
+                        if let Some(unknown) = options.stages.iter().find(|stage| {
+                            !ALL_STAGES.contains(&stage.as_str())
+                                && !OPT_IN_STAGES.contains(&stage.as_str())
+                        }) {
                             return Err(format!("unknown stage {unknown}; {USAGE}"));
                         }
                     }
@@ -291,18 +295,63 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
     }
     if wants("playback") {
         let seconds = options.audition_seconds.to_string();
+        let worker = bin.join("deadpan-media-worker");
         for (name, package) in &media {
+            // The seek stage's private proxy cache, or a new one.
+            let proxies = work.join(format!("proxies-{name}"));
             let copy = work.join(format!("playback-{name}.deadpan"));
             copy_package(package, &copy)?;
-            let load = quiet(options.max_load);
-            let mut report = stage_json(
+            // A YTP-like edit of the same Original: a Repeat restart (a
+            // backward jump needing a keyframe seek) every few seconds.
+            let cuts = work.join(format!("playback-{name}-cuts.deadpan"));
+            copy_package(package, &cuts)?;
+            let made = stage_json(
                 &perf,
-                &["playback", path_str(&copy)?, "--seconds", &seconds],
+                &[
+                    "make-cuts",
+                    path_str(&cuts)?,
+                    "--every",
+                    CUT_EVERY,
+                    "--plays",
+                    CUT_PLAYS,
+                    "--seconds",
+                    &(options.audition_seconds + 10).to_string(),
+                ],
                 &output,
-                &format!("playback-{name}"),
+                &format!("make-cuts-{name}"),
             )?;
-            report["load"] = load;
-            results.insert(format!("playback/{name}"), report);
+            results.insert(format!("fixture/{name}-cuts"), made);
+            for (label, template, policy) in [
+                (name.clone(), &copy, "original"),
+                (format!("{name}+proxy"), &copy, "adaptive"),
+                (format!("{name}-cuts"), &cuts, "original"),
+                (format!("{name}-cuts+proxy"), &cuts, "adaptive"),
+            ] {
+                // Each run opens its own copy writable.
+                let package = &work.join(format!("playback-run-{label}.deadpan"));
+                copy_package(template, package)?;
+                let load = quiet(options.max_load);
+                let mut arguments = vec![
+                    "playback",
+                    path_str(package)?,
+                    "--seconds",
+                    &seconds,
+                    "--pictures",
+                    policy,
+                ];
+                if policy == "adaptive" {
+                    arguments.extend([
+                        "--proxy-cache",
+                        path_str(&proxies)?,
+                        "--worker",
+                        path_str(&worker)?,
+                    ]);
+                }
+                let mut report =
+                    stage_json(&perf, &arguments, &output, &format!("playback-{label}"))?;
+                report["load"] = load;
+                results.insert(format!("playback/{label}"), report);
+            }
         }
     }
     if wants("export") {
@@ -316,6 +365,19 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
             report["load"] = load;
             results.insert(format!("export/{name}"), report);
         }
+    }
+    if wants("stress") {
+        stress(
+            &options,
+            &bin,
+            &cli,
+            &perf,
+            &output,
+            &work,
+            &media,
+            &large,
+            &mut results,
+        )?;
     }
     if wants("ui") {
         results.insert("ui".into(), ui(&output, options.max_load)?);
@@ -808,6 +870,182 @@ fn export(
     }))
 }
 
+/// Stress workloads: long-project playback (10,000 Original Source beats
+/// and 10,000 Holds) and, per media fixture, a proxy build, jumpy adaptive
+/// playback and an export running at the same time. The app itself pauses
+/// proxy builds during playback and renders; this deliberately does not.
+#[allow(clippy::too_many_arguments)]
+fn stress(
+    options: &Options,
+    bin: &Path,
+    cli: &Path,
+    perf: &Path,
+    output: &Path,
+    work: &Path,
+    media: &[(String, PathBuf)],
+    large: &Path,
+    results: &mut BTreeMap<String, Value>,
+) -> Result<(), String> {
+    let seconds = options.audition_seconds.to_string();
+    let worker = bin.join("deadpan-media-worker");
+    let (fragments, plays) = if options.quick {
+        ("20", "10")
+    } else {
+        ("100", "100")
+    };
+    let holds = work.join(format!("stress-large-{LARGE_BEATS}.deadpan"));
+    copy_package(large, &holds)?;
+    let load = quiet(options.max_load);
+    let mut report = stage_json(
+        perf,
+        &["playback", path_str(&holds)?, "--seconds", &seconds],
+        output,
+        "stress-playback-holds",
+    )?;
+    report["load"] = load;
+    results.insert(format!("stress/playback-large-{LARGE_BEATS}"), report);
+    for (name, package) in media {
+        let proxies = work.join(format!("proxies-{name}"));
+        let long = work.join(format!("stress-{name}-long.deadpan"));
+        copy_package(package, &long)?;
+        let made = stage_json(
+            perf,
+            &[
+                "make-long",
+                path_str(&long)?,
+                "--fragments",
+                fragments,
+                "--every",
+                "6",
+                "--plays",
+                plays,
+            ],
+            output,
+            &format!("make-long-{name}"),
+        )?;
+        results.insert(format!("fixture/{name}-long"), made);
+        let load = quiet(options.max_load);
+        let mut report = stage_json(
+            perf,
+            &[
+                "playback",
+                path_str(&long)?,
+                "--seconds",
+                &seconds,
+                "--pictures",
+                "adaptive",
+                "--proxy-cache",
+                path_str(&proxies)?,
+                "--worker",
+                path_str(&worker)?,
+            ],
+            output,
+            &format!("stress-playback-{name}-long"),
+        )?;
+        report["load"] = load;
+        results.insert(format!("stress/playback-{name}-long+proxy"), report);
+
+        // Simultaneous: a fresh proxy build, jumpy adaptive playback with the
+        // existing proxy, and a public Render export.
+        let building = work.join(format!("stress-{name}-build.deadpan"));
+        let playing = work.join(format!("stress-{name}-play.deadpan"));
+        let exporting = work.join(format!("stress-{name}-export.deadpan"));
+        for copy in [&building, &playing, &exporting] {
+            copy_package(package, copy)?;
+        }
+        stage_json(
+            perf,
+            &[
+                "make-cuts",
+                path_str(&playing)?,
+                "--every",
+                CUT_EVERY,
+                "--plays",
+                CUT_PLAYS,
+                "--seconds",
+                &(options.audition_seconds + 10).to_string(),
+            ],
+            output,
+            &format!("stress-make-cuts-{name}"),
+        )?;
+        let fresh = work.join(format!("stress-proxies-{name}"));
+        let destination = work.join(format!("stress-export-{name}"));
+        std::fs::create_dir(&destination).map_err(|error| error.to_string())?;
+        let load = quiet(options.max_load);
+        let started = Instant::now();
+        let (build, playback, export_report) = std::thread::scope(|scope| {
+            let build = scope.spawn(|| {
+                stage_json(
+                    perf,
+                    &[
+                        "proxy-build",
+                        path_str(&building)?,
+                        "--proxy-cache",
+                        path_str(&fresh)?,
+                        "--worker",
+                        path_str(&worker)?,
+                    ],
+                    output,
+                    &format!("stress-concurrent-{name}-proxy-build"),
+                )
+            });
+            let playback = scope.spawn(|| {
+                stage_json(
+                    perf,
+                    &[
+                        "playback",
+                        path_str(&playing)?,
+                        "--seconds",
+                        &seconds,
+                        "--pictures",
+                        "adaptive",
+                        "--proxy-cache",
+                        path_str(&proxies)?,
+                        "--worker",
+                        path_str(&worker)?,
+                    ],
+                    output,
+                    &format!("stress-concurrent-{name}-playback"),
+                )
+            });
+            let exported = scope.spawn(|| {
+                export(
+                    cli,
+                    &exporting,
+                    &destination,
+                    output,
+                    &format!("stress-concurrent-{name}"),
+                )
+            });
+            (
+                build
+                    .join()
+                    .map_err(|_| "proxy build thread panicked".to_owned()),
+                playback
+                    .join()
+                    .map_err(|_| "playback thread panicked".to_owned()),
+                exported
+                    .join()
+                    .map_err(|_| "export thread panicked".to_owned()),
+            )
+        });
+        let mut playback = playback??;
+        playback["load"] = load;
+        results.insert(
+            format!("stress/concurrent-{name}"),
+            json!({
+                "success": playback["success"],
+                "load": playback["load"],
+                "wall_seconds": started.elapsed().as_secs_f64(),
+                "proxy_build": build??,
+                "playback": playback,
+                "export": export_report??,
+            }),
+        );
+    }
+    Ok(())
+}
+
 /// Release ui-harness performance replays of the gated Section 25 scenarios.
 fn ui(output: &Path, max_load: f64) -> Result<Value, String> {
     eprintln!("perf: building release ui-harness app");
@@ -1105,6 +1343,20 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     Some(complete && clean),
                     base.clone().and(covered),
                 );
+                if value["picture_policy"] == "adaptive" {
+                    push(
+                        "Playback picture tiers (informational)",
+                        format!("{fixture}: exact or proxy per picture, repositions"),
+                        json!({
+                            "tiers": pictures["tiers"],
+                            "repositions": pictures["repositions"],
+                            "proxy": pictures["proxy"],
+                            "exact_on_stop_ms": pictures["exact_on_stop_ms"],
+                        }),
+                        None,
+                        base.clone(),
+                    );
+                }
                 push(
                     "Playback start latency (informational)",
                     format!("{fixture}: play() to first device-reported content"),
@@ -1112,6 +1364,46 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     None,
                     base.clone(),
                 );
+            }
+            "stress" => {
+                let playback = if fixture.starts_with("concurrent-") {
+                    &value["playback"]
+                } else {
+                    value
+                };
+                push(
+                    "Stress playback (informational)",
+                    format!("{fixture}: real-device audition, pictures following heard clock"),
+                    json!({
+                        "covered": playback["covered_requested_interval"],
+                        "failure": playback["failure"],
+                        "audio": playback["audio"],
+                        "dropped": playback["pictures"]["dropped_skipped"],
+                        "presented": playback["pictures"]["presented"],
+                        "tiers": playback["pictures"]["tiers"],
+                        "start_ms": playback["playback_start_to_first_heard_ms"],
+                        "open_ms": playback["picture_session_open_ms"],
+                        "peak_footprint_bytes": playback["resources"]["peak_footprint_bytes"],
+                    }),
+                    None,
+                    base.clone(),
+                );
+                if fixture.starts_with("concurrent-") {
+                    push(
+                        "Concurrent proxy build and export (informational)",
+                        format!("{fixture}: beside the playback above"),
+                        json!({
+                            "proxy_build": value["proxy_build"]["status"],
+                            "proxy_build_ms": value["proxy_build"]["build_ms"],
+                            "proxy_build_peak_footprint_bytes": value["proxy_build"]["resources"]["peak_footprint_bytes"],
+                            "export_wall_seconds": value["export"]["wall_seconds"],
+                            "export_success": value["export"]["success"],
+                            "export_peak_footprint_bytes": value["export"]["resources"]["peak_footprint_bytes"],
+                        }),
+                        None,
+                        base.clone(),
+                    );
+                }
             }
             "export" => {
                 push(

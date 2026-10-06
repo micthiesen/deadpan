@@ -157,6 +157,23 @@ pub(super) fn rows(
             format!("{} max", micros(playback.max_render_cost_ns / 1000)),
         ),
         ("PLAYBACK", "Generations", playback.generations.to_string()),
+        ("PLAYBACK", "Pictures", {
+            let pictures = counters.playback_pictures;
+            format!(
+                "{} requested · {} dropped · {} exact · {} proxy",
+                pictures.requested, pictures.skipped, pictures.exact, pictures.reduced
+            )
+        }),
+        (
+            "PLAYBACK",
+            "Repositions",
+            format!(
+                "{} started · {} reached · {} failed",
+                counters.playback_pictures.repositions,
+                counters.playback_pictures.repositions_reached,
+                counters.playback_pictures.repositions_failed
+            ),
+        ),
         (
             "DECODE QUEUES",
             "Picture preview",

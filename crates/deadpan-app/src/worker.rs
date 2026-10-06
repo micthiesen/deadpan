@@ -10,9 +10,11 @@ use std::time::{Duration, Instant};
 #[cfg(test)]
 use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
+use deadpan_media::playback_pictures::{PictureClock, PictureSource, PlaybackPictures};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{
-    SourceSession, SourceSessionError, SourceSessionLimits, interactive_decode_threads_for,
+    RepositionProgress, SourceSession, SourceSessionError, SourceSessionLimits,
+    interactive_decode_threads_for,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_render::Rgba8Frame;
@@ -330,11 +332,17 @@ impl PreviewWorker {
                 &deadpan_diagnostics::QUEUES.thumbnails
             }));
         let background = Arc::clone(&shared);
+        #[cfg(test)]
+        let seek_cost_scale = tests_support::SEEK_COST_SCALE.get();
         // The single thread owns all file I/O, hashing, indexing and decoding.
         // Dropping the handle deliberately avoids a blocking GUI shutdown join.
         std::thread::Builder::new()
             .name(name.into())
-            .spawn(move || run(background, context, proxies))?;
+            .spawn(move || {
+                #[cfg(test)]
+                tests_support::SEEK_COST_SCALE.set(seek_cost_scale);
+                run(background, context, proxies)
+            })?;
         Ok(Self { shared })
     }
 
@@ -460,13 +468,24 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
                 continue;
             }
         };
-        // Only stopped committed pictures of the main viewer may start with
-        // a proxy; playback, proposals, copies and candidates never do.
-        let interactive = proxies
-            && request.ticket.transport.is_none()
-            && matches!(request.work, Work::Project { .. });
+        // Committed pictures of the main viewer may come from a proxy:
+        // stopped ones first, refined after a rest, and playback ones when
+        // the Original decoder cannot deliver them in time. Proposals,
+        // copies and candidates never do.
+        let committed = proxies && matches!(request.work, Work::Project { .. });
+        let interactive = committed && request.ticket.transport.is_none();
+        let playback = committed && request.ticket.transport.is_some();
         idle_preparation = interactive;
-        let slot = interactive.then_some(&mut proxy);
+        let slot = if interactive {
+            Some(ProxyUse::Stopped(&mut proxy))
+        } else if playback {
+            Some(ProxyUse::Playback {
+                slot: &mut proxy,
+                picture_period: None,
+            })
+        } else {
+            None
+        };
         let started = Instant::now();
         let rest = if interactive {
             let moving = previous_interactive.is_some_and(|previous| {
@@ -483,7 +502,16 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         };
         let picture = perform_with(&request, &mut session, &mut proposal, slot);
         let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
-        if !publish_reply(&shared, &context, &request, picture, started) || !refine {
+        let published = publish_reply(&shared, &context, &request, picture, started);
+        if playback {
+            // Between playback pictures, move the Original decoder toward a
+            // picture ahead of the heard clock so exact pictures resume.
+            if refine {
+                reposition(&shared, &request, &mut session);
+            }
+            continue;
+        }
+        if !published || !refine {
             continue;
         }
         // Refine once the cursor rests: wait for a newer request, and decode
@@ -532,6 +560,78 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         }
         publish_reply(&shared, &context, &request, picture, started);
     }
+}
+
+/// Advance the retained Original decoder's reposition after a proxy
+/// playback picture, one picture at a time, until it reaches its target or
+/// the viewer submits, cancels or clears anything. Decoding is never
+/// cancelled mid-picture (that would reopen the decoder); a new request
+/// waits at most one preroll picture's decode.
+fn reposition(shared: &Shared, request: &Request, retained: &mut Option<RetainedSession>) {
+    let Some(session) = retained.as_mut() else {
+        return;
+    };
+    let mut waiting = || {
+        let mailbox = shared.mailbox.lock().expect("preview mailbox");
+        mailbox.pending.is_some()
+            || mailbox.clear_requested
+            || mailbox.shutdown
+            || mailbox.latest != Some(request.ticket)
+    };
+    let never = AtomicBool::new(false);
+    if let Some(target) = session.reposition.take() {
+        if waiting() {
+            return;
+        }
+        if session
+            .source
+            .begin_reposition(target, FRAME_TIMEOUT, &never)
+            .is_err()
+        {
+            // The session reopens its decoder on its next picture.
+            deadpan_diagnostics::PLAYBACK_PICTURES
+                .repositions_failed
+                .increment();
+            return;
+        }
+        deadpan_diagnostics::PLAYBACK_PICTURES
+            .repositions
+            .increment();
+    }
+    if session.source.repositioning().is_none() {
+        return;
+    }
+    let started = Instant::now();
+    match session
+        .source
+        .advance_reposition(FRAME_TIMEOUT, &never, &mut waiting)
+    {
+        Ok(RepositionProgress::Pending { ordinals }) => {
+            session.costs.record_reposition(ordinals, started.elapsed());
+        }
+        Ok(RepositionProgress::Reached { ordinals }) => {
+            session.costs.record_reposition(ordinals, started.elapsed());
+            deadpan_diagnostics::PLAYBACK_PICTURES
+                .repositions_reached
+                .increment();
+        }
+        Err(_) => deadpan_diagnostics::PLAYBACK_PICTURES
+            .repositions_failed
+            .increment(),
+    }
+}
+
+/// How the main viewer's proxy may serve one committed picture.
+enum ProxyUse<'a> {
+    /// A stopped seek: the proxy picture first, refined after a rest.
+    Stopped(&'a mut ProxySlot),
+    /// A playback picture: the tier the decoder's measured costs choose.
+    /// `picture_period` is the project picture period of an edit; None
+    /// for the Original itself, whose own picture durations apply.
+    Playback {
+        slot: &'a mut ProxySlot,
+        picture_period: Option<Duration>,
+    },
 }
 
 enum Next {
@@ -618,6 +718,12 @@ struct RetainedSession {
     key: SessionKey,
     source: SourceSession,
     catalog: Option<Arc<RegisteredSource>>,
+    /// Measured exact, seek and proxy picture costs of this decoder, which
+    /// choose each playback picture's tier.
+    costs: PlaybackPictures,
+    /// Where to reposition this decoder after the last proxy playback
+    /// picture, so exact pictures can resume.
+    reposition: Option<SourceFrameId>,
 }
 
 /// Always the exact picture; see [`perform_with`] for proxy pictures.
@@ -633,7 +739,7 @@ fn perform_with(
     request: &Request,
     retained: &mut Option<RetainedSession>,
     proposal: &mut Option<PlanCache>,
-    proxy: Option<&mut ProxySlot>,
+    proxy: Option<ProxyUse<'_>>,
 ) -> Result<Picture, String> {
     if let Work::Project { workspace, view } = &request.work {
         return media_picture(
@@ -723,6 +829,8 @@ fn perform_with(
                 key: SessionKey::Raw(request.ticket.source),
                 source,
                 catalog: None,
+                costs: PlaybackPictures::default(),
+                reposition: None,
             });
             (Some(summary), SourceFrameId(0))
         }
@@ -784,7 +892,7 @@ fn media_picture(
     view: &ProjectView,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
-    proxy: Option<&mut ProxySlot>,
+    proxy: Option<ProxyUse<'_>>,
 ) -> Result<Picture, String> {
     if cancelled.load(Ordering::Acquire) {
         return Err("Project preview was cancelled.".into());
@@ -857,6 +965,14 @@ fn media_picture(
                 .select_source_frame(index)
                 .map_err(|error| error.to_string())?
                 .identity;
+            // Edit playback requests one picture per project picture period.
+            let proxy = proxy.map(|proxy| match proxy {
+                ProxyUse::Playback { slot, .. } => ProxyUse::Playback {
+                    slot,
+                    picture_period: frame_period(basis.frame_rate),
+                },
+                stopped => stopped,
+            });
             let mut picture =
                 registered_picture(media, registered, frame, canvas, cancelled, retained, proxy)?;
             picture.follow_point = sample
@@ -994,6 +1110,8 @@ fn generated_picture(
             key,
             source,
             catalog: None,
+            costs: PlaybackPictures::default(),
+            reposition: None,
         });
     }
     let session = retained
@@ -1084,35 +1202,166 @@ fn registered_picture(
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
-    proxy: Option<&mut ProxySlot>,
+    proxy: Option<ProxyUse<'_>>,
 ) -> Result<Picture, String> {
-    // A proxy serves a random seek; an Original decoder already positioned
-    // at or just before the target is as fast and exact, so it serves steps.
-    if let Some(slot) = proxy {
-        let key = SessionKey::Project {
-            session: media.session(),
-            asset: registered.asset.clone(),
-            receipt: registered.receipt.id().clone(),
-        };
-        // A single step (either direction) from the decoder's current picture
-        // is shown exactly, without a proxy picture flashing first.
-        let stepping = retained
-            .as_ref()
-            .is_some_and(|session| session.key == key && session.source.is_step(id));
-        if !stepping
-            && let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)?
-        {
-            return Ok(picture);
+    let key = SessionKey::Project {
+        session: media.session(),
+        asset: registered.asset.clone(),
+        receipt: registered.receipt.id().clone(),
+    };
+    match proxy {
+        // A proxy serves a random seek; an Original decoder already
+        // positioned at or just before the target is as fast and exact, so
+        // it serves steps.
+        Some(ProxyUse::Stopped(slot)) => {
+            // A single step (either direction) from the decoder's current
+            // picture is shown exactly, without a proxy picture flashing first.
+            let stepping = retained
+                .as_ref()
+                .is_some_and(|session| session.key == key && session.source.is_step(id));
+            if !stepping
+                && let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)?
+            {
+                return Ok(picture);
+            }
         }
+        Some(ProxyUse::Playback {
+            slot,
+            picture_period,
+        }) => {
+            if let Some(picture) = playback_proxy_picture(
+                media,
+                registered,
+                id,
+                canvas,
+                cancelled,
+                retained,
+                slot,
+                picture_period,
+                &key,
+            )? {
+                deadpan_diagnostics::PLAYBACK_PICTURES.reduced.increment();
+                return Ok(picture);
+            }
+            let picture = exact_picture(media, registered, id, canvas, cancelled, retained, &key);
+            if picture.is_ok() {
+                deadpan_diagnostics::PLAYBACK_PICTURES.exact.increment();
+            }
+            return picture;
+        }
+        None => {}
     }
-    match registered_picture_once(media, registered, id, canvas, cancelled, retained) {
+    exact_picture(media, registered, id, canvas, cancelled, retained, &key)
+}
+
+/// The proxy picture for a playback request when the retained Original
+/// decoder's measured costs say its exact picture would be late, together
+/// with where that decoder should reposition. None: decode it exactly.
+#[allow(clippy::too_many_arguments)]
+fn playback_proxy_picture(
+    media: PictureMedia<'_>,
+    registered: &Arc<RegisteredSource>,
+    id: SourceFrameId,
+    canvas: Option<(u32, u32)>,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+    slot: &mut ProxySlot,
+    picture_period: Option<Duration>,
+    key: &SessionKey,
+) -> Result<Option<Picture>, String> {
+    let Some(session) = retained.as_mut().filter(|session| session.key == *key) else {
+        return Ok(None);
+    };
+    let Some(ordinal_period) = picture_duration(session.source.index().index(), id) else {
+        return Ok(None);
+    };
+    let clock = PictureClock {
+        picture_period: picture_period.unwrap_or(ordinal_period),
+        ordinal_period,
+    };
+    let plan = session.source.decode_plan(id);
+    if session.costs.choose(plan, clock, slot.is_open()) != PictureSource::Reduced {
+        return Ok(None);
+    }
+    let started = Instant::now();
+    let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)? else {
+        return Ok(None);
+    };
+    session.costs.record_reduced(started.elapsed());
+    // A decoder already at or moving to a picture ahead of this one is kept
+    // when playback reaches it no later than a new reposition would.
+    let ahead =
+        PlaybackPictures::ahead(id, session.source.current(), session.source.repositioning());
+    session.reposition =
+        session
+            .costs
+            .reposition_target(session.source.index().index(), id, clock, ahead);
+    Ok(Some(picture))
+}
+
+/// The exact Original picture. Its decode cost is recorded against the
+/// retained decoder's plan for later playback choices.
+fn exact_picture(
+    media: PictureMedia<'_>,
+    registered: &Arc<RegisteredSource>,
+    id: SourceFrameId,
+    canvas: Option<(u32, u32)>,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+    key: &SessionKey,
+) -> Result<Picture, String> {
+    // A decoder reopened by this picture costs more than its plan says.
+    let plan = retained
+        .as_ref()
+        .filter(|session| session.key == *key && !session.source.reopening())
+        .map(|session| session.source.decode_plan(id));
+    let started = Instant::now();
+    let result = match registered_picture_once(media, registered, id, canvas, cancelled, retained) {
         Err(Served::Interrupted(_)) => {
             *retained = None;
-            registered_picture_once(media, registered, id, canvas, cancelled, retained)
-                .map_err(Served::into_message)
+            return registered_picture_once(media, registered, id, canvas, cancelled, retained)
+                .map_err(Served::into_message);
         }
         result => result.map_err(Served::into_message),
+    };
+    if result.is_ok()
+        && let Some(plan) = plan
+        && let Some(session) = retained.as_mut().filter(|session| session.key == *key)
+    {
+        let elapsed = started.elapsed();
+        #[cfg(test)]
+        let elapsed = match plan {
+            deadpan_media::source_session::DecodePlan::Seek { .. } => {
+                elapsed * tests_support::SEEK_COST_SCALE.get()
+            }
+            _ => elapsed,
+        };
+        session.costs.record_exact(plan, elapsed);
+        session.reposition = None;
     }
+    result
+}
+
+/// How long Original picture `id` is presented: until the next picture's
+/// PTS, or the measured terminal end for the last.
+fn picture_duration(index: &SourceFrameIndex, id: SourceFrameId) -> Option<Duration> {
+    let frames = index.frames();
+    let position = usize::try_from(id.0).ok()?;
+    let start = frames.get(position)?.pts;
+    let end = frames
+        .get(position + 1)
+        .map_or(index.terminal_end(), |next| next.pts);
+    let ticks = u64::try_from(end.checked_sub(start)?).ok()?;
+    let base = index.time_base();
+    let nanos = u128::from(ticks) * u128::from(base.numerator()) * 1_000_000_000
+        / u128::from(base.denominator());
+    Some(Duration::from_nanos(u64::try_from(nanos).ok()?)).filter(|d| !d.is_zero())
+}
+
+/// One picture period of an edit at `rate`.
+fn frame_period(rate: deadpan_core::FrameRate) -> Option<Duration> {
+    let nanos = u128::from(rate.denominator()) * 1_000_000_000 / u128::from(rate.numerator());
+    Some(Duration::from_nanos(u64::try_from(nanos).ok()?)).filter(|d| !d.is_zero())
 }
 
 enum Served {
@@ -1163,6 +1412,10 @@ pub(crate) mod tests_support {
         pub static ADMISSIONS: Cell<u32> = const { Cell::new(0) };
         /// Admit with the receipt index's last duration changed by one tick.
         pub static TAMPER_INDEX: Cell<bool> = const { Cell::new(false) };
+        /// Scale recorded exact keyframe-seek costs, standing in for a
+        /// long-GOP Original whose seeks exceed a picture period. A preview
+        /// worker inherits its creating thread's value.
+        pub static SEEK_COST_SCALE: Cell<u32> = const { Cell::new(1) };
     }
 
     pub(super) fn adjust_index(
@@ -1284,6 +1537,8 @@ fn registered_picture_once(
             key,
             source,
             catalog: Some(Arc::clone(registered)),
+            costs: PlaybackPictures::default(),
+            reposition: None,
         });
     }
     let session = retained

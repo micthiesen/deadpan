@@ -60,6 +60,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "gain",
     "ai-pause",
     "ai-variants",
+    "ai-compare",
     "ai-pause-ready",
     "model-packs",
     "retime",

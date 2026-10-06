@@ -178,6 +178,24 @@ impl Resume {
         &self.window
     }
 
+    /// Whether this paused position belongs to `content` of `revision`.
+    pub fn shows(&self, revision: &RevisionId, content: &ContentIdentity) -> bool {
+        &self.revision == revision && &self.content == content
+    }
+
+    /// The same paused position for other content with identical timing in
+    /// the same session and project, such as an AI comparison switching
+    /// between the committed pause and a proposed variant. The exact sample,
+    /// frame and window are kept; the old device generation is not.
+    pub fn retarget(self, revision: RevisionId, content: ContentIdentity) -> Self {
+        Self {
+            revision,
+            content,
+            generation: None,
+            ..self
+        }
+    }
+
     pub fn matches(&self, update: &Update) -> bool {
         self.ticket == update.ticket
             && self.session == update.session
@@ -376,6 +394,16 @@ impl Run {
             return None;
         }
         let generation = self.generation?;
+        // Frames the heard clock passed while the previous picture was in
+        // flight were never shown. A loop wrap is not a drop.
+        if let Some(previous) = self.requested_frame
+            && frame > previous + 1
+        {
+            deadpan_diagnostics::PLAYBACK_PICTURES
+                .skipped
+                .add(frame - previous - 1);
+        }
+        deadpan_diagnostics::PLAYBACK_PICTURES.requested.increment();
         self.requested_frame = Some(frame);
         Some(generation)
     }

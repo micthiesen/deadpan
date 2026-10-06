@@ -6,27 +6,45 @@
 //! frame after it, decoded from the committed revision through the shared
 //! project picture path. Each is fitted whole inside the native raster
 //! (Lanczos, black bars), as the qualification probe prepared its inputs.
-//! Editorial framing around the Hold is not composed into these pictures yet;
-//! the manifest records the colour interpretation as a stated assumption.
+//! Editorial framing around the Hold is not composed into these pictures yet.
+//!
+//! The version-2 manifest records, for each side, what the picture path
+//! actually showed: an Original frame (asset, receipt, measured index identity,
+//! exact source PTS and the decoder's measured stream colour, pixel format and
+//! geometry), a frame of an accepted generated Hold (its artifact objects and
+//! the same measurements), or authored black. It declares the model's colour
+//! space (canonical full-range sRGB BT.709 RGB) and the conversion applied to
+//! each decoded picture. Conditioning refuses a picture whose measured colour
+//! no stated conversion covers (`deadpan_models::model_input_conversion`).
 
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use deadpan_core::{FrameDuration, NodeId, NodeKind, ProjectFrame, RevisionId};
+use deadpan_core::{FrameDuration, NodeId, NodeKind, ProjectFrame, RevisionId, SourceFrameId};
 use deadpan_jobs::{
     BridgeGenerationPlan, ConditioningMode, HoldConstraints, MotionAmount, Sha256, VideoSpec,
     WorkspaceArtifact, WorkspaceRef,
 };
-use deadpan_models::BridgeContext;
+use deadpan_models::{
+    BoundaryPicture, BridgeBoundaries, BridgeColor, BridgeContext, BridgeMatrix, BridgePrimaries,
+    BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, DecodedBoundary, MeasuredStream,
+    ModelInputConversion, model_input_conversion,
+};
 use deadpan_plan::RenderPlan;
-use deadpan_render::{Rgba8Frame, Rotation};
+use deadpan_render::{Rgba8Frame, SampleDepth};
+use deadpan_source::{ColorMatrix, ColorPrimaries, ColorRange, ColorTransfer, SourceStreamInfo};
 use image::{ImageBuffer, Rgb, RgbImage, RgbaImage, imageops};
 use sha2::Digest;
 
 use crate::picture::{PreparedPicture, ProjectPictureSession};
 
-/// Decoded full-range Rec.709 SDR RGB, passed to the model as sRGB.
-pub const INPUT_COLOR_INTERPRETATION: &str = "rec709-sdr-full-range-rgb8-interpreted-as-srgb";
+/// The conversion applied to every decoded boundary picture: the decoder's
+/// full-range RGB8 (declared matrix and range applied) with BT.709 primaries,
+/// whose sRGB or BT.709 transfer codes pass unchanged and are read as sRGB.
+pub const INPUT_COLOR_INTERPRETATION: &str =
+    "decoded-full-range-rgb8-bt709-primaries-srgb-or-bt709-transfer-codes-unchanged-as-srgb";
+/// The bridge model's declared input/output colour space.
+pub const MODEL_COLOR_SPACE: BridgeColor = CANONICAL_BRIDGE_COLOR;
 pub const LEFT: &str = "inputs/left.png";
 pub const RIGHT: &str = "inputs/right.png";
 pub const MANIFEST: &str = "inputs/context.json";
@@ -40,6 +58,13 @@ pub struct BridgeInputs {
     pub right_png: Vec<u8>,
     pub manifest: Vec<u8>,
     pub manifest_sha256: Sha256,
+}
+
+/// One prepared boundary: the model-input PNG and what the project showed.
+#[derive(Debug, Clone)]
+pub struct PreparedBoundary {
+    pub png: Vec<u8>,
+    pub picture: BoundaryPicture,
 }
 
 /// Prepare the inputs for `hold` at `revision` of the project at `package`.
@@ -108,24 +133,25 @@ pub fn prepare(
     };
     let basis = document.presentation_basis();
     let region = canvas_region([basis.width, basis.height]);
-    let left_png = boundary_png(
+    let left = boundary(
         &mut session,
         ProjectFrame(range.start().0 - 1),
         region,
+        "before",
         cancelled,
     )?;
     check()?;
-    let right_png = boundary_png(&mut session, range.end(), region, cancelled)?;
+    let right = boundary(&mut session, range.end(), region, "after", cancelled)?;
     check()?;
-    assemble(plan, constraints, left_png, right_png)
+    assemble(plan, constraints, left, right)
 }
 
-/// Bind two prepared pictures to `plan` in a context manifest.
+/// Bind two prepared boundaries to `plan` in a version-2 context manifest.
 pub fn assemble(
     plan: BridgeGenerationPlan,
     constraints: HoldConstraints,
-    left_png: Vec<u8>,
-    right_png: Vec<u8>,
+    left: PreparedBoundary,
+    right: PreparedBoundary,
 ) -> Result<BridgeInputs, String> {
     let artifact = |reference: &str, bytes: &[u8]| -> Result<WorkspaceArtifact, String> {
         WorkspaceArtifact::new(
@@ -137,9 +163,14 @@ pub fn assemble(
     };
     let context = BridgeContext::new(
         plan.clone(),
-        artifact(LEFT, &left_png)?,
-        artifact(RIGHT, &right_png)?,
+        artifact(LEFT, &left.png)?,
+        artifact(RIGHT, &right.png)?,
         INPUT_COLOR_INTERPRETATION,
+        MODEL_COLOR_SPACE,
+        BridgeBoundaries {
+            left: left.picture,
+            right: right.picture,
+        },
     )
     .map_err(|error| error.to_string())?;
     let manifest = serde_json::to_vec(&context).map_err(|error| error.to_string())?;
@@ -147,43 +178,220 @@ pub fn assemble(
     Ok(BridgeInputs {
         plan,
         constraints,
-        left_png,
-        right_png,
+        left_png: left.png,
+        right_png: right.png,
         manifest,
         manifest_sha256,
     })
 }
 
-fn boundary_png(
+/// How each boundary picture became model input, read from a context
+/// manifest. `None` on a side means nothing was decoded (authored black) or
+/// the manifest predates measured evidence (schema 1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConditioningColour {
+    pub left: Option<ModelInputConversion>,
+    pub right: Option<ModelInputConversion>,
+    /// True for a schema-1 manifest, which states its interpretation only as text.
+    pub unmeasured: bool,
+}
+
+impl ConditioningColour {
+    /// Read the summary from manifest bytes (`BridgeInputs::manifest` or the
+    /// retained manifest object). `None` if the bytes are not a valid context.
+    pub fn from_manifest(manifest: &[u8]) -> Option<Self> {
+        let context: BridgeContext = serde_json::from_slice(manifest).ok()?;
+        let side = |picture: &BoundaryPicture| picture.decoded().map(|decoded| decoded.model_input);
+        Some(match context.boundaries() {
+            Some(boundaries) => Self {
+                left: side(&boundaries.left),
+                right: side(&boundaries.right),
+                unmeasured: false,
+            },
+            None => Self {
+                left: None,
+                right: None,
+                unmeasured: true,
+            },
+        })
+    }
+
+    /// Whether either side's codes were read as sRGB without a transfer
+    /// conversion (BT.709 transfer passed as sRGB).
+    pub fn approximate(self) -> bool {
+        [self.left, self.right].contains(&Some(ModelInputConversion::Rec709CodesAsSrgb))
+    }
+
+    /// The report value: `{left, right, approximate}` with conversion names,
+    /// `"authored_black"` for an undecoded side, or `{"unmeasured": true}`.
+    pub fn to_json(self) -> serde_json::Value {
+        if self.unmeasured {
+            return serde_json::json!({"unmeasured": true, "approximate": false});
+        }
+        let name = |side: Option<ModelInputConversion>| {
+            side.map_or(serde_json::json!("authored_black"), |conversion| {
+                serde_json::to_value(conversion).unwrap_or_default()
+            })
+        };
+        serde_json::json!({
+            "left": name(self.left),
+            "right": name(self.right),
+            "approximate": self.approximate(),
+        })
+    }
+
+    /// One line of plain text for the AI inspector.
+    pub fn describe(self) -> String {
+        if self.unmeasured {
+            return "Conditioning colour was stated, not measured (older request).".into();
+        }
+        let side = |side: Option<ModelInputConversion>| match side {
+            None => "black",
+            Some(ModelInputConversion::SrgbCodesUnchanged) => "sRGB",
+            Some(ModelInputConversion::Rec709CodesAsSrgb) => "BT.709 read as sRGB",
+        };
+        let sides = format!("before: {}, after: {}", side(self.left), side(self.right));
+        if self.approximate() {
+            format!(
+                "Model input colour is approximate ({sides}); no transfer conversion is applied."
+            )
+        } else {
+            format!("Model input colour is exact sRGB ({sides}).")
+        }
+    }
+}
+
+/// Prepare the picture at `frame` and record what the picture path showed.
+fn boundary(
     session: &mut ProjectPictureSession,
     frame: ProjectFrame,
     region: (u32, u32),
+    side: &str,
     cancelled: &AtomicBool,
-) -> Result<Vec<u8>, String> {
+) -> Result<PreparedBoundary, String> {
     let prepared = session
         .prepare(frame, cancelled)
         .map_err(|error| error.to_string())?;
-    let picture = match &prepared.picture {
-        PreparedPicture::Frame { frame, .. } | PreparedPicture::Generated { frame, .. } => {
-            Some(rgba(frame)?)
+    let refuse =
+        |reason: String| format!("The picture {side} the pause cannot condition it: {reason}.");
+    let (picture, image) = match &prepared.picture {
+        PreparedPicture::Frame {
+            asset,
+            qualification,
+            id,
+            frame: decoded,
+        } => {
+            let info = session
+                .source_info()
+                .ok_or("the decoded Original's stream is not retained")?;
+            let picture = decoded_boundary(info, *id, decoded).map_err(refuse)?;
+            (
+                BoundaryPicture::Original {
+                    project_frame: frame.0,
+                    asset: asset.clone(),
+                    qualification: qualification.clone(),
+                    picture,
+                },
+                Some(rgba(decoded)?),
+            )
         }
-        PreparedPicture::Background => None,
+        PreparedPicture::Generated {
+            artifact,
+            id,
+            frame: decoded,
+        } => {
+            let info = session
+                .source_info()
+                .ok_or("the decoded generated master's stream is not retained")?;
+            let picture = decoded_boundary(info, *id, decoded).map_err(refuse)?;
+            (
+                BoundaryPicture::Generated {
+                    project_frame: frame.0,
+                    sampled_asset: artifact.sampled_asset.clone(),
+                    sampled_object: artifact.sampled_object.clone(),
+                    provenance: artifact.provenance.clone(),
+                    picture,
+                },
+                Some(rgba(decoded)?),
+            )
+        }
+        PreparedPicture::Background => (
+            BoundaryPicture::AuthoredBlack {
+                project_frame: frame.0,
+            },
+            None,
+        ),
     };
-    encode(&contain(picture.as_ref(), region))
+    Ok(PreparedBoundary {
+        png: encode(&contain(image.as_ref(), region))?,
+        picture,
+    })
+}
+
+/// The decoder's description of the stream `frame` was decoded from.
+pub fn measured_stream(info: &SourceStreamInfo, frame: &Rgba8Frame) -> MeasuredStream {
+    let color = info.color;
+    MeasuredStream {
+        codec: info.codec.clone(),
+        pixel_format: info.pixel_format.clone(),
+        width: info.width,
+        height: info.height,
+        sample_aspect: [info.sample_aspect_num, info.sample_aspect_den],
+        rotation_quarter_turns: info.rotation_quarter_turns,
+        decoded_sample_bits: match frame.sample_depth() {
+            SampleDepth::Eight => 8,
+            SampleDepth::Sixteen => 16,
+        },
+        color: BridgeColor {
+            transfer: match color.transfer {
+                ColorTransfer::Bt709 => BridgeTransfer::Bt709,
+                ColorTransfer::Srgb => BridgeTransfer::Srgb,
+                ColorTransfer::Linear => BridgeTransfer::Linear,
+                ColorTransfer::Pq => BridgeTransfer::Pq,
+                ColorTransfer::Hlg => BridgeTransfer::Hlg,
+            },
+            primaries: match color.primaries {
+                ColorPrimaries::Bt709 => BridgePrimaries::Bt709,
+                ColorPrimaries::Bt2020 => BridgePrimaries::Bt2020,
+                ColorPrimaries::DisplayP3 => BridgePrimaries::DisplayP3,
+            },
+            matrix: match color.matrix {
+                ColorMatrix::Rgb => BridgeMatrix::Rgb,
+                ColorMatrix::Bt709 => BridgeMatrix::Bt709,
+                ColorMatrix::Bt601 => BridgeMatrix::Bt601,
+                ColorMatrix::Bt2020NonConstant => BridgeMatrix::Bt2020Ncl,
+            },
+            range: match color.range {
+                ColorRange::Limited => BridgeRange::Limited,
+                ColorRange::Full => BridgeRange::Full,
+            },
+        },
+    }
+}
+
+/// The measured evidence for one decoded picture, refusing colour that the
+/// stated model-input conversion does not cover.
+fn decoded_boundary(
+    info: &SourceStreamInfo,
+    id: SourceFrameId,
+    frame: &Rgba8Frame,
+) -> Result<DecodedBoundary, String> {
+    let stream = measured_stream(info, frame);
+    let model_input = model_input_conversion(&stream).map_err(|refusal| refusal.to_string())?;
+    Ok(DecodedBoundary {
+        source_frame: id,
+        pts: frame.metadata().pts,
+        stream,
+        model_input,
+    })
 }
 
 /// The decoded picture at its display aspect, as straight RGBA.
+/// [`decoded_boundary`] has already refused rotated, HDR and deep pictures.
 fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     let metadata = frame.metadata();
-    if metadata.rotation != Rotation::None {
-        return Err("Rotated Originals cannot condition an AI pause yet.".into());
-    }
-    // The bridge model consumes SDR sRGB-like pictures; HDR conditioning
-    // needs a qualified tone-mapped readback that does not exist yet.
-    if frame.sample_depth() != deadpan_render::SampleDepth::Eight
-        || metadata.color.transfer.is_hdr()
-    {
-        return Err("HDR Originals cannot condition an AI pause yet.".into());
+    if frame.sample_depth() != SampleDepth::Eight {
+        return Err("only eight-bit pictures can condition an AI pause".into());
     }
     let (width, height) = (metadata.width, metadata.height);
     let stride = metadata.row_stride_bytes as usize;
@@ -270,9 +478,179 @@ pub(crate) fn sha256(bytes: &[u8]) -> Result<Sha256, String> {
     Sha256::new(hex).map_err(|error| error.to_string())
 }
 
+/// Authored-black boundaries around `plan`'s Hold for tests whose prepared
+/// pictures are opaque bytes: their manifest is well formed, but the PNGs are
+/// not the black they record.
+#[cfg(test)]
+pub(crate) fn opaque_boundaries(
+    plan: &BridgeGenerationPlan,
+    left: Vec<u8>,
+    right: Vec<u8>,
+) -> (PreparedBoundary, PreparedBoundary) {
+    let end = 15 + plan.project_frames().frames();
+    (
+        PreparedBoundary {
+            png: left,
+            picture: BoundaryPicture::AuthoredBlack { project_frame: 14 },
+        },
+        PreparedBoundary {
+            png: right,
+            picture: BoundaryPicture::AuthoredBlack { project_frame: end },
+        },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn info(color: deadpan_source::ColorMetadata) -> SourceStreamInfo {
+        SourceStreamInfo {
+            width: 4,
+            height: 2,
+            stream_index: 0,
+            time_base_num: 1,
+            time_base_den: 24,
+            sample_aspect_num: 1,
+            sample_aspect_den: 1,
+            rotation_quarter_turns: 0,
+            color,
+            codec: "ffv1".into(),
+            pixel_format: "yuv444p".into(),
+            stream_start: Some(0),
+            stream_duration: None,
+            container_start: None,
+            container_duration: None,
+            audio_streams: Vec::new(),
+        }
+    }
+
+    fn sdr(transfer: ColorTransfer, primaries: ColorPrimaries) -> deadpan_source::ColorMetadata {
+        deadpan_source::ColorMetadata {
+            range: ColorRange::Limited,
+            matrix: ColorMatrix::Bt601,
+            transfer,
+            primaries,
+            mastering: None,
+            content_light: None,
+            ignored_static: deadpan_source::IgnoredStaticMetadata::NONE,
+        }
+    }
+
+    #[test]
+    fn colour_summary_reports_the_bt709_approximation() {
+        let plan = BridgeGenerationPlan::for_conditioning(
+            ConditioningMode::Bridge,
+            FrameDuration::new(12).unwrap(),
+            deadpan_core::FrameRate::new(30, 1).unwrap(),
+            &super::super::development_capability(),
+            super::super::native_dimensions(),
+        )
+        .unwrap();
+        let constraints = HoldConstraints {
+            video: VideoSpec::new(
+                FrameDuration::new(12).unwrap(),
+                deadpan_core::FrameRate::new(30, 1).unwrap(),
+                super::super::NATIVE_WIDTH,
+                super::super::NATIVE_HEIGHT,
+            )
+            .unwrap(),
+            conditioning: ConditioningMode::Bridge,
+            motion: MotionAmount::Still,
+        };
+        let picture = frame(&RgbImage::from_pixel(4, 2, Rgb([1, 2, 3])));
+        let (mut left, right) = opaque_boundaries(&plan, b"l".to_vec(), b"r".to_vec());
+        left.picture = BoundaryPicture::Original {
+            project_frame: 14,
+            asset: deadpan_core::AssetId::new("original").unwrap(),
+            qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
+            picture: decoded_boundary(
+                &info(sdr(ColorTransfer::Bt709, ColorPrimaries::Bt709)),
+                SourceFrameId(26),
+                &picture,
+            )
+            .unwrap(),
+        };
+        let inputs = assemble(plan.clone(), constraints, left, right).unwrap();
+        let colour = ConditioningColour::from_manifest(&inputs.manifest).unwrap();
+        assert!(colour.approximate());
+        assert_eq!(
+            colour.to_json(),
+            serde_json::json!({"left": "rec709_codes_as_srgb", "right": "authored_black", "approximate": true})
+        );
+        assert_eq!(
+            colour.describe(),
+            "Model input colour is approximate (before: BT.709 read as sRGB, after: black); no transfer conversion is applied."
+        );
+        let legacy = BridgeContext::legacy_v1(
+            plan,
+            WorkspaceArtifact::new(WorkspaceRef::new(LEFT).unwrap(), sha256(b"l").unwrap(), 1)
+                .unwrap(),
+            WorkspaceArtifact::new(WorkspaceRef::new(RIGHT).unwrap(), sha256(b"r").unwrap(), 1)
+                .unwrap(),
+            "stated",
+        )
+        .unwrap();
+        let legacy =
+            ConditioningColour::from_manifest(&serde_json::to_vec(&legacy).unwrap()).unwrap();
+        assert!(legacy.unmeasured && !legacy.approximate());
+        assert_eq!(legacy.to_json()["unmeasured"], true);
+        assert!(ConditioningColour::from_manifest(b"{}").is_none());
+    }
+
+    #[test]
+    fn measured_colour_is_recorded_and_uncovered_colour_refuses() {
+        let picture = frame(&RgbImage::from_pixel(4, 2, Rgb([1, 2, 3])));
+        let measured = decoded_boundary(
+            &info(sdr(ColorTransfer::Bt709, ColorPrimaries::Bt709)),
+            SourceFrameId(7),
+            &picture,
+        )
+        .unwrap();
+        assert_eq!(measured.source_frame, SourceFrameId(7));
+        assert_eq!(measured.pts, picture.metadata().pts);
+        assert_eq!(
+            measured.stream.color,
+            BridgeColor {
+                transfer: BridgeTransfer::Bt709,
+                primaries: BridgePrimaries::Bt709,
+                matrix: BridgeMatrix::Bt601,
+                range: BridgeRange::Limited,
+            }
+        );
+        assert_eq!(measured.stream.pixel_format, "yuv444p");
+        assert_eq!(measured.stream.decoded_sample_bits, 8);
+        assert_eq!(
+            measured.model_input,
+            deadpan_models::ModelInputConversion::Rec709CodesAsSrgb
+        );
+        for (transfer, primaries, reason) in [
+            (
+                ColorTransfer::Bt709,
+                ColorPrimaries::DisplayP3,
+                "display_p3 primaries",
+            ),
+            (
+                ColorTransfer::Bt709,
+                ColorPrimaries::Bt2020,
+                "bt2020 primaries",
+            ),
+            (ColorTransfer::Linear, ColorPrimaries::Bt709, "linear-light"),
+            (ColorTransfer::Pq, ColorPrimaries::Bt2020, "HDR"),
+        ] {
+            let error =
+                decoded_boundary(&info(sdr(transfer, primaries)), SourceFrameId(7), &picture)
+                    .unwrap_err();
+            assert!(error.contains(reason), "{error}");
+        }
+        let mut rotated = info(sdr(ColorTransfer::Srgb, ColorPrimaries::Bt709));
+        rotated.rotation_quarter_turns = 1;
+        assert!(
+            decoded_boundary(&rotated, SourceFrameId(7), &picture)
+                .unwrap_err()
+                .contains("rotated")
+        );
+    }
 
     fn frame(image: &RgbImage) -> Rgba8Frame {
         let rgba: Vec<u8> = image
@@ -285,7 +663,7 @@ mod tests {
                 height: image.height(),
                 row_stride_bytes: image.width() * 4,
                 sample_aspect_ratio: deadpan_render::SampleAspectRatio::SQUARE,
-                rotation: Rotation::None,
+                rotation: deadpan_render::Rotation::None,
                 color: deadpan_render::SourceColor {
                     transfer: deadpan_render::Transfer::Srgb,
                     primaries: deadpan_render::Primaries::Rec709,

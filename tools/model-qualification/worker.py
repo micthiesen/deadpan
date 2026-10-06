@@ -52,6 +52,37 @@ def strict_json(data):
     return json.loads(data, object_pairs_hook=pairs, parse_constant=constant)
 
 
+# The only colour space this model takes and produces: full-range sRGB RGB
+# with BT.709 primaries (deadpan_models::CANONICAL_BRIDGE_COLOR).
+MODEL_COLOR_SPACE = {"transfer": "srgb", "primaries": "bt709", "matrix": "rgb", "range": "full"}
+
+
+def validate_context_shape(context):
+    """Admit a version-2 context (measured boundary pictures, explicit model
+    colour space) or a version-1 context from an earlier host. The host
+    records and checks the boundary evidence; the worker refuses a declared
+    model colour space it does not produce."""
+    if not isinstance(context, dict) or type(context.get("schema_version")) is not int:
+        raise ValueError("unsupported context or color interpretation")
+    if context["schema_version"] == 2:
+        exact_keys(context, ["schema_version", "model_color_space", "plan", "left", "right",
+                             "input_color_interpretation", "boundaries"])
+        boundaries = context["boundaries"]
+        if not isinstance(boundaries, dict):
+            raise ValueError("unsupported context boundaries")
+        exact_keys(boundaries, ["left", "right"])
+        supported = context["model_color_space"] == MODEL_COLOR_SPACE
+    elif context["schema_version"] == 1:
+        exact_keys(context, ["schema_version", "model_color", "plan", "left", "right",
+                             "input_color_interpretation"])
+        supported = context["model_color"] == "srgb"
+    else:
+        supported = False
+    if (not supported or not isinstance(context["input_color_interpretation"], str)
+            or not 1 <= len(context["input_color_interpretation"]) <= 4096):
+        raise ValueError("unsupported context or color interpretation")
+
+
 def validate_bridge_context(context, request, video):
     if not isinstance(request, GenerateBridgeRequest):
         raise ValueError("development worker requires protocol-2 generate_bridge")
@@ -202,12 +233,7 @@ def run():
             if hashlib.sha256(raw).hexdigest() != request.input.sha256:
                 raise ValueError("context manifest hash mismatch")
             context = strict_json(raw)
-            exact_keys(context, ["schema_version", "model_color", "plan", "left", "right", "input_color_interpretation"])
-            if (type(context["schema_version"]) is not int or context["schema_version"] != 1
-                    or context["model_color"] != "srgb"
-                    or not isinstance(context["input_color_interpretation"], str)
-                    or not 1 <= len(context["input_color_interpretation"]) <= 4096):
-                raise ValueError("unsupported context or color interpretation")
+            validate_context_shape(context)
             validate_bridge_context(context, request, wire["constraints"]["video"])
             inputs = []
             for name in ["left", "right"]:

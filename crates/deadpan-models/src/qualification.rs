@@ -271,6 +271,9 @@ pub fn qualify_bridge(
         .validate_for(selected_provider.capability())
         .map_err(|error| QualificationError::Request(error.to_string()))?;
     conditioning.validate_for(request)?;
+    // The masters are derived below as canonical sRGB; refuse a context whose
+    // declared model space would make that a reinterpretation.
+    conditioning.context().check_model_output()?;
     let HostMessage::GenerateBridge {
         output_workspace, ..
     } = request

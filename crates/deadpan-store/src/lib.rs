@@ -17,6 +17,7 @@ pub mod generated_media;
 pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
+pub mod generation_retention;
 mod history;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host_owner;

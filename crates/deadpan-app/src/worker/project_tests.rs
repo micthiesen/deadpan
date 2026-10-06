@@ -26,6 +26,9 @@ mod edited_slice_tests;
 #[path = "proxy_tests.rs"]
 mod proxy_tests;
 
+#[path = "stress_tests.rs"]
+mod stress_tests;
+
 #[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{
@@ -249,63 +252,11 @@ impl Fixture {
     }
 
     pub(super) fn workspace(&self, session: u64) -> Arc<Workspace> {
-        let document = Arc::new(self.store.snapshot().unwrap());
-        let sources = document
-            .assets()
-            .iter()
-            .map(|(asset, record)| {
-                let receipt = self
-                    .store
-                    .registered_source(document.revision_id(), asset)
-                    .unwrap();
-                let original = self
-                    .store
-                    .original_record(receipt.original().content())
-                    .unwrap()
-                    .unwrap();
-                let receipt = Arc::new(receipt);
-                let original_audition = Arc::new(
-                    deadpan_playback::Original::new(
-                        document.presentation_basis().frame_rate,
-                        asset.clone(),
-                        receipt.clone(),
-                    )
-                    .unwrap(),
-                );
-                let video_index = Some(original_audition.index().clone());
-                (
-                    asset.clone(),
-                    Arc::new(RegisteredSource {
-                        asset: asset.clone(),
-                        label: record.label.clone(),
-                        receipt,
-                        original,
-                        video_index,
-                        original_audition: Some(original_audition),
-                        sound_audition: None,
-                    }),
-                )
-            })
-            .collect();
-        Arc::new(Workspace {
-            color: self.store.output_color(&document).unwrap(),
+        workspace_of(
+            &self.store,
             session,
-            path: self.scratch.path().join("preview.deadpan"),
-            plan: Arc::new(RenderPlan::compile(&document).unwrap()),
-            document,
-            sources,
-            originals: self.store.original_import_handle().unwrap(),
-            generated: self.store.generated_read_handle(),
-            can_undo: false,
-            can_redo: false,
-            single_source: None,
-            original_duration: None,
-            transcript: None,
-            speech_activity: None,
-            shot_analysis: None,
-            corrections: None,
-            read_only: None,
-        })
+            self.scratch.path().join("preview.deadpan"),
+        )
     }
 
     fn append_hold(&mut self, name: &str, index: usize, video: HoldVideo) {
@@ -339,6 +290,66 @@ impl Fixture {
             })
             .unwrap();
     }
+}
+
+/// The native workspace of `store`'s current revision, as the project
+/// service publishes it.
+pub(super) fn workspace_of(store: &ProjectStore, session: u64, path: PathBuf) -> Arc<Workspace> {
+    let document = Arc::new(store.snapshot().unwrap());
+    let sources = document
+        .assets()
+        .iter()
+        .map(|(asset, record)| {
+            let receipt = store
+                .registered_source(document.revision_id(), asset)
+                .unwrap();
+            let original = store
+                .original_record(receipt.original().content())
+                .unwrap()
+                .unwrap();
+            let receipt = Arc::new(receipt);
+            let original_audition = Arc::new(
+                deadpan_playback::Original::new(
+                    document.presentation_basis().frame_rate,
+                    asset.clone(),
+                    receipt.clone(),
+                )
+                .unwrap(),
+            );
+            let video_index = Some(original_audition.index().clone());
+            (
+                asset.clone(),
+                Arc::new(RegisteredSource {
+                    asset: asset.clone(),
+                    label: record.label.clone(),
+                    receipt,
+                    original,
+                    video_index,
+                    original_audition: Some(original_audition),
+                    sound_audition: None,
+                }),
+            )
+        })
+        .collect();
+    Arc::new(Workspace {
+        color: store.output_color(&document).unwrap(),
+        session,
+        path,
+        plan: Arc::new(RenderPlan::compile(&document).unwrap()),
+        document,
+        sources,
+        originals: store.original_import_handle().unwrap(),
+        generated: store.generated_read_handle(),
+        can_undo: false,
+        can_redo: false,
+        single_source: None,
+        original_duration: None,
+        transcript: None,
+        speech_activity: None,
+        shot_analysis: None,
+        corrections: None,
+        read_only: None,
+    })
 }
 
 fn asset() -> AssetId {

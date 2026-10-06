@@ -75,6 +75,9 @@ impl ProjectStore {
         }
         let (outcome, next) =
             write_command_plan(&transaction, documents, plan, Some(relevance), None)?;
+        // Operational: an accepted variant never expires, even after Undo,
+        // because history keeps naming it.
+        crate::generation_retention::record_accepted(&transaction, &input.identity)?;
         transaction.commit()?;
         documents.insert(next);
         Ok(outcome)

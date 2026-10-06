@@ -1656,3 +1656,136 @@ mod live {
         );
     }
 }
+
+/// Keep pins a variant against the retention policy; the automatic pass of a
+/// later session expires an old, unkept, unchosen variant, which is then no
+/// longer offered. Selection never expires.
+#[test]
+fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
+    use crate::project::RetentionPassState;
+    if !synthetic_ready_available() {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    }
+    let fixture = project_with_pause(Backend::Scripted(Arc::new(ScriptQueue::new([
+        ready_script(),
+    ]))));
+    generation(&fixture.service, start_variants(&fixture, 1, 2));
+    let finished = job_until(&fixture.service, |job| !job.running());
+    let candidate = finished.generation.unwrap().candidates[&fixture.hold].clone();
+    let (first, second) = (&candidate.variants[0], &candidate.variants[1]);
+    assert_eq!(candidate.selected, second.attempt);
+    assert!(!first.kept && first.expires_at.is_some());
+    assert_eq!(
+        first.expires_at,
+        Some(first.ready_at + deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION)
+    );
+    assert_eq!(second.expires_at, None, "the selection never expires");
+    let session = fixture.workspace.session;
+    let keep = |ticket, session, keep| GenerationOperation::Keep {
+        ticket,
+        session,
+        request: candidate.request.clone(),
+        attempt: first.attempt.clone(),
+        keep,
+    };
+    let stale = generation(&fixture.service, keep(2, session + 1, true));
+    assert!(refusal(&stale).is_some());
+    let kept = generation(&fixture.service, keep(3, session, true));
+    assert!(refusal(&kept).is_none(), "{:?}", refusal(&kept));
+    let variant = &kept.generation.unwrap().candidates[&fixture.hold].variants[0];
+    assert!(variant.kept && variant.expires_at.is_none());
+
+    // Make every variant old, as if generated weeks ago, and reopen: the
+    // kept one stays.
+    let path = fixture.workspace.path.clone();
+    let age_all = || {
+        command(&fixture.service, ProjectRequest::Close);
+        let database = rusqlite::Connection::open(path.join("project.sqlite")).unwrap();
+        database
+            .execute("UPDATE generation_variant_retention SET ready_at_ms=0", [])
+            .unwrap();
+        drop(database);
+        let opened = command(&fixture.service, ProjectRequest::Open(path.clone()));
+        let session = opened.workspace.unwrap().session;
+        wait(&fixture.service, |update| {
+            update.storage_retention.as_ref().is_some_and(|status| {
+                status.session == session && matches!(status.state, RetentionPassState::Done { .. })
+            })
+        })
+    };
+    let reopened = age_all();
+    let RetentionPassState::Done { expired, .. } = reopened.storage_retention.unwrap().state else {
+        unreachable!()
+    };
+    assert_eq!(expired, 0);
+    assert_eq!(
+        reopened.generation.unwrap().candidates[&fixture.hold]
+            .variants
+            .len(),
+        2
+    );
+
+    // Released, the old variant expires on the next session's pass.
+    let session = reopened.workspace.unwrap().session;
+    let released = generation(&fixture.service, keep(4, session, false));
+    assert!(refusal(&released).is_none(), "{:?}", refusal(&released));
+    let reopened = age_all();
+    let RetentionPassState::Done { expired, .. } = reopened.storage_retention.unwrap().state else {
+        unreachable!()
+    };
+    assert_eq!(expired, 1);
+    let offered = reopened.generation.unwrap().candidates[&fixture.hold].clone();
+    assert_eq!(
+        offered
+            .variants
+            .iter()
+            .map(|variant| variant.attempt.clone())
+            .collect::<Vec<_>>(),
+        vec![second.attempt.clone()]
+    );
+
+    // A newer variant takes the selection from one only the selection
+    // protected: the job and message say it now expires.
+    let workspace = reopened.workspace.unwrap();
+    generation(
+        &fixture.service,
+        GenerationOperation::Start {
+            ticket: 5,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            hold: fixture.hold.clone(),
+            variants: 1,
+        },
+    );
+    let finished = job_until(&fixture.service, |job| job.ticket == 5 && !job.running());
+    let job = finished.generation.as_ref().unwrap().job.clone().unwrap();
+    assert_eq!(job.selected_before, Some(second.attempt.clone()));
+    assert_eq!(job.unprotected, Some(second.attempt.clone()));
+    assert!(
+        finished
+            .message
+            .as_deref()
+            .unwrap()
+            .contains("is no longer the chosen one"),
+        "{:?}",
+        finished.message
+    );
+    // Choosing it explicitly protects it again, though another is newer.
+    let picked = generation(
+        &fixture.service,
+        GenerationOperation::Select {
+            ticket: 6,
+            session: workspace.session,
+            request: candidate.request.clone(),
+            attempt: second.attempt.clone(),
+        },
+    );
+    let candidates = picked.generation.unwrap().candidates[&fixture.hold].clone();
+    let variant = candidates
+        .variants
+        .iter()
+        .find(|variant| variant.attempt == second.attempt)
+        .unwrap();
+    assert!(variant.picked && variant.expires_at.is_none());
+}

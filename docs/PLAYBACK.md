@@ -206,10 +206,22 @@ Picture tickets retain the output generation; stop invalidates pending decode
 and GPU work while retaining the last actually submitted image and its geometry.
 Captions and accessibility labels advance only after successful GPU submission.
 
+Above 1080p, a picture whose exact Original decode would miss its budget
+(the keyframe seek after a cut or Repeat restart of a long-GOP Original)
+comes from the verified [preview proxy](PROXIES.md#playback-pictures) with
+the same Original ordinal and PTS, while the Original decoder repositions
+ahead between pictures; exact pictures resume when playback reaches it. The
+choice never changes the heard clock, the requested frames or the audio.
+The viewer shows its Proxy chip while proxy pixels are displayed, and a
+stopped transport replaces a displayed proxy picture with the exact one.
+The transport counts requested and skipped (dropped) frames and the worker
+counts exact and proxy pictures (`:diagnostics`, PLAYBACK).
+
 The current device adapter requires the default route's existing 48 kHz stereo
 float configuration. Automatic device-rate conversion, full route recovery,
-acoustic synchronization/listening qualification, long-source preparation,
-performance targets and full mastered preview/export equivalence remain open.
+acoustic synchronization/listening qualification, long-source preparation
+and full mastered preview/export equivalence remain open. Measured playback
+picture rates are in the [playback-proxy record](qualification/playback-proxy-2026-10-06.md).
 Unit and integration tests cover clocks, cancellation, real canonical PCM,
 provider identity, queue failures and keyboard/presentation state without a
 native window. Physical playback and native interaction evidence is recorded

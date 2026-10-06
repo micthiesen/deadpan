@@ -594,6 +594,23 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 super::VariantChoice::Number(number),
             ))));
         }
+        "compare-ai" => {
+            let choice = match argument {
+                None => super::CompareChoice::Toggle,
+                Some(value) if value.eq_ignore_ascii_case("before") => {
+                    super::CompareChoice::Before
+                }
+                Some(value) => value
+                    .parse::<u8>()
+                    .ok()
+                    .filter(|number| *number > 0)
+                    .map(super::CompareChoice::Variant)
+                    .ok_or(
+                        "Use :compare-ai, :compare-ai before or :compare-ai N with a variant number the inspector shows.",
+                    )?,
+            };
+            return Ok(Entry::Action(Action::Ai(super::AiAction::Compare(choice))));
+        }
         "next-ai" => Action::Ai(super::AiAction::Choose(super::VariantChoice::Next)),
         "prev-ai" | "previous-ai" => {
             Action::Ai(super::AiAction::Choose(super::VariantChoice::Previous))
@@ -603,6 +620,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "audition-ai" => Action::Ai(super::AiAction::Audition),
         "accept-ai" => Action::Ai(super::AiAction::Accept),
         "discard-ai" => Action::Ai(super::AiAction::Discard),
+        "keep-ai" => Action::Ai(super::AiAction::Keep),
         "record-stop" => Action::MacroStop,
         "record-cancel" => Action::MacroCancel,
         "delete-frames" => {

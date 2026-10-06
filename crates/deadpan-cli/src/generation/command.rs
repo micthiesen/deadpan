@@ -162,7 +162,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     let mut reports = Vec::new();
     let mut last = None;
     for variant in 1..=variants {
-        let (report, finished) = run_one(&mut store, &allocated, &runtime, &cancelled)?;
+        let (report, finished) = run_one(&mut store, path, &allocated, &runtime, &cancelled)?;
         reports.push(report);
         let ready = finished.state == JobState::Ready;
         last = Some(finished);
@@ -183,6 +183,12 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
             "conditioning_ms".into(),
             serde_json::json!(millis(conditioning)),
         );
+        // Per request: every variant shares these conditioning inputs.
+        if let Some(colour) =
+            super::conditioning::ConditioningColour::from_manifest(&allocated.inputs().manifest)
+        {
+            fields.insert("colour".into(), colour.to_json());
+        }
         fields.insert("variants".into(), serde_json::Value::Array(reports));
     }
     crate::write_json(&report)?;
@@ -202,6 +208,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
 /// Run one allocated attempt to its durable outcome and describe it.
 fn run_one(
     store: &mut ProjectStore,
+    package: &Path,
     allocated: &attempt::Allocated,
     runtime: &BridgeRuntime,
     cancelled: &AtomicBool,
@@ -240,7 +247,9 @@ fn run_one(
     let failed_run = matches!(run.result, RunResult::Failed(_));
     let finished: Finished = attempt::finish(store, allocated, run)?;
     let receipt = finished.receipt.as_ref().map(|receipt| {
+        let joins = join_report(store, package, allocated, receipt, cancelled);
         serde_json::json!({
+            "joins": joins,
             "native": receipt.native_object(),
             "sampled": receipt.sampled_object(),
             "provenance": receipt.provenance_object(),
@@ -272,6 +281,33 @@ fn run_one(
         "worker_log_tail": failed_run.then_some(worker_log_tail),
     });
     Ok((report, finished))
+}
+
+/// The advisory join measurement of a Ready variant (spec §12.5), or why it
+/// could not be measured. It never changes the attempt's outcome.
+fn join_report(
+    store: &ProjectStore,
+    package: &Path,
+    allocated: &attempt::Allocated,
+    receipt: &deadpan_store::generation_attempts::BundleValidationReceipt,
+    cancelled: &AtomicBool,
+) -> serde_json::Value {
+    match super::joins::measure_request_joins(
+        package,
+        &store.generated_read_handle(),
+        &allocated.request.origin_revision,
+        &allocated.request.binding.hold_id,
+        receipt,
+        cancelled,
+    ) {
+        Ok(report) => serde_json::json!({
+            "entry": report.entry,
+            "exit": report.exit,
+            "region": report.region,
+            "advisory": true,
+        }),
+        Err(error) => serde_json::json!({ "error": error.to_string() }),
+    }
 }
 
 fn failure_text(failure: &JobFailure) -> String {

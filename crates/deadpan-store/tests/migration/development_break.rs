@@ -133,10 +133,10 @@ fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Resu
 }
 
 #[test]
-fn current_schema67_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema68_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 67);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 68);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -154,7 +154,7 @@ fn current_schema67_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (67, 67));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (68, 68));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
@@ -166,16 +166,16 @@ fn current_schema67_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     Ok(())
 }
 
-/// The previous build's packages (schema 66) are upgraded, not stranded:
+/// Packages of the builds before (schema 66) are upgraded, not stranded:
 /// opening asks for migration without writing, `migrate` backs up, upgrades a
 /// copy, validates the complete history and promotes it, and undo works.
 #[test]
-fn schema66_packages_migrate_to_67_with_a_backup_and_keep_their_history() -> Result {
+fn schema66_packages_migrate_to_68_with_a_backup_and_keep_their_history() -> Result {
     use deadpan_core::{
         BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, HoldAudio,
         HoldRecipe, HoldVideo, PresentationBasis, ProjectId, Subtree,
     };
-    assert_eq!(DATABASE_SCHEMA_VERSION, 67);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 68);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().canonicalize()?.join("previous.deadpan");
     let document = ProjectDocument::new(
@@ -219,9 +219,11 @@ fn schema66_packages_migrate_to_67_with_a_backup_and_keep_their_history() -> Res
     })?;
     let edited = store.snapshot()?;
     drop(store);
-    // Exactly what the schema-66 build wrote: no retired_identities table.
+    // Exactly what the schema-66 build wrote: no retired_identities or
+    // variant retention table.
     let database = Connection::open(package.join("project.sqlite"))?;
-    database.execute_batch("DROP TABLE retired_identities;")?;
+    database
+        .execute_batch("DROP TABLE retired_identities; DROP TABLE generation_variant_retention; DROP TABLE generation_retention_state;")?;
     database.pragma_update(None, "user_version", 66)?;
     drop(database);
     let before = fs::read(package.join("project.sqlite"))?;
@@ -233,7 +235,7 @@ fn schema66_packages_migrate_to_67_with_a_backup_and_keep_their_history() -> Res
     }
     assert_eq!(fs::read(package.join("project.sqlite"))?, before);
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (66, 67));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (66, 68));
     let backup = outcome.backup.ok_or("no backup")?;
     let old = Connection::open_with_flags(&backup, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
     assert_eq!(

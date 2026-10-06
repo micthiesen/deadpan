@@ -10,13 +10,16 @@ use std::time::Duration;
 
 use deadpan_core::{AssetId, SourceFrameId};
 use deadpan_media::proxy::{
-    ProxyError, ProxyIneligible, ProxyOriginal, ProxyPlan, ProxyReason, ProxySidecar,
-    VerifyControl, expressible, hex, proxy_plan, proxy_raster, proxy_request, verify_proxy,
+    ProxyError, ProxyIneligible, ProxyOriginal, ProxyPlan, ProxyReason, ProxySegment, ProxySidecar,
+    VerifyControl, expressible, hex, proxy_assemble_request, proxy_plan, proxy_range_request,
+    proxy_raster, proxy_request, proxy_segments, verify_proxy,
 };
 use deadpan_media::source_index::{SourceContentIdentity, SourceIndexSnapshot};
 use deadpan_media::source_input::VerifiedSourceInput;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
-use deadpan_media::{ConversionError, ProxyEncodeOptions, encode_proxy, encode_proxy_retrying};
+use deadpan_media::{
+    ConversionError, ProxyEncodeOptions, assemble_proxy, encode_proxy, encode_proxy_retrying,
+};
 use deadpan_source::{ColorMatrix, ColorPrimaries, ColorTransfer, SourceStreamInfo};
 use sha2::{Digest, Sha256};
 
@@ -313,6 +316,235 @@ fn downscaled_rotated_anamorphic_and_wide_gamut_originals_keep_their_interpretat
             .as_deref(),
         Ok(ProxyError::Fidelity { .. })
     ));
+    Ok(())
+}
+
+/// Encode `original` in keyframe-aligned ranges of about `target` pictures,
+/// each written after the previous one into one private file (out of picture
+/// order, as a resumed build may), then join them at packet level and verify
+/// the result as a single encoding is verified.
+fn build_in_ranges(original: &Original, scratch: &Path, target: u64) -> Result<ProxySidecar> {
+    let plan = requested_plan(original);
+    let ranges = proxy_segments(original.index.index(), target);
+    let data = private_output(&scratch.join("segments.bin"))?;
+    let cancelled = AtomicBool::new(false);
+    let mut segments = Vec::new();
+    let mut digests = Vec::new();
+    // Last range first: storage order is independent of picture order.
+    for &(start, end) in ranges.iter().rev() {
+        let offset = data.metadata()?.len();
+        let request = proxy_range_request(
+            original.input.identity().byte_length(),
+            &original.info,
+            original.index.index(),
+            &plan,
+            start,
+            end,
+            offset,
+            Duration::from_secs(120),
+        )
+        .expect("SDR range request");
+        let report = encode_proxy_retrying(
+            worker(),
+            &original.input,
+            &request,
+            || Ok(((), data.try_clone()?)),
+            &cancelled,
+            ProxyEncodeOptions {
+                stall: TEST_STALL,
+                pause: None,
+            },
+        )?
+        .1;
+        assert_eq!(
+            (report.frames, report.keyframes),
+            (end - start, end - start)
+        );
+        digests.push(report.extradata_sha256.clone());
+        let range = request.range.unwrap();
+        segments.push(ProxySegment {
+            offset,
+            length: report.output_bytes,
+            frames: report.frames,
+            start_pts: range.start_pts,
+            end_pts: range.end_pts,
+        });
+    }
+    segments.reverse();
+    digests.dedup();
+    assert_eq!(
+        digests.len(),
+        1,
+        "every range has one decoder configuration"
+    );
+    let request = proxy_assemble_request(
+        data.metadata()?.len(),
+        &original.info,
+        &plan,
+        segments,
+        Duration::from_secs(120),
+    )?;
+    let output = private_output(&scratch.join("proxy.mp4"))?;
+    let report = assemble_proxy(
+        worker(),
+        &data,
+        &request,
+        &output,
+        &cancelled,
+        ProxyEncodeOptions::default(),
+    )?;
+    assert_eq!(report.packets, original.index.index().frames().len() as u64);
+    Ok(verify_proxy(
+        &output,
+        &original.input,
+        &original.blake3,
+        Arc::clone(&original.index),
+        &original.info,
+        plan.reason,
+        control(&cancelled),
+    )?)
+}
+
+#[test]
+fn ranges_joined_at_packet_level_verify_as_one_encoding() -> Result {
+    let _slot = vt_slot();
+    for (name, target, ranges) in [
+        ("cfr-bframes.mp4", 30, 4),
+        ("offset-bframes.mp4", 30, 4),
+        ("vfr.mp4", 40, 3),
+        ("pyramid-bframes.mp4", 30, 2),
+        ("rotated-bt709.mp4", 1, 0),
+        ("anamorphic-bt601.mp4", 1, 0),
+        ("p3-srgb.mp4", 1, 0),
+    ] {
+        let original = original(name)?;
+        let count = proxy_segments(original.index.index(), target).len();
+        if ranges > 0 {
+            assert_eq!(count, ranges, "{name}");
+        }
+        let scratch = tempfile::tempdir()?;
+        let sidecar = build_in_ranges(&original, scratch.path(), target)?;
+        let frames = original.index.index().frames();
+        let proxy_frames = sidecar.index.index().frames();
+        assert_eq!(proxy_frames.len(), frames.len(), "{name}");
+        for (proxy, source) in proxy_frames.iter().zip(frames) {
+            assert!(proxy.keyframe, "{name}");
+            assert!(same(proxy.pts, &sidecar, source.pts, &original), "{name}");
+        }
+        let info = &sidecar.info;
+        assert_eq!(
+            info.rotation_quarter_turns, original.info.rotation_quarter_turns,
+            "{name}"
+        );
+        assert_eq!(
+            u64::from(info.sample_aspect_num) * u64::from(original.info.sample_aspect_den),
+            u64::from(original.info.sample_aspect_num) * u64::from(info.sample_aspect_den),
+            "{name}"
+        );
+        assert_eq!(
+            info.color.primaries, original.info.color.primaries,
+            "{name}"
+        );
+        assert_eq!(info.color.transfer, original.info.color.transfer, "{name}");
+        eprintln!("{name}: {count} ranges, {:?}", sidecar.fidelity);
+    }
+    Ok(())
+}
+
+/// Equal exact times in the two streams' clocks.
+fn same(proxy: i64, sidecar: &ProxySidecar, original_pts: i64, original: &Original) -> bool {
+    let a = sidecar.index.index().time_base();
+    let b = original.index.index().time_base();
+    i128::from(proxy) * i128::from(a.numerator()) * i128::from(b.denominator())
+        == i128::from(original_pts) * i128::from(b.numerator()) * i128::from(a.denominator())
+}
+
+#[test]
+fn an_assembly_refuses_a_misplaced_or_damaged_range() -> Result {
+    let _slot = vt_slot();
+    let original = original("cfr-bframes.mp4")?;
+    let plan = requested_plan(&original);
+    let scratch = tempfile::tempdir()?;
+    let data = private_output(&scratch.path().join("segments.bin"))?;
+    let cancelled = AtomicBool::new(false);
+    let mut segments = Vec::new();
+    for (start, end) in proxy_segments(original.index.index(), 60) {
+        let offset = data.metadata()?.len();
+        let request = proxy_range_request(
+            original.input.identity().byte_length(),
+            &original.info,
+            original.index.index(),
+            &plan,
+            start,
+            end,
+            offset,
+            Duration::from_secs(120),
+        )
+        .expect("SDR range request");
+        let (_, report) = encode_proxy_retrying(
+            worker(),
+            &original.input,
+            &request,
+            || Ok(((), data.try_clone()?)),
+            &cancelled,
+            ProxyEncodeOptions {
+                stall: TEST_STALL,
+                pause: None,
+            },
+        )?;
+        let range = request.range.unwrap();
+        segments.push(ProxySegment {
+            offset,
+            length: report.output_bytes,
+            frames: report.frames,
+            start_pts: range.start_pts,
+            end_pts: range.end_pts,
+        });
+    }
+    assert_eq!(segments.len(), 2);
+    let assemble = |segments: Vec<ProxySegment>, name: &str| -> ConversionError {
+        let request = proxy_assemble_request(
+            data.metadata().unwrap().len(),
+            &original.info,
+            &plan,
+            segments,
+            Duration::from_secs(60),
+        )
+        .unwrap();
+        let output = private_output(&scratch.path().join(name)).unwrap();
+        assemble_proxy(
+            worker(),
+            &data,
+            &request,
+            &output,
+            &cancelled,
+            ProxyEncodeOptions::default(),
+        )
+        .unwrap_err()
+    };
+    // The second range's bytes claimed for the first range's times.
+    let swapped = vec![
+        ProxySegment {
+            offset: segments[1].offset,
+            length: segments[1].length,
+            ..segments[0]
+        },
+        ProxySegment {
+            offset: segments[0].offset,
+            length: segments[0].length,
+            ..segments[1]
+        },
+    ];
+    let error = assemble(swapped, "swapped.mp4");
+    assert!(
+        matches!(&error, ConversionError::Worker { code, .. } if code == "invalid_media"),
+        "{error}"
+    );
+    // A truncated range.
+    let mut truncated = segments.clone();
+    truncated[1].length -= 100;
+    let error = assemble(truncated, "truncated.mp4");
+    assert!(matches!(&error, ConversionError::Worker { .. }), "{error}");
     Ok(())
 }
 

@@ -230,6 +230,12 @@ impl ProxySlot {
         }
     }
 
+    /// Whether a verified proxy reader is open. It may still belong to
+    /// another Original; [`Self::picture`] checks that.
+    pub(super) fn is_open(&self) -> bool {
+        self.reader.is_some()
+    }
+
     /// Whether a recent request wants a proxy that is not open yet.
     pub(super) fn wants_preparation(&self) -> bool {
         self.reader.is_none() && self.wanted.is_some() && self.cache.is_some()

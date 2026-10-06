@@ -41,6 +41,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 mod edited_slice;
 #[path = "generation_bundles/move_range.rs"]
 mod move_range;
+#[path = "generation_bundles/retention.rs"]
+mod retention;
 #[path = "generation_bundles/storage.rs"]
 mod storage;
 

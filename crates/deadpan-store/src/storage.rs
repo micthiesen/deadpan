@@ -151,6 +151,9 @@ pub struct StorageReport {
     pub removable_bytes: u64,
     /// What the retained history occupies inside the database.
     pub history: HistoryUsage,
+    /// The [retention policy](crate::generation_retention) for offered,
+    /// unaccepted AI variants and its current state.
+    pub variant_retention: crate::generation_retention::VariantRetentionReport,
 }
 
 /// The stored size of the project's history: every revision stays (see
@@ -230,6 +233,33 @@ impl CleanupPolicy {
             render_candidates: true,
             originals: true,
             pending: true,
+        }
+    }
+
+    /// Only unreferenced objects in `Media/Generated`: what the automatic
+    /// retention pass removes. Originals, render candidates and unfinished
+    /// writes are left to explicit cleanup.
+    pub const fn generated_only(grace: Duration, dry_run: bool) -> Self {
+        Self {
+            grace,
+            dry_run,
+            generated: true,
+            render_candidates: false,
+            originals: false,
+            pending: false,
+        }
+    }
+
+    fn selects(&self, namespace: StorageNamespace, state: &EntryState) -> bool {
+        let selected = match namespace {
+            StorageNamespace::Generated => self.generated,
+            StorageNamespace::Originals => self.originals,
+            StorageNamespace::RenderCandidates => self.render_candidates,
+        };
+        match state {
+            EntryState::Unreferenced => selected,
+            EntryState::Pending => self.pending && selected,
+            _ => false,
         }
     }
 }
@@ -610,6 +640,7 @@ impl ProjectStore {
             .iter()
             .map(|namespace| namespace.removable_bytes)
             .sum();
+        let variant_retention = self.variant_retention(&namespaces, now)?;
         Ok(StorageReport {
             schema_version: 1,
             grace_seconds: grace.as_secs(),
@@ -621,7 +652,46 @@ impl ProjectStore {
             total_bytes: database_bytes + auxiliary_bytes + media,
             removable_bytes,
             history: history_usage(&self.connection)?,
+            variant_retention,
         })
+    }
+
+    /// The retention policy's counts, plus evicted variants whose own
+    /// objects are still listed unreferenced in `Media/Generated`.
+    fn variant_retention(
+        &self,
+        namespaces: &[NamespaceReport],
+        now: SystemTime,
+    ) -> Result<crate::generation_retention::VariantRetentionReport, StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let mut report = crate::generation_retention::retention_report(
+            &transaction,
+            now,
+            crate::generation_retention::DEFAULT_VARIANT_RETENTION,
+        )?;
+        let evicted = crate::generation_retention::evicted_objects(&transaction)?;
+        transaction.commit()?;
+        let unreferenced: BTreeMap<&str, u64> = namespaces
+            .iter()
+            .filter(|namespace| namespace.namespace == "generated")
+            .flat_map(|namespace| &namespace.entries)
+            .filter(|entry| entry.state == EntryState::Unreferenced)
+            .filter_map(|entry| Some((entry.digest.as_deref()?, entry.bytes)))
+            .collect();
+        let mut counted = BTreeSet::new();
+        for own in evicted {
+            let mut waiting = false;
+            for digest in own.iter().flatten() {
+                if let Some(bytes) = unreferenced.get(digest.as_str()) {
+                    waiting = true;
+                    if counted.insert(digest.clone()) {
+                        report.evicted_awaiting_cleanup_bytes += bytes;
+                    }
+                }
+            }
+            report.evicted_awaiting_cleanup += u64::from(waiting);
+        }
+        Ok(report)
     }
 
     /// Remove unreferenced objects and abandoned temporaries that `policy`
@@ -636,16 +706,25 @@ impl ProjectStore {
     /// included, so a preview never waits for the project writer. Pass the
     /// result to [`Self::clean_previewed_storage`] on the writer.
     pub fn preview_storage_cleanup(&self, grace: Duration) -> Result<CleanupOutcome, StoreError> {
-        let report = self.storage_report(grace)?;
+        self.preview_storage_cleanup_with(CleanupPolicy::everything(grace, true))
+    }
+
+    /// [`Self::preview_storage_cleanup`] limited to what `policy` selects.
+    pub fn preview_storage_cleanup_with(
+        &self,
+        policy: CleanupPolicy,
+    ) -> Result<CleanupOutcome, StoreError> {
+        let report = self.storage_report(policy.grace)?;
         let mut outcome = CleanupOutcome {
             dry_run: true,
             ..CleanupOutcome::default()
         };
-        for namespace in &report.namespaces {
+        for (kind, name) in NAMESPACES {
+            let Some(namespace) = report.namespace(name) else {
+                continue;
+            };
             for entry in &namespace.entries {
-                if !entry.removable
-                    || !matches!(entry.state, EntryState::Unreferenced | EntryState::Pending)
-                {
+                if !entry.removable || !policy.selects(kind, &entry.state) {
                     continue;
                 }
                 outcome.removed_bytes += entry.bytes;
@@ -670,6 +749,22 @@ impl ProjectStore {
         previewed: &[RemovedEntry],
     ) -> Result<CleanupOutcome, StoreError> {
         self.clean_storage_selected(CleanupPolicy::everything(grace, false), Some(previewed))
+    }
+
+    /// [`Self::clean_previewed_storage`] limited to what `policy` selects
+    /// (its `dry_run` is ignored: this removes).
+    pub fn clean_previewed_storage_with(
+        &mut self,
+        policy: CleanupPolicy,
+        previewed: &[RemovedEntry],
+    ) -> Result<CleanupOutcome, StoreError> {
+        self.clean_storage_selected(
+            CleanupPolicy {
+                dry_run: false,
+                ..policy
+            },
+            Some(previewed),
+        )
     }
 
     fn clean_storage_selected(
@@ -727,22 +822,9 @@ impl ProjectStore {
             let Some(listed) = report.namespace(name) else {
                 continue;
             };
-            let selected = match namespace {
-                StorageNamespace::Generated => policy.generated,
-                StorageNamespace::Originals => policy.originals,
-                StorageNamespace::RenderCandidates => policy.render_candidates,
-            };
             let storage = self.namespace_storage(namespace);
             for entry in &listed.entries {
-                if !entry.removable {
-                    continue;
-                }
-                let wanted = match entry.state {
-                    EntryState::Unreferenced => selected,
-                    EntryState::Pending => policy.pending && selected,
-                    _ => false,
-                };
-                if !wanted {
+                if !entry.removable || !policy.selects(namespace, &entry.state) {
                     continue;
                 }
                 let Some(listed_entry) = &entry.entry else {
@@ -814,6 +896,26 @@ impl NamespaceStorage<'_> {
         }
         .map_err(|error| StoreError::Storage(error.to_string()))
     }
+}
+
+/// Every digest named by a row of `connection` other than bundle receipts
+/// and render rows: the rows whose naming makes a variant *accepted* in
+/// [`scan_database`]. Reads within the caller's transaction, if any.
+pub(crate) fn non_receipt_media_digests(
+    connection: &rusqlite::Connection,
+) -> Result<BTreeSet<String>, StoreError> {
+    let mut found = BTreeSet::new();
+    for table in table_names(connection)? {
+        if table == "generation_bundle_receipts" || table.starts_with("render_") {
+            continue;
+        }
+        scan_table(connection, &table, |text| {
+            digests(text, |digest| {
+                found.insert(digest.to_owned());
+            });
+        })?;
+    }
+    Ok(found)
 }
 
 /// Scan one database's rows into `references` with the liveness rules.

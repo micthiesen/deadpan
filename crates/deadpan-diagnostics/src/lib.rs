@@ -221,6 +221,65 @@ pub static QUEUES: Queues = Queues {
     playback_prefill_frames: Gauge::new(),
 };
 
+/// Pictures the main viewer showed during playback, by tier. Requested and
+/// skipped counts come from the transport's picture scheduling (one picture
+/// in flight, newest heard frame wins); the tier counts from the preview
+/// worker that served them.
+#[derive(Debug, Default)]
+pub struct PlaybackPictures {
+    /// Playback pictures requested from the preview worker.
+    pub requested: Counter,
+    /// Frames the heard clock passed while a picture was in flight, never
+    /// requested (dropped). Loop wraps and seeks are not counted.
+    pub skipped: Counter,
+    /// Pictures served as the exact Original picture.
+    pub exact: Counter,
+    /// Pictures served from the reduced preview proxy.
+    pub reduced: Counter,
+    /// Original decoder repositions started between reduced pictures.
+    pub repositions: Counter,
+    /// Repositions that reached their target picture.
+    pub repositions_reached: Counter,
+    /// Repositions that failed; the decoder reopens for its next picture.
+    pub repositions_failed: Counter,
+}
+
+pub static PLAYBACK_PICTURES: PlaybackPictures = PlaybackPictures {
+    requested: Counter::new(),
+    skipped: Counter::new(),
+    exact: Counter::new(),
+    reduced: Counter::new(),
+    repositions: Counter::new(),
+    repositions_reached: Counter::new(),
+    repositions_failed: Counter::new(),
+};
+
+/// One observation of [`PLAYBACK_PICTURES`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PlaybackPictureTotals {
+    pub requested: u64,
+    pub skipped: u64,
+    pub exact: u64,
+    pub reduced: u64,
+    pub repositions: u64,
+    pub repositions_reached: u64,
+    pub repositions_failed: u64,
+}
+
+impl PlaybackPictures {
+    pub fn snapshot(&self) -> PlaybackPictureTotals {
+        PlaybackPictureTotals {
+            requested: self.requested.get(),
+            skipped: self.skipped.get(),
+            exact: self.exact.get(),
+            reduced: self.reduced.get(),
+            repositions: self.repositions.get(),
+            repositions_reached: self.repositions_reached.get(),
+            repositions_failed: self.repositions_failed.get(),
+        }
+    }
+}
+
 /// One cache's effectiveness and residency.
 #[derive(Debug, Default)]
 pub struct CacheCounters {
@@ -496,6 +555,7 @@ pub struct Snapshot {
     pub io: IoTotals,
     pub queues: QueueLevels,
     pub caches: CacheTotals,
+    pub playback_pictures: PlaybackPictureTotals,
     pub gpu: LatencySnapshot,
     pub model_workers: WorkerMemorySnapshot,
     pub other_workers: WorkerMemorySnapshot,
@@ -523,6 +583,7 @@ pub fn snapshot() -> Snapshot {
             limiter_tiles: CACHES.limiter_tiles.snapshot(),
             limiter_inputs: CACHES.limiter_inputs.snapshot(),
         },
+        playback_pictures: PLAYBACK_PICTURES.snapshot(),
         gpu: GPU.snapshot(),
         model_workers: WORKERS.model.snapshot(),
         other_workers: WORKERS.other.snapshot(),

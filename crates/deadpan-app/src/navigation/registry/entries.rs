@@ -1206,7 +1206,21 @@ pub static SPECS: &[Spec] = &[
             "accept-hold --attempt <id> selects as part of acceptance",
             AI,
         ),
-        help: "Choose which Ready AI variant of the selected pause Preview, Audition and Accept use; the inspector numbers them with a picture from each. Choosing while previewing shows the newly chosen variant.",
+        help: "Choose which Ready AI variant of the selected pause Preview, Audition and Accept use; the inspector numbers them with a picture from each. Choosing while previewing or comparing shows the newly chosen variant at the same frame, and an audition continues from the same heard sample.",
+    },
+    Spec {
+        id: "ai.compare",
+        name: "Compare AI pictures",
+        section: Section::Ai,
+        keys: &[Keys::Editor(B::CompareAi), Keys::Editor(B::NextAi)],
+        commands: &[verb(
+            "compare-ai",
+            ":compare-ai [before|N]  before / after at the same frame",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::Ignored,
+        headless: gui("none needed", AI),
+        help: "Compare at the same frame and heard sample: {ai.compare} switches the viewer and audition between the pause as it is now (Before: its freeze or accepted pictures) and the chosen AI variant, previewing it first when needed; {ai.next} shows the next variant. :compare-ai before / :compare-ai N choose directly. Playing or paused, the switch keeps the exact heard position. Nothing is saved; Esc returns to your edit.",
     },
     Spec {
         id: "ai.preview",
@@ -1242,7 +1256,21 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::Ignored,
         headless: h(Parity::Gap, "none", AI),
-        help: "Remove the chosen variant from the list for good, also after reopening (its files stay until a cleanup); the pause is unchanged.",
+        help: "Remove the chosen variant from the list for good, also after reopening; its files are removed by the next storage cleanup after the grace period. The pause is unchanged.",
+    },
+    Spec {
+        id: "ai.keep",
+        name: "Keep an AI variant",
+        section: Section::Ai,
+        keys: &[],
+        commands: &[verb(
+            "keep-ai",
+            ":keep-ai  keep or release the chosen variant",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::Ignored,
+        headless: h(Parity::Gap, "none", AI),
+        help: "Keep the chosen Ready variant offered and its files in the project for good, or release it again. Variants that are not kept, chosen or accepted expire after the retention period shown in the inspector and Storage, and a later cleanup removes their files. Accepted pictures and everything Undo can restore are never removed.",
     },
     // GAGS, CAPTIONS & CUTAWAYS
     Spec {
@@ -2380,6 +2408,17 @@ pub static SPECS: &[Spec] = &[
         replay: Replay::Ignored,
         headless: part("project restore <p> <backup> (closed project)", PROJECT),
         help: "Press twice to replace the project with the chosen backup, history included. What you have now is backed up first, so restoring that backup goes back.",
+    },
+    Spec {
+        id: "storage.confirm-clock",
+        name: "Confirm the clock for AI variant expiry",
+        section: Section::Storage,
+        keys: &[mode(Mode::Storage, "e", &[chord(Key::E, Plain)])],
+        commands: &[],
+        contexts: C::STORAGE,
+        replay: Replay::Ignored,
+        headless: part("project storage <p> --clean (closed project)", PROJECT),
+        help: "After a long gap since the last retention check, press once to see which AI variants would stop being offered, twice to confirm the clock so automatic checks resume. Their files go after the normal grace period.",
     },
     Spec {
         id: "storage.close",

@@ -16,6 +16,7 @@
 //!   .staging/<uuid>/              # builds in progress (0700)
 //!   .trash/<uuid>/                # replaced or evicted entries awaiting removal
 //!   .failures/v1-<…>.json         # a remembered failed build
+//!   .partial/v1-<BLAKE3>-s<stream>/  # completed ranges of an unpublished build
 //! ```
 //!
 //! Every operation is relative to the root descriptor opened once, with
@@ -49,6 +50,7 @@ const ENCODER_LOCK: &str = ".encoder.lock";
 const STAGING: &str = ".staging";
 const TRASH: &str = ".trash";
 const FAILURES: &str = ".failures";
+use partial::PARTIAL;
 const MOVIE: &str = "proxy.mp4";
 const SIDECAR: &str = "proxy.json";
 const USED: &str = "used";
@@ -59,6 +61,8 @@ pub const DEFAULT_PROXY_BUDGET_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 pub const DEFAULT_STAGING_GRACE: Duration = Duration::from_secs(24 * 60 * 60);
 /// Entries unused for this long are evicted.
 pub const DEFAULT_UNUSED_GRACE: Duration = Duration::from_secs(30 * 24 * 60 * 60);
+/// Partial build state unused for this long is removed.
+pub const DEFAULT_PARTIAL_GRACE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const MAX_SIDECAR_BYTES: u64 =
     deadpan_media::source_index::MAX_SOURCE_INDEX_JSON_BYTES as u64 + 64 * 1024;
 
@@ -221,6 +225,8 @@ impl Drop for ProxyStaging {
 pub struct ProxyCleanupPolicy {
     pub staging_grace: Duration,
     pub unused_grace: Duration,
+    /// Partial build state (completed ranges) unused for this long goes.
+    pub partial_grace: Duration,
     pub budget_bytes: u64,
 }
 
@@ -229,6 +235,7 @@ impl Default for ProxyCleanupPolicy {
         Self {
             staging_grace: DEFAULT_STAGING_GRACE,
             unused_grace: DEFAULT_UNUSED_GRACE,
+            partial_grace: DEFAULT_PARTIAL_GRACE,
             budget_bytes: DEFAULT_PROXY_BUDGET_BYTES,
         }
     }
@@ -238,6 +245,9 @@ impl Default for ProxyCleanupPolicy {
 pub struct ProxyCleanupReport {
     pub removed_entries: Vec<String>,
     pub removed_staging: usize,
+    /// Partial build states removed, by key directory name, and their bytes.
+    pub removed_partials: Vec<String>,
+    pub removed_partial_bytes: u64,
     pub kept_in_use: Vec<String>,
     pub retained_bytes: u64,
 }
@@ -298,7 +308,7 @@ impl ProxyCache {
                 root,
             }),
         };
-        for name in [STAGING, TRASH, FAILURES] {
+        for name in [STAGING, TRASH, FAILURES, PARTIAL] {
             match mkdirat(&cache.inner.root, name, Mode::from_raw_mode(0o700)) {
                 Ok(()) | Err(Errno::EXIST) => {}
                 Err(error) => return Err(error.into()),
@@ -751,10 +761,16 @@ impl ProxyCache {
         }
     }
 
-    /// Bytes of every published entry.
+    /// Bytes of every published entry and partial build state.
     pub fn usage(&self) -> Result<u64, ProxyCacheError> {
         let _lock = self.lock(false)?;
-        Ok(self.entries()?.iter().map(|entry| entry.bytes).sum())
+        let partials = self.subdirectory(PARTIAL)?;
+        let partial: u64 = list(&partials)?
+            .iter()
+            .filter_map(|name| partial::partial_use(&partials, name))
+            .map(|(_, bytes)| bytes)
+            .sum();
+        Ok(self.entries()?.iter().map(|entry| entry.bytes).sum::<u64>() + partial)
     }
 
     /// Bytes available to this user on the cache's volume.
@@ -824,12 +840,48 @@ impl ProxyCache {
         self.empty_trash(&self.subdirectory(TRASH)?);
         let current = format!("v{PROXY_RECIPE_VERSION}-");
         let retained: Vec<String> = retain.iter().map(ProxyKey::directory).collect();
-        let mut entries = self.entries()?;
-        let mut total: u64 = entries.iter().map(|entry| entry.bytes).sum();
+        let entries = self.entries()?;
+        // Partial build state: another recipe's, one whose proxy is already
+        // published, and one unused for its grace period go first; a build
+        // holding its lock keeps it. The rest count toward the budget.
+        let partials = self.subdirectory(PARTIAL)?;
+        let mut candidates: Vec<(EntryUse, bool)> = Vec::new();
+        for name in list(&partials)? {
+            let Some((used, bytes)) = partial::partial_use(&partials, &name) else {
+                continue;
+            };
+            if partial::partial_in_use(&partials, &name) {
+                continue;
+            }
+            let published = entries.iter().any(|entry| entry.name == name);
+            let stale = !name.starts_with(&current)
+                || published
+                || (!retained.contains(&name) && older(used, policy.partial_grace));
+            if stale {
+                if self.remove_partial_locked(&partials, &name)? {
+                    report.removed_partial_bytes += bytes;
+                    report.removed_partials.push(name);
+                }
+                continue;
+            }
+            candidates.push((EntryUse { name, used, bytes }, true));
+        }
+        candidates.extend(entries.into_iter().map(|entry| (entry, false)));
+        let mut total: u64 = candidates.iter().map(|(entry, _)| entry.bytes).sum();
         // Least recently used first.
-        entries.sort_by(|a, b| (a.used, &a.name).cmp(&(b.used, &b.name)));
-        for entry in entries {
+        candidates.sort_by(|(a, _), (b, _)| (a.used, &a.name).cmp(&(b.used, &b.name)));
+        for (entry, partial) in candidates {
             if retained.contains(&entry.name) {
+                continue;
+            }
+            if partial {
+                if total > policy.budget_bytes
+                    && self.remove_partial_locked(&partials, &entry.name)?
+                {
+                    total -= entry.bytes;
+                    report.removed_partial_bytes += entry.bytes;
+                    report.removed_partials.push(entry.name);
+                }
                 continue;
             }
             let stale = !entry.name.starts_with(&current) || older(entry.used, policy.unused_grace);
@@ -862,7 +914,7 @@ fn unix_now() -> i64 {
         })
 }
 
-fn touch(file: &OwnedFd) -> Result<(), ProxyCacheError> {
+fn touch(file: &impl AsFd) -> Result<(), ProxyCacheError> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
@@ -963,6 +1015,9 @@ fn remove_tree(parent: &OwnedFd, name: &str) -> Result<(), ProxyCacheError> {
         }
     }
 }
+
+mod partial;
+pub use partial::{MAX_JOURNAL_BYTES, ProxyPartial};
 
 #[cfg(test)]
 #[path = "cache_tests.rs"]

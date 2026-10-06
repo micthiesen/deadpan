@@ -1259,7 +1259,7 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schema 67 is current. Schema 66 returns `MigrationRequired` and
+Database schema 68 is current. Schemas 66 and 67 return `MigrationRequired` and
 `project migrate` upgrades it (backup, copy, validate, promote). Earlier
 schemas return `SchemaUnsupported` before writer locks, backups, recovery,
 authored JSON parsing or database writes, and their packages remain intact
@@ -1371,4 +1371,8 @@ app has the project open, both route through its
 [live endpoint](LIVE_PROJECT.md#ai-pause-jobs): generation runs as the app's
 own AI job. Errors use `GenerationUnavailable`, `GenerationInputsUnavailable`,
 `GenerationRefused`, `GenerationCancelled`, `GenerationFailed` and
-`GenerationUnknown`. See [AI Holds](AI_HOLDS.md).
+`GenerationUnknown`. The direct (not live-routed) `generate-hold` report adds
+`colour`: each side's model-input conversion from the conditioning manifest
+(`srgb_codes_unchanged`, `rec709_codes_as_srgb` or `authored_black`) and
+`approximate: true` when BT.709-transfer codes were read as sRGB without a
+transfer conversion. See [AI Holds](AI_HOLDS.md).

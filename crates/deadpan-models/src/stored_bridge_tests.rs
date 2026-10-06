@@ -68,7 +68,39 @@ struct Fixture {
 }
 
 impl Fixture {
+    /// An accepted bundle whose retained context uses the version-1 grammar
+    /// written before measured boundary evidence existed.
     fn new() -> Self {
+        Self::with_context(|plan, left, right| {
+            BridgeContext::legacy_v1(plan, left, right, "fixture RGB").unwrap()
+        })
+    }
+
+    /// The same bundle with a version-2 context declaring `model_color_space`.
+    fn measured(model_color_space: crate::BridgeColor) -> Self {
+        Self::with_context(|plan, left, right| {
+            BridgeContext::new(
+                plan,
+                left,
+                right,
+                "fixture RGB",
+                model_color_space,
+                crate::BridgeBoundaries {
+                    left: crate::BoundaryPicture::AuthoredBlack { project_frame: 9 },
+                    right: crate::BoundaryPicture::AuthoredBlack { project_frame: 40 },
+                },
+            )
+            .unwrap()
+        })
+    }
+
+    fn with_context(
+        context: impl FnOnce(
+            BridgeGenerationPlan,
+            WorkspaceArtifact,
+            WorkspaceArtifact,
+        ) -> BridgeContext,
+    ) -> Self {
         let capability = BridgeCapability::new(
             true,
             FrameRate::new(24, 1).unwrap(),
@@ -89,8 +121,7 @@ impl Fixture {
         let right_bytes = b"prepared right image";
         let left = declaration("inputs/left.png", left_bytes);
         let right = declaration("inputs/right.png", right_bytes);
-        let context =
-            BridgeContext::new(plan.clone(), left.clone(), right.clone(), "fixture RGB").unwrap();
+        let context = context(plan.clone(), left.clone(), right.clone());
         let context_bytes = serde_json::to_vec_pretty(&context).unwrap();
         let manifest = declaration("inputs/context.json", &context_bytes);
         let conditioning: ConditioningReceipt = serde_json::from_value(json!({
@@ -279,6 +310,23 @@ fn stored_production_envelope_preserves_measured_clocks_and_historical_identity(
             .as_str()
     );
     assert_eq!(evidence.provenance_object(), &fixture.wire().1.provenance);
+}
+
+#[test]
+fn measured_contexts_admit_and_a_foreign_model_space_is_refused() {
+    let evidence = Fixture::measured(crate::CANONICAL_BRIDGE_COLOR)
+        .validate()
+        .unwrap();
+    assert_eq!(evidence.sampled_contract().frames, 30);
+    let mut wide = crate::CANONICAL_BRIDGE_COLOR;
+    wide.primaries = crate::BridgePrimaries::Bt2020;
+    let Err(QualificationError::Request(reason)) = Fixture::measured(wide).validate() else {
+        panic!("a BT.2020 model space must not admit sRGB masters")
+    };
+    assert!(
+        reason.contains("colour interpretation mismatch"),
+        "{reason}"
+    );
 }
 
 #[test]

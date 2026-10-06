@@ -13,7 +13,9 @@ latency, storage and open time superseded by
 [command-work-2026-10-05](qualification/command-work-2026-10-05.md), which also
 records idle CPU. [pause-and-cold-seek-2026-10-06](qualification/pause-and-cold-seek-2026-10-06.md)
 supersedes edit latency on 10,000 beats and the cold, warm 4K and
-refinement seek rows. A target
+refinement seek rows, and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
+the playback rows (with and without proxy pictures, cut edits) and adds the
+stress runs. A target
 without a measured workload is open, never passed.
 
 ## Run the suite
@@ -67,9 +69,26 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   kinds (Undo follows each wrap), for attributing one path under a sampling
   profiler such as `sample`. `perf seek PACKAGE --admissions progressive`
   skips the slow complete (export) admission in the same way.
+- The playback stage plays each media fixture four ways for
+  `--audition-seconds`: as imported and as a `perf make-cuts` copy (fragments
+  of 24 pictures, every second one a three-play Repeat, so a backward jump
+  needing a keyframe seek about every 2.4 s), each with `--pictures original`
+  (never a proxy) and `--pictures adaptive` (the native worker's
+  [playback tier choice](PROXIES.md#playback-pictures), with the proxy built
+  into the seek stage's private cache if missing). Result keys are
+  `playback/NAME`, `NAME+proxy`, `NAME-cuts` and `NAME-cuts+proxy`.
+- `--stages stress` (opt-in, not part of the default set) adds: playback of
+  the 10,000-Hold package; per media fixture, playback of a `perf make-long`
+  copy (100 fragments of 6 pictures grouped, repeated 100 times and
+  exploded: 10,000 Original Source beats); and per media fixture a fresh
+  proxy build, adaptive playback of a cuts copy and a public Render export
+  started together (the app itself pauses proxy builds during playback and
+  renders; this does not). The seek storm runs through the real preview
+  worker as an ignored app test (`worker::project_tests::stress_tests`;
+  see its module documentation).
 - `--quick` shortens fixtures and sample counts for a smoke run; every target
   row is then INFO. `--stages` selects a subset of
-  `doctor,scale,seek,edit,playback,export,ui`. `--audition-seconds` sets the
+  `doctor,scale,seek,edit,playback,export,stress,ui`. `--audition-seconds` sets the
   real-device audition length (default 30).
 - Before each seek, edit, playback, export and UI stage the suite waits up to
   10 minutes for the 1-minute load average to fall to `--max-load` (default
@@ -101,7 +120,7 @@ like workloads and the same summary schema.
 | Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (the cached validated head and its plan compiled in that validation scope, as the native workspace does) on real and 10,000-beat packages, without the picture. It then reopens the edited package writable and read-only and reports `reopen_*` times and `reopen_validation`. |
 | Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks, Original and preview proxy; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary with progressive (preview) admission, the persistent threaded decoder and the shared Metal pipeline, on real long-GOP media at full canvas. Warm samples start after the background index measurement has verified; `measuring_seek` samples random seeks while it still runs. `decode_threads` records the default serving codec thread count and `decode_threads_for_canvas` the count for a stream of the canvas raster (more above 1080p). `proxy.warm_seek` measures the same random seeks through the verified [preview proxy](PROXIES.md), which the native viewer shows first for a stopped seek. `proxy.refinement.refined_ms` is the latency until the exact Original picture replaces it, including the worker's rest before refining an isolated request (30 ms; 150 ms while the cursor keeps moving). |
 | Cold long-GOP seek, < 300 ms | `perf seek` cold samples (10 per admission mode) | Session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, decoder, first picture), but the OS file cache is not purged. `cold.progressive` is the preview path (receipt-verified pictures while the complete measurement runs; `verified_ms` is when it finishes); `cold.complete` is the export path, which measures the whole index before its first picture. Retaining the previous picture while loading is a UI property not measured here. |
-| Playback 1080p60 and 4K30 | `perf playback` on the generated fixtures; `perf seek` frame stepping | Real device audio; pictures follow the heard clock, newest frame wins, skipped frames count as dropped. Decode and Metal completion only: no window, compositor or display scanout. |
+| Playback 1080p60 and 4K30 | `perf playback` on the generated fixtures and their cuts copies, with and without the proxy tier; `perf seek` frame stepping | Real device audio; pictures follow the heard clock, newest frame wins, skipped frames count as dropped. Pictures come from a progressively admitted interactive decoder, as in the native viewer (records before 2026-10-06 used a completely admitted `ProjectPictureSession`). Reports per-tier decode cost, presentation intervals, lag at completion, proxy runs until exact pictures resume and the exact picture after the stop. Decode and Metal completion only: no window, compositor or display scanout. |
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |
 | Hold insertion fallback visible < 100 ms | ui `edit-latency` `hold_fallback_input_to_picture_complete_ms`; `perf edit` insert pause | The CLI stage commits the native `,h` freeze through the store. |
 | 10,000-beat navigation without a whole-document scan | ui `large-project` navigation CPU; `perf scale` frame lookup at 100 to 50,000 beats; code audit | Lookups use the compiled plan's binary search; per-revision work (validation, plan compile, rows) scales with size and is measured separately. |
@@ -117,9 +136,9 @@ like workloads and the same summary schema.
 | Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale` | Implemented. |
 | History validation on open | `ProjectStore::open_validation()` and `validate_report`; `doctor --project` `history_validation`; `perf edit` `reopen_validation`: revisions, those proved by the [history receipt](TIMING_STORAGE.md#verified-history-receipts) and those recomputed | Implemented. `project validate` recomputes all; `--quick` reports what opening checks. |
 | Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost; the native `:diagnostics` panel (PLAYBACK) | Implemented as cumulative atomics; observations only. |
-| Dropped video frames | `perf playback` (pictures skipped while following the heard clock) | Benchmark only. The native preview coalesces superseded requests without a counter. |
+| Dropped video frames | `perf playback` (pictures skipped while following the heard clock); `deadpan_diagnostics::PLAYBACK_PICTURES` in the native app: playback pictures requested and frames skipped by the transport, pictures served exact or from the proxy, repositions started and reached; `:diagnostics` (PLAYBACK) | Cumulative per process. A loop wrap is not counted as a drop. |
 | GPU submission and completion | `deadpan_diagnostics::GPU`, recorded at the shared picture pipeline's submit (`deadpan-render`): submissions, completions, last, maximum and p50/p95 over a fixed 128-sample ring of `queue.submit` to the `on_submitted_work_done` callback; `:diagnostics` (GPU) and `doctor --project` (`diagnostics.gpu_submissions`, zero there); `perf seek`/`perf playback`; ui-harness `ui_composition_*` and picture timings | The latency ends when the owner next polls the device, so it includes polling delay. egui's own frame submission and the readback copy are not counted. Harness timings remain feature-gated. |
-| Preview proxy | `perf seek` `proxy` (build time, bytes, raster, fidelity and bias, opening, seek and refinement latency); `perf proxy-build`; the sidecar's `fidelity`; the app's proxy job state on the Original card and in the `proxy-seek` replay | No live counter of proxy versus Original pictures in the native app. |
+| Preview proxy | `perf seek` `proxy` (build time, bytes, raster, fidelity and bias, opening, seek and refinement latency); `perf proxy-build`; `perf playback --pictures adaptive` tiers; the sidecar's `fidelity`; the app's proxy job state on the Original card and in the `proxy-seek` replay; playback proxy and exact picture counts in `:diagnostics` | Stopped proxy pictures are not counted. |
 | Index measurement | `SourceSession::measurement()`, `ProjectPictureSession::source_measurement()`: Measuring, Verified, Mismatch or Interrupted for the retained Original; `DecodeWork::decoded_pictures` counts pictures the codec decoded | Not shown in the native app. A mismatch surfaces as the picture error; the preview worker retries an interruption once. |
 | Cache hit rate | `ProjectPictureSession::stats()`: cold decoder admissions and their time, retained-decoder reuses, decoded and Background pictures. `perf seek` reports them as `cold.<mode>.session_stats` and `warm_session_stats`, with the decoder reuse rate. `deadpan_diagnostics::CACHES`: hits, misses, evictions and resident entries/bytes (current and high) for the decoded-PCM source caches (CLI inspection and playback preparation, each bounded at 16 sessions and 1 GiB), limiter tiles (entries only) and limiter input blocks (entries and sample bytes); `:diagnostics` (PCM CACHES) and `doctor --project` (`diagnostics.pcm_caches`) | The native app's preview worker uses `SourceSession` directly, not `ProjectPictureSession`, so its panel has no picture-session row. A hit counts only a revalidated reuse. Thumbnail and proxy caches have no hit counter. |
 | Decode queue depth | `deadpan_diagnostics::QUEUES`, current and high-water: the main viewer's and the card thumbnail service's source-preview slots (pending plus in progress, including idle proxy preparation; 0 to 2 each), prepared PCM batches waiting for the playback control worker (0 or 1), packets in the device queue as seen by its producer (`Feed::queued_packets`, sampled each control tick, never from the callback) and the frames queued before the latest activation; `:diagnostics` (DECODE QUEUES) and `doctor --project` (`diagnostics.queue_depths`, idle there) | The picture path is single-flight by design, so a depth above 1 means a replaced request was still running. The Edit-waveform, endpoint and junction picture services are not instrumented. |

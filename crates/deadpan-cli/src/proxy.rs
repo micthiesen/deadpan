@@ -17,17 +17,22 @@ use std::time::{Duration, Instant};
 
 use deadpan_media::proxy::{
     ProxyIneligible, ProxyOriginal, ProxyPlan, ProxySidecar, VerifyControl, estimated_proxy_bytes,
-    hex, proxy_plan, proxy_request, verify_proxy,
+    hex, proxy_plan, verify_proxy,
 };
+use deadpan_media::source_index::SourceIndexSnapshot;
 use deadpan_media::source_input::VerifiedSourceInput;
 use deadpan_media::source_qualification::QualifiedVideoSnapshot;
-use deadpan_media::{ProxyEncodeOptions, encode_proxy_retrying};
+use deadpan_source::SourceStreamInfo;
 use deadpan_store::original_media::OriginalMediaRecord;
 
 pub mod cache;
+mod resume;
 use cache::{
     DEFAULT_PROXY_BUDGET_BYTES, ProxyCache, ProxyCacheError, ProxyCleanupPolicy, ProxyEntry,
     ProxyKey,
+};
+pub use resume::{
+    PROXY_JOURNAL_SCHEMA, PROXY_SEGMENT_PICTURES, ProxyProgress, ProxyProgressSnapshot,
 };
 
 /// Whole build: copy, worker encoding, verification and publication.
@@ -63,6 +68,8 @@ pub enum ProxyBuildError {
     },
     #[error("proxy I/O: {0}")]
     Io(#[from] std::io::Error),
+    #[error("proxy ranges cannot be joined: {0}")]
+    Ranges(String),
 }
 
 impl ProxyBuildError {
@@ -87,6 +94,13 @@ impl ProxyBuildError {
         match self {
             Self::Space { .. } | Self::Cache(ProxyCacheError::Budget { .. }) => true,
             _ if self.is_disk_full() => true,
+            // Stopped from outside (memory pressure, a user): its completed
+            // ranges stay for the next build.
+            Self::Conversion(deadpan_media::ConversionError::Worker { code, .. })
+                if code == deadpan_media::WORKER_TERMINATED =>
+            {
+                true
+            }
             Self::Conversion(error) => deadpan_media::retryable(error),
             _ => false,
         }
@@ -158,6 +172,11 @@ pub struct BuildControl<'a> {
     /// own deadline by the pauses it observes).
     pub paused: Option<&'a std::sync::atomic::AtomicU64>,
     pub stall: Duration,
+    /// Reused and encoded ranges and pictures, updated as the build runs.
+    pub progress: Option<&'a ProxyProgress>,
+    /// Target pictures per resumable range ([`PROXY_SEGMENT_PICTURES`]).
+    /// Completed ranges are reused only by builds with the same target.
+    pub segment_pictures: u64,
 }
 
 impl<'a> BuildControl<'a> {
@@ -167,6 +186,8 @@ impl<'a> BuildControl<'a> {
             pause: None,
             paused: None,
             stall: deadpan_media::PROXY_STALL_TIMEOUT,
+            progress: None,
+            segment_pictures: PROXY_SEGMENT_PICTURES,
         }
     }
 
@@ -206,6 +227,29 @@ pub fn proxy_identity(
         sha256: hex(&original.sha256()),
         byte_length: original.object().byte_length(),
         stream_index: video.index().stream_index(),
+    }
+}
+
+/// What a proxy is built from: the Original's identity, its receipt's
+/// measured index and stream interpretation.
+#[derive(Clone)]
+pub struct ProxySubject<'a> {
+    pub identity: ProxyOriginal,
+    pub index: &'a SourceIndexSnapshot,
+    pub info: &'a SourceStreamInfo,
+}
+
+impl<'a> ProxySubject<'a> {
+    pub fn of(original: &OriginalMediaRecord, video: &'a QualifiedVideoSnapshot) -> Self {
+        Self {
+            identity: proxy_identity(original, video),
+            index: video.index(),
+            info: video.interpretation(),
+        }
+    }
+
+    pub fn key(&self) -> Result<ProxyKey, ProxyCacheError> {
+        ProxyKey::new(&self.identity.blake3, self.identity.stream_index)
     }
 }
 
@@ -292,14 +336,40 @@ pub fn build_proxy(
         },
         other => return Ok(other),
     };
-    match build_proxy_with_plan(cache, original, video, worker, plan, open_original, control) {
-        Ok(entry) => Ok(ProxyStatus::Ready(entry)),
+    build_subject(
+        cache,
+        &ProxySubject::of(original, video),
+        worker,
+        plan,
+        open_original,
+        control,
+    )
+    .map(ProxyStatus::Ready)
+}
+
+/// Build and publish `subject`'s proxy with an explicit plan, as
+/// [`build_proxy`] does once it has decided to build: completed ranges of an
+/// earlier build are reused, and a failure that is neither a cancellation
+/// nor a machine condition is remembered, which also discards the completed
+/// ranges.
+pub fn build_subject(
+    cache: &ProxyCache,
+    subject: &ProxySubject<'_>,
+    worker: &Path,
+    plan: ProxyPlan,
+    open_original: OpenOriginal<'_>,
+    control: BuildControl<'_>,
+) -> Result<ProxyEntry, ProxyBuildError> {
+    match build_subject_with_plan(cache, subject, worker, plan, open_original, control) {
+        Ok(entry) => Ok(entry),
         Err(error) => {
             if !error.is_cancellation() && !error.is_environmental() {
+                let key = subject.key()?;
                 // The record only spares a later opening a doomed rebuild.
                 // Failing to write it (for example on a volume that has
                 // just filled) must not replace the build's own error.
-                let _ = cache.record_failure(&proxy_key(original, video)?, &error.to_string());
+                let _ = cache.record_failure(&key, &error.to_string());
+                let _ = cache.remove_partial(&key);
             }
             Err(error)
         }
@@ -319,11 +389,32 @@ pub fn build_proxy_with_plan(
     open_original: OpenOriginal<'_>,
     control: BuildControl<'_>,
 ) -> Result<ProxyEntry, ProxyBuildError> {
+    build_subject_with_plan(
+        cache,
+        &ProxySubject::of(original, video),
+        worker,
+        plan,
+        open_original,
+        control,
+    )
+}
+
+/// [`build_proxy_with_plan`] for an explicit subject. Completed ranges of an
+/// earlier build of the same subject, recipe and plan are reused; failures
+/// are not remembered.
+pub fn build_subject_with_plan(
+    cache: &ProxyCache,
+    subject: &ProxySubject<'_>,
+    worker: &Path,
+    plan: ProxyPlan,
+    open_original: OpenOriginal<'_>,
+    control: BuildControl<'_>,
+) -> Result<ProxyEntry, ProxyBuildError> {
     let started = Instant::now();
-    deadpan_media::proxy::expressible(video.index().index())?;
-    let key = proxy_key(original, video)?;
-    let info = video.interpretation();
-    let frames = video.index().index().frames().len() as u64;
+    deadpan_media::proxy::expressible(subject.index.index())?;
+    let key = subject.key()?;
+    let info = subject.info;
+    let frames = subject.index.index().frames().len() as u64;
     let estimate = estimated_proxy_bytes(&plan, frames);
     let used = cache.usage()?;
     if used.saturating_add(estimate) > DEFAULT_PROXY_BUDGET_BYTES {
@@ -348,46 +439,33 @@ pub fn build_proxy_with_plan(
     check_space(
         "temporary",
         cache::available(&temporary)?,
-        original.object().byte_length(),
+        subject.identity.byte_length,
     )?;
     control.wait_while_paused()?;
     let mut source = open_original(control.cancelled)?;
     let input = VerifiedSourceInput::copy_verified(
         &mut source,
-        video.index().content(),
-        original.object().byte_length().max(1),
+        subject.index.content(),
+        subject.identity.byte_length.max(1),
         remaining(started, &control)?,
         control.cancelled,
     )?;
     drop(source);
     control.wait_while_paused()?;
-    let request = proxy_request(
-        input.identity().byte_length(),
-        info,
-        frames,
-        &plan,
-        remaining(started, &control)?,
-    )?;
     // One VideoToolbox proxy session per user at a time, across processes:
     // its encoder service has hung under many concurrent sessions.
     let _slot = cache.encoder_slot(control.cancelled)?;
-    // Each attempt writes a fresh staging file; a failed one is removed.
-    let (staging, _) = encode_proxy_retrying(
-        worker,
-        &input,
-        &request,
-        || stage_output(cache),
-        control.cancelled,
-        ProxyEncodeOptions {
-            stall: control.stall,
-            pause: control.pause,
-        },
+    // This key's completed ranges, locked for this build; an interrupted
+    // build leaves them for the next one.
+    let partial = cache.partial(&key, control.cancelled)?;
+    let staging = resume::encode_by_ranges(
+        cache, &partial, subject, worker, &plan, &input, &control, started,
     )?;
     let sidecar = verify_proxy(
         staging.movie(),
         &input,
-        original.object().content().digest(),
-        Arc::new(video.index().clone()),
+        &subject.identity.blake3,
+        Arc::new(subject.index.clone()),
         info,
         plan.reason,
         VerifyControl {
@@ -396,8 +474,15 @@ pub fn build_proxy_with_plan(
             pause: control.pause,
         },
     )?;
+    if sidecar.original != subject.identity {
+        return Err(ProxyCacheError::Damaged("the proxy names other Original bytes".into()).into());
+    }
     control.wait_while_paused()?;
-    Ok(cache.publish(&key, staging, &sidecar)?)
+    let entry = cache.publish(&key, staging, &sidecar)?;
+    // Published: the ranges are no longer needed. A failure here leaves them
+    // to cleanup, which removes partial state whose proxy is published.
+    let _ = partial.remove();
+    Ok(entry)
 }
 
 fn check_space(volume: &'static str, available: u64, bytes: u64) -> Result<(), ProxyBuildError> {
@@ -533,6 +618,8 @@ mod tests {
             "crates/deadpan-cli/src/proxy.rs",
             "crates/deadpan-cli/src/proxy/cache.rs",
             "crates/deadpan-cli/src/proxy/cache_tests.rs",
+            "crates/deadpan-cli/src/proxy/cache/partial.rs",
+            "crates/deadpan-cli/src/proxy/resume.rs",
             "crates/deadpan-cli/src/lib.rs",
             // Explicit cache cleanup: removes entries, never reads pictures.
             "crates/deadpan-cli/src/storage.rs",
@@ -549,6 +636,7 @@ mod tests {
             "crates/deadpan-app/src/worker.rs",
             "crates/deadpan-app/src/worker/proxy.rs",
             "crates/deadpan-app/src/worker/proxy_tests.rs",
+            "crates/deadpan-app/src/worker/stress_tests.rs",
             "crates/deadpan-app/src/worker/project_tests.rs",
             "crates/deadpan-app/src/preview/harness.rs",
             "crates/deadpan-app/src/preview/harness/proxy.rs",

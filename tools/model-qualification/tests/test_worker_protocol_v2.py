@@ -239,6 +239,45 @@ class BridgeProtocolTests(unittest.TestCase):
                     worker_protocol.parse_host_message(value)
 
 
+class WorkerContextShapeTests(unittest.TestCase):
+    def context(self):
+        artifact = {"reference": "inputs/left.png", "sha256": SHA_A, "byte_length": 1}
+        return {
+            "schema_version": 2,
+            "model_color_space": {"transfer": "srgb", "primaries": "bt709",
+                                  "matrix": "rgb", "range": "full"},
+            "plan": plan(), "left": artifact, "right": dict(artifact, reference="inputs/right.png"),
+            "input_color_interpretation": "decoded rgb8 as srgb",
+            "boundaries": {"left": {"authored_black": {"project_frame": 0}},
+                           "right": {"authored_black": {"project_frame": 46}}},
+        }
+
+    def test_measured_and_legacy_contexts_are_admitted(self):
+        worker.validate_context_shape(self.context())
+        legacy = self.context()
+        del legacy["model_color_space"], legacy["boundaries"]
+        legacy.update(schema_version=1, model_color="srgb")
+        worker.validate_context_shape(legacy)
+
+    def test_foreign_model_colour_and_unknown_shapes_are_refused(self):
+        mutations = [
+            lambda value: value["model_color_space"].update(primaries="bt2020"),
+            lambda value: value["model_color_space"].update(gamma=2.2),
+            lambda value: value.update(schema_version=3),
+            lambda value: value.update(schema_version=True),
+            lambda value: value.update(model_color="srgb"),
+            lambda value: value.pop("boundaries"),
+            lambda value: value["boundaries"].update(middle={}),
+            lambda value: value.update(input_color_interpretation=""),
+        ]
+        for mutate in mutations:
+            value = self.context()
+            mutate(value)
+            with self.subTest(mutation=mutate):
+                with self.assertRaises(ValueError):
+                    worker.validate_context_shape(value)
+
+
 class WorkerFinishedOutputTests(unittest.TestCase):
     def test_request_plan_must_equal_context_plan_before_inference(self):
         request = worker_protocol.parse_host_message(bridge_request_wire())

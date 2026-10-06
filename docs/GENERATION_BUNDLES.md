@@ -41,6 +41,20 @@ checking SHA-256, byte length, descriptor-relative containment, disjoint input/o
 scopes, cancellation and one shared capture deadline. The strict context must match
 the request's plan and manifest identity. Frames are opaque at this boundary;
 capturing them does not qualify image decoding, source-clock coordinates or color.
+
+Current conditioning writes context schema 2. It declares the model's colour
+space (`model_color_space`, canonical full-range sRGB, BT.709 primaries, RGB
+matrix) and, under `boundaries`, what the project showed on each side of the
+Hold: an `original` frame (asset, receipt ID, measured index identity, exact
+source PTS and the decoder's measured codec, pixel format, geometry, SAR,
+rotation, decoded bit depth, transfer, primaries, matrix and range), a
+`generated` frame (sampled asset/object and provenance object with the same
+measurements) or `authored_black`. Each decoded side also names its
+`model_input` conversion, which must follow from its measured colour
+(`model_input_conversion`); the two sides must enclose the planned Hold. Schema
+1 contexts (a stated `model_color: "srgb"` and interpretation text) remain
+readable so already retained bundles keep qualifying and admitting; new
+conditioning never writes them.
 Snapshots expose only read/seek, and their BLAKE3 identities form a typed
 `ConditioningReceipt`. Identical left/right inputs can share an object identity.
 
@@ -62,6 +76,10 @@ its Ready API relies on this independent host qualification.
    Check bounded counts, strings, valid hashes, and unique asset identities. Require
    the worker's complete context to equal the independently captured host context,
    including both prepared input declarations and the color interpretation.
+   Require the context's declared model colour space to equal the canonical
+   masters' (full-range sRGB BT.709 RGB, which the converter writes and verifies);
+   otherwise qualification fails with a colour interpretation mismatch. The
+   stored-evidence reader repeats this check on admission.
 3. Snapshot native bytes with the same controls. Derive canonical native and
    sampled FFV1 masters under the remaining shared deadline, using
    [`canonicalize_bridge`](MEDIA_CONVERSION.md). Independently decode outputs and
@@ -80,9 +98,10 @@ its Ready API relies on this independent host qualification.
 
 Provenance records the worker's asset/runtime claims. Parsing and matching these
 claims does not independently prove which model bytes executed. Installed-pack
-attestation and measured source colour metadata remain required; the retained
-conditioning's source-clock binding is checked by
-[re-derivation](STORAGE.md#source-clock-and-colour-evidence). Extra bounded backend diagnostics are retained without granting
+attestation remains required. Measured boundary colour, frame identity and PTS
+are recorded by the host in schema-2 contexts and checked by
+[re-derivation](STORAGE.md#source-clock-and-colour-evidence); the model's own
+colour handling (`model_color_interpretation`) remains a worker claim. Extra bounded backend diagnostics are retained without granting
 them authority. Host decoded-media results remain separate from worker reports.
 
 The standalone `retain_bridge_conditioning` example captures prepared input bytes

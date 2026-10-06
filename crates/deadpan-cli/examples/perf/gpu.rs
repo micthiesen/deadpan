@@ -73,6 +73,14 @@ impl Gpu {
         self.complete(started, submission)
     }
 
+    /// Clear the canvas to the authored Background, as for Background and
+    /// Blank pictures, and wait for GPU completion.
+    pub fn present_background(&mut self) -> Result<Presented> {
+        let started = Instant::now();
+        let submission = self.renderer.render_background(&self.target)?;
+        self.complete(started, submission)
+    }
+
     pub fn present(&mut self, prepared: &PreparedProjectPicture) -> Result<Presented> {
         let started = Instant::now();
         let layers = prepared.render_layers()?;

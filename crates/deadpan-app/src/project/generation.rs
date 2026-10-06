@@ -8,7 +8,7 @@
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 use deadpan_core::GeneratedObjectRef;
 use deadpan_core::{FrameRange, NodeId, ProjectDocument, ProjectFrame, ProjectId, RevisionId};
@@ -76,6 +76,17 @@ pub enum GenerationOperation {
         session: u64,
         request: RequestId,
         attempt: AttemptId,
+    },
+    /// Keep (pin) one offered Ready variant so the retention policy never
+    /// expires it, or with `keep: false` let it expire again. Operational
+    /// store metadata, durable across reopen; not undoable and never an
+    /// edit. Refused for a stale session or a variant no longer offered.
+    Keep {
+        ticket: u64,
+        session: u64,
+        request: RequestId,
+        attempt: AttemptId,
+        keep: bool,
     },
     /// Discard an interrupted attempt from the Jobs panel's retry list. The
     /// attempt keeps its failed record; it is just no longer offered.
@@ -191,6 +202,14 @@ pub struct Job {
     /// variants kept after a later one failed, was cancelled or could not
     /// start.
     pub note: Option<String>,
+    /// The Hold's chosen variant when this job started.
+    pub selected_before: Option<AttemptId>,
+    /// Set when a Ready variant of this job took the selection from a
+    /// variant that only its selection protected (neither kept nor
+    /// explicitly picked): that variant now expires under the retention
+    /// policy unless the person keeps or chooses it. The concluding message
+    /// says so.
+    pub unprotected: Option<AttemptId>,
 }
 
 impl Job {
@@ -211,6 +230,22 @@ pub struct Variant {
     pub sampled: GeneratedObjectRef,
     pub sampled_frames: u32,
     pub sampled_size: (u32, u32),
+    /// The stored bundle receipt, for off-UI advisory join measurement.
+    pub receipt: Arc<deadpan_store::generation_attempts::BundleValidationReceipt>,
+    /// When the variant became Ready (or, for one older than the retention
+    /// records, when its project was upgraded).
+    pub ready_at: SystemTime,
+    /// The person kept it with Keep: it never expires.
+    pub kept: bool,
+    /// The person explicitly chose it (Select or Preview): it does not
+    /// expire until they choose another variant of the pause or discard it,
+    /// even when a later variant becomes the selection.
+    pub picked: bool,
+    /// When the retention policy will stop offering it
+    /// (`deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION`
+    /// after `ready_at`). `None` while it is kept, picked, selected or was
+    /// accepted.
+    pub expires_at: Option<SystemTime>,
 }
 
 /// A current request's present Ready variants that the Hold has not

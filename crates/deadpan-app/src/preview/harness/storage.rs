@@ -3,7 +3,9 @@
 //! previews a cleanup on a read-only open off the writer, R removes nothing without a
 //! removable preview, editor keys never reach the project, S saves a
 //! verified portable copy through the (scripted) save sheet, C cleans only
-//! the replay's private cache root, and Escape closes it.
+//! the replay's private cache root, E reviews then confirms the clock after a
+//! long gap since the last AI variant retention check (and offers nothing
+//! when the clock is behind the project's records), and Escape closes it.
 
 use egui::Key;
 
@@ -169,6 +171,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"status":status,"reopened":format!("{reopened:?}")}),
     )?;
     d.capture("Storage after cleanup and a portable copy")?;
+    clock(d)?;
 
     d.key(Key::Escape)?;
     d.settled()?;
@@ -182,4 +185,161 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"open":d.app().storage.open,"revision":d.revision()}),
     )?;
     d.capture("Storage closed")
+}
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_millis() as i64)
+}
+
+/// Set the retention watermark directly, as an earlier session would have.
+fn seed_watermark(d: &Driver<'_>, last_pass_ms: i64) -> Result<(), String> {
+    let path = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("no project")?
+        .path
+        .join("project.sqlite");
+    rusqlite::Connection::open(path)
+        .and_then(|connection| {
+            connection.execute(
+                "INSERT INTO generation_retention_state(singleton,last_pass_ms) VALUES (1,?1)
+                 ON CONFLICT(singleton) DO UPDATE SET last_pass_ms=excluded.last_pass_ms",
+                [last_pass_ms],
+            )
+        })
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+fn watermark(d: &Driver<'_>) -> Result<Option<i64>, String> {
+    let path = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("no project")?
+        .path
+        .join("project.sqlite");
+    rusqlite::Connection::open(path)
+        .and_then(|connection| {
+            connection.query_row(
+                "SELECT max(last_pass_ms) FROM generation_retention_state",
+                [],
+                |row| row.get(0),
+            )
+        })
+        .map_err(|error| error.to_string())
+}
+
+fn anomaly(app: &DeadpanApp) -> Option<Option<deadpan_store::generation_retention::ClockAnomaly>> {
+    match &app.storage.snapshot {
+        Some(super::super::storage::Snapshot {
+            project: Some(Ok(report)),
+            ..
+        }) => Some(report.variant_retention.clock_anomaly),
+        _ => None,
+    }
+}
+
+fn clock(d: &mut Driver<'_>) -> Result<(), String> {
+    use deadpan_store::generation_retention::ClockAnomaly;
+    const DAY_MS: i64 = 24 * 60 * 60 * 1000;
+    // The session's own automatic check runs first; it must not race the seed.
+    d.wait_for("Automatic retention check finished", |app| {
+        app.storage.retention.as_ref().is_some_and(|status| {
+            matches!(
+                status.state,
+                crate::project::RetentionPassState::Done { .. }
+            )
+        })
+    })?;
+    let revision = d.revision();
+
+    // A long gap since the last check: E reviews, a second E confirms.
+    let seeded = now_ms() - 30 * DAY_MS;
+    seed_watermark(d, seeded)?;
+    d.key(Key::U)?;
+    d.wait_for("Long gap measured", |app| {
+        matches!(anomaly(app), Some(Some(ClockAnomaly::Ahead { .. })))
+    })?;
+    d.settled()?;
+    let clock_row = row(d, "Clock: ");
+    let button = labels(d)
+        .iter()
+        .any(|(_, label, _)| label == "Confirm clock  E");
+    d.check(
+        "A long gap since the last retention check shows a Clock row and offers Confirm clock (E)",
+        clock_row
+            .as_deref()
+            .is_some_and(|text| text.contains("long gap") && text.contains("E reviews"))
+            && button,
+        json!({"clock":"long gap … E reviews and confirms the clock","button":"Confirm clock  E"}),
+        json!({"clock":clock_row,"button":button}),
+    )?;
+    d.key(Key::E)?;
+    d.wait_for("Clock review planned", |app| {
+        app.storage
+            .status
+            .as_deref()
+            .is_some_and(|status| status.starts_with("Confirm this Mac's clock?"))
+    })?;
+    let review = d.app().storage.status.clone().unwrap_or_default();
+    d.check(
+        "The first E shows exactly what would stop being offered, with its bytes, and writes nothing",
+        review.contains("0 AI variants (0 B) would stop being offered")
+            && review.contains("Press E again")
+            && watermark(d)? == Some(seeded),
+        json!({"status":"Confirm this Mac's clock? 0 AI variants (0 B) would stop being offered now; … Press E again to confirm.","watermark":seeded}),
+        json!({"status":review,"watermark":watermark(d)?}),
+    )?;
+    d.capture("Storage reviewing the clock after a long gap")?;
+    d.key(Key::E)?;
+    d.wait_for("Clock confirmed", |app| {
+        app.storage.status.as_deref().is_some_and(|status| {
+            status.starts_with("Confirmed the clock") || !status.starts_with("Confirm")
+        }) && matches!(anomaly(app), Some(None))
+    })?;
+    let status = d.app().storage.status.clone().unwrap_or_default();
+    let advanced = watermark(d)?;
+    d.check(
+        "The second E confirms on the writer: the watermark advances, the anomaly clears, nothing is edited",
+        status.starts_with("Confirmed the clock: 0 AI variants (0 B) stopped being offered")
+            && advanced.is_some_and(|ms| ms > seeded + 29 * DAY_MS)
+            && d.revision() == revision
+            && row(d, "Clock: ").is_none(),
+        json!({"status":"Confirmed the clock: 0 AI variants (0 B) stopped being offered; …","watermark":"now","revision":revision}),
+        json!({"status":status,"watermark":advanced,"revision":d.revision(),"clock":row(d, "Clock: ")}),
+    )?;
+
+    // A clock behind the project's records: shown, never confirmed.
+    let ahead = now_ms() + 10 * DAY_MS;
+    seed_watermark(d, ahead)?;
+    d.key(Key::U)?;
+    d.wait_for("Clock behind measured", |app| {
+        matches!(anomaly(app), Some(Some(ClockAnomaly::Behind { .. })))
+    })?;
+    d.settled()?;
+    d.key(Key::E)?;
+    d.settled()?;
+    let status = d.app().storage.status.clone().unwrap_or_default();
+    let button = labels(d)
+        .iter()
+        .any(|(_, label, _)| label == "Confirm clock  E");
+    let clock_row = row(d, "Clock: ");
+    d.check(
+        "A clock behind the project's records is shown but offers no confirmation",
+        status.contains("earlier than times this project recorded")
+            && status.contains("nothing to confirm")
+            && !button
+            && clock_row.as_deref().is_some_and(|text| text.starts_with("Clock: earlier"))
+            && watermark(d)? == Some(ahead)
+            && d.app().storage.clock.is_none(),
+        json!({"status":"… earlier than times this project recorded … nothing to confirm","button":false,"watermark":ahead}),
+        json!({"status":status,"button":button,"clock":clock_row,"watermark":watermark(d)?}),
+    )?;
+    d.capture("Storage with a clock behind the project's records")?;
+    // Leave the project as the replay found it.
+    seed_watermark(d, now_ms())
 }

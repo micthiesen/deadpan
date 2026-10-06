@@ -34,7 +34,15 @@ use crate::source_session::{SourceSession, SourceSessionError, SourceSessionLimi
 
 /// First worker argument selecting proxy encoding.
 pub const PROXY_ARGUMENT: &str = "proxy";
-pub const PROXY_PROTOCOL_VERSION: u32 = 1;
+/// First worker argument selecting the packet-level join of encoded ranges.
+pub const PROXY_ASSEMBLE_ARGUMENT: &str = "proxy-assemble";
+/// Version 2: encoded ranges at an output offset, the codec configuration
+/// digest in the report, and assembly.
+pub const PROXY_PROTOCOL_VERSION: u32 = 2;
+/// Most ranges one proxy is built from; it bounds the assembly request.
+pub const MAX_PROXY_SEGMENTS: usize = 1024;
+/// Wire bound of one assembly request, which lists every range.
+pub const MAX_PROXY_ASSEMBLE_REQUEST_BYTES: usize = 256 * 1024;
 /// Raster rule, codec, quality and color handling. A change needs a new
 /// version: cached proxies of other versions are never served.
 pub const PROXY_RECIPE_VERSION: u32 = 1;
@@ -130,8 +138,24 @@ impl ProxyPrimaries {
     }
 }
 
+/// One contiguous range of Original pictures `[start_frame, start_frame +
+/// frames)`. The worker seeks to the keyframe at `seek_pts`, discards earlier
+/// pictures, and requires the first encoded picture at `start_pts` and the
+/// last one to end at `end_pts`, all in the Original's time base.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProxyRange {
+    pub start_frame: u64,
+    pub seek_pts: i64,
+    pub start_pts: i64,
+    pub end_pts: i64,
+}
+
 /// Decode the Original on stdin, encode the proxy to stdout. The worker
 /// decodes through the qualified source adapter and receives no path.
+/// Without a range it encodes every picture; with one, only that range. The
+/// movie is written at `output_offset`, which must be the output's current
+/// length, so several ranges can follow each other in one private file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProxyRequest {
@@ -154,6 +178,8 @@ pub struct ProxyRequest {
     pub decode_threads: u32,
     pub max_output_bytes: u64,
     pub timeout_ms: u64,
+    pub output_offset: u64,
+    pub range: Option<ProxyRange>,
 }
 
 impl ProxyRequest {
@@ -202,11 +228,24 @@ impl ProxyRequest {
                 "proxy quality, frame, byte or time budget is invalid",
             ));
         }
+        if self.output_offset > MAX_PROXY_BYTES {
+            return Err(ContractError("proxy output offset is out of range"));
+        }
+        if let Some(range) = self.range
+            && (range.seek_pts > range.start_pts
+                || range.start_pts >= range.end_pts
+                || range
+                    .start_frame
+                    .checked_add(self.frames)
+                    .is_none_or(|end| end > MAX_PROXY_FRAMES))
+        {
+            return Err(ContractError("proxy range is invalid"));
+        }
         Ok(())
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProxyReport {
     pub protocol: u32,
@@ -216,6 +255,16 @@ pub struct ProxyReport {
     pub keyframes: u64,
     pub width: u32,
     pub height: u32,
+    /// SHA-256 of the H.264 decoder configuration (`avcC`) the worker read
+    /// back from its own finished movie. Ranges join only when equal.
+    pub extradata_sha256: String,
+}
+
+fn lower_hex_digest(text: &str) -> bool {
+    text.len() == 64
+        && text
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 impl ProxyReport {
@@ -228,11 +277,139 @@ impl ProxyReport {
             || self.keyframes != request.frames
             || self.width != request.width
             || self.height != request.height
+            || !lower_hex_digest(&self.extradata_sha256)
         {
             return Err(ContractError("proxy report violates its contract"));
         }
         Ok(())
     }
+}
+
+/// One encoded range inside the assembly input: a complete proxy movie of
+/// `frames` pictures at `[offset, offset + length)`, starting at `start_pts`
+/// and ending at `end_pts` in the Original's time base.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProxySegment {
+    pub offset: u64,
+    pub length: u64,
+    pub frames: u64,
+    pub start_pts: i64,
+    pub end_pts: i64,
+}
+
+/// Join encoded ranges, in this order, into one proxy movie at packet level:
+/// stdin holds the ranges, stdout receives the movie. Every packet keeps its
+/// exact time; the stream takes the recipe's aspect, rotation and color
+/// tags and the Original's clock, as a single-range encoding would.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProxyAssembleRequest {
+    pub protocol: u32,
+    pub input_byte_length: u64,
+    pub width: u32,
+    pub height: u32,
+    pub time_base_num: u32,
+    pub time_base_den: u32,
+    pub sar_num: u32,
+    pub sar_den: u32,
+    pub rotation_quarter_turns: u8,
+    pub transfer: ProxyTransfer,
+    pub primaries: ProxyPrimaries,
+    pub frames: u64,
+    pub segments: Vec<ProxySegment>,
+    pub max_output_bytes: u64,
+    pub timeout_ms: u64,
+}
+
+impl ProxyAssembleRequest {
+    pub fn validate(&self) -> Result<(), ContractError> {
+        if self.protocol != PROXY_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported proxy protocol"));
+        }
+        if self.input_byte_length == 0 || self.input_byte_length > MAX_PROXY_BYTES {
+            return Err(ContractError("proxy assembly input is out of range"));
+        }
+        if self.width < 2
+            || self.height < 2
+            || self.width > 4096
+            || self.height > 4096
+            || !self.width.is_multiple_of(2)
+            || !self.height.is_multiple_of(2)
+            || self.time_base_num == 0
+            || self.time_base_den == 0
+            || self.time_base_num > i32::MAX as u32
+            || self.time_base_den > i32::MAX as u32
+            || self.sar_num == 0
+            || self.sar_den == 0
+            || self.sar_num > i32::MAX as u32
+            || self.sar_den > i32::MAX as u32
+            || self.rotation_quarter_turns > 3
+        {
+            return Err(ContractError("proxy assembly stream is invalid"));
+        }
+        if !(1..=MAX_PROXY_FRAMES).contains(&self.frames)
+            || !(1..=MAX_PROXY_BYTES).contains(&self.max_output_bytes)
+            || !(1..=MAX_PROXY_TIMEOUT_MS).contains(&self.timeout_ms)
+            || self.segments.is_empty()
+            || self.segments.len() > MAX_PROXY_SEGMENTS
+        {
+            return Err(ContractError("proxy assembly budget is invalid"));
+        }
+        let mut frames = 0_u64;
+        for (position, segment) in self.segments.iter().enumerate() {
+            let inside = segment
+                .offset
+                .checked_add(segment.length)
+                .is_some_and(|end| end <= self.input_byte_length);
+            let joined = position == 0 || self.segments[position - 1].end_pts == segment.start_pts;
+            if segment.length == 0
+                || segment.frames == 0
+                || segment.start_pts >= segment.end_pts
+                || !inside
+                || !joined
+            {
+                return Err(ContractError("proxy assembly ranges are invalid"));
+            }
+            frames = frames.saturating_add(segment.frames);
+        }
+        if frames != self.frames {
+            return Err(ContractError("proxy assembly ranges miss pictures"));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProxyAssembleReport {
+    pub protocol: u32,
+    pub output_bytes: u64,
+    pub packets: u64,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl ProxyAssembleReport {
+    pub fn validate_for(&self, request: &ProxyAssembleRequest) -> Result<(), ContractError> {
+        if self.protocol != PROXY_PROTOCOL_VERSION
+            || self.output_bytes == 0
+            || self.output_bytes > request.max_output_bytes
+            || self.packets != request.frames
+            || self.width != request.width
+            || self.height != request.height
+        {
+            return Err(ContractError("proxy assembly report violates its contract"));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ProxyAssembleReply {
+    Success { report: ProxyAssembleReport },
+    Failure { code: String, message: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -369,6 +546,112 @@ pub fn proxy_request(
             .saturating_mul(frames)
             .saturating_add(16 * 1024 * 1024)
             .min(MAX_PROXY_BYTES),
+        timeout_ms: u64::try_from(timeout.as_millis())
+            .unwrap_or(MAX_PROXY_TIMEOUT_MS)
+            .clamp(1, MAX_PROXY_TIMEOUT_MS),
+        output_offset: 0,
+        range: None,
+    })
+}
+
+/// The worker request encoding Original pictures `[start, end)` of `index`
+/// into a movie written at `output_offset`. The output bound is that of a
+/// whole proxy of `end - start` pictures.
+#[allow(clippy::too_many_arguments)]
+pub fn proxy_range_request(
+    input_byte_length: u64,
+    info: &SourceStreamInfo,
+    index: &SourceFrameIndex,
+    plan: &ProxyPlan,
+    start: u64,
+    end: u64,
+    output_offset: u64,
+    timeout: Duration,
+) -> Result<ProxyRequest, ProxyIneligible> {
+    let frames = index.frames();
+    let ordinal = |value: u64| {
+        usize::try_from(value)
+            .ok()
+            .filter(|value| *value <= frames.len())
+    };
+    let (Some(first), Some(last)) = (ordinal(start), ordinal(end)) else {
+        return Err(ProxyIneligible::Empty);
+    };
+    if first >= last {
+        return Err(ProxyIneligible::Empty);
+    }
+    let anchor = frames[first]
+        .seek_from
+        .and_then(|anchor| usize::try_from(anchor.0).ok())
+        .and_then(|anchor| frames.get(anchor))
+        .map_or(frames[0].pts, |anchor| anchor.pts);
+    let end_pts = frames
+        .get(last)
+        .map_or(index.terminal_end(), |frame| frame.pts);
+    let mut request = proxy_request(input_byte_length, info, end - start, plan, timeout)?;
+    request.output_offset = output_offset;
+    request.range = Some(ProxyRange {
+        start_frame: start,
+        seek_pts: anchor.min(frames[first].pts),
+        start_pts: frames[first].pts,
+        end_pts,
+    });
+    Ok(request)
+}
+
+/// The contiguous ranges a resumable build encodes: the first keyframe at or
+/// after every `target` pictures starts a new range, so each range starts
+/// at a keyframe and decodes without preroll. Without a later keyframe the
+/// range runs to the end. At most [`MAX_PROXY_SEGMENTS`] ranges: a long
+/// Original gets longer ranges.
+pub fn proxy_segments(index: &SourceFrameIndex, target: u64) -> Vec<(u64, u64)> {
+    let frames = index.frames();
+    let count = frames.len() as u64;
+    let target = target.max(1).max(count.div_ceil(MAX_PROXY_SEGMENTS as u64));
+    let mut ranges = Vec::new();
+    let mut start = 0_u64;
+    while start < count {
+        let next = (start.saturating_add(target)..count).find(|ordinal| {
+            usize::try_from(*ordinal)
+                .ok()
+                .and_then(|ordinal| frames.get(ordinal))
+                .is_some_and(|frame| frame.keyframe)
+        });
+        let end = next.unwrap_or(count);
+        ranges.push((start, end));
+        start = end;
+    }
+    ranges
+}
+
+/// The assembly request joining `segments` (in picture order) of a proxy of
+/// `info`'s stream at `plan`'s raster.
+pub fn proxy_assemble_request(
+    input_byte_length: u64,
+    info: &SourceStreamInfo,
+    plan: &ProxyPlan,
+    segments: Vec<ProxySegment>,
+    timeout: Duration,
+) -> Result<ProxyAssembleRequest, ProxyIneligible> {
+    let transfer =
+        ProxyTransfer::of(info.color.transfer).ok_or(ProxyIneligible::HighDynamicRange)?;
+    let frames = segments.iter().map(|segment| segment.frames).sum();
+    let bytes: u64 = segments.iter().map(|segment| segment.length).sum();
+    Ok(ProxyAssembleRequest {
+        protocol: PROXY_PROTOCOL_VERSION,
+        input_byte_length,
+        width: plan.width,
+        height: plan.height,
+        time_base_num: info.time_base_num,
+        time_base_den: info.time_base_den,
+        sar_num: info.sample_aspect_num,
+        sar_den: info.sample_aspect_den,
+        rotation_quarter_turns: info.rotation_quarter_turns,
+        transfer,
+        primaries: ProxyPrimaries::of(info.color.primaries),
+        frames,
+        segments,
+        max_output_bytes: bytes.saturating_add(16 * 1024 * 1024).min(MAX_PROXY_BYTES),
         timeout_ms: u64::try_from(timeout.as_millis())
             .unwrap_or(MAX_PROXY_TIMEOUT_MS)
             .clamp(1, MAX_PROXY_TIMEOUT_MS),
@@ -1002,6 +1285,8 @@ mod tests {
             decode_threads: 4,
             max_output_bytes: 1024,
             timeout_ms: 1000,
+            output_offset: 0,
+            range: None,
         };
         request.validate().unwrap();
         for invalid in [
@@ -1019,11 +1304,29 @@ mod tests {
                 ..request
             },
             ProxyRequest {
-                protocol: 2,
+                protocol: 1,
                 ..request
             },
             ProxyRequest {
                 rotation_quarter_turns: 4,
+                ..request
+            },
+            ProxyRequest {
+                range: Some(ProxyRange {
+                    start_frame: 0,
+                    seek_pts: 10,
+                    start_pts: 5,
+                    end_pts: 20,
+                }),
+                ..request
+            },
+            ProxyRequest {
+                range: Some(ProxyRange {
+                    start_frame: 0,
+                    seek_pts: 0,
+                    start_pts: 5,
+                    end_pts: 5,
+                }),
                 ..request
             },
         ] {
@@ -1037,12 +1340,21 @@ mod tests {
             keyframes: 3,
             width: 1920,
             height: 1080,
+            extradata_sha256: "0".repeat(64),
         };
         report.validate_for(&request).unwrap();
         assert!(
             ProxyReport {
+                extradata_sha256: "x".into(),
+                ..report.clone()
+            }
+            .validate_for(&request)
+            .is_err()
+        );
+        assert!(
+            ProxyReport {
                 keyframes: 2,
-                ..report
+                ..report.clone()
             }
             .validate_for(&request)
             .is_err()
@@ -1050,7 +1362,7 @@ mod tests {
         assert!(
             ProxyReport {
                 output_bytes: 2048,
-                ..report
+                ..report.clone()
             }
             .validate_for(&request)
             .is_err()
@@ -1070,6 +1382,115 @@ mod tests {
         assert!(same_time(512, (1, 15360), 1, (1, 30)));
         assert!(same_time(1001, (1, 30000), 1, (1001, 30000)));
         assert!(!same_time(513, (1, 15360), 1, (1, 30)));
+    }
+
+    fn index(keyframes: &[u64], count: u64) -> SourceFrameIndex {
+        let mut anchor = None;
+        let frames = (0..count)
+            .map(|ordinal| {
+                let keyframe = keyframes.contains(&ordinal);
+                if keyframe {
+                    anchor = Some(SourceFrameId(ordinal));
+                }
+                deadpan_core::IndexedSourceFrame {
+                    identity: SourceFrameId(ordinal),
+                    pts: 100 + ordinal as i64 * 2,
+                    reported_duration: Some(2),
+                    keyframe,
+                    seek_from: anchor,
+                    decode_timestamp: None,
+                }
+            })
+            .collect();
+        SourceFrameIndex::new(
+            AssetId::new("a").unwrap(),
+            deadpan_core::SourceTimeBase::new(1, 60).unwrap(),
+            frames,
+            100 + count as i64 * 2,
+            deadpan_core::TerminalProvenance::Explicit,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn ranges_start_at_keyframes_and_cover_every_picture_once() {
+        let index = index(&[0, 15, 30, 45, 60, 75, 90, 105], 120);
+        assert_eq!(
+            proxy_segments(&index, 30),
+            vec![(0, 30), (30, 60), (60, 90), (90, 120)]
+        );
+        assert_eq!(
+            proxy_segments(&index, 20),
+            vec![(0, 30), (30, 60), (60, 90), (90, 120)]
+        );
+        assert_eq!(proxy_segments(&index, 1000), vec![(0, 120)]);
+        // One keyframe: one range, whatever the target.
+        assert_eq!(proxy_segments(&self::index(&[0], 50), 10), vec![(0, 50)]);
+        // The range bound grows the target.
+        let all: Vec<u64> = (0..5000).collect();
+        let many = proxy_segments(&self::index(&all, 5000), 1);
+        assert_eq!(many.len(), 1000);
+        let info_free = proxy_segments(&index, 30);
+        let request = |start: u64, end: u64| {
+            let frames = index.frames();
+            (
+                frames[start as usize].pts,
+                frames
+                    .get(end as usize)
+                    .map_or(index.terminal_end(), |f| f.pts),
+            )
+        };
+        assert_eq!(request(info_free[3].0, info_free[3].1), (280, 340));
+    }
+
+    #[test]
+    fn assembly_requests_join_contiguous_ranges_exactly() {
+        let segment = |offset, start_pts, end_pts| ProxySegment {
+            offset,
+            length: 10,
+            frames: 2,
+            start_pts,
+            end_pts,
+        };
+        let request = ProxyAssembleRequest {
+            protocol: PROXY_PROTOCOL_VERSION,
+            input_byte_length: 30,
+            width: 1920,
+            height: 1080,
+            time_base_num: 1,
+            time_base_den: 60,
+            sar_num: 1,
+            sar_den: 1,
+            rotation_quarter_turns: 0,
+            transfer: ProxyTransfer::Bt709,
+            primaries: ProxyPrimaries::Bt709,
+            frames: 4,
+            // Stored out of order in the file, joined in picture order.
+            segments: vec![segment(20, 0, 4), segment(0, 4, 8)],
+            max_output_bytes: 1000,
+            timeout_ms: 1000,
+        };
+        request.validate().unwrap();
+        for invalid in [
+            ProxyAssembleRequest {
+                segments: vec![segment(20, 0, 4), segment(0, 5, 8)],
+                ..request.clone()
+            },
+            ProxyAssembleRequest {
+                segments: vec![segment(25, 0, 4), segment(0, 4, 8)],
+                ..request.clone()
+            },
+            ProxyAssembleRequest {
+                frames: 5,
+                ..request.clone()
+            },
+            ProxyAssembleRequest {
+                segments: Vec::new(),
+                ..request.clone()
+            },
+        ] {
+            assert!(invalid.validate().is_err());
+        }
     }
 
     #[test]

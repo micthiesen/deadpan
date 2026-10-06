@@ -49,14 +49,14 @@ fn proxy_limits() -> SourceSessionLimits {
 }
 
 /// The project's Original record and qualified picture stream.
-struct Subject {
-    original: deadpan_store::original_media::OriginalMediaRecord,
-    video: deadpan_media::source_qualification::QualifiedVideoSnapshot,
-    asset: deadpan_core::AssetId,
-    document: deadpan_core::ProjectDocument,
+pub struct Subject {
+    pub original: deadpan_store::original_media::OriginalMediaRecord,
+    pub video: deadpan_media::source_qualification::QualifiedVideoSnapshot,
+    pub asset: deadpan_core::AssetId,
+    pub document: deadpan_core::ProjectDocument,
 }
 
-fn subject(package: &Path) -> Result<(ProjectStore, Subject)> {
+pub fn subject(package: &Path) -> Result<(ProjectStore, Subject)> {
     let store = ProjectStore::open(package, AccessMode::ReadOnly)?;
     let document = store.snapshot()?;
     let revision = document.revision_id().clone();
@@ -144,7 +144,11 @@ pub fn build_stage(options: &crate::Options) -> Result<Value> {
 }
 
 /// Open the published proxy in place, as the native worker does.
-fn open(cache: &ProxyCache, subject: &Subject, cancelled: &AtomicBool) -> Result<SourceSession> {
+pub fn open(
+    cache: &ProxyCache,
+    subject: &Subject,
+    cancelled: &AtomicBool,
+) -> Result<SourceSession> {
     let (file, sidecar) = open_proxy_file(cache, &subject.original, &subject.video, cancelled)?
         .ok_or("published proxy was not found")?;
     let input = VerifiedSourceInput::from_verified_file(file, sidecar.content())?;

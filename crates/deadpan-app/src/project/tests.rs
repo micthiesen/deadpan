@@ -27,6 +27,7 @@ mod recovery;
 mod registers;
 mod render;
 mod render_history;
+mod retention;
 mod retime;
 mod room_tone;
 mod saved_receipts;

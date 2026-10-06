@@ -16,6 +16,7 @@ use deadpan_cli::generation::runtime::BridgeRuntime;
 use deadpan_core::HoldVideo;
 use deadpan_jobs::{AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, RequestId};
 use deadpan_store::generation_attempts::CandidateAvailability;
+use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
 use super::*;
 use crate::project::generation::{
@@ -141,6 +142,11 @@ impl State {
         }
     }
 
+    /// Stored variants changed outside this module; reread the candidates.
+    pub(super) fn variants_changed(&mut self) {
+        self.epoch += 1;
+    }
+
     /// A job thread is live; the writer must not be released.
     pub(super) fn active(&self) -> bool {
         self.running.is_some()
@@ -189,6 +195,7 @@ impl Service {
             | GenerationOperation::Select { ticket, .. }
             | GenerationOperation::Preview { ticket, .. }
             | GenerationOperation::Discard { ticket, .. }
+            | GenerationOperation::Keep { ticket, .. }
             | GenerationOperation::DismissInterrupted { ticket, .. } => *ticket,
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
@@ -244,6 +251,13 @@ impl Service {
                 attempt,
                 ..
             } => self.discard_variant(session, &request, &attempt),
+            GenerationOperation::Keep {
+                session,
+                request,
+                attempt,
+                keep,
+                ..
+            } => self.keep_variant(session, &request, &attempt, keep),
             GenerationOperation::DismissInterrupted {
                 session,
                 request,
@@ -379,6 +393,80 @@ impl Service {
         Ok(())
     }
 
+    /// Keep (pin) or stop keeping one offered variant. Operational store
+    /// metadata only: durable, not undoable, and the pause is unchanged.
+    fn keep_variant(
+        &mut self,
+        session: u64,
+        request: &RequestId,
+        attempt: &AttemptId,
+        keep: bool,
+    ) -> Result<()> {
+        if self.generation.session != session
+            || self
+                .workspace
+                .as_ref()
+                .is_none_or(|workspace| workspace.session != session)
+        {
+            return Err("Project session changed before the request".into());
+        }
+        self.offered(request, attempt)?;
+        let identity = MessageIdentity::new(request.clone(), attempt.clone());
+        self.store
+            .as_mut()
+            .ok_or("Open a project first")?
+            .keep_generation_bundle_variant(&identity, keep)
+            .map_err(display)?;
+        self.generation.epoch += 1;
+        let days = DEFAULT_VARIANT_RETENTION.as_secs() / (24 * 60 * 60);
+        self.message = Some(if keep {
+            "Kept this AI variant: it stays offered until you discard or accept it. The pause is unchanged.".into()
+        } else {
+            format!(
+                "Stopped keeping this AI variant: unless you choose or accept it, it stops being offered {days} days after it was generated. The pause is unchanged."
+            )
+        });
+        Ok(())
+    }
+
+    /// A new Ready variant took the selection from the variant chosen when
+    /// the job started: if nothing else protects that one now, record it on
+    /// the job and say it will expire.
+    fn note_unprotected(&mut self, request: &RequestId) {
+        let Some(before) = self
+            .generation
+            .job
+            .as_ref()
+            .and_then(|job| job.selected_before.clone())
+        else {
+            return;
+        };
+        let candidates = self.current_candidates();
+        let Some((number, _)) = candidates
+            .values()
+            .filter(|candidate| &candidate.request == request && candidate.selected != before)
+            .flat_map(|candidate| candidate.variants.iter().enumerate())
+            .find(|(_, variant)| variant.attempt == before && variant.expires_at.is_some())
+        else {
+            return;
+        };
+        let days = DEFAULT_VARIANT_RETENTION.as_secs() / (24 * 60 * 60);
+        if let Some(job) = &mut self.generation.job {
+            job.unprotected = Some(before);
+        }
+        let warning = format!(
+            "Variant {} is no longer the chosen one; unless you keep it (:keep-ai) or choose it, it stops being offered {days} days after it was generated.",
+            number + 1
+        );
+        match &mut self.message {
+            Some(message) => {
+                message.push(' ');
+                message.push_str(&warning);
+            }
+            None => self.message = Some(warning),
+        }
+    }
+
     fn start_generation(
         &mut self,
         ticket: u64,
@@ -402,6 +490,10 @@ impl Service {
                 "An AI pause is already generating. Cancel it with :cancel-ai first.".into(),
             );
         }
+        let selected_before = self
+            .current_candidates()
+            .get(&hold)
+            .map(|candidate| candidate.selected.clone());
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         if !matches!(
             workspace.document.nodes().get(&hold).map(|node| &node.kind),
@@ -429,6 +521,8 @@ impl Service {
             phase: Phase::Conditioning,
             outcome: None,
             note: None,
+            selected_before,
+            unprotected: None,
         };
         let worker = match &self.generation.backend {
             Backend::Environment => match BridgeRuntime::from_environment() {
@@ -1131,6 +1225,9 @@ impl Service {
             message.push(' ');
             message.push_str(&note);
         }
+        if let Outcome::Ready(request) = &outcome {
+            self.note_unprotected(request);
+        }
         if let Some(job) = &mut self.generation.job
             && job.outcome.is_none()
         {
@@ -1302,6 +1399,10 @@ fn candidates(
             HoldVideo::Generated { accepted } => Some(&accepted.artifact.sampled_object),
             _ => None,
         };
+        let retention = store.generation_variant_retention(&request.request_id)?;
+        let store_selected = store
+            .selected_generation_bundle(&request.request_id)?
+            .map(|selected| selected.identity.attempt_id);
         let mut variants = Vec::new();
         let mut after = 0;
         loop {
@@ -1321,13 +1422,25 @@ fn candidates(
                     continue;
                 }
                 let video = receipt.sampled_video();
+                let attempt_id = &attempt.checkpoint.identity.attempt_id;
+                let record = retention
+                    .iter()
+                    .find(|record| &record.identity.attempt_id == attempt_id);
                 variants.push(Variant {
-                    attempt: attempt.checkpoint.identity.attempt_id.clone(),
+                    attempt: attempt_id.clone(),
                     ordinal: attempt.ordinal,
                     seed: receipt.provider().seed,
                     sampled: receipt.sampled_object().clone(),
                     sampled_frames: u32::try_from(video.frames().frames()).unwrap_or(u32::MAX),
                     sampled_size: (video.width(), video.height()),
+                    receipt: std::sync::Arc::new(receipt.clone()),
+                    ready_at: record.map_or(std::time::UNIX_EPOCH, |record| record.ready_at),
+                    kept: record.is_some_and(|record| record.kept),
+                    picked: record.is_some_and(|record| record.picked),
+                    // The store's own selection never expires.
+                    expires_at: record
+                        .filter(|_| store_selected.as_ref() != Some(attempt_id))
+                        .and_then(|record| record.expires_at(DEFAULT_VARIANT_RETENTION)),
                 });
             }
             if page.len() < 256 {
@@ -1337,9 +1450,7 @@ fn candidates(
         let Some(newest) = variants.last() else {
             continue;
         };
-        let selected = store
-            .selected_generation_bundle(&request.request_id)?
-            .map(|selected| selected.identity.attempt_id)
+        let selected = store_selected
             .filter(|attempt| variants.iter().any(|variant| &variant.attempt == attempt))
             .unwrap_or_else(|| newest.attempt.clone());
         found.insert(

@@ -270,7 +270,7 @@ fn a_moving_cursor_waits_the_full_rest_before_refining() {
 }
 
 #[test]
-fn proposals_playback_and_thumbnails_never_use_the_proxy() {
+fn affordable_playback_pictures_and_thumbnails_stay_exact() {
     let fixture = Fixture::source("cfr-bframes.mp4");
     let workspace = fixture.workspace(1);
     let (_directory, cache) = cache();
@@ -278,7 +278,8 @@ fn proposals_playback_and_thumbnails_never_use_the_proxy() {
     let worker = proxy_worker(&cache);
     let mut serial = 0;
     until_proxy(&worker, &workspace, &mut serial);
-    // With the proxy open, a transport-tagged (audition) picture is exact.
+    // With the proxy open, an audition picture whose measured exact decode
+    // fits its picture budget (this small fixture's seeks) is exact.
     let (mut feed, _callback) = deadpan_output::channel().unwrap();
     let mut playing = request(&workspace, sequence(50), serial + 1);
     playing.ticket.transport = Some(feed.restart(0).unwrap());
@@ -291,6 +292,96 @@ fn proposals_playback_and_thumbnails_never_use_the_proxy() {
     assert!(worker.take_reply().is_none(), "nothing to refine");
     worker.shutdown();
     assert_eq!(exact_picture(&workspace, sequence(80)).len(), 320 * 180 * 4);
+}
+
+/// During playback a picture whose exact decode would be late comes from the
+/// proxy; between pictures the Original decoder repositions ahead, and exact
+/// pictures resume there. A displayed proxy picture is a view a stopping
+/// transport must replace with its exact picture.
+#[test]
+fn late_playback_pictures_use_the_proxy_until_the_original_repositions() {
+    tests_support::SEEK_COST_SCALE.set(10_000);
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let workspace = fixture.workspace(1);
+    let (_directory, cache) = cache();
+    publish_proxy(&fixture, &workspace, &cache);
+    let exact = exact_picture(&workspace, sequence(60));
+    let worker = proxy_worker(&cache);
+    tests_support::SEEK_COST_SCALE.set(1);
+    let mut serial = 0;
+    until_proxy(&worker, &workspace, &mut serial);
+    // A stopped seek to 20: proxy first, then exact at the rest.
+    serial += 1;
+    let seek = request(&workspace, sequence(20), serial);
+    worker.submit(seek.ticket, seek.work);
+    let mut tier = await_reply(&worker).picture.unwrap().tier;
+    if tier == PictureTier::Proxy {
+        tier = await_reply(&worker).picture.unwrap().tier;
+    }
+    assert_eq!(tier, PictureTier::Original);
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let generation = feed.restart(0).unwrap();
+    let play = |frame: i64, serial: u64| {
+        let mut playing = request(&workspace, sequence(frame), serial);
+        playing.ticket.transport = Some(generation);
+        worker.submit(playing.ticket, playing.work);
+        let reply = await_reply(&worker);
+        assert_eq!(reply.ticket.request, serial);
+        reply.picture.unwrap()
+    };
+    // The next picture decodes forward: exact.
+    let step = play(21, serial + 1);
+    assert_eq!(
+        (step.tier, step.id),
+        (PictureTier::Original, SourceFrameId(21))
+    );
+    // A jump needs a keyframe seek, measured as slower than a picture
+    // period: the proxy shows the same Original picture.
+    let jump = play(50, serial + 2);
+    assert_eq!(
+        (jump.tier, jump.id),
+        (PictureTier::Proxy, SourceFrameId(50))
+    );
+    assert_eq!(
+        jump.frame.as_ref().unwrap().metadata().pts.ticks,
+        50 * 1001,
+        "the proxy picture keeps the Original picture's clock"
+    );
+    let mut presentation = crate::presentation::Presentation::default();
+    let mut shown = request(&workspace, sequence(50), serial + 2);
+    shown.ticket.transport = Some(generation);
+    presentation.request(shown.ticket, &shown.work);
+    assert!(
+        presentation
+            .receive(Reply {
+                ticket: shown.ticket,
+                picture: Ok(jump),
+                #[cfg(feature = "ui-harness")]
+                timing: None,
+            })
+            .unwrap()
+            .is_ok()
+    );
+    presentation.presented();
+    assert_eq!(
+        presentation.displayed_proxy_view(),
+        Some(sequence(50)),
+        "a stopping transport replaces this proxy picture"
+    );
+    // Playback never refines a proxy picture itself.
+    std::thread::sleep(REFINE_DELAY * 2);
+    assert!(worker.take_reply().is_none(), "playback is not refined");
+    // Meanwhile the decoder repositioned to the next keyframe (60), so the
+    // picture there is exact and equals an independent exact decode.
+    let resumed = play(60, serial + 3);
+    assert_eq!(
+        (resumed.tier, resumed.id),
+        (PictureTier::Original, SourceFrameId(60))
+    );
+    assert_eq!(resumed.frame.unwrap().bytes(), exact.as_slice());
+    let next = play(61, serial + 4);
+    assert_eq!(next.tier, PictureTier::Original);
+    worker.shutdown();
 }
 
 #[test]

@@ -12,7 +12,7 @@ use deadpan_store::storage::{
 };
 
 /// A Ready variant whose three masters have their own bytes.
-fn distinct_variant(
+pub(super) fn distinct_variant(
     store: &mut ProjectStore,
     request: &StoredGenerationRequest,
     attempt: &str,
@@ -44,7 +44,7 @@ fn distinct_variant(
     Ok((identity, receipt, bytes))
 }
 
-fn state(report: &StorageReport, bytes: &[u8]) -> EntryState {
+pub(super) fn state(report: &StorageReport, bytes: &[u8]) -> EntryState {
     let digest = object(bytes).content().digest().to_owned();
     report
         .namespace("generated")

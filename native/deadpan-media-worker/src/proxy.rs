@@ -1,5 +1,7 @@
 //! Proxy mode: decode the Original on stdin through the qualified source
-//! adapter and encode an intra-only preview proxy to stdout.
+//! adapter and encode an intra-only preview proxy, or one range of its
+//! pictures, to stdout. Assembly mode joins encoded ranges from stdin into
+//! one proxy movie on stdout.
 
 use std::fs::File;
 use std::io::Write;
@@ -8,7 +10,8 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use deadpan_media::proxy::{
-    PROXY_PROTOCOL_VERSION, ProxyPrimaries, ProxyReply, ProxyReport, ProxyRequest, ProxyTransfer,
+    PROXY_PROTOCOL_VERSION, ProxyAssembleReply, ProxyAssembleReport, ProxyAssembleRequest,
+    ProxyPrimaries, ProxyReply, ProxyReport, ProxyRequest, ProxyTransfer, hex,
 };
 use deadpan_source::{DecodeControl, DecodeLimits, SourceDecoder, SourceStreamInfo};
 
@@ -52,12 +55,15 @@ impl Heartbeat {
             return;
         }
         let mut stderr = std::io::stderr().lock();
-        if stderr
-            .write_all(b"\n")
-            .and_then(|()| stderr.flush())
-            .is_ok()
-        {
-            self.0 = Some(Instant::now());
+        match stderr.write_all(b"\n").and_then(|()| stderr.flush()) {
+            Ok(()) => self.0 = Some(Instant::now()),
+            // The host is gone (killed or crashed): nobody will read the
+            // output or record it, so stop writing at once. Its next build
+            // waits for this process to release the output's lock.
+            Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => {
+                std::process::exit(3);
+            }
+            Err(_) => {}
         }
     }
 }
@@ -153,17 +159,64 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
         frames: request.frames,
         max_output_bytes: request.max_output_bytes,
         timeout_ms: request.timeout_ms,
+        output_offset: request.output_offset,
     };
+    // A range starts at its first picture: seek to its keyframe and decode
+    // only metadata until the first picture of the range.
+    let mut first = None;
+    if let Some(range) = request.range {
+        if range.start_frame > 0 {
+            match control().map(|control| decoder.seek_to(range.seek_pts, range.start_pts, control))
+            {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => return decode_failure(error),
+                Err(reply) => return reply,
+            }
+        }
+        loop {
+            let metadata = match control().map(|control| decoder.next_metadata(control)) {
+                Ok(Ok(Some(metadata))) => metadata,
+                Ok(Ok(None)) => {
+                    return failure("invalid_media", "the Original ended before the range");
+                }
+                Ok(Err(error)) => return decode_failure(error),
+                Err(reply) => return reply,
+            };
+            heartbeat.beat();
+            if metadata.pts < range.start_pts {
+                continue;
+            }
+            if metadata.pts != range.start_pts {
+                return failure(
+                    "invalid_media",
+                    "the range does not start at an Original picture",
+                );
+            }
+            match control().map(|control| decoder.copy_current_rgba(control)) {
+                Ok(Ok(frame)) => first = Some(frame),
+                Ok(Err(error)) => return decode_failure(error),
+                Err(reply) => return reply,
+            }
+            break;
+        }
+    }
     if ffi::proxy_open(output, &native, &mut error) != 0 {
         return native_failure(&error, "proxy encoder failed to open");
     }
     let mut frames = 0_u64;
+    let mut end = None;
     loop {
-        let frame = match control().map(|control| decoder.next_rgba(control)) {
-            Ok(Ok(Some(frame))) => frame,
-            Ok(Ok(None)) => break,
-            Ok(Err(error)) => return decode_failure(error),
-            Err(reply) => return reply,
+        if request.range.is_some() && frames == request.frames {
+            break;
+        }
+        let frame = match first.take() {
+            Some(frame) => frame,
+            None => match control().map(|control| decoder.next_rgba(control)) {
+                Ok(Ok(Some(frame))) => frame,
+                Ok(Ok(None)) => break,
+                Ok(Err(error)) => return decode_failure(error),
+                Err(reply) => return reply,
+            },
         };
         frames += 1;
         if frames > request.frames {
@@ -172,6 +225,7 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
         let Some(duration) = frame.metadata.reported_duration.filter(|value| *value > 0) else {
             return failure("invalid_media", "an Original picture has no duration");
         };
+        end = frame.metadata.pts.checked_add(duration);
         if ffi::proxy_push(
             &frame.rgba,
             frame.row_stride_bytes as u64,
@@ -183,6 +237,11 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
             return native_failure(&error, "proxy encoder rejected a picture");
         }
         heartbeat.beat();
+    }
+    if let Some(range) = request.range
+        && end != Some(range.end_pts)
+    {
+        return failure("invalid_media", "the range does not end where planned");
     }
     let mut native_report = ffi::ProxyReport::default();
     if ffi::proxy_finish(output, &mut native_report, &mut error) != 0 {
@@ -196,6 +255,7 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
         keyframes: native_report.keyframes,
         width: native_report.width,
         height: native_report.height,
+        extradata_sha256: hex(&native_report.extradata_sha256),
     };
     match report.validate_for(request) {
         Ok(()) => ProxyReply::Success { report },
@@ -203,5 +263,68 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
             "internal_error",
             format!("native proxy report violated contract: {error}"),
         ),
+    }
+}
+
+/// Join the encoded ranges on stdin into one proxy movie on stdout.
+pub(super) fn assemble(request: &ProxyAssembleRequest) -> ProxyAssembleReply {
+    deadpan_source::lower_current_thread_priority();
+    let segments: Vec<ffi::ProxySegment> = request
+        .segments
+        .iter()
+        .map(|segment| ffi::ProxySegment {
+            offset: segment.offset,
+            length: segment.length,
+            frames: segment.frames,
+            start_pts: segment.start_pts,
+            end_pts: segment.end_pts,
+        })
+        .collect();
+    let native = ffi::ProxyAssembleRequest {
+        input_byte_length: request.input_byte_length,
+        width: request.width,
+        height: request.height,
+        time_base_num: request.time_base_num,
+        time_base_den: request.time_base_den,
+        sar_num: request.sar_num,
+        sar_den: request.sar_den,
+        rotation_quarter_turns: u32::from(request.rotation_quarter_turns),
+        transfer: request.transfer.code(),
+        primaries: request.primaries.code(),
+        frames: request.frames,
+        segments: segments.as_ptr(),
+        segment_count: segments.len() as u64,
+        max_output_bytes: request.max_output_bytes,
+        timeout_ms: request.timeout_ms,
+    };
+    let mut report = ffi::ProxyAssembleReport::default();
+    let mut error = ffi::Error::default();
+    if ffi::proxy_assemble(
+        std::io::stdin().as_raw_fd(),
+        std::io::stdout().as_raw_fd(),
+        &segments,
+        &native,
+        &mut report,
+        &mut error,
+    ) != 0
+    {
+        return match native_failure(&error, "proxy assembly failed") {
+            ProxyReply::Failure { code, message } => ProxyAssembleReply::Failure { code, message },
+            ProxyReply::Success { .. } => unreachable!("a failure is never a success"),
+        };
+    }
+    let report = ProxyAssembleReport {
+        protocol: PROXY_PROTOCOL_VERSION,
+        output_bytes: report.output_bytes,
+        packets: report.packets,
+        width: report.width,
+        height: report.height,
+    };
+    match report.validate_for(request) {
+        Ok(()) => ProxyAssembleReply::Success { report },
+        Err(error) => ProxyAssembleReply::Failure {
+            code: "internal_error".into(),
+            message: format!("native proxy assembly report violated contract: {error}"),
+        },
     }
 }

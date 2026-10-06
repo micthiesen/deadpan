@@ -146,6 +146,9 @@ fn nextest_available() -> bool {
 fn run(arguments: &[&str]) -> target_hygiene::Result<()> {
     let status = Command::new("cargo")
         .args(arguments)
+        // Synthetic-worker tests fail instead of skipping when their ffmpeg
+        // or deadpan-media-worker is missing (crates/deadpan-cli/tests/generated_joins.rs).
+        .env("DEADPAN_REQUIRE_SYNTHETIC_WORKER", "1")
         .status()
         .map_err(|error| format!("failed to start cargo: {error}"))?;
     if status.success() {

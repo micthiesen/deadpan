@@ -139,6 +139,7 @@ const HELP: &str = "Deadpan headless commands:
   detect-faces <project.deadpan> --at <pts> [--asset <id>]
   generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
   accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
+  keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
@@ -151,6 +152,7 @@ cookies come only from an explicit file. You are responsible for having the righ
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
 Definition inspection reads a local-zero point grid, not final timeline allocation.
+Offered AI variants that are neither kept (keep-hold), chosen nor accepted expire 7 days after they became Ready; project storage --clean applies that first.
 AI pauses use Deadpan.app's bundled runtime and the installed ltx-2.3-q4-bridge model pack (development builds: DEADPAN_BRIDGE_* variables; docs/AI_HOLDS.md); generation proposes pictures and only accept-hold edits the project.
 Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.";
 
@@ -587,6 +589,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["generate-hold", rest @ ..] => generation::command::run_generate(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["accept-hold", rest @ ..] => generation::command::run_accept(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["keep-hold", rest @ ..] => storage::run_keep_hold(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())

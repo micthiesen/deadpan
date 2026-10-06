@@ -20,7 +20,8 @@ use crate::protocol::{
 mod proxy;
 mod remux;
 pub use proxy::{
-    PROXY_STALL_TIMEOUT, ProxyEncodeOptions, encode_proxy, encode_proxy_retrying, retryable,
+    PROXY_STALL_TIMEOUT, ProxyEncodeOptions, WORKER_TERMINATED, assemble_proxy, encode_proxy,
+    encode_proxy_retrying, retryable,
 };
 pub use remux::{RemuxLimits, append_for_remux, remux_av, remux_joined};
 

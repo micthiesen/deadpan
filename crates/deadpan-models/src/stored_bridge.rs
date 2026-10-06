@@ -100,6 +100,7 @@ impl StoredBridgeProvenance {
                 "retained context differs from the plan or prepared inputs",
             ));
         }
+        context.check_model_output()?;
         let worker = envelope.worker_provenance_utf8.as_bytes();
         verify_declaration(worker, &envelope.declaration.provenance)?;
         crate::provenance::validate(

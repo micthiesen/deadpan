@@ -338,6 +338,15 @@ impl ProjectPictureSession {
             .filter(|retained| matches!(retained.origin, RetainedOrigin::Original(_)))
             .map(|retained| retained.source.measurement())
     }
+    /// The decoder's stream description (measured colour, pixel format,
+    /// geometry and clock) of the retained Original or generated master.
+    /// After [`Self::prepare`] returns a decoded picture, this is the stream
+    /// that picture came from.
+    pub fn source_info(&self) -> Option<&deadpan_source::SourceStreamInfo> {
+        self.retained
+            .as_ref()
+            .map(|retained| retained.source.info())
+    }
     /// Wait up to `timeout` for the retained Original's complete measurement.
     pub fn wait_source_measured(&self, timeout: Duration) -> Option<IndexMeasurement> {
         self.retained

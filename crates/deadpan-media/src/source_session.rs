@@ -188,7 +188,49 @@ pub struct SourceSession {
     index: Arc<SourceIndexSnapshot>,
     maximum_seek_frames: usize,
     last_frame: Option<SourceFrameId>,
+    /// An incremental move of the decoder toward a later picture, decoded in
+    /// bounded steps between other work (see [`SourceSession::begin_reposition`]).
+    reposition: Option<Reposition>,
     measurement: Option<BackgroundMeasurement>,
+}
+
+/// The state of an unfinished [`SourceSession::begin_reposition`]: the
+/// decoder was positioned at `anchor` with non-reference pictures before
+/// `target` skipped, and has decoded preroll through `position`.
+#[derive(Clone, Copy, Debug)]
+struct Reposition {
+    target: SourceFrameId,
+    anchor: SourceFrameId,
+    position: Option<SourceFrameId>,
+    decoded: usize,
+}
+
+/// How the decoder would reach a requested picture from where it stands,
+/// in Original picture ordinals. Callers predict the cost of an exact
+/// picture from it; [`SourceSession::frame`] follows the same plan.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DecodePlan {
+    /// The decoder's current picture: converted again, nothing decoded.
+    Current,
+    /// Decode forward from the current picture without seeking: `pictures`
+    /// pictures, the requested one last.
+    Forward { pictures: u64 },
+    /// Finish an unfinished reposition: `remaining` preroll ordinals before
+    /// its target (non-reference pictures skipped), then `after` pictures
+    /// from the target to the requested one.
+    Resume { remaining: u64, after: u64 },
+    /// Seek to the keyframe anchor and decode `ordinals` ordinals through the
+    /// requested picture (non-reference preroll pictures skipped).
+    Seek { ordinals: u64 },
+}
+
+/// Progress of one [`SourceSession::advance_reposition`] call.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RepositionProgress {
+    /// Yielded before the target; `ordinals` preroll ordinals were passed.
+    Pending { ordinals: u64 },
+    /// The decoder's current picture is now the target.
+    Reached { ordinals: u64 },
 }
 
 /// One owned thread measuring the complete index on its own single-threaded
@@ -334,6 +376,7 @@ impl SourceSession {
             index: Arc::new(index),
             maximum_seek_frames: limits.maximum_seek_frames,
             last_frame: None,
+            reposition: None,
             measurement: None,
         })
     }
@@ -428,6 +471,7 @@ impl SourceSession {
             index: expected,
             maximum_seek_frames: limits.maximum_seek_frames,
             last_frame: None,
+            reposition: None,
             measurement: Some(measurement),
         })
     }
@@ -468,6 +512,7 @@ impl SourceSession {
             index: expected,
             maximum_seek_frames: limits.maximum_seek_frames,
             last_frame: None,
+            reposition: None,
             measurement: None,
         })
     }
@@ -488,6 +533,7 @@ impl SourceSession {
         self.decode_limits = limits;
         self.reopen_decoder = true;
         self.last_frame = None;
+        self.reposition = None;
         Ok(())
     }
 
@@ -737,14 +783,83 @@ impl SourceSession {
                 .is_some_and(|last| last.0.abs_diff(id.0) <= 1)
     }
 
+    /// How [`Self::frame`] would reach `id` from the decoder's current state.
+    ///
+    /// Forward decoding is ordinary sequential decoding, so it is exact from
+    /// any current picture; it is chosen over a seek when it passes at most
+    /// half as many ordinals (a seek skips non-reference preroll pictures,
+    /// forward decoding decodes every picture) or for the next picture. An
+    /// unfinished reposition continues when its target is at or before `id`
+    /// and finishing it passes no more ordinals than a new seek.
+    pub fn decode_plan(&self, id: SourceFrameId) -> DecodePlan {
+        let Some(frame) = usize::try_from(id.0)
+            .ok()
+            .and_then(|position| self.index.index().frames().get(position))
+        else {
+            return DecodePlan::Seek { ordinals: 1 };
+        };
+        let anchor = frame.seek_from.unwrap_or(SourceFrameId(0));
+        let seek = id.0.saturating_sub(anchor.0).saturating_add(1);
+        if self.reopen_decoder {
+            return DecodePlan::Seek { ordinals: seek };
+        }
+        if let Some(reposition) = &self.reposition
+            && id.0 >= reposition.target.0
+        {
+            let next = reposition
+                .position
+                .map_or(reposition.anchor.0, |position| position.0.saturating_add(1));
+            let remaining = reposition.target.0.saturating_sub(next);
+            let after = id.0 - reposition.target.0 + 1;
+            if remaining.saturating_add(after) <= seek {
+                return DecodePlan::Resume { remaining, after };
+            }
+        }
+        if let Some(last) = self.last_frame {
+            if last == id {
+                return DecodePlan::Current;
+            }
+            if last.0 < id.0 {
+                let pictures = id.0 - last.0;
+                if pictures == 1 || pictures <= seek / 2 {
+                    return DecodePlan::Forward { pictures };
+                }
+            }
+        }
+        DecodePlan::Seek { ordinals: seek }
+    }
+
+    /// The decoder's current picture, which [`Self::frame`] returns without
+    /// decoding; None after a failure, a seek in progress or a reposition
+    /// not yet at its target.
+    pub fn current(&self) -> Option<SourceFrameId> {
+        if self.reopen_decoder {
+            None
+        } else {
+            self.last_frame
+        }
+    }
+
+    /// Whether the next picture first reopens the decoder after a failure
+    /// or cancellation; its cost then is not the plan's alone.
+    pub fn reopening(&self) -> bool {
+        self.reopen_decoder
+    }
+
+    /// The target of an unfinished reposition, if any.
+    pub fn repositioning(&self) -> Option<SourceFrameId> {
+        self.reposition.map(|reposition| reposition.target)
+    }
+
     /// The retained index, shared rather than copied.
     pub fn shared_index(&self) -> Arc<SourceIndexSnapshot> {
         Arc::clone(&self.index)
     }
 
-    /// Reuses the decoder for adjacent forward steps. Random access seeks to the
-    /// indexed keyframe, decodes metadata through preroll and copies only the
-    /// requested picture. Returned bytes outlive further seeks and this session.
+    /// Reuses the decoder for forward steps (see [`Self::decode_plan`]).
+    /// Random access seeks to the indexed keyframe, decodes metadata through
+    /// preroll and copies only the requested picture. Returned bytes outlive
+    /// further seeks and this session.
     /// The picture-path representation: packed RGBA8 (`sample_bits == 8`) for
     /// SDR sources, unchanged, and little-endian RGBA64 (`sample_bits == 16`)
     /// of the nonlinear R'G'B' for sources qualified as PQ or HLG.
@@ -768,20 +883,20 @@ impl SourceSession {
             .frame_inner(id, &deadline)
             .and_then(|frame| self.check_measurement().map(|()| frame));
         if result.is_err() {
-            // Native failures can poison decode state. Preserve the private
-            // input and measured index, but reopen the decoder on the next request.
-            self.reopen_decoder = true;
-            self.last_frame = None;
+            self.poison();
         }
         result
     }
 
-    fn frame_inner(
-        &mut self,
-        id: SourceFrameId,
-        deadline: &Deadline<'_>,
-    ) -> Result<DecodedRgbaFrame, SourceSessionError> {
-        deadline.check()?;
+    /// Native failures can poison decode state. Preserve the private input
+    /// and measured index, but reopen the decoder on the next request.
+    fn poison(&mut self) {
+        self.reopen_decoder = true;
+        self.last_frame = None;
+        self.reposition = None;
+    }
+
+    fn reopen_if_needed(&mut self, deadline: &Deadline<'_>) -> Result<(), SourceSessionError> {
         if self.reopen_decoder {
             let decoder = SourceDecoder::open(
                 self.input.decoder_file()?,
@@ -794,20 +909,34 @@ impl SourceSession {
             self.decoder = decoder;
             self.reopen_decoder = false;
         }
-        let index = self.index.index();
+        Ok(())
+    }
+
+    fn frame_inner(
+        &mut self,
+        id: SourceFrameId,
+        deadline: &Deadline<'_>,
+    ) -> Result<DecodedRgbaFrame, SourceSessionError> {
+        deadline.check()?;
+        self.reopen_if_needed(deadline)?;
+        let index = Arc::clone(&self.index);
+        let index = index.index();
         let frame = usize::try_from(id.0)
             .ok()
             .and_then(|i| index.frames().get(i))
             .ok_or(SourceSessionError::MissingFrame(id))?
             .clone();
-        if self.last_frame == Some(id) {
+        let plan = self.decode_plan(id);
+        if plan == DecodePlan::Current {
             return self.copy_picture(deadline);
         }
-        let adjacent = self
-            .last_frame
-            .is_some_and(|last| last.0.checked_add(1) == Some(id.0));
         self.last_frame = None;
-        if !adjacent {
+        let mut decoded = match plan {
+            DecodePlan::Resume { .. } => self.reposition.map_or(0, |state| state.decoded),
+            _ => 0,
+        };
+        self.reposition = None;
+        if let DecodePlan::Seek { .. } = plan {
             let anchor = frame.seek_from.unwrap_or(SourceFrameId(0));
             let pts = index.frames()
                 [usize::try_from(anchor.0).map_err(|_| SourceSessionError::IndexMismatch)?]
@@ -816,23 +945,17 @@ impl SourceSession {
             // later pictures reference them; none of them is returned.
             self.decoder.seek_to(pts, frame.pts, control(deadline)?)?;
         }
-        for _ in 0..self.maximum_seek_frames {
-            let decoded = self
+        while decoded < self.maximum_seek_frames {
+            decoded += 1;
+            let metadata = self
                 .decoder
                 .next_metadata(control(deadline)?)?
                 .ok_or(SourceSessionError::IndexMismatch)?;
-            if decoded.pts < frame.pts {
-                // Every decoded preroll picture must be an indexed picture.
-                let position = index
-                    .frames()
-                    .binary_search_by_key(&decoded.pts, |indexed| indexed.pts)
-                    .map_err(|_| SourceSessionError::IndexMismatch)?;
-                if !same_frame(&decoded, &index.frames()[position]) {
-                    return Err(SourceSessionError::IndexMismatch);
-                }
+            if metadata.pts < frame.pts {
+                check_preroll(index, &metadata)?;
                 continue;
             }
-            if !same_frame(&decoded, &frame) {
+            if !same_frame(&metadata, &frame) {
                 return Err(SourceSessionError::IndexMismatch);
             }
             let pixels = self.copy_picture(deadline)?;
@@ -841,6 +964,130 @@ impl SourceSession {
             return Ok(pixels);
         }
         Err(SourceSessionError::SeekLimit)
+    }
+
+    /// Start moving the decoder toward `target` without returning a picture:
+    /// seek to its keyframe anchor with non-reference preroll skipped, then
+    /// decode in [`Self::advance_reposition`] steps between other work. A
+    /// later [`Self::frame`] at or after the target finishes the move; one
+    /// before it seeks afresh. Every decoded picture is checked against the
+    /// index exactly as in [`Self::frame`].
+    pub fn begin_reposition(
+        &mut self,
+        target: SourceFrameId,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<(), SourceSessionError> {
+        if timeout.is_zero() || timeout > Duration::from_secs(60) {
+            return Err(SourceSessionError::Limits(
+                "seek timeout must be in (0, 60 seconds]",
+            ));
+        }
+        self.check_measurement()?;
+        let deadline = Deadline {
+            end: Instant::now() + timeout,
+            cancelled,
+        };
+        let result = (|| {
+            deadline.check()?;
+            self.reopen_if_needed(&deadline)?;
+            let index = self.index.index();
+            let frame = usize::try_from(target.0)
+                .ok()
+                .and_then(|i| index.frames().get(i))
+                .ok_or(SourceSessionError::MissingFrame(target))?;
+            let anchor = frame.seek_from.unwrap_or(SourceFrameId(0));
+            let pts = index.frames()
+                [usize::try_from(anchor.0).map_err(|_| SourceSessionError::IndexMismatch)?]
+            .pts;
+            let target_pts = frame.pts;
+            self.last_frame = None;
+            self.reposition = None;
+            self.decoder.seek_to(pts, target_pts, control(&deadline)?)?;
+            self.reposition = Some(Reposition {
+                target,
+                anchor,
+                position: None,
+                decoded: 0,
+            });
+            Ok(())
+        })();
+        if result.is_err() {
+            self.poison();
+        }
+        result
+    }
+
+    /// Decode the unfinished reposition's next pictures until its target is
+    /// the current picture or `should_yield` (checked before each picture)
+    /// returns true. Each step is one native decoder call, so a yield comes
+    /// within one picture's decode. Fails after the session's seek budget.
+    pub fn advance_reposition(
+        &mut self,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+        should_yield: &mut dyn FnMut() -> bool,
+    ) -> Result<RepositionProgress, SourceSessionError> {
+        if timeout.is_zero() || timeout > Duration::from_secs(60) {
+            return Err(SourceSessionError::Limits(
+                "seek timeout must be in (0, 60 seconds]",
+            ));
+        }
+        let Some(mut state) = self.reposition else {
+            return Err(SourceSessionError::Limits("no reposition is in progress"));
+        };
+        self.check_measurement()?;
+        let deadline = Deadline {
+            end: Instant::now() + timeout,
+            cancelled,
+        };
+        let index = Arc::clone(&self.index);
+        let index = index.index();
+        let start = state
+            .position
+            .map_or(state.anchor.0, |position| position.0 + 1);
+        let result = (|| {
+            let frame = usize::try_from(state.target.0)
+                .ok()
+                .and_then(|i| index.frames().get(i))
+                .ok_or(SourceSessionError::MissingFrame(state.target))?;
+            loop {
+                let reached = state
+                    .position
+                    .map_or(state.anchor.0, |position| position.0 + 1);
+                if should_yield() {
+                    return Ok(RepositionProgress::Pending {
+                        ordinals: reached - start,
+                    });
+                }
+                if state.decoded >= self.maximum_seek_frames {
+                    return Err(SourceSessionError::SeekLimit);
+                }
+                state.decoded += 1;
+                let metadata = self
+                    .decoder
+                    .next_metadata(control(&deadline)?)?
+                    .ok_or(SourceSessionError::IndexMismatch)?;
+                if metadata.pts < frame.pts {
+                    state.position = Some(check_preroll(index, &metadata)?);
+                    self.reposition = Some(state);
+                    continue;
+                }
+                if !same_frame(&metadata, frame) {
+                    return Err(SourceSessionError::IndexMismatch);
+                }
+                self.reposition = None;
+                self.last_frame = Some(state.target);
+                return Ok(RepositionProgress::Reached {
+                    ordinals: state.target.0 + 1 - start,
+                });
+            }
+        })();
+        let result = result.and_then(|progress| self.check_measurement().map(|()| progress));
+        if result.is_err() {
+            self.poison();
+        }
+        result
     }
 
     fn copy_picture(
@@ -853,6 +1100,23 @@ impl SourceSession {
             self.decoder.copy_current_rgba(control(deadline)?)?
         })
     }
+}
+
+/// A decoded preroll picture must be an indexed picture; its ordinal.
+fn check_preroll(
+    index: &SourceFrameIndex,
+    decoded: &SourceFrameMetadata,
+) -> Result<SourceFrameId, SourceSessionError> {
+    let position = index
+        .frames()
+        .binary_search_by_key(&decoded.pts, |indexed| indexed.pts)
+        .map_err(|_| SourceSessionError::IndexMismatch)?;
+    if !same_frame(decoded, &index.frames()[position]) {
+        return Err(SourceSessionError::IndexMismatch);
+    }
+    Ok(SourceFrameId(
+        u64::try_from(position).map_err(|_| SourceSessionError::IndexMismatch)?,
+    ))
 }
 
 /// Decoded picture identity equals the measured entry: PTS and reported

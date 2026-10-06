@@ -35,6 +35,10 @@ use serde_json::{Value, json};
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[cfg(feature = "synthetic-worker")]
+#[path = "generated.rs"]
+pub mod generated;
+
 /// Original ordinals [BASE_START, BASE_END) remain after the base shortening.
 pub const BASE_START: u64 = 12;
 pub const BASE_END: u64 = 42;
@@ -48,7 +52,11 @@ pub enum Expected {
         source_ordinal: u64,
     },
     Background,
-    Generated,
+    /// Frame `sampled_frame` of an accepted Generated Hold's sampled master
+    /// (one picture per Hold frame, so Hold-local frame `k` shows frame `k`).
+    Generated {
+        sampled_frame: u64,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -147,10 +155,15 @@ struct Project {
 
 impl Project {
     fn create(directory: &Path, name: &'static str) -> Result<Self> {
+        Self::create_from(directory, name, &source_media())
+    }
+
+    /// A one-Original project whose Original is a copy of `source`.
+    fn create_from(directory: &Path, name: &'static str, source: &Path) -> Result<Self> {
         fs::create_dir_all(directory)?;
         let directory = directory.canonicalize()?;
         let media = directory.join("original.mp4");
-        fs::copy(source_media(), &media)?;
+        fs::copy(source, &media)?;
         let package = directory.join(format!("{name}.deadpan"));
         let created = success(&[
             "project",
@@ -2410,9 +2423,312 @@ pub fn role_repeat(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
-/// Build every fixture, each in its own subdirectory of `dir`.
+/// A development `ffmpeg` CLI with `libx264`/`libx264rgb`
+/// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's). Tests only: it generates the
+/// large fixture and encodes synthetic AI footage; Deadpan never links it.
+fn development_ffmpeg() -> std::result::Result<PathBuf, String> {
+    let ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/opt/homebrew/bin/ffmpeg"));
+    if ffmpeg.is_file() {
+        Ok(ffmpeg)
+    } else {
+        Err(format!(
+            "needs a development ffmpeg with libx264 at {} (or DEADPAN_BRIDGE_FFMPEG)",
+            ffmpeg.display()
+        ))
+    }
+}
+
+/// Frames of the generated 1080p Original.
+const LARGE_FRAMES: u64 = 180;
+
+/// Generate a large Original deterministically: `width`x`height` `testsrc2`
+/// at 30000/1001 for `frames` frames, long-GOP H.264 High (GOP 150, no
+/// scene cuts, 3 B frames with pyramid references, 3 references), BT.709
+/// limited range with left chroma siting, and 48 kHz stereo AAC carrying a
+/// 100 ms linear chirp (300 to 1500 Hz, L 0.7, R -0.6) in every half second
+/// from 0.2 s, silent otherwise. The chirps are aperiodic (so alignment can
+/// verify a zero offset) and lie at least 0.2 s from every cut of the recipe.
+fn large_media(directory: &Path, width: u32, height: u32, frames: u64) -> Result<PathBuf> {
+    fs::create_dir_all(directory)?;
+    let ffmpeg = development_ffmpeg()?;
+    let output = directory.join(format!("large-{height}p-source.mp4"));
+    // Audio spans exactly the picture duration.
+    let seconds = format!("{:.6}", frames as f64 * 1001.0 / 30000.0);
+    let chirp = |gain: f64| {
+        format!(
+            "if(between(mod(t,0.5),0.2,0.3),{gain}*sin(2*PI*(300*(mod(t,0.5)-0.2)+6000*pow(mod(t,0.5)-0.2,2))),0)"
+        )
+    };
+    let audio = format!(
+        "aevalsrc=exprs='{}|{}':s=48000:d={seconds}:c=stereo",
+        chirp(0.7),
+        chirp(-0.6)
+    );
+    let status = Process::new(ffmpeg)
+        .args(["-hide_banner", "-loglevel", "error", "-nostdin", "-y"])
+        .args([
+            "-f",
+            "lavfi",
+            "-i",
+            &format!("testsrc2=size={width}x{height}:rate=30000/1001"),
+        ])
+        .args(["-f", "lavfi", "-i", &audio])
+        .args(["-frames:v", &frames.to_string()])
+        .args([
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-profile:v",
+            "high",
+        ])
+        .args(["-preset", "medium", "-crf", "20", "-threads", "1"])
+        .args([
+            "-g",
+            "150",
+            "-keyint_min",
+            "150",
+            "-sc_threshold",
+            "0",
+            "-bf",
+            "3",
+        ])
+        .args([
+            "-x264-params",
+            "b-pyramid=normal:ref=3:colorprim=bt709:transfer=bt709:colormatrix=bt709",
+        ])
+        .args(["-color_primaries", "bt709", "-color_trc", "bt709"])
+        .args(["-colorspace", "bt709", "-color_range", "tv"])
+        .args(["-chroma_sample_location", "left"])
+        .args(["-video_track_timescale", "30000"])
+        .args(["-c:a", "aac", "-b:a", "192k", "-t", &seconds])
+        .arg(&output)
+        .status()?;
+    if !status.success() {
+        return Err(format!("ffmpeg could not generate the large fixture: {status}").into());
+    }
+    Ok(output)
+}
+
+/// Insert a freeze pause of `frames` at Edit `at` through the shared pause
+/// provider, as the native `,h` does: it freezes the picture before `at`.
+fn insert_freeze(project: &mut Project, at: i64, frames: i64, id: &str) -> Result<ProjectDocument> {
+    let at = ProjectFrame(at);
+    project.apply(|project, document, revision| {
+        let store = ProjectStore::open(&project.package, AccessMode::ReadOnly)?;
+        let plan = deadpan_plan::RenderPlan::compile(document)?;
+        let provider = deadpan_cli::pause::pause_provider(document, &plan, at, &mut |asset| {
+            store
+                .source_video_index(document.revision_id(), asset)
+                .map(Arc::new)
+                .map_err(|error| error.to_string())
+        })?;
+        if !matches!(provider.video, HoldVideo::Freeze { .. }) {
+            return Err("the pause provider did not freeze the Original".into());
+        }
+        let identities = match document.insert_time_target(at)?.split {
+            Some(split) => project.fresh(split.required_ids)?,
+            None => Vec::new(),
+        };
+        Ok(Command::InsertTime {
+            at,
+            hold: HoldRecipe {
+                picture_context: provider.picture_context,
+                duration: FrameDuration::new(frames)?,
+                video: provider.video,
+                audio: HoldAudio::Silence,
+            },
+            id: node(id)?,
+            identities: SplitIdentities { nodes: identities },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })
+}
+
+/// Materially larger media: the generated 1920x1080 long-GOP Original
+/// ([`large_media`]) shortened to Original [0, 150), a 15-frame freeze pause at
+/// Edit 60 (holding Original 59), Edit [105, 135) (Original 90..120) as two
+/// total plays, and a static centered 1.35x zoom on Edit [0, 60).
+/// 150 + 15 + 30 = 195 frames.
+pub fn large_1080p(dir: &Path) -> Result<Fixture> {
+    let media = large_media(dir, 1920, 1080, LARGE_FRAMES)?;
+    let mut project = Project::create_from(dir, "large-1080p", &media)?;
+    project.delete_range(150, LARGE_FRAMES as i64)?;
+    insert_freeze(&mut project, 60, 15, "freeze")?;
+    project.split_root(105)?;
+    project.split_root(135)?;
+    project.apply(|_, document, _| {
+        Ok(Command::WrapRepeat {
+            node: root_child_at(document, 105)?.0,
+            id: node("again")?,
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        })
+    })?;
+    let half = ratio(1, 2)?;
+    let zoomed = FramingPose::new(half, half, ratio(27, 20)?)?;
+    project.apply(|_, document, _| {
+        Ok(Command::SetFraming {
+            node: root_child_at(document, 0)?.0,
+            framing: Some(Framing::static_pose(zoomed)?),
+        })
+    })?;
+    let expectations = vec![
+        (0, original(0)),
+        (30, original(30)),
+        (59, original(59)),
+        (60, original(59)),
+        (67, original(59)),
+        (74, original(59)),
+        (75, original(60)),
+        (104, original(89)),
+        (105, original(90)),
+        (120, original(105)),
+        (134, original(119)),
+        (135, original(90)),
+        (164, original(119)),
+        (165, original(120)),
+        (194, original(149)),
+    ];
+    let notes = vec![format!(
+        "Original {} bytes, sha256 {}",
+        fs::metadata(&media)?.len(),
+        sha256_hex(&fs::read(&media)?)
+    )];
+    let mut fixture = project.finish(
+        vec!["Frozen stare", "Repeat operator", "Smash zoom"],
+        expectations,
+        notes,
+    )?;
+    // Chirp k plays Original [0.2 + 0.5k, 0.3 + 0.5k) s. Edit sample = Original
+    // sample before the pause, + 24,024 (15 frames) after it, and + 48,048 more
+    // in the second play.
+    fixture.audio = vec![
+        (9_700, true),                  // chirp 0, Original 0.2 s
+        (100_000, false),               // inside the freeze pause [96,096, 120,120)
+        (125_000, false),               // Original 2.104 s, between chirps
+        (130_000, true),                // chirp 4, Original 2.2 s
+        (153_600 + 24_024 + 100, true), // chirp 6, Original 3.2 s, first play
+        (153_600 + 72_072 + 100, true), // the same chirp in the second play
+        (235_200 + 72_072, false),      // Original 4.9 s, after the last chirp
+    ];
+    Ok(fixture)
+}
+
+/// 4K media: a generated 3840x2160 long-GOP Original of 60 frames
+/// ([`large_media`]) with an 8-frame freeze pause at Edit 30 (holding Original
+/// 29) and a static centered 1.35x zoom on Edit [0, 30). 60 + 8 = 68 frames.
+pub fn large_2160p(dir: &Path) -> Result<Fixture> {
+    let media = large_media(dir, 3840, 2160, 60)?;
+    let mut project = Project::create_from(dir, "large-2160p", &media)?;
+    insert_freeze(&mut project, 30, 8, "freeze")?;
+    let half = ratio(1, 2)?;
+    let zoomed = FramingPose::new(half, half, ratio(27, 20)?)?;
+    project.apply(|_, document, _| {
+        Ok(Command::SetFraming {
+            node: root_child_at(document, 0)?.0,
+            framing: Some(Framing::static_pose(zoomed)?),
+        })
+    })?;
+    let expectations = vec![
+        (0, original(0)),
+        (15, original(15)),
+        (29, original(29)),
+        (30, original(29)),
+        (37, original(29)),
+        (38, original(30)),
+        (50, original(42)),
+        (67, original(59)),
+    ];
+    let notes = vec![format!(
+        "Original {} bytes, sha256 {}",
+        fs::metadata(&media)?.len(),
+        sha256_hex(&fs::read(&media)?)
+    )];
+    let mut fixture = project.finish(vec!["Frozen stare", "Smash zoom"], expectations, notes)?;
+    // The pause is Edit samples [48,048, 60,861); later Original samples move
+    // 12,812.8 later.
+    fixture.audio = vec![
+        (9_700, true),                 // chirp 0, Original 0.2 s
+        (52_000, false),               // inside the freeze pause
+        (57_600 + 12_813 + 100, true), // chirp 2, Original 1.2 s
+    ];
+    Ok(fixture)
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::Digest as _;
+    sha2::Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+/// Build every fixture, each in its own subdirectory of `dir`; see
+/// [`all_with_skips`] for fixtures whose tools are missing.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
-    type Builder = fn(&Path) -> Result<Fixture>;
+    let (fixtures, skipped) = all_with_skips(dir)?;
+    for (name, reason) in skipped {
+        eprintln!("SKIPPED fixture {name}: {reason}");
+    }
+    Ok(fixtures)
+}
+
+/// A fixture that needs a tool outside the build: the generated large
+/// Original needs a development `ffmpeg`, accepted Generated Holds also the
+/// synthetic worker (`--features synthetic-worker`) and `deadpan-media-worker`.
+type Optional = (
+    &'static str,
+    fn() -> std::result::Result<(), String>,
+    Builder,
+);
+
+/// Builds one fixture in its own directory.
+type Builder = fn(&Path) -> Result<Fixture>;
+
+/// A fixture not built, and why.
+pub type Skipped = (&'static str, String);
+
+#[cfg(feature = "synthetic-worker")]
+fn generated_tools() -> std::result::Result<(), String> {
+    generated::tools().map(|_| ())
+}
+
+#[cfg(not(feature = "synthetic-worker"))]
+fn generated_tools() -> std::result::Result<(), String> {
+    Err("built without --features synthetic-worker".into())
+}
+
+#[cfg(feature = "synthetic-worker")]
+const GENERATED: [(&str, Builder); 4] = [
+    ("generated-pause", generated::generated_pause),
+    ("generated-repeat", generated::generated_repeat),
+    ("generated-reframe", generated::generated_reframe),
+    ("generated-prefix", generated::generated_prefix),
+];
+
+#[cfg(not(feature = "synthetic-worker"))]
+const GENERATED: [(&str, Builder); 4] = {
+    fn unavailable(_: &Path) -> Result<Fixture> {
+        Err("built without --features synthetic-worker".into())
+    }
+    [
+        ("generated-pause", unavailable),
+        ("generated-repeat", unavailable),
+        ("generated-reframe", unavailable),
+        ("generated-prefix", unavailable),
+    ]
+};
+
+/// Build every fixture whose tools are available; return the others' names
+/// with the reason they were skipped.
+pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     let builders: [(&str, Builder); 38] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
@@ -2453,6 +2769,22 @@ pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
         ("gain-trim", gain_trim),
         ("sound-event", sound_event),
     ];
+    let mut optional: Vec<Optional> = GENERATED
+        .into_iter()
+        .map(|(name, build)| (name, generated_tools as fn() -> _, build))
+        .collect();
+    for (name, builder) in [
+        ("large-1080p", large_1080p as Builder),
+        ("large-2160p", large_2160p),
+    ] {
+        optional.push((name, || development_ffmpeg().map(|_| ()), builder));
+    }
+    let known = || {
+        builders
+            .iter()
+            .map(|(name, _)| *name)
+            .chain(optional.iter().map(|(name, _, _)| *name))
+    };
     // DEADPAN_PREVIEW_EXPORT_ONLY=a,b builds only the named fixtures, for a
     // focused rerun; the full run always builds all of them.
     let only = std::env::var("DEADPAN_PREVIEW_EXPORT_ONLY").ok();
@@ -2465,26 +2797,40 @@ pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
         }
         if let Some(unknown) = names
             .iter()
-            .find(|name| !builders.iter().any(|(known, _)| known == *name))
+            .find(|name| !known().any(|known| known == **name))
         {
             return Err(
                 format!("DEADPAN_PREVIEW_EXPORT_ONLY names unknown fixture {unknown}").into(),
             );
         }
+        let total = known().count();
         eprintln!(
             "DEADPAN_PREVIEW_EXPORT_ONLY: building {} of {} fixtures; {} SKIPPED. Record results only from a full run.",
             names.len(),
-            builders.len(),
-            builders.len() - names.len()
+            total,
+            total - names.len()
         );
     }
-    builders
+    let selected = |name: &str| only.as_ref().is_none_or(|names| names.contains(&name));
+    let build = |name: &str, build: Builder| -> Result<Fixture> {
+        build(&dir.join(name)).map_err(|error| format!("{name}: {error}").into())
+    };
+    let mut fixtures = builders
         .into_iter()
-        .filter(|(name, _)| only.as_ref().is_none_or(|names| names.contains(name)))
-        .map(|(name, build)| {
-            build(&dir.join(name)).map_err(|error| format!("{name}: {error}").into())
-        })
-        .collect()
+        .filter(|(name, _)| selected(name))
+        .map(|(name, builder)| build(name, builder))
+        .collect::<Result<Vec<_>>>()?;
+    let mut skipped = Vec::new();
+    for (name, available, builder) in optional {
+        if !selected(name) {
+            continue;
+        }
+        match available() {
+            Ok(()) => fixtures.push(build(name, builder)?),
+            Err(reason) => skipped.push((name, reason)),
+        }
+    }
+    Ok((fixtures, skipped))
 }
 
 /// Commit a later edit to an already rendered fixture without changing its

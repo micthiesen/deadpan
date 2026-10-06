@@ -93,8 +93,11 @@ Measured source colour metadata in the manifest, cross-build determinism,
 installed-model attestation, useful motion and seam quality remain required.
 The store trusts the host's qualification receipt; it does not independently
 decode media or parse provenance. [Storage](STORAGE.md) adds the reference
-inventory, cleanup of discarded and stale variants and portable copies;
-source joins remain open. The native app's scheduling, variant choice, audition and
+inventory, cleanup of discarded and stale variants and portable copies.
+[Source joins and speech preservation](GENERATED_HOLDS.md#source-joins) are
+hard cuts at exact frames with unchanged audio, checked on real media with the
+synthetic worker; an advisory endpoint-discontinuity measurement is reported per
+Ready variant, and real-model seam quality remains unmeasured. The native app's scheduling, variant choice, audition and
 interactive acceptance are described in [AI Holds](AI_HOLDS.md#native-app-workflow). The
 headless chain, its measured real run and the symmetric conditioning and
 presentation raster policy are in [AI Holds](AI_HOLDS.md).

@@ -104,3 +104,80 @@ checks now support explicit durable store acceptance. Audition, exact source/col
 context, application acceptance, model-independent rendering and portable copy
 remain open. [Generated-object storage](GENERATED_MEDIA.md) supplies byte ownership;
 [the acceptance contract](GENERATION_ACCEPTANCE.md) describes the integrated boundary.
+
+## Source joins
+
+An accepted bridge meets the Original with hard cuts at exact frames; nothing is
+crossfaded, because a picture crossfade would alter original frames. For a pause of
+N frames inserted at Edit boundary f, frame f-1 is the unchanged left picture L,
+frames f..f+N-1 show sampled-master frames 0..N-1 (cropped back to the recorded
+`content_aspect` by `picture::fill_canvas_aspect`), and frame f+N is the unchanged
+right picture R that was at f before insertion. Sampled frame j is the half-up
+linear interpolation of the native sequence at `(j+1)*(M-1)/(N+1)`, so neither
+conditioning endpoint (native frames 0 and M-1) is ever presented.
+
+`deadpan_cli::generation::joins::measure_request_joins(package, generated, origin,
+hold, receipt, cancelled)` is the §12.5 endpoint-discontinuity heuristic. It decodes
+the committed pictures at f-1 and f+N of the request's origin revision through
+`ProjectPictureSession` (what the viewer shows there, before editorial framing),
+and the Ready receipt's sampled-master frames 0 and N-1 through a verified
+generated-object snapshot (`open_candidate_master`), cropped exactly as
+presentation crops them (`fill_canvas_aspect`). Both are compared in one space,
+`joins::comparison_region(canvas, native)`: the canvas aspect inside the native
+raster, which is the size of a presented generated frame. Each boundary picture is
+fitted whole into that region the way conditioning fits it, then cropped like a
+generated frame; authored black stays black. Each join reports the mean absolute
+RGB difference on the 0..255 scale, the largest channel difference and a class:
+Smooth below 6, Noticeable below 20, otherwise Jump. The thresholds are
+uncalibrated against viewers. The measurement is advisory: it never accepts,
+rejects, selects or reorders a variant, and Smooth does not prove an invisible
+cut. Editorial framing and captions are not composed, and eight-bit, unrotated
+pictures only are measured. `generate-hold` reports it per Ready attempt as
+`ready.joins = {entry, exit, region, advisory: true}` (each join
+`{mean_abs_diff, max_abs_diff, class}`), or `{error}` when it cannot be measured;
+a measurement failure never changes the attempt's outcome.
+
+`crates/deadpan-cli/tests/generated_joins.rs` checks these joins on real media
+through production code with the synthetic worker (only the model is replaced):
+the `freeze_hold` recipe (`cfr-bframes.mp4`, 15-frame Freeze at f = 15) filled by
+two Ready variants, the first accepted, undone back to the Freeze fallback, then
+the second accepted. Through `ProjectPictureSession` each accepted revision shows
+frame f-1 byte-identical to L and frame f+N byte-identical to R as decoded at the
+pre-insertion revision, every pause frame byte-identical to the cropped sampled
+frame, the exact sampling positions and interpolation against the decoded native
+master, native endpoints equal to the retained conditioning pictures, and first
+and last generated frames differing from both endpoints. The Freeze and undone
+revisions show L throughout the pause. `measure_request_joins` equals
+`measure_pictures` on the same decoded pictures, and on these real pictures a
+master whose end frames are the retained conditioning pictures measures exactly 0
+(Smooth, confirming the shared comparison space reproduces conditioning's
+placement) while their inverse is a Jump. Real-model join quality is not
+measured here. These tests skip without `ffmpeg` (libx264rgb) or a built
+`deadpan-media-worker`, except under `DEADPAN_REQUIRE_SYNTHETIC_WORKER=1`, which
+`cargo xtask gate` sets, where a missing tool fails them.
+
+## Speech preservation
+
+Hold pictures and Hold audio are independent: acceptance, reversion to the
+fallback and switching variants change only the visual provider, so they change
+no audio sample. Insertion itself splits the Original audio at B(f) and resumes
+it at B(f+N) without regeneration or stretching.
+
+The same test file checks this on two real Originals: `cfr-bframes.mp4` (silent
+but for one click after the pause) and a generated 320x180 Original whose 48 kHz
+stereo AAC is a continuous aperiodic amplitude-modulated chirp, so both seams cut
+through sound. On both, the edge-faded bus (`ProjectAudioSession::read_edge_faded`)
+and the limited bus that audition and export share (`OfflineAudioSession`) of the
+accepted, undone and second-accepted revisions are bit-identical to the Freeze
+revision over the whole Edit. Against the pre-insertion revision, the Freeze
+revision is bit-identical before B(f) and, shifted by exactly B(f+N)-B(f)
+samples, from B(f+N) to the end, excluding only the 96-sample seam fade windows
+(where samples are never louder than the original); the pause itself is silent.
+The proposal the app auditions before acceptance (`Snapshot::proposed_generated`)
+is admitted against the committed base, and differs from that base only in the
+revision ID, the Hold's `video` and the two added video-only master assets; the
+Hold's duration and audio policy and every other beat, sound and asset are equal.
+Its PCM is read inside `deadpan-playback`, whose `Sources` provider is private,
+so that read is covered by the existing playback unit test rather than this one.
+These checks are structural (bit equality and an exact sample shift), not a
+listening test.
