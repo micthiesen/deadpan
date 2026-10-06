@@ -553,7 +553,8 @@ fn route_events(events: &mut Vec<egui::Event>, mut field: bool, mut background: 
     let mut shortcut_text: Option<egui::Key> = None;
     let mut focus_boundary = None;
     let mut retained = Vec::with_capacity(events.len());
-    for event in std::mem::take(events) {
+    let mut input = std::mem::take(events).into_iter().peekable();
+    while let Some(event) = input.next() {
         if let egui::Event::Text(text) = &event {
             // Text sent before the heading's focus shortcut belonged to the
             // heading. It cannot be replayed into a field focused later in
@@ -595,9 +596,17 @@ fn route_events(events: &mut Vec<egui::Event>, mut field: bool, mut background: 
             batch.accept_amount = true;
             continue;
         }
-        if let Some(action) =
-            navigation::trim::route_key(*key, *modifiers, field, background, false, *repeat)
-        {
+        // The immediate companion text names the typed key; a character no
+        // Trim key names (QWERTZ `ö`, Turkish `ı` at I) stays native input.
+        let routed = navigation::mode_key(
+            *key,
+            *modifiers,
+            crate::preview::editor_input::companion_text(*key, input.peek()),
+        )
+        .and_then(|(key, modifiers)| {
+            navigation::trim::route_key(key, modifiers, field, background, false, *repeat)
+        });
+        if let Some(action) = routed {
             batch.keys.push(action);
             shortcut_text = Some(*key);
             if action == TrimKey::FocusAmount {

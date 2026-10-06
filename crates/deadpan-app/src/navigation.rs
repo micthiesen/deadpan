@@ -48,6 +48,12 @@ pub use sound::SoundAction;
 pub mod shortcut_audit;
 pub use camera::route_camera_key;
 
+/// Normalize a press for the fixed mode routers by its immediate companion
+/// text; `None` is a character none of them names. See `keymap_config`.
+pub fn mode_key(key: Key, modifiers: Modifiers, text: Option<&str>) -> Option<(Key, Modifiers)> {
+    keymap_config::mode_key(key, modifiers, text)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BeatEdit {
     Split,
@@ -434,8 +440,55 @@ impl Bindings {
         }
     }
 
+    #[cfg(test)]
     pub fn from_json(bytes: &[u8]) -> Result<Self, String> {
-        keymap_config::parse(bytes).map(Self::with_map)
+        Self::from_json_reporting(bytes).map(|(bindings, _)| bindings)
+    }
+
+    /// The complete map plus non-fatal warnings about logical strokes that
+    /// no layout, or only some layouts, can deliver.
+    pub fn from_json_reporting(bytes: &[u8]) -> Result<(Self, Vec<String>), String> {
+        keymap_config::parse(bytes).map(|(map, warnings)| (Self::with_map(map), warnings))
+    }
+
+    /// Teaching for a press the router refused because Kestrel reserves its
+    /// physical chord although the layout types an editor character there:
+    /// QWERTZ Option+5 and AZERTY Shift+Option+5 type `[`, QWERTZ Option+L
+    /// types `@`. Logical maps only; `logical_text` is the immediate companion.
+    pub fn reserved_layout_notice(
+        &self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        logical_text: Option<&str>,
+    ) -> Option<String> {
+        let text = logical_text?;
+        let physical = physical_key.unwrap_or(key);
+        if self.map.mode != editor_map::KeyMode::Logical
+            || modifiers.ctrl
+            || modifiers.command
+            || modifiers.mac_cmd
+            || !keymap_config::reservations::reserved(physical, modifiers)
+            || !(text.len() == 1 && text.as_bytes()[0].is_ascii_punctuation())
+        {
+            return None;
+        }
+        let chord = format!(
+            "{}{}{}",
+            if modifiers.shift { "Shift+" } else { "" },
+            if modifiers.alt { "Option+" } else { "" },
+            physical.symbol_or_name()
+        );
+        let alternative = match text {
+            "[" => {
+                "For [r use :scope play N or :scope all. [p and [s have no command: bind pause.previous / shot.previous to another key in keymap.json, or go back with gg and a counted ]p / ]s."
+            }
+            "@" => "Run a macro with :macro a (a count after the name repeats it).",
+            _ => "Bind that action to another key in keymap.json.",
+        };
+        Some(format!(
+            "{chord} types {text} on this layout, but Kestrel reserves {chord}, so Deadpan ignores it. {alternative}"
+        ))
     }
 
     pub fn set_routing_domain(&mut self, domain: RoutingDomain) {
@@ -2244,6 +2297,189 @@ mod tests {
         );
         assert_eq!(bindings.pending(), "@");
         assert!(bindings.macro_pending());
+    }
+
+    #[test]
+    fn non_latin_letters_fall_back_to_their_physical_positions() {
+        let step = |forward, count| Some(Action::Step { forward, count });
+        // Russian ЙЦУКЕН, Greek and Hebrew letters have no egui key, so
+        // egui-winit delivers the physical position, which stands for the
+        // Latin letter there: р on H is h, д / λ / ך on L is l.
+        for (physical, modifiers, text, expected) in [
+            (Key::H, Modifiers::NONE, "р", step(false, 1)),
+            (Key::L, Modifiers::NONE, "д", step(true, 1)),
+            (Key::H, Modifiers::NONE, "η", step(false, 1)),
+            (Key::L, Modifiers::NONE, "λ", step(true, 1)),
+            (Key::H, Modifiers::NONE, "י", step(false, 1)),
+            (Key::L, Modifiers::NONE, "ך", step(true, 1)),
+            (Key::G, Modifiers::SHIFT, "П", Some(Action::Last)),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                layout_press(&mut bindings, physical, physical, modifiers, text),
+                expected,
+                "{text}"
+            );
+        }
+        // Counts and two-key paths compose: 3 then д is 3l, пп is gg.
+        let mut bindings = Bindings::default();
+        layout_press(&mut bindings, Key::Num3, Key::Num3, Modifiers::NONE, "3");
+        assert_eq!(
+            layout_press(&mut bindings, Key::L, Key::L, Modifiers::NONE, "д"),
+            step(true, 3)
+        );
+        layout_press(&mut bindings, Key::G, Key::G, Modifiers::NONE, "п");
+        assert_eq!(
+            layout_press(&mut bindings, Key::G, Key::G, Modifiers::NONE, "п"),
+            Some(Action::First)
+        );
+        // Russian Shift+3 types №: not a count. Latin-script letters at a
+        // position stay inert (QWERTZ ö, Turkish ı at I, Polish ł at L).
+        for (key, modifiers, text) in [
+            (Key::Num3, Modifiers::SHIFT, "№"),
+            (Key::Semicolon, Modifiers::NONE, "ö"),
+            (Key::I, Modifiers::NONE, "ı"),
+            (Key::L, Modifiers::ALT, "ł"),
+            (Key::Semicolon, Modifiers::NONE, "΄"),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                layout_press(&mut bindings, key, key, modifiers, text),
+                None,
+                "{text}"
+            );
+            assert!(bindings.pending().is_empty(), "{text}");
+        }
+        // Option still refuses a letter, and Kestrel still owns Option+H even
+        // when a non-Latin layout types a letter there.
+        let mut bindings = Bindings::default();
+        assert_eq!(
+            layout_press(&mut bindings, Key::H, Key::H, Modifiers::ALT, "р"),
+            None
+        );
+        assert!(keymap_config::non_latin_letter("ж"));
+        assert!(!keymap_config::non_latin_letter("ß"));
+        assert!(!keymap_config::non_latin_letter("жж"));
+        assert!(!keymap_config::non_latin_letter("1"));
+    }
+
+    #[test]
+    fn mode_routers_read_the_typed_character() {
+        let none = Modifiers::NONE;
+        let shift = Modifiers::SHIFT;
+        // AZERTY: Shift+3 types 3 and is a plain digit; unshifted & é " ( _
+        // at the digit positions name nothing.
+        assert_eq!(
+            mode_key(Key::Num3, shift, Some("3")),
+            Some((Key::Num3, none))
+        );
+        for (key, text) in [
+            (Key::Num1, "&"),
+            (Key::Num2, "é"),
+            (Key::Num3, "\""),
+            (Key::Num5, "("),
+            (Key::Num8, "_"),
+        ] {
+            assert_eq!(mode_key(key, none, Some(text)), None, "{text}");
+        }
+        // US Shift+3 is # and Shift+2 is @: neither is a digit.
+        assert_eq!(mode_key(Key::Num3, shift, Some("#")), None);
+        assert_eq!(mode_key(Key::Num2, shift, Some("@")), None);
+        // Letters keep Shift; non-Latin letters use their position.
+        assert_eq!(mode_key(Key::H, shift, Some("H")), Some((Key::H, shift)));
+        assert_eq!(mode_key(Key::L, none, Some("д")), Some((Key::L, none)));
+        assert_eq!(mode_key(Key::I, none, Some("ı")), None);
+        assert_eq!(
+            mode_key(Key::Quote, none, Some("'")),
+            Some((Key::Quote, none))
+        );
+        // No companion text (Enter, arrows, held keys): unchanged.
+        assert_eq!(mode_key(Key::Num3, shift, None), Some((Key::Num3, shift)));
+        // Through the real routers: AZERTY Shift+3 counts in Place slice and
+        // Camera, & does not; Trim and Slip take a Cyrillic л as l.
+        let routed = |key, modifiers, text| {
+            mode_key(key, modifiers, text).and_then(|(key, modifiers)| {
+                splice::route_key(key, modifiers, false, true, false, false)
+            })
+        };
+        assert_eq!(
+            routed(Key::Num3, shift, Some("3")),
+            Some(splice::SpliceKey::Count(3))
+        );
+        assert_eq!(routed(Key::Num1, none, Some("&")), None);
+        let camera = |key, modifiers, text| {
+            mode_key(key, modifiers, text)
+                .and_then(|(key, modifiers)| route_camera_key(key, modifiers, false, false, false))
+        };
+        assert_eq!(
+            camera(Key::Num3, shift, Some("3")),
+            Some(camera::CameraKey::Digit(3))
+        );
+        assert_eq!(camera(Key::Num1, none, Some("&")), None);
+        assert_eq!(
+            mode_key(Key::L, none, Some("л")).and_then(|(key, modifiers)| {
+                trim::route_key(key, modifiers, false, true, false, false)
+            }),
+            Some(trim::TrimKey::Nudge(1))
+        );
+        assert!(
+            mode_key(Key::H, none, Some("р"))
+                .and_then(|(key, modifiers)| {
+                    slip::route_key(key, modifiers, false, true, false, false)
+                })
+                .is_some()
+        );
+        // Gain and room tone route only Enter, Space and Escape, which carry
+        // no layout character to reinterpret.
+        assert_eq!(
+            mode_key(Key::Space, none, Some(" ")),
+            Some((Key::Space, none))
+        );
+    }
+
+    #[test]
+    fn kestrel_blocked_layout_characters_teach_their_alternatives() {
+        let bindings = Bindings::default();
+        let alt = Modifiers::ALT;
+        // QWERTZ Option+5 and AZERTY Shift+Option+5 type [.
+        for modifiers in [alt, alt | Modifiers::SHIFT] {
+            let notice = bindings
+                .reserved_layout_notice(Key::OpenBracket, Some(Key::Num5), modifiers, Some("["))
+                .unwrap();
+            assert!(notice.contains("types [ on this layout"), "{notice}");
+            assert!(notice.contains(":scope play N"), "{notice}");
+            assert!(notice.contains("[p and [s have no command"), "{notice}");
+            let mut routed = bindings.clone();
+            assert_eq!(
+                layout_press(&mut routed, Key::OpenBracket, Key::Num5, modifiers, "["),
+                None
+            );
+        }
+        let notice = bindings
+            .reserved_layout_notice(Key::L, Some(Key::L), alt, Some("@"))
+            .unwrap();
+        assert!(notice.starts_with("Option+L types @"), "{notice}");
+        assert!(notice.contains(":macro a"), "{notice}");
+        // Not reserved, not a typed ASCII symbol (US Option+5 is ∞), or a
+        // physical map: no notice.
+        assert_eq!(
+            bindings.reserved_layout_notice(Key::CloseBracket, Some(Key::Num6), alt, Some("]")),
+            None
+        );
+        assert_eq!(
+            bindings.reserved_layout_notice(Key::Num5, Some(Key::Num5), alt, Some("∞")),
+            None
+        );
+        assert_eq!(
+            bindings.reserved_layout_notice(Key::Num5, Some(Key::Num5), alt, None),
+            None
+        );
+        let physical =
+            Bindings::from_json(br#"{"version":1,"key_mode":"physical","bindings":[]}"#).unwrap();
+        assert_eq!(
+            physical.reserved_layout_notice(Key::OpenBracket, Some(Key::Num5), alt, Some("[")),
+            None
+        );
     }
 
     #[test]

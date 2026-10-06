@@ -4,7 +4,8 @@
 //! logical key, or the physical position when egui has no key for the
 //! layout's character, its `physical_key`, and the immediate companion
 //! `Text`. German QWERTZ and French AZERTY drive motions, counts, Visual copy,
-//! marks, registers, Undo and commands. IME composition then fills the command
+//! marks, registers, Undo and commands; Russian ЙЦУКЕН letters reach the Vim
+//! keys at their physical positions. IME composition then fills the command
 //! line (including `:caption` text), the transcript word field and the YouTube
 //! URL field. egui-winit 0.36 never emits `ImeEvent::Enabled`/`Disabled`
 //! (both are deprecated in egui 0.36), so composition is Preedit then Commit,
@@ -20,6 +21,7 @@ use egui::{Event, ImeEvent, Key, Modifiers};
 enum Layout {
     Qwertz,
     Azerty,
+    Russian,
 }
 
 /// One macOS key press: delivered key, physical position, modifiers and its
@@ -54,6 +56,7 @@ impl Layout {
         match self {
             Self::Qwertz => "German QWERTZ",
             Self::Azerty => "French AZERTY",
+            Self::Russian => "Russian ЙЦУКЕН",
         }
     }
 
@@ -95,6 +98,26 @@ impl Layout {
             (Self::Azerty, '(') => press(Key::Num5, Key::Num5, Modifiers::NONE, "("),
             (Self::Azerty, ':') => press(Key::Colon, Key::Period, Modifiers::NONE, ":"),
             (Self::Azerty, '@') => press(Key::Backtick, Key::Backtick, Modifiers::NONE, "@"),
+            (Self::Azerty, '[') => press(
+                Key::OpenBracket,
+                Key::Num5,
+                Modifiers::ALT | Modifiers::SHIFT,
+                "[",
+            ),
+            (Self::Russian, '0'..='9') => press(digit(c), digit(c), Modifiers::NONE, c),
+            // Shift+3 types №, which egui cannot name: the Num3 fallback.
+            (Self::Russian, '№') => press(Key::Num3, Key::Num3, Modifiers::SHIFT, "№"),
+            // Cyrillic letters have no egui key; egui-winit delivers the
+            // physical position as the key.
+            (Self::Russian, c) if russian_position(c).is_some() => {
+                let position = russian_position(c).expect("checked position");
+                let shift = if c.is_uppercase() {
+                    Modifiers::SHIFT
+                } else {
+                    Modifiers::NONE
+                };
+                press(position, position, shift, c)
+            }
             (Self::Azerty, ']') => press(
                 Key::CloseBracket,
                 Key::Minus,
@@ -109,6 +132,20 @@ impl Layout {
     fn events(self, text: &str) -> Vec<Event> {
         text.chars().flat_map(|c| events(self.press(c))).collect()
     }
+}
+
+/// Russian ЙЦУКЕН letters at the Vim positions this replay types.
+fn russian_position(c: char) -> Option<Key> {
+    Some(match c.to_lowercase().next()? {
+        'р' => Key::H,
+        'о' => Key::J,
+        'л' => Key::K,
+        'д' => Key::L,
+        'п' => Key::G,
+        'ц' => Key::W,
+        'и' => Key::B,
+        _ => return None,
+    })
 }
 
 fn events(press: Press) -> Vec<Event> {
@@ -160,6 +197,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let fixture = prepare(d)?;
     qwertz(d, &fixture)?;
     azerty(d, &fixture)?;
+    russian(d, &fixture)?;
     command_composition(d, &fixture)?;
     correction_composition(d)?;
     youtube_composition(d)?;
@@ -264,6 +302,20 @@ fn inert(d: &mut Driver<'_>, layout: Layout, c: char, why: &str) -> Result<(), S
     )
 }
 
+/// A Kestrel-reserved layout character leaves a visible teaching message.
+fn taught(d: &mut Driver<'_>, what: &str, phrases: &[&str]) -> Result<(), String> {
+    let message = d.app().message.clone().unwrap_or_default();
+    let visible = scenarios::text_paint_visibility(d, "Kestrel reserves");
+    d.check(
+        &format!("{what} shows why it is ignored and what to use instead"),
+        phrases.iter().all(|phrase| message.contains(phrase))
+            && !visible.is_empty()
+            && visible.iter().all(|paint| paint["fully_visible"] == true),
+        json!({"message contains":phrases,"painted":true}),
+        json!({"message":message,"paints":visible}),
+    )
+}
+
 fn prefix(d: &mut Driver<'_>, layout: Layout, c: char, expected: &str) -> Result<(), String> {
     let at = d.app().sequence_cursor;
     typed(d, layout, &c.to_string())?;
@@ -363,12 +415,19 @@ fn qwertz(d: &mut Driver<'_>, fixture: &Fixture) -> Result<(), String> {
         '[',
         "Kestrel owns Option+5, so ]p's partner [p is unavailable",
     )?;
+    taught(
+        d,
+        "QWERTZ Option+5 [",
+        &[":scope play N", "[p and [s have no command"],
+    )?;
+    d.capture("QWERTZ [ reserved by Kestrel teaches its alternatives")?;
     inert(
         d,
         layout,
         '@',
         "Kestrel owns Option+L, so @ cannot run macros",
     )?;
+    taught(d, "QWERTZ Option+L @", &[":macro a"])?;
     inert(d, layout, 'ü', "the OpenBracket position is not [")?;
     inert(d, layout, 'ö', "the Semicolon position is not ;")?;
     inert(d, layout, 'ä', "the Quote position is not a mark jump")?;
@@ -455,6 +514,17 @@ fn azerty(d: &mut Driver<'_>, fixture: &Fixture) -> Result<(), String> {
         '&',
         "the Num1 position without Shift is not a count",
     )?;
+    inert(
+        d,
+        layout,
+        '[',
+        "Kestrel owns Shift+Option+5, so [r, [p and [s are unavailable",
+    )?;
+    taught(
+        d,
+        "AZERTY Shift+Option+5 [",
+        &["Shift+Option+5 types [", ":scope all"],
+    )?;
     prefix(d, layout, '"', "\"")?;
     escape(d)?;
     settle_typed(d, layout, "ggw")?;
@@ -525,6 +595,41 @@ fn azerty(d: &mut Driver<'_>, fixture: &Fixture) -> Result<(), String> {
     visual_copy(d, layout, 10, 2)
 }
 
+/// Cyrillic letters have no egui key, so egui-winit delivers their physical
+/// position. Before this fallback was restored, logical routing dropped them.
+fn russian(d: &mut Driver<'_>, fixture: &Fixture) -> Result<(), String> {
+    let layout = Layout::Russian;
+    let revision = d.revision();
+    settle_typed(d, layout, "пп3д")?;
+    cursor(
+        d,
+        "Russian пп then 3д (g g 3 l positions) lands on frame 3",
+        3,
+    )?;
+    settle_typed(d, layout, "р")?;
+    cursor(d, "Russian р (H position) moves back one frame", 2)?;
+    settle_typed(d, layout, "П")?;
+    cursor(
+        d,
+        "Russian Shift+п (G position) reaches the end of the edit",
+        fixture.length,
+    )?;
+    settle_typed(d, layout, "ппц")?;
+    cursor(
+        d,
+        "Russian ц (W position) moves to the first word",
+        fixture.words[0],
+    )?;
+    d.capture("Russian ЙЦУКЕН motions at their physical positions")?;
+    inert(d, layout, '№', "Shift+3 types №, which is not a count")?;
+    d.check(
+        "Russian motions author nothing",
+        d.revision() == revision,
+        json!(revision),
+        json!(d.revision()),
+    )
+}
+
 /// `:caption` text is the command line: German fallback keys and a committed
 /// Japanese composition both stay text.
 fn command_composition(d: &mut Driver<'_>, fixture: &Fixture) -> Result<(), String> {
@@ -581,13 +686,19 @@ fn composition(
 ) -> Result<(), String> {
     let revision = d.revision();
     let at = d.app().sequence_cursor;
+    // One native batch: the IME starts composing and the user presses
+    // Escape before the app has seen the composition. The field must keep
+    // focus; egui applies its focus filter before the app reads the batch.
     d.events(
-        &format!("{field}: Japanese preedit"),
-        vec![preedit("にほんご")],
+        &format!("{field}: Japanese preedit and Escape in one batch"),
+        std::iter::once(preedit("にほんご"))
+            .chain(plain(Key::Escape))
+            .collect(),
     )?;
+    d.settled()?;
     let preedit_value = format!("{prefix}にほんご");
     d.check(
-        &format!("{field} shows the preedit in the field and acts on nothing"),
+        &format!("{field} keeps focus and the preedit through a same-batch Escape and acts on nothing"),
         value(d).as_deref() == Some(preedit_value.as_str())
             && d.app().ime_composing
             && d.app().bindings.pending().is_empty()

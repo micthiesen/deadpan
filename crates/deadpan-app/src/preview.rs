@@ -2445,9 +2445,13 @@ impl DeadpanApp {
                 };
                 let logical_text = logical_text.as_deref();
                 if self.camera.is_some() && !self.sound_focused() {
+                    // The typed character decides Camera digits and letters:
+                    // AZERTY Shift+3 is 3, unshifted `&` names no Camera key.
+                    let camera_press = navigation::mode_key(key, modifiers, logical_text);
+                    let (camera_key, camera_modifiers) = camera_press.unwrap_or((key, modifiers));
                     match camera::dispatch_key(
-                        key,
-                        modifiers,
+                        camera_key,
+                        camera_modifiers,
                         focused,
                         ime,
                         repeat,
@@ -2466,6 +2470,11 @@ impl DeadpanApp {
                             continue;
                         }
                         camera::KeyDispatch::Draft(camera_key) => {
+                            let camera_key = if camera_press.is_some() {
+                                camera_key
+                            } else {
+                                navigation::camera::CameraKey::Other
+                            };
                             if matches!(camera_key, navigation::camera::CameraKey::Tab { .. }) {
                                 camera::retain_field_input_suffix(context, events.as_slice());
                             }
@@ -2578,6 +2587,19 @@ impl DeadpanApp {
                     selection,
                     logical_text,
                 );
+                if action.is_none()
+                    && !ime
+                    && !text_input_active(context, self.command_open)
+                    && let Some(notice) = self.bindings.reserved_layout_notice(
+                        key,
+                        physical_key,
+                        modifiers,
+                        logical_text,
+                    )
+                {
+                    // Kestrel keeps this chord; say so instead of a silent no-op.
+                    self.message = Some(notice);
+                }
                 if !operator_pending
                     && (self.bindings.operator_pending()
                         || matches!(action, Some(Action::Operator { .. })))
@@ -3001,14 +3023,7 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::PortableCopy) => self.start_portable_copy(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
             Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
-            Ok(navigation::command::Entry::Close) => {
-                if self.workspace.is_none() {
-                    self.error = Some("No project is open.".into());
-                } else {
-                    self.stop_playback();
-                    self.submit(ProjectRequest::Close);
-                }
-            }
+            Ok(navigation::command::Entry::Close) => self.close_command(),
             Ok(navigation::command::Entry::SoundChannels(choice)) => {
                 self.sound_interpretation = choice;
                 self.message = Some(match choice {
@@ -3405,7 +3420,20 @@ impl DeadpanApp {
         let available_bottom = available.bottom();
         // Command entry adds a field and help beneath the status rows. Reserve
         // that space on entry rather than inheriting Normal mode's short panel.
-        let minimum = if self.command_open { 144.0 } else { 0.0 };
+        // The completion line is one truncated row; measure it before the
+        // first paint so the reserve already includes it.
+        let completion = self
+            .command_open
+            .then(|| command_completion_text(&self.command))
+            .flatten();
+        let completion_height = completion.as_ref().map_or(0.0, |_| {
+            ui.fonts_mut(|fonts| fonts.row_height(&egui::FontId::monospace(11.0))) + 4.0
+        });
+        let minimum = if self.command_open {
+            144.0 + completion_height
+        } else {
+            0.0
+        };
         let panel = egui::Panel::bottom("workspace-status").resizable(false).min_size(minimum).frame(style::compact_panel()).show(ui, |ui| {
             ui.spacing_mut().item_spacing = egui::vec2(6.0, 4.0);
             if self.camera.is_some() && !self.sound_focused() {
@@ -3489,14 +3517,11 @@ impl DeadpanApp {
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
-                let matches = navigation::command::completions(&self.command);
-                if !matches.is_empty() {
-                    // Completion teaching: the first few matching commands.
-                    let mut text = matches.iter().take(4).copied().collect::<Vec<_>>().join("  ·  ");
-                    if matches.len() > 4 {
-                        text.push_str(&format!("  ·  +{} more", matches.len() - 4));
-                    }
-                    ui.add(egui::Label::new(egui::RichText::new(text).monospace().size(11.0).color(style::LAVENDER)).truncate());
+                if let Some((shown, full)) = &completion {
+                    // Completion teaching: the first few matching commands; the
+                    // accessible name and hover carry every match.
+                    let response = ui.add(egui::Label::new(egui::RichText::new(shown).monospace().size(11.0).color(style::LAVENDER)).truncate());
+                    accessibility::full_text(response, full).on_hover_text(full);
                 }
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
@@ -5490,6 +5515,25 @@ fn help_binding(ui: &mut egui::Ui, key: &str, description: &str) {
         ui.label(description);
     });
 }
+/// The completion row for a partially typed verb: up to four usages, and
+/// the complete list for accessibility and hover.
+fn command_completion_text(command: &str) -> Option<(String, String)> {
+    let matches = navigation::command::completions(command);
+    if matches.is_empty() {
+        return None;
+    }
+    let mut shown = matches
+        .iter()
+        .take(4)
+        .copied()
+        .collect::<Vec<_>>()
+        .join("  ·  ");
+    if matches.len() > 4 {
+        shown.push_str(&format!("  ·  +{} more", matches.len() - 4));
+    }
+    Some((shown, format!("Matching commands: {}", matches.join(" · "))))
+}
+
 fn pane_id(pane: Pane) -> egui::Id {
     egui::Id::new(match pane {
         Pane::Sources => "sources-pane",
@@ -5586,6 +5630,19 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn completion_row_truncates_to_four_and_names_every_match_accessibly() {
+        assert_eq!(super::command_completion_text("caption hi"), None);
+        let (shown, full) = super::command_completion_text(":cap").unwrap();
+        assert_eq!(shown, ":caption TEXT [at=top|center] [delay=4f]");
+        assert!(full.ends_with(":caption TEXT [at=top|center] [delay=4f]"));
+        let (shown, full) = super::command_completion_text("s").unwrap();
+        let total = crate::navigation::command::completions("s").len();
+        assert!(total > 4);
+        assert!(shown.ends_with(&format!("+{} more", total - 4)));
+        assert_eq!(full.matches(" · ").count(), total - 1);
+    }
+
     use super::*;
 
     #[test]

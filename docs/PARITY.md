@@ -246,6 +246,8 @@ GUI-only.
   focus (sound events, Original Source mappings, framing poses). The
   interactive previews and auditions of Trim, Slip, Splice, Gain, Room tone and
   Camera are GUI-only by nature; their commits are reachable.
-- **Analysis corrections on an open project.** `corrections` needs the
-  project writer. The app does not yet expose corrections through its live
-  endpoint, so it returns `ProjectAlreadyOpen` while the app holds the project.
+- **Analysis corrections on an open project.** A committing `corrections`
+  change needs the project writer. The app does not expose corrections through
+  its live endpoint, so while it holds the project the command writes nothing
+  and returns `ProjectAlreadyOpen`, telling the caller to use `:correct` in the
+  app or close the project. Inspection and `--dry-run` still work.

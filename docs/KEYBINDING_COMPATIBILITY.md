@@ -41,8 +41,11 @@ their own modal `b`/`e` handling, which runs before the editor router. Custom
 keymaps that used these letters as free prefixes must move to another key.
 
 Pause motions use the bare two-key paths `]p` and `[p`, and `ip`/`ap` join the
-Visual objects. Plain `[` and `]` carry no modifier, so the Kestrel registry is
-not involved (it reserves no bracket chord). `p` and `P`
+Visual objects. On US layouts `[` and `]` carry no modifier, so the Kestrel
+registry is not involved (it reserves no bracket chord). That no longer holds
+on every layout: QWERTZ types `[`/`]` with Option+5/Option+6 and AZERTY with
+Shift+Option+5/Shift+Option+`)`, and Kestrel reserves Option+5 and
+Shift+Option+5 (see [layouts and typed text](#layouts-and-typed-text)). `p` and `P`
 keep their paste meaning: only a pending `]`, `[`, `i` or `a` prefix reaches
 the pause bindings. Custom keymaps that bound `[` or `]` alone must move.
 Shot motions `]s`/`[s` share those prefixes, and `iS`/`aS` use Shift+`s`
@@ -135,6 +138,45 @@ controls are separately checked through AccessKit Focus events with strict
 paint and complete hit-target clips. Native CUA also verified gain boundary
 wrapping, keyboard envelope/key editing, field reveal, literal shortcut text and
 Escape cancellation without changing the saved project.
+
+## Layouts and typed text
+
+On 2026-10-05 `]r`/`[r` (`play.next`/`play.previous`) joined the bracket
+family: unmodified, Normal Edit navigation only, counts step further and
+operators never compose with them.
+Logical routing now reads each printable press's immediate typed text
+([logical and physical keys](KEYMAP.md#logical-and-physical-keys)): `@`,
+quotes, `_` and `>` by character, brackets as logical symbols whatever
+Shift/Option produced them, characters egui cannot name (AZERTY `&é"(`, QWERTZ
+`öäüß`) inert, and non-Latin letters at their physical positions. The Camera,
+Trim, Slip and Place slice routers read the same text through `mode_key`.
+
+Option-produced brackets meet Kestrel: QWERTZ `[` is Option+5 and AZERTY `[`
+is Shift+Option+5, both reserved (`space` and `send-space`), so `[r`, `[p` and
+`[s` cannot start there while Kestrel runs; QWERTZ `@` (Option+L, `focus`) is
+reserved too. QWERTZ `]` (Option+6) and AZERTY `]` (Shift+Option at the Minus
+position) are not reserved and work. The physical reservation is checked
+before any typed text is interpreted, so no layout character can disguise a
+reserved chord. When Deadpan does receive such a press, it does nothing and the
+status line names the reserved chord and the alternative (`:scope play N` or
+`:scope all` for `[r`; `[p`/`[s` have no command, so bind them elsewhere or use
+`gg` and a counted `]p`/`]s`; `:macro a` for `@`).
+
+The production audit now pairs every reserved physical chord with typed text
+as well as logical identities: `[`, `]`, `{`, `r`, `"`, `3`, `@`, AZERTY `&`
+and Cyrillic `ж` at the reserved position, besides the earlier Comma, Period,
+Colon, N, A and Quote identities, over every compiled prefix (228 prefix/count
+paths), four selections and four text/IME states. The mode routers are audited
+after `mode_key` under no companion and the companions `5`, `[` and `h`. The
+`layouts` replay of 2026-10-05 passed **21,845,328** routing cases against the
+**62** Kestrel globals with **no conflicts**: per reservation, domain and
+recording state, 3,648 editor cases, 54,720 layout cases and 356 mode/native
+cases (62 × 3 domains × 2 recording states × 58,724). Run with
+`--kestrel-source` against the local
+`~/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`, the live digest matched
+the fixture (`368c01df…`). The same replay checks the QWERTZ and AZERTY `[`
+notices on screen. These are injected egui events; physical keyboards and
+system interception are not qualified.
 
 ## Marks and jumps
 

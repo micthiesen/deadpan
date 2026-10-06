@@ -829,7 +829,7 @@ impl DeadpanApp {
                 .add(
                     egui::TextEdit::singleline(&mut self.youtube.url)
                         .id(egui::Id::new(URL_ID))
-                        .event_filter(super::editor_input::field_filter(self.ime_composing))
+                        .event_filter(super::editor_input::field_filter())
                         .hint_text("https://youtu.be/… or https://www.youtube.com/watch?v=…")
                         .return_key(None)
                         .desired_width((ui.available_width() - button_width).max(120.0))
@@ -840,6 +840,7 @@ impl DeadpanApp {
             if std::mem::take(&mut self.youtube.focus_field) {
                 field.request_focus();
             }
+            super::retain_text_escape(ui, URL_ID);
             // Validate after the field applied this frame's text and paste,
             // so the button and message never lag the visible URL.
             let valid = matches!(validation(&self.youtube.url), Some(Ok(_)));

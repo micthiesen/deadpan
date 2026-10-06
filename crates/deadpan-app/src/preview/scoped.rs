@@ -244,8 +244,12 @@ impl DeadpanApp {
             if !self.enter_scoped(context) || self.scoped.is_none() {
                 return;
             }
-            // Opening starts at All plays; [r opens the last play.
+            // Opening starts at All plays: N]r opens play N, N[r the Nth play
+            // from the end (both default to one).
             self.scoped_play(true, if forward { count } else { u32::MAX }, context);
+            if !forward && count > 1 && self.scoped.is_some() {
+                self.scoped_play(false, count - 1, context);
+            }
             return;
         }
         let result = self

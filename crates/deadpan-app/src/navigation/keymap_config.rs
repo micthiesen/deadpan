@@ -29,7 +29,9 @@ struct Entry {
     keys: Vec<Vec<String>>,
 }
 
-pub(super) fn parse(bytes: &[u8]) -> Result<Arc<Compiled>, String> {
+/// A complete compiled map plus non-fatal diagnostics for strokes that compile
+/// but that the logical router can never (or only on some layouts) deliver.
+pub(super) fn parse(bytes: &[u8]) -> Result<(Arc<Compiled>, Vec<String>), String> {
     if bytes.len() > MAX_FILE_BYTES {
         return Err("Keymap exceeds the 256 KiB file limit".into());
     }
@@ -48,6 +50,7 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Arc<Compiled>, String> {
         return Err("Too many action entries".into());
     }
     let mut overrides = Vec::new();
+    let mut warnings = Vec::new();
     for entry in config.bindings {
         if entry.action.len() > MAX_TOKEN_BYTES {
             return Err("Action ID exceeds 32 bytes".into());
@@ -69,7 +72,14 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Arc<Compiled>, String> {
             }
             let mut strokes = Vec::new();
             for token in path {
-                strokes.push(parse_stroke(&token, config.key_mode)?);
+                let stroke = parse_stroke(&token, config.key_mode)?;
+                if config.key_mode == KeyMode::Logical
+                    && let Some(warning) = logical_warning(&token, stroke)
+                    && warnings.len() < MAX_WARNINGS
+                {
+                    warnings.push(format!("{}: {warning}", id.as_str()));
+                }
+                strokes.push(stroke);
             }
             if strokes.iter().any(|stroke| {
                 matches!(stroke, Stroke::Key(key, shift)
@@ -92,7 +102,38 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Arc<Compiled>, String> {
         }
         overrides.push((id, paths));
     }
-    Compiled::compile(config.key_mode, overrides).map(Arc::new)
+    Compiled::compile(config.key_mode, overrides).map(|map| (Arc::new(map), warnings))
+}
+
+/// Bounds the diagnostic text a hostile file can produce.
+const MAX_WARNINGS: usize = 8;
+
+/// A logical-mode stroke the router reaches only on some layouts, or never.
+/// The router reads the typed character: egui delivers Shift+`[` as `{`,
+/// Shift+`;` as `:`, Shift+`=` as `+`, Shift+`\` as `|`, and US Shift+`` ` ``
+/// (`~`) has no egui key at all.
+fn logical_warning(token: &str, stroke: Stroke) -> Option<String> {
+    let Stroke::Key(key, true) = stroke else {
+        return None;
+    };
+    let (symbol, typed) = match key {
+        Key::OpenBracket => ("[", "{"),
+        Key::CloseBracket => ("]", "}"),
+        Key::Semicolon => (";", ":"),
+        Key::Equals => ("=", "+"),
+        Key::Backslash => ("\\", "|"),
+        Key::Backtick => ("`", "~"),
+        _ => return None,
+    };
+    Some(if matches!(key, Key::OpenBracket | Key::CloseBracket) {
+        format!(
+            "{token} can never match in logical keys: brackets are typed symbols, and Shift+{symbol} types {typed}. Bind \"{typed}\" (or \"{symbol}\") instead."
+        )
+    } else {
+        format!(
+            "{token} matches only where Shift types {symbol} itself; on a US layout Shift+{symbol} types {typed}. Bind the typed symbol, or use physical keys."
+        )
+    })
 }
 
 fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
@@ -138,7 +179,14 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
     {
         return Err("This key has no egui physical position; use an actual position such as Shift+Semicolon".into());
     }
-    if mode == KeyMode::Logical && shift && logical_symbol(key) {
+    // Shift+[ and Shift+] compiled before brackets became logical symbols.
+    // They stay admissible, with a load warning, so an older personal map is
+    // not rejected as a whole; they can never match a logical press.
+    if mode == KeyMode::Logical
+        && shift
+        && logical_symbol(key)
+        && !matches!(key, Key::OpenBracket | Key::CloseBracket)
+    {
         return Err(
             "Logical punctuation uses the delivered symbol without an explicit Shift modifier"
                 .into(),
@@ -192,7 +240,62 @@ pub(super) fn companion_stroke(key: Key, text: &str) -> Companion {
         "_" => Companion::Stroke(Stroke::Key(Key::Minus, true)),
         ">" => Companion::Stroke(Stroke::Key(Key::Period, true)),
         _ if Key::from_name(text) == Some(key) => Companion::Delivered,
+        // A letter of a non-Latin script (Cyrillic, Greek, Hebrew, ...) has no
+        // egui key, so egui-winit reports its physical position. As egui's own
+        // fallback intends, that position stands in for the Latin letter: a
+        // Russian `р` on the H key acts as `h`. Latin-script letters such as
+        // QWERTZ `ö` or Turkish `ı` stay inert: their layouts type ASCII too.
+        _ if non_latin_letter(text) => Companion::Delivered,
         _ => Companion::Unnamed,
+    }
+}
+
+/// One alphabetic character outside the Latin script blocks.
+pub(super) fn non_latin_letter(text: &str) -> bool {
+    let mut chars = text.chars();
+    let (Some(c), None) = (chars.next(), chars.next()) else {
+        return false;
+    };
+    let latin = c.is_ascii()
+        || ('\u{00AA}'..='\u{02AF}').contains(&c)
+        || ('\u{1D00}'..='\u{1DBF}').contains(&c)
+        || ('\u{1E00}'..='\u{1EFF}').contains(&c)
+        || ('\u{2C60}'..='\u{2C7F}').contains(&c)
+        || ('\u{A720}'..='\u{A7FF}').contains(&c)
+        || ('\u{AB30}'..='\u{AB6F}').contains(&c)
+        || ('\u{FB00}'..='\u{FB06}').contains(&c)
+        || ('\u{FF21}'..='\u{FF5A}').contains(&c);
+    c.is_alphabetic() && !latin
+}
+
+/// Normalize one press for the fixed mode routers (Camera, Trim, Slip and
+/// Place slice), which match delivered keys. `text` is the press's immediate
+/// companion. `None` means the press is a character none of them can name,
+/// such as AZERTY unshifted `&` at the 1 position. A typed digit is a digit
+/// whatever Shift the layout needed (AZERTY Shift+3 types 3).
+pub(super) fn mode_key(
+    key: Key,
+    modifiers: eframe::egui::Modifiers,
+    text: Option<&str>,
+) -> Option<(Key, eframe::egui::Modifiers)> {
+    let Some(text) = text else {
+        return Some((key, modifiers));
+    };
+    match companion_stroke(key, text) {
+        Companion::Delivered if DIGITS.iter().any(|(digit, _)| *digit == key) => Some((
+            key,
+            eframe::egui::Modifiers {
+                shift: false,
+                ..modifiers
+            },
+        )),
+        Companion::Delivered => Some((key, modifiers)),
+        // Quotes, `_` and `>` keep their own delivered key; at a physical
+        // fallback (AZERTY `"` on the 3 position, `_` on 8) they must not
+        // become digits. `@` has no egui key at all.
+        Companion::Stroke(Stroke::Key(stroke, _)) if stroke == key => Some((key, modifiers)),
+        Companion::Stroke(_) => None,
+        Companion::Unnamed => None,
     }
 }
 

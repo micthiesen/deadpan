@@ -203,7 +203,9 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("gag-save", ":gag-save NAME"),
     ("gag-set", ":gag-set NAME key=value"),
     ("gain", ":gain +3dB | +=3dB | mute"),
+    ("gain-mute", ":gain-mute  mute or unmute the beat"),
     ("generate", ":generate [N]  AI pictures for the pause"),
+    ("generate-ai", ":generate-ai [N]  same as :generate"),
     ("group", ":group name=\"the answer\""),
     ("help", ":help  all keys and commands"),
     ("hold", ":hold 0.5s [video=black]"),
@@ -212,10 +214,10 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("import", ":import  add a sound"),
     ("insert", ":insert  reuse the whole Original"),
     ("jcut", ":jcut 6f"),
-    ("lcut", ":lcut 200ms"),
     ("jump", ":jump a"),
     ("jump-back", ":jump-back"),
     ("jump-forward", ":jump-forward"),
+    ("lcut", ":lcut 200ms"),
     ("lift", ":lift  cut and leave a black pause"),
     ("macro", ":macro a"),
     ("mark", ":mark a"),
@@ -223,7 +225,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("models", ":models"),
     ("monitor", ":monitor 25%"),
     ("new", ":new  choose a video"),
-    ("youtube", ":youtube  start from a URL"),
+    ("new-url", ":new-url  same as :youtube"),
     ("next-ai", ":next-ai"),
     ("open", ":open"),
     ("parent", ":parent  leave the group"),
@@ -233,8 +235,13 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("ping-pong", ":ping-pong 12f"),
     ("pitch", ":pitch +5st"),
     ("play", ":play"),
+    (
+        "portable-copy",
+        ":portable-copy  save a self-contained copy",
+    ),
     ("prev-ai", ":prev-ai"),
     ("preview-ai", ":preview-ai"),
+    ("previous-ai", ":previous-ai  same as :prev-ai"),
     ("proxies", ":proxies on|off|retry"),
     ("recipe", ":recipe a"),
     ("recipe-inspect", ":recipe-inspect a"),
@@ -259,19 +266,21 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("select", ":select role=audio|video"),
     ("sequence", ":sequence  Your edit"),
     ("slip", ":slip +5f"),
-    ("sound-allow", ":sound-allow"),
-    ("sound-at", ":sound-at"),
+    ("sound-allow", ":sound-allow  in this pause"),
+    ("sound-at", ":sound-at 274000  start sample (48 kHz)"),
     ("sound-channels", ":sound-channels mono|stereo|none"),
-    ("sound-cut", ":sound-cut"),
-    ("sound-edges", ":sound-edges"),
-    ("sound-gain", ":sound-gain -6dB"),
+    ("sound-cut", ":sound-cut  end the sound here"),
+    ("sound-delete", ":sound-delete  remove the placed sound"),
+    ("sound-edges", ":sound-edges soft|hard"),
+    ("sound-gain", ":sound-gain -3  dB"),
     ("sound-place", ":sound-place"),
-    ("sound-silence", ":sound-silence"),
+    ("sound-silence", ":sound-silence  in this pause"),
     ("sounds", ":sounds  placed sounds"),
     ("source", ":source  Original"),
     ("splice", ":splice  place a copy"),
     ("split", ":split"),
-    ("sting", ":sting"),
+    ("sting", ":sting  add a sting sound"),
+    ("storage", ":storage  project storage and cleanup"),
     ("tail", ":tail [1s] [effect=reverb]"),
     ("track", ":track [TARGET] [through-shots]"),
     ("track-cancel", ":track-cancel"),
@@ -282,6 +291,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("wrap-repeat", ":wrap-repeat 2"),
     ("wrap-retime", ":wrap-retime 0.5"),
     ("yank", ":yank"),
+    ("youtube", ":youtube  start from a URL"),
     ("zoom", ":zoom 2 [target=center] [curve=step]"),
 ];
 
@@ -1640,5 +1650,39 @@ mod tests {
         assert!(completions("caption Hi").is_empty());
         assert!(completions(":").is_empty());
         assert!(completions("re").len() > 5);
+    }
+
+    /// Drift guard: every verb the parser accepts must be in `COMMANDS`.
+    /// Candidates are the string literals in this module's source.
+    #[test]
+    fn parser_verbs_and_completion_table_agree() {
+        let verbs = COMMANDS.iter().map(|(verb, _)| *verb).collect::<Vec<_>>();
+        let mut sorted = verbs.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(verbs, sorted, "COMMANDS must be sorted and unique");
+        let source = include_str!("command.rs");
+        let mut missing = std::collections::BTreeSet::new();
+        for literal in source.split('"').skip(1).step_by(2) {
+            if literal.is_empty()
+                || !literal
+                    .bytes()
+                    .all(|byte| byte.is_ascii_lowercase() || byte == b'-')
+                || verbs.contains(&literal)
+            {
+                continue;
+            }
+            let known = match parse(literal) {
+                Ok(_) => true,
+                Err(error) => !error.starts_with("Unknown command"),
+            };
+            if known {
+                missing.insert(literal);
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "verbs missing from COMMANDS: {missing:?}"
+        );
     }
 }

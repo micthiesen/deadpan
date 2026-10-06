@@ -259,7 +259,10 @@ audition admission, acceptance and discard are then production code. Without
 the `ai-variants` replay that need it report a skip. It is compiled only for
 `deadpan-cli` tests and its `synthetic-worker` feature, which the app enables
 for its tests (dev-dependency) and its `ui-harness` build; the shipped CLI and
-app do not contain it, and no host offers it as a provider.
+app do not contain it, and no host offers it as a provider. The CLI's
+`offline_portable` integration test declares the feature as required, so run
+it alone with `cargo test -p deadpan-cli --features synthetic-worker --test
+offline_portable`; `cargo xtask gate` enables it for the workspace runs.
 
 ### Verification
 

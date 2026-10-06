@@ -624,26 +624,31 @@ impl DeadpanApp {
             return;
         };
         context.input_mut(|input| {
-            input.events.retain(|event| {
-                let egui::Event::Key {
+            let mut events = std::mem::take(&mut input.events).into_iter().peekable();
+            while let Some(event) = events.next() {
+                if let egui::Event::Key {
                     key,
                     modifiers,
                     pressed: true,
                     repeat,
                     ..
-                } = event
-                else {
-                    return true;
-                };
-                if let Some(action) =
-                    navigation::slip::route_key(*key, *modifiers, field, background, false, *repeat)
+                } = &event
+                    // The companion text names the typed key: a character no
+                    // Slip key names stays native input.
+                    && let Some(action) = navigation::mode_key(
+                        *key,
+                        *modifiers,
+                        super::editor_input::companion_text(*key, events.peek()),
+                    )
+                    .and_then(|(key, modifiers)| {
+                        navigation::slip::route_key(key, modifiers, field, background, false, *repeat)
+                    })
                 {
                     draft.keys.push(action);
-                    false
-                } else {
-                    true
+                    continue;
                 }
-            })
+                input.events.push(event);
+            }
         });
     }
 

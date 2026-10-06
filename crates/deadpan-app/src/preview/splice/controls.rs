@@ -51,26 +51,31 @@ impl DeadpanApp {
         // matching presses, which loses duplicate count digits in one batch.
         // Native widgets receive only the events they still own.
         context.input_mut(|input| {
-            input.events.retain(|event| {
-                let egui::Event::Key {
+            let mut events = std::mem::take(&mut input.events).into_iter().peekable();
+            while let Some(event) = events.next() {
+                if let egui::Event::Key {
                     key,
                     modifiers,
                     pressed: true,
                     repeat,
                     ..
-                } = event
-                else {
-                    return true;
-                };
-                if let Some(action) = navigation::splice::route_key(
-                    *key, *modifiers, false, background, false, *repeat,
-                ) {
+                } = &event
+                    // The companion text names the typed key: AZERTY Shift+3
+                    // counts 3, while unshifted `&` (the 1 position) does not.
+                    && let Some(action) = navigation::mode_key(
+                        *key,
+                        *modifiers,
+                        crate::preview::editor_input::companion_text(*key, events.peek()),
+                    )
+                    .and_then(|(key, modifiers)| {
+                        navigation::splice::route_key(key, modifiers, false, background, false, *repeat)
+                    })
+                {
                     draft.keys.push(action);
-                    false
-                } else {
-                    true
+                    continue;
                 }
-            });
+                input.events.push(event);
+            }
         });
     }
 

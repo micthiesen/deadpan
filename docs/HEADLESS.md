@@ -1309,9 +1309,13 @@ Change types are `edit_word`, `remove_word`, `join_words`,
 different stored version returns `AnalysisCorrectionsConflict`; a different
 target returns `CorrectionTargetChanged`. Neither writes. A dry run returns the
 label and proposed corrections without writing. Corrections never create a
-document revision. Changes need the project writer: while the app holds the
-project the command returns `ProjectAlreadyOpen`, because the live endpoint
-does not carry corrections yet.
+document revision. Inspection and dry runs only read, so they work while the
+app has the project open. A committing change needs the project writer: while
+the app holds it, the command writes nothing and returns `ProjectAlreadyOpen`
+with the message "The project is open in Deadpan, which holds its writer. Make
+the correction there with :correct, or close the project and run corrections
+again. Inspection and --dry-run work while it is open." The live endpoint does
+not carry corrections.
 
 ## AI pauses
 

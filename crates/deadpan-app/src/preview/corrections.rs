@@ -847,7 +847,6 @@ impl DeadpanApp {
             .and_then(|item| items.iter().position(|(entry, _, _)| *entry == item));
         let mut clicked: Option<Item> = None;
         let mut button: Option<CorrectionKey> = None;
-        let composing = self.ime_composing;
         let width = (context.content_rect().width() - 64.0).clamp(300.0, 620.0);
         let words = workspace.transcript.as_ref();
         let pauses = workspace
@@ -955,7 +954,7 @@ impl DeadpanApp {
                         .add(
                             egui::TextEdit::singleline(text)
                                 .id(egui::Id::new(TEXT_ID))
-                                .event_filter(super::editor_input::field_filter(composing))
+                                .event_filter(super::editor_input::field_filter())
                                 .return_key(None)
                                 .desired_width(f32::INFINITY),
                         )
@@ -963,6 +962,7 @@ impl DeadpanApp {
                     if std::mem::take(&mut draft.text_focus_pending) {
                         field.request_focus();
                     }
+                    super::retain_text_escape(ui, TEXT_ID);
                     ui.weak("Enter applies · Esc discards");
                 }
                 if draft.pending.is_some() {

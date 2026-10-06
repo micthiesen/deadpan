@@ -64,15 +64,20 @@ impl TextEntryGate {
     }
 }
 
-/// A text field's egui focus filter. egui surrenders focus on Escape before
-/// the app routes it; during an active composition that Escape belongs to the
-/// IME, so the field keeps focus and the later commit still lands in it.
-pub(super) fn field_filter(composing: bool) -> EventFilter {
+/// A text field's egui focus filter. egui applies the previous pass's filter
+/// at the start of a pass, before the app sees the batch, so a filter that
+/// followed composition state would still surrender focus when a Preedit and
+/// its Escape arrive in one native batch. Like the Command field, the field
+/// therefore always keeps focus through Escape; its sheet router handles a
+/// plain Escape outside composition and leaves the field explicitly. Callers
+/// also use `retain_text_escape` so the filter is installed in the same outer
+/// frame that focus is acquired.
+pub(super) fn field_filter() -> EventFilter {
     EventFilter {
         horizontal_arrows: true,
         vertical_arrows: true,
         tab: false,
-        escape: composing,
+        escape: true,
     }
 }
 
@@ -101,6 +106,15 @@ pub(super) fn field_suffix(key: Key, modifiers: Modifiers, suffix: &[Event]) -> 
         &suffix[1..]
     } else {
         suffix
+    }
+}
+
+/// The press's immediate native text companion, which names the character a
+/// layout typed. Only printable keys carry one; later text is not this key's.
+pub(super) fn companion_text(key: Key, next: Option<&Event>) -> Option<&str> {
+    match next {
+        Some(Event::Text(text)) if printable(key) => Some(text),
+        _ => None,
     }
 }
 

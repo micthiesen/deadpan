@@ -12,7 +12,8 @@ plays preserves existing overrides. Browsing never creates an override.
 `]r` and `[r` step the nearest displayed Repeat through All plays, then play 1
 to N, clamped at both ends; a count steps further (`3[r` returns to All plays
 from play 3). On a selected Repeat beat in Your edit, `]r` opens it at play 1
-and `[r` at its last play. Inside a play, `j`/`k` reach that play's owned gap
+and `[r` at its last play; with a count, `3]r` opens play 3 and `2[r` the
+second-to-last play, clamped to the Repeat's plays. Inside a play, `j`/`k` reach that play's owned gap
 branch when it has one, and `Enter` descends into nested groups and Repeats,
 whose plays `]r` then steps independently. `Backspace` keeps each outer play
 choice. The inspector's Previous/Next buttons and the footer teach the keys.

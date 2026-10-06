@@ -449,6 +449,22 @@ fn occurrences(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
             && d.revision() == saved,
         json!({"scoped":false,"selected":"Repeat"}),
         d.snapshot(),
+    )?;
+    // On the selected Repeat a count names the play: 3]r is play 3, 2[r the
+    // second play from the end.
+    let mut opened = Vec::new();
+    for keys in ["3]r", "2[r", "[r"] {
+        plain(d, keys)?;
+        d.settled()?;
+        opened.push(play(d)?.0);
+        d.key(Key::Backspace)?;
+        d.settled()?;
+    }
+    d.check(
+        "Counted ]r/[r on a selected Repeat open play N or the Nth play from the end",
+        opened == [Some(3), Some(2), Some(3)] && d.revision() == saved,
+        json!([3, 2, 3]),
+        json!(opened),
     )
 }
 
@@ -879,6 +895,26 @@ fn close_and_reopen(d: &mut Driver<'_>, _movie: &Path) -> Result<(), String> {
     focus_edit(d)?;
     let saved = document(d)?;
     let path = d.app().workspace.as_ref().ok_or("No project")?.path.clone();
+    // An unfinished recording refuses :close (the recorder rejects the
+    // command before the close readiness check, which unit tests cover).
+    plain(d, "qb")?;
+    d.command("close")?;
+    d.step("Refused close", true)?;
+    d.check(
+        ":close refuses while a macro is being recorded and keeps the project open",
+        d.app().workspace.is_some()
+            && d.app().macros.recording()
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("macro")),
+        json!("refused with the recording named"),
+        json!({"error":d.app().error,"open":d.app().workspace.is_some()}),
+    )?;
+    d.key(Key::Escape)?;
+    d.wait_for("Recording cancelled", |app| {
+        !app.macros.recording() && !app.macros.is_pending()
+    })?;
     d.key(Key::Colon)?;
     d.events("Type clo", vec![Event::Text("clo".into())])?;
     taught(d, "close the project", &[":close  close this project"])?;

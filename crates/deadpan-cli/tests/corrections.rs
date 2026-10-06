@@ -303,3 +303,62 @@ fn pause_corrections_check_the_seen_bounds_and_dry_runs_write_nothing() -> Resul
     );
     Ok(())
 }
+
+#[test]
+fn committing_while_the_app_holds_the_writer_is_refused_with_guidance() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = registered(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let empty = success(&["corrections", path, "--asset", "speech"])?;
+    let audio_stream = u32::try_from(empty["key"]["audio_stream"].as_u64().unwrap())?;
+    // Stands in for the native app: it keeps the writer lock while open.
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.save_transcript(
+        &TranscriptKey {
+            content: empty["key"]["content"].as_str().unwrap().to_owned(),
+            audio_stream,
+            model_sha256: "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002".into(),
+            language: "en".into(),
+            engine: "whisper.cpp 1.8.3".into(),
+        },
+        &Transcript::new(
+            AnalysedAudio {
+                origin: 0,
+                sample_rate: 48_000,
+                duration_cs: 200,
+            },
+            vec![Word {
+                text: "helo".into(),
+                start_cs: 10,
+                end_cs: 40,
+                probability: 0.9,
+                segment: 0,
+            }],
+        )?,
+    )?;
+    let edit = json!({"protocol":1,"expected_version":0,"asset":"speech",
+        "change":{"type":"edit_word","word":0,"expected_text":"helo","text":"hello"}});
+
+    // Inspection and dry runs only read, so they work while the app is open.
+    let seen = success(&["corrections", path, "--asset", "speech"])?;
+    assert_eq!(seen["words"][0]["text"], "helo");
+    let before = rows(&package)?;
+    let preview = json_of(&change(scratch.path(), &package, &edit, true)?)?;
+    assert_eq!(preview["committed"], false, "{preview}");
+
+    let output = change(scratch.path(), &package, &edit, false)?;
+    assert!(!output.status.success());
+    let refused = json_of(&output)?;
+    assert_eq!(refused["error"]["code"], "ProjectAlreadyOpen");
+    assert_eq!(
+        refused["error"]["message"],
+        "ProjectAlreadyOpen: The project is open in Deadpan, which holds its writer. Make the correction there with :correct, or close the project and run corrections again. Inspection and --dry-run work while it is open."
+    );
+    assert_eq!(rows(&package)?, before);
+    drop(writer);
+
+    // Once the app closes, the same request commits.
+    let applied = json_of(&change(scratch.path(), &package, &edit, false)?)?;
+    assert_eq!(applied["committed"], true, "{applied}");
+    Ok(())
+}

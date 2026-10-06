@@ -55,7 +55,7 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `sentence.next`, `sentence.previous` | `W` / `B`: recognized sentence starts |
 | `object.inner_word`, `object.around_word`, `object.inner_sentence`, `object.around_sentence` | `iw` / `aw` / `is` / `as`: Visual word or sentence at the Edit cursor, with up to 80 ms pause handles for `a`; also compose after `y`, `d`, `r` |
 | `pause.next`, `pause.previous` | `]p` / `[p`: start of the next / previous detected pause, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
-| `play.next`, `play.previous` | `]r` / `[r`: step the nearest open Repeat through All plays, then play 1..N (counts step further); on a selected Repeat beat, `]r` opens play 1 and `[r` the last play. Navigation only: operators never compose with it and Macros do not record it |
+| `play.next`, `play.previous` | `]r` / `[r`: step the nearest open Repeat through All plays, then play 1..N (counts step further); on a selected Repeat beat, `]r` opens play 1 and `[r` the last play, and a count `N` opens play N or the Nth play from the end. Navigation only: operators never compose with it and Macros do not record it |
 | `object.inner_pause`, `object.around_pause` | `ip` / `ap`: Visual pause at the Edit cursor, with up to 80 ms of the adjoining speech for `a`; also compose after `y`, `d`, `r` |
 | `shot.next`, `shot.previous` | `]s` / `[s`: start of the next / previous detected shot occurrence, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
 | `ai.generate` | `,a`: generate AI pictures for the selected pause (Hold) in Your edit, in the background; Normal Edit only, no count. `:generate [N]`, `:cancel-ai`, `:next-ai`, `:prev-ai`, `:pick-ai N`, `:preview-ai`, `:audition-ai`, `:accept-ai` and `:discard-ai` complete the workflow |
@@ -95,20 +95,46 @@ QWERTZ `"` as Shift+Num2 and QWERTZ `ö` as Semicolon. In logical mode the
 press's immediate `Text` companion therefore decides. `@`, `"`, `'`, `_` and `>`
 map to their existing strokes whatever Shift the layout needed. Text that names
 the delivered key keeps ordinary modifier handling, so AZERTY Shift+3 is a count.
+A letter of a non-Latin script (Cyrillic, Greek, Hebrew, Arabic and so on)
+has no egui key, so egui-winit delivers its physical position, and that
+position stands in for the Latin letter, as egui's own fallback intends: Russian
+`р` on the H key is `h`, `пп` is `gg`, Shift+`п` is `G`, and Greek `η` or Hebrew
+`י` on H is `h` too. Typed punctuation on those layouts keeps its logical
+meaning (Russian `.` and `,` are the period and comma wherever they sit).
 Any other companion means a character no binding can name, and the press is
-inert: AZERTY `&é(§çà`, QWERTZ `üöäß#`, US `#` and `<` and US Option+`[`
-(`“`) neither count nor act. QWERTZ `'` (Shift+`#`) is a mark jump, not `"`.
+inert: AZERTY `&é(§çà`, QWERTZ `üöäß#`, Turkish `ı`, Russian Shift+3 `№`, US
+`#` and `<` and US Option+`[` (`“`) neither count nor act. Latin-script letters
+stay inert because their layouts type every ASCII letter elsewhere. QWERTZ `'`
+(Shift+`#`) is a mark jump, not `"`.
 A press without companion text keeps the delivered identity. If macOS reports
 a dead key such as French `^` as a key press, it can still reach the binding at
 its position; dead keys are not replayed.
 Brackets join the logical symbols, so QWERTZ Option+6 and AZERTY
-Shift+Option+`)` produce `]`.
+Shift+Option+`)` produce `]`. A personal logical map may still contain
+`Shift+[` or `Shift+]`, which compiled before brackets became logical symbols;
+the file loads, but the Keys sheet's keymap status shows a **Keymap warning**
+because those strokes can never match (Shift+`[` types `{`): bind `"{"` or
+`"["` instead. Other shifted punctuation (`Shift+;`, `Shift+=`, `Shift+\`,
+``Shift+` ``) loads with a warning that it matches only on a layout whose Shift
+types that same symbol. The other logical symbols with Shift remain errors.
 
 Kestrel reservations are checked on the physical position first, so some layout
 characters stay unavailable while Kestrel runs: QWERTZ `[` (Option+5) and `@`
-(Option+L), and AZERTY `[` (Shift+Option+5). AZERTY `@` is unshifted and works.
-Mode routers for Camera, Trim, Gain, room tone and Place slice still read the
-delivered key only.
+(Option+L), and AZERTY `[` (Shift+Option+5) and `{` (Option+5). AZERTY `@` is
+unshifted and works. When Deadpan receives such a press (Kestrel is not running
+or did not intercept it), the status line says that Kestrel reserves the chord
+and teaches the alternative instead of ignoring it silently: for `[r`, `:scope
+play N` or `:scope all`; `[p` and `[s` have no command, so bind
+`pause.previous`/`shot.previous` elsewhere or go back with `gg` and a counted
+`]p`/`]s`; for `@`, `:macro a`. The press itself still does nothing.
+
+The fixed mode routers for Camera, Trim, Slip and Place slice read the same
+companion text before matching: AZERTY Shift+3 is the digit 3 in Camera's
+rectangle fields and Place slice counts, unshifted `&é"(` name no key there,
+and a non-Latin letter acts at its position (Russian `л` on L nudges Trim).
+Gain and room tone route only Enter, Space and Escape, which carry no layout
+character, so they need no translation. Corrections, the YouTube URL step and
+the Marks modal still match the delivered key.
 
 Egui uses `Quote` for both apostrophe and double quote. In logical mode the
 companion text decides; without it, and in physical mode, Quote preserves Shift:
@@ -197,9 +223,13 @@ While the command line holds only a partial verb, the footer lists the
 matching commands with their usage (`:cap` shows `:caption TEXT [at=top|center]
 [delay=4f]`), from the `COMMANDS` table in
 [`command.rs`](../crates/deadpan-app/src/navigation/command.rs). A unit test
-checks that every listed verb parses. Commands without a key path are therefore
+checks that every listed verb parses, and a drift test scans the parser's verb
+literals so a new verb missing from the sorted table fails. Commands without a key path are therefore
 discoverable by typing their first letters, besides the Keys sheet. `:close`
-closes the open project and `:sound-channels mono|stereo|none` sets how the next
+closes the open project with the same readiness as File › Close Project (it refuses,
+naming them, while unsaved previews such as Camera, Gain or Trim drafts, a Render
+decision, a recording, a save or an open panel are pending, and never discards a
+draft) and `:sound-channels mono|stereo|none` sets how the next
 sound without a declared speaker layout is heard, so neither needs the pointer.
 
 ## Counts, repetition and teaching
@@ -278,11 +308,18 @@ retains the original held-key regression.
 Current configuration covers Normal and timeline Visual paths and their teaching.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
-composes Japanese text in Command (`:caption`), the transcript word field and
-the YouTube URL field. During composition, Escape keeps the word and URL fields
-focused, as Command already did, so the commit lands in the field. egui-winit
-0.36 emits no IME Enabled/Disabled events. The remaining mode routers, dead keys,
-physical keyboards and a real OS input method remain open. Settings are file-based and require a restart; a
+drives Russian ЙЦУКЕН letters at their physical positions, and composes
+Japanese text in Command (`:caption`), the transcript word field and the YouTube
+URL field. egui applies a field's focus filter before the app reads a native
+batch, so a filter that followed composition could not keep focus when a
+Preedit and its Escape arrive together. The word and URL fields therefore keep
+focus through Escape like Command, installed in the frame focus is acquired;
+their sheet routers handle a plain Escape outside composition and leave the
+field explicitly, and the replay sends Preedit and Escape in one batch.
+egui-winit 0.36 emits no IME Enabled/Disabled events. These replays inject the
+events egui-winit would deliver: physical keyboard delivery on real layouts
+(including the macOS input-source switcher and dead keys) and a real OS input
+method remain unverified. Settings are file-based and require a restart; a
 native settings editor and live map replacement are not implemented. Semantic
 [dot-repeat supports picture cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
 support frame/beat/group motions, Visual selections, copies, cuts, pastes and

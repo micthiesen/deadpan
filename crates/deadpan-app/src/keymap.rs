@@ -26,14 +26,21 @@ impl Startup {
         );
         let admitted = file.contents.and_then(|contents| {
             contents
-                .map(|bytes| Bindings::from_json(&bytes))
+                .map(|bytes| Bindings::from_json_reporting(&bytes))
                 .transpose()
         });
         match admitted {
-            Ok(Some(bindings)) => Self {
+            Ok(Some((bindings, warnings))) => Self {
                 status: format!(
-                    "Custom editor keys · {} · {location} · Restart Deadpan after changing the file.",
-                    bindings.key_mode_label()
+                    "Custom editor keys · {} · {location} · Restart Deadpan after changing the file.{}",
+                    bindings.key_mode_label(),
+                    if warnings.is_empty() {
+                        String::new()
+                    } else {
+                        // Non-fatal: the map is installed; these keys just
+                        // cannot fire on every layout.
+                        format!(" Keymap warning: {}", warnings.join(" · "))
+                    }
                 ),
                 bindings,
                 failed: false,
@@ -105,6 +112,49 @@ mod tests {
         assert_eq!(
             setup.bindings.key(Key::A, Modifiers::NONE, false, false),
             None
+        );
+    }
+
+    #[test]
+    fn unreachable_logical_strokes_install_with_a_warning() {
+        let setup = Startup::from_file(input(Ok(Some(
+            br#"{"version":1,"key_mode":"logical","bindings":[
+                {"action":"pause.next","keys":[["Shift+]","p"],["}","p"]]},
+                {"action":"frame.next","keys":[["Shift+="],["l"]]}
+            ]}"#
+            .to_vec(),
+        ))));
+        assert!(!setup.failed, "{}", setup.status);
+        assert!(
+            setup
+                .status
+                .contains("Keymap warning: pause.next: Shift+] can never match")
+        );
+        assert!(
+            setup
+                .status
+                .contains("frame.next: Shift+= matches only where Shift types = itself")
+        );
+        let mut bindings = setup.bindings;
+        assert_eq!(
+            bindings.key(Key::CloseCurlyBracket, Modifiers::SHIFT, false, false),
+            None
+        );
+        assert_eq!(
+            bindings.key(Key::P, Modifiers::NONE, false, false),
+            Some(Action::Pause {
+                forward: true,
+                count: 1
+            })
+        );
+        let clean = Startup::from_file(input(Ok(Some(
+            br#"{"version":1,"key_mode":"physical","bindings":[{"action":"frame.next","keys":[["Shift+Backslash"]]}]}"#
+                .to_vec(),
+        ))));
+        assert!(
+            !clean.failed && !clean.status.contains("warning"),
+            "{}",
+            clean.status
         );
     }
 

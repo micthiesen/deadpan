@@ -977,7 +977,6 @@ dependencies = [
  "deadpan-analysis",
  "deadpan-audio",
  "deadpan-chaos",
- "deadpan-cli",
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-encode",

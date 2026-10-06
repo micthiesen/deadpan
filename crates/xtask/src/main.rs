@@ -47,6 +47,12 @@ fn main() -> ExitCode {
     }
 }
 
+/// Enables `deadpan-cli` test targets that declare `required-features`
+/// (the synthetic AI worker). The `deadpan-app` dev-dependency already unifies
+/// this feature into workspace builds, so naming it changes no build graph; it
+/// only keeps those targets from being skipped if that unification goes away.
+const SYNTHETIC_WORKER: &str = "deadpan-cli/synthetic-worker";
+
 /// Formatting, lints and tests for the workspace and the replay harness
 /// feature set. Tests use nextest when installed, then doc tests.
 fn gate() -> target_hygiene::Result<()> {
@@ -56,6 +62,8 @@ fn gate() -> target_hygiene::Result<()> {
         "clippy",
         "--workspace",
         "--all-targets",
+        "--features",
+        SYNTHETIC_WORKER,
         "--locked",
         "--",
         "-D",
@@ -78,6 +86,8 @@ fn gate() -> target_hygiene::Result<()> {
             "nextest",
             "run",
             "--workspace",
+            "--features",
+            SYNTHETIC_WORKER,
             "--locked",
             "--no-fail-fast",
         ])?;
@@ -91,9 +101,24 @@ fn gate() -> target_hygiene::Result<()> {
             "--locked",
             "--no-fail-fast",
         ])?;
-        run(&["test", "--workspace", "--locked", "--doc", "--no-fail-fast"])
+        run(&[
+            "test",
+            "--workspace",
+            "--features",
+            SYNTHETIC_WORKER,
+            "--locked",
+            "--doc",
+            "--no-fail-fast",
+        ])
     } else {
-        run(&["test", "--workspace", "--locked", "--no-fail-fast"])?;
+        run(&[
+            "test",
+            "--workspace",
+            "--features",
+            SYNTHETIC_WORKER,
+            "--locked",
+            "--no-fail-fast",
+        ])?;
         run(&[
             "test",
             "-p",

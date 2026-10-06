@@ -278,6 +278,33 @@ impl DeadpanApp {
         previews
     }
 
+    /// `:close`: the same readiness as File › Close Project. Unsaved previews
+    /// are never discarded silently; the user applies or cancels them first.
+    pub(super) fn close_command(&mut self) {
+        let previews = self.unsaved_previews();
+        let refusal = close_refusal(&CloseState {
+            project: self.workspace.is_some(),
+            previews: &previews,
+            busy: self.service.is_busy(),
+            importing: self.importing(),
+            render_decision: self.render.blocking(),
+            dialog: self.dialogs.is_open(),
+            macro_recording: self.macros.recording() || self.macros.is_pending(),
+            panel: self.marks.open
+                || self.models.open
+                || self.diagnostics.open
+                || self.storage.open
+                || self.help_open,
+        });
+        match refusal {
+            Some(refusal) => self.error = Some(refusal),
+            None => {
+                self.stop_playback();
+                self.submit(ProjectRequest::Close);
+            }
+        }
+    }
+
     /// Returns true when a requested window close must wait for an answer.
     pub(super) fn hold_close_for_previews(&mut self, context: &egui::Context) -> bool {
         if self.recovery.close_confirmed {
@@ -589,4 +616,142 @@ fn project_name(path: &std::path::Path) -> String {
     path.file_stem()
         .map(|stem| stem.to_string_lossy().into_owned())
         .unwrap_or_else(|| "The last project".into())
+}
+
+/// What `:close` must wait for; mirrors the menu's Close readiness.
+pub(super) struct CloseState<'a> {
+    pub project: bool,
+    pub previews: &'a [&'static str],
+    pub busy: bool,
+    pub importing: bool,
+    pub render_decision: bool,
+    pub dialog: bool,
+    pub macro_recording: bool,
+    pub panel: bool,
+}
+
+/// Why `:close` cannot close now, or `None` when it can.
+pub(super) fn close_refusal(state: &CloseState<'_>) -> Option<String> {
+    if !state.project {
+        return Some("No project is open.".into());
+    }
+    // The command being typed has already been submitted.
+    let previews = state
+        .previews
+        .iter()
+        .filter(|preview| **preview != "The command being typed")
+        .copied()
+        .collect::<Vec<_>>();
+    if !previews.is_empty() {
+        return Some(format!(
+            "Close would discard unsaved previews: {}. Apply them with Enter or cancel them with Esc, then :close. Saved edits are already in the project.",
+            previews.join(", ")
+        ));
+    }
+    if state.render_decision {
+        return Some("Finish or cancel the Render decision first, then :close.".into());
+    }
+    if state.macro_recording {
+        return Some("Save (q) or cancel (Esc) the macro recording first, then :close.".into());
+    }
+    if state.busy || state.importing {
+        return Some(
+            "The project is still saving or importing; :close again when it finishes.".into(),
+        );
+    }
+    if state.dialog || state.panel {
+        return Some("Close the open panel or dialog first, then :close.".into());
+    }
+    None
+}
+
+#[cfg(test)]
+mod close_tests {
+    use super::*;
+
+    fn ready<'a>() -> CloseState<'a> {
+        CloseState {
+            project: true,
+            previews: &[],
+            busy: false,
+            importing: false,
+            render_decision: false,
+            dialog: false,
+            macro_recording: false,
+            panel: false,
+        }
+    }
+
+    #[test]
+    fn close_waits_for_every_condition_the_menu_waits_for() {
+        assert_eq!(close_refusal(&ready()), None);
+        let refused = |state: CloseState<'_>, needle: &str| {
+            let refusal = close_refusal(&state).expect("refused");
+            assert!(refusal.contains(needle), "{refusal}");
+        };
+        refused(
+            CloseState {
+                project: false,
+                ..ready()
+            },
+            "No project",
+        );
+        refused(
+            CloseState {
+                previews: &["Trim", "Gain"],
+                ..ready()
+            },
+            "unsaved previews: Trim, Gain",
+        );
+        refused(
+            CloseState {
+                render_decision: true,
+                ..ready()
+            },
+            "Render decision",
+        );
+        refused(
+            CloseState {
+                busy: true,
+                ..ready()
+            },
+            "still saving",
+        );
+        refused(
+            CloseState {
+                importing: true,
+                ..ready()
+            },
+            "still saving",
+        );
+        refused(
+            CloseState {
+                macro_recording: true,
+                ..ready()
+            },
+            "macro recording",
+        );
+        refused(
+            CloseState {
+                dialog: true,
+                ..ready()
+            },
+            "panel or dialog",
+        );
+        refused(
+            CloseState {
+                panel: true,
+                ..ready()
+            },
+            "panel or dialog",
+        );
+        // The already-submitted command text is not a preview to protect.
+        assert_eq!(
+            close_refusal(&CloseState {
+                previews: &["The command being typed"],
+                ..ready()
+            }),
+            None
+        );
+    }
 }

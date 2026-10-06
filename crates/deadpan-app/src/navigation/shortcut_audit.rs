@@ -92,15 +92,7 @@ fn audit_layout_reservation(
             super::EditSelection::Object,
         ] {
             for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
-                for (logical, logical_text) in [
-                    (Key::Comma, None),
-                    (Key::Period, None),
-                    (Key::Colon, None),
-                    (Key::N, None),
-                    (Key::A, None),
-                    (Key::Quote, None),
-                    (Key::Num2, Some("@")),
-                ] {
+                for (logical, logical_text) in layout_cases(reservation.key) {
                     let mut bindings = template.clone();
                     bindings.clear();
                     for stroke in &prefix {
@@ -136,6 +128,32 @@ fn audit_layout_reservation(
             }
         }
     }
+}
+
+/// Logical identities a layout can deliver at a reserved physical chord, with
+/// the immediate companion text the router reads. Typed text covers the
+/// QWERTZ/AZERTY Option brackets and `@`, `]r`/`[r`, quotes, an AZERTY digit
+/// symbol, and a non-Latin letter at its own physical position.
+const LAYOUT_TEXT_CASES: usize = 15;
+
+fn layout_cases(physical: Key) -> [(Key, Option<&'static str>); LAYOUT_TEXT_CASES] {
+    [
+        (Key::Comma, None),
+        (Key::Period, None),
+        (Key::Colon, None),
+        (Key::N, None),
+        (Key::A, None),
+        (Key::Quote, None),
+        (Key::Num2, Some("@")),
+        (Key::OpenBracket, Some("[")),
+        (Key::CloseBracket, Some("]")),
+        (Key::OpenCurlyBracket, Some("{")),
+        (Key::R, Some("r")),
+        (Key::Num3, Some("\"")),
+        (Key::Num3, Some("3")),
+        (physical, Some("&")),
+        (physical, Some("ж")),
+    ]
 }
 
 /// Check a caller-read UTF-8 Shortcuts.swift against the qualified registry.
@@ -230,95 +248,8 @@ fn audit_reservation_for(
                 );
             }
         }
-        for repeat in [false, true] {
-            for background in [false, true] {
-                let action = super::room_tone::route_key(
-                    reservation.key,
-                    reservation.modifiers,
-                    text,
-                    background,
-                    ime,
-                    repeat,
-                );
-                record(
-                    report,
-                    reservation,
-                    format!(
-                        "Room tone text={text} background={background} ime={ime} repeat={repeat}"
-                    ),
-                    action.map(|action| format!("room-tone={action:?}")),
-                );
-                let gain = super::gain::route_key(
-                    reservation.key,
-                    reservation.modifiers,
-                    text,
-                    background,
-                    ime,
-                    repeat,
-                );
-                record(
-                    report,
-                    reservation,
-                    format!("Gain text={text} background={background} ime={ime} repeat={repeat}"),
-                    gain.map(|action| format!("gain={action:?}")),
-                );
-                let slip = super::slip::route_key(
-                    reservation.key,
-                    reservation.modifiers,
-                    text,
-                    background,
-                    ime,
-                    repeat,
-                );
-                record(
-                    report,
-                    reservation,
-                    format!("Slip text={text} background={background} ime={ime} repeat={repeat}"),
-                    slip.map(|action| format!("slip={action:?}")),
-                );
-                let splice = super::splice::route_key(
-                    reservation.key,
-                    reservation.modifiers,
-                    text,
-                    background,
-                    ime,
-                    repeat,
-                );
-                record(
-                    report,
-                    reservation,
-                    format!(
-                        "Place slice text={text} background={background} ime={ime} repeat={repeat}"
-                    ),
-                    splice.map(|action| format!("splice={action:?}")),
-                );
-                let trim = super::trim::route_key(
-                    reservation.key,
-                    reservation.modifiers,
-                    text,
-                    background,
-                    ime,
-                    repeat,
-                );
-                record(
-                    report,
-                    reservation,
-                    format!("Trim text={text} background={background} ime={ime} repeat={repeat}"),
-                    trim.map(|action| format!("trim={action:?}")),
-                );
-            }
-            let camera =
-                super::route_camera_key(reservation.key, reservation.modifiers, text, ime, repeat);
-            record(
-                report,
-                reservation,
-                format!("Camera text={text} ime={ime} repeat={repeat}"),
-                (!matches!(
-                    camera,
-                    None | Some(CameraKey::ClearCount | CameraKey::Ignore | CameraKey::Other)
-                ))
-                .then(|| format!("camera={camera:?}")),
-            );
+        for companion in MODE_COMPANIONS {
+            audit_modes(reservation, report, text, ime, companion);
         }
         let text_action = super::text_action(reservation.key, reservation.modifiers, text, ime);
         let inspector = super::inspector_parameter_key(
@@ -334,6 +265,86 @@ fn audit_reservation_for(
             format!("Native text/inspector text={text} ime={ime}"),
             (text_action.is_some() || inspector)
                 .then(|| format!("text={text_action:?}, inspector={inspector}")),
+        );
+    }
+}
+
+/// Mode routers see the press after `mode_key` reads its companion text:
+/// none, a typed digit (AZERTY Shift+digit) and typed brackets/letters.
+const MODE_COMPANIONS: [Option<&str>; 4] = [None, Some("5"), Some("["), Some("h")];
+
+fn audit_modes(
+    reservation: &Reservation,
+    report: &mut ShortcutAudit,
+    text: bool,
+    ime: bool,
+    companion: Option<&str>,
+) {
+    // `None` is a character no mode router names; it reaches none of them.
+    let routed = super::mode_key(reservation.key, reservation.modifiers, companion);
+    for repeat in [false, true] {
+        for background in [false, true] {
+            let detail = format!(
+                "companion={companion:?} text={text} background={background} ime={ime} repeat={repeat}"
+            );
+            let room_tone = routed.and_then(|(key, modifiers)| {
+                super::room_tone::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Room tone {detail}"),
+                room_tone.map(|action| format!("room-tone={action:?}")),
+            );
+            let gain = routed.and_then(|(key, modifiers)| {
+                super::gain::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Gain {detail}"),
+                gain.map(|action| format!("gain={action:?}")),
+            );
+            let slip = routed.and_then(|(key, modifiers)| {
+                super::slip::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Slip {detail}"),
+                slip.map(|action| format!("slip={action:?}")),
+            );
+            let splice = routed.and_then(|(key, modifiers)| {
+                super::splice::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Place slice {detail}"),
+                splice.map(|action| format!("splice={action:?}")),
+            );
+            let trim = routed.and_then(|(key, modifiers)| {
+                super::trim::route_key(key, modifiers, text, background, ime, repeat)
+            });
+            record(
+                report,
+                reservation,
+                format!("Trim {detail}"),
+                trim.map(|action| format!("trim={action:?}")),
+            );
+        }
+        let camera = routed.and_then(|(key, modifiers)| {
+            super::route_camera_key(key, modifiers, text, ime, repeat)
+        });
+        record(
+            report,
+            reservation,
+            format!("Camera companion={companion:?} text={text} ime={ime} repeat={repeat}"),
+            (!matches!(
+                camera,
+                None | Some(CameraKey::ClearCount | CameraKey::Ignore | CameraKey::Other)
+            ))
+            .then(|| format!("camera={camera:?}")),
         );
     }
 }
@@ -432,10 +443,12 @@ mod tests {
             );
         }
         let editor_cases = prefix_cases * 4 * 4; // Normal/Empty/Range/Object × text/IME.
-        // Five drafts × repeat/background, Camera × repeat, and native input,
-        // each under all four text/IME combinations.
-        let mode_cases = 4 * (5 * 2 * 2 + 2 + 1);
-        let layout_cases = prefix_cases * 4 * 4 * 7; // Includes paired logical @.
+        // Five drafts × repeat/background and Camera × repeat under each mode
+        // companion, plus native input, each under all four text/IME
+        // combinations.
+        let mode_cases = 4 * (MODE_COMPANIONS.len() * (5 * 2 * 2 + 2) + 1);
+        // Includes paired logical @, brackets, quotes, digits and letters.
+        let layout_cases = prefix_cases * 4 * 4 * LAYOUT_TEXT_CASES;
         assert_eq!(
             report.routing_cases,
             62 * 3 * 2 * (editor_cases + mode_cases + layout_cases)
