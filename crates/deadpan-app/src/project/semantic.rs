@@ -52,8 +52,9 @@ pub enum RepeatableEdit {
     },
     Ungroup,
     /// A creative edit of the selected beat or at the cursor that keeps its
-    /// exact parameters: gain and saturation, reverse and ping-pong pauses,
-    /// tails and gags. Dot applies the same instruction to the current
+    /// exact parameters: gain and saturation, pauses, reverse and ping-pong
+    /// pauses, tails, framing, cutaways, captions, speed, pitch, pause
+    /// durations and gags. Dot applies the same instruction to the current
     /// selection, which resolves it afresh.
     Parameter(SemanticInstruction),
 }
@@ -72,6 +73,14 @@ impl RepeatableEdit {
                 | SemanticInstruction::InsertPause { .. }
                 | SemanticInstruction::SetFraming { .. }
                 | SemanticInstruction::Gag { .. }
+                | SemanticInstruction::SetGag { .. }
+                | SemanticInstruction::SetAudioEdges { .. }
+                | SemanticInstruction::SetAudioLag { .. }
+                | SemanticInstruction::SetCutaway { .. }
+                | SemanticInstruction::SetCaption { .. }
+                | SemanticInstruction::Retime { .. }
+                | SemanticInstruction::Pitch { .. }
+                | SemanticInstruction::SetHoldDuration { .. }
         )
     }
 }

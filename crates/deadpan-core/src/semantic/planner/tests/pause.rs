@@ -480,6 +480,61 @@ fn nothing_happens_holds_room_tone_then_true_silence_in_one_group() {
             (4, HoldAudio::Silence)
         ]
     );
+    // `:gag-set tone=7f silence=2f` changes each pause's own length and
+    // repins the label, as one compound within SetGag's step estimate.
+    let changed = crate::GagRecipe::NothingHappens {
+        version: crate::GAG_RECIPE_VERSION,
+        tone: frames_length(7),
+        silence: frames_length(2),
+        register,
+    };
+    let edited = plan_semantic_with_speech(
+        &document,
+        &context("root", 3),
+        &program(vec![
+            SemanticInstruction::Gag { recipe },
+            SemanticInstruction::SetGag {
+                recipe: changed,
+                parameters: Vec::new(),
+            },
+        ]),
+        SemanticRegisterBank {
+            entries: &bank,
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        |_, _| Ok(moment.clone()),
+        |_| Err(crate::speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: crate::HoldAudio::Silence,
+            })
+        },
+    )
+    .unwrap();
+    let group = edited.context.selected_child.clone().unwrap();
+    assert_eq!(edited.document.nodes()[&group].label, changed.label());
+    let NodeKind::Sequence { children } = &edited.document.nodes()[&group].kind else {
+        panic!("the gag is a group")
+    };
+    let lengths: Vec<_> = children
+        .iter()
+        .map(|child| match &edited.document.nodes()[child].kind {
+            NodeKind::Hold { recipe } => recipe.duration.frames(),
+            other => panic!("{other:?}"),
+        })
+        .collect();
+    assert_eq!(lengths, [7, 2]);
+    assert_eq!(edited.document.duration().unwrap().frames(), 7 + 9);
+    let reverted = crate::apply(&document, edited.request.as_ref().unwrap())
+        .unwrap()
+        .inverse
+        .apply(&edited.document)
+        .unwrap();
+    assert_eq!(reverted, document);
     // The measured selected placement of a native copy yields the same range.
     let mut selected = moment.clone();
     selected.audio_mapping = crate::SourceAudioMapping::SelectedPlacement {
@@ -951,6 +1006,66 @@ fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
         .apply(&planned.document)
         .unwrap();
     assert_eq!(reverted.duration().unwrap().frames(), 7);
+    // `:gag-set pause=8f` lengthens the pause, rings the tail through it and
+    // shows the reaction over all of it again, relabelled, in one compound.
+    let longer = crate::GagRecipe::AreWeDone {
+        version: crate::GAG_RECIPE_VERSION,
+        pause: frames_length(8),
+        register,
+    };
+    let edited = plan_semantic_with_speech(
+        &document,
+        &context("root", 3),
+        &program(vec![
+            SemanticInstruction::Gag {
+                recipe: crate::GagRecipe::AreWeDone {
+                    version: crate::GAG_RECIPE_VERSION,
+                    pause: frames_length(5),
+                    register,
+                },
+            },
+            SemanticInstruction::SetGag {
+                recipe: longer,
+                parameters: Vec::new(),
+            },
+        ]),
+        SemanticRegisterBank {
+            entries: &bank,
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        |_, _| Ok(moment.clone()),
+        |_| Err(crate::speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: crate::HoldAudio::Silence,
+            })
+        },
+    )
+    .unwrap();
+    let group = edited.context.selected_child.clone().unwrap();
+    assert_eq!(edited.document.nodes()[&group].label, longer.label());
+    let node = &edited.document.nodes()[pause];
+    assert!(matches!(
+        &node.kind,
+        NodeKind::Hold { recipe } if recipe.duration.frames() == 8
+            && recipe.audio == crate::HoldAudio::Tail {
+                maximum: FrameDuration::new(8).unwrap(),
+                effect: crate::TailEffect::Reverb,
+            }
+    ));
+    assert_eq!(node.cutaways.len(), 1);
+    assert_eq!(node.cutaways[0].range, range(0, 8));
+    assert_eq!(edited.document.duration().unwrap().frames(), 7 + 8);
+    let reverted = crate::apply(&document, edited.request.as_ref().unwrap())
+        .unwrap()
+        .inverse
+        .apply(&edited.document)
+        .unwrap();
+    assert_eq!(reverted, document);
 }
 
 #[test]

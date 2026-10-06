@@ -85,6 +85,24 @@ pub enum Work {
         candidate: Arc<crate::project::generation::CandidatePreview>,
         frame: ProjectFrame,
     },
+    /// The middle picture of one Ready AI variant's sampled master, for its
+    /// inspector thumbnail. Read through the workspace's generated-media
+    /// handle; never part of the edit's picture.
+    CandidateThumbnail {
+        workspace: Arc<Workspace>,
+        thumbnail: Arc<CandidateThumbnail>,
+    },
+}
+
+/// What a variant thumbnail decodes: the sampled master's verified object,
+/// its receipt raster and frame count, and the canvas its conditioning
+/// letterbox is cropped to (as acceptance records it).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CandidateThumbnail {
+    pub object: deadpan_core::GeneratedObjectRef,
+    pub frames: u32,
+    pub size: (u32, u32),
+    pub canvas: [u32; 2],
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -617,6 +635,14 @@ fn perform_with(
     if let Work::Copied { view, frame } = &request.work {
         return slice_view::copied_picture(view, *frame, proposal, &request.cancelled, retained);
     }
+    if let Work::CandidateThumbnail {
+        workspace,
+        thumbnail,
+    } = &request.work
+    {
+        *retained = None;
+        return candidate_thumbnail(workspace, thumbnail, &request.cancelled);
+    }
     let (summary, id) = match &request.work {
         Work::Open(path) => {
             *retained = None;
@@ -636,7 +662,8 @@ fn perform_with(
         | Work::Proposed { .. }
         | Work::EditedProposed { .. }
         | Work::Copied { .. }
-        | Work::Candidate { .. } => {
+        | Work::Candidate { .. }
+        | Work::CandidateThumbnail { .. } => {
             unreachable!("project requests handled above")
         }
     };
@@ -810,6 +837,47 @@ fn candidate_plan<'a>(
         });
     }
     Ok(&retained.as_ref().expect("admitted candidate plan").plan)
+}
+
+/// Decode one Ready variant's middle picture for its thumbnail.
+fn candidate_thumbnail(
+    workspace: &Workspace,
+    thumbnail: &CandidateThumbnail,
+    cancelled: &AtomicBool,
+) -> Result<Picture, String> {
+    let mut source = deadpan_cli::picture::open_candidate_master(
+        &workspace.generated,
+        &thumbnail.object,
+        thumbnail.frames,
+        thumbnail.size,
+        cancelled,
+    )
+    .map_err(|error| error.to_string())?;
+    let id = source
+        .index()
+        .index()
+        .frames()
+        .get(thumbnail.frames as usize / 2)
+        .ok_or("The AI variant has no pictures.")?
+        .identity;
+    let decoded = source
+        .frame(id, FRAME_TIMEOUT, cancelled)
+        .map_err(|error| error.to_string())?;
+    let frame = render_frame(decoded, source.info())?;
+    let frame = deadpan_cli::picture::fill_canvas_aspect(frame, thumbnail.canvas)
+        .map_err(|error| error.to_string())?;
+    Ok(Picture {
+        summary: None,
+        id,
+        frame: Some(frame),
+        canvas: None,
+        framing: Vec::new(),
+        framing_gap: false,
+        follow_point: None,
+        picture_context: None,
+        captions: Vec::new(),
+        tier: PictureTier::Original,
+    })
 }
 
 fn background_picture(canvas: Option<(u32, u32)>) -> Picture {

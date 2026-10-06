@@ -1,6 +1,7 @@
 //! Native source preview and the shared headless command entrypoint.
 
 mod dialogs;
+mod gag_presets;
 mod gain;
 mod keymap;
 mod keymap_file;

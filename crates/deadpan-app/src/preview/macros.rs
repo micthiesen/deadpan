@@ -17,6 +17,16 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    /// The selected direct child as it was when the command was entered.
+    pub(super) fn selected_node(&self) -> Option<&deadpan_core::BeatNode> {
+        self.context
+            .selected_child
+            .as_ref()
+            .and_then(|node| self.base.document.nodes().get(node))
+    }
+    pub(super) fn frame_rate(&self) -> deadpan_core::FrameRate {
+        self.base.document.presentation_basis().frame_rate
+    }
     fn object_selected(&self) -> bool {
         matches!(
             self.context.visual_selection,
@@ -160,6 +170,13 @@ pub(super) struct State {
 impl State {
     pub fn recording(&self) -> bool {
         self.recording.is_some()
+    }
+
+    /// Replace the pending action's success message.
+    pub fn set_summary(&mut self, summary: String) {
+        if let Some(pending) = &mut self.pending {
+            pending.summary = Some(summary);
+        }
     }
 
     pub fn is_pending(&self) -> bool {
@@ -331,7 +348,15 @@ impl DeadpanApp {
                 | Action::Edit(BeatEdit::Cutaway(
                     crate::navigation::cutaway::CutawayInput::Place { .. }
                 ))
-                | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
+                | Action::Edit(
+                    BeatEdit::InsertHold(_)
+                        | BeatEdit::InsertBlack(_)
+                        | BeatEdit::Retime(_)
+                        | BeatEdit::Pitch(_)
+                        | BeatEdit::HoldDuration(_)
+                        | BeatEdit::AudioLag { .. }
+                )
+                | Action::Mute
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep
@@ -351,7 +376,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses, reverses, J- and L-cuts, tails, gain and saturation changes, whole-beat cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -445,6 +470,16 @@ impl DeadpanApp {
                 navigation::command::Entry::RecipeInspect(_)
                 | navigation::command::Entry::GagInspect(_),
             ) => true,
+            // Recorded as one semantic recipe change.
+            Ok(
+                navigation::command::Entry::GagSet(_)
+                | navigation::command::Entry::GagPreset { .. }
+                | navigation::command::Entry::Edge { .. },
+            ) => self.macro_action_allowed(Action::Group),
+            // Library reads and writes change no project.
+            Ok(navigation::command::Entry::GagSave(_) | navigation::command::Entry::GagPresets) => {
+                true
+            }
             Ok(navigation::command::Entry::DeleteRole(_)) => {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
@@ -453,6 +488,7 @@ impl DeadpanApp {
             Ok(
                 navigation::command::Entry::Gain(Some(_))
                 | navigation::command::Entry::GainStep(_)
+                | navigation::command::Entry::GainMute
                 | navigation::command::Entry::Saturate(_),
             ) => self.macro_action_allowed(Action::GainStep(0)),
             // Recorded as one semantic caption, checked like a whole-beat cutaway.
@@ -812,6 +848,61 @@ impl DeadpanApp {
         true
     }
 
+    /// The semantic instruction for a beat edit that has one, so a macro
+    /// records it and `.` repeats it: speed, pitch, pause length, audio lag
+    /// and placing a cutaway. Clearing cutaways keeps its direct edit.
+    pub(super) fn semantic_beat_edit(
+        &self,
+        edit: &navigation::BeatEdit,
+    ) -> Option<Result<SemanticInstruction, String>> {
+        use navigation::BeatEdit;
+        Some(match edit {
+            BeatEdit::Retime(input) => Ok(SemanticInstruction::Retime {
+                speed: input.speed,
+                pitch: input.pitch,
+                wrap: input.wrap,
+            }),
+            BeatEdit::Pitch(semitones) => Ok(SemanticInstruction::Pitch {
+                semitones: *semitones,
+            }),
+            BeatEdit::AudioLag { earlier, amount } => self
+                .workspace
+                .as_ref()
+                .ok_or_else(|| "Open a project first.".to_owned())
+                .and_then(|workspace| {
+                    let rate = workspace.document.presentation_basis().frame_rate;
+                    let samples = amount
+                        .map(|amount| amount.samples(rate))
+                        .transpose()?
+                        .map_or(0, |samples| samples.0);
+                    Ok(SemanticInstruction::SetAudioLag {
+                        offset: deadpan_core::AudioSample(if *earlier {
+                            -samples
+                        } else {
+                            samples
+                        }),
+                    })
+                }),
+            BeatEdit::HoldDuration(duration) => u32::try_from(duration.frames())
+                .ok()
+                .and_then(NonZeroU32::new)
+                .map(|frames| SemanticInstruction::SetHoldDuration {
+                    length: deadpan_core::PauseLength::Frames { frames },
+                })
+                .ok_or_else(|| "A pause needs at least one frame.".to_owned()),
+            BeatEdit::Cutaway(crate::navigation::cutaway::CutawayInput::Place {
+                register,
+                fit,
+            }) => RegisterName::new(register.or_else(|| self.copied.selected()).unwrap_or('"'))
+                .map(|register| SemanticInstruction::SetCutaway {
+                    register,
+                    fit: *fit,
+                })
+                .map_err(|error| error.message),
+            _ => return None,
+        })
+    }
+
     pub(super) fn apply_recorded_instruction(
         &mut self,
         target: Result<Capture, String>,
@@ -937,11 +1028,12 @@ impl DeadpanApp {
                 repeat_version,
             };
             self.stop_playback();
+            let summary = super::semantic::applied_summary(&instruction, &captured.context);
             if self.submit(ProjectRequest::Macro(operation.clone())) {
                 self.macros.pending = Some(Pending {
                     operation,
                     capture: captured,
-                    summary: super::semantic::applied_text(&instruction),
+                    summary,
                     instruction: self.macros.recording().then_some(instruction),
                     owns_cursor: true,
                 });
@@ -1114,7 +1206,28 @@ impl DeadpanApp {
                 if pending.owns_cursor && pending.capture.matches_without_selection(self) {
                     self.selected_beat = pending.capture.context.selected_child.clone();
                 }
-                self.error = Some(error);
+                // A request that would change nothing is reported as a
+                // message, like the direct edits' "No edit was made".
+                if error.to_ascii_lowercase().ends_with("no edit was made") {
+                    let text = error
+                        .split_once(": ")
+                        .map_or(error.as_str(), |(_, text)| text);
+                    let mut chars = text.chars();
+                    self.error = None;
+                    self.message = Some(format!(
+                        "{}{}.",
+                        chars
+                            .next()
+                            .map(|first| first.to_uppercase().to_string())
+                            .unwrap_or_default(),
+                        chars
+                            .as_str()
+                            .replace("; no edit was made", ". No edit was made")
+                            .trim_end_matches('.')
+                    ));
+                } else {
+                    self.error = Some(error);
+                }
             }
             Ok(receipt) => {
                 let visible = completion_visible(
@@ -1148,8 +1261,9 @@ impl DeadpanApp {
                         "{}{}.",
                         pending
                             .summary
-                            .clone()
-                            .unwrap_or_else(|| "Action completed".into()),
+                            .as_deref()
+                            .unwrap_or("Action completed")
+                            .trim_end_matches('.'),
                         if self.macros.recording() {
                             " and recorded"
                         } else {

@@ -510,3 +510,33 @@ fn adversarial_generation_frames() {
     });
     report.assert_clean();
 }
+
+#[test]
+fn attempt_providers_are_seeded_variants_below_the_worker_seed_limit() {
+    let base = provider();
+    assert_eq!(base.for_attempt(1), base);
+    assert_eq!(base.for_attempt(0), base);
+    let second = base.for_attempt(2);
+    assert_eq!(second.seed, base.seed + 1);
+    assert_eq!(
+        ProviderSelection {
+            seed: base.seed,
+            ..second.clone()
+        },
+        base,
+        "only the seed varies"
+    );
+    let high = ProviderSelection {
+        seed: (1 << 32) - 1,
+        ..base.clone()
+    };
+    assert_eq!(high.for_attempt(1).seed, (1 << 32) - 1);
+    assert_eq!(high.for_attempt(2).seed, 0);
+    assert_eq!(
+        high.for_attempt(u64::MAX).seed,
+        ((1_u64 << 32) - 1 + (u64::MAX - 1) % (1 << 32)) % (1 << 32)
+    );
+    for ordinal in [2, 3, 1_000, u64::MAX] {
+        assert!(base.for_attempt(ordinal).seed < 1 << 32);
+    }
+}

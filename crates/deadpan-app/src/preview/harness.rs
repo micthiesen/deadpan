@@ -14,6 +14,7 @@ mod accessibility;
 mod ai_pause;
 mod audio_treatments;
 mod captions;
+mod creative_dot;
 mod cutaway;
 mod delete_range;
 mod edit_latency;
@@ -304,6 +305,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(library),
                             if name == "ai-pause" {
                                 ai_pause::backend()
+                            } else if name == "ai-variants" {
+                                ai_pause::variants_backend()
                             } else {
                                 crate::project::generation::Backend::Environment
                             },
@@ -322,6 +325,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         )]);
                         app.feedback.simulate_playback = true;
                         app.feedback.original_fixture = Some(fixture.to_owned());
+                        app.gag_presets =
+                            crate::gag_presets::GagPresets::at(replay_root.join("gag-presets.json"));
+                        app.bundled_sounds = Some(replay_root.join("Sounds"));
                         app.use_proxy_locations(
                             Some(
                                 deadpan_cli::proxy::cache::ProxyCache::at(&replay_root.join("Caches/Proxies"))
@@ -454,6 +460,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     gain::run(&mut driver)
                 } else if name == "ai-pause" {
                     ai_pause::run(&mut driver)
+                } else if name == "ai-variants" {
+                    ai_pause::variants(&mut driver)
                 } else if name == "model-packs" {
                     model_packs::run(&mut driver)
                 } else {

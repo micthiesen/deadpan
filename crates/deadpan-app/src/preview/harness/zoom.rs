@@ -123,9 +123,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                 // Resolved follows are quantized to the framing grid.
                 (approx(pose.center_x) - 0.58).abs() < 0.01 && (approx(pose.scale) - 1.35).abs() < 1e-6
             })
-            && d.app().message.as_deref() == Some("Framing saved: 1.350× following Target 1")
+            && d.app().message.as_deref() == Some("Framing saved: 1.350× following Target 1.")
             && d.app().sequence_length() == duration,
-        json!({"framing":"Follow target-1 at 1.35","center_x":0.58,"message":"Framing saved: 1.350× following Target 1","frames":duration}),
+        json!({"framing":"Follow target-1 at 1.35","center_x":0.58,"message":"Framing saved: 1.350× following Target 1.","frames":duration}),
         json!({"framing":format!("{followed:?}"),"shown":format!("{shown:?}"),"message":d.app().message,"frames":d.app().sequence_length()}),
     )?;
     let widgets = d.widgets().to_string();
@@ -214,8 +214,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         ":zoom off returns the whole beat to the full picture",
         framing(d).is_none()
-            && d.app().message.as_deref() == Some("Framing saved: full picture, no framing"),
-        json!({"framing":null,"message":"Framing saved: full picture, no framing"}),
+            && d.app().message.as_deref() == Some("Framing saved: full picture, no framing."),
+        json!({"framing":null,"message":"Framing saved: full picture, no framing."}),
         json!({"framing":format!("{:?}", framing(d)),"message":d.app().message}),
     )?;
 

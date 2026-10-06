@@ -52,6 +52,20 @@ cannot appear retroactively in an old history. Existing Retime document recipes
 retain their meaning. Migration validates the complete history on a consistent
 copy and preserves its pre-migration backup.
 
+Native `:retime`, `:wrap-retime`, `:pitch` and `:hold-duration` commit as one
+semantic instruction each (`Retime { speed, pitch, wrap }`, `Pitch { semitones }`,
+`SetHoldDuration { length }`) through the shared planner, which authors exactly
+the `WrapRetime`, `SetRetime` and `SetHoldDuration` commands above against the
+staged selected direct child. A macro therefore records them, and `.` repeats
+them on another beat with the same speed applied to that beat's own input, the
+same shift at that beat's own speed, or the same pause length. An unchanged
+speed and pitch, or an unchanged pause length, refuses without a revision. The
+wrapper becomes the selected beat and the cursor stays at its start. Evidence:
+`speed_wraps_a_beat_then_updates_its_own_retime_from_the_exact_input`,
+`pitch_keeps_the_speed_or_wraps_at_unity_and_zero_restores_preservation`,
+`a_pause_duration_changes_only_the_selected_hold` (each replayed as a compound
+and inverted) and the `creative-dot` replay.
+
 ## Pitch shift
 
 `PitchPolicy::Shift { semitones }` is pitch-preserving processing with a fixed

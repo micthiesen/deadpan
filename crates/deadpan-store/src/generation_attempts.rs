@@ -786,8 +786,13 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
             )?;
         }
         if let Some(receipt) = &attempt.bundle_receipt {
-            validate_bundle_receipt(&request, attempt.declared_candidate.as_ref(), receipt)
-                .map_err(|_| integrity("bundle receipt does not match its request"))?;
+            validate_bundle_receipt(
+                &request,
+                attempt.ordinal,
+                attempt.declared_candidate.as_ref(),
+                receipt,
+            )
+            .map_err(|_| integrity("bundle receipt does not match its request"))?;
         }
     }
 
@@ -1171,7 +1176,7 @@ impl ProjectStore {
         if receipt.availability != CandidateAvailability::Present {
             return Err(attempt_error("new bundle receipt is not present"));
         }
-        validate_bundle_receipt(&request, Some(&expected), &receipt)?;
+        validate_bundle_receipt(&request, stored.ordinal, Some(&expected), &receipt)?;
         if stored.checkpoint.state == JobState::Ready {
             if stored.bundle_receipt.as_ref() == Some(&receipt) {
                 return Ok(AttemptMutationOutcome::Duplicate);
@@ -1322,41 +1327,62 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let stored = read_attempt(&transaction, identity)?;
-        let Some(mut receipt) = stored.bundle_receipt else {
-            return Err(attempt_error(
-                "attempt has no bundle validation receipt to evict",
-            ));
-        };
-        if receipt.availability == CandidateAvailability::Evicted {
-            return Ok(AttemptMutationOutcome::Duplicate);
-        }
-        receipt.availability = CandidateAvailability::Evicted;
-        let bundle = serde_json::to_string(&receipt)?;
-        if bundle.len() > MAX_ATTEMPT_JSON_BYTES {
-            return Err(attempt_error(
-                "bundle validation receipt exceeds the persistence limit",
-            ));
-        }
-        let updated = transaction.execute(
-            "UPDATE generation_bundle_receipts SET bundle=?1, availability='evicted'
-             WHERE request_id=?2 AND attempt_id=?3",
-            params![
-                bundle,
-                identity.request_id.as_str(),
-                identity.attempt_id.as_str()
-            ],
-        )?;
-        if updated != 1 {
-            return Err(attempt_error("bundle receipt disappeared during eviction"));
-        }
-        transaction.execute(
-            "UPDATE generation_attempt_heads SET selected_ready_attempt_id=NULL
-             WHERE request_id=?1 AND selected_ready_attempt_id=?2",
-            params![identity.request_id.as_str(), identity.attempt_id.as_str()],
-        )?;
+        let outcome = evict_bundle(&transaction, identity)?;
         transaction.commit()?;
-        Ok(AttemptMutationOutcome::Applied)
+        Ok(outcome)
+    }
+
+    /// A user's durable discard of one Ready bridge variant, in one
+    /// transaction: the bundle becomes unavailable (its objects are kept),
+    /// and only if it was the request's selection does the newest other
+    /// present Ready variant of a current request become selected. Any other
+    /// selection is preserved. Returns the resulting selection.
+    pub fn discard_generation_bundle_variant(
+        &mut self,
+        identity: &MessageIdentity,
+    ) -> Result<Option<AttemptId>, StoreError> {
+        self.require_writer()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let request = read_request(&transaction, &identity.request_id)?;
+        if request.bridge_plan.is_none() {
+            return Err(attempt_error(
+                "bridge variant discard requires a V2 generation request",
+            ));
+        }
+        let selected_before = selected_attempt(&transaction, &identity.request_id)?;
+        evict_bundle(&transaction, identity)?;
+        if selected_before.as_deref() == Some(identity.attempt_id.as_str())
+            && request.relevance == Relevance::Current
+        {
+            let next: Option<String> = transaction
+                .query_row(
+                    "SELECT a.attempt_id FROM generation_attempts a
+                     JOIN generation_bundle_receipts b
+                       ON b.request_id=a.request_id AND b.attempt_id=a.attempt_id
+                     WHERE a.request_id=?1 AND a.attempt_id<>?2 AND a.state='ready'
+                       AND b.availability='present'
+                     ORDER BY a.ordinal DESC LIMIT 1",
+                    params![identity.request_id.as_str(), identity.attempt_id.as_str()],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if let Some(next) = &next {
+                transaction.execute(
+                    "UPDATE generation_attempt_heads SET selected_ready_attempt_id=?1
+                     WHERE request_id=?2",
+                    params![next, identity.request_id.as_str()],
+                )?;
+            }
+        }
+        let selected = selected_attempt(&transaction, &identity.request_id)?
+            .map(|attempt| {
+                AttemptId::new(attempt).map_err(|_| integrity("invalid selected attempt ID"))
+            })
+            .transpose()?;
+        transaction.commit()?;
+        Ok(selected)
     }
 
     pub fn mark_generation_candidate_evicted(
@@ -1514,6 +1540,61 @@ impl ProjectStore {
         transaction.commit()?;
         Ok(Some(SelectedGenerationBundle { identity, receipt }))
     }
+}
+
+fn selected_attempt(
+    connection: &Connection,
+    request: &RequestId,
+) -> Result<Option<String>, StoreError> {
+    Ok(connection
+        .query_row(
+            "SELECT selected_ready_attempt_id FROM generation_attempt_heads WHERE request_id=?1",
+            [request.as_str()],
+            |row| row.get(0),
+        )
+        .optional()?
+        .flatten())
+}
+
+/// Mark one bundle receipt evicted and clear a matching selection.
+fn evict_bundle(
+    transaction: &Connection,
+    identity: &MessageIdentity,
+) -> Result<AttemptMutationOutcome, StoreError> {
+    let stored = read_attempt(transaction, identity)?;
+    let Some(mut receipt) = stored.bundle_receipt else {
+        return Err(attempt_error(
+            "attempt has no bundle validation receipt to evict",
+        ));
+    };
+    if receipt.availability == CandidateAvailability::Evicted {
+        return Ok(AttemptMutationOutcome::Duplicate);
+    }
+    receipt.availability = CandidateAvailability::Evicted;
+    let bundle = serde_json::to_string(&receipt)?;
+    if bundle.len() > MAX_ATTEMPT_JSON_BYTES {
+        return Err(attempt_error(
+            "bundle validation receipt exceeds the persistence limit",
+        ));
+    }
+    let updated = transaction.execute(
+        "UPDATE generation_bundle_receipts SET bundle=?1, availability='evicted'
+             WHERE request_id=?2 AND attempt_id=?3",
+        params![
+            bundle,
+            identity.request_id.as_str(),
+            identity.attempt_id.as_str()
+        ],
+    )?;
+    if updated != 1 {
+        return Err(attempt_error("bundle receipt disappeared during eviction"));
+    }
+    transaction.execute(
+        "UPDATE generation_attempt_heads SET selected_ready_attempt_id=NULL
+             WHERE request_id=?1 AND selected_ready_attempt_id=?2",
+        params![identity.request_id.as_str(), identity.attempt_id.as_str()],
+    )?;
+    Ok(AttemptMutationOutcome::Applied)
 }
 
 pub(crate) fn recover_nonterminal(
@@ -2053,8 +2134,11 @@ fn validate_receipt(
     Ok(())
 }
 
+/// `ordinal` is the attempt's own: each attempt of a request is a seeded
+/// variant with [`ProviderSelection::for_attempt`].
 pub(crate) fn validate_bundle_receipt(
     request: &RequestMetadata,
+    ordinal: u64,
     candidate: Option<&CandidateDeclaration>,
     receipt: &BundleValidationReceipt,
 ) -> Result<(), StoreError> {
@@ -2065,7 +2149,8 @@ pub(crate) fn validate_bundle_receipt(
         return Err(attempt_error("bundle receipt belongs to a legacy request"));
     };
     if receipt.plan() != plan
-        || receipt.provider() != &request.provider
+        || receipt.provider() != &request.provider.for_attempt(ordinal)
+        || candidate.provider != request.provider.for_attempt(ordinal)
         || receipt.native_video() != &candidate.video
         || receipt.native_sha256() != candidate.native.sha256()
         || receipt.native_byte_length() != candidate.native.byte_length()

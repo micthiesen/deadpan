@@ -28,7 +28,7 @@ pub use shared::{
     aspect_region, fill_canvas_aspect, render_layers, same_index_mapping, source_to_render_frame,
 };
 mod generated;
-pub use generated::open_generated_picture;
+pub use generated::{open_candidate_master, open_generated_picture};
 mod color;
 pub use color::{
     AssetColor, AssetTransfer, ColorDecisionPipeline, DEFAULT_HDR_PEAK_NITS,

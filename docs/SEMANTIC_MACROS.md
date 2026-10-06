@@ -33,10 +33,20 @@ captured targets and structural range wrapping. `:repeat N` records a count sett
 for an existing Repeat and a selected-beat wrap for another kind. Setters require
 an explicit selected direct-child Repeat and no Visual selection on replay.
 `:reverse`/`:ping-pong` record `InsertReverse`, `:tail` and the command `,t`
-opens record `Tail`, a whole-beat `:cutaway` records `SetCutaway` and a
-whole-beat `:caption` records `SetCaption`; each resolves the staged document
-when replayed ([reversed pauses and tails](REVERSE_AND_TAILS.md),
-[captions](CAPTIONS.md)). Ranged cutaways and captions refuse while recording.
+opens record `Tail`, `:cutaway` records `SetCutaway` and `:caption` records
+`SetCaption`, over the selected beat or over the Edit range inside one beat
+(the recorded Visual motions rebuild that range on replay); each resolves the
+staged document when replayed ([reversed pauses and tails](REVERSE_AND_TAILS.md),
+[captions](CAPTIONS.md)). `:retime`/`:wrap-retime` record `Retime { speed,
+pitch, wrap }`, `:pitch` records `Pitch { semitones }` and `:hold-duration`
+records `SetHoldDuration`; they author the same `WrapRetime`, `SetRetime` and
+`SetHoldDuration` commands as the native edits, resolved against the staged
+beat's own input ([speed editing](RETIME_EDITING.md)). `+`/`-` over an Edit range
+records a ranged `SetAudio` step ([gain](AUDIO_GAIN.md#range-steps)); `,m`
+records the explicit whole-beat mute state (`SetAudio { change: mute }`) or, over
+a range, the role-only sound delete; `:audio-lag` records `SetAudioLag`;
+`:edge` records `SetAudioEdges` ([audio edges](AUDIO_EDGES.md#native-edge-command));
+and `:gag-set` records `SetGag` ([gags](GAGS.md#changing-parameters-after-insertion)).
 [Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
 requires a selected neutral Sequence with no Visual selection. Both preserve the
 copy bank and pending register choice, and use one atomic history entry per run.

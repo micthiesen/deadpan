@@ -447,6 +447,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::RevertGeneratedHold { .. }
         | Command::Rename { .. }
         | Command::SetAudioEdge { .. }
+        | Command::SetEditorialEdges { .. }
         | Command::SetFraming { .. }
         | Command::SetRepeatEscalation { .. }
         | Command::SetCutaways { .. }

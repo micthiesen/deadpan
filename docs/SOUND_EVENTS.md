@@ -98,6 +98,23 @@ target for this subset. The [native placement qualification record](qualificatio
 tracks its checks and limits; this increment completes no product requirement or
 release gate.
 
+### Bundled sting
+
+`:sting` adds Deadpan's own "wrongly triumphant" sting (specification §8.3) to
+the sound catalog: an original brass-like fanfare (three G4 pickups, then a
+held C major chord with a slow vibrato and release, 1.8 s, peaking at -3 dBFS)
+synthesized deterministically by `deadpan_audio::triumphant_sting_wav`, so no
+third-party sound is distributed. The app writes it as a 48 kHz stereo 16-bit
+WAV under `Application Support/Deadpan/Sounds/sting-v1/` (a private directory in
+replays) and imports it through the ordinary managed `ImportSound` path with an
+explicit stereo left/right reading; placement with `,s`, `:sound-at`, gain,
+edges and export are then those of any catalog sound. The version directory
+names the synthesis recipe, so a changed recipe never replaces an imported
+sting. Evidence: `the_sting_is_a_bounded_fanfare_ending_in_silence`, the
+`creative-dot` replay (import, catalog row, placement at the Edit cursor, Undo)
+and the release `triumphant-sting` preview/export fixture (the chord window's
+peak predicted from the synthesized samples, silence before and after).
+
 ## Persisted root sounds
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.

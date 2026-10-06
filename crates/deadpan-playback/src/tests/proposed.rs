@@ -320,3 +320,98 @@ fn proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback() {
     assert_eq!(recovered.revision_id, *base.document.revision_id());
     assert_eq!(store.snapshot().unwrap(), *base.document);
 }
+
+/// The document an AI pause acceptance would commit adds only the two
+/// video-only generated masters. Its audio is admitted from the committed
+/// base's qualified sources and equals the base's audio exactly.
+#[test]
+fn generated_acceptance_proposal_adds_only_video_assets_and_keeps_base_audio() {
+    let permit = resources::pcm();
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = ProjectStore::create(
+        &directory.path().join("generated-proposal.deadpan"),
+        &empty(),
+    )
+    .unwrap();
+    register(&mut store);
+    let base = snapshot(&store, 52);
+    let time_base = SourceTimeBase::new(1, 1000).unwrap();
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        SourceTimestamp {
+            ticks: 400,
+            time_base,
+        },
+    )
+    .unwrap();
+    let generated = AssetRecord {
+        label: "Generated".into(),
+        content_hash: format!("blake3:{}", "a".repeat(64)),
+        video: Some(span),
+        audio: None,
+        still_image: false,
+        frame_count: Some(FrameDuration::new(12).unwrap()),
+        source_qualification: None,
+    };
+    let with_asset = |record: &AssetRecord, revision_id: &str| {
+        let mut wire = serde_json::to_value(base.document.as_ref()).unwrap();
+        wire["revision_id"] = json!(revision_id);
+        wire["assets"]["generated"] = serde_json::to_value(record).unwrap();
+        Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap())
+    };
+    let document = with_asset(&generated, "proposal-generated");
+    assert!(matches!(
+        Snapshot::proposed(&base, document.clone(), 9, 1),
+        Err(SnapshotError::ChangedAssetContracts)
+    ));
+    let proposal = Arc::new(Snapshot::proposed_generated(&base, document.clone(), 9, 1).unwrap());
+    assert_eq!(
+        proposal.content,
+        ContentIdentity::Proposed {
+            base_revision: base.document.revision_id().clone(),
+            draft: 9,
+            change: 1,
+        }
+    );
+    assert_eq!(
+        proposal.validate_proposed_base(base.session, &base.document),
+        Ok(())
+    );
+    // An added audio asset or a changed base asset is not a picture-only proposal.
+    let audible = AssetRecord {
+        audio: Some(span),
+        ..generated.clone()
+    };
+    assert!(matches!(
+        Snapshot::proposed_generated(&base, with_asset(&audible, "audible"), 9, 1),
+        Err(SnapshotError::ChangedAssetContracts)
+    ));
+    let mut wire = serde_json::to_value(document.as_ref()).unwrap();
+    wire["assets"]["original"]["label"] = json!("Changed complete asset contract");
+    assert!(matches!(
+        Snapshot::proposed_generated(
+            &base,
+            Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap()),
+            9,
+            1
+        ),
+        Err(SnapshotError::ChangedAssetContracts)
+    ));
+    assert!(matches!(
+        Snapshot::proposed_generated(&base, document.clone(), 0, 1),
+        Err(SnapshotError::InvalidIdentity)
+    ));
+    assert!(matches!(
+        Snapshot::proposed_generated(&proposal, document, 9, 2),
+        Err(SnapshotError::BaseNotCommitted)
+    ));
+    let start = AudioSample(0);
+    assert_eq!(
+        reference(&proposal, start, 4_800),
+        reference(&base, start, 4_800)
+    );
+    drop(permit);
+}

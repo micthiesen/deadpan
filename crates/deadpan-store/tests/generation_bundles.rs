@@ -215,6 +215,14 @@ fn stage(
 }
 
 fn native_candidate(request: &StoredGenerationRequest) -> NativeCandidateManifest {
+    native_candidate_for(request, 1)
+}
+
+/// The declaration of attempt `ordinal`, a seeded variant of the request.
+fn native_candidate_for(
+    request: &StoredGenerationRequest,
+    ordinal: u64,
+) -> NativeCandidateManifest {
     let plan = request.bridge_plan.as_ref().unwrap();
     NativeCandidateManifest {
         native: WorkspaceArtifact::new(
@@ -236,7 +244,7 @@ fn native_candidate(request: &StoredGenerationRequest) -> NativeCandidateManifes
             plan.native_dimensions().height(),
         )
         .unwrap(),
-        provider: request.provider.clone(),
+        provider: request.provider.for_attempt(ordinal),
     }
 }
 
@@ -606,11 +614,12 @@ fn retry_supersedes_modern_selection_and_corrupt_objects_cannot_be_ready() -> Re
             .identity,
         first
     );
-    complete_bridge(&mut store, &second, &candidate)?;
+    let second_candidate = native_candidate_for(&request, 2);
+    complete_bridge(&mut store, &second, &second_candidate)?;
     store.record_generation_bundle_ready(
         &second,
-        &candidate,
-        bundle_receipt.clone(),
+        &second_candidate,
+        receipt(&second_candidate),
         media_limits(),
     )?;
     assert_eq!(
@@ -643,7 +652,9 @@ fn retry_supersedes_modern_selection_and_corrupt_objects_cannot_be_ready() -> Re
     );
 
     let third = begin(&mut store, &request, "attempt-3")?;
+    let candidate = native_candidate_for(&request, 3);
     complete_bridge(&mut store, &third, &candidate)?;
+    let bundle_receipt = receipt(&candidate);
     let sampled_path = stored_path(&package, bundle_receipt.sampled_object());
     fs::set_permissions(&sampled_path, fs::Permissions::from_mode(0o600))?;
     fs::write(
@@ -1304,12 +1315,12 @@ fn acceptance_rechecks_selection_receipt_revision_and_complete_relevance() -> Re
         .generation_request(&input.identity.request_id)?
         .unwrap();
     let next = begin(&mut store, &request, "next-attempt")?;
-    let candidate = native_candidate(&request);
+    let candidate = native_candidate_for(&request, 2);
     complete_bridge(&mut store, &next, &candidate)?;
     store.record_generation_bundle_ready(
         &next,
         &candidate,
-        input.expected_receipt.clone(),
+        receipt(&candidate).with_admission(admission(request.binding.context_sha256.clone()))?,
         media_limits(),
     )?;
     assert!(
@@ -1567,6 +1578,196 @@ fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result 
             )
             .is_err()
     );
+    store.validate()?;
+    Ok(())
+}
+
+/// Publish the three retained inputs acceptance requires.
+fn publish_inputs(store: &mut ProjectStore) -> Result {
+    for bytes in INPUT_BYTES {
+        store.promote_generated_object(&mut Cursor::new(bytes), &object(bytes), media_limits())?;
+    }
+    Ok(())
+}
+
+/// Make attempt `ordinal` of `request` a Ready variant with admission evidence.
+fn ready_variant(
+    store: &mut ProjectStore,
+    request: &StoredGenerationRequest,
+    attempt: &str,
+    ordinal: u64,
+) -> Result<(MessageIdentity, BundleValidationReceipt)> {
+    let identity = begin(store, request, attempt)?;
+    let candidate = native_candidate_for(request, ordinal);
+    complete_bridge(store, &identity, &candidate)?;
+    let receipt =
+        receipt(&candidate).with_admission(admission(request.binding.context_sha256.clone()))?;
+    store.record_generation_bundle_ready(&identity, &candidate, receipt.clone(), media_limits())?;
+    Ok((identity, receipt))
+}
+
+#[test]
+fn seeded_variants_share_one_request_and_discard_is_durable() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("variants.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let request = allocate_bridge(&mut store, "request", 7)?;
+    publish_bundle(&mut store)?;
+    publish_inputs(&mut store)?;
+
+    let (first, first_receipt) = ready_variant(&mut store, &request, "attempt-1", 1)?;
+    let (second, second_receipt) = ready_variant(&mut store, &request, "attempt-2", 2)?;
+    // Every attempt is a distinct seeded variant of the one request.
+    assert_eq!(first_receipt.provider().seed, 7);
+    assert_eq!(second_receipt.provider().seed, 8);
+    assert_eq!(request.provider.for_attempt(1), request.provider);
+
+    // A declaration that repeats the request's own seed is not attempt 3's.
+    let third = begin(&mut store, &request, "attempt-3")?;
+    let repeated = native_candidate_for(&request, 1);
+    complete_bridge(&mut store, &third, &repeated)?;
+    let error = store
+        .record_generation_bundle_ready(
+            &third,
+            &repeated,
+            receipt(&repeated).with_admission(admission(request.binding.context_sha256.clone()))?,
+            media_limits(),
+        )
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("does not exactly match"),
+        "{error}"
+    );
+    assert_eq!(
+        store.generation_attempt(&third)?.unwrap().checkpoint.state,
+        JobState::Validating
+    );
+    store.fail_generation_attempt(
+        &third,
+        deadpan_jobs::HostFailure {
+            code: deadpan_jobs::HostFailureCode::OutputValidationFailed,
+            detail: deadpan_jobs::Diagnostic::new("wrong seed")?,
+        },
+    )?;
+    let (fourth, fourth_receipt) = ready_variant(&mut store, &request, "attempt-4", 4)?;
+    assert_eq!(fourth_receipt.provider().seed, 10);
+
+    // The newest Ready variant is selected; any present one may be chosen.
+    assert_eq!(
+        store
+            .selected_generation_bundle(&request.request_id)?
+            .unwrap()
+            .identity,
+        fourth
+    );
+    store.select_generation_bundle_variant(&first)?;
+    // Acceptance admits only the selected variant.
+    let accept =
+        |identity: &MessageIdentity, receipt: &BundleValidationReceipt| GenerationAcceptance {
+            expected_revision: RevisionId::new("initial").unwrap(),
+            new_revision: RevisionId::new("accepted").unwrap(),
+            identity: identity.clone(),
+            expected_receipt: receipt.clone(),
+            native_asset: AssetId::new("native").unwrap(),
+            sampled_asset: AssetId::new("sampled").unwrap(),
+        };
+    let mut unselected = accept(&second, &second_receipt);
+    unselected.expected_revision = store.snapshot()?.revision_id().clone();
+    assert!(matches!(
+        store.preview_generation_acceptance(&unselected, media_limits()),
+        Err(StoreError::GenerationAcceptance(message)) if message.contains("selected bundle changed")
+    ));
+
+    // Discard is the durable availability change: it clears a matching
+    // selection and survives reopening, while the other variants remain.
+    store.mark_generation_bundle_evicted(&first)?;
+    assert!(
+        store
+            .selected_generation_bundle(&request.request_id)?
+            .is_none()
+    );
+    drop(store);
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let attempts = store.generation_attempts(&request.request_id, 0, 16)?;
+    let available: Vec<_> = attempts
+        .iter()
+        .filter(|attempt| {
+            attempt
+                .bundle_receipt
+                .as_ref()
+                .is_some_and(|receipt| receipt.availability() == CandidateAvailability::Present)
+        })
+        .map(|attempt| attempt.ordinal)
+        .collect();
+    assert_eq!(available, vec![2, 4]);
+    assert!(store.select_generation_bundle_variant(&first).is_err());
+    store.select_generation_bundle_variant(&second)?;
+    let mut input = accept(&second, &second_receipt);
+    input.expected_revision = store.snapshot()?.revision_id().clone();
+    let outcome = store.accept_generation_bundle(
+        &input,
+        &unchanged_relevance(&store, &input.new_revision)?,
+        media_limits(),
+    )?;
+    assert_eq!(outcome.revision_id, input.new_revision);
+    store.validate()?;
+
+    // A later request for the Hold makes every earlier variant stale.
+    let replacement = allocate_bridge(&mut store, "replacement", 20)?;
+    assert!(
+        store
+            .selected_generation_bundle(&request.request_id)?
+            .is_none()
+    );
+    assert!(store.select_generation_bundle_variant(&fourth).is_err());
+    assert_eq!(replacement.provider.for_attempt(2).seed, 21);
+    Ok(())
+}
+
+#[test]
+fn discarding_a_variant_is_one_transaction_that_keeps_another_selection() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("discard.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let request = allocate_bridge(&mut store, "request", 3)?;
+    publish_bundle(&mut store)?;
+    publish_inputs(&mut store)?;
+    let (first, _) = ready_variant(&mut store, &request, "attempt-1", 1)?;
+    let (second, _) = ready_variant(&mut store, &request, "attempt-2", 2)?;
+    let (third, _) = ready_variant(&mut store, &request, "attempt-3", 3)?;
+    store.select_generation_bundle_variant(&first)?;
+
+    // Discarding a variant that is not selected keeps the user's choice.
+    assert_eq!(
+        store.discard_generation_bundle_variant(&second)?,
+        Some(first.attempt_id.clone())
+    );
+    // Discarding the selected one selects the newest remaining present one.
+    assert_eq!(
+        store.discard_generation_bundle_variant(&first)?,
+        Some(third.attempt_id.clone())
+    );
+    assert_eq!(
+        store
+            .selected_generation_bundle(&request.request_id)?
+            .unwrap()
+            .identity,
+        third
+    );
+    // The last one leaves no selection; repeating a discard changes nothing.
+    assert_eq!(store.discard_generation_bundle_variant(&third)?, None);
+    assert_eq!(store.discard_generation_bundle_variant(&third)?, None);
+    for identity in [&first, &second, &third] {
+        assert_eq!(
+            store
+                .generation_attempt(identity)?
+                .unwrap()
+                .bundle_receipt
+                .unwrap()
+                .availability(),
+            CandidateAvailability::Evicted
+        );
+    }
     store.validate()?;
     Ok(())
 }

@@ -22,7 +22,7 @@ ends in Ready, Failed or Cancelled.
 | Step | Thread | Function |
 | --- | --- | --- |
 | Conditioning | job (read-only store) | `generation::conditioning::prepare(package, revision, hold, cancelled) -> BridgeInputs` |
-| Allocation | writer | `generation::attempt::allocate(&mut store, AllocateInput) -> Allocated` |
+| Allocation | writer | `generation::attempt::allocate(&mut store, AllocateInput) -> Allocated`, or `allocate_variant(&mut store, request, inputs)` for another attempt of a current request |
 | Worker and qualification | job, no store | `generation::attempt::run_worker(&Allocated, &BridgeRuntime, progress, records, cancelled) -> WorkerRun` |
 | Durable transitions | writer | `generation::attempt::record(&mut store, &Allocated, &AttemptRecord)` |
 | Publication or failure | writer | `generation::attempt::finish(&mut store, &Allocated, WorkerRun) -> Finished` |
@@ -31,6 +31,19 @@ ends in Ready, Failed or Cancelled.
 - `allocate` records a bridge request with the manifest hash as its context and
   `development_provider(seed)`, then begins a fresh attempt. A new request makes
   the Hold's earlier requests stale.
+- `allocate_variant` begins another attempt of a current request with its exact
+  constraints, plan and conditioning inputs (it refuses inputs whose manifest
+  hash, constraints or plan differ). Every attempt of a request is a seeded
+  variant: attempt `n` runs with `ProviderSelection::for_attempt(n)`, the
+  request's seed plus `n - 1` below 2^32 (attempt 1 uses the request's own
+  seed). The worker request, its declaration, the provenance and the store's
+  bundle receipt all carry that attempt's provider, and the store checks it
+  against the attempt ordinal. A retry is therefore a new variant, never a
+  repeat of the same seed. Seeds of different requests can coincide: variant
+  `k` of a request with seed `s` uses the same seed as variant 1 of a request
+  with seed `s + k - 1` (with the same inputs the pictures can match). The
+  seed is provenance, not identity; the attempt and its objects identify a
+  variant.
 - `run_worker` creates a private temporary directory (`runtime.json` beside
   `worker/{inputs,outputs}`), writes the two prepared PNGs and the context
   manifest, pins the workspace and captures the inputs with
@@ -57,19 +70,48 @@ ends in Ready, Failed or Cancelled.
 ## Headless commands
 
 ```sh
-deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--seed N]
-deadpan-cli accept-hold <project.deadpan> --request <request-id>
+deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
+deadpan-cli accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
 ```
 
 `generate-hold` prints progress as JSON lines on stderr and one JSON report on
-stdout: request, attempt, plan, final state, failure, per-step timings, the
-Ready objects and measured spans, and the worker log tail on failure. It exits
-nonzero unless the attempt is Ready. SIGINT/SIGTERM cancel cooperatively. Both
-commands hold the project writer and refuse with `GenerationRefused` when the
-project is open in the app; routing through the app's writer is not
-implemented. Error codes: `GenerationUnavailable` (runtime missing),
+stdout. With the project closed it holds the writer for the whole job: the
+first variant records a new request (or, with `--another`, joins the Hold's
+current request, conditioned from that request's own revision), and each
+further variant is another attempt of the same request. The report describes
+the last attempt (request, attempt and ordinal, seed, plan, final state,
+failure, per-step timings, the Ready objects and measured spans, the worker log
+tail on failure) and lists every attempt under `variants`. It stops at the
+first attempt that is not Ready and exits nonzero unless the last one is Ready.
+SIGINT/SIGTERM cancel cooperatively. Without `--seed` a new request gets a
+random seed below 2^32, as in the app; `--seed` with `--another` is refused,
+because variants of an existing request derive their seeds from its own.
+`accept-hold` names the head revision it observed before sending, so an edit
+made meanwhile refuses with `RevisionConflict`; `--attempt` selects that Ready
+variant before accepting, otherwise the request's selected variant is
+accepted.
+
+When the app has the project open, both commands route through its
+[authenticated live endpoint](LIVE_PROJECT.md) instead of refusing.
+`generate-hold` starts the app's own AI job (the same job as `:generate N`,
+shown in the app), polls it every 250 ms, prints its stage, variant and steps
+on stderr, and cancels exactly that job on SIGINT/SIGTERM or after one worker
+deadline per variant, then waits up to five minutes for the app to confirm.
+Its report has `routed: "live_project"`, the job, request, ready count,
+outcome and note; per-attempt timings and objects stay in the app and the
+store. The app keeps a concluded live job's result (up to eight, ten minutes)
+even after the UI starts another job, until the CLI releases it after writing
+its report. A failed observation reports `HostOutcomeUnknown` with the job
+number and the advice to cancel it in the app; nothing is replayed. The app
+decides between a new request and another variant from the pause's boundary
+pictures, so `--another` is implied when they are unchanged; an explicit
+`--seed` that would land on an existing request ends the job refused rather
+than ignored. `accept-hold` sends one `AcceptHold` command that the
+owner runs in a single transaction. A lost reply reports `HostOutcomeUnknown`
+and is never replayed. Error codes: `GenerationUnavailable` (runtime missing),
 `GenerationInputsUnavailable`, `GenerationRefused`, `GenerationCancelled`,
-`GenerationFailed`, and store codes.
+`GenerationFailed`, `GenerationUnknown` (the observed job is no longer the
+app's current one), host codes, and store codes.
 
 ## Native app workflow
 
@@ -78,17 +120,24 @@ the footer teach the actions:
 
 | Action | Keys | Effect |
 | --- | --- | --- |
-| Generate | `,a`, `:generate` | Start one background job for the selected pause |
-| Cancel | `:cancel-ai` (Esc never cancels) | Cancel cooperatively; the attempt ends Cancelled |
-| Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the candidate's pictures in the viewer at the edit cursor |
-| Accept | `:accept-ai` | One undoable edit; the pause stays selected |
-| Discard | `:discard-ai` | Hide the candidate for this session; nothing is written |
+| Generate | `,a`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant |
+| Generate several | `:generate N` (1 to 4) | One job that generates N variants, one attempt after another |
+| Cancel | `:cancel-ai` (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
+| Choose | `:next-ai`, `:prev-ai`, `:pick-ai N`, a click on a variant row | Choose which variant Preview, Audition and Accept use; stored as the request's selection, never an edit |
+| Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the chosen variant's pictures in the viewer at the edit cursor |
+| Audition | `:audition-ai`, Audition; Space while previewing | Play the pause with the chosen variant's pictures and the pause's own sound |
+| Accept | `:accept-ai` | One undoable edit with the chosen variant; the pause stays selected |
+| Discard | `:discard-ai` | Durably discard the chosen variant; not undoable, the pause is unchanged |
 | Install the model pack | Install AI models…, `:models` | Open the Models panel on the bridge pack; shown when it is not installed |
+
+No key binding was added or changed: `,a` keeps its single-variant meaning and
+the rest of the workflow is command-only, so the
+[compatibility audit](KEYBINDING_COMPATIBILITY.md) is unchanged.
 
 `project::generation` defines the requests and published state, and
 `project/service/generation.rs` runs them:
 
-- **Start** captures session, revision and Hold. The service resolves
+- **Start** captures session, revision, Hold and the variant count. The service resolves
   `BridgeRuntime::from_environment` first. A missing runtime ends the job as
   Unavailable with the runtime's own text, records nothing and starts no thread.
 - One bounded job thread per project (`deadpan-ai-pause`) runs
@@ -108,13 +157,43 @@ the footer teach the actions:
 - Allocation requires the head to still be the captured revision; an edit during
   the (about one second) conditioning fails the job with a request to generate
   again. Ordinary edits after allocation keep the request reconciled.
+- **Variants.** When the conditioned manifest, constraints and plan equal the
+  Hold's current bridge request, the job adds attempts to that request
+  (`allocate_variant`); otherwise its first attempt records a new request,
+  which makes the earlier request and all its variants stale. After each Ready
+  attempt the writer finishes it (publication and Ready) and allocates the next
+  variant from the same inputs until the count is reached; a failure,
+  cancellation or session change stops the job. The job reports which variant
+  runs (`Variant 2 of 3`, footer `variant 2/3`) and how many are Ready. The job
+  thread receives one allocation per attempt and returns when the writer drops
+  its allocation channel. Earlier Ready variants are never lost to a later
+  outcome: if the next variant cannot start (for example the pause changed
+  and the request went stale), the job ends Ready with a note naming why; if a
+  later variant fails or the job is cancelled, it ends Failed or Cancelled with
+  a note counting the Ready variants kept. Notes appear in the inspector, the
+  status message and live-endpoint statuses.
 - Progress (stage, step k/n when the worker reports it, elapsed time) appears in
   the inspector and in a footer row that stays visible with other selections.
   The development worker reports stages only; it sends no inference steps.
-- Ready candidates are read from the store, not from the job: every current
-  request with a selected Ready bundle whose Hold has not accepted those
-  pictures. They therefore survive reopen and reappear after an Undo of the
-  acceptance. A new request for the Hold supersedes its candidate.
+- Ready candidates are read from the store, not from the job: for every current
+  bridge request, its Ready attempts whose bundle is Present and whose sampled
+  master is not the Hold's accepted one, oldest first. The chosen variant is
+  the store's selection when it is among them, otherwise the newest. They
+  survive reopen and reappear after an Undo of the acceptance. A new request
+  for the Hold makes all its earlier variants stale; Undo never revives them.
+- **Choose** writes the request's operational selection
+  (`select_generation_bundle_variant`); store acceptance admits only the
+  selected attempt, so Preview and Accept select their captured variant first.
+  Choosing while previewing previews the newly chosen variant.
+- The inspector lists each variant with a thumbnail of its sampled master's
+  middle picture, its number, seed and state (chosen, showing). The dedicated
+  thumbnail worker reads the object through the workspace's generated-media
+  handle (BLAKE3-verified snapshot), decodes it with `open_candidate_master`
+  (checks the receipt's raster, frame count and canonical FFV1 sRGB
+  interpretation) and crops the conditioning letterbox to the canvas like
+  presentation. Thumbnails are keyed by attempt and the request's origin
+  revision, so edits do not re-decode them; they never touch the edit's
+  picture path.
 - **Preview** asks the store for the acceptance preview
   (`preview_generation_acceptance`, which verifies the six retained objects)
   and publishes the resulting uncommitted document as a service-issued
@@ -123,7 +202,36 @@ the footer teach the actions:
   any timing change and decodes the generated sampled master through the shared
   generated-picture path. Presentation records it as a separate location
   (“Showing AI preview frame N”), so Camera cannot target it. Edits, Undo,
-  session changes and a superseded candidate end the preview.
+  session changes, a superseded candidate and a discarded or no longer offered
+  variant end the preview.
+- **Audition.** The same Preview reply carries the proposed document admitted
+  for playback with `deadpan_playback::Snapshot::proposed_generated` against
+  the workspace's committed snapshot: it may add only video-only assets with no
+  source qualification (the two generated masters) and keeps every base asset
+  and its qualified source evidence, so its audio is admitted from exactly the
+  committed revision's sources. Accepting pictures leaves the pause's audio
+  policy (silence, room tone, tail) unchanged, so this is the sound the edit
+  will have. While previewing, playback of Your edit (Space, Shift+Space,
+  `:audition-ai`, the Audition button) uses that snapshot, with its own
+  `Proposed` content identity, and every heard frame inside the pause shows the
+  candidate's picture through the preview worker. The preview's `Proposed`
+  draft identity comes from the workspace's single monotonic proposal counter
+  that Gain, Trim, Slip and Splice drafts also use (the UI sends it with the
+  Preview command), so a preview never shares a playback identity or cache
+  entry with another draft on the same revision. `:audition-ai` loops the
+  pause with the ordinary 500 ms lead-in and 750 ms follow-through
+  (`:audition-context`), previewing the chosen variant first when needed; issued
+  while that loop plays (captured before command entry pauses it), it pauses.
+  Choosing another variant during the loop restarts it with the new pictures.
+  Leaving the preview stops its audition. Nothing is saved.
+- **Discard** removes the chosen variant from the list for good with one store
+  transaction (`discard_generation_bundle_variant`): its bundle becomes
+  Evicted, so it is never offered again, also after reopening, and Undo does
+  not restore it; only if it was the request's selection does the newest
+  other present Ready variant become selected, otherwise the selection is
+  kept. Its files stay under `Media/Generated` until a cleanup removes
+  unreferenced candidates; no such retention policy exists yet, so discard
+  frees no disk space.
 - **Accept** is the only authored change: `acceptance::accept` through the
   ordinary edit receipt, selecting the Hold and keeping the cursor.
 - Stale session, revision, ticket and request identities are refused. Close,
@@ -136,17 +244,52 @@ the footer teach the actions:
 `project::generation::Backend::Scripted` exists only in tests and the
 `ui-harness` build. It keeps conditioning, request allocation and every durable
 transition real and replaces only the model worker with a deterministic script
-(an unavailable runtime, progress steps, then cancellation or a worker failure).
-It cannot produce Ready pictures: Ready, Preview and Accept are exercised only
-with real bundles (`ai-pause-ready` replay and the opt-in service test).
+per attempt: an unavailable runtime, progress steps, then cancellation, a
+worker failure, or Ready. The Ready ending runs
+`generation::attempt::synthetic`: it writes native footage that blends the
+attempt's own two conditioning pictures with a band whose colour follows the
+seed, encodes it like the development worker's lossless RGB intermediate with
+an external `ffmpeg` (`DEADPAN_BRIDGE_FFMPEG`, else the Homebrew path), and
+writes a schema-2 worker provenance whose claims name the synthetic origin
+(zero revisions, `backend: synthetic`). Host qualification by
+`deadpan-media-worker`, publication of all six objects, Ready, preview,
+audition admission, acceptance and discard are then production code. Without
+`ffmpeg` or the media worker the attempt fails and says so, and the tests and
+the `ai-variants` replay that need it report a skip. It is compiled only for
+`deadpan-cli` tests and its `synthetic-worker` feature, which the app enables
+for its tests (dev-dependency) and its `ui-harness` build; the shipped CLI and
+app do not contain it, and no host offers it as a provider.
 
 ### Verification
 
 - Service tests (`project::tests::generation`): unavailable runtime records
   nothing; progress then cancellation records Cancelled; immediate cancellation
   leaves no live attempt; worker failure is recorded; stale session, revision,
-  target, ticket and request are refused; Close and shutdown drain the job
-  before the writer is released.
+  target, ticket, request, attempt and variant count are refused; Close and
+  shutdown drain the job before the writer is released. With store fixtures:
+  three variants are listed oldest first with distinct seeds and masters, the
+  newest chosen; choosing writes only the store selection; previewing another
+  variant selects it and carries a `Proposed` audition snapshot of the same
+  document; discarding the chosen variant chooses the newest remaining one, is
+  refused for reuse and survives reopening; lengthening the pause makes every
+  variant stale and Undo does not revive them. With the synthetic worker:
+  `:generate 2` yields two Ready variants of one request with consecutive seeds
+  and different pictures, accepting the first keeps the second offered, and a
+  later Generate adds a third attempt to the same request. Live-endpoint tests
+  start, observe, refuse a stale revision, cancel exactly the observed job and
+  accept a variant through `AcceptHold`.
+- Store (`generation_bundles::seeded_variants_share_one_request_and_discard_is_durable`):
+  attempts carry seeds 7, 8, …; a declaration repeating the request's seed is
+  refused for attempt 3; acceptance admits only the selected variant; eviction
+  survives reopening; a new request makes all variants stale.
+- CLI: `synthetic_variants_publish_distinct_ready_bundles_for_one_request`
+  (real qualification of two synthetic variants) and the
+  `live_generation` integration test (the actual `deadpan-cli` binary routing
+  `generate-hold --variants 2 --seed 9` and `accept-hold --attempt` to an
+  authenticated owner).
+- Playback: `generated_acceptance_proposal_adds_only_video_assets_and_keeps_base_audio`
+  admits the acceptance document, refuses added audio or changed base assets,
+  and reads the same limited PCM as the base.
 - `real_worker_generates_a_candidate_that_acceptance_commits` is ignored unless
   `DEADPAN_BRIDGE_REAL=1`. It needs `deadpan-media-worker` beside the test
   executable (for example a link in `target/debug/deps`) and accepts
@@ -156,8 +299,19 @@ with real bundles (`ai-pause-ready` replay and the opt-in service test).
   19.7 s, Decoding 91.9 s, Encoding 93.2 s, WorkerValidation 93.4 s, Qualifying
   93.9 s, Ready at 96.0 s; Preview and Accept passed; `/usr/bin/time -l`
   maximum RSS 14.6 GB including the reaped worker.
-- UI replay: `ai-pause` (scripted worker) and `ai-pause-ready --project` (a
-  copy of that accepted project). See [UI feedback](UI_FEEDBACK.md).
+- On 2026-10-05 (M5 Max, debug, same opt-in test on the `cfr-bframes`
+  fixture with a 30-frame pause) `:generate 2` ran the real worker twice for
+  one request: variant 1 Ready at 81.9 s (inference 18.1–79.7 s), variant 2
+  started at 83.5 s, reloaded the runtime and model in its own worker process
+  (99.1–104.2 s) and was Ready at 173.3 s. Seeds 1359878095 and 1359878096
+  produced different sampled masters (`a953f79e…`, `68cd3e4f…`). Preview and
+  Accept of variant 1 passed and variant 2 stayed offered. `/usr/bin/time -l`
+  maximum RSS 14.5 GB. Generated pictures were not inspected for quality.
+- UI replay: `ai-pause` (scripted worker), `ai-variants` (scripted Ready
+  variants through real qualification: list with thumbnails, choose, preview,
+  audition with simulated delivery, accept, durable discard, Undo) and
+  `ai-pause-ready --project` (a copy of a real accepted project). See
+  [UI feedback](UI_FEEDBACK.md).
 
 ## Runtime
 
@@ -278,22 +432,24 @@ filling the canvas like frame 285 before it.
 
 ## Superseding and partial allocation
 
-Generating again for the same Hold records a new request, which makes the
-previous one stale, including an unaccepted Ready candidate; there is one
-candidate per Hold until variants exist. Request recording and the first
-attempt are separate store writes: if beginning the attempt fails, the request
-remains current with no attempt, and the next generation supersedes it.
+Generating again for the same Hold adds variants to its current request while
+the pause's boundary pictures are unchanged; when they changed, the request is
+already stale and generation records a new one. Request recording and the
+first attempt are separate store writes: if beginning the attempt fails, the
+request remains current with no attempt, and the next generation adds its
+first variant to it.
 
 The CLI's first SIGINT/SIGTERM cancels (also after the worker exits, before
 publication); a second exits at once with status 130.
 
 ## Remaining work
 
-Variants and a durable Discard, sound audition of the candidate (Preview is
-pictures only; acceptance does not change the Hold's audio), candidate
-thumbnails in the inspector, a Generate entry inside scoped Repeat/Retime
-inspection, routing the headless commands through an open project's writer,
-composed framing in conditioning, source/colour context qualification, native
+Comparing two variants side by side or toggling Before/Proposed at the same
+heard sample (Preview shows one variant at a time), an undoable or reversible
+Discard and a visible retention policy for discarded variants' objects
+(§19.2), audition of acceptance through the device in a qualified listening
+check (replays simulate delivery), a Generate entry inside scoped
+Repeat/Retime inspection, composed framing in conditioning, source/colour context qualification, native
 physical-input, VoiceOver and real-window checks of the AI controls, the
 §13.4 qualification corpus and bake-off, a Developer ID/notarized run of the
 bundled runtime, and the clean-machine download-and-generate test of §26.6.

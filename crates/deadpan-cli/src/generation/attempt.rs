@@ -128,7 +128,29 @@ pub struct Allocated {
     pub identity: MessageIdentity,
     pub cancellation_token: CancellationToken,
     pub host_message: HostMessage,
+    ordinal: u64,
     inputs: BridgeInputs,
+}
+
+impl Allocated {
+    /// The conditioning inputs this attempt's request was recorded with.
+    /// Every later variant of the request reuses them unchanged.
+    pub fn inputs(&self) -> &BridgeInputs {
+        &self.inputs
+    }
+
+    /// The 1-based attempt ordinal within the request.
+    pub fn ordinal(&self) -> u64 {
+        self.ordinal
+    }
+
+    /// The exact provider of this attempt, a seeded variant of the request.
+    pub fn provider(&self) -> &deadpan_jobs::ProviderSelection {
+        let HostMessage::GenerateBridge { provider, .. } = &self.host_message else {
+            unreachable!("allocation builds a bridge request");
+        };
+        provider
+    }
 }
 
 /// Record a bridge request for `input.hold` and begin its first attempt.
@@ -147,20 +169,52 @@ pub fn allocate(
             hold_id: input.hold.clone(),
             context_sha256: input.inputs.manifest_sha256.clone(),
             constraints: input.inputs.constraints.clone(),
-            provider: provider.clone(),
+            provider,
         },
         input.inputs.plan.clone(),
     )?;
+    allocate_variant(store, request, input.inputs)
+}
+
+/// The Hold's current bridge request, whose attempts are its variants.
+pub fn current_bridge_request(
+    store: &ProjectStore,
+    hold: &NodeId,
+) -> Result<Option<StoredGenerationRequest>, StoreError> {
+    Ok(store
+        .current_generation_requests()?
+        .into_iter()
+        .find(|request| &request.binding.hold_id == hold && request.bridge_plan.is_some()))
+}
+
+/// Begin another attempt of an existing current `request`: a new seeded
+/// variant ([`deadpan_jobs::ProviderSelection::for_attempt`]) with the
+/// request's exact constraints, plan and conditioning `inputs`. Earlier Ready
+/// variants stay available for explicit selection.
+pub fn allocate_variant(
+    store: &mut ProjectStore,
+    request: StoredGenerationRequest,
+    inputs: BridgeInputs,
+) -> Result<Allocated, GenerationError> {
+    if inputs.manifest_sha256 != request.binding.context_sha256
+        || inputs.constraints != request.constraints
+        || request.bridge_plan.as_ref() != Some(&inputs.plan)
+    {
+        return Err(invalid(
+            "the pause's boundary pictures changed since its AI pictures were requested; generate again",
+        ));
+    }
     let identity = MessageIdentity::new(
-        request_id,
+        request.request_id.clone(),
         AttemptId::new(uuid::Uuid::new_v4().simple().to_string()).map_err(invalid)?,
     );
     let cancellation_token =
         CancellationToken::new(uuid::Uuid::new_v4().simple().to_string()).map_err(invalid)?;
-    store.begin_generation_attempt(BeginGenerationAttempt {
+    let begun = store.begin_generation_attempt(BeginGenerationAttempt {
         identity: identity.clone(),
         cancellation_token: cancellation_token.clone(),
     })?;
+    let provider = request.provider.for_attempt(begun.ordinal);
     let host_message = HostMessage::GenerateBridge {
         protocol: ProtocolVersion::V2,
         identity: identity.clone(),
@@ -173,12 +227,12 @@ pub fn allocate(
         },
         input: ContextArtifact {
             manifest: WorkspaceRef::new(MANIFEST).map_err(invalid)?,
-            sha256: input.inputs.manifest_sha256.clone(),
+            sha256: inputs.manifest_sha256.clone(),
         },
         output_workspace: WorkspaceRef::new(OUTPUT_SCOPE).map_err(invalid)?,
-        constraints: input.inputs.constraints.clone(),
+        constraints: inputs.constraints.clone(),
         provider: Box::new(provider),
-        plan: Box::new(input.inputs.plan.clone()),
+        plan: Box::new(inputs.plan.clone()),
     };
     host_message.validate().map_err(invalid)?;
     Ok(Allocated {
@@ -186,7 +240,8 @@ pub fn allocate(
         identity,
         cancellation_token,
         host_message,
-        inputs: input.inputs,
+        ordinal: begun.ordinal,
+        inputs,
     })
 }
 
@@ -370,6 +425,63 @@ fn workspace_artifact(
     .map_err(|error| error.to_string())
 }
 
+/// A private attempt workspace: `runtime.json` beside `worker/{inputs,outputs}`,
+/// pinned, with the conditioning inputs captured outside the worker's control.
+pub(super) struct PreparedWorkspace {
+    pub(super) directory: tempfile::TempDir,
+    pub(super) worker: std::path::PathBuf,
+    pub(super) runtime_config: Option<std::path::PathBuf>,
+    pub(super) pinned: ArtifactWorkspace,
+    pub(super) conditioning: deadpan_models::RetainedConditioning,
+}
+
+pub(super) fn prepare_workspace(
+    allocated: &Allocated,
+    runtime_config: Option<&[u8]>,
+    cancelled: &AtomicBool,
+) -> Result<PreparedWorkspace, String> {
+    let directory = tempfile::Builder::new()
+        .prefix("deadpan-ai-hold-")
+        .tempdir()
+        .map_err(|error| error.to_string())?;
+    let worker = directory.path().join("worker");
+    let io = |error: std::io::Error| error.to_string();
+    std::fs::create_dir(&worker).map_err(io)?;
+    std::fs::create_dir(worker.join(INPUT_SCOPE)).map_err(io)?;
+    std::fs::create_dir(worker.join(OUTPUT_SCOPE)).map_err(io)?;
+    let inputs = &allocated.inputs;
+    write_new(&worker.join(LEFT), &inputs.left_png).map_err(io)?;
+    write_new(&worker.join(RIGHT), &inputs.right_png).map_err(io)?;
+    write_new(&worker.join(MANIFEST), &inputs.manifest).map_err(io)?;
+    let runtime_config = match runtime_config {
+        Some(bytes) => {
+            let path = directory.path().join("runtime.json");
+            write_new(&path, bytes).map_err(io)?;
+            Some(path)
+        }
+        None => None,
+    };
+    // Pin before launch; capture the inputs outside the worker's control.
+    let pinned = ArtifactWorkspace::open(&worker).map_err(|error| error.to_string())?;
+    let manifest = workspace_artifact(MANIFEST, &inputs.manifest, &inputs.manifest_sha256)?;
+    let conditioning = capture_bridge_conditioning(
+        &pinned,
+        &allocated.host_message,
+        &manifest,
+        &WorkspaceRef::new(INPUT_SCOPE).map_err(|error| error.to_string())?,
+        conditioning_limits(),
+        cancelled,
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(PreparedWorkspace {
+        directory,
+        worker,
+        runtime_config,
+        pinned,
+        conditioning,
+    })
+}
+
 /// Run the worker for `allocated` and qualify its bundle. Blocks for the whole
 /// attempt; call it on a job thread. Never touches the store: durable
 /// transitions go to `records` in order, and an `Err` from it cancels the
@@ -406,40 +518,18 @@ pub fn run_worker(
         return WorkerRun::early(cancel_early(&mut records), timings);
     }
 
-    // Workspace layout: runtime.json beside worker/{inputs,outputs}.
-    let prepared = (|| -> Result<_, String> {
-        let directory = tempfile::Builder::new()
-            .prefix("deadpan-ai-hold-")
-            .tempdir()
-            .map_err(|error| error.to_string())?;
-        let worker = directory.path().join("worker");
-        let io = |error: std::io::Error| error.to_string();
-        std::fs::create_dir(&worker).map_err(io)?;
-        std::fs::create_dir(worker.join(INPUT_SCOPE)).map_err(io)?;
-        std::fs::create_dir(worker.join(OUTPUT_SCOPE)).map_err(io)?;
-        let inputs = &allocated.inputs;
-        write_new(&worker.join(LEFT), &inputs.left_png).map_err(io)?;
-        write_new(&worker.join(RIGHT), &inputs.right_png).map_err(io)?;
-        write_new(&worker.join(MANIFEST), &inputs.manifest).map_err(io)?;
-        let runtime_config = directory.path().join("runtime.json");
-        write_new(&runtime_config, &runtime.worker_configuration()).map_err(io)?;
-        // Pin before launch; capture the inputs outside the worker's control.
-        let pinned = ArtifactWorkspace::open(&worker).map_err(|error| error.to_string())?;
-        let manifest = workspace_artifact(MANIFEST, &inputs.manifest, &inputs.manifest_sha256)?;
-        let conditioning = capture_bridge_conditioning(
-            &pinned,
-            &allocated.host_message,
-            &manifest,
-            &WorkspaceRef::new(INPUT_SCOPE).map_err(|error| error.to_string())?,
-            conditioning_limits(),
-            cancelled,
-        )
-        .map_err(|error| error.to_string())?;
-        Ok((directory, worker, runtime_config, pinned, conditioning))
-    })();
+    let prepared = prepare_workspace(allocated, Some(&runtime.worker_configuration()), cancelled);
     timings.preparation = started.elapsed();
     let (directory, worker, runtime_config, pinned, conditioning) = match prepared {
-        Ok(prepared) => prepared,
+        Ok(prepared) => (
+            prepared.directory,
+            prepared.worker,
+            prepared
+                .runtime_config
+                .expect("a real worker run writes its runtime configuration"),
+            prepared.pinned,
+            prepared.conditioning,
+        ),
         Err(_) if cancelled.load(Ordering::Acquire) => {
             return WorkerRun::early(cancel_early(&mut records), timings);
         }
@@ -636,33 +726,16 @@ pub fn run_worker(
             .expect("a validating bridge attempt has a declared bundle");
         progress(AttemptProgress::Qualifying);
         let qualifying = Instant::now();
-        let selected = SelectedBridgeProvider::new(
-            declaration.provider.clone(),
-            super::development_capability(),
-        );
-        let qualified = qualify_bridge(
+        let qualified = qualify_declared(
+            allocated,
             &runtime.media_worker,
             &pinned,
-            BridgeQualification {
-                request: &allocated.host_message,
-                declaration: &declaration,
-                selected_provider: &selected,
-                conditioning,
-            },
-            qualification_limits(),
+            conditioning,
+            declaration,
             cancelled,
         );
         timings.qualification = qualifying.elapsed();
-        match qualified
-            .map_err(|error| error.to_string())
-            .and_then(|bundle| {
-                let receipt = validation_receipt(&bundle, &declaration)?;
-                Ok(QualifiedRun {
-                    bundle,
-                    receipt,
-                    declaration,
-                })
-            }) {
+        match qualified {
             // A cancel that lands after the worker exited still wins: the
             // user asked for no candidate.
             _ if cancelled.load(Ordering::Acquire) => cancel_early(&mut records),
@@ -682,6 +755,41 @@ pub fn run_worker(
         worker_log_discarded_bytes: logs.discarded_bytes,
         _directory: Some(directory),
     }
+}
+
+/// Qualify a clean worker's declared bundle with the media worker after
+/// teardown: provenance, both masters and the captured conditioning inputs.
+pub(super) fn qualify_declared(
+    allocated: &Allocated,
+    media_worker: &Path,
+    pinned: &ArtifactWorkspace,
+    conditioning: deadpan_models::RetainedConditioning,
+    declaration: NativeCandidateManifest,
+    cancelled: &AtomicBool,
+) -> Result<QualifiedRun, String> {
+    let selected = SelectedBridgeProvider::new(
+        declaration.provider.clone(),
+        super::development_capability(),
+    );
+    let bundle = qualify_bridge(
+        media_worker,
+        pinned,
+        BridgeQualification {
+            request: &allocated.host_message,
+            declaration: &declaration,
+            selected_provider: &selected,
+            conditioning,
+        },
+        qualification_limits(),
+        cancelled,
+    )
+    .map_err(|error| error.to_string())?;
+    let receipt = validation_receipt(&bundle, &declaration)?;
+    Ok(QualifiedRun {
+        bundle,
+        receipt,
+        declaration,
+    })
 }
 
 /// The host's validation receipt for a qualified bundle, with its measured
@@ -837,6 +945,9 @@ pub fn finish(
         }
     }
 }
+
+#[cfg(any(test, feature = "synthetic-worker"))]
+pub mod synthetic;
 
 #[cfg(test)]
 mod tests;

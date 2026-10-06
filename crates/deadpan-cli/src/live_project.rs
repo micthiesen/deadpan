@@ -12,6 +12,7 @@ use serde_json::Value;
 use crate::host::{Client, HostError};
 use crate::render::{RenderContext, RenderRequest, RenderStatus, WorkflowTarget};
 
+pub mod generation;
 pub mod preparation;
 use preparation::{PreparationCommand, PreparationStatus, PreparationTarget};
 
@@ -61,6 +62,25 @@ pub enum Operation {
         project_id: ProjectId,
         target: PreparationTarget,
     },
+    /// Start the owner's AI job for one pause.
+    Generate {
+        project_id: ProjectId,
+        request: generation::GenerateRequest,
+    },
+    GenerationStatus {
+        project_id: ProjectId,
+        job: u64,
+    },
+    /// Cooperatively cancel exactly the observed job.
+    CancelGeneration {
+        project_id: ProjectId,
+        job: u64,
+    },
+    /// The caller has the concluded job's result; the owner may forget it.
+    ReleaseGenerationStatus {
+        project_id: ProjectId,
+        job: u64,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -92,6 +112,15 @@ pub enum ShortOperation {
     },
     #[serde(deserialize_with = "deserialize_empty")]
     Migrate,
+    /// Accept a Ready AI pause variant as one undoable edit. With `attempt`,
+    /// that variant of the request is selected first. With
+    /// `expected_revision`, a different head is refused.
+    AcceptHold {
+        request: deadpan_jobs::RequestId,
+        attempt: Option<deadpan_jobs::AttemptId>,
+        expected_revision: Option<RevisionId>,
+        new_revision: RevisionId,
+    },
 }
 
 impl ShortOperation {
@@ -126,6 +155,9 @@ pub enum Reply {
     },
     Preparation {
         status: Box<PreparationStatus>,
+    },
+    Generation {
+        status: Box<generation::GenerationStatus>,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     Released,
@@ -229,6 +261,7 @@ impl Request {
             Operation::PreparationStatus { target, .. }
             | Operation::CancelPreparation { target, .. }
             | Operation::ReleasePreparationStatus { target, .. } => target.validate()?,
+            Operation::Generate { request, .. } => request.validate()?,
             _ => {}
         }
         Ok(request)
@@ -462,6 +495,38 @@ pub fn execute_short(
                     Some(revision),
                 )
             }
+        }
+        ShortOperation::AcceptHold {
+            request,
+            attempt,
+            expected_revision,
+            new_revision,
+        } => {
+            if let Some(expected) = expected_revision {
+                let current = store.head_revision().map_err(LiveError::store)?;
+                if &current != expected {
+                    return Err(LiveError::store(StoreError::RevisionConflict {
+                        expected: expected.as_str().into(),
+                        current: current.as_str().into(),
+                    }));
+                }
+            }
+            if let Some(attempt) = attempt {
+                store
+                    .select_generation_bundle_variant(&deadpan_jobs::MessageIdentity::new(
+                        request.clone(),
+                        attempt.clone(),
+                    ))
+                    .map_err(LiveError::store)?;
+            }
+            let outcome =
+                crate::generation::acceptance::accept(store, request, new_revision.clone())
+                    .map_err(|error| LiveError::new(error.code(), &error))?;
+            let revision = outcome.revision_id.clone();
+            (
+                serde_json::json!({"protocol":1,"committed":true,"outcome":outcome}),
+                Some(revision),
+            )
         }
         ShortOperation::Migrate => {
             // An admitted store is already at the current schema. Never release

@@ -13,7 +13,7 @@ const MIN_THUMBNAIL_WIDTH: f32 = 64.0;
 const MIN_TEXT_WIDTH: f32 = 112.0;
 
 /// Letterboxed picture on black, with a hairline so dark frames keep an edge.
-fn paint_thumbnail(ui: &egui::Ui, rect: egui::Rect, painted: Option<Painted>) {
+pub(super) fn paint_thumbnail(ui: &egui::Ui, rect: egui::Rect, painted: Option<Painted>) {
     let painter = ui.painter();
     painter.rect_filled(rect, 4.0, egui::Color32::BLACK);
     if let Some(Painted::Texture { texture, aspect }) = painted {

@@ -179,6 +179,33 @@ fn pause_text(length: deadpan_core::PauseLength) -> String {
     }
 }
 
+/// The footer message after an applied instruction, naming the Edit range
+/// a ranged gain step, caption or cutaway acted on.
+pub(super) fn applied_summary(
+    instruction: &deadpan_core::SemanticInstruction,
+    context: &deadpan_core::SemanticContext,
+) -> Option<String> {
+    use deadpan_core::SemanticInstruction as I;
+    let text = applied_text(instruction)?;
+    let Some(deadpan_core::SemanticVisualSelection::Time { anchor, head, .. }) =
+        &context.visual_selection
+    else {
+        return Some(text);
+    };
+    let (start, end) = (anchor.0.min(head.0), anchor.0.max(head.0));
+    Some(match instruction {
+        I::SetAudio { .. } => format!("{text} over Edit {start}–{end}"),
+        I::SetCaption { text: caption, .. } => {
+            format!("Captioned Edit {start}–{end}: “{caption}”")
+        }
+        I::SetCutaway { register, .. } => format!(
+            "Cutaway from register {} placed over Edit {start}–{end}",
+            register.as_char()
+        ),
+        _ => text,
+    })
+}
+
 /// The footer message after an applied editor operator.
 pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> Option<String> {
     use deadpan_core::SemanticInstruction as I;
@@ -199,6 +226,56 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                 .then(|| format!("Repeated {} ×{plays}{escalated}", selector_text(selector)));
         }
         I::Gag { recipe } => return Some(format!("Applied {}", recipe.name())),
+        I::SetGag { recipe, parameters } if parameters.is_empty() => {
+            return Some(format!("Gag set: {}", recipe.label()));
+        }
+        I::SetGag { recipe, parameters } => {
+            let names: Vec<&str> = parameters
+                .iter()
+                .flat_map(|parameter| crate::navigation::gag::parameter_keys(*parameter))
+                .copied()
+                .collect();
+            let values: Vec<String> = crate::navigation::gag::arguments(recipe)
+                .into_iter()
+                .filter(|(key, _)| names.contains(key))
+                .map(|(key, value)| format!("{key} {value}"))
+                .collect();
+            return Some(format!("{} set: {}", recipe.name(), values.join(", ")));
+        }
+        I::SetAudioLag { offset } => {
+            return Some(match offset.0 {
+                0 => "Sound offset removed".to_owned(),
+                samples => {
+                    // 48 samples per millisecond, shown to the microsecond.
+                    let micros = samples.unsigned_abs() * 1000 / 48;
+                    let fraction = format!("{:03}", micros % 1000);
+                    let fraction = fraction.trim_end_matches('0');
+                    format!(
+                        "Sound plays {}{}{fraction} ms {}",
+                        micros / 1000,
+                        if fraction.is_empty() { "" } else { "." },
+                        if samples > 0 { "later" } else { "earlier" }
+                    )
+                }
+            });
+        }
+        I::SetAudioEdges { side, policy } => {
+            let side = match side {
+                deadpan_core::EdgeSide::Start => "start",
+                deadpan_core::EdgeSide::End => "end",
+                deadpan_core::EdgeSide::Both => "start and end",
+                deadpan_core::EdgeSide::Plays => "play seams",
+                deadpan_core::EdgeSide::Gaps => "gap edges",
+            };
+            return Some(match policy {
+                deadpan_core::AudioEdgePolicy::Hard => {
+                    format!("Sound {side} cut hard, without the automatic fade")
+                }
+                deadpan_core::AudioEdgePolicy::Automatic => {
+                    format!("Sound {side} use the automatic fade")
+                }
+            });
+        }
         I::SetRepeat {
             plays,
             gaps,
@@ -256,6 +333,28 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Added a {} tail", effect.name()));
         }
         I::SetFraming { .. } => return Some("Framed the beat".into()),
+        I::Retime { speed, pitch, wrap } => {
+            let pitch = match pitch {
+                deadpan_core::PitchPolicy::Preserve => "preserve pitch".to_owned(),
+                deadpan_core::PitchPolicy::FollowSpeed => "tape pitch".to_owned(),
+                deadpan_core::PitchPolicy::Shift { semitones } => {
+                    format!("pitch {semitones:+} semitones")
+                }
+            };
+            let wrap = if *wrap { " · new Retime" } else { "" };
+            return Some(format!(
+                "Speed {}/{}× · {pitch}{wrap}",
+                speed.numerator(),
+                speed.denominator()
+            ));
+        }
+        I::Pitch { semitones: 0 } => return Some("Pitch shift removed".into()),
+        I::Pitch { semitones } => {
+            return Some(format!("Pitch shifted {semitones:+} semitones"));
+        }
+        I::SetHoldDuration { length } => {
+            return Some(format!("Pause length set to {}", pause_text(*length)));
+        }
         I::SetAudio { change } => return Some(audio_change_text(*change)),
         I::RoleRepeat { role, plays, .. } => {
             return Some(match role {
@@ -336,14 +435,19 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
     use deadpan_core::AudioChange;
     match change {
         AudioChange::Trim { gain } => format!("Gain set to {} dB", crate::gain::format_db(gain)),
-        AudioChange::Step { millidecibels } => {
+        AudioChange::Step { millidecibels } | AudioChange::RangeStep { millidecibels } => {
+            let scope = if matches!(change, AudioChange::RangeStep { .. }) {
+                "Range gain"
+            } else {
+                "Gain"
+            };
             let sign = if millidecibels < 0 { "-" } else { "+" };
             let magnitude = millidecibels.unsigned_abs();
             let fraction = format!("{:03}", magnitude % 1000);
             let fraction = fraction.trim_end_matches('0');
             let point = if fraction.is_empty() { "" } else { "." };
             format!(
-                "Gain changed by {sign}{}{point}{fraction} dB",
+                "{scope} changed by {sign}{}{point}{fraction} dB",
                 magnitude / 1000
             )
         }
@@ -351,6 +455,8 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
             format!("Saturation drive {} dB", crate::gain::format_db(drive))
         }
         AudioChange::Saturation { drive: None } => "Saturation removed".into(),
+        AudioChange::Mute { muted: true } => "Beat muted".into(),
+        AudioChange::Mute { muted: false } => "Beat unmuted".into(),
     }
 }
 

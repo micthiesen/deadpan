@@ -145,6 +145,12 @@ impl Draft {
     }
 }
 
+/// A captured gain target that is a whole beat (or an Edit range inside it)
+/// in the current group rather than one play inside a Repeat.
+pub(super) fn whole_beat(target: &Option<Result<Target, String>>) -> bool {
+    matches!(target, Some(Ok(target)) if target.scoped.is_none())
+}
+
 impl DeadpanApp {
     pub(super) fn gain_render_edit(&self) -> Result<Option<super::render::PreviewEdit>, String> {
         let draft = self
@@ -257,6 +263,11 @@ impl DeadpanApp {
                 if target.scoped.is_some() {
                     return Err("Recording changes a whole beat's gain; leave the play scope with :scope all.".into());
                 }
+                // A range step changes the beat containing the range, which
+                // the planner resolves and checks exactly.
+                if matches!(change, deadpan_core::AudioChange::RangeStep { .. }) {
+                    return Ok(());
+                }
                 change
                     .apply(&target.entry)
                     .map_err(|error| error.to_string())
@@ -270,7 +281,12 @@ impl DeadpanApp {
                     })
             });
         if let Err(error) = checked {
-            self.error = Some(error);
+            if error.ends_with("No edit was made.") {
+                self.error = None;
+                self.message = Some(error);
+            } else {
+                self.error = Some(error);
+            }
             return;
         }
         let capture = macro_target
@@ -286,19 +302,27 @@ impl DeadpanApp {
             self.sound_action(navigation::SoundAction::GainStep(delta), context);
             return;
         }
-        if self.macros.recording() {
-            let target = Some(self.capture_gain_target());
+        // A beat (or the Edit range inside it) in the current group changes
+        // through the semantic path, so `.` repeats it and a macro records it;
+        // one play inside a Repeat is edited directly.
+        let target = self.capture_gain_target();
+        if self.macros.recording() || matches!(&target, Ok(target) if target.scoped.is_none()) {
             let capture = Some(self.capture_macro_target());
-            self.record_audio_change(
-                target,
-                capture,
+            // A range step and a whole-beat step are different edits, so `.`
+            // never turns one into the other.
+            let change = if self.edit_selection() == navigation::EditSelection::None {
                 deadpan_core::AudioChange::Step {
                     millidecibels: delta,
-                },
-            );
+                }
+            } else {
+                deadpan_core::AudioChange::RangeStep {
+                    millidecibels: delta,
+                }
+            };
+            self.record_audio_change(Some(target), capture, change);
             return;
         }
-        let result = self.capture_gain_target().and_then(|target| {
+        let result = target.and_then(|target| {
             let mut edit = GainEdit::new(target.entry.clone());
             edit.adjust_trim(delta)?;
             Ok((target, edit.recipe().clone()))
@@ -312,9 +336,38 @@ impl DeadpanApp {
     /// `,m`: mute the Visual range inside the selected beat, or toggle the
     /// whole beat's mute when no range is selected. One Undo either way.
     pub(super) fn mute_key(&mut self) {
+        // A beat in the current group (or the Edit range inside it) mutes
+        // through the semantic path, so `.` repeats it and a macro records
+        // it: a range as the role-only sound delete it is, the whole beat as
+        // an explicit mute state. One play inside a Repeat is edited directly.
+        let captured = self.capture_gain_target();
+        if self.macros.recording() && matches!(&captured, Ok(target) if target.scoped.is_some()) {
+            self.error = Some(
+                "Recording mutes a whole beat or a range of it; leave the play scope with :scope all."
+                    .into(),
+            );
+            return;
+        }
+        if let Ok(target) = &captured
+            && target.scoped.is_none()
+        {
+            let muted = GainEdit::new(target.entry.clone()).muted();
+            let capture = self.capture_macro_target();
+            let instruction = if self.selected_edit_range().is_some() {
+                deadpan_core::SemanticInstruction::DeleteRole {
+                    role: deadpan_core::MediaRole::Audio,
+                }
+            } else {
+                deadpan_core::SemanticInstruction::SetAudio {
+                    change: deadpan_core::AudioChange::Mute { muted: !muted },
+                }
+            };
+            self.apply_recorded_instruction(capture, Ok(instruction));
+            return;
+        }
         let range = self.selected_edit_range();
         let rows = &self.beat_rows;
-        let result = self.capture_gain_target().and_then(|target| {
+        let result = captured.and_then(|target| {
             let mut edit = GainEdit::new(target.entry.clone());
             let Some(range) = range else {
                 edit.set_muted(!edit.muted())?;
@@ -346,7 +399,25 @@ impl DeadpanApp {
         }
     }
 
-    pub(super) fn gain_mute(&mut self, target: Option<Result<Target, String>>) {
+    pub(super) fn gain_mute(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+    ) {
+        // With an Edit range, `:gain-mute` keeps toggling the whole beat as
+        // it always has, through the direct edit.
+        if let Some(Ok(captured)) = &target
+            && captured.scoped.is_none()
+            && self.selected_edit_range().is_none()
+        {
+            let muted = GainEdit::new(captured.entry.clone()).muted();
+            self.record_audio_change(
+                target,
+                macro_target,
+                deadpan_core::AudioChange::Mute { muted: !muted },
+            );
+            return;
+        }
         let result = target
             .unwrap_or_else(|| Err("No gain target was captured on command entry.".into()))
             .and_then(|target| {
@@ -1071,7 +1142,8 @@ impl DeadpanApp {
                     .reveal_on_focus()
                     .clicked()
                 {
-                    self.gain_mute(Some(Ok(target.clone())));
+                    let capture = Some(self.capture_macro_target());
+                    self.gain_mute(Some(Ok(target.clone())), capture);
                 }
             });
             if ui

@@ -410,6 +410,14 @@ define_commands! {
         edge: crate::AudioBoundaryKind,
         policy: crate::AudioEdgePolicy,
     },
+    /// Mark a split fragment's (Partition's) sides as editorial edges, so
+    /// their `node_start`/`node_end` policy applies there: a short creative
+    /// fade when automatic, a cut when hard. Unmarked fragment sides add no
+    /// fade. Timing, sampling support and every clock are unchanged.
+    SetEditorialEdges {
+        node: NodeId,
+        edges: crate::AudioEditorialEdges,
+    },
     SetFraming {
         node: NodeId,
         framing: Option<crate::Framing>,
@@ -2089,6 +2097,22 @@ pub(crate) fn reduce(
             }
             beat.audio_edges.set(*edge, *policy);
         }
+        Command::SetEditorialEdges { node, edges } => {
+            let beat = node_mut(document, node)?;
+            if !matches!(
+                beat.kind,
+                NodeKind::Retime {
+                    purpose: crate::RetimePurpose::Partition,
+                    ..
+                }
+            ) {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "editorial edge marks are set on a split fragment",
+                ));
+            }
+            beat.audio_editorial_edges = *edges;
+        }
         Command::SetCanvas { width, height } => {
             crate::basis::validate_canvas(*width, *height)?;
             document.presentation_basis.width = *width;
@@ -2692,6 +2716,7 @@ fn description(command: &Command) -> &'static str {
         Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
         Command::SetAudioEdge { .. } => "Change audio edge policy",
+        Command::SetEditorialEdges { .. } => "Mark fragment sound edges",
         Command::SetFraming { .. } => "Change framing",
         Command::SetRepeatEscalation { .. } => "Change Repeat escalation",
         Command::SetCutaways { .. } => "Change cutaways",

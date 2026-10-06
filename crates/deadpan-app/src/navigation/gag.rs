@@ -10,6 +10,16 @@ use super::duration::DurationInput;
 
 pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms] [vary=20% [seed=7]], :gag nothing-happens [register=r] [tone=1s] [silence=1s] or :gag are-we-done [register=r] [pause=1.5s].";
 
+/// The built-in recipe names; saved presets use any other name.
+pub const BUILT_IN: [&str; 6] = [
+    "long-answer",
+    "escalator",
+    "non-sequitur",
+    "one-more-time",
+    "nothing-happens",
+    "are-we-done",
+];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GagInput {
     LongAnswer {
@@ -331,6 +341,324 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
     Ok(input)
 }
 
+/// The `:gag` name of a recipe.
+pub fn slug(recipe: &deadpan_core::GagRecipe) -> &'static str {
+    use deadpan_core::GagRecipe as G;
+    match recipe {
+        G::LongAnswer { .. } => "long-answer",
+        G::Escalator { .. } => "escalator",
+        G::NonSequitur { .. } => "non-sequitur",
+        G::OneMoreTime { .. } => "one-more-time",
+        G::NothingHappens { .. } => "nothing-happens",
+        G::AreWeDone { .. } => "are-we-done",
+    }
+}
+
+/// A recipe's parameters as `:gag` arguments, exactly when the value is a
+/// terminating decimal: the inspector pre-fills `:gag-set` with them.
+pub fn arguments(recipe: &deadpan_core::GagRecipe) -> Vec<(&'static str, String)> {
+    use deadpan_core::{GagRecipe as G, PauseLength};
+    let length = |length: &PauseLength| match length {
+        PauseLength::Frames { frames } => format!("{frames}f"),
+        PauseLength::Milliseconds { milliseconds } => format!("{milliseconds}ms"),
+    };
+    let register = |name: &RegisterName| name.as_char().to_string();
+    match recipe {
+        G::LongAnswer { pause, scale, .. } => {
+            vec![("pause", length(pause)), ("creep", exact_decimal(*scale))]
+        }
+        G::Escalator {
+            plays,
+            gain_step,
+            zoom_step,
+            ..
+        } => vec![
+            ("plays", plays.to_string()),
+            (
+                "gain-step",
+                format!(
+                    "{}dB",
+                    exact_decimal(
+                        ExactRatio::new(i128::from(gain_step.millidecibels()), 1000)
+                            .expect("nonzero denominator")
+                    )
+                ),
+            ),
+            ("zoom-step", exact_decimal(*zoom_step)),
+        ],
+        G::NonSequitur { register: name, .. } => vec![("register", register(name))],
+        G::OneMoreTime {
+            plays,
+            gap,
+            shorten,
+            variation,
+            ..
+        } => {
+            let mut values = vec![
+                ("plays", plays.to_string()),
+                ("gap", length(gap)),
+                ("shorten", length(shorten)),
+            ];
+            if let Some(variation) = variation {
+                values.push(("vary", format!("{}%", variation.percent)));
+                values.push(("seed", variation.seed.to_string()));
+            }
+            values
+        }
+        G::NothingHappens {
+            tone,
+            silence,
+            register: name,
+            ..
+        } => vec![
+            ("register", register(name)),
+            ("tone", length(tone)),
+            ("silence", length(silence)),
+        ],
+        G::AreWeDone {
+            pause,
+            register: name,
+            ..
+        } => vec![("register", register(name)), ("pause", length(pause))],
+    }
+}
+
+/// `value` written exactly in decimal when it terminates within nine
+/// places, else to three places as the pinned label writes it.
+fn exact_decimal(value: ExactRatio) -> String {
+    let (numerator, denominator) = (value.numerator(), value.denominator());
+    let Some(places) = (0..=9u32).find(|places| 10_i128.pow(*places) % denominator == 0) else {
+        return format!("{:.3}", numerator as f64 / denominator as f64);
+    };
+    let scaled = numerator * (10_i128.pow(places) / denominator);
+    let digits = scaled.unsigned_abs().to_string();
+    let places = places as usize;
+    let text = if places == 0 {
+        digits
+    } else {
+        let padded = format!("{digits:0>width$}", width = places + 1);
+        let (whole, fraction) = padded.split_at(padded.len() - places);
+        format!("{whole}.{fraction}")
+    };
+    if scaled < 0 { format!("-{text}") } else { text }
+}
+
+/// The `:gag` argument keys a parameter is written with.
+pub fn parameter_keys(parameter: deadpan_core::GagParameter) -> &'static [&'static str] {
+    use deadpan_core::GagParameter as P;
+    match parameter {
+        P::Pause => &["pause"],
+        P::Creep => &["creep"],
+        P::Plays => &["plays"],
+        P::GainStep => &["gain-step"],
+        P::ZoomStep => &["zoom-step"],
+        P::Gap => &["gap"],
+        P::Shorten => &["shorten"],
+        P::Variation => &["vary", "seed"],
+        P::Tone => &["tone"],
+        P::Silence => &["silence"],
+        P::Register => &["register"],
+    }
+}
+
+/// `:gag-set key=value …` on an inserted gag: its current recipe with only
+/// the given parameters changed, each parsed by the `:gag` grammar, and the
+/// changed parameters themselves (`vary=` and `seed=` are one).
+pub fn merge(
+    current: &deadpan_core::GagRecipe,
+    parameters: &[&str],
+    rate: deadpan_core::FrameRate,
+) -> Result<(deadpan_core::GagRecipe, Vec<deadpan_core::GagParameter>), String> {
+    let recipe = merge_recipe(current, parameters, rate)?;
+    let mut changed = Vec::new();
+    for parameter in parameters {
+        use deadpan_core::GagParameter as P;
+        let key = parameter.split_once('=').map_or(*parameter, |(key, _)| key);
+        let named = match key {
+            "pause" => P::Pause,
+            "creep" => P::Creep,
+            "plays" => P::Plays,
+            "gain-step" => P::GainStep,
+            "zoom-step" => P::ZoomStep,
+            "gap" => P::Gap,
+            "shorten" => P::Shorten,
+            "vary" | "seed" => P::Variation,
+            "tone" => P::Tone,
+            "silence" => P::Silence,
+            "register" => P::Register,
+            other => return Err(format!("{other} is not a gag parameter. {USAGE}")),
+        };
+        if !changed.contains(&named) {
+            changed.push(named);
+        }
+    }
+    Ok((recipe, changed))
+}
+
+fn merge_recipe(
+    current: &deadpan_core::GagRecipe,
+    parameters: &[&str],
+    rate: deadpan_core::FrameRate,
+) -> Result<deadpan_core::GagRecipe, String> {
+    use deadpan_core::GagRecipe as G;
+    if parameters.is_empty() {
+        return Err(format!(
+            "Give the parameters to change, for example :gag-set {}.",
+            arguments(current)
+                .first()
+                .map_or(String::new(), |(key, value)| format!("{key}={value}"))
+        ));
+    }
+    let mut given = std::collections::BTreeSet::new();
+    let mut words: Vec<String> = vec![slug(current).to_owned()];
+    for parameter in parameters {
+        let (key, _) = parameter.split_once('=').ok_or(USAGE)?;
+        given.insert(key.to_owned());
+        words.push((*parameter).to_owned());
+    }
+    // A new seed alone keeps the pinned percentage.
+    if let G::OneMoreTime {
+        variation: Some(variation),
+        ..
+    } = current
+        && given.contains("seed")
+        && !given.contains("vary")
+    {
+        words.push(format!("vary={}%", variation.percent));
+        given.insert("vary".to_owned());
+    }
+    let words: Vec<&str> = words.iter().map(String::as_str).collect();
+    let changed = parse(&words)?.recipe(rate)?;
+    let has = |key: &str| given.contains(key);
+    Ok(match (current, changed) {
+        (
+            G::LongAnswer {
+                version,
+                pause,
+                scale,
+            },
+            G::LongAnswer {
+                pause: new_pause,
+                scale: new_scale,
+                ..
+            },
+        ) => G::LongAnswer {
+            version: *version,
+            pause: if has("pause") { new_pause } else { *pause },
+            scale: if has("creep") { new_scale } else { *scale },
+        },
+        (
+            G::Escalator {
+                version,
+                plays,
+                gain_step,
+                zoom_step,
+            },
+            G::Escalator {
+                plays: new_plays,
+                gain_step: new_gain,
+                zoom_step: new_zoom,
+                ..
+            },
+        ) => G::Escalator {
+            version: *version,
+            plays: if has("plays") { new_plays } else { *plays },
+            gain_step: if has("gain-step") {
+                new_gain
+            } else {
+                *gain_step
+            },
+            zoom_step: if has("zoom-step") {
+                new_zoom
+            } else {
+                *zoom_step
+            },
+        },
+        (G::NonSequitur { version, .. }, G::NonSequitur { register, .. }) => G::NonSequitur {
+            version: *version,
+            register,
+        },
+        (
+            G::OneMoreTime {
+                version,
+                plays,
+                gap,
+                shorten,
+                variation,
+            },
+            G::OneMoreTime {
+                plays: new_plays,
+                gap: new_gap,
+                shorten: new_shorten,
+                variation: new_variation,
+                ..
+            },
+        ) => G::OneMoreTime {
+            version: *version,
+            plays: if has("plays") { new_plays } else { *plays },
+            gap: if has("gap") { new_gap } else { *gap },
+            shorten: if has("shorten") {
+                new_shorten
+            } else {
+                *shorten
+            },
+            variation: if has("vary") {
+                new_variation
+            } else {
+                *variation
+            },
+        },
+        (
+            G::NothingHappens {
+                version,
+                tone,
+                silence,
+                register,
+            },
+            G::NothingHappens {
+                tone: new_tone,
+                silence: new_silence,
+                register: new_register,
+                ..
+            },
+        ) => G::NothingHappens {
+            version: *version,
+            tone: if has("tone") { new_tone } else { *tone },
+            silence: if has("silence") {
+                new_silence
+            } else {
+                *silence
+            },
+            register: if has("register") {
+                new_register
+            } else {
+                *register
+            },
+        },
+        (
+            G::AreWeDone {
+                version,
+                pause,
+                register,
+            },
+            G::AreWeDone {
+                pause: new_pause,
+                register: new_register,
+                ..
+            },
+        ) => G::AreWeDone {
+            version: *version,
+            pause: if has("pause") { new_pause } else { *pause },
+            register: if has("register") {
+                new_register
+            } else {
+                *register
+            },
+        },
+        _ => return Err("The parameters belong to another gag.".into()),
+    })
+}
+
 /// `register=r`: one register letter, or the unnamed register when absent.
 fn register(value: Option<&str>) -> Result<RegisterName, String> {
     value.map_or(Ok(RegisterName::unnamed()), |value| {
@@ -361,6 +689,82 @@ pub(super) fn decimal(value: &str) -> Result<ExactRatio, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gag_set_changes_only_the_given_parameters_and_prefills_exact_values() {
+        let rate = deadpan_core::FrameRate::new(30, 1).unwrap();
+        let current = parse(&[
+            "one-more-time",
+            "plays=4",
+            "gap=12f",
+            "shorten=3f",
+            "vary=20%",
+            "seed=7",
+        ])
+        .unwrap()
+        .recipe(rate)
+        .unwrap();
+        let (merged, changed) = merge(&current, &["plays=5"], rate).unwrap();
+        assert_eq!(changed, [deadpan_core::GagParameter::Plays]);
+        assert!(matches!(
+            merged,
+            deadpan_core::GagRecipe::OneMoreTime {
+                plays,
+                gap: deadpan_core::PauseLength::Frames { frames },
+                variation: Some(deadpan_core::GagVariation { percent: 20, seed: 7 }),
+                ..
+            } if plays.get() == 5 && frames.get() == 12
+        ));
+        // A new seed alone keeps the pinned percentage.
+        assert!(matches!(
+            merge(&current, &["seed=9"], rate).unwrap().0,
+            deadpan_core::GagRecipe::OneMoreTime {
+                variation: Some(deadpan_core::GagVariation {
+                    percent: 20,
+                    seed: 9
+                }),
+                ..
+            }
+        ));
+        assert!(merge(&current, &[], rate).is_err());
+        assert!(merge(&current, &["creep=1.5"], rate).is_err());
+        let long = parse(&["long-answer", "pause=1500ms", "creep=1.35"])
+            .unwrap()
+            .recipe(rate)
+            .unwrap();
+        assert_eq!(
+            arguments(&long),
+            vec![("pause", "1500ms".to_owned()), ("creep", "1.35".to_owned())]
+        );
+        let escalator = parse(&["escalator", "gain-step=-1.5dB", "zoom-step=0.08"])
+            .unwrap()
+            .recipe(rate)
+            .unwrap();
+        assert_eq!(
+            arguments(&escalator),
+            vec![
+                ("plays", "3".to_owned()),
+                ("gain-step", "-1.5dB".to_owned()),
+                ("zoom-step", "0.080".to_owned())
+            ]
+        );
+        // The pre-filled arguments parse back to the same recipe.
+        for recipe in [long, escalator, current] {
+            let words: Vec<String> = std::iter::once(slug(&recipe).to_owned())
+                .chain(
+                    arguments(&recipe)
+                        .into_iter()
+                        .map(|(key, value)| format!("{key}={value}")),
+                )
+                .collect();
+            let words: Vec<&str> = words.iter().map(String::as_str).collect();
+            assert_eq!(
+                parse(&words).unwrap().recipe(rate).unwrap(),
+                recipe,
+                "{words:?}"
+            );
+        }
+    }
 
     #[test]
     fn gags_parse_with_defaults_and_refuse_strangers() {

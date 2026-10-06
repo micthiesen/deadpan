@@ -72,11 +72,16 @@ fn project_with_pause(backend: Backend) -> Fixture {
 }
 
 fn start(fixture: &Fixture, ticket: u64) -> GenerationOperation {
+    start_variants(fixture, ticket, 1)
+}
+
+fn start_variants(fixture: &Fixture, ticket: u64, variants: u8) -> GenerationOperation {
     GenerationOperation::Start {
         ticket,
         session: fixture.workspace.session,
         revision: fixture.workspace.document.revision_id().clone(),
         hold: fixture.hold.clone(),
+        variants,
     }
 }
 
@@ -287,6 +292,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             session,
             revision: RevisionId::new("not-current").unwrap(),
             hold: fixture.hold.clone(),
+            variants: 1,
         },
     );
     assert_eq!(
@@ -300,6 +306,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             session: session + 1,
             revision: revision.clone(),
             hold: fixture.hold.clone(),
+            variants: 1,
         },
     );
     assert_eq!(
@@ -314,10 +321,25 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             session,
             revision: revision.clone(),
             hold: root,
+            variants: 1,
         },
     );
     assert!(refusal(&not_a_pause).unwrap().contains("Select a pause"));
+    for variants in [0, crate::project::generation::MAX_VARIANTS + 1] {
+        let too_many = generation(
+            &fixture.service,
+            GenerationOperation::Start {
+                ticket: 2,
+                session,
+                revision: revision.clone(),
+                hold: fixture.hold.clone(),
+                variants,
+            },
+        );
+        assert!(refusal(&too_many).unwrap().contains("1 to 4 AI variants"));
+    }
     let request = deadpan_jobs::RequestId::new("ai-hold-unknown").unwrap();
+    let attempt = deadpan_jobs::AttemptId::new("unknown").unwrap();
     let preview = generation(
         &fixture.service,
         GenerationOperation::Preview {
@@ -325,6 +347,8 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             session,
             revision: revision.clone(),
             request: request.clone(),
+            attempt: attempt.clone(),
+            draft: 41,
         },
     );
     assert!(refusal(&preview).unwrap().contains("no longer offered"));
@@ -334,13 +358,44 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
         GenerationOperation::Accept {
             session,
             revision: revision.clone(),
-            request,
+            request: request.clone(),
+            attempt: attempt.clone(),
             hold: fixture.hold.clone(),
             cursor: ProjectFrame(10),
             scope: SequenceScope::default(),
         },
     );
     assert!(accept.error.unwrap().contains("no longer offered"));
+    for operation in [
+        GenerationOperation::Select {
+            ticket: 5,
+            session,
+            request: request.clone(),
+            attempt: attempt.clone(),
+        },
+        GenerationOperation::Discard {
+            ticket: 6,
+            session,
+            request: request.clone(),
+            attempt: attempt.clone(),
+        },
+    ] {
+        let refused = generation(&fixture.service, operation);
+        assert!(refusal(&refused).unwrap().contains("no longer offered"));
+    }
+    let foreign = generation(
+        &fixture.service,
+        GenerationOperation::Discard {
+            ticket: 7,
+            session: session + 1,
+            request: request.clone(),
+            attempt,
+        },
+    );
+    assert_eq!(
+        refusal(&foreign).as_deref(),
+        Some("Project session changed before the request")
+    );
     assert!(accept.committed.is_none());
     assert_eq!(accept.workspace.unwrap().document.revision_id(), &revision);
     assert!(
@@ -349,6 +404,218 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             .unwrap()
             .is_empty(),
         "refused requests record nothing"
+    );
+}
+
+fn ready_script() -> Script {
+    Script {
+        unavailable: None,
+        steps: 2,
+        step_interval: Duration::from_millis(1),
+        ending: ScriptEnding::Ready,
+    }
+}
+
+/// Whether this machine can run the synthetic Ready worker.
+fn synthetic_ready_available() -> bool {
+    crate::project::generation::synthetic_tools().is_ok()
+}
+
+/// Variants through the real job thread: conditioning, allocation, the
+/// synthetic worker's footage, host qualification, publication and Ready are
+/// all production code; only the model is replaced. Two variants of one
+/// request, one accepted, then another added to the same request.
+#[test]
+fn generated_variants_share_a_request_and_one_is_accepted() {
+    if !synthetic_ready_available() {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    }
+    let fixture = project_with_pause(Backend::Scripted(Arc::new(ScriptQueue::new([
+        ready_script(),
+    ]))));
+    let started = generation(&fixture.service, start_variants(&fixture, 1, 2));
+    assert!(refusal(&started).is_none(), "{:?}", refusal(&started));
+    let finished = job_until(&fixture.service, |job| !job.running());
+    let generation_state = finished.generation.clone().unwrap();
+    let job = generation_state.job.clone().unwrap();
+    let Some(Outcome::Ready(request)) = job.outcome.clone() else {
+        panic!("expected Ready, got {:?}", job.outcome);
+    };
+    assert_eq!((job.variants, job.variant, job.ready), (2, 2, 2));
+    let candidate = generation_state.candidates[&fixture.hold].clone();
+    assert_eq!(candidate.request, request);
+    assert_eq!(candidate.variants.len(), 2);
+    assert_eq!(
+        candidate.variants[1].seed,
+        (candidate.variants[0].seed + 1) % (1 << 32)
+    );
+    assert_ne!(candidate.variants[0].sampled, candidate.variants[1].sampled);
+    assert_eq!(candidate.selected, candidate.variants[1].attempt);
+    assert_eq!(
+        attempt_states(&fixture.workspace, &request),
+        vec![JobState::Ready, JobState::Ready]
+    );
+    let workspace = finished.workspace.unwrap();
+    assert_eq!(
+        workspace.document.revision_id(),
+        fixture.workspace.document.revision_id(),
+        "Ready never edits"
+    );
+
+    // Preview and accept the first variant.
+    let first = candidate.variants[0].attempt.clone();
+    let previewed = generation(
+        &fixture.service,
+        GenerationOperation::Preview {
+            ticket: 2,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            request: request.clone(),
+            attempt: first.clone(),
+            draft: 42,
+        },
+    );
+    let preview = previewed.generation.unwrap().preview.expect("preview");
+    assert_eq!(preview.attempt(), &first);
+    let accepted = generation(
+        &fixture.service,
+        GenerationOperation::Accept {
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            request: request.clone(),
+            attempt: first.clone(),
+            hold: fixture.hold.clone(),
+            cursor: ProjectFrame(10),
+            scope: SequenceScope::default(),
+        },
+    );
+    assert!(accepted.error.is_none(), "{:?}", accepted.error);
+    let workspace = accepted.workspace.clone().unwrap();
+    let NodeKind::Hold { recipe } = &workspace.document.nodes()[&fixture.hold].kind else {
+        panic!("the pause is a Hold");
+    };
+    let HoldVideo::Generated { accepted: artifact } = &recipe.video else {
+        panic!("accepted pictures are generated");
+    };
+    assert_eq!(
+        artifact.artifact.sampled_object,
+        candidate.variants[0].sampled
+    );
+    // The other variant is still offered for the accepted pause.
+    let offered = accepted.generation.unwrap().candidates[&fixture.hold].clone();
+    assert_eq!(offered.request, request);
+    assert_eq!(
+        offered
+            .variants
+            .iter()
+            .map(|variant| variant.attempt.clone())
+            .collect::<Vec<_>>(),
+        vec![candidate.variants[1].attempt.clone()]
+    );
+
+    // Generating again with unchanged boundary pictures adds a variant to
+    // the same request.
+    let again = generation(
+        &fixture.service,
+        GenerationOperation::Start {
+            ticket: 3,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            hold: fixture.hold.clone(),
+            variants: 1,
+        },
+    );
+    assert!(refusal(&again).is_none(), "{:?}", refusal(&again));
+    let finished = job_until(&fixture.service, |job| job.ticket == 3 && !job.running());
+    let state = finished.generation.unwrap();
+    assert_eq!(
+        state.job.unwrap().outcome,
+        Some(Outcome::Ready(request.clone()))
+    );
+    assert_eq!(state.candidates[&fixture.hold].request, request);
+    assert_eq!(state.candidates[&fixture.hold].variants.len(), 2);
+    assert_eq!(
+        attempt_states(&fixture.workspace, &request),
+        vec![JobState::Ready, JobState::Ready, JobState::Ready]
+    );
+}
+
+/// A later variant that fails or is cancelled keeps the earlier Ready ones
+/// and says so; nothing is reported as all-or-nothing.
+#[test]
+fn partial_variants_are_kept_and_reported() {
+    if !synthetic_ready_available() {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    }
+    let fixture = project_with_pause(Backend::Scripted(Arc::new(ScriptQueue::new([
+        ready_script(),
+        Script {
+            ending: ScriptEnding::Fail("variant two stopped".into()),
+            ..waiting(1)
+        },
+        ready_script(),
+        waiting(2),
+    ]))));
+    generation(&fixture.service, start_variants(&fixture, 1, 2));
+    let failed = job_until(&fixture.service, |job| job.ticket == 1 && !job.running());
+    let job = failed.generation.as_ref().unwrap().job.clone().unwrap();
+    assert!(matches!(job.outcome, Some(Outcome::Failed(_))), "{job:?}");
+    assert_eq!((job.ready, job.variant), (1, 2));
+    assert!(
+        job.note
+            .as_deref()
+            .unwrap()
+            .contains("1 earlier AI variant")
+    );
+    assert!(
+        failed
+            .message
+            .as_deref()
+            .unwrap()
+            .contains("variant 2 failed")
+    );
+    assert_eq!(
+        failed.generation.unwrap().candidates[&fixture.hold]
+            .variants
+            .len(),
+        1
+    );
+
+    // Cancelling while a later variant runs keeps the Ready ones too.
+    let workspace = failed.workspace.unwrap();
+    generation(
+        &fixture.service,
+        GenerationOperation::Start {
+            ticket: 2,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            hold: fixture.hold.clone(),
+            variants: 2,
+        },
+    );
+    job_until(&fixture.service, |job| {
+        job.ticket == 2 && job.variant == 2 && job.phase.steps() == Some((2, 2))
+    });
+    generation(
+        &fixture.service,
+        GenerationOperation::Cancel {
+            ticket: 3,
+            session: workspace.session,
+            job: 2,
+        },
+    );
+    let cancelled = job_until(&fixture.service, |job| job.ticket == 2 && !job.running());
+    let job = cancelled.generation.as_ref().unwrap().job.clone().unwrap();
+    assert_eq!(job.outcome, Some(Outcome::Cancelled));
+    assert_eq!(job.ready, 1);
+    assert!(job.note.as_deref().unwrap().contains("was cancelled"));
+    assert_eq!(
+        cancelled.generation.unwrap().candidates[&fixture.hold]
+            .variants
+            .len(),
+        2
     );
 }
 
@@ -397,10 +664,11 @@ fn shutdown_drains_a_running_job() {
     );
 }
 
-/// The real job thread and worker, then explicit acceptance. Opt in with
-/// DEADPAN_BRIDGE_REAL=1 (about 100 s and 14 GB on an M5 Max). Set
-/// DEADPAN_BRIDGE_REAL_PROJECT to an absolute scratch copy of a project to use
-/// it instead of the small fixture; a 30-frame pause is inserted mid-edit.
+/// The real job thread and worker generating two seeded variants, then
+/// explicit acceptance of the first. Opt in with DEADPAN_BRIDGE_REAL=1 (about
+/// 100 s per variant and 14 GB on an M5 Max). Set DEADPAN_BRIDGE_REAL_PROJECT
+/// to an absolute scratch copy of a project to use it instead of the small
+/// fixture; a 30-frame pause is inserted mid-edit.
 #[test]
 #[ignore = "runs the local AI model; set DEADPAN_BRIDGE_REAL=1"]
 fn real_worker_generates_a_candidate_that_acceptance_commits() {
@@ -453,15 +721,20 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
         hold: paused.committed.unwrap().selected_node.unwrap(),
     };
     let started = Instant::now();
-    generation(&fixture.service, start(&fixture, 1));
+    generation(&fixture.service, start_variants(&fixture, 1, 2));
     let mut last = None;
     let finished = wait_long(&fixture.service, |update| {
         let job = update.generation.as_ref().and_then(|g| g.job.as_ref());
         if let Some(job) = job
-            && last.as_ref() != Some(&job.phase)
+            && last.as_ref() != Some(&(job.variant, job.phase.clone()))
         {
-            eprintln!("{:>6.1}s {:?}", started.elapsed().as_secs_f64(), job.phase);
-            last = Some(job.phase.clone());
+            eprintln!(
+                "{:>6.1}s variant {} {:?}",
+                started.elapsed().as_secs_f64(),
+                job.variant,
+                job.phase
+            );
+            last = Some((job.variant, job.phase.clone()));
         }
         job.is_some_and(|job| !job.running())
     });
@@ -475,13 +748,33 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
         panic!("expected Ready, got {:?}", job.outcome);
     };
     let generation_state = finished.generation.unwrap();
-    assert_eq!(generation_state.candidates[&fixture.hold].request, request);
+    let candidate = generation_state.candidates[&fixture.hold].clone();
+    assert_eq!(candidate.request, request);
+    assert_eq!(job.ready, 2);
+    assert_eq!(candidate.variants.len(), 2);
+    assert_eq!(
+        candidate.variants[1].seed,
+        (candidate.variants[0].seed + 1) % (1 << 32)
+    );
+    assert_ne!(
+        candidate.variants[0].sampled, candidate.variants[1].sampled,
+        "different seeds give different pictures"
+    );
+    for variant in &candidate.variants {
+        eprintln!(
+            "variant attempt {} seed {} sampled {}",
+            variant.attempt,
+            variant.seed,
+            variant.sampled.content()
+        );
+    }
     let workspace = finished.workspace.unwrap();
     assert_eq!(
         workspace.document.revision_id(),
         fixture.workspace.document.revision_id(),
         "Ready never edits"
     );
+    let attempt = candidate.variants[0].attempt.clone();
     let previewed = generation(
         &fixture.service,
         GenerationOperation::Preview {
@@ -489,6 +782,8 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             request: request.clone(),
+            attempt: attempt.clone(),
+            draft: 43,
         },
     );
     let preview = previewed.generation.unwrap().preview.expect("preview");
@@ -502,6 +797,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             request,
+            attempt,
             hold: fixture.hold.clone(),
             cursor: at,
             scope: SequenceScope::default(),
@@ -517,7 +813,15 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
         &workspace.document.nodes()[&fixture.hold].kind,
         NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. })
     ));
-    assert!(accepted.generation.unwrap().candidates.is_empty());
+    // The other variant stays offered for the accepted pause.
+    assert_eq!(
+        accepted.generation.unwrap().candidates[&fixture.hold]
+            .variants
+            .iter()
+            .map(|variant| variant.attempt.clone())
+            .collect::<Vec<_>>(),
+        vec![candidate.variants[1].attempt.clone()]
+    );
 }
 
 fn wait_long(
@@ -536,10 +840,10 @@ fn wait_long(
     }
 }
 
-/// A real store Ready bundle (fixture bytes, no model or media decoding):
-/// the service discovers it, previews it through the store's acceptance
-/// preview without an edit, refuses stale preview identities and discards it
-/// for the session only.
+/// Real store Ready variants (fixture bytes, no model or media decoding):
+/// the service discovers them, selects and previews them through the store's
+/// acceptance preview without an edit, refuses stale identities, discards
+/// them durably and stops offering them when the pause changes.
 mod ready_fixture {
     use super::*;
     use deadpan_core::{
@@ -600,8 +904,9 @@ mod ready_fixture {
         Sha256::new(character.to_string().repeat(64)).unwrap()
     }
 
-    /// A one-Hold project whose current request has a selected Ready bundle.
-    fn seed(path: &Path) -> (NodeId, RequestId) {
+    /// A one-Hold project whose current request has `variants` Ready
+    /// variants, each with its own seed and sampled master.
+    fn seed(path: &Path, variants: u64) -> (NodeId, RequestId, Vec<AttemptId>) {
         let hold = node("hold");
         let document = ProjectDocument::new(
             ProjectId::new("project").unwrap(),
@@ -673,104 +978,135 @@ mod ready_fixture {
                 plan.clone(),
             )
             .unwrap();
-        let identity = MessageIdentity::new(
-            request.request_id.clone(),
-            AttemptId::new("attempt").unwrap(),
-        );
-        store
-            .begin_generation_attempt(BeginGenerationAttempt {
-                identity: identity.clone(),
-                cancellation_token: CancellationToken::new("cancel").unwrap(),
-            })
-            .unwrap();
-        let candidate = NativeCandidateManifest {
-            native: WorkspaceArtifact::new(
-                WorkspaceRef::new("outputs/native.mp4").unwrap(),
-                sha('c'),
-                101,
-            )
-            .unwrap(),
-            provenance: WorkspaceArtifact::new(
-                WorkspaceRef::new("outputs/provenance.json").unwrap(),
-                sha('d'),
-                202,
-            )
-            .unwrap(),
-            video: VideoSpec::new(
-                FrameDuration::new(i64::from(plan.native_frame_count())).unwrap(),
-                plan.native_frame_rate(),
-                512,
-                320,
-            )
-            .unwrap(),
-            provider,
-        };
-        for stage in [WorkerStage::Preflight, WorkerStage::Inference] {
-            store
-                .record_generation_worker_message(&WorkerMessage::Stage {
-                    protocol: ProtocolVersion::V2,
-                    identity: identity.clone(),
-                    stage,
-                })
-                .unwrap();
-        }
-        store
-            .record_generation_worker_message(&WorkerMessage::CompletedBridge {
-                protocol: ProtocolVersion::V2,
-                identity: identity.clone(),
-                candidate: candidate.clone(),
-            })
-            .unwrap();
         let limits = GeneratedMediaLimits::new(1024 * 1024).unwrap();
         for bytes in OBJECTS {
             store
                 .promote_generated_object(&mut std::io::Cursor::new(bytes), &object(bytes), limits)
                 .unwrap();
         }
-        let receipt = BundleValidationReceipt::new(
-            &candidate,
-            object(OBJECTS[0]),
-            object(OBJECTS[1]),
-            object(OBJECTS[2]),
-            video,
-            plan,
-            ValidatorIdentity::new("deadpan-media", "bridge-1").unwrap(),
-        )
-        .unwrap()
-        .with_admission(
-            BundleAdmissionEvidence::new(
-                span(458),
-                span(400),
-                BundleInputObjects::new(
-                    request.binding.context_sha256.clone(),
-                    object(OBJECTS[3]),
-                    object(OBJECTS[4]),
-                    object(OBJECTS[5]),
+        let mut attempts = Vec::new();
+        for ordinal in 1..=variants {
+            let attempt = AttemptId::new(format!("attempt-{ordinal}")).unwrap();
+            let identity = MessageIdentity::new(request.request_id.clone(), attempt.clone());
+            store
+                .begin_generation_attempt(BeginGenerationAttempt {
+                    identity: identity.clone(),
+                    cancellation_token: CancellationToken::new(format!("cancel-{ordinal}"))
+                        .unwrap(),
+                })
+                .unwrap();
+            let candidate = NativeCandidateManifest {
+                native: WorkspaceArtifact::new(
+                    WorkspaceRef::new("outputs/native.mp4").unwrap(),
+                    sha('c'),
+                    101,
+                )
+                .unwrap(),
+                provenance: WorkspaceArtifact::new(
+                    WorkspaceRef::new("outputs/provenance.json").unwrap(),
+                    sha('d'),
+                    202,
+                )
+                .unwrap(),
+                video: VideoSpec::new(
+                    FrameDuration::new(i64::from(plan.native_frame_count())).unwrap(),
+                    plan.native_frame_rate(),
+                    512,
+                    320,
+                )
+                .unwrap(),
+                provider: provider.for_attempt(ordinal),
+            };
+            for stage in [WorkerStage::Preflight, WorkerStage::Inference] {
+                store
+                    .record_generation_worker_message(&WorkerMessage::Stage {
+                        protocol: ProtocolVersion::V2,
+                        identity: identity.clone(),
+                        stage,
+                    })
+                    .unwrap();
+            }
+            store
+                .record_generation_worker_message(&WorkerMessage::CompletedBridge {
+                    protocol: ProtocolVersion::V2,
+                    identity: identity.clone(),
+                    candidate: candidate.clone(),
+                })
+                .unwrap();
+            // Each variant has its own sampled master.
+            let sampled = format!("sampled fixture {ordinal}").into_bytes();
+            store
+                .promote_generated_object(
+                    &mut std::io::Cursor::new(&sampled),
+                    &object(&sampled),
+                    limits,
+                )
+                .unwrap();
+            let receipt = BundleValidationReceipt::new(
+                &candidate,
+                object(OBJECTS[0]),
+                object(&sampled),
+                object(OBJECTS[2]),
+                video.clone(),
+                plan.clone(),
+                ValidatorIdentity::new("deadpan-media", "bridge-1").unwrap(),
+            )
+            .unwrap()
+            .with_admission(
+                BundleAdmissionEvidence::new(
+                    span(458),
+                    span(400),
+                    BundleInputObjects::new(
+                        request.binding.context_sha256.clone(),
+                        object(OBJECTS[3]),
+                        object(OBJECTS[4]),
+                        object(OBJECTS[5]),
+                    )
+                    .unwrap(),
                 )
                 .unwrap(),
             )
-            .unwrap(),
-        )
-        .unwrap();
-        store
-            .record_generation_bundle_ready(&identity, &candidate, receipt, limits)
             .unwrap();
-        (hold, request.request_id)
+            store
+                .record_generation_bundle_ready(&identity, &candidate, receipt, limits)
+                .unwrap();
+            attempts.push(attempt);
+        }
+        (hold, request.request_id, attempts)
+    }
+
+    fn open(path: &Path) -> (ProjectService, Arc<Workspace>, ProjectUpdate) {
+        let service =
+            ProjectService::start_with(Arc::new(|| {}), None, scripted(waiting(0))).unwrap();
+        let opened = command(&service, ProjectRequest::Open(path.to_path_buf()));
+        assert!(opened.error.is_none(), "{:?}", opened.error);
+        let workspace = opened.workspace.clone().unwrap();
+        (service, workspace, opened)
+    }
+
+    fn offered(update: &ProjectUpdate, hold: &NodeId) -> Option<(Vec<AttemptId>, AttemptId)> {
+        let candidate = update.generation.as_ref()?.candidates.get(hold)?.clone();
+        Some((
+            candidate
+                .variants
+                .iter()
+                .map(|variant| variant.attempt.clone())
+                .collect(),
+            candidate.selected,
+        ))
     }
 
     #[test]
-    fn ready_bundles_are_discovered_previewed_without_an_edit_and_discarded() {
+    fn ready_bundles_are_discovered_previewed_without_an_edit_and_discarded_durably() {
         let scratch = tempfile::tempdir().unwrap();
         let path = scratch.path().join("ready.deadpan");
-        let (hold, request) = seed(&path);
-        let service =
-            ProjectService::start_with(Arc::new(|| {}), None, scripted(waiting(0))).unwrap();
-        let opened = command(&service, ProjectRequest::Open(path));
-        assert!(opened.error.is_none(), "{:?}", opened.error);
-        let workspace = opened.workspace.unwrap();
+        let (hold, request, attempts) = seed(&path, 1);
+        let (service, workspace, opened) = open(&path);
         let candidates = opened.generation.unwrap().candidates;
         assert_eq!(candidates[&hold].request, request);
         assert_eq!(candidates[&hold].frames, 12);
+        assert_eq!(candidates[&hold].variants.len(), 1);
+        let attempt = attempts[0].clone();
 
         let session = workspace.session;
         let revision = workspace.document.revision_id().clone();
@@ -781,6 +1117,8 @@ mod ready_fixture {
                 session,
                 revision: RevisionId::new("stale").unwrap(),
                 request: request.clone(),
+                attempt: attempt.clone(),
+                draft: 44,
             },
         );
         assert_eq!(
@@ -794,12 +1132,15 @@ mod ready_fixture {
                 session,
                 revision: revision.clone(),
                 request: request.clone(),
+                attempt: attempt.clone(),
+                draft: 45,
             },
         );
         let state = previewed.generation.unwrap();
         assert_eq!(state.reply, Some((2, None)));
         let preview = state.preview.expect("an issued preview");
         assert_eq!(preview.request(), &request);
+        assert_eq!(preview.attempt(), &attempt);
         assert_eq!(preview.base(), &revision);
         assert_eq!(preview.session(), session);
         assert_eq!(
@@ -811,6 +1152,53 @@ mod ready_fixture {
             &preview.document().nodes()[&hold].kind,
             NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. })
         ));
+        // The audition snapshot is the same proposed document, admitted
+        // against the exact committed base, under the caller's draft
+        // identity (the workspace's shared proposal counter), never the
+        // command ticket: a Gain or Trim draft numbered like this command's
+        // ticket cannot share its playback identity.
+        let audio = preview.audio();
+        assert!(Arc::ptr_eq(&audio.document, preview.document()));
+        assert_eq!(
+            audio.content,
+            deadpan_playback::ContentIdentity::Proposed {
+                base_revision: revision.clone(),
+                draft: 45,
+                change: 1,
+            }
+        );
+        assert_eq!(audio.session, session);
+        // Another draft identity on the same base is a distinct proposal,
+        // whatever the ticket; a missing identity is refused.
+        let again = generation(
+            &service,
+            GenerationOperation::Preview {
+                ticket: 2,
+                session,
+                revision: revision.clone(),
+                request: request.clone(),
+                attempt: attempt.clone(),
+                draft: 46,
+            },
+        );
+        let other = again.generation.unwrap().preview.unwrap();
+        assert_ne!(other.audio().content, preview.audio().content);
+        let unnumbered = generation(
+            &service,
+            GenerationOperation::Preview {
+                ticket: 3,
+                session,
+                revision: revision.clone(),
+                request: request.clone(),
+                attempt: attempt.clone(),
+                draft: 0,
+            },
+        );
+        assert!(
+            refusal(&unnumbered)
+                .unwrap()
+                .contains("fresh proposal identity")
+        );
         // Preview never edits or adds history.
         let workspace = previewed.workspace.unwrap();
         assert_eq!(workspace.document.revision_id(), &revision);
@@ -825,6 +1213,7 @@ mod ready_fixture {
                 ticket: 3,
                 session,
                 request: request.clone(),
+                attempt: attempt.clone(),
             },
         );
         let state = discarded.generation.unwrap();
@@ -835,13 +1224,435 @@ mod ready_fixture {
             discarded.workspace.unwrap().document.revision_id(),
             &revision
         );
-        // Discard writes nothing: the bundle is still Ready and current.
-        let store = ProjectStore::open(&workspace.path, AccessMode::ReadOnly).unwrap();
+        // Discard is durable: the variant is unavailable, also after reopening.
+        service.shutdown();
+        let deadline = Instant::now() + TIMEOUT;
+        while !service.is_shutdown_complete() {
+            assert!(Instant::now() < deadline, "service shutdown timed out");
+            std::thread::yield_now();
+        }
+        drop(service);
+        let store = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
         assert!(
             store
                 .selected_generation_bundle(&request)
                 .unwrap()
-                .is_some()
+                .is_none()
+        );
+        let stored = store
+            .generation_attempt(&MessageIdentity::new(request.clone(), attempt))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            stored.bundle_receipt.unwrap().availability(),
+            deadpan_store::generation_attempts::CandidateAvailability::Evicted
+        );
+        drop(store);
+        let (_service, _workspace, reopened) = open(&path);
+        assert!(reopened.generation.unwrap().candidates.is_empty());
+    }
+
+    #[test]
+    fn variants_are_chosen_previewed_discarded_and_go_stale_with_their_pause() {
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("variants.deadpan");
+        let (hold, request, attempts) = seed(&path, 3);
+        let (service, workspace, opened) = open(&path);
+        // Oldest first; the newest Ready variant is selected.
+        assert_eq!(
+            offered(&opened, &hold),
+            Some((attempts.clone(), attempts[2].clone()))
+        );
+        let candidate = opened.generation.as_ref().unwrap().candidates[&hold].clone();
+        let seeds: Vec<_> = candidate
+            .variants
+            .iter()
+            .map(|variant| variant.seed)
+            .collect();
+        assert_eq!(seeds, vec![1, 2, 3]);
+        let sampled: std::collections::BTreeSet<_> = candidate
+            .variants
+            .iter()
+            .map(|variant| variant.sampled.clone())
+            .collect();
+        assert_eq!(sampled.len(), 3);
+        let session = workspace.session;
+        let revision = workspace.document.revision_id().clone();
+
+        // Choosing is operational: the store's selection changes, the edit not.
+        let chosen = generation(
+            &service,
+            GenerationOperation::Select {
+                ticket: 1,
+                session,
+                request: request.clone(),
+                attempt: attempts[0].clone(),
+            },
+        );
+        assert_eq!(chosen.generation.as_ref().unwrap().reply, Some((1, None)));
+        assert_eq!(
+            offered(&chosen, &hold).unwrap().1,
+            attempts[0],
+            "the chosen variant is offered as selected"
+        );
+        assert_eq!(chosen.workspace.unwrap().document.revision_id(), &revision);
+        assert_eq!(
+            reader(&workspace)
+                .selected_generation_bundle(&request)
+                .unwrap()
+                .unwrap()
+                .identity
+                .attempt_id,
+            attempts[0]
+        );
+
+        // Previewing another variant selects it and shows its own pictures.
+        let previewed = generation(
+            &service,
+            GenerationOperation::Preview {
+                ticket: 2,
+                session,
+                revision: revision.clone(),
+                request: request.clone(),
+                attempt: attempts[1].clone(),
+                draft: 46,
+            },
+        );
+        let state = previewed.generation.unwrap();
+        let preview = state.preview.expect("preview of the second variant");
+        assert_eq!(preview.attempt(), &attempts[1]);
+        assert_eq!(state.candidates[&hold].selected, attempts[1]);
+        let NodeKind::Hold { recipe } = &preview.document().nodes()[&hold].kind else {
+            panic!("the pause is a Hold");
+        };
+        let HoldVideo::Generated { accepted } = &recipe.video else {
+            panic!("the preview shows generated pictures");
+        };
+        assert_eq!(
+            accepted.artifact.sampled_object,
+            candidate.variants[1].sampled
+        );
+
+        // Discarding the chosen variant chooses the newest remaining one and
+        // ends its preview.
+        let discarded = generation(
+            &service,
+            GenerationOperation::Discard {
+                ticket: 3,
+                session,
+                request: request.clone(),
+                attempt: attempts[1].clone(),
+            },
+        );
+        let state = discarded.generation.as_ref().unwrap();
+        assert_eq!(state.reply, Some((3, None)));
+        assert!(state.preview.is_none());
+        assert_eq!(
+            offered(&discarded, &hold),
+            Some((
+                vec![attempts[0].clone(), attempts[2].clone()],
+                attempts[2].clone()
+            ))
+        );
+        // A discarded variant cannot be chosen again.
+        let refused = generation(
+            &service,
+            GenerationOperation::Select {
+                ticket: 4,
+                session,
+                request: request.clone(),
+                attempt: attempts[1].clone(),
+            },
+        );
+        assert!(refusal(&refused).unwrap().contains("no longer offered"));
+
+        // Changing the pause's duration changes its context: every variant
+        // goes stale together and nothing is offered.
+        let lengthened = command(
+            &service,
+            edit_request(
+                &workspace,
+                ProjectEdit::HoldDuration {
+                    node: hold.clone(),
+                    duration: FrameDuration::new(18).unwrap(),
+                },
+            ),
+        );
+        assert!(lengthened.error.is_none(), "{:?}", lengthened.error);
+        assert!(offered(&lengthened, &hold).is_none());
+        let store = reader(&workspace);
+        assert!(
+            store
+                .selected_generation_bundle(&request)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            store
+                .current_generation_requests()
+                .unwrap()
+                .iter()
+                .all(|current| current.request_id != request)
+        );
+        // Undo restores the duration, but not the stale request's relevance.
+        let workspace = lengthened.workspace.unwrap();
+        let undone = command(
+            &service,
+            ProjectRequest::Undo {
+                expected_revision: workspace.document.revision_id().clone(),
+            },
+        );
+        assert!(undone.error.is_none(), "{:?}", undone.error);
+        assert!(offered(&undone, &hold).is_none());
+    }
+}
+
+/// `generate-hold` and `accept-hold` against an open project: the live
+/// endpoint starts the app's own AI job, observes and cancels exactly it,
+/// and accepts a Ready variant in one owner transaction.
+mod live {
+    use super::*;
+    use deadpan_cli::host::Client;
+    use deadpan_cli::live_project::generation::{
+        GenerateRequest, GenerationOutcome, GenerationStatus,
+    };
+    use deadpan_cli::live_project::{self, LiveError, Operation, Reply, ShortOperation};
+
+    fn status(reply: Result<Reply, LiveError>) -> GenerationStatus {
+        match reply {
+            Ok(Reply::Generation { status }) => *status,
+            other => panic!("expected a generation status, got {other:?}"),
+        }
+    }
+
+    fn generate(fixture: &Fixture, client: &mut Client, variants: u8) -> GenerationStatus {
+        status(live_project::request(
+            client,
+            Operation::Generate {
+                project_id: fixture.workspace.document.project_id().clone(),
+                request: GenerateRequest {
+                    hold: fixture.hold.clone(),
+                    expected_revision: fixture.workspace.document.revision_id().clone(),
+                    variants,
+                    seed: Some(40),
+                },
+            },
+        ))
+    }
+
+    fn observe(fixture: &Fixture, client: &mut Client, job: u64) -> GenerationStatus {
+        status(live_project::request(
+            client,
+            Operation::GenerationStatus {
+                project_id: fixture.workspace.document.project_id().clone(),
+                job,
+            },
+        ))
+    }
+
+    fn finished(fixture: &Fixture, client: &mut Client, job: u64) -> GenerationStatus {
+        let deadline = Instant::now() + TIMEOUT;
+        loop {
+            let current = observe(fixture, client, job);
+            if current.finished() {
+                return current;
+            }
+            assert!(Instant::now() < deadline, "live generation timed out");
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    }
+
+    #[test]
+    fn a_live_request_runs_the_apps_job_and_accepts_its_variant() {
+        if !synthetic_ready_available() {
+            eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+            return;
+        }
+        let fixture = project_with_pause(Backend::Scripted(Arc::new(ScriptQueue::new([
+            ready_script(),
+        ]))));
+        let mut client = Client::discover(&fixture.workspace.path)
+            .unwrap()
+            .expect("native owner discovery");
+        let project = fixture.workspace.document.project_id().clone();
+        let refused = live_project::request(
+            &mut client,
+            Operation::Generate {
+                project_id: project.clone(),
+                request: GenerateRequest {
+                    hold: fixture.hold.clone(),
+                    expected_revision: RevisionId::new("stale").unwrap(),
+                    variants: 1,
+                    seed: None,
+                },
+            },
+        )
+        .unwrap_err();
+        assert_eq!(refused.code, "GenerationRefused");
+        assert!(refused.message.contains("Project changed"), "{refused}");
+
+        let started = generate(&fixture, &mut client, 1);
+        assert!(started.job >= 1 << 62, "remote jobs use their own tickets");
+        let done = finished(&fixture, &mut client, started.job);
+        assert_eq!(done.outcome, Some(GenerationOutcome::Ready {}));
+        assert_eq!((done.variants, done.ready), (1, 1));
+        let request = done.request_id.clone().unwrap();
+        // The app shows the same job and offers its Ready variant.
+        let native = wait(&fixture.service, |update| {
+            update
+                .generation
+                .as_ref()
+                .is_some_and(|generation| generation.candidates.contains_key(&fixture.hold))
+        });
+        let generation_state = native.generation.unwrap();
+        assert_eq!(
+            generation_state.job.as_ref().map(|job| job.ticket),
+            Some(started.job)
+        );
+        let candidate = &generation_state.candidates[&fixture.hold];
+        assert_eq!(candidate.request, request);
+        assert_eq!(candidate.variants[0].seed, 40, "the caller's seed");
+
+        let unknown = live_project::request(
+            &mut client,
+            Operation::GenerationStatus {
+                project_id: project.clone(),
+                job: started.job + 1,
+            },
+        )
+        .unwrap_err();
+        assert_eq!(unknown.code, "GenerationUnknown");
+
+        // An explicit seed cannot apply to a request whose variants derive
+        // theirs from its own seed: the job refuses instead of ignoring it.
+        let seeded = generate(&fixture, &mut client, 1);
+        let refused = finished(&fixture, &mut client, seeded.job);
+        assert!(
+            matches!(&refused.outcome, Some(GenerationOutcome::Failed { reason }) if reason.contains("derive their seeds")),
+            "{refused:?}"
+        );
+        // The earlier job's result outlives the newer job until released.
+        let retained = observe(&fixture, &mut client, started.job);
+        assert_eq!(retained.outcome, Some(GenerationOutcome::Ready {}));
+        assert_eq!(retained.request_id, Some(request.clone()));
+        assert!(matches!(
+            live_project::request(
+                &mut client,
+                Operation::ReleaseGenerationStatus {
+                    project_id: project.clone(),
+                    job: started.job,
+                },
+            ),
+            Ok(Reply::Released)
+        ));
+        let released = live_project::request(
+            &mut client,
+            Operation::GenerationStatus {
+                project_id: project.clone(),
+                job: started.job,
+            },
+        )
+        .unwrap_err();
+        assert_eq!(released.code, "GenerationUnknown");
+
+        // The UI reads the jobs' published state before another edit.
+        while fixture.service.take_update().is_some() {}
+        // Acceptance names the head it observed; a different head refuses.
+        let stale = live_project::request(
+            &mut client,
+            Operation::Execute {
+                project_id: project.clone(),
+                command: Box::new(ShortOperation::AcceptHold {
+                    request: request.clone(),
+                    attempt: Some(candidate.variants[0].attempt.clone()),
+                    expected_revision: Some(RevisionId::new("not-the-head").unwrap()),
+                    new_revision: RevisionId::new("never").unwrap(),
+                }),
+            },
+        )
+        .unwrap_err();
+        assert_eq!(stale.code, "RevisionConflict");
+
+        let reply = live_project::request(
+            &mut client,
+            Operation::Execute {
+                project_id: project.clone(),
+                command: Box::new(ShortOperation::AcceptHold {
+                    request: request.clone(),
+                    attempt: Some(candidate.variants[0].attempt.clone()),
+                    expected_revision: Some(fixture.workspace.document.revision_id().clone()),
+                    new_revision: RevisionId::new("live-accepted").unwrap(),
+                }),
+            },
+        )
+        .unwrap();
+        let Reply::Completed {
+            committed_revision,
+            refresh_error,
+            ..
+        } = reply
+        else {
+            panic!("expected a committed acceptance")
+        };
+        assert_eq!(committed_revision.unwrap().as_str(), "live-accepted");
+        assert!(refresh_error.is_none(), "{refresh_error:?}");
+        let refreshed = wait(&fixture.service, |update| {
+            update.workspace.as_ref().is_some_and(|workspace| {
+                workspace.document.revision_id().as_str() == "live-accepted"
+            })
+        });
+        let workspace = refreshed.workspace.unwrap();
+        assert!(matches!(
+            &workspace.document.nodes()[&fixture.hold].kind,
+            NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. })
+        ));
+        assert!(workspace.can_undo);
+    }
+
+    #[test]
+    fn a_live_cancellation_names_exactly_the_observed_job() {
+        let fixture = project_with_pause(scripted(waiting(3)));
+        let mut client = Client::discover(&fixture.workspace.path)
+            .unwrap()
+            .expect("native owner discovery");
+        let project = fixture.workspace.document.project_id().clone();
+        let started = generate(&fixture, &mut client, 2);
+        assert_eq!(started.variants, 2);
+        let deadline = Instant::now() + TIMEOUT;
+        while observe(&fixture, &mut client, started.job)
+            .request_id
+            .is_none()
+        {
+            assert!(Instant::now() < deadline, "allocation timed out");
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let wrong = live_project::request(
+            &mut client,
+            Operation::CancelGeneration {
+                project_id: project.clone(),
+                job: started.job + 7,
+            },
+        )
+        .unwrap_err();
+        assert_eq!(wrong.code, "GenerationUnknown");
+        assert!(
+            observe(&fixture, &mut client, started.job)
+                .outcome
+                .is_none()
+        );
+        let cancelling = status(live_project::request(
+            &mut client,
+            Operation::CancelGeneration {
+                project_id: project,
+                job: started.job,
+            },
+        ));
+        assert_eq!(cancelling.job, started.job);
+        let done = finished(&fixture, &mut client, started.job);
+        assert_eq!(done.outcome, Some(GenerationOutcome::Cancelled {}));
+        assert_eq!(
+            attempt_states(&fixture.workspace, done.request_id.as_ref().unwrap()),
+            vec![JobState::Cancelled]
         );
     }
 }

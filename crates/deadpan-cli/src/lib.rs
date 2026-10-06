@@ -118,8 +118,8 @@ const HELP: &str = "Deadpan headless commands:
   track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
   track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]
   detect-faces <project.deadpan> --at <pts> [--asset <id>]
-  generate-hold <project.deadpan> --hold <node-id> [--seed N]
-  accept-hold <project.deadpan> --request <request-id>
+  generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
+  accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.

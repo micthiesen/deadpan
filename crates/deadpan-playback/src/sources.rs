@@ -135,6 +135,64 @@ impl Snapshot {
         ))
     }
 
+    /// Admit the service-issued document that accepting a Ready AI pause
+    /// candidate would commit. It may add only video-only assets without a
+    /// source qualification (the generated masters): every base asset and its
+    /// source evidence is unchanged, so the proposal's audio is admitted from
+    /// exactly the committed base's qualified sources. Generated pictures are
+    /// not audio media; playback never opens them.
+    pub fn proposed_generated(
+        base: &Snapshot,
+        document: Arc<ProjectDocument>,
+        draft: u64,
+        change: u64,
+    ) -> Result<Self, SnapshotError> {
+        base.validate_admission()?;
+        if base.content != ContentIdentity::Committed {
+            return Err(SnapshotError::BaseNotCommitted);
+        }
+        if draft == 0 || change == 0 {
+            return Err(SnapshotError::InvalidIdentity);
+        }
+        if document.project_id() != base.document.project_id() {
+            return Err(SnapshotError::ForeignProject);
+        }
+        if document.revision_id() == base.document.revision_id() {
+            return Err(SnapshotError::ReusedRevision);
+        }
+        let assets = document.assets();
+        let unchanged = base
+            .document
+            .assets()
+            .iter()
+            .all(|(id, record)| assets.get(id) == Some(record));
+        let added_video_only = assets
+            .iter()
+            .filter(|(id, _)| !base.document.assets().contains_key(*id))
+            .all(|(_, record)| {
+                record.audio.is_none()
+                    && record.video.is_some()
+                    && record.source_qualification.is_none()
+                    && !record.still_image
+            });
+        if !unchanged || !added_video_only {
+            return Err(SnapshotError::ChangedAssetContracts);
+        }
+        document
+            .validate()
+            .map_err(|error| SnapshotError::InvalidDocument(error.to_string()))?;
+        validate_sources(&document, &base.sources)?;
+        base.check_media_live(&AtomicBool::new(false))?;
+        Ok(Self::admitted(
+            base,
+            document,
+            base.sources.clone(),
+            draft,
+            change,
+            None,
+        ))
+    }
+
     /// Admit a store-validated edited placement, including historical media
     /// absent from the current base. The view supplies the entire output document.
     pub fn proposed_edit_slice(

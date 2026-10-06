@@ -152,14 +152,41 @@ shared limiter, not to a summed group bus. Mute still yields exact silence.
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated
-by `.`); a single Repeat play is edited directly. While recording, `+`/`-`,
-`:gain N` and `:gain +=N` record `SetAudio` trim and step changes. The
+by `.`); a single Repeat play is edited directly. `+`/`-`, `:gain N`,
+`:gain +=N`, `,m` and `:gain-mute` on a whole beat are `SetAudio` trim, step
+and mute changes through the same path (a mute records the explicit new state,
+`Mute { muted }`, so `.` mutes rather than toggles another beat), and `,m` over
+an Edit range is the role-only sound delete, so they are recorded and repeated
+too. The
 inspector lists the drive and its order; the gain section names it. Evidence:
 `saturation_is_an_ordered_bounded_stage_with_a_closed_wire`,
 `saturation_shapes_each_owner_output_inner_first_in_its_serialized_order` (real
 decoded PCM against an independent oracle in both orders), the
 `audio-treatments` replay and the `saturation` preview/export fixture. Oversampled
 shaping remains open: at high drive the memoryless clipper aliases.
+
+## Range steps
+
+Specification §5 has `+`/`-` change the selected audio's gain. With an Edit
+range inside one beat, `+`/`-` changes only that range: `SetAudio { change:
+range_step }` (distinct from the whole-beat `step`, which refuses a Visual
+range) adds one constant `Step` envelope over exactly that range, in the
+beat's own output frames (`ClipGain::adjust_range`). A clip gain that returns
+to unity, unmuted and without envelopes or mute ranges is removed
+(`with_clip_gain_or_none`), so an undone change leaves the plain recipe.
+Another press over the same range adjusts that envelope instead of stacking a
+second one; returning it to 0 dB removes it. Trim, mutes and other envelopes are
+kept, and overlapping envelopes still add. The range must lie inside one direct
+child; a range across beats, and an absolute `:gain N` or saturation with a
+range, refuse (`:gain N` with a range keeps setting the whole beat's trim). The
+range stays selected, the footer hint reads "range gain 3 dB", and `.` repeats
+the step over a new range. The change has hard edges at the range boundaries,
+like a mute range; no fade is invented. Evidence:
+`gain_steps_over_a_visual_range_adjust_one_envelope_of_that_beat` (core), the
+`creative-dot` replay (two presses give +6 dB over Edit [50, 60) of the middle
+beat only; `.` adds +3 dB over a range of the last beat), and the release
+`range-gain` preview/export fixture (a -12 dB step inside a 1 kHz tone pause
+drops its peak to 0.079 while the next tone keeps 0.316).
 
 ## Native editor and qualification
 

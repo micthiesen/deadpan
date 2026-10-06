@@ -1249,11 +1249,15 @@ See [local transcription](TRANSCRIPTION.md).
 
 ## AI pauses
 
-`generate-hold <project.deadpan> --hold <node-id> [--seed N]` fills a Hold with
-pictures from the development LTX MLX runtime: it records a bridge request and
-attempt, supervises the worker, qualifies and publishes the bundle and records
-it Ready, without editing the project. `accept-hold <project.deadpan> --request
-<request-id>` accepts that request's selected Ready bundle as one undoable edit.
-Both need the project closed in the app. Errors use `GenerationUnavailable`,
-`GenerationInputsUnavailable`, `GenerationRefused`, `GenerationCancelled` and
-`GenerationFailed`. See [AI Holds](AI_HOLDS.md).
+`generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4]
+[--another]` fills a Hold with pictures from the local LTX MLX runtime: it
+records a bridge request (or, with `--another`, joins the Hold's current one),
+runs one attempt per variant with its own seed, qualifies and publishes each
+bundle and records it Ready, without editing the project. `accept-hold
+<project.deadpan> --request <request-id> [--attempt <attempt-id>]` accepts the
+request's selected (or the given) Ready variant as one undoable edit. When the
+app has the project open, both route through its
+[live endpoint](LIVE_PROJECT.md#ai-pause-jobs): generation runs as the app's
+own AI job. Errors use `GenerationUnavailable`, `GenerationInputsUnavailable`,
+`GenerationRefused`, `GenerationCancelled`, `GenerationFailed` and
+`GenerationUnknown`. See [AI Holds](AI_HOLDS.md).

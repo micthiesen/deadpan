@@ -302,3 +302,40 @@ crossings/s on the shifted tone against 2,000 on the plain one. Role-repeat
 sounds are now owned by a group around the muted beat (an owner's mute also
 silences its own sounds). All 31 fixtures pass again in one run (67.8 s), with
 the export verifier's newer SDR gates from the concurrent HDR work.
+
+## Creative dot, gag parameters, micro-loop and sting (2026-10-05)
+
+Four fixtures added with ranged gain steps, `:gag-set`, `:cutaway fit=bounce`
+with `:edge … plays`, and the bundled `:sting`. All 35 fixtures passed in one
+run of `cargo test --release --locked -p deadpan-cli --test preview_export`
+(3 tests, 79.0 s) on the uncommitted tree based on `f8a55739`, with concurrent
+AI-variant work in progress. `range-gain`, `gag-set` and `micro-loop` run their
+edits through the headless semantic path the native commands share;
+`triumphant-sting` registers the synthesized WAV like a user sound.
+
+| Fixture | Construction | Frames |
+| --- | --- | --- |
+| range-gain | two 12-frame 1 kHz tone pauses; Visual [3, 9) inside the first and four `SetAudio` steps of -3 dB: one -12 dB envelope over exactly that range | 54 |
+| gag-set | `:gag one-more-time plays=3 gap=12f shorten=6f` on Edit [12, 24), then `SetGag` to 2 plays, gap 8f, shorten 2f | 50 |
+| micro-loop | Edit [0, 6) wrapped as 3 plays with `SetAudioEdges { plays, automatic }` marking the fragment's seams; a 16-frame freeze pause at Edit 24 with a `bounce` cutaway of Original 90..96 | 58 |
+| triumphant-sting | the unshortened Original with `deadpan_audio::triumphant_sting_wav` placed at Edit 10 | 120 |
+
+Independent expectations: the range window's peak 0.075–0.084 against
+0.30–0.33 in the next tone (crest of a sine in both); the gag's two plays,
+8-frame freeze and following base pictures; the bounce pictures 90..95, 95..90,
+90..93 over the pause; the sting chord window's peak within ±3% of the
+synthesized samples' own peak, and silence before and after it.
+
+| Fixture | Pictures | Min Y PSNR dB | Min Cb/Cr PSNR dB | Max thumbnail MAD | Audio windows (signal) | Blocks | Min block SNR dB | Max block level dB | Offsets | Render s | Verify s | Passed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| range-gain | 54 | 58.0 | 54.2 | 0.031 | 2 (2) | 82 | 29.0 | 0.09 | verified_zero ×2 | 1.52 | 0.70 | yes |
+| gag-set | 50 | 62.2 | 57.7 | 0.019 | 2 (2) | 2 | 32.6 | 0.03 | verified_zero ×2 | 1.29 | 0.51 | yes |
+| micro-loop | 58 | 62.2 | 58.3 | 0.019 | 2 (1) | 1 | 55.7 | 0.00 | not_applicable, verified_zero | 1.25 | 0.42 | yes |
+| triumphant-sting | 120 | 59.8 | 57.6 | 0.031 | 4 (4) | 181 | 3.2 | 0.52 | verified_zero ×4 | 1.93 | 1.25 | yes |
+
+No preview/export mismatch was found. The sting's lowest block SNR (3.2 dB)
+passed the verifier's gates with block levels within 0.52 dB; it is the
+dense harmonic chord through the AAC encoder, not a timing offset (every
+window verified a zero offset). These fixtures do not exercise the native key
+paths (the `creative-dot` replay does), picture crossfades at a loop seam, or
+listening.

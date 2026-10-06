@@ -60,6 +60,28 @@ pub enum Entry {
     /// `:gag-inspect NAME [parameters]`: list a recipe's expansion without
     /// applying it.
     GagInspect(super::gag::GagInput),
+    /// `:edge hard|auto [start|end|both|plays|gaps]`: the selected beat's
+    /// sound edge policy.
+    Edge {
+        side: deadpan_core::EdgeSide,
+        policy: deadpan_core::AudioEdgePolicy,
+    },
+    /// `:gag NAME [key=value …]` for a saved preset: its recipe, with the
+    /// given parameters changed.
+    GagPreset {
+        name: String,
+        parameters: Vec<String>,
+    },
+    /// `:gag-save NAME`: keep the selected inserted gag's recipe as a preset.
+    GagSave(String),
+    /// `:gag-presets`: list the saved presets in Help.
+    GagPresets,
+    /// `:sting`: add the bundled, synthesized triumphant sting to the sound
+    /// catalog.
+    Sting,
+    /// `:gag-set key=value …`: change the selected inserted gag's exposed
+    /// parameters, resolved against its pinned recipe.
+    GagSet(Vec<String>),
     /// `:select role=audio|video|linked`: the media role the next Visual
     /// delete acts on.
     SelectRole(deadpan_core::MediaRole),
@@ -238,7 +260,61 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb == "gag" {
         let arguments: Vec<&str> = words.collect();
+        // Any other name is the user's saved preset, resolved by the app.
+        if let Some((name, parameters)) = arguments.split_first()
+            && !super::gag::BUILT_IN.contains(name)
+            && !name.contains('=')
+        {
+            return Ok(Entry::GagPreset {
+                name: (*name).to_owned(),
+                parameters: parameters.iter().map(|word| (*word).to_owned()).collect(),
+            });
+        }
         return super::gag::parse(&arguments).map(|input| Entry::Action(Action::Gag(input)));
+    }
+    if verb == "gag-save" {
+        let name = words.next().ok_or(
+            "Use :gag-save NAME on a selected inserted gag to keep its recipe and parameters for every project.",
+        )?;
+        if words.next().is_some() {
+            return Err("A gag preset name is one word.".into());
+        }
+        return Ok(Entry::GagSave(name.to_owned()));
+    }
+    if verb == "sting" {
+        if words.next().is_some() {
+            return Err(":sting takes no arguments; place the added sound with ,s.".into());
+        }
+        return Ok(Entry::Sting);
+    }
+    if verb == "gag-presets" {
+        if words.next().is_some() {
+            return Err(":gag-presets takes no arguments.".into());
+        }
+        return Ok(Entry::GagPresets);
+    }
+    if verb == "edge" {
+        const USAGE: &str = "Use :edge hard or :edge auto, then start, end, both (the default), plays (a Repeat's loop seams) or gaps (its gap edges).";
+        let policy = match words.next() {
+            Some("hard") => deadpan_core::AudioEdgePolicy::Hard,
+            Some("auto") => deadpan_core::AudioEdgePolicy::Automatic,
+            _ => return Err(USAGE.into()),
+        };
+        let side = match words.next() {
+            None | Some("both") => deadpan_core::EdgeSide::Both,
+            Some("start") => deadpan_core::EdgeSide::Start,
+            Some("end") => deadpan_core::EdgeSide::End,
+            Some("plays") => deadpan_core::EdgeSide::Plays,
+            Some("gaps") => deadpan_core::EdgeSide::Gaps,
+            Some(_) => return Err(USAGE.into()),
+        };
+        if words.next().is_some() {
+            return Err(USAGE.into());
+        }
+        return Ok(Entry::Edge { side, policy });
+    }
+    if verb == "gag-set" {
+        return Ok(Entry::GagSet(words.map(str::to_owned).collect()));
     }
     if verb == "gag-inspect" {
         let arguments: Vec<&str> = words.collect();
@@ -363,9 +439,38 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }));
         }
         "marks" => Action::Marks,
-        "generate" | "generate-ai" => Action::Ai(super::AiAction::Generate),
+        "generate" | "generate-ai" => {
+            let maximum = crate::project::generation::MAX_VARIANTS;
+            let variants = match argument {
+                None => 1,
+                Some(count) => count
+                    .parse::<u8>()
+                    .ok()
+                    .filter(|count| (1..=maximum).contains(count))
+                    .ok_or_else(|| {
+                        format!("Use :generate or :generate N for 1 to {maximum} AI variants.")
+                    })?,
+            };
+            return Ok(Entry::Action(Action::Ai(super::AiAction::Generate {
+                variants,
+            })));
+        }
+        "pick-ai" => {
+            let number = argument
+                .and_then(|value| value.parse::<u8>().ok())
+                .filter(|number| *number > 0)
+                .ok_or("Use :pick-ai N with the variant number the inspector shows.")?;
+            return Ok(Entry::Action(Action::Ai(super::AiAction::Choose(
+                super::VariantChoice::Number(number),
+            ))));
+        }
+        "next-ai" => Action::Ai(super::AiAction::Choose(super::VariantChoice::Next)),
+        "prev-ai" | "previous-ai" => {
+            Action::Ai(super::AiAction::Choose(super::VariantChoice::Previous))
+        }
         "cancel-ai" => Action::Ai(super::AiAction::Cancel),
         "preview-ai" => Action::Ai(super::AiAction::Preview),
+        "audition-ai" => Action::Ai(super::AiAction::Audition),
         "accept-ai" => Action::Ai(super::AiAction::Accept),
         "discard-ai" => Action::Ai(super::AiAction::Discard),
         "record-stop" => Action::MacroStop,
@@ -678,6 +783,56 @@ mod track_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edge_and_gag_set_commands_parse_their_choices() {
+        use deadpan_core::{AudioEdgePolicy, EdgeSide};
+        assert_eq!(
+            parse(":edge hard"),
+            Ok(Entry::Edge {
+                side: EdgeSide::Both,
+                policy: AudioEdgePolicy::Hard
+            })
+        );
+        assert_eq!(
+            parse("edge auto plays"),
+            Ok(Entry::Edge {
+                side: EdgeSide::Plays,
+                policy: AudioEdgePolicy::Automatic
+            })
+        );
+        for bad in [
+            ":edge",
+            ":edge soft",
+            ":edge hard middle",
+            ":edge hard end start",
+        ] {
+            assert!(parse(bad).is_err(), "{bad}");
+        }
+        assert_eq!(
+            parse(":gag-set plays=4 gap=400ms"),
+            Ok(Entry::GagSet(vec!["plays=4".into(), "gap=400ms".into()]))
+        );
+        assert_eq!(
+            parse(":gag stutter-4 plays=5"),
+            Ok(Entry::GagPreset {
+                name: "stutter-4".into(),
+                parameters: vec!["plays=5".into()]
+            })
+        );
+        assert!(matches!(
+            parse(":gag one-more-time plays=4"),
+            Ok(Entry::Action(Action::Gag(_)))
+        ));
+        assert_eq!(
+            parse(":gag-save stutter-4"),
+            Ok(Entry::GagSave("stutter-4".into()))
+        );
+        assert!(parse(":gag-save").is_err());
+        assert_eq!(parse(":gag-presets"), Ok(Entry::GagPresets));
+        assert_eq!(parse(":sting"), Ok(Entry::Sting));
+        assert!(parse(":sting loud").is_err());
+    }
 
     #[test]
     fn scoped_play_commands_are_explicit_and_bounded() {

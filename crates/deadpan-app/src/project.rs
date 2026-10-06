@@ -585,11 +585,15 @@ pub enum ProjectEdit {
         node: NodeId,
         framing: Option<deadpan_core::Framing>,
     },
+    /// The native `,h` and `:hold` commit through the semantic InsertPause
+    /// instruction; service tests keep exercising this direct form.
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     InsertTime {
         at: ProjectFrame,
         duration: FrameDuration,
     },
     /// A silent pause with black picture (black-frame punctuation).
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     InsertBlack {
         at: ProjectFrame,
         duration: FrameDuration,
@@ -629,11 +633,10 @@ pub enum ProjectEdit {
         parent: NodeId,
         range: deadpan_core::FrameRange,
     },
-    /// Set the signed sound offset of the Source under this beat.
-    AudioLag {
-        node: NodeId,
-        offset: deadpan_core::AudioSample,
-    },
+    /// The native `:hold-duration` and `:retime`/`:pitch` (and `:audio-lag`,
+    /// which has no direct form any more) commit as semantic instructions;
+    /// service tests keep these direct forms as fixtures.
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     HoldDuration {
         node: NodeId,
         duration: FrameDuration,
@@ -642,6 +645,7 @@ pub enum ProjectEdit {
         node: NodeId,
         audio: HoldAudio,
     },
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     Retime {
         node: NodeId,
         speed: deadpan_core::ExactRatio,

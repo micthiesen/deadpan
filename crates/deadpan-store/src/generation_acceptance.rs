@@ -121,7 +121,12 @@ fn prepare_acceptance(
             "the selected Ready receipt changed or is unavailable",
         ));
     }
-    validate_bundle_receipt(&request, attempt.declared_candidate.as_ref(), receipt)?;
+    validate_bundle_receipt(
+        &request,
+        attempt.ordinal,
+        attempt.declared_candidate.as_ref(),
+        receipt,
+    )?;
     let evidence = receipt
         .admission()
         .ok_or_else(|| invalid("legacy bundle lacks measured spans and retained input evidence"))?;

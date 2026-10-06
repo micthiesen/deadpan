@@ -20,6 +20,9 @@ const MAX_ENTRIES: usize = 48;
 pub(super) enum Slot {
     Original,
     Beat(NodeId),
+    /// A Ready AI variant, keyed by its attempt. Its picture is immutable, so
+    /// its key's revision is the request's origin and edits never re-decode it.
+    Candidate(deadpan_jobs::AttemptId),
 }
 
 /// The exact committed picture a thumbnail shows.
@@ -136,6 +139,8 @@ pub(super) struct Thumbnails {
     pending: Option<(u64, Key)>,
     received: Option<(Key, Result<crate::worker::Picture, String>)>,
     wanted: Vec<Key>,
+    /// What each wanted variant thumbnail decodes, by attempt.
+    candidates: BTreeMap<deadpan_jobs::AttemptId, Arc<crate::worker::CandidateThumbnail>>,
     /// Displaced textures may still be referenced by the frame being painted;
     /// they are freed when the next frame begins.
     retired: Vec<Thumb>,
@@ -152,6 +157,7 @@ impl Thumbnails {
             pending: None,
             received: None,
             wanted: Vec::new(),
+            candidates: BTreeMap::new(),
             retired: Vec::new(),
         })
     }
@@ -166,6 +172,19 @@ impl Thumbnails {
             self.release_all();
         }
         self.wanted.clear();
+        self.candidates.clear();
+    }
+
+    /// Record a visible AI variant and return what it should paint now.
+    pub fn show_candidate(
+        &mut self,
+        key: Key,
+        thumbnail: Arc<crate::worker::CandidateThumbnail>,
+    ) -> Option<Painted> {
+        if let Slot::Candidate(attempt) = &key.slot {
+            self.candidates.insert(attempt.clone(), thumbnail);
+        }
+        self.show(key)
     }
 
     /// Record a visible card and return what it should paint now.
@@ -252,24 +271,38 @@ impl Thumbnails {
         let Some(key) = self.cache.missing(&self.wanted).cloned() else {
             return;
         };
-        if Some(key.session) != Some(workspace.session)
-            || &key.revision != workspace.document.revision_id()
-        {
-            return;
-        }
+        let work = match &key.slot {
+            Slot::Candidate(attempt) => {
+                let Some(thumbnail) = self.candidates.get(attempt) else {
+                    return;
+                };
+                if key.session != workspace.session {
+                    return;
+                }
+                Work::CandidateThumbnail {
+                    workspace: Arc::clone(workspace),
+                    thumbnail: Arc::clone(thumbnail),
+                }
+            }
+            Slot::Original | Slot::Beat(_) => {
+                if key.session != workspace.session
+                    || &key.revision != workspace.document.revision_id()
+                {
+                    return;
+                }
+                Work::Project {
+                    workspace: Arc::clone(workspace),
+                    view: key.view.clone(),
+                }
+            }
+        };
         self.serial += 1;
         let ticket = Ticket {
             transport: None,
             source: key.session,
             request: self.serial,
         };
-        self.worker.submit(
-            ticket,
-            Work::Project {
-                workspace: Arc::clone(workspace),
-                view: key.view.clone(),
-            },
-        );
+        self.worker.submit(ticket, work);
         self.pending = Some((self.serial, key));
     }
 
@@ -371,6 +404,20 @@ impl Thumbnails {
                 })
                 .count()
         })
+    }
+
+    /// Rendered variant thumbnails of the current session.
+    #[cfg(feature = "ui-harness")]
+    pub fn rendered_candidates(&self, session: u64) -> usize {
+        self.cache
+            .entries
+            .iter()
+            .filter(|(slot, entry)| {
+                matches!(slot, Slot::Candidate(_))
+                    && entry.value.picture.is_some()
+                    && entry.key.session == session
+            })
+            .count()
     }
 
     #[cfg(feature = "ui-harness")]

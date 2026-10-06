@@ -491,3 +491,90 @@ fn the_source_stage_explains_that_a_tail_is_read_from_the_processed_stages() {
         "{message}"
     );
 }
+
+/// `:edge` on split fragments of one tone: a pure Split seam stays exactly
+/// the continuous tone; a seam where frames were cut has no fade until its
+/// sides are marked editorial, then fades both sides when automatic and
+/// cuts when Hard. Exact PCM, not plan metadata.
+#[test]
+fn marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let level = GainDb::new(-6_000).unwrap();
+    let tone = || {
+        effect_hold(
+            1_200,
+            HoldAudio::Tone {
+                frequency_hz: 1_000,
+                level,
+            },
+        )
+    };
+    let fragment = |child: &str, start: i64, end: i64, marked: bool, hard: bool| {
+        let mut node = BeatNode {
+            label: "Fragment".into(),
+            kind: NodeKind::Retime {
+                child: NodeId::new(child).unwrap(),
+                duration: duration(end - start),
+                mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
+                pitch: PitchPolicy::Preserve,
+                purpose: RetimePurpose::Partition,
+            },
+            ..tone()
+        };
+        node.audio_editorial_edges = AudioEditorialEdges {
+            start: marked,
+            end: marked,
+        };
+        if hard {
+            node.audio_edges.node_start = AudioEdgePolicy::Hard;
+            node.audio_edges.node_end = AudioEdgePolicy::Hard;
+        }
+        node
+    };
+    let read = |left: (i64, i64), right: (i64, i64), marked: bool, hard: bool| {
+        let planned = plan(
+            rate,
+            &["left", "right"],
+            [
+                ("one", tone()),
+                ("two", tone()),
+                ("left", fragment("one", left.0, left.1, marked, hard)),
+                ("right", fragment("two", right.0, right.1, marked, hard)),
+            ],
+        );
+        let mut renderer = StageAudio::new(planned);
+        let mut provider = FixtureProvider::new();
+        faded_all(&mut renderer, &mut provider, &[256, 61])
+    };
+    let sine =
+        deadpan_audio::tone(1_000, level.millidecibels(), 1_200, &AtomicBool::new(false)).unwrap();
+    // A pure Split: [0, 600) and [600, 1200) are exactly the tone around
+    // the seam (the outer ends keep their own fades).
+    let split = read((0, 600), (600, 1_200), false, false);
+    assert_pcm_close(&split[200..1_000], &sine[200..1_000]);
+    // [0, 600) then [700, 1200): 100 samples were cut at sample 600.
+    let expected_cut: Vec<_> = sine[..600]
+        .iter()
+        .chain(&sine[700..1_200])
+        .copied()
+        .collect();
+    let unmarked = read((0, 600), (700, 1_200), false, false);
+    assert_pcm_close(&unmarked[500..700], &expected_cut[500..700]);
+    let hard = read((0, 600), (700, 1_200), true, true);
+    assert_pcm_close(&hard[500..700], &expected_cut[500..700]);
+    let faded = read((0, 600), (700, 1_200), true, false);
+    // The last sample before the seam and the first after it are faded
+    // towards silence, and the fade is gone 96 samples away.
+    let peak = |samples: &[[f32; 2]]| {
+        samples
+            .iter()
+            .fold(0.0_f32, |peak, frame| peak.max(frame[0].abs()))
+    };
+    assert!(
+        peak(&expected_cut[599..601]) > 0.2,
+        "the tone is loud at the cut"
+    );
+    assert!(peak(&faded[599..601]) < 0.02, "{:?}", &faded[599..601]);
+    assert_pcm_close(&faded[400..500], &expected_cut[400..500]);
+    assert_pcm_close(&faded[800..900], &expected_cut[800..900]);
+}

@@ -262,7 +262,7 @@ fn encode(image: &RgbImage) -> Result<Vec<u8>, String> {
     Ok(bytes)
 }
 
-fn sha256(bytes: &[u8]) -> Result<Sha256, String> {
+pub(crate) fn sha256(bytes: &[u8]) -> Result<Sha256, String> {
     let hex: String = sha2::Sha256::digest(bytes)
         .iter()
         .map(|byte| format!("{byte:02x}"))

@@ -18,16 +18,48 @@ Visual range taking precedence. A saved Visual selector needs a new nonempty
 range. Ungroup resolves a newly selected neutral Sequence and refuses every
 Visual state. Both operations preserve the copy bank and pending register choice.
 
-Creative parameter edits applied through the semantic path supply
-`RepeatableEdit::Parameter` intent: the exact instruction, repeated as written
-against the new current selection, which the planner resolves afresh. This
-covers saturation and recorded gain changes (`SetAudio`), J- and L-cuts
-(`SplitEdit`, at the cut under the new cursor), role-only deletes
-(`DeleteRole`) and role repeats (`RoleRepeat`), over a new Visual range, reverse and ping-pong pauses, tails,
-gags, and pauses and framing applied while recording. The dot hint names the
-edit ("repeat: J-cut: the next sound starts 6f early"). Native `,h`, `,z`/`,c`,
-`+`/`-`, cutaways, captions and retime outside a recording commit directly and
-still clear dot intent.
+Creative parameter edits supply `RepeatableEdit::Parameter` intent: the exact
+instruction, repeated as written against the new current selection, which the
+planner resolves afresh. The native keys and commands commit these edits as one
+semantic Apply whether or not a macro is recording, so each has one Undo entry
+and installs dot intent:
+
+- `,h` and `:hold` pauses (`InsertPause`) and `:hold-duration` (`SetHoldDuration`);
+- `:retime`/`:wrap-retime` (`Retime`, the speed divides the new beat's own
+  exact input, rounded once ties-to-even) and `:pitch` (`Pitch`, at the new
+  beat's own speed);
+- `+`/`-`, `:gain` and `:gain +=`/`-=` on a whole beat (`SetAudio` step or
+  trim), and `+`/`-` over an Edit range inside one beat (the distinct
+  `SetAudio` range step: one constant envelope over exactly that range,
+  adjusted again by a second press), and `:saturate`. A whole-beat step refuses
+  a Visual range and a range step needs one, so `.` never turns one into the
+  other; `:gain N`, `:gain +=N` and `:gain-mute` with a range keep their
+  direct whole-beat edits;
+- `,m` on a whole beat (`SetAudio { change: mute }`, the explicit new mute
+  state; unmuting a plain beat restores the plain recipe, so `.` of an unmute
+  on a beat that was never muted reports "No edit was made") or over an Edit
+  range (the role-only sound delete it is), and `:gain-mute` without a range;
+  `:audio-lag` (`SetAudioLag`, the exact 48 kHz sample offset);
+- `:edge hard|auto [start|end|both|plays|gaps]` (`SetAudioEdges`) and
+  `:gag-set` (`SetGag`, the complete new recipe on another gag of the same
+  recipe);
+- whole-beat `,z`/`,c` zoom and creep framing (`SetFraming`);
+- cutaways (`SetCutaway`) and captions (`SetCaption`) over the selected beat or
+  over the Edit range inside one beat;
+- J- and L-cuts (`SplitEdit`, at the cut under the new cursor), role-only
+  deletes (`DeleteRole`) and role repeats (`RoleRepeat`) over a new Visual
+  range, reverse and ping-pong pauses, tails and gags.
+
+The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). A Repeat
+play scope (`:scope play N`) edits one play directly and clears dot intent, as
+do a zoom over a Visual range (its envelope stores fractions of that beat),
+a face-target zoom that also saves a target, clearing cutaways or captions,
+the Camera editor and the Trim, Slip and Split edits. Each split fragment keeps
+its own copy of the Original's Source, so an audio lag set on one fragment
+does not move the others. A repeated or recorded edit that would change
+nothing reports "No edit was made" as a message, without a revision. The [creative-dot replay](#native-interaction)
+exercises speed, pitch, pauses, pause length, ranged gain, ranged captions,
+gag parameters, play-seam edges, mute and audio lag.
 
 This covers picture cuts, Repeat wraps/count setters and Group/Ungroup for DP-06.
 [Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
@@ -126,8 +158,8 @@ Placed sounds and temporary previews refuse. Each invocation captures its new
 context once. An attempted cut dot also consumes a one-shot register override when
 pending macro work or a full recording refuses it, without changing queued work.
 The keyboard
-compatibility audit and rendered `dot-repeat` replay exercise the production
-paths; physical layout and OS IME qualification remain separate obligations.
+compatibility audit and rendered `dot-repeat` and `creative-dot` replays
+exercise the production paths; physical layout and OS IME qualification remain separate obligations.
 
 No project schema changes are needed. SQLite remains at 55 and core documents
 at 43; history uses resolved cut, RepeatSelection and Compound commands.

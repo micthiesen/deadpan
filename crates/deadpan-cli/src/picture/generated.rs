@@ -129,6 +129,58 @@ pub fn open_generated_picture(
     Ok(source)
 }
 
+/// Open the sampled master of a Ready, not yet accepted, AI pause variant
+/// for display only (an inspector thumbnail). The object is read through the
+/// store's verified snapshot (its BLAKE3 identity), then decoded and checked
+/// against the receipt's raster, frame count and canonical FFV1 sRGB
+/// interpretation. This admits no authored use: preview and acceptance still
+/// verify all six retained objects through the store.
+pub fn open_candidate_master(
+    handle: &GeneratedReadHandle,
+    sampled: &GeneratedObjectRef,
+    frames: u32,
+    size: (u32, u32),
+    cancelled: &AtomicBool,
+) -> Result<SourceSession, ProjectPictureError> {
+    let deadline = Instant::now() + OPEN_TIMEOUT;
+    let remaining = || {
+        check_cancel(cancelled)?;
+        handle.check_live(cancelled)?;
+        deadline
+            .checked_duration_since(Instant::now())
+            .filter(|duration| !duration.is_zero())
+            .ok_or(ProjectPictureError::Deadline)
+    };
+    let limits = GeneratedReadLimits::new(MAX_MEDIA_BYTES, remaining()?)?;
+    let mut snapshot = handle.snapshot(sampled, limits, cancelled)?;
+    let content = SourceContentIdentity::new(snapshot.sha256(), snapshot.reference().byte_length())
+        .map_err(|_| invalid("generated input identity is invalid"))?;
+    let mut limits = SourceSessionLimits::default();
+    limits.decode.max_input_bytes = MAX_MEDIA_BYTES;
+    limits.maximum_index_frames = usize::try_from(frames)
+        .map_err(|_| ProjectPictureError::Limits("generated frame count"))?;
+    limits.opening_timeout = remaining()?;
+    let asset = AssetId::new(format!("candidate-{}", sampled.content().digest()))
+        .map_err(|_| invalid("generated candidate identity is invalid"))?;
+    let source = SourceSession::open_verified(&mut snapshot, content, asset, limits, cancelled)?;
+    remaining()?;
+    let info = source.info();
+    if (info.width, info.height) != size
+        || info.codec != "ffv1"
+        || info.pixel_format != "bgr0"
+        || info.rotation_quarter_turns != 0
+        || !info.audio_streams.is_empty()
+        || info.color.range != ColorRange::Full
+        || info.color.matrix != ColorMatrix::Rgb
+        || info.color.transfer != ColorTransfer::Srgb
+        || info.color.primaries != ColorPrimaries::Bt709
+        || u64::try_from(source.index().index().frames().len()).ok() != Some(u64::from(frames))
+    {
+        return Err(invalid("candidate master differs from its Ready receipt"));
+    }
+    Ok(source)
+}
+
 fn invalid(reason: &'static str) -> ProjectPictureError {
     ProjectPictureError::GeneratedEvidence(reason)
 }

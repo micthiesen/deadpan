@@ -3,7 +3,7 @@
 //! authors the same InsertTime and SetFraming commands as the native edits.
 
 use super::*;
-use crate::{AudioTimingId, FrameDuration, Framing, HoldAudio, HoldRecipe};
+use crate::{AudioTimingId, ExactRatio, FrameDuration, Framing, HoldAudio, HoldRecipe};
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
@@ -366,27 +366,48 @@ where
         trace_index: usize,
         change: crate::AudioChange,
     ) -> Result<(), EditError> {
-        if self.context.visual_selection.is_some() {
+        let ranged = self.context.visual_selection.is_some();
+        let range_step = match change {
+            crate::AudioChange::RangeStep { millidecibels } => Some(millidecibels),
+            _ => None,
+        };
+        if ranged && range_step.is_none() {
             return Err(invalid(
                 "clear the Visual selection before changing a beat's gain or saturation",
             ));
         }
-        let selected = self.context.selected_child.clone().ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "select a beat before changing its gain or saturation",
-            )
-        })?;
-        if !self.child_indices.contains_key(&selected) {
+        if !ranged && range_step.is_some() {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
-                "the beat must be a direct child of the current Sequence",
+                "select the range to change with v first",
             ));
         }
+        let (selected, local) = self.beat_span(
+            "select a beat before changing its gain or saturation",
+            "a gain range stays inside one beat; select a range inside one beat",
+        )?;
         let current = &self.current.nodes()[&selected].audio_treatments;
-        let treatments = change.apply(current).map_err(crate::audio_gain::invalid)?;
+        let treatments = match range_step {
+            Some(millidecibels) => {
+                let range = crate::GainRange::new(
+                    ExactRatio::integer(local.start),
+                    ExactRatio::integer(local.end),
+                )
+                .map_err(crate::audio_gain::invalid)?;
+                let clip = current.clip_gain().cloned().unwrap_or_default();
+                current
+                    .with_clip_gain_or_none(
+                        clip.adjust_range(range, millidecibels)
+                            .map_err(crate::audio_gain::invalid)?,
+                    )
+                    .map_err(crate::audio_gain::invalid)?
+            }
+            None => change.apply(current).map_err(crate::audio_gain::invalid)?,
+        };
         if &treatments == current {
-            return Err(invalid("the beat already has that gain and saturation"));
+            return Err(invalid(
+                "the beat already has that gain and saturation; no edit was made",
+            ));
         }
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =
@@ -405,10 +426,7 @@ where
             },
         )?;
         self.commit_leaf(edit)?;
-        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
-        self.trace[trace_index].resolved_selection =
-            Some(SliceCaptureSelection::Child { node: selected });
-        Ok(())
+        self.finish_beat_span(trace_index, selected, local)
     }
 
     /// `SetRoomTone`: the selected Hold loops the exact audio of an Original
@@ -486,27 +504,10 @@ where
         register: crate::RegisterName,
         fit: crate::CutawayFit,
     ) -> Result<(), EditError> {
-        if self.context.visual_selection.is_some() {
-            return Err(invalid(
-                "clear the Visual selection before placing a cutaway",
-            ));
-        }
-        let selected = self.context.selected_child.clone().ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "select a beat before placing a cutaway over it",
-            )
-        })?;
-        let Some(&index) = self.child_indices.get(&selected) else {
-            return Err(EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "the beat must be a direct child of the current Sequence",
-            ));
-        };
-        let start = index
-            .checked_sub(1)
-            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
-        let frames = self.child_ends[index].1.0 - start.0;
+        let (selected, local) = self.beat_span(
+            "select a beat before placing a cutaway over it",
+            "a cutaway stays inside one beat; select a range inside one beat",
+        )?;
         let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
             EditError::new(
                 EditErrorCode::WrongNodeKind,
@@ -533,8 +534,11 @@ where
             .video_mapping
             .selection_in_source(*span, source.duration)
             .map_err(crate::DocumentError::from)?;
-        let range = FrameRange::new(ProjectFrame(offset), ProjectFrame(offset + frames))
-            .map_err(crate::DocumentError::from)?;
+        let range = FrameRange::new(
+            ProjectFrame(offset + local.start),
+            ProjectFrame(offset + local.end),
+        )
+        .map_err(crate::DocumentError::from)?;
         let mut cutaways = self.current.nodes()[&host].cutaways.clone();
         if cutaways.iter().any(|cutaway| {
             cutaway.range.start() < range.end() && range.start() < cutaway.range.end()
@@ -571,10 +575,7 @@ where
             },
         )?;
         self.commit_leaf(edit)?;
-        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
-        self.trace[trace_index].resolved_selection =
-            Some(SliceCaptureSelection::Child { node: selected });
-        Ok(())
+        self.finish_beat_span(trace_index, selected, local)
     }
 
     /// `SetCaption`: one line of text over the selected direct child from
@@ -587,36 +588,26 @@ where
         delay: Option<crate::PauseLength>,
         reveal: Option<std::num::NonZeroU32>,
     ) -> Result<(), EditError> {
-        if self.context.visual_selection.is_some() {
+        let ranged = self.context.visual_selection.is_some();
+        if ranged && delay.is_some() {
             return Err(invalid(
-                "clear the Visual selection before adding a caption",
+                "a Visual range already sets where the caption starts; leave out delay",
             ));
         }
-        let selected = self.context.selected_child.clone().ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "select a beat before captioning it",
-            )
-        })?;
-        let Some(&index) = self.child_indices.get(&selected) else {
-            return Err(EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "the beat must be a direct child of the current Sequence",
-            ));
-        };
-        let start = index
-            .checked_sub(1)
-            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
-        let frames = self.child_ends[index].1.0 - start.0;
+        let (selected, mut local) = self.beat_span(
+            "select a beat before captioning it",
+            "a caption stays inside one beat; select a range inside one beat",
+        )?;
         let delay = delay
             .map(|delay| delay.resolve(self.current.presentation_basis().frame_rate))
             .transpose()?
             .map_or(0, |delay| delay.frames());
-        if delay >= frames {
+        if delay >= local.end - local.start {
             return Err(invalid(
                 "the caption delay reaches past the end of the beat",
             ));
         }
+        local.start += delay;
         let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
             EditError::new(
                 EditErrorCode::WrongNodeKind,
@@ -624,8 +615,11 @@ where
             )
         })?;
         let caption = crate::Caption {
-            range: FrameRange::new(ProjectFrame(offset + delay), ProjectFrame(offset + frames))
-                .map_err(crate::DocumentError::from)?,
+            range: FrameRange::new(
+                ProjectFrame(offset + local.start),
+                ProjectFrame(offset + local.end),
+            )
+            .map_err(crate::DocumentError::from)?,
             text: text.to_owned(),
             placement,
             reveal,
@@ -654,9 +648,73 @@ where
             },
         )?;
         self.commit_leaf(edit)?;
+        self.finish_beat_span(trace_index, selected, local)
+    }
+
+    /// The selected direct child and its whole local range, or the one
+    /// direct child containing the nonempty Visual time range and that range
+    /// in the child's own clock.
+    fn beat_span(
+        &self,
+        unselected: &str,
+        across: &str,
+    ) -> Result<(NodeId, std::ops::Range<i64>), EditError> {
+        if self.context.visual_selection.is_some() {
+            let (child, start, _, range) = self.range_in_child(across)?;
+            if range.duration() == FrameDuration::ZERO {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "the Visual range is empty",
+                ));
+            }
+            return Ok((
+                child,
+                (range.start().0 - start.0)..(range.end().0 - start.0),
+            ));
+        }
+        let selected = self
+            .context
+            .selected_child
+            .clone()
+            .ok_or_else(|| EditError::new(EditErrorCode::SelectionUnavailable, unselected))?;
+        let Some(&index) = self.child_indices.get(&selected) else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the beat must be a direct child of the current Sequence",
+            ));
+        };
+        let start = index
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        Ok((selected, 0..self.child_ends[index].1.0 - start.0))
+    }
+
+    /// Trace a beat-span edit: a Visual range records its exact range and
+    /// stays selected, so `+` can be pressed again over it; a whole beat
+    /// records the child.
+    fn finish_beat_span(
+        &mut self,
+        trace_index: usize,
+        selected: NodeId,
+        local: std::ops::Range<i64>,
+    ) -> Result<(), EditError> {
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
-        self.trace[trace_index].resolved_selection =
-            Some(SliceCaptureSelection::Child { node: selected });
+        if self.context.visual_selection.is_some() {
+            let index = self.child_indices[&selected];
+            let start = index
+                .checked_sub(1)
+                .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+            self.trace[trace_index].resolved_range = Some(
+                FrameRange::new(
+                    ProjectFrame(start.0 + local.start),
+                    ProjectFrame(start.0 + local.end),
+                )
+                .map_err(crate::DocumentError::from)?,
+            );
+        } else {
+            self.trace[trace_index].resolved_selection =
+                Some(SliceCaptureSelection::Child { node: selected });
+        }
         Ok(())
     }
 

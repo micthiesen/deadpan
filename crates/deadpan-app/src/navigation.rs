@@ -325,11 +325,28 @@ pub enum RepeatPendingScope {
 /// The AI pause workflow. Only Accept edits the project.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AiAction {
-    Generate,
+    /// Generate this many variants, one after another.
+    Generate {
+        variants: u8,
+    },
     Cancel,
+    /// Choose which Ready variant Preview, Audition and Accept use.
+    Choose(VariantChoice),
     Preview,
+    /// Loop the pause in context with the chosen variant's pictures and the
+    /// pause's own sound, previewing it first when needed.
+    Audition,
     Accept,
     Discard,
+}
+
+/// Which Ready AI variant to choose.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VariantChoice {
+    Next,
+    Previous,
+    /// 1-based, as the inspector numbers them.
+    Number(u8),
 }
 
 /// Framing actions owned by the selected edited beat.

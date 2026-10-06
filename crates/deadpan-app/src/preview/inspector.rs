@@ -151,12 +151,47 @@ impl Inspector {
             }
             NodeKind::Sequence { children } => {
                 fields.push(("Child beats", children.len().to_string()));
-                (
-                    "Sequence",
-                    "≡",
-                    None,
-                    "Open this group's child beats, or return to its parent without changing the edit.",
-                )
+                match deadpan_core::GagRecipe::from_label(&node.label) {
+                    // A gag's pinned label is its stored recipe: show its
+                    // parameters and offer to change them.
+                    Some(recipe) => {
+                        let arguments = crate::navigation::gag::arguments(&recipe);
+                        fields.push((
+                            "Recipe",
+                            format!("{} · v{}", recipe.name(), recipe.version()),
+                        ));
+                        fields.push((
+                            "Parameters",
+                            arguments
+                                .iter()
+                                .map(|(key, value)| format!("{key} {value}"))
+                                .collect::<Vec<_>>()
+                                .join(", "),
+                        ));
+                        (
+                            "Gag",
+                            "G",
+                            Some((
+                                "Change parameters…",
+                                format!(
+                                    "gag-set {}",
+                                    arguments
+                                        .iter()
+                                        .map(|(key, value)| format!("{key}={value}"))
+                                        .collect::<Vec<_>>()
+                                        .join(" ")
+                                ),
+                            )),
+                            "An inserted gag: its parts are ordinary beats. Changing a parameter edits the part it made and repins the label; Ungroup detaches it from its recipe.",
+                        )
+                    }
+                    None => (
+                        "Sequence",
+                        "≡",
+                        None,
+                        "Open this group's child beats, or return to its parent without changing the edit.",
+                    ),
+                }
             }
             NodeKind::Retime {
                 purpose: deadpan_core::RetimePurpose::Partition,
@@ -233,6 +268,22 @@ impl Inspector {
                 }
             };
             fields.push(("Framing", description));
+        }
+        {
+            use deadpan_core::{AudioBoundaryKind as Kind, AudioEdgePolicy};
+            let hard: Vec<&str> = [
+                (Kind::NodeStart, "start"),
+                (Kind::NodeEnd, "end"),
+                (Kind::RepeatGapStart, "gap start"),
+                (Kind::RepeatGapEnd, "gap end"),
+            ]
+            .into_iter()
+            .filter(|(edge, _)| node.audio_edges.get(*edge) == AudioEdgePolicy::Hard)
+            .map(|(_, name)| name)
+            .collect();
+            if !hard.is_empty() {
+                fields.push(("Hard sound edges", hard.join(", ")));
+            }
         }
         if let Some(saturation) = node.audio_treatments.saturation() {
             let gain_first = node.audio_treatments.order().first()
@@ -371,6 +422,47 @@ mod tests {
         );
         assert_eq!(inspector.parameter.unwrap().1, "repeat 4294967295");
         assert_eq!(inspector.range, "143–215");
+    }
+
+    #[test]
+    fn an_inserted_gag_shows_its_recipe_and_offers_its_exact_parameters() {
+        let recipe = deadpan_core::GagRecipe::OneMoreTime {
+            version: 1,
+            plays: std::num::NonZeroU32::new(3).unwrap(),
+            gap: deadpan_core::PauseLength::Milliseconds {
+                milliseconds: std::num::NonZeroU32::new(500).unwrap(),
+            },
+            shorten: deadpan_core::PauseLength::Milliseconds {
+                milliseconds: std::num::NonZeroU32::new(200).unwrap(),
+            },
+            variation: None,
+        };
+        let node = BeatNode::sequence(
+            recipe.label(),
+            vec![deadpan_core::NodeId::new("r").unwrap()],
+        );
+        let inspector = Inspector::describe(&node, 10, 40);
+        assert_eq!(inspector.kind, "Gag");
+        assert!(
+            inspector
+                .fields
+                .contains(&("Recipe", "One More Time · v1".to_owned()))
+        );
+        assert!(
+            inspector
+                .fields
+                .contains(&("Parameters", "plays 3, gap 500ms, shorten 200ms".to_owned()))
+        );
+        assert_eq!(
+            inspector.parameter,
+            Some((
+                "Change parameters…",
+                "gag-set plays=3 gap=500ms shorten=200ms".to_owned()
+            ))
+        );
+        // A renamed group is an ordinary Sequence.
+        let renamed = BeatNode::sequence("Bit", vec![deadpan_core::NodeId::new("r").unwrap()]);
+        assert_eq!(Inspector::describe(&renamed, 10, 40).kind, "Sequence");
     }
 
     #[test]

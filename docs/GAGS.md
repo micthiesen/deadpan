@@ -88,6 +88,60 @@ recordable yet.
   semantic path; `are-we-done` does too; `nothing-happens` exports its ordinary parts
   ([preview/export verification](PREVIEW_EXPORT_VERIFICATION.md)).
 
+## Changing parameters after insertion
+
+The pinned group label is the stored form of an inserted gag's recipe:
+`GagRecipe::from_label` parses it back and accepts it only when the recipe
+writes exactly that label again, so a renamed group, an unknown version or an
+edited label names no recipe. Any group whose label is exactly such a label is
+treated as that gag, even if the label was typed by hand; its parts must still
+match (below). Lengths, plays, gains, seeds and registers round-trip exactly.
+The label writes a creep scale and a zoom step to three decimals: values with
+at most three decimals (the `:gag` defaults and typical input) come back
+exactly, a finer value as written there, and a zoom step is re-quantized to
+the framing grid it was stored on. Selecting such a group shows it in the inspector as a
+**Gag** with its recipe, version and parameters, and **Change parameters…**
+(Enter in the inspector) opens `:gag-set` pre-filled with the exact current
+values.
+
+`:gag-set key=value …` takes the `:gag` grammar for that recipe; parameters not
+given keep their pinned values (`seed=` alone keeps the variation percentage).
+The gag is the one selected when `:` opened; a selection change before Enter
+refuses. It is one semantic `SetGag { recipe, parameters }` instruction and one
+Undo, naming only the changed parameters, so `.` and macros change just those
+on another gag of the same recipe and keep its other values. The planner
+enters the group and first checks every part is exactly what the recipe made:
+the pause lengths, the Long Answer's creep, the Repeat's plays, default gap,
+each later gap Hold and escalation, room tone then silence, the reaction tail's
+kind and length and the single whole-pause reaction cutaway, with no framing,
+gain, captions or cutaways added by hand. Any difference refuses; edit the
+parts directly then. It then edits each part whose parameter changed through
+the ordinary leaves and renames the group to the new label.
+
+| Recipe | Parameter edits |
+| --- | --- |
+| The Long Answer | `pause` sets the pause length (`SetHoldDuration`); `creep` replaces its creep with the new end scale (`SetFraming`). |
+| The Escalator | `plays`, `gain-step` and `zoom-step` set the Repeat's plays and escalation (`SetRepeat`). |
+| One More Time | `plays`, `gap`, `shorten` and `vary`/`seed` set plays and the complete recomputed gap ladder (`SetRepeat`). |
+| Nothing Happens | `tone` and `silence` set the two pause lengths; `register` replaces the room tone from the new Original moment (`SetRoomTone`). |
+| Are We Done? | `pause` sets the pause length and rings the reverb tail through it; the reaction cutaway is cleared and placed again over the whole pause from `register` (or the same register). |
+| The Non-Sequitur | Refused: its register content is already pasted; paste the new content instead. |
+
+A different recipe's parameters, unchanged parameters, a group that is not an
+inserted gag and a gag whose parts were changed by hand (another part count or
+kind) refuse without an edit; edit the parts directly then. Macros record
+`SetGag`, and `.` sets the same complete parameters on another inserted gag of
+the same recipe. Evidence: `every_recipe_label_parses_back_to_exactly_its_recipe`,
+`setting_a_long_answers_parameters_edits_its_pause_and_creep_and_relabels_it`
+(the edited creep equals a fresh insertion's), `setting_one_more_time_changes_its_plays_and_gap_ladder`,
+`a_gag_set_refuses_other_recipes_unchanged_values_and_reshaped_parts`, the
+Are We Done? case in `are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group`
+(each one compound with an exact inverse),
+`gag_set_changes_only_the_given_parameters_and_prefills_exact_values`,
+`an_inserted_gag_shows_its_recipe_and_offers_its_exact_parameters`, and the
+`creative-dot` replay (the inspector's Gag row, `:gag-set plays=4` on one
+One More Time and `.` on another).
+
 ## Inspecting an expansion
 
 `:gag-inspect NAME [parameters]` takes exactly the `:gag` grammar, resolves the
@@ -120,11 +174,35 @@ its exact beats, timing, framing, cutaways, captions and gain travel with it, an
 the bank persists across reopen. `:recipe a` inserts a fresh copy at the cursor
 (`"ap`) as one Undo, and `:recipe-inspect a` outlines it in Help before reuse:
 each part's root with kind, label and length, and a group's direct children with
-their attachments. Both are recordable. A saved group is fixed content: its
-recipe parameters are not re-exposed, and the recipe lives in this project.
+their attachments. Both are recordable. A saved group is fixed content that
+lives in this project, because it shows this project's Original. A saved copy
+of an inserted gag keeps its pinned label, so `:gag-set` still changes the
+inserted copy's parameters; a group whose parts were changed by hand has no
+recipe parameters left to expose and is edited directly.
+
+## Presets shared across projects
+
+`:gag-save NAME` keeps the selected inserted gag's recipe and exact parameters
+(parsed from its pinned label) as a named preset in
+`Application Support/Deadpan/gag-presets.json`, shared by every project. A
+preset holds no media or project identity. `:gag NAME [key=value …]` inserts it
+as the concrete recipe it names, with any given parameters changed by the
+`:gag-set` grammar, so macros record and `.` repeats that portable recipe;
+`:gag-presets` lists them in Help. Names are 1 to 32 lowercase letters, digits
+or hyphens and never a built-in name; the file holds at most 128 presets in
+256 KiB. A save holds an exclusive lock for its read-change-write, writes a
+uniquely named temporary file and renames it over the old one, so concurrent
+saves keep each other's presets. One entry this Deadpan cannot read is
+skipped with a warning and kept in the file; a file of another version is
+reported and never overwritten. Replays and tests use a private file;
+headless and worker paths never read it. Evidence:
+`presets_round_trip_in_one_bounded_file_and_refuse_bad_names`,
+`edge_and_gag_set_commands_parse_their_choices` and the `creative-dot` replay
+(save, list, insert in the same project with the private file, and `:gag-set`
+on a `:recipe a` copy).
 
 ## Remaining
 
-A recipe library shared across projects, re-exposed parameters on a saved
-group, a gag-aware inspector (the label is currently shown as a Sequence label)
-and seeded framing variation.
+Fixed-content local recipes cannot move between projects (each shows its own
+Original); structured recipe storage independent of the group label, and seeded
+framing variation, remain open.

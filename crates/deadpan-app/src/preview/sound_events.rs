@@ -29,6 +29,59 @@ pub(super) struct CommandTarget {
 }
 
 impl DeadpanApp {
+    /// `:sting`: write the bundled synthesized sting (deterministic, original)
+    /// to its versioned file and import it like any user sound, so the
+    /// catalog, placement, gain, edges and export treat it identically.
+    pub(super) fn import_sting(&mut self) {
+        let result = (|| {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            if !matches!(
+                workspace.single_source,
+                Some(SingleSourceState::Ready { .. })
+            ) {
+                return Err("Add the sting after the Original is ready.".to_owned());
+            }
+            let directory = self
+                .bundled_sounds
+                .as_ref()
+                .ok_or("No Application Support directory is available for bundled sounds.")?
+                .join(deadpan_audio::STING_VERSION);
+            let path = directory.join(deadpan_audio::STING_FILE_NAME);
+            let bytes = deadpan_audio::triumphant_sting_wav();
+            if std::fs::read(&path).ok().as_deref() != Some(bytes.as_slice()) {
+                std::fs::create_dir_all(&directory)
+                    .and_then(|()| std::fs::write(&path, &bytes))
+                    .map_err(|error| format!("The sting could not be written: {error}"))?;
+            }
+            Ok((
+                workspace.session,
+                workspace.document.revision_id().clone(),
+                path,
+            ))
+        })();
+        match result {
+            Ok((expected_session, expected_revision, path)) => {
+                if self.submit(ProjectRequest::ImportSound {
+                    expected_session,
+                    expected_revision,
+                    path,
+                    stream: None,
+                    interpretation: Some(
+                        crate::project::AudioLayoutInterpretation::StereoLeftRight,
+                    ),
+                    ownership: OriginalOwnership::Managed,
+                }) {
+                    self.message = Some(format!(
+                        "Adding {} to the sound catalog; place it with {}.",
+                        deadpan_audio::STING_LABEL,
+                        self.editor_key(EditorKey::PlaceSound)
+                    ));
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     /// Show the Placed sounds count beside the beat heading instead of a
     /// panel when the edit has no placed sounds, at every height. Compact
     /// Original also summarizes a populated list to keep the picture usable.

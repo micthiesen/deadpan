@@ -894,6 +894,11 @@ impl Service {
         };
         let document = new_document()?;
         let (package, mut store) = library.create(&path, &document)?;
+        // Edits keep pending AI requests reconciled instead of refusing, as
+        // for an opened project.
+        store.set_generation_context_resolver(std::sync::Arc::new(
+            deadpan_cli::generation_context::BoundaryContextResolver::default(),
+        ));
         let next = self
             .session
             .checked_add(1)
@@ -1047,7 +1052,6 @@ impl Service {
             | ProjectEdit::SetAudioTreatments { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. }
-            | ProjectEdit::AudioLag { node, .. }
             | ProjectEdit::HoldAudio { node, .. } => node,
         };
         let view = scope.resolve(workspace)?;
@@ -1065,7 +1069,6 @@ impl Service {
                 | ProjectEdit::SetAudioTreatments { .. }
                 | ProjectEdit::SetCutaways { .. }
                 | ProjectEdit::SetCaptions { .. }
-                | ProjectEdit::AudioLag { .. }
         );
         let mut retime_message = None;
         let new_revision = revision();
@@ -1288,39 +1291,6 @@ impl Service {
                     },
                     selected,
                     "Beat deleted and saved",
-                )
-            }
-            ProjectEdit::AudioLag { node, offset } => {
-                let (host, _) = deadpan_core::cutaway_host(document, &node).ok_or(
-                    "Audio lag belongs to a source beat. Open a group with Enter and select one there.",
-                )?;
-                let NodeKind::Source { source } = &document.nodes()[&host].kind else {
-                    return Err("Audio lag needs a beat of the Original; this is a pause.".into());
-                };
-                if source.audio.is_none() {
-                    return Err("This beat has no sound to offset.".into());
-                }
-                if source.edit_window.is_some() && source.audio_offset != offset {
-                    // An offset gives the sound its own clock, so the common
-                    // picture/sound window that Slip and Trim need ends.
-                    retime_message = Some(
-                        "Sound offset saved. Slip and Trim no longer apply to this beat because its sound no longer shares the picture's clock; Undo restores them."
-                            .into(),
-                    );
-                }
-                if source.audio_offset == offset {
-                    self.message =
-                        Some("The sound already has that offset. No edit was made.".into());
-                    return Ok(());
-                }
-                (
-                    Command::SetSourceAudioMapping {
-                        node: host,
-                        mapping: source.audio_mapping,
-                        offset,
-                    },
-                    selected,
-                    "Sound offset updated and saved",
                 )
             }
             ProjectEdit::HoldDuration { node, duration } => (

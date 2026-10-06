@@ -2,8 +2,12 @@
 //!
 //! `ai-pause` replaces only the model worker with the scripted test seam
 //! (`project::generation::Backend::Scripted`): conditioning, request
-//! allocation and every durable transition are real, and the script can never
-//! produce Ready pictures. `ai-pause-ready` opens a private copy of a real
+//! allocation and every durable transition are real; its scripts end in an
+//! unavailable runtime, cancellation or failure. `ai-variants` uses the same
+//! seam's Ready ending: the synthetic worker's footage goes through real host
+//! qualification, publication and Ready, then variants are listed with
+//! thumbnails, chosen, previewed, auditioned (delivery simulated), accepted
+//! and durably discarded. `ai-pause-ready` opens a private copy of a real
 //! project whose pause holds real accepted AI pictures, and exercises Undo,
 //! Ready discovery, Preview, Accept and Discard against those real bundles.
 
@@ -34,6 +38,16 @@ pub(super) fn backend() -> Backend {
         run(None, 8, ScriptEnding::WaitForCancel),
         run(None, 3, ScriptEnding::Fail(FAILURE.into())),
     ])))
+}
+
+/// Every start of `ai-variants` produces Ready synthetic footage.
+pub(super) fn variants_backend() -> Backend {
+    Backend::Scripted(Arc::new(ScriptQueue::new([Script {
+        unavailable: None,
+        steps: 3,
+        step_interval: Duration::from_millis(20),
+        ending: ScriptEnding::Ready,
+    }])))
 }
 
 fn widget_text(d: &Driver<'_>) -> String {
@@ -350,5 +364,308 @@ pub(super) fn ready(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"candidates":d.app().ai.candidate_count(),"message":d.app().message}),
     )?;
     d.capture("Discarded")?;
+    Ok(())
+}
+
+fn chosen(d: &Driver<'_>) -> Option<usize> {
+    d.app().ai.chosen_variant().map(|(number, _)| number)
+}
+
+pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
+    if let Err(reason) = crate::project::generation::synthetic_tools() {
+        d.report.skipped.push(format!(
+            "ai-variants needs the synthetic Ready worker's tools: {reason}"
+        ));
+        return Ok(());
+    }
+    d.report.skipped.push(
+        "The model is the synthetic test worker (a blend of the boundary pictures with a seed-coloured band); conditioning, host qualification, publication, Ready, preview, acceptance and discard are real. Audition delivery is simulated: no audio device opens and nothing is heard.".into(),
+    );
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::H])?;
+    d.changed(&before)?;
+    d.settled()?;
+    let paused = d.revision();
+    let hold = d.app().ai_hold().ok_or("The new pause is not selected")?;
+
+    d.command("generate 2")?;
+    d.wait_for("First variant generating", |app| {
+        app.ai
+            .job()
+            .is_some_and(|job| job.running() && job.variants == 2)
+    })?;
+    d.step("Two variants requested", false)?;
+    let widgets = widget_text(d);
+    d.check(
+        ":generate 2 shows which variant is generating",
+        widgets.contains("Variant 1 of 2") || widgets.contains("variant 1/2"),
+        json!({"inspector":"Variant 1 of 2","footer":"AI pause · variant 1/2"}),
+        json!({"job":format!("{:?}", d.app().ai.job())}),
+    )?;
+    d.wait_for("Both variants Ready", |app| {
+        app.ai.job().is_some_and(|job| !job.running()) && app.ai.variant_count() == 2
+    })?;
+    d.wait_for("Variant thumbnails rendered", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|workspace| app.thumbnails.rendered_candidates(workspace.session) == 2)
+    })?;
+    d.step("Variants listed", false)?;
+    let widgets = widget_text(d);
+    let job = d.app().ai.job().cloned();
+    d.check(
+        "Two Ready variants are listed with thumbnails, the newest chosen, without an edit",
+        matches!(
+            job.as_ref().and_then(|job| job.outcome.clone()),
+            Some(Outcome::Ready(_))
+        ) && job.as_ref().is_some_and(|job| job.ready == 2)
+            && widgets.contains("Ready · 2 variants")
+            && widgets.contains("chosen")
+            && widgets.contains(":next-ai")
+            && widgets.contains("Audition")
+            && chosen(d) == Some(2)
+            && d.revision() == paused,
+        json!({"variants":2,"thumbnails":2,"chosen":2,"revision":paused}),
+        json!({"job":format!("{job:?}"),"chosen":chosen(d),"revision":d.revision()}),
+    )?;
+    d.capture("Two variants with thumbnails")?;
+
+    d.command("prev-ai")?;
+    d.wait_for("First variant chosen", |app| {
+        app.ai
+            .chosen_variant()
+            .is_some_and(|(number, _)| number == 1)
+    })?;
+    d.check(
+        ":prev-ai chooses the first variant without an edit",
+        d.revision() == paused,
+        json!({"chosen":1,"revision":paused}),
+        json!({"chosen":chosen(d),"revision":d.revision()}),
+    )?;
+    let first = d.app().ai.chosen_variant().ok_or("No chosen variant")?.1;
+
+    d.command("preview-ai")?;
+    d.wait_for("First variant previewed", |app| {
+        app.ai.preview_attempt() == Some(&first)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.step("First variant shown", false)?;
+    d.check(
+        "Preview shows the chosen variant in the viewer and names it in the footer",
+        widget_text(d).contains("AI PREVIEW · VARIANT 1 OF 2 · NOT SAVED")
+            && d.revision() == paused,
+        json!({"footer":"AI PREVIEW · VARIANT 1 OF 2 · NOT SAVED"}),
+        json!({"snapshot":d.snapshot()}),
+    )?;
+    d.capture("Previewing variant 1")?;
+    let draft = |d: &Driver<'_>| match d.app().ai.preview_content() {
+        Some(deadpan_playback::ContentIdentity::Proposed { draft, .. }) => Some(*draft),
+        _ => None,
+    };
+    let first_draft = draft(d);
+
+    d.command("next-ai")?;
+    d.wait_for("Second variant previewed", |app| {
+        app.ai
+            .preview_attempt()
+            .is_some_and(|attempt| attempt != &first)
+            && app
+                .ai
+                .chosen_variant()
+                .is_some_and(|(number, _)| number == 2)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.step("Second variant shown", false)?;
+    d.check(
+        ":next-ai while previewing shows the newly chosen variant",
+        widget_text(d).contains("AI PREVIEW · VARIANT 2 OF 2 · NOT SAVED"),
+        json!({"footer":"AI PREVIEW · VARIANT 2 OF 2 · NOT SAVED"}),
+        json!({"snapshot":d.snapshot()}),
+    )?;
+    d.capture("Previewing variant 2")?;
+    let second_draft = draft(d);
+    d.check(
+        "Each AI preview draws its draft identity from the shared proposal counter",
+        first_draft
+            .zip(second_draft)
+            .is_some_and(|(first, second)| first < second && second <= d.app().serial),
+        json!({"drafts":"increasing, from the counter Gain/Trim/Slip/Splice drafts use"}),
+        json!({"first":first_draft,"second":second_draft,"serial":d.app().serial}),
+    )?;
+    let second = d.app().ai.chosen_variant().ok_or("No chosen variant")?.1;
+
+    // Audition: the proposed acceptance document, admitted against this
+    // exact revision, plays the pause in its loop context.
+    let (start, end) = d
+        .app()
+        .beat_rows
+        .iter()
+        .find(|row| row.id == hold)
+        .map(|row| (row.start, row.start + row.frames))
+        .ok_or("The pause is not a visible beat")?;
+    d.app_mut().feedback.simulate_playback = true;
+    d.command("audition-ai")?;
+    d.step("Audition started", false)?;
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let rate = workspace.document.presentation_basis().frame_rate;
+    let boundary = |frame: u64| {
+        rate.audio_boundary(deadpan_core::ProjectFrame(frame as i64))
+            .map_err(|error| error.to_string())
+    };
+    let (pause_start, pause_end) = (boundary(start)?, boundary(end)?);
+    let transport = d
+        .app()
+        .transport
+        .as_ref()
+        .map(|run| (run.content.clone(), run.revision.clone(), *run.window()));
+    let expected_content = d.app().ai.preview_content().cloned();
+    let audition = transport.as_ref().is_some_and(|(content, revision, window)| {
+        Some(content) == expected_content.as_ref()
+            && matches!(content, deadpan_playback::ContentIdentity::Proposed { base_revision, .. } if base_revision.as_str() == paused)
+            && revision.as_str() != paused
+            && window.looping()
+            && window.start() < pause_start
+            && window.end() > pause_end
+    });
+    d.check(
+        ":audition-ai loops the pause with lead-in and follow-through from the proposed acceptance, admitted against the current revision",
+        audition,
+        json!({"content":"Proposed{base: current revision}","looping":true,"window":"pause with context"}),
+        json!({"transport":format!("{transport:?}"),"expected":format!("{expected_content:?}")}),
+    )?;
+    let (mut feed, _callback) = deadpan_output::channel().map_err(|error| error.to_string())?;
+    let loop_start = d
+        .app()
+        .transport
+        .as_ref()
+        .ok_or("No audition")?
+        .window()
+        .start();
+    let generation = feed
+        .restart(loop_start.0)
+        .map_err(|error| error.to_string())?;
+    let inside = boundary(start + (end - start) / 2)?;
+    let update = {
+        let run = d.app().transport.as_ref().ok_or("No audition")?;
+        deadpan_playback::Update {
+            ticket: run.ticket,
+            session: run.session,
+            project_id: run.project.clone(),
+            revision_id: run.revision.clone(),
+            content: run.content.clone(),
+            phase: deadpan_playback::Phase::Playing,
+            sample: Some(inside),
+            generation: Some(generation),
+            error: None,
+        }
+    };
+    d.app_mut().feedback.playback_updates.push_back(update);
+    d.wait_for("Audition picture inside the pause", |app| {
+        (start..end).contains(&app.sequence_cursor)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+    })?;
+    d.check(
+        "The heard position inside the pause shows the candidate's picture",
+        d.app().transport.is_some() && d.revision() == paused,
+        json!({"cursor_in_pause":true,"picture":"candidate"}),
+        json!({"cursor":d.app().sequence_cursor,"pause":[start,end]}),
+    )?;
+    d.capture("Auditioning variant 2 with the pause's sound")?;
+    d.command("audition-ai")?;
+    d.step("Audition paused", false)?;
+    d.check(
+        "A second :audition-ai pauses the loop at the heard position and keeps the preview",
+        d.app().transport.is_none()
+            && d.app().resume.is_some()
+            && (start..end).contains(&d.app().sequence_cursor)
+            && d.app().ai.preview_attempt() == Some(&second),
+        json!({"playing":false,"preview":"variant 2"}),
+        json!({"snapshot":d.snapshot()}),
+    )?;
+    d.app_mut().feedback.simulate_playback = false;
+
+    d.command("accept-ai")?;
+    d.changed(&paused)?;
+    d.settled()?;
+    let accepted = d.revision();
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let generated = matches!(
+        &workspace.document.nodes()[&hold].kind,
+        NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. })
+    );
+    d.wait_for("The other variant stays offered", |app| {
+        app.ai.variant_count() == 1
+    })?;
+    d.check(
+        "Accept commits the chosen variant as one undoable edit; the other variant stays offered",
+        generated
+            && d.app().selected_beat.as_ref() == Some(&hold)
+            && workspace.can_undo
+            && d.app()
+                .ai
+                .chosen_variant()
+                .is_some_and(|(_, attempt)| attempt == first),
+        json!({"picture":"variant 2","offered":["variant 1"]}),
+        json!({"generated":generated,"chosen":format!("{:?}", d.app().ai.chosen_variant())}),
+    )?;
+    d.capture("Accepted variant 2")?;
+
+    d.command("discard-ai")?;
+    d.wait_for("Variant discarded", |app| app.ai.variant_count() == 0)?;
+    d.step("Discarded", false)?;
+    let durable = {
+        let store =
+            deadpan_store::ProjectStore::open(&workspace.path, deadpan_store::AccessMode::ReadOnly)
+                .map_err(|error| error.to_string())?;
+        let request = store
+            .current_generation_requests()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|request| request.binding.hold_id == hold)
+            .ok_or("No current request")?;
+        store
+            .generation_attempt(&deadpan_jobs::MessageIdentity::new(
+                request.request_id,
+                first.clone(),
+            ))
+            .map_err(|error| error.to_string())?
+            .and_then(|attempt| attempt.bundle_receipt)
+            .is_some_and(|receipt| {
+                receipt.availability()
+                    == deadpan_store::generation_attempts::CandidateAvailability::Evicted
+            })
+    };
+    d.check(
+        "Discard durably removes the variant without an edit",
+        durable && d.revision() == accepted && widget_text(d).contains("Generate AI pictures"),
+        json!({"stored":"evicted","revision":accepted}),
+        json!({"durable":durable,"revision":d.revision(),"message":d.app().message}),
+    )?;
+    d.capture("Discarded variant 1")?;
+
+    d.key(Key::U)?;
+    d.changed(&accepted)?;
+    d.settled()?;
+    select_beat(d, &hold)?;
+    d.wait_for("Accepted variant offered again after Undo", |app| {
+        app.ai.variant_count() == 1
+    })?;
+    d.check(
+        "Undo offers the accepted variant again; the discarded one stays gone",
+        d.app()
+            .ai
+            .chosen_variant()
+            .is_some_and(|(_, attempt)| attempt == second),
+        json!({"offered":["variant 2"]}),
+        json!({"chosen":format!("{:?}", d.app().ai.chosen_variant())}),
+    )?;
+    d.capture("Undo offers the accepted variant")?;
     Ok(())
 }

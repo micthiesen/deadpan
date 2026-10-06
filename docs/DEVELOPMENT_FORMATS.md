@@ -26,6 +26,19 @@ adapters avoids maintaining their closed command vocabulary with each new
 command. The adapters alone occupied 31,091 lines before this change. Build
 speed improvements have not been isolated or measured.
 
+## Per-attempt seeds in bridge receipts (2026-10-05)
+
+Without a schema change, every attempt of a bridge generation request is a
+seeded variant: attempt `n` must declare and record
+`ProviderSelection::for_attempt(n)` (the request's seed plus `n - 1`, below
+2^32). The store checks this when recording Ready, on acceptance and in its
+whole-store validation on open. Attempt 1 is unchanged, so packages whose
+Ready bundles are all first attempts are unaffected. A package whose request
+has a Ready retry (attempt 2 or later) recorded under the request's own seed,
+which the previous builds produced only by retrying a request, now fails
+validation on open with an integrity error. No migration rewrites it; create
+or regenerate the project. See [AI Holds](AI_HOLDS.md#library-chain).
+
 ## Additive vocabulary in core schema 46 (2026-10-05)
 
 Core schema 46 also admits three additive, closed fields without a version

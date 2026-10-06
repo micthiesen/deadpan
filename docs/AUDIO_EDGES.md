@@ -128,6 +128,47 @@ stages. Authored hard choices use the normal `command --json` entrypoint, for
 example the command member `{"command":"set_audio_edge","node":"word",
 "edge":"node_end","policy":"hard"}` in a complete revision-bound request.
 
+## Native edge command
+
+`:edge hard|auto [start|end|both|plays|gaps]` sets the selected direct child's
+policies as one semantic `SetAudioEdges { side, policy }` instruction and one
+Undo, with one `SetAudioEdge` leaf per changed boundary: `start`/`end`/`both`
+(the default) are the beat's `node_start`/`node_end`; `plays` on a selected
+Repeat sets its repeated child's `node_start` and `node_end`, which are every
+play's seam (a default play's child; an overridden play keeps its own
+subtree's choice); `gaps` sets the Repeat's `repeat_gap_start` and
+`repeat_gap_end`. Picture and timing are unchanged. Restating the current
+policies, and `plays` or `gaps` on a beat that is not a Repeat, refuse. The
+inspector lists any hard edges. Macros record it and `.` repeats it on another
+beat.
+
+A split fragment (Partition) adds no fade of its own: a Repeat of a Visual
+range inside a beat therefore cuts its play seams with no envelope. Hard
+policies on a fragment are valid only on sides marked as editorial edges, so
+`:edge` on a fragment (directly, or through `plays` on a Repeat of one) first
+marks the touched sides with the reversible `SetEditorialEdges { node, edges }`
+command, in the same transaction. Like a Trim, a side next to another fragment
+marks both incident sides, so the cut fades on both; the policy is set on the
+selected side, and any coincident Hard suppresses the fade. A side that simply
+continues the same sound (a pure Split: equal fragment contents and
+contiguous mappings) refuses, because a fade there would dip continuous sound.
+`plays` refuses on a Repeat whose plays have their own contents (per-play
+overrides): set those seams inside each play. Marked, `auto` fades each seam with the
+shared short envelope and `hard` cuts it explicitly; filtering support, timing
+and every clock are unchanged. The command refuses any node other than a
+fragment, and clearing a mark is not exposed. Evidence:
+`sound_edges_set_a_beats_ends_a_repeats_play_seams_or_its_gap_edges` and
+`a_split_fragments_play_seams_are_marked_before_their_policy_applies` (core,
+one compound with an exact inverse), `a_split_seam_has_no_edge_while_a_cut_between_fragments_marks_both_sides`
+(including Undo and Redo), `marked_fragment_play_seams_fade_or_cut_by_their_policy`
+(plan: no seam edge unmarked, an automatic editorial edge on both sides of the
+seam when marked, Hard origins when cut),
+`marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous`
+(exact PCM of a synthesized tone: a pure Split seam is the continuous tone, an
+unmarked or Hard cut is the raw jump, a marked automatic cut fades to silence
+at the seam and is untouched 100 samples away), `edge_and_gag_set_commands_parse_their_choices`,
+the `creative-dot` replay and the release `micro-loop` preview/export fixture.
+
 ## Verification and remaining scope
 
 Core tests cover strict current serialization and default migration without
@@ -152,7 +193,8 @@ An earlier isolated audio doctest attempt failed to locate `deadpan_media`;
 its retry and the final full workspace doctests passed.
 
 This implements the edge stage for existing sequential source/room-tone voices.
-Native authoring controls and keyboard bindings, listening qualification,
+The native `:edge` command authors node, play-seam and gap policies; per-play
+override and placement-edge controls, keyboard bindings, listening qualification,
 simultaneous attachment voices, full effect-order authoring, gain/EQ/saturation,
 sends and tails, group/master processing, application playback and export remain
 open. The earlier failed limiter experiments remain unadopted. This stage is

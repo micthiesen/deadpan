@@ -353,6 +353,58 @@ impl ClipGain {
         Ok(self.with_trim(self.trim.adjusted(delta_millidecibels)?))
     }
 
+    /// `+`/`-` over a range (specification §5 "selected audio gain"): a
+    /// constant step envelope over exactly `range`, changed by the signed
+    /// amount. Pressing again over the same range adjusts that envelope;
+    /// reaching 0 dB removes it. Other envelopes, trim and mutes are kept;
+    /// overlapping envelopes still add.
+    pub fn adjust_range(
+        &self,
+        range: GainRange,
+        delta_millidecibels: i32,
+    ) -> Result<Self, GainError> {
+        let constant = |envelope: &GainEnvelope| {
+            envelope.range == range
+                && envelope
+                    .segments
+                    .iter()
+                    .all(|segment| segment.value == envelope.initial)
+        };
+        let mut next = self.clone();
+        let existing = next.envelopes.iter().position(constant);
+        let current = existing.map_or(GainDb::UNITY, |index| next.envelopes[index].initial);
+        let value = current.adjusted(delta_millidecibels)?;
+        if let Some(index) = existing {
+            next.envelopes.remove(index);
+        }
+        if value != GainDb::UNITY {
+            let envelope = GainEnvelope::new(
+                GainClock::OwnerOutput,
+                range,
+                value,
+                vec![GainSegment::new(range.end, value, GainCurve::Step)?],
+            )?;
+            next.envelopes
+                .insert(existing.unwrap_or(next.envelopes.len()), envelope);
+        }
+        next.validate()?;
+        Ok(next)
+    }
+
+    /// The constant step a range change left over exactly `range`, if any.
+    pub fn range_step(&self, range: GainRange) -> Option<GainDb> {
+        self.envelopes
+            .iter()
+            .find(|envelope| {
+                envelope.range == range
+                    && envelope
+                        .segments
+                        .iter()
+                        .all(|segment| segment.value == envelope.initial)
+            })
+            .map(|envelope| envelope.initial)
+    }
+
     /// The caller establishes the owner's allocation. Whole-owner trim/mute
     /// apply throughout that allocation; only range effects use `local`.
     /// Overlapping envelopes add dB without clamping or normalization.
@@ -485,6 +537,22 @@ impl AudioTreatments {
             order.insert(0, AudioTreatmentStage::ClipGain);
         }
         Self::with_stages(order, Some(clip_gain), self.saturation)
+    }
+    /// `with_clip_gain`, except that a unity, unmuted clip gain with no
+    /// envelopes or mute ranges removes the stage, so undoing a change by
+    /// another change restores the plain recipe instead of keeping an inert
+    /// stage.
+    pub fn with_clip_gain_or_none(&self, clip_gain: ClipGain) -> Result<Self, GainError> {
+        if clip_gain != ClipGain::default() {
+            return self.with_clip_gain(clip_gain);
+        }
+        let order = self
+            .order
+            .iter()
+            .copied()
+            .filter(|stage| *stage != AudioTreatmentStage::ClipGain)
+            .collect();
+        Self::with_stages(order, None, self.saturation)
     }
     pub fn validate(&self) -> Result<(), GainError> {
         if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {

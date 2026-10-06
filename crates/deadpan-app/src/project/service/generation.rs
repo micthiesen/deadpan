@@ -3,7 +3,6 @@
 //! allocation, every durable transition and the final outcome. Session
 //! replacement and shutdown cancel the job and wait until it has drained.
 
-use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::time::Instant;
 
@@ -15,11 +14,13 @@ use deadpan_cli::generation::attempt::{
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
 use deadpan_core::HoldVideo;
-use deadpan_jobs::{HostFailureCode, JobFailure, JobState, RequestId};
+use deadpan_jobs::{AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, RequestId};
+use deadpan_store::generation_attempts::CandidateAvailability;
 
 use super::*;
 use crate::project::generation::{
-    Backend, Candidate, CandidatePreview, GenerationOperation, Job, Outcome, Phase, Update,
+    Backend, Candidate, CandidatePreview, GenerationOperation, Job, MAX_VARIANTS, Outcome, Phase,
+    PreviewParts, Update, Variant,
 };
 
 /// Events the job thread may queue ahead of the writer.
@@ -39,12 +40,18 @@ enum Event {
 struct Running {
     cancelled: Arc<AtomicBool>,
     events: Receiver<Event>,
-    /// A dedicated one-slot channel: the final run is never dropped behind
-    /// queued progress, and its qualified workspace reaches `finish`.
+    /// A dedicated one-slot channel: each attempt's run is never dropped
+    /// behind queued progress, and its qualified workspace reaches `finish`.
     finished: Receiver<WorkerRun>,
-    /// The job thread waits on this once conditioning is ready.
+    /// The job thread waits on this for each attempt, once conditioning is
+    /// ready. Dropping it ends the job thread after its current attempt.
     allocation: Option<SyncSender<std::result::Result<Allocated, String>>>,
+    /// The attempt in progress.
     allocated: Option<Allocated>,
+    /// Whether this job's first attempt has been allocated.
+    started: bool,
+    /// The seed for a new request, when the caller chose one.
+    seed: Option<u64>,
     thread: Option<JoinHandle<()>>,
 }
 
@@ -65,9 +72,55 @@ pub(super) struct State {
     candidates: Arc<BTreeMap<NodeId, Candidate>>,
     candidates_key: Option<(u64, RevisionId, u64)>,
     epoch: u64,
-    dismissed: BTreeSet<RequestId>,
     preview: Option<Arc<CandidatePreview>>,
     reply: Option<(u64, Option<String>)>,
+    /// Jobs started through the live endpoint, numbered apart from the UI's.
+    remote: u64,
+    /// Concluded live-endpoint jobs, kept for their caller until released,
+    /// replaced by its next job or expired, even after the UI starts another.
+    finished_remote: Vec<FinishedRemote>,
+}
+
+struct FinishedRemote {
+    status: deadpan_cli::live_project::generation::GenerationStatus,
+    expires: Instant,
+}
+
+/// Live-endpoint job tickets never collide with the UI's command tickets.
+const REMOTE_TICKETS: u64 = 1 << 62;
+/// The most concluded live-endpoint jobs kept, and for how long.
+const MAX_FINISHED_REMOTE: usize = 8;
+const FINISHED_REMOTE_RETENTION: Duration = Duration::from_secs(10 * 60);
+
+/// One observation of `job` for the live endpoint.
+fn remote_status(job: &Job) -> deadpan_cli::live_project::generation::GenerationStatus {
+    use deadpan_cli::live_project::generation::{GenerationOutcome, GenerationStatus, bounded};
+    let outcome = job.outcome.as_ref().map(|outcome| match outcome {
+        Outcome::Ready(_) => GenerationOutcome::Ready {},
+        Outcome::Cancelled => GenerationOutcome::Cancelled {},
+        Outcome::Failed(reason) => GenerationOutcome::Failed {
+            reason: bounded(reason),
+        },
+        Outcome::Unavailable(reason) => GenerationOutcome::Unavailable {
+            reason: bounded(reason),
+        },
+    });
+    GenerationStatus {
+        job: job.ticket,
+        hold: job.hold.clone(),
+        request_id: job.request.clone(),
+        variants: job.variants,
+        variant: job.variant,
+        ready: job.ready,
+        stage: job.phase.label().into(),
+        steps: job
+            .phase
+            .steps()
+            .map(|(completed, total)| [completed, total]),
+        elapsed_ms: u64::try_from(job.started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        outcome,
+        note: job.note.as_deref().map(bounded),
+    }
 }
 
 impl State {
@@ -89,9 +142,9 @@ impl State {
         self.job = None;
         self.candidates = Arc::default();
         self.candidates_key = None;
-        self.dismissed.clear();
         self.preview = None;
         self.reply = None;
+        self.finished_remote.clear();
     }
 }
 
@@ -121,6 +174,7 @@ impl Service {
         let ticket = match &operation {
             GenerationOperation::Start { ticket, .. }
             | GenerationOperation::Cancel { ticket, .. }
+            | GenerationOperation::Select { ticket, .. }
             | GenerationOperation::Preview { ticket, .. }
             | GenerationOperation::Discard { ticket, .. } => *ticket,
             GenerationOperation::Accept { .. } => {
@@ -133,7 +187,8 @@ impl Service {
                 session,
                 revision,
                 hold,
-            } => self.start_generation(ticket, session, &revision, hold),
+                variants,
+            } => self.start_generation(ticket, session, &revision, hold, variants, None),
             GenerationOperation::Cancel {
                 session,
                 job: started,
@@ -154,40 +209,133 @@ impl Service {
                     Err("No matching AI pause is generating.".into())
                 }
             }
+            GenerationOperation::Select {
+                session,
+                request,
+                attempt,
+                ..
+            } => self.select_variant(session, &request, &attempt).map(|_| {
+                self.message = Some("Chose this AI variant. Preview or accept it.".into());
+            }),
             GenerationOperation::Preview {
                 session,
                 revision,
                 request,
+                attempt,
+                draft,
                 ..
-            } => self.preview_generation(session, &revision, request),
+            } => self.preview_generation(draft, session, &revision, request, attempt),
             GenerationOperation::Discard {
-                session, request, ..
-            } => {
-                if self.generation.session == session {
-                    if self
-                        .generation
-                        .preview
-                        .as_ref()
-                        .is_some_and(|preview| preview.request() == &request)
-                    {
-                        self.generation.preview = None;
-                    }
-                    self.generation.dismissed.insert(request);
-                    self.generation.candidates_key = None;
-                    self.message = Some(
-                        "Discarded the AI pictures. The pause is unchanged; generate again for new pictures."
-                            .into(),
-                    );
-                    Ok(())
-                } else {
-                    Err("Project session changed before the request".into())
-                }
-            }
+                session,
+                request,
+                attempt,
+                ..
+            } => self.discard_variant(session, &request, &attempt),
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
             }
         };
         self.generation.reply = Some((ticket, result.err()));
+    }
+
+    /// The offered candidate of `request` that contains `attempt`.
+    fn offered(&mut self, request: &RequestId, attempt: &AttemptId) -> Result<Candidate> {
+        self.current_candidates()
+            .values()
+            .find(|candidate| {
+                &candidate.request == request
+                    && candidate
+                        .variants
+                        .iter()
+                        .any(|variant| &variant.attempt == attempt)
+            })
+            .cloned()
+            .ok_or_else(|| "These AI pictures are no longer offered for this pause.".into())
+    }
+
+    /// Make `attempt` the request's selected variant in the store, so the
+    /// store's acceptance preview and acceptance use exactly it. Operational
+    /// metadata only; nothing in the edit changes.
+    fn select_variant(
+        &mut self,
+        session: u64,
+        request: &RequestId,
+        attempt: &AttemptId,
+    ) -> Result<Candidate> {
+        if self.generation.session != session
+            || self
+                .workspace
+                .as_ref()
+                .is_none_or(|workspace| workspace.session != session)
+        {
+            return Err("Project session changed before the request".into());
+        }
+        let candidate = self.offered(request, attempt)?;
+        let identity = MessageIdentity::new(request.clone(), attempt.clone());
+        let store = self.store.as_mut().ok_or("Open a project first")?;
+        if store
+            .selected_generation_bundle(request)
+            .map_err(display)?
+            .is_none_or(|selected| selected.identity != identity)
+        {
+            store
+                .select_generation_bundle_variant(&identity)
+                .map_err(display)?;
+            self.generation.epoch += 1;
+        }
+        if self
+            .generation
+            .preview
+            .as_ref()
+            .is_some_and(|preview| preview.request() == request && preview.attempt() != attempt)
+        {
+            self.generation.preview = None;
+        }
+        Ok(candidate)
+    }
+
+    /// Durably discard one Ready variant: the store records it unavailable
+    /// and it is never offered again. If it was selected, the newest other
+    /// offered variant of the request becomes selected.
+    fn discard_variant(
+        &mut self,
+        session: u64,
+        request: &RequestId,
+        attempt: &AttemptId,
+    ) -> Result<()> {
+        if self.generation.session != session
+            || self
+                .workspace
+                .as_ref()
+                .is_none_or(|workspace| workspace.session != session)
+        {
+            return Err("Project session changed before the request".into());
+        }
+        let candidate = self.offered(request, attempt)?;
+        let identity = MessageIdentity::new(request.clone(), attempt.clone());
+        // One store transaction: the variant becomes unavailable and, only if
+        // it was the chosen one, the newest remaining variant is chosen.
+        self.store
+            .as_mut()
+            .ok_or("Open a project first")?
+            .discard_generation_bundle_variant(&identity)
+            .map_err(display)?;
+        if self
+            .generation
+            .preview
+            .as_ref()
+            .is_some_and(|preview| preview.attempt() == attempt)
+        {
+            self.generation.preview = None;
+        }
+        self.generation.epoch += 1;
+        self.message = Some(if candidate.variants.len() > 1 {
+            "Removed this AI variant from the list for good; its files stay in the project until a cleanup removes them. The pause is unchanged.".into()
+        } else {
+            "Removed the AI pictures from the list for good; their files stay in the project until a cleanup removes them. The pause is unchanged; generate again for new pictures."
+                .into()
+        });
+        Ok(())
     }
 
     fn start_generation(
@@ -196,10 +344,17 @@ impl Service {
         session: u64,
         revision: &RevisionId,
         hold: NodeId,
+        variants: u8,
+        seed: Option<u64>,
     ) -> Result<()> {
         self.check_context(session, revision)?;
         if self.pending_session_change.is_some() {
             return Err("The project is closing or changing.".into());
+        }
+        if !(1..=MAX_VARIANTS).contains(&variants) {
+            return Err(format!(
+                "Generate 1 to {MAX_VARIANTS} AI variants at a time."
+            ));
         }
         if self.generation.running.is_some() {
             return Err(
@@ -221,8 +376,12 @@ impl Service {
             revision: revision.clone(),
             started: Instant::now(),
             request: None,
+            variants,
+            variant: 1,
+            ready: 0,
             phase: Phase::Conditioning,
             outcome: None,
+            note: None,
         };
         let worker = match &self.generation.backend {
             Backend::Environment => match BridgeRuntime::from_environment() {
@@ -239,7 +398,10 @@ impl Service {
                     self.conclude_unavailable(job, error.clone());
                     return Ok(());
                 }
-                Worker::Scripted(script)
+                Worker::Scripted {
+                    queue: queue.clone(),
+                    first: Some(script),
+                }
             }
         };
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -271,10 +433,16 @@ impl Service {
             finished: receive_finished,
             allocation: Some(allocation),
             allocated: None,
+            started: false,
+            seed,
             thread: Some(thread),
         });
         self.generation.job = Some(job);
-        self.message = Some("Generating AI pictures for this pause…".into());
+        self.message = Some(if variants > 1 {
+            format!("Generating {variants} AI variants for this pause…")
+        } else {
+            "Generating AI pictures for this pause…".into()
+        });
         Ok(())
     }
 
@@ -286,17 +454,17 @@ impl Service {
 
     fn preview_generation(
         &mut self,
+        draft: u64,
         session: u64,
         revision: &RevisionId,
         request: RequestId,
+        attempt: AttemptId,
     ) -> Result<()> {
         self.check_context(session, revision)?;
-        let candidate = self
-            .current_candidates()
-            .values()
-            .find(|candidate| candidate.request == request)
-            .cloned()
-            .ok_or("These AI pictures are no longer offered for this pause.")?;
+        if draft == 0 {
+            return Err("The AI preview needs a fresh proposal identity.".into());
+        }
+        let candidate = self.select_variant(session, &request, &attempt)?;
         let workspace = self
             .workspace
             .as_ref()
@@ -309,17 +477,37 @@ impl Service {
         let store = self.store.as_ref().ok_or("Open a project first")?;
         let acceptance =
             acceptance::acceptance_for(store, &request, revision_id()).map_err(display)?;
+        if acceptance.identity.attempt_id != attempt {
+            return Err("The selected AI variant changed; choose it again.".into());
+        }
         let edit = store
             .preview_generation_acceptance(&acceptance, attempt::object_limits())
             .map_err(display)?;
-        let after = edit.forward.apply(&workspace.document).map_err(display)?;
+        let after = Arc::new(edit.forward.apply(&workspace.document).map_err(display)?);
+        // The same proposed document, admitted for audition against the
+        // exact committed base: accepting pictures leaves the pause's sound
+        // unchanged, so pictures and sound play together as they would after
+        // acceptance.
+        let audio = Arc::new(
+            deadpan_playback::Snapshot::proposed_generated(
+                &workspace.playback_snapshot(),
+                after.clone(),
+                draft,
+                1,
+            )
+            .map_err(display)?,
+        );
         self.generation.preview = Some(Arc::new(CandidatePreview::new(
-            session,
             &workspace.document,
-            request,
-            candidate.hold,
-            range,
-            Arc::new(after),
+            PreviewParts {
+                session,
+                request,
+                attempt,
+                hold: candidate.hold,
+                range,
+                document: after,
+                audio,
+            },
         )?));
         Ok(())
     }
@@ -330,6 +518,7 @@ impl Service {
             session,
             revision,
             request,
+            attempt,
             hold,
             cursor,
             scope,
@@ -338,11 +527,8 @@ impl Service {
             unreachable!("only acceptance is an ordinary edit");
         };
         self.check_context(session, &revision)?;
-        if !self
-            .current_candidates()
-            .get(&hold)
-            .is_some_and(|candidate| candidate.request == request)
-        {
+        let candidate = self.select_variant(session, &request, &attempt)?;
+        if candidate.hold != hold {
             return Err("These AI pictures are no longer offered for this pause.".into());
         }
         let outcome = acceptance::accept(self.writer()?, &request, revision_id())
@@ -383,7 +569,7 @@ impl Service {
         let Some(store) = &self.store else {
             return Arc::default();
         };
-        match candidates(store, &workspace.document, &self.generation.dismissed) {
+        match candidates(store, &workspace.document) {
             Ok(found) => {
                 self.generation.candidates = Arc::new(found);
             }
@@ -503,26 +689,33 @@ impl Service {
         let Some(running) = &mut self.generation.running else {
             return;
         };
-        let Some(allocation) = running.allocation.take() else {
+        if running.started || running.allocation.is_none() {
             return;
-        };
+        }
         let cancelled = running.cancelled.load(Ordering::Acquire);
-        let Some(job) = &self.generation.job else {
+        let requested_seed = running.seed;
+        let Some((hold, revision)) = self
+            .generation
+            .job
+            .as_ref()
+            .map(|job| (job.hold.clone(), job.revision.clone()))
+        else {
             return;
         };
         let inputs = match prepared {
-            // Nothing was recorded; dropping or refusing the allocation ends
-            // the job thread.
+            // Nothing was recorded; refusing the allocation ends the job thread.
             Ok(_) if cancelled => {
-                let _ = allocation.try_send(Err("cancelled".into()));
+                self.refuse_allocation("cancelled".into());
                 self.conclude_generation(Outcome::Cancelled);
                 return;
             }
             Err(_) if cancelled => {
+                self.refuse_allocation("cancelled".into());
                 self.conclude_generation(Outcome::Cancelled);
                 return;
             }
             Err(error) => {
+                self.refuse_allocation(error.clone());
                 self.conclude_generation(Outcome::Failed(format!(
                     "The pause's boundary pictures could not be prepared: {error}"
                 )));
@@ -530,8 +723,6 @@ impl Service {
             }
             Ok(inputs) => *inputs,
         };
-        let hold = job.hold.clone();
-        let revision = job.revision.clone();
         let allocated = (|| -> std::result::Result<Allocated, String> {
             let store = self
                 .store
@@ -543,50 +734,95 @@ impl Service {
                         .into(),
                 );
             }
-            attempt::allocate(
-                store,
-                AllocateInput {
-                    hold,
-                    expected_revision: revision,
-                    seed: {
-                        let random = uuid::Uuid::new_v4();
-                        let mut seed = [0; 4];
-                        seed.copy_from_slice(&random.as_bytes()[..4]);
-                        u64::from(u32::from_le_bytes(seed))
+            // Unchanged boundary pictures add variants to the Hold's current
+            // request; anything else is a new request that supersedes it.
+            let existing = attempt::current_bridge_request(store, &hold)
+                .map_err(display)?
+                .filter(|request| {
+                    request.binding.context_sha256 == inputs.manifest_sha256
+                        && request.constraints == inputs.constraints
+                        && request.bridge_plan.as_ref() == Some(&inputs.plan)
+                });
+            match existing {
+                // Variants of an existing request derive their seeds from its
+                // own seed; an explicit seed cannot apply and is refused.
+                Some(request) if requested_seed.is_some() => {
+                    return Err(format!(
+                        "This pause already has AI variants from request {} (seed {}); its new variants derive their seeds from that. Generate without a seed to add one, or change the pause to start a new request.",
+                        request.request_id, request.provider.seed
+                    ));
+                }
+                Some(request) => attempt::allocate_variant(store, request, inputs),
+                None => attempt::allocate(
+                    store,
+                    AllocateInput {
+                        hold,
+                        expected_revision: revision,
+                        seed: requested_seed.unwrap_or_else(|| {
+                            let random = uuid::Uuid::new_v4();
+                            let mut seed = [0; 4];
+                            seed.copy_from_slice(&random.as_bytes()[..4]);
+                            u64::from(u32::from_le_bytes(seed))
+                        }),
+                        inputs,
                     },
-                    inputs,
-                },
-            )
+                ),
+            }
             .map_err(|error: GenerationError| error.to_string())
         })();
         match allocated {
-            Ok(allocated) => {
-                if let Some(job) = &mut self.generation.job {
-                    job.request = Some(allocated.request.request_id.clone());
-                    job.phase = Phase::Preparing;
-                }
-                if let Some(running) = &mut self.generation.running {
-                    running.allocated = Some(allocated.clone());
-                }
-                // A new request supersedes the Hold's earlier candidate.
-                self.generation.epoch += 1;
-                self.generation.preview = None;
-                // If the job thread is already gone, its disconnect records
-                // the allocated attempt's failure.
-                let _ = allocation.try_send(Ok(allocated));
-            }
+            Ok(allocated) => self.dispatch_attempt(allocated),
             Err(error) => {
-                let _ = allocation.try_send(Err(error.clone()));
+                self.refuse_allocation(error.clone());
                 self.conclude_generation(Outcome::Failed(error));
             }
         }
     }
 
+    /// Hand the job thread its next attempt.
+    fn dispatch_attempt(&mut self, allocated: Allocated) {
+        if let Some(job) = &mut self.generation.job {
+            job.request = Some(allocated.request.request_id.clone());
+            job.phase = Phase::Preparing;
+        }
+        // A new request supersedes the Hold's earlier candidate; a new
+        // variant changes which one the store selects when it is Ready.
+        self.generation.epoch += 1;
+        if self
+            .generation
+            .preview
+            .as_ref()
+            .is_some_and(|preview| preview.request() != &allocated.request.request_id)
+        {
+            self.generation.preview = None;
+        }
+        if let Some(running) = &mut self.generation.running {
+            running.started = true;
+            running.allocated = Some(allocated.clone());
+            if let Some(allocation) = &running.allocation {
+                // If the job thread is already gone, its disconnect records
+                // the allocated attempt's failure.
+                let _ = allocation.try_send(Ok(allocated));
+            }
+        }
+    }
+
+    /// Tell a job thread waiting for an attempt that none follows.
+    fn refuse_allocation(&mut self, reason: String) {
+        if let Some(running) = &mut self.generation.running
+            && let Some(allocation) = running.allocation.take()
+        {
+            let _ = allocation.try_send(Err(reason));
+        }
+    }
+
     fn generation_finished(&mut self, run: WorkerRun) {
-        let Some(mut running) = self.generation.running.take() else {
+        let Some(running) = &mut self.generation.running else {
             return;
         };
-        let outcome = match (running.allocated.as_ref(), self.store.as_mut()) {
+        let cancelled = running.cancelled.load(Ordering::Acquire);
+        let allocated = running.allocated.take();
+        let outcome = match (allocated.as_ref(), self.store.as_mut()) {
             (Some(allocated), Some(store)) => match attempt::finish(store, allocated, run) {
                 Ok(finished) => match finished.state {
                     JobState::Ready => Outcome::Ready(allocated.request.request_id.clone()),
@@ -605,17 +841,106 @@ impl Service {
                 _ => Outcome::Failed("The AI pause stopped before it was recorded.".into()),
             },
         };
-        if let Some(thread) = running.thread.take() {
-            let _ = thread.join();
+        self.generation.epoch += 1;
+        let next = match (&outcome, &mut self.generation.job, allocated) {
+            (Outcome::Ready(_), Some(job), Some(allocated)) => {
+                job.ready = job.ready.saturating_add(1);
+                (job.variant < job.variants && !cancelled && self.pending_session_change.is_none())
+                    .then_some(allocated)
+            }
+            _ => None,
+        };
+        if let Some(previous) = next {
+            let store = self.store.as_mut();
+            let allocated = store
+                .ok_or_else(|| "The project writer is unavailable.".to_owned())
+                .and_then(|store| {
+                    attempt::allocate_variant(
+                        store,
+                        previous.request.clone(),
+                        previous.inputs().clone(),
+                    )
+                    .map_err(|error| error.to_string())
+                });
+            match allocated {
+                Ok(allocated) => {
+                    if let Some(job) = &mut self.generation.job {
+                        job.variant += 1;
+                    }
+                    self.message = self.generation.job.as_ref().map(|job| {
+                        format!(
+                            "AI variant {} of {} is ready; generating variant {}…",
+                            job.ready, job.variants, job.variant
+                        )
+                    });
+                    self.dispatch_attempt(allocated);
+                    return;
+                }
+                Err(error) => {
+                    // The variants already made stay Ready; say why no more
+                    // follow (for example, the pause changed meanwhile).
+                    if let Some(job) = &mut self.generation.job {
+                        job.note = Some(format!(
+                            "{} of {} AI variants are ready; variant {} could not start: {error}",
+                            job.ready,
+                            job.variants,
+                            job.variant + 1
+                        ));
+                    }
+                    self.finish_job_thread();
+                    self.conclude_generation(outcome);
+                    return;
+                }
+            }
         }
+        let outcome = match (&outcome, &mut self.generation.job) {
+            // Cancelled between variants: the Ready ones are kept.
+            (Outcome::Ready(_), Some(job)) if cancelled && job.variant < job.variants => {
+                job.note = Some(format!(
+                    "Cancelled after {} of {} AI variants; the ready ones are kept.",
+                    job.ready, job.variants
+                ));
+                Outcome::Cancelled
+            }
+            (Outcome::Cancelled | Outcome::Failed(_), Some(job)) if job.ready > 0 => {
+                job.note = Some(format!(
+                    "{} earlier AI variant{} of this job {} ready; variant {} {}.",
+                    job.ready,
+                    if job.ready == 1 { "" } else { "s" },
+                    if job.ready == 1 { "is" } else { "are" },
+                    job.variant,
+                    if matches!(outcome, Outcome::Cancelled) {
+                        "was cancelled"
+                    } else {
+                        "failed"
+                    }
+                ));
+                outcome
+            }
+            _ => outcome,
+        };
+        self.finish_job_thread();
         self.conclude_generation(outcome);
     }
 
-    /// The job thread ended without sending Finished.
+    /// End and reap the job thread once no attempt follows.
+    fn finish_job_thread(&mut self) {
+        let Some(mut running) = self.generation.running.take() else {
+            return;
+        };
+        // Dropping the allocation sender ends the thread's wait.
+        running.allocation = None;
+        if let Some(thread) = running.thread.take() {
+            let _ = thread.join();
+        }
+    }
+
+    /// The job thread ended without sending a run for its current attempt.
     fn generation_stopped(&mut self) {
         let Some(mut running) = self.generation.running.take() else {
             return;
         };
+        running.allocation = None;
         let panicked = running
             .thread
             .take()
@@ -672,67 +997,250 @@ impl Service {
                 .any(|candidate| &candidate.request == request),
             _ => false,
         };
-        self.message = Some(
-            match &outcome {
-                Outcome::Ready(_) if offered => {
-                    "AI pictures are ready. Preview them, then accept or discard."
-                }
-                Outcome::Ready(_) => {
-                    "AI pictures finished, but the pause changed meanwhile; generate again."
-                }
-                Outcome::Cancelled => "The AI pause was cancelled; the pause is unchanged.",
-                Outcome::Failed(_) => "The AI pause failed; the pause is unchanged.",
-                Outcome::Unavailable(_) => {
-                    "AI pauses are unavailable on this Mac; the inspector lists what is missing."
+        let earlier = self.generation.job.as_ref().map_or(0, |job| job.ready);
+        self.message = Some(match &outcome {
+            Outcome::Ready(_) if offered => {
+                if earlier > 1 {
+                    format!(
+                        "{earlier} AI variants are ready. Choose one, preview it, then accept or discard."
+                    )
+                } else {
+                    "AI pictures are ready. Preview them, then accept or discard.".into()
                 }
             }
-            .into(),
-        );
+            Outcome::Ready(_) => {
+                "AI pictures finished, but the pause changed meanwhile; generate again.".into()
+            }
+            Outcome::Cancelled if earlier > 0 => {
+                "The AI job was cancelled; the pause is unchanged.".into()
+            }
+            Outcome::Cancelled => "The AI pause was cancelled; the pause is unchanged.".into(),
+            Outcome::Failed(_) => "The AI pause failed; the pause is unchanged.".into(),
+            Outcome::Unavailable(_) => {
+                "AI pauses are unavailable on this Mac; the inspector lists what is missing.".into()
+            }
+        });
+        if let Some(note) = self
+            .generation
+            .job
+            .as_ref()
+            .and_then(|job| job.note.clone())
+            && let Some(message) = &mut self.message
+        {
+            message.push(' ');
+            message.push_str(&note);
+        }
         if let Some(job) = &mut self.generation.job
             && job.outcome.is_none()
         {
             job.outcome = Some(outcome);
+            if job.ticket >= REMOTE_TICKETS {
+                let now = Instant::now();
+                let status = remote_status(job);
+                let finished = &mut self.generation.finished_remote;
+                finished.retain(|entry| entry.expires > now && entry.status.job != status.job);
+                if finished.len() >= MAX_FINISHED_REMOTE {
+                    finished.remove(0);
+                }
+                finished.push(FinishedRemote {
+                    status,
+                    expires: now + FINISHED_REMOTE_RETENTION,
+                });
+            }
         }
-        // A job concluded before allocation has nothing left to record. Its
-        // thread has already returned or is returning from a refused
-        // allocation, so reap it now; an immediate restart is then admitted.
+        // A job concluded before its first attempt has nothing left to
+        // record. Its thread has already returned or is returning from a
+        // refused allocation, so reap it now; an immediate restart is then
+        // admitted.
         if self
             .generation
             .running
             .as_ref()
             .is_some_and(|running| running.allocated.is_none() && running.allocation.is_none())
-            && let Some(mut running) = self.generation.running.take()
-            && let Some(thread) = running.thread.take()
         {
-            let _ = thread.join();
+            self.finish_job_thread();
         }
     }
 }
 
-/// Current Ready bundles that their Hold has not accepted.
+/// The live endpoint's view of the AI job: it starts the same job the UI's
+/// `:generate` does, observes it and cancels exactly it.
+impl Service {
+    pub(super) fn host_generate(
+        &mut self,
+        project: &ProjectId,
+        request: deadpan_cli::live_project::generation::GenerateRequest,
+    ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
+    {
+        use deadpan_cli::live_project::LiveError;
+        request.validate()?;
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or_else(|| LiveError::new("HostProjectChanged", "No project is open"))?;
+        if workspace.document.project_id() != project {
+            return Err(LiveError::new(
+                "HostProjectChanged",
+                "The request names another project",
+            ));
+        }
+        let session = workspace.session;
+        if workspace.session != self.generation.session && self.generation.running.is_none() {
+            self.generation.reset(session);
+        }
+        self.generation.remote = self.generation.remote.wrapping_add(1);
+        let ticket = REMOTE_TICKETS + (self.generation.remote % REMOTE_TICKETS);
+        self.start_generation(
+            ticket,
+            session,
+            &request.expected_revision,
+            request.hold,
+            request.variants,
+            request.seed,
+        )
+        .map_err(|error| LiveError::new("GenerationRefused", error))?;
+        self.publish();
+        self.host_generation_status(ticket)
+    }
+
+    pub(super) fn host_generation_status(
+        &self,
+        ticket: u64,
+    ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
+    {
+        let current = self.generation.job.as_ref().filter(|job| {
+            job.ticket == ticket
+                && self
+                    .workspace
+                    .as_ref()
+                    .is_some_and(|workspace| workspace.session == job.session)
+        });
+        let now = Instant::now();
+        let status = match current {
+            Some(job) => remote_status(job),
+            None => self
+                .generation
+                .finished_remote
+                .iter()
+                .find(|entry| entry.status.job == ticket && entry.expires > now)
+                .map(|entry| entry.status.clone())
+                .ok_or_else(|| {
+                    deadpan_cli::live_project::LiveError::new(
+                        "GenerationUnknown",
+                        "That AI job is neither running nor among the project's retained results; inspect the project's requests",
+                    )
+                })?,
+        };
+        Ok(deadpan_cli::live_project::Reply::Generation {
+            status: Box::new(status),
+        })
+    }
+
+    /// The caller has its result; forget the retained observation.
+    pub(super) fn host_release_generation(
+        &mut self,
+        ticket: u64,
+    ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
+    {
+        if self
+            .generation
+            .job
+            .as_ref()
+            .is_some_and(|job| job.ticket == ticket && job.running())
+        {
+            return Err(deadpan_cli::live_project::LiveError::new(
+                "GenerationBusy",
+                "The AI job is still running",
+            ));
+        }
+        self.generation
+            .finished_remote
+            .retain(|entry| entry.status.job != ticket);
+        Ok(deadpan_cli::live_project::Reply::Released)
+    }
+
+    pub(super) fn host_cancel_generation(
+        &mut self,
+        ticket: u64,
+    ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
+    {
+        let reply = self.host_generation_status(ticket)?;
+        if self.generation.running.is_some()
+            && self
+                .generation
+                .job
+                .as_ref()
+                .is_some_and(|job| job.ticket == ticket && job.running())
+        {
+            self.cancel_generation();
+            self.message = Some("Cancelling the AI pause…".into());
+            self.publish();
+            return self.host_generation_status(ticket);
+        }
+        Ok(reply)
+    }
+}
+
+/// Every current bridge request's present Ready variants that its Hold has
+/// not accepted, by Hold.
 fn candidates(
     store: &ProjectStore,
     document: &ProjectDocument,
-    dismissed: &BTreeSet<RequestId>,
 ) -> std::result::Result<BTreeMap<NodeId, Candidate>, StoreError> {
     let mut found = BTreeMap::new();
     for request in store.current_generation_requests()? {
-        if request.bridge_plan.is_none() || dismissed.contains(&request.request_id) {
+        if request.bridge_plan.is_none() {
             continue;
         }
-        let Some(selected) = store.selected_generation_bundle(&request.request_id)? else {
-            continue;
-        };
         let hold = request.binding.hold_id.clone();
         let Some(NodeKind::Hold { recipe }) = document.nodes().get(&hold).map(|node| &node.kind)
         else {
             continue;
         };
-        if let HoldVideo::Generated { accepted } = &recipe.video
-            && &accepted.artifact.sampled_object == selected.receipt.sampled_object()
-        {
-            continue;
+        let accepted = match &recipe.video {
+            HoldVideo::Generated { accepted } => Some(&accepted.artifact.sampled_object),
+            _ => None,
+        };
+        let mut variants = Vec::new();
+        let mut after = 0;
+        loop {
+            let page = store.generation_attempts(&request.request_id, after, 256)?;
+            let Some(last) = page.last() else {
+                break;
+            };
+            after = last.ordinal;
+            for attempt in &page {
+                let Some(receipt) = attempt.bundle_receipt.as_ref() else {
+                    continue;
+                };
+                if attempt.checkpoint.state != JobState::Ready
+                    || receipt.availability() != CandidateAvailability::Present
+                    || accepted == Some(receipt.sampled_object())
+                {
+                    continue;
+                }
+                let video = receipt.sampled_video();
+                variants.push(Variant {
+                    attempt: attempt.checkpoint.identity.attempt_id.clone(),
+                    ordinal: attempt.ordinal,
+                    seed: receipt.provider().seed,
+                    sampled: receipt.sampled_object().clone(),
+                    sampled_frames: u32::try_from(video.frames().frames()).unwrap_or(u32::MAX),
+                    sampled_size: (video.width(), video.height()),
+                });
+            }
+            if page.len() < 256 {
+                break;
+            }
         }
+        let Some(newest) = variants.last() else {
+            continue;
+        };
+        let selected = store
+            .selected_generation_bundle(&request.request_id)?
+            .map(|selected| selected.identity.attempt_id)
+            .filter(|attempt| variants.iter().any(|variant| &variant.attempt == attempt))
+            .unwrap_or_else(|| newest.attempt.clone());
         found.insert(
             hold.clone(),
             Candidate {
@@ -740,6 +1248,8 @@ fn candidates(
                 hold,
                 origin: request.origin_revision.clone(),
                 frames: request.constraints.video.frames().frames(),
+                variants,
+                selected,
             },
         );
     }
@@ -764,15 +1274,19 @@ struct Channels {
     allocation: Receiver<std::result::Result<Allocated, String>>,
 }
 
-/// What runs after allocation: the real supervised worker, or the test seam.
+/// What runs for each attempt: the real supervised worker, or the test seam.
 enum Worker {
     Real(BridgeRuntime),
     #[cfg(any(test, feature = "ui-harness"))]
-    Scripted(crate::project::generation::Script),
+    Scripted {
+        queue: Arc<crate::project::generation::ScriptQueue>,
+        /// The first attempt's script, taken when the job started.
+        first: Option<crate::project::generation::Script>,
+    },
 }
 
 fn job_thread(
-    worker: Worker,
+    mut worker: Worker,
     package: PathBuf,
     revision: RevisionId,
     hold: NodeId,
@@ -789,36 +1303,51 @@ fn job_thread(
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;
     }
-    let Ok(Ok(allocated)) = allocation.recv() else {
-        return;
-    };
-    let progress = |progress: AttemptProgress| {
-        // Display-only; a full queue drops one step, never the worker.
-        let _ = events.try_send(Event::Progress(progress));
-    };
-    let records = |record: AttemptRecord| -> std::result::Result<(), String> {
-        let (acknowledge, acknowledged) = mpsc::sync_channel(1);
-        send(&events, Event::Record(record, acknowledge))?;
-        acknowledged
-            .recv()
-            .map_err(|_| "The project writer stopped before recording the AI pause.".to_owned())?
-    };
-    let run = match &worker {
-        Worker::Real(runtime) => {
-            attempt::run_worker(&allocated, runtime, progress, records, &cancelled)
+    // One attempt per allocation; the writer drops the sender when no
+    // further variant follows.
+    while let Ok(Ok(allocated)) = allocation.recv() {
+        let progress = |progress: AttemptProgress| {
+            // Display-only; a full queue drops one step, never the worker.
+            let _ = events.try_send(Event::Progress(progress));
+        };
+        let records = |record: AttemptRecord| -> std::result::Result<(), String> {
+            let (acknowledge, acknowledged) = mpsc::sync_channel(1);
+            send(&events, Event::Record(record, acknowledge))?;
+            acknowledged.recv().map_err(|_| {
+                "The project writer stopped before recording the AI pause.".to_owned()
+            })?
+        };
+        let run = match &mut worker {
+            Worker::Real(runtime) => {
+                attempt::run_worker(&allocated, runtime, progress, records, &cancelled)
+            }
+            #[cfg(any(test, feature = "ui-harness"))]
+            Worker::Scripted { queue, first } => match first.take().or_else(|| queue.next()) {
+                Some(script) => scripted(&script, &allocated, progress, records, &cancelled),
+                None => WorkerRun::without_workspace(
+                    RunResult::Failed(JobFailure::Host(attempt::host_failure(
+                        HostFailureCode::WorkerExited,
+                        "the scripted AI worker has no runs",
+                    ))),
+                    RunTimings::default(),
+                ),
+            },
+        };
+        // The one-slot channel is empty: the writer consumed the previous
+        // run before allocating this attempt.
+        if finished.send(run).is_err() {
+            return;
         }
-        #[cfg(any(test, feature = "ui-harness"))]
-        Worker::Scripted(script) => scripted(script, progress, records, &cancelled),
-    };
-    // The one-slot channel is empty: this is the job's only final send.
-    let _ = finished.send(run);
+    }
 }
 
 /// The deterministic replacement for the model worker. It reports progress
-/// and ends in a cancellation or failure; it can never produce a bundle.
+/// and ends in a cancellation, a failure, or synthetic footage that the
+/// production qualification and publication path makes Ready.
 #[cfg(any(test, feature = "ui-harness"))]
 fn scripted(
     script: &crate::project::generation::Script,
+    allocated: &Allocated,
     mut progress: impl FnMut(AttemptProgress),
     mut records: impl FnMut(AttemptRecord) -> std::result::Result<(), String>,
     cancelled: &AtomicBool,
@@ -859,5 +1388,15 @@ fn scripted(
             ))),
             RunTimings::default(),
         ),
+        ScriptEnding::Ready => match crate::project::generation::synthetic_tools() {
+            Ok(worker) => attempt::synthetic::run(allocated, &worker, progress, records, cancelled),
+            Err(reason) => WorkerRun::without_workspace(
+                RunResult::Failed(JobFailure::Host(attempt::host_failure(
+                    HostFailureCode::WorkerExited,
+                    &reason,
+                ))),
+                RunTimings::default(),
+            ),
+        },
     }
 }

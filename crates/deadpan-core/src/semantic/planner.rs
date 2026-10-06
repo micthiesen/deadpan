@@ -21,10 +21,12 @@ use crate::{
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 
 mod content;
+mod gag_edit;
 mod group;
 mod pause;
 pub use pause::copied_moment_audio;
 mod repeat;
+mod retime;
 mod role_repeat;
 mod selection;
 mod split_edit;
@@ -130,6 +132,10 @@ pub enum SemanticAllocationRequest {
     Sound {
         step_index: usize,
     },
+    /// One fresh Retime wrapper around the selected beat.
+    WrapRetime {
+        step_index: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -185,6 +191,10 @@ pub enum SemanticAllocation {
     Sound {
         new_revision: RevisionId,
         id: crate::SoundId,
+    },
+    WrapRetime {
+        new_revision: RevisionId,
+        id: NodeId,
     },
 }
 
@@ -684,6 +694,24 @@ where
                 SemanticInstruction::SetFraming { framing } => {
                     self.set_framing(index, framing.as_deref().cloned())?;
                 }
+                SemanticInstruction::SetAudioLag { offset } => {
+                    self.set_audio_lag(index, *offset)?;
+                }
+                SemanticInstruction::SetAudioEdges { side, policy } => {
+                    self.set_audio_edges(index, *side, *policy)?;
+                }
+                SemanticInstruction::SetGag { recipe, parameters } => {
+                    self.set_gag(index, recipe, parameters)?;
+                }
+                SemanticInstruction::Retime { speed, pitch, wrap } => {
+                    self.retime(index, *speed, *pitch, *wrap)?;
+                }
+                SemanticInstruction::Pitch { semitones } => {
+                    self.pitch(index, *semitones)?;
+                }
+                SemanticInstruction::SetHoldDuration { length } => {
+                    self.set_hold_duration(index, *length)?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -777,6 +805,10 @@ where
                 } => 2,
                 // A recipe stages at most three leaves.
                 SemanticInstruction::Gag { .. } => 2,
+                // At most four part edits and the relabel.
+                SemanticInstruction::SetGag { .. } => 5,
+                // Marks on the beat and both neighbors, a start and an end.
+                SemanticInstruction::SetAudioEdges { .. } => 5,
                 // A Roll and a cutaway.
                 SemanticInstruction::SplitEdit { .. } => 2,
                 // A mute and one sound per later play, or one cutaway.
@@ -801,6 +833,10 @@ where
                         | SemanticInstruction::Bleep { .. }
                         | SemanticInstruction::Tail { .. }
                         | SemanticInstruction::SetFraming { .. }
+                        | SemanticInstruction::Retime { .. }
+                        | SemanticInstruction::Pitch { .. }
+                        | SemanticInstruction::SetHoldDuration { .. }
+                        | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }
                         | SemanticInstruction::Yank { .. }

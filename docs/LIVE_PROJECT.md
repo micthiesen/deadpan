@@ -20,6 +20,8 @@ readers.
 | `project migrate` | Current-schema packages use the existing read-only validation and no-op result, including beside a native owner. Only a migration writer-lock conflict takes the IPC fallback. |
 | Render, retry, re-encode and reconcile | Admit through the native service's shared render coordinator and observe the exact workflow. |
 | Render cancellation | Require the exact job, attempt and cancellation token. |
+| AI pause generation (`generate-hold`) | `Generate` starts the app's own AI job for the submitted Hold, revision, variant count and optional seed, exactly as `:generate N`; `GenerationStatus` observes and `CancelGeneration` cancels exactly that job. |
+| AI pause acceptance (`accept-hold`) | `AcceptHold` optionally selects the submitted Ready variant, then accepts the request's selected bundle in one transaction with the owner's relevance resolver. |
 
 The CLI first attempts its existing closed-project operation. Only an actual
 writer-lock conflict selects the live owner. A writer without an authenticated
@@ -28,7 +30,7 @@ does not acquire a writer or contact the owner. The explicit IPC `Migrate`
 operation can report an admitted owner's current schema without releasing its
 writer; it does not migrate a legacy store. Older closed packages retain their
 existing explicit migration path. This boundary does not complete DP-21 or add
-CLI generation, analysis or the remaining editor commands. Named Macro access
+analysis or the remaining editor commands. Named Macro access
 implements bounded motions, frame cuts, beat copies, register pastes and calls.
 
 ## Ownership and authentication
@@ -175,6 +177,25 @@ operations also release their terminal entries. A failed release cannot reverse
 an already observed result. These observations are process-local, so closing the
 owner removes them; retained inventory, authored history and published checkpoints
 remain the authoritative persistent state.
+
+## AI pause jobs
+
+`Generate` is an admitted operation: it takes the short admission slot only
+while the job starts, then returns its first status. The job has its own
+ticket range apart from the UI's command tickets and appears in the app's
+inspector and footer like a `:generate` job; the UI's own command replies are
+unaffected. Status and cancellation do not need the admission slot. They name
+the observed job: a different or replaced job is `GenerationUnknown`, never
+retargeted. Statuses carry the stage, variant, Ready count, bounded reason and
+note text and the outcome once the job has concluded; per-attempt objects
+remain in the store. A concluded live job's status is retained (at most eight,
+for ten minutes) even after the UI or another client starts a newer job, until
+`ReleaseGenerationStatus` from the client that wrote its report; releasing a
+running job is refused. A failed observation is reported as
+`HostOutcomeUnknown` with the job number, never replayed. Closing the project or a session change cancels and drains the job as
+for a native one. The client polls every 250 ms, cancels on SIGINT/SIGTERM or
+after one 30-minute worker deadline per variant, and reports
+`HostOutcomeUnknown` if cancellation is not confirmed within five minutes.
 
 ## Render observations
 

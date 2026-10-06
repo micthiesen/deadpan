@@ -170,6 +170,9 @@ impl Service {
                             SemanticInstruction::Group { .. } => "Group beats",
                             SemanticInstruction::Ungroup => "Ungroup beats",
                             SemanticInstruction::Gag { .. } => "Apply gag",
+                            SemanticInstruction::SetGag { .. } => "Change gag parameters",
+                            SemanticInstruction::SetAudioEdges { .. } => "Change sound edges",
+                            SemanticInstruction::SetAudioLag { .. } => "Offset sound",
                             SemanticInstruction::InsertPause { .. } => "Insert pause",
                             SemanticInstruction::InsertReverse { bounce: false, .. } => {
                                 "Insert reverse"
@@ -181,6 +184,9 @@ impl Service {
                             SemanticInstruction::Lift { .. } => "Lift selection",
                             SemanticInstruction::Bleep { .. } => "Bleep selection",
                             SemanticInstruction::SetFraming { .. } => "Frame beat",
+                            SemanticInstruction::Retime { .. } => "Change speed",
+                            SemanticInstruction::Pitch { .. } => "Shift pitch",
+                            SemanticInstruction::SetHoldDuration { .. } => "Change pause length",
                             SemanticInstruction::SetAudio {
                                 change: deadpan_core::AudioChange::Saturation { .. },
                             } => "Change saturation",

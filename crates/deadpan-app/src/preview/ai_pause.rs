@@ -1,25 +1,42 @@
-//! AI pause pictures in the native workspace: generate for the selected
-//! pause, follow progress, preview a Ready candidate in the viewer, then
-//! accept or discard it. Ready never edits; Accept is one undoable edit.
+//! AI pause pictures in the native workspace: generate one or several
+//! variants for the selected pause, follow progress, choose a variant by its
+//! thumbnail, preview its pictures in the viewer and audition them with the
+//! pause's own sound, then accept or durably discard it. Ready never edits;
+//! Accept is one undoable edit.
 
 use std::sync::Arc;
 use std::time::Duration;
 
 use deadpan_core::{NodeId, NodeKind, ProjectFrame};
-use deadpan_jobs::RequestId;
+use deadpan_jobs::{AttemptId, RequestId};
 
 use super::*;
-use crate::navigation::AiAction;
+use crate::navigation::{AiAction, VariantChoice};
 use crate::project::generation::{
     Candidate, CandidatePreview, GenerationOperation, Job, Outcome, Update,
 };
+
+/// Logical height of a variant thumbnail in the inspector.
+const VARIANT_THUMBNAIL_HEIGHT: f32 = 40.0;
+
+/// A preview command awaiting its reply.
+#[derive(Clone, Debug)]
+struct PendingPreview {
+    ticket: u64,
+    request: RequestId,
+    attempt: AttemptId,
+    /// Start the looped audition once the preview is admitted.
+    audition: bool,
+}
 
 #[derive(Default)]
 pub(super) struct State {
     update: Option<Update>,
     ticket: u64,
     /// The preview command awaiting its reply.
-    pending_preview: Option<(u64, RequestId)>,
+    pending_preview: Option<PendingPreview>,
+    /// An admitted preview whose looped audition starts on the next frame.
+    audition_pending: bool,
     /// The admitted preview the viewer shows instead of the committed edit.
     preview: Option<Arc<CandidatePreview>>,
     /// Independent command tickets whose refusal the editor should show.
@@ -36,7 +53,10 @@ pub(super) struct Target {
     session: u64,
     revision: deadpan_core::RevisionId,
     hold: Option<NodeId>,
-    candidate: Option<(NodeId, RequestId)>,
+    /// The selected pause's offered variants and the chosen one, as shown.
+    candidate: Option<Candidate>,
+    /// Whether the AI audition was playing, before command entry paused it.
+    auditioning: bool,
     cursor: ProjectFrame,
     scope: SequenceScope,
 }
@@ -67,9 +87,41 @@ impl State {
             .map_or(0, |update| update.candidates.len())
     }
 
+    /// Offered Ready variants across every pause.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn variant_count(&self) -> usize {
+        self.update.as_ref().map_or(0, |update| {
+            update
+                .candidates
+                .values()
+                .map(|candidate| candidate.variants.len())
+                .sum()
+        })
+    }
+
+    /// The chosen variant's 1-based number and attempt, for the only
+    /// candidate offered.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn chosen_variant(&self) -> Option<(usize, AttemptId)> {
+        let candidate = self.update.as_ref()?.candidates.values().next()?;
+        Some((candidate.selected_index() + 1, candidate.selected.clone()))
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(crate) fn preview_request(&self) -> Option<&RequestId> {
         self.preview.as_ref().map(|preview| preview.request())
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn preview_attempt(&self) -> Option<&AttemptId> {
+        self.preview.as_ref().map(|preview| preview.attempt())
+    }
+
+    /// The admitted preview's audition content identity.
+    pub(super) fn preview_content(&self) -> Option<&deadpan_playback::ContentIdentity> {
+        self.preview
+            .as_ref()
+            .map(|preview| &preview.audio().content)
     }
 }
 
@@ -119,15 +171,15 @@ impl DeadpanApp {
             .as_ref()
             .ok_or("Open a project before using AI pictures.")?;
         let hold = self.ai_hold();
-        let candidate = hold.as_ref().and_then(|hold| {
-            self.ai_candidate(hold)
-                .map(|candidate| (hold.clone(), candidate.request.clone()))
-        });
+        let candidate = hold
+            .as_ref()
+            .and_then(|hold| self.ai_candidate(hold).cloned());
         Ok(Target {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             hold,
             candidate,
+            auditioning: self.ai_auditioning(),
             cursor: ProjectFrame(i64::try_from(self.sequence_cursor).unwrap_or(i64::MAX)),
             scope: self.sequence_scope.clone(),
         })
@@ -148,8 +200,10 @@ impl DeadpanApp {
             }
             let target = target.ok_or("Enter the AI command again to capture its pause.")??;
             match action {
-                AiAction::Generate => self.ai_generate(target),
-                AiAction::Preview => self.ai_preview(target),
+                AiAction::Generate { variants } => self.ai_generate(target, variants),
+                AiAction::Choose(choice) => self.ai_choose(target, choice),
+                AiAction::Preview => self.ai_preview(target, false),
+                AiAction::Audition => self.ai_audition(target),
                 AiAction::Accept => self.ai_accept(target),
                 AiAction::Discard => self.ai_discard(target),
                 AiAction::Cancel => unreachable!("cancel handled above"),
@@ -169,35 +223,56 @@ impl DeadpanApp {
                 session,
                 revision,
                 hold,
+                variants,
                 ..
             } => GenerationOperation::Start {
                 ticket,
                 session,
                 revision,
                 hold,
+                variants,
             },
             GenerationOperation::Cancel { session, job, .. } => GenerationOperation::Cancel {
                 ticket,
                 session,
                 job,
             },
+            GenerationOperation::Select {
+                session,
+                request,
+                attempt,
+                ..
+            } => GenerationOperation::Select {
+                ticket,
+                session,
+                request,
+                attempt,
+            },
             GenerationOperation::Preview {
                 session,
                 revision,
                 request,
+                attempt,
+                draft,
                 ..
             } => GenerationOperation::Preview {
                 ticket,
                 session,
                 revision,
                 request,
+                attempt,
+                draft,
             },
             GenerationOperation::Discard {
-                session, request, ..
+                session,
+                request,
+                attempt,
+                ..
             } => GenerationOperation::Discard {
                 ticket,
                 session,
                 request,
+                attempt,
             },
             accept @ GenerationOperation::Accept { .. } => accept,
         };
@@ -214,7 +289,7 @@ impl DeadpanApp {
         }
     }
 
-    fn ai_generate(&mut self, target: Target) -> Result<(), String> {
+    fn ai_generate(&mut self, target: Target, variants: u8) -> Result<(), String> {
         let hold = target.hold.ok_or(
             "AI pictures fill a pause. Select a pause beat in Your edit, then press the key again.",
         )?;
@@ -223,21 +298,17 @@ impl DeadpanApp {
                 "An AI pause is already generating. Cancel it with :cancel-ai first.".into(),
             );
         }
-        if !self.macro_request_allowed(&ProjectRequest::Generation(GenerationOperation::Start {
-            ticket: 0,
-            session: target.session,
-            revision: target.revision.clone(),
-            hold: hold.clone(),
-        })) {
-            return Ok(());
-        }
-        self.ai_stop_preview();
-        self.ai_submit(GenerationOperation::Start {
+        let start = GenerationOperation::Start {
             ticket: 0,
             session: target.session,
             revision: target.revision,
             hold,
-        });
+            variants,
+        };
+        if !self.macro_request_allowed(&ProjectRequest::Generation(start.clone())) {
+            return Ok(());
+        }
+        self.ai_submit(start);
         Ok(())
     }
 
@@ -259,8 +330,8 @@ impl DeadpanApp {
         Ok(())
     }
 
-    fn ai_target_candidate(target: &Target) -> Result<(NodeId, RequestId), String> {
-        target.candidate.clone().ok_or_else(|| {
+    fn ai_target_candidate(target: &Target) -> Result<&Candidate, String> {
+        target.candidate.as_ref().ok_or_else(|| {
             if target.hold.is_some() {
                 "This pause has no Ready AI pictures. Generate them first.".into()
             } else {
@@ -269,27 +340,143 @@ impl DeadpanApp {
         })
     }
 
-    fn ai_preview(&mut self, target: Target) -> Result<(), String> {
-        let (_, request) = Self::ai_target_candidate(&target)?;
-        if let Some(ticket) = self.ai_submit(GenerationOperation::Preview {
-            ticket: 0,
-            session: target.session,
-            revision: target.revision,
-            request: request.clone(),
-        }) {
-            self.ai.pending_preview = Some((ticket, request));
+    /// Choose another offered variant. While previewing, the viewer shows the
+    /// newly chosen one (and an audition in progress continues with it).
+    fn ai_choose(&mut self, target: Target, choice: VariantChoice) -> Result<(), String> {
+        let candidate = Self::ai_target_candidate(&target)?;
+        let count = candidate.variants.len();
+        let current = candidate.selected_index();
+        let index = match choice {
+            VariantChoice::Next => (current + 1) % count,
+            VariantChoice::Previous => (current + count - 1) % count,
+            VariantChoice::Number(number) => {
+                let index = usize::from(number) - 1;
+                if index >= count {
+                    return Err(format!(
+                        "This pause has {count} AI variant{}; choose 1 to {count}.",
+                        if count == 1 { "" } else { "s" }
+                    ));
+                }
+                index
+            }
+        };
+        let attempt = candidate.variants[index].attempt.clone();
+        let request = candidate.request.clone();
+        let previewing = self
+            .ai
+            .preview
+            .as_ref()
+            .is_some_and(|preview| preview.request() == &request)
+            || self.ai.pending_preview.is_some();
+        if previewing {
+            let auditioning = self.ai_auditioning();
+            self.ai_request_preview(&target, request, attempt, auditioning);
+        } else {
+            self.ai_submit(GenerationOperation::Select {
+                ticket: 0,
+                session: target.session,
+                request,
+                attempt,
+            });
         }
+        self.message = Some(format!("Chose AI variant {} of {count}.", index + 1));
         Ok(())
     }
 
+    fn ai_request_preview(
+        &mut self,
+        target: &Target,
+        request: RequestId,
+        attempt: AttemptId,
+        audition: bool,
+    ) {
+        // The same counter as every other proposed edit's draft identity.
+        let Some(draft) = self.next_serial() else {
+            return;
+        };
+        if let Some(ticket) = self.ai_submit(GenerationOperation::Preview {
+            ticket: 0,
+            session: target.session,
+            revision: target.revision.clone(),
+            request: request.clone(),
+            attempt: attempt.clone(),
+            draft,
+        }) {
+            self.ai.pending_preview = Some(PendingPreview {
+                ticket,
+                request,
+                attempt,
+                audition,
+            });
+        }
+    }
+
+    fn ai_preview(&mut self, target: Target, audition: bool) -> Result<(), String> {
+        let candidate = Self::ai_target_candidate(&target)?;
+        let (request, attempt) = (candidate.request.clone(), candidate.selected.clone());
+        self.ai_request_preview(&target, request, attempt, audition);
+        Ok(())
+    }
+
+    /// The admitted preview's proposed-acceptance audition snapshot, when it
+    /// belongs to `workspace`'s exact session and revision.
+    pub(super) fn ai_preview_audio(
+        &self,
+        workspace: &Workspace,
+    ) -> Option<Arc<deadpan_playback::Snapshot>> {
+        let preview = self.ai.preview.as_ref()?;
+        (self.view == View::Sequence
+            && preview.session() == workspace.session
+            && preview.base() == workspace.document.revision_id())
+        .then(|| Arc::clone(preview.audio()))
+    }
+
+    /// Whether playback is the AI preview's own audition.
+    fn ai_auditioning(&self) -> bool {
+        self.transport.as_ref().is_some_and(|run| {
+            self.ai
+                .preview_content()
+                .is_some_and(|content| &run.content == content)
+        })
+    }
+
+    /// Loop the pause in context with the chosen variant's pictures and the
+    /// pause's own sound. Previews first when needed. Issued while that loop
+    /// was playing (captured before command entry paused it), it pauses.
+    fn ai_audition(&mut self, target: Target) -> Result<(), String> {
+        if target.auditioning {
+            self.pause_playback();
+            self.message = Some(
+                "Paused the AI audition. :audition-ai loops it again; Space plays on from here."
+                    .into(),
+            );
+            return Ok(());
+        }
+        let candidate = Self::ai_target_candidate(&target)?;
+        let shown = self.ai.preview.as_ref().is_some_and(|preview| {
+            preview.request() == &candidate.request && preview.attempt() == &candidate.selected
+        });
+        if shown {
+            self.audition_selection();
+            return Ok(());
+        }
+        self.ai_preview(target, true)
+    }
+
     fn ai_accept(&mut self, target: Target) -> Result<(), String> {
-        let (hold, request) = Self::ai_target_candidate(&target)?;
+        let candidate = Self::ai_target_candidate(&target)?;
+        let (hold, request, attempt) = (
+            candidate.hold.clone(),
+            candidate.request.clone(),
+            candidate.selected.clone(),
+        );
         self.ai_stop_preview();
         // Acceptance is an ordinary edit with the ordinary command path.
         self.submit(ProjectRequest::Generation(GenerationOperation::Accept {
             session: target.session,
             revision: target.revision,
             request,
+            attempt,
             hold,
             cursor: target.cursor,
             scope: target.scope,
@@ -298,19 +485,38 @@ impl DeadpanApp {
     }
 
     fn ai_discard(&mut self, target: Target) -> Result<(), String> {
-        let (_, request) = Self::ai_target_candidate(&target)?;
+        let candidate = Self::ai_target_candidate(&target)?;
+        let (request, attempt) = (candidate.request.clone(), candidate.selected.clone());
         self.ai_stop_preview();
         self.ai_submit(GenerationOperation::Discard {
             ticket: 0,
             session: target.session,
             request,
+            attempt,
         });
         Ok(())
     }
 
-    /// Leave preview without an edit. True when the viewer must change.
+    /// Start the looped audition an admitted preview asked for. Runs in the
+    /// frame's dispatch pass, after the preview's picture request.
+    pub(super) fn dispatch_ai_audition(&mut self) {
+        if !std::mem::take(&mut self.ai.audition_pending) || self.ai.preview.is_none() {
+            return;
+        }
+        if !self.ai_auditioning() {
+            self.stop_playback();
+            self.audition_selection();
+        }
+    }
+
+    /// Leave preview without an edit, stopping its audition. True when the
+    /// viewer must change.
     pub(super) fn ai_stop_preview(&mut self) -> bool {
         self.ai.pending_preview = None;
+        self.ai.audition_pending = false;
+        if self.ai_auditioning() {
+            self.stop_playback();
+        }
         if self.ai.preview.take().is_some() {
             self.request_picture(false);
             true
@@ -365,17 +571,23 @@ impl DeadpanApp {
                 }
                 self.ai.awaiting = None;
             }
-            if let Some((ticket, request)) = self.ai.pending_preview.clone()
-                && *answered >= ticket
+            if let Some(pending) = self.ai.pending_preview.clone()
+                && *answered >= pending.ticket
             {
                 self.ai.pending_preview = None;
                 let issued = self.ai.update.as_ref().and_then(|update| {
-                    update
-                        .preview
-                        .clone()
-                        .filter(|preview| preview.request() == &request)
+                    update.preview.clone().filter(|preview| {
+                        preview.request() == &pending.request
+                            && preview.attempt() == &pending.attempt
+                    })
                 });
                 if let Some(preview) = issued {
+                    // A different variant's audition cannot continue with
+                    // these pictures; it restarts with them instead.
+                    let auditioning = self.ai_auditioning();
+                    if auditioning {
+                        self.stop_playback();
+                    }
                     // Show the pause itself when the cursor is elsewhere.
                     let range = preview.range();
                     if let (Ok(start), Ok(end)) =
@@ -384,11 +596,23 @@ impl DeadpanApp {
                     {
                         self.sequence_cursor = start;
                     }
+                    let number = self.ai.update.as_ref().and_then(|update| {
+                        let candidate = update.candidates.get(preview.hold())?;
+                        let index = candidate
+                            .variants
+                            .iter()
+                            .position(|variant| &variant.attempt == preview.attempt())?;
+                        Some((index + 1, candidate.variants.len()))
+                    });
                     self.ai.preview = Some(preview);
-                    self.message = Some(
-                        "Previewing AI pictures. Nothing is saved; accept with :accept-ai or press Esc to return."
+                    self.ai.audition_pending = pending.audition || auditioning;
+                    self.message = Some(match number {
+                        Some((number, count)) if count > 1 => format!(
+                            "Previewing AI variant {number} of {count}. Nothing is saved; :audition-ai plays it with the pause's sound, :accept-ai keeps it, Esc returns."
+                        ),
+                        _ => "Previewing AI pictures. Nothing is saved; :audition-ai plays them with the pause's sound, :accept-ai keeps them, Esc returns."
                             .into(),
-                    );
+                    });
                     changed = true;
                 }
             }
@@ -401,11 +625,21 @@ impl DeadpanApp {
                 update
                     .candidates
                     .get(preview.hold())
-                    .is_some_and(|candidate| &candidate.request == preview.request())
+                    .is_some_and(|candidate| {
+                        &candidate.request == preview.request()
+                            && candidate
+                                .variants
+                                .iter()
+                                .any(|variant| &variant.attempt == preview.attempt())
+                    })
             })
         });
         if !valid {
+            if self.ai_auditioning() {
+                self.stop_playback();
+            }
             self.ai.preview = None;
+            self.ai.audition_pending = false;
             changed = true;
         }
         if workspace.is_none() {
@@ -432,7 +666,9 @@ impl DeadpanApp {
         })
     }
 
-    /// The inspector section for a selected pause.
+    /// The inspector section for a selected pause: progress while a job
+    /// runs, the offered variants with thumbnails and their actions, and
+    /// Generate.
     pub(super) fn ai_inspector(&mut self, ui: &mut egui::Ui, ready: bool) {
         let Some(hold) = self.ai_hold() else {
             return;
@@ -449,10 +685,15 @@ impl DeadpanApp {
         let other_running = self
             .ai_running()
             .is_some_and(|running| running.hold != hold);
+        let running = job.as_ref().is_some_and(Job::running);
         if let Some(job) = job.as_ref().filter(|job| job.running()) {
             ui.horizontal(|ui| {
                 crate::preview::accessibility::busy(ui);
-                ui.label(style::semibold("In progress"));
+                ui.label(style::semibold(if job.variants > 1 {
+                    format!("Variant {} of {}", job.variant, job.variants)
+                } else {
+                    "In progress".to_owned()
+                }));
                 ui.label(egui::RichText::new(elapsed(job)).monospace().weak());
             });
             match job.phase.steps().filter(|(_, total)| *total > 0) {
@@ -487,52 +728,36 @@ impl DeadpanApp {
                 self.ai_action(AiAction::Cancel, None);
             }
             ui.ctx().request_repaint_after(Duration::from_millis(250));
+        }
+        let note = job
+            .as_ref()
+            .filter(|job| !job.running())
+            .and_then(|job| job.note.clone());
+        if let Some(candidate) = self.ai_candidate(&hold).cloned() {
+            if running {
+                ui.add_space(6.0);
+            }
+            if let Some(note) = &note {
+                ui.label(egui::RichText::new(note).size(12.0).weak());
+            }
+            self.ai_variants(ui, ready, &candidate);
+            if !running
+                && ui
+                    .add_enabled(
+                        ready && !other_running,
+                        style::row_action(ui, "Generate another", &generate_key),
+                    )
+                    .on_hover_text("Generate one more variant from a new seed; :generate N makes several. The variants above stay offered.")
+                    .clicked()
+            {
+                self.ai_action(
+                    AiAction::Generate { variants: 1 },
+                    Some(self.ai_capture()),
+                );
+            }
             return;
         }
-        if let Some(candidate) = self.ai_candidate(&hold).cloned() {
-            ui.colored_label(
-                style::LAVENDER,
-                format!("Ready · {} f of generated pictures", candidate.frames),
-            );
-            ui.label(
-                egui::RichText::new("Ready does not change your edit.")
-                    .size(12.0)
-                    .weak(),
-            );
-            let previewing = self.ai.preview.is_some();
-            let (label, key) = if previewing {
-                ("Stop preview", "Esc")
-            } else {
-                ("Preview", ":preview-ai")
-            };
-            if ui
-                .add_enabled(ready, style::row_action(ui, label, key))
-                .on_hover_text("Show the generated pictures in the viewer at the edit cursor. Move through the pause to see every frame; nothing is saved.")
-                .clicked()
-            {
-                self.ai_action(AiAction::Preview, Some(self.ai_capture()));
-            }
-            if ui
-                .add_enabled(
-                    ready,
-                    style::row_action(ui, "Accept", ":accept-ai").fill(style::SELECTED),
-                )
-                .on_hover_text("Make these pictures the pause's picture as one undoable edit.")
-                .clicked()
-            {
-                self.ai_action(AiAction::Accept, Some(self.ai_capture()));
-            }
-            if ui
-                .add_enabled(ready, style::row_action(ui, "Discard", ":discard-ai"))
-                .clicked()
-            {
-                self.ai_action(AiAction::Discard, Some(self.ai_capture()));
-            }
-            ui.label(
-                egui::RichText::new("Undo restores the previous picture.")
-                    .size(12.0)
-                    .weak(),
-            );
+        if running {
             return;
         }
         match job.as_ref().and_then(|job| job.outcome.as_ref()) {
@@ -553,16 +778,19 @@ impl DeadpanApp {
             }
             Some(Outcome::Ready(_)) | None => {}
         }
+        if let Some(note) = &note {
+            ui.label(egui::RichText::new(note).size(12.0).weak());
+        }
         self.ai_model_offer(ui);
         if ui
             .add_enabled(
                 ready && !other_running,
                 style::row_action(ui, "Generate AI pictures", &generate_key),
             )
-            .on_hover_text("Fill this pause from the pictures on both sides with the local model. It runs in the background; nothing changes until you accept.")
+            .on_hover_text("Fill this pause from the pictures on both sides with the local model. It runs in the background; nothing changes until you accept. :generate 3 makes three variants to choose from.")
             .clicked()
         {
-            self.ai_action(AiAction::Generate, Some(self.ai_capture()));
+            self.ai_action(AiAction::Generate { variants: 1 }, Some(self.ai_capture()));
         }
         ui.label(
             egui::RichText::new(if other_running {
@@ -570,6 +798,157 @@ impl DeadpanApp {
             } else {
                 "Proposes pictures from both sides of this pause. Nothing changes until you accept."
             })
+            .size(12.0)
+            .weak(),
+        );
+    }
+
+    /// The offered variants, each with a thumbnail of its middle picture,
+    /// and the actions for the chosen one.
+    fn ai_variants(&mut self, ui: &mut egui::Ui, ready: bool, candidate: &Candidate) {
+        let count = candidate.variants.len();
+        ui.colored_label(
+            style::LAVENDER,
+            if count > 1 {
+                format!("Ready · {count} variants · {} f each", candidate.frames)
+            } else {
+                format!("Ready · {} f of generated pictures", candidate.frames)
+            },
+        );
+        ui.label(
+            egui::RichText::new("Ready does not change your edit.")
+                .size(12.0)
+                .weak(),
+        );
+        let canvas = self.workspace.as_ref().map_or([16, 9], |workspace| {
+            let basis = workspace.document.presentation_basis();
+            [basis.width.max(1), basis.height.max(1)]
+        });
+        let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        let aspect = canvas[0] as f32 / canvas[1] as f32;
+        let selected = candidate.selected_index();
+        let previewed = self
+            .ai
+            .preview
+            .as_ref()
+            .filter(|preview| preview.request() == &candidate.request)
+            .map(|preview| preview.attempt().clone());
+        for (index, variant) in candidate.variants.iter().enumerate() {
+            let painted = session.and_then(|session| {
+                self.thumbnails.show_candidate(
+                    thumbnails::Key {
+                        session,
+                        revision: candidate.origin.clone(),
+                        slot: thumbnails::Slot::Candidate(variant.attempt.clone()),
+                        view: ProjectView::Sequence {
+                            frame: ProjectFrame(0),
+                        },
+                    },
+                    Arc::new(crate::worker::CandidateThumbnail {
+                        object: variant.sampled.clone(),
+                        frames: variant.sampled_frames,
+                        size: variant.sampled_size,
+                        canvas,
+                    }),
+                )
+            });
+            let chosen = index == selected;
+            let shown = previewed.as_ref() == Some(&variant.attempt);
+            let response = variant_row(
+                ui,
+                ready,
+                VariantRow {
+                    number: index + 1,
+                    seed: variant.seed,
+                    chosen,
+                    shown,
+                    aspect,
+                    painted,
+                },
+            )
+            .on_hover_text(format!(
+                "AI variant {} of {count}, seed {}. Choose it with :pick-ai {} or :next-ai / :prev-ai.",
+                index + 1,
+                variant.seed,
+                index + 1
+            ));
+            let number = u8::try_from(index + 1).unwrap_or(u8::MAX);
+            if response.clicked() && !chosen {
+                self.ai_action(
+                    AiAction::Choose(VariantChoice::Number(number)),
+                    Some(self.ai_capture()),
+                );
+            }
+        }
+        if count > 1 {
+            ui.horizontal_wrapped(|ui| {
+                style::key_hint(ui, ":next-ai", "next");
+                style::key_hint(ui, ":prev-ai", "previous");
+                style::key_hint(ui, ":pick-ai N", "choose");
+            });
+        }
+        let previewing = self.ai.preview.is_some();
+        let (label, key) = if previewing {
+            ("Stop preview", "Esc")
+        } else {
+            ("Preview", ":preview-ai")
+        };
+        if ui
+            .add_enabled(ready, style::row_action(ui, label, key))
+            .on_hover_text("Show the chosen variant's pictures in the viewer at the edit cursor. Move through the pause to see every frame; nothing is saved.")
+            .clicked()
+        {
+            self.ai_action(AiAction::Preview, Some(self.ai_capture()));
+        }
+        let auditioning = self.ai_auditioning();
+        if ui
+            .add_enabled(
+                ready || auditioning,
+                style::row_action(
+                    ui,
+                    if auditioning { "Pause audition" } else { "Audition" },
+                    ":audition-ai",
+                ),
+            )
+            .on_hover_text("Loop the pause with its lead-in and follow-through: the chosen variant's pictures with the pause's own sound, as they would play after Accept. Nothing is saved.")
+            .clicked()
+        {
+            self.ai_action(AiAction::Audition, Some(self.ai_capture()));
+        }
+        if ui
+            .add_enabled(
+                ready,
+                style::row_action(ui, "Accept", ":accept-ai").fill(style::SELECTED),
+            )
+            .on_hover_text("Make the chosen variant the pause's picture as one undoable edit.")
+            .clicked()
+        {
+            self.ai_action(AiAction::Accept, Some(self.ai_capture()));
+        }
+        if ui
+            .add_enabled(
+                ready,
+                style::row_action(
+                    ui,
+                    if count > 1 {
+                        "Discard variant"
+                    } else {
+                        "Discard"
+                    },
+                    ":discard-ai",
+                ),
+            )
+            .on_hover_text(
+                "Remove the chosen variant from the list for good, also after reopening; its files stay in the project until a cleanup removes them. The pause is unchanged.",
+            )
+            .clicked()
+        {
+            self.ai_action(AiAction::Discard, Some(self.ai_capture()));
+        }
+        ui.label(
+            egui::RichText::new(
+                "Undo after Accept restores the previous picture. Discard cannot be undone.",
+            )
             .size(12.0)
             .weak(),
         );
@@ -622,20 +1001,48 @@ impl DeadpanApp {
 
     /// A status row while a job runs or a preview is shown.
     pub(super) fn ai_footer(&self, ui: &mut egui::Ui) {
-        let previewing = self.ai.preview.is_some();
+        let previewing = self.ai.preview.as_ref();
         let running = self.ai_running();
-        if !previewing && running.is_none() {
+        if previewing.is_none() && running.is_none() {
             return;
         }
         ui.horizontal_wrapped(|ui| {
-            if previewing {
-                ui.colored_label(style::LAVENDER, "AI PREVIEW · NOT SAVED");
+            if let Some(preview) = previewing {
+                let number = self.ai.update.as_ref().and_then(|update| {
+                    let candidate = update.candidates.get(preview.hold())?;
+                    let index = candidate
+                        .variants
+                        .iter()
+                        .position(|variant| &variant.attempt == preview.attempt())?;
+                    Some((index + 1, candidate.variants.len()))
+                });
+                ui.colored_label(
+                    style::LAVENDER,
+                    match number {
+                        Some((number, count)) if count > 1 => {
+                            format!("AI PREVIEW · VARIANT {number} OF {count} · NOT SAVED")
+                        }
+                        _ => "AI PREVIEW · NOT SAVED".to_owned(),
+                    },
+                );
+                style::key_hint(
+                    ui,
+                    ":audition-ai",
+                    if self.ai_auditioning() {
+                        "pause audition"
+                    } else {
+                        "audition with sound"
+                    },
+                );
+                if number.is_some_and(|(_, count)| count > 1) {
+                    style::key_hint(ui, ":next-ai", "next variant");
+                }
                 style::key_hint(ui, ":accept-ai", "accept");
                 style::key_hint(ui, ":discard-ai", "discard");
                 style::key_hint(ui, "Esc", "show your edit");
             }
             if let Some(job) = running {
-                if previewing {
+                if previewing.is_some() {
                     ui.separator();
                 }
                 crate::preview::accessibility::busy(ui);
@@ -644,13 +1051,125 @@ impl DeadpanApp {
                     .steps()
                     .map(|(completed, total)| format!(" {completed}/{total}"))
                     .unwrap_or_default();
+                let variant = if job.variants > 1 {
+                    format!(" · variant {}/{}", job.variant, job.variants)
+                } else {
+                    String::new()
+                };
                 ui.colored_label(
                     style::LAVENDER,
-                    format!("AI pause · {}{steps} · {}", job.phase.label(), elapsed(job)),
+                    format!(
+                        "AI pause{variant} · {}{steps} · {}",
+                        job.phase.label(),
+                        elapsed(job)
+                    ),
                 );
                 style::key_hint(ui, ":cancel-ai", "cancel");
                 ui.ctx().request_repaint_after(Duration::from_millis(250));
             }
         });
     }
+}
+
+/// What one variant row shows.
+struct VariantRow {
+    number: usize,
+    seed: u64,
+    chosen: bool,
+    shown: bool,
+    aspect: f32,
+    painted: Option<thumbnails::Painted>,
+}
+
+/// One selectable variant row that fits the inspector's width: its
+/// thumbnail, number and state, and its seed.
+fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Response {
+    let width = ui.available_width().max(1.0);
+    let padding = 3.0;
+    let height = VARIANT_THUMBNAIL_HEIGHT + 2.0 * padding;
+    let sense = if enabled {
+        egui::Sense::click()
+    } else {
+        egui::Sense::hover()
+    };
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), sense);
+    let state = if row.shown {
+        "showing"
+    } else if row.chosen {
+        "chosen"
+    } else {
+        ""
+    };
+    let title = if state.is_empty() {
+        format!("Variant {}", row.number)
+    } else {
+        format!("Variant {} · {state}", row.number)
+    };
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::WidgetType::SelectableLabel,
+            enabled,
+            row.chosen,
+            format!("{title}, seed {}", row.seed),
+        )
+    });
+    if !ui.is_rect_visible(rect) {
+        return response;
+    }
+    let visuals = ui.style().interact_selectable(&response, row.chosen);
+    if row.chosen || response.hovered() || response.has_focus() {
+        ui.painter().rect_filled(rect, 4.0, visuals.weak_bg_fill);
+    }
+    if response.has_focus() {
+        ui.painter().rect_stroke(
+            rect,
+            4.0,
+            ui.visuals().selection.stroke,
+            egui::StrokeKind::Inside,
+        );
+    }
+    let thumbnail_width = (VARIANT_THUMBNAIL_HEIGHT * row.aspect).min(width * 0.45);
+    let thumbnail = egui::Rect::from_min_size(
+        rect.min + egui::vec2(padding, padding),
+        egui::vec2(thumbnail_width, VARIANT_THUMBNAIL_HEIGHT),
+    );
+    cards::paint_thumbnail(ui, thumbnail, row.painted);
+    if row.chosen {
+        ui.painter().rect_stroke(
+            thumbnail.expand(1.0),
+            5.0,
+            egui::Stroke::new(2.0, style::LAVENDER),
+            egui::StrokeKind::Outside,
+        );
+    }
+    let text_left = thumbnail.right() + 8.0;
+    let text_width = (rect.right() - padding - text_left).max(1.0);
+    let galley = |text: String, color: egui::Color32, size: f32| {
+        let mut job =
+            egui::text::LayoutJob::simple_singleline(text, egui::FontId::proportional(size), color);
+        job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
+        ui.fonts_mut(|fonts| fonts.layout_job(job))
+    };
+    let title = galley(
+        title,
+        if row.chosen {
+            style::LAVENDER
+        } else {
+            ui.visuals().text_color()
+        },
+        14.0,
+    );
+    let seed = galley(format!("seed {}", row.seed), style::muted(ui), 12.0);
+    let top = rect.top() + padding + 2.0;
+    ui.painter().galley(
+        egui::pos2(text_left, top),
+        title.clone(),
+        egui::Color32::WHITE,
+    );
+    ui.painter().galley(
+        egui::pos2(text_left, top + title.size().y + 2.0),
+        seed,
+        egui::Color32::WHITE,
+    );
+    response
 }

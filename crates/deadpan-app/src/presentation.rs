@@ -36,6 +36,8 @@ enum Location {
         request: deadpan_jobs::RequestId,
         frame: deadpan_core::ProjectFrame,
     },
+    /// A variant thumbnail; the inspector's own worker, never the viewer.
+    Thumbnail(deadpan_core::GeneratedObjectRef),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,6 +79,9 @@ impl RequestedPicture {
                 source: view.id().clone(),
                 frame: *frame,
             },
+            Work::CandidateThumbnail { thumbnail, .. } => {
+                Location::Thumbnail(thumbnail.object.clone())
+            }
             Work::Candidate {
                 candidate, frame, ..
             } => Location::Candidate {
@@ -127,6 +132,7 @@ impl RequestedPicture {
                 "Showing copied Edit frame {}",
                 i128::from(source.range.start().0) + i128::from(frame.0) + 1
             )),
+            Location::Thumbnail(_) => Some("Showing an AI variant thumbnail".into()),
         }
     }
 }

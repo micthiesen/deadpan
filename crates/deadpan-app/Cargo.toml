@@ -10,7 +10,7 @@ publish.workspace = true
 
 [features]
 # Developer-only whole-workspace replay. The shipped app does not include the runner.
-ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:tempfile"]
+ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:tempfile", "deadpan-cli/synthetic-worker"]
 
 [dependencies]
 eframe.workspace = true
@@ -49,6 +49,8 @@ objc2-foundation = { version = "=0.3.2", default-features = false, features = ["
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "NSAccessibility", "NSWorkspace"] }
 
 [dev-dependencies]
+# Service tests run the scripted Ready ending through the synthetic worker.
+deadpan-cli = { path = "../deadpan-cli", features = ["synthetic-worker"] }
 blake3.workspace = true
 deadpan-native-process.workspace = true
 rusqlite.workspace = true

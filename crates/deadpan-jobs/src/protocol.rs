@@ -386,6 +386,31 @@ pub struct ProviderSelection {
     pub seed: u64,
 }
 
+/// Seeds the bridge worker accepts are below 2^32.
+const VARIANT_SEED_MODULUS: u64 = 1 << 32;
+
+impl ProviderSelection {
+    /// The exact provider of attempt `ordinal` (1-based) of a request whose
+    /// immutable intent is `self`. Every attempt of one request is a seeded
+    /// variant: the first uses the request's own seed and each later one the
+    /// next seed below 2^32, so retries and "generate another" never repeat a
+    /// result while the request's constraints, context and pack stay fixed.
+    /// The store, worker request and receipts all use this one derivation.
+    pub fn for_attempt(&self, ordinal: u64) -> Self {
+        let seed = match ordinal {
+            0 | 1 => self.seed,
+            ordinal => {
+                let offset = (ordinal - 1) % VARIANT_SEED_MODULUS;
+                ((self.seed % VARIANT_SEED_MODULUS) + offset) % VARIANT_SEED_MODULUS
+            }
+        };
+        Self {
+            seed,
+            ..self.clone()
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(try_from = "WorkspaceArtifactWire")]
 pub struct WorkspaceArtifact {

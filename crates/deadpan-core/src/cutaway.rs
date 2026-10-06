@@ -32,6 +32,12 @@ pub enum CutawayFit {
     Loop,
     /// Show the host's own picture for the rest of the range.
     Gap,
+    /// Play the selection forward, then backward, then forward again: a
+    /// micro-loop whose seam never jumps back to the first picture
+    /// (specification §8 "Micro-loop", explicit seam treatment). The shown
+    /// source time is a triangle wave of period twice the selection, so each
+    /// end picture is shown on both sides of its turn.
+    Bounce,
 }
 
 impl CutawayFit {
@@ -92,6 +98,17 @@ impl Cutaway {
                     ))?)?;
                 }
                 CutawayFit::Gap => return Ok(None),
+                CutawayFit::Bounce => {
+                    let passes = elapsed.checked_div(length)?.floor();
+                    let into = elapsed.checked_sub(length.checked_mul(ExactRatio::integer(
+                        i64::try_from(passes).map_err(|_| TimeError::Overflow)?,
+                    ))?)?;
+                    elapsed = if passes % 2 == 0 {
+                        into
+                    } else {
+                        length.checked_sub(into)?
+                    };
+                }
             }
         }
         Ok(Some(SourcePoint {
@@ -248,6 +265,69 @@ mod tests {
         assert_eq!(shown(&looped, 14), half(100));
         assert_eq!(shown(&looped, 19), half(105));
         assert_eq!(shown(&cutaway(CutawayFit::Gap), 14), None);
+        // Bounce turns at each end instead of jumping back: frames 4..14
+        // show 100..109 forward, 14..24 show 109..100 backward, then forward.
+        let bounced = cutaway(CutawayFit::Bounce);
+        assert_eq!(shown(&bounced, 13), half(109));
+        assert_eq!(shown(&bounced, 14), half(109), "the turning picture");
+        assert_eq!(shown(&bounced, 15), half(108));
+        assert_eq!(shown(&bounced, 19), half(104));
+        let wire = serde_json::to_string(&bounced).unwrap();
+        assert!(wire.contains("\"fit\":\"bounce\""), "{wire}");
+    }
+
+    #[test]
+    fn bounce_mirrors_exact_source_ticks_at_a_non_unity_tick_rate() {
+        // 30 fps project over a 1/60 s tick: two source ticks per project
+        // frame, so picture centers land on whole ticks.
+        let point = |ticks: i128| SourcePoint {
+            ticks: ExactRatio::integer(ticks as i64),
+            time_base: SourceTimeBase::new(1, 60).unwrap(),
+        };
+        let bounced = Cutaway {
+            range: FrameRange::new(ProjectFrame(4), ProjectFrame(20)).unwrap(),
+            asset: AssetId::new("original").unwrap(),
+            selection: ExactSourceSpan::new(point(100), point(110)).unwrap(),
+            fit: CutawayFit::Bounce,
+            removed: false,
+        };
+        let shown = |frame: i64| {
+            bounced
+                .picture_point(
+                    ExactRatio::new(i128::from(frame) * 2 + 1, 2).unwrap(),
+                    FrameRate::new(30, 1).unwrap(),
+                )
+                .unwrap()
+                .unwrap()
+                .ticks
+        };
+        // Forward: 101, 103, 105, 107, 109; backward from tick 110: 109,
+        // 107, 105, 103, 101; then forward again from 100.
+        let ticks: Vec<_> = (4..19).map(shown).collect();
+        let expected: Vec<_> = [
+            101, 103, 105, 107, 109, 109, 107, 105, 103, 101, 101, 103, 105, 107, 109,
+        ]
+        .into_iter()
+        .map(ExactRatio::integer)
+        .collect();
+        assert_eq!(ticks, expected);
+        // A backward point on a whole tick is that exact tick, so the plan's
+        // half-open selection keeps choosing the picture that starts there
+        // (the later one), as a forward point at that tick does.
+        let turn = bounced
+            .picture_point(ExactRatio::integer(9), FrameRate::new(30, 1).unwrap())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            turn.ticks,
+            ExactRatio::integer(110),
+            "the turn is the selection end"
+        );
+        let back = bounced
+            .picture_point(ExactRatio::integer(10), FrameRate::new(30, 1).unwrap())
+            .unwrap()
+            .unwrap();
+        assert_eq!(back.ticks, ExactRatio::integer(108));
     }
 
     #[test]

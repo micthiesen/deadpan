@@ -491,7 +491,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 65 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts; 65 the register bank digest over version and slots, checked on every bank read). Refuse schemas 1 through 64 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 65 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts; 65 the register bank digest over version and slots, checked on every bank read). Refuse schemas 1 through 64 before writer acquisition, backups, recovery or document parsing. Without a schema change, bridge bundle receipts must carry their attempt's own seed (`ProviderSelection::for_attempt`): a current package whose request has a Ready retry (attempt 2 or later) recorded under the request's own seed fails validation on open. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -778,6 +778,21 @@ same Repeat at its absolute start. Dot retains the total count without a node or
 register target. Only supported Apply installs intent; named Run does not. See
 [Repeat selections](docs/REPEAT_SELECTION.md).
 
+Native creative parameter edits commit as one semantic Apply even outside a
+recording: pauses and pause length, speed/pitch, beat and Edit-range gain steps,
+mute, audio lag, whole-beat zoom/creep, cutaways and captions, `:edge` and
+`:gag-set`. Keep their native and recorded results identical and keep direct
+`ProjectEdit` paths only for one-play scopes, ranged/face zoom and clears. Capture
+targets on command entry and derive parameters from that capture. Ranged and
+whole-beat gain steps are distinct instructions, and unity clip gain is
+removed. A gag's pinned label is its stored recipe: `GagRecipe::from_label`
+must round-trip exactly, `SetGag` names only changed parameters and refuses
+unless every part still equals what the recipe made. Split fragments add no
+edge fade until `SetEditorialEdges` marks the side; mark both incident sides
+before a Hard policy in the same transaction, and never mark a pure Split seam. See
+[semantic repeat](docs/SEMANTIC_REPEAT.md), [gags](docs/GAGS.md) and
+[audio edges](docs/AUDIO_EDGES.md#native-edge-command).
+
 The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
@@ -862,6 +877,17 @@ isolate repeated occurrences first. Retime ancestors remain conservatively rejec
 Do not retroactively reject valid legacy operational bindings during migration.
 Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_ACCEPTANCE.md).
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
+
+Every attempt of a bridge request is a seeded variant: attempt `n` uses
+`ProviderSelection::for_attempt(n)` in its worker request, declaration and
+receipt, and the store checks it against the ordinal. Add variants to a current
+request only with identical conditioning inputs; changed context records a new
+request. Choosing a variant is the store's operational selection; acceptance
+admits only the selected attempt. Discard is the durable eviction, never a
+session filter. AI audition plays the acceptance document admitted with
+`Snapshot::proposed_generated` (added video-only generated assets only). The
+synthetic Ready worker is a test/replay seam, never a provider. See
+[AI Holds](docs/AI_HOLDS.md#native-app-workflow).
 
 Native AI pause jobs run conditioning and the worker on one bounded job thread
 per project; allocation, attempt records, finish and acceptance stay on the

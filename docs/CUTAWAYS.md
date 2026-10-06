@@ -14,7 +14,7 @@ content's clock. `BeatNode.cutaways` holds up to 16 sorted, disjoint
 | --- | --- |
 | `range` | Half-open project frames in the host beat's own output clock. |
 | `asset`, `selection` | The Original video and the exact source interval shown at its natural rate. |
-| `fit` | After a short selection runs out: `hold` (default) the final picture, `loop` it, or `gap` to show the host again. |
+| `fit` | After a short selection runs out: `hold` (default) the final picture, `loop` it, `bounce` it (forward, then backward, then forward: the shown source time is a triangle wave of period twice the selection, so the loop never jumps back to its first picture and each end picture shows on both sides of its turn; a backward point on a whole tick is that exact tick, so the half-open selection still chooses the picture starting there, as forward), or `gap` to show the host again. |
 | `removed` | A video-only delete: the range shows the project background instead, and `asset`/`selection` record the removed Original pictures ([role edits](ROLE_EDITS.md#role-only-deletes)). Omitted when false. |
 
 Validation requires a registered non-still video asset, a selection inside its
@@ -45,7 +45,7 @@ projections use it, so motions follow the heard Original under a cutaway.
 
 ## Commands
 
-`:cutaway [register=r] [fit=hold|loop|gap] [audio=keep]` places the copied
+`:cutaway [register=r] [fit=hold|loop|bounce|gap] [audio=keep]` places the copied
 Original moment (the selected register, or `register=`) over the Edit range,
 which must lie inside the selected beat, or over the whole beat without a
 range. A selected Split fragment places the cutaway on its Source, in the
@@ -53,17 +53,26 @@ Source's clock; a group, Repeat or speed change is refused with guidance to
 open it and select a source or pause beat. Other `audio=` values are refused because a cutaway never changes
 sound. An overlap with an existing cutaway is refused; `:cutaway clear`
 removes the cutaways overlapping the range. The inspector lists the beat's
-cutaway ranges. While recording a macro, a whole-beat `:cutaway` records the
-semantic `SetCutaway { register, fit }`, which resolves the register's Original
-moment and the selected beat when replayed; `:gag are-we-done` uses the same
-instruction over its tail pause. A ranged cutaway refuses while recording.
+cutaway ranges. Placing a cutaway commits the semantic
+`SetCutaway { register, fit }` over the selected beat or the Edit range inside
+one beat, which resolves the register's Original moment and the target when
+replayed, so a macro records it and `.` repeats it at a new selection;
+`:gag are-we-done` uses the same instruction over its tail pause.
 [Captions](CAPTIONS.md) follow the same host and lifecycle rules. J- and L-cuts
 ([role edits](ROLE_EDITS.md#j-and-l-cuts)) place a picture-keeping cutaway over
 the stretch their Roll moves.
 
+A micro-loop inside a pause (specification §8 "Micro-loop") is a short,
+low-motion Original moment shown over a Hold with `fit=loop` or, for a seam
+that never jumps, `fit=bounce`; the Hold keeps its own sound (silence, room
+tone or a tail). A micro-loop of linked content is a Repeat of a Visual range
+(`v` … `r`) whose play seams take an explicit sound treatment with
+`:edge hard plays` (no automatic fade at each play's start and end) or
+`:edge auto plays` ([audio edges](AUDIO_EDGES.md#native-edge-command)).
+
 ## Tests
 
-- Core: natural-rate pictures, hold/loop/gap fits, prefix shift and wire form.
+- Core: natural-rate pictures, hold/loop/bounce/gap fits (bounce turns at each end), prefix shift and wire form.
 - Core: only Source and Hold beats host cutaways.
 - Plan: pictures inside and outside a range over a Hold, the held final
   picture selecting the last selected frame, host framing still applied,

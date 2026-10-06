@@ -3,9 +3,21 @@
 The store exposes `preview_generation_acceptance` and `accept_generation_bundle`
 for an explicit host acceptance of the exact selected Ready bundle.
 [`generation::acceptance::accept`](AI_HOLDS.md) uses them with a relevance plan
-from the installed boundary resolver, and `deadpan-cli accept-hold` exposes it;
-the native app has no generation or audition workflow yet.
+from the installed boundary resolver; `deadpan-cli accept-hold` (directly or
+through an open app's live endpoint) and the native `:accept-ai` expose it.
 It does not turn background completion, qualification, or selection into an edit.
+
+A request's attempts are seeded variants: attempt `n` runs with
+`ProviderSelection::for_attempt(n)`, and the bundle receipt and worker
+declaration must carry exactly that provider (attempt 1 keeps the request's own
+seed, so existing receipts are unchanged). Hosts choose a variant with
+`select_generation_bundle_variant`; acceptance admits only the selected one.
+The native Preview admits the acceptance's document for audition with
+`deadpan_playback::Snapshot::proposed_generated`, which permits only the two
+added video-only generated assets and keeps every committed asset and its
+qualified sources, so the proposed pause plays its unchanged audio. A durable
+Discard is the existing availability change (`mark_generation_bundle_evicted`);
+it clears a matching selection and is not reversible.
 
 ## Evidence and transaction
 
@@ -78,8 +90,9 @@ Prepared frames remain opaque retained bytes. Exact source-clock context, image
 decoding/color qualification, installed-model attestation, useful motion and seam
 quality remain required. The store trusts the host's qualification receipt; it
 does not independently decode media or parse provenance. Reference inventory,
-history-aware cleanup, portable copy, source joins, model-independent application
-rendering, app scheduling, audition and interactive acceptance remain open. The
+history-aware cleanup of discarded variants, portable copy and source joins
+remain open. The native app's scheduling, variant choice, audition and
+interactive acceptance are described in [AI Holds](AI_HOLDS.md#native-app-workflow). The
 headless chain, its measured real run and the symmetric conditioning and
 presentation raster policy are in [AI Holds](AI_HOLDS.md).
 

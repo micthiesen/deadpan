@@ -344,12 +344,14 @@ impl DeadpanApp {
         let Some(workspace) = self.workspace.clone() else {
             return;
         };
-        self.start_snapshot_playback(
-            Arc::new(workspace.playback_snapshot()),
-            domain,
-            window,
-            start,
-        );
+        // While an AI preview shows a candidate's pictures, playback of Your
+        // edit is the proposed acceptance: the pause's own sound with those
+        // pictures, admitted against this exact committed revision.
+        let snapshot = match (&domain, self.ai_preview_audio(&workspace)) {
+            (Domain::Sequence { .. }, Some(snapshot)) => snapshot,
+            _ => Arc::new(workspace.playback_snapshot()),
+        };
+        self.start_snapshot_playback(snapshot, domain, window, start);
     }
 
     pub(super) fn start_snapshot_playback(

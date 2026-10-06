@@ -1,9 +1,9 @@
-//! `:cutaway [register=r] [fit=hold|loop|gap] [audio=keep]` and
+//! `:cutaway [register=r] [fit=hold|loop|bounce|gap] [audio=keep]` and
 //! `:cutaway clear`: picture-only cutaways over part of the selected beat.
 
 use deadpan_core::CutawayFit;
 
-pub const USAGE: &str = "Use :cutaway to show the copied Original moment over the selected range of this beat while its sound continues; register=r chooses a register and fit=hold|loop|gap what follows a short moment. :cutaway clear removes cutaways there.";
+pub const USAGE: &str = "Use :cutaway to show the copied Original moment over the selected range of this beat while its sound continues; register=r chooses a register and fit=hold|loop|bounce|gap what follows a short moment (bounce plays it forward and back, a micro-loop with no jump at its seam). :cutaway clear removes cutaways there.";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CutawayInput {
@@ -39,7 +39,8 @@ pub fn parse(arguments: &[&str]) -> Result<CutawayInput, String> {
                     "hold" => CutawayFit::Hold,
                     "loop" => CutawayFit::Loop,
                     "gap" => CutawayFit::Gap,
-                    _ => return Err("fit is hold, loop or gap.".into()),
+                    "bounce" => CutawayFit::Bounce,
+                    _ => return Err("fit is hold, loop, bounce or gap.".into()),
                 });
             }
             "audio" => {
@@ -78,6 +79,13 @@ mod tests {
             CutawayInput::Place {
                 register: None,
                 fit: CutawayFit::Loop
+            }
+        );
+        assert_eq!(
+            parse(&["fit=bounce"]).unwrap(),
+            CutawayInput::Place {
+                register: None,
+                fit: CutawayFit::Bounce
             }
         );
         assert_eq!(parse(&["clear"]).unwrap(), CutawayInput::Clear);

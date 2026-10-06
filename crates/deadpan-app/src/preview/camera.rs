@@ -1046,11 +1046,14 @@ impl DeadpanApp {
             return;
         }
         match self.zoom_framing(&session, &input, range, None) {
-            Ok((framing, _)) if self.macros.recording() => {
-                // Recorded as the semantic framing of the selected beat;
-                // a scoped play has no semantic equivalent yet. A ranged
-                // envelope stores beat fractions, which would not mean the
-                // same range on another beat, so it is not recorded.
+            Ok((framing, note))
+                if self.macros.recording() || (session.scoped.is_none() && range.is_none()) =>
+            {
+                // The semantic framing of the selected beat, recorded by a
+                // macro and repeated by `.`; a scoped play has no semantic
+                // equivalent yet. A ranged envelope stores beat fractions,
+                // which would not mean the same range on another beat, so it
+                // is neither recorded nor repeated.
                 if session.scoped.is_some() {
                     self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
                     return;
@@ -1063,6 +1066,15 @@ impl DeadpanApp {
                     self.message = Some("Framing is unchanged; no edit was made.".into());
                     return;
                 }
+                let described = self.workspace.as_ref().map(|workspace| {
+                    crate::navigation::zoom::describe(framing.as_ref(), &|id| {
+                        workspace
+                            .document
+                            .targets()
+                            .get(id)
+                            .map_or_else(|| id.as_str().to_owned(), |target| target.label.clone())
+                    })
+                });
                 let target = self.capture_macro_target();
                 self.apply_recorded_instruction(
                     target,
@@ -1070,6 +1082,14 @@ impl DeadpanApp {
                         framing: framing.map(Box::new),
                     }),
                 );
+                if self.macros.is_pending()
+                    && let Some(described) = described
+                {
+                    self.macros.set_summary(match note {
+                        Some(note) => format!("Framing saved: {described}. {note}"),
+                        None => format!("Framing saved: {described}"),
+                    });
+                }
             }
             Ok((framing, note)) => {
                 // An unchanged result submits nothing, so no note outlives it.

@@ -12,7 +12,7 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
     assert_eq!(bindings.pending(), ",");
     assert_eq!(
         bindings.key(Key::A, Modifiers::NONE, false, false),
-        Some(Action::Ai(AiAction::Generate))
+        Some(Action::Ai(AiAction::Generate { variants: 1 }))
     );
     assert!(bindings.pending().is_empty());
     assert!(!bindings.allows_key_repeat(Key::A, Modifiers::NONE));
@@ -38,7 +38,7 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
     );
     assert_ne!(
         bindings.key_with_selection(Key::A, Modifiers::NONE, false, false, EditSelection::Range),
-        Some(Action::Ai(AiAction::Generate))
+        Some(Action::Ai(AiAction::Generate { variants: 1 }))
     );
     for domain in [RoutingDomain::Original, RoutingDomain::Sound] {
         let mut bindings = Bindings::default();
@@ -46,7 +46,7 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
         bindings.key(Key::Comma, Modifiers::NONE, false, false);
         assert_ne!(
             bindings.key(Key::A, Modifiers::NONE, false, false),
-            Some(Action::Ai(AiAction::Generate)),
+            Some(Action::Ai(AiAction::Generate { variants: 1 })),
             "{domain:?}"
         );
     }
@@ -61,15 +61,22 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
 }
 
 #[test]
-fn ai_commands_parse_without_arguments() {
+fn ai_commands_parse_with_their_exact_arguments() {
     use command::{Entry, parse};
     for (input, action) in [
-        (":generate", AiAction::Generate),
-        ("generate-ai", AiAction::Generate),
+        (":generate", AiAction::Generate { variants: 1 }),
+        ("generate-ai", AiAction::Generate { variants: 1 }),
+        ("generate 3", AiAction::Generate { variants: 3 }),
+        ("generate-ai 4", AiAction::Generate { variants: 4 }),
         ("cancel-ai", AiAction::Cancel),
         ("PREVIEW-AI", AiAction::Preview),
+        ("audition-ai", AiAction::Audition),
         ("accept-ai", AiAction::Accept),
         ("discard-ai", AiAction::Discard),
+        ("next-ai", AiAction::Choose(VariantChoice::Next)),
+        ("prev-ai", AiAction::Choose(VariantChoice::Previous)),
+        ("previous-ai", AiAction::Choose(VariantChoice::Previous)),
+        ("pick-ai 2", AiAction::Choose(VariantChoice::Number(2))),
     ] {
         assert_eq!(
             parse(input),
@@ -77,7 +84,18 @@ fn ai_commands_parse_without_arguments() {
             "{input}"
         );
     }
-    for input in ["generate now", "accept-ai 1", "cancel-ai x"] {
+    for input in [
+        "generate now",
+        "generate 0",
+        "generate 5",
+        "generate 2 3",
+        "accept-ai 1",
+        "cancel-ai x",
+        "next-ai 2",
+        "pick-ai",
+        "pick-ai 0",
+        "audition-ai now",
+    ] {
         assert!(parse(input).is_err(), "{input}");
     }
 }

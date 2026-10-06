@@ -1125,3 +1125,124 @@ fn bound_opaque_owner_suppression_keeps_a_distinct_inner_marker() {
             .all(|origin| origin.instance.node != id("preserve"))
     );
 }
+
+/// `:edge plays` on a Repeat of a split fragment: the fragment's sides add no
+/// fade until marked editorial; marked, Automatic fades each play seam and
+/// Hard cuts it.
+#[test]
+fn marked_fragment_play_seams_fade_or_cut_by_their_policy() {
+    let fragment = BeatNode {
+        label: "Fragment".into(),
+        kind: NodeKind::Retime {
+            child: id("voice"),
+            duration: frames(4),
+            mapping: FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap(),
+            pitch: PitchPolicy::Preserve,
+            purpose: RetimePurpose::Partition,
+        },
+        ..hold(1)
+    };
+    let base = document(
+        30,
+        &["fragment"],
+        vec![("voice", hold(8)), ("fragment", fragment)],
+    );
+    let edit = |document: &ProjectDocument, revision: &str, command: Command| {
+        apply(
+            document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: RevisionId::new(revision).unwrap(),
+                command,
+            },
+        )
+        .unwrap()
+        .forward
+        .apply(document)
+        .unwrap()
+    };
+    let looped = edit(
+        &base,
+        "loop",
+        Command::WrapRepeat {
+            node: id("fragment"),
+            id: id("loop"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        },
+    );
+    // The seam between the plays is Edit frame 4 (sample 6,400 at 30 fps):
+    // each edge there is (editorial, any origin Hard).
+    let seam = |document: &ProjectDocument| -> Vec<(bool, bool)> {
+        let plan = RenderPlan::compile(document).unwrap();
+        query(&plan, 0, 12_800)
+            .spans
+            .iter()
+            .flat_map(|span| span.start.iter().chain(&span.end))
+            .filter(|edge| edge.at == ExactRatio::integer(4))
+            .map(|edge| {
+                (
+                    edge.editorial,
+                    edge.origins
+                        .iter()
+                        .any(|origin| origin.policy == AudioEdgePolicy::Hard),
+                )
+            })
+            .collect()
+    };
+    let unmarked = seam(&looped);
+    let marked = edit(
+        &looped,
+        "marked",
+        Command::SetEditorialEdges {
+            node: id("fragment"),
+            edges: AudioEditorialEdges {
+                start: true,
+                end: true,
+            },
+        },
+    );
+    let faded = seam(&marked);
+    let mut hard = marked.clone();
+    for (revision, edge) in [
+        ("hard-start", AudioBoundaryKind::NodeStart),
+        ("hard-end", AudioBoundaryKind::NodeEnd),
+    ] {
+        hard = edit(
+            &hard,
+            revision,
+            Command::SetAudioEdge {
+                node: id("fragment"),
+                edge,
+                policy: AudioEdgePolicy::Hard,
+            },
+        );
+    }
+    let cut = seam(&hard);
+    // Unmarked fragment sides add no seam edge; marked ones fade both sides
+    // of the seam automatically, and Hard suppresses that fade.
+    assert!(unmarked.is_empty(), "{unmarked:?}");
+    assert_eq!(faded, [(true, false), (true, false)]);
+    assert_eq!(cut, [(true, true), (true, true)]);
+    // Marking needs a fragment.
+    assert!(
+        apply(
+            &base,
+            &CommandRequest {
+                project_id: base.project_id().clone(),
+                expected_revision: base.revision_id().clone(),
+                new_revision: RevisionId::new("wrong").unwrap(),
+                command: Command::SetEditorialEdges {
+                    node: id("voice"),
+                    edges: AudioEditorialEdges {
+                        start: true,
+                        end: false,
+                    },
+                },
+            },
+        )
+        .is_err()
+    );
+}

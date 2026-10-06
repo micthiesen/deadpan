@@ -122,6 +122,136 @@ impl DeadpanApp {
         );
     }
 
+    /// `:gag-set key=value …`: the gag selected when the command was entered,
+    /// with the given parameters changed. Only those parameters are recorded,
+    /// so `.` changes just them on another gag of the same recipe.
+    pub(super) fn set_gag(
+        &mut self,
+        target: Option<Result<super::macros::Capture, String>>,
+        parameters: &[String],
+    ) {
+        self.bindings.clear();
+        self.cancel_repeats("a gag change was requested");
+        let target = target
+            .unwrap_or_else(|| Err("Open :gag-set again to capture the selected gag.".into()));
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|captured| {
+            let node = captured
+                .selected_node()
+                .ok_or("Select an inserted gag's group first.")?;
+            let current = deadpan_core::GagRecipe::from_label(&node.label).ok_or(
+                "The selected beat is not an inserted gag: its label does not pin a recipe. Edit its parts directly.",
+            )?;
+            let parameters: Vec<&str> = parameters.iter().map(String::as_str).collect();
+            crate::navigation::gag::merge(&current, &parameters, captured.frame_rate()).map(
+                |(recipe, parameters)| SemanticInstruction::SetGag { recipe, parameters },
+            )
+        });
+        self.apply_recorded_instruction(target, instruction);
+    }
+
+    /// `:gag NAME` for a saved preset: its recipe, with any given parameters
+    /// changed, applied at the context captured on command entry and
+    /// recorded as the concrete recipe it names.
+    pub(super) fn apply_gag_preset(
+        &mut self,
+        target: Option<Result<super::macros::Capture, String>>,
+        name: &str,
+        parameters: &[String],
+    ) {
+        self.bindings.clear();
+        self.cancel_repeats("a gag was requested");
+        let target = target.unwrap_or_else(|| Err("Open :gag again to capture the cursor.".into()));
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|captured| {
+            let preset = self.gag_presets.get(name)?;
+            let recipe = if parameters.is_empty() {
+                preset
+            } else {
+                let parameters: Vec<&str> = parameters.iter().map(String::as_str).collect();
+                crate::navigation::gag::merge(&preset, &parameters, captured.frame_rate())?.0
+            };
+            Ok(SemanticInstruction::Gag { recipe })
+        });
+        self.apply_recorded_instruction(target, instruction);
+    }
+
+    /// `:gag-save NAME`: keep the inserted gag selected on command entry, with
+    /// its recipe and exact parameters, as a preset every project can insert
+    /// with `:gag NAME`.
+    pub(super) fn save_gag_preset(
+        &mut self,
+        target: Option<Result<super::macros::Capture, String>>,
+        name: &str,
+    ) {
+        let result = (|| {
+            let captured = target.ok_or("Open :gag-save again to capture the selected gag.")??;
+            if !captured.matches(self) {
+                return Err(
+                    "The selection changed while typing. Start :gag-save again; nothing was saved."
+                        .to_owned(),
+                );
+            }
+            let node = captured
+                .selected_node()
+                .ok_or("Select an inserted gag's group first.")?;
+            let recipe = deadpan_core::GagRecipe::from_label(&node.label).ok_or(
+                "The selected beat is not an inserted gag: its label does not pin a recipe. A changed group can be kept in this project with :recipe-save.",
+            )?;
+            let replaced = self.gag_presets.save(name, recipe)?;
+            Ok::<_, String>(format!(
+                "{} gag preset {name}: {}. :gag {name} inserts it in any project.",
+                if replaced { "Replaced" } else { "Saved" },
+                recipe.label()
+            ))
+        })();
+        match result {
+            Ok(message) => {
+                self.error = None;
+                self.message = Some(message);
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `:gag-presets`: the saved presets, one row each, in Help, naming any
+    /// entry this Deadpan cannot read.
+    pub(super) fn list_gag_presets(&mut self) {
+        match self.gag_presets.load() {
+            Ok(loaded) => {
+                let mut rows: Vec<String> = loaded
+                    .presets
+                    .iter()
+                    .map(|(name, recipe)| format!(":gag {name} · {}", recipe.label()))
+                    .collect();
+                if rows.is_empty() {
+                    rows.push(
+                        "No gag presets are saved yet. Select an inserted gag and :gag-save NAME."
+                            .into(),
+                    );
+                }
+                for name in &loaded.skipped {
+                    rows.push(format!(
+                        "{name}: this entry cannot be read by this Deadpan and was skipped; it stays in the file."
+                    ));
+                }
+                let count = loaded.presets.len();
+                self.message = Some(format!(
+                    "{count} saved gag preset{}{}; see Help.",
+                    if count == 1 { "" } else { "s" },
+                    if loaded.skipped.is_empty() {
+                        String::new()
+                    } else {
+                        format!(", {} unreadable entry skipped", loaded.skipped.len())
+                    }
+                ));
+                self.help_expansion = Some(("Saved gag presets".into(), rows));
+                self.help_registers_first = false;
+                self.help_scroll = Default::default();
+                self.help_open = true;
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     /// `:gag-inspect`: show the recipe's exact expansion in Help, with the
     /// current Visual range deciding its content as `:gag` would. Nothing is
     /// applied and history is unchanged.

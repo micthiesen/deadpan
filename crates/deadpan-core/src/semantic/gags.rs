@@ -69,6 +69,24 @@ pub enum GagRecipe {
     },
 }
 
+/// One exposed recipe parameter, named as `:gag` names it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GagParameter {
+    Pause,
+    Creep,
+    Plays,
+    GainStep,
+    ZoomStep,
+    Gap,
+    Shorten,
+    /// `vary=` and its pinned `seed=`.
+    Variation,
+    Tone,
+    Silence,
+    Register,
+}
+
 /// Seeded, bounded irregularity: each value moves by at most `percent` of
 /// itself, in a direction and amount drawn deterministically from `seed`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -132,7 +150,7 @@ impl GagRecipe {
         }
     }
 
-    fn version(&self) -> u32 {
+    pub fn version(&self) -> u32 {
         match self {
             Self::LongAnswer { version, .. }
             | Self::Escalator { version, .. }
@@ -198,6 +216,203 @@ impl GagRecipe {
         format!("{} · v{} · {parameters}", self.name(), self.version())
     }
 
+    /// The recipe a gag group's pinned label names, when the label is exactly
+    /// one this recipe version writes. The label is the stored form of the
+    /// recipe's version and parameters (specification §8.4), so any group
+    /// whose label is exactly such a label, even one typed by hand, is
+    /// treated as that gag; a renamed group or an unknown version names none.
+    /// Lengths, plays, gains, seeds and registers come back exactly. The
+    /// label writes a creep scale and a zoom step to three decimals: a value
+    /// with at most three decimals (as `:gag` accepts by default) comes back
+    /// exactly, a finer one as written there (a zoom step re-quantized to the
+    /// framing grid).
+    pub fn from_label(label: &str) -> Option<Self> {
+        let mut parts = label.splitn(3, " · ");
+        let (name, version, parameters) = (parts.next()?, parts.next()?, parts.next()?);
+        let version: u32 = version.strip_prefix('v')?.parse().ok()?;
+        let recipe = match name {
+            "The Long Answer" => {
+                let rest = parameters.strip_prefix("pause ")?;
+                let (pause, scale) = rest.split_once(", creep to ")?;
+                Self::LongAnswer {
+                    version,
+                    pause: parse_length(pause)?,
+                    scale: parse_decimal(scale.strip_suffix('×')?)?,
+                }
+            }
+            "One More Time" => {
+                let (plays, rest) = parameters.split_once(" plays, gap ")?;
+                let (gap, rest) = rest.split_once(" shortening by ")?;
+                let (shorten, variation) = match rest.split_once(", varied ±") {
+                    Some((shorten, varied)) => {
+                        let (percent, seed) = varied.split_once("% (seed ")?;
+                        (
+                            shorten,
+                            Some(GagVariation {
+                                percent: percent.parse().ok()?,
+                                seed: seed.strip_suffix(')')?.parse().ok()?,
+                            }),
+                        )
+                    }
+                    None => (rest, None),
+                };
+                Self::OneMoreTime {
+                    version,
+                    plays: plays.parse().ok()?,
+                    gap: parse_length(gap)?,
+                    shorten: parse_length(shorten)?,
+                    variation,
+                }
+            }
+            "Nothing Happens" => {
+                let rest = parameters.strip_prefix("room tone ")?;
+                let (tone, rest) = rest.split_once(" from register ")?;
+                let (register, rest) = rest.split_once(", then ")?;
+                Self::NothingHappens {
+                    version,
+                    tone: parse_length(tone)?,
+                    silence: parse_length(rest.strip_suffix(" silence")?)?,
+                    register: parse_register(register)?,
+                }
+            }
+            "The Escalator" => {
+                let (plays, rest) = parameters.split_once(" plays, ")?;
+                let (gain, rest) = rest.split_once(" dB and ")?;
+                let gain = parse_decimal(gain)?
+                    .checked_mul(ExactRatio::integer(1000))
+                    .ok()?;
+                if gain.denominator() != 1 {
+                    return None;
+                }
+                Self::Escalator {
+                    version,
+                    plays: plays.parse().ok()?,
+                    gain_step: GainDb::new(i32::try_from(gain.numerator()).ok()?).ok()?,
+                    // The step is stored on the framing grid; the label
+                    // writes three places of it.
+                    zoom_step: crate::quantize_zoom_step(parse_decimal(
+                        rest.strip_suffix(" scale per play")?,
+                    )?)
+                    .ok()?,
+                }
+            }
+            "The Non-Sequitur" => Self::NonSequitur {
+                version,
+                register: parse_register(parameters.strip_prefix("register ")?)?,
+            },
+            "Are We Done?" => {
+                let rest = parameters.strip_prefix("pause ")?;
+                let (pause, register) =
+                    rest.split_once(" with a reverb tail, reaction from register ")?;
+                Self::AreWeDone {
+                    version,
+                    pause: parse_length(pause)?,
+                    register: parse_register(register)?,
+                }
+            }
+            _ => return None,
+        };
+        (recipe.label() == label).then_some(recipe)
+    }
+
+    /// These parameters with `parameters` taken from `from`, a recipe of the
+    /// same kind and version. A parameter the recipe does not have refuses.
+    pub fn with_parameters(
+        &self,
+        from: &Self,
+        parameters: &[GagParameter],
+    ) -> Result<Self, EditError> {
+        use GagParameter as P;
+        let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
+        if !self.same_recipe(from) {
+            return Err(invalid("the parameters belong to another gag recipe"));
+        }
+        let mut result = *self;
+        for parameter in parameters {
+            match (&mut result, from, parameter) {
+                (Self::LongAnswer { pause, .. }, Self::LongAnswer { pause: new, .. }, P::Pause)
+                | (Self::AreWeDone { pause, .. }, Self::AreWeDone { pause: new, .. }, P::Pause) => {
+                    *pause = *new;
+                }
+                (Self::LongAnswer { scale, .. }, Self::LongAnswer { scale: new, .. }, P::Creep) => {
+                    *scale = *new;
+                }
+                (Self::Escalator { plays, .. }, Self::Escalator { plays: new, .. }, P::Plays)
+                | (
+                    Self::OneMoreTime { plays, .. },
+                    Self::OneMoreTime { plays: new, .. },
+                    P::Plays,
+                ) => {
+                    *plays = *new;
+                }
+                (
+                    Self::Escalator { gain_step, .. },
+                    Self::Escalator { gain_step: new, .. },
+                    P::GainStep,
+                ) => *gain_step = *new,
+                (
+                    Self::Escalator { zoom_step, .. },
+                    Self::Escalator { zoom_step: new, .. },
+                    P::ZoomStep,
+                ) => *zoom_step = *new,
+                (Self::OneMoreTime { gap, .. }, Self::OneMoreTime { gap: new, .. }, P::Gap) => {
+                    *gap = *new;
+                }
+                (
+                    Self::OneMoreTime { shorten, .. },
+                    Self::OneMoreTime { shorten: new, .. },
+                    P::Shorten,
+                ) => *shorten = *new,
+                (
+                    Self::OneMoreTime { variation, .. },
+                    Self::OneMoreTime { variation: new, .. },
+                    P::Variation,
+                ) => *variation = *new,
+                (
+                    Self::NothingHappens { tone, .. },
+                    Self::NothingHappens { tone: new, .. },
+                    P::Tone,
+                ) => {
+                    *tone = *new;
+                }
+                (
+                    Self::NothingHappens { silence, .. },
+                    Self::NothingHappens { silence: new, .. },
+                    P::Silence,
+                ) => *silence = *new,
+                (
+                    Self::NothingHappens { register, .. },
+                    Self::NothingHappens { register: new, .. },
+                    P::Register,
+                )
+                | (
+                    Self::AreWeDone { register, .. },
+                    Self::AreWeDone { register: new, .. },
+                    P::Register,
+                )
+                | (
+                    Self::NonSequitur { register, .. },
+                    Self::NonSequitur { register: new, .. },
+                    P::Register,
+                ) => *register = *new,
+                _ => {
+                    return Err(invalid(&format!(
+                        "{} has no {parameter:?} parameter",
+                        self.name()
+                    )));
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    /// Whether `other` is the same recipe, so its parameters can replace
+    /// these on an inserted gag.
+    pub fn same_recipe(&self, other: &Self) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+            && self.version() == other.version()
+    }
+
     /// Whether the recipe edits and groups a pause it inserts, which must
     /// therefore be a direct child of the current group.
     pub fn frames_its_pause(&self) -> bool {
@@ -205,6 +420,18 @@ impl GagRecipe {
             self,
             Self::LongAnswer { .. } | Self::NothingHappens { .. } | Self::AreWeDone { .. }
         )
+    }
+
+    /// The gap lengths of One More Time, each resolved once from its exact
+    /// authored value: `gap - k·shorten` after play `k + 1`, varied when a
+    /// seed is pinned.
+    pub fn one_more_time_gaps(
+        plays: NonZeroU32,
+        gap: PauseLength,
+        shorten: PauseLength,
+        variation: Option<GagVariation>,
+    ) -> Result<Vec<PauseLength>, EditError> {
+        Self::gaps(plays, gap, shorten, variation)
     }
 
     /// The gap lengths of One More Time, each resolved once from its exact
@@ -433,6 +660,47 @@ fn length(value: PauseLength) -> String {
     }
 }
 
+/// `12f` or `500ms`, as `length` writes them.
+fn parse_length(text: &str) -> Option<PauseLength> {
+    if let Some(milliseconds) = text.strip_suffix("ms") {
+        return Some(PauseLength::Milliseconds {
+            milliseconds: milliseconds.parse().ok()?,
+        });
+    }
+    Some(PauseLength::Frames {
+        frames: text.strip_suffix('f')?.parse().ok()?,
+    })
+}
+
+/// A signed decimal such as `+3`, `-0.25` or `1.350`, exactly.
+fn parse_decimal(text: &str) -> Option<ExactRatio> {
+    let (negative, digits) = match text.as_bytes().first()? {
+        b'+' => (false, &text[1..]),
+        b'-' => (true, &text[1..]),
+        _ => (false, text),
+    };
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if whole.is_empty()
+        || whole.len() + fraction.len() > 18
+        || !whole
+            .bytes()
+            .chain(fraction.bytes())
+            .all(|byte| byte.is_ascii_digit())
+    {
+        return None;
+    }
+    let magnitude: i128 = format!("{whole}{fraction}").parse().ok()?;
+    let numerator = if negative { -magnitude } else { magnitude };
+    ExactRatio::new(numerator, 10_i128.pow(u32::try_from(fraction.len()).ok()?)).ok()
+}
+
+fn parse_register(text: &str) -> Option<RegisterName> {
+    let mut chars = text.chars();
+    let name = chars.next()?;
+    chars.next().is_none().then_some(())?;
+    RegisterName::new(name).ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -471,6 +739,106 @@ mod tests {
         );
         let wire = serde_json::to_string(&recipe).unwrap();
         assert_eq!(serde_json::from_str::<GagRecipe>(&wire).unwrap(), recipe);
+    }
+
+    #[test]
+    fn every_recipe_label_parses_back_to_exactly_its_recipe() {
+        let millis = |value| PauseLength::Milliseconds {
+            milliseconds: NonZeroU32::new(value).unwrap(),
+        };
+        let frames = |value| PauseLength::Frames {
+            frames: NonZeroU32::new(value).unwrap(),
+        };
+        let r = |name| RegisterName::new(name).unwrap();
+        let recipes = [
+            GagRecipe::LongAnswer {
+                version: 1,
+                pause: millis(1500),
+                scale: ExactRatio::new(27, 20).unwrap(),
+            },
+            GagRecipe::Escalator {
+                version: 1,
+                plays: NonZeroU32::new(4).unwrap(),
+                gain_step: GainDb::new(-1_250).unwrap(),
+                zoom_step: crate::quantize_zoom_step(ExactRatio::new(2, 25).unwrap()).unwrap(),
+            },
+            GagRecipe::Escalator {
+                version: 1,
+                plays: NonZeroU32::new(3).unwrap(),
+                gain_step: GainDb::new(3_000).unwrap(),
+                zoom_step: ExactRatio::ZERO,
+            },
+            GagRecipe::NonSequitur {
+                version: 1,
+                register: r('"'),
+            },
+            GagRecipe::OneMoreTime {
+                version: 1,
+                plays: NonZeroU32::new(5).unwrap(),
+                gap: frames(12),
+                shorten: frames(3),
+                variation: Some(GagVariation {
+                    percent: 20,
+                    seed: 7,
+                }),
+            },
+            GagRecipe::OneMoreTime {
+                version: 1,
+                plays: NonZeroU32::new(3).unwrap(),
+                gap: millis(500),
+                shorten: millis(200),
+                variation: None,
+            },
+            GagRecipe::NothingHappens {
+                version: 1,
+                tone: millis(1000),
+                silence: frames(30),
+                register: r('t'),
+            },
+            GagRecipe::AreWeDone {
+                version: 1,
+                pause: millis(1500),
+                register: r('r'),
+            },
+        ];
+        for recipe in recipes {
+            assert_eq!(
+                GagRecipe::from_label(&recipe.label()),
+                Some(recipe),
+                "{}",
+                recipe.label()
+            );
+            assert!(recipe.same_recipe(&recipe));
+        }
+        // A renamed group, an edited label and a stranger name none.
+        for label in [
+            "Renamed",
+            "The Long Answer · v1 · pause 1500ms, creep to 1.35×",
+            "The Long Answer · v1 · pause 1500 ms, creep to 1.350×",
+            "One More Time · v1 · 3 plays, gap 500ms shortening by 200ms, varied ±20% (seed x)",
+            "The Shrug · v1 · register r",
+        ] {
+            assert_eq!(GagRecipe::from_label(label), None, "{label}");
+        }
+        // A rounded creep scale comes back as written.
+        let thirds = GagRecipe::LongAnswer {
+            version: 1,
+            pause: frames(12),
+            scale: ExactRatio::new(4, 3).unwrap(),
+        };
+        assert_eq!(
+            GagRecipe::from_label(&thirds.label()),
+            Some(GagRecipe::LongAnswer {
+                version: 1,
+                pause: frames(12),
+                scale: ExactRatio::new(1333, 1000).unwrap(),
+            })
+        );
+        assert!(!thirds.same_recipe(&GagRecipe::AreWeDone {
+            version: 1,
+            pause: frames(12),
+            register: r('r'),
+        }));
     }
 
     #[test]

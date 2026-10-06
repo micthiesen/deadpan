@@ -6,10 +6,12 @@ use crate::{
 use std::num::NonZeroU32;
 
 mod content;
+mod gag_edit;
 mod group;
 mod objects;
 mod pause;
 mod repeat;
+mod retime;
 mod selectors;
 mod set_repeat;
 mod speech;
@@ -108,6 +110,10 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                         .collect(),
                 },
             },
+        },
+        SemanticAllocationRequest::WrapRetime { step_index } => SemanticAllocation::WrapRetime {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            id: node(&format!("retime-{step_index}")),
         },
         SemanticAllocationRequest::Sound { step_index } => SemanticAllocation::Sound {
             new_revision: revision(&format!("leaf-{step_index}")),

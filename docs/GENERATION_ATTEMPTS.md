@@ -16,9 +16,12 @@ documents to core schema 5. Schema 8 adds optional immutable request plans and
 separate `generation_bundle_receipts`. Requests without a plan remain strict
 protocol 1; modern bridge requests and receipts use protocol 2. Attempts use the
 full request/attempt identity, a cancellation token, a monotonically increasing
-ordinal within the request, and a transition sequence. A retry allocates a new
-attempt while retaining the request's exact constraints, provider, seed, and
-context. Regeneration with different inputs allocates a new request instead.
+ordinal within the request, and a transition sequence. A retry or variant
+allocates a new attempt while retaining the request's exact constraints, pack,
+runtime and context; for bridge requests its seed is the request's seed plus
+the ordinal minus one, below 2^32 (`ProviderSelection::for_attempt`), and its
+bundle receipt must carry that exact provider. Regeneration with different
+inputs allocates a new request instead.
 Only a current request can start an attempt, and only one attempt per request
 can be nonterminal. These are storage rules; the global one-generation-at-a-time
 scheduler is still unimplemented.
@@ -52,8 +55,9 @@ attempt becomes ready, its receipt and selection commit together. Earlier ready
 variants remain available for explicit selection. Stale or detached requests
 cannot yield a selected candidate for use, and late messages from another
 attempt cannot select it. Eviction marks availability separately, clears a
-matching selection, and retains the attempt's terminal record. This metadata
-operation does not delete a file or implement cache retention policy.
+matching selection, and retains the attempt's terminal record; the native app
+and its live endpoint use it as the durable Discard of a variant. This
+metadata operation does not delete a file or implement cache retention policy.
 
 ## Host validation boundary
 

@@ -15,12 +15,14 @@ impl DeadpanApp {
             return;
         }
         let target = self.capture_macro_target();
-        if self.macros.recording() {
+        // Placing a caption is one semantic instruction over the selected
+        // beat or the Edit range inside it, so a macro records it and `.`
+        // repeats it. Clearing stays a direct edit outside recordings.
+        if self.macros.recording() || matches!(input, CaptionInput::Place { .. }) {
             let instruction = match input {
-                CaptionInput::Clear => Err("Recording places captions; clear them outside a macro.".to_owned()),
-                CaptionInput::Place { .. } if self.selected_edit_range().is_some() => Err(
-                    "Recording captions the whole selected beat; clear the Edit range first, or use delay=.".to_owned(),
-                ),
+                CaptionInput::Clear => {
+                    Err("Recording places captions; clear them outside a macro.".to_owned())
+                }
                 CaptionInput::Place {
                     text,
                     placement,

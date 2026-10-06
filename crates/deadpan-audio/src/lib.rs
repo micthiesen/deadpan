@@ -24,6 +24,7 @@ mod session;
 mod signal_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stages;
+mod sting;
 mod true_peak;
 mod waveform;
 
@@ -64,6 +65,10 @@ pub use stages::{
     PointDomainAudioBlock, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock,
     SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError, StageLimits,
     TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+};
+pub use sting::{
+    STING_FILE_NAME, STING_FRAMES, STING_LABEL, STING_SAMPLE_RATE, STING_VERSION, triumphant_sting,
+    triumphant_sting_wav,
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,

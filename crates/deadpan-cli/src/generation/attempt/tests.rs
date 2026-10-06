@@ -278,3 +278,132 @@ fn reaping_finishes_cancel_and_keeps_the_first_failure() {
     reaped(&mut job, true);
     assert!(matches!(concluded(&job), RunResult::Failed(_)));
 }
+
+/// The synthetic worker's two external tools, when this machine has them.
+fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
+    let ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/opt/homebrew/bin/ffmpeg"));
+    let media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/deadpan-media-worker")
+        });
+    (ffmpeg.is_file() && media_worker.is_file()).then_some(synthetic::SyntheticWorker {
+        ffmpeg,
+        media_worker,
+    })
+}
+
+/// Real PNG conditioning pictures at the native raster.
+fn picture_inputs() -> BridgeInputs {
+    let png = |rgb: [u8; 3]| {
+        let image = image::RgbImage::from_pixel(768, 320, image::Rgb(rgb));
+        let mut bytes = Vec::new();
+        image
+            .write_to(
+                &mut std::io::Cursor::new(&mut bytes),
+                image::ImageFormat::Png,
+            )
+            .unwrap();
+        bytes
+    };
+    let template = inputs();
+    conditioning::assemble(
+        template.plan,
+        template.constraints,
+        png([200, 40, 40]),
+        png([40, 40, 200]),
+    )
+    .unwrap()
+}
+
+fn run_synthetic(
+    store: &mut ProjectStore,
+    allocated: &Allocated,
+    worker: &synthetic::SyntheticWorker,
+) -> Finished {
+    let run = synthetic::run(
+        allocated,
+        worker,
+        |_| {},
+        |record| super::record(store, allocated, &record).map_err(|error| error.to_string()),
+        &AtomicBool::new(false),
+    );
+    finish(store, allocated, run).unwrap()
+}
+
+/// Every attempt of one request is a seeded variant: each reaches Ready with
+/// its own seed and pictures, the newest is selected, earlier ones stay
+/// available, and a new request for the Hold makes them all stale.
+#[test]
+fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let expected_revision = store.head_revision().unwrap();
+    let first = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision,
+            seed: 7,
+            inputs: picture_inputs(),
+        },
+    )
+    .unwrap();
+    assert_eq!((first.ordinal(), first.provider().seed), (1, 7));
+    let finished = run_synthetic(&mut store, &first, &worker);
+    assert_eq!(finished.state, JobState::Ready, "{:?}", finished.failure);
+    let first_receipt = finished.receipt.unwrap();
+
+    let second =
+        allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
+    assert_eq!(second.request.request_id, first.request.request_id);
+    assert_eq!((second.ordinal(), second.provider().seed), (2, 8));
+    let finished = run_synthetic(&mut store, &second, &worker);
+    assert_eq!(finished.state, JobState::Ready, "{:?}", finished.failure);
+    let second_receipt = finished.receipt.unwrap();
+    assert_eq!(second_receipt.provider().seed, 8);
+    assert_ne!(
+        first_receipt.sampled_object(),
+        second_receipt.sampled_object(),
+        "each seed yields its own pictures"
+    );
+    let selected = store
+        .selected_generation_bundle(&first.request.request_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(selected.identity, second.identity);
+    store
+        .select_generation_bundle_variant(&first.identity)
+        .unwrap();
+
+    // Inputs from another context cannot extend this request.
+    let mut changed = picture_inputs();
+    changed.manifest_sha256 = deadpan_jobs::Sha256::new("f".repeat(64)).unwrap();
+    assert!(allocate_variant(&mut store, first.request.clone(), changed).is_err());
+
+    let expected_revision = store.head_revision().unwrap();
+    let replacement = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision,
+            seed: 30,
+            inputs: picture_inputs(),
+        },
+    )
+    .unwrap();
+    assert_eq!(state(&store, &replacement), JobState::Queued);
+    assert!(
+        store
+            .selected_generation_bundle(&first.request.request_id)
+            .unwrap()
+            .is_none()
+    );
+    assert!(allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).is_err());
+}

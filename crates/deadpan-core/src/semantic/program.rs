@@ -208,6 +208,19 @@ pub enum SemanticInstruction {
     Gag {
         recipe: super::GagRecipe,
     },
+    /// Change the exposed parameters of the selected inserted gag group
+    /// (`:gag-set`, specification §8.4): each changed parameter edits the
+    /// ordinary part it made, and the group's pinned label is rewritten to the
+    /// new recipe, as one transaction. The group must still have the shape the
+    /// recipe expanded to; otherwise its parts are edited directly.
+    SetGag {
+        recipe: super::GagRecipe,
+        /// The parameters to take from `recipe`; empty takes all of them.
+        /// `.` and macros then change only these on another gag of the same
+        /// recipe.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        parameters: Vec<super::GagParameter>,
+    },
     /// Insert a silent freeze pause at the cursor (`,h`, `:hold`). The host
     /// resolves the frozen picture from the staged document. `black` inserts
     /// the project background instead (`:hold … video=black`), with no
@@ -339,6 +352,43 @@ pub enum SemanticInstruction {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         reveal: Option<NonZeroU32>,
     },
+    /// `:audio-lag +80ms`: the selected direct child's Source sound plays
+    /// this many 48 kHz samples later (negative: earlier) than its picture,
+    /// as its explicit link offset.
+    SetAudioLag {
+        offset: crate::AudioSample,
+    },
+    /// `:edge hard|auto [side]`: the selected direct child's sound edge
+    /// policy, without changing picture or timing. `plays` sets every play's
+    /// start and end inside a selected Repeat (its loop seams) and `gaps` its
+    /// gap edges.
+    SetAudioEdges {
+        side: EdgeSide,
+        policy: crate::AudioEdgePolicy,
+    },
+    /// Change the selected direct child's speed (`:speed`, `:retime`). The
+    /// speed divides the beat's exact input, rounded once to whole frames,
+    /// ties to even. An ordinary Retime is updated in place unless `wrap`;
+    /// any other beat is wrapped in a new Retime, which becomes selected.
+    Retime {
+        speed: crate::ExactRatio,
+        #[serde(default = "preserve_pitch", skip_serializing_if = "is_preserve_pitch")]
+        pitch: crate::PitchPolicy,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        wrap: bool,
+    },
+    /// A fixed pitch shift of the selected direct child at its current speed
+    /// (`:pitch +3st`). An ordinary Retime keeps its exact speed and gets the
+    /// shift; any other beat is wrapped in a unity-speed Retime with it. Zero
+    /// restores plain pitch preservation on an existing Retime.
+    Pitch {
+        semitones: i8,
+    },
+    /// Change the selected direct-child pause's duration (`:hold-duration`),
+    /// keeping its picture, sound policy and framing.
+    SetHoldDuration {
+        length: PauseLength,
+    },
     CutFrames {
         operation: FrameCut,
         register: RegisterName,
@@ -413,6 +463,19 @@ impl SemanticInstruction {
     }
 }
 
+/// Which sound edges `:edge` sets on the selected beat.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EdgeSide {
+    Start,
+    End,
+    Both,
+    /// Each play's start and end inside a selected Repeat: the loop seams.
+    Plays,
+    /// A selected Repeat's gap starts and ends.
+    Gaps,
+}
+
 /// Which role leads across a split edit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -440,11 +503,19 @@ pub enum AudioChange {
     Trim { gain: crate::GainDb },
     /// Change the clip-gain trim by a signed amount (`+`, `-`, `:gain +=3dB`).
     Step { millidecibels: i32 },
+    /// `+`/`-` over a Visual range inside one beat: change that range's
+    /// constant step envelope by a signed amount. It needs a Visual time
+    /// range, and a whole-beat step refuses one, so `.` never turns one into
+    /// the other.
+    RangeStep { millidecibels: i32 },
     /// Set the saturation drive, or remove the stage (`:saturate`).
     Saturation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         drive: Option<crate::GainDb>,
     },
+    /// Mute or unmute the whole beat (`,m` without a range, `:gain-mute`),
+    /// keeping its trim, envelopes and mute ranges.
+    Mute { muted: bool },
 }
 
 impl AudioChange {
@@ -455,12 +526,22 @@ impl AudioChange {
     ) -> Result<crate::AudioTreatments, crate::GainError> {
         let clip = || current.clip_gain().cloned().unwrap_or_default();
         match self {
-            Self::Trim { gain } => current.with_clip_gain(clip().with_trim(gain)),
+            Self::Trim { gain } => current.with_clip_gain_or_none(clip().with_trim(gain)),
             Self::Step { millidecibels } => {
-                current.with_clip_gain(clip().adjust_trim(millidecibels)?)
+                current.with_clip_gain_or_none(clip().adjust_trim(millidecibels)?)
             }
+            Self::RangeStep { .. } => Err(crate::GainError::TimeRange),
             Self::Saturation { drive } => {
                 current.with_saturation(drive.map(crate::Saturation::new).transpose()?)
+            }
+            Self::Mute { muted } => {
+                let clip = clip();
+                current.with_clip_gain_or_none(crate::ClipGain::new(
+                    clip.trim(),
+                    muted,
+                    clip.envelopes().to_vec(),
+                    clip.mute_ranges().to_vec(),
+                )?)
             }
         }
     }
@@ -477,6 +558,14 @@ fn default_bleep_frequency() -> u32 {
 
 fn default_bleep_level() -> crate::GainDb {
     crate::GainDb::new(DEFAULT_BLEEP_LEVEL_MILLIDECIBELS).expect("constant level")
+}
+
+fn preserve_pitch() -> crate::PitchPolicy {
+    crate::PitchPolicy::Preserve
+}
+
+fn is_preserve_pitch(pitch: &crate::PitchPolicy) -> bool {
+    *pitch == crate::PitchPolicy::Preserve
 }
 
 fn is_hold_fit(fit: &crate::CutawayFit) -> bool {
@@ -558,6 +647,20 @@ impl SemanticProgram {
                         ),
                     ));
                 }
+            }
+            if let SemanticInstruction::Retime { speed, pitch, .. } = instruction {
+                if !speed.compare_integer(0).is_gt() {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "a retime speed must be positive",
+                    ));
+                }
+                if let crate::PitchPolicy::Shift { semitones } = pitch {
+                    crate::PitchPolicy::shifted(*semitones).map_err(EditError::from)?;
+                }
+            }
+            if let SemanticInstruction::Pitch { semitones } = instruction {
+                crate::PitchPolicy::shifted(*semitones).map_err(EditError::from)?;
             }
             if let SemanticInstruction::Call { register, .. } = instruction
                 && *register == RegisterName::unnamed()

@@ -666,7 +666,7 @@ impl Rule {
             Action::Edit(BeatEdit::WrapRepeat(_)) => I::Repeat,
             Action::Edit(BeatEdit::InsertHold(_)) => I::Hold,
             Action::EscalatingRepeat => I::EscalatingRepeat,
-            Action::Ai(AiAction::Generate) => I::GenerateAi,
+            Action::Ai(AiAction::Generate { variants: 1 }) => I::GenerateAi,
             Action::Insert => I::Insert,
             Action::Sound(SoundAction::Place) => I::PlaceSound,
             Action::GainStep(step) if step > 0 => I::GainUp,
@@ -2031,7 +2031,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         ),
         (
             Key::A,
-            Action::Ai(AiAction::Generate),
+            Action::Ai(AiAction::Generate { variants: 1 }),
             C::Refuse("Generate AI pictures once, without a count."),
             "AI pictures",
         ),

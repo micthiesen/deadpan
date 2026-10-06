@@ -118,6 +118,19 @@ impl Service {
                 self.check_host_project(&project_id)?;
                 self.host_release_preparation(&target)
             }
+            Operation::GenerationStatus { project_id, job } => {
+                self.check_host_project(&project_id)?;
+                self.host_generation_status(job)
+            }
+            Operation::ReleaseGenerationStatus { project_id, job } => {
+                self.check_host_project(&project_id)?;
+                self.host_release_generation(job)
+            }
+            Operation::CancelGeneration { project_id, job } => {
+                // Cancellation remains available while a command is queued.
+                self.check_host_project(&project_id)?;
+                self.host_cancel_generation(job)
+            }
             Operation::ReleaseRenderStatus { project_id, target } => {
                 self.check_host_project(&project_id)?;
                 let HostReply::Render { finished, .. } = self.host_render_status(&target)? else {
@@ -164,6 +177,10 @@ impl Service {
                             target,
                             command,
                         } => self.host_prepare(&project_id, target, *command),
+                        Operation::Generate {
+                            project_id,
+                            request,
+                        } => self.host_generate(&project_id, request),
                         _ => unreachable!("non-admitting operations handled above"),
                     }
                 };

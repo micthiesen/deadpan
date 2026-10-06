@@ -71,9 +71,11 @@ spaces before any trailing options. A Split fragment places the caption on its
 Source in the Source's clock; groups, Repeats and speed changes are refused
 with guidance. `:caption clear` removes the captions overlapping the range or
 beat. The inspector lists a beat's captions, including a fragment's Source
-captions over its own frames. Recording a macro records a whole-beat caption as
-`SetCaption { text, placement, delay, reveal }`, which resolves the selected
-beat when replayed; a ranged caption refuses while recording.
+captions over its own frames. Placing a caption commits one semantic
+`SetCaption { text, placement, delay, reveal }` over the selected beat, or over
+the Edit range inside one beat, which resolves its target when replayed: a macro
+records it and `.` repeats it at a new selection. `:caption clear` stays a
+direct edit.
 
 ## Tests and evidence
 
@@ -90,7 +92,10 @@ beat when replayed; a ranged caption refuses while recording.
   fragment, the inspector row, no caption before the delay, white text with a
   dark outline read back from the actual viewer target after it (compared with
   the same frame after `:caption clear`), Undo twice, and a caption recorded in
-  macro `c` and replayed on another beat.
+  macro `c` and replayed on another beat. Replay `creative-dot`: a caption over
+  an Edit range repeated with `.` over a range of another beat, and a ranged
+  caption recorded with a speed change and replayed with `@a`. Core:
+  `a_caption_over_a_visual_range_lands_on_that_range_of_its_beat`.
 - Export (release): `delayed-caption` captions an Original beat after a delay
   and a black pause; the movie matches its preview, and verifying it against a
   later revision without the first caption flags exactly the captioned frame.

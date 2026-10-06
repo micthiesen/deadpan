@@ -507,6 +507,82 @@ pub fn repeat_with_gap(dir: &Path) -> Result<Fixture> {
     project.finish(REPEAT_ROWS.to_vec(), expectations, Vec::new())
 }
 
+/// A micro-loop with explicit seams: Edit [0, 6) as three total plays whose
+/// fragment seams `:edge auto plays` marks for the shared short fade, then a
+/// 16-frame freeze pause at Edit 24 over which `:cutaway fit=bounce` plays
+/// Original 90..96 forward and back. Both edge and pause run through the
+/// headless semantic path. 18 + 24 + 16 = 58 frames.
+pub fn micro_loop(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "micro-loop")?;
+    project.shorten()?;
+    project.split_root(6)?;
+    project.apply(|_, document, _| {
+        Ok(Command::WrapRepeat {
+            node: root_child_at(document, 0)?.0,
+            id: node("loop")?,
+            plays: 3,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        })
+    })?;
+    // The repeated fragment's seams add no fade until marked; `:edge auto
+    // plays` marks them for the shared short fade.
+    let saved = project.run_semantic(
+        json!([{"type":"set_audio_edges","side":"plays","policy":"automatic"}]),
+        0,
+        Some(&node("loop")?),
+    )?;
+    let NodeKind::Repeat { child, .. } = &saved.nodes()[&node("loop")?].kind else {
+        return Err("the loop is a Repeat".into());
+    };
+    let marks = saved.nodes()[child].audio_editorial_edges;
+    if !(marks.start && marks.end) {
+        return Err(format!("play seams are not marked: {marks:?}").into());
+    }
+    let saved = project.run_semantic(
+        json!([{"type":"insert_pause","length":{"unit":"frames","frames":16}}]),
+        24,
+        None,
+    )?;
+    let (pause, start) = root_child_at(&saved, 24)?;
+    if start != 24 || !matches!(saved.nodes()[&pause].kind, NodeKind::Hold { .. }) {
+        return Err("the pause is the root child at Edit 24".into());
+    }
+    let asset = project.asset.clone();
+    project.apply(|_, document, _| {
+        Ok(Command::SetCutaways {
+            node: pause.clone(),
+            cutaways: vec![Cutaway {
+                range: FrameRange::new(ProjectFrame(0), ProjectFrame(16))?,
+                asset: asset.clone(),
+                selection: ordinal_span(document, &asset, 90, 96)?,
+                fit: CutawayFit::Bounce,
+                removed: false,
+            }],
+        })
+    })?;
+    let mut expectations = Vec::new();
+    for play in 0..3u64 {
+        expectations.extend([(play * 6, original(12)), (play * 6 + 5, original(17))]);
+    }
+    expectations.extend([(18, base(6)), (23, base(11))]);
+    // Bounce: forward 90..95, back 95..90, then forward again.
+    for (frame, ordinal) in [
+        (0, 90),
+        (5, 95),
+        (6, 95),
+        (7, 94),
+        (11, 90),
+        (12, 90),
+        (13, 91),
+        (15, 93),
+    ] {
+        expectations.push((24 + frame, original(ordinal)));
+    }
+    expectations.extend([(40, base(12)), (57, base(29))]);
+    project.finish(vec!["Micro-loop", "Cutaways"], expectations, Vec::new())
+}
+
 /// The native `,h` freeze: a 15-frame silent Hold at Edit 15 (Original 27)
 /// freezing the preceding picture (Original 26), with its captured view.
 pub fn freeze_hold(dir: &Path) -> Result<Fixture> {
@@ -936,6 +1012,40 @@ pub fn sound_event(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// `:sting`: Deadpan's own synthesized triumphant sting
+/// (`deadpan_audio::triumphant_sting_wav`) registered like any user sound and
+/// placed at Edit frame 10 of the whole, unshortened Original. The chord
+/// window's peak is predicted from the synthesized samples themselves; before
+/// and after the sting the bus is silent. Pictures are unchanged.
+pub fn triumphant_sting(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "triumphant-sting")?;
+    let wav = project.directory.join(deadpan_audio::STING_FILE_NAME);
+    fs::write(&wav, deadpan_audio::triumphant_sting_wav())?;
+    place_catalog_sound(&mut project, &wav, deadpan_audio::STING_LABEL)?;
+    let expectations = [0u64, 10, 40, 119]
+        .into_iter()
+        .map(|frame| (frame, original(frame)))
+        .collect();
+    let mut fixture = project.finish(vec!["Wrongly triumphant sting"], expectations, Vec::new())?;
+    // Edit frame 10 is sample 16,016; the chord sounds 0.9 s later.
+    let onset = 16_016_i64;
+    let chord = onset + 43_200;
+    let samples = deadpan_audio::triumphant_sting();
+    let window = usize::try_from(chord - onset)?..usize::try_from(chord - onset + 2_048)?;
+    let peak = samples[window]
+        .iter()
+        .fold(0.0_f64, |peak, frame| peak.max(frame[0].abs()));
+    fixture.signals = vec![Signal {
+        start: chord,
+        count: 2_048,
+        crossings_per_second: None,
+        crest: None,
+        peak: Some((peak * 0.97, peak * 1.03)),
+    }];
+    fixture.audio = vec![(8_000, false), (onset + 86_400 + 2_000, false)];
+    Ok(fixture)
+}
+
 /// `:sound-cut` with the Edit cursor at frame 12: the placed sound of
 /// [`sound_event`] (about 5 frames from frame 10) ends exactly at that frame
 /// boundary, sample 19,219.2, with a hard edge. Its local selection becomes
@@ -984,6 +1094,12 @@ pub fn bed_drop(dir: &Path) -> Result<Fixture> {
 fn place_click_sound(project: &mut Project) -> Result {
     let wav = project.directory.join("sound.wav");
     fs::copy(sound_media(), &wav)?;
+    place_catalog_sound(project, &wav, "Click sound")
+}
+
+/// Register the stereo WAV at `wav` as the catalog sound and place it whole
+/// as a root sound starting at Edit frame [`SOUND_FRAME`].
+fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result {
     let retained = success(&[
         "project",
         "retain-original",
@@ -1003,7 +1119,7 @@ fn place_click_sound(project: &mut Project) -> Result {
                 "new_revision": revision,
                 "original": content,
                 "new_asset_id": "sound",
-                "label": "Click sound",
+                "label": label,
                 "insertion": null
             },
             "streams": {"type": "audio_only", "stream": 0, "interpretation": "stereo_left_right"}
@@ -1096,6 +1212,54 @@ pub fn one_more_time(dir: &Path) -> Result<Fixture> {
         (96_000, true),
     ];
     Ok(fixture)
+}
+
+/// `:gag one-more-time plays=3 gap=12f shorten=6f` on Edit [12, 24), then
+/// `:gag-set plays=2 gap=8f shorten=2f` on the inserted group through the
+/// headless semantic path (`SetGag`): the Repeat drops to two plays with one
+/// 8-frame freeze gap and the label is repinned, so the export shows exactly
+/// what inserting the new parameters would.
+pub fn gag_set(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "gag-set")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let beat = root_child_at(&document, 12)?.0;
+    let saved = project.run_semantic(
+        json!([{"type":"gag","recipe":{"recipe":"one_more_time","version":1,"plays":3,
+            "gap":{"unit":"frames","frames":12},"shorten":{"unit":"frames","frames":6}}}]),
+        12,
+        Some(&beat),
+    )?;
+    let (group, _) = root_child_at(&saved, 12)?;
+    let saved = project.run_semantic(
+        json!([{"type":"set_gag","recipe":{"recipe":"one_more_time","version":1,"plays":2,
+            "gap":{"unit":"frames","frames":8},"shorten":{"unit":"frames","frames":2}}}]),
+        12,
+        Some(&group),
+    )?;
+    let label = &saved.nodes()[&group].label;
+    if label != "One More Time · v1 · 2 plays, gap 8f shortening by 2f" {
+        return Err(format!("unexpected gag label {label:?}").into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (11, base(11)),
+        (12, original(24)),
+        (18, original(30)),
+        (23, original(35)),
+        (24, original(35)),
+        (31, original(35)),
+        (32, original(24)),
+        (43, original(35)),
+        (44, original(36)),
+        (49, original(41)),
+    ];
+    project.finish(
+        vec!["Exposed parameter editing after insertion", "One More Time"],
+        expectations,
+        Vec::new(),
+    )
 }
 
 /// `:gag one-more-time plays=3 gap=12f shorten=6f vary=25% seed=7` on Edit
@@ -1796,6 +1960,62 @@ pub fn saturation(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// `-` four times over Edit [3, 9) inside the first of two -10 dBFS 1 kHz
+/// tone pauses, through the headless semantic path the native keys share:
+/// one constant -12 dB step envelope over exactly that range of the beat.
+/// The window inside it drops to peak 0.079 (0.316 / 3.98) while the second
+/// tone keeps its 0.316 peak; pictures and timing are unchanged.
+pub fn range_gain(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "range-gain")?;
+    tone_pauses(&mut project)?;
+    let step = json!({"type":"set_audio","change":{"type":"range_step","millidecibels":-3000}});
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":6},
+            step, step, step, step,
+            {"type":"clear_selection"}
+        ]),
+        3,
+        Some(&node("tone-a")?),
+    )?;
+    let clip = saved.nodes()[&node("tone-a")?]
+        .audio_treatments
+        .clip_gain()
+        .cloned()
+        .ok_or("the range step adds clip gain")?;
+    let range = deadpan_core::GainRange::new(ExactRatio::integer(3), ExactRatio::integer(9))?;
+    if clip.trim() != GainDb::UNITY
+        || clip.envelopes().len() != 1
+        || clip.range_step(range) != Some(GainDb::new(-12_000)?)
+    {
+        return Err(format!("unexpected range gain {clip:?}").into());
+    }
+    let mut fixture = project.finish(
+        vec!["`+` / `-` gain", "Selective emphasis"],
+        tone_expectations(),
+        Vec::new(),
+    )?;
+    let ((a, count), (b, _)) = (tone_window(0), tone_window(1));
+    fixture.signals = vec![
+        Signal {
+            start: a,
+            count,
+            crossings_per_second: Some((2_000.0, 0.03)),
+            crest: Some((1.39, 1.44)),
+            peak: Some((0.075, 0.084)),
+        },
+        Signal {
+            start: b,
+            count,
+            crossings_per_second: Some((2_000.0, 0.03)),
+            crest: Some((1.39, 1.44)),
+            peak: Some((0.30, 0.33)),
+        },
+    ];
+    Ok(fixture)
+}
+
 /// `:pitch +12st` on the first of two 1 kHz tone pauses: a unity-speed
 /// Retime shifting it one octave on the pitch-preserving processor. Its zero
 /// crossings double (about 4,000 per second) while the untouched second tone
@@ -2020,7 +2240,11 @@ pub fn role_repeat(dir: &Path) -> Result<Fixture> {
 /// Build every fixture, each in its own subdirectory of `dir`.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     type Builder = fn(&Path) -> Result<Fixture>;
-    let builders: [(&str, Builder); 31] = [
+    let builders: [(&str, Builder); 35] = [
+        ("triumphant-sting", triumphant_sting),
+        ("micro-loop", micro_loop),
+        ("gag-set", gag_set),
+        ("range-gain", range_gain),
         ("saturation", saturation),
         ("role-repeat", role_repeat),
         ("role-delete", role_delete),

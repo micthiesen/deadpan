@@ -60,9 +60,12 @@ text and composition; `a` alone keeps its text-object prefix. The production
 audit after adding it passed 10,890,672 routing cases against the 62 reserved
 Kestrel bindings with no conflict, and the live Kestrel source digest matched
 the fixture (`368c01df…`). The rest of the AI workflow is command-only
-(`:cancel-ai`, `:preview-ai`, `:accept-ai`, `:discard-ai`); Escape leaves an AI
-preview only after register choice, macro, Visual and pending-key owners have
-none left to clear, and never cancels a generation.
+(`:generate N`, `:cancel-ai`, `:next-ai`, `:prev-ai`, `:pick-ai N`,
+`:preview-ai`, `:audition-ai`, `:accept-ai`, `:discard-ai`); the 2026-10-05
+variant and audition commands added no key binding, so no new audit was
+needed. Escape leaves an AI preview only after register choice, macro, Visual
+and pending-key owners have none left to clear, and never cancels a
+generation.
 
 `,m` (`gain.mute`) and `,r` (`cutaway.pick`) join the comma family on
 2026-10-04. Both are unmodified, Your edit only (Normal and Visual), refuse a
