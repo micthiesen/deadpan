@@ -9,6 +9,7 @@ publish.workspace = true
 description = "Bounded persistent descriptor-only FFmpeg source decoder"
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 deadpan-core.workspace = true
 thiserror.workspace = true
 

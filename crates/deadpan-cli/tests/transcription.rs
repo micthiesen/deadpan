@@ -157,7 +157,16 @@ fn transcript_commands_report_absence_usage_and_unavailable_sources() -> Result 
     let package = registered(scratch.path())?;
     let path = package.to_str().unwrap();
     let empty = success(&["transcript", path, "--asset", "speech"])?;
-    assert_eq!(empty, json!({"protocol": 1, "transcripts": []}));
+    assert_eq!(
+        empty,
+        json!({
+            "protocol": 1,
+            "transcripts": [],
+            "correction_rule": "deadpan-corrections-1",
+            "corrections_version": null,
+            "corrections_error": null,
+        })
+    );
     let searched = success(&["transcript", path, "--asset", "speech", "--search", "hello"])?;
     assert_eq!(searched["transcripts"], json!([]));
     for arguments in [

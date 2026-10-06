@@ -46,6 +46,11 @@ pub mod slice_preview;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
 pub use shot_analysis::{MAX_SHOT_ANALYSES, ShotAnalysisKey};
+pub mod analysis_corrections;
+pub use analysis_corrections::{
+    CorrectionChange, CorrectionsKey, MAX_CORRECTION_UNDO, MAX_CORRECTIONS_JSON_BYTES,
+    StoredCorrections, UnreadableCorrection,
+};
 mod speech_activity;
 pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
 mod transcripts;
@@ -634,8 +639,11 @@ impl ProjectStore {
         } else {
             validation::HistoryMode::Receipt
         };
-        self.validate_with(mode)
-            .map(|audit| HistoryValidation::from(&audit))
+        let audit = self.validate_with(mode)?;
+        // Opening tolerates unreadable corrections so the app can report and
+        // discard them; explicit validation does not.
+        analysis_corrections::validate_store(&self.connection)?;
+        Ok(HistoryValidation::from(&audit))
     }
 
     /// How opening this store validated its history.
@@ -656,6 +664,7 @@ impl ProjectStore {
         transcripts::check_stored_sizes(&transaction)?;
         speech_activity::check_stored_sizes(&transaction)?;
         shot_analysis::check_stored_sizes(&transaction)?;
+        analysis_corrections::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -1068,7 +1077,7 @@ fn command_plan(
             "edit changes meaning when decoded for history replay".into(),
         ));
     }
-    if edit.inverse.apply_stored(&next)? != *current {
+    if !edit.inverse.restores(&next, &current)? {
         return Err(StoreError::History(
             "inverse does not restore the preceding revision".into(),
         ));
@@ -1249,6 +1258,9 @@ fn write_command_plan(
             plan.edit_json
         ],
     )?;
+    deadpan_diagnostics::IO
+        .store_revisions
+        .write((plan.request_json.len() + plan.edit_json.len()) as u64);
     let history_id = connection.last_insert_rowid();
     connection.execute(
         "UPDATE state SET head_revision=?1,cursor=?2 WHERE singleton=1",

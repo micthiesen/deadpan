@@ -226,6 +226,10 @@ pub struct FrozenAudioLayoutData {
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
     #[serde(skip)]
     index: FrozenIndex,
+    /// The exact compact JSON length, remembered once counted. The contents
+    /// are immutable, so the length cannot change.
+    #[serde(skip)]
+    wire_bytes: std::sync::OnceLock<usize>,
 }
 
 impl std::ops::Deref for FrozenAudioLayout {
@@ -539,6 +543,7 @@ impl FrozenAudioLayout {
                 gap_overrides: wire.gap_overrides,
                 audio_lineage: wire.audio_lineage,
                 index: FrozenIndex::default(),
+                wire_bytes: std::sync::OnceLock::new(),
             }),
         };
         let index = layout.build_index()?;
@@ -548,10 +553,54 @@ impl FrozenAudioLayout {
             inner: Arc::new(data),
         };
         // Capture and JSON admission share the serialized size ceiling.
+        // Counting the bytes is the same check without retaining the text.
         if check_size {
-            layout.to_json()?;
+            if crate::command_work::local() {
+                layout.wire_bytes()?;
+            } else {
+                layout.to_json()?;
+            }
         }
         Ok(layout)
+    }
+
+    /// The exact compact JSON length of this layout, which [`Self::to_json`]
+    /// would produce, counted once and remembered.
+    pub(crate) fn wire_bytes(&self) -> Result<usize, DocumentError> {
+        if let Some(bytes) = self.inner.wire_bytes.get() {
+            return Ok(*bytes);
+        }
+        struct Count {
+            bytes: usize,
+            exceeded: bool,
+        }
+        impl Write for Count {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                if bytes.len() > MAX_DOCUMENT_JSON_BYTES - self.bytes {
+                    self.exceeded = true;
+                    return Err(std::io::Error::other(
+                        "frozen audio JSON exceeds byte limit",
+                    ));
+                }
+                self.bytes += bytes.len();
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let mut count = Count {
+            bytes: 0,
+            exceeded: false,
+        };
+        serde_json::to_writer(&mut count, self).map_err(|error| {
+            if count.exceeded {
+                limit("frozen audio JSON exceeds byte limit")
+            } else {
+                DocumentError::json(error)
+            }
+        })?;
+        Ok(*self.inner.wire_bytes.get_or_init(|| count.bytes))
     }
 
     /// Retain only the structure that projects the `required` aliases: each

@@ -2,17 +2,22 @@
 //!
 //! The scan decodes every picture of the Original from its verified retained
 //! snapshot, checks each against its qualified index ordinal, reduces it to a
-//! [`PictureSignature`] and keeps only the previous signature and the
-//! three-byte change. Nothing here edits a project: shot boundaries are
-//! proposals, stored as an annotation outside history.
+//! [`PictureSignature`] on a second thread and keeps only the last 51
+//! signatures and the per-picture measures. A long scan offers checkpoints
+//! that a later scan resumes from. Nothing here edits a project: shot
+//! boundaries are proposals, stored as an annotation outside history.
 
 use std::sync::atomic::AtomicBool;
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use deadpan_analysis::{PictureSignature, SHOT_RULE, SIGNATURE_VERSION, ShotAnalysis};
-use deadpan_media::picture_scan::{PictureScanError, scan_pictures};
+use deadpan_analysis::{
+    PictureSignature, SHOT_RULE, SIGNATURE_VERSION, ShotAnalysis, ShotMeasurer, ShotProgress,
+    ShotProgressTail,
+};
+use deadpan_media::picture_scan::{PictureScanError, scan_pictures_from};
 use deadpan_media::source_input::VerifiedSourceInput;
-use deadpan_source::DecodeLimits;
+use deadpan_source::{DecodeLimits, DecodedRgbaFrame};
 use deadpan_store::ShotAnalysisKey;
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::source_registration::SourceQualificationReceipt;
@@ -63,8 +68,50 @@ pub struct ShotScan {
     pub key: ShotAnalysisKey,
     pub analysis: ShotAnalysis,
     pub elapsed: Duration,
-    /// Time spent reducing converted pictures to signatures, within `elapsed`.
+    /// Time spent reducing converted pictures to signatures, on the
+    /// signature thread; it overlaps decoding.
     pub signature_elapsed: Duration,
+    /// The first unmeasured picture of the progress this scan resumed.
+    pub resumed_from: Option<usize>,
+    /// Pictures decoded and measured by this scan, including the pictures
+    /// decoded again before the resumed one.
+    pub decoded: usize,
+}
+
+/// Codec threads of the scan's decoder. FFmpeg frame and slice threading
+/// return the same pictures bit for bit (checked against single-threaded
+/// scans in the media tests); this bounds the background scan's share of
+/// the machine. See docs/SHOT_DETECTION.md for the measurements.
+pub const SHOT_DECODE_THREADS: u32 = 4;
+/// How often a scan offers its progress for saving.
+pub const SHOT_CHECKPOINT_INTERVAL: Duration = Duration::from_secs(10);
+/// How often `detect-shots` saves its progress. Each checkpoint opens the
+/// package's writer briefly (so the project stays openable elsewhere), and a
+/// writable open revalidates the package, so the command saves less often
+/// than the app, whose project service already holds the writer.
+pub const CLI_CHECKPOINT_INTERVAL: Duration = Duration::from_secs(60);
+/// A checkpoint is skipped when less time than this remains before the
+/// scan's deadline, so saving never delays the scan past it.
+pub const CHECKPOINT_DEADLINE_MARGIN: Duration = Duration::from_secs(5);
+
+#[derive(Debug, Clone)]
+pub struct ShotScanOptions {
+    /// Saved progress of the same key to continue. Progress of a different
+    /// picture count is ignored and the scan starts over.
+    pub resume: Option<ShotProgress>,
+    /// Minimum time between `checkpoint` calls; zero offers every picture.
+    pub checkpoint_interval: Duration,
+    pub decode_threads: u32,
+}
+
+impl Default for ShotScanOptions {
+    fn default() -> Self {
+        Self {
+            resume: None,
+            checkpoint_interval: SHOT_CHECKPOINT_INTERVAL,
+            decode_threads: SHOT_DECODE_THREADS,
+        }
+    }
 }
 
 /// The qualification receipt whose pictures to scan: the single-Original
@@ -148,57 +195,142 @@ pub fn prepare_shot_input(
     })
 }
 
-/// Decode and measure every picture. `progress(done, total)` is called after
-/// each picture; keep it cheap.
+/// Saved scan progress for `input`, if a readable checkpoint of the same
+/// pictures exists. Progress is rebuildable, so an unreadable row is
+/// skipped and the scan starts over.
+pub fn stored_shot_progress(
+    store: &deadpan_store::ProjectStore,
+    input: &ShotInput,
+) -> Option<ShotProgress> {
+    store
+        .shot_scan_progress(&input.key, input.pictures())
+        .ok()
+        .flatten()
+}
+
+/// Decode and measure every picture, continuing `options.resume` when
+/// given. Signatures are computed on a second thread while the next picture
+/// decodes. `progress(measured, total)` follows each measured picture and
+/// `checkpoint` receives, at most every `options.checkpoint_interval`, the
+/// measures changed since the previous checkpoint (or since the resumed
+/// progress) to append to the saved progress. It returns whether it saved
+/// (or handed off) the tail; after a refused tail the next one carries every
+/// measure, replacing whatever progress was saved. No checkpoint is offered once the scan is cancelled or
+/// within [`CHECKPOINT_DEADLINE_MARGIN`] of its deadline. Keep both cheap.
 pub fn scan_shots(
     input: &ShotInput,
     cancelled: &AtomicBool,
     deadline: Instant,
+    options: ShotScanOptions,
     mut progress: impl FnMut(usize, usize),
+    mut checkpoint: impl FnMut(ShotProgressTail) -> bool,
 ) -> Result<ShotScan, ShotScanError> {
     let started = Instant::now();
     let video = input.receipt.snapshot().video().ok_or_else(|| {
         ShotScanError::Unavailable("the Original has no qualified picture".into())
     })?;
     let total = video.index().index().frames().len();
-    let mut changes = Vec::new();
-    changes
-        .try_reserve_exact(total)
-        .map_err(|_| ShotScanError::Failed("shot change allocation failed".into()))?;
-    let mut previous: Option<PictureSignature> = None;
-    let mut before: Option<PictureSignature> = None;
+    let failed = |error: deadpan_analysis::ShotError| ShotScanError::Failed(error.to_string());
+    let mut measurer = match options.resume.filter(|resume| resume.pictures() == total) {
+        Some(resume) => ShotMeasurer::resume(resume),
+        None => ShotMeasurer::new(total),
+    }
+    .map_err(failed)?;
+    let resumed_from = (measurer.measured() > 0).then_some(measurer.measured());
+    let start = measurer.next_ordinal();
+    let limits = DecodeLimits {
+        threads: options.decode_threads,
+        ..DecodeLimits::default()
+    };
     let mut signature_elapsed = Duration::ZERO;
-    scan_pictures(
-        &input.input,
-        video,
-        DecodeLimits::default(),
-        deadline,
-        cancelled,
-        |ordinal, picture| {
-            let reduced = Instant::now();
-            let signature = PictureSignature::from_rgba(
-                &picture.rgba,
-                picture.width,
-                picture.height,
-                picture.row_stride_bytes,
-            )?;
-            changes.push(match &previous {
-                Some(previous) => previous.change(&signature, before.as_ref()),
-                None => [0, 0, 0],
-            });
-            before = previous.replace(signature);
-            signature_elapsed += reduced.elapsed();
-            progress(ordinal + 1, total);
-            Ok::<_, deadpan_analysis::ShotError>(())
-        },
-    )?;
-    let analysis = ShotAnalysis::new(changes).map_err(|e| ShotScanError::Failed(e.to_string()))?;
+    let mut last_checkpoint = Instant::now();
+    let mut decoded = 0;
+    std::thread::scope(|scope| -> Result<(), ShotScanError> {
+        let (pictures, received) = mpsc::sync_channel::<(usize, DecodedRgbaFrame)>(2);
+        let (reduced, signatures) = mpsc::channel();
+        std::thread::Builder::new()
+            .name("deadpan-shot-signatures".into())
+            .spawn_scoped(scope, move || {
+                for (ordinal, picture) in received {
+                    let began = Instant::now();
+                    let signature = PictureSignature::from_rgba(
+                        &picture.rgba,
+                        picture.width,
+                        picture.height,
+                        picture.row_stride_bytes,
+                    );
+                    let stop = signature.is_err();
+                    if reduced
+                        .send(signature.map(|signature| (ordinal, signature, began.elapsed())))
+                        .is_err()
+                        || stop
+                    {
+                        break;
+                    }
+                }
+            })
+            .map_err(|error| ShotScanError::Failed(error.to_string()))?;
+        let mut absorb = |result: Result<(usize, PictureSignature, Duration), _>| {
+            let (ordinal, signature, took) = result.map_err(failed)?;
+            measurer.push(ordinal, signature).map_err(failed)?;
+            signature_elapsed += took;
+            decoded += 1;
+            let measured = measurer.measured();
+            progress(measured, total);
+            if measured < total
+                && last_checkpoint.elapsed() >= options.checkpoint_interval
+                && checkpoint_allowed(cancelled, deadline)
+            {
+                if !checkpoint(measurer.take_tail()) {
+                    // The saved progress may be older than the tail or gone;
+                    // the next checkpoint replaces it from the first picture.
+                    measurer.unsave_from(0);
+                }
+                last_checkpoint = Instant::now();
+            }
+            Ok::<_, ShotScanError>(())
+        };
+        scan_pictures_from(
+            &input.input,
+            video,
+            limits,
+            deadline,
+            cancelled,
+            start,
+            |ordinal, picture| {
+                pictures
+                    .send((ordinal, picture))
+                    .map_err(|_| "the signature thread stopped".to_string())?;
+                while let Ok(result) = signatures.try_recv() {
+                    absorb(result).map_err(|error| error.to_string())?;
+                }
+                Ok::<_, String>(())
+            },
+        )?;
+        drop(pictures);
+        for result in signatures {
+            absorb(result)?;
+        }
+        Ok(())
+    })?;
+    let analysis = measurer.finish().map_err(failed)?;
     Ok(ShotScan {
         key: input.key.clone(),
         analysis,
         elapsed: started.elapsed(),
         signature_elapsed,
+        resumed_from,
+        decoded,
     })
+}
+
+/// Whether a scan may still save a checkpoint: not cancelled and not
+/// within [`CHECKPOINT_DEADLINE_MARGIN`] of its deadline.
+pub fn checkpoint_allowed(cancelled: &AtomicBool, deadline: Instant) -> bool {
+    !cancelled.load(std::sync::atomic::Ordering::Acquire)
+        && Instant::now()
+            .checked_add(CHECKPOINT_DEADLINE_MARGIN)
+            .is_some_and(|latest| latest < deadline)
 }
 
 /// The stored shot analysis of one Original under the current signature
@@ -242,40 +374,101 @@ fn millis(duration: Duration) -> u64 {
 }
 
 /// `detect-shots PROJECT [--asset ID]`: scan every Original picture and store
-/// the analysis outside history.
+/// the analysis outside history. A scan interrupted earlier continues from
+/// its last saved checkpoint.
 pub fn run_detect_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
-    let asset = parse_asset(
-        arguments,
-        "usage: detect-shots <project.deadpan> [--asset <id>]",
-    )?;
+    const USAGE: &str =
+        "usage: detect-shots <project.deadpan> [--asset <id>] [--decode-threads <1-16>]";
+    // `--decode-threads` overrides the codec thread count, for measurement.
+    let mut arguments = arguments.to_vec();
+    let mut decode_threads = SHOT_DECODE_THREADS;
+    if let Some(position) = arguments
+        .iter()
+        .position(|item| *item == "--decode-threads")
+    {
+        decode_threads = arguments
+            .get(position + 1)
+            .and_then(|value| value.parse().ok())
+            .filter(|value| (1..=16).contains(value))
+            .ok_or_else(|| crate::CliError::Usage(USAGE.into()))?;
+        arguments.drain(position..position + 2);
+    }
+    let arguments = arguments.as_slice();
+    let asset = parse_asset(arguments, USAGE)?;
     let path = std::path::Path::new(arguments[0]);
     // Read-only while scanning; the writer is taken only to save.
     let reader = deadpan_store::ProjectStore::open(path, deadpan_store::AccessMode::ReadOnly)?;
     let cancelled = AtomicBool::new(false);
     let deadline = Instant::now() + Duration::from_secs(6 * 60 * 60);
     let input = prepare_shot_input(&reader, asset.as_ref(), &cancelled, deadline)?;
+    let resume = stored_shot_progress(&reader, &input);
     drop(reader);
-    let scan = scan_shots(&input, &cancelled, deadline, |_, _| {})?;
+    let (mut saved, mut unsaved) = (0_u64, 0_u64);
+    let options = ShotScanOptions {
+        resume,
+        decode_threads,
+        checkpoint_interval: CLI_CHECKPOINT_INTERVAL,
+    };
+    let scan = scan_shots(
+        &input,
+        &cancelled,
+        deadline,
+        options,
+        |_, _| {},
+        |tail| {
+            // Checkpoints are best effort: the writer is taken briefly and
+            // only the changed measures are appended. A project open
+            // elsewhere keeps the previous checkpoint, and the refused
+            // measures join the next one. The writer open can take a while,
+            // so check cancellation and the deadline again before writing.
+            let appended =
+                deadpan_store::ProjectStore::open(path, deadpan_store::AccessMode::ReadWrite)
+                    .ok()
+                    .filter(|_| checkpoint_allowed(&cancelled, deadline))
+                    .is_some_and(|writer| {
+                        writer.append_shot_scan_progress(&input.key, &tail).is_ok()
+                    });
+            if appended {
+                saved += 1;
+            } else {
+                unsaved += 1;
+            }
+            appended
+        },
+    )?;
     let writer = deadpan_store::ProjectStore::open(path, deadpan_store::AccessMode::ReadWrite)?;
     writer.save_shot_analysis(&scan.key, &scan.analysis)?;
     drop(writer);
     let pictures = scan.analysis.pictures();
     let seconds = scan.elapsed.as_secs_f64();
+    let boundaries = scan.analysis.boundaries();
     crate::write_json(&serde_json::json!({
         "protocol": 1,
         "rule": SHOT_RULE,
         "key": scan.key,
         "pictures": pictures,
-        "boundaries": scan.analysis.boundaries(),
-        "shots": scan.analysis.boundaries().len() + usize::from(pictures > 0),
+        "boundaries": boundaries,
+        "cuts": scan.analysis.cuts(),
+        "transitions": scan.analysis.transitions().iter().map(|transition| serde_json::json!({
+            "kind": transition.kind,
+            "first": transition.range.start,
+            "end": transition.range.end,
+            "boundary": transition.boundary,
+        })).collect::<Vec<_>>(),
+        "shots": boundaries.len() + usize::from(pictures > 0),
+        "resumed_from": scan.resumed_from,
+        "decoded_pictures": scan.decoded,
+        "checkpoints_saved": saved,
+        "checkpoints_unsaved": unsaved,
+        "decode_threads": decode_threads,
         "elapsed_ms": millis(scan.elapsed),
         "signature_elapsed_ms": millis(scan.signature_elapsed),
-        "pictures_per_second": if seconds > 0.0 { pictures as f64 / seconds } else { 0.0 },
+        "pictures_per_second": if seconds > 0.0 { scan.decoded as f64 / seconds } else { 0.0 },
     }))
 }
 
 /// `shots PROJECT [--asset ID]`: print the stored analysis's boundaries with
-/// exact picture ordinals and PTS.
+/// exact picture ordinals and PTS, and its gradual transitions.
 pub fn run_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
     let asset = parse_asset(arguments, "usage: shots <project.deadpan> [--asset <id>]")?;
     let store = deadpan_store::ProjectStore::open(
@@ -298,27 +491,52 @@ pub fn run_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
             "rule": SHOT_RULE,
             "analysis": null,
             "boundaries": [],
+            "transitions": [],
         }));
     };
     let base = index.time_base();
+    let time = |picture: usize| -> Result<serde_json::Value, crate::CliError> {
+        let pts = frames[picture].pts;
+        let exact = deadpan_core::ExactRatio::new(
+            i128::from(pts) * i128::from(base.numerator()),
+            i128::from(base.denominator()),
+        )?;
+        Ok(serde_json::json!({
+            "pts": pts,
+            "seconds_exact": exact,
+            "seconds": exact.numerator() as f64 / exact.denominator() as f64,
+        }))
+    };
+    let transitions = analysis.transitions();
     let boundaries = analysis
         .boundaries()
         .into_iter()
         .map(|picture| {
-            let pts = frames[picture].pts;
-            let [cell, histogram, skip] = analysis.changes()[picture];
-            let exact = deadpan_core::ExactRatio::new(
-                i128::from(pts) * i128::from(base.numerator()),
-                i128::from(base.denominator()),
-            )?;
+            let [cell, histogram, skip] = analysis.change(picture).unwrap_or_default();
+            let mut entry = time(picture)?;
+            entry["picture"] = picture.into();
+            entry["kind"] = match transitions
+                .iter()
+                .find(|transition| transition.boundary == picture)
+            {
+                Some(transition) => serde_json::to_value(transition.kind)?,
+                None => "cut".into(),
+            };
+            entry["cell_change"] = cell.into();
+            entry["histogram_change"] = histogram.into();
+            entry["change_from_two_before"] = skip.into();
+            Ok(entry)
+        })
+        .collect::<Result<Vec<_>, crate::CliError>>()?;
+    let transitions = transitions
+        .iter()
+        .map(|transition| {
             Ok(serde_json::json!({
-                "picture": picture,
-                "pts": pts,
-                "seconds_exact": exact,
-                "seconds": exact.numerator() as f64 / exact.denominator() as f64,
-                "cell_change": cell,
-                "histogram_change": histogram,
-                "change_from_two_before": skip,
+                "kind": transition.kind,
+                "first": transition.range.start,
+                "end": transition.range.end,
+                "boundary": transition.boundary,
+                "start": time(transition.range.start)?,
             }))
         })
         .collect::<Result<Vec<_>, crate::CliError>>()?;
@@ -331,5 +549,6 @@ pub fn run_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
             "time_base": [base.numerator(), base.denominator()],
         },
         "boundaries": boundaries,
+        "transitions": transitions,
     }))
 }

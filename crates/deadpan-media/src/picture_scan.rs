@@ -19,6 +19,10 @@ use deadpan_source::{
 use crate::source_input::VerifiedSourceInput;
 use crate::source_qualification::QualifiedVideoSnapshot;
 
+/// Pictures decoded before the target after a seek, at most. Matches the
+/// preview session's seek bound.
+pub const MAX_PREROLL_PICTURES: usize = 10_000;
+
 #[derive(Debug, thiserror::Error)]
 pub enum PictureScanError {
     #[error("picture scan cancelled")]
@@ -45,6 +49,33 @@ pub fn scan_pictures<E: std::fmt::Display>(
     deadline: Instant,
     cancelled: &AtomicBool,
     mut visit: impl FnMut(usize, &DecodedRgbaFrame) -> Result<(), E>,
+) -> Result<usize, PictureScanError> {
+    scan_pictures_from(
+        input,
+        video,
+        limits,
+        deadline,
+        cancelled,
+        0,
+        |ordinal, picture| visit(ordinal, &picture),
+    )
+}
+
+/// Like [`scan_pictures`], starting at index ordinal `start` and handing
+/// each picture over by value. A nonzero `start` seeks: the decoder restarts
+/// at the key picture the qualified index names for `start` (its
+/// `seek_from`), decodes the preroll pictures without converting them,
+/// checks every preroll picture against its own indexed PTS and duration,
+/// and then delivers `start` and every later picture exactly as a scan from
+/// the first picture would. Returns the number of pictures visited.
+pub fn scan_pictures_from<E: std::fmt::Display>(
+    input: &VerifiedSourceInput,
+    video: &QualifiedVideoSnapshot,
+    limits: DecodeLimits,
+    deadline: Instant,
+    cancelled: &AtomicBool,
+    start: usize,
+    mut visit: impl FnMut(usize, DecodedRgbaFrame) -> Result<(), E>,
 ) -> Result<usize, PictureScanError> {
     let control = || -> Result<DecodeControl<'_>, PictureScanError> {
         if cancelled.load(Ordering::Acquire) {
@@ -91,7 +122,73 @@ pub fn scan_pictures<E: std::fmt::Display>(
         ));
     }
     let frames = index.index().frames();
-    let mut ordinal = 0;
+    let mut ordinal = start;
+    if start > 0 {
+        let target = frames.get(start).ok_or_else(|| {
+            PictureScanError::Mismatch(format!(
+                "scan start {start} is beyond the {} indexed pictures",
+                frames.len()
+            ))
+        })?;
+        let anchor = target.seek_from.map_or(Ok(0), |anchor| {
+            usize::try_from(anchor.0)
+                .map_err(|_| PictureScanError::Mismatch("seek anchor beyond the index".into()))
+        })?;
+        let anchor = frames
+            .get(anchor)
+            .filter(|_| anchor <= start)
+            .ok_or_else(|| {
+                PictureScanError::Mismatch(format!("picture {start} has no seek anchor before it"))
+            })?;
+        decoder
+            .seek_to(anchor.pts, target.pts, control()?)
+            .map_err(native)?;
+        let mut preroll = 0_usize;
+        loop {
+            let decoded = decoder
+                .next_metadata(control()?)
+                .map_err(native)?
+                .ok_or_else(|| {
+                    PictureScanError::Mismatch(format!("decoding ended before picture {start}"))
+                })?;
+            if decoded.pts >= target.pts {
+                if decoded.pts != target.pts
+                    || decoded.reported_duration != target.reported_duration
+                {
+                    return Err(PictureScanError::Mismatch(format!(
+                        "seeking to picture {start} decoded PTS {} (duration {:?}), indexed at PTS {} (duration {:?})",
+                        decoded.pts,
+                        decoded.reported_duration,
+                        target.pts,
+                        target.reported_duration
+                    )));
+                }
+                break;
+            }
+            // Every preroll picture must be an indexed picture before the target.
+            let indexed = frames
+                .binary_search_by_key(&decoded.pts, |indexed| indexed.pts)
+                .is_ok_and(|position| {
+                    position < start
+                        && frames[position].reported_duration == decoded.reported_duration
+                });
+            if !indexed {
+                return Err(PictureScanError::Mismatch(format!(
+                    "preroll for picture {start} decoded unindexed PTS {}",
+                    decoded.pts
+                )));
+            }
+            preroll += 1;
+            if preroll > MAX_PREROLL_PICTURES {
+                return Err(PictureScanError::Mismatch(format!(
+                    "seeking to picture {start} decoded more than {MAX_PREROLL_PICTURES} preroll pictures"
+                )));
+            }
+        }
+        let picture = decoder.copy_current_rgba(control()?).map_err(native)?;
+        visit(start, picture).map_err(|error| PictureScanError::Visit(error.to_string()))?;
+        ordinal += 1;
+    }
     while let Some(picture) = decoder.next_rgba(control()?).map_err(native)? {
         let Some(indexed) = frames.get(ordinal) else {
             return Err(PictureScanError::Mismatch(format!(
@@ -110,7 +207,7 @@ pub fn scan_pictures<E: std::fmt::Display>(
                 indexed.reported_duration
             )));
         }
-        visit(ordinal, &picture).map_err(|error| PictureScanError::Visit(error.to_string()))?;
+        visit(ordinal, picture).map_err(|error| PictureScanError::Visit(error.to_string()))?;
         ordinal += 1;
     }
     if ordinal != frames.len() {
@@ -119,5 +216,5 @@ pub fn scan_pictures<E: std::fmt::Display>(
             frames.len()
         )));
     }
-    Ok(ordinal)
+    Ok(ordinal - start)
 }

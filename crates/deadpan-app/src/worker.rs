@@ -175,9 +175,19 @@ struct Mailbox {
     reply: Option<Reply>,
     clear_requested: bool,
     shutdown: bool,
+    /// This worker's pending plus in-progress work in process diagnostics,
+    /// including idle proxy preparation.
+    depth: Option<deadpan_diagnostics::Share>,
 }
 
 impl Mailbox {
+    fn sync_depth(&mut self) {
+        let depth = u64::from(self.pending.is_some()) + u64::from(self.active.is_some());
+        if let Some(share) = &mut self.depth {
+            share.set(depth);
+        }
+    }
+
     fn submit(&mut self, ticket: Ticket, work: Work) -> bool {
         if self.shutdown {
             return false;
@@ -190,6 +200,7 @@ impl Mailbox {
             cancelled: Arc::new(AtomicBool::new(false)),
         });
         self.reply = None;
+        self.sync_depth();
         true
     }
 
@@ -199,11 +210,13 @@ impl Mailbox {
         }
         let request = self.pending.take()?;
         self.active = Some(Arc::clone(&request.cancelled));
+        self.sync_depth();
         Some(request)
     }
 
     fn publish(&mut self, reply: Reply) -> bool {
         self.active = None;
+        self.sync_depth();
         if self.shutdown || self.latest != Some(reply.ticket) {
             return false;
         }
@@ -232,6 +245,7 @@ impl Mailbox {
             return false;
         }
         self.active = Some(Arc::clone(&request.cancelled));
+        self.sync_depth();
         true
     }
 
@@ -249,6 +263,7 @@ impl Mailbox {
         self.cancel_active();
         self.pending = None;
         self.reply = None;
+        self.sync_depth();
     }
 
     fn clear(&mut self) {
@@ -261,6 +276,7 @@ impl Mailbox {
         self.latest = None;
         self.pending = None;
         self.reply = None;
+        self.sync_depth();
     }
 }
 
@@ -292,6 +308,12 @@ impl PreviewWorker {
 
     fn spawn(context: egui::Context, name: &str, proxies: bool) -> std::io::Result<Self> {
         let shared = Arc::new(Shared::default());
+        shared.mailbox.lock().expect("preview mailbox").depth =
+            Some(deadpan_diagnostics::Share::new(if proxies {
+                &deadpan_diagnostics::QUEUES.picture_preview
+            } else {
+                &deadpan_diagnostics::QUEUES.thumbnails
+            }));
         let background = Arc::clone(&shared);
         // The single thread owns all file I/O, hashing, indexing and decoding.
         // Dropping the handle deliberately avoids a blocking GUI shutdown join.
@@ -384,6 +406,7 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
                 if idle_preparation && proxy.wants_preparation() {
                     let cancelled = Arc::new(AtomicBool::new(false));
                     mailbox.active = Some(Arc::clone(&cancelled));
+                    mailbox.sync_depth();
                     break Next::Prepare(cancelled);
                 }
                 mailbox = shared.changed.wait(mailbox).expect("preview mailbox");
@@ -408,6 +431,7 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
                     .is_some_and(|active| Arc::ptr_eq(active, &cancelled))
                 {
                     mailbox.active = None;
+                    mailbox.sync_depth();
                 }
                 continue;
             }

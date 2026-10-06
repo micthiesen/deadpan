@@ -173,7 +173,7 @@ fn store_cut(fixture: &Fixture, cut: usize) -> Arc<Workspace> {
         .original()
         .content()
         .to_string();
-    let analysis = ShotAnalysis::new(
+    let analysis = ShotAnalysis::from_changes(
         (0..fixture.pictures.len())
             .map(|picture| match picture {
                 0 => [0, 0, 0],

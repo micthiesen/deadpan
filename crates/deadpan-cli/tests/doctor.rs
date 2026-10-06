@@ -157,6 +157,29 @@ fn project_doctor_names_real_sources_and_times_revision_stages_read_only() {
             .as_u64()
             .is_some_and(|keys| keys > 0)
     );
+    // Process-local counters observed this process's own probes: opening and
+    // snapshotting the head read revision rows. Nothing was written, no GPU
+    // work was submitted and no worker ran.
+    let diagnostics = &report["diagnostics"];
+    let revisions = &diagnostics["file_io"]["store_revisions"];
+    assert!(revisions["read_ops"].as_u64().is_some_and(|ops| ops > 0));
+    assert!(
+        revisions["read_bytes"]
+            .as_u64()
+            .is_some_and(|bytes| bytes > 0)
+    );
+    assert_eq!(revisions["write_ops"], 0);
+    assert_eq!(diagnostics["gpu_submissions"]["submissions"], 0);
+    assert_eq!(diagnostics["model_workers"]["live"]["high"], 0);
+    for queue in [
+        "picture_preview",
+        "thumbnails",
+        "playback_prepared",
+        "playback_device_packets",
+    ] {
+        assert_eq!(diagnostics["queue_depths"][queue]["current"], 0, "{queue}");
+    }
+    assert!(diagnostics["pcm_caches"]["decoded_pcm"]["hits"].is_u64());
     // Diagnostics never write: the head revision is unchanged.
     assert_eq!(
         run(&["project", "validate", package_text])["revision_id"],

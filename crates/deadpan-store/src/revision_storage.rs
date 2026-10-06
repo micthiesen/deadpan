@@ -126,6 +126,11 @@ pub(crate) fn insert(
             params![after.revision_id().as_str(), json],
         )?;
     }
+    // Counted once the rows are accepted by SQLite (the enclosing transaction
+    // may still roll back).
+    deadpan_diagnostics::IO
+        .store_revisions
+        .write(document.len() as u64 + navigation.map_or(0, |json| json.len() as u64));
     Ok(())
 }
 
@@ -161,6 +166,9 @@ pub(crate) fn stored_patch(
     let json = json.ok_or_else(|| {
         StoreError::Integrity("stored revision patch exceeds its bound or is not text".into())
     })?;
+    deadpan_diagnostics::IO
+        .store_revisions
+        .read(json.len() as u64);
     Ok(Some(if kind == "edit" {
         // Rebuilding needs only the forward patch; skip materializing the
         // inverse half of the history entry.

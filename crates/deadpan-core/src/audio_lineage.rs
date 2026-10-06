@@ -69,6 +69,18 @@ pub(crate) fn reconcile(
     after: &mut ProjectDocument,
     command: &Command,
 ) -> Result<(), EditError> {
+    reconcile_shared(before, after, command, &mut None)
+}
+
+/// [`reconcile`], sharing the structural durations of `after` with the
+/// caller's later mark transform (see `marks::transform_marks_shared`).
+/// Only `after.audio_lineage` changes here, which no structural check reads.
+pub(crate) fn reconcile_shared(
+    before: &ProjectDocument,
+    after: &mut ProjectDocument,
+    command: &Command,
+    structure: &mut Option<crate::command::SharedDurations>,
+) -> Result<(), EditError> {
     after
         .audio_lineage
         .retain(|id, _| after.nodes.contains_key(id));
@@ -85,7 +97,20 @@ pub(crate) fn reconcile(
     }
     // Charge the existing structural limits before collecting parent edges;
     // malformed Move/Insert requests must not feed an unbounded graph walk.
-    after.structural_durations()?;
+    if !crate::command_work::local() {
+        after.structural_durations()?;
+        return reference_closure(before, after);
+    }
+    crate::command::shared_structure(after, structure)?;
+    let changed = changed_closure(before, after);
+    after.audio_lineage.retain(|id, _| !changed.contains(id));
+    Ok(())
+}
+
+fn reference_closure(
+    before: &ProjectDocument,
+    after: &mut ProjectDocument,
+) -> Result<(), EditError> {
     let mut changed = BTreeSet::new();
     for id in before.nodes.keys().chain(after.nodes.keys()) {
         let equal = match (before.nodes.get(id), after.nodes.get(id)) {
@@ -126,6 +151,75 @@ pub(crate) fn reconcile(
     }
     after.audio_lineage.retain(|id, _| !changed.contains(id));
     Ok(())
+}
+
+/// The nodes whose raw audio context changed and all their processing
+/// ancestors, exactly as [`reference_closure`] computes them: the same
+/// per-node comparison, visited once per identity by merging both sorted
+/// node maps rather than looking every identity up twice, and the same union
+/// of both documents' parent edges, held in hash maps.
+fn changed_closure(before: &ProjectDocument, after: &ProjectDocument) -> BTreeSet<NodeId> {
+    let same = |id: &NodeId, a: &crate::BeatNode, b: &crate::BeatNode| {
+        same_raw_audio(&a.kind, &b.kind)
+            && before.overrides.get(id) == after.overrides.get(id)
+            && before.gap_overrides.get(id) == after.gap_overrides.get(id)
+    };
+    let mut changed: BTreeSet<NodeId> = BTreeSet::new();
+    let mut old = before.nodes.iter().peekable();
+    let mut new = after.nodes.iter().peekable();
+    loop {
+        match (old.peek(), new.peek()) {
+            (None, None) => break,
+            (Some((id, _)), None) => {
+                changed.insert((*id).clone());
+                old.next();
+            }
+            (None, Some((id, _))) => {
+                changed.insert((*id).clone());
+                new.next();
+            }
+            (Some((a, x)), Some((b, y))) => match a.cmp(b) {
+                std::cmp::Ordering::Less => {
+                    changed.insert((*a).clone());
+                    old.next();
+                }
+                std::cmp::Ordering::Greater => {
+                    changed.insert((*b).clone());
+                    new.next();
+                }
+                std::cmp::Ordering::Equal => {
+                    if !same(a, x, y) {
+                        changed.insert((*a).clone());
+                    }
+                    old.next();
+                    new.next();
+                }
+            },
+        }
+    }
+    if changed.is_empty() {
+        return changed;
+    }
+    let mut parents: std::collections::HashMap<&NodeId, Vec<&NodeId>> =
+        std::collections::HashMap::with_capacity(before.nodes.len().max(after.nodes.len()));
+    for document in [before, after] {
+        for parent in document.nodes.keys() {
+            for child in document.children(parent) {
+                parents.entry(child).or_default().push(parent);
+            }
+        }
+    }
+    let mut pending: Vec<_> = changed.iter().cloned().collect();
+    while let Some(id) = pending.pop() {
+        if let Some(ancestors) = parents.get(&id) {
+            for parent in ancestors {
+                if changed.insert((*parent).clone()) {
+                    pending.push((*parent).clone());
+                }
+            }
+        }
+    }
+    changed
 }
 
 fn same_gap(a: Option<&HoldRecipe>, b: Option<&HoldRecipe>) -> bool {

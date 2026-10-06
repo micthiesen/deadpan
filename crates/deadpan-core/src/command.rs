@@ -780,6 +780,100 @@ impl DocumentPatch {
         Ok(())
     }
 
+    /// Exactly `self.apply_stored(from).map(|result| result == *to)`: the same
+    /// guards in the same order with the same errors, then a field-by-field
+    /// comparison of the would-be result, without copying `from`.
+    pub fn restores(
+        &self,
+        from: &ProjectDocument,
+        to: &ProjectDocument,
+    ) -> Result<bool, EditError> {
+        if !crate::command_work::local() {
+            return self.apply_stored(from).map(|result| result == *to);
+        }
+        self.check_bounds(from)?;
+        if let Some(change) = &self.presentation
+            && from.presentation_state() != change.before
+        {
+            return Err(EditError::new(
+                EditErrorCode::PatchConflict,
+                "presentation patch before-value does not match the current document",
+            ));
+        }
+        check_changes(&from.nodes, &self.nodes)?;
+        check_changes(&from.beat_sounds, &self.beat_sounds)?;
+        for change in self.assets.values() {
+            if let (Some(before), Some(after)) = (&change.before, &change.after)
+                && before != after
+            {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    "asset identity and stream metadata cannot be changed in place",
+                ));
+            }
+        }
+        check_changes(&from.assets, &self.assets)?;
+        check_changes(&from.marks, &self.marks)?;
+        check_changes(&from.sounds, &self.sounds)?;
+        check_changes(&from.sound_routes, &self.sound_routes)?;
+        check_changes(&from.sound_allowances, &self.sound_allowances)?;
+        check_changes(&from.targets, &self.targets)?;
+        check_changes(&from.overrides, &self.overrides)?;
+        check_changes(&from.gap_overrides, &self.gap_overrides)?;
+        check_changes(&from.audio_lineage, &self.audio_lineage)?;
+        let bindings_equal = match &self.audio_bindings {
+            Some(change) => change.restores(&from.audio_bindings, &to.audio_bindings)?,
+            None => from.audio_bindings == to.audio_bindings,
+        };
+        // Every field, so a new document field cannot be left uncompared.
+        let ProjectDocument {
+            schema_version,
+            project_id,
+            revision_id,
+            presentation_basis,
+            basis_state,
+            root,
+            nodes,
+            assets,
+            marks,
+            sounds,
+            beat_sounds,
+            sound_routes,
+            sound_allowances,
+            overrides,
+            gap_overrides,
+            audio_lineage,
+            audio_bindings: _,
+            targets,
+        } = to;
+        let (basis, state) = match &self.presentation {
+            Some(change) => (&change.after.basis, &change.after.state),
+            None => (&from.presentation_basis, &from.basis_state),
+        };
+        Ok(bindings_equal
+            && from.schema_version == *schema_version
+            && from.project_id == *project_id
+            && self.to_revision == *revision_id
+            && basis == presentation_basis
+            && state == basis_state
+            && from.root == *root
+            && patched_equals(&from.nodes, &self.nodes, nodes)
+            && patched_equals(&from.assets, &self.assets, assets)
+            && patched_equals(&from.marks, &self.marks, marks)
+            && patched_equals(&from.sounds, &self.sounds, sounds)
+            && patched_equals(&from.beat_sounds, &self.beat_sounds, beat_sounds)
+            && patched_equals(&from.sound_routes, &self.sound_routes, sound_routes)
+            && patched_equals(
+                &from.sound_allowances,
+                &self.sound_allowances,
+                sound_allowances,
+            )
+            && patched_equals(&from.overrides, &self.overrides, overrides)
+            && patched_equals(&from.gap_overrides, &self.gap_overrides, gap_overrides)
+            && patched_equals(&from.audio_lineage, &self.audio_lineage, audio_lineage)
+            && patched_equals(&from.targets, &self.targets, targets))
+    }
+
     pub fn inverse(&self) -> Self {
         Self {
             project_id: self.project_id.clone(),
@@ -857,8 +951,41 @@ pub fn apply_with_result(
     apply_with_durations(document, request, None).map(|(edit, result, _)| (edit, result))
 }
 
-type Durations = BTreeMap<NodeId, crate::FrameDuration>;
-type Validation = (Durations, crate::audio_binding::BindingProof);
+pub(crate) type Durations = BTreeMap<NodeId, crate::FrameDuration>;
+pub(crate) type Validation = (Durations, crate::audio_binding::BindingProof);
+/// Structural durations computed once for one exact structure and shared by
+/// the steps that read that structure.
+pub(crate) type SharedDurations = std::sync::Arc<Durations>;
+
+/// The structural durations of `document`, computed on first use and then
+/// shared. Callers pass one slot per structure and never change the nodes,
+/// overrides, assets, basis or root of `document` while the slot is live.
+pub(crate) fn shared_structure(
+    document: &ProjectDocument,
+    slot: &mut Option<SharedDurations>,
+) -> Result<SharedDurations, DocumentError> {
+    if let Some(durations) = slot {
+        #[cfg(debug_assertions)]
+        assert!(
+            document.structural_durations().as_ref() == Ok(&**durations),
+            "shared structural durations describe another structure"
+        );
+        return Ok(std::sync::Arc::clone(durations));
+    }
+    let durations = std::sync::Arc::new(document.structural_durations()?);
+    *slot = Some(std::sync::Arc::clone(&durations));
+    Ok(durations)
+}
+
+/// What a leaf edit already proved about its result before the transaction's
+/// shared post-processing (sound restoration, pruning, compaction, basis).
+pub(crate) enum KnownValidation {
+    Nothing,
+    /// The structural durations of the result's nodes.
+    Structure(SharedDurations),
+    /// The result's complete validation.
+    Complete(Validation),
+}
 
 fn apply_with_durations(
     document: &ProjectDocument,
@@ -913,6 +1040,7 @@ fn apply_with_durations(
         allocation: &request.new_revision,
         allowances: allowance_edit.as_mut(),
     };
+    let mut known = KnownValidation::Nothing;
     let mut result = match &request.command {
         Command::InsertTime {
             at,
@@ -920,7 +1048,14 @@ fn apply_with_durations(
             id,
             identities,
             timing,
-        } => crate::insert_time::apply(input, *at, hold, id, identities, timing, context)?,
+        } => {
+            let (result, structure) =
+                crate::insert_time::apply_known(input, *at, hold, id, identities, timing, context)?;
+            if let Some(structure) = structure {
+                known = KnownValidation::Structure(structure);
+            }
+            result
+        }
         Command::SpliceSource {
             parent,
             index,
@@ -1090,7 +1225,12 @@ fn apply_with_durations(
             node,
             at,
             identities,
-        } => crate::split::apply(input, node, *at, identities, context)?,
+        } => {
+            let (result, validation) =
+                crate::split::apply_validated(input, node, *at, identities, context)?;
+            known = KnownValidation::Complete(validation);
+            result
+        }
         Command::IsolateGap {
             node,
             iteration,
@@ -1115,16 +1255,27 @@ fn apply_with_durations(
             if let Some(allowances) = context.allowances.as_deref_mut() {
                 allowances.apply_hold_audio_command(command);
             }
-            crate::audio_lineage::reconcile(input, &mut result, command)?;
+            // Lineage and marks read the same new structure; compute it once.
+            let mut structure = None;
+            crate::audio_lineage::reconcile_shared(input, &mut result, command, &mut structure)?;
             if !matches!(
                 command,
                 Command::SetMark { .. } | Command::DeleteMark { .. }
             ) {
-                result.marks = crate::marks::transform_marks(input, &result, command)?;
+                result.marks =
+                    crate::marks::transform_marks_shared(input, &result, command, &mut structure)?;
+            }
+            if let Some(structure) = structure {
+                known = KnownValidation::Structure(structure);
             }
             result
         }
     };
+    // Sound, beat-sound and allowance restoration are not audited here as
+    // structure-preserving, so their transactions validate from scratch.
+    if sound_edit.is_some() || beat_sound_edit.is_some() || allowance_edit.is_some() {
+        known = KnownValidation::Nothing;
+    }
     if let Some(capture) = sound_edit {
         capture.restore(&mut result)?;
     }
@@ -1134,15 +1285,42 @@ fn apply_with_durations(
     if let Some(allowances) = allowance_edit {
         allowances.restore(&mut result)?;
     }
+    // Pruning only removes entries and compaction only rewrites tables new
+    // in this transaction, so equal counts and no new table mean neither
+    // changed anything. Neither touches the structure.
+    let counts = binding_entry_counts(&result.audio_bindings);
+    let new_tables = result
+        .audio_bindings
+        .timings
+        .keys()
+        .any(|timing| !document.audio_bindings.timings.contains_key(timing));
     crate::audio_binding_lifecycle::prune(&mut result);
     crate::audio_binding_lifecycle::compact_new_timings(
         &document.audio_bindings,
         &mut result.audio_bindings,
     )?;
+    let basis = result.basis_state.clone();
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
-    let (edit, validation) =
-        net_transaction_with_durations(document, &result, description(&request.command), previous)?;
+    // Validation reads neither the revision identity nor anything the
+    // unchanged steps above could have changed.
+    if let KnownValidation::Complete((durations, _)) = &known
+        && (new_tables
+            || counts != binding_entry_counts(&result.audio_bindings)
+            || basis != result.basis_state)
+    {
+        known = KnownValidation::Structure(std::sync::Arc::new(durations.clone()));
+    }
+    if !crate::command_work::local() {
+        known = KnownValidation::Nothing;
+    }
+    let (edit, validation) = net_transaction_known(
+        document,
+        &result,
+        description(&request.command),
+        previous,
+        known,
+    )?;
     if result.schema_version != document.schema_version
         || result.project_id != document.project_id
         || result.root != document.root
@@ -1174,9 +1352,45 @@ fn net_transaction_with_durations(
     description: &str,
     previous: Option<&crate::ValidatedDocument>,
 ) -> Result<(EditTransaction, Validation), EditError> {
+    net_transaction_known(
+        document,
+        result,
+        description,
+        previous,
+        KnownValidation::Nothing,
+    )
+}
+
+/// Entry counts of every binding collection pruning can shrink.
+fn binding_entry_counts(state: &crate::AudioBindingState) -> [usize; 5] {
+    [
+        state.bindings.len(),
+        state.gap_bindings.len(),
+        state.sound_clocks.len(),
+        state.sound_clocks.values().map(BTreeMap::len).sum(),
+        state.timings.len(),
+    ]
+}
+
+/// [`net_transaction_with_durations`] for a result whose validation is
+/// partly or completely `known` already.
+fn net_transaction_known(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+    previous: Option<&crate::ValidatedDocument>,
+    known: KnownValidation,
+) -> Result<(EditTransaction, Validation), EditError> {
     // The entry revision was admitted and validated already; only the result
     // needs the complete (binding-inclusive) validation here.
-    let before_duration = document.structural_durations()?[document.root()].frames();
+    let before_duration = match document.retained_durations() {
+        Some(durations) if crate::command_work::local() => durations
+            .get(document.root())
+            .copied()
+            .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "root is missing"))?,
+        _ => document.structural_durations()?[document.root()],
+    }
+    .frames();
     let forward = DocumentPatch {
         project_id: document.project_id.clone(),
         from_revision: document.revision_id.clone(),
@@ -1204,9 +1418,26 @@ fn net_transaction_with_durations(
         ),
     };
     let previous = previous.filter(|previous| std::ptr::eq(previous.document().as_ref(), document));
-    let validation = match previous {
-        Some(previous) => result.validate_after(previous, forward.audio_bindings.as_ref())?,
-        None => result.validated_with_proof()?,
+    let structure = match known {
+        KnownValidation::Complete(validation) => {
+            #[cfg(debug_assertions)]
+            assert!(
+                result.validated_with_proof().as_ref() == Ok(&validation),
+                "a reused leaf validation differs from complete validation"
+            );
+            Some(Err(validation))
+        }
+        KnownValidation::Structure(durations) => Some(Ok(durations)),
+        KnownValidation::Nothing => None,
+    };
+    let validation = match (structure, previous) {
+        (Some(Err(validation)), _) => validation,
+        (structure, Some(previous)) => result.validate_after_with(
+            previous,
+            forward.audio_bindings.as_ref(),
+            structure.and_then(Result::ok),
+        )?,
+        (structure, None) => result.validated_with_structure(structure.and_then(Result::ok))?,
     };
     let after_duration = validation
         .0
@@ -2598,7 +2829,68 @@ pub(crate) fn replace_child(
     Ok(())
 }
 
-fn diff<K: Ord + Clone, V: Eq + Clone>(
+/// Every key whose value differs, in key order. Both maps are sorted, so one
+/// merged pass visits each entry once; the reference path collected the key
+/// union and looked each key up in both maps, with the same result.
+pub(crate) fn diff<K: Ord + Clone, V: Eq + Clone>(
+    before: &BTreeMap<K, V>,
+    after: &BTreeMap<K, V>,
+) -> BTreeMap<K, ValueChange<V>> {
+    if !crate::command_work::local() {
+        return reference_diff(before, after);
+    }
+    let mut changes = Vec::new();
+    let mut old = before.iter().peekable();
+    let mut new = after.iter().peekable();
+    loop {
+        let change = match (old.peek(), new.peek()) {
+            (None, None) => break,
+            (Some((key, value)), None) => {
+                let change = ((*key).clone(), Some(*value), None);
+                old.next();
+                change
+            }
+            (None, Some((key, value))) => {
+                let change = ((*key).clone(), None, Some(*value));
+                new.next();
+                change
+            }
+            (Some((a, x)), Some((b, y))) => match a.cmp(b) {
+                std::cmp::Ordering::Less => {
+                    let change = ((*a).clone(), Some(*x), None);
+                    old.next();
+                    change
+                }
+                std::cmp::Ordering::Greater => {
+                    let change = ((*b).clone(), None, Some(*y));
+                    new.next();
+                    change
+                }
+                std::cmp::Ordering::Equal => {
+                    let change = (x != y).then(|| ((*a).clone(), Some(*x), Some(*y)));
+                    old.next();
+                    new.next();
+                    match change {
+                        Some(change) => change,
+                        None => continue,
+                    }
+                }
+            },
+        };
+        let (key, before, after) = change;
+        changes.push((
+            key,
+            ValueChange {
+                before: before.cloned(),
+                after: after.cloned(),
+            },
+        ));
+    }
+    // Keys arrive strictly increasing, so the map builds in bulk.
+    changes.into_iter().collect()
+}
+
+fn reference_diff<K: Ord + Clone, V: Eq + Clone>(
     before: &BTreeMap<K, V>,
     after: &BTreeMap<K, V>,
 ) -> BTreeMap<K, ValueChange<V>> {
@@ -2638,6 +2930,47 @@ fn inverse_changes<K: Clone + Ord, V: Clone>(
             )
         })
         .collect()
+}
+
+/// The guard of [`apply_changes`] alone, with its error.
+fn check_changes<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changes: &BTreeMap<K, ValueChange<V>>,
+) -> Result<(), EditError> {
+    for (key, change) in changes {
+        if values.get(key) != change.before.as_ref() {
+            return Err(EditError::new(
+                EditErrorCode::PatchConflict,
+                "patch before-value does not match the current document",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Whether `values` with `changes` applied equals `expected`: each changed
+/// key holds its after-value, and every other entry is unchanged.
+pub(crate) fn patched_equals<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changes: &BTreeMap<K, ValueChange<V>>,
+    expected: &BTreeMap<K, V>,
+) -> bool {
+    changes
+        .iter()
+        .all(|(key, change)| expected.get(key) == change.after.as_ref())
+        && unchanged_entries_equal(values, |key| changes.contains_key(key), expected)
+}
+
+/// Whether the entries of `values` and `expected` outside `changed` are equal.
+pub(crate) fn unchanged_entries_equal<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changed: impl Fn(&K) -> bool,
+    expected: &BTreeMap<K, V>,
+) -> bool {
+    values
+        .iter()
+        .filter(|(key, _)| !changed(key))
+        .eq(expected.iter().filter(|(key, _)| !changed(key)))
 }
 
 fn apply_changes<K: Ord + Clone, V: Eq + Clone>(

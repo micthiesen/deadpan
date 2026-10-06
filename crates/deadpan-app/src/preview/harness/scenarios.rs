@@ -19,6 +19,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "nested-pause" => super::nested_pause::run(d),
         "original-moment" => super::moment::run(d),
         "transcript" => super::transcript::run(d),
+        "corrections" => super::corrections::run(d),
         "shots" => super::shots::run(d),
         "proxy-seek" => super::proxy::run(d),
         "cutaway" => super::cutaway::run(d),
@@ -51,6 +52,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "recovery" => super::recovery::crash(d),
         "relink" => super::recovery::relink(d),
         "storage-failure" => super::recovery::storage_failure(d),
+        "diagnostics" => super::diagnostics::run(d),
         _ => Err(format!("Unknown scenario {name}")),
     }
 }

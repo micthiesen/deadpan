@@ -19,7 +19,9 @@
 
 use std::sync::Arc;
 
-use deadpan_analysis::{SpeechActivity, Transcript, picture_seconds};
+use deadpan_analysis::{
+    CorrectedPauses, CorrectedTranscript, Pause, SpeechActivity, Transcript, picture_seconds,
+};
 use deadpan_core::{
     AssetId, EditError, EditErrorCode, ExactRatio, FrameRange, ProjectDocument, ProjectFrame,
     ShotRun, SourceFrameIndex, SpeechRun, SpeechTimeline,
@@ -127,13 +129,14 @@ pub fn original_speech(
     SpeechTimeline::new(runs)
 }
 
-/// Detected pauses as exact container times, in order.
+/// Pauses (detected or corrected) of an activity's analysis clock as exact
+/// container times, in order.
 pub fn pause_seconds(
     activity: &SpeechActivity,
+    pauses: &[Pause],
 ) -> Result<Vec<(ExactRatio, ExactRatio)>, EditError> {
-    activity
-        .pauses()
-        .into_iter()
+    pauses
+        .iter()
         .map(|pause| Ok((activity.seconds(pause.start)?, activity.seconds(pause.end)?)))
         .collect::<Result<Vec<_>, deadpan_analysis::ActivityError>>()
         .map_err(|error| failed(&error.to_string()))
@@ -320,10 +323,10 @@ fn timed_words(transcript: &Transcript) -> Result<Vec<(ExactRatio, ExactRatio, u
         .map_err(|error| failed(&error.to_string()))
 }
 
-/// The preferred stored transcript of one Original: an approved model's
-/// English transcript first. Transcripts are rebuildable annotations, so an
-/// unreadable one is skipped rather than failing its caller.
-pub fn stored_transcript(
+/// The preferred stored recognizer transcript of one Original: an approved
+/// model's English transcript first. Transcripts are rebuildable annotations,
+/// so an unreadable one is skipped rather than failing its caller.
+pub fn stored_proposal(
     store: &deadpan_store::ProjectStore,
     content: &str,
 ) -> Option<(deadpan_store::TranscriptKey, Transcript)> {
@@ -337,6 +340,103 @@ pub fn stored_transcript(
         .find_map(|key| Some((key.clone(), store.transcript(&key).ok()??)))
 }
 
+/// A stored transcript with the person's corrections applied.
+#[derive(Debug, Clone)]
+pub struct StoredWords {
+    pub key: deadpan_store::TranscriptKey,
+    pub proposal: Transcript,
+    pub corrected: CorrectedTranscript,
+    /// Why stored corrections could not be read or applied, if they could not.
+    pub corrections_error: Option<String>,
+}
+
+/// The preferred stored transcript with stored corrections applied. Damaged
+/// corrections are reported, never silently discarded: the transcript is
+/// shown uncorrected with the reason.
+pub fn stored_words(store: &deadpan_store::ProjectStore, content: &str) -> Option<StoredWords> {
+    let (key, proposal) = stored_proposal(store, content)?;
+    let (corrected, corrections_error) =
+        match store.analysis_corrections(&corrections_key(content, key.audio_stream)) {
+            Ok(Some(stored)) => match stored.corrections.apply_to_transcript(&proposal) {
+                Ok(corrected) => (corrected, None),
+                Err(error) => (
+                    CorrectedTranscript::recognized(proposal.clone()),
+                    Some(error.to_string()),
+                ),
+            },
+            Ok(None) => (CorrectedTranscript::recognized(proposal.clone()), None),
+            Err(error) => (
+                CorrectedTranscript::recognized(proposal.clone()),
+                Some(error.to_string()),
+            ),
+        };
+    Some(StoredWords {
+        key,
+        proposal,
+        corrected,
+        corrections_error,
+    })
+}
+
+/// The preferred stored transcript as people corrected it. `Err` carries why
+/// the corrections could not be applied; callers must not fall back to the
+/// uncorrected words silently.
+pub fn stored_transcript(
+    store: &deadpan_store::ProjectStore,
+    content: &str,
+) -> Option<Result<(deadpan_store::TranscriptKey, Transcript), String>> {
+    stored_words(store, content).map(|words| {
+        match correction_problem(
+            "words",
+            words.corrections_error.as_deref(),
+            words.corrected.skipped,
+        ) {
+            Some(problem) => Err(problem),
+            None => Ok((words.key, words.corrected.transcript)),
+        }
+    })
+}
+
+/// Detected pauses with the person's corrections applied, and why stored
+/// corrections did not apply, if they did not.
+pub fn corrected_pauses(
+    store: &deadpan_store::ProjectStore,
+    content: &str,
+    audio_stream: u32,
+    activity: &SpeechActivity,
+) -> (CorrectedPauses, Option<String>) {
+    match store.analysis_corrections(&corrections_key(content, audio_stream)) {
+        Ok(Some(stored)) => (stored.corrections.apply_to_pauses(activity), None),
+        Ok(None) => (CorrectedPauses::detected(activity), None),
+        Err(error) => (CorrectedPauses::detected(activity), Some(error.to_string())),
+    }
+}
+
+/// Why words or pauses must not be used as corrected: stored corrections
+/// could not be read, or some do not apply to the current analysis. Operators
+/// and macros refuse with this reason instead of silently using uncorrected
+/// analyses; the `:correct` sheet offers to discard or drop them.
+pub fn correction_problem(unit: &str, error: Option<&str>, skipped: usize) -> Option<String> {
+    match (error, skipped) {
+        (Some(error), _) => Some(format!(
+            "{unit} are not ready: the stored corrections are unreadable ({error}); discard them in :correct"
+        )),
+        (None, 0) => None,
+        (None, skipped) => Some(format!(
+            "{unit} are not ready: {skipped} stored correction{} no longer appl{} to the analysis; review them in :correct",
+            if skipped == 1 { "" } else { "s" },
+            if skipped == 1 { "ies" } else { "y" },
+        )),
+    }
+}
+
+pub fn corrections_key(content: &str, audio_stream: u32) -> deadpan_store::CorrectionsKey {
+    deadpan_store::CorrectionsKey {
+        content: content.to_owned(),
+        audio_stream,
+    }
+}
+
 /// What a planner needs to place words and pauses: the ready Original, its
 /// qualified picture index and whichever analyses are stored.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -345,8 +445,12 @@ pub struct StoredSpeech {
     /// The qualified picture index, bound to the project's asset identity.
     pub index: SourceFrameIndex,
     pub transcript: Option<Transcript>,
+    /// Why the corrected words cannot be used, when corrections failed.
+    pub words_problem: Option<String>,
     /// Detected pauses as exact container times.
     pub pauses: Option<Vec<(ExactRatio, ExactRatio)>>,
+    /// Why the corrected pauses cannot be used, when corrections failed.
+    pub pauses_problem: Option<String>,
     /// Original pictures that begin a shot after the first.
     pub shots: Option<Vec<usize>>,
 }
@@ -382,9 +486,23 @@ impl StoredSpeech {
         )
         .map_err(|error| not_ready(&error.to_string()))?;
         let content = receipt.original().content().to_string();
-        let transcript = stored_transcript(store, &content).map(|(_, transcript)| transcript);
+        let words = stored_words(store, &content);
+        let words_problem = words.as_ref().and_then(|words| {
+            correction_problem(
+                "words",
+                words.corrections_error.as_deref(),
+                words.corrected.skipped,
+            )
+        });
+        let transcript = words.map(|words| words.corrected.transcript);
+        let mut pauses_problem = None;
         let pauses = crate::activity::stored_activity(store, &content)
-            .map(|(_, activity)| pause_seconds(&activity))
+            .map(|(key, activity)| {
+                let (pauses, error) =
+                    corrected_pauses(store, &content, key.audio_stream, &activity);
+                pauses_problem = correction_problem("pauses", error.as_deref(), pauses.skipped);
+                pause_seconds(&activity, &pauses.pauses)
+            })
             .transpose()?;
         let shots = crate::shots::stored_shots(
             store,
@@ -397,22 +515,30 @@ impl StoredSpeech {
             asset,
             index,
             transcript,
+            words_problem,
             pauses,
+            pauses_problem,
             shots,
         })
     }
 
     pub fn project(&self, document: &ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError> {
         let plan = RenderPlan::compile(document).map_err(|error| failed(&error.to_string()))?;
-        let timeline = match &self.transcript {
-            Some(transcript) => project_speech(&plan, &self.asset, &self.index, transcript)?,
-            None => SpeechTimeline::without_words(deadpan_core::speech_unavailable().message),
+        let timeline = match (&self.transcript, &self.words_problem) {
+            (_, Some(problem)) => SpeechTimeline::without_words(problem.clone()),
+            (Some(transcript), None) => {
+                project_speech(&plan, &self.asset, &self.index, transcript)?
+            }
+            (None, None) => {
+                SpeechTimeline::without_words(deadpan_core::speech_unavailable().message)
+            }
         };
-        let timeline = match &self.pauses {
-            Some(pauses) => {
+        let timeline = match (&self.pauses, &self.pauses_problem) {
+            (_, Some(problem)) => timeline.without_pauses(problem.clone()),
+            (Some(pauses), None) => {
                 timeline.with_pauses(project_pauses(&plan, &self.asset, &self.index, pauses)?)?
             }
-            None => timeline.without_pauses(
+            (None, None) => timeline.without_pauses(
                 "pauses are not ready: the Original's speech has not been analysed",
             ),
         };
@@ -458,6 +584,26 @@ fn failed(reason: &str) -> EditError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn failed_or_stale_corrections_refuse_with_a_reason() {
+        assert_eq!(correction_problem("words", None, 0), None);
+        assert!(
+            correction_problem("words", Some("bad rule"), 0)
+                .is_some_and(|reason| reason.contains("unreadable") && reason.contains(":correct"))
+        );
+        assert!(
+            correction_problem("pauses", None, 1)
+                .is_some_and(|reason| reason.contains("1 stored correction no longer applies"))
+        );
+        let refused =
+            SpeechTimeline::without_words(correction_problem("words", None, 3).unwrap_or_default());
+        assert!(
+            refused
+                .require(deadpan_core::SpeechUnit::Word)
+                .is_err_and(|error| error.message.contains("3 stored corrections"))
+        );
+    }
 
     fn seconds(hundredths: i128) -> ExactRatio {
         ExactRatio::new(hundredths, 100).unwrap()

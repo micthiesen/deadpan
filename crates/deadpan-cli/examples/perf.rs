@@ -8,7 +8,7 @@
 //!             [--proxy-cache NEW_DIR --worker MEDIA_WORKER]
 //!   perf proxy-build PACKAGE --proxy-cache DIR --worker MEDIA_WORKER
 //!   perf playback PACKAGE [--seconds N] [--start-frame N]
-//!   perf edit PACKAGE [--cycles N] [--seed N]
+//!   perf edit PACKAGE [--cycles N] [--seed N] [--kinds split,pause,wrap]
 //!   perf make-large NEW_PACKAGE [--beats N]
 //!   perf scale [--sizes 1000,10000,...] [--source PACKAGE --fragments N]
 //!

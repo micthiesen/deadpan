@@ -10,6 +10,7 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 use super::*;
 
+mod corrections;
 mod delete;
 mod delete_range;
 mod edited_slice;

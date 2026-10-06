@@ -181,8 +181,8 @@ fn capture_with_placements(
     result.timings.insert(timing, layout);
     result.bindings.extend(bindings);
     result.gap_bindings.extend(gap_bindings);
-    result.validate_for(document)?;
-    result.to_json()?;
+    document.validate_bindings_in_scope(&result)?;
+    result.check_wire_size()?;
     Ok(CompositeInsertionCapture {
         state: result,
         phase_only_layout: None,

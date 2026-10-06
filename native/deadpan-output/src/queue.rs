@@ -217,6 +217,15 @@ impl Feed {
         self.next
     }
 
+    /// Packets the callback has not yet consumed, as seen by this producer.
+    /// A diagnostic observation; the callback may drain more concurrently.
+    pub fn queued_packets(&self) -> usize {
+        self.producer
+            .buffer()
+            .capacity()
+            .saturating_sub(self.producer.slots())
+    }
+
     pub fn fault_signal(&self) -> FaultSignal {
         FaultSignal(Arc::clone(&self.shared))
     }
@@ -681,6 +690,21 @@ mod tests {
         assert_eq!(feed.pause(), Err(FeedError::GenerationExhausted));
         assert_eq!(feed.shared.control.load(Ordering::Acquire), before);
         assert_eq!(feed.next_sample(), 0);
+    }
+
+    #[test]
+    fn queued_packets_counts_unconsumed_pcm_and_end() {
+        let (mut feed, mut callback) = channel_with_capacity(4).unwrap();
+        assert_eq!(feed.queued_packets(), 0);
+        let generation = feed.restart(0).unwrap();
+        feed.submit(generation, &[[0.1, 0.1]]).unwrap();
+        feed.submit(generation, &[[0.1, 0.1]]).unwrap();
+        feed.finish(generation).unwrap();
+        assert_eq!(feed.queued_packets(), 3);
+        feed.activate(generation).unwrap();
+        let mut output = [0.0; 4];
+        callback.render(&mut output);
+        assert!(feed.queued_packets() < 3);
     }
 
     #[test]

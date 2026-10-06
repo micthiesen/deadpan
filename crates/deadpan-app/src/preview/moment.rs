@@ -421,6 +421,54 @@ impl DeadpanApp {
                 rect.left() + rect.width() * boundary_fraction(index, boundary) as f32
             };
             ui.painter().rect_filled(rect, 3.0, style::PANEL);
+            // Pauses as quiet bands along the bottom, shots as hairline ticks,
+            // from marks cached with the timeline. Bands closer than a pixel
+            // join and ticks within a pixel of the previous one are skipped,
+            // so a long Original paints at most about one shape per pixel.
+            let marks = self.source_analysis_marks();
+            let clip = ui.clip_rect().intersect(rect);
+            let mut band: Option<(f32, f32)> = None;
+            let paint_band = |ui: &egui::Ui, (left, right): (f32, f32)| {
+                if right >= clip.left() && left <= clip.right() {
+                    ui.painter().rect_filled(
+                        egui::Rect::from_min_max(
+                            egui::pos2(left, rect.bottom() - 6.0),
+                            egui::pos2(right.max(left + 1.0), rect.bottom() - 1.0),
+                        ),
+                        0.0,
+                        style::PAUSE_BAND,
+                    );
+                }
+            };
+            for pause in &marks.pauses {
+                let (left, right) = (x(pause.start), x(pause.end));
+                band = match band {
+                    Some((from, to)) if left <= to + 1.0 => Some((from, to.max(right))),
+                    Some(previous) => {
+                        paint_band(ui, previous);
+                        Some((left, right))
+                    }
+                    None => Some((left, right)),
+                };
+            }
+            if let Some(last) = band {
+                paint_band(ui, last);
+            }
+            let mut last_tick = f32::NEG_INFINITY;
+            for shot in &marks.shots {
+                let at = x(*shot);
+                if at < last_tick + 1.0 || at < clip.left() || at > clip.right() {
+                    continue;
+                }
+                last_tick = at;
+                ui.painter().line_segment(
+                    [
+                        egui::pos2(at, rect.top() + 3.0),
+                        egui::pos2(at, rect.bottom() - 3.0),
+                    ],
+                    egui::Stroke::new(1.0, style::SHOT_TICK),
+                );
+            }
             if let Some(range) = &range {
                 let selected = egui::Rect::from_min_max(
                     egui::pos2(x(range.start), rect.top()),

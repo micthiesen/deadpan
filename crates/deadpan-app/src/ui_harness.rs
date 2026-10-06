@@ -27,6 +27,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "nested-pause",
     "original-moment",
     "transcript",
+    "corrections",
     "shots",
     "proxy-seek",
     "cutaway",
@@ -70,6 +71,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "generated-picture",
     "youtube",
     "accessibility",
+    "diagnostics",
 ];
 
 pub(crate) struct Options {

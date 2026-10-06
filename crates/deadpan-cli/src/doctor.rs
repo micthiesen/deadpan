@@ -9,7 +9,76 @@ mod project;
 pub fn project_report(package: &std::path::Path) -> Result<serde_json::Value, CliError> {
     let mut report = report()?;
     report["project"] = project::report(package)?;
+    // Read after the probes so the counters include their work.
+    report["diagnostics"] = diagnostics(&deadpan_diagnostics::snapshot());
     Ok(report)
+}
+
+/// Process-local Section 25.3 counters as JSON. In a CLI process they cover
+/// only what this process did; a running app's sessions are not visible.
+pub fn diagnostics(snapshot: &deadpan_diagnostics::Snapshot) -> serde_json::Value {
+    use serde_json::{Map, Value, json};
+    let level =
+        |level: deadpan_diagnostics::Level| json!({"current": level.current, "high": level.high});
+    let io: Map<String, Value> = snapshot
+        .io
+        .paths()
+        .into_iter()
+        .map(|(name, io)| {
+            (
+                name.to_owned(),
+                json!({
+                    "read_ops": io.read_ops, "read_bytes": io.read_bytes,
+                    "write_ops": io.write_ops, "write_bytes": io.write_bytes,
+                }),
+            )
+        })
+        .collect();
+    let queues: Map<String, Value> = snapshot
+        .queues
+        .named()
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), level(value)))
+        .collect();
+    let caches: Map<String, Value> = snapshot
+        .caches
+        .named()
+        .into_iter()
+        .map(|(name, cache)| {
+            (
+                name.to_owned(),
+                json!({
+                    "hits": cache.hits, "misses": cache.misses, "evictions": cache.evictions,
+                    "hit_rate": cache.hit_rate(),
+                    "entries": level(cache.entries), "bytes": level(cache.bytes),
+                }),
+            )
+        })
+        .collect();
+    let workers = |memory: deadpan_diagnostics::WorkerMemorySnapshot| {
+        json!({
+            "live": level(memory.live),
+            "phys_footprint_bytes": level(memory.footprint_bytes),
+            "samples": memory.samples, "failed_samples": memory.failures,
+        })
+    };
+    let gpu = snapshot.gpu;
+    json!({
+        "scope": "process-local counters for this deadpan-cli process only; a running app's sessions, GPU work and workers are not visible here",
+        "file_io": io,
+        "file_io_note": "the store's revision rows (logical payload bytes, not SQLite pages), object-store copies and snapshots, media snapshots, decoder descriptor reads, the private PCM cache file and proxy reads; one operation is one buffered call",
+        "queue_depths": queues,
+        "pcm_caches": caches,
+        "gpu_submissions": {
+            "submissions": gpu.submissions, "completions": gpu.completions,
+            "last_us": gpu.last_us, "max_us": gpu.max_us,
+            "recent_p50_us": gpu.p50_us, "recent_p95_us": gpu.p95_us,
+            "note": "shared picture pipeline only; doctor submits no GPU work",
+        },
+        "model_workers": workers(snapshot.model_workers),
+        "other_workers": workers(snapshot.other_workers),
+        "workers_note": "physical footprint of live supervised workers sampled every 500 ms by their supervisor; doctor starts none",
+    })
 }
 
 pub fn report() -> Result<serde_json::Value, CliError> {

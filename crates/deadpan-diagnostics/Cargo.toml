@@ -1,0 +1,12 @@
+[package]
+name = "deadpan-diagnostics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Process-local, bounded performance counters; never authored state, history or project data"
+
+[lints]
+workspace = true

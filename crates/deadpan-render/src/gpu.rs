@@ -704,10 +704,16 @@ impl PictureRenderer {
 
     fn submit(&self, encoder: wgpu::CommandEncoder) -> wgpu::SubmissionIndex {
         self.complete.store(false, Ordering::Release);
+        let submitted = Instant::now();
         let submission = self.queue.submit([encoder.finish()]);
+        deadpan_diagnostics::GPU.submitted();
         let complete = Arc::clone(&self.complete);
-        self.queue
-            .on_submitted_work_done(move || complete.store(true, Ordering::Release));
+        // The latency ends when the callback runs, which requires a device
+        // poll; it includes any delay before the owner polls.
+        self.queue.on_submitted_work_done(move || {
+            deadpan_diagnostics::GPU.completed(submitted.elapsed());
+            complete.store(true, Ordering::Release);
+        });
         submission
     }
 

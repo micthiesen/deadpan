@@ -418,6 +418,7 @@ struct CachedSource {
     prepared: PreparedSource,
     bytes: u64,
     index_frames: u64,
+    _resident: deadpan_diagnostics::Resident,
 }
 
 pub(crate) struct Sources {
@@ -515,8 +516,10 @@ impl AudioSourceProvider for Sources {
         }
         if self.cache.contains_key(asset) {
             check_cancel(cancelled)?;
+            deadpan_diagnostics::CACHES.decoded_pcm.hits.increment();
             mark_recent(&mut self.recency, asset);
         } else {
+            deadpan_diagnostics::CACHES.decoded_pcm.misses.increment();
             // Decoded physical samples include priming and padding. The opener
             // receives this exact reservation and must reproduce the receipt.
             let bytes = expected
@@ -587,6 +590,10 @@ impl AudioSourceProvider for Sources {
                     prepared,
                     bytes,
                     index_frames,
+                    _resident: deadpan_diagnostics::Resident::new(
+                        &deadpan_diagnostics::CACHES.decoded_pcm,
+                        bytes,
+                    ),
                 },
             );
             self.recency.push_back(asset.clone());
@@ -651,6 +658,10 @@ fn make_room(
         let oldest = oldest.clone();
         recency.pop_front();
         cache.remove(&oldest);
+        deadpan_diagnostics::CACHES
+            .decoded_pcm
+            .evictions
+            .increment();
         *cache_bytes = remaining_bytes;
         *cache_index_frames = remaining_frames;
     }

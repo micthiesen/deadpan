@@ -22,8 +22,9 @@ sample and reports token bounds in centiseconds. A centisecond `t` maps to
 Original audio sample `origin + t · rate / 100`, an exact rational with no
 accumulated rounding. Recognizer timing itself is approximate: whisper.cpp
 describes word timestamps as experimental. Each word keeps its lowest token
-probability, and words below 0.6 are presented as approximate. Refinement and
-manual correction remain required.
+probability, and words below 0.6 are presented as approximate. People correct
+words and their edges by hand ([analysis corrections](ANALYSIS_CORRECTIONS.md));
+an automatic refinement pass remains required.
 
 Word construction drops special tokens, starts a word at each token beginning
 with a space, and attaches subword pieces and punctuation to the current word.
@@ -84,6 +85,20 @@ MIT licensed like whisper.cpp, and the Silero detector for
 REPORT.json [phrase]` runs the real worker on a PCM16 mono 16 kHz WAV.
 `DEADPAN_QUALIFY_CANCEL_MS` cancels instead. See the
 [qualification record](qualification/transcription-2026-10-04.md).
+
+### Accuracy on speech
+
+On 2026-10-05, `ggml-base.en.bin` with this worker scored 5.08% word error rate
+on all of LibriSpeech test-clean (5.4 h of human read speech, each chapter
+transcribed as one long file), or 3.92% without two failed chapters. One of
+those fell into a confident repetition loop and lost half the chapter; the
+other stopped after its first sentence. A short JFK excerpt and the synthesized
+interview were transcribed without errors. Word timing is much coarser than
+word identity: sentence-initial words start a median 315 ms from the energy
+onset, and sentence-final words end a median 650 ms after the speech stops.
+The approximate flag marks about a third of wrong words. Conversational, noisy
+and non-English speech, and the app's own analysis-PCM path, remain unmeasured.
+See the [accuracy record](qualification/transcription-accuracy-2026-10-05.md).
 
 ## Storage and headless commands
 
@@ -171,6 +186,17 @@ In Original, `w`, `b`, `e`, `W` and `B` move the Original cursor over the
 Original's own pictures with the same rule. Original operators with motions
 are not yet available; `v` with word motions selects a moment to copy.
 
+## Manual correction
+
+`:correct` opens a sheet where words are edited, split (a space in the text),
+joined, removed and their edges moved by 10 ms or to measured energy edges.
+Corrections are stored apart from the recognizer's transcript, keyed by the
+Original and its audio stream rather than the model, so transcribing again
+keeps them; corrected words win over any recognized word they overlap. They
+have their own Undo and Redo and never create an edit revision. Display,
+search, word motions and objects, and macros read the corrected words. See
+[analysis corrections](ANALYSIS_CORRECTIONS.md).
+
 ## Your edit in the rail
 
 While Your edit is in view, the TRANSCRIPT section lists the edit's words in
@@ -212,5 +238,7 @@ every word per query.
 ## Remaining
 
 Original operators with word motions, background scheduling by visible range,
-word-boundary refinement from speech activity, manual correction, accuracy measurement on real speech, and
-a manager listing every pack.
+automatic word-boundary refinement from speech activity (manual edges snap to
+measured edges), accuracy on conversational and noisy speech and handling of
+long-form recognizer failures (see [Accuracy on speech](#accuracy-on-speech)),
+and a manager listing every pack.

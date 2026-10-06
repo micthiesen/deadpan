@@ -23,6 +23,9 @@ mod audio_reference;
 mod basis;
 mod caption;
 mod command;
+mod command_work;
+#[cfg(any(test, feature = "test-support"))]
+pub use command_work::{binding_wire_check_for_tests, diff_for_tests, with_reference_command_work};
 mod compound;
 mod cutaway;
 mod document;

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/deadpan-core", "crates/deadpan-analysis", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-audio", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-playback", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone", "native/deadpan-filesystem", "native/deadpan-dsp", "native/deadpan-output", "native/deadpan-encode", "native/deadpan-transcribe", "native/deadpan-track", "crates/deadpan-chaos", "crates/xtask"]
+members = ["crates/deadpan-core", "crates/deadpan-diagnostics", "crates/deadpan-analysis", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-audio", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-playback", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone", "native/deadpan-filesystem", "native/deadpan-dsp", "native/deadpan-output", "native/deadpan-encode", "native/deadpan-transcribe", "native/deadpan-track", "crates/deadpan-chaos", "crates/xtask"]
 default-members = ["crates/deadpan-app", "native/deadpan-transcribe", "native/deadpan-track"]
 
 [workspace.package]
@@ -13,6 +13,7 @@ publish = false
 
 [workspace.dependencies]
 deadpan-core = { path = "crates/deadpan-core" }
+deadpan-diagnostics = { path = "crates/deadpan-diagnostics" }
 deadpan-analysis = { path = "crates/deadpan-analysis" }
 deadpan-store = { path = "crates/deadpan-store" }
 deadpan-plan = { path = "crates/deadpan-plan" }

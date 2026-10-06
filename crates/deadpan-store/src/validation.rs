@@ -188,6 +188,9 @@ fn read_revision_json(
     let json = json.ok_or_else(|| {
         StoreError::Integrity("stored document exceeds the 64 MiB limit or is not text".into())
     })?;
+    deadpan_diagnostics::IO
+        .store_revisions
+        .read(json.len() as u64);
     Ok((parent, kind, json))
 }
 

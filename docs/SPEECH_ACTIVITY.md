@@ -132,8 +132,30 @@ lets an edge advance 60 ms over near-floor frames and accepts pauses from
 transcript's word gaps (for example 5.25–5.61 and 6.55–6.89) are wider and less
 precise than both.
 
+## Manual correction and display
+
+Pauses can be removed, added after a word and resized in the `:correct`
+sheet ([analysis corrections](ANALYSIS_CORRECTIONS.md)). Corrected pause
+regions are stored apart from the detector's values and keyed by the Original
+and audio stream, so detecting again keeps them; detected pause time inside a
+corrected region is replaced and a remainder outside it shorter than 150 ms is
+dropped. Pause motions, objects and the rail read the corrected pauses.
+
+Pauses are drawn as quiet bands: along the bottom of the Original range bar
+(pictures wholly inside a pause, as `]p` sees them) and along the top of each
+Your edit beat card, mapped through the plan exactly as the pause motions
+project them, so a cut shortens a band and a silent Hold lengthens it. Shot
+boundaries appear as hairline ticks in the same places.
+
+## Detection time on long audio
+
+Detection is not resumable: the worker processes the whole analysis PCM in one
+call (177 ms for the 18 s interview, including model loading). Its time on a
+long Original is unmeasured; this machine has only the version 1 pack, without
+the detector. Preparing analysis PCM precedes it and reports no progress.
+
 ## Remaining
 
-Pause display in the rail, a rule qualified on varied real recordings (one
-synthesized speaker so far), room-tone and breath classification,
-and detection progress for very long Originals.
+A rule qualified on varied real recordings (one synthesized speaker so far),
+room-tone and breath classification, resumable detection and preparation
+progress for very long Originals, and non-US physical delivery of `[`/`]`.

@@ -10,8 +10,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use deadpan_analysis::SIGNATURE_VERSION;
-use deadpan_cli::shots::{ShotScanError, prepare_shot_input, scan_shots, stored_shots};
+use deadpan_analysis::{PictureMeasure, SIGNATURE_VERSION, ShotProgress};
+use deadpan_cli::shots::{
+    ShotScanError, ShotScanOptions, prepare_shot_input, scan_shots, stored_shot_progress,
+    stored_shots,
+};
 use deadpan_core::AssetId;
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
@@ -89,7 +92,9 @@ fn every_picture_is_measured_in_index_order_and_stored_outside_history() -> Resu
     let path = package.to_str().unwrap();
 
     let detected = success(&["detect-shots", path, "--asset", "clip"])?;
-    assert_eq!(detected["rule"], "deadpan-shots-1");
+    assert_eq!(detected["rule"], "deadpan-shots-2");
+    assert_eq!(detected["resumed_from"], Value::Null);
+    assert_eq!(detected["transitions"], json!([]));
     assert_eq!(detected["pictures"], 120);
     assert_eq!(detected["key"]["signature_version"], SIGNATURE_VERSION);
     assert_eq!(detected["key"]["video_stream"], 0);
@@ -120,7 +125,7 @@ fn every_picture_is_measured_in_index_order_and_stored_outside_history() -> Resu
     let (key, analysis) = stored_shots(&store, content, 0, 120).unwrap();
     assert_eq!(key.signature_version, SIGNATURE_VERSION);
     assert_eq!(analysis.pictures(), 120);
-    assert_eq!(analysis.changes()[0], [0, 0, 0]);
+    assert_eq!(analysis.change(0), Some([0, 0, 0]));
     // A count other than the Original's index length is never accepted.
     assert!(stored_shots(&store, content, 0, 119).is_none());
     Ok(())
@@ -151,29 +156,196 @@ fn a_cancelled_scan_stops_without_an_analysis() -> Result {
     let input = prepare_shot_input(&store, Some(&AssetId::new("clip")?), &running, deadline)?;
     assert_eq!(input.pictures(), 120);
     let mut seen = Vec::new();
-    let scan = scan_shots(&input, &running, deadline, |done, total| {
-        seen.push((done, total))
-    })?;
+    let scan = scan_shots(
+        &input,
+        &running,
+        deadline,
+        ShotScanOptions::default(),
+        |done, total| seen.push((done, total)),
+        |_| true,
+    )?;
     assert_eq!(seen.len(), 120);
     assert_eq!(seen.last(), Some(&(120, 120)));
     assert_eq!(scan.analysis.pictures(), 120);
 
     let cancelled = AtomicBool::new(true);
     assert!(matches!(
-        scan_shots(&input, &cancelled, deadline, |_, _| {}),
+        scan_shots(
+            &input,
+            &cancelled,
+            deadline,
+            ShotScanOptions::default(),
+            |_, _| {},
+            |_| true
+        ),
         Err(ShotScanError::Cancelled)
     ));
-    // Cancelling midway also stops.
+    // Cancelling midway also stops, and no checkpoint follows the cancel.
     let midway = AtomicBool::new(false);
-    let result = scan_shots(&input, &midway, deadline, |done, _| {
-        if done == 10 {
-            midway.store(true, std::sync::atomic::Ordering::Release);
-        }
-    });
+    let mut offered = Vec::new();
+    let result = scan_shots(
+        &input,
+        &midway,
+        deadline,
+        ShotScanOptions {
+            checkpoint_interval: Duration::ZERO,
+            ..ShotScanOptions::default()
+        },
+        |done, _| {
+            if done == 10 {
+                midway.store(true, std::sync::atomic::Ordering::Release);
+            }
+        },
+        |tail| {
+            offered.push(tail.next());
+            true
+        },
+    );
     assert!(matches!(result, Err(ShotScanError::Cancelled)));
+    assert_eq!(offered, (1..10).collect::<Vec<_>>());
+    // Nor within the deadline margin.
+    let mut late = 0;
+    scan_shots(
+        &input,
+        &running,
+        Instant::now() + Duration::from_secs(4),
+        ShotScanOptions {
+            checkpoint_interval: Duration::ZERO,
+            ..ShotScanOptions::default()
+        },
+        |_, _| {},
+        |_| {
+            late += 1;
+            true
+        },
+    )?;
+    assert_eq!(late, 0);
     assert!(matches!(
-        scan_shots(&input, &running, Instant::now(), |_, _| {}),
+        scan_shots(
+            &input,
+            &running,
+            Instant::now(),
+            ShotScanOptions::default(),
+            |_, _| {},
+            |_| true
+        ),
         Err(ShotScanError::Deadline)
     ));
+    Ok(())
+}
+
+#[test]
+fn a_scan_resumed_from_any_checkpoint_equals_an_uninterrupted_scan() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = registered(scratch.path())?;
+    let running = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    let input = prepare_shot_input(&reader, Some(&AssetId::new("clip")?), &running, deadline)?;
+    drop(reader);
+    let single = ShotScanOptions {
+        decode_threads: 1,
+        checkpoint_interval: Duration::ZERO,
+        ..ShotScanOptions::default()
+    };
+    // Each checkpoint's tail, applied to the measures saved so far, as the
+    // store appends it.
+    let mut checkpoints = Vec::new();
+    let mut saved: Vec<PictureMeasure> = Vec::new();
+    let whole = scan_shots(
+        &input,
+        &running,
+        deadline,
+        single.clone(),
+        |_, _| {},
+        |tail| {
+            assert!(tail.start() <= saved.len());
+            saved.truncate(tail.start());
+            saved.extend_from_slice(tail.measures());
+            checkpoints.push(ShotProgress::new(120, saved.clone()).unwrap());
+            true
+        },
+    )?;
+    // Every picture but the last offered a checkpoint.
+    assert_eq!(checkpoints.len(), 119);
+    // A refused tail makes the next one replace the saved progress whole;
+    // tails appended through the store equal the last checkpoint.
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let mut starts = Vec::new();
+    scan_shots(
+        &input,
+        &running,
+        deadline,
+        single.clone(),
+        |_, _| {},
+        |tail| {
+            starts.push(tail.start());
+            starts.len() != 30 && writer.append_shot_scan_progress(&input.key, &tail).is_ok()
+        },
+    )?;
+    assert_eq!(starts[0], 0);
+    assert!(starts[1] > 0);
+    assert_eq!(starts[30], 0);
+    assert!(starts[31] > 0);
+    assert_eq!(
+        writer.shot_scan_progress(&input.key, 120)?,
+        Some(checkpoints[118].clone())
+    );
+    writer.delete_shot_scan_progress(&input.key)?;
+    drop(writer);
+    assert_eq!(whole.resumed_from, None);
+    assert_eq!(whole.decoded, 120);
+    // Threaded decoding measures the same pictures.
+    let threaded = scan_shots(
+        &input,
+        &running,
+        deadline,
+        ShotScanOptions {
+            decode_threads: 8,
+            ..ShotScanOptions::default()
+        },
+        |_, _| {},
+        |_| true,
+    )?;
+    assert_eq!(threaded.analysis, whole.analysis);
+    for stop in [1, 2, 30, 51, 77, 100, 119] {
+        let saved = checkpoints[stop - 1].clone();
+        assert_eq!(saved.next(), stop);
+        // Through the store, as the app and the CLI save it.
+        let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+        writer.save_shot_scan_progress(&input.key, &saved)?;
+        drop(writer);
+        let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+        let restored = stored_shot_progress(&reader, &input).unwrap();
+        drop(reader);
+        let mut measured = Vec::new();
+        let resumed = scan_shots(
+            &input,
+            &running,
+            deadline,
+            ShotScanOptions {
+                resume: Some(restored),
+                ..ShotScanOptions::default()
+            },
+            |done, _| measured.push(done),
+            |_| true,
+        )?;
+        assert_eq!(resumed.analysis, whole.analysis, "resumed at {stop}");
+        assert_eq!(resumed.resumed_from, Some(stop));
+        assert_eq!(resumed.decoded, 120 - stop.saturating_sub(50));
+        assert_eq!(measured.last(), Some(&120));
+    }
+    // The command resumes saved progress and the saved analysis removes it.
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.save_shot_scan_progress(&input.key, &checkpoints[99])?;
+    drop(writer);
+    let path = package.to_str().unwrap();
+    let detected = success(&["detect-shots", path, "--asset", "clip"])?;
+    assert_eq!(detected["resumed_from"], 100);
+    assert_eq!(detected["decoded_pictures"], 70);
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert!(stored_shot_progress(&reader, &input).is_none());
+    let (_, stored) = stored_shots(&reader, &input.key.content, 0, 120).unwrap();
+    assert_eq!(stored, whole.analysis);
     Ok(())
 }

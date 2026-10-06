@@ -729,6 +729,7 @@ fn hash_file(file: &File, control: &Control<'_>) -> Result<([u8; 32], String, u6
         if count == 0 {
             break;
         }
+        deadpan_diagnostics::IO.proxy.read(count as u64);
         sha.update(&buffer[..count]);
         blake.update(&buffer[..count]);
         offset += count as u64;

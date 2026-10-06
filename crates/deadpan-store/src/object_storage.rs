@@ -183,13 +183,17 @@ impl VerifiedObject {
     }
 
     pub(crate) fn read_at(&self, buffer: &mut [u8], offset: u64) -> io::Result<usize> {
-        self.file.read_at(buffer, offset)
+        let read = self.file.read_at(buffer, offset)?;
+        deadpan_diagnostics::IO.objects.read(read as u64);
+        Ok(read)
     }
 }
 
 impl Read for VerifiedObject {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        self.file.read(buffer)
+        let read = self.file.read(buffer)?;
+        deadpan_diagnostics::IO.objects.read(read as u64);
+        Ok(read)
     }
 }
 
@@ -327,6 +331,7 @@ impl GeneratedStorage {
             if read == 0 {
                 break;
             }
+            deadpan_diagnostics::IO.objects.read(read as u64);
             let next = copied
                 .checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
                 .ok_or(ObjectStorageError::SourceChanged)?;
@@ -349,6 +354,7 @@ impl GeneratedStorage {
                     operation: "write pending generated object",
                     source,
                 })?;
+            deadpan_diagnostics::IO.objects.write(read as u64);
             copied = next;
         }
         control.check()?;
@@ -483,7 +489,7 @@ impl GeneratedStorage {
             source,
         })?;
         let sha256 = {
-            let mut writer = Sha256Writer::new(&mut snapshot);
+            let mut writer = Sha256Writer::new(CountedWrites(&mut snapshot));
             self.verify_open_object_controlled(
                 source,
                 expected,
@@ -663,6 +669,7 @@ impl GeneratedStorage {
             if read == 0 {
                 break;
             }
+            deadpan_diagnostics::IO.objects.read(read as u64);
             let next = copied
                 .checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
                 .ok_or(ObjectStorageError::SourceChanged)?;
@@ -1661,6 +1668,21 @@ impl<W: Write> Write for Sha256Writer<W> {
 
     fn flush(&mut self) -> io::Result<()> {
         self.destination.flush()
+    }
+}
+
+/// A private snapshot file whose writes count as object-store I/O.
+struct CountedWrites<'a>(&'a mut File);
+
+impl Write for CountedWrites<'_> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let written = self.0.write(bytes)?;
+        deadpan_diagnostics::IO.objects.write(written as u64);
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
     }
 }
 

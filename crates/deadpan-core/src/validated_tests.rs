@@ -196,3 +196,53 @@ fn reused_proofs_still_reject_every_changed_owner_and_table() {
     assert!(complete(&retyped).is_err());
     assert!(retyped.validate_after(&validated, None).is_err());
 }
+
+#[test]
+fn scoped_binding_validation_rechecks_owners_of_a_replaced_timing_table() {
+    let validated = bound();
+    let owner = validated
+        .audio_bindings()
+        .bindings()
+        .keys()
+        .next()
+        .unwrap()
+        .clone();
+    let timing = validated.audio_bindings().bindings()[&owner]
+        .lattice
+        .reference
+        .timing
+        .clone();
+    // Same timing identity, different tables: one from a structure whose
+    // durations differ, one from a structure without the owners' aliases.
+    let mut longer = ProjectDocument::clone(&validated);
+    let NodeKind::Hold { recipe } = &mut longer.nodes.get_mut(&owner).unwrap().kind else {
+        panic!("bound owner is a Hold")
+    };
+    recipe.duration = FrameDuration::new(9).unwrap();
+    let mut unrelated = ProjectDocument::clone(&validated);
+    unrelated.audio_bindings = AudioBindingState::default();
+    for node in unrelated.nodes.values_mut() {
+        if let NodeKind::Sequence { children } = &mut node.kind {
+            children.retain(|child| child != &owner);
+        }
+    }
+    unrelated.nodes.remove(&owner);
+    unrelated.audio_lineage.remove(&owner);
+    for (index, mut source) in [longer, unrelated].into_iter().enumerate() {
+        source.audio_bindings = AudioBindingState::default();
+        let table = FrozenAudioLayout::capture(&source).unwrap();
+        let mut state = validated.audio_bindings().clone();
+        state.timings.insert(timing.clone(), table);
+        // Reuse through the scoped head must not skip any owner naming the
+        // replaced table: the outcome equals unscoped validation.
+        let scoped = validated.scope(|| validated.validate_bindings_in_scope(&state));
+        let unscoped = state.validate_for(&validated);
+        let reference = crate::with_reference_command_work(|| {
+            validated.scope(|| validated.validate_bindings_in_scope(&state))
+        });
+        assert_eq!(scoped, unscoped);
+        assert_eq!(scoped, reference);
+        // A table without the owners' aliases must be refused.
+        assert!(index == 0 || scoped.is_err());
+    }
+}

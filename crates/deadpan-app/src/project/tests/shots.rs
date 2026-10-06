@@ -7,7 +7,7 @@ use super::*;
 
 /// `pictures` quiet pictures with a cut at picture 60.
 fn analysis(pictures: usize) -> ShotAnalysis {
-    ShotAnalysis::new(
+    ShotAnalysis::from_changes(
         (0..pictures)
             .map(|picture| match picture {
                 0 => [0, 0, 0],
@@ -28,14 +28,24 @@ fn save(
     analysis: ShotAnalysis,
 ) -> ProjectUpdate {
     let _ = service.take_update();
-    service
+    let analysis = Arc::new(analysis);
+    // A checkpoint may still occupy the one-request annotation lane.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    while service
         .submit(ProjectRequest::SaveShotAnalysis {
             expected_session: session,
             attempt,
             key: key.clone(),
-            analysis: Arc::new(analysis),
+            analysis: Arc::clone(&analysis),
         })
-        .unwrap();
+        .is_err()
+    {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "annotation lane stayed busy"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
     wait(service, |update| {
         update
             .shot_save
@@ -90,8 +100,56 @@ fn saved_shots_are_published_carried_across_edits_and_reloaded() {
     let short = save(&service, before.session, 3, &key, analysis(119));
     assert!(short.shot_save.unwrap().error.is_some());
 
+    // Scan checkpoints are saved best effort for the session's Original
+    // only, outside history, and the finished analysis removes them.
+    let progress = |session, key: &deadpan_store::ShotAnalysisKey, start, next| {
+        let progress = deadpan_analysis::ShotProgressTail::new(
+            120,
+            start,
+            analysis(120).measures()[start..next].to_vec(),
+        )
+        .unwrap();
+        // The annotation lane admits one request at a time.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        while service
+            .submit(ProjectRequest::SaveShotProgress {
+                expected_session: session,
+                key: key.clone(),
+                progress: Arc::new(progress.clone()),
+            })
+            .is_err()
+        {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "annotation lane stayed busy"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    };
+    progress(before.session + 1, &key, 0, 10);
+    progress(before.session, &foreign, 0, 20);
+    progress(before.session, &key, 0, 30);
+    // Later checkpoints append only their changed measures.
+    progress(before.session, &key, 25, 40);
+    // A tail that does not join the saved progress is dropped.
+    progress(before.session, &key, 50, 60);
+    // A later annotation request completes after the checkpoints.
+    let refused = save(&service, before.session, 5, &key, analysis(119));
+    assert!(refused.shot_save.unwrap().error.is_some());
+    let stored_progress = || {
+        deadpan_store::ProjectStore::open(&before.path, deadpan_store::AccessMode::ReadOnly)
+            .unwrap()
+            .shot_scan_progress(&key, 120)
+            .unwrap()
+    };
+    assert_eq!(
+        stored_progress().map(|progress| progress.measures().to_vec()),
+        Some(analysis(120).measures()[..40].to_vec())
+    );
+
     let saved = save(&service, before.session, 4, &key, analysis(120));
     assert_eq!(saved.shot_save.as_ref().unwrap().error, None);
+    assert!(stored_progress().is_none());
     let workspace = saved.workspace.unwrap();
     let stored = workspace.shot_analysis.as_ref().unwrap();
     assert_eq!((&stored.key, &stored.analysis), (&key, &analysis(120)));

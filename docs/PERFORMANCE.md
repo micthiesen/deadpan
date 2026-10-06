@@ -9,7 +9,9 @@ superseded by [seek-2026-10-05](qualification/seek-2026-10-05.md) and preview
 proxy seeks in [proxy-2026-10-05](qualification/proxy-2026-10-05.md), and edit
 latency, storage and open time superseded by
 [timing-storage-2026-10-05](qualification/timing-storage-2026-10-05.md) and then
-[incremental-commit-2026-10-05](qualification/incremental-commit-2026-10-05.md). A target
+[incremental-commit-2026-10-05](qualification/incremental-commit-2026-10-05.md) and then
+[command-work-2026-10-05](qualification/command-work-2026-10-05.md), which also
+records idle CPU. A target
 without a measured workload is open, never passed.
 
 ## Run the suite
@@ -58,6 +60,9 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   `"status": "not_needed"`. `perf proxy-build PACKAGE --proxy-cache DIR
   --worker BIN` runs one build alone, for measuring its effect on concurrent
   playback and edits.
+- `perf edit PACKAGE --kinds split,pause,wrap` measures only the named edit
+  kinds (Undo follows each wrap), for attributing one path under a sampling
+  profiler such as `sample`.
 - `--quick` shortens fixtures and sample counts for a smoke run; every target
   row is then INFO. `--stages` selects a subset of
   `doctor,scale,seek,edit,playback,export,ui`. `--audition-seconds` sets the
@@ -96,10 +101,10 @@ like workloads and the same summary schema.
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |
 | Hold insertion fallback visible < 100 ms | ui `edit-latency` `hold_fallback_input_to_picture_complete_ms`; `perf edit` insert pause | The CLI stage commits the native `,h` freeze through the store. |
 | 10,000-beat navigation without a whole-document scan | ui `large-project` navigation CPU; `perf scale` frame lookup at 100 to 50,000 beats; code audit | Lookups use the compiled plan's binary search; per-revision work (validation, plan compile, rows) scales with size and is measured separately. |
-| Idle: event-driven UI | Not measured by this suite | The replay harness's repaint wait (see [UI feedback](UI_FEEDBACK.md#repaint-waits-and-worker-timing)) is evidence of event-driven repaint requests, not an idle CPU measurement. |
+| Idle: event-driven UI | Release app opened with `--project`, settled 30 s, then CPU time from `ps` over 60 s, wakeups from `top` and footprint from `footprint` ([record](qualification/command-work-2026-10-05.md#idle-and-memory)) | Manual, not part of `cargo xtask perf`. A visible window only; occluded, background and display power are not measured. |
 | AI generation | Cited from the [AI pause run](AI_HOLDS.md#measured-run-2026-10-04) | Not rerun here: a single run of minutes and about 21 GiB footprint. |
 | Export speed by workload | `perf` export stage through `deadpan-cli render` | Wall time per stage from timestamped events, encoding frames per second, and `real_time_factor` (content seconds from the committed frame rate ÷ wall), including encoder admission, full verification and publication. |
-| Memory | `/usr/bin/time -l` around every stage | Peak RSS and footprint per process. Not a memory-pressure test. |
+| Memory | `/usr/bin/time -l` around every stage; the idle app's footprint | Peak RSS and footprint per process. Not a memory-pressure test: `memory_pressure -S` needs root, and no allocation-pressure run exists. |
 
 ## Diagnostics
 
@@ -107,16 +112,26 @@ like workloads and the same summary schema.
 | --- | --- | --- |
 | Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale` | Implemented. |
 | History validation on open | `ProjectStore::open_validation()` and `validate_report`; `doctor --project` `history_validation`; `perf edit` `reopen_validation`: revisions, those proved by the [history receipt](TIMING_STORAGE.md#verified-history-receipts) and those recomputed | Implemented. `project validate` recomputes all; `--quick` reports what opening checks. |
-| Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost | Implemented as cumulative atomics; observations only. Not yet shown in the native app. |
+| Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost; the native `:diagnostics` panel (PLAYBACK) | Implemented as cumulative atomics; observations only. |
 | Dropped video frames | `perf playback` (pictures skipped while following the heard clock) | Benchmark only. The native preview coalesces superseded requests without a counter. |
-| GPU submission and completion | `perf seek`/`perf playback`; ui-harness `ui_composition_*` and picture timings | Harness timings are feature-gated. |
+| GPU submission and completion | `deadpan_diagnostics::GPU`, recorded at the shared picture pipeline's submit (`deadpan-render`): submissions, completions, last, maximum and p50/p95 over a fixed 128-sample ring of `queue.submit` to the `on_submitted_work_done` callback; `:diagnostics` (GPU) and `doctor --project` (`diagnostics.gpu_submissions`, zero there); `perf seek`/`perf playback`; ui-harness `ui_composition_*` and picture timings | The latency ends when the owner next polls the device, so it includes polling delay. egui's own frame submission and the readback copy are not counted. Harness timings remain feature-gated. |
 | Preview proxy | `perf seek` `proxy` (build time, bytes, raster, fidelity and bias, opening, seek and refinement latency); `perf proxy-build`; the sidecar's `fidelity`; the app's proxy job state on the Original card and in the `proxy-seek` replay | No live counter of proxy versus Original pictures in the native app. |
 | Index measurement | `SourceSession::measurement()`, `ProjectPictureSession::source_measurement()`: Measuring, Verified, Mismatch or Interrupted for the retained Original; `DecodeWork::decoded_pictures` counts pictures the codec decoded | Not shown in the native app. A mismatch surfaces as the picture error; the preview worker retries an interruption once. |
-| Cache hit rate | `ProjectPictureSession::stats()`: cold decoder admissions and their time, retained-decoder reuses, decoded and Background pictures. `perf seek` reports them as `cold.<mode>.session_stats` and `warm_session_stats`, with the decoder reuse rate. | Picture sessions only. PCM, limiter and thumbnail caches expose occupancy at most. |
-| Decode queue depth | None | The picture path is single-flight by design; the playback preparation queue is bounded but not instrumented. |
-| File I/O | None | Open. |
-| Model memory | Pack manifests declare memory; the AI pause run measured RSS and footprint externally | Open as a live counter. |
+| Cache hit rate | `ProjectPictureSession::stats()`: cold decoder admissions and their time, retained-decoder reuses, decoded and Background pictures. `perf seek` reports them as `cold.<mode>.session_stats` and `warm_session_stats`, with the decoder reuse rate. `deadpan_diagnostics::CACHES`: hits, misses, evictions and resident entries/bytes (current and high) for the decoded-PCM source caches (CLI inspection and playback preparation, each bounded at 16 sessions and 1 GiB), limiter tiles (entries only) and limiter input blocks (entries and sample bytes); `:diagnostics` (PCM CACHES) and `doctor --project` (`diagnostics.pcm_caches`) | The native app's preview worker uses `SourceSession` directly, not `ProjectPictureSession`, so its panel has no picture-session row. A hit counts only a revalidated reuse. Thumbnail and proxy caches have no hit counter. |
+| Decode queue depth | `deadpan_diagnostics::QUEUES`, current and high-water: the main viewer's and the card thumbnail service's source-preview slots (pending plus in progress, including idle proxy preparation; 0 to 2 each), prepared PCM batches waiting for the playback control worker (0 or 1), packets in the device queue as seen by its producer (`Feed::queued_packets`, sampled each control tick, never from the callback) and the frames queued before the latest activation; `:diagnostics` (DECODE QUEUES) and `doctor --project` (`diagnostics.queue_depths`, idle there) | The picture path is single-flight by design, so a depth above 1 means a replaced request was still running. The Edit-waveform, endpoint and junction picture services are not instrumented. |
+| File I/O | `deadpan_diagnostics::IO`, cumulative operations and bytes per path: the store's history rows (revision documents and stored patches read or inserted, and each edit's request and patch, counted after SQLite accepts the row; logical payload bytes), Media/Originals and Media/Generated object copies, verification reads and private snapshot writes, `deadpan-media` source snapshot copies, native video decoder descriptor reads (added once per decoder call from its cumulative AVIO count), the private decoded-PCM cache file and proxy hashing reads; `:diagnostics` (FILE I/O) and `doctor --project` (`diagnostics.file_io`) | Not SQLite page or kernel I/O: the receipt, registers, analysis tables and other store tables, the native audio decoder's input reads, render/export output and model files are not counted. One operation is one buffered call. |
+| Model memory | Pack manifests declare memory. `deadpan_diagnostics::WORKERS`: every `SupervisedProcess` samples its live, unreaped worker's physical footprint every 500 ms during `poll` (`deadpan_native_process::owned_child_memory`, `proc_pid_rusage` `RUSAGE_INFO_V2`), summed with current and peak, live count, samples and refused samples; transcription, AI pause generation, face and tracking workers count as model workers, render, encode, verification and probe workers as others; `:diagnostics` (MODEL MEMORY) and `doctor --project` (`diagnostics.model_workers`, none there) | Sampling follows the host's poll cadence, so a short peak between samples is missed. The in-process app and Metal memory are not included. |
 | Active decoders, encoders, preview resolution, model pack, fallback path | `doctor` runtime section (FFmpeg images, workers, model root) and `doctor --project` (per-source codec, raster, keyframe spacing, preview canvas, quality tier) | The CLI reports stored and installed facts; it cannot see a running app's live sessions. |
 
 All counters are process-local and bounded; none enters authored state,
-history or the project database.
+history or the project database. `deadpan-diagnostics` holds them as fixed
+statics of relaxed atomics plus one 128-entry latency ring: recording never
+allocates or locks, and the audio device callback records nothing. The native
+`:diagnostics` panel (Escape closes it) samples them twice a second without
+pausing playback, alongside the playback engine's counters and the number of UI
+outer UI updates (which include the panel's own refresh, so their rate is
+not an idle measurement); each row is exposed to assistive technology as "label: value".
+The `diagnostics` replay opens it through real keys, checks the accessible rows,
+GPU latency, resampling and keyboard ownership, and closes it. A CLI process
+reports only its own work: `doctor --project` adds `diagnostics` after its probes
+(revision reads, no writes, no GPU or worker activity).

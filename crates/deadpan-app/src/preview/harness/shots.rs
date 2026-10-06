@@ -59,7 +59,8 @@ fn shots_in_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
             _ => [1, 1, 1],
         })
         .collect();
-    let analysis = deadpan_analysis::ShotAnalysis::new(changes).map_err(|e| e.to_string())?;
+    let analysis =
+        deadpan_analysis::ShotAnalysis::from_changes(changes).map_err(|e| e.to_string())?;
     let submitted = d.app_mut().submit(ProjectRequest::SaveShotAnalysis {
         expected_session: workspace.session,
         attempt: 0,

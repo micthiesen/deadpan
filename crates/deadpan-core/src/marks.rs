@@ -869,6 +869,25 @@ pub(crate) fn transform_marks(
     transform_marks_with_source_prefixes(before, after, command, &[])
 }
 
+/// [`transform_marks`] with the structural durations of `after` shared with
+/// the caller: `structure` holds them when already computed for this exact
+/// structure, and receives them otherwise. The same structural pass, on the
+/// same nodes, would return the same result.
+pub(crate) fn transform_marks_shared(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    command: &Command,
+    structure: &mut Option<crate::command::SharedDurations>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    if !crate::command_work::local() {
+        return transform_marks(before, after, command);
+    }
+    let new_durations = crate::command::shared_structure(after, structure)?;
+    transform_with_structure(before, after, command, &[], || {
+        Ok(new_durations.as_ref().clone())
+    })
+}
+
 /// Growing a physical Source before local zero moves its retained content
 /// points, while Source PTS and host edge sentinels keep their own semantics.
 pub(crate) fn transform_marks_with_source_prefix(
@@ -897,11 +916,21 @@ pub(crate) fn transform_marks_with_source_prefixes(
     // Validate the new structure even when no marks are present. Marks may be
     // temporarily dangling here; they are transformed before full validation.
     let new_durations = after.structural_durations()?;
+    transform_with_structure(before, after, command, prefixes, || Ok(new_durations))
+}
+
+fn transform_with_structure(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    command: &Command,
+    prefixes: &[(&NodeId, FrameDuration)],
+    new_durations: impl FnOnce() -> std::result::Result<BTreeMap<NodeId, FrameDuration>, DocumentError>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
     if before.marks().is_empty() {
         return Ok(BTreeMap::new());
     }
     let old = Index::new(before, before.structural_durations()?)?;
-    let new = Index::new(after, new_durations)?;
+    let new = Index::new(after, new_durations()?)?;
     let mut output = BTreeMap::new();
     for (id, mark) in before.marks() {
         let mut bindings = Vec::with_capacity(mark.binding_count());

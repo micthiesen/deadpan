@@ -26,10 +26,14 @@ pub enum Entry {
     Recovery,
     /// `:models`: open the model pack panel.
     Models,
+    /// `:diagnostics`: open the live process counters panel.
+    Diagnostics,
     Splice,
     Slip(i64),
     Trim(super::trim::TrimInput),
     RoomTone,
+    /// `:correct`: correct the Original's transcript words and pauses.
+    Correct,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
     /// `:gain +=3dB` / `:gain -=3dB`: change the trim by a signed amount.
@@ -586,7 +590,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "import" => Action::Import,
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" | "relink" | "recovery" | "models"
+        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -596,14 +600,16 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "relink" => Entry::Relink,
                 "recovery" => Entry::Recovery,
                 "models" => Entry::Models,
+                "diagnostics" => Entry::Diagnostics,
                 "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
+                "correct" => Entry::Correct,
                 "hold-silence" => Entry::HoldSilence,
                 _ => Entry::Help,
             });
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" | "relink" | "recovery" | "models" => {
+        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1415,11 +1421,13 @@ mod tests {
             (":relink", Entry::Relink),
             ("recovery", Entry::Recovery),
             (":models", Entry::Models),
+            (":diagnostics", Entry::Diagnostics),
             (":splice", Entry::Splice),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
             ("help", Entry::Help),
             ("room-tone", Entry::RoomTone),
+            (":correct", Entry::Correct),
             (":HOLD-SILENCE", Entry::HoldSilence),
             (" : ", Entry::Empty),
         ] {
@@ -1428,10 +1436,12 @@ mod tests {
         for input in [
             "room-tone auto",
             "room-tone 12f",
+            "correct words",
             "hold-silence all",
             "renders current",
             "relink /tmp/clip.mp4",
             "models ltx",
+            "diagnostics now",
             "splice 12",
         ] {
             assert!(parse(input).is_err(), "{input}");

@@ -38,6 +38,8 @@ pub trait WorkerProtocol: Sized {
     fn write_request(writer: &mut impl Write, request: &Self::Request) -> Result<(), String>;
     fn read_response(reader: &mut impl Read) -> Result<Option<Self::Response>, String>;
     fn classify(&self, response: &Self::Response) -> Result<ResponseKind, String>;
+    /// Which process diagnostics bucket receives this worker's footprint.
+    const WORKER_CLASS: deadpan_diagnostics::WorkerClass = deadpan_diagnostics::WorkerClass::Other;
 }
 
 /// Whether a validated response ends the protocol and needs clean teardown.
@@ -330,6 +332,10 @@ pub struct SupervisedProcess<P: WorkerProtocol> {
     cancellation_escalated: bool,
     cleanup_failure: Option<CleanupFailure>,
     pump_panicked: bool,
+    /// Process diagnostics: this worker's liveness and sampled footprint.
+    live: deadpan_diagnostics::Share,
+    footprint: deadpan_diagnostics::Share,
+    footprint_sampled: Option<Instant>,
 }
 
 impl<P: WorkerProtocol> SupervisedProcess<P> {
@@ -400,7 +406,11 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             cancellation_escalated: false,
             cleanup_failure: None,
             pump_panicked: false,
+            live: deadpan_diagnostics::Share::new(&P::WORKER_CLASS.memory().live),
+            footprint: deadpan_diagnostics::Share::new(&P::WORKER_CLASS.memory().footprint_bytes),
+            footprint_sampled: None,
         };
+        process.live.set(1);
         let setup = (|| -> Result<(), SupervisorError> {
             check_setup(SetupStage::Pipes, &process.child)?;
             let stdin = process
@@ -506,6 +516,34 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
         Ok(process)
     }
 
+    /// Sample a live, unreaped worker's physical footprint at low frequency
+    /// for process diagnostics. Never signals, waits or reaps.
+    fn sample_footprint(&mut self, now: Instant) {
+        if self.exit.is_some() || self.reap_attempted {
+            self.live.set(0);
+            self.footprint.set(0);
+            return;
+        }
+        if self.footprint_sampled.is_some_and(|last| {
+            now.saturating_duration_since(last) < deadpan_diagnostics::WORKER_SAMPLE_INTERVAL
+        }) {
+            return;
+        }
+        self.footprint_sampled = Some(now);
+        let memory = P::WORKER_CLASS.memory();
+        #[cfg(target_os = "macos")]
+        match deadpan_native_process::owned_child_memory(&self.child) {
+            Ok(Some(sample)) => {
+                memory.samples.increment();
+                self.footprint.set(sample.phys_footprint);
+            }
+            Ok(None) => self.footprint.set(0),
+            Err(_) => memory.failures.increment(),
+        }
+        #[cfg(not(target_os = "macos"))]
+        memory.failures.increment();
+    }
+
     /// Queues one cooperative cancellation without touching a pipe on this thread.
     pub fn request_cancel(&mut self, now: Instant) -> Result<bool, SupervisorError> {
         if self.cancel_started.is_some() || self.reap_attempted {
@@ -600,7 +638,11 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             if can_reap {
                 self.reap_attempted = true;
                 match operations.reap(&mut self.child) {
-                    Ok(status) => self.exit = Some(status),
+                    Ok(status) => {
+                        self.exit = Some(status);
+                        self.live.set(0);
+                        self.footprint.set(0);
+                    }
                     Err(error) => {
                         push_cleanup_issue(&mut issues, CleanupStage::Reap, error.to_string());
                     }
@@ -693,6 +735,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             self.exited_at = Some(now);
             self.control = None;
         }
+        self.sample_footprint(now);
         if self.exit.is_none() && !self.group_stopped {
             if self.cancel_started.is_some_and(|start| {
                 now.saturating_duration_since(start) >= self.limits.cancellation_grace
@@ -1027,6 +1070,30 @@ mod tests {
                 Ok(status)
             }
         }
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn poll_samples_a_live_worker_footprint_and_releases_it_after_exit() {
+        let workspace = tempfile::tempdir().unwrap();
+        let memory = &deadpan_diagnostics::WORKERS.other;
+        let samples = memory.samples.get();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        assert_eq!(process.live.value(), 1);
+        process.poll(Instant::now()).unwrap();
+        assert!(process.footprint.value() > 0);
+        assert!(memory.samples.get() > samples);
+        assert!(memory.footprint_bytes.level().high >= process.footprint.value());
+        // A second poll inside the interval does not sample again.
+        let sampled = process.footprint_sampled;
+        process.poll(Instant::now()).unwrap();
+        assert_eq!(process.footprint_sampled, sampled);
+        process
+            .finish_owned_work(Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        assert_eq!(process.live.value(), 0);
+        assert_eq!(process.footprint.value(), 0);
     }
 
     #[test]

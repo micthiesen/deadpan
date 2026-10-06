@@ -266,6 +266,8 @@ pub struct TrackingProtocol {
 }
 
 impl WorkerProtocol for TrackingProtocol {
+    const WORKER_CLASS: deadpan_diagnostics::WorkerClass = deadpan_diagnostics::WorkerClass::Model;
+
     type Request = HostMessage;
     type Response = WorkerMessage;
 

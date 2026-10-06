@@ -14,6 +14,7 @@ publish.workspace = true
 synthetic-worker = []
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 deadpan-core.workspace = true
 deadpan-store.workspace = true
 deadpan-plan.workspace = true

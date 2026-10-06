@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use deadpan_core::AssetId;
-use deadpan_media::picture_scan::{PictureScanError, scan_pictures};
+use deadpan_media::picture_scan::{PictureScanError, scan_pictures, scan_pictures_from};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_input::VerifiedSourceInput;
 use deadpan_media::source_qualification::DecodedSourceQualification;
@@ -126,4 +126,71 @@ fn foreign_content_visitor_failures_and_cancellation_fail_explicitly() {
         ),
         Err(PictureScanError::Deadline)
     ));
+}
+
+/// Every picture of a scan from the first picture, as (PTS, RGBA hash).
+fn hashes(
+    input: &VerifiedSourceInput,
+    video: &deadpan_media::source_qualification::QualifiedVideoSnapshot,
+    start: usize,
+    threads: u32,
+) -> Vec<(i64, [u8; 32])> {
+    let mut seen = Vec::new();
+    let limits = DecodeLimits {
+        threads,
+        ..DecodeLimits::default()
+    };
+    let count = scan_pictures_from(
+        input,
+        video,
+        limits,
+        later(),
+        &AtomicBool::new(false),
+        start,
+        |ordinal, picture| {
+            assert_eq!(ordinal, start + seen.len());
+            seen.push((picture.metadata.pts, Sha256::digest(&picture.rgba).into()));
+            Ok::<_, String>(())
+        },
+    )
+    .unwrap();
+    assert_eq!(count, seen.len());
+    seen
+}
+
+#[test]
+fn a_scan_from_any_picture_equals_the_tail_of_a_whole_scan_with_any_thread_count() {
+    for name in ["cfr-bframes.mp4", "vfr.mp4", "offset-bframes.mp4"] {
+        let input = input(name);
+        let qualification = qualified(&input);
+        let video = qualification.snapshot().video().unwrap();
+        let pictures = video.index().index().frames().len();
+        let whole = hashes(&input, video, 0, 1);
+        assert_eq!(whole.len(), pictures);
+        assert_eq!(hashes(&input, video, 0, 4), whole, "{name} threaded");
+        for start in [1, 2, pictures / 3, pictures / 2 + 1, pictures - 1] {
+            assert_eq!(
+                hashes(&input, video, start, 1),
+                whole[start..],
+                "{name} from {start}"
+            );
+        }
+        assert_eq!(
+            hashes(&input, video, pictures / 2 + 1, 4),
+            whole[pictures / 2 + 1..],
+            "{name} threaded seek"
+        );
+        assert!(matches!(
+            scan_pictures_from(
+                &input,
+                video,
+                DecodeLimits::default(),
+                later(),
+                &AtomicBool::new(false),
+                pictures,
+                |_, _| Ok::<_, String>(())
+            ),
+            Err(PictureScanError::Mismatch(_))
+        ));
+    }
 }

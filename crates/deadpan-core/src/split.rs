@@ -30,6 +30,18 @@ pub(crate) fn apply(
     identities: &SplitIdentities,
     edit_context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    apply_validated(document, target, at, identities, edit_context).map(|(result, _)| result)
+}
+
+/// [`apply`], also returning the result's complete validation, which a
+/// caller that changes nothing else can adopt instead of validating again.
+pub(crate) fn apply_validated(
+    document: &ProjectDocument,
+    target: &NodeId,
+    at: FrameDuration,
+    identities: &SplitIdentities,
+    edit_context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, crate::command::Validation), EditError> {
     let allocation = edit_context.allocation;
     let durations = document.durations()?;
     let original = document.nodes.get(target).ok_or_else(|| {
@@ -56,9 +68,23 @@ pub(crate) fn apply(
             "split identities must be fresh and distinct",
         ));
     }
-    let index = AnchorIndex::from_durations(document, durations)?;
+    let local = crate::command_work::local();
+    // The complete anchor index (every parent, offset and Repeat layout) is
+    // needed only to relocate occurrence marks inside the target. The input
+    // validated, so building it cannot fail; the target's parent is found
+    // directly otherwise.
+    let index = (!local || occurrence_marks_inside(document, target)?)
+        .then(|| AnchorIndex::from_durations(document, durations.clone()))
+        .transpose()?;
     let root = target == document.root();
-    let parent = index.parents.get(target).map(|(parent, _)| parent);
+    let found_parent;
+    let parent = match &index {
+        Some(index) => index.parents.get(target).map(|(parent, _)| parent),
+        None => {
+            found_parent = document.parent_of(target);
+            found_parent.as_ref()
+        }
+    };
     let container = parent
         .is_some_and(|parent| !matches!(document.nodes[parent].kind, NodeKind::Sequence { .. }));
     let refinement = match &original.kind {
@@ -120,7 +146,7 @@ pub(crate) fn apply(
     }
     let marks = split_marks(
         document,
-        &index,
+        index.as_ref(),
         target,
         at,
         refinement.is_some(),
@@ -195,8 +221,35 @@ pub(crate) fn apply(
         children.splice(slot..=slot, [left, right]);
     }
     result.marks = marks;
-    result.validate()?;
-    Ok(result)
+    let validation = result.validated_in_scope()?;
+    Ok((result, validation))
+}
+
+/// Whether any bound occurrence mark lies in the target's subtree, the only
+/// marks whose relocation reads the anchor index. A mark's occurrence node is
+/// inside the subtree exactly when the subtree contains it.
+fn occurrence_marks_inside(document: &ProjectDocument, target: &NodeId) -> Result<bool, EditError> {
+    let hosts: BTreeSet<NodeId> = document
+        .marks()
+        .values()
+        .flat_map(|mark| mark.bindings())
+        .filter(|binding| binding.state == MarkState::Bound)
+        .filter_map(|binding| match binding.coordinate {
+            Anchor::Occurrence { instance, .. } => Some(instance.node),
+            _ => None,
+        })
+        .collect();
+    if hosts.is_empty() {
+        return Ok(false);
+    }
+    let mut pending = vec![target];
+    while let Some(id) = pending.pop() {
+        if hosts.contains(id) {
+            return Ok(true);
+        }
+        pending.extend(document.children(id));
+    }
+    Ok(false)
 }
 
 pub(crate) fn partition(
@@ -228,7 +281,7 @@ pub(crate) fn partition(
 
 fn split_marks(
     document: &ProjectDocument,
-    index: &AnchorIndex<'_>,
+    index: Option<&AnchorIndex<'_>>,
     target: &NodeId,
     at: FrameDuration,
     refinement: bool,
@@ -246,6 +299,9 @@ fn split_marks(
                     Anchor::Occurrence { instance, position }
                         if mapping.contains_key(&instance.node) =>
                     {
+                        let index = index.ok_or_else(|| {
+                            invalid("split occurrence mark needs the anchor index")
+                        })?;
                         Some(relative_position(index, instance, *position, target)?)
                     }
                     Anchor::Local { node, position } if refinement && node == target => {

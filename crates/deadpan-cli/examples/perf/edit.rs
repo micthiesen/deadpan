@@ -71,6 +71,10 @@ pub fn run(options: &Options) -> Result<Value> {
     let package = options.package()?;
     let cycles = options.number("cycles", 30)?;
     let mut random = Lcg::new(options.number("seed", 7)?);
+    // Profiling mode: `--kinds split,pause,wrap` measures only those edits
+    // (Undo follows each wrap), so a sampling profiler attributes one path.
+    let kinds = options.text("kinds").unwrap_or("split,pause,wrap");
+    let enabled = |kind: &str| kinds.split(',').any(|selected| selected == kind);
     let opened = Instant::now();
     let mut store = ProjectStore::open(package, AccessMode::ReadWrite)?;
     store.set_generation_context_resolver(Arc::new(
@@ -93,15 +97,17 @@ pub fn run(options: &Options) -> Result<Value> {
     for _ in 0..cycles {
         // Split a physical root beat at an interior frame.
         let started = Instant::now();
-        let command = document.scope(|| {
-            (0..16).find_map(|_| {
-                let at = random.below(u64::try_from(plan.duration().frames()).ok()?);
-                split_command(&document, i64::try_from(at).ok()?, &mut ids)
-                    .ok()
-                    .flatten()
+        let command = enabled("split").then(|| {
+            document.scope(|| {
+                (0..16).find_map(|_| {
+                    let at = random.below(u64::try_from(plan.duration().frames()).ok()?);
+                    split_command(&document, i64::try_from(at).ok()?, &mut ids)
+                        .ok()
+                        .flatten()
+                })
             })
         });
-        if let Some(command) = command {
+        if let Some(command) = command.flatten() {
             let command = (ids.revision()?, command);
             measure(
                 &mut store,
@@ -111,7 +117,7 @@ pub fn run(options: &Options) -> Result<Value> {
                 started,
                 &mut split,
             )?;
-        } else {
+        } else if enabled("split") {
             split.refusals.push("no splittable root beat found".into());
         }
 
@@ -120,8 +126,12 @@ pub fn run(options: &Options) -> Result<Value> {
         let at = ProjectFrame(i64::try_from(
             random.below(u64::try_from(plan.duration().frames())?),
         )?);
-        match document.scope(|| pause_command(&store, &document, &plan, at, &mut ids)) {
-            Ok(command) => {
+        match enabled("pause")
+            .then(|| document.scope(|| pause_command(&store, &document, &plan, at, &mut ids)))
+            .transpose()
+        {
+            Ok(None) => {}
+            Ok(Some(command)) => {
                 measure(
                     &mut store,
                     &mut document,
@@ -135,6 +145,10 @@ pub fn run(options: &Options) -> Result<Value> {
         }
 
         // Wrap a root beat in a three-play Repeat, then undo that wrap.
+        if !enabled("wrap") {
+            json_bytes.push(document.to_json()?.len() as f64);
+            continue;
+        }
         let started = Instant::now();
         let children = root_children(&document);
         let target = (0..16).find_map(|_| {

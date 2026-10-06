@@ -18,7 +18,7 @@ pub(super) struct StorageWatch {
     saves: Option<SaveMarks>,
 }
 
-type SaveMarks = (Option<usize>, [Option<u64>; 3], Option<Option<u64>>);
+type SaveMarks = (Option<usize>, [Option<u64>; 4], Option<Option<u64>>);
 
 pub(super) struct Relinking {
     id: u64,
@@ -111,6 +111,9 @@ impl Service {
                 .as_ref()
                 .and_then(|save| save.error.as_ref()),
             self.shot_save.as_ref().and_then(|save| save.error.as_ref()),
+            self.correction_save
+                .as_ref()
+                .and_then(|save| save.error.as_ref()),
         ]
         .into_iter()
         .flatten()
@@ -149,7 +152,13 @@ impl Service {
             self.registers
                 .as_ref()
                 .map(|bank| Arc::as_ptr(bank) as usize),
-            [&self.transcript_save, &self.activity_save, &self.shot_save].map(|save| {
+            [
+                &self.transcript_save,
+                &self.activity_save,
+                &self.shot_save,
+                &self.correction_save,
+            ]
+            .map(|save| {
                 save.as_ref()
                     .filter(|save| save.error.is_none())
                     .map(|save| save.attempt)

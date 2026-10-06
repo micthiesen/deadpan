@@ -311,6 +311,7 @@ struct CachedSource {
     original: OriginalMediaRecord,
     bytes: u64,
     index_frames: u64,
+    _resident: deadpan_diagnostics::Resident,
 }
 
 impl CachedSource {
@@ -404,6 +405,10 @@ impl RegisteredSources {
             let oldest = oldest.clone();
             self.recency.pop_front();
             self.retained.remove(&oldest);
+            deadpan_diagnostics::CACHES
+                .decoded_pcm
+                .evictions
+                .increment();
             self.cache_bytes = remaining_bytes;
             self.cache_index_frames = remaining_index_frames;
         }
@@ -477,7 +482,10 @@ impl AudioSourceProvider for RegisteredSources {
                 "audio request differs from the fixed project revision".into(),
             ));
         }
-        if !self.retained.contains_key(asset) {
+        if self.retained.contains_key(asset) {
+            deadpan_diagnostics::CACHES.decoded_pcm.hits.increment();
+        } else {
+            deadpan_diagnostics::CACHES.decoded_pcm.misses.increment();
             let authored = self
                 .document
                 .assets()
@@ -574,6 +582,10 @@ impl AudioSourceProvider for RegisteredSources {
                     original: original.record().clone(),
                     bytes,
                     index_frames,
+                    _resident: deadpan_diagnostics::Resident::new(
+                        &deadpan_diagnostics::CACHES.decoded_pcm,
+                        bytes,
+                    ),
                 },
             );
             (self.cache_bytes, self.cache_index_frames) = reserved;

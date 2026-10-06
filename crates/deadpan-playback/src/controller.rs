@@ -254,6 +254,7 @@ impl Shared {
         state.intent = Some(Intent::Stop);
         state.prep = None;
         state.reply = None;
+        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
         drop(state);
         self.wake.notify_all();
         if analysis_changed {
@@ -282,6 +283,7 @@ impl Shared {
         state.intent = Some(Intent::Stop);
         state.prep = None;
         state.reply = None;
+        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
         drop(state);
         self.wake.notify_all();
         (self.repaint)();
@@ -452,6 +454,7 @@ impl Engine {
         state.intent = Some(Intent::Play(job.clone()));
         state.prep = None;
         state.reply = None;
+        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
         state.update = Some(job.update(Phase::Preparing, None, None, None));
         drop(state);
         self.shared.wake.notify_all();
@@ -558,6 +561,8 @@ struct Active {
     clock: Option<DeliveryClock>,
     activated: bool,
     queued: usize,
+    /// This generation's device-queue depth in process diagnostics.
+    device_queue: deadpan_diagnostics::Share,
     finished: bool,
     terminal_report: bool,
     last_sample: Option<AudioSample>,
@@ -608,6 +613,9 @@ impl Active {
             clock: None,
             activated: false,
             queued: 0,
+            device_queue: deadpan_diagnostics::Share::new(
+                &deadpan_diagnostics::QUEUES.playback_device_packets,
+            ),
             finished: false,
             terminal_report: false,
             last_sample: None,
@@ -694,6 +702,8 @@ impl Active {
         if !self.terminal_report {
             self.supply(shared)?;
         }
+        self.device_queue
+            .set(self.device.feed().queued_packets() as u64);
         #[cfg(test)]
         shared
             .controller_hooks
@@ -773,7 +783,16 @@ impl Active {
 
     fn supply(&mut self, shared: &Shared) -> Result<(), String> {
         if self.batch.is_none() && !self.finished {
-            let reply = shared.lock().reply.take();
+            // The gauge follows the slot under its lock, so a reply published
+            // between the take and the update cannot be reported as absent.
+            let reply = {
+                let mut state = shared.lock();
+                let reply = state.reply.take();
+                if reply.is_some() {
+                    deadpan_diagnostics::QUEUES.playback_prepared.set(0);
+                }
+                reply
+            };
             if let Some(reply) = reply {
                 shared.wake.notify_all();
                 match reply {
@@ -823,6 +842,9 @@ impl Active {
             }
         }
         if !self.activated && (self.queued >= preparation::BATCH_FRAMES || self.finished) {
+            deadpan_diagnostics::QUEUES
+                .playback_prefill_frames
+                .set(self.queued as u64);
             self.device
                 .feed()
                 .activate(self.generation)

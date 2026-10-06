@@ -13,6 +13,7 @@ name = "qualify_model_worker"
 test = true
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 deadpan-core.workspace = true
 deadpan-analysis.workspace = true
 serde.workspace = true

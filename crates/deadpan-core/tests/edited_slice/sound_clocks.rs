@@ -398,3 +398,15 @@ fn copied_shared_sound_clock_scope_is_checked_once_for_all_events() {
     assert_eq!(journals.len(), MAX_DOCUMENT_SOUNDS);
     assert!(journals.values().all(|journal| journal.clocks().len() == 2));
 }
+
+#[test]
+fn sound_clock_states_skip_the_structural_byte_bound_and_count_exactly() {
+    let before = shifted(&shifted(&fixture(), "one"), "two");
+    let state = before.audio_bindings();
+    assert!(!state.sound_clocks().is_empty());
+    let (bound, outcome) = binding_wire_check_for_tests(state);
+    // Sound journals have no structural bound, so the state is counted
+    // exactly, with the outcome `to_json` gives after validation.
+    assert_eq!(bound, None);
+    assert_eq!(outcome, state.to_json().map(|_| ()));
+}

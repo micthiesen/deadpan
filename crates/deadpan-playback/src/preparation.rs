@@ -110,6 +110,7 @@ fn publish(shared: &Shared, job: &Job, reply: Reply) {
     let mut state = shared.lock();
     if !job.cancelled.load(Ordering::Acquire) && !state.shutdown() {
         state.reply = Some(reply);
+        deadpan_diagnostics::QUEUES.playback_prepared.set(1);
     }
     drop(state);
     shared.wake.notify_all();

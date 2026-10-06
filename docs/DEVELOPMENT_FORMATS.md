@@ -1,12 +1,14 @@
 # Supported development project formats
 
-The current package uses SQLite schema 65 and core document schema 46. Schema
+The current package uses SQLite schema 66 and core document schema 46. Schema
 64 stores revision documents only at [keyframes](TIMING_STORAGE.md#revision-storage-database-schema-64),
 records each revision's patch-chain depth and JSON size bound, and adds the
 [verified history receipt](TIMING_STORAGE.md#verified-history-receipts).
 Schema 65 adds the [register bank digest](TIMING_STORAGE.md#register-bank-digest-database-schema-65).
+Schema 66 adds [analysis corrections](ANALYSIS_CORRECTIONS.md) and
+[resumable shot scan progress](SHOT_DETECTION.md).
 Under the 2026-09-30 development-format authorization there is no migration:
-this build refuses schemas 1 through 64, including the former schema-59
+this build refuses schemas 1 through 65, including the former schema-59
 through 62 additive upgrades, as `UnsupportedSchema` without changes.
 
 History patches now record retained audio timing as granular
@@ -68,7 +70,7 @@ supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 65 performs read-only validation and reports
+Calling `project migrate` on schema 66 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
 native writer. Calling it on an older package returns `SchemaUnsupported`
 before creating a backup or obtaining a writer. An open native endpoint only

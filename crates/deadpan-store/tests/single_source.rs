@@ -549,3 +549,53 @@ fn a_valid_generic_reimport_branch_cannot_be_forged_into_single_source_history()
     );
     Ok(())
 }
+
+#[test]
+fn shot_scan_progress_is_kept_only_for_the_ready_original() -> Result {
+    use deadpan_analysis::{SIGNATURE_VERSION, ShotAnalysis, ShotProgress};
+    use deadpan_store::ShotAnalysisKey;
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = create(scratch.path())?;
+    let foreign = ShotAnalysisKey {
+        content: "blake3:foreign".into(),
+        video_stream: 0,
+        signature_version: SIGNATURE_VERSION.into(),
+    };
+    let progress = ShotProgress::new(30, Vec::new())?;
+    // Before the Original is ready, progress is kept like a generic project's.
+    store.save_shot_scan_progress(&foreign, &progress)?;
+    let original = prepare(&mut store, "offset-bframes.mp4", true)?;
+    store.initialize_prepared_source(&initialization(), &original, &active())?;
+    let key = ShotAnalysisKey {
+        content: original.receipt().original().content().to_string(),
+        ..foreign.clone()
+    };
+    // Other content's progress is refused, and the Original's progress
+    // removes the stale row.
+    assert!(matches!(
+        store.save_shot_scan_progress(&foreign, &progress),
+        Err(StoreError::Integrity(_))
+    ));
+    assert!(store.shot_scan_progress(&foreign, 30)?.is_none());
+    store.save_shot_scan_progress(&key, &progress)?;
+    assert!(store.shot_scan_progress(&key, 30)?.is_some());
+    // A refused save keeps the Original's progress.
+    assert!(store.save_shot_scan_progress(&foreign, &progress).is_err());
+    assert!(store.shot_scan_progress(&key, 30)?.is_some());
+    // A stale row left by an older writer is removed by any shot save.
+    let connection = Connection::open(path.join("project.sqlite"))?;
+    connection.execute(
+        "INSERT INTO shot_scan_progress(content,video_stream,signature_version,pictures,
+            next_picture,measures) VALUES('blake3:foreign',0,?1,30,0,x'')",
+        [SIGNATURE_VERSION],
+    )?;
+    drop(connection);
+    let other_stream = ShotAnalysisKey {
+        video_stream: 1,
+        ..key.clone()
+    };
+    store.save_shot_analysis(&other_stream, &ShotAnalysis::from_changes(vec![[0, 0, 0]])?)?;
+    assert!(store.shot_scan_progress(&foreign, 30)?.is_none());
+    assert!(store.shot_scan_progress(&key, 30)?.is_some());
+    Ok(())
+}

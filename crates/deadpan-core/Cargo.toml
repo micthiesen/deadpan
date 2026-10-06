@@ -12,8 +12,14 @@ description = "Exact timing, validated beat documents, and reversible editing co
 serde = { workspace = true, features = ["rc"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 
+[features]
+# Equivalence oracles for the local command-work replacements; never enabled
+# by production crates. The crate's own integration tests enable it below.
+test-support = []
+
 [dev-dependencies]
 deadpan-chaos.workspace = true
+deadpan-core = { workspace = true, features = ["test-support"] }
 proptest.workspace = true
 
 [lints]

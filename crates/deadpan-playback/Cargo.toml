@@ -9,6 +9,7 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 deadpan-core.workspace = true
 deadpan-store.workspace = true
 deadpan-plan.workspace = true

@@ -183,6 +183,48 @@ and marks and binding ancestry depend on durations and Repeat ancestors
 anywhere above a change. The complete pass costs about 9 ms on 10,000 beats
 with retained clocks, and it remains the single source of truth.
 
+### Command work reuse
+
+The remaining whole-document passes inside a command were repeated, not
+required. Each replacement below computes the same value once or computes an
+exact local equivalent; `deadpan_core::with_reference_command_work` restores
+the previous computation on the current thread as an oracle.
+
+| Step | Before | Now | Why it is the same |
+| --- | --- | --- | --- |
+| Lineage and mark transforms | Each rebuilt the result's structural durations | One shared value per structure (`command::shared_structure`) | Only `audio_lineage` changes in between, which the structural pass does not read |
+| Final result validation | Repeated the structural pass | Takes that shared value when the shared post-processing (prune, compaction, basis lock) ran without sound, beat-sound or allowance restoration | Those steps change bindings and basis state only |
+| Split command | Split validated its result, then the transaction validated it again | The transaction adopts Split's complete validation when pruning removed nothing, no new timing table exists and the basis did not lock | The result is then the Split result with a new revision identity, which validation does not read |
+| Split's anchor index | Every parent, offset and Repeat layout | Built only when a bound occurrence mark lies in the target; otherwise the target's parent is found directly | The index is read only to relocate those marks; the input validated, so building it cannot fail |
+| Pause Split input | The captured copy (head plus new bindings) was validated from scratch | Its durations are the head's (`with_proved_durations`) | A copy differing only in a binding state that `validate_for` accepted against the head validates to the head's durations; no other invariant reads bindings |
+| Intermediate validations (Split result, capture, resume terms) | Every binding owner's placement checks | Owners unchanged from the validated head in scope reuse its proof, through the exact binding patch to that head | The same argument as committed results: reused checks are pure functions of the binding and its immutable tables |
+| Capture byte limit | Validated again, then serialized the complete binding state | Layouts remember their exact compact length; bindings use the structural bound binding admission already relies on; exact counting only when the bound exceeds the limit | `to_json` after a successful validation fails exactly when the length exceeds the limit |
+| Layout admission | Built the JSON text to measure it | Counts bytes without retaining them, once per layout | Same length, same limit |
+| Patch diff, lineage comparison | Collected the key union and looked every key up in both maps | One merged pass over both sorted maps; lineage ancestors use hash maps | Same comparisons in the same key order |
+| Store inverse check | Copied the result, applied the inverse, compared whole documents | `DocumentPatch::restores`: the same guards and errors, then a field-by-field comparison of the would-be result | Equal to `apply_stored(from) == to`, checked on every random step |
+
+`crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
+40 edits over Hold-only, linked-Source and placed-sound documents (pauses at
+seams and interiors, Splits anywhere and of occurrence-mark hosts, Repeat
+wraps with and without gaps, ripple deletes, Hold durations, Local,
+Occurrence and Sequence marks, play counts, Group, Ungroup, Retime wraps,
+root and beat sounds and Hold allowances, including refusals of at least four
+kinds) and requires
+identical transactions, results, durations and errors with and without the
+oracle, through both the validated and the unscoped entry points, and
+identical `restores` results for matching, reversed and conflicting patches.
+Separate tests compare the capture's byte check with `to_json` below and above
+the structural bound (12,000 newly bound Holds) and with sound clocks (no
+bound), and check that scoped binding reuse rechecks every owner of a
+replaced timing table. The oracle and these probes are compiled only for
+tests (`test-support` feature).
+Debug builds also assert at each reuse that the shared or proved durations and
+any adopted validation equal a complete recomputation.
+
+The structural walk and each validation family still run once per commit over
+the whole document; on a 10,000-sibling root a pause also composes one resume
+term per later physical owner, which the authored semantics require.
+
 ## Verified history receipts
 
 Every revision's stored rows (revision, keyframe metadata, history entry or
@@ -287,8 +329,11 @@ and validation does not rebuild admitted layouts' indexes. See the
 - The first edit that binds owners still captures every physical owner's
   lattice, and the full-structure table they share: on 10,000 Holds about
   3 MB of bindings and 2.8 MB of layout, retained once.
-- Commands still do whole-document work: each validates its result (about
-  9 ms on 10,000 beats), Split and pause validate their intermediate result
-  again, and audio lineage reconciliation, mark transforms and the patch diff
-  each walk every node. A pause also serializes the complete binding state to
-  check its size.
+- Each commit still validates its result once over the whole document, and
+  a pause validates its Split intermediate; see
+  [command work reuse](#command-work-reuse). A pause still captures a
+  complete-structure layout and builds its index before slicing it, and on a
+  wide root composes one resume term per later sibling.
+- Every edit's patch carries the changed parent Sequence's complete children
+  list before and after, in both directions; on a 10,000-sibling root that is
+  serialized, checked and written (with `F_FULLFSYNC`) on every commit.

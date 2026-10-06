@@ -69,6 +69,10 @@ pub(super) struct Transcription {
     /// A finished transcript not yet admitted by a busy project service.
     unsaved: Option<(TranscriptKey, Arc<Transcript>)>,
     attempts: u64,
+    /// Correction saves, numbered per app run like transcript attempts.
+    pub(super) correction_attempts: u64,
+    /// The correction sheet's words and pauses, per published analysis.
+    pub(super) correction_stream: Option<super::corrections::StreamCache>,
     /// A word chosen by click or search and the Original picture it moved to.
     /// While the cursor stays there, that word is current even when a later
     /// word also begins in the same picture.
@@ -80,6 +84,9 @@ pub(super) struct Transcription {
     )>,
     /// Speech over the Original's pictures for one analysis.
     source_speech: Option<((u64, SpeechKey), Arc<deadpan_core::SpeechTimeline>)>,
+    /// Marks of the last Edit and Original timelines, held with them.
+    edit_marks: Option<(Arc<deadpan_core::SpeechTimeline>, Arc<AnalysisMarks>)>,
+    source_marks: Option<(Arc<deadpan_core::SpeechTimeline>, Arc<AnalysisMarks>)>,
     /// Enter (true) or Shift+Enter (false) pressed in Find words this frame.
     step: Option<bool>,
     /// The background thread, joined briefly at exit so its worker is reaped.
@@ -103,8 +110,12 @@ impl Default for Transcription {
             chosen: None,
             edit_speech: None,
             source_speech: None,
+            edit_marks: None,
+            source_marks: None,
             step: None,
             attempts: 0,
+            correction_attempts: 0,
+            correction_stream: None,
             thread: None,
             activity: activity::ActivityJob::default(),
         }
@@ -121,6 +132,7 @@ impl Transcription {
             session,
             seen_pack_changes: previous.seen_pack_changes,
             attempts: previous.attempts,
+            correction_attempts: previous.correction_attempts,
             ..Self::default()
         };
     }
@@ -468,6 +480,12 @@ impl DeadpanApp {
             .checked_sub(1)
     }
 
+    /// Corrections renumber words: drop the chosen word and search again.
+    pub(super) fn after_correction(&mut self) {
+        self.transcription.chosen = None;
+        self.update_transcript_search();
+    }
+
     fn update_transcript_search(&mut self) {
         let matches = self
             .workspace
@@ -478,6 +496,20 @@ impl DeadpanApp {
             });
         self.transcription.current_match = None;
         self.transcription.matches = matches;
+    }
+
+    /// The rail's way into the correction sheet.
+    pub(super) fn correct_offer(&mut self, ui: &mut egui::Ui) {
+        if ui
+            .add(style::row_action(
+                ui,
+                "Correct words and pauses…",
+                ":correct",
+            ))
+            .clicked()
+        {
+            self.open_corrections(ui.ctx());
+        }
     }
 
     /// Whether the rail shows a searchable transcript.
@@ -726,6 +758,7 @@ impl DeadpanApp {
                             approximate: words[word].approximate(),
                             current: Some(word) == current,
                             matched: highlighted.iter().any(|range| range.contains(&word)),
+                            corrected: transcript.corrected(word),
                         })
                         .collect();
                     if let Some(offset) = phrase(ui, &entries) {
@@ -742,7 +775,28 @@ impl DeadpanApp {
         if approximate > 0 {
             caption.push_str(&format!(" · {approximate} approximate in grey"));
         }
+        let corrected = (0..words.len())
+            .filter(|word| transcript.corrected(*word))
+            .count();
+        if corrected > 0 {
+            caption.push_str(&format!(" · {corrected} corrected"));
+        }
         ui.label(egui::RichText::new(caption).size(11.0).weak());
+        let problem = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| {
+                workspace
+                    .corrections
+                    .as_ref()
+                    .and_then(|corrections| corrections.error.clone())
+                    .map(|error| format!("Stored corrections are unreadable: {error}"))
+            })
+            .or_else(|| transcript.problem());
+        if let Some(problem) = problem {
+            ui.colored_label(style::WARNING, problem);
+        }
+        self.correct_offer(ui);
         if let Some(word) = clicked {
             self.jump_to_word(word);
         }
@@ -809,6 +863,7 @@ impl DeadpanApp {
                                 matched: matches
                                     .iter()
                                     .any(|range| range.contains(&(runs[index].word as usize))),
+                                corrected: transcript.corrected(runs[index].word as usize),
                             }
                         })
                         .collect();
@@ -896,6 +951,8 @@ struct Entry<'a> {
     approximate: bool,
     current: bool,
     matched: bool,
+    /// Set by a person; drawn with a thin lavender underline.
+    corrected: bool,
 }
 
 /// One sentence as a single wrapped text run. Returns the clicked entry.
@@ -916,6 +973,9 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
         if entry.current {
             format.background = style::SELECTED;
             format.color = style::LAVENDER;
+        }
+        if entry.corrected {
+            format.underline = egui::Stroke::new(1.0, style::LAVENDER);
         }
         if entry.matched {
             format.underline = egui::Stroke::new(1.5, style::CURSOR);
@@ -1015,15 +1075,25 @@ impl DeadpanApp {
         shots: impl FnOnce(&[usize]) -> Result<Vec<deadpan_core::ShotRun>, deadpan_core::EditError>,
     ) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
         // A failure places only its own analysis; the others stay usable.
+        // Corrections that failed or no longer apply refuse word and pause
+        // operators with the reason; the recognizer's words never stand in.
         let timeline = match &inputs.transcript {
-            Some(transcript) => words(&transcript.transcript)
-                .unwrap_or_else(|error| deadpan_core::SpeechTimeline::without_words(error.message)),
+            Some(transcript) => match transcript.problem() {
+                Some(problem) => deadpan_core::SpeechTimeline::without_words(problem),
+                None => words(&transcript.transcript).unwrap_or_else(|error| {
+                    deadpan_core::SpeechTimeline::without_words(error.message)
+                }),
+            },
             None => deadpan_core::SpeechTimeline::without_words(self.words_not_ready()),
         };
         let timeline = match &inputs.activity {
+            Some(activity) if activity.problem().is_some() => {
+                timeline.without_pauses(activity.problem().unwrap_or_default())
+            }
             Some(activity) => {
-                let projected = deadpan_cli::speech::pause_seconds(&activity.activity)
-                    .and_then(|seconds| pauses(&seconds));
+                let projected =
+                    deadpan_cli::speech::pause_seconds(&activity.activity, &activity.pauses.pauses)
+                        .and_then(|seconds| pauses(&seconds));
                 match projected {
                     Ok(ranges) => timeline
                         .clone()
@@ -1080,6 +1150,23 @@ impl DeadpanApp {
         Ok(speech)
     }
 
+    /// Pause bands and shot starts on the Edit clock, for the beat strip.
+    /// Empty without the analyses; never an error in the strip.
+    pub(super) fn edit_analysis_marks(&mut self) -> Arc<AnalysisMarks> {
+        let Ok(speech) = self.edit_analysis() else {
+            return Arc::default();
+        };
+        cached_marks(&mut self.transcription.edit_marks, speech)
+    }
+
+    /// Pause bands and shot ticks over the Original's pictures.
+    pub(super) fn source_analysis_marks(&mut self) -> Arc<AnalysisMarks> {
+        let Ok(speech) = self.source_analysis() else {
+            return Arc::default();
+        };
+        cached_marks(&mut self.transcription.source_marks, speech)
+    }
+
     /// Edit speech whose words are available.
     pub(super) fn edit_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
         let speech = self.edit_analysis()?;
@@ -1090,7 +1177,7 @@ impl DeadpanApp {
     }
 
     /// Speech over the Original's pictures, cached per analysis.
-    fn source_analysis(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+    pub(super) fn source_analysis(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
         let (inputs, asset, workspace) =
             self.speech_inputs().ok_or_else(|| self.words_not_ready())?;
         let key = (workspace.session, self.speech_key(&inputs));
@@ -1334,10 +1421,81 @@ struct SpeechInputs {
 
 /// Identifies the analyses behind a cached timeline: each analysis key, or
 /// the reason it is missing, which changes as the job progresses.
+/// Pause frame ranges and shot-occurrence starts of a timeline, in frames.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub(super) struct AnalysisMarks {
+    pub pauses: Vec<std::ops::Range<u64>>,
+    pub shots: Vec<u64>,
+}
+
+pub(super) fn analysis_marks(speech: &deadpan_core::SpeechTimeline) -> AnalysisMarks {
+    let frame = |at: ProjectFrame| u64::try_from(at.0).unwrap_or(0);
+    AnalysisMarks {
+        pauses: speech
+            .pauses()
+            .unwrap_or_default()
+            .iter()
+            .map(|range| frame(range.start())..frame(range.end()))
+            .collect(),
+        shots: speech
+            .shots()
+            .unwrap_or_default()
+            .iter()
+            .map(|run| frame(run.range.start()))
+            .filter(|start| *start > 0)
+            .collect(),
+    }
+}
+
+/// Marks derived once per cached timeline, held with the timeline they came
+/// from so the strip and range bar never rebuild them per frame.
+fn cached_marks(
+    cache: &mut Option<(Arc<deadpan_core::SpeechTimeline>, Arc<AnalysisMarks>)>,
+    speech: Arc<deadpan_core::SpeechTimeline>,
+) -> Arc<AnalysisMarks> {
+    if let Some((timeline, marks)) = cache.as_ref()
+        && Arc::ptr_eq(timeline, &speech)
+    {
+        return Arc::clone(marks);
+    }
+    let marks = Arc::new(analysis_marks(&speech));
+    *cache = Some((speech, Arc::clone(&marks)));
+    marks
+}
+
+/// The published analyses a timeline was built from, held so their identity
+/// cannot be reused by a later allocation.
+#[derive(Clone, Default)]
+struct Published {
+    transcript: Option<Arc<crate::project::OriginalTranscript>>,
+    activity: Option<Arc<crate::project::OriginalActivity>>,
+    shots: Option<Arc<crate::project::OriginalShots>>,
+}
+
+impl PartialEq for Published {
+    fn eq(&self, other: &Self) -> bool {
+        fn same<T>(left: &Option<Arc<T>>, right: &Option<Arc<T>>) -> bool {
+            match (left, right) {
+                (Some(left), Some(right)) => Arc::ptr_eq(left, right),
+                (None, None) => true,
+                _ => false,
+            }
+        }
+        same(&self.transcript, &other.transcript)
+            && same(&self.activity, &other.activity)
+            && same(&self.shots, &other.shots)
+    }
+}
+
+/// Analyses by key, plus the corrections version and the published analysis
+/// identities: a correction or a re-save under the same key changes the words,
+/// pauses or shots without changing any analysis key.
 type SpeechKey = (
     Result<TranscriptKey, String>,
     Result<deadpan_store::SpeechActivityKey, String>,
     Result<deadpan_store::ShotAnalysisKey, String>,
+    u64,
+    Published,
 );
 
 impl DeadpanApp {
@@ -1358,6 +1516,15 @@ impl DeadpanApp {
                 .as_ref()
                 .map(|shots| shots.key.clone())
                 .ok_or_else(|| self.shots_not_ready()),
+            self.workspace
+                .as_ref()
+                .and_then(|workspace| workspace.corrections.as_ref())
+                .map_or(0, |corrections| corrections.version()),
+            Published {
+                transcript: inputs.transcript.clone(),
+                activity: inputs.activity.clone(),
+                shots: inputs.shots.clone(),
+            },
         )
     }
 }

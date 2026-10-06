@@ -303,6 +303,7 @@ impl Fixture {
             transcript: None,
             speech_activity: None,
             shot_analysis: None,
+            corrections: None,
         })
     }
 

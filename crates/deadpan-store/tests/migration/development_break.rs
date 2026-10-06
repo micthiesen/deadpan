@@ -87,8 +87,8 @@ pub(super) fn assert_refused(package: &Path, version: u32) -> Result {
 }
 
 #[test]
-fn schemas1_through64_fail_before_reading_document_or_acquiring_writer() -> Result {
-    for version in 1..=64 {
+fn schemas1_through65_fail_before_reading_document_or_acquiring_writer() -> Result {
+    for version in 1..=65 {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("unsupported.deadpan");
         fs::create_dir(&package)?;
@@ -114,7 +114,7 @@ fn schemas1_through64_fail_before_reading_document_or_acquiring_writer() -> Resu
 
 #[test]
 fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Result {
-    for version in [1, 16, 38, 51, 52, 53, 54, 55, 56, 59, 62, 63, 64] {
+    for version in [1, 16, 38, 51, 52, 53, 54, 55, 56, 59, 62, 63, 64, 65] {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("locked.deadpan");
         fs::create_dir(&package)?;
@@ -133,10 +133,10 @@ fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Resu
 }
 
 #[test]
-fn current_schema65_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema66_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 65);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 66);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -154,7 +154,7 @@ fn current_schema65_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (65, 65));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (66, 66));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);

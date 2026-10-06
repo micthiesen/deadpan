@@ -39,6 +39,8 @@ pub(super) struct Markers {
     /// The Edit frame the badge reports.
     pub frame: u64,
     pub range: Option<std::ops::Range<u64>>,
+    /// Pause bands and shot starts on the Edit clock, sorted.
+    pub analysis: std::sync::Arc<super::transcript::AnalysisMarks>,
 }
 
 pub(super) fn original(
@@ -124,6 +126,7 @@ pub(super) fn strip(
                 egui::vec2(layout.card_width - 8.0, layout.card_height),
             );
             let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
+            paint_analysis(ui, rect, beat, &markers);
             if let Some(range) = &markers.range
                 && beat.frames > 0
             {
@@ -163,6 +166,47 @@ pub(super) fn strip(
         }
     });
     clicked
+}
+
+/// Pause bands along a card's top edge and shot ticks below them, mapped
+/// through the card's own frames. The top stays visible when a compact
+/// window clips the card's bottom.
+fn paint_analysis(ui: &egui::Ui, rect: egui::Rect, beat: &BeatRow, markers: &Markers) {
+    if beat.frames == 0 {
+        return;
+    }
+    let end = beat.start + beat.frames;
+    let x = |at: u64| rect.left() + rect.width() * (at - beat.start) as f32 / beat.frames as f32;
+    let first = markers
+        .analysis
+        .pauses
+        .partition_point(|pause| pause.end <= beat.start);
+    for pause in markers.analysis.pauses[first..]
+        .iter()
+        .take_while(|pause| pause.start < end)
+    {
+        let band = egui::Rect::from_min_max(
+            egui::pos2(x(pause.start.max(beat.start)), rect.top() + 1.0),
+            egui::pos2(x(pause.end.min(end)), rect.top() + 4.0),
+        );
+        ui.painter().rect_filled(band, 0.0, style::PAUSE_BAND);
+    }
+    let first = markers
+        .analysis
+        .shots
+        .partition_point(|shot| *shot <= beat.start);
+    for shot in markers.analysis.shots[first..]
+        .iter()
+        .take_while(|shot| **shot < end)
+    {
+        ui.painter().line_segment(
+            [
+                egui::pos2(x(*shot), rect.top() + 1.0),
+                egui::pos2(x(*shot), rect.top() + 10.0),
+            ],
+            egui::Stroke::new(1.0, style::SHOT_TICK),
+        );
+    }
 }
 
 fn beat_card(
@@ -423,6 +467,7 @@ mod tests {
                             cursor: Some((marker, 0.0)),
                             frame: beats[marker].start,
                             range: None,
+                            ..Markers::default()
                         },
                         true,
                         &mut |_| None,
@@ -705,6 +750,7 @@ mod tests {
                                                 cursor: Some((count - 1, 0.0)),
                                                 frame: beats[count - 1].start,
                                                 range: None,
+                                                ..Markers::default()
                                             },
                                             reveal,
                                             &mut |_| None,

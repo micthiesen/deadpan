@@ -49,6 +49,32 @@ impl Service {
     }
 }
 
+impl Service {
+    /// Append a scan checkpoint's changed measures to the current session's
+    /// Original's saved progress. Progress is rebuildable, so a refused or
+    /// failed append is dropped silently: later tails of that scan no longer
+    /// join and are refused too, and the finished analysis (or the next
+    /// scan, from the last saved progress) replaces it.
+    pub(super) fn save_shot_progress_command(
+        &mut self,
+        expected_session: u64,
+        key: deadpan_store::ShotAnalysisKey,
+        progress: Arc<deadpan_analysis::ShotProgressTail>,
+    ) {
+        let Some(workspace) = self.workspace.as_ref() else {
+            return;
+        };
+        if workspace.session != expected_session
+            || original_pictures(workspace, &key).ok() != Some(progress.pictures())
+        {
+            return;
+        }
+        if let Some(store) = self.store.as_ref() {
+            let _ = store.append_shot_scan_progress(&key, &progress);
+        }
+    }
+}
+
 /// Shots are saved only for the session's ready Original, its qualified
 /// picture stream and the current signature, so the published analysis
 /// always describes the pictures on screen. Returns the qualified picture

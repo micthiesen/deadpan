@@ -102,6 +102,8 @@ pub enum TranscriptionError {
     #[error(transparent)]
     Activity(#[from] deadpan_analysis::ActivityError),
     #[error(transparent)]
+    Corrections(#[from] deadpan_analysis::CorrectionError),
+    #[error(transparent)]
     Supervisor(#[from] deadpan_jobs::process::SupervisorError),
     #[error(transparent)]
     Artifact(#[from] deadpan_jobs::artifact::ArtifactError),
@@ -749,7 +751,36 @@ pub fn run_transcript(arguments: &[&str]) -> Result<(), crate::CliError> {
     let receipt = analysed_receipt(&store, asset.as_ref())?;
     let content = receipt.original().content().to_string();
     let mut transcripts = Vec::new();
-    for (key, transcript) in store.transcripts_for_content(&content)? {
+    let stored = store.analysis_corrections(&crate::speech::corrections_key(
+        &content,
+        receipt
+            .snapshot()
+            .audio()
+            .map_or(0, |audio| audio.stream().stream_index),
+    ));
+    let (corrections, corrections_error) = match stored {
+        Ok(stored) => (stored, None),
+        Err(error) => (None, Some(error.to_string())),
+    };
+    for (key, recognized) in store.transcripts_for_content(&content)? {
+        // Search and print the words as people corrected them.
+        let corrected = match corrections.as_ref().filter(|_| {
+            key.audio_stream
+                == receipt
+                    .snapshot()
+                    .audio()
+                    .map_or(u32::MAX, |audio| audio.stream().stream_index)
+        }) {
+            Some(stored) => stored
+                .corrections
+                .apply_to_transcript(&recognized)
+                .map_err(TranscriptionError::from)?,
+            None => deadpan_analysis::CorrectedTranscript::recognized(recognized),
+        };
+        let transcript = &corrected.transcript;
+        let corrected_words: Vec<usize> = (0..transcript.words().len())
+            .filter(|word| corrected.corrected(*word))
+            .collect();
         let matches = search.map(|words| {
             transcript
                 .search(words)
@@ -770,8 +801,20 @@ pub fn run_transcript(arguments: &[&str]) -> Result<(), crate::CliError> {
         });
         transcripts.push(match matches {
             Some(matches) => serde_json::json!({ "key": key, "matches": matches }),
-            None => serde_json::json!({ "key": key, "transcript": transcript }),
+            None => serde_json::json!({
+                "key": key,
+                "transcript": transcript,
+                "corrected_words": corrected_words,
+                "replaced_recognized_words": corrected.replaced,
+                "corrections_skipped": corrected.skipped,
+            }),
         });
     }
-    crate::write_json(&serde_json::json!({ "protocol": 1, "transcripts": transcripts }))
+    crate::write_json(&serde_json::json!({
+        "protocol": 1,
+        "correction_rule": deadpan_analysis::CORRECTION_RULE,
+        "corrections_version": corrections.as_ref().map(|stored| stored.version),
+        "corrections_error": corrections_error,
+        "transcripts": transcripts,
+    }))
 }

@@ -5,19 +5,22 @@
 //! exists. A job thread opens a read-only store, copies the verified
 //! Original snapshot, decodes and measures every picture, and hands the
 //! validated analysis to the project service, which saves it outside history
-//! and publishes it with the workspace. The Original card shows progress or
+//! and publishes it with the workspace. Every ten seconds the scan offers a
+//! checkpoint, which the service saves outside history too, so a scan
+//! interrupted by quitting or closing the project continues from it later. The Original card shows progress or
 //! the shot count, and a failure appears with Try again below the REUSE
 //! heading.
 
 use std::sync::mpsc;
 
-use deadpan_analysis::ShotAnalysis;
+use deadpan_analysis::{ShotAnalysis, ShotProgressTail};
 use deadpan_store::{AccessMode, ProjectStore, ShotAnalysisKey};
 
 use super::*;
 
 enum Event {
     Progress(u8),
+    Checkpoint(ShotAnalysisKey, ShotProgressTail),
     Done(Result<(ShotAnalysisKey, ShotAnalysis), String>),
 }
 
@@ -44,6 +47,8 @@ pub(super) struct ShotJob {
     threads: Vec<std::thread::JoinHandle<()>>,
     /// A finished analysis not yet admitted by a busy project service.
     unsaved: Option<(ShotAnalysisKey, Arc<ShotAnalysis>)>,
+    /// Checkpoint measures not yet submitted; a newer tail merges into it.
+    checkpoint: Option<(ShotAnalysisKey, ShotProgressTail)>,
     attempts: u64,
     /// Shot count of the published analysis, keyed by its allocation, so the
     /// rule runs once per analysis rather than every frame.
@@ -110,24 +115,42 @@ impl ShotJob {
 }
 
 /// Scan the Original of the project at `package` from a read-only store.
+/// Continues from the package's saved checkpoint when it has one.
 fn scan(
     package: &std::path::Path,
     cancel: &AtomicBool,
-    mut progress: impl FnMut(u8),
+    send: impl Fn(Event),
 ) -> Result<(ShotAnalysisKey, ShotAnalysis), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
     let store = ProjectStore::open(package, AccessMode::ReadOnly).map_err(|e| e.to_string())?;
     let input = deadpan_cli::shots::prepare_shot_input(&store, None, cancel, deadline)
         .map_err(|e| e.to_string())?;
+    let resume = deadpan_cli::shots::stored_shot_progress(&store, &input);
     drop(store);
     let mut reported = 0;
-    let scan = deadpan_cli::shots::scan_shots(&input, cancel, deadline, |done, total| {
-        let percent = (done * 100 / total.max(1)) as u8;
-        if percent != reported {
-            reported = percent;
-            progress(percent);
-        }
-    })
+    let options = deadpan_cli::shots::ShotScanOptions {
+        resume,
+        ..deadpan_cli::shots::ShotScanOptions::default()
+    };
+    let scan = deadpan_cli::shots::scan_shots(
+        &input,
+        cancel,
+        deadline,
+        options,
+        |done, total| {
+            let percent = (done * 100 / total.max(1)) as u8;
+            if percent != reported {
+                reported = percent;
+                send(Event::Progress(percent));
+            }
+        },
+        // Only the measures changed since the previous checkpoint cross to
+        // the UI thread; the service appends them to the saved progress.
+        |tail| {
+            send(Event::Checkpoint(input.key.clone(), tail));
+            true
+        },
+    )
     .map_err(|e| e.to_string())?;
     Ok((scan.key, scan.analysis))
 }
@@ -147,6 +170,17 @@ impl DeadpanApp {
         {
             match event {
                 Event::Progress(percent) => self.shots.status = Status::Scanning(percent),
+                Event::Checkpoint(key, tail) => {
+                    // A waiting tail and a newer one join; the newer one
+                    // alone would leave out the waiting measures.
+                    let tail = match self.shots.checkpoint.take() {
+                        Some((waiting, older)) if waiting == key => {
+                            older.merge(tail.clone()).unwrap_or(tail)
+                        }
+                        _ => tail,
+                    };
+                    self.shots.checkpoint = Some((key, tail));
+                }
                 Event::Done(result) => {
                     self.shots.events = None;
                     match result {
@@ -206,8 +240,8 @@ impl DeadpanApp {
         let spawned = std::thread::Builder::new()
             .name("deadpan-shots".into())
             .spawn(move || {
-                let result = scan(&package, &cancel, |percent| {
-                    let _ = sender.send(Event::Progress(percent));
+                let result = scan(&package, &cancel, |event| {
+                    let _ = sender.send(event);
                     repaint.request_repaint();
                 });
                 let _ = sender.send(Event::Done(result));
@@ -227,9 +261,11 @@ impl DeadpanApp {
     fn save_shots(&mut self, session: Option<u64>, context: &egui::Context) {
         let Some(session) = session else {
             self.shots.unsaved = None;
+            self.shots.checkpoint = None;
             return;
         };
         let Some((key, analysis)) = self.shots.unsaved.as_ref() else {
+            self.save_shot_checkpoint(session);
             return;
         };
         // Saves use their own lane and never occupy the user-command slot,
@@ -259,6 +295,30 @@ impl DeadpanApp {
                 self.shots.status = Status::Failed(format!("the shots were not saved: {error}"));
             }
         }
+    }
+
+    /// Submit the waiting checkpoint when the annotation lane is free. A
+    /// checkpoint is best effort: while the service is busy it waits and
+    /// newer tails merge into it, and a finished analysis makes it moot.
+    fn save_shot_checkpoint(&mut self, session: u64) {
+        if self.shots.unsaved.is_some() || self.shots.events.is_none() {
+            self.shots.checkpoint = None;
+            return;
+        }
+        if self.shots.checkpoint.is_none()
+            || self.service.is_busy()
+            || self.service.annotation_busy()
+        {
+            return;
+        }
+        let Some((key, tail)) = self.shots.checkpoint.take() else {
+            return;
+        };
+        let _ = self.service.submit(ProjectRequest::SaveShotProgress {
+            expected_session: session,
+            key,
+            progress: Arc::new(tail),
+        });
     }
 
     /// The REUSE heading, with the shot status on its right so progress and

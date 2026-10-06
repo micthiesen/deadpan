@@ -141,29 +141,103 @@ impl AudioBindingPatch {
     }
 }
 
+impl AudioBindingPatch {
+    /// Exactly `self.apply(state).map(|result| result == *expected)`, with the
+    /// same guards and errors in the same order, without copying `state`.
+    pub(crate) fn restores(
+        &self,
+        state: &AudioBindingState,
+        expected: &AudioBindingState,
+    ) -> Result<bool, EditError> {
+        if !crate::command_work::local() {
+            return self.apply(state).map(|result| result == *expected);
+        }
+        if self.is_empty() {
+            return Err(invalid(
+                "an audio binding patch must change at least one entry",
+            ));
+        }
+        // The timing list is applied in order and may name an id twice.
+        let mut timings: BTreeMap<&AudioTimingId, Option<&crate::FrozenAudioLayout>> =
+            BTreeMap::new();
+        for change in &self.timings {
+            let current = timings
+                .get(&change.id)
+                .copied()
+                .unwrap_or_else(|| state.timings.get(&change.id));
+            if current != change.before.as_ref() {
+                return Err(conflict());
+            }
+            timings.insert(&change.id, change.after.as_ref());
+        }
+        check_owner_changes(&state.bindings, &self.bindings)?;
+        check_owner_changes(&state.gap_bindings, &self.gap_bindings)?;
+        let sound_clocks = match &self.sound_clocks {
+            Some(change) => {
+                if Some(&state.sound_clocks) != change.before.as_ref() {
+                    return Err(conflict());
+                }
+                change
+                    .after
+                    .as_ref()
+                    .ok_or_else(|| invalid("sound clock replacement requires an after-value"))?
+            }
+            None => &state.sound_clocks,
+        };
+        let count = timings
+            .iter()
+            .fold(state.timings.len(), |count, (id, after)| {
+                match (state.timings.contains_key(*id), after.is_some()) {
+                    (false, true) => count + 1,
+                    (true, false) => count - 1,
+                    _ => count,
+                }
+            });
+        if count > MAX_AUDIO_BINDING_ENTRIES {
+            return Err(invalid("audio timing record count"));
+        }
+        let AudioBindingState {
+            timings: expected_timings,
+            bindings: expected_bindings,
+            gap_bindings: expected_gaps,
+            sound_clocks: expected_clocks,
+        } = expected;
+        let timings_equal = timings
+            .iter()
+            .all(|(id, after)| expected_timings.get(*id) == *after)
+            && crate::command::unchanged_entries_equal(
+                &state.timings,
+                |id| timings.contains_key(id),
+                expected_timings,
+            );
+        Ok(timings_equal
+            && crate::command::patched_equals(&state.bindings, &self.bindings, expected_bindings)
+            && crate::command::patched_equals(
+                &state.gap_bindings,
+                &self.gap_bindings,
+                expected_gaps,
+            )
+            && sound_clocks == expected_clocks)
+    }
+}
+
+fn check_owner_changes(
+    values: &BTreeMap<NodeId, OwnedAudioBinding>,
+    changes: &BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
+) -> Result<(), EditError> {
+    for (owner, change) in changes {
+        if values.get(owner) != change.before.as_ref() {
+            return Err(conflict());
+        }
+    }
+    Ok(())
+}
+
 fn diff(
     before: &BTreeMap<NodeId, OwnedAudioBinding>,
     after: &BTreeMap<NodeId, OwnedAudioBinding>,
 ) -> BTreeMap<NodeId, ValueChange<OwnedAudioBinding>> {
-    before
-        .keys()
-        .chain(after.keys())
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .filter_map(|owner| {
-            let old = before.get(owner);
-            let new = after.get(owner);
-            (old != new).then(|| {
-                (
-                    owner.clone(),
-                    ValueChange {
-                        before: old.cloned(),
-                        after: new.cloned(),
-                    },
-                )
-            })
-        })
-        .collect()
+    crate::command::diff(before, after)
 }
 
 fn invert(

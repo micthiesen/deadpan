@@ -158,11 +158,15 @@ pub fn run_pauses(arguments: &[&str]) -> Result<(), crate::CliError> {
             "pauses": [],
         }));
     };
-    let pauses = activity
-        .pauses()
-        .into_iter()
-        .map(|pause| {
+    let (corrected, corrections_error) =
+        crate::speech::corrected_pauses(&store, &content, key.audio_stream, &activity);
+    let pauses = corrected
+        .pauses
+        .iter()
+        .zip(&corrected.corrected)
+        .map(|(pause, manual)| {
             Ok(serde_json::json!({
+                "corrected": manual,
                 "analysis_start": pause.start,
                 "analysis_end": pause.end,
                 "original_sample_start": original_sample(&activity, pause.start)?,
@@ -182,6 +186,10 @@ pub fn run_pauses(arguments: &[&str]) -> Result<(), crate::CliError> {
             "sample_rate": audio.sample_rate,
             "analysis_samples": audio.samples,
         },
+        "detected_pauses": activity.pauses().len(),
+        "correction_rule": deadpan_analysis::CORRECTION_RULE,
+        "corrections_skipped": corrected.skipped,
+        "corrections_error": corrections_error,
         "pauses": pauses,
     }))
 }

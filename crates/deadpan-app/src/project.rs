@@ -59,7 +59,61 @@ pub struct RegisteredSource {
 #[derive(Debug)]
 pub struct OriginalTranscript {
     pub key: deadpan_store::TranscriptKey,
+    /// The words as people corrected them: what display, search, motions and
+    /// objects use.
     pub transcript: deadpan_analysis::Transcript,
+    /// The recognizer's rebuildable proposal.
+    pub proposal: Arc<deadpan_analysis::Transcript>,
+    /// Where each corrected word came from.
+    pub origins: Vec<deadpan_analysis::WordOrigin>,
+    /// Recognized words replaced by corrections.
+    pub replaced: usize,
+    /// Correction regions that do not apply to this transcript.
+    pub skipped: usize,
+    /// Why stored corrections could not be read or applied, if they could not.
+    pub corrections_error: Option<String>,
+}
+
+impl OriginalTranscript {
+    pub fn new(words: deadpan_cli::speech::StoredWords) -> Self {
+        Self {
+            key: words.key,
+            transcript: words.corrected.transcript,
+            proposal: Arc::new(words.proposal),
+            origins: words.corrected.origins,
+            replaced: words.corrected.replaced,
+            skipped: words.corrected.skipped,
+            corrections_error: words.corrections_error,
+        }
+    }
+
+    /// Why word operators must refuse: corrections that failed or do not
+    /// apply are never silently replaced by the recognizer's words.
+    pub fn problem(&self) -> Option<String> {
+        deadpan_cli::speech::correction_problem(
+            "words",
+            self.corrections_error.as_deref(),
+            self.skipped,
+        )
+    }
+
+    /// Whether a word was set by a person.
+    pub fn corrected(&self, word: usize) -> bool {
+        matches!(
+            self.origins.get(word),
+            Some(deadpan_analysis::WordOrigin::Corrected(_))
+        )
+    }
+
+    /// The corrected words with their origins, for building a correction.
+    pub fn current(&self) -> deadpan_analysis::CorrectedTranscript {
+        deadpan_analysis::CorrectedTranscript {
+            transcript: self.transcript.clone(),
+            origins: self.origins.clone(),
+            replaced: self.replaced,
+            skipped: self.skipped,
+        }
+    }
 }
 
 /// Stored speech activity of the Original, carried across edits.
@@ -67,6 +121,52 @@ pub struct OriginalTranscript {
 pub struct OriginalActivity {
     pub key: deadpan_store::SpeechActivityKey,
     pub activity: deadpan_analysis::SpeechActivity,
+    /// Detected pauses as people corrected them.
+    pub pauses: deadpan_analysis::CorrectedPauses,
+    /// Why stored corrections could not be read, if they could not.
+    pub corrections_error: Option<String>,
+}
+
+impl OriginalActivity {
+    /// Why pause operators must refuse; see [`OriginalTranscript::problem`].
+    pub fn problem(&self) -> Option<String> {
+        deadpan_cli::speech::correction_problem(
+            "pauses",
+            self.corrections_error.as_deref(),
+            self.pauses.skipped,
+        )
+    }
+}
+
+/// One correction change. The analyses the person saw are carried by
+/// identity, so the service refuses a change computed against a transcript or
+/// detection that has since been replaced.
+#[derive(Debug, Clone)]
+pub struct CorrectionRequest {
+    pub expected_session: u64,
+    pub attempt: u64,
+    pub key: deadpan_store::CorrectionsKey,
+    pub expected_version: u64,
+    pub change: deadpan_store::CorrectionChange,
+    pub transcript: Option<Arc<OriginalTranscript>>,
+    pub activity: Option<Arc<OriginalActivity>>,
+}
+
+/// A person's corrections of the Original's transcript and pauses, stored
+/// apart from the rebuildable analyses with their own Undo and Redo.
+#[derive(Debug)]
+pub struct OriginalCorrections {
+    pub key: deadpan_store::CorrectionsKey,
+    /// None until the first correction.
+    pub stored: Option<deadpan_store::StoredCorrections>,
+    /// Why stored corrections could not be read, if they could not.
+    pub error: Option<String>,
+}
+
+impl OriginalCorrections {
+    pub fn version(&self) -> u64 {
+        self.stored.as_ref().map_or(0, |stored| stored.version)
+    }
 }
 
 /// Stored shot analysis of the Original's pictures, carried across edits.
@@ -108,6 +208,9 @@ pub struct Workspace {
     /// Loaded when the project opens and replaced when shot analysis is
     /// saved; like the other analyses it never changes with revisions.
     pub shot_analysis: Option<Arc<OriginalShots>>,
+    /// Manual corrections of the transcript and pauses, loaded when the
+    /// project opens and replaced when they change; never revisions.
+    pub corrections: Option<Arc<OriginalCorrections>>,
     /// Receipt-derived automatic SDR/HDR branch of this committed revision.
     pub color: deadpan_cli::picture::OutputColorDecision,
 }
@@ -153,6 +256,22 @@ impl Workspace {
         }
     }
 
+    /// The same committed workspace with changed corrections and the
+    /// analyses they correct.
+    pub fn with_corrections(
+        &self,
+        corrections: Arc<OriginalCorrections>,
+        transcript: Option<Arc<OriginalTranscript>>,
+        speech_activity: Option<Arc<OriginalActivity>>,
+    ) -> Self {
+        Self {
+            corrections: Some(corrections),
+            transcript,
+            speech_activity,
+            ..self.annotated()
+        }
+    }
+
     /// A copy of this committed workspace, for replacing one annotation.
     fn annotated(&self) -> Self {
         // Exhaustive destructuring: a new field must be carried here explicitly.
@@ -171,6 +290,7 @@ impl Workspace {
             transcript,
             speech_activity,
             shot_analysis,
+            corrections,
             color,
         } = self;
         Self {
@@ -189,6 +309,7 @@ impl Workspace {
             transcript: transcript.clone(),
             speech_activity: speech_activity.clone(),
             shot_analysis: shot_analysis.clone(),
+            corrections: corrections.clone(),
         }
     }
 
@@ -323,6 +444,8 @@ pub struct ProjectUpdate {
     pub activity_save: Option<TranscriptSave>,
     /// Background shot analysis saves, reported like transcript saves.
     pub shot_save: Option<TranscriptSave>,
+    /// Transcript and pause correction saves, matched by attempt.
+    pub correction_save: Option<TranscriptSave>,
     /// AI pause jobs and Ready candidates, independent of editor feedback.
     pub generation: Option<generation::Update>,
     /// Target saves and tracking, independent of editor feedback.
@@ -674,6 +797,7 @@ impl ProjectRequest {
             Self::SaveTranscript { .. }
                 | Self::SaveSpeechActivity { .. }
                 | Self::SaveShotAnalysis { .. }
+                | Self::SaveShotProgress { .. }
         )
     }
 }
@@ -700,6 +824,16 @@ pub enum ProjectRequest {
         key: deadpan_store::ShotAnalysisKey,
         analysis: Arc<deadpan_analysis::ShotAnalysis>,
     },
+    /// Append a shot scan checkpoint's changed measures to the Original's
+    /// saved progress, best effort; never an edit and no receipt.
+    SaveShotProgress {
+        expected_session: u64,
+        key: deadpan_store::ShotAnalysisKey,
+        progress: Arc<deadpan_analysis::ShotProgressTail>,
+    },
+    /// Apply, undo or redo a correction of the Original's transcript or
+    /// pauses. Corrections live outside document history.
+    ChangeCorrections(CorrectionRequest),
     Marks(marks::Request),
     /// AI pause generation. Only Accept edits the project.
     Generation(generation::GenerationOperation),

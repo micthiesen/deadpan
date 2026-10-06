@@ -16,6 +16,11 @@ pub(super) const CURSOR: Color32 = Color32::from_rgb(0xf6, 0xd3, 0x65);
 pub(super) const SAVED: Color32 = Color32::from_rgb(0xa7, 0xf3, 0xd0);
 pub(super) const ERROR: Color32 = Color32::from_rgb(0xf8, 0x8a, 0x8a);
 pub(super) const WARNING: Color32 = Color32::from_rgb(0xf5, 0xb8, 0x6b);
+/// Detected or corrected pauses under the Original range and Your edit's
+/// cards: a quiet band that never competes with the selection.
+pub(super) const PAUSE_BAND: Color32 = Color32::from_rgba_premultiplied(0x2e, 0x31, 0x37, 0x55);
+/// Shot boundaries: hairline ticks.
+pub(super) const SHOT_TICK: Color32 = Color32::from_rgb(0x8a, 0x93, 0xa6);
 
 /// Secondary text: [`MUTED`], raised to full text colour under macOS Increase
 /// contrast. Prefer `RichText::weak()`, which resolves the same colour.

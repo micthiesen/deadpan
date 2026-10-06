@@ -918,6 +918,7 @@ dependencies = [
  "deadpan-audio",
  "deadpan-cli",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-models",
@@ -951,6 +952,7 @@ name = "deadpan-audio"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-dsp",
  "deadpan-media",
  "deadpan-plan",
@@ -976,6 +978,7 @@ dependencies = [
  "deadpan-audio",
  "deadpan-chaos",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-encode",
  "deadpan-filesystem",
  "deadpan-jobs",
@@ -1007,10 +1010,15 @@ name = "deadpan-core"
 version = "0.1.0"
 dependencies = [
  "deadpan-chaos",
+ "deadpan-core",
  "proptest",
  "serde",
  "serde_json",
 ]
+
+[[package]]
+name = "deadpan-diagnostics"
+version = "0.1.0"
 
 [[package]]
 name = "deadpan-dsp"
@@ -1057,6 +1065,7 @@ dependencies = [
  "deadpan-analysis",
  "deadpan-chaos",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-native-process",
  "rustix 1.1.5",
  "serde",
@@ -1073,6 +1082,7 @@ dependencies = [
  "blake3",
  "deadpan-chaos",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-native-process",
  "deadpan-plan",
  "deadpan-source",
@@ -1162,6 +1172,7 @@ version = "0.1.0"
 dependencies = [
  "deadpan-audio",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-dsp",
  "deadpan-media",
  "deadpan-output",
@@ -1177,6 +1188,7 @@ name = "deadpan-render"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-diagnostics",
  "pollster",
  "serde_json",
  "sha2",
@@ -1193,6 +1205,7 @@ dependencies = [
  "cc",
  "deadpan-chaos",
  "deadpan-core",
+ "deadpan-diagnostics",
  "tempfile",
  "thiserror 2.0.20",
 ]
@@ -1205,6 +1218,7 @@ dependencies = [
  "deadpan-analysis",
  "deadpan-chaos",
  "deadpan-core",
+ "deadpan-diagnostics",
  "deadpan-fileclone",
  "deadpan-jobs",
  "deadpan-media",

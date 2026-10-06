@@ -70,7 +70,8 @@ pub struct ActivityAudio {
 }
 
 /// A pause: a half-open interval of analysis samples.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Pause {
     pub start: u64,
     pub end: u64,

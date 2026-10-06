@@ -96,6 +96,8 @@ pub enum StoreError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     OriginalMedia(#[from] crate::original_media::OriginalMediaError),
+    #[error("The analysis corrections did not change: {0}")]
+    AnalysisCorrections(String),
     #[error("Project history is inconsistent: {0}")]
     History(String),
     #[error("Project integrity check failed: {0}")]
@@ -137,6 +139,7 @@ impl StoreError {
             Self::RevisionConflict { .. } => "RevisionConflict",
             Self::NothingToUndo => "NothingToUndo",
             Self::NothingToRedo => "NothingToRedo",
+            Self::AnalysisCorrections(_) => "AnalysisCorrectionsConflict",
             Self::SingleSource(_) => "SingleSourceInvalid",
             Self::GenerationRequestReused(_) => "GenerationRequestReused",
             Self::GenerationTarget(_) => "GenerationTargetInvalid",

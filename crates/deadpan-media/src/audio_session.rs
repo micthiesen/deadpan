@@ -222,6 +222,9 @@ impl AudioSession {
                     bytes.copy_from_slice(&value.to_le_bytes());
                 }
                 cache.write_all(&buffer[..chunk.len() * 4])?;
+                deadpan_diagnostics::IO
+                    .pcm_cache_file
+                    .write(chunk.len() as u64 * 4);
             }
             observations.push(AudioFrameObservation {
                 pts: frame.pts,
@@ -314,6 +317,7 @@ impl AudioSession {
                     deadline.check()?;
                     let length = remaining.min(buffer.len() as u64) as usize;
                     self.cache.read_exact_at(&mut buffer[..length], offset)?;
+                    deadpan_diagnostics::IO.pcm_cache_file.read(length as u64);
                     samples.extend(
                         buffer[..length].chunks_exact(4).map(|bytes| {
                             f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])

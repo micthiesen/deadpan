@@ -80,6 +80,7 @@ struct Service {
     transcript_save: Option<super::TranscriptSave>,
     activity_save: Option<super::TranscriptSave>,
     shot_save: Option<super::TranscriptSave>,
+    correction_save: Option<super::TranscriptSave>,
     splice: Option<super::splice::ProposalUpdate>,
     splice_commit: Option<super::splice::SpliceCommitUpdate>,
     splice_draft: Option<splice::Draft>,
@@ -166,6 +167,7 @@ pub(super) fn run(
         transcript_save: None,
         activity_save: None,
         shot_save: None,
+        correction_save: None,
         splice: None,
         splice_commit: None,
         splice_draft: None,
@@ -405,6 +407,7 @@ impl Service {
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
             shot_save: self.shot_save.clone(),
+            correction_save: self.correction_save.clone(),
             generation: self.generation_update(),
             targets: self.targets_update(),
             opened: self.opened.clone().filter(|report| {
@@ -444,6 +447,11 @@ impl Service {
                 key,
                 analysis,
             } => self.save_shot_analysis_command(expected_session, attempt, key, analysis),
+            ProjectRequest::SaveShotProgress {
+                expected_session,
+                key,
+                progress,
+            } => self.save_shot_progress_command(expected_session, key, progress),
             _ => unreachable!("only analysis saves use the annotation lane"),
         }
     }
@@ -479,6 +487,18 @@ impl Service {
                 analysis,
             } => {
                 self.save_shot_analysis_command(expected_session, attempt, key, analysis);
+                return Ok(());
+            }
+            ProjectRequest::SaveShotProgress {
+                expected_session,
+                key,
+                progress,
+            } => {
+                self.save_shot_progress_command(expected_session, key, progress);
+                return Ok(());
+            }
+            ProjectRequest::ChangeCorrections(request) => {
+                self.change_corrections_command(request);
                 return Ok(());
             }
             ProjectRequest::CaptureEditSlice(request) => {
@@ -565,7 +585,9 @@ impl Service {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
             ProjectRequest::SaveTranscript { .. }
             | ProjectRequest::SaveSpeechActivity { .. }
-            | ProjectRequest::SaveShotAnalysis { .. } => {
+            | ProjectRequest::SaveShotAnalysis { .. }
+            | ProjectRequest::SaveShotProgress { .. }
+            | ProjectRequest::ChangeCorrections(_) => {
                 unreachable!("analysis annotations use independent feedback")
             }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
@@ -1980,16 +2002,22 @@ fn snapshot(
         ),
         _ => None,
     };
-    let (transcript, speech_activity, shot_analysis) = match previous {
+    let (transcript, speech_activity, shot_analysis, corrections) = match previous {
         Some(previous) => (
             previous.transcript.clone(),
             previous.speech_activity.clone(),
             previous.shot_analysis.clone(),
+            // The Original can become ready after the first workspace.
+            previous
+                .corrections
+                .clone()
+                .or_else(|| original_corrections(store, single_source.as_ref(), &sources)),
         ),
         None => (
             original_transcript(store, single_source.as_ref(), &sources),
             original_activity(store, single_source.as_ref(), &sources),
             original_shots(store, single_source.as_ref(), &sources),
+            original_corrections(store, single_source.as_ref(), &sources),
         ),
     };
     let color = store.output_color(&document).map_err(display)?;
@@ -2009,6 +2037,7 @@ fn snapshot(
         transcript,
         speech_activity,
         shot_analysis,
+        corrections,
     })
 }
 
@@ -2026,8 +2055,40 @@ fn original_transcript(
     };
     let source = sources.get(asset)?;
     let content = source.receipt.original().content().to_string();
-    let (key, transcript) = deadpan_cli::speech::stored_transcript(store, &content)?;
-    Some(Arc::new(super::OriginalTranscript { key, transcript }))
+    let words = deadpan_cli::speech::stored_words(store, &content)?;
+    Some(Arc::new(super::OriginalTranscript::new(words)))
+}
+
+/// The ready Original's corrections, keyed by its qualified audio stream.
+/// Unreadable corrections are reported with the workspace, never dropped.
+fn original_corrections(
+    store: &ProjectStore,
+    single_source: Option<&SingleSourceState>,
+    sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
+) -> Option<Arc<super::OriginalCorrections>> {
+    let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
+        return None;
+    };
+    let receipt = &sources.get(asset)?.receipt;
+    let stream = receipt.snapshot().audio()?.stream().stream_index;
+    let key =
+        deadpan_cli::speech::corrections_key(&receipt.original().content().to_string(), stream);
+    let (stored, mut error) = match store.analysis_corrections(&key) {
+        Ok(stored) => (stored, None),
+        Err(error) => (None, Some(error.to_string())),
+    };
+    // Unreadable Undo or Redo steps are reported too, so they are discarded
+    // explicitly rather than found by a failing Undo.
+    if error.is_none() {
+        error = match store.unreadable_analysis_corrections() {
+            Ok(unreadable) => unreadable
+                .iter()
+                .find(|bad| bad.key == key)
+                .map(|bad| format!("a stored {} step is unreadable: {}", bad.place, bad.error)),
+            Err(failure) => Some(failure.to_string()),
+        };
+    }
+    Some(Arc::new(super::OriginalCorrections { key, stored, error }))
 }
 
 /// The preferred stored speech activity of the ready Original. An unreadable
@@ -2043,7 +2104,14 @@ fn original_activity(
     let source = sources.get(asset)?;
     let content = source.receipt.original().content().to_string();
     let (key, activity) = deadpan_cli::activity::stored_activity(store, &content)?;
-    Some(Arc::new(super::OriginalActivity { key, activity }))
+    let (pauses, corrections_error) =
+        deadpan_cli::speech::corrected_pauses(store, &content, key.audio_stream, &activity);
+    Some(Arc::new(super::OriginalActivity {
+        key,
+        activity,
+        pauses,
+        corrections_error,
+    }))
 }
 
 /// The stored shot analysis of the ready Original under the current

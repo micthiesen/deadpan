@@ -24,6 +24,8 @@ pub struct GenerationProtocol {
 }
 
 impl WorkerProtocol for GenerationProtocol {
+    const WORKER_CLASS: deadpan_diagnostics::WorkerClass = deadpan_diagnostics::WorkerClass::Model;
+
     type Request = HostMessage;
     type Response = WorkerMessage;
 

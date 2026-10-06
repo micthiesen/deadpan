@@ -1,4 +1,10 @@
-//! Owned worker teardown, with group-membership confirmation on Darwin.
+//! Owned worker teardown, with group-membership confirmation on Darwin, and
+//! footprint sampling of an owned, unreaped worker.
+//!
+//! Unsafe code is denied except in two documented, bounded libproc calls:
+//! `group_members` (`proc_listpids` with `PROC_PGRP_ONLY`) and
+//! `pid_rusage` (`proc_pid_rusage` with `RUSAGE_INFO_V2`, used by
+//! `owned_child_memory`).
 #![cfg(any(target_os = "macos", target_os = "linux"))]
 
 use std::io;
@@ -188,6 +194,57 @@ fn group_members(group: u32, members: &mut [libc::pid_t; 2]) -> io::Result<usize
         });
     }
     usize::try_from(result).map_err(|_| io::Error::other("negative process-list length"))
+}
+
+/// Memory use of a live owned worker, for diagnostics only.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WorkerMemory {
+    /// Physical footprint as Activity Monitor's Memory column reports it.
+    pub phys_footprint: u64,
+    pub resident_size: u64,
+}
+
+/// Sample an owned, unreaped child's memory.
+///
+/// The caller must retain sole reaping ownership: an unreaped child keeps its
+/// PID, so the sample cannot describe a reused identity. Returns `None` once
+/// the child has exited. A refused sample is an error, never an invented zero.
+#[cfg(target_os = "macos")]
+pub fn owned_child_memory(child: &Child) -> io::Result<Option<WorkerMemory>> {
+    if owned_child_has_exited(child)? {
+        return Ok(None);
+    }
+    let pid = libc::pid_t::try_from(child.id())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "PID out of range"))?;
+    pid_rusage(pid).map(|usage| {
+        Some(WorkerMemory {
+            phys_footprint: usage.ri_phys_footprint,
+            resident_size: usage.ri_resident_size,
+        })
+    })
+}
+
+#[allow(unsafe_code)]
+#[cfg(target_os = "macos")]
+fn pid_rusage(pid: libc::pid_t) -> io::Result<libc::rusage_info_v2> {
+    let mut usage = std::mem::MaybeUninit::<libc::rusage_info_v2>::zeroed();
+    // SAFETY: the zero-initialized, aligned rusage_info_v2 buffer is exclusively
+    // borrowed and alive across this bounded synchronous call, and
+    // RUSAGE_INFO_V2 names exactly that layout, so libproc writes within it and
+    // retains no pointer. On success every field is initialized; on failure the
+    // zeroed value is discarded. errno is read on this thread immediately.
+    let (result, usage) = unsafe {
+        let result = libc::proc_pid_rusage(
+            pid,
+            libc::RUSAGE_INFO_V2,
+            usage.as_mut_ptr().cast::<libc::rusage_info_t>(),
+        );
+        (result, usage.assume_init())
+    };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(usage)
 }
 
 #[cfg(test)]
@@ -444,5 +501,17 @@ mod tests {
         assert!(exited_leader_has_no_other_members(&leader.0).unwrap());
         leader.0.wait().unwrap();
         assert!(exited_leader_has_no_other_members(&leader.0).is_err());
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn live_child_memory_is_sampled_and_an_exited_child_reports_none() {
+        let mut child = OwnedChild(Command::new("/bin/sleep").arg("60").spawn().unwrap());
+        let memory = owned_child_memory(&child.0).unwrap().unwrap();
+        assert!(memory.phys_footprint > 0);
+        assert!(memory.resident_size > 0);
+        child.0.kill().unwrap();
+        observe_exit(&child.0);
+        assert_eq!(owned_child_memory(&child.0).unwrap(), None);
     }
 }

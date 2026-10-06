@@ -1850,6 +1850,72 @@ impl AudioBindingState {
         Ok(state)
     }
 
+    /// The byte limit of [`Self::to_json`] for a state whose validation has
+    /// already succeeded, without materializing its JSON.
+    ///
+    /// Layout tables are immutable and remember their exact compact length,
+    /// and each binding has the structural upper bound that individual
+    /// binding admission already relies on. When the sum of those bounds and
+    /// the surrounding syntax fits the limit, the exact serialization cannot
+    /// exceed it; otherwise the state is counted exactly. The outcome is the
+    /// outcome of `to_json` after a successful validation.
+    pub(crate) fn check_wire_size(&self) -> Result<(), DocumentError> {
+        if !crate::command_work::local() {
+            return self.to_json().map(|_| ());
+        }
+        if self
+            .wire_bound()
+            .is_some_and(|bound| bound <= MAX_DOCUMENT_JSON_BYTES)
+        {
+            #[cfg(debug_assertions)]
+            {
+                let exact = serde_json::to_vec(self).map_or(usize::MAX, |json| json.len());
+                debug_assert!(
+                    self.wire_bound().is_some_and(|bound| exact <= bound),
+                    "audio binding wire bound is below the exact length"
+                );
+            }
+            return Ok(());
+        }
+        let mut count = CountJson::default();
+        serde_json::to_writer(&mut count, self).map_err(|error| {
+            if count.exceeded {
+                limit("audio binding JSON byte limit")
+            } else {
+                DocumentError::json(error)
+            }
+        })
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    pub(crate) fn wire_bound_for_tests(&self) -> Option<usize> {
+        self.wire_bound()
+    }
+
+    fn wire_bound(&self) -> Option<usize> {
+        if !self.sound_clocks.is_empty() {
+            return None;
+        }
+        // `{"timings":[` ... `],"bindings":{` ... `},"gap_bindings":{` ... `}}`
+        let mut total = 64usize;
+        let identity = |bytes: usize| bytes.checked_mul(6)?.checked_add(2);
+        for (id, layout) in &self.timings {
+            // `{"id":{"allocation":"…","ordinal":4294967295},"layout":…},`
+            total = total
+                .checked_add(identity(id.allocation.as_str().len())?)?
+                .checked_add(64)?
+                .checked_add(layout.wire_bytes().ok()?)?;
+        }
+        for (owner, binding) in self.bindings.iter().chain(&self.gap_bindings) {
+            // `"owner":…,`
+            total = total
+                .checked_add(identity(owner.as_str().len())?)?
+                .checked_add(2)?
+                .checked_add(binding_wire_bound(binding)?)?;
+        }
+        Some(total)
+    }
+
     pub fn to_json(&self) -> Result<String, DocumentError> {
         self.validate()?;
         let mut output = BoundedJson::default();
@@ -2012,10 +2078,10 @@ fn compact_json_bytes(json: &str) -> usize {
 /// escaped identities plus every fixed field, exact ratio and window.
 const MAX_ENTRY_WIRE_BYTES: usize = 4 * (6 * crate::MAX_IDENTITY_BYTES + 2) + 600;
 
-pub(crate) fn binding_wire_size(binding: &OwnedAudioBinding) -> Result<(), DocumentError> {
-    // Bindings are validated on every commit and refresh. When even the
-    // generous structural bound fits, serializing to count bytes cannot fail.
-    let bound = binding
+/// A generous upper bound on one binding's compact JSON length, from its
+/// entry counts alone; `None` when the bound itself overflows.
+fn binding_wire_bound(binding: &OwnedAudioBinding) -> Option<usize> {
+    binding
         .placements()
         .try_fold(1000usize, |total, placement| {
             placement
@@ -2023,7 +2089,13 @@ pub(crate) fn binding_wire_size(binding: &OwnedAudioBinding) -> Result<(), Docum
                 .checked_mul(MAX_ENTRY_WIRE_BYTES)
                 .and_then(|bytes| bytes.checked_add(600))
                 .and_then(|bytes| total.checked_add(bytes))
-        });
+        })
+}
+
+pub(crate) fn binding_wire_size(binding: &OwnedAudioBinding) -> Result<(), DocumentError> {
+    // Bindings are validated on every commit and refresh. When even the
+    // generous structural bound fits, serializing to count bytes cannot fail.
+    let bound = binding_wire_bound(binding);
     if bound.is_some_and(|bound| bound <= MAX_BINDING_WIRE_BYTES) {
         return Ok(());
     }
@@ -2134,6 +2206,33 @@ fn bounded_json_map(json: &str) -> Result<BTreeMap<NodeId, &RawValue>, DocumentE
     let values = decoder.deserialize_map(Map).map_err(DocumentError::json)?;
     decoder.end().map_err(DocumentError::json)?;
     Ok(values)
+}
+
+#[derive(Default)]
+struct CountJson {
+    bytes: usize,
+    exceeded: bool,
+}
+impl Write for CountJson {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        match self
+            .bytes
+            .checked_add(bytes.len())
+            .filter(|size| *size <= MAX_DOCUMENT_JSON_BYTES)
+        {
+            Some(size) => {
+                self.bytes = size;
+                Ok(bytes.len())
+            }
+            None => {
+                self.exceeded = true;
+                Err(io::Error::other("audio binding JSON byte limit"))
+            }
+        }
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 #[derive(Default)]

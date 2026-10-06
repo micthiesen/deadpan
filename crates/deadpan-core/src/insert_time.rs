@@ -39,7 +39,9 @@ struct ShiftedOwner {
     entry: ExactRatio,
 }
 
-pub(crate) fn apply(
+/// Insert a pause, also returning the result's structural durations when the
+/// insertion computed them (see `command::KnownValidation`).
+pub(crate) fn apply_known(
     document: &ProjectDocument,
     at: ProjectFrame,
     hold: &HoldRecipe,
@@ -47,7 +49,7 @@ pub(crate) fn apply(
     identities: &SplitIdentities,
     timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
-) -> Result<ProjectDocument, EditError> {
+) -> Result<(ProjectDocument, Option<crate::command::SharedDurations>), EditError> {
     let allocation = context.allocation;
     if hold.duration == FrameDuration::ZERO {
         return Err(EditError::new(
@@ -107,8 +109,9 @@ pub(crate) fn apply(
                         document,
                         timing.clone(),
                     )?;
-                working =
-                    crate::split::apply(&working, &split.target, split.at, identities, context)?;
+                working = split_captured(document, &working, |working| {
+                    crate::split::apply(working, &split.target, split.at, identities, context)
+                })?;
                 // The post-Split placement graph has new physical aliases.
                 // Give it a distinct immutable identity rather than overwriting
                 // the pre-Split graph still referenced by inherited lattices.
@@ -124,7 +127,8 @@ pub(crate) fn apply(
                         timing: &placement_timing,
                         allocation,
                     },
-                );
+                )
+                .map(|result| (result, None));
             }
             return composite::apply_at(
                 document,
@@ -138,7 +142,8 @@ pub(crate) fn apply(
                     timing,
                     allocation,
                 },
-            );
+            )
+            .map(|result| (result, None));
         }
         Err(error) => return Err(error),
     };
@@ -156,13 +161,10 @@ pub(crate) fn apply(
     let mut working = document.clone();
     working.audio_bindings = bindings;
     let insertion_slot = if let Some((target, cut)) = &interior {
-        working = crate::split::apply(
-            &working,
-            target,
-            FrameDuration::new(*cut).map_err(crate::DocumentError::from)?,
-            identities,
-            context,
-        )?;
+        let cut = FrameDuration::new(*cut).map_err(crate::DocumentError::from)?;
+        working = split_captured(document, &working, |working| {
+            crate::split::apply(working, target, cut, identities, context)
+        })?;
         slot + 1
     } else {
         slot
@@ -290,8 +292,36 @@ pub(crate) fn apply(
         resume.local_boundary = shifted.entry;
     }
     crate::audio_binding_lifecycle::prune(&mut working);
-    working.audio_bindings.validate_for(&working)?;
-    insert_pause(&working, insertion_slot, id, hold, allocation)
+    working.validate_bindings_in_scope(&working.audio_bindings)?;
+    let mut structure = None;
+    let result = insert_leaf_shared(
+        &working,
+        working.root(),
+        insertion_slot,
+        id,
+        BeatNode::hold("Pause", hold.clone()),
+        allocation,
+        &mut structure,
+    )?;
+    Ok((result, structure))
+}
+
+/// Split `working`, a copy of the validated `document` whose only change is
+/// a binding state captured and validated against `document`. Complete
+/// validation of `working` therefore returns `document`'s durations, so the
+/// Split reuses them instead of validating `working` from scratch.
+fn split_captured(
+    document: &ProjectDocument,
+    working: &ProjectDocument,
+    split: impl FnOnce(&ProjectDocument) -> Result<ProjectDocument, EditError>,
+) -> Result<ProjectDocument, EditError> {
+    match document
+        .retained_durations()
+        .filter(|_| crate::command_work::local())
+    {
+        Some(durations) => working.with_proved_durations(durations, || split(working)),
+        None => split(working),
+    }
 }
 
 fn validate_split_budget(
@@ -425,23 +455,6 @@ fn resolve_legacy_suffix(
     })
 }
 
-fn insert_pause(
-    working: &ProjectDocument,
-    insertion_slot: usize,
-    id: &NodeId,
-    hold: &HoldRecipe,
-    allocation: &RevisionId,
-) -> Result<ProjectDocument, EditError> {
-    insert_leaf_at(
-        working,
-        working.root(),
-        insertion_slot,
-        id,
-        BeatNode::hold("Pause", hold.clone()),
-        allocation,
-    )
-}
-
 fn insert_leaf_at(
     working: &ProjectDocument,
     parent: &NodeId,
@@ -449,6 +462,28 @@ fn insert_leaf_at(
     id: &NodeId,
     node: BeatNode,
     allocation: &RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    insert_leaf_shared(
+        working,
+        parent,
+        insertion_slot,
+        id,
+        node,
+        allocation,
+        &mut None,
+    )
+}
+
+/// [`insert_leaf_at`], sharing the result's structural durations between
+/// its lineage and mark transforms and with the caller.
+fn insert_leaf_shared(
+    working: &ProjectDocument,
+    parent: &NodeId,
+    insertion_slot: usize,
+    id: &NodeId,
+    node: BeatNode,
+    allocation: &RevisionId,
+    structure: &mut Option<crate::command::SharedDurations>,
 ) -> Result<ProjectDocument, EditError> {
     // Split already transported logical mark fragments. Let the ordinary
     // insertion transform shift content-following marks from that intermediate
@@ -465,8 +500,8 @@ fn insert_leaf_at(
     };
     let mut result = working.clone();
     crate::command::reduce(&mut result, &insertion, allocation)?;
-    crate::audio_lineage::reconcile(working, &mut result, &insertion)?;
-    result.marks = crate::marks::transform_marks(working, &result, &insertion)?;
+    crate::audio_lineage::reconcile_shared(working, &mut result, &insertion, structure)?;
+    result.marks = crate::marks::transform_marks_shared(working, &result, &insertion, structure)?;
     // The shared command entrypoint locks a provisional presentation basis
     // before full validation. A first Hold is the edit that establishes time.
     Ok(result)

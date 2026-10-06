@@ -30,8 +30,10 @@ mod camera_fields;
 mod captions;
 mod cards;
 mod copied;
+mod corrections;
 mod cutaways;
 mod delete;
+mod diagnostics;
 mod edit_range;
 mod editor_input;
 #[cfg(target_os = "macos")]
@@ -170,6 +172,8 @@ pub struct DeadpanApp {
     sound_command_target: Option<sound_events::CommandTarget>,
     hold_command_target: Option<room_tone::CommandTarget>,
     room_tone: Option<room_tone::Draft>,
+    /// `:correct`: the transcript and pause correction sheet.
+    correction: Option<corrections::Draft>,
     gain_command_target: Option<Result<crate::project::gain::Target, String>>,
     gain: Option<gain::Draft>,
     slip_command_target: Option<Result<slip::Capture, String>>,
@@ -267,6 +271,8 @@ pub struct DeadpanApp {
     message: Option<String>,
     recovery: recovery::RecoveryUi,
     models: model_packs::Models,
+    /// `:diagnostics`: live process counters.
+    diagnostics: diagnostics::State,
     /// The user's gag presets, shared by every project.
     gag_presets: crate::gag_presets::GagPresets,
     /// Where bundled synthesized sounds are written before import.
@@ -361,6 +367,7 @@ impl DeadpanApp {
             sound_command_target: None,
             hold_command_target: None,
             room_tone: None,
+            correction: None,
             gain_command_target: None,
             gain: None,
             slip_command_target: None,
@@ -444,6 +451,7 @@ impl DeadpanApp {
             message: keymap.failed.then_some(keymap.status),
             recovery: recovery::RecoveryUi::default(),
             models: model_packs::Models::default(),
+            diagnostics: diagnostics::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             bundled_sounds: crate::keymap_file::application_support_directory()
                 .ok()
@@ -1093,6 +1101,7 @@ impl DeadpanApp {
             self.transcription
                 .receive_activity_save(update.activity_save);
             self.shots.receive_save(update.shot_save);
+            self.receive_correction_save(update.correction_save);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
             // after receive returns or when final layout requests its successor.
@@ -2284,6 +2293,9 @@ impl DeadpanApp {
         if self.models_keyboard(context) {
             return None;
         }
+        if self.diagnostics_keyboard(context) {
+            return None;
+        }
         if self.render_keyboard(context) {
             return None;
         }
@@ -2301,6 +2313,10 @@ impl DeadpanApp {
         }
         if self.room_tone.is_some() {
             self.room_tone_keyboard(context);
+            return None;
+        }
+        if self.correction.is_some() {
+            self.corrections_keyboard(context);
             return None;
         }
         if self.youtube_keyboard(context) {
@@ -2877,6 +2893,7 @@ impl DeadpanApp {
                 self.open_trim(trim_target, preset, context)
             }
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
+            Ok(navigation::command::Entry::Correct) => self.open_corrections(context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
             Ok(navigation::command::Entry::Action(Action::PasteMoment { before })) => {
                 self.paste_captured_moment(
@@ -2952,6 +2969,7 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
+            Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
             Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
             Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
@@ -3072,6 +3090,7 @@ impl DeadpanApp {
                 && !self.render.blocking()
                 && !self.marks.open
                 && !self.models.open
+                && !self.diagnostics.open
                 && !self.help_open
                 && !self.macros.recording()
                 && !self.macros.is_pending()
@@ -3898,7 +3917,8 @@ impl DeadpanApp {
             } else {
                 None
             };
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64) };
+            let analysis = self.edit_analysis_marks();
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), analysis };
             let reveal = std::mem::take(&mut self.reveal_beat);
             let identity = self.workspace.as_ref().map(|workspace| (workspace.session, workspace.document.revision_id().clone()));
             let thumbnails = &mut self.thumbnails;
@@ -4793,6 +4813,7 @@ impl DeadpanApp {
                         (":audio-lag +80ms / -2f / 0".to_owned(), "Offset the selected beat's sound from its picture: later with +, earlier with -, 0 realigns. The beat keeps its picture and timing; the inspector shows the offset beside the link.".to_owned()),
                         (":sound-allow / :sound-silence".to_owned(), "Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap.".to_owned()),
                         (":room-tone".to_owned(), format!("Select a pause after copying a quiet Original range with {}, {}, {}. The draft shows exact source samples: Space auditions, Shift+Space loops, Tab moves through controls, Enter applies and Escape cancels. Reopening starts from the saved range; Use copied Original range explicitly replaces it.", key(EditorKey::Visual), key_labels::aliases_pair(&bindings, EditorKey::FramePrevious, EditorKey::FrameNext, "/"), key(EditorKey::Copy))),
+                        (":correct".to_owned(), "Correct the Original's transcript and pauses in a sheet: h/l select a word or pause, c or Enter edits a word (a space splits it, empty removes it), Shift+J joins it with the next, x removes, b/e choose an edge that h/l move by 10 ms and Shift+H/L move to measured edges (Enter applies), p adds a pause after a word, u/Shift+U undo and redo corrections, Shift+D discards corrections that are unreadable or no longer apply. Corrections are kept apart from the recognized words, survive transcribing again and are not edits.".to_owned()),
                         (":hold-silence".to_owned(), "Restore the selected ordinary pause to silence in one undoable edit. Explicit per-sound permissions remain separate. Room-tone changes preserve the pause's picture and duration.".to_owned()),
                         (format!("Sound {} / :sound-delete", key(EditorKey::CutBeat)), "Remove only the selected placed sound. Undo restores it. Focus Beats to cut picture time.".to_owned()),
                         (key(EditorKey::Camera), "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%.".to_owned()),
@@ -4819,6 +4840,7 @@ impl DeadpanApp {
                         (format!("{} / Ctrl R", key(EditorKey::Undo)), "Undo / redo. Native ⌘Z / ⌘Shift Z also work.".to_owned()),
                         ("⌘E / :render".to_owned(), "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.".to_owned()),
                         (":renders".to_owned(), "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing.".to_owned()),
+                        (":diagnostics".to_owned(), "Show live counters for this app process beside the picture: audio underruns and faults, decode queue depths, GPU submission latency, PCM cache hits and residency, file reads and writes, model worker memory and UI frames. Updates twice a second; playback continues. Escape closes. Nothing is saved with the project.".to_owned()),
                         (":models".to_owned(), "Install, resume, cancel or remove the models AI pauses and transcription use, also in the Deadpan menu. Each pack shows its size, free space, memory and licenses before anything downloads; licenses that need acceptance are accepted there. Install from a folder or .tar works offline. Tab moves between controls; Escape closes and an install keeps running.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
@@ -4893,6 +4915,7 @@ impl eframe::App for DeadpanApp {
             self.receive_gain_waveform();
             self.receive_trim_media();
             self.reconcile_models(&context);
+            self.reconcile_diagnostics(&context);
             self.reconcile_transcription(&context);
             self.reconcile_shots(&context);
             self.reconcile_proxies(&context);
@@ -5040,10 +5063,12 @@ impl eframe::App for DeadpanApp {
             self.help(&context);
             if !self.render.blocking() {
                 self.room_tone_sheet(&context);
+                self.corrections_sheet(&context);
             }
             self.render_windows(&context);
             self.marks_window(&context);
             self.models_window(&context);
+            self.diagnostics_window(&context);
             self.youtube_window(&context);
         }
         // Drawn even over Trim, whose close question it may be asking.

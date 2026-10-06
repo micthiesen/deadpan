@@ -86,7 +86,15 @@ fn project(scratch: &Path, with_shots: bool) -> PathBuf {
         let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
         let input = prepare_shot_input(&store, Some(&clip()), &cancelled, deadline).unwrap();
         drop(store);
-        let scan = scan_shots(&input, &cancelled, deadline, |_, _| {}).unwrap();
+        let scan = scan_shots(
+            &input,
+            &cancelled,
+            deadline,
+            deadpan_cli::shots::ShotScanOptions::default(),
+            |_, _| {},
+            |_| true,
+        )
+        .unwrap();
         assert_eq!(scan.analysis.boundaries(), [CUT]);
         let writer = ProjectStore::open(&package, AccessMode::ReadWrite).unwrap();
         writer

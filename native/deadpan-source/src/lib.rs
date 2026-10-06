@@ -1125,6 +1125,8 @@ mod ffi {
         // Drop frees C state before this descriptor is closed.
         _file: File,
         _not_sync: PhantomData<Cell<()>>,
+        /// Cumulative descriptor bytes already added to process diagnostics.
+        published_io: u64,
     }
     // SAFETY: all FFmpeg state is owned by this instance, no process-global
     // callbacks/state are installed, and access requires &mut self. Moving the
@@ -1215,11 +1217,13 @@ mod ffi {
             if result != 1 {
                 return Err(error.into_error());
             }
-            let inner = Self {
+            let mut inner = Self {
                 pointer: NonNull::new(pointer).expect("successful C open returns context"),
                 _file: file,
                 _not_sync: PhantomData,
+                published_io: 0,
             };
+            inner.publish_io();
             let mut color = ColorMetadata {
                 range: match info.range {
                     1 => ColorRange::Limited,
@@ -1364,6 +1368,16 @@ mod ffi {
                 decoded_pictures: work.pictures,
             }
         }
+        /// Add descriptor reads since the last call to process diagnostics.
+        /// One counted operation per decoder call, not per AVIO read.
+        fn publish_io(&mut self) {
+            let total = self.work().io_bytes;
+            let delta = total.saturating_sub(self.published_io);
+            if delta != 0 {
+                deadpan_diagnostics::IO.decoder_input.read(delta);
+                self.published_io = total;
+            }
+        }
         pub(super) fn runtime_info(&self) -> DecoderRuntimeInfo {
             let mut runtime = Runtime::default();
             // SAFETY: this call only copies linked-library version integers.
@@ -1404,6 +1418,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             match result {
                 1 => export_frame(frame).map(Some),
                 0 => Ok(None),
@@ -1439,6 +1454,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             match result {
                 1 => Ok(Some(frame_metadata(&frame))),
                 0 => Ok(None),
@@ -1473,6 +1489,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             match result {
                 1 => export_frame(frame).map(Some),
                 0 => Ok(None),
@@ -1523,6 +1540,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             match result {
                 1 => Ok(Some(frame_metadata(&frame))),
                 0 => Ok(None),
@@ -1567,6 +1585,7 @@ mod ffi {
                     ),
                 }
             };
+            self.publish_io();
             if result != 1 {
                 return Err(error.into_error());
             }

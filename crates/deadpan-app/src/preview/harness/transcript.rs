@@ -153,7 +153,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 /// A three-word transcript over the fixture's real audio clock.
-fn synthetic(
+pub(super) fn synthetic(
     d: &Driver<'_>,
 ) -> Result<
     (

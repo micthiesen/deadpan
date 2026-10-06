@@ -70,11 +70,13 @@ struct CachedTile {
     limited: LimitedTile,
     dependencies: Dependencies,
     suppressed: Vec<Range<AudioSample>>,
+    _resident: deadpan_diagnostics::Resident,
 }
 
 struct CachedBusBlock {
     samples: Range<AudioSample>,
     bus: PreparedBus,
+    _resident: deadpan_diagnostics::Resident,
 }
 
 /// Worker-owned preparation against one immutable plan. Every cache hit checks
@@ -222,9 +224,11 @@ impl LimitedAudio {
                 .revalidate_dependencies(provider, &entry.dependencies, budget)?
             {
                 self.cache.push(Arc::clone(&entry));
+                deadpan_diagnostics::CACHES.limiter_tiles.hits.increment();
                 return Ok(entry);
             }
         }
+        deadpan_diagnostics::CACHES.limiter_tiles.misses.increment();
         let project = AudioSample(0)..duration;
         let context = LimitedTile::required_context(&project, &requested)?;
         let frames = usize::try_from(context.end.0 - context.start.0)
@@ -274,9 +278,17 @@ impl LimitedAudio {
             limited,
             dependencies,
             suppressed,
+            _resident: deadpan_diagnostics::Resident::new(
+                &deadpan_diagnostics::CACHES.limiter_tiles,
+                0,
+            ),
         });
         if self.cache.len() == MAX_CACHED_LIMITED_TILES {
             self.cache.remove(0);
+            deadpan_diagnostics::CACHES
+                .limiter_tiles
+                .evictions
+                .increment();
         }
         self.cache.push(Arc::clone(&entry));
         Ok(entry)
@@ -300,21 +312,35 @@ impl LimitedAudio {
                 .revalidate_dependencies(provider, &entry.bus.dependencies, budget)?
             {
                 self.bus_cache.push(Arc::clone(&entry));
+                deadpan_diagnostics::CACHES.limiter_inputs.hits.increment();
                 return Ok(entry);
             }
         }
+        deadpan_diagnostics::CACHES
+            .limiter_inputs
+            .misses
+            .increment();
         let frames = u32::try_from(requested.end.0 - requested.start.0)
             .map_err(|_| LimitedAudioError::Range)?;
         let bus = self
             .stages
             .prepare_bus(provider, requested.start, frames, budget)?;
         budget.check()?;
+        let bytes = std::mem::size_of_val(bus.block.samples.as_slice()) as u64;
         let entry = Arc::new(CachedBusBlock {
             samples: requested,
             bus,
+            _resident: deadpan_diagnostics::Resident::new(
+                &deadpan_diagnostics::CACHES.limiter_inputs,
+                bytes,
+            ),
         });
         if self.bus_cache.len() == MAX_CACHED_LIMITER_BUS_BLOCKS {
             self.bus_cache.remove(0);
+            deadpan_diagnostics::CACHES
+                .limiter_inputs
+                .evictions
+                .increment();
         }
         self.bus_cache.push(Arc::clone(&entry));
         Ok(entry)

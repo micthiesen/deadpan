@@ -1,7 +1,9 @@
 //! Shot analysis is a durable annotation outside document history.
 use std::error::Error;
 
-use deadpan_analysis::{SIGNATURE_VERSION, ShotAnalysis};
+use deadpan_analysis::{
+    MEASURE_BYTES, SIGNATURE_VERSION, ShotAnalysis, ShotMeasurer, ShotProgress, ShotProgressTail,
+};
 use deadpan_core::{NodeId, ProjectDocument, ProjectId, RevisionId};
 use deadpan_store::{AccessMode, MAX_SHOT_ANALYSES, ProjectStore, ShotAnalysisKey, StoreError};
 use rusqlite::Connection;
@@ -18,7 +20,7 @@ fn analysis(cut: u8) -> ShotAnalysis {
             _ => [2, 1, 2],
         })
         .collect();
-    ShotAnalysis::new(changes).unwrap()
+    ShotAnalysis::from_changes(changes).unwrap()
 }
 
 fn key(version: &str) -> ShotAnalysisKey {
@@ -150,8 +152,8 @@ fn tampered_stored_shots_fail_on_read() -> Result {
     drop(reader);
     // A first picture with a predecessor change fails ShotAnalysis::new.
     tamper(&format!(
-        "UPDATE shot_analysis SET changes=X'0100{}'",
-        "00".repeat(38)
+        "UPDATE shot_analysis SET changes=X'01{}'",
+        "00".repeat(20 * MEASURE_BYTES - 1)
     ))?;
     let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
     assert!(matches!(
@@ -200,5 +202,146 @@ fn a_schema60_package_is_refused_unchanged() -> Result {
         Err(deadpan_store::StoreError::UnsupportedSchema(60))
     ));
     assert_eq!(version(&path)?, 60);
+    Ok(())
+}
+
+/// Progress of a 120-picture scan stopped after `next` pictures, from
+/// synthetic changes only.
+fn progress(next: usize) -> ShotProgress {
+    let analysis = analysis(90);
+    ShotProgress::new(120, analysis.measures()[..next.min(20)].to_vec()).unwrap()
+}
+
+#[test]
+fn scan_progress_is_saved_outside_history_and_removed_by_the_analysis() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = project(&scratch)?;
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let head = store.head_revision()?;
+    let current = key(SIGNATURE_VERSION);
+    assert!(store.shot_scan_progress(&current, 120)?.is_none());
+    store.save_shot_scan_progress(&key("older"), &progress(5))?;
+    store.save_shot_scan_progress(&current, &progress(10))?;
+    store.save_shot_scan_progress(&current, &progress(20))?;
+    assert_eq!(store.head_revision()?, head);
+    // A newer measurement supersedes older progress of the same pictures.
+    assert!(store.shot_scan_progress(&key("older"), 120)?.is_none());
+    let stored = store.shot_scan_progress(&current, 120)?.unwrap();
+    assert_eq!(stored, progress(20));
+    assert_eq!(stored.next(), 20);
+    // A resumed measurer accepts it.
+    assert_eq!(ShotMeasurer::resume(stored)?.next_ordinal(), 0);
+    assert!(matches!(
+        store.shot_scan_progress(&current, 121),
+        Err(StoreError::Integrity(_))
+    ));
+    drop(store);
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    reader.validate()?;
+    assert_eq!(
+        reader.shot_scan_progress(&current, 120)?,
+        Some(progress(20))
+    );
+    assert!(
+        reader
+            .save_shot_scan_progress(&current, &progress(1))
+            .is_err()
+    );
+    drop(reader);
+
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let other = ShotAnalysisKey {
+        content: "blake3:other".into(),
+        ..current.clone()
+    };
+    store.save_shot_scan_progress(&other, &progress(3))?;
+    store.save_shot_analysis(&current, &analysis(90))?;
+    assert!(store.shot_scan_progress(&current, 120)?.is_none());
+    assert!(store.shot_scan_progress(&other, 120)?.is_some());
+    store.delete_shot_scan_progress(&other)?;
+    assert!(store.shot_scan_progress(&other, 120)?.is_none());
+    drop(store);
+
+    // Tampering is refused on read.
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.save_shot_scan_progress(&current, &progress(20))?;
+    drop(store);
+    let connection = Connection::open(path.join("project.sqlite"))?;
+    connection.execute("UPDATE shot_scan_progress SET next_picture=19", [])?;
+    drop(connection);
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert!(reader.shot_scan_progress(&current, 120).is_err());
+    Ok(())
+}
+
+#[test]
+fn checkpoints_append_tails_and_keep_one_scan() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = project(&scratch)?;
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let current = key(SIGNATURE_VERSION);
+    let whole = analysis(90).measures().to_vec();
+    // Tails of the synthetic measures, which have no spans.
+    let tail = |start: usize, end: usize| {
+        ShotProgressTail::new(120, start, whole[start..end].to_vec()).unwrap()
+    };
+    // A tail that starts later than any saved progress is refused.
+    assert!(matches!(
+        store.append_shot_scan_progress(&current, &tail(5, 8)),
+        Err(StoreError::Integrity(_))
+    ));
+    assert_eq!(store.append_shot_scan_progress(&current, &tail(0, 6))?, 6);
+    assert_eq!(store.append_shot_scan_progress(&current, &tail(4, 12))?, 12);
+    assert!(matches!(
+        store.append_shot_scan_progress(&current, &tail(13, 14)),
+        Err(StoreError::Integrity(_))
+    ));
+    assert_eq!(
+        store.append_shot_scan_progress(&current, &tail(12, 20))?,
+        20
+    );
+    assert_eq!(
+        store.shot_scan_progress(&current, 120)?,
+        Some(ShotProgress::new(120, whole.clone())?)
+    );
+    // A tail of other pictures does not join.
+    let other_count = ShotProgressTail::new(121, 3, whole[3..5].to_vec())?;
+    assert!(
+        store
+            .append_shot_scan_progress(&current, &other_count)
+            .is_err()
+    );
+    // A tail from the first picture replaces the progress.
+    assert_eq!(store.append_shot_scan_progress(&current, &tail(0, 2))?, 2);
+    assert_eq!(store.shot_scan_progress(&current, 120)?.unwrap().next(), 2);
+
+    // Progress is kept for one scan: saving another key's removes it.
+    let other = ShotAnalysisKey {
+        content: "blake3:other".into(),
+        ..current.clone()
+    };
+    let stream = ShotAnalysisKey {
+        video_stream: 1,
+        ..current.clone()
+    };
+    store.save_shot_scan_progress(&other, &progress(3))?;
+    assert!(store.shot_scan_progress(&current, 120)?.is_none());
+    store.save_shot_scan_progress(&stream, &progress(4))?;
+    assert!(store.shot_scan_progress(&other, 120)?.is_none());
+    assert_eq!(store.shot_scan_progress(&stream, 120)?.unwrap().next(), 4);
+    let rows: i64 = Connection::open(path.join("project.sqlite"))?.query_row(
+        "SELECT count(*) FROM shot_scan_progress",
+        [],
+        |row| row.get(0),
+    )?;
+    assert_eq!(rows, 1);
+    // A read-only store saves nothing.
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    reader.validate()?;
+    assert!(
+        reader
+            .append_shot_scan_progress(&stream, &tail(4, 6))
+            .is_err()
+    );
     Ok(())
 }

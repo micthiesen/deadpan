@@ -21,12 +21,13 @@ impl Service {
             require_original(workspace, &key.content, key.audio_stream)?;
             let store = self.store.as_ref().ok_or("Open a project first")?;
             store.save_transcript(&key, &transcript).map_err(display)?;
-            // Publish the preferred stored transcript, the same one operators
-            // and macros read, so motions and edits never use different words.
-            let (key, transcript) = deadpan_cli::speech::stored_transcript(store, &key.content)
-                .unwrap_or_else(|| (key, (*transcript).clone()));
+            // Publish the preferred stored transcript with the person's
+            // corrections, the same words operators and macros read, so
+            // motions and edits never use different words.
+            let words = deadpan_cli::speech::stored_words(store, &key.content)
+                .ok_or("The saved transcript could not be read back")?;
             Ok(Arc::new(workspace.with_transcript(Arc::new(
-                crate::project::OriginalTranscript { key, transcript },
+                crate::project::OriginalTranscript::new(words),
             ))))
         })();
         let error = match result {
@@ -65,8 +66,19 @@ impl Service {
                 .map_err(display)?;
             let (key, activity) = deadpan_cli::activity::stored_activity(store, &key.content)
                 .unwrap_or_else(|| (key, (*activity).clone()));
+            let (pauses, corrections_error) = deadpan_cli::speech::corrected_pauses(
+                store,
+                &key.content,
+                key.audio_stream,
+                &activity,
+            );
             Ok(Arc::new(workspace.with_speech_activity(Arc::new(
-                crate::project::OriginalActivity { key, activity },
+                crate::project::OriginalActivity {
+                    key,
+                    activity,
+                    pauses,
+                    corrections_error,
+                },
             ))))
         })();
         let error = match result {
@@ -77,6 +89,105 @@ impl Service {
             Err(error) => Some(error.to_string()),
         };
         self.activity_save = Some(crate::project::TranscriptSave {
+            session: expected_session,
+            attempt,
+            error,
+        });
+    }
+
+    /// Apply, undo or redo a correction of the Original's transcript or
+    /// pauses, then publish the corrected analyses. The document revision and
+    /// history are unchanged; corrections have their own Undo and Redo.
+    pub(super) fn change_corrections_command(
+        &mut self,
+        request: crate::project::CorrectionRequest,
+    ) {
+        let crate::project::CorrectionRequest {
+            expected_session,
+            attempt,
+            key,
+            expected_version,
+            change,
+            transcript: seen_transcript,
+            activity: seen_activity,
+        } = request;
+        let result = (|| -> Result<Arc<Workspace>> {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+            if workspace.session != expected_session {
+                return Err("The correction belongs to a different project session".into());
+            }
+            require_original(workspace, &key.content, key.audio_stream)?;
+            // A correction is computed against the analyses the person saw;
+            // a newer transcript or detection would misplace it.
+            fn same<T>(seen: Option<&Arc<T>>, current: Option<&Arc<T>>) -> bool {
+                match (seen, current) {
+                    (Some(seen), Some(current)) => Arc::ptr_eq(seen, current),
+                    (None, None) => true,
+                    _ => false,
+                }
+            }
+            if !same(seen_transcript.as_ref(), workspace.transcript.as_ref())
+                || !same(seen_activity.as_ref(), workspace.speech_activity.as_ref())
+            {
+                return Err(
+                    "The transcript or pauses changed while correcting; look again and retry"
+                        .into(),
+                );
+            }
+            let current = workspace
+                .corrections
+                .as_ref()
+                .filter(|corrections| corrections.key == key)
+                .ok_or("The Original's corrections are not loaded")?;
+            let discard = matches!(
+                change,
+                deadpan_store::CorrectionChange::DiscardUnreadable { .. }
+            );
+            if let Some(error) = &current.error
+                && !discard
+            {
+                return Err(format!(
+                    "The stored corrections are unreadable, so they were not changed: {error}. Discard them first."
+                ));
+            }
+            let store = self.store.as_ref().ok_or("Open a project first")?;
+            let stored = store
+                .change_analysis_corrections(&key, expected_version, change)
+                .map_err(display)?;
+            let transcript = match &workspace.transcript {
+                Some(_) => Some(Arc::new(crate::project::OriginalTranscript::new(
+                    deadpan_cli::speech::stored_words(store, &key.content).ok_or(
+                        "The corrections were saved, but the transcript could not be read back; reopen the project",
+                    )?,
+                ))),
+                None => None,
+            };
+            let activity = workspace.speech_activity.as_ref().map(|activity| {
+                Arc::new(crate::project::OriginalActivity {
+                    key: activity.key.clone(),
+                    activity: activity.activity.clone(),
+                    pauses: stored.corrections.apply_to_pauses(&activity.activity),
+                    corrections_error: None,
+                })
+            });
+            Ok(Arc::new(workspace.with_corrections(
+                Arc::new(crate::project::OriginalCorrections {
+                    key,
+                    stored: Some(stored),
+                    error: None,
+                }),
+                transcript,
+                activity,
+            )))
+        })();
+        let error = match result {
+            Ok(workspace) => {
+                self.workspace = Some(workspace);
+                None
+            }
+            Err(error) => Some(error.to_string()),
+        };
+        self.correction_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
             error,

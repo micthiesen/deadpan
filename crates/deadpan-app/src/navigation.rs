@@ -6,6 +6,7 @@ mod binding_trie;
 pub mod camera;
 pub mod caption;
 pub mod command;
+pub mod corrections;
 #[cfg(test)]
 mod delete_range_tests;
 pub mod duration;

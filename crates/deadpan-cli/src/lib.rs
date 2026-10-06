@@ -113,7 +113,7 @@ const HELP: &str = "Deadpan headless commands:
   transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
   pauses <project.deadpan> [--asset <id>]
-  detect-shots <project.deadpan> [--asset <id>]
+  detect-shots <project.deadpan> [--asset <id>] [--decode-threads <1-16>]
   shots <project.deadpan> [--asset <id>]
   track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
   track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]

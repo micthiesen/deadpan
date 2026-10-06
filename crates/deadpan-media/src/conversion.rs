@@ -331,7 +331,9 @@ pub(crate) fn snapshot(
         if count == 0 {
             return Err(ConversionError::InputIdentity);
         }
+        deadpan_diagnostics::IO.media_snapshots.read(count as u64);
         file.write_all(&buffer[..count])?;
+        deadpan_diagnostics::IO.media_snapshots.write(count as u64);
         hash.update(&buffer[..count]);
         remaining -= count as u64;
     }

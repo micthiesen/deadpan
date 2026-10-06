@@ -9,6 +9,7 @@ publish.workspace = true
 description = "Exact-phase source audio preparation for the shared 48 kHz mix"
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 deadpan-core.workspace = true
 deadpan-plan.workspace = true
 deadpan-media.workspace = true

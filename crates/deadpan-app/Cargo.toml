@@ -13,6 +13,7 @@ publish.workspace = true
 ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:tempfile", "deadpan-cli/synthetic-worker"]
 
 [dependencies]
+deadpan-diagnostics.workspace = true
 eframe.workspace = true
 deadpan-cli = { path = "../deadpan-cli" }
 deadpan-audio.workspace = true
