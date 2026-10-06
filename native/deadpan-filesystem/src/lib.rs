@@ -1,10 +1,16 @@
-//! Descriptor-based APFS volume identity for cooperative recovery checks.
+//! Descriptor-based APFS volume identity for cooperative recovery checks,
+//! and macOS file bookmarks for finding moved linked media.
 //!
 //! A volume UUID is replacement evidence, not proof against a malicious owner.
 //! This adapter does not open paths, take ownership of descriptors, mutate files,
 //! infer content identity, or promise that an inode can never be reused.
+//!
+//! A bookmark is only a hint where a file went: resolving one never proves the
+//! file is the same content, so callers verify the bytes they find.
 
 use std::{fs::File, io};
+
+pub mod bookmark;
 
 /// Return the nonzero UUID of the APFS volume containing this open descriptor.
 /// Other platforms/filesystems and absent identities fail explicitly.

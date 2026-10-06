@@ -304,6 +304,7 @@ impl Fixture {
             speech_activity: None,
             shot_analysis: None,
             corrections: None,
+            read_only: None,
         })
     }
 
@@ -377,6 +378,7 @@ fn request(workspace: &Arc<Workspace>, view: ProjectView, serial: u64) -> Reques
             view,
         },
         cancelled: Arc::new(AtomicBool::new(false)),
+        arrived: Instant::now(),
     }
 }
 

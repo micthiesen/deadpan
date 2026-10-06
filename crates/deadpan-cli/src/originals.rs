@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use deadpan_store::original_media::{
     LinkedOriginal, OriginalContentId, OriginalMediaError, OriginalMediaLimits, OriginalOwnership,
+    moved_location,
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
@@ -21,7 +22,7 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
         ("retain-original", [project, source])
         | ("retain-original", [project, source, "--linked"]) => {
             let ownership = if arguments.len() == 3 {
-                OriginalOwnership::Linked { bookmark: None }
+                OriginalOwnership::linked_at(Path::new(source))
             } else {
                 OriginalOwnership::Managed
             };
@@ -80,7 +81,7 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
                     "Location version must be a positive integer".into(),
                 ));
             }
-            let location = LinkedOriginal::new(Path::new(source).to_owned(), None)
+            let location = LinkedOriginal::bookmarked(Path::new(source).to_owned())
                 .map_err(StoreError::from)?;
             let mut store = match ProjectStore::open(Path::new(project), AccessMode::ReadWrite) {
                 Ok(store) => store,
@@ -98,6 +99,40 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
             };
             let record = store.relink_original(&key, version, location, limits, &cancelled)?;
             write_json(&serde_json::json!({ "protocol": 1, "relinked_original": record }))
+        }
+        ("relink-moved", [project]) => {
+            // Closed projects only: the app relinks moved files itself when
+            // it opens a project.
+            let mut store = ProjectStore::open(Path::new(project), AccessMode::ReadWrite)?;
+            let mut relinked = Vec::new();
+            let mut refused = Vec::new();
+            let mut after = None;
+            loop {
+                let records = store.original_records(after.as_ref(), 100)?;
+                let Some(last) = records.last() else { break };
+                after = Some(last.object().content().clone());
+                for record in records {
+                    let Some(candidate) = moved_location(&record) else {
+                        continue;
+                    };
+                    let path = candidate.path().to_owned();
+                    let outcome = store
+                        .original_import_handle()?
+                        .prepare_relink(&record, record.version(), candidate, limits, &cancelled)
+                        .and_then(|prepared| store.relink_prepared_original(&prepared, &cancelled));
+                    match outcome {
+                        Ok(record) => relinked.push(record),
+                        Err(error) => refused.push(serde_json::json!({
+                            "content": record.object().content(),
+                            "candidate": path,
+                            "error": { "code": error.code(), "message": error.to_string() },
+                        })),
+                    }
+                }
+            }
+            write_json(&serde_json::json!({
+                "protocol": 1, "relinked_originals": relinked, "refused_candidates": refused,
+            }))
         }
         _ => Err(CliError::Usage(
             "Invalid original-media command; see --help".into(),

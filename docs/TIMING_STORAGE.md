@@ -87,9 +87,12 @@ and as keyframes plus patches:
   `Serialize` implementations as the document and wrapped in more syntax
   (keys, `before`, `after`, nulls), so a patch grows the compact document by
   less than its own length; the slack covers a map field appearing for the
-  first time. History rows hold the forward and inverse patch together, which
-  only loosens the bound. The randomized store test checks the bound against
-  the actual serialization after every commit.
+  first time. A Sequence stored as a [child splice](#compact-history-rows)
+  carries its complete old node and every inserted child, and its document
+  form grows by at most those children and their commas, so the argument is
+  unchanged. A history row that also holds the inverse only loosens the
+  bound. The randomized store test checks the bound against the actual
+  serialization after every commit.
 - `snapshot`, `snapshot_at` and register, render and source-registration
   readers rebuild an elided revision from its nearest keyframe with
   `DocumentPatch::apply_stored_in_place`, which keeps every before-value guard
@@ -225,6 +228,45 @@ The structural walk and each validation family still run once per commit over
 the whole document; on a 10,000-sibling root a pause also composes one resume
 term per later physical owner, which the authored semantics require.
 
+### Pause work scoped to its changes
+
+A pause on a 10,000-sibling root still repeated whole-document work that its
+result does not need. Each replacement below is exact; debug builds assert
+it against the complete computation at every use, and the random suites in
+`command_work.rs`, `structural_properties.rs`, the store's commit and
+rebuild suites and `deadpan-audio`'s `timing_representation.rs` (compact
+against reference representation, bit-identical PCM) run through them.
+
+| Step | Before | Now | Why it is the same |
+| --- | --- | --- | --- |
+| New timing table | Captured, indexed and counted the complete-structure layout, then sliced it at the end of the commit | `FrozenAudioLayout::capture_scoped` builds the slice for the aliases the command will read (the new bindings, the cut owner, reanchored owners and, for composite insertion, the affected owners' placements) straight from the document. The command's other terms extend it once (`rescope_timing`) before they are validated | Slicing that provisional table to any subset of its aliases equals slicing the complete capture (zero-length runs keep a spacer so merged runs keep the same first alias). Budgets charge the complete layout's node, lineage and run counts, and the byte check uses its exact length, counted node by node, so every limit decides as before. Anything the complete capture could refuse falls back to it. Both insertion paths extend the table before validating their own templates; should a leaf still leave an alias unprojected, the command repeats that leaf with complete captures rather than refuse. A provisional table cannot be serialized and must be compacted before the command returns |
+| Result structure | A complete structural pass for lineage, marks and the final validation | `structural_durations_after_root_leaf` adds the new Hold to the Split result's (or the head's) durations and repeats only the checks the new leaf and the root's sum could fail | Only the leaf and the root differ; every other node, asset, override and the basis were proved for the base |
+| Identity lookups | Ordered-map lookups by identity in the structural pass, binding validation, frozen projections, the lineage closure and plan compilation | Transient hashed indexes (FNV-1a from a per-process random offset, `id_hash`; keys are the validated document's own bounded identities, so a crafted collision set can only slow a pass), merge-joins of sorted owners against their nodes and proofs, and the root (always a Sequence) without a lookup | The same entries are found; the hashed maps are never iterated for output |
+| Plan compile | Copied the head's durations and looked every child up twice | Shares the retained durations and one hashed index | Same plan |
+
+`FrozenIndex` parents are hashed, and every node of an admitted layout but
+the root has one, so `has_node` equals `nodes.contains_key` (asserted in
+debug builds).
+
+### Compact history rows
+
+`command::patch_wire` stores transactions in an exact compact form:
+
+- A node change whose before and after are Sequences that differ only in
+  their children, with at least 32 children, stores `before` and
+  `after_children: {at, remove, insert}` instead of `after`.
+- A transaction whose inverse is exactly `forward.inverse()` omits it.
+
+A splice has one encoding (no `after` key at all; an explicit null is
+refused), and the writer decides the omission by comparing the inverse with
+the forward patch field by field rather than building its reverse.
+Decoding reconstructs the identical typed transaction, the store still
+requires its stored text to decode to the computed transaction before it
+commits, and rows in the complete form remain readable. A splice must lie
+inside its old list and produce at most 100,000 children. On a
+10,000-sibling root a pause's history row keeps one copy of the child list
+instead of four.
+
 ## Verified history receipts
 
 Every revision's stored rows (revision, keyframe metadata, history entry or
@@ -330,10 +372,14 @@ and validation does not rebuild admitted layouts' indexes. See the
   lattice, and the full-structure table they share: on 10,000 Holds about
   3 MB of bindings and 2.8 MB of layout, retained once.
 - Each commit still validates its result once over the whole document, and
-  a pause validates its Split intermediate; see
-  [command work reuse](#command-work-reuse). A pause still captures a
-  complete-structure layout and builds its index before slicing it, and on a
-  wide root composes one resume term per later sibling.
-- Every edit's patch carries the changed parent Sequence's complete children
-  list before and after, in both directions; on a 10,000-sibling root that is
-  serialized, checked and written (with `F_FULLFSYNC`) on every commit.
+  a pause validates its capture, its Split intermediate and its resumed
+  bindings too (four binding validations, each over every owner, now with
+  hashed and merge-joined lookups); see
+  [command work reuse](#command-work-reuse). On a wide root a pause still
+  resolves one resume clock per later sibling, about 1.3 µs each.
+- An edit's history row still carries the changed parent Sequence's complete
+  old children list once ([compact history rows](#compact-history-rows)).
+- Every 64th revision is a keyframe: the complete document is serialized and
+  written on that commit. On 10,000 bound Holds that is 7.8 MB of compact
+  JSON and about 40 ms more than a pause otherwise takes; in the 30-cycle
+  edit run it lands on one pause, which is that run's p95.

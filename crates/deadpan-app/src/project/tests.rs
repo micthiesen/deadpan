@@ -10,6 +10,7 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 use super::*;
 
+mod backups;
 mod corrections;
 mod delete;
 mod delete_range;
@@ -677,6 +678,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         trim_commit_refresh_failure: AtomicBool::new(false),
         workspace_refresh_failure: AtomicBool::new(false),
         storage_failure: AtomicBool::new(false),
+        backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
         job_board: crate::jobs::Jobs::new(),
@@ -755,6 +757,7 @@ fn held_shared() -> Arc<Shared> {
         trim_commit_refresh_failure: AtomicBool::new(false),
         workspace_refresh_failure: AtomicBool::new(false),
         storage_failure: AtomicBool::new(false),
+        backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
         job_board: crate::jobs::Jobs::new(),
@@ -1048,6 +1051,7 @@ impl Harness {
             trim_commit_refresh_failure: AtomicBool::new(false),
             workspace_refresh_failure: AtomicBool::new(false),
             storage_failure: AtomicBool::new(false),
+            backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
             job_board: crate::jobs::Jobs::new(),

@@ -25,8 +25,13 @@ use serde_json::{Value, json};
 use crate::gpu::Gpu;
 use crate::{Lcg, Result, ms, round, summary};
 
-/// The native worker's rest period before refinement (`REFINE_DELAY`).
+/// The native worker's rest before refining a request that followed another
+/// within `REFINE_DELAY` (150 ms), reported for reference.
 const REFINE_DELAY: Duration = Duration::from_millis(150);
+/// The native worker's rest before refining an isolated request
+/// (`ISOLATED_REFINE_DELAY`). Each refinement sample below follows the
+/// previous exact picture by more than `REFINE_DELAY`, so it is isolated.
+const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 /// The native worker's proxy decoder (`PROXY_SERVING_THREADS`).
 const PROXY_SERVING_THREADS: u32 = 1;
 
@@ -253,7 +258,7 @@ pub fn run(
         let frame = random_frame(&mut random, &mut previous)?;
         let started = Instant::now();
         proxy_visible.push(view.present(gpu, &mut session, frame)?);
-        std::thread::sleep(REFINE_DELAY);
+        std::thread::sleep(ISOLATED_REFINE_DELAY);
         let exact_started = Instant::now();
         let prepared = exact.prepare(ProjectFrame(frame), &cancelled)?;
         gpu.present(&prepared)?;
@@ -283,7 +288,8 @@ pub fn run(
         "cold_seek": {"total_ms": summary(&cold)},
         "warm_seek": {"total_ms": summary(&warm), "at_or_over_80ms": slow},
         "refinement": {
-            "rest_ms": REFINE_DELAY.as_millis() as u64,
+            "rest_ms": ISOLATED_REFINE_DELAY.as_millis() as u64,
+            "scrubbing_rest_ms": REFINE_DELAY.as_millis() as u64,
             "proxy_visible_ms": summary(&proxy_visible),
             "exact_seek_ms": summary(&exact_seek),
             "refined_ms": summary(&refined),

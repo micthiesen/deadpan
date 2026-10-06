@@ -25,6 +25,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
 mod accessibility;
 mod ai_pause;
+mod backups;
 mod camera;
 #[cfg(test)]
 pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
@@ -898,6 +899,7 @@ impl DeadpanApp {
                 update.relink.take(),
             );
             self.receive_storage_cleanup(update.storage_cleanup.take());
+            self.receive_backups(std::mem::take(&mut update.backups));
             self.project_error = update.error;
             self.message = update.message;
             if let Some(note) = zoom_note {
@@ -3054,6 +3056,7 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
             Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
             Ok(navigation::command::Entry::Storage) => self.open_storage(context),
+            Ok(navigation::command::Entry::Backups) => self.open_backups(context),
             Ok(navigation::command::Entry::Jobs) => self.open_jobs(context),
             Ok(navigation::command::Entry::PortableCopy) => self.start_portable_copy(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
@@ -3426,6 +3429,19 @@ impl DeadpanApp {
                                 || self.trim.is_some()
                             {
                                 ui.colored_label(style::LAVENDER, "Draft preview");
+                            } else if let Some(reason) = self
+                                .workspace
+                                .as_ref()
+                                .and_then(|workspace| workspace.read_only.clone())
+                            {
+                                // A newer package viewed read-only: never "Saved".
+                                let response = ui
+                                    .push_id("header-save-state", |ui| {
+                                        ui.colored_label(style::WARNING, "Read-only")
+                                    })
+                                    .inner
+                                    .on_hover_text(reason.to_string());
+                                accessibility::full_text(response, &format!("Read-only: {reason}"));
                             } else if self.recovery.storage.is_some() {
                                 // Never "Saved" after a refused transaction.
                                 // A fixed ID, so a busy spinner before it cannot

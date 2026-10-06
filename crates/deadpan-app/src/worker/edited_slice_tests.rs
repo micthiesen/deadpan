@@ -130,6 +130,7 @@ fn work(work: Work, serial: u64) -> Request {
         },
         work,
         cancelled: Arc::new(AtomicBool::new(false)),
+        arrived: Instant::now(),
     }
 }
 

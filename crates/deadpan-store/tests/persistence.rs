@@ -161,8 +161,10 @@ fn imported_initial_allocations_stay_reserved_after_their_plays_are_removed() ->
     let connection = Connection::open(path.join("project.sqlite"))?;
     connection.execute_batch("PRAGMA foreign_keys=OFF; BEGIN;
         UPDATE revisions SET id='reserved-name',document=json_set(document,'$.revision_id','reserved-name') WHERE id='shrink-import';
-        UPDATE history SET revision_id='reserved-name',request=json_set(request,'$.new_revision','reserved-name'),edit=json_set(edit,'$.forward.to_revision','reserved-name','$.inverse.from_revision','reserved-name') WHERE revision_id='shrink-import';
-        UPDATE state SET head_revision='reserved-name'; COMMIT;")?;
+        UPDATE history SET revision_id='reserved-name',request=json_set(request,'$.new_revision','reserved-name') WHERE revision_id='shrink-import';
+        UPDATE state SET head_revision='reserved-name';")?;
+    rename_history_target(&connection, "reserved-name")?;
+    connection.execute_batch("COMMIT;")?;
     assert!(matches!(
         ProjectStore::open(&path, AccessMode::ReadOnly),
         Err(StoreError::History(_))
@@ -237,8 +239,10 @@ fn imported_audio_lineage_allocations_stay_reserved_after_owners_are_removed() -
     let connection = Connection::open(path.join("project.sqlite"))?;
     connection.execute_batch("PRAGMA foreign_keys=OFF; BEGIN;
         UPDATE revisions SET id='reserved-lineage',document=json_set(document,'$.revision_id','reserved-lineage') WHERE id='delete-right';
-        UPDATE history SET revision_id='reserved-lineage',request=json_set(request,'$.new_revision','reserved-lineage'),edit=json_set(edit,'$.forward.to_revision','reserved-lineage','$.inverse.from_revision','reserved-lineage') WHERE revision_id='delete-right';
-        UPDATE state SET head_revision='reserved-lineage'; COMMIT;")?;
+        UPDATE history SET revision_id='reserved-lineage',request=json_set(request,'$.new_revision','reserved-lineage') WHERE revision_id='delete-right';
+        UPDATE state SET head_revision='reserved-lineage';")?;
+    rename_history_target(&connection, "reserved-lineage")?;
+    connection.execute_batch("COMMIT;")?;
     assert!(matches!(
         ProjectStore::open(&path, AccessMode::ReadOnly),
         Err(StoreError::History(_))
@@ -375,7 +379,7 @@ fn newer_schema_is_refused_without_rewriting_database() -> Result {
     let before = fs::read(&database)?;
     assert!(matches!(
         ProjectStore::open(&path, AccessMode::ReadWrite),
-        Err(StoreError::UnsupportedSchema(999))
+        Err(StoreError::NewerSchema { found: 999, .. })
     ));
     assert_eq!(fs::read(&database)?, before);
     Ok(())
@@ -520,7 +524,6 @@ fn semantic_validation_rejects_forged_history_and_state() -> Result {
         "UPDATE history SET parent_id=id WHERE id=1",
         "UPDATE history SET request=json_set(request,'$.new_revision','unrelated') WHERE id=1",
         "UPDATE history SET edit=json_set(edit,'$.duration_delta',999) WHERE id=1",
-        "UPDATE history SET edit=json_set(edit,'$.inverse.to_revision','unrelated') WHERE id=1",
         "UPDATE revisions SET document=json_set(document,'$.revision_id','unrelated') WHERE id='r0'",
         "UPDATE revisions SET document=json_set(document,'$.nodes.root.label','changed') WHERE id='r0'",
         // The head is stored as a navigation patch rather than a document.
@@ -549,6 +552,95 @@ fn semantic_validation_rejects_forged_history_and_state() -> Result {
             ProjectStore::open(&path, AccessMode::ReadOnly).is_err(),
             "opened corruption: {change}"
         );
+    }
+    Ok(())
+}
+
+/// Rewrite `revision`'s stored transaction with `change`, always writing a
+/// complete explicit inverse (the writer omits one that is the forward
+/// patch's reverse), so a forgery is a well-formed row.
+fn rewrite_history(
+    connection: &Connection,
+    revision: &str,
+    change: impl FnOnce(&mut deadpan_core::EditTransaction),
+) -> Result {
+    let json: String = connection.query_row(
+        "SELECT edit FROM history WHERE revision_id=?1",
+        [revision],
+        |row| row.get(0),
+    )?;
+    let mut edit: deadpan_core::EditTransaction = serde_json::from_str(&json)?;
+    change(&mut edit);
+    let mut value = serde_json::to_value(&edit)?;
+    value["inverse"] = serde_json::to_value(&edit.inverse)?;
+    assert_eq!(
+        serde_json::from_value::<deadpan_core::EditTransaction>(value.clone())?,
+        edit,
+        "the rewritten row decodes to the forged transaction"
+    );
+    let rewritten = value.to_string();
+    connection.execute(
+        "UPDATE history SET edit=?2 WHERE revision_id=?1",
+        [revision, rewritten.as_str()],
+    )?;
+    // Keep each elided revision's document bound covering the longer row, so
+    // only the forged content can be what validation refuses.
+    let growth = rewritten.len().saturating_sub(json.len()) as i64;
+    connection.execute(
+        "UPDATE revisions SET json_bound=json_bound+?2 WHERE depth>0 AND rowid>=(SELECT rowid FROM revisions WHERE id=?1)",
+        rusqlite::params![revision, growth],
+    )?;
+    Ok(())
+}
+
+/// A coherent forgery: the transaction now names `revision` as its target in
+/// both directions.
+fn rename_history_target(connection: &Connection, revision: &str) -> Result {
+    rewrite_history(connection, revision, |edit| {
+        let target = RevisionId::new(revision).unwrap();
+        edit.forward.to_revision = target.clone();
+        edit.inverse.from_revision = target;
+    })
+}
+
+#[test]
+fn explicit_history_inverses_are_checked_against_the_forward_patch() -> Result {
+    for (name, wrong) in [("correct", false), ("wrong", true)] {
+        let scratch = tempfile::tempdir()?;
+        let path = scratch.path().join(format!("{name}-inverse.deadpan"));
+        let mut store = ProjectStore::create(&path, &document()?)?;
+        store.commit(&insert(&store.snapshot()?, "r1", "one")?)?;
+        store.commit(&insert(&store.snapshot()?, "r2", "two")?)?;
+        drop(store);
+        let connection = Connection::open(path.join("project.sqlite"))?;
+        rewrite_history(&connection, "r1", |edit| {
+            if wrong {
+                edit.inverse.to_revision = RevisionId::new("unrelated").unwrap();
+            }
+        })?;
+        let stored: String = connection.query_row(
+            "SELECT edit FROM history WHERE revision_id='r1'",
+            [],
+            |row| row.get(0),
+        )?;
+        assert!(
+            stored.contains("\"inverse\""),
+            "the row keeps an explicit inverse"
+        );
+        drop(connection);
+        let opened = ProjectStore::open(&path, AccessMode::ReadOnly);
+        if wrong {
+            assert!(
+                matches!(
+                    opened,
+                    Err(StoreError::History(_) | StoreError::Integrity(_))
+                ),
+                "a complete wrong inverse was accepted: {:?}",
+                opened.as_ref().err()
+            );
+        } else {
+            opened?.validate()?;
+        }
     }
     Ok(())
 }
@@ -1124,7 +1216,8 @@ fn imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed()
         connection.execute_batch("PRAGMA foreign_keys=OFF;")?;
         let transaction = connection.unchecked_transaction()?;
         transaction.execute("UPDATE revisions SET id=?1,document=json_set(document,'$.revision_id',?1) WHERE id='delete-owner'", [reserved])?;
-        transaction.execute("UPDATE history SET revision_id=?1,request=json_set(request,'$.new_revision',?1),edit=json_set(edit,'$.forward.to_revision',?1,'$.inverse.from_revision',?1) WHERE revision_id='delete-owner'", [reserved])?;
+        transaction.execute("UPDATE history SET revision_id=?1,request=json_set(request,'$.new_revision',?1) WHERE revision_id='delete-owner'", [reserved])?;
+        rename_history_target(&transaction, reserved)?;
         transaction.execute("UPDATE state SET head_revision=?1", [reserved])?;
         transaction.commit()?;
         assert!(matches!(

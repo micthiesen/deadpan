@@ -86,10 +86,49 @@ impl ProxyBuildError {
     pub fn is_environmental(&self) -> bool {
         match self {
             Self::Space { .. } | Self::Cache(ProxyCacheError::Budget { .. }) => true,
+            _ if self.is_disk_full() => true,
             Self::Conversion(error) => deadpan_media::retryable(error),
             _ => false,
         }
     }
+
+    /// The cache or temporary volume refused a write for lack of space
+    /// (ENOSPC or EDQUOT), whether in this process or in the media worker
+    /// writing the staged movie. The free-space preflight is only an
+    /// estimate, so this can still happen; it is never this Original's fault.
+    pub fn is_disk_full(&self) -> bool {
+        match self {
+            Self::Cache(ProxyCacheError::Io(error))
+            | Self::Io(error)
+            | Self::Conversion(deadpan_media::ConversionError::Io(error)) => io_disk_full(error),
+            // The worker classifies ENOSPC and EDQUOT itself.
+            Self::Conversion(deadpan_media::ConversionError::Worker { code, .. }) => {
+                code == "disk_full"
+            }
+            _ => false,
+        }
+    }
+}
+
+fn io_disk_full(error: &std::io::Error) -> bool {
+    matches!(
+        error.kind(),
+        std::io::ErrorKind::StorageFull | std::io::ErrorKind::QuotaExceeded
+    )
+}
+
+/// One encoding attempt's fresh private staging movie in `cache`, as the
+/// worker receives it. I/O failures keep their kind, so a full cache volume
+/// stays recognizable as one.
+pub fn stage_output(
+    cache: &ProxyCache,
+) -> Result<(cache::ProxyStaging, File), deadpan_media::ConversionError> {
+    let staging = cache.stage().map_err(|error| match error {
+        ProxyCacheError::Io(error) => deadpan_media::ConversionError::Io(error),
+        other => deadpan_media::ConversionError::Protocol(other.to_string()),
+    })?;
+    let file = staging.movie().try_clone()?;
+    Ok((staging, file))
 }
 
 /// What the cache holds for one Original.
@@ -257,7 +296,10 @@ pub fn build_proxy(
         Ok(entry) => Ok(ProxyStatus::Ready(entry)),
         Err(error) => {
             if !error.is_cancellation() && !error.is_environmental() {
-                cache.record_failure(&proxy_key(original, video)?, &error.to_string())?;
+                // The record only spares a later opening a doomed rebuild.
+                // Failing to write it (for example on a volume that has
+                // just filled) must not replace the build's own error.
+                let _ = cache.record_failure(&proxy_key(original, video)?, &error.to_string());
             }
             Err(error)
         }
@@ -334,13 +376,7 @@ pub fn build_proxy_with_plan(
         worker,
         &input,
         &request,
-        || {
-            let staging = cache
-                .stage()
-                .map_err(|error| deadpan_media::ConversionError::Protocol(error.to_string()))?;
-            let file = staging.movie().try_clone()?;
-            Ok((staging, file))
-        },
+        || stage_output(cache),
         control.cancelled,
         ProxyEncodeOptions {
             stall: control.stall,

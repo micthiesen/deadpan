@@ -49,7 +49,7 @@ pub(crate) fn apply_validated(
     edit_context: crate::command::EditContext<'_>,
 ) -> Result<(ProjectDocument, crate::command::Validation), EditError> {
     let allocation = edit_context.allocation;
-    let durations = document.durations()?;
+    let durations = document.durations_shared()?;
     let original = document.nodes.get(target).ok_or_else(|| {
         EditError::new(
             EditErrorCode::SelectionUnavailable,
@@ -80,7 +80,7 @@ pub(crate) fn apply_validated(
     // validated, so building it cannot fail; the target's parent is found
     // directly otherwise.
     let index = (!local || occurrence_marks_inside(document, target)?)
-        .then(|| AnchorIndex::from_durations(document, durations.clone()))
+        .then(|| AnchorIndex::from_durations(document, (*durations).clone()))
         .transpose()?;
     let root = target == document.root();
     let found_parent;

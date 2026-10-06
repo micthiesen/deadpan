@@ -1398,6 +1398,8 @@ fn content_range_start(value: &str) -> Option<u64> {
         .ok()
 }
 
+#[cfg(all(test, target_os = "macos"))]
+mod disk_full_tests;
 #[cfg(test)]
 mod interrupted_download_tests;
 #[cfg(test)]

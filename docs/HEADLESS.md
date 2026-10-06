@@ -1259,30 +1259,42 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schema 55 is current. Schema 52 returns `MigrationRequired` and has an
-explicit backed-up additive upgrade:
+Database schema 67 is current. Schema 66 returns `MigrationRequired` and
+`project migrate` upgrades it (backup, copy, validate, promote). Earlier
+schemas return `SchemaUnsupported` before writer locks, backups, recovery,
+authored JSON parsing or database writes, and their packages remain intact
+([development formats](DEVELOPMENT_FORMATS.md)).
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
-The upgrade adds empty register and Compound-step tables, validates all current
-history and operational state, and promotes a separate candidate through SQLite's
-backup API. Authored rows remain unchanged. The retained backup is named
-`Snapshots/before-schema-55-*.sqlite`. Native writable Open uses the same service
-path. A current-schema migration request validates read-only and returns equal
-schemas with `backup: null`, including alongside a native writer.
+On a current package this validates read-only and returns equal schemas with
+`backup: null`, including alongside a native writer. A package from a newer
+build returns `SchemaNewer`; `project view` shows it read-only. Release
+migrations will run through the implemented runner: back up, migrate a copy,
+validate, promote atomically; a failure after the backup returns
+`MigrationFailed` naming the retained backup. See the
+[release migration policy](BACKUPS.md#release-migration-policy).
 
-Schemas 1 through 51, 53 and 54 return `SchemaUnsupported` before writer locks,
-backups, recovery, authored JSON parsing or database writes. This uses the user's
-permission to retire unused development formats. Their packages remain intact.
-See [supported development formats](DEVELOPMENT_FORMATS.md) for the precise
-boundary and retained current recovery behavior. Historical qualification
-reports apply to their recorded revisions.
+## Backups
 
-Failures after backup creation include `error.recovery_backup`. Semantic
-migration failures use `MigrationFailed`; disk, permission and lock failures
-retain actionable storage error codes and identify the backup when present.
+```sh
+cargo run --locked -p deadpan-cli -- project backups /tmp/example.deadpan [--verify]
+cargo run --locked -p deadpan-cli -- project backup /tmp/example.deadpan
+cargo run --locked -p deadpan-cli -- project restore /tmp/example.deadpan BACKUP_ID [--dry-run]
+cargo run --locked -p deadpan-cli -- project view /tmp/example.deadpan
+cargo run --locked -p deadpan-cli -- project relink-moved /tmp/example.deadpan
+```
+
+`backups` lists verified backups newest first with the revision, beats, length
+and edit count each holds; `backup` makes one beside an open app; `restore`
+needs the writer (`ProjectAlreadyOpen` while the app has the project) and backs
+up the current state first; `--dry-run` verifies without writing.
+`relink-moved` follows the bookmarks of missing linked originals and relinks
+only identical content. Error codes: `BackupNotFound`, `BackupOtherProject`,
+`BackupInvalid`, `BackupCancelled`, `BackupDeadline`, `DiskFull`. See
+[backups](BACKUPS.md).
 
 Generated Hold acceptance/reversion semantics were introduced in core schema 5, but generic
 project commands and initial import reject newly introduced generated artifacts

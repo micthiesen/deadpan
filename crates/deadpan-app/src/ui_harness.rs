@@ -74,6 +74,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "accessibility",
     "diagnostics",
     "storage",
+    "backups",
     "jobs",
     "full-session",
     "layouts",

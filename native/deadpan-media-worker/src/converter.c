@@ -98,6 +98,12 @@ static int fail(const char *code, const char *format, ...) {
     return 0;
 }
 
+/* A failed write's class: a full volume or exhausted quota is reported as
+   `disk_full`, so the host never needs to parse the message. */
+static const char *io_code(int error_number) {
+    return error_number == ENOSPC || error_number == EDQUOT ? "disk_full" : "io_failure";
+}
+
 static int fail_ffmpeg(const char *operation, int error) {
     char detail[AV_ERROR_MAX_STRING_SIZE];
     if (av_strerror(error, detail, sizeof(detail)) < 0) {
@@ -288,7 +294,11 @@ static int descriptor_write(void *opaque, const uint8_t *buffer, int buffer_size
             continue;
         }
         if (count <= 0) {
-            return AVERROR(count < 0 ? errno : EIO);
+            int error_number = count < 0 ? errno : EIO;
+            if (error_number == ENOSPC || error_number == EDQUOT) {
+                fail("disk_full", "write output: %s", strerror(error_number));
+            }
+            return AVERROR(error_number);
         }
         written += (int)count;
     }
@@ -472,7 +482,7 @@ static int exact_write_at(int fd, const uint8_t *bytes, uint64_t amount, uint64_
             continue;
         }
         if (count <= 0) {
-            return fail("io_failure", "write RGB scratch: %s",
+            return fail(count < 0 ? io_code(errno) : "io_failure", "write RGB scratch: %s",
                         count < 0 ? strerror(errno) : "short write");
         }
         written += (uint64_t)count;
@@ -1002,7 +1012,7 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     *output_bytes = (uint64_t)io.descriptor.length;
     if (*output_bytes == 0 || *output_bytes > request->max_output_bytes ||
         ftruncate(output_fd, (off_t)*output_bytes) != 0) {
-        fail("io_failure", "finalize bounded Matroska output: %s", strerror(errno));
+        fail(io_code(errno), "finalize bounded Matroska output: %s", strerror(errno));
         goto cleanup;
     }
     success = 1;
@@ -1368,7 +1378,7 @@ int deadpan_convert(int input_fd, int output_fd, int scratch_fd,
     }
     if ((uint64_t)decoded.frame_count * decoded.frame_bytes != scratch_bytes ||
         ftruncate(scratch_fd, (off_t)scratch_bytes) != 0) {
-        fail("io_failure", "finalize RGB scratch: %s", strerror(errno));
+        fail(io_code(errno), "finalize RGB scratch: %s", strerror(errno));
         goto cleanup;
     }
     if (!encode_output(output_fd, scratch_fd, request, decoded.frame_bytes, &output_bytes)) {
@@ -1827,7 +1837,7 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         goto cleanup;
     }
     if (fsync(output_fd) != 0) {
-        fail("io_failure", "synchronize MP4 output: %s", strerror(errno));
+        fail(io_code(errno), "synchronize MP4 output: %s", strerror(errno));
         goto cleanup;
     }
     if (!remux_verify(output_fd, output_io.descriptor.length, inputs)) {
@@ -2362,7 +2372,7 @@ int deadpan_proxy_finish(int output_fd, DeadpanProxyReport *report,
         goto failed;
     }
     if (ftruncate(output_fd, (off_t)proxy.io.descriptor.length) != 0 || fsync(output_fd) != 0) {
-        fail("io_failure", "finalize proxy output: %s", strerror(errno));
+        fail(io_code(errno), "finalize proxy output: %s", strerror(errno));
         goto failed;
     }
     report->output_bytes = (uint64_t)proxy.io.descriptor.length;

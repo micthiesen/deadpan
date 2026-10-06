@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::{error::Error, fmt};
 
@@ -895,10 +895,32 @@ impl ProjectDocument {
     }
 
     pub(crate) fn parent_of(&self, id: &NodeId) -> Option<NodeId> {
+        // `children` without a node lookup per candidate: primitive children,
+        // then override and gap-branch roots.
+        let branches = |parent: &NodeId| {
+            self.overrides
+                .get(parent)
+                .into_iter()
+                .chain(self.gap_overrides.get(parent))
+                .flat_map(|entries| entries.iter().map(|(_, root)| root))
+        };
+        let plain = self.overrides.is_empty() && self.gap_overrides.is_empty();
         self.nodes
             .iter()
-            .find(|(parent, _)| self.children(parent).any(|child| child == id))
+            .find(|(parent, node)| {
+                node.kind.children().contains(id)
+                    || (!plain && branches(parent).any(|child| child == id))
+            })
             .map(|(id, _)| id.clone())
+    }
+
+    /// [`Self::durations`], shared without copying when an enclosing
+    /// validation scope retains them for this exact document.
+    pub fn durations_shared(&self) -> Result<Arc<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        match validated::durations(self) {
+            Some(durations) => Ok(durations),
+            None => self.durations().map(Arc::new),
+        }
     }
 
     /// Validate once and return every authored duration for plan compilation.
@@ -1200,9 +1222,12 @@ impl ProjectDocument {
             ));
         }
         // Borrow identities during the walk; only the returned map owns them.
-        let mut seen = BTreeSet::new();
+        // The transient indexes are hashed; the result is built sorted.
+        let mut seen = crate::id_hash::id_set(self.nodes.len());
         let mut stack: Vec<(&NodeId, usize, Option<&BeatNode>)> = vec![(&self.root, 0usize, None)];
-        let mut durations = BTreeMap::new();
+        let mut durations: crate::id_hash::IdMap<&NodeId, FrameDuration> =
+            crate::id_hash::id_map(self.nodes.len());
+        let no_overrides = self.overrides.is_empty() && self.gap_overrides.is_empty();
         while let Some((id, depth, visited)) = stack.pop() {
             if depth > MAX_DOCUMENT_DEPTH {
                 return Err(DocumentError::new(
@@ -1226,6 +1251,12 @@ impl ProjectDocument {
                 validate_label(&node.label)?;
                 node.audio_edges.validate(&node.kind)?;
                 stack.push((id, depth, Some(node)));
+                if no_overrides {
+                    for child in node.kind.children().iter().rev() {
+                        stack.push((child, depth + 1, None));
+                    }
+                    continue;
+                }
                 // The same order as `children`: primitive, override, gap roots.
                 let overrides = self
                     .overrides
@@ -1361,13 +1392,22 @@ impl ProjectDocument {
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
                     }
+                    // The layout reads only these evaluated branch roots.
+                    let branches: BTreeMap<NodeId, FrameDuration> = self
+                        .children(id)
+                        .filter_map(|branch| {
+                            durations
+                                .get(branch)
+                                .map(|duration| (branch.clone(), *duration))
+                        })
+                        .collect();
                     RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         self.overrides.get(id),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
                         self.gap_overrides.get(id),
-                        &durations,
+                        &branches,
                     )?
                     .duration()
                 }
@@ -1414,7 +1454,7 @@ impl ProjectDocument {
                     *duration
                 }
             };
-            durations.insert(id.clone(), duration);
+            durations.insert(id, duration);
         }
         if seen.len() != self.nodes.len() {
             return Err(DocumentError::new(
@@ -1422,7 +1462,130 @@ impl ProjectDocument {
                 "document contains nodes unreachable from its root",
             ));
         }
-        Ok(durations)
+        // Every node was reached, so every node has a duration; the sorted
+        // node keys build the result in bulk.
+        Ok(self
+            .nodes
+            .keys()
+            .map(|id| (id.clone(), durations[id]))
+            .collect())
+    }
+
+    /// [`Self::structural_durations`] of `self`, where `self` is `base` with
+    /// one new Hold `leaf` inserted into the root Sequence and nothing else
+    /// structural changed, given `base`'s structural durations. Only the leaf
+    /// and the root can differ, so this repeats exactly the checks the
+    /// complete pass could newly fail, in its order: the node and edge
+    /// limits, the leaf's own checks, then the root's sum. Every other node,
+    /// asset, override and the basis were proven for `base`.
+    ///
+    /// `Ok(None)` when `self` is not such a document; the caller then runs the
+    /// complete pass. Debug builds compare the result with the complete pass
+    /// wherever it is shared (`command::shared_structure`).
+    ///
+    /// Provenance: the only caller (`insert_time::insert_leaf_shared`) passes
+    /// the result of reducing one `Command::Insert` of a single-node subtree
+    /// into the root of `base`. The checks below cover the root and the leaf;
+    /// debug builds also assert that every other node is unchanged, which the
+    /// release build takes from that provenance.
+    pub(crate) fn structural_durations_after_root_leaf(
+        &self,
+        base: &ProjectDocument,
+        base_durations: &BTreeMap<NodeId, FrameDuration>,
+        leaf: &NodeId,
+    ) -> Result<Option<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        let (Some(NodeKind::Sequence { children }), Some(NodeKind::Sequence { children: before })) = (
+            self.nodes.get(&self.root).map(|node| &node.kind),
+            base.nodes.get(&base.root).map(|node| &node.kind),
+        ) else {
+            return Ok(None);
+        };
+        let Some(NodeKind::Hold { recipe }) = self.nodes.get(leaf).map(|node| &node.kind) else {
+            return Ok(None);
+        };
+        let Some(&base_root) = base_durations.get(&base.root) else {
+            return Ok(None);
+        };
+        if self.root != base.root
+            || self.schema_version != base.schema_version
+            || self.presentation_basis != base.presentation_basis
+            || base.nodes.contains_key(leaf)
+            || self.nodes.len() != base.nodes.len() + 1
+            || base_durations.len() != base.nodes.len()
+            || children.len() != before.len() + 1
+            || self.assets != base.assets
+            || self.overrides != base.overrides
+            || self.gap_overrides != base.gap_overrides
+            || self.nodes[&self.root].label != base.nodes[&base.root].label
+            || self.nodes[&self.root].audio_edges != base.nodes[&base.root].audio_edges
+        {
+            return Ok(None);
+        }
+        let Some(slot) = children.iter().position(|child| child == leaf) else {
+            return Ok(None);
+        };
+        if children[..slot] != before[..slot] || children[slot + 1..] != before[slot..] {
+            return Ok(None);
+        }
+        debug_assert!(
+            self.nodes
+                .iter()
+                .filter(|(id, _)| *id != leaf && **id != self.root)
+                .eq(base.nodes.iter().filter(|(id, _)| **id != base.root)),
+            "a root-leaf derivation was given a document with other node changes"
+        );
+        if self.schema_version != DOCUMENT_SCHEMA_VERSION {
+            return Err(DocumentError::new(
+                DocumentErrorCode::UnsupportedSchema,
+                format!(
+                    "unsupported document schema {}; expected {DOCUMENT_SCHEMA_VERSION}",
+                    self.schema_version
+                ),
+            ));
+        }
+        if self.nodes.len() > MAX_DOCUMENT_NODES {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "document exceeds 100,000 nodes or assets",
+            ));
+        }
+        // The complete pass counts every primitive child and override root.
+        let edges = self
+            .nodes
+            .values()
+            .map(|node| node.kind.children().len())
+            .chain(
+                self.overrides
+                    .values()
+                    .chain(self.gap_overrides.values())
+                    .map(|entries| entries.iter().count()),
+            )
+            .try_fold(0usize, |total, count| total.checked_add(count));
+        match edges {
+            None => {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "too many structural references",
+                ));
+            }
+            Some(edges) if edges > MAX_DOCUMENT_NODES => {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "document exceeds 100,000 structural references",
+                ));
+            }
+            Some(_) => {}
+        }
+        // The leaf is visited before the root's sum, at depth one.
+        let node = &self.nodes[leaf];
+        validate_label(&node.label)?;
+        node.audio_edges.validate(&node.kind)?;
+        self.validate_hold(recipe)?;
+        let root = base_root.checked_add(recipe.duration)?;
+        let mut durations = base_durations.clone();
+        durations.insert(leaf.clone(), recipe.duration);
+        durations.insert(self.root.clone(), root);
+        Ok(Some(durations))
     }
 
     pub(crate) fn validate_asset(id: &AssetId, asset: &AssetRecord) -> Result<(), DocumentError> {

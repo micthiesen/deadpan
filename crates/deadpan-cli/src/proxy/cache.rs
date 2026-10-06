@@ -305,6 +305,14 @@ impl ProxyCache {
             }
             cache.subdirectory(name)?;
         }
+        // Create the lock file now, so reading a cache never needs a new
+        // file later, for example once its volume has filled. A read-only
+        // cache is still readable; writes then fail on their own.
+        match cache.lock(false) {
+            Ok(lock) => drop(lock),
+            Err(ProxyCacheError::Io(error)) if read_only_volume(&error) => {}
+            Err(error) => return Err(error),
+        }
         Ok(cache)
     }
 
@@ -483,7 +491,19 @@ impl ProxyCache {
             let marker = serde_json::to_vec(&VerifiedMarker { state, sha256 })
                 .map_err(|error| ProxyCacheError::Damaged(error.to_string()))?;
             // Concurrent identical markers are harmless; rename is atomic.
-            self.replace_file(&directory, VERIFIED, &marker, Mode::from_raw_mode(0o444))?;
+            // The marker only saves rehashing; the bytes were just verified,
+            // so a full or read-only volume does not refuse them. Any other
+            // failure is reported.
+            match self.replace_file(&directory, VERIFIED, &marker, Mode::from_raw_mode(0o444)) {
+                Ok(()) => {}
+                Err(ProxyCacheError::Io(error))
+                    if read_only_volume(&error)
+                        || matches!(
+                            error.kind(),
+                            std::io::ErrorKind::StorageFull | std::io::ErrorKind::QuotaExceeded
+                        ) => {}
+                Err(error) => return Err(error),
+            }
         }
         if let Ok(used) = openat(
             &directory,
@@ -947,3 +967,11 @@ fn remove_tree(parent: &OwnedFd, name: &str) -> Result<(), ProxyCacheError> {
 #[cfg(test)]
 #[path = "cache_tests.rs"]
 mod tests;
+
+/// A volume or directory that refuses writes but can still be read.
+fn read_only_volume(error: &std::io::Error) -> bool {
+    matches!(
+        error.kind(),
+        std::io::ErrorKind::ReadOnlyFilesystem | std::io::ErrorKind::PermissionDenied
+    )
+}

@@ -561,7 +561,7 @@ impl CompiledHold {
 
 impl RenderPlan {
     pub fn compile(document: &ProjectDocument) -> Result<Self, PlanError> {
-        let durations = document.durations()?;
+        let durations = document.durations_shared()?;
         let by_id: BTreeMap<_, _> = document
             .nodes()
             .keys()
@@ -569,13 +569,26 @@ impl RenderPlan {
             .enumerate()
             .map(|(index, id)| (id, index))
             .collect();
+        // A transient hashed index of each node's position and duration for
+        // the child references below; `by_id` stays the plan's sorted map.
+        let mut index: std::collections::HashMap<&NodeId, (usize, FrameDuration)> =
+            std::collections::HashMap::with_capacity(by_id.len());
+        for (position, (id, duration)) in durations.iter().enumerate() {
+            index.insert(id, (position, *duration));
+        }
+        if index.len() != by_id.len() || durations.keys().ne(document.nodes().keys()) {
+            return Err(PlanError::InvalidPlan(
+                "durations do not describe the nodes",
+            ));
+        }
+        let position = |id: &NodeId| index[id].0;
         let mut storage = StorageStats {
             authored_nodes: by_id.len(),
             ..StorageStats::default()
         };
         let mut nodes = Vec::with_capacity(by_id.len());
         for (id, node) in document.nodes() {
-            let duration = durations[id];
+            let duration = index[id].1;
             let (kind, node_type) = match &node.kind {
                 NodeKind::Source { source } => (
                     CompiledKind::Source {
@@ -625,9 +638,10 @@ impl RenderPlan {
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
                         let start = end.frames();
-                        end = end.checked_add(durations[child])?;
+                        let (child, duration) = index[child];
+                        end = end.checked_add(duration)?;
                         entries.push(SequenceEntry {
-                            child: by_id[child],
+                            child,
                             start,
                             end: end.frames(),
                         });
@@ -670,7 +684,7 @@ impl RenderPlan {
                     storage.referenced_plays += u64::from(iterations.len());
                     (
                         CompiledKind::Repeat {
-                            default_child: by_id[child],
+                            default_child: position(child),
                             layout,
                             gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
                             gap_duration: gap
@@ -697,7 +711,7 @@ impl RenderPlan {
                     purpose,
                 } => (
                     CompiledKind::Retime {
-                        child: by_id[child],
+                        child: position(child),
                         pitch: *pitch,
                         purpose: *purpose,
                         start: ExactRatio::integer(mapping.start().0),
@@ -736,11 +750,17 @@ impl RenderPlan {
                 captions: node.captions.clone(),
             });
         }
-        let root = by_id[document.root()];
+        let root = position(document.root());
         let mut parents = vec![None; nodes.len()];
-        for id in document.nodes().keys() {
-            for child in document.children(id) {
-                parents[by_id[child]] = Some(by_id[id]);
+        for (parent, (id, node)) in document.nodes().iter().enumerate() {
+            let overrides = document
+                .overrides()
+                .get(id)
+                .into_iter()
+                .chain(document.gap_overrides().get(id))
+                .flat_map(|entries| entries.iter().map(|(_, root)| root));
+            for child in node.kind.children().iter().chain(overrides) {
+                parents[position(child)] = Some(parent);
             }
         }
         let mut plan = Self {
@@ -749,7 +769,7 @@ impl RenderPlan {
                 revision_id: document.revision_id().clone(),
                 root: document.root().clone(),
                 presentation_basis: document.presentation_basis().clone(),
-                duration: durations[document.root()],
+                duration: index[document.root()].1,
                 storage,
             },
             nodes,

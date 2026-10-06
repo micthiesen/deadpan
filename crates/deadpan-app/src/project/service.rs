@@ -28,6 +28,7 @@ use super::{
 
 type Result<T> = std::result::Result<T, String>;
 
+mod backups;
 mod cut_slice;
 mod delete_range;
 pub(super) mod edit_slice;
@@ -139,6 +140,10 @@ struct Service {
     relinking: Option<recovery::Relinking>,
     relink: Option<super::RelinkStatus>,
     storage_cleanup: Option<super::StorageCleanupStatus>,
+    /// Missing linked originals whose bookmark candidate was tried this
+    /// session.
+    auto_relinked: std::collections::BTreeSet<deadpan_store::original_media::OriginalContentId>,
+    backups: backups::State,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -218,6 +223,8 @@ pub(super) fn run(
         relinking: None,
         relink: None,
         storage_cleanup: None,
+        auto_relinked: Default::default(),
+        backups: backups::State::default(),
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -234,6 +241,7 @@ pub(super) fn run(
             false
         };
         let changed = shutdown_changed
+            | service.pump_backups()
             | service.pump_render()
             | service.pump_generation()
             | service.pump_tracking()
@@ -349,9 +357,11 @@ pub(super) fn run(
         }
     }
     service.cancel();
+    service.backup_before_session_change();
     // Revoke handles and release the lock before waiting for cooperative decoding.
     service.host = None;
     service.store = None;
+    service.backups.finish_on_exit();
     service.workspace = None;
     service.cached = None;
     service.shared.busy.store(false, Ordering::Release);
@@ -425,6 +435,7 @@ impl Service {
             storage: self.current_storage_alert(),
             relink: self.relink.clone(),
             storage_cleanup: self.storage_cleanup.clone(),
+            backups: self.backups.update(),
         };
         *self
             .shared
@@ -591,6 +602,11 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
+            ProjectRequest::Backup(request) => {
+                // Normally answered before dispatch; kept for direct callers.
+                self.backup_command(request);
+                Ok(())
+            }
             ProjectRequest::SaveTranscript { .. }
             | ProjectRequest::SaveSpeechActivity { .. }
             | ProjectRequest::SaveShotAnalysis { .. }
@@ -645,6 +661,7 @@ impl Service {
                 Ok(())
             }
             ProjectRequest::Close => {
+                self.backup_before_session_change();
                 self.cancel();
                 self.host = None;
                 self.store = None;
@@ -763,6 +780,25 @@ impl Service {
                 Ok(())
             }
         }
+    }
+
+    /// Why a request cannot run in a read-only session (a newer package
+    /// opened for viewing). Session changes and cancellations always can.
+    fn read_only_refusal(&self, request: &ProjectRequest) -> Option<String> {
+        let reason = self.workspace.as_ref()?.read_only.as_ref()?;
+        if matches!(
+            request,
+            ProjectRequest::Open(_)
+                | ProjectRequest::Close
+                | ProjectRequest::CreateFromSource { .. }
+                | ProjectRequest::CancelImport
+                | ProjectRequest::AbandonSplice(_)
+                | ProjectRequest::AbandonSlip(_)
+                | ProjectRequest::AbandonTrim(_)
+        ) {
+            return None;
+        }
+        Some(format!("Not saved: {reason}"))
     }
 
     fn writer(&mut self) -> Result<&mut ProjectStore> {
@@ -945,6 +981,7 @@ impl Service {
         let registers = registers::restore(&store, next)?;
         let report = Arc::new(recovery::open_report(&store, &workspace));
         let host = headless::Host::bind(&mut store)?;
+        self.backup_before_session_change();
         self.cancel();
         self.host = Some(host);
         self.store = Some(store);
@@ -958,6 +995,7 @@ impl Service {
         self.registers = Some(registers);
         self.clear_marks();
         self.import = None;
+        self.begin_backup_session();
         self.initialize_source(next, document.revision_id().clone(), path)
     }
 
@@ -1431,6 +1469,10 @@ impl Service {
                     migration = Some(ProjectStore::migrate(&path).map_err(display)?);
                     ProjectStore::open(&path, AccessMode::ReadWrite)
                 }
+                // A newer Deadpan saved it: view it read-only, never rewrite.
+                Err(StoreError::NewerSchema { .. }) => {
+                    ProjectStore::open(&path, AccessMode::ReadOnly)
+                }
                 result => result,
             }
         }
@@ -1455,6 +1497,9 @@ impl Service {
                 migration.backup.as_ref().expect("backup checked").display(),
             ),
             _ if create => "Project created".into(),
+            _ if workspace.read_only.is_some() => {
+                "Opened read-only: a newer Deadpan saved this project. You can look at it; nothing can be saved here.".into()
+            }
             _ => "Project opened".into(),
         };
         Ok(Some(render::PreparedOpen {
@@ -1469,9 +1514,15 @@ impl Service {
     fn install_open(&mut self, mut prepared: render::PreparedOpen) -> Result<()> {
         // A pending Open is unadvertised until installation. Bind before
         // replacing the old session so a failed endpoint keeps that session.
-        let host = headless::Host::bind(&mut prepared.store)?;
+        // A read-only view has no writer, so no command endpoint either.
+        let host = if prepared.store.access_mode() == AccessMode::ReadWrite {
+            Some(headless::Host::bind(&mut prepared.store)?)
+        } else {
+            None
+        };
+        self.backup_before_session_change();
         self.cancel();
-        self.host = Some(host);
+        self.host = host;
         self.store = Some(prepared.store);
         self.session = prepared.workspace.session;
         self.workspace = Some(Arc::new(prepared.workspace));
@@ -1484,6 +1535,9 @@ impl Service {
         self.storage = None;
         self.storage_watch = Default::default();
         self.clear_marks();
+        self.begin_backup_session();
+        self.auto_relinked.clear();
+        self.relink_moved_originals();
         Ok(())
     }
 
@@ -2037,14 +2091,28 @@ fn snapshot(
         ),
     };
     let color = store.output_color(&document).map_err(display)?;
+    let read_only = store.newer_schema().map(|found| {
+        Arc::<str>::from(
+            StoreError::NewerSchema {
+                found,
+                supported: deadpan_store::DATABASE_SCHEMA_VERSION,
+            }
+            .to_string(),
+        )
+    });
     Ok(Workspace {
+        read_only,
         color,
         session,
         path,
         document: Arc::new(document),
         plan: Arc::new(plan),
         sources,
-        originals: store.original_import_handle().map_err(display)?,
+        originals: if store.access_mode() == AccessMode::ReadWrite {
+            store.original_import_handle().map_err(display)?
+        } else {
+            store.original_view_handle()
+        },
         generated: store.generated_read_handle(),
         can_undo,
         can_redo,

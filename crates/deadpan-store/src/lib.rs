@@ -6,6 +6,8 @@
 
 mod audit;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod backups;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod checkpoint;
 mod compound;
 mod document_cache;
@@ -18,7 +20,7 @@ pub mod generation_attempts;
 mod history;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host_owner;
-mod migration;
+pub mod migration;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod object_storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -38,6 +40,7 @@ pub mod registers;
 pub mod render_jobs;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_media;
+mod retired;
 mod revision_storage;
 mod schema;
 mod shot_analysis;
@@ -101,6 +104,8 @@ pub struct ProjectStore {
     context_resolver: Option<Arc<dyn generation::GenerationContextResolver>>,
     package: PathBuf,
     mode: AccessMode,
+    /// The newer database schema of a package opened read-only for viewing.
+    newer_schema: Option<u32>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     generated_storage: Arc<generated_media::GeneratedStorage>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -317,6 +322,7 @@ impl ProjectStore {
             context_resolver: None,
             package,
             mode: AccessMode::ReadWrite,
+            newer_schema: None,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage: Arc::new(generated_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -380,10 +386,46 @@ impl ProjectStore {
         // Probe the format read-only before acquiring writable state or enabling WAL.
         let probe = Connection::open_with_flags(&database, read_flags())?;
         schema::configure(&probe)?;
-        schema::check_version(&probe)?;
-        drop(probe);
+        let mut recovered_lock = None;
+        let newer_schema = match readable_version(&probe, mode) {
+            // A write in rollback-journal mode was interrupted (for example a
+            // release migration leaving WAL mode). Only a writer may roll the
+            // hot journal back; do it under the package lock, then probe again.
+            Err(error) if interrupted_rollback(&error) => {
+                drop(probe);
+                if mode == AccessMode::ReadOnly {
+                    return Err(StoreError::Storage(
+                        "an interrupted write left a recovery journal; open the project for editing once to recover it (nothing has been changed)".into(),
+                    ));
+                }
+                let lock = acquire_lock(&package)?;
+                let recovery = Connection::open_with_flags(
+                    &database,
+                    OpenFlags::SQLITE_OPEN_READ_WRITE
+                        | OpenFlags::SQLITE_OPEN_NO_MUTEX
+                        | OpenFlags::SQLITE_OPEN_NOFOLLOW,
+                )?;
+                schema::configure(&recovery)?;
+                // The first read rolls the hot journal back.
+                recovery.query_row("PRAGMA schema_version", [], |row| row.get::<_, i64>(0))?;
+                recovery
+                    .close()
+                    .map_err(|(_, error)| StoreError::Database(error))?;
+                recovered_lock = Some(lock);
+                let probe = Connection::open_with_flags(&database, read_flags())?;
+                schema::configure(&probe)?;
+                readable_version(&probe, mode)?
+            }
+            result => {
+                drop(probe);
+                result?
+            }
+        };
         let lock = if mode == AccessMode::ReadWrite {
-            Some(acquire_lock(&package)?)
+            Some(match recovered_lock {
+                Some(lock) => lock,
+                None => acquire_lock(&package)?,
+            })
         } else {
             None
         };
@@ -409,7 +451,11 @@ impl ProjectStore {
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
-        schema::check_version(&connection)?;
+        if readable_version(&connection, mode)? != newer_schema {
+            return Err(StoreError::Integrity(
+                "database schema changed while opening".into(),
+            ));
+        }
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
@@ -437,6 +483,7 @@ impl ProjectStore {
             context_resolver: None,
             package,
             mode,
+            newer_schema,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage: Arc::new(generated_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -466,9 +513,31 @@ impl ProjectStore {
             session_marker: false,
             _writer_lock: lock,
         };
+        if newer_schema.is_some() {
+            // A later build's history and operational tables cannot be
+            // validated here. Show only what reads as a current document.
+            store.check_newer_readable()?;
+            return Ok(store);
+        }
         let audit = store.validate_with(validation::HistoryMode::Receipt)?;
         store.opened = HistoryValidation::from(&audit);
         if mode == AccessMode::ReadWrite {
+            store.recover_writable(&audit, false)?;
+            store.begin_writer_session();
+        }
+        Ok(store)
+    }
+
+    /// The writable-open steps after validation: certify the chronology and
+    /// interrupt every attempt a previous writer left running. Shared by
+    /// opening and by restoring a backup into the open writer.
+    fn recover_writable(
+        &mut self,
+        audit: &validation::HistoryAudit,
+        restored: bool,
+    ) -> Result<(), StoreError> {
+        let store = self;
+        {
             // Record this validator's proof of the complete chronology, so the
             // next open hashes the stored rows instead of replaying them.
             if audit.verified < audit.order.len() {
@@ -487,8 +556,13 @@ impl ProjectStore {
             // Read the previous writer's evidence first, but replace its
             // marker only after recovery succeeds: a failed or crashed
             // recovery leaves the earlier evidence for the next writer.
+            // After a restore the marker is this session's own.
             let mut found = recovery::OpenRecovery {
-                unclean_previous_writer: store.previous_writer(),
+                unclean_previous_writer: if restored {
+                    None
+                } else {
+                    store.previous_writer()
+                },
                 ..Default::default()
             };
             let generations = generation_attempts::recover_nonterminal(&mut store.connection)?;
@@ -516,9 +590,40 @@ impl ProjectStore {
             // Keep unacknowledged findings across writers, so a headless
             // open in between cannot swallow what the app must report.
             store.recovery = recovery::retain_pending(&store.package, found);
-            store.begin_writer_session();
         }
-        Ok(store)
+        Ok(())
+    }
+
+    pub fn access_mode(&self) -> AccessMode {
+        self.mode
+    }
+
+    /// The database schema of a package a newer Deadpan saved, opened
+    /// read-only for viewing; `None` for current packages.
+    pub fn newer_schema(&self) -> Option<u32> {
+        self.newer_schema
+    }
+
+    /// A newer package is viewable only when SQLite integrity holds and its
+    /// head document reads and validates under this build's document model.
+    fn check_newer_readable(&self) -> Result<(), StoreError> {
+        let found = self.newer_schema.unwrap_or(schema::VERSION);
+        let unreadable = |detail: String| {
+            StoreError::Integrity(format!(
+                "this project was saved by a newer Deadpan (database schema {found}) and this build cannot read it ({detail}); nothing was changed"
+            ))
+        };
+        let integrity: String = self
+            .connection
+            .query_row("PRAGMA quick_check", [], |row| row.get(0))
+            .map_err(|error| unreadable(error.to_string()))?;
+        if integrity != "ok" {
+            return Err(StoreError::Integrity(integrity));
+        }
+        self.documents
+            .head_validated(&self.connection)
+            .map_err(|error| unreadable(error.to_string()))?;
+        Ok(())
     }
 
     /// What writable opens found and recovered and nobody has acknowledged,
@@ -638,6 +743,12 @@ impl ProjectStore {
 
     /// Validate the package and report how much history was recomputed.
     pub fn validate_report(&self, full: bool) -> Result<HistoryValidation, StoreError> {
+        if let Some(found) = self.newer_schema {
+            return Err(StoreError::NewerSchema {
+                found,
+                supported: schema::VERSION,
+            });
+        }
         let mode = if full {
             validation::HistoryMode::Full
         } else {
@@ -659,55 +770,7 @@ impl ProjectStore {
         &self,
         mode: validation::HistoryMode,
     ) -> Result<validation::HistoryAudit, StoreError> {
-        let transaction = self.connection.unchecked_transaction()?;
-        validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
-        compound::check_stored_sizes(&transaction)?;
-        registers::check_stored_sizes(&transaction)?;
-        generation::check_stored_sizes(&transaction)?;
-        generation_attempts::check_stored_sizes(&transaction)?;
-        transcripts::check_stored_sizes(&transaction)?;
-        speech_activity::check_stored_sizes(&transaction)?;
-        shot_analysis::check_stored_sizes(&transaction)?;
-        analysis_corrections::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        render_jobs::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        publication::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        original_media::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        source_registration::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        single_source::check_stored_sizes(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        original_provenance::validate_store(&transaction)?;
-        let integrity: String =
-            transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
-        if integrity != "ok" {
-            return Err(StoreError::Integrity(integrity));
-        }
-        let foreign_keys: i64 =
-            transaction.query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| {
-                row.get(0)
-            })?;
-        if foreign_keys != 0 {
-            return Err(StoreError::Integrity("foreign-key violation".into()));
-        }
-        let audit = validation::validate_history(&transaction, mode)?;
-        generation::validate_store(&transaction)?;
-        generation_attempts::validate_store(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        render_jobs::validate_store(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        publication::validate_store(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        original_media::validate_store(&transaction)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        source_registration::validate_store(&transaction, audit.verified)?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        single_source::validate_store(&transaction, audit.verified)?;
-        registers::validate_store(&transaction)?;
-        Ok(audit)
+        validate_database(&self.connection, mode)
     }
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {
@@ -821,6 +884,103 @@ impl ProjectStore {
             return Err(StoreError::ReadOnly);
         }
         Ok(())
+    }
+}
+
+/// Every stored-size bound, SQLite integrity, the history and each
+/// operational table of one database, in one read transaction. Shared by
+/// opening, explicit validation and backup verification.
+fn validate_database(
+    connection: &Connection,
+    mode: validation::HistoryMode,
+) -> Result<validation::HistoryAudit, StoreError> {
+    let transaction = connection.unchecked_transaction()?;
+    validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+    compound::check_stored_sizes(&transaction)?;
+    registers::check_stored_sizes(&transaction)?;
+    generation::check_stored_sizes(&transaction)?;
+    generation_attempts::check_stored_sizes(&transaction)?;
+    transcripts::check_stored_sizes(&transaction)?;
+    speech_activity::check_stored_sizes(&transaction)?;
+    shot_analysis::check_stored_sizes(&transaction)?;
+    analysis_corrections::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    render_jobs::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    original_media::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    single_source::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    original_provenance::validate_store(&transaction)?;
+    let integrity: String = transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
+    if integrity != "ok" {
+        return Err(StoreError::Integrity(integrity));
+    }
+    let foreign_keys: i64 =
+        transaction.query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| {
+            row.get(0)
+        })?;
+    if foreign_keys != 0 {
+        return Err(StoreError::Integrity("foreign-key violation".into()));
+    }
+    let audit = validation::validate_history(&transaction, mode)?;
+    generation::validate_store(&transaction)?;
+    generation_attempts::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    render_jobs::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    original_media::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::validate_store(&transaction, audit.verified)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    single_source::validate_store(&transaction, audit.verified)?;
+    registers::validate_store(&transaction)?;
+    Ok(audit)
+}
+
+/// Debug builds only: abort the process (as a kill would) at a named crash
+/// window when `DEADPAN_STORE_FAILPOINT` names it, first appending `hit
+/// <name>` to `DEADPAN_STORE_FAILPOINT_LOG`. Release builds compile it away.
+pub(crate) fn failpoint(name: &str) {
+    #[cfg(debug_assertions)]
+    if std::env::var("DEADPAN_STORE_FAILPOINT").as_deref() == Ok(name) {
+        if let Some(log) = std::env::var_os("DEADPAN_STORE_FAILPOINT_LOG")
+            && let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log)
+        {
+            let _ = writeln!(file, "hit {name}");
+            let _ = file.sync_all();
+        }
+        std::process::abort();
+    }
+    #[cfg(not(debug_assertions))]
+    let _ = name;
+}
+
+/// SQLite refused a read because a hot rollback journal needs a writer
+/// (`SQLITE_READONLY_ROLLBACK`).
+fn interrupted_rollback(error: &StoreError) -> bool {
+    matches!(
+        error,
+        StoreError::Database(rusqlite::Error::SqliteFailure(failure, _))
+            if failure.extended_code == rusqlite::ffi::SQLITE_READONLY_ROLLBACK
+    )
+}
+
+/// The schema check of `open`: a newer schema is readable only for a
+/// read-only open, and returns its version.
+fn readable_version(connection: &Connection, mode: AccessMode) -> Result<Option<u32>, StoreError> {
+    match schema::check_version(connection) {
+        Ok(()) => Ok(None),
+        Err(StoreError::NewerSchema { found, .. }) if mode == AccessMode::ReadOnly => {
+            Ok(Some(found))
+        }
+        Err(error) => Err(error),
     }
 }
 
@@ -1364,7 +1524,7 @@ fn ensure_unused_revisions(
     let mut seen = std::collections::BTreeSet::new();
     for revision in revisions {
         let exists: bool = connection.query_row(
-            "SELECT EXISTS(SELECT 1 FROM revisions WHERE id=?1 UNION ALL SELECT 1 FROM transaction_steps WHERE step_revision=?1)",
+            "SELECT EXISTS(SELECT 1 FROM revisions WHERE id=?1 UNION ALL SELECT 1 FROM transaction_steps WHERE step_revision=?1 UNION ALL SELECT 1 FROM retired_identities WHERE kind='revision' AND key=?1)",
             [revision.as_str()], |row| row.get(0),
         )?;
         if exists || allocations.contains(*revision) || !seen.insert(*revision) {

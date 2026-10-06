@@ -9,7 +9,9 @@
 //! R asks the project service, which owns the writer, to remove exactly the
 //! previewed files that a fresh scan still finds unreferenced. Any project
 //! change discards the preview. Per-user caches (C) are rebuildable.
-//! Escape or Close closes it. Nothing here edits the project or its history.
+//! Escape or Close closes it. Nothing here edits the project or its history,
+//! except restoring a backup (BACKUPS section, `preview/backups.rs`), which
+//! replaces it after backing up the current state.
 
 use std::sync::mpsc;
 
@@ -50,6 +52,8 @@ pub(super) struct State {
     /// The per-user directories to account for; replay uses a private root
     /// so it never reports or cleans the person's real caches.
     pub(super) user: Option<UserStorage>,
+    /// The BACKUPS section.
+    pub(super) backups: super::backups::View,
 }
 
 impl State {
@@ -105,7 +109,22 @@ pub(super) fn project_rows(report: &StorageReport) -> Vec<(String, String)> {
         rows.push((label.to_owned(), value));
     }
     rows.push((
-        "Checkpoints and reports".to_owned(),
+        "History".to_owned(),
+        format!(
+            "{} revisions · {} ({} in {} keyframes); all kept",
+            report.history.revisions,
+            bytes(
+                report
+                    .history
+                    .keyframe_bytes
+                    .saturating_add(report.history.patch_bytes)
+            ),
+            bytes(report.history.keyframe_bytes),
+            report.history.keyframes
+        ),
+    ));
+    rows.push((
+        "Checkpoints, backups and reports".to_owned(),
         bytes(report.auxiliary_bytes),
     ));
     rows.push(("Total".to_owned(), bytes(report.total_bytes)));
@@ -145,6 +164,7 @@ fn summary(outcome: &CleanupOutcome) -> String {
 
 impl DeadpanApp {
     pub(super) fn open_storage(&mut self, context: &egui::Context) {
+        self.storage.backups.only = false;
         self.bindings.clear();
         self.storage.open = true;
         self.storage.focus_pending = true;
@@ -184,10 +204,12 @@ impl DeadpanApp {
             Ok(_) => self.storage.loading = Some(receiver),
             Err(error) => self.storage.status = Some(format!("Storage report failed: {error}")),
         }
+        self.refresh_backups();
     }
 
     /// Poll background work. Call once per outer frame.
     pub(super) fn reconcile_storage(&mut self, context: &egui::Context) {
+        self.reconcile_backups(context);
         // A preview describes one session and revision; any change, such as
         // an edit, Undo or another project, discards it.
         let current = self.current_context();
@@ -542,12 +564,31 @@ impl DeadpanApp {
                     input.events.push(event);
                 }
             });
+            // `:backups` shows only the backups; cleanup keys wait for
+            // `:storage`, where their controls are.
+            if self.storage.backups.only
+                && matches!(
+                    pressed,
+                    Some(
+                        StorageKey::Preview
+                            | StorageKey::Remove
+                            | StorageKey::CleanCaches
+                            | StorageKey::PortableCopy
+                    )
+                )
+            {
+                pressed = None;
+            }
             match pressed {
                 Some(StorageKey::Preview) => self.preview_storage_cleanup(),
                 Some(StorageKey::Remove) => self.confirm_storage_cleanup(),
                 Some(StorageKey::CleanCaches) => self.clean_user_caches(),
                 Some(StorageKey::PortableCopy) => self.start_portable_copy(context),
                 Some(StorageKey::Refresh) => self.refresh_storage(),
+                Some(StorageKey::BackUp) => self.back_up_now(),
+                Some(StorageKey::NextBackup) => self.move_backup_selection(true),
+                Some(StorageKey::PreviousBackup) => self.move_backup_selection(false),
+                Some(StorageKey::Restore) => self.restore_selected_backup(),
                 None => {}
             }
         }
@@ -569,6 +610,8 @@ impl DeadpanApp {
             .preview
             .as_ref()
             .is_some_and(|(_, _, outcome)| !outcome.removed.is_empty());
+        let focus = std::mem::take(&mut self.storage.focus_pending);
+        let mut backup_action = None;
         let modal = egui::Modal::new(egui::Id::new("storage-window"))
             .backdrop_color(egui::Color32::TRANSPARENT)
             .area(
@@ -580,9 +623,11 @@ impl DeadpanApp {
                 ui.set_width(width);
                 ui.label(style::section_title("STORAGE", true));
                 ui.label(
-                    egui::RichText::new(
-                        "What this project and Deadpan's caches use. P lists files no retained revision, register, checkpoint or offered AI variant references and that have been unchanged for a day; R removes exactly those.",
-                    )
+                    egui::RichText::new(if self.storage.backups.only {
+                        "Verified copies of this project's saved state, newest first. Media stays in the project and is kept while a backup names it."
+                    } else {
+                        "What this project and Deadpan's caches use. P lists files no retained revision, register, checkpoint or offered AI variant references and that have been unchanged for a day; R removes exactly those."
+                    })
                     .size(11.5)
                     .weak(),
                 );
@@ -592,8 +637,14 @@ impl DeadpanApp {
                     .max_height(height)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
+                        // `:backups` shows the backups alone.
+                        if self.storage.backups.only {
+                            backup_action = self.backups_section(ui, focus);
+                            return;
+                        }
                         let Some(snapshot) = &self.storage.snapshot else {
                             ui.label(egui::RichText::new("Measuring…").weak());
+                            backup_action = self.backups_section(ui, false);
                             return;
                         };
                         let section = |ui: &mut egui::Ui, title: &str, rows: Vec<(String, String)>| {
@@ -652,15 +703,24 @@ impl DeadpanApp {
                             ));
                             section(ui, "DEADPAN CACHES", rows);
                         }
+                        backup_action = self.backups_section(ui, false);
                     });
                 if let Some(status) = &self.storage.status {
                     let response = ui.add(egui::Label::new(egui::RichText::new(status).size(12.0)).wrap());
                     accessibility::full_text(response, status);
                 }
                 ui.add_space(6.0);
+                let only = self.storage.backups.only;
                 ui.horizontal_wrapped(|ui| {
+                    if only {
+                        // `:backups`: its own actions are in the section.
+                        if ui.add(style::action("Close", "Esc")).clicked() {
+                            close = true;
+                        }
+                        return;
+                    }
                     let preview = ui.add_enabled(project, style::action("Preview cleanup", "P"));
-                    if std::mem::take(&mut self.storage.focus_pending) {
+                    if focus {
                         preview.request_focus();
                     }
                     if preview.clicked() {
@@ -683,7 +743,9 @@ impl DeadpanApp {
                     }
                 });
             });
-        match action {
+        match action.or(backup_action) {
+            Some('b') => self.back_up_now(),
+            Some('o') => self.restore_selected_backup(),
             Some('p') => self.preview_storage_cleanup(),
             Some('r') => self.confirm_storage_cleanup(),
             Some('c') => self.clean_user_caches(),

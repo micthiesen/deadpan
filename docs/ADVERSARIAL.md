@@ -95,6 +95,23 @@ edits; `cargo xtask chaos --stress` runs 10,000 beats and 300 edits in release.
 Budgets bound pathological growth; the Section 25 interactive targets remain
 measured by `cargo xtask perf`.
 
+## Process kills
+
+`crates/deadpan-store/tests/chaos_kills.rs` is the crash part of the suite. A
+child process (the test binary re-executed) keeps a writer busy with edit
+commits, AI generation attempt state changes, verified backups with rotation
+and checkpoints; another child restores backups back and forth; a third runs a
+synthetic release migration; the proxy cache test kills a child publishing
+proxies. The parent SIGKILLs each after a seeded random
+delay, repeatedly on the same package, then reopens and checks that history
+validates, every reported commit survives, no attempt is left running, every
+published backup verifies and every checkpoint is intact, and that a killed
+restore or migration leaves exactly one whole state. The normal suite runs 8
+kills per test from a fixed seed; `DEADPAN_CHAOS_SEED` (hex) and
+`DEADPAN_CHAOS_ITERATIONS` widen it. Details and the hot-journal defect it
+found: [backups](BACKUPS.md#process-kills). A process kill is not a power
+loss.
+
 ## Limits
 
 - No edge coverage: the verdict-class proxy cannot guide mutation through code

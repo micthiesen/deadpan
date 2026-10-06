@@ -19,9 +19,9 @@ the native app; headless commands keep their documented contracts.
 | Native persisted render-job recovery (RENDER_JOBS) | **New entry point** on existing actions | The recovery report opens Renders on the interrupted job, whose existing actions verify a retained encoding or render the saved edit again. No retry starts automatically. |
 | Disk-full and permission errors stop commits and show unsaved status (20.4, 26.3) | **New** messaging; failure behavior verified | Real ENOSPC, EROFS and EACCES tests; persistent "Not saved" alert; never "saved" after a failed transaction. |
 | Missing media placeholder and relink (20.3, 26.3) | **New** native flow | Degraded open with a report, `:relink`, managed restore and linked relink verified against content identity. |
-| Open newer unsupported schema read-only with an explanation (20.4) | Partial | Older and newer schemas refuse without writes and now explain why; a read-only view of a newer schema is not implemented. |
-| Rotating consistent backups, including before migration (20.4) | Open | Consistent checkpoints exist (`checkpoint`, prepared checkpoints); nothing creates them on a schedule. No migration exists under the development-format policy. |
-| Release migration policy (Gate F/G) | Open | [Development formats](DEVELOPMENT_FORMATS.md) refuse schemas 1-63. |
+| Open newer unsupported schema read-only with an explanation (20.4) | **Implemented** | Writers refuse a newer schema as `SchemaNewer`; read-only opens view it without writing (header **Read-only**, edits refused with the reason); `project view`. Older development schemas still refuse. See [newer packages](BACKUPS.md#packages-a-newer-deadpan-saved). |
+| Rotating consistent backups, including before migration (20.4) | **Implemented** | Verified backups every 15 minutes while editing, on close, on request, before every restore and before a release migration, rotated hourly/daily/weekly within a budget; restore from the Storage panel (`:backups`) and `project restore`. See [backups](BACKUPS.md). |
+| Release migration policy (Gate F/G) | Policy and hook | [Release migration policy](BACKUPS.md#release-migration-policy): back up, migrate a copy, validate, promote atomically; exercised by a synthetic step and process kills. The production chain upgrades schema 66 to 67; [development formats](DEVELOPMENT_FORMATS.md) still refuse schemas 1-65. |
 
 ## Detecting an unclean exit
 
@@ -113,7 +113,27 @@ authored revision. Structural edits and Undo work with the Original missing,
 since they never read media bytes. A wrong file reports *That file is not this
 project's Original*; the matching file reports *found and verified* (or that a
 damaged copy was replaced, or that the copy is intact) and refreshes the
-picture and thumbnails. Bookmarks and moved-file discovery are not implemented.
+picture and thumbnails.
+
+### Moved linked files
+
+Linked originals and sounds record a system bookmark when they are retained
+(the import worker, `project retain-original --linked`, relinks), through the
+[`deadpan-filesystem`](../native/deadpan-filesystem/src/bookmark.rs) adapter.
+When a project opens and a linked file is missing at its recorded path, the
+service resolves its bookmark (no UI, no mounting). A file the system finds
+elsewhere is reported as *moved*, not missing, and verified on the import
+worker with the ordinary versioned relink: it is relinked only if its length,
+BLAKE3 identity and SHA-256 match exactly, with a fresh bookmark. The message
+says where it was found. If the bytes differ, the record is unchanged, the
+error says the file at that location is not the same content, and the report
+shows the original as missing for `:relink`. Each candidate is tried once per
+session, one at a time. `project relink-moved <p>` does the same for a closed
+project. Bookmarks are regular, not security-scoped (the app is not
+sandboxed), and only find files on mounted volumes; tests cover renames and
+moves within a volume, changed content and records without a bookmark
+(`deadpan-store` `bookmarks`, app `project::tests::backups`, CLI
+`relink_moved`).
 
 ## Storage failures
 
@@ -124,6 +144,10 @@ picture and thumbnails. Bookmarks and moved-file discovery are not implemented.
 | Original retention on a full disk | `DiskFull`; no partial object, no inventory row | `storage_failures.rs` |
 | Package on a read-only volume | `ProjectReadOnly` (`ReadOnlyLocation`) for both writable and read-only opens, with a copy-it-elsewhere action; nothing written | `storage_failures.rs` (image attached `-readonly`) |
 | Unwritable package and database | `ProjectReadOnly`; nothing written | `storage_failures.rs` (`chmod`) |
+| Generated-media promotion on a full disk | `DiskFull`; no object and no `.pending-*` in `Media/Generated`; the project validates; the same promotion succeeds once space returns | `storage_failures_media.rs` |
+| Render candidate retention on a full disk | `DiskFull`; nothing in `Media/RenderCandidates`; the same retention succeeds once space returns | `storage_failures_media.rs` |
+| Seek proxy build on a full cache volume | The worker's own movie write (classified by the worker itself as `disk_full` from ENOSPC/EDQUOT) and the sidecar write at publication both fail as disk-full, an environmental condition never remembered as the Original's failure; no entry and no staging left; the same build publishes once space returns; a published proxy stays readable on a full volume | `deadpan-cli` `proxy_disk_full.rs` (cache on a 16 MB image, real worker) |
+| Model pack volume fills during a download | The write fails with `No space left on device` (CLI code `DiskFull`); no finished file, receipt or active version; the kept `.part` is an exact prefix; while full the preflight refuses with `ModelPackSpace`; the install resumes from the kept bytes once space returns | `deadpan-models` `packs::disk_full_tests` (320 MB image filled by another writer mid-download) |
 | Render publication to a full destination | `destination_full`; no movie at the destination; the verified candidate publishes once space returns | `encoded_verification` `publication` |
 
 A WAL database needs writable shared memory even to read, so a project on a
@@ -205,17 +229,17 @@ and `encoded_verification` `a_full_destination_volume_publishes_nothing_and_keep
 
 ## Remaining work
 
-- Rotating automatic checkpoints, a read-only view of newer schemas, release
-  migration and its backups.
-- Bookmark-based linked originals and automatic discovery of moved files;
-  iCloud-evicted media ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
-- ENOSPC coverage for proxy builds, model downloads, generated-media
-  promotion and render candidate retention; these report their I/O errors but
-  have no disk-image test.
+- Moved files on unmounted or other volumes, and iCloud-evicted media
+  ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
+- Offline model pack imports (from a folder or archive) have no disk-image
+  test.
 - Store errors wrapped in other error types keep SQLite's raw wording; the
   alert still recognizes SQLite's disk-full and read-only messages but not
   other raw I/O wording. Render workflow journal failures are classified only
   by those messages.
 - The Dock/system Quit path cannot show the close prompt (see above).
-- Physical power-loss behavior, a full chaos suite and physical-input,
-  VoiceOver and IME acceptance of these dialogs.
+- Physical power-loss behavior (owner: To verify). Process kills during
+  commits, AI attempt states, backups, checkpoints, restores and migrations
+  and proxy publication are covered ([process kills](BACKUPS.md#process-kills));
+  kills during renders are not part of that suite.
+- Physical-input, VoiceOver and IME acceptance of these dialogs.

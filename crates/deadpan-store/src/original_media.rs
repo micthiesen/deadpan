@@ -87,6 +87,11 @@ impl LinkedOriginal {
     pub fn bookmark(&self) -> Option<&[u8]> {
         self.bookmark.as_deref()
     }
+    /// `path` with a fresh system bookmark when one can be made.
+    pub fn bookmarked(path: PathBuf) -> Result<Self, OriginalMediaError> {
+        let bookmark = bookmark_for(&path);
+        Self::new(path, bookmark)
+    }
     fn validate(&self) -> Result<(), OriginalMediaError> {
         validate_path(&self.path)?;
         if self
@@ -173,6 +178,57 @@ pub enum OriginalOwnership {
     Linked { bookmark: Option<Vec<u8>> },
 }
 
+impl OriginalOwnership {
+    /// Linked to `path`, with a system bookmark when one can be made, so a
+    /// later move can be found (see [`moved_location`]).
+    pub fn linked_at(path: &Path) -> Self {
+        Self::Linked {
+            bookmark: bookmark_for(path),
+        }
+    }
+}
+
+/// A fresh system bookmark of `path`, or `None` where bookmarks are
+/// unavailable (another platform, a missing file, a non-UTF-8 path).
+pub fn bookmark_for(path: &Path) -> Option<Vec<u8>> {
+    #[cfg(target_os = "macos")]
+    {
+        deadpan_filesystem::bookmark::create(path)
+            .ok()
+            .filter(|bookmark| !bookmark.is_empty() && bookmark.len() <= MAX_BOOKMARK_BYTES)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = path;
+        None
+    }
+}
+
+/// Where a linked original went, when its recorded path no longer names a
+/// file and its bookmark resolves to a different existing regular file.
+/// This is only a candidate: relink it with `prepare_relink`, which accepts
+/// it only if its bytes have the original's exact BLAKE3 identity, length
+/// and SHA-256. Resolution touches the filesystem; call it off the UI.
+pub fn moved_location(record: &OriginalMediaRecord) -> Option<LinkedOriginal> {
+    let linked = record.linked()?;
+    if std::fs::symlink_metadata(linked.path()).is_ok() {
+        return None;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let resolved = deadpan_filesystem::bookmark::resolve(linked.bookmark()?).ok()?;
+        if resolved.path == linked.path()
+            || !std::fs::symlink_metadata(&resolved.path).is_ok_and(|metadata| metadata.is_file())
+        {
+            return None;
+        }
+        let bookmark = bookmark_for(&resolved.path).or_else(|| linked.bookmark.clone());
+        LinkedOriginal::new(resolved.path, bookmark).ok()
+    }
+    #[cfg(not(target_os = "macos"))]
+    None
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct OriginalMediaLimits {
     maximum_bytes: u64,
@@ -244,6 +300,33 @@ impl VerifiedOriginalObject {
     pub fn record(&self) -> &OriginalMediaRecord {
         &self.record
     }
+
+    /// These verified private bytes as a decoder input, without a second
+    /// copy. The snapshot is an anonymous temporary file this store wrote
+    /// while hashing what it copied: the copy's BLAKE3 identity, SHA-256 and
+    /// length equal the record's (managed objects also recheck the package
+    /// file's state around the read). The store keeps no other handle and
+    /// this consumes the object, so nothing else can modify the bytes.
+    /// `identity` must carry the record's SHA-256 and length, or this refuses.
+    pub fn into_source_input(
+        self,
+        identity: deadpan_media::source_index::SourceContentIdentity,
+    ) -> Result<deadpan_media::source_input::VerifiedSourceInput, StoreError> {
+        if identity.sha256() != self.record.sha256
+            || identity.byte_length() != self.record.object.byte_length()
+        {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        let mut file = match self.bytes {
+            SnapshotBytes::Managed(object) => object.into_file(),
+            SnapshotBytes::Linked(file) => file,
+        };
+        file.seek(SeekFrom::Start(0))?;
+        deadpan_media::source_input::VerifiedSourceInput::from_store_verified_snapshot(
+            file, identity,
+        )
+        .map_err(|_| OriginalMediaError::IdentityMismatch.into())
+    }
 }
 impl Read for VerifiedOriginalObject {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
@@ -268,6 +351,9 @@ impl Seek for VerifiedOriginalObject {
 pub struct OriginalImportHandle {
     storage: Arc<ObjectStorage>,
     closed: Arc<AtomicBool>,
+    /// False for a viewing handle of a read-only store: it can snapshot and
+    /// verify retained bytes but never prepares a write into the package.
+    writable: bool,
 }
 
 enum OriginalFreshnessGuard {
@@ -346,6 +432,17 @@ impl PreparedOriginalSnapshot {
         self.original.record()
     }
 
+    /// See [`VerifiedOriginalObject::into_source_input`]. This consumes the
+    /// snapshot and its freshness guard, so use it only for reading (preview,
+    /// playback); store admission needs an unconsumed prepared snapshot. The
+    /// returned bytes stay readable after the store closes.
+    pub fn into_source_input(
+        self,
+        identity: deadpan_media::source_index::SourceContentIdentity,
+    ) -> Result<deadpan_media::source_input::VerifiedSourceInput, StoreError> {
+        self.original.into_source_input(identity)
+    }
+
     pub(crate) fn validate_for(
         &self,
         store: &ProjectStore,
@@ -397,6 +494,15 @@ impl OriginalImportHandle {
         Ok(())
     }
 
+    /// A viewing handle refuses every preparation that writes media.
+    fn require_writable(&self) -> Result<(), StoreError> {
+        if self.writable {
+            Ok(())
+        } else {
+            Err(StoreError::ReadOnly)
+        }
+    }
+
     /// Pointer identity establishes the owning session, independently of liveness.
     pub fn same_session(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.storage, &other.storage) && Arc::ptr_eq(&self.closed, &other.closed)
@@ -422,6 +528,7 @@ impl OriginalImportHandle {
         limits: OriginalMediaLimits,
         cancelled: &AtomicBool,
     ) -> Result<PreparedOriginalRetention, StoreError> {
+        self.require_writable()?;
         self.check_live(cancelled)?;
         let control = limits.control(cancelled)?.with_closed(&self.closed);
         validate_path(path)?;
@@ -512,6 +619,7 @@ impl OriginalImportHandle {
         limits: OriginalMediaLimits,
         cancelled: &AtomicBool,
     ) -> Result<PreparedOriginalRelink, StoreError> {
+        self.require_writable()?;
         self.check_live(cancelled)?;
         record.validate()?;
         location.validate()?;
@@ -563,6 +671,7 @@ impl OriginalImportHandle {
         limits: OriginalMediaLimits,
         cancelled: &AtomicBool,
     ) -> Result<PreparedOriginalRestore, StoreError> {
+        self.require_writable()?;
         self.check_live(cancelled)?;
         record.validate()?;
         if !record.managed {
@@ -704,7 +813,19 @@ impl ProjectStore {
         Ok(OriginalImportHandle {
             storage: Arc::clone(&self.original_storage),
             closed: Arc::clone(&self.import_closed),
+            writable: true,
         })
+    }
+
+    /// A handle for reading retained originals from any store, including a
+    /// read-only view of a newer package. It refuses every preparation that
+    /// would write media.
+    pub fn original_view_handle(&self) -> OriginalImportHandle {
+        OriginalImportHandle {
+            storage: Arc::clone(&self.original_storage),
+            closed: Arc::clone(&self.import_closed),
+            writable: self.mode == crate::AccessMode::ReadWrite,
+        }
     }
 
     /// Retain complete original bytes or an explicit linked location. This does
@@ -774,13 +895,23 @@ impl ProjectStore {
         }
         if let Some(old) = &old {
             if record != *old {
-                record.version = next_version(old.version)?;
+                record.version = next_version(retired_floor(&transaction, old)?)?;
             }
         } else {
             let count: i64 =
                 transaction.query_row("SELECT COUNT(*) FROM original_media", [], |r| r.get(0))?;
             if count >= MAX_ORIGINALS {
                 return Err(OriginalMediaError::RecordLimit.into());
+            }
+            // Re-registered after a restore discarded its record: continue
+            // past every location version that record ever had.
+            let retired = crate::retired::floor(
+                &transaction,
+                "original_version",
+                &record.object.content().to_string(),
+            )?;
+            if retired > 0 {
+                record.version = next_version(retired_floor(&transaction, &record)?)?;
             }
         }
         write_record(&transaction, &record)?;
@@ -873,7 +1004,7 @@ impl ProjectStore {
             .into());
         }
         record.linked = None;
-        record.version = next_version(record.version)?;
+        record.version = next_version(retired_floor(&transaction, &record)?)?;
         write_record(&transaction, &record)?;
         transaction.commit()?;
         Ok(record)
@@ -958,7 +1089,7 @@ impl ProjectStore {
         }
         if record.linked.as_ref() != Some(&prepared.location) {
             record.linked = Some(prepared.location.clone());
-            record.version = next_version(record.version)?;
+            record.version = next_version(retired_floor(&transaction, &record)?)?;
             write_record(&transaction, &record)?;
         }
         prepared.recheck(cancelled)?;
@@ -1171,6 +1302,16 @@ fn inspect_original(
         sha256: sha256.finalize().into(),
         state: after,
     })
+}
+
+/// A record's version, raised to any location version a restore discarded.
+fn retired_floor(connection: &Connection, record: &OriginalMediaRecord) -> Result<u64, StoreError> {
+    let retired = crate::retired::floor(
+        connection,
+        "original_version",
+        &record.object.content().to_string(),
+    )?;
+    Ok(record.version.max(u64::try_from(retired).unwrap_or(0)))
 }
 
 fn next_version(version: u64) -> Result<u64, OriginalMediaError> {

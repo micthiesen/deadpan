@@ -235,9 +235,17 @@ main viewer's `PreviewWorker::new` may serve a stopped committed picture
 - **Steps.** A single step in either direction from the Original decoder's
   current picture is decoded exactly, without a proxy picture first: forward
   needs no seek, and a backward step must not flash proxy pixels.
-- **Refinement.** After publishing a proxy picture, the worker waits
-  `REFINE_DELAY` (150 ms). If no newer request arrives, it decodes the exact
-  Original picture for the same ticket, retrying once with a reopened
+- **Refinement.** After publishing a proxy picture, the worker waits for the
+  cursor to rest. A request that followed the previous interactive request
+  within `REFINE_DELAY` (150 ms) is scrubbing (held keys, a drag) and waits
+  the full 150 ms; repeated keys arrive faster, so scrubbing never starts an
+  exact decode it would abandon. An isolated request (a jump, a click, a
+  key's first press) waits only `ISOLATED_REFINE_DELAY` (30 ms), which
+  coalesces an immediate follow-up; a key's first repeat comes later than an
+  exact 4K seek takes. The rest also lasts until the viewer has taken the
+  proxy reply, so the exact picture follows it rather than replacing an
+  undelivered one. If no newer request arrives, the worker decodes the
+  exact Original picture for the same ticket, retrying once with a reopened
   decoder, and publishes it as a second reply. A newer request cancels the
   refinement through the same flag, and a stale refinement can never be
   published. If the refinement still fails, the proxy picture stays
@@ -287,7 +295,7 @@ decode the Original.
 | `native/deadpan-media-worker/tests/proxy_real_media.rs` (10 tests) | **Timing:** the real worker encodes CFR, offset-start, B-pyramid, VFR and `frame_mbs_only_flag` 0 Originals, and every proxy picture has the Original's exact PTS and duration and is intra. **Interpretation:** 4K is downscaled to 1920×1080 by policy, and SAR 4:3 with a BT.601 matrix, Display P3 with sRGB, and a rotated Original keep their interpretation with per-channel bias under 1.5; a 4×2 RGB picture is refused by fidelity. **Rejections:** sidecars for other bytes, indexes, recipes or a tinted bias are refused; at or below 1080p nothing gets a proxy. **Stall and retry:** a stub worker hangs then delegates (two spawns, output only from the second run, the first staging removed, no surviving process); a second stall is reported, not looped; an `invalid_packet` refusal is retried once and two are reported. **Control:** a paused build is suspended without a stall; cancellation; a wrong plan or picture count is refused. |
 | `crates/deadpan-media` conversion tests | Stall detection with confirmed teardown; a suspended group is resumed, not reported as stalled. |
 | `crates/deadpan-cli/src/proxy/cache_tests.rs` (6 tests) | Staging is invisible until publication; replacement swaps atomically while a reader keeps the old movie; hashing happens once per file state and changed bytes are damaged; symbolic links are never followed; cleanup handles grace, retention, readers in use, budget, staging and stale recipes; failures are remembered across handles until published or forgotten; a replaced cache directory is never written. |
-| `crates/deadpan-app/src/worker/proxy_tests.rs` | The first seek is exact and opens the proxy while idle. Later, a seek shows the proxy and then the bit-exact Original picture for the same ticket. Forward and backward steps from a refined picture are exact at once, with nothing to refine. A newer seek cancels refinement. Playback and thumbnails stay exact. A damaged entry falls back silently and a rebuilt one is used. |
+| `crates/deadpan-app/src/worker/proxy_tests.rs` | The first seek is exact and opens the proxy while idle. Later, a seek shows the proxy and then the bit-exact Original picture for the same ticket. Forward and backward steps from a refined picture are exact at once, with nothing to refine. A newer seek cancels refinement, and a seek that follows another within 150 ms waits the full rest before refining. Playback and thumbnails stay exact. A damaged entry falls back silently and a rebuilt one is used. |
 | `crates/deadpan-app/src/presentation/tests.rs` | The proxy tier is a distinct identity, and a failed refinement keeps the proxy displayed with its error. |
 | `proxy-seek` replay | The job decides "not needed" for the small fixture; `:proxies off` and `on` change the setting without an edit; the Proxy chip is painted and accessible while proxy pixels show; Camera's gate refuses them; the exact picture replaces them with the chip gone. |
 | `perf seek`, `perf proxy-build` | Build, opening, cold, warm and refined seeks, and playback and edit latency during a build; see [the qualification record](qualification/proxy-2026-10-05.md). |

@@ -12,8 +12,8 @@ mod numeric;
 mod wire;
 
 pub(crate) use admission::{
-    MAX_ISOLATED_GAIN_RECORDS, invalid, node_map, validate_command, validate_document,
-    validate_nodes, validate_nodes_with_limit,
+    MAX_ISOLATED_GAIN_RECORDS, NodeGainInventory, invalid, node_map, validate_command,
+    validate_document, validate_nodes, validate_nodes_with_limit,
 };
 
 use std::{error::Error, fmt};

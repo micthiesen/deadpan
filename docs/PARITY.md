@@ -213,8 +213,9 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | ⌘⇧N, `:youtube`, `:new-url` | `project create-from-url`, `downloader install|status` | - | Equivalent |
 | ⌘O Open, Close Project, `:close` | none needed | - | GUI-only |
 | ⌘I Choose Original / Import Media, `:sound-channels mono\|stereo\|none` | `project retain-original`, `project register-source`; live `Prepare` | R, D | Equivalent |
-| `:relink`, Recovery Locate… | `project relink-original … --expected-version <N>` | R | Equivalent |
+| `:relink`, Recovery Locate…; moved linked files relinked on open | `project relink-original … --expected-version <N>`, `project relink-moved <p>` | R | Equivalent |
 | `:recovery` report, Acknowledge | `project validate`, `project originals`, `verify-original` | - | Partial (no acknowledge; the report is app session state) |
+| `:backups`, Storage B/J/K/O: back up, choose, restore | `project backup <p>`, `project backups <p> [--verify]`, `project restore <p> <id> [--dry-run]` ([backups](BACKUPS.md)) | R | Partial (restore refuses a project the app has open instead of routing through the live endpoint) |
 | `:storage`, Storage… report; P/R project cleanup; C cache cleanup; S, `:portable-copy`, File › Save Portable Copy… | `project storage <p> [--clean [--dry-run]] [--grace-hours N]`, `cache status|clean [--dry-run]`, `project copy-portable <p> <dest>` ([storage](STORAGE.md)) | D | Partial (report and copy run while the app holds the project; `--clean` refuses an open project instead of routing through the live endpoint) |
 
 ## Models
@@ -225,7 +226,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 
 ## Counts
 
-Counting each action row once (94 rows): Equivalent 59, Partial 16, Gap 2,
+Counting each action row once (95 rows): Equivalent 59, Partial 17, Gap 2,
 GUI-only 17. Navigation rows whose motions also exist as instructions count as
 GUI-only.
 

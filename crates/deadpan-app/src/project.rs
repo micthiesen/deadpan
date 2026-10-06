@@ -19,6 +19,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 
 use crate::library::ProjectLibrary;
 
+pub mod backups;
 pub mod gain;
 pub mod generation;
 pub mod macros;
@@ -213,6 +214,9 @@ pub struct Workspace {
     pub corrections: Option<Arc<OriginalCorrections>>,
     /// Receipt-derived automatic SDR/HDR branch of this committed revision.
     pub color: deadpan_cli::picture::OutputColorDecision,
+    /// Why this session cannot save: a package a newer Deadpan saved, opened
+    /// read-only for viewing. `None` for an ordinary writable session.
+    pub read_only: Option<Arc<str>>,
 }
 
 impl Workspace {
@@ -292,8 +296,10 @@ impl Workspace {
             shot_analysis,
             corrections,
             color,
+            read_only,
         } = self;
         Self {
+            read_only: read_only.clone(),
             color: *color,
             session: *session,
             path: path.clone(),
@@ -460,6 +466,8 @@ pub struct ProjectUpdate {
     pub relink: Option<RelinkStatus>,
     /// The latest explicit storage cleanup, matched by its request ticket.
     pub storage_cleanup: Option<StorageCleanupStatus>,
+    /// Automatic and explicit backups and restores of this session.
+    pub backups: backups::Update,
 }
 
 /// The outcome of one explicit `:storage` cleanup request. Operational; it
@@ -482,12 +490,16 @@ pub struct OpenReport {
 }
 
 impl OpenReport {
+    /// Originals whose bytes are not where they belong, excluding linked
+    /// files their bookmark already found elsewhere (relinked automatically
+    /// once their bytes verify).
     pub fn missing(&self) -> impl Iterator<Item = &OriginalStatus> {
         self.originals.iter().filter(|status| {
-            !matches!(
-                status.availability,
-                deadpan_store::original_media::OriginalAvailability::Present
-            )
+            status.moved_to.is_none()
+                && !matches!(
+                    status.availability,
+                    deadpan_store::original_media::OriginalAvailability::Present
+                )
         })
     }
 
@@ -504,6 +516,9 @@ pub struct OriginalStatus {
     pub primary: bool,
     pub record: OriginalMediaRecord,
     pub availability: deadpan_store::original_media::OriginalAvailability,
+    /// A missing linked file's bookmark found it here; the service is
+    /// verifying its bytes before relinking it.
+    pub moved_to: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -814,6 +829,8 @@ impl ProjectRequest {
 }
 
 pub enum ProjectRequest {
+    /// Back up or restore the project's database; never an edit.
+    Backup(backups::Request),
     /// Store a validated transcript of the Original; never an edit.
     SaveTranscript {
         expected_session: u64,
@@ -997,6 +1014,10 @@ struct Shared {
     /// Replay/tests: refuse the next authored edit as a full disk would.
     #[cfg(any(test, feature = "ui-harness"))]
     storage_failure: AtomicBool,
+    /// Replay/tests: the automatic backup interval in milliseconds; zero
+    /// keeps the production interval.
+    #[cfg(any(test, feature = "ui-harness"))]
+    backup_interval_ms: std::sync::atomic::AtomicU64,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
     /// The app's background job coordinator, shared with the UI's jobs.
@@ -1060,6 +1081,8 @@ impl ProjectService {
             workspace_refresh_failure: AtomicBool::new(false),
             #[cfg(any(test, feature = "ui-harness"))]
             storage_failure: AtomicBool::new(false),
+            #[cfg(any(test, feature = "ui-harness"))]
+            backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
             update: Mutex::new(None),
             wake,
             job_board: crate::jobs::Jobs::new(),
@@ -1147,6 +1170,18 @@ impl ProjectService {
     #[cfg(feature = "ui-harness")]
     pub fn inject_storage_failure_for_check(&self) {
         self.shared.storage_failure.store(true, Ordering::Release);
+    }
+
+    /// Tests: back up automatically after this interval instead of the
+    /// production one.
+    #[cfg(test)]
+    pub fn set_backup_interval_for_check(&self, interval: std::time::Duration) {
+        self.shared.backup_interval_ms.store(
+            u64::try_from(interval.as_millis())
+                .unwrap_or(u64::MAX)
+                .max(1),
+            Ordering::Release,
+        );
     }
 
     #[cfg(feature = "ui-harness")]

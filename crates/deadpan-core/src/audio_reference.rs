@@ -197,7 +197,8 @@ pub struct FrozenAudioNode {
 
 #[derive(Debug, Clone, Default)]
 struct FrozenIndex {
-    parents: BTreeMap<NodeId, (NodeId, i64)>,
+    /// Looked up per projection step and never iterated, so hashed.
+    parents: crate::id_hash::IdMap<NodeId, (NodeId, i64)>,
     repeats: BTreeMap<NodeId, RepeatLayout>,
 }
 
@@ -230,6 +231,26 @@ pub struct FrozenAudioLayoutData {
     /// are immutable, so the length cannot change.
     #[serde(skip)]
     wire_bytes: std::sync::OnceLock<usize>,
+    /// Present only on a provisional slice made by
+    /// [`FrozenAudioLayout::capture_scoped`]: the complete layout it stands in
+    /// for. Budgets charge these values, so validation outcomes are those of
+    /// the complete table. A provisional table exists only inside one command
+    /// and cannot be serialized; compaction replaces it.
+    #[serde(skip)]
+    complete: Option<CompleteCharge>,
+}
+
+/// The counts and exact wire length of the complete captured layout behind a
+/// provisional slice, and the aliases the slice projects exactly (the
+/// required aliases and their ancestors). Other names may be spacers.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CompleteCharge {
+    projected: BTreeSet<NodeId>,
+    nodes: usize,
+    lineage: usize,
+    runs: usize,
+    /// The complete layout's exact compact JSON length.
+    wire_bytes: usize,
 }
 
 impl std::ops::Deref for FrozenAudioLayout {
@@ -241,6 +262,11 @@ impl std::ops::Deref for FrozenAudioLayout {
 
 impl Serialize for FrozenAudioLayout {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if self.inner.complete.is_some() {
+            return Err(serde::ser::Error::custom(
+                "a provisional timing table cannot be serialized",
+            ));
+        }
         self.inner.serialize(serializer)
     }
 }
@@ -433,16 +459,59 @@ impl FrozenAudioLayout {
         document: &ProjectDocument,
         validate_bindings: bool,
     ) -> Result<Self, DocumentError> {
-        // Precharge before cloning nodes, overrides or iteration vectors and
-        // before durations() builds any derived Repeat layouts.
+        Self::precharge(document)?;
+        let durations = if validate_bindings {
+            document.durations()?
+        } else {
+            document.structural_durations()?
+        };
+        let rate = document.presentation_basis().frame_rate;
+        let mut nodes = BTreeMap::new();
+        for (id, node) in document.nodes() {
+            nodes.insert(id.clone(), frozen_node(node, durations[id], rate, true)?);
+        }
+        Self::admit(LayoutWire {
+            root: document.root().clone(),
+            rate,
+            nodes,
+            overrides: document.overrides().clone(),
+            gap_overrides: document.gap_overrides().clone(),
+            audio_lineage: document.audio_lineage().clone(),
+        })
+    }
+
+    /// Precharge before cloning nodes, overrides or iteration vectors and
+    /// before durations() builds any derived Repeat layouts. Returns the
+    /// document's total compact run count.
+    fn precharge(document: &ProjectDocument) -> Result<usize, DocumentError> {
         let mut edges = 0usize;
         let mut runs = 0usize;
         if document.audio_lineage().len() > MAX_DOCUMENT_NODES {
             return Err(limit("frozen audio lineage exceeds node limit"));
         }
+        // Override roots are edges of their Repeat; counting them per owner
+        // map rather than per node gives the same running totals at the end
+        // of each node, without a map lookup per node.
+        fn branches<'a>((owner, entries): (&'a NodeId, &PlayOverrides)) -> (&'a NodeId, usize) {
+            (owner, entries.iter().count())
+        }
+        let mut overrides = document.overrides().iter().map(branches).peekable();
+        let mut gap_overrides = document.gap_overrides().iter().map(branches).peekable();
         for (id, node) in document.nodes() {
+            let mut count = node.kind.children().len();
+            for branches in [&mut overrides, &mut gap_overrides] {
+                // Both maps iterate in the same key order as the nodes; an
+                // owner that is not a node never matches (validation rejects
+                // it elsewhere, and `children` ignored it too).
+                while branches.peek().is_some_and(|(owner, _)| *owner < id) {
+                    branches.next();
+                }
+                if let Some((_, entries)) = branches.next_if(|(owner, _)| *owner == id) {
+                    count += entries;
+                }
+            }
             edges = edges
-                .checked_add(document.children(id).count())
+                .checked_add(count)
                 .ok_or_else(|| limit("frozen structural edge count overflow"))?;
             if let NodeKind::Repeat { iterations, .. } = &node.kind {
                 runs = runs
@@ -453,80 +522,281 @@ impl FrozenAudioLayout {
                 return Err(limit("document exceeds frozen reference complexity limits"));
             }
         }
-        let durations = if validate_bindings {
-            document.durations()?
-        } else {
-            document.structural_durations()?
+        Ok(runs)
+    }
+
+    /// A provisional slice of `capture(document)` to the `required` aliases,
+    /// built without materializing or indexing the complete layout. It
+    /// projects every required alias exactly as the complete layout does, and
+    /// slicing it to any subset of `required` equals slicing the complete
+    /// layout to that subset. It charges the complete layout's counts (see
+    /// [`CompleteCharge`]).
+    ///
+    /// `Ok(None)` means the caller must use [`Self::capture`] instead, which
+    /// then decides the outcome exactly as before: whenever the complete
+    /// capture could fail (a per-node frozen check, a Retime mapping or an
+    /// alias outside the document), when the slice would not be smaller than
+    /// the complete layout (compaction then keeps the complete table), or
+    /// when the complete layout's byte bound exceeds the JSON limit. Every
+    /// prefix check of `capture` runs first, in the same order, so a refusal
+    /// is the same refusal.
+    ///
+    /// Only binding timing tables use this, and only inside one command:
+    /// `compact_new_timings` replaces the table with its exact slice before
+    /// the result is validated for storage.
+    pub(crate) fn capture_scoped(
+        document: &ProjectDocument,
+        required: &BTreeSet<NodeId>,
+    ) -> Result<Option<Self>, DocumentError> {
+        let runs = Self::precharge(document)?;
+        let durations = match document.retained_durations() {
+            Some(durations) => durations,
+            None => Arc::new(document.durations()?),
         };
         let rate = document.presentation_basis().frame_rate;
-        let mut nodes = BTreeMap::new();
-        for (id, node) in document.nodes() {
-            let kind = match &node.kind {
-                NodeKind::Source { source } => {
-                    let placement = source
-                        .audio
-                        .as_ref()
-                        .map(|_| {
-                            source.audio_mapping.selection_frames_with_offset(
-                                source.duration,
-                                source.audio_offset,
-                                rate,
-                            )
-                        })
-                        .transpose()?;
-                    FrozenAudioKind::Source { placement }
-                }
-                NodeKind::Hold { recipe } => FrozenAudioKind::Hold {
-                    audio: (&recipe.audio).into(),
-                },
-                NodeKind::Sequence { children } => FrozenAudioKind::Sequence {
-                    children: children.clone(),
-                },
-                // Frozen timing omits postmapping escalation, like gain.
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                    ..
-                } => FrozenAudioKind::Repeat {
-                    child: child.clone(),
-                    iterations: iterations.clone(),
-                    gap_duration: gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
-                    gap_audio: gap
-                        .as_ref()
-                        .map_or(ReferenceAudibility::Silence, |gap| (&gap.audio).into()),
-                },
-                NodeKind::Retime {
-                    child,
-                    mapping,
-                    pitch,
-                    purpose,
-                    ..
-                } => FrozenAudioKind::Retime {
-                    child: child.clone(),
-                    mapping: *mapping,
-                    pitch: *pitch,
-                    purpose: *purpose,
-                },
+        if durations.len() != document.nodes().len() {
+            return Ok(None);
+        }
+        // One pass: the complete capture's per-node checks, each node's
+        // parent and duration, and the complete layout's exact JSON length.
+        let mut info: std::collections::HashMap<&NodeId, (Option<&NodeId>, FrameDuration)> =
+            std::collections::HashMap::with_capacity(document.nodes().len());
+        let mut wire = WireCount::default();
+        for ((id, node), (duration_id, duration)) in document.nodes().iter().zip(durations.iter()) {
+            if id != duration_id {
+                return Ok(None);
+            }
+            let Ok(frozen) = frozen_node(node, *duration, rate, false) else {
+                return Ok(None);
             };
-            nodes.insert(
-                id.clone(),
-                FrozenAudioNode {
-                    duration: durations[id],
-                    edges: node.audio_edges,
-                    editorial_edges: node.audio_editorial_edges,
-                    kind,
-                },
+            if validate_node(&frozen).is_err() {
+                return Ok(None);
+            }
+            if let NodeKind::Retime { child, mapping, .. } = &node.kind
+                && (mapping.start().0 < 0
+                    || mapping.duration() == FrameDuration::ZERO
+                    || durations
+                        .get(child)
+                        .is_none_or(|child| mapping.end().0 > child.frames()))
+            {
+                return Ok(None);
+            }
+            wire.node(id, &frozen, node.kind.children())?;
+            info.entry(id).or_insert((None, FrameDuration::ZERO)).1 = *duration;
+            for child in node.kind.children() {
+                info.entry(child).or_insert((None, FrameDuration::ZERO)).0 = Some(id);
+            }
+        }
+        for (owner, entries) in document.overrides().iter().chain(document.gap_overrides()) {
+            for (_, child) in entries.iter() {
+                info.entry(child).or_insert((None, FrameDuration::ZERO)).0 = Some(owner);
+            }
+        }
+        let wire_bytes = wire.layout(document, rate)?;
+        if wire_bytes > MAX_DOCUMENT_JSON_BYTES {
+            return Ok(None);
+        }
+        let mut keep: BTreeSet<&NodeId> = BTreeSet::new();
+        for alias in required {
+            let Some((alias, _)) = document.nodes().get_key_value(alias) else {
+                return Ok(None);
+            };
+            let mut current = alias;
+            while keep.insert(current) {
+                match info.get(current).and_then(|(parent, _)| *parent) {
+                    Some(parent) => current = parent,
+                    None => break,
+                }
+            }
+        }
+        let duration_of = |id: &NodeId| info.get(id).map_or(FrameDuration::ZERO, |info| info.1);
+        // The same construction as `sliced`, reading the document directly.
+        let mut nodes = BTreeMap::new();
+        let mut pending = vec![document.root()];
+        while let Some(id) = pending.pop() {
+            let source = &document.nodes()[id];
+            let node = match &source.kind {
+                NodeKind::Sequence { children } => {
+                    let mut retained = Vec::with_capacity(keep.len().min(children.len()));
+                    let mut run: Option<(&NodeId, FrameDuration)> = None;
+                    // Unlike `sliced`, a zero-duration run keeps its (empty
+                    // Sequence) spacer, so that compaction's later slice names
+                    // each merged run after the same first alias as slicing
+                    // the complete layout would.
+                    let flush =
+                        |run: &mut Option<(&NodeId, FrameDuration)>,
+                         retained: &mut Vec<NodeId>,
+                         nodes: &mut BTreeMap<NodeId, FrozenAudioNode>| {
+                            if let Some((first, duration)) = run.take() {
+                                nodes.insert(first.clone(), spacer(duration));
+                                retained.push(first.clone());
+                            }
+                        };
+                    for child in children {
+                        if keep.contains(child) {
+                            flush(&mut run, &mut retained, &mut nodes);
+                            retained.push(child.clone());
+                            pending.push(child);
+                        } else {
+                            let duration = duration_of(child);
+                            run = Some(match run.take() {
+                                Some((first, total)) => (first, total.checked_add(duration)?),
+                                None => (child, duration),
+                            });
+                        }
+                    }
+                    flush(&mut run, &mut retained, &mut nodes);
+                    FrozenAudioNode {
+                        duration: durations[id],
+                        edges: source.audio_edges,
+                        editorial_edges: source.audio_editorial_edges,
+                        kind: FrozenAudioKind::Sequence { children: retained },
+                    }
+                }
+                _ => {
+                    // Override and gap-branch roots keep their keys; only
+                    // their contents collapse when nothing below is required.
+                    for child in document.children(id) {
+                        if keep.contains(child) {
+                            pending.push(child);
+                        } else {
+                            nodes.insert(child.clone(), spacer(duration_of(child)));
+                        }
+                    }
+                    frozen_node(source, durations[id], rate, true)?
+                }
+            };
+            nodes.insert(id.clone(), node);
+        }
+        if nodes.len() >= document.nodes().len() {
+            return Ok(None);
+        }
+        let retained_overrides = |overrides: &BTreeMap<NodeId, PlayOverrides>| {
+            overrides
+                .iter()
+                .filter(|(repeat, _)| keep.contains(*repeat))
+                .map(|(repeat, entries)| (repeat.clone(), entries.clone()))
+                .collect()
+        };
+        let mut layout = Self::admit_sized(
+            LayoutWire {
+                root: document.root().clone(),
+                rate,
+                nodes,
+                overrides: retained_overrides(document.overrides()),
+                gap_overrides: retained_overrides(document.gap_overrides()),
+                audio_lineage: document
+                    .audio_lineage()
+                    .iter()
+                    .filter(|(id, _)| keep.contains(*id))
+                    .map(|(id, lineage)| (id.clone(), lineage.clone()))
+                    .collect(),
+            },
+            false,
+        )?;
+        let complete = CompleteCharge {
+            projected: keep.iter().map(|alias| (*alias).clone()).collect(),
+            nodes: document.nodes().len(),
+            lineage: document.audio_lineage().len(),
+            runs,
+            wire_bytes,
+        };
+        #[cfg(debug_assertions)]
+        {
+            let full = Self::capture(document).expect("a complete capture succeeds with its slice");
+            assert_eq!(
+                layout.sliced(required),
+                full.sliced(required),
+                "slicing a scoped capture differs from slicing the complete capture"
+            );
+            assert_eq!(
+                (complete.nodes, complete.lineage, complete.runs),
+                (
+                    full.nodes.len(),
+                    full.audio_lineage.len(),
+                    full.compact_runs()
+                ),
+                "a scoped capture charges other counts than the complete capture"
+            );
+            assert_eq!(
+                full.wire_bytes(),
+                Ok(wire_bytes),
+                "the counted wire length differs from the complete capture's"
             );
         }
-        Self::admit(LayoutWire {
-            root: document.root().clone(),
-            rate,
-            nodes,
-            overrides: document.overrides().clone(),
-            gap_overrides: document.gap_overrides().clone(),
-            audio_lineage: document.audio_lineage().clone(),
-        })
+        Arc::get_mut(&mut layout.inner)
+            .expect("a new layout has one owner")
+            .complete = Some(complete);
+        crate::command_work::note_provisional_capture(false);
+        Ok(Some(layout))
+    }
+
+    /// Whether `id` names a node: the root or an indexed child. Admission
+    /// proved every node reachable, so this equals `nodes.contains_key`
+    /// without an ordered lookup.
+    fn has_node(&self, id: &NodeId) -> bool {
+        let found = *id == self.root || self.index.parents.contains_key(id);
+        debug_assert_eq!(found, self.nodes.contains_key(id));
+        found
+    }
+
+    /// Whether this is a provisional slice from [`Self::capture_scoped`].
+    pub(crate) fn is_provisional(&self) -> bool {
+        self.inner.complete.is_some()
+    }
+
+    /// Nodes charged to binding budgets: the complete layout's for a
+    /// provisional slice.
+    pub(crate) fn charged_nodes(&self) -> usize {
+        self.inner
+            .complete
+            .as_ref()
+            .map_or(self.nodes.len(), |complete| complete.nodes)
+    }
+
+    /// Lineage entries charged to binding budgets.
+    pub(crate) fn charged_lineage(&self) -> usize {
+        self.inner
+            .complete
+            .as_ref()
+            .map_or(self.audio_lineage.len(), |complete| complete.lineage)
+    }
+
+    /// Compact Repeat runs charged to binding budgets.
+    pub(crate) fn charged_runs(&self) -> usize {
+        self.inner
+            .complete
+            .as_ref()
+            .map_or_else(|| self.compact_runs(), |complete| complete.runs)
+    }
+
+    fn compact_runs(&self) -> usize {
+        self.nodes
+            .values()
+            .map(|node| match &node.kind {
+                FrozenAudioKind::Repeat { iterations, .. } => iterations.segment_count(),
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The exact wire length, or for a provisional slice that of the
+    /// complete layout it stands in for.
+    pub(crate) fn wire_bound_bytes(&self) -> Result<usize, DocumentError> {
+        match &self.inner.complete {
+            Some(complete) => Ok(complete.wire_bytes),
+            None => self.wire_bytes(),
+        }
+    }
+
+    /// Whether this layout projects `alias` exactly: always for a complete
+    /// or compacted table, and for a provisional slice only for the aliases
+    /// it was built for (its other names may be spacers).
+    pub(crate) fn projects(&self, alias: &NodeId) -> bool {
+        match &self.inner.complete {
+            Some(complete) => complete.projected.contains(alias),
+            None => self.nodes.contains_key(alias),
+        }
     }
 
     fn admit(wire: LayoutWire) -> Result<Self, DocumentError> {
@@ -544,6 +814,7 @@ impl FrozenAudioLayout {
                 audio_lineage: wire.audio_lineage,
                 index: FrozenIndex::default(),
                 wire_bytes: std::sync::OnceLock::new(),
+                complete: None,
             }),
         };
         let index = layout.build_index()?;
@@ -569,6 +840,9 @@ impl FrozenAudioLayout {
     pub(crate) fn wire_bytes(&self) -> Result<usize, DocumentError> {
         if let Some(bytes) = self.inner.wire_bytes.get() {
             return Ok(*bytes);
+        }
+        if self.inner.complete.is_some() {
+            return Err(invalid("a provisional timing table has no wire form"));
         }
         struct Count {
             bytes: usize,
@@ -630,22 +904,6 @@ impl FrozenAudioLayout {
                 }
             }
         }
-        let spacer = |duration: FrameDuration| FrozenAudioNode {
-            duration,
-            edges: AudioEdgePolicies::default(),
-            editorial_edges: Default::default(),
-            // A zero-duration leaf is invalid; an empty Sequence is the
-            // zero-length structure with no audio of its own.
-            kind: if duration == FrameDuration::ZERO {
-                FrozenAudioKind::Sequence {
-                    children: Vec::new(),
-                }
-            } else {
-                FrozenAudioKind::Hold {
-                    audio: ReferenceAudibility::Silence,
-                }
-            },
-        };
         let mut nodes = BTreeMap::new();
         let mut pending = vec![&self.root];
         while let Some(id) = pending.pop() {
@@ -990,10 +1248,14 @@ impl FrozenAudioLayout {
                 }
             }
         }
-        let mut seen = BTreeSet::new();
+        let mut seen = crate::id_hash::id_set(self.nodes.len());
         let mut stack = vec![(&self.root, 0usize, false)];
-        let mut durations = BTreeMap::new();
-        let mut index = FrozenIndex::default();
+        let mut durations: crate::id_hash::IdMap<&NodeId, FrameDuration> =
+            crate::id_hash::id_map(self.nodes.len());
+        let mut index = FrozenIndex {
+            parents: crate::id_hash::id_map(self.nodes.len()),
+            repeats: BTreeMap::new(),
+        };
         while let Some((id, depth, visited)) = stack.pop() {
             if depth > MAX_DOCUMENT_DEPTH {
                 return Err(limit("frozen audio depth exceeds limit"));
@@ -1027,13 +1289,22 @@ impl FrozenAudioLayout {
                     gap_duration,
                     ..
                 } => {
+                    // The layout reads only these evaluated branch roots.
+                    let branches: BTreeMap<NodeId, FrameDuration> = self
+                        .children(id)
+                        .filter_map(|branch| {
+                            durations
+                                .get(branch)
+                                .map(|duration| (branch.clone(), *duration))
+                        })
+                        .collect();
                     let repeat = RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         self.overrides.get(id),
                         *gap_duration,
                         self.gap_overrides.get(id),
-                        &durations,
+                        &branches,
                     )?;
                     let duration = repeat.duration();
                     index.repeats.insert(id.clone(), repeat);
@@ -1053,7 +1324,7 @@ impl FrozenAudioLayout {
             if computed != node.duration {
                 return Err(invalid("frozen duration disagrees with its structure"));
             }
-            durations.insert(id.clone(), computed);
+            durations.insert(id, computed);
             let mut offset = 0i64;
             for child in self.children(id) {
                 index.parents.insert(child.clone(), (id.clone(), offset));
@@ -1179,7 +1450,11 @@ impl FrozenAudioLayout {
             return Err(limit("invalid frozen projection budget"));
         }
         instance.validate_depth()?;
-        if !self.nodes.contains_key(root) {
+        debug_assert!(
+            self.inner.complete.is_none() || self.projects(&instance.node),
+            "a provisional timing table read through an alias it does not project"
+        );
+        if !self.has_node(root) {
             return Err(invalid("frozen projection scope is missing"));
         }
         let target = self
@@ -1220,6 +1495,12 @@ impl FrozenAudioLayout {
                 .parents
                 .get(node)
                 .ok_or_else(|| invalid("frozen projection host is outside scope"))?;
+            // The admitted root is a Sequence; skip looking it up.
+            if parent == &self.root {
+                origin = origin.checked_add(ExactRatio::integer(*offset))?;
+                node = parent;
+                continue;
+            }
             match &self.nodes[parent].kind {
                 FrozenAudioKind::Sequence { .. } => {
                     origin = origin.checked_add(ExactRatio::integer(*offset))?
@@ -1322,7 +1603,11 @@ impl FrozenAudioLayout {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
             return Err(limit("invalid frozen scope budget"));
         }
-        if !self.nodes.contains_key(root) || !self.nodes.contains_key(target) {
+        debug_assert!(
+            self.inner.complete.is_none() || self.projects(target),
+            "a provisional timing table read through an alias it does not project"
+        );
+        if !self.has_node(root) || !self.has_node(target) {
             return Err(invalid("frozen scope alias is missing"));
         }
         let mut node = target;
@@ -1338,6 +1623,11 @@ impl FrozenAudioLayout {
                 .parents
                 .get(node)
                 .ok_or_else(|| invalid("frozen scope does not contain its target"))?;
+            // The admitted root is a Sequence: neither a stage nor a Repeat.
+            if parent == &self.root {
+                node = parent;
+                continue;
+            }
             let parent_node = &self.nodes[parent];
             if matches!(
                 &parent_node.kind,
@@ -1661,6 +1951,202 @@ pub(crate) fn clip_binding_support(
     Ok(())
 }
 
+/// The exact compact JSON length of a complete captured layout, counted
+/// node by node without building it. Identifiers need no escaping (ASCII
+/// letters, digits, `-` and `_`). Repeated edge and Hold bodies are counted
+/// once. `capture_scoped` checks the total against the complete capture in
+/// debug builds, and `complete_wire_count_equals_serialization` in tests.
+#[derive(Default)]
+struct WireCount {
+    nodes: usize,
+    count: usize,
+    edges: Vec<(AudioEdgePolicies, usize)>,
+    holds: Vec<(ReferenceAudibility, usize)>,
+}
+
+impl WireCount {
+    fn add(&mut self, bytes: usize) -> Result<(), DocumentError> {
+        self.count = self
+            .count
+            .checked_add(bytes)
+            .ok_or_else(|| limit("frozen audio JSON length overflow"))?;
+        Ok(())
+    }
+
+    /// One `"id":{…}` entry of the node map; `frozen` may omit a Sequence's
+    /// children, which are given separately.
+    fn node(
+        &mut self,
+        id: &NodeId,
+        frozen: &FrozenAudioNode,
+        children: &[NodeId],
+    ) -> Result<(), DocumentError> {
+        if self.nodes > 0 {
+            self.add(1)?;
+        }
+        self.nodes += 1;
+        self.add(id.as_str().len() + 3)?;
+        self.add("{\"duration\":".len() + frozen.duration.frames().to_string().len())?;
+        let edges = match self.edges.iter().find(|(edges, _)| *edges == frozen.edges) {
+            Some((_, bytes)) => *bytes,
+            None => {
+                let bytes = json_len(&frozen.edges)?;
+                self.edges.push((frozen.edges, bytes));
+                bytes
+            }
+        };
+        self.add(",\"edges\":".len() + edges)?;
+        if !frozen.editorial_edges.is_empty() {
+            self.add(",\"editorial_edges\":".len() + json_len(&frozen.editorial_edges)?)?;
+        }
+        let kind = match &frozen.kind {
+            FrozenAudioKind::Sequence { .. } => {
+                // `{"type":"sequence","children":[]}` plus each quoted child.
+                json_len(&FrozenAudioKind::Sequence {
+                    children: Vec::new(),
+                })? + children
+                    .iter()
+                    .map(|child| child.as_str().len() + 2)
+                    .sum::<usize>()
+                    + children.len().saturating_sub(1)
+            }
+            FrozenAudioKind::Hold { audio } => {
+                match self.holds.iter().find(|(held, _)| held == audio) {
+                    Some((_, bytes)) => *bytes,
+                    None => {
+                        let bytes = json_len(&frozen.kind)?;
+                        self.holds.push((*audio, bytes));
+                        bytes
+                    }
+                }
+            }
+            kind => json_len(kind)?,
+        };
+        self.add(",\"kind\":".len() + kind + "}".len())
+    }
+
+    /// The whole layout around the counted node map.
+    fn layout(
+        mut self,
+        document: &ProjectDocument,
+        rate: FrameRate,
+    ) -> Result<usize, DocumentError> {
+        self.add("{\"root\":".len() + document.root().as_str().len() + 2)?;
+        self.add(",\"rate\":".len() + json_len(&rate)?)?;
+        self.add(",\"nodes\":{".len() + "}".len())?;
+        self.add(",\"overrides\":".len() + json_len(document.overrides())?)?;
+        if !document.gap_overrides().is_empty() {
+            self.add(",\"gap_overrides\":".len() + json_len(document.gap_overrides())?)?;
+        }
+        if !document.audio_lineage().is_empty() {
+            self.add(",\"audio_lineage\":".len() + json_len(document.audio_lineage())?)?;
+        }
+        self.add("}".len())?;
+        Ok(self.count)
+    }
+}
+
+/// Exact compact JSON length, without retaining the text.
+fn json_len<T: Serialize + ?Sized>(value: &T) -> Result<usize, DocumentError> {
+    struct Count(usize);
+    impl Write for Count {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0 = self.0.saturating_add(bytes.len());
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut count = Count(0);
+    serde_json::to_writer(&mut count, value).map_err(DocumentError::json)?;
+    Ok(count.0)
+}
+
+/// A complete subtree replaced by its duration; see `FrozenAudioLayout::sliced`.
+fn spacer(duration: FrameDuration) -> FrozenAudioNode {
+    FrozenAudioNode {
+        duration,
+        edges: AudioEdgePolicies::default(),
+        editorial_edges: Default::default(),
+        // A zero-duration leaf is invalid; an empty Sequence is the
+        // zero-length structure with no audio of its own.
+        kind: if duration == FrameDuration::ZERO {
+            FrozenAudioKind::Sequence {
+                children: Vec::new(),
+            }
+        } else {
+            FrozenAudioKind::Hold {
+                audio: ReferenceAudibility::Silence,
+            }
+        },
+    }
+}
+
+/// The frozen form of one authored node. Without `children`, a Sequence's
+/// child list is left empty (enough for `validate_node`, which never reads it).
+fn frozen_node(
+    node: &crate::BeatNode,
+    duration: FrameDuration,
+    rate: FrameRate,
+    children: bool,
+) -> Result<FrozenAudioNode, DocumentError> {
+    let kind = match &node.kind {
+        NodeKind::Source { source } => {
+            let placement = source
+                .audio
+                .as_ref()
+                .map(|_| {
+                    source.audio_mapping.selection_frames_with_offset(
+                        source.duration,
+                        source.audio_offset,
+                        rate,
+                    )
+                })
+                .transpose()?;
+            FrozenAudioKind::Source { placement }
+        }
+        NodeKind::Hold { recipe } => FrozenAudioKind::Hold {
+            audio: (&recipe.audio).into(),
+        },
+        NodeKind::Sequence { children: list } => FrozenAudioKind::Sequence {
+            children: if children { list.clone() } else { Vec::new() },
+        },
+        // Frozen timing omits postmapping escalation, like gain.
+        NodeKind::Repeat {
+            child,
+            iterations,
+            gap,
+            ..
+        } => FrozenAudioKind::Repeat {
+            child: child.clone(),
+            iterations: iterations.clone(),
+            gap_duration: gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+            gap_audio: gap
+                .as_ref()
+                .map_or(ReferenceAudibility::Silence, |gap| (&gap.audio).into()),
+        },
+        NodeKind::Retime {
+            child,
+            mapping,
+            pitch,
+            purpose,
+            ..
+        } => FrozenAudioKind::Retime {
+            child: child.clone(),
+            mapping: *mapping,
+            pitch: *pitch,
+            purpose: *purpose,
+        },
+    };
+    Ok(FrozenAudioNode {
+        duration,
+        edges: node.audio_edges,
+        editorial_edges: node.audio_editorial_edges,
+        kind,
+    })
+}
+
 fn validate_node(node: &FrozenAudioNode) -> Result<(), DocumentError> {
     match node.kind {
         FrozenAudioKind::Hold { audio } => audio.validate_duration(node.duration)?,
@@ -1778,5 +2264,390 @@ impl Write for BoundedJson {
     }
     fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod scoped_capture_tests {
+    use super::*;
+
+    /// The node-by-node count equals the serialized node map for every kind,
+    /// extreme values, non-default edges and Sequence child lists. The layout
+    /// syntax around it is compared with the complete capture by every scoped
+    /// capture in debug builds.
+    #[test]
+    fn complete_wire_count_equals_serialization() {
+        let child = NodeId::new("c").unwrap();
+        let wide = ExactRatio::new(-(10_i128.pow(37)) + 1, 10_i128.pow(37) - 3).unwrap();
+        let hard = AudioEdgePolicy::Hard;
+        let edges = AudioEdgePolicies {
+            node_start: hard,
+            node_end: hard,
+            source_placement_start: hard,
+            source_placement_end: hard,
+            repeat_gap_start: hard,
+            repeat_gap_end: hard,
+        };
+        let editorial = crate::AudioEditorialEdges {
+            start: true,
+            end: true,
+        };
+        let iterations = IterationOrder::new(crate::RevisionId::new("r").unwrap(), 2).unwrap();
+        let kinds = [
+            FrozenAudioKind::Source {
+                placement: Some(ExactFrameRange {
+                    start: wide,
+                    end: wide,
+                }),
+            },
+            FrozenAudioKind::Hold {
+                audio: ReferenceAudibility::Tail {
+                    maximum: FrameDuration::new(i64::MAX).unwrap(),
+                    effect: crate::TailEffect::Delay,
+                },
+            },
+            FrozenAudioKind::Hold {
+                audio: ReferenceAudibility::Tone {
+                    frequency_hz: u32::MAX,
+                    level: crate::GainDb::new(crate::audio_gain::MIN_GAIN_MILLIDECIBELS).unwrap(),
+                },
+            },
+            FrozenAudioKind::Sequence {
+                children: Vec::new(),
+            },
+            FrozenAudioKind::Sequence {
+                children: vec![child.clone()],
+            },
+            FrozenAudioKind::Sequence {
+                children: vec![child.clone(), NodeId::new("second_child-2").unwrap()],
+            },
+            FrozenAudioKind::Hold {
+                audio: ReferenceAudibility::Silence,
+            },
+            FrozenAudioKind::Source { placement: None },
+            FrozenAudioKind::Repeat {
+                child: child.clone(),
+                iterations: iterations.clone(),
+                gap_duration: FrameDuration::new(i64::MAX).unwrap(),
+                gap_audio: ReferenceAudibility::Tail {
+                    maximum: FrameDuration::new(i64::MAX).unwrap(),
+                    effect: crate::TailEffect::Delay,
+                },
+            },
+            FrozenAudioKind::Retime {
+                child: child.clone(),
+                mapping: FrameRange::new(
+                    crate::ProjectFrame(-(i64::MAX / 4)),
+                    crate::ProjectFrame(i64::MAX / 4),
+                )
+                .unwrap(),
+                pitch: PitchPolicy::Shift { semitones: -24 },
+                purpose: RetimePurpose::Partition,
+            },
+        ];
+        let id = NodeId::new("node-id_9").unwrap();
+        for kind in kinds {
+            for (edges, editorial) in [
+                (edges, editorial),
+                (
+                    AudioEdgePolicies::default(),
+                    crate::AudioEditorialEdges::default(),
+                ),
+            ] {
+                let node = FrozenAudioNode {
+                    duration: FrameDuration::new(i64::MAX).unwrap(),
+                    edges,
+                    editorial_edges: editorial,
+                    kind: kind.clone(),
+                };
+                let mut count = WireCount::default();
+                // Count twice: the second entry adds a comma and reuses caches.
+                for _ in 0..2 {
+                    count.node(&id, &node, node.kind.children()).unwrap();
+                }
+                let one = json_len(&BTreeMap::from([(id.clone(), node.clone())])).unwrap();
+                assert_eq!(count.count, 2 * (one - 2) + 1, "{node:?}");
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod scoped_capture_property {
+    use super::*;
+    use crate::{
+        BeatNode, ColorPolicy, HoldRecipe, HoldVideo, PresentationBasis, ProjectId, RevisionId,
+    };
+
+    struct Lcg(u64);
+    impl Lcg {
+        fn below(&mut self, bound: usize) -> usize {
+            self.0 = self
+                .0
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            ((self.0 >> 33) % bound.max(1) as u64) as usize
+        }
+    }
+
+    fn hold(frames: i64) -> BeatNode {
+        BeatNode::hold(
+            "Hold",
+            HoldRecipe {
+                picture_context: None,
+                duration: FrameDuration::new(frames).unwrap(),
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            },
+        )
+    }
+
+    /// A random valid tree of Sequences (some empty), Holds, Repeats and
+    /// unity Partitions, returning the document and its node identities.
+    fn document(random: &mut Lcg) -> (ProjectDocument, Vec<NodeId>) {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("scoped").unwrap(),
+            RevisionId::new("r").unwrap(),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(24, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let mut next = 0usize;
+        let mut fresh = || {
+            next += 1;
+            NodeId::new(format!("n{next:03}")).unwrap()
+        };
+        // Returns the subtree's root and its duration.
+        fn build(
+            document: &mut ProjectDocument,
+            random: &mut Lcg,
+            fresh: &mut dyn FnMut() -> NodeId,
+            depth: usize,
+        ) -> (NodeId, i64) {
+            let id = fresh();
+            let kind = if depth >= 3 { 0 } else { random.below(6) };
+            match kind {
+                0 | 1 => {
+                    let frames = 1 + random.below(6) as i64;
+                    document.nodes.insert(id.clone(), hold(frames));
+                    (id, frames)
+                }
+                2 | 3 => {
+                    let mut children = Vec::new();
+                    let mut total = 0;
+                    for _ in 0..random.below(5) {
+                        let (child, frames) = build(document, random, fresh, depth + 1);
+                        children.push(child);
+                        total += frames;
+                    }
+                    document
+                        .nodes
+                        .insert(id.clone(), BeatNode::sequence("Group", children));
+                    (id, total)
+                }
+                4 => {
+                    let (child, frames) = build(document, random, fresh, depth + 1);
+                    if frames == 0 {
+                        return (child, frames);
+                    }
+                    let plays = 1 + random.below(3) as u32;
+                    let mut node = BeatNode::sequence("Repeat", Vec::new());
+                    node.kind = NodeKind::Repeat {
+                        child,
+                        iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), plays)
+                            .unwrap(),
+                        gap: None,
+                        escalation: None,
+                    };
+                    document.nodes.insert(id.clone(), node);
+                    (id, frames * i64::from(plays))
+                }
+                _ => {
+                    let (child, frames) = build(document, random, fresh, depth + 1);
+                    if frames < 2 {
+                        return (child, frames);
+                    }
+                    let start = random.below(frames as usize - 1) as i64;
+                    let end = start + 1 + random.below((frames - start - 1) as usize) as i64;
+                    let mut node = BeatNode::sequence("Partition", Vec::new());
+                    node.kind = NodeKind::Retime {
+                        child,
+                        duration: FrameDuration::new(end - start).unwrap(),
+                        mapping: FrameRange::new(
+                            crate::ProjectFrame(start),
+                            crate::ProjectFrame(end),
+                        )
+                        .unwrap(),
+                        pitch: PitchPolicy::Preserve,
+                        purpose: RetimePurpose::Partition,
+                    };
+                    document.nodes.insert(id.clone(), node);
+                    (id, end - start)
+                }
+            }
+        }
+        let mut children = Vec::new();
+        for _ in 0..1 + random.below(12) {
+            children.push(build(&mut document, random, &mut fresh, 1).0);
+        }
+        document.nodes.insert(
+            NodeId::new("root").unwrap(),
+            BeatNode::sequence("Root", children),
+        );
+        let ids = document.nodes.keys().cloned().collect();
+        (document, ids)
+    }
+
+    /// The scoped capture equals the complete capture for everything the
+    /// command and compaction read: slicing it to any subset of its aliases
+    /// equals slicing the complete layout, it projects exactly those aliases
+    /// and their ancestors, and it charges the complete layout's counts and
+    /// exact wire length. It is used only when strictly smaller.
+    #[test]
+    fn scoped_capture_slices_like_the_complete_capture_on_random_documents() {
+        let mut random = Lcg(11);
+        let mut scoped = 0;
+        for _ in 0..400 {
+            let (document, ids) = document(&mut random);
+            if document.validate().is_err() {
+                continue;
+            }
+            let full = FrozenAudioLayout::capture(&document).unwrap();
+            let required: BTreeSet<NodeId> = (0..1 + random.below(4))
+                .map(|_| ids[random.below(ids.len())].clone())
+                .collect();
+            let Some(provisional) =
+                FrozenAudioLayout::capture_scoped(&document, &required).unwrap()
+            else {
+                // The complete capture is used where a slice is not smaller.
+                continue;
+            };
+            scoped += 1;
+            assert!(provisional.is_provisional());
+            assert!(provisional.nodes().len() < full.nodes().len());
+            assert_eq!(provisional.charged_nodes(), full.nodes().len());
+            assert_eq!(provisional.charged_lineage(), full.audio_lineage().len());
+            assert_eq!(provisional.charged_runs(), full.compact_runs());
+            assert_eq!(
+                provisional.wire_bound_bytes().unwrap(),
+                full.wire_bytes().unwrap()
+            );
+            for alias in &required {
+                assert!(provisional.projects(alias));
+            }
+            // Every nonempty subset of a small alias set.
+            let aliases: Vec<_> = required.iter().collect();
+            for mask in 1..(1usize << aliases.len()) {
+                let subset: BTreeSet<&NodeId> = aliases
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, _)| mask & (1 << index) != 0)
+                    .map(|(_, alias)| *alias)
+                    .collect();
+                assert_eq!(
+                    provisional.sliced(subset.iter().copied()).unwrap(),
+                    full.sliced(subset.iter().copied()).unwrap()
+                );
+            }
+            // A provisional table never reaches a stored form.
+            assert!(provisional.to_json().is_err());
+            assert!(provisional.wire_bytes().is_err());
+        }
+        assert!(scoped >= 100, "only {scoped} scoped captures");
+    }
+
+    /// The same checks at the 10,000-sibling scale the pause targets, in
+    /// every build mode (the debug-only parity assertions do not run in
+    /// release): counts, the exact wire length and slices against the
+    /// complete capture, comparing results rather than only successes.
+    #[test]
+    fn scoped_capture_matches_the_complete_capture_at_ten_thousand_children() {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("wide").unwrap(),
+            RevisionId::new("r").unwrap(),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(24, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let mut children = Vec::new();
+        for index in 0..10_000 {
+            let id = NodeId::new(format!("hold-{index:05}")).unwrap();
+            document
+                .nodes
+                .insert(id.clone(), hold(1 + (index % 7) as i64));
+            children.push(id);
+        }
+        // One nested group and a Repeat among the siblings.
+        let inner = NodeId::new("group-inner").unwrap();
+        document.nodes.insert(inner.clone(), hold(5));
+        let group = NodeId::new("group").unwrap();
+        document.nodes.insert(
+            group.clone(),
+            BeatNode::sequence("Group", vec![inner.clone()]),
+        );
+        children.insert(5_000, group);
+        let echo = NodeId::new("echo").unwrap();
+        document.nodes.insert(echo.clone(), hold(3));
+        let repeat = NodeId::new("repeat").unwrap();
+        let mut node = BeatNode::sequence("Repeat", Vec::new());
+        node.kind = NodeKind::Repeat {
+            child: echo.clone(),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
+            gap: None,
+            escalation: None,
+        };
+        document.nodes.insert(repeat.clone(), node);
+        children.insert(7_500, repeat);
+        document.nodes.insert(
+            NodeId::new("root").unwrap(),
+            BeatNode::sequence("Root", children),
+        );
+        document.validate().unwrap();
+        let full = FrozenAudioLayout::capture(&document).unwrap();
+        let required: BTreeSet<NodeId> = [
+            "hold-00000",
+            "hold-04999",
+            "group-inner",
+            "echo",
+            "hold-09999",
+        ]
+        .into_iter()
+        .map(|id| NodeId::new(id).unwrap())
+        .collect();
+        let provisional = FrozenAudioLayout::capture_scoped(&document, &required)
+            .unwrap()
+            .expect("a wide root slices");
+        assert!(provisional.nodes().len() < 32);
+        assert_eq!(provisional.charged_nodes(), full.nodes().len());
+        assert_eq!(provisional.charged_lineage(), full.audio_lineage().len());
+        assert_eq!(provisional.charged_runs(), full.compact_runs());
+        assert_eq!(provisional.wire_bound_bytes(), full.wire_bytes());
+        let aliases: Vec<&NodeId> = required.iter().collect();
+        for mask in 1..(1usize << aliases.len()) {
+            let subset: Vec<&NodeId> = aliases
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| mask & (1 << index) != 0)
+                .map(|(_, alias)| *alias)
+                .collect();
+            assert_eq!(
+                provisional.sliced(subset.iter().copied()),
+                full.sliced(subset.iter().copied())
+            );
+        }
+        // An alias outside the slice is refused by the slice, never answered
+        // by a spacer.
+        let outside = NodeId::new("hold-02000").unwrap();
+        assert!(!provisional.projects(&outside));
     }
 }

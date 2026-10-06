@@ -11,7 +11,9 @@ use std::time::{Duration, Instant};
 use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
 use deadpan_media::source_index::SourceContentIdentity;
-use deadpan_media::source_session::{SourceSession, SourceSessionError, SourceSessionLimits};
+use deadpan_media::source_session::{
+    SourceSession, SourceSessionError, SourceSessionLimits, interactive_decode_threads_for,
+};
 use deadpan_plan::RenderPlan;
 use deadpan_render::Rgba8Frame;
 #[cfg(test)]
@@ -27,8 +29,17 @@ use crate::project::{RegisteredSource, Workspace};
 const HASH_TIMEOUT: Duration = Duration::from_secs(300);
 const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long the cursor must rest on a proxy picture before the worker
-/// replaces it with the exact Original picture.
+/// replaces it with the exact Original picture while the cursor is moving:
+/// when the request followed the previous one within this interval (held
+/// keys, a drag). Repeated keys arrive faster, so scrubbing never starts an
+/// exact decode it would abandon.
 pub const REFINE_DELAY: Duration = Duration::from_millis(150);
+/// The rest before refining an isolated request, one that followed no other
+/// request within [`REFINE_DELAY`]: a jump, a click or the first press of a
+/// key. It only coalesces an immediate follow-up; the exact picture then
+/// completes as soon as the Original decodes. A key's first repeat comes
+/// later than an exact 4K seek takes, so it does not abandon the decode.
+pub const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 
 mod endpoints;
 mod proposed;
@@ -120,6 +131,9 @@ struct Request {
     ticket: Ticket,
     work: Work,
     cancelled: Arc<AtomicBool>,
+    /// When the viewer submitted it, which tells scrubbing from an isolated
+    /// seek independently of how long the worker was busy.
+    arrived: Instant,
 }
 
 pub struct SourceSummary {
@@ -198,6 +212,7 @@ impl Mailbox {
             ticket,
             work,
             cancelled: Arc::new(AtomicBool::new(false)),
+            arrived: Instant::now(),
         });
         self.reply = None;
         self.sync_depth();
@@ -336,12 +351,18 @@ impl PreviewWorker {
     }
 
     pub fn take_reply(&self) -> Option<Reply> {
-        self.shared
+        let reply = self
+            .shared
             .mailbox
             .lock()
             .expect("preview mailbox")
             .reply
-            .take()
+            .take();
+        // A refinement waits for its proxy picture to be taken.
+        if reply.is_some() {
+            self.shared.changed.notify_one();
+        }
+        reply
     }
 
     /// Revoke outstanding pictures while retaining the verified source decoder.
@@ -386,6 +407,9 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
     // Prepare a proxy only after a stopped interactive request, never in the
     // gaps between playback pictures.
     let mut idle_preparation = false;
+    // When the previous interactive request arrived, to tell scrubbing from
+    // an isolated seek (see `ISOLATED_REFINE_DELAY`).
+    let mut previous_interactive: Option<Instant> = None;
     loop {
         if proxies {
             proxy.set_cache(shared.proxy_cache.lock().expect("proxy cache").clone());
@@ -444,6 +468,19 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         idle_preparation = interactive;
         let slot = interactive.then_some(&mut proxy);
         let started = Instant::now();
+        let rest = if interactive {
+            let moving = previous_interactive.is_some_and(|previous| {
+                request.arrived.saturating_duration_since(previous) < REFINE_DELAY
+            });
+            previous_interactive = Some(request.arrived);
+            if moving {
+                REFINE_DELAY
+            } else {
+                ISOLATED_REFINE_DELAY
+            }
+        } else {
+            REFINE_DELAY
+        };
         let picture = perform_with(&request, &mut session, &mut proposal, slot);
         let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
         if !publish_reply(&shared, &context, &request, picture, started) || !refine {
@@ -452,7 +489,7 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         // Refine once the cursor rests: wait for a newer request, and decode
         // the exact Original picture if none arrives in time.
         let refining = {
-            let deadline = Instant::now() + REFINE_DELAY;
+            let deadline = Instant::now() + rest;
             let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
             loop {
                 if mailbox.shutdown {
@@ -465,12 +502,20 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
                 {
                     break false;
                 }
-                if now >= deadline {
+                // The rest also waits for the viewer to take the proxy
+                // picture, so the exact one follows it instead of replacing
+                // an undelivered reply (`take_reply` notifies).
+                if now >= deadline && mailbox.reply.is_none() {
                     break mailbox.start_refinement(&request);
                 }
+                let wait = if now >= deadline {
+                    REFINE_DELAY
+                } else {
+                    deadline - now
+                };
                 mailbox = shared
                     .changed
-                    .wait_timeout(mailbox, deadline - now)
+                    .wait_timeout(mailbox, wait)
                     .expect("preview mailbox")
                     .0;
             }
@@ -1096,9 +1141,9 @@ impl From<&str> for Served {
 }
 
 /// Preview decoders: threaded serving, single-threaded measurement.
-fn preview_limits() -> SourceSessionLimits {
+fn preview_limits(width: u32, height: u32) -> SourceSessionLimits {
     #[allow(unused_mut)]
-    let mut limits = SourceSessionLimits::interactive();
+    let mut limits = SourceSessionLimits::interactive_for(width, height);
     #[cfg(test)]
     tests_support::adjust_limits(&mut limits);
     limits
@@ -1193,7 +1238,7 @@ fn registered_picture_once(
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
-        let limits = preview_limits();
+        let limits = preview_limits(video.interpretation().width, video.interpretation().height);
         limits
             .decode
             .validate()
@@ -1201,7 +1246,7 @@ fn registered_picture_once(
         if registered.receipt.snapshot().content().byte_length() > limits.decode.max_input_bytes {
             return Err("Source original exceeds the native preview byte limit.".into());
         }
-        let mut snapshot = media
+        let snapshot = media
             .originals()
             .snapshot_original(
                 &registered.original,
@@ -1209,12 +1254,17 @@ fn registered_picture_once(
                 cancelled,
             )
             .map_err(|error| error.to_string())?;
+        // The store's private snapshot was verified against these exact
+        // bytes; the decoders read it without a second copy.
+        let input = snapshot
+            .into_source_input(video.index().content())
+            .map_err(|error| error.to_string())?;
         // Progressive admission: every served picture matches the receipt's
         // measured index (checked against `expected` above), and a background
         // decoder completes the fresh full measurement. The session's index
         // and stream metadata are the receipt's, compared at open.
-        let source = SourceSession::open_admitted(
-            &mut snapshot,
+        let source = SourceSession::open_admitted_input(
+            input,
             Arc::new({
                 let index = video
                     .index()
@@ -1351,14 +1401,20 @@ fn open_source(path: &PathBuf, cancelled: &AtomicBool) -> Result<SourceSession, 
     let identity = SourceContentIdentity::new(digest.finalize().into(), metadata.len())
         .map_err(|error| error.to_string())?;
     input.rewind().map_err(|error| error.to_string())?;
-    SourceSession::open_verified(
+    let mut session = SourceSession::open_verified(
         &mut input,
         identity,
         AssetId::new("source-preview").map_err(|error| error.to_string())?,
         limits,
         cancelled,
     )
-    .map_err(|error| error.to_string())
+    .map_err(|error| error.to_string())?;
+    // The raster is known only now; above 1080p serve with more threads.
+    let info = session.info();
+    session
+        .set_serving_threads(interactive_decode_threads_for(info.width, info.height))
+        .map_err(|error| error.to_string())?;
+    Ok(session)
 }
 
 fn check_hash_control(started: Instant, cancelled: &AtomicBool) -> Result<(), String> {

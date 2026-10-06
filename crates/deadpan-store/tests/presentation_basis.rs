@@ -520,7 +520,38 @@ fn self_consistent_history_cannot_claim_geometry_different_from_source_evidence(
         &active(),
     )?;
     drop(store);
-    Connection::open(path.join("project.sqlite"))?.execute_batch("UPDATE revisions SET document=json_set(document,'$.presentation_basis.width',18) WHERE id='primary'; UPDATE history SET request=json_set(request,'$.command.primary.basis.width',18), edit=json_set(edit,'$.forward.presentation.after.basis.width',18,'$.inverse.presentation.before.basis.width',18) WHERE revision_id='primary'; UPDATE revisions SET json_bound=json_bound+64 WHERE id='primary';")?;
+    let connection = Connection::open(path.join("project.sqlite"))?;
+    connection.execute_batch("UPDATE revisions SET document=json_set(document,'$.presentation_basis.width',18) WHERE id='primary'; UPDATE history SET request=json_set(request,'$.command.primary.basis.width',18) WHERE revision_id='primary';")?;
+    // A self-consistent forgery: both directions name the forged width, with
+    // a complete explicit inverse (the writer omits an implied one).
+    let stored: String = connection.query_row(
+        "SELECT edit FROM history WHERE revision_id='primary'",
+        [],
+        |row| row.get(0),
+    )?;
+    let edit: EditTransaction = serde_json::from_str(&stored)?;
+    let mut forged = serde_json::to_value(&edit)?;
+    forged["inverse"] = serde_json::to_value(&edit.inverse)?;
+    for pointer in [
+        "/forward/presentation/after/basis/width",
+        "/inverse/presentation/before/basis/width",
+    ] {
+        *forged.pointer_mut(pointer).ok_or(pointer)? = serde_json::json!(18);
+    }
+    let forged_edit: EditTransaction = serde_json::from_value(forged.clone())?;
+    assert_eq!(forged_edit.inverse, forged_edit.forward.inverse());
+    let forged = forged.to_string();
+    connection.execute(
+        "UPDATE history SET edit=?1 WHERE revision_id='primary'",
+        [forged.as_str()],
+    )?;
+    // Keep the stored bounds covering the longer row and wider document.
+    let growth = forged.len().saturating_sub(stored.len()) as i64 + 64;
+    connection.execute(
+        "UPDATE revisions SET json_bound=json_bound+?1 WHERE id='primary' OR (depth>0 AND rowid>(SELECT rowid FROM revisions WHERE id='primary'))",
+        [growth],
+    )?;
+    drop(connection);
     let opened = ProjectStore::open(&path, AccessMode::ReadOnly);
     assert!(
         matches!(&opened, Err(StoreError::SourceRegistration(message)) if message.contains("measured geometry")),

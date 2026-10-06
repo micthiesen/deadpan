@@ -1228,10 +1228,13 @@ fn run(beats: Vec<Beat>, ops: Vec<Op>) -> Result<(), TestCaseError> {
     Ok(())
 }
 
+/// A fixed seed: every run explores the same cases, so a coverage or
+/// property result is reproducible rather than depending on the run.
 fn config(cases: u32) -> Config {
     Config {
         cases,
         failure_persistence: None,
+        rng_seed: proptest::test_runner::RngSeed::Fixed(0x6465_6164_7061_6e31),
         ..Config::default()
     }
 }
@@ -1254,13 +1257,11 @@ proptest! {
 fn generated_sequences_commit_every_command_family() {
     let mut runner = proptest::test_runner::TestRunner::new(config(1));
     let mut committed = BTreeSet::new();
-    let ops_strategy = prop::collection::vec(operation(), 12);
-    let beats_strategy = prop::collection::vec(beat(), 3..=6);
-    for _ in 0..400 {
-        let beats = beats_strategy.new_tree(&mut runner).unwrap().current();
-        let ops = ops_strategy.new_tree(&mut runner).unwrap().current();
+    // Apply `ops` to a fresh document of `beats`, recording each committed
+    // family.
+    let run_ops = |beats: &[Beat], ops: Vec<Op>, committed: &mut BTreeSet<String>| {
         let mut state = Runner {
-            document: document(&beats),
+            document: document(beats),
             step: 0,
             ids: 0,
             history: Vec::new(),
@@ -1288,6 +1289,36 @@ fn generated_sequences_commit_every_command_family() {
                 state.document = after;
             }
         }
+    };
+    // A directed prelude for the families that need a precondition the
+    // generator reaches rarely: a Repeat with a positive gap to isolate.
+    run_ops(
+        &[Beat::Hold(4), Beat::Source(8), Beat::Hold(6)],
+        vec![
+            Op::RepeatChild { pick: 0, plays: 3 },
+            Op::SetRepeatPlays { pick: 0, plays: 4 },
+            Op::SetRepeatGaps { pick: 0, frames: 2 },
+            Op::IsolateGap { pick: 0, play: 1 },
+        ],
+        &mut committed,
+    );
+    for family in [
+        "RepeatChild",
+        "SetRepeatPlays",
+        "SetRepeatGaps",
+        "IsolateGap",
+    ] {
+        assert!(
+            committed.contains(family),
+            "the prelude did not commit {family}"
+        );
+    }
+    let ops_strategy = prop::collection::vec(operation(), 12);
+    let beats_strategy = prop::collection::vec(beat(), 3..=6);
+    for _ in 0..400 {
+        let beats = beats_strategy.new_tree(&mut runner).unwrap().current();
+        let ops = ops_strategy.new_tree(&mut runner).unwrap().current();
+        run_ops(&beats, ops, &mut committed);
     }
     let expected = [
         "Split",

@@ -7,7 +7,9 @@ use std::time::{Duration, Instant};
 
 use deadpan_cli::picture::{PreparedPicture, ProjectPictureSession, SourceAdmission};
 use deadpan_core::{NodeKind, ProjectFrame};
-use deadpan_media::source_session::{IndexMeasurement, interactive_decode_threads};
+use deadpan_media::source_session::{
+    IndexMeasurement, interactive_decode_threads, interactive_decode_threads_for,
+};
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
 
@@ -36,10 +38,16 @@ pub fn run(options: &Options) -> Result<Value> {
     // that measurement runs, and `verified_ms` records when it completes.
     let mut frames = 0;
     let mut cold_reports = serde_json::Map::new();
+    // `--admissions progressive` skips the slow complete admission, e.g. when
+    // profiling only the interactive path; the default measures both.
+    let admissions = options.text("admissions").unwrap_or("complete,progressive");
     for (name, admission) in [
         ("complete", SourceAdmission::Complete),
         ("progressive", SourceAdmission::Progressive),
-    ] {
+    ]
+    .into_iter()
+    .filter(|(name, _)| admissions.split(',').any(|selected| selected == *name))
+    {
         let mut cold_open = Vec::new();
         let mut cold_first = Vec::new();
         let mut cold_total = Vec::new();
@@ -180,6 +188,7 @@ pub fn run(options: &Options) -> Result<Value> {
         "project_frames": frames,
         "source_gop": gop,
         "decode_threads": interactive_decode_threads(),
+        "decode_threads_for_canvas": interactive_decode_threads_for(basis.width, basis.height),
         "cold_state": "session-cold, page-cache-warm: each sample opens a new picture session (verified private snapshot copy, SHA-256, decoder; complete admission also measures the full index first) but the OS file cache is not purged (that needs root), so only the first sample can include disk reads",
         "cold": cold_reports,
         "measuring_seek": {

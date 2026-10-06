@@ -11,7 +11,9 @@ latency, storage and open time superseded by
 [timing-storage-2026-10-05](qualification/timing-storage-2026-10-05.md) and then
 [incremental-commit-2026-10-05](qualification/incremental-commit-2026-10-05.md) and then
 [command-work-2026-10-05](qualification/command-work-2026-10-05.md), which also
-records idle CPU. A target
+records idle CPU. [pause-and-cold-seek-2026-10-06](qualification/pause-and-cold-seek-2026-10-06.md)
+supersedes edit latency on 10,000 beats and the cold, warm 4K and
+refinement seek rows. A target
 without a measured workload is open, never passed.
 
 ## Run the suite
@@ -53,8 +55,9 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
     openings;
   - cold: a new reader to the first picture;
   - warm: decode plus Metal completion;
-  - refinement: a proxy seek, the 150 ms rest, then the exact Original
-    picture from a warm, verified preview session.
+  - refinement: a proxy seek, the worker's 30 ms rest for an isolated
+    request (`ISOLATED_REFINE_DELAY`; scrubbing keeps 150 ms), then the
+    exact Original picture from a warm, verified preview session.
 
   Originals that need no proxy (at or below 1080p) report
   `"status": "not_needed"`. `perf proxy-build PACKAGE --proxy-cache DIR
@@ -62,7 +65,8 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   playback and edits.
 - `perf edit PACKAGE --kinds split,pause,wrap` measures only the named edit
   kinds (Undo follows each wrap), for attributing one path under a sampling
-  profiler such as `sample`.
+  profiler such as `sample`. `perf seek PACKAGE --admissions progressive`
+  skips the slow complete (export) admission in the same way.
 - `--quick` shortens fixtures and sample counts for a smoke run; every target
   row is then INFO. `--stages` selects a subset of
   `doctor,scale,seek,edit,playback,export,ui`. `--audition-seconds` sets the
@@ -95,7 +99,7 @@ like workloads and the same summary schema.
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
 | Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (the cached validated head and its plan compiled in that validation scope, as the native workspace does) on real and 10,000-beat packages, without the picture. It then reopens the edited package writable and read-only and reports `reopen_*` times and `reopen_validation`. |
-| Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks, Original and preview proxy; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary with progressive (preview) admission, the persistent threaded decoder and the shared Metal pipeline, on real long-GOP media at full canvas. Warm samples start after the background index measurement has verified; `measuring_seek` samples random seeks while it still runs. `decode_threads` records the serving codec thread count. `proxy.warm_seek` measures the same random seeks through the verified [preview proxy](PROXIES.md), which the native viewer shows first for a stopped seek. `proxy.refinement.refined_ms` is the latency until the exact Original picture replaces it, including the 150 ms rest. |
+| Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks, Original and preview proxy; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary with progressive (preview) admission, the persistent threaded decoder and the shared Metal pipeline, on real long-GOP media at full canvas. Warm samples start after the background index measurement has verified; `measuring_seek` samples random seeks while it still runs. `decode_threads` records the default serving codec thread count and `decode_threads_for_canvas` the count for a stream of the canvas raster (more above 1080p). `proxy.warm_seek` measures the same random seeks through the verified [preview proxy](PROXIES.md), which the native viewer shows first for a stopped seek. `proxy.refinement.refined_ms` is the latency until the exact Original picture replaces it, including the worker's rest before refining an isolated request (30 ms; 150 ms while the cursor keeps moving). |
 | Cold long-GOP seek, < 300 ms | `perf seek` cold samples (10 per admission mode) | Session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, decoder, first picture), but the OS file cache is not purged. `cold.progressive` is the preview path (receipt-verified pictures while the complete measurement runs; `verified_ms` is when it finishes); `cold.complete` is the export path, which measures the whole index before its first picture. Retaining the previous picture while loading is a UI property not measured here. |
 | Playback 1080p60 and 4K30 | `perf playback` on the generated fixtures; `perf seek` frame stepping | Real device audio; pictures follow the heard clock, newest frame wins, skipped frames count as dropped. Decode and Metal completion only: no window, compositor or display scanout. |
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |

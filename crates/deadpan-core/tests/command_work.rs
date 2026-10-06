@@ -702,10 +702,18 @@ fn run(seed: u64, steps: usize, variant: Variant, coverage: &mut Coverage) {
 #[test]
 fn local_command_work_equals_the_reference_on_random_edit_sequences() {
     let mut coverage = Coverage::default();
+    let provisional = deadpan_core::provisional_captures_for_tests();
     for seed in 1..=48 {
         let variant = [Variant::Holds, Variant::Sources, Variant::Sounds][(seed % 3) as usize];
         run(seed, 40, variant, &mut coverage);
     }
+    // Pauses built provisional timing slices, and some were extended by
+    // later resume terms, so both paths match the complete captures.
+    let (built, extended) = deadpan_core::provisional_captures_for_tests();
+    assert!(
+        built - provisional.0 >= 20 && extended - provisional.1 >= 1,
+        "provisional captures {built} (extended {extended})"
+    );
     // Every command kind commits, refusals occur, and the results carry the
     // lineage, marks and retained clocks the replaced steps read.
     for kind in [

@@ -30,6 +30,10 @@ pub enum StoreError {
     #[error("Unsupported database schema {0}; the project has not been rewritten")]
     UnsupportedSchema(u32),
     #[error(
+        "This project was saved by a newer Deadpan (database schema {found}; this build supports {supported}). It can only be opened read-only; nothing in it has been changed"
+    )]
+    NewerSchema { found: u32, supported: u32 },
+    #[error(
         "Project schema {0} requires migration; run `deadpan-cli project migrate <project.deadpan>` to back up and upgrade its complete history"
     )]
     MigrationRequired(u32),
@@ -130,6 +134,7 @@ impl StoreError {
             Self::ReadOnly | Self::ReadOnlyLocation(_) => "ProjectReadOnly",
             Self::HostOwner(_) => "HostOwnerUnavailable",
             Self::UnsupportedSchema(_) => "SchemaUnsupported",
+            Self::NewerSchema { .. } => "SchemaNewer",
             Self::MigrationRequired(_) => "MigrationRequired",
             Self::MigrationBusy => "ProjectBusy",
             Self::MigrationFailed { source, .. } => match source.code() {

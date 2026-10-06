@@ -1264,16 +1264,25 @@ impl AudioBindingState {
         let mut nodes = 0usize;
         let mut runs = 0usize;
         for layout in self.timings.values() {
-            work.spend(layout.nodes().len() + layout.audio_lineage().len())?;
+            // A provisional slice charges the complete layout it stands in
+            // for, so these limits decide as they would for that layout.
+            work.spend(layout.charged_nodes() + layout.charged_lineage())?;
             nodes = nodes
-                .checked_add(layout.nodes().len())
+                .checked_add(layout.charged_nodes())
                 .ok_or_else(|| limit("audio timing node overflow"))?;
-            for node in layout.nodes().values() {
-                if let FrozenAudioKind::Repeat { iterations, .. } = &node.kind {
-                    work.spend(iterations.segment_count())?;
-                    runs = runs
-                        .checked_add(iterations.segment_count())
-                        .ok_or_else(|| limit("audio timing run overflow"))?;
+            if layout.is_provisional() {
+                work.spend(layout.charged_runs())?;
+                runs = runs
+                    .checked_add(layout.charged_runs())
+                    .ok_or_else(|| limit("audio timing run overflow"))?;
+            } else {
+                for node in layout.nodes().values() {
+                    if let FrozenAudioKind::Repeat { iterations, .. } = &node.kind {
+                        work.spend(iterations.segment_count())?;
+                        runs = runs
+                            .checked_add(iterations.segment_count())
+                            .ok_or_else(|| limit("audio timing run overflow"))?;
+                    }
                 }
             }
             if nodes > MAX_AUDIO_BINDING_ENTRIES || runs > MAX_AUDIO_BINDING_ENTRIES {
@@ -1306,21 +1315,26 @@ impl AudioBindingState {
             .map(|patch| patch.timings.iter().map(|change| &change.id).collect())
             .unwrap_or_default();
         let mut entries = 0usize;
+        // Owners arrive sorted within each kind, as the proof's entries do,
+        // so the proof is read by advancing cursors rather than lookups.
+        let mut proved = previous.map(|(proof, _)| ProofCursor::new(proof));
+        let mut last_used: Option<&AudioTimingId> = None;
         for (kind, owner, binding) in self.owners() {
             // An unchanged owner's proved placement work, when reusable.
-            let reused = previous.and_then(|(proof, patch)| {
+            let reused = previous.and_then(|(_, patch)| {
                 let changed = patch.is_some_and(|patch| {
                     let bindings = match kind {
                         AudioRecipeKind::Node => &patch.bindings,
                         AudioRecipeKind::RepeatGap => &patch.gap_bindings,
                     };
                     bindings.contains_key(owner)
-                        || binding
-                            .placements()
-                            .any(|template| changed_timings.contains(&template.reference.timing))
+                        || (!changed_timings.is_empty()
+                            && binding.placements().any(|template| {
+                                changed_timings.contains(&template.reference.timing)
+                            }))
                 });
                 (!changed)
-                    .then(|| proof.get(kind, owner))
+                    .then(|| proved.as_mut().and_then(|proved| proved.get(kind, owner)))
                     .flatten()
                     .filter(|spent| {
                         work.maximum
@@ -1382,7 +1396,11 @@ impl AudioBindingState {
                 if reused.is_none() {
                     template.validate_with(layout, &mut work)?;
                 }
-                used.insert(&template.reference.timing);
+                // Consecutive owners usually name the same table.
+                if last_used != Some(&template.reference.timing) {
+                    used.insert(&template.reference.timing);
+                    last_used = Some(&template.reference.timing);
+                }
             }
             if let Some(spent) = reused {
                 work.spend(spent)?;
@@ -1467,23 +1485,33 @@ impl AudioBindingState {
         }
         // The document's tree was validated before its bindings, so every
         // child has one parent and the map is independent of visiting order.
-        let mut parents = std::collections::HashMap::with_capacity(document.nodes().len());
+        // Each parent is stored with whether it is a Repeat.
+        let mut parents = crate::id_hash::id_map(document.nodes().len());
+        let no_overrides = document.overrides().is_empty() && document.gap_overrides().is_empty();
         for (parent, node) in document.nodes() {
             work.spend(1)?;
+            let entry = (parent, matches!(node.kind, NodeKind::Repeat { .. }));
+            for child in node.kind.children() {
+                parents.insert(child, entry);
+            }
+            if no_overrides {
+                continue;
+            }
             let overrides = document
                 .overrides()
                 .get(parent)
                 .into_iter()
                 .chain(document.gap_overrides().get(parent))
                 .flat_map(|entries| entries.iter().map(|(_, root)| root));
-            for child in node.kind.children().iter().chain(overrides) {
-                parents.insert(child, parent);
+            for child in overrides {
+                parents.insert(child, entry);
             }
         }
+        // Owners arrive sorted within each kind, as the nodes do.
+        let mut owner_nodes = OwnerNodes::new(document);
         for (kind, owner, binding) in self.owners() {
-            let node = document
-                .nodes()
-                .get(owner)
+            let node = owner_nodes
+                .get(kind, owner)
                 .ok_or_else(|| invalid("audio binding owner is missing"))?;
             if binding
                 .reanchors
@@ -1548,14 +1576,14 @@ impl AudioBindingState {
             let mut ancestors = Vec::new();
             let mut node = owner;
             let mut depth = 0usize;
-            while let Some(parent) = parents.get(node) {
+            while let Some(&(parent, repeat)) = parents.get(node) {
                 work.spend(1)?;
                 if depth >= MAX_DOCUMENT_DEPTH {
                     return Err(limit("live audio binding depth"));
                 }
                 depth += 1;
-                if matches!(document.nodes()[*parent].kind, NodeKind::Repeat { .. }) {
-                    ancestors.push(*parent);
+                if repeat {
+                    ancestors.push(parent);
                 }
                 node = parent;
             }
@@ -1868,7 +1896,7 @@ impl AudioBindingState {
             .is_some_and(|bound| bound <= MAX_DOCUMENT_JSON_BYTES)
         {
             #[cfg(debug_assertions)]
-            {
+            if !self.has_provisional_timings() {
                 let exact = serde_json::to_vec(self).map_or(usize::MAX, |json| json.len());
                 debug_assert!(
                     self.wire_bound().is_some_and(|bound| exact <= bound),
@@ -1885,6 +1913,18 @@ impl AudioBindingState {
                 DocumentError::json(error)
             }
         })
+    }
+
+    /// Whether the byte bound alone proves [`Self::check_wire_size`]. A
+    /// state holding a provisional timing table must pass this before that
+    /// check: only the complete table could be counted exactly.
+    pub(crate) fn wire_bound_fits(&self) -> bool {
+        self.wire_bound()
+            .is_some_and(|bound| bound <= MAX_DOCUMENT_JSON_BYTES)
+    }
+
+    pub(crate) fn has_provisional_timings(&self) -> bool {
+        self.timings.values().any(FrozenAudioLayout::is_provisional)
     }
 
     #[cfg(any(test, feature = "test-support"))]
@@ -1904,7 +1944,7 @@ impl AudioBindingState {
             total = total
                 .checked_add(identity(id.allocation.as_str().len())?)?
                 .checked_add(64)?
-                .checked_add(layout.wire_bytes().ok()?)?;
+                .checked_add(layout.wire_bound_bytes().ok()?)?;
         }
         for (owner, binding) in self.bindings.iter().chain(&self.gap_bindings) {
             // `"owner":…,`
@@ -2368,15 +2408,76 @@ pub struct BindingProof {
     gaps: BTreeMap<NodeId, usize>,
 }
 
-impl BindingProof {
-    fn get(&self, kind: AudioRecipeKind, owner: &NodeId) -> Option<usize> {
+/// Ordered lookup of one owner kind's entries in a sorted map, for owners
+/// visited in ascending order: each lookup only advances a cursor.
+struct SortedCursor<'a, V> {
+    entries: std::iter::Peekable<std::collections::btree_map::Iter<'a, NodeId, V>>,
+}
+
+impl<'a, V> SortedCursor<'a, V> {
+    fn new(map: &'a BTreeMap<NodeId, V>) -> Self {
+        Self {
+            entries: map.iter().peekable(),
+        }
+    }
+
+    /// The entry for `key`, which must not be less than any earlier key.
+    fn get(&mut self, key: &NodeId) -> Option<&'a V> {
+        while self.entries.next_if(|(entry, _)| *entry < key).is_some() {}
+        self.entries
+            .peek()
+            .filter(|(entry, _)| *entry == key)
+            .map(|(_, value)| *value)
+    }
+}
+
+/// [`BindingProof`] entries for owners in `AudioBindingState::owners` order.
+struct ProofCursor<'a> {
+    nodes: SortedCursor<'a, usize>,
+    gaps: SortedCursor<'a, usize>,
+}
+
+impl<'a> ProofCursor<'a> {
+    fn new(proof: &'a BindingProof) -> Self {
+        Self {
+            nodes: SortedCursor::new(&proof.nodes),
+            gaps: SortedCursor::new(&proof.gaps),
+        }
+    }
+
+    fn get(&mut self, kind: AudioRecipeKind, owner: &NodeId) -> Option<usize> {
         match kind {
             AudioRecipeKind::Node => self.nodes.get(owner),
             AudioRecipeKind::RepeatGap => self.gaps.get(owner),
         }
         .copied()
     }
+}
 
+/// Document nodes for owners in `AudioBindingState::owners` order: Node
+/// owners ascending, then gap owners ascending.
+struct OwnerNodes<'a> {
+    nodes: SortedCursor<'a, crate::BeatNode>,
+    gaps: SortedCursor<'a, crate::BeatNode>,
+}
+
+impl<'a> OwnerNodes<'a> {
+    fn new(document: &'a ProjectDocument) -> Self {
+        Self {
+            nodes: SortedCursor::new(document.nodes()),
+            gaps: SortedCursor::new(document.nodes()),
+        }
+    }
+
+    fn get(&mut self, kind: AudioRecipeKind, owner: &NodeId) -> Option<&'a crate::BeatNode> {
+        match kind {
+            AudioRecipeKind::Node => self.nodes.get(owner),
+            AudioRecipeKind::RepeatGap => self.gaps.get(owner),
+        }
+    }
+}
+
+impl BindingProof {
     fn from_owners(owners: Vec<(AudioRecipeKind, &NodeId, usize)>) -> Self {
         // Owners arrive sorted within each kind, so both maps build in bulk.
         let mut nodes = Vec::new();

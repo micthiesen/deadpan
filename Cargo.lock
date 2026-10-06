@@ -1055,6 +1055,8 @@ name = "deadpan-filesystem"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "objc2 0.6.4",
+ "objc2-foundation 0.3.2",
  "tempfile",
 ]
 
@@ -1222,6 +1224,7 @@ dependencies = [
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-fileclone",
+ "deadpan-filesystem",
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-native-process",

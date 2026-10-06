@@ -260,3 +260,65 @@ fn dropping_a_measuring_session_cancels_and_joins_its_thread() {
         assert!(started.elapsed() < Duration::from_secs(1));
     }
 }
+
+/// A store-verified private snapshot serves through progressive admission
+/// without a second copy: the same pictures and verdict as copying, and an
+/// identity that names other bytes is refused before any decoder opens.
+#[test]
+fn an_adopted_private_snapshot_serves_like_a_copied_one() {
+    use deadpan_media::source_input::VerifiedSourceInput;
+    use std::io::Write;
+    let cancelled = AtomicBool::new(false);
+    let bytes = fixture("cfr-bframes.mp4");
+    let mut reference = complete(&bytes);
+    let snapshot = |bytes: &[u8]| {
+        let mut file = tempfile::tempfile().unwrap();
+        file.write_all(bytes).unwrap();
+        file
+    };
+    let input =
+        VerifiedSourceInput::from_store_verified_snapshot(snapshot(&bytes), identity(&bytes))
+            .unwrap();
+    let mut session = SourceSession::open_admitted_input(
+        input,
+        Arc::new(reference.index().clone()),
+        reference.info(),
+        limits(8),
+        &cancelled,
+    )
+    .unwrap();
+    let count = reference.index().index().frames().len() as u64;
+    for id in [count - 1, 0, count / 2, count / 2 + 1] {
+        let expected = reference
+            .frame(SourceFrameId(id), TIMEOUT, &cancelled)
+            .unwrap();
+        let actual = session
+            .frame(SourceFrameId(id), TIMEOUT, &cancelled)
+            .unwrap();
+        assert_eq!(actual.rgba, expected.rgba, "{id}");
+    }
+    assert_eq!(
+        session.wait_measured(Duration::from_secs(30)),
+        IndexMeasurement::Verified
+    );
+    // A snapshot whose length differs from its claimed identity is refused,
+    // and so is an identity that is not the receipt's content.
+    assert!(
+        VerifiedSourceInput::from_store_verified_snapshot(snapshot(&bytes[1..]), identity(&bytes))
+            .is_err()
+    );
+    let other = fixture("vfr.mp4");
+    let input =
+        VerifiedSourceInput::from_store_verified_snapshot(snapshot(&other), identity(&other))
+            .unwrap();
+    assert!(matches!(
+        SourceSession::open_admitted_input(
+            input,
+            Arc::new(reference.index().clone()),
+            reference.info(),
+            limits(8),
+            &cancelled,
+        ),
+        Err(SourceSessionError::IndexMismatch)
+    ));
+}

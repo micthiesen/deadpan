@@ -153,7 +153,8 @@ fn a_seek_shows_the_proxy_then_refines_to_the_exact_original_picture() {
     );
 
     let refined = await_reply(&worker);
-    assert!(started.elapsed() >= REFINE_DELAY);
+    // An isolated seek refines after the short rest only.
+    assert!(started.elapsed() >= ISOLATED_REFINE_DELAY);
     assert_eq!(
         refined.ticket.request, serial,
         "refinement keeps the request"
@@ -228,6 +229,43 @@ fn a_newer_seek_before_the_rest_period_cancels_refinement() {
     );
     std::thread::sleep(REFINE_DELAY * 2);
     assert!(worker.take_reply().is_none());
+    worker.shutdown();
+}
+
+/// A seek that follows another within `REFINE_DELAY` is scrubbing: its
+/// refinement waits the full rest, not the isolated one.
+#[test]
+fn a_moving_cursor_waits_the_full_rest_before_refining() {
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let workspace = fixture.workspace(1);
+    let (_directory, cache) = cache();
+    publish_proxy(&fixture, &workspace, &cache);
+    let worker = proxy_worker(&cache);
+    let mut serial = 0;
+    until_proxy(&worker, &workspace, &mut serial);
+    std::thread::sleep(REFINE_DELAY * 2);
+    while worker.take_reply().is_some() {}
+    // Backward from the Original decoder's position, so each needs a seek.
+    for (offset, frame) in [(1, 3), (2, 1)] {
+        let seek = request(&workspace, sequence(frame), serial + offset);
+        worker.submit(seek.ticket, seek.work);
+        assert_eq!(
+            await_reply(&worker).picture.unwrap().tier,
+            PictureTier::Proxy
+        );
+    }
+    let proxied = Instant::now();
+    std::thread::sleep(ISOLATED_REFINE_DELAY * 2);
+    if proxied.elapsed() < REFINE_DELAY {
+        assert!(
+            worker.take_reply().is_none(),
+            "a scrubbing seek must not refine after the isolated rest"
+        );
+    }
+    let refined = await_reply(&worker);
+    assert!(proxied.elapsed() >= REFINE_DELAY - ISOLATED_REFINE_DELAY);
+    assert_eq!(refined.ticket.request, serial + 2);
+    assert_eq!(refined.picture.unwrap().tier, PictureTier::Original);
     worker.shutdown();
 }
 

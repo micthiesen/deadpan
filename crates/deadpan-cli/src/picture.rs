@@ -517,7 +517,10 @@ impl ProjectPictureSession {
             .ok_or_else(|| evidence("qualified video stream is absent"))?;
         let limits = match self.admission {
             SourceAdmission::Complete => SourceSessionLimits::default(),
-            SourceAdmission::Progressive => SourceSessionLimits::interactive(),
+            SourceAdmission::Progressive => SourceSessionLimits::interactive_for(
+                expected.interpretation().width,
+                expected.interpretation().height,
+            ),
         };
         validate_raster(
             expected.interpretation().width,
@@ -535,7 +538,7 @@ impl ProjectPictureSession {
         let original_limits =
             OriginalMediaLimits::new(limits.decode.max_input_bytes, limits.opening_timeout)
                 .map_err(StoreError::from)?;
-        let mut snapshot = self.store.snapshot_original(
+        let snapshot = self.store.snapshot_original(
             receipt.original().content(),
             original_limits,
             cancelled,
@@ -547,19 +550,18 @@ impl ProjectPictureSession {
             return Err(evidence("verified original differs from receipt"));
         }
         check_cancel(cancelled)?;
+        // The store's snapshot is already a private copy verified against
+        // these exact bytes; decoders read it without copying it again.
+        let input = snapshot.into_source_input(expected.index().content())?;
         let source = match self.admission {
-            SourceAdmission::Complete => SourceSession::open_verified(
-                &mut snapshot,
-                expected.index().content(),
-                asset.clone(),
-                limits,
-                cancelled,
-            )?,
+            SourceAdmission::Complete => {
+                SourceSession::open_input(input, asset.clone(), limits, cancelled)?
+            }
             // Its index is the receipt's (under this revision's alias) and its
             // stream metadata was compared at open; the fresh measurement runs
             // in the background, so there is nothing further to compare here.
-            SourceAdmission::Progressive => SourceSession::open_admitted(
-                &mut snapshot,
+            SourceAdmission::Progressive => SourceSession::open_admitted_input(
+                input,
                 Arc::new(
                     expected
                         .index()

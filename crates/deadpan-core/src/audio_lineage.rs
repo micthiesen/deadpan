@@ -200,19 +200,43 @@ fn changed_closure(before: &ProjectDocument, after: &ProjectDocument) -> BTreeSe
     if changed.is_empty() {
         return changed;
     }
-    let mut parents: std::collections::HashMap<&NodeId, Vec<&NodeId>> =
-        std::collections::HashMap::with_capacity(before.nodes.len().max(after.nodes.len()));
+    // Every parent of each child in either document, in the same order as
+    // before. Almost every child has one parent per document, so the first
+    // two are stored inline and only further ones allocate.
+    #[derive(Default)]
+    struct Parents<'a> {
+        inline: [Option<&'a NodeId>; 2],
+        more: Vec<&'a NodeId>,
+    }
+    let mut parents: crate::id_hash::IdMap<&NodeId, Parents<'_>> =
+        crate::id_hash::id_map(before.nodes.len().max(after.nodes.len()));
     for document in [before, after] {
-        for parent in document.nodes.keys() {
-            for child in document.children(parent) {
-                parents.entry(child).or_default().push(parent);
+        let plain = document.overrides.is_empty() && document.gap_overrides.is_empty();
+        for (parent, node) in &document.nodes {
+            let branches = (!plain)
+                .then(|| {
+                    document
+                        .overrides
+                        .get(parent)
+                        .into_iter()
+                        .chain(document.gap_overrides.get(parent))
+                        .flat_map(|entries| entries.iter().map(|(_, root)| root))
+                })
+                .into_iter()
+                .flatten();
+            for child in node.kind.children().iter().chain(branches) {
+                let entry = parents.entry(child).or_default();
+                match entry.inline.iter_mut().find(|slot| slot.is_none()) {
+                    Some(slot) => *slot = Some(parent),
+                    None => entry.more.push(parent),
+                }
             }
         }
     }
     let mut pending: Vec<_> = changed.iter().cloned().collect();
     while let Some(id) = pending.pop() {
         if let Some(ancestors) = parents.get(&id) {
-            for parent in ancestors {
+            for parent in ancestors.inline.iter().flatten().chain(&ancestors.more) {
                 if changed.insert((*parent).clone()) {
                     pending.push((*parent).clone());
                 }

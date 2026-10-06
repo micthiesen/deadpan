@@ -7246,8 +7246,10 @@ mode-key group 47 cases: A none, A shift, A ctrl, A alt, A command, A mac-cmd, A
 mode-key group 48 answers: same | None | same | None | None | None | None | None | None | None | None | None | None | same | same | same
 mode-key group 48 cases: H none, H shift, H ctrl, H alt, H command, H mac-cmd, H shift-command, H shift-mac-cmd, H ctrl-shift, H ctrl-alt, H ctrl-command, H ctrl-mac-cmd, H alt-command, H alt-mac-cmd, H mac-cmd-only
 panel ArrowDown none -> jobs Next
+panel ArrowDown none -> storage NextBackup
 panel ArrowDown none -> keys-sheet LineDown
 panel ArrowUp none -> jobs Previous
+panel ArrowUp none -> storage PreviousBackup
 panel ArrowUp none -> keys-sheet LineUp
 panel Escape none -> keys-sheet Close
 panel Home none -> keys-sheet Top
@@ -7255,13 +7257,17 @@ panel End none -> keys-sheet Bottom
 panel PageUp none -> keys-sheet PageUp
 panel PageDown none -> keys-sheet PageDown
 panel Slash none -> keys-sheet Search
+panel B none -> storage BackUp
 panel C none -> storage CleanCaches
 panel D none -> jobs Discard
 panel I ctrl -> marks true
 panel J none -> jobs Next
+panel J none -> storage NextBackup
 panel J none -> keys-sheet LineDown
 panel K none -> jobs Previous
+panel K none -> storage PreviousBackup
 panel K none -> keys-sheet LineUp
+panel O none -> storage Restore
 panel O ctrl -> marks false
 panel P none -> storage Preview
 panel R none -> jobs Retry

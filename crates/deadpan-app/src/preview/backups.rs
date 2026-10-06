@@ -1,0 +1,444 @@
+//! The Storage panel's BACKUPS section: the project's verified backups,
+//! what each one holds, backing up now and restoring one
+//! (docs/BACKUPS.md).
+//!
+//! `:backups` opens the Storage panel on this section. J/K or the arrows
+//! choose a backup; its revision, beats, length and edit count are read from
+//! the backup on a background thread. B backs up now. O asks to restore the
+//! chosen backup and a second O restores it: the project service backs up
+//! the current state first, replaces the database and opens the result as
+//! a new session. Listing and previews never use the project writer.
+
+use std::sync::mpsc;
+
+use deadpan_store::backups::{BackupInfo, BackupPreview, list_backups, preview_backup};
+
+use super::*;
+use crate::project::backups::{Request, Update};
+
+type Listing = mpsc::Receiver<Result<Vec<BackupInfo>, String>>;
+type Previewing = mpsc::Receiver<Result<BackupPreview, String>>;
+
+#[derive(Default)]
+pub(super) struct View {
+    list: Option<Result<Vec<BackupInfo>, String>>,
+    loading: Option<Listing>,
+    selected: usize,
+    /// The chosen backup's contents, by id.
+    preview: Option<(String, Result<BackupPreview, String>)>,
+    previewing: Option<(String, Previewing)>,
+    /// The first O: restore this backup of this session on the next O.
+    confirm: Option<(u64, String)>,
+    ticket: u64,
+    pending: Option<u64>,
+    /// The service's backup state of the current session.
+    pub(super) update: Update,
+    pub(super) status: Option<String>,
+    /// Opened by `:backups`: the panel shows only this section.
+    pub(super) only: bool,
+    /// The session the state above belongs to.
+    session: Option<u64>,
+}
+
+#[cfg(feature = "ui-harness")]
+impl View {
+    pub(super) fn listed(&self) -> bool {
+        self.list.is_some() && self.loading.is_none()
+    }
+
+    pub(super) fn count(&self) -> usize {
+        match &self.list {
+            Some(Ok(list)) => list.len(),
+            _ => 0,
+        }
+    }
+
+    /// The chosen backup's contents have been read.
+    pub(super) fn previewed(&self) -> bool {
+        match (&self.list, &self.preview) {
+            (Some(Ok(list)), Some((id, Ok(_)))) => {
+                list.get(self.selected).is_some_and(|info| info.id == *id)
+            }
+            _ => false,
+        }
+    }
+}
+
+/// Seconds as `m:ss.s` or `h:mm:ss`.
+fn length(frames: i64, rate: deadpan_core::FrameRate) -> String {
+    let seconds = frames as f64 * f64::from(rate.denominator()) / f64::from(rate.numerator());
+    let whole = seconds as u64;
+    if whole >= 3600 {
+        format!("{}:{:02}:{:02}", whole / 3600, whole / 60 % 60, whole % 60)
+    } else {
+        format!("{}:{:04.1}", whole / 60, seconds - (whole / 60 * 60) as f64)
+    }
+}
+
+/// One line describing what a backup holds.
+pub(super) fn describe(preview: &BackupPreview) -> String {
+    let count = |count: u64, one: &str, many: &str| {
+        format!("{count} {}", if count == 1 { one } else { many })
+    };
+    format!(
+        "Revision {} · {} · {} long · {}",
+        preview.revision_id.as_str(),
+        count(preview.beats as u64, "beat", "beats"),
+        length(preview.duration_frames, preview.frame_rate),
+        count(preview.edits, "edit", "edits")
+    )
+}
+
+fn row(info: &BackupInfo) -> String {
+    format!(
+        "{} · {} · {}",
+        crate::project::backups::age(info.created_unix_ms),
+        info.reason.label(),
+        storage::bytes(info.database_bytes)
+    )
+}
+
+impl DeadpanApp {
+    /// List backups again, off the UI thread.
+    pub(super) fn refresh_backups(&mut self) {
+        let Some(package) = self
+            .workspace
+            .as_ref()
+            .map(|workspace| workspace.path.clone())
+        else {
+            self.storage.backups.list = None;
+            return;
+        };
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let spawned = std::thread::Builder::new()
+            .name("deadpan-backup-list".into())
+            .spawn(move || {
+                let _ = sender.send(list_backups(&package).map_err(|error| error.to_string()));
+            });
+        match spawned {
+            Ok(_) => self.storage.backups.loading = Some(receiver),
+            Err(error) => self.storage.backups.status = Some(error.to_string()),
+        }
+    }
+
+    /// `:backups`: the Storage panel, on its backups.
+    pub(super) fn open_backups(&mut self, context: &egui::Context) {
+        self.open_storage(context);
+        self.storage.backups.only = true;
+        self.storage.backups.status =
+            Some("J/K choose a backup, B backs up now, O restores the chosen one.".into());
+    }
+
+    /// Admit the service's backup state for the current session.
+    pub(super) fn receive_backups(&mut self, update: Update) {
+        let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        let view = &mut self.storage.backups;
+        let changed = view.session != session;
+        view.session = session;
+        if changed {
+            // A restore's reply arrives with its new session; anything else
+            // pending belonged to a session that is gone.
+            view.confirm = None;
+            if update.reply.as_ref().map(|reply| reply.ticket) != view.pending {
+                view.pending = None;
+            }
+        }
+        if Some(update.session) != session {
+            return;
+        }
+        let published = update.latest.as_ref().map(|(info, _)| info.id.clone())
+            != view.update.latest.as_ref().map(|(info, _)| info.id.clone());
+        if let Some(reply) = &update.reply
+            && view.pending == Some(reply.ticket)
+        {
+            view.pending = None;
+            view.confirm = None;
+            view.status = Some(match &reply.result {
+                Ok(message) => message.clone(),
+                Err(error) => error.clone(),
+            });
+        }
+        view.update = update;
+        if published && self.storage.open {
+            self.refresh_backups();
+        }
+    }
+
+    pub(super) fn reconcile_backups(&mut self, context: &egui::Context) {
+        let view = &mut self.storage.backups;
+        if view.confirm.as_ref().is_some_and(|(session, _)| {
+            Some(*session) != self.workspace.as_ref().map(|w| w.session)
+        }) {
+            view.confirm = None;
+        }
+        if let Some(receiver) = &view.loading {
+            match receiver.try_recv() {
+                Ok(list) => {
+                    view.loading = None;
+                    if let Ok(list) = &list {
+                        view.selected = view.selected.min(list.len().saturating_sub(1));
+                    }
+                    view.list = Some(list);
+                    self.preview_selected_backup();
+                }
+                Err(mpsc::TryRecvError::Empty) => {
+                    context.request_repaint_after(std::time::Duration::from_millis(100));
+                }
+                Err(mpsc::TryRecvError::Disconnected) => view.loading = None,
+            }
+        }
+        let view = &mut self.storage.backups;
+        if let Some((id, receiver)) = &view.previewing {
+            match receiver.try_recv() {
+                Ok(preview) => {
+                    let id = id.clone();
+                    view.previewing = None;
+                    view.preview = Some((id, preview));
+                }
+                Err(mpsc::TryRecvError::Empty) => {
+                    context.request_repaint_after(std::time::Duration::from_millis(100));
+                }
+                Err(mpsc::TryRecvError::Disconnected) => view.previewing = None,
+            }
+        }
+    }
+
+    fn selected_backup(&self) -> Option<&BackupInfo> {
+        match &self.storage.backups.list {
+            Some(Ok(list)) => list.get(self.storage.backups.selected),
+            _ => None,
+        }
+    }
+
+    /// Read what the chosen backup holds, unless already read or reading.
+    fn preview_selected_backup(&mut self) {
+        let Some(info) = self.selected_backup().cloned() else {
+            return;
+        };
+        let view = &mut self.storage.backups;
+        if view.preview.as_ref().is_some_and(|(id, _)| *id == info.id)
+            || view
+                .previewing
+                .as_ref()
+                .is_some_and(|(id, _)| *id == info.id)
+        {
+            return;
+        }
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let id = info.id.clone();
+        let spawned = std::thread::Builder::new()
+            .name("deadpan-backup-preview".into())
+            .spawn(move || {
+                let _ = sender.send(preview_backup(&info).map_err(|error| error.to_string()));
+            });
+        if spawned.is_ok() {
+            view.previewing = Some((id, receiver));
+        }
+    }
+
+    pub(super) fn move_backup_selection(&mut self, forward: bool) {
+        let count = match &self.storage.backups.list {
+            Some(Ok(list)) => list.len(),
+            _ => 0,
+        };
+        if count == 0 {
+            return;
+        }
+        let view = &mut self.storage.backups;
+        view.selected = if forward {
+            (view.selected + 1).min(count - 1)
+        } else {
+            view.selected.saturating_sub(1)
+        };
+        if view.confirm.take().is_some() {
+            view.status = Some("Restore cancelled.".into());
+        }
+        self.preview_selected_backup();
+    }
+
+    /// B: back up now, on the service's backup thread.
+    pub(super) fn back_up_now(&mut self) {
+        let Some(session) = self.workspace.as_ref().map(|workspace| workspace.session) else {
+            self.storage.backups.status = Some("Open a project to back it up.".into());
+            return;
+        };
+        if let Some(reason) = self.workspace.as_ref().and_then(|w| w.read_only.clone()) {
+            self.storage.backups.status = Some(format!("Not backed up: {reason}"));
+            return;
+        }
+        if self.storage.backups.pending.is_some() {
+            return;
+        }
+        self.storage.backups.ticket += 1;
+        let ticket = self.storage.backups.ticket;
+        match self
+            .service
+            .submit(crate::project::ProjectRequest::Backup(Request::Now {
+                ticket,
+                expected_session: session,
+            })) {
+            Ok(()) => {
+                self.storage.backups.pending = Some(ticket);
+                self.storage.backups.status = Some("Backing up…".into());
+            }
+            Err(error) => self.storage.backups.status = Some(error),
+        }
+    }
+
+    /// O: the first press asks, the second restores the same backup.
+    pub(super) fn restore_selected_backup(&mut self) {
+        let Some(session) = self.workspace.as_ref().map(|workspace| workspace.session) else {
+            self.storage.backups.status = Some("Open a project to restore a backup.".into());
+            return;
+        };
+        if let Some(reason) = self.workspace.as_ref().and_then(|w| w.read_only.clone()) {
+            self.storage.backups.status = Some(format!("Not restored: {reason}"));
+            return;
+        }
+        if self.storage.backups.pending.is_some() {
+            return;
+        }
+        let Some(info) = self.selected_backup().cloned() else {
+            self.storage.backups.status = Some("There is no backup to restore yet.".into());
+            return;
+        };
+        let confirmed = self.storage.backups.confirm.as_ref() == Some(&(session, info.id.clone()));
+        if !confirmed {
+            let contents = match &self.storage.backups.preview {
+                Some((id, Ok(preview))) if *id == info.id => describe(preview),
+                _ => "its contents are being read".into(),
+            };
+            self.storage.backups.confirm = Some((session, info.id.clone()));
+            self.storage.backups.status = Some(format!(
+                "Restore the backup from {} ({contents})? It replaces the project, history included; what you have now is backed up first. Press O again to restore, or J/K to cancel.",
+                crate::project::backups::age(info.created_unix_ms)
+            ));
+            return;
+        }
+        self.storage.backups.ticket += 1;
+        let ticket = self.storage.backups.ticket;
+        match self
+            .service
+            .submit(crate::project::ProjectRequest::Backup(Request::Restore {
+                ticket,
+                expected_session: session,
+                id: info.id,
+            })) {
+            Ok(()) => {
+                self.storage.backups.pending = Some(ticket);
+                self.storage.backups.status =
+                    Some("Backing up the current state, then restoring…".into());
+            }
+            Err(error) => self.storage.backups.status = Some(error),
+        }
+    }
+
+    /// The BACKUPS section of the Storage panel. Returns a clicked action.
+    pub(super) fn backups_section(&self, ui: &mut egui::Ui, focus: bool) -> Option<char> {
+        let mut action = None;
+        ui.label(style::section_title("BACKUPS", false));
+        let view = &self.storage.backups;
+        if self
+            .workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.read_only.is_some())
+        {
+            ui.label(
+                egui::RichText::new("This project is open read-only; it is not backed up here.")
+                    .size(11.5)
+                    .weak(),
+            );
+            return None;
+        }
+        let line = |ui: &mut egui::Ui, text: String, selected: bool| {
+            let rich = egui::RichText::new(&text).monospace().size(11.5);
+            let response = ui.add(
+                egui::Label::new(if selected {
+                    rich.background_color(style::SELECTED).strong()
+                } else {
+                    rich
+                })
+                .wrap(),
+            );
+            accessibility::full_text(
+                response,
+                &if selected {
+                    format!("Chosen backup: {text}")
+                } else {
+                    text.clone()
+                },
+            );
+        };
+        match &view.list {
+            None => line(ui, "Reading backups…".into(), false),
+            Some(Err(error)) => line(ui, format!("Backups unavailable: {error}"), false),
+            Some(Ok(list)) if list.is_empty() => line(
+                ui,
+                "None yet. Deadpan backs up while you edit, when you close, and before a restore."
+                    .into(),
+                false,
+            ),
+            Some(Ok(list)) => {
+                for (index, info) in list.iter().enumerate() {
+                    line(ui, row(info), index == view.selected);
+                }
+                let contents = match (&view.preview, list.get(view.selected)) {
+                    (Some((id, Ok(preview))), Some(info)) if *id == info.id => describe(preview),
+                    (Some((id, Err(error))), Some(info)) if *id == info.id => {
+                        format!("Cannot be read: {error}")
+                    }
+                    _ => "Reading what it holds…".into(),
+                };
+                ui.label(egui::RichText::new(contents).size(11.5).weak());
+            }
+        }
+        if let Some(reason) = view.update.running {
+            ui.label(
+                egui::RichText::new(format!("Backing up now ({})…", reason.label())).size(11.5),
+            );
+        }
+        if let Some(failure) = &view.update.failure {
+            ui.colored_label(
+                style::WARNING,
+                format!("The last automatic backup failed: {failure}"),
+            );
+        }
+        ui.horizontal_wrapped(|ui| {
+            let project = self.workspace.is_some();
+            let back_up = ui.add_enabled(project, style::action("Back up now", "B"));
+            if focus {
+                back_up.request_focus();
+            }
+            if back_up.clicked() {
+                action = Some('b');
+            }
+            let any = matches!(&view.list, Some(Ok(list)) if !list.is_empty());
+            if ui
+                .add_enabled(project && any, style::action("Restore…", "O"))
+                .clicked()
+            {
+                action = Some('o');
+            }
+        });
+        if let Some(status) = &view.status {
+            let response = ui.add(egui::Label::new(egui::RichText::new(status).size(12.0)).wrap());
+            accessibility::full_text(response, status);
+        }
+        ui.add_space(6.0);
+        action
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lengths_read_as_clock_times() {
+        let rate = deadpan_core::FrameRate::new(30, 1).unwrap();
+        assert_eq!(length(0, rate), "0:00.0");
+        assert_eq!(length(45, rate), "0:01.5");
+        assert_eq!(length(30 * 75, rate), "1:15.0");
+        assert_eq!(length(30 * 3725, rate), "1:02:05");
+    }
+}

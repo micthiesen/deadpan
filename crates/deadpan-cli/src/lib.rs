@@ -6,6 +6,8 @@ pub mod activity;
 mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod backups;
 pub mod bundle;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod corrections;
@@ -80,6 +82,10 @@ const HELP: &str = "Deadpan headless commands:
   project redo <project.deadpan> --expected <revision> [--dry-run]
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
+  project view <project.deadpan>
+  project backups <project.deadpan> [--verify]
+  project backup <project.deadpan>
+  project restore <project.deadpan> <backup-id> [--dry-run | --damaged [--force-project <id>]]
   project storage <project.deadpan> [--clean [--dry-run]] [--grace-hours N]
   project copy-portable <project.deadpan> <new-copy.deadpan>
   cache status [--grace-hours N]
@@ -91,6 +97,7 @@ const HELP: &str = "Deadpan headless commands:
   project original-provenance <project.deadpan> <blake3-digest>
   project verify-original <project.deadpan> <blake3-digest>
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
+  project relink-moved <project.deadpan>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
   inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --authored-bus | --limited]
@@ -163,6 +170,9 @@ pub enum CliError {
     Protocol(u32),
     #[error(transparent)]
     Store(#[from] StoreError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Backup(#[from] deadpan_store::backups::BackupError),
     #[error(transparent)]
     Document(#[from] deadpan_core::DocumentError),
     #[error(transparent)]
@@ -236,6 +246,8 @@ impl CliError {
             Self::Io(_) => "IoFailure",
             Self::Store(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Backup(error) => error.code(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceInput(_) => "SourceSnapshotFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceVideo(_) => "SourceVideoDecodeFailed",
@@ -268,6 +280,17 @@ impl CliError {
             ) => "ModelPackVerification",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(deadpan_models::packs::PackError::Update { code, .. }) => code,
+            // A download the volume refused part way, as opposed to the
+            // up-front space check (`ModelPackSpace`).
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::Io(error))
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::StorageFull | std::io::ErrorKind::QuotaExceeded
+                ) =>
+            {
+                "DiskFull"
+            }
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(_) => "ModelPackFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -533,6 +556,14 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "copy-portable", rest @ ..] => storage::run_copy(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "backups", rest @ ..] => backups::run_list(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "backup", rest @ ..] => backups::run_create(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "restore", rest @ ..] => backups::run_restore(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "view", rest @ ..] => backups::run_view(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["cache", rest @ ..] => storage::run_cache(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
@@ -767,7 +798,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             | "originals"
             | "original-provenance"
             | "verify-original"
-            | "relink-original"),
+            | "relink-original"
+            | "relink-moved"),
             rest @ ..,
         ] => originals::run(action, rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

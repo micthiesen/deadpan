@@ -398,8 +398,9 @@ fn pause_history_records_only_changed_timing_state() -> Result {
     let document = store.snapshot()?;
     // The first pause binds every Hold; later pauses add one small timing
     // table and a few bindings, never another copy of the project. Their
-    // remaining bytes are the parent Sequence's child list in the node patch.
-    assert!(sizes[0] > 300_000, "{sizes:?}");
+    // remaining bytes are the parent Sequence's child list in the node patch,
+    // stored once (its new list is a splice and the inverse is implied).
+    assert!(sizes[0] > 150_000, "{sizes:?}");
     for size in &sizes[1..] {
         assert!(*size < 30_000, "{sizes:?}");
     }

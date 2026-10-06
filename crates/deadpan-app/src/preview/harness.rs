@@ -13,6 +13,7 @@ use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 mod accessibility;
 mod ai_pause;
 mod audio_treatments;
+mod backups;
 mod captions;
 mod corrections;
 mod creative_dot;

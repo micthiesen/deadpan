@@ -31,6 +31,9 @@ pub fn describe_store_error(error: &StoreError) -> String {
                 deadpan_store::DATABASE_SCHEMA_VERSION
             )
         }
+        (_, StoreError::NewerSchema { .. }) => format!(
+            "{error}. Open it with that newer Deadpan to edit it; this build can only show it."
+        ),
         (_, StoreError::UnsupportedSchema(version)) => format!(
             "This project uses development format {version}, which this build no longer opens (it reads format {}). Nothing was changed and no backup was made. Create a new project from its Original to continue.",
             deadpan_store::DATABASE_SCHEMA_VERSION
@@ -352,6 +355,12 @@ mod tests {
         ));
         assert!(newer.contains("newer Deadpan"));
         assert!(newer.contains("Nothing was changed"));
+        let newer = describe_store_error(&StoreError::NewerSchema {
+            found: deadpan_store::DATABASE_SCHEMA_VERSION + 1,
+            supported: deadpan_store::DATABASE_SCHEMA_VERSION,
+        });
+        assert!(newer.contains("read-only"), "{newer}");
+        assert!(newer.contains("nothing in it has been changed"), "{newer}");
     }
 
     fn package(root: &Path, name: &str) -> PathBuf {

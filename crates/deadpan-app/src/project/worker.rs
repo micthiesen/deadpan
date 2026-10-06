@@ -115,7 +115,18 @@ pub(super) fn prepare(job: Job) -> Result<Prepared, String> {
             ref ownership,
         } => job
             .handle
-            .prepare_retention(path, ownership.clone(), original_limits(), &job.cancelled)
+            .prepare_retention(
+                path,
+                match ownership {
+                    // Record where a linked file is, so a later move is found.
+                    OriginalOwnership::Linked { bookmark: None } => {
+                        OriginalOwnership::linked_at(path)
+                    }
+                    other => other.clone(),
+                },
+                original_limits(),
+                &job.cancelled,
+            )
             .map(Box::new)
             .map(Prepared::Retained)
             .map_err(|error| crate::recovery::describe_store_error(&error)),

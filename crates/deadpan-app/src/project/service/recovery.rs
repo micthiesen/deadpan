@@ -4,6 +4,7 @@
 
 use deadpan_store::original_media::{
     LinkedOriginal, OriginalAvailability, OriginalContentId, OriginalRetentionMethod,
+    moved_location,
 };
 
 use super::*;
@@ -26,7 +27,13 @@ pub(super) struct Relinking {
     session: u64,
     label: String,
     cancelled: Arc<AtomicBool>,
+    /// Found by a bookmark rather than chosen by the person: where, and
+    /// which original.
+    moved_to: Option<(PathBuf, OriginalContentId)>,
 }
+
+/// The ticket of relinks the service starts itself for moved linked files.
+pub(super) const AUTOMATIC_RELINK: u64 = 0;
 
 /// Recovery facts from the writer open and a metadata-only presence check of
 /// each registered original. Opening never fails because media is missing.
@@ -35,11 +42,17 @@ pub(super) fn open_report(store: &ProjectStore, workspace: &Workspace) -> OpenRe
         session: workspace.session,
         path: workspace.path.clone(),
         recovery: store.open_recovery().clone(),
-        originals: original_statuses(store, workspace),
+        originals: original_statuses(store, workspace, &Default::default()),
     }
 }
 
-fn original_statuses(store: &ProjectStore, workspace: &Workspace) -> Vec<OriginalStatus> {
+/// `attempted`: originals whose bookmark candidate was already tried this
+/// session and refused; they are reported missing again.
+fn original_statuses(
+    store: &ProjectStore,
+    workspace: &Workspace,
+    attempted: &std::collections::BTreeSet<OriginalContentId>,
+) -> Vec<OriginalStatus> {
     let primary = match &workspace.single_source {
         Some(SingleSourceState::Ready { asset, .. }) => Some(asset),
         _ => None,
@@ -56,6 +69,13 @@ fn original_statuses(store: &ProjectStore, workspace: &Workspace) -> Vec<Origina
                 .unwrap_or_else(|error| OriginalAvailability::Unreadable {
                     reason: error.to_string(),
                 }),
+            // A writable session relinks a moved linked file once its bytes
+            // verify; a read-only view only reports it missing.
+            moved_to: (store.access_mode() == AccessMode::ReadWrite
+                && !attempted.contains(source.original.object().content()))
+            .then(|| moved_location(&source.original))
+            .flatten()
+            .map(|location| location.path().to_owned()),
         })
         .collect()
 }
@@ -239,7 +259,8 @@ impl Service {
             Work::Restore { record, path }
         } else {
             Work::Relink {
-                location: LinkedOriginal::new(path, None).map_err(|error| error.to_string())?,
+                // A fresh bookmark, so a later move is found again.
+                location: LinkedOriginal::bookmarked(path).map_err(|error| error.to_string())?,
                 record,
             }
         };
@@ -263,6 +284,7 @@ impl Service {
             session,
             label: label.clone(),
             cancelled,
+            moved_to: None,
         });
         self.relink = Some(RelinkStatus {
             ticket,
@@ -316,6 +338,22 @@ impl Service {
             Ok(_) => Err("The import worker returned an unrelated result.".into()),
             Err(error) => Err(error),
         };
+        if let Some((_, content)) = &relinking.moved_to {
+            // Tried once per session, whatever the outcome.
+            self.auto_relinked.insert(content.clone());
+        }
+        let committed = match (relinking.moved_to.as_ref().map(|(path, _)| path), committed) {
+            (Some(moved), Ok(_)) => Ok(format!(
+                "found by its bookmark at {} and verified; relinked there.",
+                moved.display()
+            )),
+            (Some(moved), Err(error)) => Err(format!(
+                "{} was found by its bookmark at {}, but that file is not the same content, so it was not relinked ({error}). Use :relink to locate it.",
+                relinking.label,
+                moved.display()
+            )),
+            (None, result) => result.map(str::to_owned),
+        };
         let state =
             match committed.and_then(|outcome| self.refresh_after_relink().map(|()| outcome)) {
                 Ok(outcome) => {
@@ -323,8 +361,17 @@ impl Service {
                     RelinkState::Restored
                 }
                 Err(error) => {
-                    self.error = Some(error.clone());
-                    self.message = None;
+                    // An automatic failure still updates the report so the
+                    // file shows as missing again.
+                    if relinking.moved_to.is_some() {
+                        // Not the person's command: report it through the
+                        // relink status and message, never editor feedback.
+                        let _ = self.refresh_after_relink();
+                        self.message = Some(error.clone());
+                    } else {
+                        self.error = Some(error.clone());
+                        self.message = None;
+                    }
                     RelinkState::Failed(error)
                 }
             };
@@ -334,7 +381,79 @@ impl Service {
             label: relinking.label,
             state,
         });
+        self.relink_moved_originals();
         None
+    }
+
+    /// Start verifying the next missing linked file a bookmark found, one at
+    /// a time on the import worker. Each candidate is tried once per
+    /// session; only identical bytes are relinked.
+    pub(super) fn relink_moved_originals(&mut self) {
+        if self.active.is_some() || self.relinking.is_some() || self.host_preparation_active() {
+            return;
+        }
+        let Some(report) = self.opened.clone() else {
+            return;
+        };
+        let Some(workspace) = self.workspace.clone() else {
+            return;
+        };
+        if report.session != workspace.session {
+            return;
+        }
+        let Some(status) = report.originals.iter().find(|status| {
+            status.moved_to.is_some()
+                && !self
+                    .auto_relinked
+                    .contains(status.record.object().content())
+        }) else {
+            return;
+        };
+        let moved = status.moved_to.clone().expect("filtered");
+        let Ok(location) = LinkedOriginal::bookmarked(moved.clone()) else {
+            self.auto_relinked
+                .insert(status.record.object().content().clone());
+            return;
+        };
+        let Some(id) = self.serial.checked_add(1) else {
+            return;
+        };
+        let cancelled = Arc::new(AtomicBool::new(false));
+        if self
+            .jobs
+            .try_send(Job {
+                id,
+                handle: workspace.originals.clone(),
+                cancelled: cancelled.clone(),
+                work: Work::Relink {
+                    record: status.record.clone(),
+                    location,
+                },
+            })
+            .is_err()
+        {
+            return;
+        }
+        self.serial = id;
+        self.relinking = Some(Relinking {
+            id,
+            ticket: AUTOMATIC_RELINK,
+            session: workspace.session,
+            label: status.label.clone(),
+            cancelled,
+            moved_to: Some((moved.clone(), status.record.object().content().clone())),
+        });
+        self.relink = Some(RelinkStatus {
+            ticket: AUTOMATIC_RELINK,
+            session: workspace.session,
+            label: status.label.clone(),
+            state: RelinkState::Verifying,
+        });
+        self.message = Some(format!(
+            "{} moved; found it by its bookmark at {}. Verifying its contents…",
+            status.label,
+            moved.display()
+        ));
     }
 
     fn refresh_after_relink(&mut self) -> Result<()> {
@@ -349,7 +468,7 @@ impl Service {
             session: previous.session,
             path: previous.path.clone(),
             recovery: previous.recovery.clone(),
-            originals: original_statuses(store, workspace),
+            originals: original_statuses(store, workspace, &self.auto_relinked),
         }));
         Ok(())
     }

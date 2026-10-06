@@ -28,6 +28,7 @@ uuid.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 deadpan-fileclone.workspace = true
+deadpan-filesystem.workspace = true
 
 [build-dependencies]
 sha2.workspace = true

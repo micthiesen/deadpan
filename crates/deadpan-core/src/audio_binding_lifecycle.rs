@@ -54,11 +54,129 @@ pub(crate) fn has_unbound_recipes(document: &ProjectDocument) -> bool {
 
 /// Insertion also needs the current clock for composed resume terms when all
 /// physical recipes already have an older lattice.
+#[cfg(test)]
 pub(crate) fn capture_for_insertion(
     document: &ProjectDocument,
     timing: AudioTimingId,
 ) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
     capture(document, timing, true)
+}
+
+/// [`capture_for_insertion`] whose new table may be a provisional slice
+/// projecting the new bindings' aliases plus `aliases` (see
+/// [`LayoutScope`]). The caller must name every alias any later template of
+/// this command reads through the table, or extend it with
+/// [`rescope_timing`] before validating such a template.
+pub(crate) fn capture_for_insertion_scoped(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+    aliases: BTreeSet<NodeId>,
+) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
+    let capture = capture_with_placements(
+        document,
+        timing,
+        true,
+        false,
+        Some(LayoutScope {
+            aliases,
+            placement_owners: None,
+        }),
+    )?;
+    Ok((capture.state, capture.phase_only_layout))
+}
+
+/// The aliases a provisional timing table must project, beyond the new
+/// bindings' own. Only `capture_with_placements` builds such a table, and
+/// only when `command_work::scoped_timing_captures` permits it; otherwise the
+/// complete layout is captured as before.
+pub(crate) struct LayoutScope<'a> {
+    pub(crate) aliases: BTreeSet<NodeId>,
+    /// Owners whose captured root placements will become reanchor steps.
+    pub(crate) placement_owners: Option<&'a BTreeSet<NodeId>>,
+}
+
+/// Every alias the placement `template` reads through its timing table:
+/// those `compact_new_timings` retains, so the final slice keeps them too.
+pub(crate) fn template_aliases(template: &AudioPlacementTemplate, aliases: &mut BTreeSet<NodeId>) {
+    aliases.insert(template.reference.physical.clone());
+    match &template.reference.root {
+        AudioClockRoot::ProjectRootRoundEven => {}
+        AudioClockRoot::PreserveInputPointCeil { stage } => {
+            aliases.insert(stage.clone());
+        }
+        AudioClockRoot::DefinitionPointCeil { root } => {
+            aliases.insert(root.clone());
+        }
+        AudioClockRoot::GapDefinitionPointCeil { repeat } => {
+            aliases.insert(repeat.clone());
+        }
+    }
+    for argument in &template.arguments {
+        aliases.insert(argument.reference_repeat.clone());
+    }
+    for clause in &template.births {
+        aliases.insert(clause.definition_root.clone());
+        if let AudioBirthSurvivors::CapturedRepeat { repeat } = &clause.survivors {
+            aliases.insert(repeat.clone());
+        }
+    }
+}
+
+/// Whether every provisional table in `state` projects every alias that a
+/// template naming it reads.
+pub(crate) fn provisional_tables_project_references(state: &AudioBindingState) -> bool {
+    if !state.has_provisional_timings() {
+        return true;
+    }
+    state.owners().all(|(_, _, binding)| {
+        binding.placements().all(
+            |template| match state.timings.get(&template.reference.timing) {
+                Some(layout) if layout.is_provisional() => {
+                    let mut aliases = BTreeSet::new();
+                    template_aliases(template, &mut aliases);
+                    aliases.iter().all(|alias| layout.projects(alias))
+                }
+                _ => true,
+            },
+        )
+    })
+}
+
+/// When `state`'s table `timing` is a provisional slice that does not
+/// project every alias its referencing templates read, replace it with a
+/// slice of `document`'s capture that does (or the complete capture).
+/// `document` must be the document that table was captured from.
+pub(crate) fn rescope_timing(
+    document: &ProjectDocument,
+    state: &mut AudioBindingState,
+    timing: &AudioTimingId,
+) -> Result<(), DocumentError> {
+    let Some(layout) = state.timings.get(timing) else {
+        return Ok(());
+    };
+    if !layout.is_provisional() {
+        return Ok(());
+    }
+    let mut required = BTreeSet::new();
+    for (_, _, binding) in state.owners() {
+        for template in binding.placements() {
+            if &template.reference.timing == timing {
+                template_aliases(template, &mut required);
+            }
+        }
+    }
+    if required.iter().all(|alias| layout.projects(alias)) {
+        return Ok(());
+    }
+    let replacement = match FrozenAudioLayout::capture_scoped(document, &required)? {
+        Some(layout) => {
+            crate::command_work::note_provisional_capture(true);
+            layout
+        }
+        None => FrozenAudioLayout::capture(document)?,
+    };
+    state.timings.insert(timing.clone(), replacement);
+    Ok(())
 }
 
 /// Composite insertion moves every physical recipe in the selected root
@@ -76,7 +194,28 @@ pub(crate) fn capture_for_composite_insertion(
     document: &ProjectDocument,
     timing: AudioTimingId,
 ) -> Result<CompositeInsertionCapture, DocumentError> {
-    capture_with_placements(document, timing, true, true)
+    capture_with_placements(document, timing, true, true, None)
+}
+
+/// [`capture_for_composite_insertion`] for a caller that appends reanchor
+/// steps only for `affected` owners' placements: the new table may then be a
+/// provisional slice projecting exactly what those steps and the new bindings
+/// read.
+pub(crate) fn capture_for_composite_insertion_scoped(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+    affected: &BTreeSet<NodeId>,
+) -> Result<CompositeInsertionCapture, DocumentError> {
+    capture_with_placements(
+        document,
+        timing,
+        true,
+        true,
+        Some(LayoutScope {
+            aliases: BTreeSet::new(),
+            placement_owners: Some(affected),
+        }),
+    )
 }
 
 fn capture(
@@ -84,7 +223,7 @@ fn capture(
     timing: AudioTimingId,
     retain_timing: bool,
 ) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
-    let capture = capture_with_placements(document, timing, retain_timing, false)?;
+    let capture = capture_with_placements(document, timing, retain_timing, false, None)?;
     Ok((capture.state, capture.phase_only_layout))
 }
 
@@ -93,6 +232,7 @@ fn capture_with_placements(
     timing: AudioTimingId,
     retain_timing: bool,
     collect_root_placements: bool,
+    scope: Option<LayoutScope<'_>>,
 ) -> Result<CompositeInsertionCapture, DocumentError> {
     document.validate()?;
     if !document.sounds().is_empty() {
@@ -144,11 +284,15 @@ fn capture_with_placements(
     for layout in document.audio_bindings().timings().values() {
         charge(
             &mut retained,
-            layout.nodes().len() + layout.audio_lineage().len(),
+            layout.charged_nodes() + layout.charged_lineage(),
         )?;
-        for node in layout.nodes().values() {
-            if let FrozenAudioKind::Repeat { iterations, .. } = &node.kind {
-                charge(&mut retained, iterations.segment_count())?;
+        if layout.is_provisional() {
+            charge(&mut retained, layout.charged_runs())?;
+        } else {
+            for node in layout.nodes().values() {
+                if let FrozenAudioKind::Repeat { iterations, .. } = &node.kind {
+                    charge(&mut retained, iterations.segment_count())?;
+                }
             }
         }
     }
@@ -161,7 +305,42 @@ fn capture_with_placements(
             charge(&mut retained, iterations.segment_count())?;
         }
     }
-    let layout = FrozenAudioLayout::capture(document)?;
+    // At most one provisional table exists at a time, so a byte check that
+    // needs exact counting can always substitute the complete layout.
+    let scope = scope.filter(|_| {
+        crate::command_work::scoped_timing_captures()
+            && !document.audio_bindings().has_provisional_timings()
+    });
+    let layout = match &scope {
+        Some(scope) => {
+            let mut required = scope.aliases.clone();
+            for binding in capture
+                .bindings
+                .values()
+                .chain(capture.gap_bindings.values())
+            {
+                for template in binding.placements() {
+                    template_aliases(template, &mut required);
+                }
+            }
+            if let Some(owners) = scope.placement_owners {
+                for (owner, template) in capture
+                    .node_placements
+                    .iter()
+                    .chain(&capture.gap_placements)
+                {
+                    if owners.contains(owner) {
+                        template_aliases(template, &mut required);
+                    }
+                }
+            }
+            match FrozenAudioLayout::capture_scoped(document, &required)? {
+                Some(layout) => layout,
+                None => FrozenAudioLayout::capture(document)?,
+            }
+        }
+        None => FrozenAudioLayout::capture(document)?,
+    };
     let bindings = capture.bindings;
     let gap_bindings = capture.gap_bindings;
     let node_placements = capture.node_placements;
@@ -171,6 +350,19 @@ fn capture_with_placements(
         // A phase-only layout has no reference yet. Keep it outside the valid
         // state through intermediate Split validation; insertion installs it
         // only while composing resume terms, then prunes any unused table.
+        //
+        // Byte bound: the complete capture checks only the layout's own
+        // length here (no state check), and `capture_scoped` returns a slice
+        // only when the complete layout's exact length is within the same
+        // limit, so a provisional phase-only table refuses exactly when the
+        // complete one would. Later checks of the state that installs it see
+        // its complete length (`wire_bound_bytes`).
+        debug_assert!(
+            !layout.is_provisional()
+                || layout
+                    .wire_bound_bytes()
+                    .is_ok_and(|bytes| bytes <= crate::MAX_DOCUMENT_JSON_BYTES)
+        );
         return Ok(CompositeInsertionCapture {
             state: result,
             phase_only_layout: Some(layout),
@@ -178,10 +370,17 @@ fn capture_with_placements(
             gap_placements,
         });
     }
-    result.timings.insert(timing, layout);
+    result.timings.insert(timing.clone(), layout);
     result.bindings.extend(bindings);
     result.gap_bindings.extend(gap_bindings);
     document.validate_bindings_in_scope(&result)?;
+    // Validation charged the complete counts, so it decided as it would for
+    // the complete table. Only that table can be counted exactly.
+    if result.has_provisional_timings() && !result.wire_bound_fits() {
+        result
+            .timings
+            .insert(timing, FrozenAudioLayout::capture(document)?);
+    }
     result.check_wire_size()?;
     Ok(CompositeInsertionCapture {
         state: result,
@@ -554,36 +753,35 @@ pub(crate) fn compact_new_timings(
             let Some(aliases) = required.get_mut(&template.reference.timing) else {
                 continue;
             };
-            aliases.insert(template.reference.physical.clone());
-            match &template.reference.root {
-                AudioClockRoot::ProjectRootRoundEven => {}
-                AudioClockRoot::PreserveInputPointCeil { stage } => {
-                    aliases.insert(stage.clone());
-                }
-                AudioClockRoot::DefinitionPointCeil { root } => {
-                    aliases.insert(root.clone());
-                }
-                AudioClockRoot::GapDefinitionPointCeil { repeat } => {
-                    aliases.insert(repeat.clone());
-                }
-            }
-            for argument in &template.arguments {
-                aliases.insert(argument.reference_repeat.clone());
-            }
-            for clause in &template.births {
-                aliases.insert(clause.definition_root.clone());
-                if let AudioBirthSurvivors::CapturedRepeat { repeat } = &clause.survivors {
-                    aliases.insert(repeat.clone());
-                }
-            }
+            template_aliases(template, aliases);
         }
     }
     for (timing, aliases) in required {
         let layout = &after.timings[&timing];
-        let sliced = layout.sliced(&aliases)?;
-        if sliced.nodes().len() < layout.nodes().len() {
-            after.timings.insert(timing, sliced);
+        if !aliases.iter().all(|alias| layout.projects(alias)) {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a provisional timing table does not project a referenced alias",
+            ));
         }
+        let sliced = layout.sliced(&aliases)?;
+        // A provisional table compares against the complete layout it
+        // stands in for: slicing it to a subset of its aliases equals
+        // slicing the complete capture, which is always smaller here.
+        if sliced.nodes().len() < layout.charged_nodes() {
+            after.timings.insert(timing, sliced);
+        } else if layout.is_provisional() {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a provisional timing table could not be compacted",
+            ));
+        }
+    }
+    if after.has_provisional_timings() {
+        return Err(DocumentError::new(
+            DocumentErrorCode::InvalidTree,
+            "a provisional timing table outlived its command",
+        ));
     }
     Ok(())
 }

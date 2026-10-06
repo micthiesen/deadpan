@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-187 actions, 115 command verbs.
+191 actions, 116 command verbs.
 
 ## Start & View
 
@@ -206,6 +206,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Correct the transcript** (`correct`)<br>Correct the Original's transcript words and pauses in a sheet; see Transcript corrections for its keys. Corrections are kept apart from the recognized words, survive transcribing again and are not edits. | - | `:correct` | Every editor context | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections <p> --json <request> (closed project)` |
 | **Background jobs** (`jobs`)<br>Show every background job (AI pictures, transcription, pause and shot detection, tracking, proxies, renders, downloads, model installs, copies) with its state, progress and elapsed time. One AI model runs at a time; others wait their turn, visibly. | `Deadpan › Jobs…` (native) | `:jobs` | Anywhere | not recorded | [GUI-only](PARITY.md#project-and-files): `each job's own command reports progress` |
 | **Storage and cleanup** (`storage`)<br>Show what this project and Deadpan's caches use: originals, AI pause media, render candidates, the database, proxies, downloads and model packs, and what nothing references any more. | `Deadpan › Storage…` (native) | `:storage` | Anywhere | not recorded | [Partial](PARITY.md#project-and-files): `project storage, cache status\|clean` |
+| **Backups** (`backups`)<br>Open Storage on the project's backups: what each one holds, back up now, and restore one. | - | `:backups` | Anywhere | not recorded | [Partial](PARITY.md#project-and-files): `project backups\|backup\|restore <p>` |
 | **Portable copy** (`portable-copy`)<br>Save a verified self-contained copy of this project: linked originals become managed copies, only referenced media is copied, history is kept, and the copy renders without its source or any model. | `File › Save Portable Copy…` (native) | `:portable-copy` | Every editor context | not recorded | [Partial](PARITY.md#project-and-files): `project copy-portable <p> <dest>` |
 | **Model packs** (`models`)<br>Manage the models AI pauses and transcription use. Each pack shows its size, free space, memory and licenses before anything downloads; licenses that need acceptance are accepted there. Install from a folder or .tar works offline. | `Deadpan › Models…` (native) | `:models` | Anywhere | not recorded | [Equivalent](PARITY.md#models): `models list\|license\|install\|import\|export\|remove` |
 | **Live diagnostics** (`diagnostics`)<br>Show live counters for this app process beside the picture: audio underruns and faults, decode queue depths, GPU submission latency, PCM cache hits and residency, file reads and writes, model worker memory and UI frames. Updates twice a second; playback continues. Escape closes. Nothing is saved with the project. | - | `:diagnostics` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `doctor --project <p> reports the CLI's own counters` |
@@ -318,7 +319,10 @@ Headless status links to [PARITY](PARITY.md).
 | **Clean caches** (`storage.caches`)<br>Clean rebuildable caches. | `c` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `cache clean` |
 | **Save a portable copy** (`storage.copy`)<br>Save a portable copy, as :portable-copy does. | `s` (fixed) | - | Storage | not recorded | [Partial](PARITY.md#project-and-files): `project copy-portable <p> <dest>` |
 | **Refresh** (`storage.refresh`)<br>Measure storage again. | `u` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `project storage <p>` |
-| **Close storage** (`storage.close`)<br>Close the panel. Tab and Space/Enter stay native. Nothing here edits the project or its history. | `Esc` (native) | - | Storage | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
+| **Back up now** (`storage.backup`)<br>Make a verified backup of the project's saved state now. Deadpan also backs up every 15 minutes while you edit, when you close a project, and before a restore. | `b` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `project backup <p>` |
+| **Choose a backup** (`storage.backup-select`)<br>Choose a backup; the panel shows its revision, beats, length and edits. | `j / k · Up / Down` (fixed) | - | Storage | not recorded | [Equivalent](PARITY.md#project-and-files): `project backups <p>` |
+| **Restore a backup** (`storage.restore`)<br>Press twice to replace the project with the chosen backup, history included. What you have now is backed up first, so restoring that backup goes back. | `o` (fixed) | - | Storage | not recorded | [Partial](PARITY.md#project-and-files): `project restore <p> <backup> (closed project)` |
+| **Close storage** (`storage.close`)<br>Close the panel. Tab and Space/Enter stay native. Nothing here edits the project or its history, except restoring a backup. | `Esc` (native) | - | Storage | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 
 ## Models Panel
 

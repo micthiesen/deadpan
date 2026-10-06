@@ -62,6 +62,10 @@ pub enum StorageKey {
     CleanCaches,
     PortableCopy,
     Refresh,
+    BackUp,
+    NextBackup,
+    PreviousBackup,
+    Restore,
 }
 
 pub(super) const STORAGE: &[(&str, Key, StorageKey)] = &[
@@ -70,6 +74,20 @@ pub(super) const STORAGE: &[(&str, Key, StorageKey)] = &[
     ("storage.caches", Key::C, StorageKey::CleanCaches),
     ("storage.copy", Key::S, StorageKey::PortableCopy),
     ("storage.refresh", Key::U, StorageKey::Refresh),
+    ("storage.backup", Key::B, StorageKey::BackUp),
+    ("storage.backup-select", Key::J, StorageKey::NextBackup),
+    (
+        "storage.backup-select",
+        Key::ArrowDown,
+        StorageKey::NextBackup,
+    ),
+    ("storage.backup-select", Key::K, StorageKey::PreviousBackup),
+    (
+        "storage.backup-select",
+        Key::ArrowUp,
+        StorageKey::PreviousBackup,
+    ),
+    ("storage.restore", Key::O, StorageKey::Restore),
 ];
 
 /// A Storage panel press, after `mode_key` has read its typed character, as
@@ -141,6 +159,11 @@ mod tests {
             Key::C => Some(StorageKey::CleanCaches),
             Key::S => Some(StorageKey::PortableCopy),
             Key::U => Some(StorageKey::Refresh),
+            // Added with the BACKUPS section.
+            Key::B => Some(StorageKey::BackUp),
+            Key::J | Key::ArrowDown => Some(StorageKey::NextBackup),
+            Key::K | Key::ArrowUp => Some(StorageKey::PreviousBackup),
+            Key::O => Some(StorageKey::Restore),
             _ => None,
         }
     }

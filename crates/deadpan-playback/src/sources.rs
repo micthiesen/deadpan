@@ -542,7 +542,7 @@ impl AudioSourceProvider for Sources {
                 Duration::from_secs(15),
             )
             .map_err(unavailable)?;
-            let mut original = self
+            let original = self
                 .snapshot
                 .originals
                 .snapshot_original(&entry.original, original_limits, cancelled)
@@ -569,9 +569,12 @@ impl AudioSourceProvider for Sources {
                 .cache_index_frames
                 .checked_add(index_frames)
                 .ok_or_else(|| unavailable("source cache index accounting overflow"))?;
-            let session = AudioSession::open_verified(
-                &mut original,
-                expected.content(),
+            // The store's private snapshot was verified against these exact
+            // bytes; decode it without a second copy.
+            let session = AudioSession::open_input(
+                original
+                    .into_source_input(expected.content())
+                    .map_err(unavailable)?,
                 expected.stream().stream_index,
                 audio_limits,
                 cancelled,

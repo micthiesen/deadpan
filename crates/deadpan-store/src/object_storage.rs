@@ -27,6 +27,9 @@ use thiserror::Error;
 pub use deadpan_core::{GeneratedContentId, GeneratedObjectRef};
 
 const COPY_BUFFER_BYTES: usize = 64 * 1024;
+/// Chunks in flight between an object's reader and its snapshot writer.
+const PIPELINE_CHUNKS: usize = 3;
+const PIPELINE_CHUNK_BYTES: usize = 1024 * 1024;
 const TEMPORARY_ATTEMPTS: usize = 8;
 const FINAL_MODE: Mode = Mode::RUSR.union(Mode::RGRP).union(Mode::ROTH);
 
@@ -176,6 +179,11 @@ pub struct VerifiedObject {
 impl VerifiedObject {
     pub fn reference(&self) -> &GeneratedObjectRef {
         &self.reference
+    }
+
+    /// The private verified snapshot file itself.
+    pub(crate) fn into_file(self) -> File {
+        self.file
     }
 
     pub const fn sha256(&self) -> [u8; 32] {
@@ -645,7 +653,7 @@ impl GeneratedStorage {
         source: OwnedFd,
         expected: &GeneratedObjectRef,
         limits: ObjectLimits,
-        mut destination: impl Write,
+        destination: impl Write + Send,
         control: ObjectControl<'_>,
         after_open: impl FnOnce(),
     ) -> Result<File, ObjectStorageError> {
@@ -668,41 +676,78 @@ impl GeneratedStorage {
         after_open();
         let mut source = File::from(source);
         let mut hasher = blake3::Hasher::new();
-        let mut copied = 0_u64;
-        let mut buffer = [0_u8; COPY_BUFFER_BYTES];
-        loop {
-            control.check()?;
-            let read = source
-                .read(&mut buffer)
-                .map_err(|source| ObjectStorageError::Io {
-                    operation: "read generated object",
-                    source,
-                })?;
-            if read == 0 {
-                break;
+        // Reading and BLAKE3 run here while the destination (a snapshot
+        // file and usually its SHA-256) consumes the previous chunk on a
+        // second thread: the same bytes in the same order, overlapped.
+        let copied = std::thread::scope(|scope| {
+            let (full, filled) = std::sync::mpsc::sync_channel::<(Vec<u8>, usize)>(PIPELINE_CHUNKS);
+            let (returned, empty) = std::sync::mpsc::channel::<Vec<u8>>();
+            for _ in 0..PIPELINE_CHUNKS {
+                returned
+                    .send(vec![0_u8; PIPELINE_CHUNK_BYTES])
+                    .expect("the receiver is alive");
             }
-            deadpan_diagnostics::IO.objects.read(read as u64);
-            let next = copied
-                .checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
-                .ok_or(ObjectStorageError::SourceChanged)?;
-            if next > expected.byte_length() {
-                return Err(ObjectStorageError::SourceChanged);
-            }
-            if next > limits.maximum_bytes {
-                return Err(ObjectStorageError::TooLarge {
-                    size: next,
-                    maximum: limits.maximum_bytes,
-                });
-            }
-            hasher.update(&buffer[..read]);
-            destination
-                .write_all(&buffer[..read])
-                .map_err(|source| ObjectStorageError::Io {
-                    operation: "write generated-object snapshot",
-                    source,
-                })?;
-            copied = next;
-        }
+            let writer = scope.spawn(move || {
+                let mut destination = destination;
+                while let Ok((buffer, read)) = filled.recv() {
+                    destination.write_all(&buffer[..read])?;
+                    if returned.send(buffer).is_err() {
+                        break;
+                    }
+                }
+                Ok::<_, io::Error>(())
+            });
+            let mut copied = 0_u64;
+            let read_result = loop {
+                if let Err(error) = control.check() {
+                    break Err(error);
+                }
+                // The writer stopped only after a write error, reported below.
+                let Ok(mut buffer) = empty.recv() else {
+                    break Ok(());
+                };
+                let read = match source.read(&mut buffer) {
+                    Ok(read) => read,
+                    Err(source) => {
+                        break Err(ObjectStorageError::Io {
+                            operation: "read generated object",
+                            source,
+                        });
+                    }
+                };
+                if read == 0 {
+                    break Ok(());
+                }
+                deadpan_diagnostics::IO.objects.read(read as u64);
+                let Some(next) =
+                    copied.checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
+                else {
+                    break Err(ObjectStorageError::SourceChanged);
+                };
+                if next > expected.byte_length() {
+                    break Err(ObjectStorageError::SourceChanged);
+                }
+                if next > limits.maximum_bytes {
+                    break Err(ObjectStorageError::TooLarge {
+                        size: next,
+                        maximum: limits.maximum_bytes,
+                    });
+                }
+                hasher.update(&buffer[..read]);
+                if full.send((buffer, read)).is_err() {
+                    break Ok(());
+                }
+                copied = next;
+            };
+            drop(full);
+            let written = writer.join().expect("the snapshot writer does not panic");
+            read_result?;
+            written.map_err(|source| ObjectStorageError::Io {
+                operation: "write generated-object snapshot",
+                source,
+            })?;
+            Ok::<_, ObjectStorageError>(copied)
+        })?;
         control.check()?;
         let after = fstat(&source).map_err(|source| ObjectStorageError::System {
             operation: "reinspect generated object",
@@ -1390,7 +1435,7 @@ impl ObjectStorage {
         identity: ObjectIdentity<'_>,
         limits: ObjectLimits,
         control: ObjectControl<'_>,
-        destination: impl Write,
+        destination: impl Write + Send,
     ) -> Result<(ObjectFreshnessGuard, [u8; 32]), ObjectStorageError> {
         control.check()?;
         let expected = object_reference(identity)?;

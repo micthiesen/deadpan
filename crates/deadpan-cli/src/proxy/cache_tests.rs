@@ -336,3 +336,100 @@ fn a_replaced_cache_directory_is_never_written() {
         0
     );
 }
+
+/// The bytes the kill test's child publishes for `step`: size and content
+/// both depend on the step, so a mixed or truncated publication is visible.
+fn kill_test_movie(step: u64) -> Vec<u8> {
+    let length = (256 << 10) + (step as usize % 7) * (512 << 10);
+    (0..length)
+        .map(|index| (index as u64).wrapping_mul(31).wrapping_add(step) as u8)
+        .collect()
+}
+
+/// Process kills during proxy publication (Gate G crash suite,
+/// docs/BACKUPS.md#process-kills). A child keeps staging, writing and
+/// publishing multi-megabyte movies, replacing six keys in turn, and is
+/// SIGKILLed after a seeded random delay. Afterwards every visible entry must
+/// open with its verified hash and hold exactly one step's bytes, and cleanup
+/// must still work. Abandoned staging is the only allowed residue.
+#[test]
+fn process_kills_during_publication_leave_whole_entries_or_none() {
+    const CHILD: &str = "DEADPAN_TEST_PROXY_KILL_CHILD";
+    let keys: Vec<ProxyKey> = ['a', 'b', 'c', 'd', 'e', 'f']
+        .into_iter()
+        .map(key)
+        .collect();
+    if let Some(root) = std::env::var_os(CHILD) {
+        let cache = ProxyCache::at(Path::new(&root)).unwrap();
+        for step in 0u64.. {
+            let bytes = kill_test_movie(step);
+            let key = &keys[(step % 6) as usize];
+            let staging = cache.stage().unwrap();
+            std::io::Write::write_all(&mut staging.movie(), &bytes).unwrap();
+            let mut sidecar = sidecar(key, &bytes);
+            // Record the step so the parent can rebuild the expected bytes.
+            sidecar.fidelity.widest_sample = step;
+            cache.publish(key, staging, &sidecar).unwrap();
+        }
+        return;
+    }
+    let scratch = tempfile::tempdir().unwrap();
+    let root = scratch.path().join("Proxies");
+    drop(ProxyCache::at(&root).unwrap());
+    let seed = std::env::var("DEADPAN_CHAOS_SEED")
+        .ok()
+        .and_then(|text| u64::from_str_radix(text.trim_start_matches("0x"), 16).ok())
+        .unwrap_or(0x9e0c_5eed);
+    let rounds = std::env::var("DEADPAN_CHAOS_ITERATIONS")
+        .ok()
+        .and_then(|text| text.parse().ok())
+        .unwrap_or(8u64);
+    let mut rng = deadpan_chaos::Rng::new(seed);
+    let mut seen = 0;
+    for round in 0..rounds {
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "proxy::cache::tests::process_kills_during_publication_leave_whole_entries_or_none",
+                "--nocapture",
+            ])
+            .env(CHILD, &root)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        std::thread::sleep(Duration::from_millis(30 + rng.below(400) as u64));
+        assert!(
+            child.try_wait().unwrap().is_none(),
+            "round {round}: the child exited before the kill"
+        );
+        child.kill().unwrap();
+        child.wait().unwrap();
+        let cache = ProxyCache::at(&root).unwrap();
+        for key in &keys {
+            let Some(entry) = cache.lookup(key).unwrap() else {
+                continue;
+            };
+            seen += 1;
+            let step = entry.sidecar().fidelity.widest_sample;
+            let mut bytes = Vec::new();
+            cache
+                .open(&entry, &not_cancelled())
+                .unwrap_or_else(|error| panic!("round {round}: visible entry damaged: {error}"))
+                .into_file()
+                .read_to_end(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes, kill_test_movie(step), "round {round}: step {step}");
+        }
+        cache
+            .cleanup(
+                &[],
+                ProxyCleanupPolicy {
+                    staging_grace: Duration::ZERO,
+                    ..ProxyCleanupPolicy::default()
+                },
+            )
+            .unwrap();
+    }
+    assert!(seen > 0, "no round published anything");
+}

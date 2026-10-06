@@ -1,15 +1,23 @@
 # Supported development project formats
 
-The current package uses SQLite schema 66 and core document schema 46. Schema
+The current package uses SQLite schema 67 and core document schema 46. Schema
 64 stores revision documents only at [keyframes](TIMING_STORAGE.md#revision-storage-database-schema-64),
 records each revision's patch-chain depth and JSON size bound, and adds the
 [verified history receipt](TIMING_STORAGE.md#verified-history-receipts).
 Schema 65 adds the [register bank digest](TIMING_STORAGE.md#register-bank-digest-database-schema-65).
 Schema 66 adds [analysis corrections](ANALYSIS_CORRECTIONS.md) and
-[resumable shot scan progress](SHOT_DETECTION.md).
-Under the 2026-09-30 development-format authorization there is no migration:
-this build refuses schemas 1 through 65, including the former schema-59
-through 62 additive upgrades, as `UnsupportedSchema` without changes.
+[resumable shot scan progress](SHOT_DETECTION.md). Schema 67 adds
+`retired_identities`, which keeps identities a [restore](BACKUPS.md#restore)
+discarded from being issued again.
+Schema 66 packages (the previous build) migrate: opening one returns
+`MigrationRequired` without writing, and native Open or `project migrate`
+backs it up, adds the empty table on a copy, validates the complete history
+and promotes it ([release migrations](BACKUPS.md#release-migration-policy)).
+Under the 2026-09-30 development-format authorization this build still
+refuses schemas 1 through 65, including the former schema-59 through 62
+additive upgrades, as `UnsupportedSchema` without changes. A schema *above*
+67 (a newer build's package) is refused by writers as `NewerSchema` and opens
+read-only for viewing.
 
 History patches now record retained audio timing as granular
 `AudioBindingPatch` entries rather than two complete binding states, and new
@@ -70,10 +78,11 @@ supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 66 performs read-only validation and reports
+Calling `project migrate` on schema 67 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
-native writer. Calling it on an older package returns `SchemaUnsupported`
-before creating a backup or obtaining a writer. An open native endpoint only
+native writer. Calling it on schema 66 upgrades it as above; on an older
+package it returns `SchemaUnsupported` before creating a backup or obtaining
+a writer. An open native endpoint only
 validates its already admitted current package.
 
 ## Current recovery remains required

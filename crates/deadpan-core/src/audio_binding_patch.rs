@@ -74,6 +74,41 @@ impl AudioBindingPatch {
         (!patch.is_empty()).then_some(patch)
     }
 
+    /// `self == other.inverse()`, without building the reversed patch.
+    pub(crate) fn is_reverse_of(&self, other: &Self) -> bool {
+        fn swapped<K: Eq, V: Eq>(
+            reversed: &BTreeMap<K, ValueChange<V>>,
+            forward: &BTreeMap<K, ValueChange<V>>,
+        ) -> bool {
+            reversed.len() == forward.len()
+                && reversed
+                    .iter()
+                    .zip(forward)
+                    .all(|((key, back), (other, change))| {
+                        key == other && back.before == change.after && back.after == change.before
+                    })
+        }
+        let Self {
+            timings,
+            bindings,
+            gap_bindings,
+            sound_clocks,
+        } = self;
+        timings.len() == other.timings.len()
+            && timings.iter().zip(&other.timings).all(|(back, change)| {
+                back.id == change.id && back.before == change.after && back.after == change.before
+            })
+            && swapped(bindings, &other.bindings)
+            && swapped(gap_bindings, &other.gap_bindings)
+            && match (sound_clocks, &other.sound_clocks) {
+                (None, None) => true,
+                (Some(back), Some(change)) => {
+                    back.before == change.after && back.after == change.before
+                }
+                _ => false,
+            }
+    }
+
     pub fn inverse(&self) -> Self {
         Self {
             timings: self

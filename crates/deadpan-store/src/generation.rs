@@ -285,7 +285,13 @@ impl ProjectStore {
                 |row| row.get(0),
             )
             .optional()?;
-        if exists.is_some() {
+        if exists.is_some()
+            || crate::retired::contains(
+                &transaction,
+                "generation_request",
+                input.request_id.as_str(),
+            )?
+        {
             return Err(StoreError::GenerationRequestReused(
                 input.request_id.as_str().to_owned(),
             ));
@@ -298,6 +304,13 @@ impl ProjectStore {
                 |row| row.get(0),
             )
             .optional()?;
+        // A restore may have discarded later versions of this Hold.
+        let retired = crate::retired::floor(&transaction, "hold_version", input.hold_id.as_str())?;
+        let prior = match prior {
+            Some(value) if value > 0 => Some(value.max(retired)),
+            None if retired > 0 => Some(retired),
+            other => other,
+        };
         let next = match prior {
             Some(MAX_SQL_REQUEST_VERSION) => {
                 return Err(StoreError::GenerationVersionExhausted(

@@ -213,6 +213,7 @@ pub(crate) fn set(
 /// The outer transaction detaches this relation before structural helpers
 /// capture soundless contexts. Identity transforms update it independently;
 /// the relation is restored only after the sound bus and final tree are ready.
+#[derive(Clone)]
 pub(crate) struct SoundAllowanceEdit {
     values: BTreeMap<SoundId, SoundHoldAllowances>,
 }

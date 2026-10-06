@@ -148,7 +148,10 @@ and one reply. Keep hashing, snapshot copying, indexing and decoding off the UI;
 cancel superseded work and reject stale source/request identities. Open local
 files nonblocking before checking regular-file metadata. `SourceSession` retains
 a private SHA-256-verified copy and an original-PTS index; validate native hard
-limits before starting that copy. Random seeks preroll
+limits before starting that copy. A project Original's store snapshot already is
+such a copy: adopt it (`into_source_input`, `open_admitted_input`,
+`AudioSession::open_input`) instead of copying and hashing it again. Interactive
+decoders above 1080p use up to 16 codec threads (`interactive_for`). Random seeks preroll
 metadata and convert only the selected frame, skipping non-reference pictures
 presented before the target (`seek_to`) only when every SPS declares
 `bitstream_restriction` and `frame_mbs_only_flag`; never skip at or after it. Codec
@@ -183,7 +186,8 @@ proxy rows, history or document references. Pause builds during playback,
 renders, battery, Low Power Mode and thermal pressure; honor `:proxies off`
 and remembered failures. Open proxies only while the worker is idle. A proxy
 picture is a distinct presentation identity (`PictureTier::Proxy`): show the
-Proxy chip, refine to the exact Original after `REFINE_DELAY` for the same
+Proxy chip, refine to the exact Original after the rest (`REFINE_DELAY`
+while the cursor keeps moving, `ISOLATED_REFINE_DELAY` otherwise) for the same
 ticket, show single steps exactly, and never let it satisfy Camera, Slip,
 Trim or other exact gates. Proxy pictures exist only in the app's private
 preview reader; playback, proposals, copies, candidates, thumbnails, export,
@@ -409,12 +413,38 @@ encoder geometry normalization, complete muxing or verified publication.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, cursor and history receipt. A commit writes only its patch: revision rows keep a compact document only at the initial revision and keyframes (depth 64 or a `json_bound` over the document limit), and every revision, the head included, is rebuilt from its keyframe through stored forward patches (history entry, or `revision_patches` for undo/redo) with `DocumentPatch::apply_stored_in_place`, validating only the final document. Keep each row's `depth` and `json_bound` (parent bound plus patch length plus slack) consistent; they bound reconstruction and the document size without serializing it. Read historical documents through `snapshot_at` or `for_each_revision_document`, never the raw column. The store caches validated committed documents by revision identity, inserting only after commit or outside a transaction; commits run commands with `apply_validated` inside the head's `ValidatedDocument` scope and adopt its result rather than reapplying the patch, and refresh compiles plans in the same scope. Reuse a validation only by that exact-value memo or the per-owner binding proof rule in [timing storage](docs/TIMING_STORAGE.md#validation-invariants); never skip validating a new state. Binding changes are granular `AudioBindingPatch` entries with exact before-values. See [timing storage](docs/TIMING_STORAGE.md). Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
+Backups copy the committed database on their own read-only connection, never
+the writer, and publish only after the same verification opening performs plus
+`integrity_check`; published backups pin media like checkpoints and cleanup
+fails closed and excludes copies in progress. Backups follow every commit
+(`ChangeMonitor`), not just the head. Restore takes a `before-restore` backup,
+carries every identity and version the replaced state issued into
+`retired_identities` (allocation must consult it), revokes all session
+capabilities, copies in one destination transaction, then revalidates and
+recovers as opening does; the app starts a new session and endpoint. Only
+`--damaged` replacement cannot carry identities forward (the old database is
+unreadable). A newer `user_version` opens read-only for viewing only:
+never take the writer, validate its history or write. Release migrations go
+through `migration::migrate_package_with` (lock, raw backup, migrate a copy,
+validate, fold WAL, rename). Database schema 67 is current; 66 migrates
+through the one production step (adding `retired_identities`); 1 through 65
+are still refused. Add a step whenever a schema change would otherwise strand
+the owner's packages. Linked media keeps a system bookmark; a resolved
+bookmark is only a candidate for the content-verified relink. Every revision is
+retained; see [backups](docs/BACKUPS.md) for history limits and kill tests.
+
 Commands compute each whole-document pass once: lineage, marks and final
 validation share one structural pass, intermediate validations reuse the
 scoped head's durations and binding proof, and Split's validation is adopted
 when post-processing changed nothing. New local replacements keep the
 `with_reference_command_work` oracle and its random equivalence test. See
-[command work reuse](docs/TIMING_STORAGE.md#command-work-reuse).
+[command work reuse](docs/TIMING_STORAGE.md#command-work-reuse). A pause's new
+timing table may be a provisional slice (`FrozenAudioLayout::capture_scoped`)
+that charges the complete layout's counts and bytes; name every alias a later
+template reads (or `rescope_timing`), never serialize it, and let compaction
+replace it before the command returns. History rows use the exact compact
+`command::patch_wire` form (Sequence child splices, implied inverse); keep
+both forms decodable. See [pause work](docs/TIMING_STORAGE.md#pause-work-scoped-to-its-changes).
 
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through
 ordinary Sequence ancestors. Capture downstream sample entries before removing
@@ -516,7 +546,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 66 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts; 65 the register bank digest over version and slots, checked on every bank read; 66 analysis corrections and shot scan progress). Refuse schemas 1 through 65 before writer acquisition, backups, recovery or document parsing. Without a schema change, bridge bundle receipts must carry their attempt's own seed (`ProviderSelection::for_attempt`): a current package whose request has a Ready retry (attempt 2 or later) recorded under the request's own seed fails validation on open. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 67 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts; 65 the register bank digest over version and slots, checked on every bank read; 66 analysis corrections and shot scan progress; 67 `retired_identities`). Schema 66 migrates through the backed-up release runner; refuse schemas 1 through 65 before writer acquisition, backups, recovery or document parsing. Without a schema change, bridge bundle receipts must carry their attempt's own seed (`ProviderSelection::for_attempt`): a current package whose request has a Ready retry (attempt 2 or later) recorded under the request's own seed fails validation on open. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates

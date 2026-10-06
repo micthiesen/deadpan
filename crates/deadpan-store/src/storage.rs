@@ -140,7 +140,7 @@ pub struct StorageReport {
     pub grace_seconds: u64,
     pub database_bytes: u64,
     pub namespaces: Vec<NamespaceReport>,
-    /// Bytes under `Snapshots`, `Reports` and `Analysis`.
+    /// Bytes under `Snapshots`, `Backups`, `Reports` and `Analysis`.
     pub auxiliary_bytes: u64,
     /// Checkpoint databases whose references were included.
     pub checkpoints: Vec<String>,
@@ -149,6 +149,51 @@ pub struct StorageReport {
     pub unreadable_checkpoints: Vec<String>,
     pub total_bytes: u64,
     pub removable_bytes: u64,
+    /// What the retained history occupies inside the database.
+    pub history: HistoryUsage,
+}
+
+/// The stored size of the project's history: every revision stays (see
+/// docs/BACKUPS.md, "History limits"), as keyframe documents every
+/// `MAX_PATCH_CHAIN` revisions plus one patch per revision.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct HistoryUsage {
+    pub revisions: u64,
+    pub edits: u64,
+    pub keyframes: u64,
+    /// Complete documents stored at keyframes.
+    pub keyframe_bytes: u64,
+    /// Edit history entries (request, forward and inverse patch) and undo or
+    /// redo patches.
+    pub patch_bytes: u64,
+}
+
+fn history_usage(connection: &rusqlite::Connection) -> Result<HistoryUsage, StoreError> {
+    let unsigned = |value: i64| u64::try_from(value).unwrap_or(0);
+    let (revisions, keyframes, keyframe_bytes): (i64, i64, i64) = connection.query_row(
+        "SELECT COUNT(*), COALESCE(SUM(document != 'null'),0),
+                COALESCE(SUM(CASE WHEN document != 'null' THEN length(CAST(document AS BLOB)) ELSE 0 END),0)
+         FROM revisions",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    )?;
+    let (edits, edit_bytes): (i64, i64) = connection.query_row(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(request AS BLOB)) + length(CAST(edit AS BLOB))),0) FROM history",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )?;
+    let navigation: i64 = connection.query_row(
+        "SELECT COALESCE(SUM(length(CAST(patch AS BLOB))),0) FROM revision_patches",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(HistoryUsage {
+        revisions: unsigned(revisions),
+        edits: unsigned(edits),
+        keyframes: unsigned(keyframes),
+        keyframe_bytes: unsigned(keyframe_bytes),
+        patch_bytes: unsigned(edit_bytes).saturating_add(unsigned(navigation)),
+    })
 }
 
 impl StorageReport {
@@ -413,8 +458,16 @@ fn released_render_jobs(
 
 impl ProjectStore {
     /// The digests every retained row names, read from one consistent
-    /// database snapshot, plus every checkpoint database under `Snapshots`.
+    /// database snapshot, plus every checkpoint database under `Snapshots`
+    /// and every published backup under `Backups`.
     pub(crate) fn storage_references(&self) -> Result<References, StoreError> {
+        // A later build's tables may name objects this build cannot see.
+        if let Some(found) = self.newer_schema {
+            return Err(StoreError::NewerSchema {
+                found,
+                supported: crate::schema::VERSION,
+            });
+        }
         let mut references = References::default();
         scan_database(&self.connection, &mut references)?;
         self.scan_checkpoints(&mut references);
@@ -424,11 +477,20 @@ impl ProjectStore {
     /// Checkpoints are restorable copies of the database: everything they
     /// mention stays pinned, without liveness exceptions.
     fn scan_checkpoints(&self, references: &mut References) {
-        let directory = self.package.join("Snapshots");
-        let Ok(entries) = std::fs::read_dir(&directory) else {
-            return;
-        };
-        let mut names: Vec<_> = entries.flatten().map(|entry| entry.path()).collect();
+        let mut names = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(self.package.join("Snapshots")) {
+            names.extend(entries.flatten().map(|entry| entry.path()));
+        }
+        // Published backups pin like checkpoints. Their hidden staging files
+        // are skipped: a copy in progress names only objects the live
+        // database already pins, and the grace period covers its lifetime.
+        // Fail closed: if the backups cannot be listed, what they pin is
+        // unknown and cleanup refuses.
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        match crate::backups::list_backups(&self.package) {
+            Ok(backups) => names.extend(backups.into_iter().map(|backup| backup.path)),
+            Err(_) => references.unreadable_checkpoints.push("Backups".into()),
+        }
         names.sort();
         for path in names {
             let name = path
@@ -531,7 +593,7 @@ impl ProjectStore {
             .filter(std::fs::Metadata::is_file)
             .map(|metadata| metadata.len())
             .sum::<u64>();
-        let auxiliary_bytes = ["Snapshots", "Reports", "Analysis"]
+        let auxiliary_bytes = ["Snapshots", "Backups", "Reports", "Analysis"]
             .iter()
             .map(|name| tree_bytes(&self.package.join(name)))
             .sum::<u64>();
@@ -558,6 +620,7 @@ impl ProjectStore {
             unreadable_checkpoints: references.unreadable_checkpoints,
             total_bytes: database_bytes + auxiliary_bytes + media,
             removable_bytes,
+            history: history_usage(&self.connection)?,
         })
     }
 
@@ -637,10 +700,22 @@ impl ProjectStore {
         } else {
             None
         };
+        // No backup may be copying while references are computed and objects
+        // removed: its snapshot may name objects the live database no longer
+        // pins. Backups wait for this; cleanup waits at most two seconds.
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let _backups_quiet = if policy.dry_run {
+            None
+        } else {
+            Some(crate::backups::exclude_backups(
+                &self.package,
+                Duration::from_secs(2),
+            )?)
+        };
         let report = self.storage_report(policy.grace)?;
         if !policy.dry_run && !report.unreadable_checkpoints.is_empty() {
             return Err(StoreError::Storage(format!(
-                "cleanup cannot read the checkpoint(s) {} under Snapshots, so it cannot tell what they reference; remove or repair them first",
+                "cleanup cannot read the checkpoint(s) or backups {} under Snapshots or Backups, so it cannot tell what they reference; remove or repair them first",
                 report.unreadable_checkpoints.join(", ")
             )));
         }

@@ -77,6 +77,56 @@ impl VerifiedSourceInput {
         })
     }
 
+    /// Adopt the project store's verified private Original snapshot without
+    /// copying or hashing it again. Only `deadpan-store`
+    /// (`VerifiedOriginalObject::into_source_input`) calls this: it wrote
+    /// `file` itself, an anonymous temporary file, while checking the
+    /// complete BLAKE3 identity, SHA-256 and length against the record that
+    /// `identity` must name, and no other handle to it escapes. A Rust
+    /// visibility seal across crates would need the store's copy loop to move
+    /// into this crate; instead the name states the contract, the length is
+    /// checked here, and debug builds recompute the SHA-256. Decoders still
+    /// check every picture against its index.
+    #[doc(hidden)]
+    pub fn from_store_verified_snapshot(
+        file: File,
+        identity: SourceContentIdentity,
+    ) -> Result<Self, SourceInputError> {
+        let metadata = file
+            .metadata()
+            .map_err(|error| SourceInputError::Snapshot(error.into()))?;
+        if !metadata.is_file() || metadata.len() != identity.byte_length() {
+            return Err(SourceInputError::Limits);
+        }
+        #[cfg(debug_assertions)]
+        {
+            use sha2::Digest;
+            use std::os::unix::fs::FileExt;
+            let mut hasher = sha2::Sha256::new();
+            let mut buffer = vec![0_u8; 1 << 20];
+            let mut offset = 0_u64;
+            loop {
+                let read = file
+                    .read_at(&mut buffer, offset)
+                    .map_err(|error| SourceInputError::Snapshot(error.into()))?;
+                if read == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..read]);
+                offset += read as u64;
+            }
+            assert_eq!(
+                <[u8; 32]>::from(hasher.finalize()),
+                identity.sha256(),
+                "an adopted snapshot is not the verified bytes it claims"
+            );
+        }
+        Ok(Self {
+            file: Arc::new(file),
+            identity,
+        })
+    }
+
     pub fn identity(&self) -> SourceContentIdentity {
         self.identity
     }

@@ -39,6 +39,59 @@ pub(crate) fn local() -> bool {
     !REFERENCE.with(Cell::get)
 }
 
+thread_local! {
+    static SCOPED_TIMING: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Run one command leaf permitting provisional timing tables (see
+/// `FrozenAudioLayout::capture_scoped`). The command entry point grants it
+/// only when nothing but binding compaction will read the new table: no beat
+/// sound clock can install the complete layout under the same identity.
+pub(crate) fn with_scoped_timing_captures<R>(permitted: bool, operation: impl FnOnce() -> R) -> R {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            SCOPED_TIMING.with(|flag| flag.set(self.0));
+        }
+    }
+    let _restore = Restore(SCOPED_TIMING.with(|flag| flag.replace(permitted)));
+    operation()
+}
+
+#[cfg(any(test, feature = "test-support"))]
+thread_local! {
+    static PROVISIONAL_CAPTURES: Cell<(usize, usize)> = const { Cell::new((0, 0)) };
+}
+
+/// Count one capture that built a provisional slice (`rescoped` when the
+/// command extended it afterwards).
+pub(crate) fn note_provisional_capture(rescoped: bool) {
+    #[cfg(any(test, feature = "test-support"))]
+    PROVISIONAL_CAPTURES.with(|count| {
+        let (built, extended) = count.get();
+        count.set((built + 1, extended + usize::from(rescoped)));
+    });
+    #[cfg(not(any(test, feature = "test-support")))]
+    let _ = rescoped;
+}
+
+/// Provisional timing tables built and later extended on this thread, so
+/// equivalence tests can show they exercised the scoped capture.
+#[doc(hidden)]
+#[cfg(any(test, feature = "test-support"))]
+pub fn provisional_captures_for_tests() -> (usize, usize) {
+    PROVISIONAL_CAPTURES.with(Cell::get)
+}
+
+/// Whether a capture may build a provisional slice of its new timing table:
+/// inside a permitting command leaf, with the local command work and the
+/// compact timing representation (outside both oracles).
+pub(crate) fn scoped_timing_captures() -> bool {
+    local()
+        && SCOPED_TIMING.with(Cell::get)
+        && crate::audio_binding_lifecycle::compact_representation()
+}
+
 /// The merged map difference used by every patch, as `(key, before, after)`
 /// rows, for equivalence tests outside the crate.
 #[doc(hidden)]

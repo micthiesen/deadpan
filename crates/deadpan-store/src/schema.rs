@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 66;
+pub const VERSION: u32 = 67;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,10 +18,23 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Database schema 66 adds manual analysis corrections and resumable shot
+    // Database schema 67 adds identities retired by restores (66 added
+    // manual analysis corrections and resumable shot
     // scan progress (65 added the register bank digest; 64 keyframe metadata
     // and history receipts). Refuse prior unused development packages
     // before writable open or parsing.
+    if version > VERSION {
+        // A later Deadpan wrote this package. Writers and validators refuse;
+        // `ProjectStore::open` can still show it read-only.
+        return Err(StoreError::NewerSchema {
+            found: version,
+            supported: VERSION,
+        });
+    }
+    if crate::migration::migratable(version) {
+        // `ProjectStore::migrate` backs up and upgrades it; nothing written.
+        return Err(StoreError::MigrationRequired(version));
+    }
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
     }
@@ -80,6 +93,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::shot_analysis::create_tables(&transaction)?;
     crate::analysis_corrections::create_tables(&transaction)?;
     crate::revision_storage::create_tables(&transaction)?;
+    crate::retired::create_tables(&transaction)?;
     crate::audit::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::create_tables(&transaction)?;

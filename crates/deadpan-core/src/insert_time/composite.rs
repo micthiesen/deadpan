@@ -73,8 +73,13 @@ pub(crate) fn prepare_owners(
     total: i64,
     timing: &AudioTimingId,
 ) -> Result<ProjectDocument, EditError> {
-    let captured =
-        crate::audio_binding_lifecycle::capture_for_composite_insertion(document, timing.clone())?;
+    // Only the new bindings and the affected owners' steps read the new
+    // table, so it may be a provisional slice (see `capture_scoped`).
+    let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion_scoped(
+        document,
+        timing.clone(),
+        affected,
+    )?;
     let mut working = document.clone();
     working.audio_bindings = captured.state;
     if let Some(layout) = captured.phase_only_layout {
@@ -113,6 +118,9 @@ pub(crate) fn prepare_owners(
         )?;
     }
     crate::audio_binding_lifecycle::prune(&mut working);
+    // The steps above name only captured aliases; extend the table anyway if
+    // any template reads one it does not project.
+    crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
     working.audio_bindings.validate_for(&working)?;
     Ok(working)
 }

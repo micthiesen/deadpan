@@ -38,6 +38,23 @@ impl Service {
     /// True completes the short user command; false retains its admission while
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
+        if let Some(refusal) = self.read_only_refusal(&request) {
+            // Ticketed backup requests are answered on their own channel too.
+            if let ProjectRequest::Backup(
+                super::super::backups::Request::Now { ticket, .. }
+                | super::super::backups::Request::Restore { ticket, .. },
+            ) = &request
+            {
+                self.answer_backup(*ticket, Err(refusal.clone()));
+            }
+            self.error = Some(refusal);
+            self.message = None;
+            return true;
+        }
+        if let ProjectRequest::Backup(request) = request {
+            self.backup_command(request);
+            return true;
+        }
         if let ProjectRequest::CaptureOriginal(request) = request {
             self.capture_original_command(request);
             return true;
@@ -513,6 +530,12 @@ impl Service {
             .pending_session_change
             .take()
             .expect("pending change checked");
+        if matches!(
+            pending,
+            PendingSessionChange::Close | PendingSessionChange::Shutdown
+        ) {
+            self.backup_before_session_change();
+        }
         let outcome = match pending {
             PendingSessionChange::Close => {
                 self.cancel();

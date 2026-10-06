@@ -4,6 +4,8 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
+
+mod patch_wire;
 use crate::{
     AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, AudioSample, BeatNode,
     BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, FrameRateOrigin,
@@ -609,7 +611,10 @@ pub struct DocumentPatch {
     pub to_revision: RevisionId,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub presentation: Option<PresentationChange>,
-    #[serde(deserialize_with = "crate::audio_gain::node_map")]
+    #[serde(
+        serialize_with = "patch_wire::serialize_nodes",
+        deserialize_with = "patch_wire::deserialize_nodes"
+    )]
     pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
@@ -929,8 +934,8 @@ impl DocumentPatch {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+/// Stored in the compact form of `patch_wire`, which decodes to the same value.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EditTransaction {
     pub forward: DocumentPatch,
     pub inverse: DocumentPatch,
@@ -1103,8 +1108,51 @@ fn apply_with_durations(
             identities,
             timing,
         } => {
-            let (result, structure) =
-                crate::insert_time::apply_known(input, *at, hold, id, identities, timing, context)?;
+            // A beat sound clock installs the complete pre-edit layout under
+            // this command's timing identity, so its table must stay complete.
+            let scoped = beat_sound_edit.is_none();
+            let saved_allowances = scoped.then(|| allowance_edit.clone()).flatten();
+            let scoped_result = crate::command_work::with_scoped_timing_captures(scoped, || {
+                crate::insert_time::apply_known(
+                    input,
+                    *at,
+                    hold,
+                    id,
+                    identities,
+                    timing,
+                    EditContext {
+                        allocation: &request.new_revision,
+                        allowances: allowance_edit.as_mut(),
+                    },
+                )
+            })?;
+            // Both insertion paths extend a provisional table to every alias
+            // their templates read. Should one ever not, repeat the leaf with
+            // complete captures rather than refuse what that path accepts.
+            let (result, structure) = if scoped
+                && !crate::audio_binding_lifecycle::provisional_tables_project_references(
+                    &scoped_result.0.audio_bindings,
+                ) {
+                debug_assert!(
+                    false,
+                    "a provisional timing table missed a referenced alias"
+                );
+                allowance_edit = saved_allowances;
+                crate::insert_time::apply_known(
+                    input,
+                    *at,
+                    hold,
+                    id,
+                    identities,
+                    timing,
+                    EditContext {
+                        allocation: &request.new_revision,
+                        allowances: allowance_edit.as_mut(),
+                    },
+                )?
+            } else {
+                scoped_result
+            };
             if let Some(structure) = structure {
                 known = KnownValidation::Structure(structure);
             }

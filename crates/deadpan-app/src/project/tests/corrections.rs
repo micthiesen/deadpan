@@ -232,3 +232,79 @@ fn unreadable_corrections_refuse_word_operators_until_discarded() {
             .is_some_and(|problem| problem.contains("unreadable"))
     );
 }
+
+/// A session that only saves analyses (no authored edit) is still backed
+/// up: backups follow every commit, operational ones included.
+#[test]
+fn a_transcript_only_session_is_backed_up() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service.set_backup_interval_for_check(std::time::Duration::from_millis(50));
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    let before = initialized.workspace.unwrap();
+    let path = before.path.clone();
+    // Let the first automatic backup settle on the initialized project.
+    let first = wait(&service, |update| {
+        update.backups.latest.is_some() && update.backups.running.is_none()
+    });
+    let first_id = first.backups.latest.unwrap().0.id;
+    let count = |path: &std::path::Path| {
+        deadpan_store::backups::list_backups(path)
+            .unwrap()
+            .into_iter()
+            .filter(|backup| backup.id != first_id)
+            .count()
+    };
+    // Nothing new while nothing changes.
+    std::thread::sleep(std::time::Duration::from_millis(250));
+    let quiet = count(&path);
+    let Some(SingleSourceState::Ready { asset, .. }) = &before.single_source else {
+        panic!("original not initialized")
+    };
+    let receipt = &before.sources[asset].receipt;
+    let key = deadpan_store::TranscriptKey {
+        content: receipt.original().content().to_string(),
+        audio_stream: receipt.snapshot().audio().unwrap().stream().stream_index,
+        model_sha256: "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002".into(),
+        language: "en".into(),
+        engine: "whisper.cpp 1.8.3".into(),
+    };
+    service
+        .submit(ProjectRequest::SaveTranscript {
+            expected_session: before.session,
+            attempt: 1,
+            key,
+            transcript: Arc::new(transcript()),
+        })
+        .unwrap();
+    let saved = wait(&service, |update| {
+        update
+            .transcript_save
+            .as_ref()
+            .is_some_and(|save| save.attempt == 1)
+    });
+    assert!(saved.transcript_save.unwrap().error.is_none());
+    let revision = saved.workspace.unwrap().document.revision_id().clone();
+    assert_eq!(&revision, before.document.revision_id(), "no authored edit");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    while count(&path) <= quiet {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "the transcript was never backed up"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+}

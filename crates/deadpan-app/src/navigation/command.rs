@@ -69,6 +69,8 @@ pub enum Entry {
     Diagnostics,
     /// `:storage`: open the project and cache storage panel.
     Storage,
+    /// `:backups`: Storage, on the project's backups.
+    Backups,
     /// `:jobs`: every background job, its state, progress and cancel.
     Jobs,
     /// `:portable-copy`: save a verified self-contained copy of the project.
@@ -730,7 +732,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
         | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "portable-copy" | "jobs"
+        | "storage" | "backups" | "portable-copy" | "jobs"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -742,6 +744,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "models" => Entry::Models,
                 "diagnostics" => Entry::Diagnostics,
                 "storage" => Entry::Storage,
+                "backups" => Entry::Backups,
                 "jobs" => Entry::Jobs,
                 "portable-copy" => Entry::PortableCopy,
                 "splice" => Entry::Splice,
@@ -753,7 +756,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
         | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "portable-copy" | "jobs" => {
+        | "storage" | "backups" | "portable-copy" | "jobs" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1614,6 +1617,7 @@ mod tests {
             (":models", Entry::Models),
             (":diagnostics", Entry::Diagnostics),
             (":storage", Entry::Storage),
+            (":backups", Entry::Backups),
             (":jobs", Entry::Jobs),
             (":portable-copy", Entry::PortableCopy),
             (":splice", Entry::Splice),

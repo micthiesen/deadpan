@@ -56,10 +56,20 @@ impl Default for SourceSessionLimits {
 impl SourceSessionLimits {
     /// Interactive preview: serving decoders use [`interactive_decode_threads`].
     pub fn interactive() -> Self {
+        Self::with_threads(interactive_decode_threads())
+    }
+
+    /// Interactive preview of a `width`×`height` stream: serving decoders use
+    /// [`interactive_decode_threads_for`] it.
+    pub fn interactive_for(width: u32, height: u32) -> Self {
+        Self::with_threads(interactive_decode_threads_for(width, height))
+    }
+
+    fn with_threads(threads: u32) -> Self {
         let defaults = Self::default();
         Self {
             decode: DecodeLimits {
-                threads: interactive_decode_threads(),
+                threads,
                 ..defaults.decode
             },
             ..defaults
@@ -71,10 +81,29 @@ impl SourceSessionLimits {
 /// [`MAX_INTERACTIVE_DECODE_THREADS`]. Threading changes latency and memory,
 /// never the pictures. See docs/qualification/seek-2026-10-05.md.
 pub fn interactive_decode_threads() -> u32 {
+    cores().clamp(1, MAX_INTERACTIVE_DECODE_THREADS)
+}
+
+/// [`interactive_decode_threads`] for a stream of this raster: a picture
+/// larger than 1920×1080 uses up to [`MAX_LARGE_INTERACTIVE_DECODE_THREADS`].
+pub fn interactive_decode_threads_for(width: u32, height: u32) -> u32 {
+    if u64::from(width) * u64::from(height) > 1920 * 1080 {
+        cores().clamp(1, MAX_LARGE_INTERACTIVE_DECODE_THREADS)
+    } else {
+        interactive_decode_threads()
+    }
+}
+
+fn cores() -> u32 {
     std::thread::available_parallelism()
         .map_or(1, |cores| u32::try_from(cores.get()).unwrap_or(u32::MAX))
-        .clamp(1, MAX_INTERACTIVE_DECODE_THREADS)
 }
+
+/// Above 1080p a long-GOP seek is decode-bound for longer: 4K30 warm seek p95
+/// was 213-217 ms at 12 threads and 170-172 ms at 16 (seek qualification,
+/// 2026-10-05), for about 160 MB more peak memory. Sixteen is the native
+/// adapter's limit.
+pub const MAX_LARGE_INTERACTIVE_DECODE_THREADS: u32 = 16;
 
 /// Measured on 2026-10-05 (seek qualification): 1080p long-GOP warm seek p95
 /// was 64-71 ms at 8 threads, 47-61 ms at 12 and 38-51 ms at 16. Twelve
@@ -340,8 +369,47 @@ impl SourceSession {
             cancelled,
         };
         let input = VerifiedSourceInput::copy_with_deadline(source, expected.content(), &deadline)?;
+        Self::admitted_with_deadline(input, expected, expected_info, limits, &deadline)
+    }
+
+    /// [`Self::open_admitted`] over already verified bytes, such as the
+    /// project store's private Original snapshot, without copying them again.
+    /// Serving and the background measurement are otherwise identical.
+    pub fn open_admitted_input(
+        input: VerifiedSourceInput,
+        expected: Arc<SourceIndexSnapshot>,
+        expected_info: &SourceStreamInfo,
+        limits: SourceSessionLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, SourceSessionError> {
+        Self::validate_limits(expected.content(), limits)?;
+        let frames = expected.index().frames().len();
+        if frames > limits.maximum_index_frames
+            || frames > limits.maximum_index_bytes / std::mem::size_of::<IndexedSourceFrame>()
+        {
+            return Err(SourceSessionError::Limits(
+                "presentation index exceeds budget",
+            ));
+        }
+        if input.identity() != expected.content() {
+            return Err(SourceSessionError::IndexMismatch);
+        }
+        let deadline = Deadline {
+            end: Instant::now() + limits.opening_timeout,
+            cancelled,
+        };
+        Self::admitted_with_deadline(input, expected, expected_info, limits, &deadline)
+    }
+
+    fn admitted_with_deadline(
+        input: VerifiedSourceInput,
+        expected: Arc<SourceIndexSnapshot>,
+        expected_info: &SourceStreamInfo,
+        limits: SourceSessionLimits,
+        deadline: &Deadline<'_>,
+    ) -> Result<Self, SourceSessionError> {
         let decoder =
-            SourceDecoder::open(input.decoder_file()?, limits.decode, control(&deadline)?)?;
+            SourceDecoder::open(input.decoder_file()?, limits.decode, control(deadline)?)?;
         if decoder.info() != expected_info || decoder.info().stream_index != expected.stream_index()
         {
             return Err(SourceSessionError::IndexMismatch);
@@ -402,6 +470,25 @@ impl SourceSession {
             last_frame: None,
             measurement: None,
         })
+    }
+
+    /// Serve with `threads` codec threads from the next picture on, reopening
+    /// the serving decoder once. Pictures do not depend on the count; use it
+    /// when the raster, and so [`interactive_decode_threads_for`], is known
+    /// only after opening.
+    pub fn set_serving_threads(&mut self, threads: u32) -> Result<(), SourceSessionError> {
+        if threads == self.decode_limits.threads {
+            return Ok(());
+        }
+        let limits = DecodeLimits {
+            threads,
+            ..self.decode_limits
+        };
+        limits.validate()?;
+        self.decode_limits = limits;
+        self.reopen_decoder = true;
+        self.last_frame = None;
+        Ok(())
     }
 
     /// The verified private bytes this session decodes.

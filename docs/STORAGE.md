@@ -18,6 +18,7 @@ Sections 19.2 and 20.1 set the storage classes. The code is
 | Render candidates | `Media/RenderCandidates/blake3-…` | Yes after the job's movie is confirmed published, or its latest attempt ended Failed or Cancelled | Explicit cleanup |
 | Unfinished writes | `.pending-*` in any namespace | Yes after the grace period | Explicit cleanup |
 | Damaged copies | `.damaged-*` (set aside by restore) | Kept for diagnosis | Never |
+| Backups | `Backups/backup-*.sqlite` | By rotation only | [Backup rotation](BACKUPS.md#rotation); hidden `.staging-*` copies older than six hours are removed by rotation |
 | Seek proxies | `~/Library/Caches/Deadpan/Proxies` | Yes | Explicit cache cleanup; also the proxy builder's own budget |
 | Downloader staging | `~/Library/Application Support/Deadpan/helpers/.staging` | Yes once nothing in a download has changed for the grace period | Explicit cache cleanup |
 | Model packs, AI runtimes, qualification weights | `Application Support/Deadpan/Models`, `Caches/Deadpan/ltx-*` | Reported only | `models remove`; never cache cleanup |
@@ -50,10 +51,13 @@ maximal runs of exactly 64 lowercase hexadecimal digits:
   objects. `interrupted` (abandoned by a crash, meant to be retried), active,
   verified-but-unpublished and `published_unconfirmed` jobs keep theirs.
 - Every recovery checkpoint database under `Snapshots/` (SQLite sidecars
-  excepted). A checkpoint is a restorable database, so everything it
-  mentions stays pinned, without the live-receipt or render exceptions. A
-  `Snapshots/` entry that cannot be read as a database makes cleanup refuse,
-  because what it references is unknown; the report lists it.
+  excepted) and every published backup under `Backups/`. A checkpoint or
+  backup is a restorable database, so everything it mentions stays pinned,
+  without the live-receipt or render exceptions. An entry that cannot be read
+  as a database makes cleanup refuse, because what it references is unknown;
+  the report lists it. Hidden backup staging files are not scanned: a copy in
+  progress names only objects the live database pins, and the grace period
+  outlasts it.
 
 The same scan also records *typed* references: serialized object references
 (`{"algorithm":"blake3","digest":…},"byte_length":N`) and `blake3:<digest>`
@@ -159,13 +163,13 @@ merged.
 
 | Command | Effect |
 |---|---|
-| `project storage <pkg> [--grace-hours N]` | JSON report: database, each namespace's entries with state (`referenced` with reasons, `unreferenced`, `pending`, `damaged`, `unexpected`), sizes, what cleanup would remove; plus the per-user report. Read-only; works while the app has the project open. |
+| `project storage <pkg> [--grace-hours N]` | JSON report: database, each namespace's entries with state (`referenced` with reasons, `unreferenced`, `pending`, `damaged`, `unexpected`), sizes, what cleanup would remove, the history's own size (`history`: revisions, edits, keyframes and their bytes) and checkpoint, backup and report bytes (`auxiliary_bytes`); plus the per-user report. Read-only; works while the app has the project open. |
 | `project storage <pkg> --clean [--dry-run] [--grace-hours N]` | Remove (or list) unreferenced objects and unfinished writes older than the grace period. Needs a closed project. |
 | `project copy-portable <pkg> <new.deadpan>` | Verified self-contained copy. |
 | `cache status` / `cache clean [--dry-run] [--grace-hours N]` | Per-user caches: proxies unused for the grace period, then least recently used ones while the cache exceeds its budget (the dry run lists both), and abandoned downloader staging. The grace period is at least one hour. Reports, never touches, model packs, AI runtimes and qualification weights. |
 
 In the app, `:storage` or Deadpan › Storage… opens the Storage panel beside
-the picture. It shows the project's and Deadpan's usage with accessible
+the picture; `:backups` opens it on its [backups](BACKUPS.md#app). It shows the project's and Deadpan's usage with accessible
 "label: value" rows. P previews a project cleanup off the writer, R removes
 exactly the previewed files that are still removable (refused without a
 preview of the current session and revision), C cleans

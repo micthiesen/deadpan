@@ -156,17 +156,47 @@ pub(crate) fn apply_known(
     // A current timing table is needed even when every physical node already
     // has a lattice. Resume terms compose the CURRENT mapping, never recapture
     // the old raw recipe or recompute from the Original's frame coordinate.
-    let (bindings, phase_layout) =
-        crate::audio_binding_lifecycle::capture_for_insertion(document, timing.clone())?;
+    //
+    // The table may be a provisional slice (see `capture_scoped`). Before the
+    // resume terms below, it is read only through the new bindings (whose
+    // aliases it projects) and through each reanchored owner's trial step,
+    // which names that owner's pre-edit alias. A Split copy keeps its
+    // original's binding and aliases.
+    // The cut owner's right fragment almost always receives a resume term,
+    // so its alias is included up front (`rescope_timing` adds any other).
+    let reanchored = shifted
+        .iter()
+        .enumerate()
+        .filter(|(index, shifted)| {
+            (*index == 0 && interior.is_some())
+                || document
+                    .audio_bindings()
+                    .bindings()
+                    .get(&shifted.old)
+                    .is_some_and(|binding| !binding.reanchors.is_empty())
+        })
+        .map(|(_, shifted)| shifted.old.clone())
+        .collect();
+    let (bindings, phase_layout) = crate::audio_binding_lifecycle::capture_for_insertion_scoped(
+        document,
+        timing.clone(),
+        reanchored,
+    )?;
     let mut working = document.clone();
     working.audio_bindings = bindings;
+    // The structural durations of `working`, which binding changes below
+    // never alter: the head's, or the Split result's complete validation.
+    let working_durations;
     let insertion_slot = if let Some((target, cut)) = &interior {
         let cut = FrameDuration::new(*cut).map_err(crate::DocumentError::from)?;
-        working = split_captured(document, &working, |working| {
-            crate::split::apply(working, target, cut, identities, context)
+        let (split, (durations, _)) = split_captured(document, &working, |working| {
+            crate::split::apply_validated(working, target, cut, identities, context)
         })?;
+        working = split;
+        working_durations = Some(std::sync::Arc::new(durations));
         slot + 1
     } else {
+        working_durations = document.retained_durations();
         slot
     };
 
@@ -178,23 +208,26 @@ pub(crate) fn apply_known(
     }
 
     let mut remaining = MAX_AUDIO_BINDING_ENTRIES;
+    // One occurrence path, refilled per owner without reallocating.
+    let mut instance = InstancePath {
+        node: document.root().clone(),
+        repeats: Vec::new(),
+    };
     for (index, shifted) in shifted.iter().enumerate() {
+        let fragment;
         let owner = if index == 0 && interior.is_some() {
             let NodeKind::Sequence { children } = &working.nodes()[working.root()].kind else {
                 unreachable!("Split preserves the root Sequence")
             };
-            physical(&working, &children[insertion_slot])?.0.clone()
+            fragment = physical(&working, &children[insertion_slot])?.0.clone();
+            &fragment
         } else {
-            shifted.old.clone()
+            &shifted.old
         };
-        let resolved = working.audio_bindings.resolve(
-            &owner,
-            &InstancePath {
-                node: owner.clone(),
-                repeats: Vec::new(),
-            },
-            remaining,
-        )?;
+        instance.node.clone_from(owner);
+        let resolved = working
+            .audio_bindings
+            .resolve(owner, &instance, remaining)?;
         remaining = remaining
             .checked_sub(resolved.work)
             .ok_or_else(|| limit("pause resume work"))?;
@@ -204,8 +237,8 @@ pub(crate) fn apply_known(
             .map_or(resolved.lattice.local_support.start, |resume| {
                 resume.local_boundary
             });
-        if !working.audio_bindings.bindings[&owner].reanchors.is_empty() {
-            let binding = &working.audio_bindings.bindings[&owner];
+        if !working.audio_bindings.bindings[owner].reanchors.is_empty() {
+            let binding = &working.audio_bindings.bindings[owner];
             let previous_terms = binding
                 .resume
                 .as_ref()
@@ -244,12 +277,12 @@ pub(crate) fn apply_known(
             if !(crate::audio_binding_lifecycle::compact_representation()
                 && working
                     .audio_bindings
-                    .reanchor_step_is_inert(&owner, binding, &step))
+                    .reanchor_step_is_inert(owner, binding, &step))
             {
                 working
                     .audio_bindings
                     .bindings
-                    .get_mut(&owner)
+                    .get_mut(owner)
                     .expect("captured physical owner")
                     .reanchors
                     .push(step);
@@ -259,7 +292,7 @@ pub(crate) fn apply_known(
         let binding = working
             .audio_bindings
             .bindings
-            .get_mut(&owner)
+            .get_mut(owner)
             .expect("captured physical owner");
         let resume = binding.resume.get_or_insert_with(|| AudioResume {
             local_boundary: anchor,
@@ -292,6 +325,8 @@ pub(crate) fn apply_known(
         resume.local_boundary = shifted.entry;
     }
     crate::audio_binding_lifecycle::prune(&mut working);
+    // Resume terms name each shifted owner's pre-edit alias in the new table.
+    crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
     working.validate_bindings_in_scope(&working.audio_bindings)?;
     let mut structure = None;
     let result = insert_leaf_shared(
@@ -301,6 +336,9 @@ pub(crate) fn apply_known(
         id,
         BeatNode::hold("Pause", hold.clone()),
         allocation,
+        working_durations
+            .as_deref()
+            .filter(|_| crate::command_work::local()),
         &mut structure,
     )?;
     Ok((result, structure))
@@ -310,11 +348,11 @@ pub(crate) fn apply_known(
 /// a binding state captured and validated against `document`. Complete
 /// validation of `working` therefore returns `document`'s durations, so the
 /// Split reuses them instead of validating `working` from scratch.
-fn split_captured(
+fn split_captured<T>(
     document: &ProjectDocument,
     working: &ProjectDocument,
-    split: impl FnOnce(&ProjectDocument) -> Result<ProjectDocument, EditError>,
-) -> Result<ProjectDocument, EditError> {
+    split: impl FnOnce(&ProjectDocument) -> Result<T, EditError>,
+) -> Result<T, EditError> {
     match document
         .retained_durations()
         .filter(|_| crate::command_work::local())
@@ -470,12 +508,19 @@ fn insert_leaf_at(
         id,
         node,
         allocation,
+        None,
         &mut None,
     )
 }
 
 /// [`insert_leaf_at`], sharing the result's structural durations between
-/// its lineage and mark transforms and with the caller.
+/// its lineage and mark transforms and with the caller. Given `working`'s
+/// structural durations, a root insertion derives the result's from them
+/// (`structural_durations_after_root_leaf`) instead of a complete pass.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one private helper shared by both insertion paths"
+)]
 fn insert_leaf_shared(
     working: &ProjectDocument,
     parent: &NodeId,
@@ -483,6 +528,7 @@ fn insert_leaf_shared(
     id: &NodeId,
     node: BeatNode,
     allocation: &RevisionId,
+    working_durations: Option<&BTreeMap<NodeId, FrameDuration>>,
     structure: &mut Option<crate::command::SharedDurations>,
 ) -> Result<ProjectDocument, EditError> {
     // Split already transported logical mark fragments. Let the ordinary
@@ -500,6 +546,14 @@ fn insert_leaf_shared(
     };
     let mut result = working.clone();
     crate::command::reduce(&mut result, &insertion, allocation)?;
+    if let Some(base) = working_durations
+        && structure.is_none()
+        && parent == working.root()
+    {
+        *structure = result
+            .structural_durations_after_root_leaf(working, base, id)?
+            .map(std::sync::Arc::new);
+    }
     crate::audio_lineage::reconcile_shared(working, &mut result, &insertion, structure)?;
     result.marks = crate::marks::transform_marks_shared(working, &result, &insertion, structure)?;
     // The shared command entrypoint locks a provisional presentation basis
