@@ -12,6 +12,8 @@ pub mod acceptance;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod attempt;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod color;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) mod command;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod conditioning;

@@ -52,6 +52,10 @@ rotation, decoded bit depth, transfer, primaries, matrix and range), a
 measurements) or `authored_black`. Each decoded side also names its
 `model_input` conversion, which must follow from its measured colour
 (`model_input_conversion`); the two sides must enclose the planned Hold. Schema
+2 records `rec709_to_srgb` for new BT.709 inputs: the renderer's inverse
+BT.709 OETF followed by sRGB encoding, quantized once to RGB8 before fitting.
+Older `rec709_codes_as_srgb` records retain their explicitly approximate
+interpretation. Join measurements use the same sRGB conversion. Schema
 1 contexts (a stated `model_color: "srgb"` and interpretation text) remain
 readable so already retained bundles keep qualifying and admitting; new
 conditioning never writes them.

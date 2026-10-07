@@ -368,12 +368,13 @@ each side, what the picture path showed:
 - authored black (Background/Blank), with nothing decoded.
 
 Each decoded side also names the conversion applied for the model: the
-decoder's full-range RGB8 (declared matrix and range applied) passes its codes
-unchanged, either sRGB codes as sRGB or BT.709-transfer codes read as sRGB, a
-stated approximation. Conditioning refuses, with the reason, any picture this
+decoder's full-range RGB8 (declared matrix and range applied) keeps sRGB codes
+or converts BT.709 transfer to sRGB before fitting. Older retained inputs
+explicitly record BT.709 codes read as sRGB, a stated approximation.
+Conditioning refuses, with the reason, any picture this
 does not cover: rotated pictures, PQ/HLG HDR, sixteen-bit decodes,
-linear-light transfer, and BT.2020 or Display P3 primaries (no gamut or
-transfer conversion exists). Every matrix and range the source decoder admits
+linear-light transfer, and BT.2020 or Display P3 primaries (no qualified
+conversion for these inputs exists). Every matrix and range the source decoder admits
 is covered because the decoder applies it. The request binds the manifest's
 SHA-256 and the receipt retains its bytes.
 
@@ -396,8 +397,8 @@ earlier build cannot gain another variant (`--another`); generating again
 creates a new request. Accepted and Ready bundles are unaffected.
 
 What this does not establish: the Lanczos fit and PNG encoding are
-deterministic on this build but not specified across builds; the BT.709-as-sRGB
-reading is an approximation, not a transfer conversion; and the model's own
+deterministic on this build but not specified across builds; earlier retained
+BT.709-as-sRGB inputs remain approximate; and the model's own
 colour handling is a worker claim. Accepted media portability does not depend
 on any of these: rendering reads the verified FFV1 masters, never the
 conditioning.

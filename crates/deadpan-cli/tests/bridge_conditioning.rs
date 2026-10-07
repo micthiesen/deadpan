@@ -244,7 +244,7 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
             if expected_transfer == BridgeTransfer::Srgb {
                 ModelInputConversion::SrgbCodesUnchanged
             } else {
-                ModelInputConversion::Rec709CodesAsSrgb
+                ModelInputConversion::Rec709ToSrgb
             }
         );
         // Re-derivation: the picture path at the request's origin revision

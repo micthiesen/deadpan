@@ -78,16 +78,19 @@ transfer, primaries, matrix and range; for an accepted generated Hold, its
 sampled master and provenance objects; for an authored Background, authored
 black. It states the model-input conversion of each picture and declares the
 model colour space (full-range sRGB, BT.709 primaries, RGB). Conditioning
-refuses pictures that decoded full-range RGB8 read as sRGB does not cover
+retains sRGB codes and converts BT.709 codes with the renderer's inverse
+BT.709 OETF and sRGB encoding curve, rounded once to RGB8 before fitting.
+It refuses pictures that this qualified SDR conversion does not cover
 (rotated, PQ/HLG, 16-bit, linear, BT.2020 or Display P3 primaries), and
 qualification and stored-evidence admission fail with a colour interpretation
 mismatch when the declared model space differs from the canonical FFV1
 masters. Schema-1 contexts stay admissible for already retained bundles; a
 request conditioned with schema 1 gets new variants only through a new
 request. `tests/bridge_conditioning.rs` checks the record against an
-independent decoder and a fresh picture-path preparation. BT.709 codes read as
-sRGB is a stated approximation, and the model's own colour handling remains a
-worker claim.
+independent decoder and a fresh picture-path preparation. Earlier retained
+inputs explicitly marked `rec709_codes_as_srgb` remain readable and labelled
+as approximate; new inputs record `rec709_to_srgb`. The model's own colour
+handling remains a worker claim.
 
 ## Headless commands
 
@@ -324,15 +327,16 @@ writer when it has the project open ([headless](HEADLESS.md#choosing-keeping-and
   bytes, and the last automatic pass.
 - **Colour.** The chosen variant's row notes how its conditioning colour
   reached the model (`ConditioningColour::describe` of the retained
-  manifest), for example that BT.709 codes were read as sRGB with no transfer
-  conversion; `generate-hold` reports it as `colour`.
+  manifest), including BT.709 converted to sRGB for new inputs or the stated
+  approximation of older retained inputs; `generate-hold` reports it as `colour`.
 - **Joins.** Each variant row also shows an advisory reading of its two joins
   with the Original (`joins smooth / jump`; the hover gives both mean RGB
   differences). `generation::joins::measure_request_joins` compares the
   committed pictures at f-1 and f+N (decoded at the request's origin revision)
   with the sampled master's first and last frames, cropped as presentation
   crops them, in one comparison region shared with `generate-hold`, on a
-  background thread, one variant at a time and at most once per session
+  background thread, with both sides converted to sRGB before fitting, one
+  variant at a time and at most once per session
   (cancelled when the session ends; a panic or failure records an error
   instead of retrying) (classes below
   6 and 20 out of 255; the thresholds are uncalibrated). It is a §12.5
@@ -569,12 +573,21 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-A split-screen comparison (comparison is a same-frame toggle), an undoable or
-reversible Discard, a retention period setting, audition of acceptance
-through the device in a qualified listening check (replays simulate
-delivery), a Generate entry inside scoped Repeat/Retime inspection, composed
-framing in conditioning, a transfer conversion instead of reading BT.709 codes
-as sRGB, calibrated join thresholds and real-model seam quality, native
-physical-input, VoiceOver and real-window checks of the AI controls, the
-§13.4 qualification corpus and bake-off, a Developer ID/notarized run of the
-bundled runtime, and the clean-machine download-and-generate test of §26.6.
+The current worker accepts only the fixed Still motion prompt. §12.5 still
+needs user motion controls and optional plain-language constraints, plus
+motion, lighting and detectable region/mouth checks beyond the current
+endpoint RGB comparison. Generate inside scoped Repeat/Retime inspection
+and calibrated join thresholds also remain open.
+
+Listening, physical input, VoiceOver speech, real-person quality review and
+the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.
+Native installation, generation, acceptance, restart and Render have passed
+on this Mac; see [installation](qualification/native-install-2026-10-06.md).
+Developer ID signing and notarization are outside the personal-app scope.
+
+Possible refinements include split-screen comparison, reversible Discard and
+a configurable retention period. The specification requires keyboard variant
+comparison and a visible retention policy, which the same-frame comparison
+and displayed seven-day policy already provide. Conditioning deliberately
+precedes editorial zoom as §12.4 requires; composing that zoom into generated
+pixels would prevent the accepted artifact from supporting later reframing.

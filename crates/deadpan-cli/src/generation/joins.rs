@@ -288,7 +288,9 @@ pub fn compare(a: &RgbPicture, b: &RgbPicture, region: [u32; 2]) -> Result<JoinM
     })
 }
 
-/// A decoded RGBA8 frame as packed RGB.
+/// A decoded RGBA8 frame as packed sRGB, matching conditioning's transfer
+/// conversion. Comparing raw BT.709 codes with an sRGB master would report
+/// a colour jump even when the pictures represent the same light.
 pub fn rgb(frame: &Rgba8Frame) -> Result<RgbPicture, JoinError> {
     let metadata = frame.metadata();
     if frame.sample_depth() != SampleDepth::Eight {
@@ -296,12 +298,17 @@ pub fn rgb(frame: &Rgba8Frame) -> Result<RgbPicture, JoinError> {
             "only eight-bit pictures are measured",
         ));
     }
+    let codes = super::color::srgb_codes(metadata.color).map_err(JoinError::Unsupported)?;
     let (width, height) = (metadata.width, metadata.height);
     let stride = metadata.row_stride_bytes as usize;
     let mut rgb = Vec::with_capacity(width as usize * height as usize * 3);
     for row in frame.bytes().chunks_exact(stride).take(height as usize) {
         for pixel in row[..width as usize * 4].chunks_exact(4) {
-            rgb.extend_from_slice(&pixel[..3]);
+            rgb.extend_from_slice(&[
+                codes[usize::from(pixel[0])],
+                codes[usize::from(pixel[1])],
+                codes[usize::from(pixel[2])],
+            ]);
         }
     }
     Ok(RgbPicture { width, height, rgb })
@@ -483,6 +490,28 @@ mod tests {
         assert_eq!(measure.class, JoinClass::Noticeable);
         let c = solid(8, 4, [255, 255, 255]);
         assert_eq!(compare(&a, &c, [8, 4]).unwrap().class, JoinClass::Jump);
+    }
+
+    #[test]
+    fn bt709_boundaries_and_srgb_masters_compare_in_the_same_transfer() {
+        let source = frame(&solid(4, 4, [20, 64, 128]));
+        let mut metadata = *source.metadata();
+        metadata.color.transfer = deadpan_render::Transfer::Rec709;
+        let source = Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap();
+        let master = || frame(&solid(4, 4, [36, 79, 140]));
+        let report =
+            measure_pictures(Some(&source), master(), master(), Some(&source), [4, 4]).unwrap();
+        assert_eq!(report.entry.mean_abs_diff, 0.0);
+        assert_eq!(report.exit.mean_abs_diff, 0.0);
+        // Passing through the old codes is an observable colour error.
+        let wrong = || frame(&solid(4, 4, [20, 64, 128]));
+        let report =
+            measure_pictures(Some(&source), wrong(), wrong(), Some(&source), [4, 4]).unwrap();
+        assert_eq!(report.entry.class, JoinClass::Noticeable);
+        assert_eq!(report.entry.max_abs_diff, 16);
+        let mut metadata = *source.metadata();
+        metadata.color.primaries = deadpan_render::Primaries::Rec2020;
+        assert!(rgb(&Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap()).is_err());
     }
 
     #[test]

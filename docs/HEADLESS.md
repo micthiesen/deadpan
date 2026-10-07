@@ -1464,9 +1464,9 @@ own AI job. Errors use `GenerationUnavailable`, `GenerationInputsUnavailable`,
 `GenerationRefused`, `GenerationCancelled`, `GenerationFailed` and
 `GenerationUnknown`. The direct (not live-routed) `generate-hold` report adds
 `colour`: each side's model-input conversion from the conditioning manifest
-(`srgb_codes_unchanged`, `rec709_codes_as_srgb` or `authored_black`) and
-`approximate: true` when BT.709-transfer codes were read as sRGB without a
-transfer conversion. See [AI Holds](AI_HOLDS.md).
+(`srgb_codes_unchanged`, `rec709_to_srgb` or `authored_black`). Older retained
+inputs may record `rec709_codes_as_srgb` with `approximate: true`; newly
+prepared BT.709 inputs are converted before fitting. See [AI Holds](AI_HOLDS.md).
 
 ### Choosing, keeping and discarding variants
 

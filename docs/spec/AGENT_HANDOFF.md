@@ -50,6 +50,16 @@ runtime and outbound-IP access denied. The original and copied documents were
 unchanged. Exact another-Mac, File Provider and physical power-loss checks are
 on To verify (owner).
 
+[AI conditioning colour](../qualification/conditioning-color-2026-10-07.md)
+now converts BT.709 to sRGB before fitting, using the renderer's transfer
+functions. Join readings compare in the same space. Old approximate contexts
+remain readable and clearly labelled; accepted media remains unchanged.
+Seventeen focused tests, the full 4,744-workspace/1,027-UI gate, packaged checks
+and a real generation/acceptance/render passed. The new bundle also rendered
+an older accepted artifact. §12.5 still needs motion and optional text controls
+and motion/lighting/detectable geometry heuristics beyond endpoint RGB joins.
+The fixed Still worker explicitly refuses the other motion amounts today.
+
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI
 acceptance, restart and export. Both test windows are closed. An asynchronous

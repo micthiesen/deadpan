@@ -40,9 +40,8 @@ use crate::picture::{PreparedPicture, ProjectPictureSession};
 
 /// The conversion applied to every decoded boundary picture: the decoder's
 /// full-range RGB8 (declared matrix and range applied) with BT.709 primaries,
-/// whose sRGB or BT.709 transfer codes pass unchanged and are read as sRGB.
-pub const INPUT_COLOR_INTERPRETATION: &str =
-    "decoded-full-range-rgb8-bt709-primaries-srgb-or-bt709-transfer-codes-unchanged-as-srgb";
+/// with sRGB codes retained and BT.709 transfer converted to sRGB before fitting.
+pub const INPUT_COLOR_INTERPRETATION: &str = "decoded-full-range-rgb8-bt709-primaries-srgb-unchanged-or-inverse-bt709-oetf-to-srgb-before-fitting";
 /// The bridge model's declared input/output colour space.
 pub const MODEL_COLOR_SPACE: BridgeColor = CANONICAL_BRIDGE_COLOR;
 pub const LEFT: &str = "inputs/left.png";
@@ -249,14 +248,13 @@ impl ConditioningColour {
             None => "black",
             Some(ModelInputConversion::SrgbCodesUnchanged) => "sRGB",
             Some(ModelInputConversion::Rec709CodesAsSrgb) => "BT.709 read as sRGB",
+            Some(ModelInputConversion::Rec709ToSrgb) => "BT.709 converted to sRGB",
         };
         let sides = format!("before: {}, after: {}", side(self.left), side(self.right));
         if self.approximate() {
-            format!(
-                "Model input colour is approximate ({sides}); no transfer conversion is applied."
-            )
+            format!("Model input colour includes an older approximation ({sides}).")
         } else {
-            format!("Model input colour is exact sRGB ({sides}).")
+            format!("Model input colour is sRGB ({sides}).")
         }
     }
 }
@@ -393,11 +391,19 @@ fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     if frame.sample_depth() != SampleDepth::Eight {
         return Err("only eight-bit pictures can condition an AI pause".into());
     }
+    let codes = super::color::srgb_codes(metadata.color)?;
     let (width, height) = (metadata.width, metadata.height);
     let stride = metadata.row_stride_bytes as usize;
     let mut pixels = Vec::with_capacity(width as usize * height as usize * 4);
     for row in frame.bytes().chunks_exact(stride).take(height as usize) {
-        pixels.extend_from_slice(&row[..width as usize * 4]);
+        for pixel in row[..width as usize * 4].chunks_exact(4) {
+            pixels.extend_from_slice(&[
+                codes[usize::from(pixel[0])],
+                codes[usize::from(pixel[1])],
+                codes[usize::from(pixel[2])],
+                pixel[3],
+            ]);
+        }
     }
     let image = RgbaImage::from_raw(width, height, pixels).ok_or("decoded frame layout")?;
     // Non-square pixels stretch horizontally to their display width.
@@ -538,7 +544,7 @@ mod tests {
     }
 
     #[test]
-    fn colour_summary_reports_the_bt709_approximation() {
+    fn colour_summary_reports_bt709_conversion_and_retained_approximations() {
         let plan = BridgeGenerationPlan::for_conditioning(
             ConditioningMode::Bridge,
             FrameDuration::new(12).unwrap(),
@@ -573,14 +579,33 @@ mod tests {
         };
         let inputs = assemble(plan.clone(), constraints, left, right).unwrap();
         let colour = ConditioningColour::from_manifest(&inputs.manifest).unwrap();
-        assert!(colour.approximate());
+        assert!(!colour.approximate());
         assert_eq!(
             colour.to_json(),
-            serde_json::json!({"left": "rec709_codes_as_srgb", "right": "authored_black", "approximate": true})
+            serde_json::json!({"left": "rec709_to_srgb", "right": "authored_black", "approximate": false})
         );
         assert_eq!(
             colour.describe(),
-            "Model input colour is approximate (before: BT.709 read as sRGB, after: black); no transfer conversion is applied."
+            "Model input colour is sRGB (before: BT.709 converted to sRGB, after: black)."
+        );
+        let mut retained: serde_json::Value = serde_json::from_slice(&inputs.manifest).unwrap();
+        retained["boundaries"]["left"]["original"]["picture"]["model_input"] =
+            serde_json::json!("rec709_codes_as_srgb");
+        let retained =
+            ConditioningColour::from_manifest(&serde_json::to_vec(&retained).unwrap()).unwrap();
+        assert!(retained.approximate());
+        assert_eq!(
+            retained.describe(),
+            "Model input colour includes an older approximation (before: BT.709 read as sRGB, after: black)."
+        );
+        let mixed = ConditioningColour {
+            left: Some(ModelInputConversion::Rec709CodesAsSrgb),
+            right: Some(ModelInputConversion::Rec709ToSrgb),
+            unmeasured: false,
+        };
+        assert_eq!(
+            mixed.describe(),
+            "Model input colour includes an older approximation (before: BT.709 read as sRGB, after: BT.709 converted to sRGB)."
         );
         let legacy = BridgeContext::legacy_v1(
             plan,
@@ -622,7 +647,7 @@ mod tests {
         assert_eq!(measured.stream.decoded_sample_bits, 8);
         assert_eq!(
             measured.model_input,
-            deadpan_models::ModelInputConversion::Rec709CodesAsSrgb
+            deadpan_models::ModelInputConversion::Rec709ToSrgb
         );
         for (transfer, primaries, reason) in [
             (
@@ -676,6 +701,31 @@ mod tests {
             rgba,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn prepared_png_converts_bt709_and_keeps_srgb_padding_and_alpha_separate() {
+        let original = frame(&RgbImage::from_pixel(2, 2, Rgb([20, 64, 128])));
+        let mut metadata = *original.metadata();
+        metadata.color.transfer = deadpan_render::Transfer::Rec709;
+        metadata.row_stride_bytes = 12;
+        let padded = [
+            20, 64, 128, 255, 20, 64, 128, 71, 199, 199, 199, 199, 20, 64, 128, 255, 20, 64, 128,
+            71, 199, 199, 199, 199,
+        ];
+        let decoded = Rgba8Frame::new(metadata, padded.to_vec()).unwrap();
+        let prepared = rgba(&decoded).unwrap();
+        assert_eq!(prepared.get_pixel(0, 0).0, [36, 79, 140, 255]);
+        assert_eq!(prepared.get_pixel(1, 1).0, [36, 79, 140, 71]);
+        assert_eq!(prepared.len(), 16, "row padding is not picture content");
+        let png = encode(&contain(Some(&prepared), (320, 320))).unwrap();
+        let input = image::load_from_memory(&png).unwrap().to_rgb8();
+        assert_eq!(input.get_pixel(384, 160).0, [36, 79, 140]);
+        assert_eq!(input.get_pixel(0, 160).0, [0, 0, 0]);
+        assert_eq!(
+            rgba(&original).unwrap().get_pixel(0, 0).0,
+            [20, 64, 128, 255]
+        );
     }
 
     #[test]

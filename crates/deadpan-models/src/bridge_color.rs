@@ -137,9 +137,9 @@ impl MeasuredStream {
 
 /// How a decoded picture's RGB codes became the model's input.
 ///
-/// Both conversions take the decoder's full-range RGB8 (declared matrix and
-/// range already applied) and pass the codes unchanged; neither converts
-/// transfer or gamut.
+/// The decoder has already applied the declared matrix and range. Current
+/// conditioning converts BT.709 transfer codes to sRGB; older retained inputs
+/// may instead carry the explicitly recorded approximation below.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelInputConversion {
@@ -148,6 +148,9 @@ pub enum ModelInputConversion {
     /// BT.709-transfer BT.709 codes, interpreted as sRGB. This is a stated
     /// approximation: the BT.709 OETF and the sRGB curve differ.
     Rec709CodesAsSrgb,
+    /// Inverse BT.709 OETF followed by the sRGB encoding curve, rounded once
+    /// to full-range RGB8 before fitting the picture to the model raster.
+    Rec709ToSrgb,
 }
 
 /// Why a measured picture cannot condition the bridge model.
@@ -186,8 +189,8 @@ impl std::fmt::Display for ConditioningColorRefusal {
 /// or the reason no stated conversion covers it.
 ///
 /// Every matrix and range the source decoder admits is covered, because the
-/// decoder applies it before RGB output. Transfer and primaries pass through
-/// unchanged, so only sRGB or BT.709 transfer with BT.709 primaries qualifies.
+/// decoder applies it before RGB output. Only sRGB or BT.709 transfer with
+/// BT.709 primaries qualifies; BT.709 transfer is converted to sRGB.
 pub fn model_input_conversion(
     stream: &MeasuredStream,
 ) -> Result<ModelInputConversion, ConditioningColorRefusal> {
@@ -206,7 +209,7 @@ pub fn model_input_conversion(
     }
     match color.transfer {
         BridgeTransfer::Srgb => Ok(ModelInputConversion::SrgbCodesUnchanged),
-        BridgeTransfer::Bt709 => Ok(ModelInputConversion::Rec709CodesAsSrgb),
+        BridgeTransfer::Bt709 => Ok(ModelInputConversion::Rec709ToSrgb),
         BridgeTransfer::Linear => Err(ConditioningColorRefusal::LinearTransfer),
         BridgeTransfer::Pq | BridgeTransfer::Hlg => Err(ConditioningColorRefusal::Hdr),
     }
@@ -269,7 +272,10 @@ impl BoundaryPicture {
         }
         if let Some(picture) = self.decoded() {
             picture.stream.validate_shape()?;
-            if model_input_conversion(&picture.stream) != Ok(picture.model_input) {
+            let current = model_input_conversion(&picture.stream);
+            let retained_approximation = current == Ok(ModelInputConversion::Rec709ToSrgb)
+                && picture.model_input == ModelInputConversion::Rec709CodesAsSrgb;
+            if current != Ok(picture.model_input) && !retained_approximation {
                 return Err("boundary model-input conversion contradicts its measured colour");
             }
         }
@@ -322,7 +328,7 @@ mod tests {
         use BridgeTransfer as T;
         assert_eq!(
             model_input_conversion(&stream(color(T::Bt709, P::Bt709))),
-            Ok(ModelInputConversion::Rec709CodesAsSrgb)
+            Ok(ModelInputConversion::Rec709ToSrgb)
         );
         assert_eq!(
             model_input_conversion(&stream(CANONICAL_BRIDGE_COLOR)),
@@ -403,6 +409,12 @@ mod tests {
             picture: decoded.clone(),
         };
         original.validate_shape().unwrap();
+        let mut converted = original.clone();
+        let BoundaryPicture::Original { picture, .. } = &mut converted else {
+            unreachable!()
+        };
+        picture.model_input = ModelInputConversion::Rec709ToSrgb;
+        converted.validate_shape().unwrap();
         let wire = serde_json::to_value(&original).unwrap();
         assert_eq!(
             wire["original"]["picture"]["stream"]["color"]["transfer"],
