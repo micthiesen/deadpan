@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[serde(deny_unknown_fields)]
     struct Configuration {
         codec: PathBuf,
+        landmark_worker: PathBuf,
         workspace: PathBuf,
         request: HostMessage,
         candidate: NativeCandidateManifest,
@@ -63,6 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: Configuration = serde_json::from_slice(&bytes)?;
     if [
         &config.codec,
+        &config.landmark_worker,
         &config.workspace,
         &config.output_directory,
         &config.conditioning.workspace,
@@ -90,6 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let bundle = qualify_bridge(
         &config.codec,
+        &config.landmark_worker,
         &workspace,
         BridgeQualification {
             request: &config.request,

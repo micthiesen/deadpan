@@ -1,6 +1,6 @@
 //! The bridge runtime: the private Python environment, the pinned LTX source,
-//! the model pack, FFmpeg, the worker adapter and the media worker that
-//! qualifies its output.
+//! the model pack, FFmpeg, the worker adapter and the native media and
+//! landmark workers that qualify its output.
 //!
 //! A packaged `Deadpan.app` carries the runtime in
 //! `Contents/Resources/ai-runtime` (built by `cargo xtask bundle` from
@@ -22,7 +22,8 @@
 //! | `DEADPAN_BRIDGE_FFPROBE` | `/opt/homebrew/bin/ffprobe` |
 //! | `DEADPAN_BRIDGE_WORKER` | `tools/model-qualification/worker.py` in this checkout |
 //!
-//! `deadpan-media-worker` must be installed beside the current executable.
+//! `deadpan-media-worker` and `deadpan-track` must be installed beside the
+//! current executable.
 //! The worker verifies the runtime source tree, checks the selected manifest
 //! against its pinned component/configuration contract and verifies every
 //! model file on each attempt; this module checks only component presence.
@@ -189,10 +190,13 @@ pub const MODEL_DIRECTORIES: [&str; 2] = [
     "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
 ];
 pub const MEDIA_WORKER: &str = "deadpan-media-worker";
+/// Native landmark inspection worker installed beside this executable.
+pub const LANDMARK_WORKER: &str = "deadpan-track";
 /// A runtime check imports MLX and the LTX modules and reads headers only.
 const CHECK_DEADLINE: Duration = Duration::from_secs(300);
 
-/// Absolute paths to every part of the development runtime.
+/// Absolute paths to every part of the development runtime and its native
+/// qualification workers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BridgeRuntime {
     pub python: PathBuf,
@@ -204,6 +208,7 @@ pub struct BridgeRuntime {
     pub ffprobe: PathBuf,
     pub worker_script: PathBuf,
     pub media_worker: PathBuf,
+    pub landmark_worker: PathBuf,
 }
 
 /// The runtime pieces that are missing, in user terms.
@@ -367,6 +372,7 @@ impl BridgeRuntime {
         let ffprobe = chosen(FFPROBE, Some("/opt/homebrew/bin/ffprobe".into()));
         let worker_script = chosen(WORKER, Some(DEFAULT_WORKER.into()));
         let media_worker = executable_directory.map(|directory| directory.join(MEDIA_WORKER));
+        let landmark_worker = executable_directory.map(|directory| directory.join(LANDMARK_WORKER));
 
         let mut require = |label: &str, variable: &str, path: Option<PathBuf>, directory: bool| {
             let found = path.as_ref().and_then(|path| {
@@ -410,6 +416,12 @@ impl BridgeRuntime {
                 "deadpan-media-worker beside this executable",
                 "",
                 media_worker,
+                false,
+            ),
+            landmark_worker: require(
+                "deadpan-track beside this executable",
+                "",
+                landmark_worker,
                 false,
             ),
         };
@@ -478,6 +490,13 @@ impl BridgeRuntime {
                 .unwrap_or_default(),
             false,
         );
+        let landmark_worker = part(
+            "landmark worker",
+            executable_directory
+                .map(|directory| directory.join(LANDMARK_WORKER))
+                .unwrap_or_default(),
+            false,
+        );
         if let Some(problem) = os_requirement(runtime, current_macos()) {
             missing.push(problem);
         }
@@ -518,6 +537,7 @@ impl BridgeRuntime {
                 ffprobe,
                 worker_script,
                 media_worker,
+                landmark_worker,
             })
         } else {
             Err(RuntimeError {
@@ -671,6 +691,7 @@ mod tests {
         }
         let executables = root_path.join("bin");
         file(&executables.join(MEDIA_WORKER));
+        file(&executables.join(LANDMARK_WORKER));
         let variables = BTreeMap::from([
             (RUNTIME_SOURCE, source.clone()),
             (MODEL_CACHE, cache.clone()),
@@ -691,6 +712,7 @@ mod tests {
         assert_eq!(resolved.python, linked);
         assert_eq!(runtime.model_cache, cache);
         assert_eq!(runtime.media_worker, executables.join(MEDIA_WORKER));
+        assert_eq!(runtime.landmark_worker, executables.join(LANDMARK_WORKER));
         assert_eq!(runtime.model_manifest.pack_id, BRIDGE_PACK);
         assert_eq!(runtime.provider(17).pack_version.as_str(), "1");
         let configuration: serde_json::Value =
@@ -734,6 +756,7 @@ mod tests {
             "(set DEADPAN_BRIDGE_FFPROBE)",
             "(set DEADPAN_BRIDGE_WORKER)",
             "deadpan-media-worker beside this executable not found at no location",
+            "deadpan-track beside this executable not found at no location",
             "model component mlx_gemma_default_text_encoder",
         ] {
             assert!(message.contains(expected), "{expected} in {message}");
@@ -742,7 +765,7 @@ mod tests {
             !message.contains("mlx_ltx_q4_pack"),
             "present snapshot not reported"
         );
-        assert_eq!(error.missing.len(), 7);
+        assert_eq!(error.missing.len(), 8);
     }
 
     /// A bundled runtime layout and, optionally, an installed bridge pack.
@@ -760,6 +783,7 @@ mod tests {
         std::fs::write(runtime.join("runtime.json"), r#"{"minimum_macos": "15.0"}"#).unwrap();
         let executables = root.join("Deadpan.app/Contents/MacOS");
         file(&executables.join(MEDIA_WORKER));
+        file(&executables.join(LANDMARK_WORKER));
         let models = root.join("Models");
         if with_pack {
             let manifest = approved_pack(BRIDGE_PACK).unwrap();
@@ -850,6 +874,18 @@ mod tests {
         assert!(!error.needs_model_pack);
         assert!(
             error.missing[0].starts_with("the bundled ffmpeg is missing"),
+            "{error}"
+        );
+        file(&runtime.join(BUNDLED_FFMPEG));
+        std::fs::remove_file(executables.join(LANDMARK_WORKER)).unwrap();
+        let error =
+            BridgeRuntime::resolve_with(|_| None, None, Some(&executables), &lookup, Some(&models))
+                .unwrap_err();
+        assert!(
+            error
+                .missing
+                .iter()
+                .any(|problem| problem.contains("bundled landmark worker is missing")),
             "{error}"
         );
     }

@@ -15,27 +15,30 @@ path = "src/main.rs"
 [dependencies]
 deadpan-analysis.workspace = true
 deadpan-jobs.workspace = true
+deadpan-media.workspace = true
 deadpan-source.workspace = true
 rustix.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
-# Vision's VNTrackObjectRequest and VNDetectFaceRectanglesRequest over BGRA
+# Vision's tracking, face rectangles and face landmarks over BGRA
 # CVPixelBuffers; see docs/DEPENDENCIES.md.
 objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSError", "NSString"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSEnumerator", "NSError", "NSString"] }
 objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFBase", "CFCGTypes", "CFDictionary"] }
 objc2-core-video = { version = "=0.3.2", default-features = false, features = ["std", "objc2", "CVBase", "CVBuffer", "CVImageBuffer", "CVPixelBuffer", "CVReturn"] }
-objc2-vision = { version = "=0.3.2", default-features = false, features = ["std", "objc2-core-foundation", "objc2-core-video", "VNDetectFaceRectanglesRequest", "VNObservation", "VNRequest", "VNRequestHandler", "VNTrackingRequest", "VNTrackObjectRequest", "VNTypes"] }
+objc2-vision = { version = "=0.3.2", default-features = false, features = ["std", "objc2-core-foundation", "objc2-core-video", "VNDetectFaceRectanglesRequest", "VNDetectFaceLandmarksRequest", "VNFaceLandmarks", "VNObservation", "VNRequest", "VNRequestHandler", "VNTrackingRequest", "VNTrackObjectRequest", "VNTypes"] }
 
 [dev-dependencies]
+deadpan-native-process.workspace = true
 deadpan-cli = { path = "../../crates/deadpan-cli" }
 deadpan-core.workspace = true
 deadpan-plan.workspace = true
 deadpan-store.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
 
 # Only the Vision adapter in src/vision.rs opts in; everything else is safe.
 [lints.rust]

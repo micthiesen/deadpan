@@ -215,6 +215,8 @@ struct HostProvenance<'a> {
     quality: Option<&'a crate::BridgeQualityReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     endpoints: Option<&'a crate::BridgeEndpointReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<&'a crate::BridgeGeometryReport>,
 }
 
 /// Worker declarations paired with independently selected host inputs.
@@ -234,6 +236,7 @@ pub struct BridgeQualification<'a> {
 /// Run on the background job service, outside UI/audio or database transactions.
 pub fn qualify_bridge(
     executable: &Path,
+    landmark_executable: &Path,
     workspace: &ArtifactWorkspace,
     inputs: BridgeQualification<'_>,
     limits: QualificationLimits,
@@ -356,16 +359,17 @@ pub fn qualify_bridge(
             ..limits.media
         },
     };
-    let masters = canonicalize_bridge(
+    let (mut native, sampled, _) = canonicalize_bridge(
         executable,
         &mut native_snapshot,
         input_identity(declaration.native.sha256()),
         &conversion,
         cancelled,
-    )?;
+    )?
+    .into_parts();
     check()?;
     let quality = crate::quality::measure(
-        masters.native(),
+        &native,
         &binding.plan,
         binding.constraints.motion,
         deadline,
@@ -373,7 +377,16 @@ pub fn qualify_bridge(
     )?;
     check()?;
     let endpoints = crate::endpoints::measure(
-        masters.sampled(),
+        &sampled,
+        &mut conditioning,
+        &binding.plan,
+        deadline,
+        cancelled,
+    )?;
+    check()?;
+    let geometry = crate::geometry::measure(
+        landmark_executable,
+        &mut native,
         &mut conditioning,
         &binding.plan,
         deadline,
@@ -382,33 +395,32 @@ pub fn qualify_bridge(
     check()?;
     let worker_provenance_utf8 = std::str::from_utf8(&provenance_bytes)
         .map_err(|error| QualificationError::Provenance(error.to_string()))?;
-    let native_span = masters
-        .native()
+    let native_span = native
         .report()
         .output_span()
         .map_err(ConversionError::from)?;
-    let sampled_span = masters
-        .sampled()
+    let sampled_span = sampled
         .report()
         .output_span()
         .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 5,
-            validation_profile: "deadpan-ffv1-bridge-5",
+            schema_version: 6,
+            validation_profile: "deadpan-ffv1-bridge-6",
             binding: &binding,
             selected_provider,
             declaration,
-            native: masters.native().object(),
-            sampled: masters.sampled().object(),
-            native_validation: masters.native().report(),
-            sampled_validation: masters.sampled().report(),
+            native: native.object(),
+            sampled: sampled.object(),
+            native_validation: native.report(),
+            sampled_validation: sampled.report(),
             conditioning: conditioning.receipt(),
             native_span,
             sampled_span,
             worker_provenance_utf8,
             quality: Some(&quality),
             endpoints: Some(&endpoints),
+            geometry: Some(&geometry),
         },
         limits.maximum_host_provenance_bytes,
     )
@@ -420,7 +432,6 @@ pub fn qualify_bridge(
     )
     .map_err(|error| QualificationError::Provenance(error.to_string()))?;
     check()?;
-    let (native, sampled, _) = masters.into_parts();
     Ok(QualifiedBridgeBundle {
         binding,
         declaration: declaration.clone(),
@@ -445,7 +456,7 @@ fn input_identity(hash: &Sha256) -> InputIdentity {
     InputIdentity { sha256 }
 }
 
-fn snapshot_error(error: ArtifactError) -> QualificationError {
+pub(super) fn snapshot_error(error: ArtifactError) -> QualificationError {
     match error {
         ArtifactError::Interrupted(SnapshotInterruption::Cancelled) => {
             QualificationError::Cancelled

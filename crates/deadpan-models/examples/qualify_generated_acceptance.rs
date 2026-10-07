@@ -41,6 +41,7 @@ mod supported {
     #[serde(deny_unknown_fields)]
     struct Configuration {
         codec: PathBuf,
+        landmark_worker: PathBuf,
         workspace: PathBuf,
         request: HostMessage,
         candidate: NativeCandidateManifest,
@@ -144,6 +145,7 @@ mod supported {
         let config: Configuration = serde_json::from_slice(&bytes)?;
         if [
             &config.codec,
+            &config.landmark_worker,
             &config.workspace,
             &config.conditioning.workspace,
             &config.output_directory,
@@ -167,6 +169,7 @@ mod supported {
         let started = std::time::Instant::now();
         let bundle = qualify_bridge(
             &config.codec,
+            &config.landmark_worker,
             &workspace,
             BridgeQualification {
                 request: &config.request,
@@ -199,7 +202,7 @@ mod supported {
             bundle.provenance().object().clone(),
             binding.constraints.video.clone(),
             binding.plan.clone(),
-            ValidatorIdentity::new("native-ffv1", "bridge-5")?,
+            ValidatorIdentity::new("native-ffv1", "bridge-6")?,
         )?
         .with_admission(admission)?;
         let document = create_document(&binding)?;

@@ -75,7 +75,19 @@ captured geometry. Context schema 3 and adapter `0.15.8+deadpan3` retain and
 validate the exact crop; host schema 5 binds both quality reports to their
 objects. Broad RGB discontinuity fails before Ready without changing the
 freeze or prior Ready selection. Schema 3/4 accepted evidence remains readable.
-§12.5 still needs detectable face/region/mouth checks; DP-12 remains Partial.
+[Face geometry and mouth checks](../qualification/bridge-landmarks-2026-10-07.md)
+now use a separate pinned Vision revision-3 worker over every native picture
+and both retained PNGs. Host schema 6 binds raw observations and recomputable
+policy to the immutable inputs. Conservative face association and continuous
+native mouth segments retain explicit unavailable coverage; late faces are
+checked and an interruption cannot erase an earlier rejection. Old schema 3/4/5
+accepted evidence remains readable. §12.5 still needs selected non-face region
+drift; DP-12 remains Partial. The full 4,829-workspace/1,030-UI gate, 43 replay
+checks, relocated release verification and real packaged generation/acceptance/
+render passed. Native inspection took 264 ms for 25 pictures and both inputs;
+this fixture correctly reports unavailable face/mouth coverage. The separate
+drawn-face fixture verifies positive landmarks. Older schema 3/4/5 projects
+rendered unchanged. Threshold calibration is on To verify (owner).
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

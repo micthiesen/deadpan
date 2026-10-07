@@ -76,7 +76,11 @@ qualify captured source context or create a fresh bridge bundle.
 For fresh bridge-bundle qualification, use the schema-3 context captured by the
 app and its pre-launch host-retained conditioning workspace with the Rust
 `deadpan-models` example `qualify_bridge_bundle`. Supply the original request
-and completed native declaration. [Bundle qualification](../../docs/GENERATION_BUNDLES.md)
+and completed native declaration, plus absolute `codec` (`deadpan-media-worker`)
+and `landmark_worker` (`deadpan-track`) executable paths. Build both helpers
+before running either qualification example. Fresh output uses host schema 6;
+historical configurations retain their original source revision and schema.
+[Bundle qualification](../../docs/GENERATION_BUNDLES.md)
 documents the boundary, configuration fields are in the example, and measured
 runs retain their exact configurations. Its output is still separate from
 project Ready publication and authored acceptance.

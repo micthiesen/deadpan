@@ -475,8 +475,8 @@ pub enum ScriptEnding {
     /// Ready then treat exactly as a real worker's. Needs an `ffmpeg` with
     /// `libx264rgb` (`DEADPAN_BRIDGE_FFMPEG`, else the Homebrew path) and
     /// `deadpan-media-worker` (`DEADPAN_MEDIA_WORKER`, else beside the
-    /// executable or its parent directory); without them the attempt fails
-    /// and says so.
+    /// executable or its parent directory) and its sibling `deadpan-track`;
+    /// without them the attempt fails and says so.
     Ready,
 }
 
@@ -508,10 +508,19 @@ pub fn synthetic_tools()
             media_worker.display()
         ));
     }
+    let landmark_worker =
+        media_worker.with_file_name(deadpan_cli::generation::runtime::LANDMARK_WORKER);
+    if !landmark_worker.is_file() {
+        return Err(format!(
+            "The scripted Ready worker needs deadpan-track beside deadpan-media-worker at {}.",
+            landmark_worker.display()
+        ));
+    }
     Ok(
         deadpan_cli::generation::attempt::synthetic::SyntheticWorker {
             ffmpeg,
             media_worker,
+            landmark_worker,
         },
     )
 }

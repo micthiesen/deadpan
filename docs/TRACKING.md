@@ -17,10 +17,19 @@ native app drives the same host code ([in the app](#in-the-app)).
 | [`deadpan_jobs::tracking`](../crates/deadpan-jobs/src/tracking.rs) | Versioned, strictly framed worker protocol and the `TrackingProtocol` adapter for the shared `SupervisedProcess`. |
 | [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker executable: pinned descriptor-only FFmpeg decoding through `deadpan-source`, Vision `VNTrackObjectRequest` through `objc2-vision`; with the argument `detect-faces`, `VNDetectFaceRectanglesRequest` on one picture ([face detection mode](#face-detection-mode)). |
 | [`deadpan_jobs::faces`](../crates/deadpan-jobs/src/faces.rs) | The separately versioned face-detection protocol and its `FaceProtocol` adapter. |
+| [`deadpan_jobs::landmarks`](../crates/deadpan-jobs/src/landmarks.rs) | Separate bounded `inspect-landmarks` protocol for AI Hold qualification: every native picture and optional retained boundary PNGs, using pinned Vision face landmarks revision 3. |
+| [`deadpan_models::landmark_inspection`](../crates/deadpan-models/src/landmark_inspection.rs) | Host inspection with immutable input copies, shared deadline/cancellation, owned worker cleanup and strict artifact admission; [`generated_geometry`](../crates/deadpan-analysis/src/generated_geometry.rs) evaluates face geometry and mouth aperture. |
 | [`deadpan_cli::faces`](../crates/deadpan-cli/src/faces.rs) | Host face detection (picture resolution, verified copy, supervision, strict admission), `face_target` and the `detect-faces` command. |
 | [`deadpan_cli::tracking`](../crates/deadpan-cli/src/tracking.rs) | Host attempt (range resolution against the qualified index, the asset's video span and stored shots; verified source copy; supervision; artifact snapshot; exact decoded/observation check; policy), saving and correcting targets, and the `track` / `track-correct` commands. |
 
 ## Coordinates and time
+
+AI Hold `inspect-landmarks` is separate from selected-target tracking and
+single-picture face proposals. It copies bounded eyes, nose and lip observations
+from all canonical native pictures and retained inputs. Its conservative
+geometry and mouth checks do not identify people, infer speech or save attention
+targets. Missing or ambiguous measurements remain unavailable. See
+[qualification and limits](qualification/bridge-landmarks-2026-10-07.md).
 
 Regions are `x, y, width, height` normalized to the *displayed* picture with a
 top-left origin, every edge in `[0, 1]`. The worker converts the region to coded

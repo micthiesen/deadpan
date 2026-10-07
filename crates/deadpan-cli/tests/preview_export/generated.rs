@@ -24,8 +24,9 @@ use deadpan_jobs::JobState;
 use super::*;
 
 /// The synthetic worker's tools: an `ffmpeg` with `libx264rgb`
-/// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's) and `deadpan-media-worker`
-/// (`DEADPAN_MEDIA_WORKER`, else beside the tested `deadpan-cli`).
+/// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's), `deadpan-media-worker`
+/// (`DEADPAN_MEDIA_WORKER`, else beside the tested `deadpan-cli`) and sibling
+/// `deadpan-track`.
 pub(super) fn tools() -> std::result::Result<synthetic::SyntheticWorker, String> {
     let ffmpeg = super::development_ffmpeg()?;
     let media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER")
@@ -41,9 +42,17 @@ pub(super) fn tools() -> std::result::Result<synthetic::SyntheticWorker, String>
             media_worker.display()
         ));
     }
+    let landmark_worker = media_worker.with_file_name("deadpan-track");
+    if !landmark_worker.is_file() {
+        return Err(format!(
+            "needs a built deadpan-track beside deadpan-media-worker at {}",
+            landmark_worker.display()
+        ));
+    }
     Ok(synthetic::SyntheticWorker {
         ffmpeg,
         media_worker,
+        landmark_worker,
     })
 }
 

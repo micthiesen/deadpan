@@ -208,7 +208,7 @@ fn quality_status(
     };
     let Some(report) = provenance.quality() else {
         return QualityReading::unavailable(
-            "Older candidate: motion/lighting and endpoint checks unavailable.",
+            "Older candidate: motion/lighting, endpoint, face and mouth checks unavailable.",
         );
     };
     let unavailable = report.unavailable_motion_pairs();
@@ -226,6 +226,28 @@ fn quality_status(
     } else {
         " Endpoint checks unavailable for this older candidate."
     });
+    if let Some(geometry) = provenance.geometry() {
+        let assessment = geometry.assessment();
+        let faces = &assessment.geometry;
+        let mouth = &assessment.mouth;
+        if faces.measured_tracks == 0 {
+            detail.push_str(
+                " Face geometry unavailable: no reliable track connects both input pictures.",
+            );
+        } else {
+            detail.push_str(&format!(" Face geometry: {} measured tracks, {} unavailable; eye/nose landmarks unavailable on {} tracks.", faces.measured_tracks, faces.unavailable_tracks, faces.feature_unavailable_tracks));
+        }
+        if mouth.measured_tracks == 0 {
+            detail.push_str(" Mouth motion unavailable: no reliable eye and lip track.");
+        } else {
+            detail.push_str(&format!(
+                " Mouth motion: {} measured continuous segments, {} unavailable.",
+                mouth.measured_tracks, mouth.unavailable_tracks
+            ));
+        }
+    } else {
+        detail.push_str(" Face and mouth checks unavailable for this older candidate.");
+    }
     QualityReading {
         compact: format!("Motion coverage {measurable}/{total}"),
         detail,

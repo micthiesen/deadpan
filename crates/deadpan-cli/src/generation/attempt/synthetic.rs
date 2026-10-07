@@ -24,13 +24,16 @@ use deadpan_models::{BridgeContext, GenerationBinding};
 
 use super::*;
 
-/// Where the synthetic worker finds its two external tools.
+/// Where the synthetic worker finds its encoder and qualification helpers.
 #[derive(Debug, Clone)]
 pub struct SyntheticWorker {
     /// An `ffmpeg` with `libx264rgb`, used only to encode the footage.
     pub ffmpeg: PathBuf,
     /// The host qualification helper, as for a real run.
     pub media_worker: PathBuf,
+    /// Required native landmark and face inspection helper beside the media
+    /// worker.
+    pub landmark_worker: PathBuf,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -205,6 +208,7 @@ fn run_inner(
     let qualified = qualify_declared(
         allocated,
         &worker.media_worker,
+        &worker.landmark_worker,
         &prepared.pinned,
         prepared.conditioning,
         declaration,

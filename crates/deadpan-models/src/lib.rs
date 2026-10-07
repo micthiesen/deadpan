@@ -21,6 +21,13 @@ mod endpoints;
 pub use endpoints::{BridgeEndpointReport, EndpointObservation, EndpointThresholds};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod geometry;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod landmark_inspection;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use geometry::BridgeGeometryReport;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stored_bridge;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stored_bridge::{AcceptedBridgeEvidence, StoredBridgeProvenance};

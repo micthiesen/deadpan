@@ -467,6 +467,10 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         "The chosen variant visibly reports measured quality coverage before acceptance",
         quality.starts_with("Motion/lighting sampled;")
             && quality.contains("Both edit joins checked for gross discontinuity.")
+            && quality.contains(
+                "Face geometry unavailable: no reliable track connects both input pictures.",
+            )
+            && quality.contains("Mouth motion unavailable: no reliable eye and lip track.")
             && compact.starts_with("Motion coverage ")
             && widget_text(d).contains(&quality)
             && !paint.is_empty()

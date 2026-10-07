@@ -42,7 +42,8 @@ scopes, cancellation and one shared capture deadline. The strict context must ma
 the request's plan and manifest identity. Frames are opaque at this boundary;
 capturing them does not qualify image decoding, source-clock coordinates or color.
 
-Current conditioning writes context schema 2. It declares the model's colour
+Current conditioning writes context schema 3. It retains the exact centered
+presentation crop and each fitted boundary content rectangle, and declares the model's colour
 space (`model_color_space`, canonical full-range sRGB, BT.709 primaries, RGB
 matrix) and, under `boundaries`, what the project showed on each side of the
 Hold: an `original` frame (asset, receipt ID, measured index identity, exact
@@ -96,12 +97,23 @@ its Ready API relies on this independent host qualification.
    actual sampled first/last pictures with retained conditioning PNGs inside
    the captured presentation crop, rejecting broad endpoint RGB discontinuity.
    Fresh qualification requires context schema 3 with exact prepared geometry.
+   Run `deadpan-track inspect-landmarks` on every canonical native picture and
+   both retained RGB8 PNGs under the same deadline and cancellation. Pinned
+   Vision revision 3 observations drive conservative boundary-anchored face
+   geometry and native-only mouth checks. Gaps, weak landmarks and ambiguous
+   association remain unavailable; later faces start new continuous segments.
+   A measured rejection fails qualification. See
+   [face and mouth evidence](qualification/bridge-landmarks-2026-10-07.md).
 5. Produce a bounded immutable provenance envelope containing the original worker
    report's exact UTF-8 bytes, original request/declaration, both generated-object
    identities, host media-validation reports, measured native/sample source spans,
-   conditioning receipt and typed motion/lighting and endpoint reports. Envelope
-   schema 5 uses profile `deadpan-ffv1-bridge-5`. Schema 3 remains readable without
-   either report; schema 4 retains motion/lighting evidence without endpoints;
+   conditioning receipt and typed motion/lighting, endpoint and face/mouth reports.
+   Envelope schema 6 uses profile `deadpan-ffv1-bridge-6`. The face/mouth report
+   binds raw observations, exact native PTS, pinned runtime, timings and
+   recomputable policy results to the native movie, context and boundary objects.
+   Stored admission recomputes the assessment and checks its geometry against
+   the retained context. Schema 3 remains readable without these reports;
+   schema 4 retains motion/lighting evidence; schema 5 also retains endpoints;
    earlier envelopes lack admission evidence and are not equivalent.
    Stop serialization at its budget.
 6. Return both masters, host provenance and all three immutable input snapshots.
@@ -113,7 +125,7 @@ its Ready API relies on this independent host qualification.
 Provenance records the worker's asset/runtime claims. Parsing and matching these
 claims does not independently prove which model bytes executed. Installed-pack
 attestation remains required. Measured boundary colour, frame identity and PTS
-are recorded by the host in schema-2 contexts and checked by
+are recorded by the host in schema-2/3 contexts and checked by
 [re-derivation](STORAGE.md#source-clock-and-colour-evidence); the model's own
 colour handling (`model_color_interpretation`) remains a worker claim. Extra bounded backend diagnostics are retained without granting
 them authority. Host decoded-media results remain separate from worker reports.
@@ -123,7 +135,8 @@ before generation into a new host directory. `prepare_run.py` invokes it before
 writing the launch configuration. `qualify_bridge_bundle` reloads those retained
 bytes and verifies their identities separately from the completed worker's
 workspace. Its configuration requires a `conditioning` object containing that
-host workspace, input scope, manifest declaration and capture limits. Never use
+host workspace, input scope, manifest declaration and capture limits, plus
+absolute `codec` and `landmark_worker` paths to the two built helpers. Never use
 post-completion worker inputs as pre-launch evidence. The examples do not publish to a project or
 select Ready. Its output directory may contain partial diagnostic files after an
 I/O failure; the project publication API has the durable byte-storage contract.

@@ -1,4 +1,5 @@
 use super::*;
+use std::io::Cursor;
 
 fn encoded(image: image::DynamicImage) -> Vec<u8> {
     let mut bytes = Cursor::new(Vec::new());

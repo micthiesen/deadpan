@@ -101,6 +101,7 @@ mod tests {
             ffprobe: PathBuf::new(),
             worker_script: PathBuf::from("/private/worker with spaces.py"),
             media_worker: PathBuf::new(),
+            landmark_worker: PathBuf::new(),
         }
     }
 

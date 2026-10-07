@@ -63,11 +63,11 @@ const NATIVE_HEIGHT: u32 = 320;
 const BAND: std::ops::Range<u32> = NATIVE_HEIGHT * 5 / 8..NATIVE_HEIGHT * 5 / 8 + NATIVE_HEIGHT / 8;
 
 /// The synthetic worker's tools: an `ffmpeg` with `libx264rgb`
-/// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's) and `deadpan-media-worker`
-/// (`DEADPAN_MEDIA_WORKER`, else beside the tested `deadpan-cli`, which a
-/// workspace build places there). Without them these tests skip, unless
-/// `DEADPAN_REQUIRE_SYNTHETIC_WORKER=1` (set by `cargo xtask gate`) makes a
-/// missing tool a failure.
+/// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's), `deadpan-media-worker`
+/// (`DEADPAN_MEDIA_WORKER`, else beside the tested `deadpan-cli`) and sibling
+/// `deadpan-track`. A workspace build places the workers there. Without them
+/// these tests skip, unless `DEADPAN_REQUIRE_SYNTHETIC_WORKER=1` (set by
+/// `cargo xtask gate`) makes a missing tool a failure.
 fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
     let ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG")
         .map(PathBuf::from)
@@ -75,7 +75,8 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
     let media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER")
         .map(PathBuf::from)
         .unwrap_or_else(|| Path::new(recipes::cli_path()).with_file_name("deadpan-media-worker"));
-    let missing: Vec<String> = [&ffmpeg, &media_worker]
+    let landmark_worker = media_worker.with_file_name("deadpan-track");
+    let missing: Vec<String> = [&ffmpeg, &media_worker, &landmark_worker]
         .into_iter()
         .filter(|tool| !tool.is_file())
         .map(|tool| tool.display().to_string())
@@ -84,10 +85,11 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
         return Some(synthetic::SyntheticWorker {
             ffmpeg,
             media_worker,
+            landmark_worker,
         });
     }
     let message = format!(
-        "needs ffmpeg with libx264rgb and a built deadpan-media-worker; missing {missing:?}"
+        "needs ffmpeg with libx264rgb and built deadpan-media-worker/deadpan-track; missing {missing:?}"
     );
     assert!(
         std::env::var_os("DEADPAN_REQUIRE_SYNTHETIC_WORKER").is_none_or(|value| value != "1"),

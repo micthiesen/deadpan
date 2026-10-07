@@ -69,7 +69,9 @@ fn qualification_limits() -> QualificationLimits {
             timeout_ms: 120_000,
         },
         maximum_worker_provenance_bytes: 4 * 1024 * 1024,
-        maximum_host_provenance_bytes: 1024 * 1024,
+        // Retained raw landmark observations can exceed 1 MiB for several
+        // faces across the supported 97 native pictures. Match stored admission.
+        maximum_host_provenance_bytes: 32 * 1024 * 1024,
     }
 }
 
@@ -747,6 +749,7 @@ pub fn run_worker(
         let qualified = qualify_declared(
             allocated,
             &runtime.media_worker,
+            &runtime.landmark_worker,
             &pinned,
             conditioning,
             declaration,
@@ -780,6 +783,7 @@ pub fn run_worker(
 pub(super) fn qualify_declared(
     allocated: &Allocated,
     media_worker: &Path,
+    landmark_worker: &Path,
     pinned: &ArtifactWorkspace,
     conditioning: deadpan_models::RetainedConditioning,
     declaration: NativeCandidateManifest,
@@ -791,6 +795,7 @@ pub(super) fn qualify_declared(
     );
     let bundle = qualify_bridge(
         media_worker,
+        landmark_worker,
         pinned,
         BridgeQualification {
             request: &allocated.host_message,
@@ -838,7 +843,7 @@ fn validation_receipt(
         bundle.provenance().object().clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-5").map_err(text)?,
+        ValidatorIdentity::new("native-ffv1", "bridge-6").map_err(text)?,
     )
     .map_err(text)?
     .with_admission(admission)

@@ -66,6 +66,9 @@ pub struct BridgeEndpointReport {
 }
 
 impl BridgeEndpointReport {
+    pub(crate) fn geometry(&self) -> ConditioningGeometry {
+        self.geometry
+    }
     pub fn entry(&self) -> EndpointObservation {
         self.entry
     }

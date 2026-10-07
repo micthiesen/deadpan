@@ -33,6 +33,7 @@ use rustix::fs::{Mode, OFlags};
 use sha2::Digest;
 
 mod faces;
+mod landmarks;
 #[cfg(target_os = "macos")]
 #[allow(unsafe_code)]
 mod vision;
@@ -70,12 +71,15 @@ struct Request {
 }
 
 fn main() -> ExitCode {
-    // The single argument `detect-faces` selects face detection; without
+    // One explicit argument selects a sibling inspection protocol. Without
     // arguments the worker tracks. Anything else is refused.
     let mut arguments = std::env::args_os().skip(1);
     match (arguments.next(), arguments.next()) {
         (None, _) => {}
         (Some(mode), None) if mode == deadpan_jobs::faces::WORKER_ARGUMENT => return faces::main(),
+        (Some(mode), None) if mode == deadpan_jobs::landmarks::WORKER_ARGUMENT => {
+            return landmarks::main();
+        }
         _ => return ExitCode::from(2),
     }
     let mut input = io::stdin();
@@ -406,7 +410,7 @@ fn open_source(source: &WorkspaceArtifact) -> Result<File, String> {
     let descriptor = rustix::fs::openat(
         &parent,
         name,
-        OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+        OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK,
         Mode::empty(),
     )
     .map_err(|error| format!("open source: {error}"))?;
@@ -443,6 +447,9 @@ fn verify_source(
             break;
         }
         total += read as u64;
+        if total > length {
+            return Err("the source grew while hashing".to_owned().into());
+        }
         hasher.update(&buffer[..read]);
     }
     if total != length {

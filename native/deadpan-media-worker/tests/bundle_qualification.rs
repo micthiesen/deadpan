@@ -121,6 +121,19 @@ fn limits() -> QualificationLimits {
     }
 }
 
+/// The landmark worker is packaged beside the media worker. The root test
+/// setup builds both helpers before this integration suite runs.
+fn landmark_worker() -> PathBuf {
+    let media = Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker"));
+    let landmark = media.with_file_name("deadpan-track");
+    assert!(
+        landmark.is_file(),
+        "deadpan-track must be built beside deadpan-media-worker: {}",
+        landmark.display()
+    );
+    landmark
+}
+
 fn declared(reference: &str, bytes: &[u8]) -> WorkspaceArtifact {
     WorkspaceArtifact::new(
         WorkspaceRef::new(reference).unwrap(),
@@ -364,6 +377,7 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
     fs::remove_dir_all(fixture.directory.path().join("inputs")).unwrap();
     let bundle = qualify_bridge(
         Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+        &landmark_worker(),
         &fixture.workspace,
         inputs,
         limits(),
@@ -403,11 +417,11 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 5);
-    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-5");
+    assert_eq!(envelope["schema_version"], 6);
+    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-6");
     let quality = envelope["quality"]
         .as_object()
-        .expect("schema five retains host motion/lighting evidence");
+        .expect("schema six retains host motion/lighting evidence");
     assert_eq!(quality["profile"], "deadpan-motion-lighting-1");
     assert_eq!(quality["native"]["frames"], 25);
     assert_eq!(quality["transitions"].as_array().unwrap().len(), 24);
@@ -442,6 +456,7 @@ fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec()
     let provider = fixture.selected_provider();
     let bundle = qualify_bridge(
         Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+        &landmark_worker(),
         &fixture.workspace,
         fixture.qualification(&provider),
         limits(),
@@ -461,6 +476,7 @@ fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec()
     let provider = foreign.selected_provider();
     let Err(QualificationError::Request(reason)) = qualify_bridge(
         Path::new("/missing/codec"),
+        Path::new("/missing/deadpan-track"),
         &foreign.workspace,
         foreign.qualification(&provider),
         limits(),
@@ -525,6 +541,7 @@ fn provenance_binding_and_containment_fail_before_any_codec_is_started() {
         fixture.replace_provenance(bytes);
         let error = qualify_bridge(
             Path::new("/missing/codec"),
+            Path::new("/missing/deadpan-track"),
             &fixture.workspace,
             fixture.qualification(&fixture.selected_provider()),
             limits(),
@@ -544,6 +561,7 @@ fn provenance_binding_and_containment_fail_before_any_codec_is_started() {
     assert!(matches!(
         qualify_bridge(
             Path::new("/missing/codec"),
+            Path::new("/missing/deadpan-track"),
             &fixture.workspace,
             fixture.qualification(&fixture.selected_provider()),
             limits(),
@@ -559,6 +577,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
     assert!(matches!(
         qualify_bridge(
             Path::new("/missing/codec"),
+            Path::new("/missing/deadpan-track"),
             &fixture.workspace,
             fixture.qualification(&fixture.selected_provider()),
             limits(),
@@ -573,6 +592,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
     assert!(matches!(
         qualify_bridge(
             Path::new("/missing/codec"),
+            Path::new("/missing/deadpan-track"),
             &fixture.workspace,
             fixture.qualification(&fixture.selected_provider()),
             small,
@@ -587,6 +607,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
     assert!(matches!(
         qualify_bridge(
             Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+            &landmark_worker(),
             &fixture.workspace,
             fixture.qualification(&fixture.selected_provider()),
             small,
@@ -615,6 +636,7 @@ fn host_selected_capability_rejects_mismatched_or_non_nearest_plans_before_io() 
         assert!(matches!(
             qualify_bridge(
                 Path::new("/missing/codec"),
+                Path::new("/missing/deadpan-track"),
                 &fixture.workspace,
                 fixture.qualification(&selected),
                 limits(),
@@ -636,7 +658,7 @@ fn host_selected_capability_rejects_mismatched_or_non_nearest_plans_before_io() 
     };
     **plan = non_nearest;
     assert!(
-        matches!(qualify_bridge(Path::new("/missing/codec"), &fixture.workspace,
+        matches!(qualify_bridge(Path::new("/missing/codec"), Path::new("/missing/deadpan-track"), &fixture.workspace,
         BridgeQualification { request: &request, ..fixture.qualification(&fixture.selected_provider()) }, limits(), &AtomicBool::new(false)),
         Err(QualificationError::Request(reason)) if reason.contains("nearest"))
     );
@@ -972,6 +994,7 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
         .unwrap();
     let bundle = qualify_bridge(
         Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+        &landmark_worker(),
         &fixture.workspace,
         fixture.qualification(&fixture.selected_provider()),
         limits(),
@@ -1003,7 +1026,7 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
         provenance_ref.clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-5").unwrap(),
+        ValidatorIdentity::new("native-ffv1", "bridge-6").unwrap(),
     )
     .unwrap()
     .with_admission(admission)

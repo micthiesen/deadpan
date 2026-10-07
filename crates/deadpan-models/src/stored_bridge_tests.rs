@@ -289,6 +289,7 @@ impl Fixture {
                 worker_provenance_utf8: &worker,
                 quality: None,
                 endpoints: None,
+                geometry: None,
             },
             128 * 1024,
         )
@@ -378,6 +379,24 @@ impl Fixture {
         fixture
     }
 
+    fn geometry_checked() -> Self {
+        let mut fixture = Self::endpoint_checked();
+        let plan = serde_json::from_value(fixture.envelope["binding"]["plan"].clone()).unwrap();
+        let conditioning =
+            serde_json::from_value(fixture.envelope["conditioning"].clone()).unwrap();
+        let context: BridgeContext = serde_json::from_slice(&fixture.context).unwrap();
+        let geometry = crate::geometry::test_report(
+            &plan,
+            &fixture.artifact.native_object,
+            &conditioning,
+            *context.geometry().unwrap(),
+        );
+        fixture.envelope["schema_version"] = json!(6);
+        fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-6");
+        fixture.envelope["geometry"] = serde_json::to_value(geometry).unwrap();
+        fixture
+    }
+
     fn replace_worker(&mut self, worker: String) {
         self.envelope["declaration"]["provenance"] =
             serde_json::to_value(declaration("outputs/provenance.json", worker.as_bytes()))
@@ -391,6 +410,92 @@ impl Fixture {
         self.envelope["conditioning"]["manifest"] =
             json!({"declaration":declared,"object":object(&self.context)});
         self.envelope["binding"]["input"]["sha256"] = json!(declared.sha256());
+    }
+}
+
+#[test]
+fn schema6_requires_bound_recomputed_landmark_evidence_and_keeps_old_profiles() {
+    let evidence = Fixture::geometry_checked().validate().unwrap();
+    assert_eq!(
+        evidence
+            .geometry()
+            .unwrap()
+            .assessment()
+            .geometry
+            .measured_tracks,
+        0
+    );
+    assert!(Fixture::new().validate().unwrap().geometry().is_none());
+    assert!(
+        Fixture::new()
+            .schema4(None)
+            .validate()
+            .unwrap()
+            .geometry()
+            .is_none()
+    );
+    assert!(
+        Fixture::endpoint_checked()
+            .validate()
+            .unwrap()
+            .geometry()
+            .is_none()
+    );
+    for change in [
+        "missing",
+        "null",
+        "unknown",
+        "wrong-object",
+        "wrong-pts",
+        "missing-frame",
+        "runtime",
+        "policy",
+        "invented-measurement",
+        "no-boundaries",
+        "wrong-crop",
+        "legacy-injection",
+    ] {
+        let mut fixture = Fixture::geometry_checked();
+        match change {
+            "missing" => {
+                fixture.envelope.as_object_mut().unwrap().remove("geometry");
+            }
+            "null" => fixture.envelope["geometry"] = Value::Null,
+            "unknown" => fixture.envelope["geometry"]["unknown"] = json!(true),
+            "wrong-object" => {
+                fixture.envelope["geometry"]["native_object"]["content"]["digest"] =
+                    json!("a".repeat(64))
+            }
+            "wrong-pts" => {
+                fixture.envelope["geometry"]["observations"]["frames"][0]["pts"] = json!(1)
+            }
+            "missing-frame" => {
+                fixture.envelope["geometry"]["observations"]["frames"]
+                    .as_array_mut()
+                    .unwrap()
+                    .pop();
+            }
+            "runtime" => fixture.envelope["geometry"]["runtime"]["request_revision"] = json!(2),
+            "policy" => {
+                fixture.envelope["geometry"]["assessment"]["thresholds"]["center_residual"] =
+                    json!(1.0)
+            }
+            "invented-measurement" => {
+                fixture.envelope["geometry"]["assessment"]["geometry"]["measured_tracks"] = json!(1)
+            }
+            "no-boundaries" => {
+                fixture.envelope["geometry"]["observations"]["boundaries"] = Value::Null
+            }
+            "wrong-crop" => {
+                fixture.envelope["geometry"]["geometry"]["presentation"]["width"] = json!(2)
+            }
+            "legacy-injection" => {
+                fixture.envelope["schema_version"] = json!(5);
+                fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-5");
+            }
+            _ => unreachable!(),
+        }
+        assert!(fixture.validate().is_err(), "{change}");
     }
 }
 

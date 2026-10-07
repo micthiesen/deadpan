@@ -8,6 +8,7 @@
 //! generated conversion retains its isolated-helper contract.
 
 pub mod audio_index;
+pub mod conditioning_png;
 pub mod output_color;
 pub mod protocol;
 pub mod source_index;

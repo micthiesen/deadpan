@@ -39,10 +39,33 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/deadpan-media-worker")
         });
-    (ffmpeg.is_file() && media_worker.is_file()).then_some(synthetic::SyntheticWorker {
-        ffmpeg,
-        media_worker,
-    })
+    let landmark_worker = media_worker.with_file_name("deadpan-track");
+    if std::env::var_os("DEADPAN_BRIDGE_FFMPEG").is_some()
+        || std::env::var_os("DEADPAN_MEDIA_WORKER").is_some()
+    {
+        assert!(
+            ffmpeg.is_file(),
+            "configured ffmpeg is missing: {}",
+            ffmpeg.display()
+        );
+        assert!(
+            media_worker.is_file(),
+            "configured media worker is missing: {}",
+            media_worker.display()
+        );
+        assert!(
+            landmark_worker.is_file(),
+            "deadpan-track must be installed beside the configured media worker: {}",
+            landmark_worker.display()
+        );
+    }
+    (ffmpeg.is_file() && media_worker.is_file() && landmark_worker.is_file()).then_some(
+        synthetic::SyntheticWorker {
+            ffmpeg,
+            media_worker,
+            landmark_worker,
+        },
+    )
 }
 
 /// Run one variant through the synthetic worker and record its outcome.

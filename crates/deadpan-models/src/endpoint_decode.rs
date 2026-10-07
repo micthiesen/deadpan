@@ -1,6 +1,6 @@
 //! Inspect exact sampled endpoints and retained PNGs through private inputs.
 
-use std::io::{Cursor, Read, Seek};
+use std::io::{Read, Seek};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -215,26 +215,9 @@ fn decode_png(
     control: &Control<'_>,
 ) -> Result<image::RgbImage, QualificationError> {
     control.remaining()?;
-    if width == 0 || height == 0 || u64::from(width) * u64::from(height) > MAX_PIXELS {
-        return Err(invalid(
-            "conditioning PNG raster exceeds the inspection bound",
-        ));
-    }
-    let mut reader = image::ImageReader::with_format(Cursor::new(bytes), image::ImageFormat::Png);
-    let mut limits = image::Limits::default();
-    limits.max_image_width = Some(width);
-    limits.max_image_height = Some(height);
-    limits.max_alloc = Some(MAX_PIXELS * 8);
-    reader.limits(limits);
-    let result = reader.decode();
+    let result = deadpan_media::conditioning_png::decode_rgb8(bytes, width, height);
     control.remaining()?;
-    let image::DynamicImage::ImageRgb8(image) = result.map_err(invalid)? else {
-        return Err(invalid("conditioning PNG must contain exact RGB8 pixels"));
-    };
-    if image.dimensions() != (width, height) {
-        return Err(invalid("conditioning PNG differs from the native raster"));
-    }
-    Ok(image)
+    result.map_err(invalid)
 }
 
 #[cfg(test)]

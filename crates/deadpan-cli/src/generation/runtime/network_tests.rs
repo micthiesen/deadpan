@@ -72,6 +72,7 @@ impl Probe {
             ffmpeg: PathBuf::from("/usr/bin/true"),
             ffprobe: PathBuf::from("/usr/bin/true"),
             media_worker: PathBuf::from("/usr/bin/true"),
+            landmark_worker: PathBuf::from("/usr/bin/true"),
         }
     }
 

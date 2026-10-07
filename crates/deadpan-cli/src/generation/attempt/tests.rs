@@ -144,7 +144,8 @@ fn runtime(directory: &Path, python: &str) -> BridgeRuntime {
         ffmpeg: stand_in.clone(),
         ffprobe: stand_in.clone(),
         worker_script: stand_in.clone(),
-        media_worker: stand_in,
+        media_worker: stand_in.clone(),
+        landmark_worker: stand_in,
     }
 }
 
@@ -375,7 +376,7 @@ fn reaping_finishes_cancel_and_keeps_the_first_failure() {
     assert!(matches!(concluded(&job), RunResult::Failed(_)));
 }
 
-/// The synthetic worker's two external tools, when this machine has them.
+/// The synthetic worker's required tools, when this machine has them.
 fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
     let configured_ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG");
     let configured_media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER");
@@ -389,6 +390,7 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/deadpan-media-worker")
         });
+    let landmark_worker = media_worker.with_file_name(crate::generation::runtime::LANDMARK_WORKER);
     if configured_ffmpeg.is_some() || configured_media_worker.is_some() {
         assert!(
             ffmpeg.is_file(),
@@ -400,11 +402,19 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
             "configured DEADPAN_MEDIA_WORKER does not name a file: {}",
             media_worker.display()
         );
+        assert!(
+            landmark_worker.is_file(),
+            "deadpan-track must be installed beside DEADPAN_MEDIA_WORKER: {}",
+            landmark_worker.display()
+        );
     }
-    (ffmpeg.is_file() && media_worker.is_file()).then_some(synthetic::SyntheticWorker {
-        ffmpeg,
-        media_worker,
-    })
+    (ffmpeg.is_file() && media_worker.is_file() && landmark_worker.is_file()).then_some(
+        synthetic::SyntheticWorker {
+            ffmpeg,
+            media_worker,
+            landmark_worker,
+        },
+    )
 }
 
 /// Real PNG conditioning pictures at the native raster.
@@ -538,12 +548,17 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     .unwrap();
     assert!(
         stored.quality().is_some(),
-        "successful output uses schema 5"
+        "successful output uses schema 6"
     );
     assert!(
         stored.endpoints().is_some(),
         "successful output records both joins"
     );
+    let geometry = stored
+        .geometry()
+        .expect("schema 6 retains native observations");
+    assert_eq!(geometry.assessment().mouth.measured_tracks, 0);
+    assert_eq!(geometry.assessment().geometry.measured_tracks, 0);
 
     let second =
         allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
@@ -664,6 +679,61 @@ fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
             .selected_generation_bundle(&first.request.request_id)
             .unwrap(),
         Some(selected_before)
+    );
+    store.validate_full().unwrap();
+}
+
+#[test]
+fn missing_landmark_helper_fails_without_replacing_ready_or_fallback() {
+    let Some(mut worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg and built media/landmark workers");
+        return;
+    };
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let fallback = store.snapshot().unwrap();
+    let revision = store.head_revision().unwrap();
+    let first = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision: revision.clone(),
+            seed: 7,
+            inputs: picture_inputs(),
+        },
+    )
+    .unwrap();
+    let ready = run_synthetic(&mut store, &first, &worker);
+    assert_eq!(ready.state, JobState::Ready, "{:?}", ready.failure);
+    let selected = store
+        .selected_generation_bundle(&first.request.request_id)
+        .unwrap();
+    let second =
+        allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
+    worker.landmark_worker = directory.path().join("missing-landmark-worker");
+    let finished = run_synthetic(&mut store, &second, &worker);
+    assert_eq!(finished.state, JobState::Failed);
+    let Some(JobFailure::Host(failure)) = finished.failure else {
+        panic!("missing helper must fail host qualification");
+    };
+    assert_eq!(failure.code, HostFailureCode::OutputValidationFailed);
+    assert!(failure.detail.as_str().contains("landmark"), "{failure:?}");
+    assert!(finished.receipt.is_none());
+    assert_eq!(store.head_revision().unwrap(), revision);
+    assert_eq!(store.snapshot().unwrap(), fallback);
+    assert_eq!(
+        store
+            .selected_generation_bundle(&first.request.request_id)
+            .unwrap(),
+        selected
+    );
+    assert!(
+        store
+            .generation_attempt(&second.identity)
+            .unwrap()
+            .unwrap()
+            .bundle_receipt
+            .is_none()
     );
     store.validate_full().unwrap();
 }

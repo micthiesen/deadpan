@@ -14,6 +14,8 @@ pub mod artifact;
 pub mod faces;
 pub mod generation_plan;
 mod hold_prompt;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod landmarks;
 pub mod lifecycle;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod process;

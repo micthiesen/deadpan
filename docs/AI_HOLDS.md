@@ -67,7 +67,7 @@ ends in Ready, Failed or Cancelled.
   current request, so the accepted request stays `Resolved` with its own hash.
   `relevance_plan(store, before, after)` is public for other explicit writes.
 
-### Candidate motion and lighting
+### Candidate checks
 
 Before Ready, the host inspects every adjacent native picture pair for gross
 motion and abrupt lighting changes. Motion is block displacement measured in
@@ -83,12 +83,23 @@ earlier Ready selection, and leaves the committed pause unchanged. See
 [measurement and verification](qualification/bridge-quality-2026-10-07.md).
 The host also compares the retained conditioning PNGs with the sampled master's
 first and last pictures inside the captured presentation crop. A separate gross
-endpoint guard rejects broad RGB discontinuity before Ready. Host schema 5
-retains both reports and binds endpoint measurements to the crop and immutable
-objects. Older schema 3/4 artifacts remain readable with their original evidence.
+endpoint guard rejects broad RGB discontinuity before Ready. Host schema 6
+retains these reports and binds measurements to the crop and immutable
+objects. Older schema 3/4/5 artifacts remain readable with their original evidence.
 The existing Smooth/Noticeable/Jump readings remain advisory. See
 [endpoint checks](qualification/bridge-endpoints-2026-10-07.md).
-Face/region and mouth checks remain open.
+
+The separate `deadpan-track inspect-landmarks` helper runs Apple Vision face
+landmarks request revision 3 over every canonical native picture and both
+retained boundary PNGs. Conservative unique associations connect face boxes
+and eye/nose geometry to both boundaries. Mouth aperture is measured only
+within continuous native-frame segments, including faces that enter later.
+A later occlusion cannot erase an earlier measured rejection. Missing, weak,
+ambiguous or out-of-crop observations remain explicitly unavailable; they do
+not establish identity or silence. The inspector exposes this coverage.
+See [face and mouth checks](qualification/bridge-landmarks-2026-10-07.md).
+Generic drift checks for a selected non-face region remain open. The versioned
+engineering thresholds need calibration on the owner corpus under §29.1.
 
 ### Source and colour context
 
@@ -633,7 +644,7 @@ publication); a second exits at once with status 130.
 ## Remaining work
 
 The worker exposes motion and optional guidance as described above. §12.5 still
-needs detectable face/region geometry and mouth checks. Generate inside scoped
+needs drift checks for a selected non-face region. Generate inside scoped
 Repeat/Retime inspection and calibrated join thresholds also remain open.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
