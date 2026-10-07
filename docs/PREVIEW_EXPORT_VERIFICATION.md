@@ -49,12 +49,16 @@ report. Unusable inputs fail with `ExportVerificationMovie`,
   into the eight-bit reference.
 - **This reference shares the picture session with the encoder host.** A
   planning or picture-session bug produces the same wrong picture on both
-  sides and passes the PSNR gates. The picture comparison therefore proves
-  encode, frame order, timing, color tagging and mux fidelity. The independent
-  check of recipe semantics is the per-frame provenance (Original asset,
+  sides and passes the PSNR gates. The picture comparison checks encode
+  fidelity, content order where references are distinguishable, exact PTS
+  order, color tagging and mux fidelity. It cannot identify which nearly
+  identical source frame was encoded after lossy compression. The independent
+  check of recipe semantics is the reference provenance (Original asset,
   source frame and PTS; Generated frame; Background) asserted against
-  expectations derived by hand from each recipe in the fixtures. Sound
-  recipes add the same kind of independent check: hand-derived 256-sample
+  expectations derived by hand from each recipe in the fixtures. That
+  provenance records the intended reference, not a source identity recovered
+  from decoded pixels. Sound recipes add the same kind of independent check:
+  hand-derived 256-sample
   windows of the limited bus that must be loud (peak above 0.5) or quiet
   (below 0.01), for example the click moved by an audio lag, silenced by a
   mute range or repeated by a room-tone loop.
@@ -116,13 +120,42 @@ with references `n-1` and `n+1`. Defaults (`Thresholds::default()`):
 | Chroma PSNR (HDR) | >= 40 dB | Measured 66.6 dB (PQ) and 67.9 dB (HLG) clean, 52.4 dB and 51.2 dB on grain (11.2 dB margin). |
 | HDR local structure: largest 4x4-cell luma mean difference | <= 40 ten-bit codes (`local_structure_mismatch`) | Averaging 4x4 cells removes most grain and coding noise but not a missing graphic. Correct encodes measured at most 3.9 (PQ) and 4.3 (HLG) codes clean and 8.4 and 12.6 codes on grain (3.2x below the gate); the missing caption measured 157.6–325.0 codes (3.9x above) and the reframe 422.9–868.3. A missing element that covers one full cell with more than 40 codes of contrast fails whatever the picture size; a two-pixel stroke split across cells needs about 160. SDR pictures report `local_luma_error` (eight-bit codes) without a gate. |
 | 8x8 luma thumbnail mean absolute difference | <= 4.0 eight-bit-equivalent codes | Gross mismatch gate for wrong framing, zoom or content. Ten-bit codes are divided by four (limited-range ten-bit codes are exactly four times their eight-bit counterparts). Measured <= 0.065 SDR and <= 0.059 HDR; the 1.35x reframe negatives fail it in both. |
-| Neighbor margin | reference `n±1` must not beat `n` by > 0.5 dB | `frame_index_mismatch`. The own frame beat its best neighbor by 28–38 dB on moving fixtures (`min_neighbor_margin_db`). |
+| Neighbor margin | a distinguishable reference `n±1` must not beat `n` by > 0.5 dB | `frame_index_mismatch`. Reference-only separation must exceed twice the declared luma error bound below. The own frame beat its best neighbor by 28–38 dB on moving fixtures (`min_neighbor_margin_db`). |
 | Black frame | decoded mean luma <= 20 while reference mean > 32 (eight-bit-equivalent codes) | `unexpected_black_frame`. |
 
+**Neighbor observability.** The minimum luma PSNR declares a per-picture RMS
+error bound `epsilon = peak * 10^(-min_luma_psnr_db / 20)`: 6.4053 eight-bit
+codes for SDR or 32.3501 ten-bit codes for HDR. A pair is `observable` only
+when the RMS distance between its two reference luma planes exceeds
+`2 * epsilon`. At or below that distance the two error balls overlap, so the
+comparison is `unobservable`: compression within the declared fidelity can
+produce the same decoded luma from either source. This decision uses only
+references and the existing declared threshold. A poor decoded picture
+cannot enlarge its own error allowance.
+
+The 0.5 dB preference gate is unchanged for observable pairs. For
+unobservable pairs it reports the raw neighbor PSNR without claiming an
+index mismatch. This adds no exact-identity guarantee beyond the luma gate:
+by the triangle inequality, an observable neighbor cannot be closer if the
+own luma passes its error bound. An index mismatch is therefore a diagnostic
+for an already failing luma comparison. All pixel, structure, color, PTS,
+frame-count and audio gates still apply; unobservable does not mean that
+content timing or source identity was verified. The rule is the same for
+Original, Generated and Background references.
+
+A known-order compression witness demonstrates the old rule's false
+positive: encode three 64x32 pictures with neutral chroma, flat luma 100,
+a 99/101 checkerboard, then flat luma 160. A libx264 CRF 23 encode removes
+the middle picture's one-code texture. Its own PSNR is 48.13 dB, but the
+previous reference now matches exactly. The unit regression models that
+bounded texture loss without a codec dependency; a distinguishable shifted
+square remains a failure in both SDR and HDR.
+
 On static content (freezes, Background, repeated stills) neighbors are
-identical, the margin is 0 dB and an off-by-one frame is invisible in pixels.
-There it is guarded only by the exact PTS-to-ordinal mapping and the frame
-count. Max and mean absolute errors per plane are reported but not gated.
+identical and always unobservable. Exact PTS-to-ordinal mapping and frame
+count still verify the presented timeline, but cannot expose a substitution
+of identical pictures. Max and mean absolute errors per plane are reported
+but not gated.
 
 ## Audio gates
 
@@ -179,7 +212,25 @@ event-aligned to pass.
 
 ## Report
 
-Report schema version 2 adds per-picture `local_luma_error` and
+Report schema version 3 adds per-picture `previous_index` and `next_index`.
+Each is null when that reference neighbor does not exist, or contains:
+
+- `status`: `observable` or `unobservable` at the declared luma fidelity.
+- `reference_luma_rms`: the reference-to-reference RMS separation in codes.
+- `max_error_luma_rms`: the per-reference bound `epsilon`; separation must
+  exceed twice this value for `observable`.
+
+`summary.index_observable_comparisons` and
+`summary.index_unobservable_comparisons` count directed neighbor comparisons,
+so checking both adjacent frames counts that pair twice.
+`summary.pictures_without_index_neighbors` counts frames with neither
+neighbor. These are coverage counts, not counts of verified source
+identities. `previous_luma_psnr_db`, `next_luma_psnr_db` and
+`summary.min_neighbor_margin_db` retain their raw values, including
+unobservable comparisons; a negative margin can therefore coexist with a
+passing report.
+
+Version 2 introduced per-picture `local_luma_error` and
 `summary.max_local_luma_error`, `output_color` (output policy, reason,
 `hdr_sources`, `tone_map_peak_nits` and the PQ mastering volume),
 `picture_bits` (8 or 10), the HDR container observations in `movie.color`

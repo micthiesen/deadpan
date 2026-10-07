@@ -109,6 +109,11 @@ fn picture_checks_flag_index_shift_black_frame_and_gross_framing_change() {
     let mut stored = references(&[(4, square(16)), (5, square(20)), (6, square(24))]);
     let shifted = compare_picture(ProjectFrame(0), 5, &square(24), &mut stored, &thresholds);
     assert!(shifted.flags.contains(&"frame_index_mismatch"));
+    assert!(shifted.flags.contains(&"luma_psnr"));
+    let index = shifted.next_index.unwrap();
+    assert_eq!(index.status, IndexObservability::Observable);
+    assert!(index.reference_luma_rms > 2.0 * index.max_error_luma_rms);
+    assert!((index.max_error_luma_rms - 6.405_310_400_349_427).abs() < 1e-12);
     assert!(!shifted.passed);
     // A decoded black frame where the reference shows a bright picture.
     let bright = picture(64, 32, |_, _| 180);
@@ -140,6 +145,146 @@ fn picture_checks_flag_index_shift_black_frame_and_gross_framing_change() {
     let mut stored = references(&[(1, square(16)), (2, square(20)), (3, square(24))]);
     let check = compare_picture(ProjectFrame(0), 2, &noisy, &mut stored, &thresholds);
     assert!(check.passed, "{:?}", check.flags);
+}
+
+#[test]
+fn compression_can_erase_nearby_frame_identity_without_an_index_failure() {
+    // Known-order compression witness: libx264 CRF 23 removes the middle
+    // frame's one-code checkerboard in [flat 100, checker 99/101, flat 160].
+    // Model that deterministic quantization directly, without a codec in this
+    // unit test. The former nearest-reference rule falsely called it a shift.
+    let flat = picture(64, 32, |_, _| 100);
+    let checker = picture(64, 32, |x, y| 99 + 2 * ((x + y) % 2) as u8);
+    let later = picture(64, 32, |_, _| 160);
+    let thresholds = Thresholds::default();
+    for bits in [8, 10] {
+        let depth = |picture: &I420| {
+            if bits == 10 {
+                ten_bit(picture)
+            } else {
+                picture.clone()
+            }
+        };
+        let mut stored = references(&[(0, depth(&flat)), (1, depth(&checker)), (2, depth(&later))]);
+        let compressed =
+            compare_picture(ProjectFrame(0), 1, &depth(&flat), &mut stored, &thresholds);
+        assert!(compressed.passed, "{compressed:?}");
+        assert!(
+            compressed.previous_luma_psnr_db.unwrap()
+                > compressed.planes[0].psnr_db + thresholds.neighbor_psnr_margin_db
+        );
+        let previous = compressed.previous_index.unwrap();
+        assert_eq!(previous.status, IndexObservability::Unobservable);
+        assert_eq!(
+            previous.reference_luma_rms,
+            if bits == 10 { 4.0 } else { 1.0 }
+        );
+        assert_eq!(
+            compressed.next_index.unwrap().status,
+            IndexObservability::Observable
+        );
+        let summary = summarize(std::slice::from_ref(&compressed), &[]);
+        assert_eq!(summary.index_observable_comparisons, 1);
+        assert_eq!(summary.index_unobservable_comparisons, 1);
+        assert_eq!(summary.pictures_without_index_neighbors, 0);
+        assert!(summary.min_neighbor_margin_db.unwrap() < -0.5);
+        let json = serde_json::to_value(&compressed).unwrap();
+        assert_eq!(json["previous_index"]["status"], "unobservable");
+        assert_eq!(json["next_index"]["status"], "observable");
+
+        // Observability depends on the references and declared fidelity alone.
+        // A poor decode cannot increase its own allowance to hide a mismatch.
+        let badly_decoded =
+            compare_picture(ProjectFrame(0), 1, &depth(&later), &mut stored, &thresholds);
+        assert_eq!(badly_decoded.previous_index, compressed.previous_index);
+        assert_eq!(badly_decoded.next_index, compressed.next_index);
+        assert!(badly_decoded.flags.contains(&"frame_index_mismatch"));
+        assert!(badly_decoded.flags.contains(&"luma_psnr"));
+    }
+}
+
+#[test]
+fn index_observability_uses_strict_twice_bound_and_declared_depth_threshold() {
+    // A mathematical peak of 100 and 40 dB give an exactly represented bound
+    // of one code. Closed error balls still touch at separation two.
+    for (distance, status) in [
+        (0, IndexObservability::Unobservable),
+        (1, IndexObservability::Unobservable),
+        (2, IndexObservability::Unobservable),
+        (3, IndexObservability::Observable),
+    ] {
+        let index = index_check::compare_references(&[40; 16], &[40 + distance; 16], 100, 40.0);
+        assert_eq!(index.max_error_luma_rms, 1.0);
+        assert_eq!(index.reference_luma_rms, f64::from(distance));
+        assert_eq!(index.status, status);
+    }
+    let thresholds = Thresholds::default();
+    for (peak, minimum, expected) in [
+        (255, thresholds.min_luma_psnr_db, 6.405_310_400_349_427),
+        (
+            1023,
+            thresholds.min_hdr_luma_psnr_db,
+            32.350_100_463_522_516,
+        ),
+    ] {
+        let index = index_check::compare_references(&[0; 16], &[peak; 16], peak, minimum);
+        assert!((index.max_error_luma_rms - expected).abs() < 1e-12);
+        assert_eq!(index.status, IndexObservability::Observable);
+        let loose = index_check::compare_references(&[0; 16], &[peak; 16], peak, 0.0);
+        assert_eq!(loose.max_error_luma_rms, f64::from(peak));
+        assert_eq!(loose.status, IndexObservability::Unobservable);
+        let strict = index_check::compare_references(&[0; 16], &[1; 16], peak, 100.0);
+        assert_eq!(strict.status, IndexObservability::Observable);
+        let identical = index_check::compare_references(&[1; 16], &[1; 16], peak, 100.0);
+        assert_eq!(identical.reference_luma_rms, 0.0);
+        assert_eq!(identical.status, IndexObservability::Unobservable);
+    }
+    // Choose separation 14 eight-bit-equivalent codes: above the SDR bound
+    // (12.81) but below the HDR bound after scaling (64.70 ten-bit codes).
+    let flat = picture(64, 32, |_, _| 100);
+    let neighbor = picture(64, 32, |_, _| 114);
+    let mut stored = references(&[(0, flat.clone()), (1, neighbor.clone())]);
+    let sdr = compare_picture(ProjectFrame(0), 0, &flat, &mut stored, &thresholds);
+    assert_eq!(
+        sdr.next_index.unwrap().status,
+        IndexObservability::Observable
+    );
+    let mut stored = references(&[(0, ten_bit(&flat)), (1, ten_bit(&neighbor))]);
+    let hdr = compare_picture(
+        ProjectFrame(0),
+        0,
+        &ten_bit(&flat),
+        &mut stored,
+        &thresholds,
+    );
+    assert_eq!(
+        hdr.next_index.unwrap().status,
+        IndexObservability::Unobservable
+    );
+}
+
+#[test]
+fn static_and_single_frame_reports_distinguish_unobservable_from_absent_neighbors() {
+    let flat = picture(64, 32, |_, _| 100);
+    let thresholds = Thresholds::default();
+    let mut stored = references(&[(0, flat.clone()), (1, flat.clone())]);
+    let first = compare_picture(ProjectFrame(0), 0, &flat, &mut stored, &thresholds);
+    let last = compare_picture(ProjectFrame(0), 1, &flat, &mut stored, &thresholds);
+    assert!(first.passed && last.passed);
+    assert!(first.previous_index.is_none());
+    assert!(last.next_index.is_none());
+    assert_eq!(first.next_index.unwrap().reference_luma_rms, 0.0);
+    let mut stored = references(&[(0, flat.clone())]);
+    let only = compare_picture(ProjectFrame(0), 0, &flat, &mut stored, &thresholds);
+    assert!(only.passed && only.previous_index.is_none() && only.next_index.is_none());
+    let summary = summarize(&[first, last, only], &[]);
+    assert_eq!(summary.pictures_checked, 3);
+    assert_eq!(summary.index_observable_comparisons, 0);
+    assert_eq!(summary.index_unobservable_comparisons, 2);
+    assert_eq!(summary.pictures_without_index_neighbors, 1);
+    let json = serde_json::to_value(&summary).unwrap();
+    assert_eq!(json["index_unobservable_comparisons"], 2);
+    assert_eq!(json["pictures_without_index_neighbors"], 1);
 }
 
 /// Deterministic aperiodic noise (LCG), optionally one-pole lowpassed.
@@ -532,6 +677,11 @@ fn ten_bit_pictures_use_peak_1023_and_eight_bit_equivalent_structure_gates() {
         "{:?}",
         shifted.flags
     );
+    assert_eq!(
+        shifted.next_index.unwrap().status,
+        IndexObservability::Observable
+    );
+    assert!(shifted.flags.contains(&"luma_psnr"));
     let bright = ten_bit(&picture(64, 32, |_, _| 180));
     let black = ten_bit(&picture(64, 32, |_, _| 16));
     let mut stored = references(&[(0, bright)]);

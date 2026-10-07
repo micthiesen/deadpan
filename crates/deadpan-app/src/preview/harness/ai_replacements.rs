@@ -78,16 +78,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let widgets = d.widgets().to_string();
     d.check(
         "Jobs explains the unavailable replacement and teaches Retry R and Discard D",
-        widgets.contains("REPLACEMENT PICTURES")
+        widgets.contains("AI PREPARATIONS")
             && widgets.contains("18 frames")
             && widgets.contains("Unavailable; R retries")
             && widgets.contains("D discards")
             && widgets.contains("replacement replay model is unavailable"),
-        json!([
-            "REPLACEMENT PICTURES",
-            "Unavailable; R retries",
-            "D discards"
-        ]),
+        json!(["AI PREPARATIONS", "Unavailable; R retries", "D discards"]),
         json!(widgets),
     )?;
     d.capture("Replacement unavailable with Retry and Discard")?;

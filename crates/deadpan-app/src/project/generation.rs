@@ -251,6 +251,8 @@ pub struct Job {
     pub started: Instant,
     /// The recorded request, once allocated.
     pub request: Option<RequestId>,
+    /// Exact timing admitted with the durable request, available after conditioning.
+    pub plan: Option<deadpan_jobs::BridgeGenerationPlan>,
     /// Variants this job generates, and the 1-based one in progress.
     pub variants: u8,
     pub variant: u8,
@@ -471,6 +473,9 @@ impl CandidatePreview {
 #[derive(Clone, Debug, Default)]
 pub struct Update {
     pub session: u64,
+    /// The workspace revision against which candidates were reconciled.
+    /// None only in an unpublished/default update.
+    pub revision: Option<RevisionId>,
     pub job: Option<Job>,
     /// Ready candidates by authored target for the published workspace revision.
     pub candidates: Arc<BTreeMap<ScopedNodeTarget, Candidate>>,

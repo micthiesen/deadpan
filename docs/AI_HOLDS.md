@@ -4,8 +4,9 @@
 (Hold) with generated pictures: conditioning, request and attempt bookkeeping,
 the supervised worker, host qualification, publication, Ready, and explicit
 acceptance. It replaces the developer examples as the host path; the examples
-remain qualification harnesses. Generation only proposes pictures. Only
-acceptance edits the project, as one undoable command.
+remain qualification harnesses. An AI pause insertion saves its deterministic
+fallback immediately. Generation proposes pictures; explicit acceptance changes
+the saved provider as one undoable command.
 
 The only provider is the LTX-2.3 q4 MLX route qualified in
 [`tools/model-qualification`](../tools/model-qualification/README.md). A
@@ -176,6 +177,33 @@ The stable iteration comes from the observed document. Omitted scope means
 empty Repeat ancestry; it never adopts the app's current selection. Live job
 status includes the captured scope.
 
+## Inserting an AI pause
+
+`,a` inserts the same half-second silent freeze as `,h`, then queues AI
+pictures for that exact new Hold. Counts scale the inserted time: `3,a` inserts
+1.5 seconds. `:hold 1.5s video=ai audio=silence` inserts the same AI pause
+with an explicit duration; `:ai-hold 750ms` is the shorter form. The `video`
+and `audio` parameters may appear in either order after the duration, once
+each. Audio defaults to silence; zero duration makes no edit or preparation.
+The command captures
+the insertion point and project frame rate when entry opens; changed context
+refuses without an edit. Normal and Visual Edit use the same cursor insertion
+rules as `,h`.
+
+The shared semantic instruction is `insert_ai_pause` with a `PauseLength`.
+Dot and macros retain the duration and allocate a fresh Hold and preparation at
+each new invocation. The core `InsertAiTime` command uses the ordinary pause's
+timing, framing and audio transforms. Its deterministic silent fallback and
+durable preparation commit together, without requiring a model. Initial
+controls are Still, no guidance and no selected target. These choices are saved
+at birth, so retry, reopening and Redo do not adopt changed UI defaults.
+
+Missing models or inputs appear in Jobs under **AI PREPARATIONS**. Retry and
+Discard affect generation; the inserted time remains saved. Undo removes the
+pause and cancels its preparation. Redo creates a new preparation. The queue
+and closed-project `ai-replacements` commands below handle both insertion and
+accepted-pause extension.
+
 ## Lengthening accepted pauses
 
 Shortening an accepted pause, or extending it within the retained sampling
@@ -290,7 +318,7 @@ replace the previous choices; `:generate motion=still` also clears old text.
 `target=ID` names a saved attention target; `target=none` clears it. Omitted
 target retains the captured choice, including its absence. The first request
 has no target. A target correction or removal makes its request stale.
-Bare `,a`, `:generate N` and Retry retain the current request's choices.
+`:hold-provider ai`, `:generate N` and Retry retain the current request's choices.
 Changed controls start a new request, so old candidates are never relabelled.
 Timing, pause sound and acceptance remain unchanged. These are requests to the
 model; review its result before accepting.
@@ -318,7 +346,8 @@ the footer teach the actions:
 
 | Action | Keys | Effect |
 | --- | --- | --- |
-| Generate | `,a`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant |
+| Insert AI pause | `,a`, `3,a`, `:ai-hold 0.5s`, `:hold 1.5s video=ai audio=silence` | Insert a silent fallback at the Edit cursor and queue pictures; counts scale the half-second duration |
+| Generate for an existing pause | `:hold-provider ai`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant without inserting time |
 | Generate several | `:generate N` (1 to 4) | One job that generates N variants, one attempt after another |
 | Motion and guidance | `:generate [N] motion=subtle text=Keep the hands still.` | Replace the generation controls and generate; `text=` is optional and comes last |
 | Cancel | `:cancel-ai`, or X in the Jobs panel (`:jobs`) (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
@@ -327,17 +356,30 @@ the footer teach the actions:
 | Audition | `:audition-ai`, Audition; Space while previewing | Play the pause with the chosen variant's pictures and the pause's own sound |
 | Compare | `,x`, `:compare-ai [before\|N]`, Compare before / after; `,n` next variant | Switch the viewer and audition between the pause as committed (Before) and a variant at the same frame and heard sample |
 | Accept | `:accept-ai` | One undoable edit with the chosen variant; the pause stays selected |
+| Restore fallback | `:revert-ai`, `:hold-provider fallback` | Restore the captured freeze or background and cancel pending AI preparation; timing and sound stay saved, and Undo restores the prior provider |
 | Discard | `:discard-ai` | Durably discard the chosen variant; not undoable, the pause is unchanged |
 | Install the model pack | Install AI models…, `:models` | Open the Models panel on the bridge pack; shown when it is not installed |
 
-`,a` keeps its single-variant meaning. Comparison adds `,x` (`ai.compare`)
-and `,n` (`ai.next`) to the comma family with the same contract (Normal Edit
-only, no count, no key repeat, yielding to text and composition); see the
+`,a` inserts time in Normal or Visual Edit and accepts a duration count.
+Comparison uses `,x` (`ai.compare`) and `,n` (`ai.next`) in Normal Edit only,
+without a count. All three ignore held activation and yield to native text and
+composition; see the
 [compatibility record](KEYBINDING_COMPATIBILITY.md). The rest of the workflow
 is command-only. Headless, `ai-variants` lists the offered variants (with
 `--joins`, the comparison's join readings) and `select-hold`, `keep-hold`,
 `discard-hold` and `dismiss-attempt` make the same choices, on the app's
 writer when it has the project open ([headless](HEADLESS.md#choosing-keeping-and-discarding-variants)).
+
+The inspector shows timing for the current generation, chosen variant and
+accepted pictures. A motion-speed change of at least 5% appears in the compact
+heading. Focus the timing heading and press Enter for the exact inserted pause,
+requested boundary span, native boundary span and native movie duration.
+The speed is `(M - 1) / native_rate` divided by `(N + 1) / project_rate`;
+boundary pictures are excluded from the N inserted pictures. These values are
+in the authored Hold clock, before outer Repeat or Retime sampling. Shortening
+accepted pictures shows the retained prefix and preserves the original sampling
+speed. Reports come from the admitted plan or saved sampling map and require no
+model or file read on the UI thread.
 
 `project::generation` defines the requests and published state, and
 `project/service/generation.rs` runs them:
@@ -366,9 +408,11 @@ writer when it has the project open ([headless](HEADLESS.md#choosing-keeping-and
   channel) makes `run_worker` cancel and fail it. Progress is display-only and
   may drop a step when the queue is full. The final run has its own one-slot
   channel, so it is never dropped and its qualified workspace reaches `finish`.
-- `,a` captures its session, revision and pause at the first `,a` ancestor and
-  `:generate`, `:preview-ai`, `:accept-ai` and `:discard-ai` at command entry,
-  including absence. Cancel, Preview and Discard bypass the editing command
+- `,x` and `,n` capture their session, revision and pause at their first comma
+  ancestor. `:generate`, `:hold-provider`, `:revert-ai`, `:preview-ai`,
+  `:accept-ai` and `:discard-ai` capture at command entry, including absence.
+  `,a` uses the ordinary semantic insertion path at the current cursor.
+  Cancel, Preview and Discard bypass the editing command
   path, so Camera drafts, Repeat chains, playback and pending keys are kept.
 - Allocation requires the head to still be the captured revision; an edit during
   the (about one second) conditioning fails the job with a request to generate

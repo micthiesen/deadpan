@@ -2,7 +2,9 @@ use super::*;
 use crate::generation::{acceptance, preparations};
 use crate::generation_context::BoundaryContextResolver;
 use crate::live_project::{self, ShortOperation};
-use deadpan_store::generation_preparations::{PreparationControls, PreparationState};
+use deadpan_store::generation_preparations::{
+    PreparationControls, PreparationOrigin, PreparationState,
+};
 
 fn edit(store: &mut ProjectStore, revision: &str, command: Command) -> serde_json::Value {
     let document = store.snapshot().unwrap();
@@ -82,7 +84,10 @@ fn replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
     // The same accepted object supplies controls when copied to another Hold
     // that has no operational request. No media decoder or model is needed.
     let mut copied = preparation.clone();
-    copied.controls = PreparationControls::AcceptedArtifact;
+    let PreparationOrigin::AcceptedExtension { controls, .. } = &mut copied.origin else {
+        panic!("expected an accepted extension");
+    };
+    *controls = PreparationControls::AcceptedArtifact;
     assert_eq!(
         preparations::resolve_options(&package, &copied, &AtomicBool::new(false)).unwrap(),
         options

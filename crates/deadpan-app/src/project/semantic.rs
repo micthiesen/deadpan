@@ -77,6 +77,7 @@ impl RepeatableEdit {
                 | SemanticInstruction::InsertReverse { .. }
                 | SemanticInstruction::Tail { .. }
                 | SemanticInstruction::InsertPause { .. }
+                | SemanticInstruction::InsertAiPause { .. }
                 | SemanticInstruction::SetFraming { .. }
                 | SemanticInstruction::Gag { .. }
                 | SemanticInstruction::SetGag { .. }

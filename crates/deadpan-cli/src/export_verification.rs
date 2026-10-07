@@ -40,16 +40,18 @@ use crate::{
 
 mod audio_check;
 pub mod cli;
+mod index_check;
 pub mod metrics;
 mod movie;
 
 pub use audio_check::{AudioCheck, OffsetStatus, compare_audio};
+pub use index_check::{IndexObservability, NeighborIndexCheck};
 pub use metrics::{I420, PlaneMetrics};
 pub use movie::{AudioGap, AudioStream, ColorObservation, EditSummary, PictureAnomaly};
 
-/// Version 2 adds the output branch decision, picture depth, HDR container
-/// observations and HDR light cross-check; SDR gates are unchanged.
-pub const REPORT_SCHEMA_VERSION: u32 = 2;
+/// Version 3 reports reference-only neighbor distinguishability at the declared
+/// luma fidelity, including coverage where source identity is unobservable.
+pub const REPORT_SCHEMA_VERSION: u32 = 3;
 /// Largest lag searched for audio alignment. It exceeds both measured AAC
 /// timing failures (1,024 and 1,088 samples) with margin.
 pub const MAX_ALIGNMENT_LAG: i64 = 2048;
@@ -146,7 +148,7 @@ pub struct Thresholds {
     /// ten-bit PQ/HLG codes. Catches small wrong regions (a missing caption)
     /// that whole-picture PSNR dilutes. SDR reports the value without a gate.
     pub max_hdr_local_luma_error: f64,
-    /// A neighboring reference frame must not beat the own frame by more.
+    /// A distinguishable neighboring reference must not beat the own frame by more.
     pub neighbor_psnr_margin_db: f64,
     /// Black detection: decoded mean luma at or below while reference is above
     /// `black_reference_min_luma`, both in eight-bit-equivalent codes.
@@ -276,6 +278,10 @@ pub struct PictureCheck {
     pub local_luma_error: f64,
     pub previous_luma_psnr_db: Option<f64>,
     pub next_luma_psnr_db: Option<f64>,
+    /// Reference-only distinguishability at the declared luma fidelity.
+    /// None means there is no reference neighbor at that output boundary.
+    pub previous_index: Option<NeighborIndexCheck>,
+    pub next_index: Option<NeighborIndexCheck>,
     pub flags: Vec<&'static str>,
     pub passed: bool,
 }
@@ -300,8 +306,12 @@ pub struct Summary {
     pub min_chroma_psnr_db: Option<f64>,
     pub max_thumbnail_mad: Option<f64>,
     pub max_local_luma_error: Option<f64>,
-    /// Smallest margin between a picture's own luma PSNR and its best neighbor.
+    /// Smallest raw margin, including neighbors whose identity is unobservable.
     pub min_neighbor_margin_db: Option<f64>,
+    /// Directed reference-neighbor comparisons, not verified source identities.
+    pub index_observable_comparisons: usize,
+    pub index_unobservable_comparisons: usize,
+    pub pictures_without_index_neighbors: usize,
     pub audio_windows_checked: usize,
     pub audio_windows_failed: usize,
     pub signal_windows: usize,
@@ -899,6 +909,15 @@ fn compare_picture(
     } else {
         (thresholds.min_luma_psnr_db, thresholds.min_chroma_psnr_db)
     };
+    let neighbor_index = |other: Option<&(I420, Provenance)>| {
+        other.map(|(picture, _)| {
+            index_check::compare_references(&reference.y, &picture.y, peak, min_luma)
+        })
+    };
+    let previous_index = ordinal
+        .checked_sub(1)
+        .and_then(|key| neighbor_index(references.get(&key)));
+    let next_index = neighbor_index(references.get(&(ordinal + 1)));
     let thumbnail_mad = metrics::thumbnail_mad(&reference.thumbnail(), &decoded.thumbnail());
     let local_luma_error =
         metrics::max_local_error(&reference.local_cells(), &decoded.local_cells());
@@ -922,10 +941,14 @@ fn compare_picture(
     {
         flags.push("unexpected_black_frame");
     }
-    if [previous, next]
+    if [(previous, previous_index), (next, next_index)]
         .into_iter()
-        .flatten()
-        .any(|neighbor| neighbor > planes[0].psnr_db + thresholds.neighbor_psnr_margin_db)
+        .any(|(neighbor, index)| {
+            index.is_some_and(|index| index.status == IndexObservability::Observable)
+                && neighbor.is_some_and(|neighbor| {
+                    neighbor > planes[0].psnr_db + thresholds.neighbor_psnr_margin_db
+                })
+        })
     {
         flags.push("frame_index_mismatch");
     }
@@ -943,6 +966,8 @@ fn compare_picture(
         local_luma_error,
         previous_luma_psnr_db: previous,
         next_luma_psnr_db: next,
+        previous_index,
+        next_index,
         passed: flags.is_empty(),
         flags,
     }
@@ -955,6 +980,14 @@ fn summarize(pictures: &[PictureCheck], audio: &[AudioCheck]) -> Summary {
         audio
             .iter()
             .filter(|check| check.offset_status == wanted)
+            .count()
+    };
+    let index_status = |wanted: IndexObservability| {
+        pictures
+            .iter()
+            .flat_map(|check| [check.previous_index, check.next_index])
+            .flatten()
+            .filter(|check| check.status == wanted)
             .count()
     };
     Summary {
@@ -975,6 +1008,12 @@ fn summarize(pictures: &[PictureCheck], audio: &[AudioCheck]) -> Summary {
                 .reduce(f64::max)
                 .map(|neighbor| check.planes[0].psnr_db - neighbor)
         })),
+        index_observable_comparisons: index_status(IndexObservability::Observable),
+        index_unobservable_comparisons: index_status(IndexObservability::Unobservable),
+        pictures_without_index_neighbors: pictures
+            .iter()
+            .filter(|check| check.previous_index.is_none() && check.next_index.is_none())
+            .count(),
         audio_windows_checked: audio.len(),
         audio_windows_failed: audio.iter().filter(|check| !check.passed).count(),
         signal_windows: audio.iter().filter(|check| check.kind == "signal").count(),

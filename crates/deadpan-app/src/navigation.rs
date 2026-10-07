@@ -68,6 +68,7 @@ pub fn mode_key(key: Key, modifiers: Modifiers, text: Option<&str>) -> Option<(K
 pub enum BeatEdit {
     Split,
     InsertHold(duration::DurationInput),
+    InsertAiHold(duration::DurationInput),
     /// `:hold … video=black`: a silent pause with black picture.
     InsertBlack(duration::DurationInput),
     Repeat(u32),
@@ -349,7 +350,7 @@ pub enum RepeatPendingScope {
     Mixed,
 }
 
-/// The AI pause workflow. Only Accept edits the project.
+/// The AI pause workflow. Accept and Revert edit the project.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AiAction {
     /// Generate this many variants, one after another.
@@ -364,6 +365,8 @@ pub enum AiAction {
     /// pause's own sound, previewing it first when needed.
     Audition,
     Accept,
+    /// Restore the captured Hold's deterministic picture provider.
+    Revert,
     Discard,
     /// Compare at the same picture frame and heard sample: switch the
     /// viewer and audition between the pause's committed picture (Before)
@@ -678,16 +681,12 @@ impl Bindings {
     pub fn ai_pending(&self) -> bool {
         self.count.is_none()
             && !self.count_overflow
-            && [
-                BindingId::GenerateAi,
-                BindingId::CompareAi,
-                BindingId::NextAi,
-            ]
-            .into_iter()
-            .any(|id| {
-                self.map
-                    .has_descendant(&self.path, self.active_selection(), id, self.domain)
-            })
+            && [BindingId::CompareAi, BindingId::NextAi]
+                .into_iter()
+                .any(|id| {
+                    self.map
+                        .has_descendant(&self.path, self.active_selection(), id, self.domain)
+                })
     }
     pub fn trim_pending(&self) -> bool {
         self.count.is_none()
@@ -1605,7 +1604,7 @@ mod tests {
         assert_eq!(bindings.pending(), "3,");
         assert_eq!(
             bindings.pending_hint(),
-            Some("h inserts the counted pause · Esc cancels".into())
+            Some("h inserts the counted pause · a AI pause · Esc cancels".into())
         );
         assert_eq!(
             bindings.key(Key::H, Modifiers::NONE, false, false),

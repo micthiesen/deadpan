@@ -9,7 +9,7 @@ pub(super) struct Retirement {
     pub id: PreparationId,
     pub origin_revision: RevisionId,
     pub history: i64,
-    pub controls: PreparationControls,
+    pub origin: PreparationOrigin,
     pub state: PreparationState,
     pub request_id: Option<RequestId>,
 }
@@ -78,7 +78,7 @@ fn retire(
         id: value.id,
         origin_revision: value.origin_revision,
         history,
-        controls: value.controls,
+        origin: value.origin,
         state: value.state,
         request_id: value.request_id,
     };
@@ -192,7 +192,7 @@ mod tests {
             .unwrap()
         };
         let rate = FrameRate::new(30, 1).unwrap();
-        StoredGenerationPreparation {
+        let mut value = StoredGenerationPreparation {
             id: PreparationId::new(format!("preparation-{index:05}")).unwrap(),
             project_id: ProjectId::new("project").unwrap(),
             origin_revision: RevisionId::new("r").unwrap(),
@@ -206,29 +206,35 @@ mod tests {
                 repeats: Vec::new(),
             },
             duration: FrameDuration::new(18).unwrap(),
-            accepted: GeneratedArtifact {
-                sampled_asset: AssetId::new("sampled").unwrap(),
-                sampled_object: object('a'),
-                native_asset: AssetId::new("native").unwrap(),
-                native_object: object('b'),
-                provenance: object('c'),
-                sampling: BridgeSamplingMap::new(
-                    rate,
-                    rate,
-                    FrameDuration::new(12).unwrap(),
-                    FrameDuration::new(12).unwrap(),
-                    BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
-                )
-                .unwrap(),
-                content_aspect: None,
+            origin: PreparationOrigin::AcceptedExtension {
+                accepted: Box::new(GeneratedArtifact {
+                    sampled_asset: AssetId::new("sampled").unwrap(),
+                    sampled_object: object('a'),
+                    native_asset: AssetId::new("native").unwrap(),
+                    native_object: object('b'),
+                    provenance: object('c'),
+                    sampling: BridgeSamplingMap::new(
+                        rate,
+                        rate,
+                        FrameDuration::new(12).unwrap(),
+                        FrameDuration::new(12).unwrap(),
+                        BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+                    )
+                    .unwrap(),
+                    content_aspect: None,
+                }),
+                controls: PreparationControls::AcceptedArtifact,
             },
-            controls: PreparationControls::AcceptedArtifact,
             state,
             claim_sequence: 1,
             reason: matches!(state, PreparationState::Cancelled)
                 .then(|| "Cancelled fixture".into()),
             request_id: None,
+        };
+        if index.is_multiple_of(2) {
+            value.origin = PreparationOrigin::inserted_pause();
         }
+        value
     }
 
     fn insert(db: &Connection, value: &StoredGenerationPreparation) -> Result<(), StoreError> {
@@ -287,7 +293,7 @@ mod tests {
         );
         let retired = read(&db, &displaced[0])?.unwrap();
         assert_eq!(retired.state, PreparationState::Cancelled);
-        assert_eq!(retired.controls, PreparationControls::AcceptedArtifact);
+        assert_eq!(retired.origin, record(1, PreparationState::Queued).origin);
         assert_eq!(
             db.query_row("SELECT count(*) FROM generation_preparations", [], |row| {
                 row.get::<_, i64>(0)
@@ -341,7 +347,7 @@ mod tests {
         assert!(super::super::read(&db, &first.id)?.is_none());
         let proof = read(&db, &first.id)?.unwrap();
         assert_eq!(proof.origin_revision, first.origin_revision);
-        assert_eq!(proof.controls, first.controls);
+        assert_eq!(proof.origin, first.origin);
         assert_eq!(proof.state, PreparationState::Cancelled);
         assert_eq!(
             db.query_row("SELECT count(*) FROM generation_preparations", [], |row| {

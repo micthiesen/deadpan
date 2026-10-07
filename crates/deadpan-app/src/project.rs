@@ -887,6 +887,9 @@ pub enum ProjectEdit {
         node: NodeId,
         audio: HoldAudio,
     },
+    RevertGeneratedHold {
+        node: NodeId,
+    },
     #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     Retime {
         node: NodeId,

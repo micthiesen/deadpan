@@ -63,7 +63,7 @@ impl Row {
     /// What the row's action buttons name, so each is distinguishable.
     fn subject(&self) -> String {
         match self {
-            Self::Preparation(item) => format!("replacement pictures for “{}”", item.label),
+            Self::Preparation(item) => format!("AI pictures for “{}”", item.label),
             Self::Job(job) if job.detail.is_empty() => job.kind.label().to_owned(),
             Self::Job(job) => format!("{} · {}", job.kind.label(), job.detail),
             Self::Interrupted(item) => match &item.pause {
@@ -164,7 +164,7 @@ pub(super) fn preparation_text(item: &Preparation) -> String {
         PreparationState::Cancelled => "Discarded",
     };
     let mut text = format!(
-        "Replacement pictures for “{}” · {} frames · {state}. D discards; timing stays saved.",
+        "AI pictures for “{}” · {} frames · {state}. D discards; timing stays saved.",
         item.label, item.frames
     );
     if let Some(reason) = &item.reason {
@@ -362,15 +362,13 @@ impl DeadpanApp {
         match (action, row) {
             ('r' | 'd', Row::Preparation(item)) => {
                 self.jobs.status = Some(match self.ai_preparation_action(&item, action == 'r') {
-                    Ok(()) if action == 'r' => {
-                        "Queued the replacement preparation for retry…".into()
-                    }
-                    Ok(()) => "Discarding the replacement preparation…".into(),
+                    Ok(()) if action == 'r' => "Queued the AI retry.".into(),
+                    Ok(()) => "Discard requested; saved timing is unchanged.".into(),
                     Err(error) => error,
                 });
             }
             ('x', Row::Preparation(_)) => {
-                self.jobs.status = Some("D discards a replacement preparation. R retries an unavailable or interrupted preparation.".into());
+                self.jobs.status = Some("D discards an AI preparation. R retries an unavailable or interrupted preparation.".into());
             }
             ('x', Row::Job(job)) => self.cancel_job(&job),
             ('r', Row::Interrupted(item)) => self.retry_interrupted(&item),
@@ -380,8 +378,10 @@ impl DeadpanApp {
                     Some("This attempt is not running. R retries it, D discards it.".into());
             }
             (_, Row::Job(_)) => {
-                self.jobs.status =
-                    Some("X cancels a job; R and D act on interrupted attempts and replacement preparations.".into());
+                self.jobs.status = Some(
+                    "X cancels a job; R and D act on interrupted attempts and AI preparations."
+                        .into(),
+                );
             }
             _ => {}
         }
@@ -515,7 +515,7 @@ impl DeadpanApp {
                                     if !preparation_heading {
                                         preparation_heading = true;
                                         ui.add_space(6.0);
-                                        ui.label(style::section_title("REPLACEMENT PICTURES", false));
+                                        ui.label(style::section_title("AI PREPARATIONS", false));
                                     }
                                     preparation_text(item)
                                 }

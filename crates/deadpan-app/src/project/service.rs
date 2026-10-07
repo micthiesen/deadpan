@@ -1161,6 +1161,7 @@ impl Service {
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::SetAudioTreatments { node, .. }
             | ProjectEdit::Delete { node }
+            | ProjectEdit::RevertGeneratedHold { node }
             | ProjectEdit::HoldDuration { node, .. }
             | ProjectEdit::HoldAudio { node, .. } => node,
         };
@@ -1176,6 +1177,7 @@ impl Service {
             edit,
             ProjectEdit::SetFraming { .. }
                 | ProjectEdit::HoldAudio { .. }
+                | ProjectEdit::RevertGeneratedHold { .. }
                 | ProjectEdit::SetAudioTreatments { .. }
                 | ProjectEdit::SetCutaways { .. }
                 | ProjectEdit::SetCaptions { .. }
@@ -1418,6 +1420,11 @@ impl Service {
                     "Hold sound updated and saved",
                 )
             }
+            ProjectEdit::RevertGeneratedHold { node } => (
+                Command::RevertGeneratedHold { node },
+                selected,
+                "Pause fallback restored and saved",
+            ),
         };
         let request = CommandRequest {
             project_id: document.project_id().clone(),

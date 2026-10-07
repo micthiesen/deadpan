@@ -334,6 +334,9 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             ));
         }
         I::InsertPause { .. } => return Some("Inserted a pause".into()),
+        I::InsertAiPause { .. } => {
+            return Some("Inserted an AI pause".into());
+        }
         I::InsertReverse { bounce: false, .. } => {
             return Some("Inserted a reverse: the moment before the cursor plays backwards".into());
         }

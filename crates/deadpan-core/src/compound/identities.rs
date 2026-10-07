@@ -101,6 +101,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         } => nodes.extend(left_wrapper.iter().chain(right_wrapper)),
         Command::TrimSource { wrapper, .. } => nodes.extend(wrapper),
         Command::InsertTime { id, identities, .. }
+        | Command::InsertAiTime { id, identities, .. }
         | Command::SpliceSourceAt { id, identities, .. }
         | Command::ReplaceSource { id, identities, .. } => {
             nodes.push(id);

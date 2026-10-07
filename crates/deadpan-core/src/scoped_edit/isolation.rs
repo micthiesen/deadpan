@@ -142,7 +142,13 @@ pub(super) fn preflight(
         marks: 0,
         unchanged: edit.unchanged(&document.nodes()[&target.node]),
     };
-    if requirements.unchanged {
+    let reasserts_fallback = matches!(edit, ScopedNodeEdit::RevertGeneratedHold)
+        && matches!(&document.nodes()[&target.node].kind,
+            NodeKind::Hold { recipe } if matches!(recipe.video,
+                crate::HoldVideo::Freeze { .. } | crate::HoldVideo::Background));
+    if requirements.unchanged || reasserts_fallback {
+        // Reasserting a provider keeps its exact scoped command for the host,
+        // but does not create a Play override for identical picture state.
         return Ok(IsolationPlan {
             requirements,
             steps: Vec::new(),

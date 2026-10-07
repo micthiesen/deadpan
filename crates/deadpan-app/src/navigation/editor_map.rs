@@ -588,9 +588,14 @@ impl Rule {
                     "Whole-beat cut deletes one selected beat. Counted deletion is not available.",
                 ),
             },
-            CountPolicy::Hold => Action::Edit(BeatEdit::InsertHold(
-                duration::DurationInput::half_seconds(count.unwrap_or(1)),
-            )),
+            CountPolicy::Hold => {
+                let length = duration::DurationInput::half_seconds(count.unwrap_or(1));
+                Action::Edit(match self.action {
+                    Action::Edit(BeatEdit::InsertHold(_)) => BeatEdit::InsertHold(length),
+                    Action::Edit(BeatEdit::InsertAiHold(_)) => BeatEdit::InsertAiHold(length),
+                    _ => unreachable!("pause declarations carry a pause insertion"),
+                })
+            }
             CountPolicy::Gain => {
                 let Action::GainStep(step) = self.action else {
                     unreachable!("gain declarations carry a gain action")
@@ -700,7 +705,7 @@ impl Rule {
             Action::Edit(BeatEdit::WrapRepeat(_)) => I::Repeat,
             Action::Edit(BeatEdit::InsertHold(_)) => I::Hold,
             Action::EscalatingRepeat => I::EscalatingRepeat,
-            Action::Ai(AiAction::Generate { variants: 1 }) => I::GenerateAi,
+            Action::Edit(BeatEdit::InsertAiHold(_)) => I::GenerateAi,
             Action::Ai(AiAction::Compare(CompareChoice::Toggle)) => I::CompareAi,
             Action::Ai(AiAction::Choose(VariantChoice::Next)) => I::NextAi,
             Action::Insert => I::Insert,
@@ -1361,10 +1366,10 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     if id == BindingId::EscalatingRepeat {
         return domain == RoutingDomain::Edit;
     }
-    if matches!(
-        id,
-        BindingId::GenerateAi | BindingId::CompareAi | BindingId::NextAi
-    ) {
+    if id == BindingId::GenerateAi {
+        return domain == RoutingDomain::Edit;
+    }
+    if matches!(id, BindingId::CompareAi | BindingId::NextAi) {
         return domain == RoutingDomain::Edit && !visual;
     }
     if matches!(
@@ -2184,9 +2189,11 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         ),
         (
             Key::A,
-            Action::Ai(AiAction::Generate { variants: 1 }),
-            C::Refuse("Generate AI pictures once, without a count."),
-            "AI pictures",
+            Action::Edit(BeatEdit::InsertAiHold(
+                duration::DurationInput::half_seconds(1),
+            )),
+            C::Hold,
+            "AI pause",
         ),
         (
             Key::X,

@@ -17,7 +17,7 @@ use deadpan_plan::{DefinitionPictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
 };
-use deadpan_store::generation_preparations::{PreparationControls, StoredGenerationPreparation};
+use deadpan_store::generation_preparations::StoredGenerationPreparation;
 use sha2::{Digest, Sha256};
 
 /// The context identity of `hold` in `document`, or `None` when the Hold is
@@ -186,9 +186,9 @@ fn preparation_with_plan(
     after_plan: Option<&RenderPlan>,
     preparation: &StoredGenerationPreparation,
 ) -> bool {
-    let target = match &preparation.controls {
-        PreparationControls::Request { options, .. } => options.region_target.resolve(None),
-        PreparationControls::AcceptedArtifact => {
+    let target = match preparation.origin.options() {
+        Some(options) => options.region_target.resolve(None),
+        None => {
             // Its exact saved target is in verified provenance, read later on
             // the preparation worker. No target changes may cross this gap.
             if origin.targets() != after.targets() {

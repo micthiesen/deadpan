@@ -126,6 +126,70 @@ fn insertion(document: &ProjectDocument, name: &str, at: i64, frames: i64) -> Co
         },
     )
 }
+
+#[test]
+fn ai_insertion_matches_silent_freeze_inside_source_hold_and_nested_sequence() {
+    let frozen = || {
+        BeatNode::hold(
+            "Held",
+            HoldRecipe {
+                video: HoldVideo::Freeze {
+                    asset: AssetId::new("media").unwrap(),
+                    timestamp: source_span().start(),
+                },
+                ..recipe(10)
+            },
+        )
+    };
+    let documents = [
+        tree(&["source"], vec![("source", source(10))]),
+        tree(&["held"], vec![("held", frozen())]),
+        tree(
+            &["group"],
+            vec![
+                ("group", BeatNode::sequence("Group", vec![id("source")])),
+                ("source", source(10)),
+            ],
+        ),
+    ];
+    for document in documents {
+        for at in [0, 4, 10] {
+            let mut ordinary = insertion(&document, "insert", at, 15);
+            let Command::InsertTime { hold, .. } = &mut ordinary.command else {
+                panic!()
+            };
+            hold.video = HoldVideo::Freeze {
+                asset: AssetId::new("media").unwrap(),
+                timestamp: source_span().start(),
+            };
+            let Command::InsertTime {
+                at,
+                hold,
+                id,
+                identities,
+                timing,
+            } = ordinary.command.clone()
+            else {
+                panic!()
+            };
+            let ai = CommandRequest {
+                command: Command::InsertAiTime {
+                    at,
+                    hold,
+                    id,
+                    identities,
+                    timing,
+                },
+                ..ordinary.clone()
+            };
+            let expected = apply_with_result(&document, &ordinary).unwrap().1;
+            let (edit, actual) = apply_with_result(&document, &ai).unwrap();
+            assert_eq!(actual, expected);
+            assert_eq!(actual.duration().unwrap().frames(), 25);
+            assert_eq!(edit.inverse.apply(&actual).unwrap(), document);
+        }
+    }
+}
 fn edit(document: &ProjectDocument, request: CommandRequest) -> ProjectDocument {
     let request_wire = serde_json::to_string(&request).unwrap();
     assert_eq!(

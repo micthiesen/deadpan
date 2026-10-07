@@ -4,6 +4,8 @@
 //! pause's own sound, then accept or durably discard it. Ready never edits;
 //! Accept is one undoable edit.
 
+mod timing;
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -790,6 +792,7 @@ impl DeadpanApp {
                 AiAction::Preview => self.ai_preview(target, false),
                 AiAction::Audition => self.ai_audition(target),
                 AiAction::Accept => self.ai_accept(target),
+                AiAction::Revert => self.ai_revert(target),
                 AiAction::Discard => self.ai_discard(target),
                 AiAction::Compare(choice) => self.ai_compare(target, choice),
                 AiAction::Keep => self.ai_keep(target),
@@ -1025,7 +1028,9 @@ impl DeadpanApp {
         let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
         let operation = if retry {
             if !item.retryable() {
-                return Err("This replacement is queued or preparing. D discards it.".into());
+                return Err(
+                    "These AI pictures are queued or preparing. D discards the preparation.".into(),
+                );
             }
             GenerationOperation::RetryPreparation {
                 ticket: 0,
@@ -1572,6 +1577,28 @@ impl DeadpanApp {
         self.ai_preview(target, true)
     }
 
+    fn ai_revert(&mut self, target: Target) -> Result<(), String> {
+        let hold = target
+            .hold
+            .ok_or("Select a pause in Your edit to restore its fallback.")?;
+        let edit = match target.scoped {
+            Some(scoped) => ProjectEdit::Scoped {
+                target: Box::new(scoped),
+                edit: deadpan_core::ScopedNodeEdit::RevertGeneratedHold,
+            },
+            None => ProjectEdit::RevertGeneratedHold { node: hold },
+        };
+        self.ai_stop_preview();
+        self.submit(ProjectRequest::Edit {
+            expected_session: target.session,
+            expected_revision: target.revision,
+            cursor: target.cursor,
+            scope: target.scope,
+            edit,
+        });
+        Ok(())
+    }
+
     fn ai_accept(&mut self, target: Target) -> Result<(), String> {
         let candidate = Self::ai_target_candidate(&target)?;
         let (hold, request, attempt) = (
@@ -1971,7 +1998,40 @@ impl DeadpanApp {
                     .weak(),
             );
         }
-        let generate_key = self.editor_key(EditorKey::GenerateAi);
+        if let Some(NodeKind::Hold { recipe }) = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.document.nodes().get(&target.node))
+            .map(|node| &node.kind)
+            && let deadpan_core::HoldVideo::Generated { accepted } = &recipe.video
+        {
+            // The original sampling map survives shortening, copying and reopening.
+            // A shorter Hold does not squeeze the accepted motion into a new span.
+            ui.push_id(("accepted-timing", &target.node), |ui| {
+                timing::show(
+                    ui,
+                    "Accepted",
+                    timing::Report::accepted(&accepted.artifact.sampling, recipe.duration),
+                );
+            });
+        }
+        let generate_key = ":hold-provider ai";
+        let has_generated = self.workspace.as_ref().is_some_and(|workspace| {
+            matches!(&workspace.document.nodes()[&target.node].kind,
+                NodeKind::Hold { recipe }
+                    if matches!(recipe.video, deadpan_core::HoldVideo::Generated { .. }))
+        });
+        let has_replacement = self
+            .ai_preparations()
+            .iter()
+            .any(|item| item.target == target && item.state.is_active());
+        if (has_generated || has_replacement)
+            && ui.add_enabled(ready, style::row_action(ui, "Restore fallback", ":revert-ai"))
+                .on_hover_text("Restore this pause's saved freeze or background and cancel pending AI preparation. Timing and sound stay unchanged; Undo restores the previous provider.")
+                .clicked()
+        {
+            self.ai_action(AiAction::Revert, Some(self.ai_capture()));
+        }
         let job = self
             .ai
             .update
@@ -2005,7 +2065,7 @@ impl DeadpanApp {
             ui.label(if running {
                 "Reading the accepted pictures' generation controls…"
             } else {
-                "Previous generation controls are unavailable. Retry the replacement in Jobs."
+                "Previous generation controls are unavailable. Retry the AI preparation in Jobs."
             });
         } else {
             ui.label(format!("Requested motion: {}", options.motion.name()));
@@ -2064,6 +2124,18 @@ impl DeadpanApp {
                     ui.label(job.phase.label());
                 }
             }
+            if let Some(plan) = self.workspace.as_ref().and_then(|workspace| {
+                timing::current_job_plan(
+                    job,
+                    workspace.session,
+                    workspace.document.revision_id(),
+                    &target,
+                )
+            }) {
+                ui.push_id(("generation-timing", job.ticket), |ui| {
+                    timing::show(ui, "Generation", timing::Report::planned(plan));
+                });
+            }
             ui.label(
                 egui::RichText::new("The current picture stays until you accept.")
                     .size(12.0)
@@ -2097,7 +2169,7 @@ impl DeadpanApp {
                 && ui
                     .add_enabled(
                         ready && !other_running,
-                        style::row_action(ui, "Generate another", &generate_key),
+                        style::row_action(ui, "Generate another", generate_key),
                     )
                     .on_hover_text("Generate one more variant from a new seed; :generate N makes several. The variants above stay offered.")
                     .clicked()
@@ -2137,7 +2209,7 @@ impl DeadpanApp {
         if ui
             .add_enabled(
                 ready && !other_running,
-                style::row_action(ui, "Generate AI pictures", &generate_key),
+                style::row_action(ui, "Generate AI pictures", generate_key),
             )
             .on_hover_text("Fill this pause from the pictures on both sides with the local model. It runs in the background; nothing changes until you accept. :generate 3 makes three variants to choose from.")
             .clicked()
@@ -2179,6 +2251,22 @@ impl DeadpanApp {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         let aspect = canvas[0] as f32 / canvas[1] as f32;
         let selected = self.ai_current_index(candidate);
+        let timing_current = self
+            .workspace
+            .as_ref()
+            .zip(self.ai.update.as_ref())
+            .is_some_and(|(workspace, update)| {
+                update.revision.as_ref().is_some_and(|revision| {
+                    timing::current_binding(
+                        update.session,
+                        revision,
+                        &candidate.target,
+                        workspace.session,
+                        workspace.document.revision_id(),
+                        self.ai_authoring().ok().flatten().as_ref(),
+                    )
+                })
+            });
         let comparing = self
             .ai
             .preview
@@ -2270,6 +2358,20 @@ impl DeadpanApp {
                     .unwrap_or_default()
                     + &quality_tooltip
             ));
+            let timing_rect = (chosen && timing_current).then(|| {
+                ui.push_id(
+                    ("variant-timing", &candidate.request, &variant.attempt),
+                    |ui| {
+                        timing::show(
+                            ui,
+                            &format!("Variant {}", index + 1),
+                            timing::Report::planned(variant.receipt.plan()),
+                        )
+                    },
+                )
+                .inner
+                .rect
+            });
             if chosen
                 && let Some(colour) = reading.as_ref().and_then(|reading| reading.colour.clone())
             {
@@ -2282,7 +2384,10 @@ impl DeadpanApp {
                     ui.ctx().cumulative_frame_nr(),
                 )
             {
-                response.scroll_to_me(None);
+                ui.scroll_to_rect(
+                    timing_rect.map_or(response.rect, |rect| response.rect.union(rect)),
+                    None,
+                );
             }
             let number = u8::try_from(index + 1).unwrap_or(u8::MAX);
             if response.clicked() && !chosen {

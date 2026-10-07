@@ -1,4 +1,4 @@
-//! Replacement AI work queued by an accepted pause's duration edit.
+//! AI work queued atomically by pause insertion or accepted duration edits.
 //!
 //! Reading prior controls and conditioning are worker work. The writer claims
 //! the durable preparation and admits its result against that exact claim.
@@ -12,7 +12,9 @@ use deadpan_core::GeneratedObjectRef;
 use deadpan_jobs::GenerationOptions;
 use deadpan_models::StoredBridgeProvenance;
 use deadpan_store::generated_media::{GeneratedReadHandle, GeneratedReadLimits};
-use deadpan_store::generation_preparations::{PreparationControls, StoredGenerationPreparation};
+use deadpan_store::generation_preparations::{
+    PreparationControls, PreparationOrigin, StoredGenerationPreparation,
+};
 use deadpan_store::{AccessMode, ProjectStore};
 
 use super::attempt::GenerationError;
@@ -30,9 +32,16 @@ pub fn resolve_options(
     cancelled: &AtomicBool,
 ) -> Result<GenerationOptions, GenerationError> {
     check_cancel(cancelled)?;
-    match &preparation.controls {
-        PreparationControls::Request { options, .. } => Ok(options.clone()),
-        PreparationControls::AcceptedArtifact => {
+    match &preparation.origin {
+        PreparationOrigin::InsertedPause { options }
+        | PreparationOrigin::AcceptedExtension {
+            controls: PreparationControls::Request { options, .. },
+            ..
+        } => Ok(options.clone()),
+        PreparationOrigin::AcceptedExtension {
+            accepted: artifact,
+            controls: PreparationControls::AcceptedArtifact,
+        } => {
             let store = ProjectStore::open(package, AccessMode::ReadOnly)?;
             if store.snapshot_shared()?.project_id() != &preparation.project_id {
                 return Err(invalid(
@@ -41,7 +50,6 @@ pub fn resolve_options(
             }
             let handle = store.generated_read_handle();
             let deadline = Instant::now() + Duration::from_secs(60);
-            let artifact = &preparation.accepted;
             let bytes = metadata(
                 &handle,
                 &artifact.provenance,

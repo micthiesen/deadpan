@@ -5,7 +5,9 @@ use crate::{Command, DocumentError, OccurrenceEdit, Subtree};
 
 pub(crate) fn validate_command(command: &Command) -> Result<(), DocumentError> {
     let context = match command {
-        Command::InsertTime { hold, .. } => hold.picture_context.as_ref(),
+        Command::InsertTime { hold, .. } | Command::InsertAiTime { hold, .. } => {
+            hold.picture_context.as_ref()
+        }
         Command::WrapRepeat { gap, .. } | Command::SetRepeat { gap, .. } => gap
             .as_ref()
             .and_then(|recipe| recipe.picture_context.as_ref()),

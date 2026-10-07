@@ -146,6 +146,16 @@ define_commands! {
         identities: crate::SplitIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Insert the same deterministic silent pause as InsertTime and retain
+    /// explicit AI preparation intent in history. The host queues work in the
+    /// same transaction; the document contains only the usable fallback.
+    InsertAiTime {
+        at: crate::ProjectFrame,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Insert one Source at an explicit ordinary Sequence slot, preserving the
     /// sampled entry of every shifted physical owner. Ancestors stay live.
     SpliceSource {
@@ -1146,7 +1156,23 @@ fn apply_with_durations_captured(
             id,
             identities,
             timing,
+        }
+        | Command::InsertAiTime {
+            at,
+            hold,
+            id,
+            identities,
+            timing,
         } => {
+            if matches!(&request.command, Command::InsertAiTime { .. })
+                && (!matches!(hold.video, HoldVideo::Background | HoldVideo::Freeze { .. })
+                    || hold.audio != crate::HoldAudio::Silence)
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "an AI pause requires a silent deterministic fallback",
+                ));
+            }
             // A beat sound clock installs the complete pre-edit layout under
             // this command's timing identity, so its table must stay complete.
             let scoped = beat_sound_edit.is_none();
@@ -1932,6 +1958,7 @@ pub(crate) fn reduce(
             ));
         }
         Command::InsertTime { .. }
+        | Command::InsertAiTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }
@@ -2346,13 +2373,9 @@ pub(crate) fn reduce(
         } => accept_generated_hold(document, node, artifact, assets)?,
         Command::RevertGeneratedHold { node } => {
             let recipe = hold_mut(document, node)?;
-            let HoldVideo::Generated { accepted } = &recipe.video else {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "revert-generated requires a generated Hold provider",
-                ));
-            };
-            recipe.video = fallback_video(&accepted.fallback);
+            recipe.video = reverted_hold_video(&recipe.video)?;
+            // Reasserting an active fallback is explicit provider intent. The
+            // host records it so pending generation cannot replace that choice.
         }
         Command::Rename { node, label } => {
             node_mut(document, node)?.label.clone_from(label);
@@ -2852,6 +2875,19 @@ fn fallback_video(fallback: &HoldFallback) -> HoldVideo {
     }
 }
 
+pub(crate) fn reverted_hold_video(video: &HoldVideo) -> Result<HoldVideo, EditError> {
+    match video {
+        HoldVideo::Generated { accepted } => Ok(fallback_video(&accepted.fallback)),
+        HoldVideo::Background | HoldVideo::Freeze { .. } => Ok(video.clone()),
+        HoldVideo::Accepted { .. } | HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
+            Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "this Hold has no saved generated-picture fallback to restore",
+            ))
+        }
+    }
+}
+
 pub(crate) fn accept_generated_hold(
     document: &mut ProjectDocument,
     node: &NodeId,
@@ -3188,6 +3224,7 @@ fn description(command: &Command) -> &'static str {
         Command::DeleteTarget { .. } => "Delete target",
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
+        Command::InsertAiTime { .. } => "Insert AI pause",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::SpliceSlice { .. } => "Paste edited slice",
         Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",

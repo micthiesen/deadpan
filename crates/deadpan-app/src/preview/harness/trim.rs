@@ -511,16 +511,54 @@ fn captured_absence(d: &mut Driver<'_>) -> Result<(), String> {
 
     // Publish a real paste after : has captured absence in Original. The writer
     // work is already complete; only delivery to the UI is controlled.
+    let session = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No paste workspace")?
+        .session;
+    let project = saved.project_id().clone();
+    let before = saved.revision_id().clone();
     d.app_mut().feedback.hold_project_updates = true;
     d.key(Key::P)?;
-    d.wait_for("Real paste commits while publication is withheld", |app| {
-        !app.service.is_busy()
+    let delayed = std::cell::RefCell::new(None);
+    let last_update = std::cell::RefCell::new(json!(null));
+    d.wait_for("Real paste publishes while UI delivery is withheld", |app| {
+        // Admission becomes idle before publish(), and take_update() can miss a
+        // locked mailbox. Retain the actual new commit, not an old saved receipt
+        // carried by a background update or one immediate read after !busy.
+        if delayed.borrow().is_none()
+            && let Some(update) = app.service.take_update()
+        {
+            *last_update.borrow_mut() = json!({
+                "session": update.workspace.as_ref().map(|workspace| workspace.session),
+                "project": update.workspace.as_ref().map(|workspace| workspace.document.project_id()),
+                "revision": update.workspace.as_ref().map(|workspace| workspace.document.revision_id()),
+                "committed": update.committed.as_ref().map(|committed| &committed.revision),
+                "error": update.error,
+                "message": update.message,
+            });
+            let matches = update.workspace.as_ref().is_some_and(|workspace| {
+                workspace.session == session
+                    && workspace.document.project_id() == &project
+                    && update.committed.as_ref().is_some_and(|committed| {
+                        committed.revision != before
+                            && workspace.document.revision_id() == &committed.revision
+                    })
+            });
+            if matches {
+                *delayed.borrow_mut() = Some(update);
+            }
+        }
+        delayed.borrow().is_some() && !app.service.is_busy()
+    })
+    .map_err(|error| {
+        format!(
+            "{error}; held paste expected session={session}, project={project}, revision after={before}; last mailbox update={}",
+            last_update.borrow()
+        )
     })?;
-    let delayed = d
-        .app()
-        .service
-        .take_update()
-        .ok_or("No real paste update to hold")?;
+    let delayed = delayed.into_inner().ok_or("No real paste update to hold")?;
     d.check(
         "Delayed fixture update contains a saved edit",
         delayed.committed.is_some(),

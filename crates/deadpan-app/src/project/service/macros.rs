@@ -198,6 +198,7 @@ impl Service {
                             SemanticInstruction::SetAudioEdges { .. } => "Change sound edges",
                             SemanticInstruction::SetAudioLag { .. } => "Offset sound",
                             SemanticInstruction::InsertPause { .. } => "Insert pause",
+                            SemanticInstruction::InsertAiPause { .. } => "Insert AI pause",
                             SemanticInstruction::InsertReverse { bounce: false, .. } => {
                                 "Insert reverse"
                             }

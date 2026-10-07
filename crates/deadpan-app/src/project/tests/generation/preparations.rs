@@ -283,6 +283,168 @@ fn undo_cancels_a_blocked_replacement_and_retry_cannot_resurrect_it() {
 }
 
 #[test]
+fn native_revert_after_another_edit_is_captured_and_restores_only_the_provider() {
+    if !synthetic_ready_available() {
+        eprintln!("skipped: synthetic Ready tools unavailable");
+        return;
+    }
+    let fixture = accepted([]);
+    let stale = edit_request(
+        &fixture.workspace,
+        ProjectEdit::RevertGeneratedHold {
+            node: fixture.hold.clone(),
+        },
+    );
+    let gain = deadpan_core::AudioTreatments::from_clip_gain(
+        deadpan_core::ClipGain::new(
+            deadpan_core::GainDb::new(3000).unwrap(),
+            false,
+            vec![],
+            vec![],
+        )
+        .unwrap(),
+    );
+    let edited = command(
+        &fixture.service,
+        edit_request(
+            &fixture.workspace,
+            ProjectEdit::SetAudioTreatments {
+                node: fixture.hold.clone(),
+                treatments: gain,
+            },
+        ),
+    );
+    assert!(edited.error.is_none(), "{:?}", edited.error);
+    let before = edited.workspace.unwrap();
+    let refused = command(&fixture.service, stale);
+    assert!(
+        refused
+            .error
+            .as_deref()
+            .is_some_and(|error| error.contains("Project changed"))
+    );
+    assert_eq!(refused.workspace.unwrap().document, before.document);
+    let mut wrong_session = edit_request(
+        &before,
+        ProjectEdit::RevertGeneratedHold {
+            node: fixture.hold.clone(),
+        },
+    );
+    if let ProjectRequest::Edit {
+        expected_session, ..
+    } = &mut wrong_session
+    {
+        *expected_session = before.session.wrapping_add(1);
+    }
+    let refused = command(&fixture.service, wrong_session);
+    assert!(
+        refused
+            .error
+            .as_deref()
+            .is_some_and(|error| error.contains("session changed"))
+    );
+    assert_eq!(refused.workspace.unwrap().document, before.document);
+    let reverted = command(
+        &fixture.service,
+        edit_request(
+            &before,
+            ProjectEdit::RevertGeneratedHold {
+                node: fixture.hold.clone(),
+            },
+        ),
+    );
+    assert!(reverted.error.is_none(), "{:?}", reverted.error);
+    assert!(reverted.committed.as_ref().unwrap().preserve_cursor);
+    let after = reverted.workspace.unwrap();
+    let mut expected = before.document.nodes()[&fixture.hold].clone();
+    let NodeKind::Hold { recipe } = &mut expected.kind else {
+        panic!("Hold");
+    };
+    let HoldVideo::Generated { accepted } = &recipe.video else {
+        panic!("Generated");
+    };
+    let deadpan_core::HoldFallback::Freeze { asset, timestamp } = &accepted.fallback else {
+        panic!("The inserted pause retains its original freeze");
+    };
+    recipe.video = HoldVideo::Freeze {
+        asset: asset.clone(),
+        timestamp: *timestamp,
+    };
+    assert_eq!(&after.document.nodes()[&fixture.hold], &expected);
+    assert_eq!(after.plan.duration(), before.plan.duration());
+    for (id, node) in before.document.nodes() {
+        if id != &fixture.hold {
+            assert_eq!(&after.document.nodes()[id], node);
+        }
+    }
+    let undone = command(
+        &fixture.service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    );
+    assert!(undone.error.is_none(), "{:?}", undone.error);
+    let restored = undone.workspace.unwrap();
+    assert_eq!(
+        restored.document.nodes(),
+        before.document.nodes(),
+        "one Undo restores provider and retains the intervening gain edit"
+    );
+    let redone = command(
+        &fixture.service,
+        ProjectRequest::Redo {
+            expected_revision: restored.document.revision_id().clone(),
+        },
+    );
+    assert!(redone.error.is_none(), "{:?}", redone.error);
+    assert_eq!(
+        redone.workspace.unwrap().document.nodes(),
+        after.document.nodes()
+    );
+}
+
+#[test]
+fn native_revert_of_an_active_fallback_cancels_pending_replacement_without_changing_timing() {
+    if !synthetic_ready_available() {
+        eprintln!("skipped: synthetic Ready tools unavailable");
+        return;
+    }
+    let fixture = accepted([Script {
+        unavailable: Some("Missing model".into()),
+        ..waiting(0)
+    }]);
+    let extended_update = extend(&fixture);
+    let preparation = unavailable(&fixture, &extended_update);
+    let extended = extended_update.workspace.unwrap();
+    let reverted = command(
+        &fixture.service,
+        edit_request(
+            &extended,
+            ProjectEdit::RevertGeneratedHold {
+                node: fixture.hold.clone(),
+            },
+        ),
+    );
+    assert!(reverted.error.is_none(), "{:?}", reverted.error);
+    let after = reverted.workspace.unwrap();
+    assert_ne!(
+        after.document.revision_id(),
+        extended.document.revision_id()
+    );
+    assert_eq!(after.document.nodes(), extended.document.nodes());
+    assert_eq!(after.plan.duration(), extended.plan.duration());
+    assert!(reverted.generation.unwrap().preparations.is_empty());
+    assert_eq!(
+        reader(&after)
+            .generation_preparation(&preparation.id)
+            .unwrap()
+            .unwrap()
+            .state,
+        PreparationState::Cancelled
+    );
+}
+
+#[test]
 fn a_replacement_uses_the_existing_cancellable_model_slot() {
     if !synthetic_ready_available() {
         eprintln!("skipped: synthetic Ready tools unavailable");

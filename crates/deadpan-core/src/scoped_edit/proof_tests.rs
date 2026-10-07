@@ -204,6 +204,192 @@ fn direct_and_default_value_edits_have_empty_proofs_but_noops_refuse() {
 }
 
 #[test]
+fn scoped_reversion_restores_the_captured_recipe_only_in_selected_plays() {
+    let original = fixture();
+    let (artifact, assets) = generated();
+    let acceptance = CommandRequest {
+        project_id: original.project_id().clone(),
+        expected_revision: original.revision_id().clone(),
+        new_revision: revision("accepted"),
+        command: Command::AcceptGeneratedHold {
+            node: node("a"),
+            artifact,
+            assets,
+        },
+    };
+    let (_, accepted) = apply_with_result(&original, &acceptance).unwrap();
+    for (outer, inner, expected_clones) in [
+        (None, None, 0),
+        (None, Some(1), 3),
+        (Some(1), None, 7),
+        (Some(1), Some(1), 10),
+    ] {
+        let selected = target(outer, inner);
+        let command = request(
+            &accepted,
+            selected.clone(),
+            ScopedNodeEdit::RevertGeneratedHold,
+        );
+        let reverted = prepare(&accepted, &command);
+        assert_eq!(
+            reverted.document.nodes().len(),
+            accepted.nodes().len() + expected_clones
+        );
+        assert_eq!(
+            reverted.document.nodes()[&reverted.target.node],
+            original.nodes()[&node("a")]
+        );
+        assert_eq!(reverted.transaction.duration_delta, 0);
+        if expected_clones != 0 {
+            assert_eq!(
+                reverted.document.nodes()[&node("a")],
+                accepted.nodes()[&node("a")]
+            );
+        }
+        let proof = derive_scoped_isolation(&accepted, &command, &reverted.document).unwrap();
+        assert_eq!(proof.map_backward(&reverted.target).unwrap(), selected);
+    }
+}
+
+#[test]
+fn scoped_fallback_reassertion_records_intent_without_manufacturing_overrides() {
+    let before = fixture();
+    for (outer, inner) in [
+        (None, None),
+        (None, Some(1)),
+        (Some(1), None),
+        (Some(1), Some(1)),
+    ] {
+        let selected = target(outer, inner);
+        assert_eq!(
+            before
+                .scoped_edit_requirements(&selected, &ScopedNodeEdit::RevertGeneratedHold)
+                .unwrap(),
+            ScopedEditRequirements {
+                nodes: 0,
+                marks: 0,
+                unchanged: false
+            },
+        );
+        let command = request(
+            &before,
+            selected.clone(),
+            ScopedNodeEdit::RevertGeneratedHold,
+        );
+        let reaffirmed = prepare(&before, &command);
+        assert_ne!(reaffirmed.document.revision_id(), before.revision_id());
+        assert_eq!(reaffirmed.document.nodes(), before.nodes());
+        assert_eq!(reaffirmed.document.overrides(), before.overrides());
+        assert_eq!(reaffirmed.document.gap_overrides(), before.gap_overrides());
+        assert_eq!(reaffirmed.target, selected);
+        assert!(reaffirmed.isolation().steps().is_empty());
+    }
+    let non_hold = ScopedNodeTarget {
+        node: node("inside"),
+        ..target(Some(1), Some(1))
+    };
+    assert_eq!(
+        before
+            .scoped_edit_requirements(&non_hold, &ScopedNodeEdit::RevertGeneratedHold)
+            .unwrap_err()
+            .code,
+        EditErrorCode::WrongNodeKind
+    );
+}
+
+fn holds_without_generated_fallback() -> Vec<ProjectDocument> {
+    let (artifact, assets) = generated();
+    let asset = artifact.sampled_asset;
+    let span = assets[&asset].video.unwrap();
+    [
+        HoldVideo::Accepted {
+            asset: asset.clone(),
+            frames: FrameRange::new(ProjectFrame(0), ProjectFrame(4)).unwrap(),
+        },
+        HoldVideo::Reverse {
+            asset: asset.clone(),
+            span,
+        },
+        HoldVideo::Play { asset, span },
+    ]
+    .into_iter()
+    .map(|video| {
+        let mut document = fixture();
+        document.assets = assets.clone();
+        let NodeKind::Hold { recipe } = &mut document.nodes.get_mut(&node("a")).unwrap().kind
+        else {
+            unreachable!()
+        };
+        recipe.video = video;
+        document.validate().unwrap();
+        document
+    })
+    .collect()
+}
+
+#[test]
+fn direct_reversion_rejects_other_picture_providers_without_an_edit() {
+    for before in holds_without_generated_fallback() {
+        let original = before.clone();
+        let request = CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("refused-revert"),
+            command: Command::RevertGeneratedHold { node: node("a") },
+        };
+        let error = apply_with_result(&before, &request).unwrap_err();
+        assert_eq!(error.code, EditErrorCode::InvalidCommand);
+        assert!(
+            error
+                .message
+                .contains("no saved generated-picture fallback")
+        );
+        assert_eq!(before, original);
+    }
+}
+
+#[test]
+fn scoped_reversion_rejects_other_picture_providers_before_identity_allocation() {
+    for before in holds_without_generated_fallback() {
+        let original = before.clone();
+        for (outer, inner) in [
+            (None, None),
+            (None, Some(1)),
+            (Some(1), None),
+            (Some(1), Some(1)),
+        ] {
+            let selected = target(outer, inner);
+            let error = before
+                .scoped_edit_requirements(&selected, &ScopedNodeEdit::RevertGeneratedHold)
+                .unwrap_err();
+            assert_eq!(error.code, EditErrorCode::InvalidCommand);
+            let request = CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: revision("refused-scoped-revert"),
+                command: Command::EditScoped {
+                    target: selected,
+                    edit: ScopedNodeEdit::RevertGeneratedHold,
+                    identities: OccurrenceIdentities {
+                        nodes: Vec::new(),
+                        marks: Vec::new(),
+                    },
+                },
+            };
+            let error = prepare_scoped_edit(&before, &request).unwrap_err();
+            assert_eq!(error.code, EditErrorCode::InvalidCommand);
+            assert!(
+                error
+                    .message
+                    .contains("no saved generated-picture fallback")
+            );
+            assert!(apply_with_result(&before, &request).is_err());
+            assert_eq!(before, original);
+        }
+    }
+}
+
+#[test]
 fn occurrence_commands_capture_their_actual_isolation_too() {
     let before = fixture();
     let mut command = request(&before, target(Some(1), Some(1)), rename("occurrence"));

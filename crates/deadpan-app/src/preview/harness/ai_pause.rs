@@ -64,9 +64,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     );
     super::transcript::focus_your_edit(d)?;
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
-    d.chord(&[Key::Comma, Key::A])?;
+    d.command("hold-provider ai")?;
     d.check(
-        ",a on a picture beat explains that AI pictures fill a pause",
+        ":hold-provider ai on a picture beat explains that AI pictures fill a pause",
         d.app()
             .error
             .as_deref()
@@ -83,12 +83,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let hold = d.app().ai_hold();
     let widgets = widget_text(d);
     d.check(
-        "A selected pause teaches ,a in the inspector and footer",
+        "A selected pause teaches the existing-pause provider command in the inspector",
         hold.is_some()
             && widgets.contains("Generate AI pictures")
             && widgets.contains("AI PICTURES")
-            && widgets.contains("AI pictures"),
-        json!({"hold_selected":true,"inspector":"Generate AI pictures  ,a","footer":",a AI pictures"}),
+            && widgets.contains(":hold-provider ai"),
+        json!({"hold_selected":true,"inspector":"Generate AI pictures  :hold-provider ai"}),
         json!({"hold":hold,"widgets_have_action":widgets.contains("Generate AI pictures")}),
     )?;
     d.capture("Pause selected with its AI pictures action")?;
@@ -185,7 +185,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Cancelled")?;
 
     super::transcript::focus_your_edit(d)?;
-    d.chord(&[Key::Comma, Key::A])?;
+    d.command("hold-provider ai")?;
     d.wait_for("Scripted failure reported", |app| {
         app.ai
             .job()
@@ -484,8 +484,9 @@ pub(super) fn scoped(d: &mut Driver<'_>) -> Result<(), String> {
     }
     d.check(
         "The nested Hold inspector exposes the real generation action",
-        widget_text(d).contains("Generate AI pictures") && widget_text(d).contains(",a"),
-        json!("Generate AI pictures  ,a"),
+        widget_text(d).contains("Generate AI pictures")
+            && widget_text(d).contains(":hold-provider ai"),
+        json!("Generate AI pictures  :hold-provider ai"),
         d.widgets(),
     )?;
     d.capture("Play two Hold exposes scoped AI controls")?;
@@ -658,7 +659,56 @@ pub(super) fn scoped(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"scope":null,"request_target":mapped.target,"origin_target":target,"variants":1}),
         d.snapshot(),
     )?;
-    d.capture("Scoped acceptance and request mapping survive Redo")
+    d.capture("Scoped acceptance and request mapping survive Redo")?;
+    super::transcript::focus_your_edit(d)?;
+    select_beat(d, &repeat)?;
+    d.key(Key::Enter)?;
+    scoped_play_hold(d, 2)?;
+    let before = d.revision();
+    d.command("gain +3dB")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let captured = d
+        .app()
+        .scoped_target()?
+        .ok_or("No scoped Hold capture for reversion")?;
+    let before = d.app().workspace.clone().ok_or("No workspace")?;
+    let revision = d.revision();
+    d.command("revert-ai")?;
+    d.changed(&revision)?;
+    d.settled()?;
+    let after = d.app().workspace.clone().ok_or("No workspace")?;
+    let mut expected = before.document.nodes()[&captured.target.node].clone();
+    let NodeKind::Hold { recipe } = &mut expected.kind else {
+        return Err("Scoped Hold missing".into());
+    };
+    let NodeKind::Hold { recipe: original } = &baseline.nodes()[&hold].kind else {
+        return Err("Original Hold missing".into());
+    };
+    recipe.video = original.video.clone();
+    d.check(
+        "Revert restores only Play 2's saved fallback after an intervening gain edit",
+        after.document.nodes()[&captured.target.node] == expected
+            && after.document.nodes()[&hold] == baseline.nodes()[&hold]
+            && after.document.overrides().len() == 1
+            && after.plan.duration() == before.plan.duration(),
+        json!({"play":2,"fallback":true,"other_play":"unchanged","gain":"retained","overrides":1}),
+        d.snapshot(),
+    )?;
+    let reverted = d.revision();
+    d.key(Key::U)?;
+    d.changed(&reverted)?;
+    d.settled()?;
+    d.check(
+        "One Undo restores scoped accepted pictures and retains the gain edit",
+        d.app()
+            .workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.document.nodes() == before.document.nodes()),
+        json!({"provider":"accepted","gain":"retained"}),
+        d.snapshot(),
+    )?;
+    d.capture("Scoped provider reversion is one undoable edit")
 }
 
 fn scoped_request(
@@ -750,6 +800,30 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"variants":2,"thumbnails":2,"chosen":2,"revision":paused}),
         json!({"job":format!("{job:?}"),"chosen":chosen(d),"revision":d.revision()}),
     )?;
+    let timing_label = d
+        .harness
+        .root()
+        .children_recursive()
+        .find_map(|node| {
+            node.accesskit_node()
+                .label()
+                .filter(|label| label.starts_with("Variant 2 timing"))
+                .map(|label| label.to_string())
+        })
+        .ok_or("Chosen variant timing label is missing")?;
+    let timing_paint = scenarios::text_paint_visibility(d, &timing_label);
+    d.check(
+        "Timing follows the chosen Ready variant and is fully visible",
+        widgets.contains("Variant 2 timing")
+            && !widgets.contains("Variant 1 timing")
+            && job.as_ref().is_some_and(|job| job.plan.is_some())
+            && !timing_paint.is_empty()
+            && timing_paint
+                .iter()
+                .all(|item| item["fully_visible"] == true && item["elided"] == false),
+        json!({"timing":"variant 2","plan":"admitted","fully_visible":true}),
+        json!({"widgets":widgets,"plan":job.as_ref().and_then(|job| job.plan.as_ref()),"paint":timing_paint}),
+    )?;
     d.capture("Two variants with thumbnails")?;
 
     d.wait_for("Chosen variant quality report read", |app| {
@@ -820,6 +894,84 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"chosen":1,"revision":paused}),
         json!({"chosen":chosen(d),"revision":d.revision()}),
     )?;
+    d.step("First variant timing shown", false)?;
+    d.check(
+        "Choosing a variant also chooses its timing report",
+        widget_text(d).contains("Variant 1 timing") && !widget_text(d).contains("Variant 2 timing"),
+        json!({"timing":"variant 1"}),
+        json!({"widgets":widget_text(d)}),
+    )?;
+    let focused_heading = {
+        let root = d.harness.root();
+        let control = root
+            .children_recursive()
+            .find(|node| {
+                let access = node.accesskit_node();
+                access
+                    .label()
+                    .is_some_and(|label| label.starts_with("Variant 1 timing"))
+                    && !access.is_disabled()
+                    && !access.is_hidden()
+            })
+            .ok_or("Chosen variant timing control is missing")?;
+        let label = control
+            .accesskit_node()
+            .label()
+            .ok_or("Timing control has no label")?
+            .to_owned();
+        control.focus();
+        label
+    };
+    d.step("Focus the chosen variant timing details", false)?;
+    for _ in 0..16 {
+        if timing_control_visible(d, &focused_heading) {
+            break;
+        }
+        d.step("Settle native timing focus scroll", false)?;
+    }
+    let heading_paint = scenarios::text_paint_visibility(d, &focused_heading);
+    d.check(
+        "Native focus reveals the whole chosen timing heading and its hit target",
+        timing_control_visible(d, &focused_heading),
+        json!({"heading":"Variant 1 timing","fully_painted":true,"hit_target_visible":true}),
+        json!({"paint":heading_paint,"hit_target":d.rect(&focused_heading).ok().map(|rect| [rect.min.x,rect.min.y,rect.max.x,rect.max.y])}),
+    )?;
+    d.key(Key::Enter)?;
+    d.step("Exact timing expanded with Enter", false)?;
+    let intervals = [
+        "Inserted pause:",
+        "Requested boundary span:",
+        "Native boundary span:",
+        "Native movie:",
+        "Motion speed:",
+    ];
+    for _ in 0..16 {
+        if intervals.iter().all(|label| timing_text_visible(d, label)) {
+            break;
+        }
+        d.step("Settle expanded timing report and inspector scroll", false)?;
+    }
+    let details = widget_text(d);
+    let interval_paint: Vec<_> = intervals
+        .iter()
+        .map(|label| json!({"interval":label,"paint":scenarios::text_paint_visibility(d, label)}))
+        .collect();
+    d.check(
+        "Timing details opened with Enter visibly distinguish all exact intervals",
+        details.contains("Inserted pause:")
+            && details.contains("Requested boundary span:")
+            && details.contains("Native boundary span:")
+            && details.contains("Native movie:")
+            && details.contains("Motion speed:")
+            && intervals.iter().all(|label| timing_text_visible(d, label))
+            && timing_control_visible(d, &focused_heading)
+            && d.revision() == paused,
+        json!({"intervals":["inserted","requested boundary","native boundary","native movie","motion speed"],"fully_painted":true,"unchanged":true}),
+        json!({"interval_paint":interval_paint,"heading_paint":scenarios::text_paint_visibility(d, &focused_heading),"revision":d.revision()}),
+    )?;
+    d.capture("Keyboard-expanded AI timing report with exact visible intervals")?;
+    d.key(Key::Enter)?;
+    super::transcript::focus_your_edit(d)?;
     let first = d.app().ai.chosen_variant().ok_or("No chosen variant")?.1;
 
     d.command("preview-ai")?;
@@ -991,6 +1143,13 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"picture":"variant 2","offered":["variant 1"]}),
         json!({"generated":generated,"chosen":format!("{:?}", d.app().ai.chosen_variant())}),
     )?;
+    d.step("Accepted timing retained", false)?;
+    d.check(
+        "Acceptance reports committed timing separately from the remaining candidate",
+        widget_text(d).contains("Accepted timing") && widget_text(d).contains("Variant 1 timing"),
+        json!({"timing":["accepted","offered variant 1"]}),
+        json!({"widgets":widget_text(d)}),
+    )?;
     d.capture("Accepted variant 2")?;
 
     d.command("discard-ai")?;
@@ -1043,7 +1202,139 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"chosen":format!("{:?}", d.app().ai.chosen_variant())}),
     )?;
     d.capture("Undo offers the accepted variant")?;
-    Ok(())
+    revert_after_edit(d, &hold)
+}
+
+fn timing_text_visible(d: &Driver<'_>, label: &str) -> bool {
+    let paint = scenarios::text_paint_visibility(d, label);
+    !paint.is_empty()
+        && paint
+            .iter()
+            .all(|part| part["fully_visible"] == true && part["elided"] == false)
+}
+
+fn timing_control_visible(d: &Driver<'_>, label: &str) -> bool {
+    let Ok(rect) = d.rect(label) else {
+        return false;
+    };
+    timing_text_visible(d, label)
+        && d.harness.output().shapes.iter().any(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Text(text) if text.galley.text() == label)
+                && clipped.clip_rect.contains_rect(rect.shrink(1.0))
+        })
+}
+
+fn revert_after_edit(d: &mut Driver<'_>, hold: &NodeId) -> Result<(), String> {
+    let before = d.revision();
+    d.key_modified(Key::R, egui::Modifiers::CTRL)?;
+    d.changed(&before)?;
+    d.settled()?;
+    select_beat(d, hold)?;
+    let accepted = d.revision();
+    d.check(
+        "Accepted pictures teach the explicit fallback command",
+        widget_text(d).contains("Restore fallback") && widget_text(d).contains(":revert-ai"),
+        json!("Restore fallback  :revert-ai"),
+        d.widgets(),
+    )?;
+    // Open the command first, then let an independent typed edit finish while
+    // its UI reply is held. A native semantic edit would retain its pending
+    // acknowledgment and correctly prevent another command from opening.
+    let workspace = d.app().workspace.clone().ok_or("No workspace")?;
+    let mut gain =
+        crate::gain::GainEdit::new(workspace.document.nodes()[hold].audio_treatments.clone());
+    gain.set_trim(deadpan_core::GainDb::new(3000).map_err(|error| error.to_string())?)?;
+    let independent_edit = ProjectRequest::Edit {
+        expected_session: workspace.session,
+        expected_revision: workspace.document.revision_id().clone(),
+        cursor: ProjectFrame(
+            i64::try_from(d.app().sequence_cursor).map_err(|error| error.to_string())?,
+        ),
+        scope: d.app().sequence_scope.clone(),
+        edit: crate::project::ProjectEdit::SetAudioTreatments {
+            node: hold.clone(),
+            treatments: gain.recipe().clone(),
+        },
+    };
+    d.key(Key::Colon)?;
+    d.events(
+        "Type revert-ai before an independent gain edit",
+        vec![egui::Event::Text("revert-ai".into())],
+    )?;
+    d.check("Revert command captures the accepted pause before the independent edit",
+        d.app().command_open && d.app().command == "revert-ai" && d.revision() == accepted,
+        json!({"command":"revert-ai","revision":accepted}),
+        json!({"command_open":d.app().command_open,"command":d.app().command,"revision":d.revision()}))?;
+    d.app_mut().feedback.hold_project_updates = true;
+    d.app().service.submit(independent_edit)?;
+    d.wait_for("Gain saved before its UI reply", |app| {
+        !app.service.is_busy()
+    })?;
+    d.app_mut().feedback.hold_project_updates = false;
+    d.changed(&accepted)?;
+    d.settled()?;
+    let before = d.app().workspace.clone().ok_or("No workspace")?;
+    d.key(Key::Enter)?;
+    d.wait_for(
+        "The stale provider refusal reaches the native project feedback",
+        |app| {
+            !app.service.is_busy()
+                && app
+                    .project_error
+                    .as_deref()
+                    .is_some_and(|error| error.contains("Project changed"))
+        },
+    )?;
+    let generated = matches!(&before.document.nodes()[hold].kind,
+        NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }));
+    d.check(
+        "A stale provider command cannot apply after the captured revision changes",
+        generated
+            && d.app().workspace.as_ref().is_some_and(|workspace| workspace.document == before.document)
+            && d.app()
+                .project_error
+                .as_deref()
+                .is_some_and(|error| error.contains("Project changed")),
+        json!({"provider":"accepted","revision":before.document.revision_id(),"project_error":"Project changed"}),
+        json!({"generated":generated,"revision":d.revision(),"project_error":d.app().project_error}),
+    )?;
+    let revision = d.revision();
+    d.command("hold-provider fallback")?;
+    d.changed(&revision)?;
+    d.settled()?;
+    let after = d.app().workspace.clone().ok_or("No workspace")?;
+    let NodeKind::Hold { recipe: prior } = &before.document.nodes()[hold].kind else {
+        return Err("Hold missing".into());
+    };
+    let NodeKind::Hold { recipe: restored } = &after.document.nodes()[hold].kind else {
+        return Err("Hold missing".into());
+    };
+    let mut preserved = restored.clone();
+    preserved.video = prior.video.clone();
+    d.check(
+        "The fallback command changes only the accepted picture provider after a gain edit",
+        matches!(restored.video, HoldVideo::Freeze { .. })
+            && preserved == *prior
+            && before.document.nodes()[hold].audio_treatments
+                == after.document.nodes()[hold].audio_treatments
+            && before.plan.duration() == after.plan.duration(),
+        json!({"provider":"freeze","timing":"unchanged","gain":"retained"}),
+        d.snapshot(),
+    )?;
+    let reverted = d.revision();
+    d.key(Key::U)?;
+    d.changed(&reverted)?;
+    d.settled()?;
+    d.check(
+        "One Undo restores accepted pictures while retaining the intervening edit",
+        d.app()
+            .workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.document.nodes() == before.document.nodes()),
+        json!({"provider":"accepted","gain":"retained"}),
+        d.snapshot(),
+    )?;
+    d.capture("Fallback reversion preserves later edits")
 }
 
 /// The transport's content, window and heard content sample.

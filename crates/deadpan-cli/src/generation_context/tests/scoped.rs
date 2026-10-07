@@ -3,6 +3,7 @@ use deadpan_jobs::{
     ConditioningMode, HoldConstraints, MotionAmount, Relevance, RequestId, RequestVersion,
     TargetBinding, VideoSpec,
 };
+use deadpan_store::generation_preparations::{PreparationControls, PreparationOrigin};
 
 fn fixture() -> ProjectDocument {
     document(
@@ -164,28 +165,62 @@ fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGene
         origin_target: target.clone(),
         target,
         duration: FrameDuration::new(6).unwrap(),
-        accepted: GeneratedArtifact {
-            sampled_asset: AssetId::new("sampled").unwrap(),
-            native_asset: AssetId::new("native").unwrap(),
-            sampled_object: object.clone(),
-            native_object: object.clone(),
-            provenance: object,
-            sampling: BridgeSamplingMap::new(
-                FrameRate::new(30000, 1001).unwrap(),
-                FrameRate::new(24, 1).unwrap(),
-                FrameDuration::new(5).unwrap(),
-                FrameDuration::new(4).unwrap(),
-                BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
-            )
-            .unwrap(),
-            content_aspect: None,
+        origin: PreparationOrigin::AcceptedExtension {
+            accepted: Box::new(GeneratedArtifact {
+                sampled_asset: AssetId::new("sampled").unwrap(),
+                native_asset: AssetId::new("native").unwrap(),
+                sampled_object: object.clone(),
+                native_object: object.clone(),
+                provenance: object,
+                sampling: BridgeSamplingMap::new(
+                    FrameRate::new(30000, 1001).unwrap(),
+                    FrameRate::new(24, 1).unwrap(),
+                    FrameDuration::new(5).unwrap(),
+                    FrameDuration::new(4).unwrap(),
+                    BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+                )
+                .unwrap(),
+                content_aspect: None,
+            }),
+            controls: PreparationControls::AcceptedArtifact,
         },
-        controls: PreparationControls::AcceptedArtifact,
         state: PreparationState::Queued,
         claim_sequence: 0,
         reason: None,
         request_id: None,
     }
+}
+
+#[test]
+fn inserted_preparation_has_saved_controls_without_a_package_or_model() {
+    let document = fixture();
+    let mut preparation = preparation(&document, scope("h", None));
+    preparation.origin = PreparationOrigin::inserted_pause();
+    let cancelled = std::sync::atomic::AtomicBool::new(false);
+    let options = crate::generation::preparations::resolve_options(
+        std::path::Path::new("/no-such-deadpan-preparation-package"),
+        &preparation,
+        &cancelled,
+    )
+    .unwrap();
+    assert_eq!(options.motion, MotionAmount::Still);
+    assert_eq!(options.instructions, None);
+    assert_eq!(options.region_target, deadpan_jobs::GenerationTarget::None);
+    let resolver = BoundaryContextResolver::default();
+    let isolated = isolate_sibling(&document);
+    preparation.target = isolated
+        .map_target(&document, &preparation.origin_target)
+        .unwrap();
+    assert!(resolver.preparation_is_relevant(&document, &isolated.document, &preparation));
+    cancelled.store(true, std::sync::atomic::Ordering::Release);
+    assert!(
+        crate::generation::preparations::resolve_options(
+            std::path::Path::new("/no-such-deadpan-preparation-package"),
+            &preparation,
+            &cancelled,
+        )
+        .is_err()
+    );
 }
 
 #[test]

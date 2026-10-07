@@ -1493,39 +1493,14 @@ impl DeadpanApp {
             self.repeat_change(input);
             return;
         }
-        if let BeatEdit::InsertHold(input) | BeatEdit::InsertBlack(input) = edit {
+        if let BeatEdit::InsertHold(input)
+        | BeatEdit::InsertBlack(input)
+        | BeatEdit::InsertAiHold(input) = edit
+        {
             let black = matches!(edit, BeatEdit::InsertBlack(_));
-            let Some(workspace) = &self.workspace else {
-                self.error = Some("Open a project before inserting a pause.".into());
-                return;
-            };
-            let duration = match input.resolve(workspace.document.presentation_basis().frame_rate) {
-                Ok(duration) => duration,
-                Err(error) => {
-                    self.error = Some(error);
-                    return;
-                }
-            };
-            if duration == deadpan_core::FrameDuration::ZERO {
-                self.error = None;
-                self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
-                return;
-            }
-            if let Err(error) = self
-                .sequence_scope
-                .check_pause(workspace, ProjectFrame(self.sequence_cursor as i64))
-            {
-                self.error = Some(error);
-                return;
-            }
-            // One semantic instruction, recorded by a macro and repeated by `.`.
-            let length = input.pause_length(workspace.document.presentation_basis().frame_rate);
+            let ai = matches!(edit, BeatEdit::InsertAiHold(_));
             let target = self.capture_macro_target();
-            self.apply_recorded_instruction(
-                target,
-                length
-                    .map(|length| deadpan_core::SemanticInstruction::InsertPause { length, black }),
-            );
+            self.insert_pause(input, black, ai, target);
             return;
         }
         if let Some(instruction) = self.semantic_beat_edit(&edit) {
@@ -1557,7 +1532,7 @@ impl DeadpanApp {
         };
         let node = node.clone();
         let edit = match edit {
-            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) => {
+            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_) => {
                 unreachable!("pause handled above")
             }
             BeatEdit::Split => {
@@ -1619,6 +1594,40 @@ impl DeadpanApp {
         }
         // History and background refresh preserve the absolute cursor. A valid
         // selected identity may have moved; do not turn that into a seek.
+    }
+
+    fn insert_pause(
+        &mut self,
+        input: navigation::duration::DurationInput,
+        black: bool,
+        ai: bool,
+        target: Result<macros::Capture, String>,
+    ) {
+        let instruction = (|| {
+            let captured = target.as_ref().map_err(Clone::clone)?;
+            if !captured.matches(self) {
+                return Err("The pause insertion context changed. Enter the command again; no edit was made.".into());
+            }
+            let rate = captured.frame_rate();
+            if input.resolve(rate)? == deadpan_core::FrameDuration::ZERO {
+                return Ok(None);
+            }
+            captured.check_pause()?;
+            let length = input.pause_length(rate)?;
+            Ok(Some(if ai {
+                deadpan_core::SemanticInstruction::InsertAiPause { length }
+            } else {
+                deadpan_core::SemanticInstruction::InsertPause { length, black }
+            }))
+        })();
+        match instruction {
+            Ok(Some(instruction)) => self.apply_recorded_instruction(target, Ok(instruction)),
+            Ok(None) => {
+                self.error = None;
+                self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
+            }
+            Err(error) => self.error = Some(error),
+        }
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
@@ -3002,6 +3011,21 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Action(Action::Ai(action))) => {
                 self.ai_action(action, ai_target);
             }
+            Ok(navigation::command::Entry::Action(Action::Edit(
+                edit @ (BeatEdit::InsertHold(input)
+                | BeatEdit::InsertBlack(input)
+                | BeatEdit::InsertAiHold(input)),
+            ))) => {
+                self.cancel_repeats("a pause insertion was requested");
+                self.insert_pause(
+                    input,
+                    matches!(edit, BeatEdit::InsertBlack(_)),
+                    matches!(edit, BeatEdit::InsertAiHold(_)),
+                    macro_target.unwrap_or_else(|| {
+                        Err("Enter the pause command again to capture its insertion point.".into())
+                    }),
+                );
+            }
             Ok(navigation::command::Entry::Track {
                 target,
                 through_shots,
@@ -3592,10 +3616,12 @@ impl DeadpanApp {
                     style::key_hint(ui, "Esc", "cancel entry");
                     let group_entry = self.command.trim_start().trim_start_matches(':').split_whitespace().next().is_some_and(|verb| verb.eq_ignore_ascii_case("group"));
                     ui.weak(if group_entry { "Name the selection · use quotes, for example name=\"the answer\"" } else { sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays") });
-                    if let (Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::InsertHold(input)))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
+                    if let (Ok(navigation::command::Entry::Action(Action::Edit(edit))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
+                        && let BeatEdit::InsertHold(input) | BeatEdit::InsertAiHold(input) = edit
                         && let Ok(duration) = input.resolve(workspace.document.presentation_basis().frame_rate)
                     {
-                        ui.colored_label(style::LAVENDER, format!("{} frames · freeze + silence · at boundary {}", duration.frames(), self.sequence_cursor));
+                        let ai = if matches!(edit, BeatEdit::InsertAiHold(_)) { " · AI request after saving" } else { "" };
+                        ui.colored_label(style::LAVENDER, format!("{} frames · freeze + silence · at boundary {}{ai}", duration.frames(), self.sequence_cursor));
                     }
                 });
                 if let Some(hint) = self.retime_hint() {
@@ -3665,7 +3691,7 @@ impl DeadpanApp {
                         if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
                         if let Some(hold) = self.ai_hold() {
                             match self.ai_offered_variants(&hold) {
-                                0 => self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pictures"),
+                                0 => hints.push((":hold-provider ai".into(), "pictures for this pause".into())),
                                 count => {
                                     self.add_editor_hint(&mut hints, EditorKey::CompareAi, "AI before / after");
                                     if count > 1 { self.add_editor_hint(&mut hints, EditorKey::NextAi, "next AI variant"); }
@@ -3710,6 +3736,7 @@ impl DeadpanApp {
                         hints.tier(key_labels::Tier::More);
                         self.add_editor_hint(&mut hints, EditorKey::Split, "split");
                         self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
+                        self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pause");
                         // Within a tier earlier hints win the row budget.
                         if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
                             // Operators take any motion or object: d3l, y]s.
@@ -4430,6 +4457,12 @@ impl DeadpanApp {
                                 .clicked()
                             {
                                 self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
+                            }
+                            if ui.add(style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))
+                                .on_hover_text(format!("Insert 0.5 s of frozen picture and silence, then request AI pictures. {} adds 1.5 s. The pause stays saved even when generation is unavailable; accepting pictures is a separate action.", self.editor_counted(EditorKey::GenerateAi, 3)))
+                                .clicked()
+                            {
+                                self.edit(BeatEdit::InsertAiHold(navigation::duration::DurationInput::half_seconds(1)));
                             }
                             if ui.add(style::row_action(ui, "Insert pause of…", ":hold"))
                                 .on_hover_text("Choose the pause duration before inserting it.")

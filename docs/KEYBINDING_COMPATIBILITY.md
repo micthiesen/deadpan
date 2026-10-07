@@ -10,8 +10,8 @@ into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
 AI motion and guidance extend `:generate` and `:generate-ai` with optional
-`motion=still|subtle|moderate` and final `text=…` arguments. Existing `,a` and
-`:generate N` keep their routes. The command reference and routing snapshot
+`motion=still|subtle|moderate` and final `text=…` arguments. `:generate N`
+keeps its route; counted AI insertion is described below. The command reference and routing snapshot
 record the new usage and refusal text; global key reservations are unchanged.
 The AI generation, variants and comparison replays exercise the production
 router against the pinned Kestrel fixture. A separate hash comparison confirms
@@ -68,10 +68,16 @@ On 2026-10-04 `,z` and `,c` gained target and Edit-range behavior
 and `:hold … video=black` were added to the command line. No binding path,
 modifier or count policy changed, so the reserved-chord comparison is unchanged;
 the `zoom` replay's Kestrel audit passed against the compiled router.
-`,a` (`ai.generate`) generates AI pictures for the selected pause. It is Normal
-Edit only, refuses a count, does not repeat while held and yields to native
-text and composition; `a` alone keeps its text-object prefix. The production
-audit after adding it passed 10,890,672 routing cases against the 62 reserved
+`,a` (`ai.generate`) inserts a half-second silent pause at the Edit cursor and
+queues AI pictures. Counts scale its duration (`3,a` inserts 1.5 seconds),
+and Normal or Visual Edit use the same insertion rules as `,h`. It does not
+repeat while held and yields to native text and composition; `a` alone keeps
+its text-object prefix. `:ai-hold DURATION` is the explicit-duration command.
+The spec spelling `:hold 1.5s video=ai audio=silence` uses the same captured
+insertion. `:hold-provider ai` and `:generate` request pictures for an existing captured
+Hold without inserting time. `:revert-ai` or `:hold-provider fallback` restores
+the captured fallback, including for one selected Repeat play.
+The original audit after adding the key passed 10,890,672 routing cases against the 62 reserved
 Kestrel bindings with no conflict, and the live Kestrel source digest matched
 the fixture (`368c01df…`). The rest of the AI workflow is command-only
 (`:generate N`, `:cancel-ai`, `:next-ai`, `:prev-ai`, `:pick-ai N`,
@@ -81,14 +87,22 @@ needed. Escape leaves an AI preview only after register choice, macro, Visual
 and pending-key owners have none left to clear, and never cancels a
 generation.
 
+The 2026-10-07 counted insertion and provider-command follow-up passes
+21,884,016 production-router cases against all 62 Kestrel reservations with
+zero conflicts. The live `Shortcuts.swift` SHA-256 matches the fixture:
+`368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
+The exact-command native replay passes all 57 checks, including command-entry
+capture and rejection after a delayed history reply. See
+[AI insertion qualification](qualification/ai-insertion-2026-10-07.md).
+
 `,x` (`ai.compare`) and `,n` (`ai.next`) join the comma family on 2026-10-06
 for AI variant comparison: `,x` switches the selected pause between its
 committed picture (Before) and the chosen variant, `,n` shows the next
-variant, both at the same frame and heard sample. Both have the `,a` contract:
+variant, both at the same frame and heard sample. Both are
 unmodified, Normal Edit only (Visual, Original and Sound never reach them),
 refuse a count, do not repeat while held, and yield to native text and
 composition; `x` and `n` alone keep their meanings. Their `,` ancestor
-captures the AI target like `,a`. `:compare-ai [before|N]` is the command
+captures the existing AI target. `:compare-ai [before|N]` is the command
 form. Neither adds a modified chord, so no Kestrel reservation can apply. The
 `ai-compare` replay's production audit passed all 62 reservations over
 21,884,016 routing cases with no conflicts, and the live Kestrel source digest

@@ -1,4 +1,4 @@
-//! Automatic replacement conditioning shares the one AI job thread. The
+//! Automatic AI conditioning shares the one AI job thread. The
 //! writer claims and fulfils durable intentions; decoding and provenance
 //! recovery remain on that thread. No path here accepts generated pictures.
 
@@ -74,7 +74,7 @@ fn capacity_notice(
             total, ..
         } => sum.saturating_add(*total),
     });
-    (total > 0).then(|| format!("Replacement queue was full: {total} older pending replacements were discarded. Timing edits stay saved."))
+    (total > 0).then(|| format!("AI queue was full: {total} older pending preparations were discarded. Timing edits stay saved."))
 }
 
 impl Service {
@@ -103,7 +103,7 @@ impl Service {
             {
                 Ok(notices) => self.capture_preparation_notices(&notices),
                 Err(error) => self.preparation_warning(format!(
-                    "The edit saved, but its replacement queue notice could not be read: {error}"
+                    "The edit saved, but its AI queue notice could not be read: {error}"
                 )),
             }
         }
@@ -129,7 +129,7 @@ impl Service {
             Ok(records) => {
                 self.generation.preparation_warning = None;
                 if records.len() == PAGE_SIZE {
-                    self.preparation_warning("Jobs shows the first 256 replacement preparations. Later queued replacements still run.".into());
+                    self.preparation_warning("Jobs shows the first 256 AI preparations. Later queued preparations still run.".into());
                 }
                 let workspace = self.workspace.as_ref().expect("workspace retained");
                 self.generation.preparations = Arc::new(
@@ -153,9 +153,7 @@ impl Service {
             }
             Err(error) => {
                 self.generation.preparations = Arc::default();
-                self.preparation_warning(format!(
-                    "Replacement preparations could not be read: {error}"
-                ));
+                self.preparation_warning(format!("AI preparations could not be read: {error}"));
             }
         }
     }
@@ -198,7 +196,7 @@ impl Service {
         }
         self.generation.variants_changed();
         self.message =
-            Some("Discarded the replacement preparation. The pause's timing is unchanged.".into());
+            Some("Discarded the AI preparation. The pause's timing is unchanged.".into());
         Ok(())
     }
 
@@ -235,7 +233,7 @@ impl Service {
         {
             Ok(records) => records,
             Err(error) => {
-                let message = format!("Replacement preparations could not be read: {error}");
+                let message = format!("AI preparations could not be read: {error}");
                 if self.message.as_ref() == Some(&message) {
                     return false;
                 }
@@ -272,9 +270,8 @@ impl Service {
                 self.generation
                     .preparation_scan
                     .claim_failed(Instant::now());
-                let message = format!(
-                    "Replacement preparation could not start: {error}. Retrying in 5 seconds."
-                );
+                let message =
+                    format!("AI preparation could not start: {error}. Retrying in 5 seconds.");
                 let changed = self.message.as_ref() != Some(&message);
                 self.message = Some(message);
                 return changed;
@@ -301,8 +298,14 @@ impl Service {
             Ok(worker) => worker,
             Err(reason) => {
                 self.finish_preparation(&claim, PreparationFailure::Unavailable(reason.clone()));
+                let reason = reason.trim();
+                let stop = if reason.ends_with(['.', '!', '?', '…']) {
+                    ""
+                } else {
+                    "."
+                };
                 self.message = Some(format!(
-                    "Replacement pictures unavailable: {reason}. Retry or Discard in Jobs."
+                    "AI pictures unavailable: {reason}{stop} Retry or Discard in Jobs."
                 ));
                 return true;
             }
@@ -314,7 +317,7 @@ impl Service {
         };
         self.generation.automatic = self.generation.automatic.wrapping_add(1).max(1);
         let prepared = &claim.preparation;
-        let mut options = GenerationOptions::default();
+        let mut options = prepared.origin.options().cloned().unwrap_or_default();
         options.resolve_target(None);
         let job = Job {
             ticket: AUTOMATIC_TICKETS + self.generation.automatic,
@@ -323,18 +326,16 @@ impl Service {
             target: prepared.target.clone(),
             revision: prepared.current_revision.clone(),
             options: options.clone(),
-            controls_pending: true,
+            controls_pending: prepared.origin.options().is_none(),
             started: Instant::now(),
             request: None,
+            plan: None,
             variants: 1,
             variant: 1,
             ready: 0,
             phase: Phase::Conditioning,
             outcome: None,
-            note: Some(
-                "Replacement pictures for the extended pause. Acceptance remains your choice."
-                    .into(),
-            ),
+            note: Some("AI pictures for this pause. Acceptance remains your choice.".into()),
             selected_before: None,
             unprotected: None,
         };
@@ -353,7 +354,7 @@ impl Service {
             },
             input,
             job,
-            format!("{label} · replacement"),
+            format!("{label} · AI pictures"),
             Some(claim.clone()),
         ) {
             self.finish_preparation(&claim, PreparationFailure::Interrupted(error.clone()));
@@ -393,8 +394,8 @@ impl Service {
                 if let Some(job) = &mut self.generation.job {
                     job.phase = Phase::Cancelling;
                     job.note = Some(match result {
-                        Some(Err(error)) => format!("Could not verify the replacement preparation: {error}"),
-                        _ => "The edit changed or this replacement was discarded; its late preparation will not create a request.".into(),
+                        Some(Err(error)) => format!("Could not verify the AI preparation: {error}"),
+                        _ => "The edit changed or this preparation was discarded; its late preparation will not create a request.".into(),
                     });
                 }
                 true
@@ -416,7 +417,7 @@ impl Service {
                 text.truncate(end);
             }
             if text.is_empty() {
-                text.push_str("Replacement preparation stopped.");
+                text.push_str("AI preparation stopped.");
             }
             text
         };
@@ -436,9 +437,8 @@ impl Service {
         });
         match result {
             Ok(_) => self.generation.variants_changed(),
-            Err(error) => self.preparation_warning(format!(
-                "Could not record replacement preparation recovery: {error}"
-            )),
+            Err(error) => self
+                .preparation_warning(format!("Could not record AI preparation recovery: {error}")),
         }
     }
 
@@ -458,12 +458,11 @@ impl Service {
                     || self.pending_session_change.is_some() =>
             {
                 PreparationFailure::Interrupted(
-                    "Deadpan closed before replacement conditioning finished. Retry in Jobs."
-                        .into(),
+                    "Deadpan closed before AI conditioning finished. Retry in Jobs.".into(),
                 )
             }
             Outcome::Cancelled => {
-                PreparationFailure::Cancelled("Replacement preparation was cancelled.".into())
+                PreparationFailure::Cancelled("AI preparation was cancelled.".into())
             }
             Outcome::Unavailable(reason) | Outcome::Failed(reason) => {
                 PreparationFailure::Unavailable(reason.clone())
@@ -487,7 +486,7 @@ mod tests {
             total: 301,
         };
         let text = capacity_notice(&[notice]).unwrap();
-        assert!(text.contains("301 older pending replacements"));
+        assert!(text.contains("301 older pending preparations"));
         assert!(text.contains("Timing edits stay saved"));
         assert!(!text.contains("first-displaced"));
     }

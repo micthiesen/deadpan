@@ -139,6 +139,7 @@ pub enum ScopedNodeEdit {
         #[serde(deserialize_with = "crate::document::unique_map")]
         assets: BTreeMap<crate::AssetId, crate::AssetRecord>,
     },
+    RevertGeneratedHold,
 }
 
 impl ScopedNodeEdit {
@@ -153,6 +154,9 @@ impl ScopedNodeEdit {
             Self::AcceptGeneratedHold { artifact, .. } => matches!(&node.kind,
                 NodeKind::Hold { recipe } if matches!(&recipe.video,
                     crate::HoldVideo::Generated { accepted } if &accepted.artifact == artifact)),
+            // The host must see the explicit provider choice even when the
+            // fallback is already active, to supersede pending generation.
+            Self::RevertGeneratedHold => false,
         }
     }
 
@@ -184,6 +188,7 @@ impl ScopedNodeEdit {
                 artifact: artifact.clone(),
                 assets: assets.clone(),
             },
+            Self::RevertGeneratedHold => Command::RevertGeneratedHold { node },
         }
     }
 
@@ -226,6 +231,15 @@ impl ScopedNodeEdit {
                     unreachable!("acceptance checks Hold kind")
                 };
                 staged.validate_hold(recipe)?;
+            }
+            Self::RevertGeneratedHold => {
+                let NodeKind::Hold { recipe } = &document.nodes()[node].kind else {
+                    return Err(EditError::new(
+                        EditErrorCode::WrongNodeKind,
+                        "scoped provider reversion requires an authored Hold",
+                    ));
+                };
+                crate::command::reverted_hold_video(&recipe.video)?;
             }
         }
         Ok(())

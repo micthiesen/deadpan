@@ -1,4 +1,4 @@
-//! Durable replacement intent before conditioning has a real content hash.
+//! Durable AI intent before conditioning has a real content hash.
 //! These records never authorize a worker or acceptance. Fulfilment binds a
 //! current claim to a normal request and its first attempt in one transaction.
 
@@ -90,6 +90,88 @@ pub enum PreparationControls {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum PreparationOrigin {
+    AcceptedExtension {
+        accepted: Box<GeneratedArtifact>,
+        controls: PreparationControls,
+    },
+    InsertedPause {
+        options: GenerationOptions,
+    },
+}
+
+impl PreparationOrigin {
+    /// The InsertAiTime contract fixes these controls at birth. Do not use
+    /// mutable UI preferences or future GenerationOptions defaults on replay.
+    pub fn inserted_pause() -> Self {
+        Self::InsertedPause {
+            options: GenerationOptions {
+                motion: deadpan_jobs::MotionAmount::Still,
+                instructions: None,
+                region_target: deadpan_jobs::GenerationTarget::None,
+            },
+        }
+    }
+
+    /// None means verified accepted provenance must be read off the writer.
+    pub fn options(&self) -> Option<&GenerationOptions> {
+        match self {
+            Self::InsertedPause { options }
+            | Self::AcceptedExtension {
+                controls: PreparationControls::Request { options, .. },
+                ..
+            } => Some(options),
+            Self::AcceptedExtension {
+                controls: PreparationControls::AcceptedArtifact,
+                ..
+            } => None,
+        }
+    }
+
+    pub fn accepted_artifact(&self) -> Option<&GeneratedArtifact> {
+        match self {
+            Self::AcceptedExtension { accepted, .. } => Some(accepted.as_ref()),
+            Self::InsertedPause { .. } => None,
+        }
+    }
+
+    fn source_request(&self) -> Option<&RequestId> {
+        match self {
+            Self::AcceptedExtension {
+                controls: PreparationControls::Request { request_id, .. },
+                ..
+            } => Some(request_id),
+            _ => None,
+        }
+    }
+
+    fn supports_duration(&self, duration: FrameDuration) -> bool {
+        duration != FrameDuration::ZERO
+            && self
+                .accepted_artifact()
+                .is_none_or(|accepted| duration > accepted.sampling.output_frame_count())
+    }
+
+    /// Request controls enrich an accepted birth after pure command replay;
+    /// validation separately proves that request's exact scope and controls.
+    fn same_birth(&self, derived: &Self) -> bool {
+        match (self, derived) {
+            (
+                Self::AcceptedExtension { accepted, .. },
+                Self::AcceptedExtension {
+                    accepted: expected, ..
+                },
+            ) => accepted == expected,
+            (Self::InsertedPause { options }, Self::InsertedPause { options: expected }) => {
+                options == expected
+            }
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct StoredGenerationPreparation {
     pub id: PreparationId,
@@ -99,8 +181,7 @@ pub struct StoredGenerationPreparation {
     pub current_revision: RevisionId,
     pub target: ScopedNodeTarget,
     pub duration: FrameDuration,
-    pub accepted: GeneratedArtifact,
-    pub controls: PreparationControls,
+    pub origin: PreparationOrigin,
     pub state: PreparationState,
     pub claim_sequence: u64,
     pub reason: Option<String>,
@@ -480,7 +561,7 @@ impl ProjectStore {
         {
             return Err(invalid("prepared request differs from its captured intent"));
         }
-        if let PreparationControls::Request { options, .. } = &value.controls
+        if let Some(options) = value.origin.options()
             && &GenerationOptions::from_constraints(&input.constraints) != options
         {
             return Err(invalid(

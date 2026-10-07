@@ -105,7 +105,7 @@ See the [request examples and receipt contract](SEMANTIC_MACROS.md#headless-insp
 An `apply` operation plans and commits one inline program once, the same path
 as a native single recorded action, without saving it as a Macro. Use it for
 the GUI edits that resolve through semantic instructions, such as gags
-(`gag`, `set_gag`), pauses (`insert_pause`), `bleep`, `lift`, `tail`,
+(`gag`, `set_gag`), pauses (`insert_pause`, `insert_ai_pause`), `bleep`, `lift`, `tail`,
 captions, cutaways, framing presets and `set_audio` gain steps:
 
 ```json
@@ -1475,6 +1475,14 @@ Motion, the saved region target and optional guidance are captured in the reques
 open-project behavior.
 
 ### Replacement requests after resizing
+
+`insert_ai_pause` also saves a preparation with its exact newly allocated Hold.
+Its initial controls are Still, no guidance and no target. It uses the same
+`length` shape as `insert_pause`; it has no `black` flag. The resulting typed
+`insert_ai_time` command requires a deterministic silent fallback. Dot and macro
+execution allocate fresh identities; a Compound maps only that inserted Hold
+through later leaves. Undo cancels the preparation and Redo creates a fresh one.
+The queue commands below serve both insertion and accepted-pause replacement.
 
 Extending accepted footage beyond its retained interval saves the new duration,
 fallback and replacement preparation in one transaction. Command and semantic

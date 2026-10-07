@@ -39,6 +39,99 @@ fn pause(frames: u32) -> SemanticInstruction {
     }
 }
 
+#[test]
+fn ai_pause_matches_ordinary_pause_at_rational_rate_and_retains_allocated_identity() {
+    let mut document = tree(&["a"], vec![("a", hold(10))]);
+    document.presentation_basis.frame_rate = crate::FrameRate::new(30000, 1001).unwrap();
+    let length = PauseLength::Milliseconds {
+        milliseconds: NonZeroU32::new(1500).unwrap(),
+    };
+    for at in [0, 4, 10] {
+        let ordinary = plan_pauses(
+            &document,
+            context("root", at),
+            vec![SemanticInstruction::InsertPause {
+                length,
+                black: false,
+            }],
+        )
+        .unwrap();
+        let ai = plan_pauses(
+            &document,
+            context("root", at),
+            vec![SemanticInstruction::InsertAiPause { length }],
+        )
+        .unwrap();
+        assert_eq!(ai.document, ordinary.document);
+        assert_eq!(ai.context, ordinary.context);
+        assert_eq!(ai.document.duration().unwrap().frames(), 55);
+        let request = ai.request.as_ref().unwrap();
+        let Command::Compound { transaction } = &request.command else {
+            panic!()
+        };
+        assert!(
+            matches!(transaction.steps()[0].edit().unwrap().command.as_command(),
+            Command::InsertAiTime { id, hold, .. }
+                if id == &node("pause-0") && hold.audio == HoldAudio::Silence)
+        );
+        let replay = crate::replay_compound::<EditError>(&document, request, |_| Ok(())).unwrap();
+        assert_eq!(replay.document, ai.document);
+        assert_eq!(
+            replay.edit.inverse.apply(&replay.document).unwrap(),
+            document
+        );
+        let wire = serde_json::to_string(request).unwrap();
+        assert_eq!(
+            serde_json::from_str::<CommandRequest>(&wire).unwrap(),
+            *request
+        );
+    }
+}
+
+#[test]
+fn ai_pause_refuses_non_silent_or_non_deterministic_host_recipes() {
+    let document = tree(&["a"], vec![("a", hold(10))]);
+    for bad_picture in [false, true] {
+        let mut recipe = HoldRecipe {
+            duration: FrameDuration::new(3).unwrap(),
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+            picture_context: None,
+        };
+        if bad_picture {
+            recipe.video = HoldVideo::Accepted {
+                asset: crate::AssetId::new("not-admitted").unwrap(),
+                frames: range(0, 3),
+            };
+        } else {
+            recipe.audio = HoldAudio::Tone {
+                frequency_hz: 1000,
+                level: crate::GainDb::new(0).unwrap(),
+            };
+        }
+        let request = CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: revision("ai"),
+            command: Command::InsertAiTime {
+                at: ProjectFrame(10),
+                hold: recipe,
+                id: node("ai-hold"),
+                identities: SplitIdentities { nodes: Vec::new() },
+                timing: crate::AudioTimingId {
+                    allocation: revision("ai"),
+                    ordinal: 0,
+                },
+            },
+        };
+        let error = crate::apply(&document, &request).unwrap_err();
+        assert!(
+            error.message.contains("silent deterministic fallback"),
+            "{error:?}"
+        );
+    }
+}
+
 fn creep() -> SemanticInstruction {
     let close = FramingPose::new(
         ExactRatio::new(1, 2).unwrap(),

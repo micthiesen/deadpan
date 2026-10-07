@@ -851,11 +851,14 @@ pub static SPECS: &[Spec] = &[
         name: "Insert a pause",
         section: Section::Pauses,
         keys: &[Keys::Editor(B::Hold)],
-        commands: &[verb("hold", ":hold 0.5s [video=black]")],
+        commands: &[verb(
+            "hold",
+            ":hold 0.5s [video=freeze|black|ai] [audio=silence]",
+        )],
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("insert_pause instruction", HOLDS),
-        help: "Insert a silent freeze at the cursor: 0.5 s per count, so 3{hold!} is 1.5 s. Keeps the following original speech. The cursor stays at the pause; {group.enter} opens its enclosing group when needed. :hold takes an exact duration (12f, 250ms, 1.5s or 01:02.500, rounded once to project frames); zero makes no edit. video=black inserts silent black picture instead. Repeat and Retime interiors remain unavailable.",
+        help: "Insert a silent freeze at the cursor: 0.5 s per count, so 3{hold!} is 1.5 s. Keeps the following original speech. The cursor stays at the pause; {group.enter} opens its enclosing group when needed. :hold takes an exact duration (12f, 250ms, 1.5s or 01:02.500, rounded once to project frames); zero makes no edit. video=black inserts silent black picture instead. :hold 1.5s video=ai audio=silence saves the same freeze and requests AI pictures; acceptance stays explicit. Repeat and Retime interiors remain unavailable.",
     },
     Spec {
         id: "hold.duration",
@@ -1188,10 +1191,49 @@ pub static SPECS: &[Spec] = &[
     },
     // AI PAUSES
     Spec {
+        id: "hold.provider",
+        name: "Change hold provider",
+        section: Section::Ai,
+        keys: &[],
+        commands: &[verb("hold-provider", ":hold-provider ai|fallback")],
+        contexts: C::EDIT,
+        replay: Replay::NotRecorded,
+        headless: eq(
+            "generate-hold <p> --hold <id> / revert_generated_hold command",
+            AI,
+        ),
+        help: "Change pictures for the existing selected pause without inserting time. :hold-provider ai requests one candidate with the captured motion, target and guidance; audition it and explicitly Accept. :hold-provider fallback restores the saved freeze or background as one undoable edit and cancels pending replacement intent. The command captures the pause and its Default or selected-play scope on entry.",
+    },
+    Spec {
+        id: "ai.revert",
+        name: "Revert AI pictures to fallback",
+        section: Section::Ai,
+        keys: &[],
+        commands: &[verb("revert-ai", ":revert-ai")],
+        contexts: C::EDIT,
+        replay: Replay::NotRecorded,
+        headless: eq(
+            "revert_generated_hold / edit_scoped with revert_generated_hold",
+            AI,
+        ),
+        help: "Restore the selected pause's saved freeze or background, even after other edits, as one Undo. Timing, sound, framing and other plays stay unchanged. Also cancels pending automatic replacement intent when the fallback already shows. :hold-provider fallback is the same action.",
+    },
+    Spec {
         id: "ai.generate",
-        name: "Generate AI pictures",
+        name: "Insert an AI pause",
         section: Section::Ai,
         keys: &[Keys::Editor(B::GenerateAi)],
+        commands: &[verb("ai-hold", ":ai-hold 0.5s")],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("insert_ai_pause instruction", AI),
+        help: "Insert the same silent freeze as {hold}: 0.5 s per count, so 3{ai.generate!} inserts 1.5 s. Save the pause and its AI request together, then prepare pictures in the background. :hold 1.5s video=ai audio=silence is the same insertion with an explicit duration. The freeze works without a model; Jobs shows unavailable work with Retry and Discard. A Ready candidate needs explicit acceptance. Dot and macros insert a fresh pause and request at their new location. :hold-provider ai requests pictures for an existing pause without inserting time.",
+    },
+    Spec {
+        id: "ai.generate_existing",
+        name: "Generate AI pictures",
+        section: Section::Ai,
+        keys: &[],
         commands: &[
             verb(
                 "generate",

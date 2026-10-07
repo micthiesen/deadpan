@@ -4,8 +4,12 @@ use super::*;
 use deadpan_core::{LeafEdit, ResolvedStep, ResolvedTransaction};
 use deadpan_store::generation::GenerationContextResolver;
 use deadpan_store::generation_preparations::{
-    PreparationControls, PreparationFailure, PreparationState, StoredGenerationPreparation,
+    PreparationControls, PreparationFailure, PreparationOrigin, PreparationState,
+    StoredGenerationPreparation,
 };
+
+#[path = "preparations/insertion.rs"]
+mod insertion;
 
 struct Relevant;
 impl GenerationContextResolver for Relevant {
@@ -137,7 +141,13 @@ fn extension_commits_exact_fallback_and_retains_controls_before_any_worker() -> 
     assert_eq!(value.claim_sequence, 0);
     assert_eq!(value.origin_revision, outcome.revision_id);
     assert_eq!(value.origin_target, value.target);
-    assert_eq!(value.controls, PreparationControls::AcceptedArtifact);
+    assert!(matches!(
+        value.origin,
+        PreparationOrigin::AcceptedExtension {
+            controls: PreparationControls::AcceptedArtifact,
+            ..
+        }
+    ));
     assert_eq!(
         store
             .generation_request(&RequestId::new("request")?)?
@@ -324,9 +334,8 @@ fn undo_cancels_claim_and_redo_creates_new_intent_with_original_controls() -> Re
     assert_ne!(new_id, &id);
     let fresh = store.generation_preparation(new_id)?.unwrap();
     assert_eq!(fresh.state, PreparationState::Queued);
-    assert_eq!(fresh.controls, original.controls);
+    assert_eq!(fresh.origin, original.origin);
     assert_eq!(fresh.duration, original.duration);
-    assert_eq!(fresh.accepted, original.accepted);
     assert_eq!(fresh.origin_revision, redo.revision_id);
     assert_eq!(
         store
@@ -384,17 +393,43 @@ fn compound_explicit_fallback_supersedes_birth_even_if_its_pixels_are_equal() ->
 }
 
 #[test]
-fn explicit_same_fallback_cancels_pending_preparation_in_plain_and_compound_commands() -> Result {
-    for compound_command in [false, true] {
+fn explicit_fallback_cancels_pending_preparation_in_plain_compound_and_scoped_commands() -> Result {
+    for (kind, compound_command) in ["set", "revert", "scoped", "scoped_many"]
+        .into_iter()
+        .flat_map(|kind| [false, true].map(|compound| (kind, compound)))
+    {
         let scratch = tempfile::tempdir()?;
         let mut store = accepted(&scratch.path().join("provider-choice.deadpan"))?;
         let id = resize(&mut store, "extend", 18)?
             .generation_preparations
             .remove(0);
         let claim = store.claim_generation_preparation(&id, &store.head_revision()?)?;
-        let choice = Command::SetHoldProvider {
-            node: NodeId::new("hold")?,
-            video: HoldVideo::Background,
+        let target = store.generation_preparation(&id)?.unwrap().target;
+        let choice = match kind {
+            "set" => Command::SetHoldProvider {
+                node: target.node,
+                video: HoldVideo::Background,
+            },
+            "revert" => Command::RevertGeneratedHold { node: target.node },
+            "scoped" => Command::EditScoped {
+                target,
+                edit: deadpan_core::ScopedNodeEdit::RevertGeneratedHold,
+                identities: deadpan_core::OccurrenceIdentities {
+                    nodes: vec![],
+                    marks: vec![],
+                },
+            },
+            "scoped_many" => Command::EditScopedMany {
+                edits: vec![deadpan_core::ScopedTargetEdit {
+                    target,
+                    edit: deadpan_core::ScopedNodeEdit::RevertGeneratedHold,
+                }],
+                identities: vec![deadpan_core::OccurrenceIdentities {
+                    nodes: vec![],
+                    marks: vec![],
+                }],
+            },
+            _ => unreachable!(),
         };
         let request = if compound_command {
             compound(&store, vec![choice])?
@@ -500,7 +535,11 @@ fn tampered_preparation_birth_controls_or_address_cannot_be_laundered_by_an_edit
             match field {
                 "target" => value.target.node = NodeId::new("root")?,
                 "controls" => {
-                    if let PreparationControls::Request { options, .. } = &mut value.controls {
+                    if let PreparationOrigin::AcceptedExtension {
+                        controls: PreparationControls::Request { options, .. },
+                        ..
+                    } = &mut value.origin
+                    {
                         options.motion = MotionAmount::Subtle;
                     }
                 }
@@ -622,7 +661,13 @@ fn selected_play_extension_keeps_default_and_other_plays_generated() -> Result {
             iteration: second.clone()
         }
     );
-    assert_eq!(preparation.controls, PreparationControls::AcceptedArtifact);
+    assert!(matches!(
+        preparation.origin,
+        PreparationOrigin::AcceptedExtension {
+            controls: PreparationControls::AcceptedArtifact,
+            ..
+        }
+    ));
     assert_eq!(
         store
             .generation_request(&request.request_id)?
@@ -756,12 +801,40 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
             },
         },
     )?)?;
+    // Compact a new insertion origin alongside accepted extensions, without
+    // requiring a second lifetime-sized integration fixture.
+    let inserted = store
+        .commit(&command(
+            &store,
+            "new-ai-pause",
+            Command::InsertAiTime {
+                at: deadpan_core::ProjectFrame(0),
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(18)?,
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+                id: NodeId::new("new-ai-hold")?,
+                identities: deadpan_core::SplitIdentities { nodes: Vec::new() },
+                timing: deadpan_core::AudioTimingId {
+                    allocation: RevisionId::new("new-ai-pause")?,
+                    ordinal: 0,
+                },
+            },
+        )?)?
+        .generation_preparations
+        .remove(0);
+    store.cancel_generation_preparation(&inserted, 0)?;
     let source_id = resize(&mut store, "first-extension", 18)?
         .generation_preparations
         .remove(0);
     assert!(matches!(
-        store.generation_preparation(&source_id)?.unwrap().controls,
-        PreparationControls::Request { .. }
+        store.generation_preparation(&source_id)?.unwrap().origin,
+        PreparationOrigin::AcceptedExtension {
+            controls: PreparationControls::Request { .. },
+            ..
+        }
     ));
     store.cancel_generation_preparation(&source_id, 0)?;
     let request = compound(
@@ -788,6 +861,16 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
     let retired = deadpan_store::generation_preparations::PreparationId::new(retired)?;
     assert!(store.generation_preparation(&retired)?.is_none());
     assert!(store.generation_preparation(&source_id)?.is_none());
+    assert!(store.generation_preparation(&inserted)?.is_none());
+    let insertion_origin: String = database.query_row(
+        "SELECT record FROM generation_preparation_retirements WHERE id=?1",
+        [inserted.as_str()],
+        |row| row.get(0),
+    )?;
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&insertion_origin)?["origin"]["kind"],
+        "inserted_pause"
+    );
     assert_eq!(
         database.query_row("SELECT count(*) FROM generation_preparations", [], |row| {
             row.get::<_, i64>(0)
@@ -806,11 +889,13 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
             .len(),
         1
     );
-    assert!(
-        first_page
-            .iter()
-            .all(|value| value.controls == PreparationControls::AcceptedArtifact)
-    );
+    assert!(first_page.iter().all(|value| matches!(
+        value.origin,
+        PreparationOrigin::AcceptedExtension {
+            controls: PreparationControls::AcceptedArtifact,
+            ..
+        }
+    )));
     store.validate_full()?;
     // The source constraints remain a dependency after full-row compaction.
     // Changing them must invalidate the receipt, including the warm read path.

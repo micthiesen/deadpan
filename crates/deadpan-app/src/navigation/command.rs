@@ -189,9 +189,9 @@ fn track<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     })
 }
 
-const HOLD_USAGE: &str = "Use :hold 0.5s or :hold 12f to insert a silent freeze at the cursor; video=black inserts black picture instead (audio=silence).";
+const HOLD_USAGE: &str = "Use :hold 0.5s or :hold 12f to insert a silent freeze at the cursor; video=black inserts black picture, and :hold 1.5s video=ai audio=silence also requests AI pictures.";
 
-/// `:hold DURATION [video=freeze|black] [audio=silence]`.
+/// `:hold DURATION [video=freeze|black|ai] [audio=silence]`.
 fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     let duration = DurationInput::parse(words.next().ok_or(HOLD_USAGE)?)?;
     let mut video = None;
@@ -200,13 +200,10 @@ fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
         match word.split_once('=') {
             Some(("video", value)) if video.is_none() => {
                 video = Some(match value {
-                    "freeze" => false,
-                    "black" => true,
-                    "ai" => return Err(
-                        "Insert the pause first, then request an AI picture with ,a or :generate."
-                            .into(),
-                    ),
-                    _ => return Err("video is freeze or black.".into()),
+                    "freeze" => BeatEdit::InsertHold(duration),
+                    "black" => BeatEdit::InsertBlack(duration),
+                    "ai" => BeatEdit::InsertAiHold(duration),
+                    _ => return Err("video is freeze, black or ai.".into()),
                 });
             }
             Some(("audio", value)) if !audio => {
@@ -219,11 +216,9 @@ fn hold<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
             _ => return Err(HOLD_USAGE.into()),
         }
     }
-    Ok(Entry::Action(Action::Edit(if video == Some(true) {
-        BeatEdit::InsertBlack(duration)
-    } else {
-        BeatEdit::InsertHold(duration)
-    })))
+    Ok(Entry::Action(Action::Edit(
+        video.unwrap_or(BeatEdit::InsertHold(duration)),
+    )))
 }
 
 /// Every command verb with a short usage, sorted by verb, for admission and
@@ -274,6 +269,22 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb.eq_ignore_ascii_case("generate") || verb.eq_ignore_ascii_case("generate-ai") {
         return generate::parse(Some(&input[verb.len()..]));
+    }
+    if verb.eq_ignore_ascii_case("hold-provider") {
+        let provider = words
+            .next()
+            .ok_or("Use :hold-provider ai or :hold-provider fallback.")?;
+        if words.next().is_some() {
+            return Err("Use :hold-provider ai or :hold-provider fallback.".into());
+        }
+        let action = if provider.eq_ignore_ascii_case("ai") {
+            super::AiAction::Generate { variants: 1 }
+        } else if provider.eq_ignore_ascii_case("fallback") {
+            super::AiAction::Revert
+        } else {
+            return Err("Use :hold-provider ai or :hold-provider fallback.".into());
+        };
+        return Ok(Entry::Action(Action::Ai(action)));
     }
     if verb.eq_ignore_ascii_case("group") {
         return super::group::parse(&input[verb.len()..]);
@@ -447,6 +458,17 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     if verb == "hold" {
         return hold(words);
     }
+    if verb == "ai-hold" {
+        const USAGE: &str =
+            "Use :ai-hold 0.5s or :ai-hold 12f to insert a silent freeze and request AI pictures.";
+        let duration = DurationInput::parse(words.next().ok_or(USAGE)?)?;
+        if words.next().is_some() {
+            return Err(USAGE.into());
+        }
+        return Ok(Entry::Action(Action::Edit(BeatEdit::InsertAiHold(
+            duration,
+        ))));
+    }
     if verb == "reverse" || verb == "ping-pong" {
         let arguments: Vec<&str> = words.collect();
         let bounce = verb == "ping-pong";
@@ -612,6 +634,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "preview-ai" => Action::Ai(super::AiAction::Preview),
         "audition-ai" => Action::Ai(super::AiAction::Audition),
         "accept-ai" => Action::Ai(super::AiAction::Accept),
+        "revert-ai" => Action::Ai(super::AiAction::Revert),
         "discard-ai" => Action::Ai(super::AiAction::Discard),
         "keep-ai" => Action::Ai(super::AiAction::Keep),
         "record-stop" => Action::MacroStop,
@@ -1439,7 +1462,7 @@ mod tests {
             "hold -1f",
             "hold 12",
             "hold 12f extra",
-            "hold 1s video=ai",
+            "hold 1s video=unknown",
             "hold 1s video=black video=black",
             "hold 1s audio=room-tone",
             "hold video=black",

@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
+fn comma_a_inserts_counted_half_seconds_in_normal_and_visual_edit_only() {
     assert_eq!(BindingId::GenerateAi.as_str(), "ai.generate");
     let mut bindings = Bindings::default();
     assert_eq!(bindings.key_label(BindingId::GenerateAi), ",a");
@@ -12,22 +12,26 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
     assert_eq!(bindings.pending(), ",");
     assert_eq!(
         bindings.key(Key::A, Modifiers::NONE, false, false),
-        Some(Action::Ai(AiAction::Generate { variants: 1 }))
+        Some(Action::Edit(BeatEdit::InsertAiHold(
+            duration::DurationInput::half_seconds(1)
+        )))
     );
     assert!(bindings.pending().is_empty());
     assert!(!bindings.allows_key_repeat(Key::A, Modifiers::NONE));
 
-    // A count refuses instead of generating several times.
+    // A count changes the inserted duration, as with ,h.
     for key in [Key::Num3, Key::Comma] {
         bindings.key(key, Modifiers::NONE, false, false);
     }
     assert_eq!(bindings.pending(), "3,");
-    assert!(matches!(
+    assert_eq!(
         bindings.key(Key::A, Modifiers::NONE, false, false),
-        Some(Action::Invalid(_))
-    ));
+        Some(Action::Edit(BeatEdit::InsertAiHold(
+            duration::DurationInput::half_seconds(3)
+        )))
+    );
 
-    // Visual Edit, Original and Sound routing never reach it.
+    // A Visual range keeps the same pause-at-cursor semantics as ,h.
     bindings.clear();
     bindings.key_with_selection(
         Key::Comma,
@@ -36,9 +40,11 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
         false,
         EditSelection::Range,
     );
-    assert_ne!(
+    assert_eq!(
         bindings.key_with_selection(Key::A, Modifiers::NONE, false, false, EditSelection::Range),
-        Some(Action::Ai(AiAction::Generate { variants: 1 }))
+        Some(Action::Edit(BeatEdit::InsertAiHold(
+            duration::DurationInput::half_seconds(1)
+        )))
     );
     for domain in [RoutingDomain::Original, RoutingDomain::Sound] {
         let mut bindings = Bindings::default();
@@ -46,7 +52,9 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
         bindings.key(Key::Comma, Modifiers::NONE, false, false);
         assert_ne!(
             bindings.key(Key::A, Modifiers::NONE, false, false),
-            Some(Action::Ai(AiAction::Generate { variants: 1 })),
+            Some(Action::Edit(BeatEdit::InsertAiHold(
+                duration::DurationInput::half_seconds(1)
+            ))),
             "{domain:?}"
         );
     }
@@ -61,6 +69,116 @@ fn comma_a_generates_ai_pictures_once_in_normal_edit_only() {
 }
 
 #[test]
+fn ai_hold_duration_commands_keep_exact_units_and_do_not_change_existing_hold_provider() {
+    use command::{Entry, parse};
+    use duration::DurationInput;
+    let rate = deadpan_core::FrameRate::new(30_000, 1_001).unwrap();
+    for (input, duration, frames) in [
+        (":ai-hold 1.5s", DurationInput::half_seconds(3), 45),
+        ("AI-HOLD 500ms", DurationInput::half_seconds(1), 15),
+        ("ai-hold 00:01.500", DurationInput::half_seconds(3), 45),
+        (
+            "ai-hold 12f",
+            DurationInput::Frames(deadpan_core::FrameDuration::new(12).unwrap()),
+            12,
+        ),
+        (
+            "ai-hold 0f",
+            DurationInput::Frames(deadpan_core::FrameDuration::ZERO),
+            0,
+        ),
+    ] {
+        assert_eq!(
+            parse(input),
+            Ok(Entry::Action(Action::Edit(BeatEdit::InsertAiHold(
+                duration
+            )))),
+            "{input}"
+        );
+        assert_eq!(duration.resolve(rate).unwrap().frames(), frames, "{input}");
+    }
+    assert_eq!(
+        parse("hold-provider ai"),
+        Ok(Entry::Action(Action::Ai(AiAction::Generate {
+            variants: 1
+        })))
+    );
+    for input in [
+        "ai-hold",
+        "ai-hold 1",
+        "ai-hold -1f",
+        "ai-hold 0.5s 2",
+        "ai-hold 12f video=black",
+        "ai-hold 12f motion=still",
+    ] {
+        assert!(parse(input).is_err(), "{input}");
+    }
+}
+
+#[test]
+fn hold_ai_grammar_preserves_exact_duration_parameter_order_and_zero() {
+    use command::{Entry, parse};
+    use duration::DurationInput;
+    let rate = deadpan_core::FrameRate::new(30_000, 1_001).unwrap();
+    for (input, duration, frames) in [
+        (":hold 1.5s video=ai audio=silence", "1.5s", 45),
+        ("hold 1.5s audio=silence video=ai", "1.5s", 45),
+        ("hold 500ms video=ai", "500ms", 15),
+        ("hold 12f video=ai audio=silence", "12f", 12),
+        ("hold 0f video=ai audio=silence", "0f", 0),
+        ("hold 0s audio=silence video=ai", "0s", 0),
+    ] {
+        let duration = DurationInput::parse(duration).unwrap();
+        assert_eq!(
+            parse(input),
+            Ok(Entry::Action(Action::Edit(BeatEdit::InsertAiHold(
+                duration
+            )))),
+            "{input}"
+        );
+        assert_eq!(duration.resolve(rate).unwrap().frames(), frames, "{input}");
+    }
+}
+
+#[test]
+fn hold_ai_grammar_keeps_duplicate_audio_and_duration_errors() {
+    use command::parse;
+    for input in [
+        "hold 1.5s video=ai video=ai",
+        "hold 1.5s video=ai video=freeze",
+        "hold 1.5s video=black video=ai",
+        "hold 1.5s video=ai audio=silence audio=silence",
+        "hold 1.5s audio=silence video=ai audio=room-tone",
+    ] {
+        assert_eq!(
+            parse(input),
+            Err("Each parameter can be given once.".into()),
+            "{input}"
+        );
+    }
+    for input in [
+        "hold 1.5s video=ai audio=room-tone",
+        "hold 1.5s audio=keep video=ai",
+    ] {
+        assert_eq!(
+            parse(input),
+            Err("A new pause is silent (audio=silence); choose room tone afterwards with :room-tone.".into()),
+            "{input}"
+        );
+    }
+    for input in [
+        "hold video=ai audio=silence",
+        "hold 1.5 video=ai audio=silence",
+        "hold -1f video=ai audio=silence",
+        "hold 1f 2f video=ai audio=silence",
+        "hold 1f video=ai motion=still",
+        "hold 1f video=unknown audio=silence",
+    ] {
+        assert!(parse(input).is_err(), "{input}");
+    }
+}
+
+#[test]
 fn ai_commands_parse_with_their_exact_arguments() {
     use command::{Entry, parse};
     for (input, action) in [
@@ -72,6 +190,10 @@ fn ai_commands_parse_with_their_exact_arguments() {
         ("PREVIEW-AI", AiAction::Preview),
         ("audition-ai", AiAction::Audition),
         ("accept-ai", AiAction::Accept),
+        ("hold-provider ai", AiAction::Generate { variants: 1 }),
+        ("HOLD-PROVIDER AI", AiAction::Generate { variants: 1 }),
+        ("hold-provider fallback", AiAction::Revert),
+        ("revert-ai", AiAction::Revert),
         ("discard-ai", AiAction::Discard),
         ("next-ai", AiAction::Choose(VariantChoice::Next)),
         ("prev-ai", AiAction::Choose(VariantChoice::Previous)),
@@ -101,6 +223,11 @@ fn ai_commands_parse_with_their_exact_arguments() {
         "generate 5",
         "generate 2 3",
         "accept-ai 1",
+        "hold-provider",
+        "hold-provider ai 2",
+        "hold-provider freeze",
+        "hold-provider fallback now",
+        "revert-ai now",
         "cancel-ai x",
         "next-ai 2",
         "pick-ai",

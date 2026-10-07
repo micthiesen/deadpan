@@ -18,9 +18,27 @@ where
         length: crate::PauseLength,
         black: bool,
     ) -> Result<(), EditError> {
+        self.insert_pause_with_intent(trace_index, length, black, false)
+    }
+
+    pub(super) fn insert_ai_pause(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+    ) -> Result<(), EditError> {
+        self.insert_pause_with_intent(trace_index, length, false, true)
+    }
+
+    fn insert_pause_with_intent(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+        black: bool,
+        request_ai: bool,
+    ) -> Result<(), EditError> {
         let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
         let at = self.context.cursor;
-        self.insert_hold(trace_index, duration, |planner| {
+        self.insert_hold_with_intent(trace_index, duration, request_ai, |planner| {
             // Black punctuation samples no picture and captures no framing.
             if black {
                 Ok(super::PauseProvider {
@@ -245,6 +263,16 @@ where
         duration: FrameDuration,
         provider: impl FnOnce(&mut Self) -> Result<super::PauseProvider, EditError>,
     ) -> Result<(), EditError> {
+        self.insert_hold_with_intent(trace_index, duration, false, provider)
+    }
+
+    fn insert_hold_with_intent(
+        &mut self,
+        trace_index: usize,
+        duration: FrameDuration,
+        request_ai: bool,
+        provider: impl FnOnce(&mut Self) -> Result<super::PauseProvider, EditError>,
+    ) -> Result<(), EditError> {
         if self.context.visual_selection.is_some() {
             return Err(invalid(
                 "clear the Visual selection before inserting a pause",
@@ -279,24 +307,34 @@ where
         for node in std::iter::once(&id).chain(&split.nodes) {
             self.reserve_node(node)?;
         }
-        let edit = LeafEdit::new(
-            new_revision.clone(),
-            Command::InsertTime {
+        let hold = HoldRecipe {
+            duration,
+            video: provider.video,
+            audio: provider.audio,
+            picture_context: provider.picture_context,
+        };
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let command = if request_ai {
+            Command::InsertAiTime {
                 at,
-                hold: HoldRecipe {
-                    duration,
-                    video: provider.video,
-                    audio: provider.audio,
-                    picture_context: provider.picture_context,
-                },
+                hold,
                 id: id.clone(),
                 identities: split,
-                timing: AudioTimingId {
-                    allocation: new_revision,
-                    ordinal: 0,
-                },
-            },
-        )?;
+                timing,
+            }
+        } else {
+            Command::InsertTime {
+                at,
+                hold,
+                id: id.clone(),
+                identities: split,
+                timing,
+            }
+        };
+        let edit = LeafEdit::new(new_revision, command)?;
         self.commit_leaf(edit)?;
         // The cursor stays at the pause; a hidden Hold selects its visible
         // enclosing child, as natively.

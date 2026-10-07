@@ -27,6 +27,9 @@ impl Capture {
     pub(super) fn frame_rate(&self) -> deadpan_core::FrameRate {
         self.base.document.presentation_basis().frame_rate
     }
+    pub(super) fn check_pause(&self) -> Result<(), String> {
+        self.scope.check_pause(&self.base, self.context.cursor)
+    }
     fn object_selected(&self) -> bool {
         matches!(
             self.context.visual_selection,
@@ -363,6 +366,7 @@ impl DeadpanApp {
                 ))
                 | Action::Edit(
                     BeatEdit::InsertHold(_)
+                        | BeatEdit::InsertAiHold(_)
                         | BeatEdit::InsertBlack(_)
                         | BeatEdit::Retime(_)
                         | BeatEdit::Pitch(_)
@@ -426,7 +430,9 @@ impl DeadpanApp {
                 | Action::Edit(BeatEdit::Cutaway(
                     crate::navigation::cutaway::CutawayInput::Place { .. }
                 ))
-                | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
+                | Action::Edit(
+                    BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_)
+                )
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep

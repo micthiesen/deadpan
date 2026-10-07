@@ -471,7 +471,7 @@ fn check_hdr_report(fixture: &Fixture, report: &Value, transfer: u16) -> Result 
         fixture.name,
         report["failures"]
     );
-    assert_eq!(report["schema_version"], 2);
+    assert_eq!(report["schema_version"], 3);
     assert_eq!(report["picture_bits"], 10);
     let decision = &report["output_color"];
     assert_eq!(

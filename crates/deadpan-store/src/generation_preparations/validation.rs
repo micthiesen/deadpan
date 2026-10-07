@@ -16,7 +16,7 @@ pub(crate) fn digest(connection: &Connection) -> Result<crate::audit::Chain, Sto
         digest_dependencies(
             connection,
             &mut hash,
-            &record.controls,
+            &record.origin,
             record.request_id.as_ref(),
         )?;
     }
@@ -31,7 +31,7 @@ pub(crate) fn digest(connection: &Connection) -> Result<crate::audit::Chain, Sto
         digest_dependencies(
             connection,
             &mut hash,
-            &record.controls,
+            &record.origin,
             record.request_id.as_ref(),
         )?;
     }
@@ -41,13 +41,10 @@ pub(crate) fn digest(connection: &Connection) -> Result<crate::audit::Chain, Sto
 fn digest_dependencies(
     connection: &Connection,
     hash: &mut Sha256,
-    controls: &PreparationControls,
+    origin: &PreparationOrigin,
     fulfilled: Option<&RequestId>,
 ) -> Result<(), StoreError> {
-    let source = match controls {
-        PreparationControls::Request { request_id, .. } => Some(request_id),
-        PreparationControls::AcceptedArtifact => None,
-    };
+    let source = origin.source_request();
     for request in [source, fulfilled] {
         if let Some(request) = request {
             hash.update([1]);
@@ -87,13 +84,13 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     for (value, _) in rows {
         if value.project_id != *head.project_id()
             || value.current_revision != *head.revision_id()
-            || value.duration <= value.accepted.sampling.output_frame_count()
+            || !value.origin.supports_duration(value.duration)
         {
             return Err(invalid(
                 "preparation project, revision or replacement duration differs",
             ));
         }
-        validate_controls(connection, &value.controls)?;
+        validate_origin(connection, &value.origin)?;
         if value.state.is_active() {
             if origin
                 .as_ref()
@@ -112,19 +109,32 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
                 ));
             }
         }
-        validate_fulfilment(connection, value.request_id.as_ref(), value.duration)?;
+        validate_fulfilment(
+            connection,
+            value.request_id.as_ref(),
+            value.duration,
+            &value.origin,
+        )?;
     }
     Ok(())
 }
 
-fn validate_controls(
-    connection: &Connection,
-    controls: &PreparationControls,
-) -> Result<(), StoreError> {
-    if let PreparationControls::Request {
-        request_id,
-        options,
-    } = controls
+fn validate_origin(connection: &Connection, origin: &PreparationOrigin) -> Result<(), StoreError> {
+    if let PreparationOrigin::InsertedPause { .. } = origin
+        && origin != &PreparationOrigin::inserted_pause()
+    {
+        return Err(invalid(
+            "inserted AI pause controls differ from its command",
+        ));
+    }
+    if let PreparationOrigin::AcceptedExtension {
+        controls:
+            PreparationControls::Request {
+                request_id,
+                options,
+            },
+        ..
+    } = origin
     {
         let constraints: HoldConstraints =
             serde_json::from_str(&request_constraints(connection, request_id)?)?;
@@ -139,6 +149,7 @@ fn validate_fulfilment(
     connection: &Connection,
     request: Option<&RequestId>,
     duration: FrameDuration,
+    origin: &PreparationOrigin,
 ) -> Result<(), StoreError> {
     if let Some(request) = request {
         let constraints: HoldConstraints =
@@ -146,6 +157,14 @@ fn validate_fulfilment(
         if constraints.video.frames() != duration {
             return Err(invalid(
                 "fulfilled preparation duration differs from its request",
+            ));
+        }
+        if origin
+            .options()
+            .is_some_and(|options| options != &GenerationOptions::from_constraints(&constraints))
+        {
+            return Err(invalid(
+                "fulfilled preparation controls differ from its origin",
             ));
         }
         let attempts: bool = connection.query_row(
@@ -200,7 +219,7 @@ impl Replay {
         }
         for birth in births {
             let id = transitions::id_for(document.revision_id(), &birth.target)?;
-            let controls = if let Some(value) = read(connection, &id)? {
+            let origin = if let Some(value) = read(connection, &id)? {
                 let recorded_history: i64 = connection.query_row(
                     "SELECT history_id FROM generation_preparations WHERE id=?1",
                     [id.as_str()],
@@ -209,36 +228,40 @@ impl Replay {
                 if recorded_history != history
                     || value.project_id != *document.project_id()
                     || value.origin_target != birth.target
-                    || value.accepted != birth.accepted
+                    || !value.origin.same_birth(&birth.origin)
                     || value.duration != birth.duration
                 {
-                    return Err(invalid(
-                        "preparation differs from its validated duration command",
-                    ));
+                    return Err(invalid("preparation differs from its validated command"));
                 }
                 if self.targets.insert(id, birth.target.clone()).is_some() {
                     return Err(invalid("preparation birth identity is reused"));
                 }
-                value.controls
+                value.origin
             } else if let Some(value) = retention::read(connection, &id)? {
-                if value.history != history || value.origin_revision != *document.revision_id() {
-                    return Err(invalid(
-                        "retired preparation differs from its duration command",
-                    ));
+                if value.history != history
+                    || value.origin_revision != *document.revision_id()
+                    || !value.origin.same_birth(&birth.origin)
+                {
+                    return Err(invalid("retired preparation differs from its command"));
                 }
-                validate_controls(connection, &value.controls)?;
-                validate_fulfilment(connection, value.request_id.as_ref(), birth.duration)?;
+                validate_origin(connection, &value.origin)?;
+                validate_fulfilment(
+                    connection,
+                    value.request_id.as_ref(),
+                    birth.duration,
+                    &value.origin,
+                )?;
                 self.retired = self
                     .retired
                     .checked_add(1)
                     .ok_or_else(|| invalid("retirement count overflow"))?;
-                value.controls
+                value.origin
             } else {
                 return Err(invalid(
                     "replacement preparation identity differs from the command",
                 ));
             };
-            if let PreparationControls::Request { request_id, .. } = &controls
+            if let Some(request_id) = origin.source_request()
                 && !scopes.request_has_target(connection, request_id, &birth.target)?
             {
                 return Err(invalid(

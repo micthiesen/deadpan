@@ -239,6 +239,11 @@ pub enum SemanticInstruction {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         black: bool,
     },
+    /// Insert the ordinary silent freeze and durably request one AI candidate.
+    /// Counts scale the pause length; no installed model is needed to insert.
+    InsertAiPause {
+        length: PauseLength,
+    },
     /// Bleep the Visual selection (`,b`, `:bleep`): cut it into `register`
     /// and put back a pause of exactly its length that plays the same
     /// pictures forward with a tone in place of their sound.

@@ -674,6 +674,7 @@ impl Service {
             revision: revision.clone(),
             started: Instant::now(),
             request: None,
+            plan: None,
             variants,
             variant: 1,
             ready: 0,
@@ -1166,6 +1167,7 @@ impl Service {
         });
         Some(Update {
             session,
+            revision: Some(self.workspace.as_ref()?.document.revision_id().clone()),
             job: self
                 .generation
                 .job
@@ -1400,6 +1402,7 @@ impl Service {
     fn dispatch_attempt(&mut self, allocated: Allocated) {
         if let Some(job) = &mut self.generation.job {
             job.request = Some(allocated.request.request_id.clone());
+            job.plan = allocated.request.bridge_plan.clone();
             job.phase = Phase::Preparing;
         }
         // A new request supersedes the Hold's earlier candidate; a new

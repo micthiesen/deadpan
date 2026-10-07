@@ -14,6 +14,7 @@ use crate::{
 pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
     match command {
         Command::InsertTime { timing, .. }
+        | Command::InsertAiTime { timing, .. }
         | Command::SpliceSource { timing, .. }
         | Command::SpliceSourceAt { timing, .. }
         | Command::ReplaceSource { timing, .. }

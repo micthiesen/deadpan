@@ -1,7 +1,7 @@
 use super::*;
 use deadpan_core::{
-    Command, CommandRequest, GeneratedArtifact, HoldFallback, HoldVideo, NodeKind, OccurrenceEdit,
-    ProjectDocument, RepeatEditBranch, RepeatEditStep, ScopedNodeTarget, ValidatedScopedIsolation,
+    Command, CommandRequest, HoldFallback, HoldVideo, NodeKind, OccurrenceEdit, ProjectDocument,
+    RepeatEditBranch, RepeatEditStep, ScopedNodeTarget, ValidatedScopedIsolation,
 };
 use deadpan_jobs::GenerationOptions;
 use rusqlite::{Connection, params};
@@ -11,9 +11,8 @@ use std::collections::BTreeMap;
 #[derive(Clone)]
 pub(crate) struct Birth {
     pub target: ScopedNodeTarget,
-    pub accepted: GeneratedArtifact,
+    pub origin: PreparationOrigin,
     pub duration: FrameDuration,
-    pub controls: PreparationControls,
     pub fallback: HoldVideo,
 }
 
@@ -48,7 +47,9 @@ fn changes_provider(
         } => target.matches_instance(document, instance).unwrap_or(false),
         Command::EditScoped {
             target: edited,
-            edit: deadpan_core::ScopedNodeEdit::AcceptGeneratedHold { .. },
+            edit:
+                deadpan_core::ScopedNodeEdit::AcceptGeneratedHold { .. }
+                | deadpan_core::ScopedNodeEdit::RevertGeneratedHold,
             ..
         } => edited == target,
         Command::EditScopedMany { edits, .. } => edits.iter().any(|edit| {
@@ -56,15 +57,16 @@ fn changes_provider(
                 && matches!(
                     edit.edit,
                     deadpan_core::ScopedNodeEdit::AcceptGeneratedHold { .. }
+                        | deadpan_core::ScopedNodeEdit::RevertGeneratedHold
                 )
         }),
         _ => false,
     }
 }
 
-fn has_duration(command: &Command) -> bool {
+fn has_birth(command: &Command) -> bool {
     match command {
-        Command::SetHoldDuration { .. } => true,
+        Command::SetHoldDuration { .. } | Command::InsertAiTime { .. } => true,
         Command::EditOccurrence {
             edit: OccurrenceEdit::SetHoldDuration { .. },
             ..
@@ -73,7 +75,7 @@ fn has_duration(command: &Command) -> bool {
             .steps()
             .iter()
             .filter_map(|step| step.edit())
-            .any(|edit| has_duration(edit.command.as_command())),
+            .any(|edit| has_birth(edit.command.as_command())),
         _ => false,
     }
 }
@@ -152,6 +154,22 @@ fn leaf_births(
     request: &CommandRequest,
     after: &ProjectDocument,
 ) -> Result<Vec<Birth>, StoreError> {
+    if let Command::InsertAiTime { id, .. } = &request.command {
+        let target = targets(after)
+            .into_iter()
+            .find(|target| &target.node == id)
+            .ok_or_else(|| invalid("AI insertion has no allocated Hold in its result"))?;
+        let NodeKind::Hold { recipe } = &after.nodes()[id].kind else {
+            return Err(invalid("AI insertion allocated a non-Hold node"));
+        };
+        target.validate(after)?;
+        return Ok(vec![Birth {
+            target,
+            origin: PreparationOrigin::inserted_pause(),
+            duration: recipe.duration,
+            fallback: recipe.video.clone(),
+        }]);
+    }
     let Some(edited_node) = duration_node(&request.command) else {
         return Ok(Vec::new());
     };
@@ -186,9 +204,11 @@ fn leaf_births(
             target.validate(after)?;
             result.push(Birth {
                 target,
-                accepted: accepted.artifact.clone(),
+                origin: PreparationOrigin::AcceptedExtension {
+                    accepted: Box::new(accepted.artifact.clone()),
+                    controls: PreparationControls::AcceptedArtifact,
+                },
                 duration: recipe.duration,
-                controls: PreparationControls::AcceptedArtifact,
                 fallback: recipe.video.clone(),
             });
         }
@@ -203,7 +223,7 @@ pub(crate) fn derive(
     request: &CommandRequest,
     after: &ProjectDocument,
 ) -> Result<Vec<Birth>, StoreError> {
-    if !has_duration(&request.command) {
+    if !has_birth(&request.command) {
         return Ok(Vec::new());
     }
     if !matches!(request.command, Command::Compound { .. }) {
@@ -222,7 +242,24 @@ pub(crate) fn derive(
             Ok(())
         })?;
         result.extend(leaf_births(visit.before, leaf, visit.after)?);
+        // Isolation proves cloned identities, while ordinary wrap/ungroup
+        // commands can change their Repeat ancestry without cloning a node.
+        // Recover that authored address from the exact retained ID only.
+        let relocated = result
+            .iter()
+            .any(|birth| birth.target.validate(visit.after).is_err())
+            .then(|| targets(visit.after));
         result.retain_mut(|birth| {
+            if birth.target.validate(visit.after).is_err() {
+                let Some(target) = relocated.as_ref().and_then(|targets| {
+                    targets
+                        .iter()
+                        .find(|target| target.node == birth.target.node)
+                }) else {
+                    return false;
+                };
+                birth.target = target.clone();
+            }
             let Some(NodeKind::Hold { recipe }) = visit
                 .after
                 .nodes()
@@ -232,7 +269,7 @@ pub(crate) fn derive(
                 return false;
             };
             if recipe.video != birth.fallback
-                || recipe.duration <= birth.accepted.sampling.output_frame_count()
+                || !birth.origin.supports_duration(recipe.duration)
                 || birth.target.validate(visit.after).is_err()
             {
                 return false;
@@ -262,11 +299,14 @@ pub(crate) fn command_births(
     }
     let requests = crate::generation_scope::preview_command(connection, before, request, after)?;
     for birth in &mut births {
+        let PreparationOrigin::AcceptedExtension { controls, .. } = &mut birth.origin else {
+            continue;
+        };
         if let Some(request) = requests
             .iter()
             .find(|request| request.target == birth.target)
         {
-            birth.controls = PreparationControls::Request {
+            *controls = PreparationControls::Request {
                 request_id: request.request_id.clone(),
                 options: GenerationOptions::from_constraints(&request.constraints),
             };
@@ -289,11 +329,13 @@ fn has_provider(command: &Command) -> bool {
         Command::EditScoped { edit, .. } => matches!(
             edit,
             deadpan_core::ScopedNodeEdit::AcceptGeneratedHold { .. }
+                | deadpan_core::ScopedNodeEdit::RevertGeneratedHold
         ),
         Command::EditScopedMany { edits, .. } => edits.iter().any(|edit| {
             matches!(
                 edit.edit,
                 deadpan_core::ScopedNodeEdit::AcceptGeneratedHold { .. }
+                    | deadpan_core::ScopedNodeEdit::RevertGeneratedHold
             )
         }),
         Command::Compound { transaction } => transaction
@@ -389,7 +431,7 @@ pub(crate) fn history_births(
         return Ok(Vec::new());
     }
     let history = crate::validation::read_history(connection, entry)?;
-    if !has_duration(&history.request.command) {
+    if !has_birth(&history.request.command) {
         return Ok(Vec::new());
     }
     let before =
@@ -401,13 +443,17 @@ pub(crate) fn history_births(
     // though Undo deliberately made the old request stale.
     for birth in &mut births {
         let id = id_for(&history.request.new_revision, &birth.target)?;
-        if let Some(record) = read(connection, &id)? {
-            birth.controls = record.controls.clone();
+        let origin = if let Some(record) = read(connection, &id)? {
+            record.origin
         } else if let Some(record) = retention::read(connection, &id)? {
-            birth.controls = record.controls;
+            record.origin
         } else {
-            return Err(invalid("redo has no original replacement controls proof"));
+            return Err(invalid("redo has no original preparation origin proof"));
+        };
+        if !origin.same_birth(&birth.origin) {
+            return Err(invalid("redo preparation origin differs from its command"));
         }
+        birth.origin = origin;
     }
     Ok(births)
 }
@@ -461,8 +507,7 @@ pub(crate) fn insert_births(
             current_revision: after.revision_id().clone(),
             target: birth.target,
             duration: birth.duration,
-            accepted: birth.accepted,
-            controls: birth.controls,
+            origin: birth.origin,
             state: PreparationState::Queued,
             claim_sequence: 0,
             reason: None,

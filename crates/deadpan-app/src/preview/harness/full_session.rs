@@ -803,8 +803,8 @@ fn ai_pause(d: &mut Driver<'_>, hold: &NodeId) -> Result<(), String> {
     }
     focus_edit(d)?;
     select(d, hold)?;
-    taught(d, "AI pictures", &[",a"])?;
-    plain(d, ",a")?;
+    taught(d, "AI pictures", &[":hold-provider ai"])?;
+    d.command("hold-provider ai")?;
     d.wait_for("AI variant Ready", |app| {
         app.ai.job().is_some_and(|job| !job.running()) && app.ai.variant_count() >= 1
     })?;

@@ -717,6 +717,9 @@ where
                 SemanticInstruction::InsertPause { length, black } => {
                     self.insert_pause(index, *length, *black)?;
                 }
+                SemanticInstruction::InsertAiPause { length } => {
+                    self.insert_ai_pause(index, *length)?;
+                }
                 SemanticInstruction::SetFraming { framing } => {
                     self.set_framing(index, framing.as_deref().cloned())?;
                 }
@@ -854,6 +857,7 @@ where
                     instruction,
                     SemanticInstruction::CutFrames { .. }
                         | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::InsertAiPause { .. }
                         | SemanticInstruction::InsertReverse { .. }
                         | SemanticInstruction::Lift { .. }
                         | SemanticInstruction::Bleep { .. }

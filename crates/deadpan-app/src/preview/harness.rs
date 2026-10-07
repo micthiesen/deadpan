@@ -11,6 +11,7 @@ use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
 mod accessibility;
+mod ai_insertion;
 mod ai_pause;
 mod ai_replacements;
 mod audio_treatments;
@@ -316,6 +317,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 ai_pause::backend()
                             } else if name == "ai-replacements" {
                                 ai_replacements::backend()
+                            } else if name == "ai-insertion" {
+                                ai_insertion::backend()
                             } else if name == "jobs" {
                                 jobs::backend()
                             } else if name == "ai-variants"
@@ -508,6 +511,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     ai_pause::compare(&mut driver)
                 } else if name == "ai-replacements" {
                     ai_replacements::run(&mut driver)
+                } else if name == "ai-insertion" {
+                    ai_insertion::run(&mut driver)
                 } else if name == "ai-scoped" {
                     ai_pause::scoped(&mut driver)
                 } else if name == "model-packs" {

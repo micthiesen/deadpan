@@ -128,11 +128,40 @@ assertions, relocated bundle verification, packaged accepted-media export, all
 68 runnable replay scenarios and separate release performance. The two
 fixture-only replay scenarios remain explicitly skipped. The four full-run
 failures were harness assumptions; the five affected corrective replays passed.
-DP-12 still needs counted `,a` insertion, `:hold-provider ai`, keyboard revert,
-source-boundary replacement, one-sided extension and native duration reporting.
-The proposed timing report patch at
-`/tmp/deadpan-resume-20261006/native-duration-reporting.patch` has not been
-applied or qualified; its adjacent `.md` records the design and checks owed.
+[Counted AI insertion](../qualification/ai-insertion-2026-10-07.md) now saves
+the same silent freeze as `,h` plus durable AI intent in one transaction.
+`,a`/counts, `:ai-hold` and the exact `:hold 1.5s video=ai audio=silence`
+grammar share captured timing and targets. `:hold-provider ai` generates for
+an existing Hold; `:revert-ai` restores its captured fallback after later
+edits, including one Repeat play. Native timing distinguishes inserted,
+boundary and movie intervals, discloses material speed conversion and keeps
+the original map after shortening. Schema 71 deliberately refuses earlier
+unused development packages.
+
+The gate passed in parts (4,981 workspace tests, 1,056 UI tests and two doc
+tests); the command-grammar follow-up adds two parser tests and passes all
+47 relevant tests in each configuration plus a 57-check native replay.
+Seventy-nine real-model assertions and a final fresh-home packaged export pass.
+All 69 runnable native scenarios pass in parts, with two fixture-only skips;
+one Trim harness publication race was corrected and its 166 checks pass.
+The final 133-check editing-to-export replay and five separate release
+performance scenarios (1,408 checks) pass. The export verifier now explicitly
+reports indistinguishable neighbor identities under lossy encoding; unchanged
+pixel/timing/audio gates pass on all 144 output frames and five audio windows.
+Thirteen focused verifier tests and nine optimized SDR/HDR integration tests
+pass. Exact failures, coverage limits, hashes and performance outliers remain
+in the qualification record; DP-18/DP-24 remain open.
+
+DP-12 still needs source-boundary replacement and one-sided extension.
+Read-only design notes are in `/tmp/deadpan-resume-20261006/` as
+`boundary-replacement-design.md` and `one-sided-extension-design.md`. Read
+`boundary-replacement-design-review.md` before implementation: it requires
+exclusive Play ownership, durable intent through Ready, consistent measured
+endpoint relevance, bounded shared indexes and order-independent final fallback
+selection. The
+bounded real-runtime `extension-probe` experiments establish both directional
+frame mappings on one synthetic input; they do not establish app integration
+or production quality.
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate remains about 86%.
 

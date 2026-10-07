@@ -209,7 +209,10 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 
 | GUI | Headless | Checks | Status |
 |---|---|---|---|
-| `,a`, `:generate N`, Generate another | `generate-hold <p> --hold <id> [--variants N] [--another]`; live `Generate` | - | Equivalent |
+| `,a`, `3,a`, `:ai-hold DURATION` | semantic `insert_ai_pause` via macro apply; typed `insert_ai_time` | R, D | Equivalent |
+| `:hold-provider ai`, `:generate N`, Generate another | `generate-hold <p> --hold <id> [--variants N] [--another]`; live `Generate` | - | Equivalent |
+| `:revert-ai`, `:hold-provider fallback` | `revert_generated_hold`; `edit_scoped` with `revert_generated_hold` for Default/Play | R, D | Equivalent |
+| Jobs Retry/Discard an AI preparation | `ai-replacements <p> --retry ID --expected REVISION` / `--discard ID --sequence N`; closed projects run queued work with `--run` | R | Equivalent |
 | `:cancel-ai` | SIGINT / live `CancelGeneration` | - | Equivalent |
 | Inspector variant list | `ai-variants <p> [--hold <id>]`: the shared offered-variant set, selection, kept/picked state, expiry and interrupted attempts | - | Equivalent (read) |
 | `:next-ai`, `:prev-ai`, `:pick-ai N` | `select-hold <p> --request <id> --attempt <id>`; live `GenerationVariant` | - | Equivalent |
