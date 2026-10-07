@@ -230,6 +230,25 @@ impl Report {
     }
 }
 
+/// The committed coverage-guided corpus for `name` (`fuzz/corpus/<name>`),
+/// in a stable order; empty when the directory is absent.
+pub fn committed_corpus(name: &str) -> Vec<Vec<u8>> {
+    let directory = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fuzz/corpus")
+        .join(name);
+    seeds_from_dir(&directory)
+}
+
+/// Writes each seed to `<directory>/<fnv1a>`; content-addressed, so repeated
+/// exports are idempotent. Export is a developer action: a failure panics.
+fn export_seeds(directory: &Path, corpus: &[Vec<u8>]) {
+    std::fs::create_dir_all(directory).expect("create seed export directory");
+    for seed in corpus {
+        let name = format!("{:016x}", fnv1a(seed));
+        std::fs::write(directory.join(name), seed).expect("write exported seed");
+    }
+}
+
 fn environment_mode(target: &Target) -> Mode {
     if let Some(path) = std::env::var_os("DEADPAN_CHAOS_REPLAY") {
         return Mode::Replay(path.into());
@@ -518,6 +537,20 @@ pub fn fuzz<F: Fn(&[u8]) -> Outcome>(target: Target, seeds: Vec<Vec<u8>>, run: F
     if corpus.is_empty() {
         corpus.push(Vec::new());
     }
+    if let Some(directory) = std::env::var_os("DEADPAN_CHAOS_EXPORT_SEEDS") {
+        // Seed export for the coverage-guided libFuzzer targets (`cargo xtask
+        // fuzz`): write the initial corpus and run nothing.
+        export_seeds(&PathBuf::from(directory).join(target.name), &corpus);
+        report.elapsed = started.elapsed();
+        return report;
+    }
+    // Replay the committed, minimized libFuzzer corpus of the same name, so
+    // the stable regression suite re-executes every input the coverage-guided
+    // campaigns kept, including fixed crash reproducers.
+    corpus.extend(committed_corpus(target.name).into_iter().map(|mut input| {
+        input.truncate(target.max_input_bytes);
+        input
+    }));
     let parsed: Vec<Option<serde_json::Value>> = corpus
         .iter()
         .map(|bytes| match target.shape {
@@ -707,9 +740,129 @@ pub fn read_stream(
     Ok(Verdict::Accepted)
 }
 
+/// Shared stable/nightly framed-protocol exercise. Selectors are identical in
+/// both runners: 0 reads and round-trips requests, 1 reads responses, and 2
+/// reads one initial request then classifies its responses against that exact
+/// request. Callbacks keep this development crate independent of worker jobs.
+pub fn protocol_stream<Request, Response, Classifier>(
+    input: &[u8],
+    mut read_request: impl FnMut(&mut &[u8]) -> Result<Option<Request>, String>,
+    mut write_request: impl FnMut(&mut Vec<u8>, &Request) -> Result<(), String>,
+    mut read_response: impl FnMut(&mut &[u8]) -> Result<Option<Response>, String>,
+    mut prepare: impl FnMut(&Request) -> Result<Classifier, String>,
+    mut classify: impl FnMut(&Classifier, &Response) -> Result<(), String>,
+) -> Outcome {
+    let (selector, stream) = select(input);
+    match selector % 3 {
+        0 => {
+            let mut violation = None;
+            let outcome = read_stream(stream, 64, |reader| {
+                let Some(request) = read_request(reader)? else {
+                    return Ok(None);
+                };
+                let mut encoded = Vec::new();
+                let problem = match write_request(&mut encoded, &request) {
+                    Err(error) => Some(format!("admitted request did not re-encode: {error}")),
+                    Ok(()) => {
+                        let mut again = encoded.as_slice();
+                        match read_request(&mut again) {
+                            Ok(Some(_)) if again.is_empty() => None,
+                            _ => Some("admitted request did not round-trip completely".into()),
+                        }
+                    }
+                };
+                if let Some(problem) = problem {
+                    violation = Some(problem.clone());
+                    return Err(problem);
+                }
+                Ok(Some(()))
+            });
+            violation.map_or(outcome, Err)
+        }
+        1 => read_stream(stream, 64, |reader| Ok(read_response(reader)?.map(|_| ()))),
+        _ => {
+            let mut reader = stream;
+            let request = match read_request(&mut reader) {
+                Ok(Some(request)) => request,
+                Ok(None) => return Ok(Verdict::Rejected("missing initial request".into())),
+                Err(error) => return reject(error),
+            };
+            if reader.len() == stream.len() {
+                return Err("reader admitted an initial request without consuming input".into());
+            }
+            let classifier = match prepare(&request) {
+                Ok(classifier) => classifier,
+                Err(error) => return reject(error),
+            };
+            read_stream(reader, 64, |reader| match read_response(reader)? {
+                Some(response) => {
+                    classify(&classifier, &response)?;
+                    Ok(Some(()))
+                }
+                None => Ok(None),
+            })
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn protocol_selector_two_classifies_the_response_against_its_own_request() {
+        fn read(input: &mut &[u8]) -> Result<Option<u8>, String> {
+            let Some((first, rest)) = input.split_first() else {
+                return Ok(None);
+            };
+            *input = rest;
+            Ok(Some(*first))
+        }
+        let mut classified = Vec::new();
+        let outcome = protocol_stream(
+            &[2, 37, 37, 12],
+            read,
+            |output, request| {
+                output.push(*request);
+                Ok(())
+            },
+            read,
+            |request| Ok(*request),
+            |request, response| {
+                classified.push((*request, *response));
+                if request == response {
+                    Ok(())
+                } else {
+                    Err("different attempt".into())
+                }
+            },
+        )
+        .unwrap();
+        assert_eq!(classified, [(37, 37), (37, 12)]);
+        assert!(
+            matches!(outcome, Verdict::Rejected(reason) if reason.contains("different attempt"))
+        );
+    }
+
+    #[test]
+    fn protocol_request_roundtrip_errors_are_invariant_failures() {
+        fn read(input: &mut &[u8]) -> Result<Option<u8>, String> {
+            let Some((first, rest)) = input.split_first() else {
+                return Ok(None);
+            };
+            *input = rest;
+            Ok(Some(*first))
+        }
+        let outcome = protocol_stream(
+            &[0, 1],
+            read,
+            |_, _| Err("broken writer".into()),
+            read,
+            |request| Ok(*request),
+            |_: &u8, _: &u8| Ok(()),
+        );
+        assert!(outcome.unwrap_err().contains("did not re-encode"));
+    }
 
     #[test]
     fn panics_are_captured_minimized_and_saved() {

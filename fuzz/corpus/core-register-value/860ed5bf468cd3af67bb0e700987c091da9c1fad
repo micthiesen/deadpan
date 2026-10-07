@@ -1,0 +1,1 @@
+{"program":{"instructions":[{"register":"b","selector":{"motion":{"count":2,"forward":true,"type":"frames"},"type":"motion"},"type":"yank"},{"plays":3,"selector":{"type":"visual_selection"},"type":"repeat"},{"register":"b","selector":{"type":"selected_beat"},"type":"yank"},{"before":true,"register":"a","type":"paste"}]},"type":"macro"}

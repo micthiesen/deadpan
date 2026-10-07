@@ -1,0 +1,1 @@
+{"program":{"instructions":[{"register":"b","type":"yank_beat"},{"before":false,"register":"b","type":"paste"},{"count":1,"register":"z","type":"call"}]},"type":"macro"}

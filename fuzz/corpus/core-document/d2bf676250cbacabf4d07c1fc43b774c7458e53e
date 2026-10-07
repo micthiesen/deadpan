@@ -1,0 +1,730 @@
+{
+  "schema_version": 46,
+  "project_id": "f1d983ad-470a-469a-b09f-924ecdf72fd5",
+  "revision_id": "e4787c87-50d7-41dc-adce-e1214f95e363",
+  "presentation_basis": {
+    "width": 16,
+    "height": 16,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": null
+  },
+  "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+  "nodes": {
+    "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "splice-copy-0",
+          "splice-copy-1",
+          "selected-split-0",
+          "selected-pause-hold",
+          "selected-split-1"
+        ]
+      }
+    },
+    "hold": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "envelope",
+          "envelope": {
+            "initial": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "1",
+                "denominator": "1"
+              }
+            },
+            "segments": [
+              {
+                "end": {
+                  "numerator": "1",
+                  "denominator": "1"
+                },
+                "pose": {
+                  "center_x": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "center_y": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "scale": {
+                    "numerator": "27",
+                    "denominator": "20"
+                  }
+                },
+                "curve": {
+                  "type": "smoothstep"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "selected-pause-hold": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 2,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "selected-split-0": {
+      "label": "Retained pending rename",
+      "kind": {
+        "type": "retime",
+        "child": "source",
+        "duration": 5,
+        "mapping": {
+          "start": 0,
+          "end": 5
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "selected-split-1": {
+      "label": "Retained pending rename",
+      "kind": {
+        "type": "retime",
+        "child": "selected-split-2",
+        "duration": 25,
+        "mapping": {
+          "start": 5,
+          "end": 30
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "selected-split-2": {
+      "label": "Retained pending rename",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 30,
+          "video": {
+            "type": "blank"
+          },
+          "video_mapping": {
+            "type": "fit_beat"
+          },
+          "audio": {
+            "asset": "audio",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 48000,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "selected_placement",
+            "start": {
+              "numerator": "-2",
+              "denominator": "3"
+            },
+            "frames": {
+              "numerator": "30000",
+              "denominator": "1001"
+            },
+            "selection": {
+              "start": {
+                "numerator": "2",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "20",
+                "denominator": "1"
+              }
+            }
+          },
+          "link": "independent",
+          "audio_offset": -31
+        }
+      }
+    },
+    "source": {
+      "label": "Retained pending rename",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 30,
+          "video": {
+            "type": "blank"
+          },
+          "video_mapping": {
+            "type": "fit_beat"
+          },
+          "audio": {
+            "asset": "audio",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 48000,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "selected_placement",
+            "start": {
+              "numerator": "-2",
+              "denominator": "3"
+            },
+            "frames": {
+              "numerator": "30000",
+              "denominator": "1001"
+            },
+            "selection": {
+              "start": {
+                "numerator": "2",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "20",
+                "denominator": "1"
+              }
+            }
+          },
+          "link": "independent",
+          "audio_offset": -31
+        }
+      }
+    },
+    "splice-copy-0": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "hold",
+        "duration": 3,
+        "mapping": {
+          "start": 0,
+          "end": 3
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "splice-copy-1": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "splice-copy-2",
+        "duration": 5,
+        "mapping": {
+          "start": 3,
+          "end": 8
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "splice-copy-2": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "envelope",
+          "envelope": {
+            "initial": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "1",
+                "denominator": "1"
+              }
+            },
+            "segments": [
+              {
+                "end": {
+                  "numerator": "1",
+                  "denominator": "1"
+                },
+                "pose": {
+                  "center_x": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "center_y": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "scale": {
+                    "numerator": "27",
+                    "denominator": "20"
+                  }
+                },
+                "curve": {
+                  "type": "smoothstep"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "audio": {
+      "label": "Retained original audio fixture",
+      "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "video": null,
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 48000,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": null
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "hold": {
+      "allocation": "splice",
+      "origin": "hold"
+    },
+    "selected-split-2": {
+      "allocation": "selected-pause",
+      "origin": "source"
+    },
+    "source": {
+      "allocation": "selected-pause",
+      "origin": "source"
+    },
+    "splice-copy-2": {
+      "allocation": "splice",
+      "origin": "hold"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "selected-pause",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f": {
+              "duration": 38,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "splice-copy-0",
+                  "splice-copy-1",
+                  "source"
+                ]
+              }
+            },
+            "hold": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            },
+            "source": {
+              "duration": 30,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "15861",
+                    "denominator": "8008"
+                  },
+                  "end": {
+                    "numerator": "160005",
+                    "denominator": "8008"
+                  }
+                }
+              }
+            },
+            "splice-copy-0": {
+              "duration": 3,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "hold",
+                "mapping": {
+                  "start": 0,
+                  "end": 3
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "splice-copy-1": {
+              "duration": 5,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "splice-copy-2",
+                "mapping": {
+                  "start": 3,
+                  "end": 8
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "splice-copy-2": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {},
+          "audio_lineage": {
+            "hold": {
+              "allocation": "splice",
+              "origin": "hold"
+            },
+            "splice-copy-2": {
+              "allocation": "splice",
+              "origin": "hold"
+            }
+          }
+        }
+      },
+      {
+        "id": {
+          "allocation": "splice",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "hold"
+                ]
+              }
+            },
+            "hold": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "hold": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "splice",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "selected-split-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "selected-pause",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "source"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "5",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "selected-pause",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "source"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "5",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "source": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "selected-pause",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "source"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "splice-copy-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "splice",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "3",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "splice",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "hold"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "3",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+    // Adopted from rustup:
+    // https://github.com/rust-lang/rustup/blob/1.21.1/src/cli/self_update.rs#L1036
+    // Copyright Diggory Blake, the Mozilla Corporation, and rustup contributors.
+    // Licensed under either of
+    // - Apache License, Version 2.0
+    // - MIT license

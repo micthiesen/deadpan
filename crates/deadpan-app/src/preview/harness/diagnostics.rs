@@ -51,6 +51,20 @@ const ROWS: [&str; 8] = [
     "UI updates: ",
 ];
 
+fn save_report(d: &mut Driver<'_>) -> Result<(), String> {
+    for _ in 0..20 {
+        if nodes(d)
+            .iter()
+            .any(|node| node["focused"] == true && node["label"] == "Save diagnostic report…")
+        {
+            d.key(Key::Enter)?;
+            return d.settled();
+        }
+        d.key(Key::Tab)?;
+    }
+    Err("Tab never reached Save diagnostic report".into())
+}
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push(
         "Counters are this replay process's own observations. No audio device, model worker or physical display runs here, so underrun, device-queue and worker-memory rows stay at their idle values; their recording is covered by deadpan-playback, deadpan-jobs and deadpan-native-process tests.".into(),
@@ -109,6 +123,52 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"open":d.app().diagnostics.open,"revision":d.revision()}),
     )?;
     d.capture("Diagnostics after resampling")?;
+
+    let destination = d.options.output.join("diagnostic-report.json");
+    d.app_mut().dialogs = crate::dialogs::Dialogs::scripted(vec![
+        (DialogKind::DiagnosticReport, None),
+        (DialogKind::DiagnosticReport, Some(destination.clone())),
+        (DialogKind::DiagnosticReport, Some(destination.clone())),
+    ]);
+    save_report(d)?;
+    d.check(
+        "Cancelling diagnostic export creates no file or edit",
+        !destination.exists() && d.revision() == revision,
+        json!("no file or edit"),
+        json!({"file":destination.exists(),"revision":d.revision()}),
+    )?;
+    save_report(d)?;
+    d.wait_for("Diagnostic report saved", |app| {
+        app.diagnostics
+            .export_status
+            .as_deref()
+            .is_some_and(|status| status.starts_with("Saved "))
+    })?;
+    let saved = std::fs::read(&destination).map_err(|error| error.to_string())?;
+    let report: Value = serde_json::from_slice(&saved).map_err(|error| error.to_string())?;
+    d.check(
+        "Keyboard export writes a bounded structural report without editing",
+        saved.len() <= deadpan_cli::diagnostic_export::MAX_BYTES
+            && report["schema_version"] == 1
+            && report["project"]["status"] == "available"
+            && d.revision() == revision,
+        json!("bounded versioned report, available project, unchanged revision"),
+        json!({"bytes":saved.len(),"project":report["project"],"revision":d.revision()}),
+    )?;
+    save_report(d)?;
+    d.wait_for("Diagnostic destination collision reported", |app| {
+        app.diagnostics
+            .export_status
+            .as_deref()
+            .is_some_and(|status| status.contains("DiagnosticAlreadyExists"))
+    })?;
+    d.check(
+        "Existing diagnostic reports are preserved with an actionable error",
+        std::fs::read(&destination).map_err(|error| error.to_string())? == saved,
+        json!("original report unchanged"),
+        json!(d.app().diagnostics.export_status),
+    )?;
+    d.capture("Diagnostic export completed without user content")?;
 
     d.key(Key::Escape)?;
     d.settled()?;

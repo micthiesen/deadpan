@@ -8,7 +8,14 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[lib]
+test = false
+doctest = false
+
 [features]
+# Exposes the production parser to the separate nightly fuzz workspace. The
+# default library is empty; fuzzing never creates a window or starts services.
+fuzzing = []
 # Developer-only whole-workspace replay. The shipped app does not include the runner.
 ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:rusqlite", "dep:tempfile", "deadpan-cli/synthetic-worker"]
 
@@ -55,6 +62,7 @@ objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std
 # Service tests run the scripted Ready ending through the synthetic worker.
 deadpan-cli = { path = "../deadpan-cli", features = ["synthetic-worker"] }
 blake3.workspace = true
+deadpan-chaos.workspace = true
 deadpan-native-process.workspace = true
 rusqlite.workspace = true
 tempfile.workspace = true

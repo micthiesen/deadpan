@@ -1,0 +1,223 @@
+# Coverage-guided libFuzzer targets for Deadpan's untrusted input boundaries.
+# A separate workspace: the product toolchain stays pinned stable, while these
+# targets build only with `cargo +nightly fuzz` through `cargo xtask fuzz`.
+# See docs/ADVERSARIAL.md.
+[package]
+name = "deadpan-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+members = ["."]
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+deadpan-app = { path = "../crates/deadpan-app", features = ["fuzzing"] }
+deadpan-analysis = { path = "../crates/deadpan-analysis" }
+deadpan-chaos = { path = "../crates/deadpan-chaos" }
+deadpan-cli = { path = "../crates/deadpan-cli" }
+deadpan-core = { path = "../crates/deadpan-core" }
+deadpan-jobs = { path = "../crates/deadpan-jobs" }
+deadpan-media = { path = "../crates/deadpan-media" }
+deadpan-models = { path = "../crates/deadpan-models" }
+deadpan-source = { path = "../native/deadpan-source", features = ["fuzzing"] }
+serde_json = "=1.0.151"
+tempfile = "=3.27.0"
+
+[profile.release]
+debug = 1
+overflow-checks = true
+
+[[bin]]
+name = "app-keymap-config"
+path = "fuzz_targets/app-keymap-config.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "analysis-transcript"
+path = "fuzz_targets/analysis-transcript.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli-admission-probe-protocol"
+path = "fuzz_targets/cli-admission-probe-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli-encoded-protocol"
+path = "fuzz_targets/cli-encoded-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli-render-protocol"
+path = "fuzz_targets/cli-render-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli-update-manifests"
+path = "fuzz_targets/cli-update-manifests.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli-verification-protocol"
+path = "fuzz_targets/cli-verification-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-audio-context"
+path = "fuzz_targets/core-audio-context.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-audio-layout"
+path = "fuzz_targets/core-audio-layout.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-command"
+path = "fuzz_targets/core-command.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-document"
+path = "fuzz_targets/core-document.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-edit-slice"
+path = "fuzz_targets/core-edit-slice.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-gag-recipe"
+path = "fuzz_targets/core-gag-recipe.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-patch"
+path = "fuzz_targets/core-patch.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "core-register-value"
+path = "fuzz_targets/core-register-value.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jobs-faces-protocol"
+path = "fuzz_targets/jobs-faces-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jobs-generation-protocol"
+path = "fuzz_targets/jobs-generation-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jobs-tracking-protocol"
+path = "fuzz_targets/jobs-tracking-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jobs-transcription-protocol"
+path = "fuzz_targets/jobs-transcription-protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "media-audio-index"
+path = "fuzz_targets/media-audio-index.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "media-source-index"
+path = "fuzz_targets/media-source-index.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "models-conditioning-manifest"
+path = "fuzz_targets/models-conditioning-manifest.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "models-pack-manifest"
+path = "fuzz_targets/models-pack-manifest.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "source-container-audio"
+path = "fuzz_targets/source-container-audio.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "source-container-video"
+path = "fuzz_targets/source-container-video.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "source-ffv1-config"
+path = "fuzz_targets/source-ffv1-config.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "source-hevc-sps"
+path = "fuzz_targets/source-hevc-sps.rs"
+test = false
+doc = false
+bench = false

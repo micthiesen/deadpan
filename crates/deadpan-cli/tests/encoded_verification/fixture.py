@@ -10,6 +10,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import runpy
 import struct
 import sys
 
@@ -90,6 +91,14 @@ if mode == "completed_exit_failure":
 else:
     assert sys.argv[3] == "--render-verify-worker"
 assert request["op"] == "inspect"
+# Hostile modes (tests/hostile_workers): misbehave, or rewrite the staged input.
+hostile = runpy.run_path(str(Path(__file__).parent.parent / "hostile_workers" / "hostile.py"))
+hostile["generic"](mode)
+if mode.startswith("hostile:tamper_input:"):
+    with open("input/movie.mp4", "r+b") as staged:
+        staged.write(b"\0" * 64)
+        staged.truncate(64)
+    raise SystemExit(5)
 assert Path("input/movie.mp4").is_file()
 manifest = request["manifest"]
 identity = request["identity"]

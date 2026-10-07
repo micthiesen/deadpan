@@ -265,6 +265,47 @@ fn iterations() -> u64 {
         .unwrap_or(8)
 }
 
+/// SIGKILL can interrupt any write in `writeln!`, including between the
+/// record prefix and its identity. Only a newline acknowledges a complete
+/// report. A torn commit report is covered by its preceding attempt report.
+fn complete_reports(log: &str) -> impl Iterator<Item = &str> {
+    log.split_inclusive('\n')
+        .filter_map(|line| line.strip_suffix('\n'))
+}
+
+#[test]
+fn a_kill_at_any_report_byte_preserves_only_complete_acknowledgements() -> Result {
+    let records = [
+        "attempt-commit c0-1\n",
+        "commit c0-1\n",
+        "generation request-c0-1\n",
+        "backup\n",
+        "checkpoint\n",
+    ];
+    let log = records.concat();
+    for cut in 0..=log.len() {
+        let prefix = &log[..cut];
+        let reports = complete_reports(prefix).collect::<Vec<_>>();
+        let expected = prefix.bytes().filter(|byte| *byte == b'\n').count();
+        assert_eq!(reports.len(), expected, "cut at byte {cut}");
+        for (line, original) in reports.iter().zip(&records) {
+            assert_eq!(*line, original.trim_end(), "cut at byte {cut}");
+            if let Some(revision) = line
+                .strip_prefix("attempt-commit ")
+                .or_else(|| line.strip_prefix("commit "))
+            {
+                RevisionId::new(revision)?;
+            } else if let Some(request) = line.strip_prefix("generation ") {
+                RequestId::new(request)?;
+            }
+        }
+    }
+    // A complete malformed report still reaches validation and fails.
+    let bad = complete_reports("commit \n").next().unwrap();
+    assert!(RevisionId::new(bad.strip_prefix("commit ").unwrap()).is_err());
+    Ok(())
+}
+
 #[test]
 fn random_process_kills_during_commits_attempts_backups_and_checkpoints_never_corrupt_the_project()
 -> Result {
@@ -313,7 +354,7 @@ fn random_process_kills_during_commits_attempts_backups_and_checkpoints_never_co
         let lines = std::fs::read_to_string(&log).unwrap_or_default();
         let mut attempted = None;
         let mut operations = 0;
-        for line in lines.lines() {
+        for line in complete_reports(&lines) {
             operations += 1;
             if let Some(name) = line.strip_prefix("attempt-commit ") {
                 attempted = Some(RevisionId::new(name)?);

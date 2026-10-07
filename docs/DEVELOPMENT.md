@@ -9,9 +9,9 @@ Clang, and Make available:
 
 ```sh
 python3 tools/media-qualification/compatible/build.py \
-  --work /tmp/deadpan-ffmpeg-dev \
-  --output /tmp/deadpan-ffmpeg-dev-build.json
-export DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ffmpeg-dev/prefix
+  --work "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3" \
+  --output "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-build.json"
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
 ```
 
 The work directory must be empty. The builder verifies the pinned archive hash
@@ -23,6 +23,15 @@ Keep the prefix available when running Cargo-built executables. A packaged
 reads the prefix at run time; see [Packaging](#packaging).
 CI builds the same pinned dependency before running the complete gate.
 These developer tools must never become end-user requirements.
+
+Use a durable development directory for this dependency. macOS's temporary-file
+cleanup removed headers from the former `/private/tmp/deadpan-ui-ffmpeg/prefix`.
+On 2026-10-06 the pinned builder rebuilt FFmpeg in the location above and verified
+its release signature, configuration and installed libraries. Reuse that prefix
+for local checks; the old temporary prefix remains only for existing development
+binaries until they are rebuilt. Do not relocate dylibs by copying alone: their
+install names must match the new prefix. The build report and command logs live
+beside the durable build, outside the repository.
 
 ## Validation workflow
 
@@ -185,13 +194,14 @@ release executables, relocated FFmpeg libraries, the bundled downloader
 baseline, notices, an SBOM and provenance. It builds in its own path-remapped
 `target/bundle` directory, so it never disturbs `target/release`.
 `bundle-verify` exercises a copy in a scrubbed environment with an isolated
-`HOME`, including tampered and missing helper cases. It is ad hoc signed unless you pass a Developer ID
-identity, and notarization needs the owner's credentials. See
+`HOME`, including tampered and missing helper cases. Personal bundles use ad hoc
+signing and require neither Developer ID nor notarization (§27.1). The optional
+Developer ID/notarization path needs a signing identity and credentials. See
 [Packaging](PACKAGING.md) for the layout, runtime lookup, entitlements,
 notarization steps and current evidence.
 
 ```sh
-export DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ffmpeg-dev/prefix
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
 cargo xtask bundle --output /tmp/deadpan-bundle
 cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 ```

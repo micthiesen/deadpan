@@ -8,6 +8,50 @@ to stay until its replacement passes a smoke test, with separate helper and
 model version identities and rollback rules. This page records the trust root,
 the manifest formats, the on-disk layout and the release procedure.
 
+## Application versions and rollback
+
+Application updates for this personal app use explicit replacement of a
+verified complete bundle, with the previous working build retained for
+rollback (§27.1). The helper and model managers below remain independent.
+
+Identify an application build by the version and Git commit in
+`Contents/Resources/build-provenance.json`, together with its published
+`Deadpan.app.SHA256SUMS`. The checksums identify the actual files, including
+development builds with uncommitted changes. Keep the provenance, SBOM and
+checksum file beside every archived bundle.
+
+1. Build into a new directory and run `cargo xtask bundle-verify` against it.
+   Check the published checksums from the directory containing `Deadpan.app` and run
+   `codesign --verify --deep --strict Deadpan.app`. Never patch a signed
+   bundle in place.
+2. Close the running app. Preserve its complete bundle and sidecars in a
+   separately named version directory before installing the replacement.
+   Keep at least the last version that successfully opened and rendered the
+   project; do not remove it as part of an update. A development build is
+   tested on a portable project copy before replacing that version.
+3. Install the verified new bundle at the usual launch location and verify
+   that installed copy's checksums and signature before opening it. If the copy
+   fails, retain the archived previous version and launch it directly.
+   Updating the app does not delete projects, model packs or helper updates.
+4. To roll back, close the new app, retain its bundle for diagnosis, and put
+   the complete archived bundle back at the launch location. Verify its
+   original checksums and signature before opening it. Use a compatible
+   portable project copy if the newer build changed its schema. Never lower
+   a project's schema number or erase fields to force an older build to write.
+
+An older app still admits helpers and models through its own compatibility
+and signature checks. Roll those back explicitly through their managers when
+needed; application replacement does not silently change their active version.
+Committed export receipts retain the renderer and dependency identities that
+produced their files. Rebuilding or replacing the app changes only subsequent
+work.
+
+On 2026-10-06, the replacement and rollback qualification verified all 10,818
+files and the signature after each copy, opened the same project under both
+builds, restored the previous build, and confirmed unchanged SQLite bytes and
+document dumps. Both archived versions were retained. See the
+[release audit](RELEASE_AUDIT.md) for the bundle identities and evidence.
+
 ## Trust root
 
 Deadpan is a personal app without a Developer ID (§27.1), so code signing cannot
@@ -23,6 +67,22 @@ anchor update provenance. Updates are signed with a project-owned Ed25519 key:
   mode 0600 in a 0700 directory, outside the dotfiles tree). Release signing
   names it with `--key <file>` or `DEADPAN_UPDATE_SIGNING_KEY`. Back it up
   privately; losing it means rotating the key in a new app build.
+
+On the owner's Mac, recovery copies were created and verified byte-for-byte on
+2026-10-06:
+
+- `~/Library/Application Support/Deadpan/Recovery/Update Signing/deadpan-2026-10.pk8`,
+  mode 0600 in a 0700 directory.
+- A non-synchronizing login Keychain generic-password item with service
+  `dev.deadpan.update-signing.recovery` and account `deadpan-2026-10`. Its value is
+  the base64-encoded PKCS#8 file. The key material was never printed or committed.
+
+To recover a lost working file, copy the protected recovery file to the signing
+directory and retain mode 0600. The Keychain item provides a second local recovery
+path if either file is lost. These copies protect against file loss on this Mac;
+they do not establish off-machine disaster recovery. Time Machine had no configured
+destination when the copies were made.
+
 - Rotation: add the new public key, ship a build, then remove the old one. A
   manifest signed by a key a build no longer lists is treated as incompatible
   (the baseline is used and the reason reported), not as tampering.

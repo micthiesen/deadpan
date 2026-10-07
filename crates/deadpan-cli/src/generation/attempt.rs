@@ -44,7 +44,7 @@ use deadpan_store::generation_attempts::{
 };
 
 use super::conditioning::{BridgeInputs, LEFT, MANIFEST, RIGHT};
-use super::runtime::BridgeRuntime;
+use super::runtime::{BridgeRuntime, WorkerMode};
 
 /// The worker's whole-attempt deadline.
 pub const WORKER_DEADLINE: Duration = Duration::from_secs(30 * 60);
@@ -556,19 +556,25 @@ pub fn run_worker(
     .into_iter()
     .map(|(key, value)| (key.into(), value.into()))
     .collect::<BTreeMap<_, _>>();
+    let launch = match runtime.worker_launch(&runtime_config, WorkerMode::Inference) {
+        Ok(launch) => launch,
+        Err(error) => {
+            let mut run = WorkerRun::early(
+                RunResult::Failed(JobFailure::Host(host_failure(
+                    HostFailureCode::SpawnFailed,
+                    &format!("could not isolate the AI worker: {error}"),
+                ))),
+                timings,
+            );
+            run._directory = Some(directory);
+            return run;
+        }
+    };
     let launched = Instant::now();
     let mut process = match WorkerProcess::spawn(
         ProcessSpec {
-            executable: runtime.python.clone(),
-            // -B: the bundled runtime is signed and read-only; its bytecode
-            // is precompiled.
-            arguments: vec![
-                "-I".into(),
-                "-B".into(),
-                runtime.worker_script.clone().into_os_string(),
-                "--runtime-config".into(),
-                runtime_config.into_os_string(),
-            ],
+            executable: launch.executable,
+            arguments: launch.arguments,
             environment,
             workspace: worker,
             limits: ProcessLimits {

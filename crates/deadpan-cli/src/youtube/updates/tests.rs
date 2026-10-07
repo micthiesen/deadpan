@@ -513,3 +513,103 @@ fn torn_envelopes_are_replaced_and_shared_directories_refused() {
     fs::set_permissions(root.join("updates"), fs::Permissions::from_mode(0o700)).unwrap();
     assert_eq!(fixture.selection().unwrap().source.kind(), "update");
 }
+
+/// Gate G: signed update envelopes (selector 0, verified against the test key
+/// for both kinds and then parsed as that kind's payload), downloader payloads
+/// (1) and model-pack payloads (2) are untrusted bytes until verified; every
+/// input must end in a typed refusal or a manifest that re-parses unchanged.
+#[test]
+fn adversarial_update_manifests() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject, select};
+    use deadpan_models::packs::updates::{PackUpdate, UPDATE_SCHEMA};
+    let mut fixture = fixture();
+    let downloader = fixture.manifest(1, ("2026.09.30", 0), ("2.9.7", 0));
+    let payload = serde_json::to_string(&downloader).unwrap();
+    let pack: deadpan_models::packs::PackManifest = serde_json::from_slice(
+        &fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/packs/whisper-base-en-2.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let pack_update = serde_json::to_string(&PackUpdate {
+        schema: UPDATE_SCHEMA,
+        serial: 1,
+        issued: "2026-10-05".into(),
+        min_app_version: "0.1.0".into(),
+        pack,
+    })
+    .unwrap();
+    let signed_pack = SignedManifest::sign(
+        UpdateKind::ModelPack,
+        pack_update.clone(),
+        "test-key",
+        &fixture.pkcs8,
+    )
+    .unwrap()
+    .to_bytes();
+    let seeds = vec![
+        [vec![0], fixture.sign(&downloader)].concat(),
+        [vec![0], signed_pack].concat(),
+        [vec![1], payload.into_bytes()].concat(),
+        [vec![2], pack_update.into_bytes()].concat(),
+    ];
+    let keys = fixture.keys.clone();
+    let downloader_payload = |text: &str| match DownloaderManifest::parse(text) {
+        Ok(manifest) => {
+            let again = DownloaderManifest::parse(&serde_json::to_string(&manifest).unwrap())
+                .map_err(|error| {
+                    format!("accepted downloader manifest does not re-parse: {error}")
+                })?;
+            if again != manifest {
+                return Err("downloader manifest round trip changed the value".into());
+            }
+            Ok(Verdict::Accepted)
+        }
+        Err(error) => reject(error),
+    };
+    let pack_payload = |text: &str| match PackUpdate::parse(text) {
+        Ok(update) => {
+            let again = PackUpdate::parse(&serde_json::to_string(&update).unwrap())
+                .map_err(|error| format!("accepted pack update does not re-parse: {error}"))?;
+            if again != update {
+                return Err("pack update round trip changed the value".into());
+            }
+            Ok(Verdict::Accepted)
+        }
+        Err(error) => reject(error),
+    };
+    let report = fuzz(
+        Target::json("cli-update-manifests").iterations(400),
+        seeds,
+        |input| {
+            let (selector, body) = select(input);
+            let text = |body: &[u8]| String::from_utf8(body.to_vec()).map_err(|_| ());
+            match selector % 3 {
+                0 => {
+                    let envelope = match SignedManifest::parse(body) {
+                        Ok(envelope) => envelope,
+                        Err(error) => return reject(error),
+                    };
+                    let kind = envelope.kind;
+                    match envelope.verify_with(kind, &keys) {
+                        Ok(payload) => match kind {
+                            UpdateKind::Downloader => downloader_payload(payload),
+                            UpdateKind::ModelPack => pack_payload(payload),
+                        },
+                        Err(error) => reject(error),
+                    }
+                }
+                1 => match text(body) {
+                    Ok(text) => downloader_payload(&text),
+                    Err(()) => Ok(Verdict::Rejected("utf8".into())),
+                },
+                _ => match text(body) {
+                    Ok(text) => pack_payload(&text),
+                    Err(()) => Ok(Verdict::Rejected("utf8".into())),
+                },
+            }
+        },
+    );
+    report.assert_clean();
+}

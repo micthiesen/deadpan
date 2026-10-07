@@ -1,0 +1,527 @@
+{
+  "schema_version": 46,
+  "project_id": "f8de9523-bf28-4193-9e50-ea81f4e26f81",
+  "revision_id": "856cc9f7-b9dc-44e3-a5e6-60fc7ec9e5a1",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": {
+      "asset": "camera",
+      "qualification": "38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4"
+    }
+  },
+  "root": "5d7081ea-48bb-478e-8ad4-d343319e2532",
+  "nodes": {
+    "5d7081ea-48bb-478e-8ad4-d343319e2532": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "gain-history-repeat",
+          "split-0",
+          "split-1"
+        ]
+      }
+    },
+    "clip": {
+      "label": "Original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 121,
+          "video": {
+            "type": "stream",
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 60060,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 180180,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "640",
+              "denominator": "1001"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 95072,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 288288,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120760",
+              "denominator": "1001"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "core31-first-pause-hold": {
+      "label": "Qualified quiet hold",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 1,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "room_tone",
+            "source": {
+              "asset": "camera",
+              "span": {
+                "start": {
+                  "ticks": 95072,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 288288,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "gain-history-repeat": {
+      "label": "Repeat",
+      "kind": {
+        "type": "repeat",
+        "child": "core31-first-pause-hold",
+        "iterations": {
+          "runs": [
+            {
+              "allocation": "core32-hold-repeat",
+              "first": 0,
+              "count": 3
+            }
+          ]
+        },
+        "gap": null
+      }
+    },
+    "split-0": {
+      "label": "Original",
+      "kind": {
+        "type": "retime",
+        "child": "clip",
+        "duration": 1,
+        "mapping": {
+          "start": 0,
+          "end": 1
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "split-1": {
+      "label": "Original",
+      "kind": {
+        "type": "retime",
+        "child": "split-2",
+        "duration": 120,
+        "mapping": {
+          "start": 1,
+          "end": 121
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "split-2": {
+      "label": "Original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 121,
+          "video": {
+            "type": "stream",
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 60060,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 180180,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "640",
+              "denominator": "1001"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 95072,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 288288,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120760",
+              "denominator": "1001"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    }
+  },
+  "assets": {
+    "camera": {
+      "label": "Measured camera",
+      "content_hash": "blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f",
+      "video": {
+        "start": {
+          "ticks": 60060,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 180180,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 95072,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 288288,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "clip": {
+      "allocation": "core31-split",
+      "origin": "clip"
+    },
+    "split-2": {
+      "allocation": "core31-split",
+      "origin": "clip"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "core31-first-pause",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "5d7081ea-48bb-478e-8ad4-d343319e2532",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "5d7081ea-48bb-478e-8ad4-d343319e2532": {
+              "duration": 121,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "clip"
+                ]
+              }
+            },
+            "clip": {
+              "duration": 121,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120760",
+                    "denominator": "1001"
+                  }
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      },
+      {
+        "id": {
+          "allocation": "core31-second-pause",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "5d7081ea-48bb-478e-8ad4-d343319e2532",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "5d7081ea-48bb-478e-8ad4-d343319e2532": {
+              "duration": 122,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "core31-first-pause-hold",
+                  "clip"
+                ]
+              }
+            },
+            "clip": {
+              "duration": 121,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120760",
+                    "denominator": "1001"
+                  }
+                }
+              }
+            },
+            "core31-first-pause-hold": {
+              "duration": 1,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "clip": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "core31-first-pause",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "clip"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "0",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": []
+          }
+        }
+      },
+      "core31-first-pause-hold": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "core31-second-pause",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "core31-first-pause-hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "split-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "core31-first-pause",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "clip"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "0",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": []
+          }
+        }
+      }
+    }
+  }
+}

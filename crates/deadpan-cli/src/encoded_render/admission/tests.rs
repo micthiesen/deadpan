@@ -261,13 +261,29 @@ fn pq_probe_declares_its_exact_per_pixel_input_light() {
 
 #[test]
 fn adversarial_admission_probe_frames() {
-    let cancel = ProbeProtocol::from_request(&request())
+    let initial = request();
+    let cancel = ProbeProtocol::from_request(&initial)
         .unwrap()
         .cancellation();
+    let HostMessage::Probe { identity, spec, .. } = &initial else {
+        unreachable!()
+    };
+    let responses = vec![
+        protocol::WorkerMessage::Progress {
+            protocol: PROTOCOL_VERSION,
+            identity: identity.clone(),
+            completed_frames: 0,
+            total_frames: spec.contract().unwrap().picture.frame_count,
+        },
+        protocol::WorkerMessage::Cancelled {
+            protocol: PROTOCOL_VERSION,
+            identity: identity.clone(),
+        },
+    ];
     crate::adversarial::protocol::<ProbeProtocol>(
         "cli-admission-probe-protocol",
-        vec![request(), cancel],
-        Vec::new(),
+        vec![initial, cancel],
+        responses,
         |reader| protocol::read_host_message(reader),
     );
 }

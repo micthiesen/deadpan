@@ -605,3 +605,122 @@ fn cancelled_expired_and_invalid_limit_preflight_never_launch_the_runtime() {
         Err(EncodedRenderError::Encode(_))
     ));
 }
+
+// Hostile stand-ins through the real host (docs/ADVERSARIAL.md#hostile-workers).
+
+#[path = "hostile_workers/support.rs"]
+mod hostile;
+
+const PROMPT: Duration = Duration::from_secs(10);
+
+fn hostile_encode(
+    package: &Path,
+    record: &hostile::Record,
+    name: &str,
+    within: Duration,
+) -> Result<deadpan_cli::encoded_render::EncodedCandidate, EncodedRenderError> {
+    encode(
+        &runtime(&record.mode(name)),
+        request(package),
+        choice(),
+        limits(),
+        &AtomicBool::new(false),
+        Instant::now() + within,
+        |_| {},
+    )
+}
+
+#[test]
+fn hostile_movie_claims_outside_the_scope_or_not_regular_are_refused() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("hostile-claims.deadpan");
+    fixture(&package);
+    for name in [
+        "symlink_outside",
+        "hardlink_outside",
+        "symlinked_scope",
+        "fifo",
+        "sparse",
+        "directory",
+    ] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_encode(&package, &record, name, PROCESS_LIMIT)
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, PROMPT, name);
+        assert!(
+            matches!(error, EncodedRenderError::Artifact(_)),
+            "{name}: {error:?}"
+        );
+        assert_eq!(
+            fs::read(record.path().join("outside.bin")).unwrap(),
+            PAYLOAD
+        );
+        record.assert_group_gone();
+    }
+    for name in ["absolute", "parent", "wrong_attempt"] {
+        let record = hostile::Record::new();
+        let error = hostile_encode(&package, &record, name, PROCESS_LIMIT)
+            .err()
+            .expect(name);
+        assert_rejected_claim(error, name);
+        record.assert_group_gone();
+    }
+}
+
+#[test]
+fn hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("hostile-process.deadpan");
+    fixture(&package);
+    for name in [
+        "malformed",
+        "invalid_utf8",
+        "zero_length",
+        "truncated",
+        "oversized",
+        "just_over",
+        "fork_spam_exit",
+        "stderr_flood",
+    ] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_encode(&package, &record, name, Duration::from_secs(60))
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, PROMPT, name);
+        assert!(
+            matches!(error, EncodedRenderError::Worker(_)),
+            "{name}: {error:?}"
+        );
+        hostile::assert_generic_cause(name, &error.to_string());
+        record.assert_group_gone();
+    }
+    for name in ["slow_loris", "fork_spam"] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_encode(&package, &record, name, Duration::from_millis(1_500))
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, Duration::from_secs(12), name);
+        assert!(
+            matches!(error, EncodedRenderError::Deadline),
+            "{name}: {error:?}"
+        );
+        record.assert_group_gone();
+    }
+    let record = hostile::Record::new();
+    let error = hostile_encode(&package, &record, "escape", PROCESS_LIMIT)
+        .err()
+        .expect("escape");
+    assert!(matches!(error, EncodedRenderError::Worker(_)), "{error:?}");
+    record.assert_group_gone();
+    hostile::assert_alive(record.escaped(PROMPT));
+
+    let record = hostile::Record::new();
+    let admitted = hostile_encode(&package, &record, "fork_spam_valid", PROCESS_LIMIT);
+    assert!(admitted.is_ok(), "{:?}", admitted.err());
+    assert_eq!(record.children().len(), 24);
+    record.assert_group_gone();
+}

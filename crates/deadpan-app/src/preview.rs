@@ -1204,6 +1204,7 @@ impl DeadpanApp {
                 DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => "Choose model pack",
                 DialogKind::SignedUpdate => "Choose signed update",
                 DialogKind::PortableCopy => "Save portable copy",
+                DialogKind::DiagnosticReport => "Save diagnostic report",
             };
             self.refuse_while_busy(action);
             return;
@@ -1287,6 +1288,10 @@ impl DeadpanApp {
             self.receive_signed_update(result.path, result.error, context);
             return;
         }
+        if result.kind == DialogKind::DiagnosticReport {
+            self.receive_diagnostic_dialog(result.path, result.error, context);
+            return;
+        }
         if result.kind == DialogKind::PortableCopy {
             if let Some(error) = result.error {
                 self.message = Some(error);
@@ -1337,6 +1342,9 @@ impl DeadpanApp {
                 unreachable!("model pack sources and updates return to the Models panel")
             }
             DialogKind::PortableCopy => unreachable!("portable copies return to Storage"),
+            DialogKind::DiagnosticReport => {
+                unreachable!("diagnostic reports return to Diagnostics")
+            }
             DialogKind::InitializeSource | DialogKind::ImportSound => {
                 let Some(intent) = intent else {
                     return;

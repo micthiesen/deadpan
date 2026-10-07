@@ -169,6 +169,31 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Models panel")?;
 
+    tab_to(d, "License source: ")?;
+    let expected_link = focused(d).unwrap_or_default();
+    d.key(Key::Enter)?;
+    let opened: Vec<String> = d
+        .harness
+        .output()
+        .platform_output
+        .commands
+        .iter()
+        .filter_map(|command| {
+            if let egui::OutputCommand::OpenUrl(url) = command {
+                Some(url.url.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+    d.check(
+        "A focused license source opens its exact URL only after Enter",
+        opened.len() == 1
+            && expected_link.strip_prefix("License source: ") == opened.first().map(String::as_str),
+        json!(expected_link),
+        json!(opened),
+    )?;
+
     tab_to(d, &format!("Read the full {LTX}"))?;
     d.key(Key::Space)?;
     // The text appears on the next frame and its reveal scroll paints after.

@@ -447,10 +447,13 @@ fn legacy_v1_wire_shape_is_unchanged() {
 
 /// Gate G: mutated generation frame streams read by both sides end in a
 /// typed `CodecError` or validated messages, never a panic. Selector 0 reads
-/// host messages, 1 reads worker messages. See docs/ADVERSARIAL.md.
+/// host messages, 1 reads worker messages, 2 classifies responses against the
+/// preceding request with the shared stable/nightly exercise.
 #[test]
 fn adversarial_generation_frames() {
-    use deadpan_chaos::{Target, fuzz, read_stream, select};
+    use deadpan_chaos::{Target, fuzz, protocol_stream};
+    use deadpan_jobs::process::WorkerProtocol;
+    use deadpan_jobs::supervisor::GenerationProtocol;
     fn frames(selector: u8, messages: &[serde_json::Value]) -> Vec<u8> {
         let mut bytes = vec![selector];
         for message in messages {
@@ -494,19 +497,33 @@ fn adversarial_generation_frames() {
             .iter()
             .map(|worker| frames(1, std::slice::from_ref(worker))),
     );
+    for host in &hosts {
+        for worker in &workers {
+            seeds.push(frames(2, &[host.clone(), worker.clone()]));
+        }
+    }
+    let exercise = |input: &[u8], calls: &mut usize| {
+        protocol_stream(
+            input,
+            |reader| deadpan_jobs::read_host_message(reader).map_err(|error| error.to_string()),
+            GenerationProtocol::write_request,
+            |reader| GenerationProtocol::read_response(reader),
+            |request| GenerationProtocol::from_request(request).map_err(|error| error.to_string()),
+            |protocol, response| {
+                *calls += 1;
+                protocol.classify(response).map(|_| ())
+            },
+        )
+    };
+    let mut calls = 0;
+    exercise(
+        &frames(2, &[hosts[0].clone(), workers[0].clone()]),
+        &mut calls,
+    )
+    .expect("valid generation request/response must reach classification");
+    assert_eq!(calls, 1);
     let report = fuzz(Target::frames("jobs-generation-protocol"), seeds, |input| {
-        let (selector, stream) = select(input);
-        read_stream(stream, 64, |reader| {
-            if selector % 2 == 0 {
-                deadpan_jobs::read_host_message(reader)
-                    .map(|message| message.map(|_| ()))
-                    .map_err(|error| error.to_string())
-            } else {
-                deadpan_jobs::read_worker_message(reader)
-                    .map(|message| message.map(|_| ()))
-                    .map_err(|error| error.to_string())
-            }
-        })
+        exercise(input, &mut 0)
     });
     report.assert_clean();
 }

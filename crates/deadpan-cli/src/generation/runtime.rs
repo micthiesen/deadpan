@@ -33,6 +33,11 @@ use std::time::Duration;
 
 use deadpan_models::packs::{PackStore, approved_pack};
 
+mod launch;
+pub use launch::{LaunchError, WorkerLaunch, WorkerMode};
+#[cfg(all(test, target_os = "macos"))]
+pub(crate) mod network_tests;
+
 pub const PYTHON: &str = "DEADPAN_BRIDGE_PYTHON";
 pub const RUNTIME_SOURCE: &str = "DEADPAN_BRIDGE_RUNTIME_SOURCE";
 pub const MODEL_CACHE: &str = "DEADPAN_BRIDGE_MODEL_CACHE";
@@ -470,18 +475,13 @@ impl BridgeRuntime {
         let configuration = workspace.path().join("runtime.json");
         std::fs::write(&configuration, self.worker_configuration())
             .map_err(|error| error.to_string())?;
-        let arguments: Vec<OsString> = vec![
-            "-I".into(),
-            "-B".into(),
-            self.worker_script.clone().into_os_string(),
-            "--runtime-config".into(),
-            configuration.into_os_string(),
-            "--check".into(),
-        ];
+        let launch = self
+            .worker_launch(&configuration, WorkerMode::Check)
+            .map_err(|error| error.to_string())?;
         let run = run_helper(
             HelperCommand {
-                executable: &self.python,
-                arguments: &arguments,
+                executable: &launch.executable,
+                arguments: &launch.arguments,
                 private: workspace.path(),
                 current_dir: workspace.path(),
                 max_stdout: 64 * 1024,

@@ -7,6 +7,39 @@ use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant
 
 #[cfg(test)]
 mod adversarial;
+
+/// Entry points for the coverage-guided targets in `fuzz/`; see
+/// docs/ADVERSARIAL.md. Feature-gated so no product build exposes them.
+#[cfg(feature = "fuzzing")]
+pub mod fuzzing {
+    use super::*;
+
+    /// Container admission for a video (`audio == false`) or first-audio
+    /// selection under the default decoder limits; returns admitted I/O bytes.
+    pub fn admit(file: &File, audio: bool, control: DecodeControl<'_>) -> Result<u64> {
+        if audio {
+            let limits: InputLimits = AudioDecodeLimits::default().into();
+            validate(file, Selection::FirstAudio, limits, control)
+        } else {
+            validate(
+                file,
+                Selection::Video,
+                DecodeLimits::default().into(),
+                control,
+            )
+        }
+    }
+
+    /// HEVC SPS geometry: `(coded, cropped)` width and height.
+    pub fn hevc_sps(nal: &[u8]) -> Result<([u32; 2], [u32; 2])> {
+        hevc_sps_geometry(nal).map(|geometry| (geometry.coded, geometry.cropped))
+    }
+
+    /// FFV1 version 3 configuration record under the default hard bounds.
+    pub fn ffv1_configuration(record: &[u8]) -> Result<()> {
+        crate::video_codec::validate_ffv1(record, 8192 * 8192, 8192)
+    }
+}
 mod inspection;
 use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{

@@ -934,7 +934,15 @@ pub fn install_release(
             .create_new(true)
             .mode(0o600)
             .open(&download)?;
-        let response = transport.fetch(&pin.url, 0)?;
+        let response = transport.fetch(&pin.url, 0).map_err(|_| {
+            helper_error(
+                "DownloaderNetworkFailed",
+                format!(
+                    "could not download {}; check the connection and retry",
+                    pin.name
+                ),
+            )
+        })?;
         if response.offset != 0 {
             return Err(helper_error(
                 "DownloaderInstallFailed",
@@ -953,11 +961,19 @@ pub fn install_release(
                 ));
             }
             let chunk = match chunks.recv_timeout(deadpan_models::packs::POLL) {
-                Ok(chunk) => chunk?,
+                Ok(chunk) => chunk.map_err(|_| {
+                    helper_error(
+                        "DownloaderNetworkFailed",
+                        format!(
+                            "the {} download was interrupted; check the connection and retry",
+                            pin.name
+                        ),
+                    )
+                })?,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     if last_data.elapsed() >= deadpan_models::packs::STALL {
                         return Err(helper_error(
-                            "DownloaderInstallFailed",
+                            "DownloaderNetworkFailed",
                             format!("the {} download stalled; retry the install", pin.name),
                         ));
                     }
@@ -1356,6 +1372,53 @@ mod tests {
             executable_bytes: bytes.len() as u64,
             content_sha256: None,
             signer: None,
+        }
+    }
+
+    #[test]
+    fn helper_connection_and_body_failures_are_actionable_without_private_details() {
+        struct Offline(bool);
+        impl Transport for Offline {
+            fn fetch(&self, _: &str, _: u64) -> Result<Download, PackError> {
+                if self.0 {
+                    Err(PackError::Transport(
+                        "https://user:secret@example.invalid/?token=private".into(),
+                    ))
+                } else {
+                    struct BrokenBody;
+                    impl io::Read for BrokenBody {
+                        fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+                            Err(io::Error::new(
+                                io::ErrorKind::ConnectionReset,
+                                "private response header",
+                            ))
+                        }
+                    }
+                    Ok(Download {
+                        offset: 0,
+                        body: Box::new(BrokenBody),
+                    })
+                }
+            }
+        }
+        let root = tempfile::tempdir().unwrap();
+        let pin = raw_pin(b"helper");
+        for connection in [true, false] {
+            let error = install(
+                &pin,
+                root.path(),
+                &Offline(connection),
+                &AtomicBool::new(false),
+                |_| {},
+            )
+            .unwrap_err();
+            assert_eq!(error.code(), "DownloaderNetworkFailed");
+            let message = error.to_string();
+            assert!(message.contains("check the connection and retry"));
+            for secret in ["secret", "private", "example.invalid", "header"] {
+                assert!(!message.contains(secret), "{message}");
+            }
+            assert!(pin.verified(root.path()).unwrap().is_none());
         }
     }
 

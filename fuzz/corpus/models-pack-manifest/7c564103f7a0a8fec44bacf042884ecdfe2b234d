@@ -1,0 +1,263 @@
+{
+  "schema": 2,
+  "pack_id": "ltx-2.3-q4-bridge",
+  "pack_version": "1",
+  "title": "AI pauses (LTX-2.3 video model, 4-bit, with Gemma 3 text encoder)",
+  "model_family": "ltx-2.3",
+  "runtime_id": "ltx-mlx",
+  "runtime_versions": [
+    "0.15.8+deadpan1"
+  ],
+  "operations": [
+    "bridge_hold"
+  ],
+  "languages": [],
+  "files": [
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",
+      "sha256": "e28ef68d90e17b06308e4c5cba5c9a967b70c3d67f87ddc3dfc46a312cb6a134",
+      "bytes": 21399,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/README.md",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/README.md",
+      "sha256": "49923121175ee30549d92fac8a340e6777923262e8aa7110291a538cbe79cc20",
+      "bytes": 2977,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/audio_vae.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/audio_vae.safetensors",
+      "sha256": "442119db8eaf976f83a105cc8c5f2c930e0f625062f9776b10adcdb7bc96c416",
+      "bytes": 106509048,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/config.json",
+      "sha256": "2dd64d4f8b7a385b0471a23a6e2069e4bc0f9d9903fc289347b2e4cac3c776ec",
+      "bytes": 951,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/connector.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/connector.safetensors",
+      "sha256": "5885c2bd7af4e761b3257cf5b17bc1fdb2d187cea3ca520ea723b6a129b7029f",
+      "bytes": 6344495512,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/embedded_config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/embedded_config.json",
+      "sha256": "c09755357e21d2b2eb15ea2b5c3c11f1e6b44c514ebb6d8babeee30e86f7bd14",
+      "bytes": 7234,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/ltx-2.3-22b-distilled-lora-384.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/ltx-2.3-22b-distilled-lora-384.safetensors",
+      "sha256": "2943ab994f3c9d88052e5a2a34cca14e4a2dfc36b1d8c407931d52d5c25dd72b",
+      "bytes": 7605507256,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/quantize_config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/quantize_config.json",
+      "sha256": "473aec38f34570fe7379d337e00fa191240cd9578da17df1f55df247b735012f",
+      "bytes": 100,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x1_5_v1_0_config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x1_5_v1_0_config.json",
+      "sha256": "33c2b52052d36d8d3bbeea4f1a41b2140cc0ad1605faef5ac277cc1a4d73ecb3",
+      "bytes": 274,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1.safetensors",
+      "sha256": "755f69dcb8a3f9589045925eb4a2237e9969f9c026a016393bc395e65ebd5788",
+      "bytes": 995745061,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1_config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1_config.json",
+      "sha256": "c0646d97bf1bc3fa6e66ec7d17f16ef31b717e64bf86474b7dc3993b6c42346a",
+      "bytes": 275,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/split_model.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/split_model.json",
+      "sha256": "bb72acf615558c11578b677ede6b530481c3e09db0d36515239dd8c95704ea04",
+      "bytes": 1835,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/temporal_upscaler_x2_v1_0_config.json",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/temporal_upscaler_x2_v1_0_config.json",
+      "sha256": "f890af9e95cde921d6e2eb6c334742a81c53c25c3fdc817b4b363622e2c08f3f",
+      "bytes": 273,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/transformer-dev.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/transformer-dev.safetensors",
+      "sha256": "c9d9def8657cca30ac6736b8b44503cfbc7984a8447dca1c0fc911aa312421fb",
+      "bytes": 11322002285,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_decoder.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vae_decoder.safetensors",
+      "sha256": "f404026fe0b59418eaec4a3fcdc474125c798f0b787dc390f6eb4e79934d4160",
+      "bytes": 814349531,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_encoder.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vae_encoder.safetensors",
+      "sha256": "1512f5ef8387901db0baecb328690676e2667ddf2b63e28f8e6645188c1a8c06",
+      "bytes": 637885319,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vocoder.safetensors",
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vocoder.safetensors",
+      "sha256": "410cee86c14f76956bf487d153211ef15050fe8bf51f86d47a1d27ca6e3ba287",
+      "bytes": 258313851,
+      "license": "ltx-2"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/README.md",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/README.md",
+      "sha256": "e6cbf9a42bcd91e2ca8299ba0c509b3b4df5d565b59866ccca79c2f3cbe6a6a0",
+      "bytes": 945,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/added_tokens.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/added_tokens.json",
+      "sha256": "50b2f405ba56a26d4913fd772089992252d7f942123cc0a034d96424221ba946",
+      "bytes": 35,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/chat_template.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/chat_template.json",
+      "sha256": "fe16baf728db49457cde32802cd7efc0ac8a7a9877dbe22fe3322b2d9dc6ccd9",
+      "bytes": 1615,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/config.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/config.json",
+      "sha256": "73ed96a3f1d596fcf3c07f17ed7e4358fd99be688c97da45f2464fd48dd069ed",
+      "bytes": 1141,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/generation_config.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/generation_config.json",
+      "sha256": "e04ecb65db447404710114fb282baaac482d22a95e2244ecaab428b81672ba78",
+      "bytes": 192,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00001-of-00002.safetensors",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00001-of-00002.safetensors",
+      "sha256": "995cbd05b7bfd8f5ab5307b476eb5496b5ec3f5256a9dd26366236ce8816c93f",
+      "bytes": 5367455313,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00002-of-00002.safetensors",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00002-of-00002.safetensors",
+      "sha256": "8b7af7eb5ff32109fc65cbcd0af5b8016ac0de46df17f40705f043f899495333",
+      "bytes": 2661219935,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model.safetensors.index.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model.safetensors.index.json",
+      "sha256": "788cc42a1a92835df62d9a3791f47105f63504c7c404637a73288e9b11bc7b82",
+      "bytes": 108605,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/preprocessor_config.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/preprocessor_config.json",
+      "sha256": "f688d6bb20c5017601c4011de7ca656da8485b540b05013efdaf986c0fcc918d",
+      "bytes": 570,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/processor_config.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/processor_config.json",
+      "sha256": "3ffd5f11778dc73e2b69b3c00535e4121e1badf7018136263cd17b5b34fbaa53",
+      "bytes": 70,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/special_tokens_map.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/special_tokens_map.json",
+      "sha256": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+      "bytes": 662,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.json",
+      "sha256": "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795",
+      "bytes": 33384568,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.model",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.model",
+      "sha256": "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+      "bytes": 4689074,
+      "license": "gemma"
+    },
+    {
+      "name": "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer_config.json",
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer_config.json",
+      "sha256": "0d95398b39395e5cfb290683a78f3fb0551223c672d8b033333c1a5307473760",
+      "bytes": 1157007,
+      "license": "gemma"
+    }
+  ],
+  "licenses": [
+    {
+      "id": "ltx-2",
+      "title": "LTX-2 Community License Agreement",
+      "spdx": "LicenseRef-LTX-2-Community-License",
+      "attribution": "LTX-2.3 by Lightricks Ltd.; MLX conversion and int4 quantization (dgrauet/ltx-2.3-mlx-q4, revision 56a5866d) by dgrauet with mlx-forge.",
+      "url": "https://huggingface.co/Lightricks/LTX-2.3/blob/main/LICENSE",
+      "text": "ltx-2-community-license.txt",
+      "terms": "Free for individuals and for organizations with annual revenue under US$10,000,000; larger organizations need a paid commercial license from Lightricks. You may not use the model or its outputs for the restricted uses in Attachment A (for example unlawful content, deceiving people about who made content, or harming others). Redistribution must include this agreement and its use restrictions. No warranty.",
+      "redistribution": true,
+      "access": "Public download from Hugging Face; no account. Using the weights means agreeing to this license.",
+      "acceptance_required": true
+    },
+    {
+      "id": "gemma",
+      "title": "Gemma Terms of Use",
+      "spdx": "LicenseRef-Gemma-Terms-of-Use",
+      "attribution": "Gemma 3 12B instruction-tuned by Google LLC; MLX 4-bit conversion (mlx-community/gemma-3-12b-it-4bit, revision 86cc6a8d) by the MLX community. Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms.",
+      "url": "https://ai.google.dev/gemma/terms",
+      "text": "gemma-terms-of-use.txt",
+      "terms": "Used only as the text encoder that turns Deadpan's fixed hold prompt into model conditioning. You must not use Gemma for the uses the Gemma Prohibited Use Policy (ai.google.dev/gemma/prohibited_use_policy) forbids. Redistribution must pass on these terms and their use restrictions with the notice above. Google may restrict use that violates the terms. No warranty.",
+      "redistribution": true,
+      "access": "Public download of the MLX conversion from Hugging Face; no account. Using the weights means agreeing to these terms.",
+      "acceptance_required": true
+    }
+  ],
+  "memory_bytes": 22548578304,
+  "temporary_bytes": 1073741824,
+  "qualification_report": "docs/qualification/model-smoke-2026-09-20.md"
+}

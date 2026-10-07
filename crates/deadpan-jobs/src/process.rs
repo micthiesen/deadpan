@@ -248,7 +248,27 @@ impl LogBuffer {
 enum PipeEvent<R> {
     Message(Box<R>),
     ReadError(String),
+    /// The framed output reader reached EOF after the host started killing a
+    /// worker that ignored cancellation. This is distinct from a parsed
+    /// protocol error, stderr I/O failure or EOF observed before escalation.
+    CancellationEof,
     WriteError(String),
+}
+
+struct ResponseReader<'a, R> {
+    reader: &'a mut R,
+    cancellation_kill: &'a AtomicBool,
+    cancelled_eof: bool,
+}
+
+impl<R: Read> Read for ResponseReader<'_, R> {
+    fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
+        let count = self.reader.read(bytes)?;
+        if count == 0 && !bytes.is_empty() {
+            self.cancelled_eof = self.cancellation_kill.load(Ordering::Acquire);
+        }
+        Ok(count)
+    }
 }
 
 /// Pipe pumping may wait on its own thread, but shutdown can interrupt it even
@@ -317,6 +337,7 @@ pub struct SupervisedProcess<P: WorkerProtocol> {
     readers: Vec<JoinHandle<()>>,
     logs: Arc<Mutex<LogBuffer>>,
     stop_io: Arc<AtomicBool>,
+    cancellation_kill: Arc<AtomicBool>,
     limits: ProcessLimits,
     started: Instant,
     cancel_started: Option<Instant>,
@@ -391,6 +412,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             readers: Vec::new(),
             logs: Arc::new(Mutex::new(LogBuffer::default())),
             stop_io: Arc::new(AtomicBool::new(false)),
+            cancellation_kill: Arc::new(AtomicBool::new(false)),
             limits: spec.limits,
             started: Instant::now(),
             cancel_started: None,
@@ -446,17 +468,28 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                     })?,
             );
             let reader_events = event_tx.clone();
+            let cancellation_kill = Arc::clone(&process.cancellation_kill);
             check_setup(SetupStage::OutputPump, &process.child)?;
             process.readers.push(
                 thread::Builder::new()
                     .name("deadpan-worker-output".into())
                     .spawn(move || {
                         loop {
-                            let event = match P::read_response(&mut stdout) {
+                            let mut reader = ResponseReader {
+                                reader: &mut stdout,
+                                cancellation_kill: &cancellation_kill,
+                                cancelled_eof: false,
+                            };
+                            let event = match P::read_response(&mut reader) {
                                 Ok(Some(message)) => PipeEvent::Message(Box::new(message)),
                                 Ok(None) => break,
                                 Err(error) => {
-                                    let _ = reader_events.send(PipeEvent::ReadError(error));
+                                    let event = if reader.cancelled_eof {
+                                        PipeEvent::CancellationEof
+                                    } else {
+                                        PipeEvent::ReadError(error)
+                                    };
+                                    let _ = reader_events.send(event);
                                     break;
                                 }
                             };
@@ -741,6 +774,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                 now.saturating_duration_since(start) >= self.limits.cancellation_grace
             }) {
                 self.cancellation_escalated = true;
+                self.cancellation_kill.store(true, Ordering::Release);
                 self.stop_group()?;
             } else if now.saturating_duration_since(self.started) >= self.limits.maximum_duration {
                 self.fail("worker exceeded its maximum duration".into(), &mut output)?;
@@ -860,6 +894,10 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                     }
                 }
             }
+            // Only output EOF observed after our cancellation kill is ignored.
+            // Never suppress an already parsed protocol error, a prior EOF or
+            // a stderr failure merely because it arrived after escalation.
+            PipeEvent::CancellationEof => {}
             PipeEvent::ReadError(error) if !self.faulted => self.fail(error, output)?,
             PipeEvent::WriteError(error)
                 if !self.faulted
@@ -1034,6 +1072,66 @@ mod tests {
                 cancellation_grace: Duration::from_millis(50),
                 exit_grace: Duration::from_millis(50),
             },
+        }
+    }
+
+    #[test]
+    fn cancellation_eof_is_recorded_only_when_the_reader_observes_it() {
+        let cancellation_kill = AtomicBool::new(false);
+        let mut source = io::Cursor::new(b"x");
+        let mut reader = ResponseReader {
+            reader: &mut source,
+            cancellation_kill: &cancellation_kill,
+            cancelled_eof: false,
+        };
+        let mut byte = [0];
+        assert_eq!(reader.read(&mut byte).unwrap(), 1);
+        assert_eq!(reader.read(&mut byte).unwrap(), 0);
+        assert!(!reader.cancelled_eof);
+        cancellation_kill.store(true, Ordering::Release);
+        // A delayed error event retains the earlier EOF's evidence.
+        assert!(!reader.cancelled_eof);
+
+        let mut source = io::Cursor::new(b"malformed JSON");
+        let mut reader = ResponseReader {
+            reader: &mut source,
+            cancellation_kill: &cancellation_kill,
+            cancelled_eof: false,
+        };
+        let mut bytes = [0; 14];
+        reader.read_exact(&mut bytes).unwrap();
+        // Parsing an already complete malformed frame must still fail.
+        assert!(!reader.cancelled_eof);
+        assert_eq!(reader.read(&mut byte).unwrap(), 0);
+        assert!(reader.cancelled_eof);
+    }
+
+    #[test]
+    fn cancellation_escalation_preserves_independent_read_faults() {
+        for diagnostic in [
+            "malformed frame",
+            "stderr: independent I/O failure",
+            "prior EOF",
+        ] {
+            let workspace = tempfile::tempdir().unwrap();
+            let mut process =
+                SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ())
+                    .unwrap();
+            process.cancellation_escalated = true;
+            let mut events = Vec::new();
+            process
+                .handle_pipe_event(
+                    PipeEvent::ReadError(diagnostic.into()),
+                    Instant::now(),
+                    &mut events,
+                )
+                .unwrap();
+            assert!(
+                matches!(events.as_slice(), [ProcessEvent::Fault(message)] if message == diagnostic)
+            );
+            process
+                .finish_owned_work(Instant::now() + Duration::from_secs(2))
+                .unwrap();
         }
     }
 

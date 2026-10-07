@@ -12,13 +12,15 @@
 //! `cargo xtask perf` runs the release Section 25 benchmark suite on copied
 //! fixtures (docs/PERFORMANCE.md).
 //! `cargo xtask chaos` runs the time-bounded Gate G adversarial campaign
-//! (docs/ADVERSARIAL.md).
+//! (docs/ADVERSARIAL.md). `cargo xtask fuzz` runs the coverage-guided
+//! libFuzzer targets in `fuzz/` with the nightly toolchain.
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
 mod bundle;
 mod chaos;
+mod fuzz;
 mod offline_dist;
 mod percentile;
 mod perf;
@@ -41,7 +43,8 @@ fn main() -> ExitCode {
         Some("replays") => replays::run(rest),
         Some("perf") => perf::run(rest),
         Some("chaos") => chaos::run(rest),
-        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app> | offline-dist --app <Deadpan.app> --output <new dir> --pack <id>[=<models root>]... | offline-dist-verify <dist dir>".into()),
+        Some("fuzz") => fuzz::run(rest),
+        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | fuzz list | seeds | replay | run [--minutes N] [--jobs N] [--only a,b] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app> | offline-dist --app <Deadpan.app> --output <new dir> --pack <id>[=<models root>]... | offline-dist-verify <dist dir>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

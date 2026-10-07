@@ -55,15 +55,20 @@ need app interaction evidence; headless dialog tests cover polling and result
 ownership. This does not establish bookmark access or signed bundle behavior.
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
-version and registry checksum. The UI enables `accesskit`, `default_fonts`, and
+version and registry checksum. The UI enables `accesskit`, `default_fonts`, `links`, and
 `wgpu`, disables eframe's other default features, and checks for Metal at startup
 on macOS. Application UI support is not qualification of video texture interop,
 color management, accessibility, or the shared renderer.
 
+The `links` feature routes an explicitly activated license hyperlink through
+egui-winit and locked `webbrowser` 1.2.4 to the default browser. Its URL parser
+and Unicode tables are included in the lockfile and generated notices.
+The privacy audit permits this path only through the native UI dependency.
+
 The development-only `deadpan-chaos` crate (the [adversarial suite](ADVERSARIAL.md)
 engine) adds no third-party dependency: it uses the existing `serde_json`, and
-replaces cargo-fuzz/libFuzzer, which need a nightly toolchain, with a stable
-in-repository mutation runner. It is a dev-dependency only and never ships.
+provides a stable in-repository mutation runner beside the separate nightly
+libFuzzer workspace. It is a dev-dependency only and never ships.
 Its only `unsafe` is a documented forwarding `GlobalAlloc` wrapper over the
 system allocator used to bound per-case allocation in test binaries.
 
@@ -158,7 +163,13 @@ worker and pinned LGPL FFmpeg 8.0.3 libraries (stream copy, no codec), not an
 The bundle carries the yt-dlp, PyInstaller/Python (`THIRD_PARTY_LICENSES.txt`),
 yt-dlp-ejs and Deno license notices, vendored byte-for-byte under
 [packaging/notices](../packaging/notices). Deno publishes no aggregated notice
-for its embedded V8 and crates; that gap remains open.
+for its embedded V8 and crates, so Deadpan vendors one hash-pinned set per Deno
+pin, generated from the exact upstream sources by `tools/notices/deno_notices.py`:
+[packaging/notices/deno-2.9.7](../packaging/notices/deno-2.9.7) covers rusty_v8
+150.4.0, V8 and its linked C/C++ libraries, the Rust standard library and 768
+crates. The bundle renders it into `Notices/deno/THIRD_PARTY_NOTICES.txt` and
+the bundle audit refuses a missing, changed or mismatched set
+([packaging](PACKAGING.md#notices-and-sbom)).
 
 ## Packaged FFmpeg
 

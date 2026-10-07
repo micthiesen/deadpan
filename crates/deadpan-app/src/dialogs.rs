@@ -30,6 +30,8 @@ pub enum DialogKind {
     SignedUpdate,
     /// Where File › Save Portable Copy… writes a new self-contained package.
     PortableCopy,
+    /// An explicit local diagnostic report with no user content attached.
+    DiagnosticReport,
 }
 
 pub struct SaveMovie {
@@ -259,6 +261,13 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
                 .set_title("Save a portable copy of this project")
                 .set_file_name("Portable copy.deadpan")
                 .add_filter("Deadpan project", &["deadpan"])
+                .save_file(),
+        ),
+        DialogKind::DiagnosticReport => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Save a private diagnostic report")
+                .set_file_name("Deadpan diagnostics.json")
+                .add_filter("Diagnostic report", &["json"])
                 .save_file(),
         ),
         DialogKind::ModelPackArchive => Box::pin(

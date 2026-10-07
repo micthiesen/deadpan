@@ -356,3 +356,163 @@ fn admitted_fixture_bytes_outlive_the_child_workspace_and_project_path() {
             .is_err()
     );
 }
+
+// Hostile stand-ins through the real host (docs/ADVERSARIAL.md#hostile-workers).
+
+#[path = "hostile_workers/support.rs"]
+mod hostile;
+
+/// Generous bound for refusals that must not wait for the deadline.
+const PROMPT: Duration = Duration::from_secs(10);
+const SHORT: Duration = Duration::from_millis(1_500);
+const SHORT_BOUND: Duration = Duration::from_secs(12);
+const VALID_PLANES: [u8; 12] = [16, 16, 16, 16, 128, 128, 16, 16, 16, 16, 128, 128];
+
+fn hostile_prepare(
+    package: &Path,
+    record: &hostile::Record,
+    name: &str,
+    within: Duration,
+) -> Result<deadpan_cli::render_worker::PreparedPictureRange, RenderWorkerError> {
+    prepare(
+        &fixture_runtime(&record.mode(name)),
+        host_request(package),
+        RenderWorkerLimits::default(),
+        &AtomicBool::new(false),
+        Instant::now() + within,
+        |_| {},
+    )
+}
+
+#[test]
+fn hostile_artifact_claims_are_refused_without_following_them_outside() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("hostile-claims.deadpan");
+    fixture(&package);
+    for name in [
+        "symlink_outside",
+        "hardlink_outside",
+        "symlinked_scope",
+        "fifo",
+        "sparse",
+        "directory",
+    ] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_prepare(&package, &record, name, PROCESS_LIMIT)
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, PROMPT, name);
+        assert!(
+            matches!(error, RenderWorkerError::Artifact(_)),
+            "{name}: {error:?}"
+        );
+        assert_eq!(
+            fs::read(record.path().join("outside.bin")).unwrap(),
+            VALID_PLANES
+        );
+        record.assert_group_gone();
+    }
+    for name in ["absolute", "parent", "wrong_attempt"] {
+        let record = hostile::Record::new();
+        let error = hostile_prepare(&package, &record, name, PROCESS_LIMIT)
+            .err()
+            .expect(name);
+        let message = match &error {
+            RenderWorkerError::Worker(message) | RenderWorkerError::Protocol(message) => message,
+            error => panic!("{name}: {error:?}"),
+        };
+        assert!(!message.contains("exited"), "{name}: {message}");
+        record.assert_group_gone();
+    }
+}
+
+#[test]
+fn hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("hostile-process.deadpan");
+    fixture(&package);
+    for name in [
+        "malformed",
+        "invalid_utf8",
+        "zero_length",
+        "truncated",
+        "oversized",
+        "just_over",
+        "fork_spam_exit",
+        "stderr_flood",
+    ] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_prepare(&package, &record, name, Duration::from_secs(60))
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, PROMPT, name);
+        assert!(
+            matches!(error, RenderWorkerError::Worker(_)),
+            "{name}: {error:?}"
+        );
+        hostile::assert_generic_cause(name, &error.to_string());
+        record.assert_group_gone();
+    }
+    for name in ["slow_loris", "fork_spam"] {
+        let record = hostile::Record::new();
+        let started = Instant::now();
+        let error = hostile_prepare(&package, &record, name, SHORT)
+            .err()
+            .expect(name);
+        hostile::assert_bounded(started, SHORT_BOUND, name);
+        assert!(
+            matches!(error, RenderWorkerError::Deadline),
+            "{name}: {error:?}"
+        );
+        record.assert_group_gone();
+    }
+    // A clean completion with two dozen sleeping group members is admitted
+    // only after every one of them has been stopped.
+    let record = hostile::Record::new();
+    let admitted = hostile_prepare(&package, &record, "fork_spam_valid", PROCESS_LIMIT);
+    assert!(admitted.is_ok(), "{:?}", admitted.err());
+    assert_eq!(record.children().len(), 24);
+    record.assert_group_gone();
+}
+
+#[test]
+fn setsid_escapees_are_not_contained_but_cannot_change_admitted_bytes() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("hostile-escape.deadpan");
+    fixture(&package);
+    // An escapee holding the inherited pipes turns completion into a failure.
+    let record = hostile::Record::new();
+    let started = Instant::now();
+    let error = hostile_prepare(&package, &record, "escape", PROCESS_LIMIT)
+        .err()
+        .expect("escape");
+    hostile::assert_bounded(started, PROMPT, "escape");
+    assert!(matches!(error, RenderWorkerError::Worker(_)), "{error:?}");
+    record.assert_group_gone();
+    hostile::assert_alive(record.escaped(PROMPT));
+
+    // One that closes its pipes is invisible to group ownership: the host
+    // admits the clean leader's output. The escapee is still alive after the
+    // host returns (documented, not a sandbox) and its later rewrite of the
+    // worker's output cannot reach the private admitted snapshot.
+    let record = hostile::Record::new();
+    let mut admitted = hostile_prepare(&package, &record, "escape_quiet", PROCESS_LIMIT)
+        .expect("escape_quiet leader completed cleanly");
+    record.assert_group_gone();
+    let escaped = record.escaped(PROMPT);
+    hostile::assert_alive(escaped);
+    fs::write(record.path().join("host-returned"), b"").unwrap();
+    assert!(record.wait_for("escaped-alive", PROMPT));
+    assert_eq!(
+        fs::read_to_string(record.path().join("escaped-rewritten")).unwrap(),
+        "1",
+        "the escapee must rewrite the worker's original output inode",
+    );
+    let mut frame = [0_u8; 6];
+    admitted
+        .read_frame(OutputFrameOrdinal(1), &mut frame)
+        .unwrap();
+    assert_eq!(frame, VALID_PLANES[6..]);
+}

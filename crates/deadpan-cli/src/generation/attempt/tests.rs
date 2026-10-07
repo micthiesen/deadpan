@@ -222,6 +222,36 @@ fn a_worker_that_exits_without_a_candidate_fails_truthfully() {
     assert_eq!(store.current_generation_requests().unwrap().len(), 1);
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn ai_network_inference_host_preserves_files_protocol_and_owned_group() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let allocated = allocated(&mut store);
+    let probe = crate::generation::runtime::network_tests::Probe::new();
+    let mut stages = Vec::new();
+    let run = run_worker(
+        &allocated,
+        &probe.runtime(),
+        |progress| stages.push(progress),
+        |entry| record(&mut store, &allocated, &entry).map_err(|error| error.to_string()),
+        &AtomicBool::new(false),
+    );
+    assert!(
+        matches!(&run.result, RunResult::Failed(JobFailure::Worker(failure))
+        if failure.code == FailureCode::BackendFailure
+            && failure.detail.as_str() == "network isolation probe finished"),
+        "worker did not exchange its valid protocol: {}",
+        run.worker_log
+    );
+    assert!(stages.contains(&AttemptProgress::Stage(WorkerStage::Preflight)));
+    probe.assert_denied();
+    assert_eq!(
+        finish(&mut store, &allocated, run).unwrap().state,
+        JobState::Failed
+    );
+}
+
 #[test]
 fn a_worker_failure_the_store_missed_is_recorded_as_a_host_failure() {
     let directory = tempfile::tempdir().unwrap();
@@ -403,4 +433,211 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
             .is_none()
     );
     assert!(allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).is_err());
+}
+
+// Hostile AI pause workers through the real attempt host
+// (docs/ADVERSARIAL.md#hostile-workers). The trusted `python` and
+// `worker_script` seam runs a hostile fixture instead of the bridge worker.
+
+#[path = "../../../tests/hostile_workers/support.rs"]
+mod hostile;
+
+/// What one hostile attempt concluded, captured before `finish` consumes it.
+struct HostileOutcome {
+    record: hostile::Record,
+    failure: Option<HostFailure>,
+    cancelled: bool,
+    qualified: bool,
+    log_bytes: usize,
+    discarded_bytes: u64,
+    state: JobState,
+    elapsed: Duration,
+}
+
+/// Run one hostile attempt through `run_worker`, record it as the app does,
+/// and finish it durably.
+fn hostile_attempt(name: &str, cancel_after: Option<Duration>) -> HostileOutcome {
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let allocated = allocated(&mut store);
+    let record = hostile::Record::new();
+    let runtime = BridgeRuntime {
+        python: hostile::python(),
+        worker_script: record.wrapper(&hostile::fixture("analysis.py"), name),
+        ..runtime(directory.path(), "/usr/bin/false")
+    };
+    let cancelled = AtomicBool::new(false);
+    let mut records = Vec::new();
+    let started = Instant::now();
+    let run = thread::scope(|scope| {
+        if let Some(delay) = cancel_after {
+            let cancelled = &cancelled;
+            scope.spawn(move || {
+                thread::sleep(delay);
+                cancelled.store(true, Ordering::Release);
+            });
+        }
+        run_worker(
+            &allocated,
+            &runtime,
+            |_| {},
+            |record| {
+                records.push(record);
+                Ok(())
+            },
+            &cancelled,
+        )
+    });
+    let elapsed = started.elapsed();
+    for entry in &records {
+        super::record(&mut store, &allocated, entry).unwrap();
+    }
+    let failure = match &run.result {
+        RunResult::Failed(JobFailure::Host(failure)) => Some(failure.clone()),
+        _ => None,
+    };
+    let cancelled = matches!(run.result, RunResult::Cancelled);
+    let qualified = matches!(run.result, RunResult::Qualified(_));
+    let (log_bytes, discarded_bytes) = (run.worker_log.len(), run.worker_log_discarded_bytes);
+    let finished = finish(&mut store, &allocated, run).unwrap();
+    assert_eq!(state(&store, &allocated), finished.state);
+    HostileOutcome {
+        record,
+        failure,
+        cancelled,
+        qualified,
+        log_bytes,
+        discarded_bytes,
+        state: finished.state,
+        elapsed,
+    }
+}
+
+#[test]
+fn hostile_ai_provenance_claims_fail_before_media_qualification() {
+    for name in [
+        "symlink_outside",
+        "hardlink_outside",
+        "symlinked_scope",
+        "fifo",
+        "sparse",
+        "directory",
+    ] {
+        let outcome = hostile_attempt(name, None);
+        assert!(outcome.elapsed < Duration::from_secs(10), "{name}");
+        let failure = outcome.failure.expect("artifact claim must fail");
+        assert_eq!(
+            failure.code,
+            HostFailureCode::OutputValidationFailed,
+            "{name}: {failure:?}"
+        );
+        assert!(
+            failure.detail.as_str().contains("artifact"),
+            "{name}: {failure:?}"
+        );
+        assert_eq!(outcome.state, JobState::Failed);
+        assert!(!outcome.qualified);
+        assert_eq!(
+            std::fs::read(outcome.record.path().join("outside.bin")).unwrap(),
+            b"{}"
+        );
+        outcome.record.assert_group_gone();
+    }
+    for name in ["absolute", "parent"] {
+        let outcome = hostile_attempt(name, None);
+        let failure = outcome.failure.expect("unsafe reference must fail");
+        assert!(
+            matches!(
+                failure.code,
+                HostFailureCode::WorkerExited | HostFailureCode::ProtocolViolation
+            ),
+            "{name}: {failure:?}"
+        );
+        assert!(
+            !failure.detail.as_str().contains("exited"),
+            "{name}: {failure:?}"
+        );
+        assert_eq!(outcome.state, JobState::Failed);
+        assert!(!outcome.qualified);
+        outcome.record.assert_group_gone();
+    }
+}
+
+#[test]
+fn hostile_ai_workers_fail_truthfully_and_leave_no_group_member() {
+    for name in [
+        "malformed",
+        "invalid_utf8",
+        "zero_length",
+        "truncated",
+        "oversized",
+        "just_over",
+        "wrong_attempt",
+        "fork_spam_exit",
+        "stderr_flood",
+    ] {
+        let outcome = hostile_attempt(name, None);
+        assert!(
+            outcome.elapsed < Duration::from_secs(20),
+            "{name}: {:?}",
+            outcome.elapsed
+        );
+        assert!(!outcome.qualified, "{name}");
+        let failure = outcome
+            .failure
+            .unwrap_or_else(|| panic!("{name}: expected a host failure"));
+        assert!(
+            matches!(
+                failure.code,
+                HostFailureCode::WorkerExited | HostFailureCode::ProtocolViolation
+            ),
+            "{name}: {failure:?}"
+        );
+        hostile::assert_generic_cause(name, failure.detail.as_str());
+        if name == "wrong_attempt" {
+            assert!(!failure.detail.as_str().contains("exited"), "{failure:?}");
+        }
+        assert_eq!(outcome.state, JobState::Failed, "{name}");
+        outcome.record.assert_group_gone();
+        if name == "stderr_flood" {
+            // The retained diagnostic is the bounded tail; the rest is counted.
+            assert_eq!(outcome.log_bytes, 64 * 1024);
+            assert_eq!(outcome.discarded_bytes, 16 * 1024 * 1024 - 64 * 1024);
+        }
+    }
+}
+
+#[test]
+fn stalled_and_forking_ai_workers_are_stopped_by_cancellation() {
+    // The attempt deadline is thirty minutes; cancellation is how a person
+    // stops a dribbling or forking worker that ignores the cooperative cancel.
+    for name in ["slow_loris", "fork_spam"] {
+        let outcome = hostile_attempt(name, Some(Duration::from_millis(300)));
+        assert!(
+            outcome.elapsed < Duration::from_secs(20),
+            "{name}: {:?}",
+            outcome.elapsed
+        );
+        assert!(outcome.cancelled, "{name}: {:?}", outcome.failure);
+        assert_eq!(outcome.state, JobState::Cancelled, "{name}");
+        outcome.record.assert_group_gone();
+    }
+}
+
+#[test]
+fn an_escaped_ai_worker_descendant_fails_the_attempt_and_is_not_contained() {
+    let outcome = hostile_attempt("escape", None);
+    assert!(
+        outcome.elapsed < Duration::from_secs(25),
+        "{:?}",
+        outcome.elapsed
+    );
+    let failure = outcome.failure.expect("expected a host failure");
+    assert!(
+        failure.detail.as_str().contains("pipes stayed open"),
+        "{failure:?}"
+    );
+    assert_eq!(outcome.state, JobState::Failed);
+    outcome.record.assert_group_gone();
+    hostile::assert_alive(outcome.record.escaped(Duration::from_secs(5)));
 }

@@ -914,4 +914,106 @@ mod tests {
             .is_err()
         );
     }
+
+    /// Gate G: recipes arrive as untrusted JSON (headless/live requests) and
+    /// as labels inside untrusted project files. Selector 0 is recipe JSON,
+    /// expanded at several rates in both modes; selector 1 is a group label.
+    /// Every expandable recipe's label must parse back to some recipe.
+    #[test]
+    fn adversarial_gag_recipes_and_labels() {
+        use deadpan_chaos::{Target, Verdict, fuzz, reject, select};
+        let millis = |value| PauseLength::Milliseconds {
+            milliseconds: NonZeroU32::new(value).unwrap(),
+        };
+        let frames = |value| PauseLength::Frames {
+            frames: NonZeroU32::new(value).unwrap(),
+        };
+        let r = |name| RegisterName::new(name).unwrap();
+        let recipes = [
+            GagRecipe::LongAnswer {
+                version: 1,
+                pause: millis(1500),
+                scale: ExactRatio::new(27, 20).unwrap(),
+            },
+            GagRecipe::Escalator {
+                version: 1,
+                plays: NonZeroU32::new(4).unwrap(),
+                gain_step: GainDb::new(-1_250).unwrap(),
+                zoom_step: crate::quantize_zoom_step(ExactRatio::new(2, 25).unwrap()).unwrap(),
+            },
+            GagRecipe::NonSequitur {
+                version: 1,
+                register: r('"'),
+            },
+            GagRecipe::OneMoreTime {
+                version: 1,
+                plays: NonZeroU32::new(5).unwrap(),
+                gap: frames(12),
+                shorten: frames(3),
+                variation: Some(GagVariation {
+                    percent: 20,
+                    seed: 7,
+                }),
+            },
+            GagRecipe::NothingHappens {
+                version: 1,
+                tone: millis(1000),
+                silence: frames(30),
+                register: r('t'),
+            },
+            GagRecipe::AreWeDone {
+                version: 1,
+                pause: millis(1500),
+                register: r('r'),
+            },
+        ];
+        let mut seeds = Vec::new();
+        for recipe in recipes {
+            seeds.push([vec![0], serde_json::to_vec(&recipe).unwrap()].concat());
+            seeds.push([vec![1], recipe.label().into_bytes()].concat());
+        }
+        let rates = [
+            crate::FrameRate::new(30, 1).unwrap(),
+            crate::FrameRate::new(24_000, 1_001).unwrap(),
+            crate::FrameRate::new(240, 1).unwrap(),
+        ];
+        let report = fuzz(
+            Target::json("core-gag-recipe").iterations(400),
+            seeds,
+            |input| {
+                let (selector, body) = select(input);
+                let recipe = if selector % 2 == 0 {
+                    match serde_json::from_slice::<GagRecipe>(body) {
+                        Ok(recipe) => recipe,
+                        Err(error) => return reject(error),
+                    }
+                } else {
+                    let Ok(label) = std::str::from_utf8(body) else {
+                        return Ok(Verdict::Rejected("utf8".into()));
+                    };
+                    match GagRecipe::from_label(label) {
+                        Some(recipe) => recipe,
+                        None => return Ok(Verdict::Rejected("not a gag label".into())),
+                    }
+                };
+                let mut expanded = false;
+                for rate in rates {
+                    for visual in [false, true] {
+                        expanded |= recipe.expand(visual, rate).is_ok();
+                    }
+                }
+                if !expanded {
+                    return Ok(Verdict::Rejected("does not expand".into()));
+                }
+                if GagRecipe::from_label(&recipe.label()).is_none() {
+                    return Err(format!(
+                        "expandable recipe label does not parse: {}",
+                        recipe.label()
+                    ));
+                }
+                Ok(Verdict::Accepted)
+            },
+        );
+        report.assert_clean();
+    }
 }

@@ -183,6 +183,12 @@ fn exercise(
         "otool audit: only system or in-bundle libraries",
         &mut failures,
     );
+    let deno_notices = deno_notice_problems(app)?;
+    check(
+        deno_notices.is_empty(),
+        format!("Deno/V8 notices match the vendored notice set {deno_notices:?}"),
+        &mut failures,
+    );
 
     let (success, _, stderr) = scrubbed.run(&gui, &["--smoke-test"])?;
     check(
@@ -424,6 +430,15 @@ fn ai_runtime_checks(
     Ok(())
 }
 
+fn deno_notice_problems(app: &Path) -> Result<Vec<String>> {
+    let workspace = workspace_root();
+    Ok(super::deno_notices::audit_bundle(
+        app,
+        &workspace.join("packaging/notices"),
+        &super::notices::spdx_identifiers(&workspace)?,
+    ))
+}
+
 /// Damages one copied bundle.
 type Damage = fn(&Path) -> Result<()>;
 
@@ -514,6 +529,22 @@ fn negative(scrubbed: &Scrubbed, root: &Path, app: &Path) -> Result<()> {
             &mut failures,
         );
     }
+    // Missing aggregated Deno notices fail the notice audit.
+    let directory = root.join("negative-deno-notices");
+    fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+    let copy = directory.join(APP_NAME);
+    run_tool("ditto", &[app.as_os_str(), copy.as_os_str()])?;
+    fs::remove_file(
+        copy.join("Contents/Resources/Notices")
+            .join(super::deno_notices::BUNDLED_NOTICES),
+    )
+    .map_err(|e| e.to_string())?;
+    let problems = deno_notice_problems(&copy)?;
+    check(
+        !problems.is_empty(),
+        format!("deleted Deno notices: the notice audit refuses the bundle ({problems:?})"),
+        &mut failures,
+    );
     if failures.is_empty() {
         println!("verify: all negative checks passed");
         Ok(())

@@ -19,6 +19,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 pub mod ai_runtime;
+pub mod deno_notices;
 pub mod macho;
 pub mod notices;
 pub mod spdx;
@@ -1053,6 +1054,25 @@ fn assemble(
     if let Some(built) = ai {
         ai_runtime::write_notices(built, workspace, &notices_directory)?;
     }
+    // Aggregated notices for everything statically linked into Deno.
+    let identifiers = notices::spdx_identifiers(workspace)?;
+    let deno_helper = shipped_helpers
+        .iter()
+        .find(|helper| helper.name == "deno")
+        .ok_or("no Deno helper was bundled")?;
+    let notice_sets = workspace.join("packaging/notices");
+    let deno = deno_notices::DenoNotices::load(
+        &deno_notices::set_directory(&notice_sets, &deno_helper.version)?,
+        &identifiers,
+    )?;
+    if deno.version != deno_helper.version || deno.executable_sha256 != deno_helper.upstream_sha256
+    {
+        return Err(format!(
+            "the vendored Deno notice set ({} {}) does not describe the bundled Deno {} {}",
+            deno.version, deno.executable_sha256, deno_helper.version, deno_helper.upstream_sha256
+        ));
+    }
+    deno.install(&notices_directory)?;
     let version = crates
         .iter()
         .find(|item| item.name == MAIN_EXECUTABLE)
@@ -1063,7 +1083,7 @@ fn assemble(
     if let (Some(built), Some(directory)) = (ai, &ai_directory) {
         native.extend(ai_runtime::sbom_components(built, directory)?);
     }
-    let sbom = notices::sbom(
+    let mut sbom = notices::sbom(
         &version,
         &timestamp,
         &crates,
@@ -1071,6 +1091,7 @@ fn assemble(
         &shipped_helpers,
         &native,
     );
+    deno.attach_to_sbom(&mut sbom, &identifiers)?;
     fs::write(
         notices_directory.join("sbom.cdx.json"),
         serde_json::to_vec_pretty(&sbom).map_err(|e| e.to_string())?,
@@ -1112,7 +1133,7 @@ fn assemble(
             } else {
                 "Built without the AI runtime; AI pauses are unavailable."
             },
-            "Downloader updates (signed manifests and rollback) are not implemented.",
+            "Application updates use complete verified bundles with the previous build retained for rollback. Helpers and model packs use independent signed manifests and rollback.",
         ],
     });
     fs::write(
@@ -1143,6 +1164,13 @@ fn assemble(
         return Err(format!(
             "bundle audit failed:\n  {}",
             audit.problems.join("\n  ")
+        ));
+    }
+    let deno_problems = deno_notices::audit_bundle(&app, &notice_sets, &identifiers);
+    if !deno_problems.is_empty() {
+        return Err(format!(
+            "Deno notice audit failed:\n  {}",
+            deno_problems.join("\n  ")
         ));
     }
     check_staged_helpers(&app, staging)?;
@@ -1248,10 +1276,23 @@ pub fn audit_command(arguments: &[String]) -> Result<()> {
         .unwrap_or_else(|| vec!["/opt/homebrew".into(), "/usr/local/".into()]);
     let audit = macho::audit(Path::new(app), &markers)?;
     print_audit(&audit);
-    if audit.problems.is_empty() {
-        Ok(())
-    } else {
-        Err(format!("{} load-reference problems", audit.problems.len()))
+    let workspace = workspace_root();
+    let deno = deno_notices::audit_bundle(
+        Path::new(app),
+        &workspace.join("packaging/notices"),
+        &notices::spdx_identifiers(&workspace)?,
+    );
+    for problem in &deno {
+        println!("audit: PROBLEM: Deno notices: {problem}");
+    }
+    if deno.is_empty() {
+        println!("audit: Deno notices match the vendored notice set");
+    }
+    match (audit.problems.len(), deno.len()) {
+        (0, 0) => Ok(()),
+        (load, notices) => Err(format!(
+            "{load} load-reference problems, {notices} Deno notice problems"
+        )),
     }
 }
 

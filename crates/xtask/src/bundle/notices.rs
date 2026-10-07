@@ -434,6 +434,14 @@ Build configuration: {configuration}\n",
                 notice.path, notice.component, notice.source
             );
         }
+        if helper.name == "deno" {
+            let _ = writeln!(
+                text,
+                "The deno executable statically links V8 and its third-party libraries (ICU,\nAbseil, libc++, simdutf, Highway and others), the Rust standard library and\nDeno's Rust crates; their notices are aggregated in {} with\nthe source revisions in {}.",
+                super::deno_notices::BUNDLED_NOTICES,
+                super::deno_notices::BUNDLED_MANIFEST
+            );
+        }
         if helper.name == "yt-dlp" {
             let _ = writeln!(
                 text,

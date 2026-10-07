@@ -327,6 +327,32 @@ fn unresponsive_worker_is_killed_after_grace_and_deadline() {
 }
 
 #[test]
+fn escalated_cancellation_does_not_report_the_frame_its_kill_truncated() {
+    // Regression: killing a worker that ignored cancellation while a frame was
+    // in flight used to surface "frame ended after 1 of 4096 payload bytes" as
+    // a worker fault, so the same ignored cancellation ended Failed or
+    // Cancelled depending on where the kill landed.
+    let workspace = tempfile::tempdir().unwrap();
+    let mut specification = spec(workspace.path(), "partial-ignoring-cancel");
+    specification.limits.cancellation_grace = Duration::from_millis(200);
+    let mut process = WorkerProcess::spawn(specification, request()).unwrap();
+    let ready = Instant::now() + Duration::from_secs(3);
+    while !workspace.path().join("worker.pid").exists() {
+        assert!(Instant::now() < ready);
+        thread::sleep(Duration::from_millis(2));
+    }
+    // Let the partial frame reach the host before cancelling.
+    thread::sleep(Duration::from_millis(50));
+    assert!(process.request_cancel(Instant::now()).unwrap());
+    let events = finish(&mut process);
+    assert!(faults(&events).is_empty(), "{:?}", faults(&events));
+    assert!(matches!(
+        events.last(),
+        Some(ProcessEvent::Exited { status, cancellation_escalated: true }) if !status.success()
+    ));
+}
+
+#[test]
 fn late_poll_observes_exit_before_applying_a_timeout() {
     use rustix::process::{Pid, WaitId, WaitIdOptions, waitid};
     for cancel in [false, true] {

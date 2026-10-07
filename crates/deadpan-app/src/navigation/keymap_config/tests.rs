@@ -641,3 +641,47 @@ fn compact_next_keys_share_count_and_nonterminal_filtering() {
     press(&mut map, Key::M);
     assert_eq!(map.pending_next_keys().as_deref(), Some("a–z / A–Z · Esc"));
 }
+
+/// Gate G: the personal keymap is untrusted user-supplied JSON read at
+/// startup. Every input must end in a typed refusal or a complete map whose
+/// shipped teaching still compiles; never a panic or unbounded work. This
+/// deterministic verdict campaign complements the coverage-guided
+/// app-keymap-config target over the same production parser.
+#[test]
+fn adversarial_keymap_configuration() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject};
+    let entries = [
+        serde_json::json!([]),
+        serde_json::json!([{"action":"frame.next","keys":[["h"]]},{"action":"frame.previous","keys":[["l"]]}]),
+        serde_json::json!([{"action":"frame.next","keys":[["a","Space","G",":"]]}]),
+        serde_json::json!([{"action":"trim","keys":[["o","t","v"],["F2"]]},{"action":"insert","keys":[["a","i"]]},{"action":"mark.set","keys":[["o","m"]]}]),
+        serde_json::json!([{"action":"register.select","keys":[["F2","F3","F4","F5","F6","F7"]]},{"action":"hold","keys":[["o","b"]]}]),
+        serde_json::json!([{"action":"cut.beat","keys":[["a","b"]]},{"action":"cut.range","keys":[["a","c"]]}]),
+    ];
+    let mut seeds = Vec::new();
+    for mode in ["logical", "physical"] {
+        for bindings in &entries {
+            seeds.push(
+                serde_json::to_vec(
+                    &serde_json::json!({"version":1,"key_mode":mode,"bindings":bindings}),
+                )
+                .unwrap(),
+            );
+        }
+    }
+    let report = fuzz(
+        Target::json("app-keymap-config").iterations(300),
+        seeds,
+        |input| match Bindings::from_json_reporting(input) {
+            Ok((mut bindings, _warnings)) => {
+                // The installed map must route without panicking.
+                for key in [Key::H, Key::L, Key::A, Key::Escape] {
+                    let _ = bindings.key(key, Modifiers::NONE, false, false);
+                }
+                Ok(Verdict::Accepted)
+            }
+            Err(error) => reject(error),
+        },
+    );
+    report.assert_clean();
+}

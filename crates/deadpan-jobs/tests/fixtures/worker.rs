@@ -45,6 +45,14 @@ fn main() {
         hang();
         return;
     }
+    if mode == "partial-ignoring-cancel" {
+        // Dribble a frame and ignore the cancellation until the group is killed.
+        io::stdout().write_all(&4096_u32.to_be_bytes()).unwrap();
+        io::stdout().write_all(b"{").unwrap();
+        io::stdout().flush().unwrap();
+        hang();
+        return;
+    }
     if mode == "truncated" {
         io::stdout().write_all(&12_u32.to_be_bytes()).unwrap();
         io::stdout().write_all(b"{").unwrap();

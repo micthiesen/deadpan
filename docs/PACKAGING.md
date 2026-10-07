@@ -11,7 +11,7 @@ signature is needed, and is never notarized or distributed.
 ## Build
 
 ```sh
-export DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ffmpeg-dev/prefix   # build time only
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"   # build time only
 cargo xtask bundle --output /tmp/deadpan-bundle
 cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 ```
@@ -72,7 +72,7 @@ build-time tool only.
 | `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
 | `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
-| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, yt-dlp, yt-dlp-ejs and Deno upstream notices, SPDX texts, `sbom.cdx.json`. |
+| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
 | `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, signature kind and limitations. |
 | `Contents/Resources/Assets.car`, `Deadpan.icns` | Layered icon and ICNS fallback. |
 
@@ -92,7 +92,8 @@ gain `@loader_path`, and absolute build-prefix search paths are deleted.
 `install_name_tool` invalidates the linker's ad hoc signatures, so all code is
 signed afterwards.
 
-`cargo xtask bundle-audit APP` checks every Mach-O file in a bundle. Each
+`cargo xtask bundle-audit APP` checks the Deno notices (below) and every
+Mach-O file in a bundle. Each
 dependency must be an absolute, already-normalized path under
 `/System/Library/` or `/usr/lib/`, or it must resolve through `@rpath`,
 `@executable_path` or `@loader_path` to a file inside the bundle. Paths are
@@ -374,15 +375,63 @@ FFmpeg's section states:
 Before public distribution, the owner must decide whether to host the exact
 FFmpeg source alongside the binary or provide a written offer. The notice does
 not promise one yet. yt-dlp ships its aggregated PyInstaller/Python notices.
-Deno publishes only its MIT license. Notices for its embedded V8 and other
-crates are not aggregated upstream and remain a gap.
+
+Deno publishes only its MIT license, so Deadpan aggregates the notices for
+everything statically linked into the pinned executable itself. The input is
+[packaging/notices/deno-2.9.7](../packaging/notices/deno-2.9.7): `manifest.json`
+plus each distinct license text once as `texts/<sha256>.txt` (553 texts,
+1,687,073 bytes). The manifest records the Deno tag `v2.9.7` and commit
+`0c071246a412575e07423263404a5d13e7ed6aa2`, the pinned executable SHA-256,
+rusty_v8 `v150.4.0` (commit `5c15a6995c9bb4bacd3e341b59fff32c909c80bf`), and
+for every file its upstream path, source URL and SHA-256. It covers:
+
+- Deno's `LICENSE.md`, the license files beside its embedded Node and undici
+  type declarations, the TypeScript compiler's leading license comment,
+  and copyright/license comments from 275 runtime, extension and compiler
+  source files, including the Node/Joyent/Feross notices. This source inventory
+  conservatively includes notices beyond the macOS executable's linked code;
+- rusty_v8, V8 (`LICENSE`, `LICENSE.fdlibm`, `LICENSE.strongtalk`,
+  `LICENSE.v8` and its compiled third-party directories: glibc trigonometry,
+  inspector_protocol, rapidhash, siphash, utf8-decoder and V8's own derived
+  code), ICU, Abseil, the statically linked Chromium libc++/libc++abi and
+  LLVM libc, FP16, fast_float, Dragonbox, Highway and simdutf, each at the
+  submodule commit of the rusty_v8 tag;
+- the Rust standard library at the rustc commit embedded in the executable;
+- the 768 crates.io packages in the first `deno` executable tree from
+  `cargo tree -p deno -p denort -p test_server
+  --features deno/panic-trace -e normal --target aarch64-apple-darwin` (Deno's
+  release build command, retaining its feature resolution) at that commit,
+  with license files found by the same
+  rules as Deadpan's crates, and SPDX 3.27.0 texts for the 89 that publish
+  none. Every crate path embedded in the executable is in this set.
+
+Components present in the sources but not linked in this configuration
+(partition_alloc, libunwind, Chromium's Rust crates, test and build tools) are
+listed with the reason. `tools/notices/deno_notices.py` regenerates the set
+from a Deno checkout, the pinned executable and pinned partial clones.
+The source-comment extraction was rerun against the exact Deno commit on
+2026-10-06; every retained text matches its filename hash. Full independent
+regeneration of the complete set has not been repeated in this session.
+A new Deno pin needs a new set.
+
+`cargo xtask bundle` selects `deno-<version>` by the shipped Deno version,
+refuses a set whose version or executable hash differs, a changed or unlisted
+text, a dangling reference or a crate without a license file whose license
+lacks a bundled standard text. It renders one deterministic
+`Notices/deno/THIRD_PARTY_NOTICES.txt` (about 2 MB), copies the manifest to
+`Notices/deno/notices-manifest.json` and references both from the Deno entry of
+`THIRD_PARTY_NOTICES.txt`. The bundle audit then re-renders the notice from the
+vendored set and compares bytes.
 
 `sbom.cdx.json` (CycloneDX 1.5) lists every crate with purl, validated SPDX
 expression, Cargo.lock SHA-256 and dependency edges. It also lists:
 
 - FFmpeg (`LGPL-2.1-or-later`) with its archive hash, sanitized configuration
   and shipped library hashes;
-- both helpers with upstream and shipped hashes;
+- both helpers with upstream and shipped hashes. The Deno helper nests the
+  V8 and C/C++ sources (by commit) and the 768 crates (purl, crates.io
+  SHA-256 and the declared license when it is a valid SPDX expression;
+  otherwise a `deadpan:declared-license` property);
 - whisper.cpp, SQLite and Signalsmith with versions read from their vendored
   sources. SQLite uses `blessing`, which is an SPDX identifier, so no
   `LicenseRef` is needed.
@@ -398,7 +447,8 @@ any, so a fallback would be visible.
 
 Positive checks:
 
-- `codesign --verify --deep --strict` and the load-reference audit;
+- `codesign --verify --deep --strict`, the load-reference audit and the Deno
+  notice audit;
 - `deadpan-app --smoke-test`;
 - `deadpan-cli doctor` and `deadpan-app --headless doctor`: the executable,
   every worker, the four loaded FFmpeg images and both downloader helpers are
@@ -423,14 +473,22 @@ Negative checks run on separate copies, with the managed fallback present:
 - a byte flipped in the bundled yt-dlp;
 - `Contents/Resources/helpers` deleted;
 - a changed byte in the AI worker, which `codesign --verify --deep --strict`
+  must refuse;
+- `Notices/deno/THIRD_PARTY_NOTICES.txt` deleted, which the Deno notice audit
   must refuse.
 
 In both cases `downloader status` must refuse the bundled baseline, `--probe`
 must fail with `DownloaderHelperInvalid`, and for the deleted directory
 `doctor` must report the problem.
 
-`cargo xtask bundle-audit APP` runs the load-reference audit alone. Unit tests
-cover:
+`cargo xtask bundle-audit APP` runs the load-reference and Deno notice audits
+alone. The notice audit reads the bundled helper manifest and fails when there
+is no vendored set for the bundled Deno version, when the set's version or
+executable hash differs from the bundled Deno, when the aggregated notice is
+missing or differs from a fresh rendering of the hash-checked set, when the
+bundled manifest copy differs, or when `THIRD_PARTY_NOTICES.txt` does not
+reference it. `bundle` runs it before publishing and `bundle-verify` runs it on
+the copy. Unit tests cover:
 
 - the `otool` text parsers, including universal files and install-name
   subtraction;
@@ -441,7 +499,10 @@ cover:
 - SPDX parsing and satisfiability, and SBOM shape and validity;
 - the content hash, including tamper and appended data;
 - bundled-helper tamper with a matching manifest, signer requirements and
-  packaged-bundle detection.
+  packaged-bundle detection;
+- Deno notice sets: changed, missing and unlisted texts, dangling references,
+  uncovered crates, a different Deno version or executable, missing or edited
+  bundled notices, SBOM nesting and the vendored 2.9.7 set itself.
 ### 2026-10-04 result
 
 Apple M5 Max, macOS 26.5.2, Xcode 26.6 and SDK 26.5, Rust 1.97.1, ad hoc
@@ -648,16 +709,25 @@ To verify (owner):
 
 ## Remaining work
 
-- Developer ID signing, notarization, stapling and a signed distribution
-  container. These need the owner's credentials.
-- Clean-machine online and offline acceptance under quarantine (§26.6).
-- The owner's GPL decision for the AI runtime's `ffmpeg`/`ffprobe` and a
-  Developer ID/notarized run of the nested Python code (library validation).
-- The app update mechanism. Helper and model updates have their own signed
-  manifests, version identities and rollback ([updates](UPDATES.md)); the app
-  itself is still updated by rebuilding.
-- An FFmpeg source-hosting or written-offer decision, and aggregated Deno and V8
-  notices.
+- Clean-machine online and offline acceptance under quarantine (§26.6),
+  recorded as To verify (owner) under §29.1.
+- Licensing and signing decisions for any future public distribution. Personal
+  use requires neither Developer ID/notarization nor a public redistribution
+  decision for the AI runtime's `ffmpeg`/`ffprobe`.
+- The app uses verified manual bundle replacement with retained previous
+  versions, following the [application rollback policy](UPDATES.md#application-versions-and-rollback).
+  Helper and model updates have independent signed manifests and rollback.
+- An FFmpeg source-hosting or written-offer decision if distribution begins.
+- Aggregated Deno/V8 notices are generated from upstream sources by Deadpan,
+  not published by Deno. The linked third-party set was determined from
+  rusty_v8's GN configuration, V8's build files and the executable's embedded
+  paths, not from Deno's own build graph; an owner or legal review of that
+  completeness belongs to any future public distribution. The retained
+  source-level comment inventory includes Deno's Node-derived JavaScript
+  polyfills. Complete regeneration reproduced all 553 texts and the manifest
+  byte for byte on 2026-10-06; the rebuilt bundle also passed its native load
+  audit ([evidence](RELEASE_AUDIT.md)). Personal use does not require public
+  distribution.
 - Bit-for-bit reproducibility: comparing two builds, deterministic signing and
   `env!` paths.
 - `tools/build-app.py` remains the quick wrapper for an existing debug

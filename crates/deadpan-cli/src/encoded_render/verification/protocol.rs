@@ -220,7 +220,7 @@ pub(super) fn bind(report: &VerificationReport, manifest: &EncodedManifest) -> R
     Ok(())
 }
 
-pub(super) fn read_host(reader: &mut impl Read) -> Result<Option<HostMessage>, String> {
+pub fn read_host(reader: &mut impl Read) -> Result<Option<HostMessage>, String> {
     let value: Option<HostMessage> = read_frame(reader).map_err(|e| e.to_string())?;
     if let Some(value) = &value {
         value.validate()?;

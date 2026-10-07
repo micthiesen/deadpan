@@ -1,12 +1,13 @@
 //! Gate G adversarial regression shared by the framed worker protocols. Each
 //! protocol supplies valid host requests and worker responses; inputs are
-//! mutated frame streams read by the worker-side host reader (selector 0) or
-//! the host-side response reader plus identity classification (selector 1).
+//! mutated streams read as requests (0), responses (1), or an initial request
+//! followed by responses classified against that request (2). The stable and
+//! nightly runners share the same exercise and input interpretation.
 //! Every stream must end cleanly or with a typed error, never a panic, within
 //! the per-case bounds. See docs/ADVERSARIAL.md.
 
 use crate::process::WorkerProtocol;
-use deadpan_chaos::{Target, Verdict, fuzz, read_stream, select};
+use deadpan_chaos::{Target, fuzz, protocol_stream};
 use serde::Serialize;
 
 #[global_allocator]
@@ -36,7 +37,7 @@ pub(crate) fn protocol<P>(
     P::Request: Serialize,
     P::Response: Serialize,
 {
-    let classifier = P::from_request(&requests[0]).expect("seed request is valid");
+    P::from_request(&requests[0]).expect("seed request is valid");
     let mut seeds = Vec::new();
     for request in &requests {
         seeds.push(frames(0, std::slice::from_ref(request)));
@@ -46,32 +47,28 @@ pub(crate) fn protocol<P>(
         seeds.push(frames(1, std::slice::from_ref(response)));
     }
     seeds.push(frames(1, &responses));
-    let report = fuzz(Target::frames(name), seeds, |input| {
-        let (selector, stream) = select(input);
-        if selector % 2 == 0 {
-            read_stream(stream, 64, |reader| {
-                let request = read_host(reader)?;
-                Ok(request.map(|_| ()))
-            })
-        } else {
-            let mut kinds = Vec::new();
-            let verdict = read_stream(stream, 64, |reader: &mut &[u8]| {
-                let response = P::read_response(reader)?;
-                match response {
-                    Some(response) => {
-                        kinds.push(classifier.classify(&response).is_ok());
-                        Ok(Some(()))
-                    }
-                    None => Ok(None),
-                }
-            })?;
-            Ok(match verdict {
-                Verdict::Accepted if kinds.iter().any(|ok| !ok) => {
-                    Verdict::Rejected("valid frame for another attempt".into())
-                }
-                other => other,
-            })
-        }
-    });
+    let mut classified = frames(2, std::slice::from_ref(&requests[0]));
+    classified.extend_from_slice(&frames(1, &responses)[1..]);
+    seeds.push(classified.clone());
+    let exercise = |input: &[u8], calls: &mut usize| {
+        protocol_stream(
+            input,
+            read_host,
+            |writer, request| P::write_request(writer, request),
+            |reader| P::read_response(reader),
+            |request| P::from_request(request).map_err(|error| error.to_string()),
+            |protocol, response| {
+                *calls += 1;
+                protocol.classify(response).map(|_| ())
+            },
+        )
+    };
+    let mut calls = 0;
+    exercise(&classified, &mut calls).expect("classified seed does not violate invariants");
+    assert!(
+        calls > 0,
+        "valid request/response seed never reached classification"
+    );
+    let report = fuzz(Target::frames(name), seeds, |input| exercise(input, &mut 0));
     report.assert_clean();
 }

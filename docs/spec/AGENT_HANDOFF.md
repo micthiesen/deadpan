@@ -2,6 +2,34 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Resumed grammar and release audit, 2026-10-06
+
+Build on `ae79d614` and the [current release audit](../RELEASE_AUDIT.md).
+`ib`/`ab` now resolve through the native and semantic grammars. First-play
+attachment handling is atomic for marks, captions and cutaways; sounds still
+need retained-clock Repeat mapping. Shared layout normalization covers
+Corrections, URL and Marks. Native and headless diagnostic export saves a
+bounded allowlisted report without authored text, identifiers or media.
+
+The durable build prefix is
+`~/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix`, built and verified from the
+pinned sources. Set `DEADPAN_FFMPEG_PREFIX` to it for Cargo. The update signing
+key has verified private local file and Keychain recovery copies; see
+[updates](../UPDATES.md). No off-machine backup was established.
+
+The current audit records hostile-worker/privacy checks, 27 instrumented
+fuzz targets with 41.3 million executions, complete Deno notice regeneration,
+relocated bundle verification and a native smoke test that closed itself.
+The shared AI network restriction passed hostile-worker tests and real
+packaged model checks, generation, explicit acceptance and verified Render.
+Complete application replacement and rollback preserved the project's bytes.
+The full gate passed 4,700 workspace tests, 1,023 UI harness tests, strict
+lint and doc tests. DP-23 is complete within §29.1; the other requirements
+and all release gates retain their tracked work. Native §26.6 online and
+offline-distribution acceptance is underway on the current bundle. Do not
+infer completion from older blanket status text below; consult the current
+requirements table and evidence.
+
 ## Gags and macro pauses, 2026-10-04
 
 Semantic programs gained `InsertPause` (host-resolved freeze through

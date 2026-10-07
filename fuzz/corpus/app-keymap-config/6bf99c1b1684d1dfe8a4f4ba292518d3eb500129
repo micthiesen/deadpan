@@ -1,0 +1,1 @@
+{"bindings":[{"action":"trim","keys":[["o","t","v"],["F2"]]},{"action":"insert","keys":[["a","i"]]},{"action":"mark.set","keys":[["o","m"]]}],"key_mode":"physical","version":1}

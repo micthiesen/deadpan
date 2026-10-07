@@ -1,0 +1,239 @@
+{
+  "schema_version": 46,
+  "project_id": "e57fe5e8-ab20-4de1-828a-b7fd56372b7d",
+  "revision_id": "04c85d5b-8a06-412b-b572-9a331d9ba34d",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": {
+      "asset": "camera",
+      "qualification": "38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4"
+    }
+  },
+  "root": "9ad8a1de-32dd-4182-8df7-319f6dee8b91",
+  "nodes": {
+    "9ad8a1de-32dd-4182-8df7-319f6dee8b91": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "repeat"
+        ]
+      }
+    },
+    "clip": {
+      "label": "Original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 121,
+          "video": {
+            "type": "stream",
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 60060,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 180180,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "640",
+              "denominator": "1001"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "camera",
+            "span": {
+              "start": {
+                "ticks": 95072,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 288288,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120760",
+              "denominator": "1001"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "repeat": {
+      "label": "Two plays with overlays",
+      "kind": {
+        "type": "repeat",
+        "child": "clip",
+        "iterations": {
+          "runs": [
+            {
+              "allocation": "core29-repeat",
+              "first": 0,
+              "count": 2
+            }
+          ]
+        },
+        "gap": null
+      }
+    }
+  },
+  "assets": {
+    "camera": {
+      "label": "Measured camera",
+      "content_hash": "blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f",
+      "video": {
+        "start": {
+          "ticks": 60060,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 180180,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 95072,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 288288,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4"
+    }
+  },
+  "marks": {},
+  "sounds": {
+    "bed": {
+      "owner": "9ad8a1de-32dd-4182-8df7-319f6dee8b91",
+      "label": "Bed",
+      "source": {
+        "asset": "camera",
+        "span": {
+          "start": {
+            "ticks": 95072,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 191680,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "mapping": {
+        "type": "duration",
+        "frames": {
+          "numerator": "60380",
+          "denominator": "1001"
+        }
+      },
+      "offset": 13,
+      "gain_millidecibels": -12000,
+      "start_edge": "automatic",
+      "end_edge": "automatic",
+      "overflow": "reject"
+    },
+    "impact": {
+      "owner": "9ad8a1de-32dd-4182-8df7-319f6dee8b91",
+      "label": "Retained impact",
+      "source": {
+        "asset": "camera",
+        "span": {
+          "start": {
+            "ticks": 95072,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 191680,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "mapping": {
+        "type": "duration",
+        "frames": {
+          "numerator": "60380",
+          "denominator": "1001"
+        }
+      },
+      "offset": 277,
+      "gain_millidecibels": -9000,
+      "start_edge": "automatic",
+      "end_edge": "hard",
+      "overflow": "reject"
+    }
+  },
+  "overrides": {}
+}

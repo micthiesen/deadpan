@@ -132,11 +132,12 @@ pub fn parse(expression: &str, identifiers: &Identifiers) -> Result<Expression> 
 }
 
 /// Whether a choice of alternatives is fully covered by `available` texts.
-/// Exceptions need their own text, which the bundle does not carry.
+/// An exception needs its own text as well as the license's (Deadpan's SPDX
+/// directory carries none; the Deno notice set carries `LLVM-exception`).
 pub fn satisfiable(expression: &Expression, available: &dyn Fn(&str) -> bool) -> bool {
     match expression {
         Expression::License(id) => available(id),
-        Expression::With(..) => false,
+        Expression::With(id, exception) => available(id) && available(exception),
         Expression::And(left, right) => {
             satisfiable(left, available) && satisfiable(right, available)
         }
@@ -194,5 +195,8 @@ mod tests {
         assert!(!check("ISC"));
         assert!(!check("MIT AND BSD-2-Clause"));
         assert!(!check("Apache-2.0 WITH LLVM-exception"));
+        let with_exception = |id: &str| ["Apache-2.0", "LLVM-exception"].contains(&id);
+        let expression = parse("Apache-2.0 WITH LLVM-exception", &ids).unwrap();
+        assert!(satisfiable(&expression, &with_exception));
     }
 }

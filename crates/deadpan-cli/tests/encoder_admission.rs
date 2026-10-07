@@ -194,3 +194,54 @@ fn cancel_while_probe_is_live_stops_and_confirms_teardown() {
     assert!(error.error.cleanup_confirmed());
     assert_eq!(rows(root.path()).len(), 1);
 }
+
+// Hostile stand-ins through the real probe supervision
+// (docs/ADVERSARIAL.md#hostile-workers).
+
+#[path = "hostile_workers/support.rs"]
+mod support;
+
+#[test]
+fn hostile_probe_processes_are_bounded_stopped_and_never_retried() {
+    for name in [
+        "malformed",
+        "invalid_utf8",
+        "zero_length",
+        "truncated",
+        "oversized",
+        "just_over",
+        "fork_spam_exit",
+        "stderr_flood",
+        "slow_loris",
+        "fork_spam",
+        "escape",
+    ] {
+        let record = support::Record::new();
+        let runtime = RenderWorkerRuntime {
+            executable: record.wrapper(&support::fixture("analysis.py"), name),
+            arguments: Vec::new(),
+            environment: BTreeMap::new(),
+        };
+        let started = Instant::now();
+        let error = qualify(
+            &runtime,
+            request(),
+            limits(),
+            &AtomicBool::new(false),
+            Instant::now() + Duration::from_secs(5),
+            |_, _, _| {},
+        )
+        .err()
+        .unwrap_or_else(|| panic!("hostile probe {name} was admitted"));
+        support::assert_bounded(started, Duration::from_secs(12), name);
+        assert!(error.error.cleanup_confirmed(), "{name}: {error:?}");
+        assert!(error.rejected.is_empty(), "{name}: {error:?}");
+        // A process fault is never a reason to try the next encoder path.
+        assert_eq!(record.launches(), 1, "{name}");
+        support::assert_generic_cause(name, &error.error.to_string());
+        record.assert_group_gone();
+        if name == "escape" {
+            support::assert_alive(record.escaped(Duration::from_secs(5)));
+        }
+    }
+}

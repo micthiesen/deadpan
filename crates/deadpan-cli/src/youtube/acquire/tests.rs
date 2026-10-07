@@ -312,6 +312,121 @@ fn downloader_errors_map_to_actionable_codes() {
     assert!(classify_failure(&long).message.len() < 1000);
 }
 
+/// Specification Section 27.4: a helper's final error line keeps its meaning
+/// but never carries signed stream URL queries (client address, tokens) or
+/// credential header values into the message shown, logged or reported.
+#[test]
+fn downloader_messages_redact_url_queries_and_credentials() {
+    let signed = "ERROR: unable to download video data: HTTP Error 403: Forbidden \
+        (https://rr3---sn-abc.googlevideo.com/videoplayback?expire=1&ip=203.0.113.7&sig=SECRETSIG)";
+    let error = classify_failure(signed);
+    assert_eq!(error.code, "YouTubeDownloadFailed");
+    assert!(
+        error
+            .message
+            .contains("https://rr3---sn-abc.googlevideo.com/videoplayback?[redacted])"),
+        "{}",
+        error.message
+    );
+    for leaked in ["203.0.113.7", "SECRETSIG", "expire="] {
+        assert!(!error.message.contains(leaked), "{}", error.message);
+    }
+
+    for (line, kept, leaked) in [
+        (
+            "ERROR: boom while sending Cookie: SID=abc123; HSID=def456",
+            "ERROR: boom while sending Cookie: [redacted]",
+            "abc123",
+        ),
+        (
+            "ERROR: request had authorization: Bearer tok-987",
+            "ERROR: request had authorization: [redacted]",
+            "tok-987",
+        ),
+        (
+            "ERROR: request headers {'Authorization': 'Bearer secret-token'}",
+            "ERROR: request headers {'Authorization': [redacted]",
+            "secret-token",
+        ),
+        (
+            "ERROR: received Set-Cookie = secret-cookie",
+            "ERROR: received Set-Cookie = [redacted]",
+            "secret-cookie",
+        ),
+        (
+            "ERROR: https://example.com/v?token=SECRETTOKEN Cookie: SID=abc123",
+            "ERROR: https://example.com/v?[redacted] Cookie: [redacted]",
+            "SECRETTOKEN",
+        ),
+        (
+            "ERROR: https://secret-user:secret-pass@example.com/v?token=secret-token",
+            "ERROR: https://[redacted]@example.com/v?[redacted]",
+            "secret-",
+        ),
+        (
+            "ERROR: https://secret-user:secret-pass@example.com/v Proxy-Authorization: Basic secret-auth",
+            "ERROR: https://[redacted]@example.com/v Proxy-Authorization: [redacted]",
+            "secret-",
+        ),
+        (
+            "ERROR: odd HTTP://Example.com/a#frag=secret-fragment and http://x.test/p",
+            "ERROR: odd HTTP://Example.com/a?[redacted] and http://x.test/p",
+            "secret-fragment",
+        ),
+        (
+            "ERROR: https://example.com/v?x=(abc)&token=SECRET",
+            "ERROR: https://example.com/v?[redacted]",
+            "SECRET",
+        ),
+        (
+            "ERROR: https://example.com/v?x='abc'&token=SECRET",
+            "ERROR: https://example.com/v?[redacted]",
+            "SECRET",
+        ),
+        (
+            "ERROR: 'https://example.com/v?x='abc'&token=SECRET', retry failed",
+            "ERROR: 'https://example.com/v?[redacted]', retry failed",
+            "SECRET",
+        ),
+        (
+            "ERROR: (https://example.com/v?x=(abc)&token=SECRET) failed",
+            "ERROR: (https://example.com/v?[redacted]) failed",
+            "SECRET",
+        ),
+        (
+            "ERROR: \"https://example.com/v?x=(abc)&token=SECRET\" failed",
+            "ERROR: \"https://example.com/v?[redacted]\" failed",
+            "SECRET",
+        ),
+        (
+            "ERROR: [youtube] x: Unsupported URL: https://www.youtube.com/",
+            "ERROR: [youtube] x: Unsupported URL: https://www.youtube.com/",
+            "?[redacted]",
+        ),
+    ] {
+        let redacted = redact_detail(line);
+        assert_eq!(redacted, kept);
+        assert!(!redacted.contains(leaked), "{redacted}");
+        assert!(!classify_failure(line).message.contains(leaked), "{line}");
+    }
+    // A query cut by the 400-character bound is still removed.
+    let long = format!(
+        "ERROR: {} https://example.com/v?token=SECRET",
+        "x".repeat(380)
+    );
+    assert!(!classify_failure(&long).message.contains("SECRET"));
+    assert!(!classify_failure(&long).message.contains("token"));
+    let long_authority = format!(
+        "ERROR: https://secret-user:{}@example.com/v",
+        "secret-pass".repeat(80)
+    );
+    assert!(
+        !classify_failure(&long_authority)
+            .message
+            .contains("secret-")
+    );
+}
+
 #[test]
 fn original_names_are_bounded_and_never_form_paths() {
     let id = id();

@@ -1,0 +1,48 @@
+{
+  "schema": 2,
+  "pack_id": "whisper-base-en",
+  "pack_version": "2",
+  "title": "English transcription and pause detection (whisper base.en, Silero VAD)",
+  "model_family": "whisper",
+  "runtime_id": "whisper.cpp",
+  "runtime_versions": [
+    "1.8.3"
+  ],
+  "operations": [
+    "transcribe",
+    "speech_activity"
+  ],
+  "languages": [
+    "en"
+  ],
+  "files": [
+    {
+      "name": "ggml-base.en.bin",
+      "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin",
+      "sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+      "bytes": 147964211
+    },
+    {
+      "name": "ggml-silero-v6.2.0.bin",
+      "url": "https://huggingface.co/ggml-org/whisper-vad/resolve/9ffd54a1e1ee413ddf265af9913beaf518d1639b/ggml-silero-v6.2.0.bin",
+      "sha256": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987",
+      "bytes": 885098
+    }
+  ],
+  "licenses": [
+    {
+      "id": "mit",
+      "title": "MIT License",
+      "spdx": "MIT",
+      "attribution": "OpenAI Whisper weights converted to ggml by the whisper.cpp project (Georgi Gerganov and contributors); Silero VAD by the Silero Team (snakers4/silero-vad), converted to ggml by the whisper.cpp project.",
+      "url": "https://github.com/ggml-org/whisper.cpp/blob/master/LICENSE",
+      "terms": "Permissive: use, copy, modify and redistribute, keeping the copyright and permission notice. No warranty.",
+      "redistribution": true,
+      "access": "Public download; no account or acceptance required.",
+      "acceptance_required": false
+    }
+  ],
+  "memory_bytes": 400000000,
+  "temporary_bytes": 0,
+  "qualification_report": "docs/qualification/transcription-2026-10-04.md"
+}

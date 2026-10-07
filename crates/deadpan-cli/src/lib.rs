@@ -11,6 +11,8 @@ mod backups;
 pub mod bundle;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod corrections;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod diagnostic_export;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod encoded_render;
@@ -77,6 +79,7 @@ use serde::{Deserialize, Serialize};
 const HELP: &str = "Deadpan headless commands:
   doctor
   doctor --project <project.deadpan>   (macOS/Linux)
+  diagnostics export <new-report.json> [--project <project.deadpan>]
   project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
   project create-original <project.deadpan> <absolute-video>
   project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
@@ -178,6 +181,9 @@ pub enum CliError {
     LiveProject(#[from] live_project::LiveError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
+    DiagnosticExport(#[from] diagnostic_export::ExportError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
     Render(#[from] render::PublicRenderError),
     #[error("{0}")]
     Usage(String),
@@ -242,6 +248,8 @@ impl CliError {
         match self {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::LiveProject(error) => &error.code,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::DiagnosticExport(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Render(error) => &error.code,
             Self::Usage(_) | Self::Timing(_) | Self::Json(_) => "InvalidInput",
@@ -623,6 +631,14 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             Ok(())
         }
         ["doctor"] => write_json(&doctor::report()?),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["diagnostics", "export", destination] => {
+            write_json(&diagnostic_export::capture(None).write(Path::new(destination))?)
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["diagnostics", "export", destination, "--project", package] => write_json(
+            &diagnostic_export::capture(Some(Path::new(package))).write(Path::new(destination))?,
+        ),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["doctor", "--project", package] => {
             write_json(&doctor::project_report(Path::new(package))?)

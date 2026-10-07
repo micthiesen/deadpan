@@ -162,7 +162,9 @@ pub fn classify_failure(stderr: &str) -> ImportError {
                 .find(|line| !line.trim().is_empty())
                 .unwrap_or("")
         });
-    let detail: String = line.chars().take(400).collect();
+    // Redact before truncation: a long URL's `@` or a quoted credential
+    // delimiter may otherwise fall beyond the retained diagnostic prefix.
+    let detail: String = redact_detail(line).chars().take(400).collect();
     let lower = line.to_lowercase();
     let has = |needles: &[&str]| needles.iter().any(|needle| lower.contains(needle));
     let (code, advice) = if has(&["private video", "video is private"]) {
@@ -298,6 +300,108 @@ pub fn classify_failure(stderr: &str) -> ImportError {
         format!("{advice} Downloader said: {detail}")
     };
     ImportError::new(code, message)
+}
+
+/// The helper's error line as it may be shown, logged or pasted into a
+/// report (specification Section 27.4). Signed stream URLs carry the
+/// client's address and access tokens in their query, so every URL keeps
+/// only its scheme, host and path, without user information; a credential
+/// header keeps only its name. Process preceding URLs even when a later
+/// header causes the rest of the line to be withheld.
+pub(crate) fn redact_detail(line: &str) -> String {
+    const CREDENTIAL_HEADERS: [&str; 4] = [
+        "cookie",
+        "set-cookie",
+        "authorization",
+        "proxy-authorization",
+    ];
+    let lower = line.to_ascii_lowercase();
+    let credential_start = CREDENTIAL_HEADERS
+        .iter()
+        .flat_map(|header| {
+            let lower = lower.as_str();
+            let header_len = header.len();
+            lower.match_indices(*header).filter_map(move |(at, _)| {
+                if lower[..at]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|c| c.is_alphanumeric() || c == '_')
+                {
+                    return None;
+                }
+                let after_name = at + header_len;
+                let tail = &lower[after_name..];
+                let delimiter =
+                    tail.find(|c: char| !c.is_ascii_whitespace() && !matches!(c, '\'' | '"'))?;
+                matches!(tail.as_bytes()[delimiter], b':' | b'=')
+                    .then_some(after_name + delimiter + 1)
+            })
+        })
+        .min();
+    let mut redacted = String::with_capacity(line.len());
+    let mut rest = credential_start.map_or(line, |position| &line[..position]);
+    while let Some(start) = ["https://", "http://"]
+        .iter()
+        .filter_map(|scheme| rest.to_ascii_lowercase().find(scheme))
+        .min()
+    {
+        redacted.push_str(&rest[..start]);
+        let url = &rest[start..];
+        // Apostrophes and parentheses are valid URI query characters. Consume
+        // the complete token before stripping its query, or a closing quote
+        // inside a value could expose a later `&token=...` suffix.
+        let end = url.find(char::is_whitespace).unwrap_or(url.len());
+        let (url, after) = url.split_at(end);
+        // Keep prose wrappers only when a matching opener directly precedes
+        // the URL and the closing wrapper has only punctuation after it.
+        let closing = match rest[..start].chars().next_back() {
+            Some('(') => Some(')'),
+            Some('[') => Some(']'),
+            Some('<') => Some('>'),
+            Some('"') => Some('"'),
+            Some('\'') => Some('\''),
+            _ => None,
+        };
+        let suffix = closing
+            .and_then(|closing| url.rfind(closing))
+            .filter(|at| {
+                url[*at..].chars().all(|c| {
+                    matches!(
+                        c,
+                        ')' | ']' | '>' | '"' | '\'' | '.' | ',' | ':' | ';' | '!' | '?'
+                    )
+                })
+            })
+            .unwrap_or(url.len());
+        let (url, punctuation) = url.split_at(suffix);
+        let authority_start = url.find("://").expect("matched URL scheme") + 3;
+        let authority_end = url[authority_start..]
+            .find(['/', '?', '#'])
+            .map_or(url.len(), |end| authority_start + end);
+        redacted.push_str(&url[..authority_start]);
+        let after_user =
+            url[authority_start..authority_end]
+                .rfind('@')
+                .map_or(authority_start, |at| {
+                    redacted.push_str("[redacted]@");
+                    authority_start + at + 1
+                });
+        let url = &url[after_user..];
+        match url.find(['?', '#']) {
+            Some(query) => {
+                redacted.push_str(&url[..query]);
+                redacted.push_str("?[redacted]");
+            }
+            None => redacted.push_str(url),
+        }
+        redacted.push_str(punctuation);
+        rest = after;
+    }
+    redacted.push_str(rest);
+    if credential_start.is_some() {
+        redacted.push_str(" [redacted]");
+    }
+    redacted
 }
 
 /// One chosen remote stream.

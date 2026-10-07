@@ -1,0 +1,4 @@
+/**
+ * This function is based on https://github.com/nodejs/node/blob/fc6426ccc4b4cb73076356fb6dbf46a28953af01/lib/child_process.js#L504-L528.
+ * Copyright Joyent, Inc. and other Node contributors. All rights reserved. MIT license.
+ */

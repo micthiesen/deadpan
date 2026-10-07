@@ -6,12 +6,11 @@ Section 26.1: "Fuzz malformed schemas and command inputs without launching media
 workers"). This document describes the reproducible, offline suite. Results
 are recorded per run in `docs/qualification/adversarial-*.md`.
 
-## Engine
+## Engines
 
-The workspace pins stable Rust 1.97.1, so cargo-fuzz/libFuzzer (nightly
-sanitizer coverage) is unavailable. `crates/deadpan-chaos` is a small
-development-only replacement with no new third-party dependency (it uses the
-existing `serde_json`):
+The product workspace pins stable Rust 1.97.1. `crates/deadpan-chaos` runs
+deterministic mutation regressions on that toolchain, using the existing
+`serde_json` dependency:
 
 - Deterministic SplitMix64 seeds; stacked byte mutations (bit flips, boundary
   integers in both byte orders, truncation, insertion, deletion, block
@@ -38,6 +37,78 @@ Every target asserts that each input ends in admission or a typed,
 nonempty error, never a panic or abort, within its time and memory bounds.
 Many also assert semantic invariants on accepted inputs: round trips, exact
 inverse patches, validated results, identity binding and containment.
+
+The separate [`fuzz/`](../fuzz) workspace uses `libfuzzer-sys` 0.4.13 and a
+nightly compiler for actual sanitizer coverage. `cargo xtask fuzz` builds and
+runs its 27 parser targets without starting media workers, opening windows or
+reading the user's projects. Native admission targets write only private
+temporary input files. Each process has a 256 KiB input limit, a 10-second
+per-input timeout and a 2 GiB RSS limit. Campaign duration is per target;
+`--jobs` bounds parallel processes. These are fuzz-run limits, independent of
+the production readers' own limits.
+
+### Coverage-guided parser map
+
+| Untrusted input | libFuzzer target | Production boundary |
+| --- | --- | --- |
+| Project JSON and history rows | `core-document`, `core-patch`, `core-command` | `ProjectDocument::from_json`, `DocumentPatch` including compact `command::patch_wire`, and `apply` with forward/inverse validation |
+| Frozen audio contexts and timing layouts | `core-audio-context`, `core-audio-layout` | Their production `from_json` and `to_json` methods |
+| Register rows, edited slices and Macro programs | `core-register-value`, `core-edit-slice` | `RegisterValue` deserialization, `SemanticProgram::validate`, captured-slice parser |
+| Recipe files and saved recipe labels | `core-gag-recipe` | `GagRecipe` deserialization, label parser and expansion at three project rates |
+| Personal keymap configuration | `app-keymap-config` | `Bindings::from_json_reporting`, real trie compilation and routing; the feature-gated app library uses the production modules |
+| Signed update envelopes and payloads | `cli-update-manifests` | `SignedManifest::parse`/`verify`, `DownloaderManifest::parse`, `PackUpdate::parse` |
+| Model-pack and conditioning manifests | `models-pack-manifest`, `models-conditioning-manifest` | `PackManifest::validate`, `BridgeContext` and `ConditioningColour::from_manifest` |
+| Framed job and host worker messages | `jobs-{generation,tracking,faces,transcription}-protocol`, `cli-{render,encoded,verification,admission-probe}-protocol` | Production readers and writers in both directions, plus request-bound response classification |
+| Transcript JSON and recognizer output | `analysis-transcript` | `Transcript` deserialization and `Transcript::from_segments` |
+| Retained measured media indexes | `media-source-index`, `media-audio-index` | Production snapshot JSON readers and exact round trips |
+| MP4, Matroska and WAVE before FFmpeg | `source-container-video`, `source-container-audio` | The closed container grammar, codec configuration admission and MP4 inspection |
+| HEVC SPS and FFV1 configuration records | `source-hevc-sps`, `source-ffv1-config` | The production bounded geometry/configuration parsers |
+
+Every target starts from committed input under `fuzz/corpus/<target>`. The
+stable chaos target of the same name replays those inputs in ordinary tests.
+Macro seeds also feed the register target. Framed streams use selector 0 for
+requests, 1 for responses and 2 for a request followed by responses classified
+against it. Stable tests and nightly targets share `protocol_stream`, including
+the request-specific classifier and request round-trip checks. Stable seeds
+assert that the classifier is actually reached before mutation begins.
+
+Build/replay and an example ten-minute-per-target campaign:
+
+```sh
+cargo xtask fuzz list
+cargo xtask fuzz seeds
+cargo xtask fuzz replay
+cargo xtask fuzz run --minutes 10 --jobs 4 --output /tmp/deadpan-fuzz-RUN
+```
+
+Install nightly and `cargo-fuzz` as development tools first. The separate
+`fuzz/Cargo.lock` is committed. The product uses Cargo's `--locked` flag.
+Because cargo-fuzz 0.13 does not forward that flag, its runner first resolves
+the full graph with `cargo metadata --locked --offline`, builds without network
+access, and rejects any change to the lock's SHA-256. Reports retain
+nightly/cargo-fuzz versions, source revision and
+tracked-diff hash, a hash manifest covering tracked and untracked source files,
+each executed binary's SHA-256, coverage/features, execution
+counts, exit status, logs and artifact paths. A nonzero or signalled exit fails
+even when no artifact was written. The summary is saved before merging; a
+failed run never merges. Successful merges minimize discoveries and add them
+without deleting committed seeds or fixed reproducers. Nothing in the runner
+asserts that a campaign has run or that edge coverage proves completeness.
+
+Reproduce and minimize a failure from the separate workspace:
+
+```sh
+cd fuzz
+cargo +nightly fuzz run TARGET /absolute/path/to/artifact -- -runs=1
+cargo +nightly fuzz tmin TARGET /absolute/path/to/artifact
+```
+
+Keep the original artifact and log in the run directory. After fixing the
+bug, add the minimized input to `fuzz/corpus/TARGET` and a focused regression
+that fails against the old code. Never discard a timeout or OOM artifact just
+because a later input does not reproduce it. Run `fuzz replay` on the fixed
+source, then record the new campaign's source and binary identities. The
+[release audit](RELEASE_AUDIT.md) records which runs have actually been verified.
 
 ## Modes
 
@@ -112,14 +183,92 @@ kills per test from a fixed seed; `DEADPAN_CHAOS_SEED` (hex) and
 found: [backups](BACKUPS.md#process-kills). A process kill is not a power
 loss.
 
+## Hostile workers
+
+These tests launch real child processes through each host's production
+supervision path: the trusted runtime seam (`RenderWorkerRuntime`,
+`TrackingRuntime`, `TranscriptionRuntime`, `BridgeRuntime`), the shared
+`SupervisedProcess`, `deadpan_native_process::spawn` and
+`terminate_owned_group`, and the contained artifact reader. Only the worker
+is a stand-in: a Python fixture that reads the host's real first request and
+then misbehaves. No production backdoor exists; the tests use the same
+executable-selection fields a host fills from its packaged workers.
+
+`crates/deadpan-cli/tests/hostile_workers/hostile.py` holds the shared
+behaviours. A mode `hostile:<name>:<dir>` names one, and `<dir>` is a
+test-owned record directory where the fixture writes its leader, group,
+launch and descendant PIDs. `support.rs` reads them back. After every host
+returns, it asserts that the leader, each recorded child and the whole group
+are gone. It allows three seconds for launchd to reap orphans and never
+waits on a live process.
+
+| Behaviour | What the stand-in does | Bound |
+| --- | --- | --- |
+| `oversized`, `just_over` | Declares a 4 GiB or a 256 KiB + 1 frame, then holds its pipes | Refused from the header alone, under 10 s with a 60 s deadline |
+| `slow_loris` | Declares a legal 4 KiB frame and sends one byte every 50 ms | Stopped by the 1.5 s deadline, or by cancellation, under 12 s |
+| `fork_spam`, `fork_spam_exit` | Forks 24 sleeping children in its group, then hangs or exits without a terminal reply | Every child gone when the host returns |
+| `fork_spam_valid` | The same, after a valid completion | Admitted only after all 24 children are stopped |
+| `escape` | A child calls `setsid` and keeps the inherited stdout/stderr | Fails as "pipes stayed open". The escapee is alive afterwards; the test kills it |
+| `escape_quiet` | A `setsid` child closes its pipes, waits for the host to return, then rewrites the worker's output | The host admits the clean leader. The escapee outlives it, and the admitted private snapshot is unchanged |
+| `stderr_flood` | Writes 16 MiB to stderr, then exits 3 | Typed error under 4 KiB; the AI host keeps exactly the last 64 KiB and counts the rest |
+| `symlink_outside`, `hardlink_outside` | Claims a valid manifest whose artifact is a symlink or hard link to a matching outside file | `Artifact` error; the outside file is unchanged |
+| `symlinked_scope` | Replaces the output directory with a symlink to an outside directory holding a matching artifact | `Artifact` error |
+| `fifo`, `directory` | Places a FIFO or a directory at the artifact path | `Artifact` error without blocking |
+| `sparse` | A 64 GiB sparse file whose declared hash and length are the real 12 to 35 bytes | Refused from metadata under 10 s, never read |
+| `absolute`, `parent` | Declares an absolute or `..` artifact reference | Protocol refusal, not a fixture crash |
+| `wrong_attempt` | Answers for another attempt | Protocol refusal |
+| `tamper_input` (verifier) | Rewrites and truncates its staged `input/movie.mp4` | The host's private candidate is unchanged |
+
+Coverage by host:
+
+| Host | Test | Behaviours |
+| --- | --- | --- |
+| Raw picture worker (`render_worker::prepare`) | `tests/render_worker.rs`: `hostile_artifact_claims_are_refused_without_following_them_outside`, `hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped`, `setsid_escapees_are_not_contained_but_cannot_change_admitted_bytes` | All artifact claims, frames, stalls, descendants, both escapes |
+| Encoded worker (`encoded_render::encode`) | `tests/encoded_render.rs`: `hostile_movie_claims_outside_the_scope_or_not_regular_are_refused`, `hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped` | All artifact claims, frames, stalls, descendants, `escape` |
+| Finished-file verifier (`verification::verify`) | `tests/encoded_verification.rs`: `hostile_verifier_processes_are_bounded_stopped_and_cannot_touch_the_candidate` | Frames, stalls, descendants, `escape`, `tamper_input`; the candidate survives every failure |
+| Encoder admission probe (`admission::qualify`) | `tests/encoder_admission.rs`: `hostile_probe_processes_are_bounded_stopped_and_never_retried` | Frames, stalls, descendants, `escape`; cleanup confirmed, nothing rejected or retried |
+| Tracking (`tracking::track`) | `tests/hostile_analysis_workers.rs`: `tracking_admits_only_contained_observations_and_stops_every_group` | Honest control, all artifact claims, frames, stalls, descendants, `escape` |
+| Face detection (`faces::detect_faces`) | same file: `face_detection_refuses_hostile_frames_stalls_and_descendants` | Frames, stalls, descendants, `escape`, `wrong_attempt` (no artifact) |
+| Transcription (`transcription::transcribe`) | same file: `transcription_admits_only_a_contained_regular_transcript`, `transcription_bounds_frames_stderr_stalls_and_descendants`, `cancelling_a_worker_that_ignores_it_mid_frame_reports_cancellation`, `transcription_escapee_keeping_pipes_fails_and_outlives_group_cleanup` | Honest control, all artifact claims, frames, stalls, cancellation, descendants, `escape` |
+| AI pause worker (`generation::attempt::run_worker`) | `src/generation/attempt/tests.rs`: `hostile_ai_workers_fail_truthfully_and_leave_no_group_member`, `stalled_and_forking_ai_workers_are_stopped_by_cancellation`, `an_escaped_ai_worker_descendant_fails_the_attempt_and_is_not_contained` | Frames, `wrong_attempt`, floods, descendants and `escape` end durably `Failed`. A stall or fork ignoring cancellation ends `Cancelled` within the 5 s grace |
+
+The generic supervisor and artifact reader keep their own lower-level process
+tests in `crates/deadpan-jobs/tests/supervisor.rs` and `artifact.rs`.
+
+These runs found one defect. When the supervisor killed a worker that ignored
+cancellation while a frame was in flight, the truncated frame was reported as
+a worker fault ("frame ended after N of M payload bytes"). The same ignored
+cancellation then ended `Failed` or `Cancelled` depending on where the kill
+landed. Read errors after the supervisor's own escalation are now ignored,
+since cancellation already withholds any candidate. The regression test is
+`escalated_cancellation_does_not_report_the_frame_its_kill_truncated`.
+
+These tests do not cover:
+
+- Real encoders, Vision, whisper.cpp or MLX under hostile media. The workers
+  here are stand-ins, and each real worker's own input hardening is covered
+  separately.
+- Resource exhaustion inside a worker: memory, disk or file-descriptor
+  pressure.
+- Escapes by other means than `setsid`, such as double forks into another
+  session, `launchd` jobs, or writes to paths outside the workspace. The hosts
+  never read such writes, but nothing prevents them. This is process
+  ownership, not an OS sandbox.
+- The AI host's 30-minute deadline. Its stalls are stopped by cancellation in
+  these tests.
+- Linux runs of the shared tests; they were run only on macOS.
+
 ## Limits
 
-- No edge coverage: the verdict-class proxy cannot guide mutation through code
-  that produces no new verdict, and regression iteration counts are modest.
+- Stable chaos uses verdict-class novelty; the separate libFuzzer targets use
+  sanitizer coverage. Neither proves complete path coverage, and a short smoke
+  campaign does not replace sustained campaigns.
 - Real codecs run only in the source decoder and conversion-helper targets, on
   small fixtures; the encoders, the render/tracking/transcription workers and
   model inference are exercised only at their protocol boundaries.
-- Sanitizers instrument the C adapters only, not Rust or FFmpeg.
+- `chaos --sanitize` instruments the C adapters only. The nightly libFuzzer
+  build instruments Rust with sanitizer coverage/ASan; it does not rebuild the
+  linked FFmpeg distribution with sanitizers or exercise full codecs.
 - In-process allocation bounds charge the calling thread; work moved to other
   threads is bounded by the child-process RSS check only where a target uses
   one.

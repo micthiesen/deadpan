@@ -102,7 +102,11 @@ fn a_youtube_url_becomes_a_ready_one_original_project_with_provenance()
     let helpers = stand_in(directory.path());
     let package = directory.path().join("from-url.deadpan");
     let cookies = directory.path().join("cookies.txt");
-    fs::write(&cookies, "# Netscape HTTP Cookie File\n")?;
+    // A distinctive session value that must never reach the project.
+    fs::write(
+        &cookies,
+        "# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t0\tSID\tdeadpan-cookie-secret-7f3a\n",
+    )?;
     let mut events = Vec::new();
     let created = create_from_url(
         &UrlImport {
@@ -211,5 +215,45 @@ fn a_youtube_url_becomes_a_ready_one_original_project_with_provenance()
     assert!(provenance.retrieved_at_unix_seconds > 1_700_000_000);
     // Provenance is operational metadata: nothing about it is in history.
     assert!(!document.to_json()?.contains("youtube.com"));
+    drop(store);
+
+    // Specification Section 27.4: no cookie value or cookie path is kept in
+    // project metadata (database, WAL, provenance, media) or emitted events.
+    let secret = b"deadpan-cookie-secret-7f3a";
+    let cookie_path = cookies.to_str().unwrap().as_bytes();
+    fn files(directory: &Path, found: &mut Vec<std::path::PathBuf>) {
+        for entry in fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                files(&path, found);
+            } else {
+                found.push(path);
+            }
+        }
+    }
+    let mut stored = Vec::new();
+    files(&package, &mut stored);
+    assert!(stored.len() > 1);
+    let contains = |haystack: &[u8], needle: &[u8]| {
+        haystack
+            .windows(needle.len())
+            .any(|window| window == needle)
+    };
+    for path in stored {
+        let bytes = fs::read(&path)?;
+        assert!(
+            !contains(&bytes, secret),
+            "{} holds the cookie",
+            path.display()
+        );
+        assert!(
+            !contains(&bytes, cookie_path),
+            "{} holds the cookie path",
+            path.display()
+        );
+    }
+    let emitted = serde_json::to_vec(&events)?;
+    assert!(!contains(&emitted, secret) && !contains(&emitted, cookie_path));
+    assert!(!contains(&serde_json::to_vec(&provenance)?, b"cookie"));
     Ok(())
 }

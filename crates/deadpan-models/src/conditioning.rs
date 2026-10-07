@@ -1351,4 +1351,55 @@ mod tests {
             "{reason}"
         );
     }
+
+    /// Gate G: the conditioning context manifest is retained bytes read back
+    /// from generated storage and is untrusted until it matches the request.
+    /// Accepted output manifests must re-encode to the exact same value.
+    #[test]
+    fn adversarial_conditioning_manifests() {
+        use deadpan_chaos::{Target, Verdict, fuzz, reject};
+        let fixture = Fixture::new(false);
+        let shared = Fixture::new(true);
+        let seeds = vec![
+            serde_json::to_vec(&measured(
+                plan(),
+                fixture.left.clone(),
+                fixture.right.clone(),
+            ))
+            .unwrap(),
+            serde_json::to_vec(&measured(plan(), shared.left.clone(), shared.right.clone()))
+                .unwrap(),
+            serde_json::to_vec(
+                &BridgeContext::legacy_v1(
+                    plan(),
+                    fixture.left.clone(),
+                    fixture.right.clone(),
+                    "opaque",
+                )
+                .unwrap(),
+            )
+            .unwrap(),
+        ];
+        let report = fuzz(
+            Target::json("models-conditioning-manifest").iterations(400),
+            seeds,
+            |input| match serde_json::from_slice::<BridgeContext>(input) {
+                Ok(context) => {
+                    if let Err(error) = context.check_model_output() {
+                        return reject(error);
+                    }
+                    let encoded = serde_json::to_vec(&context)
+                        .map_err(|error| format!("re-encode: {error}"))?;
+                    let again: BridgeContext = serde_json::from_slice(&encoded)
+                        .map_err(|error| format!("accepted manifest does not re-parse: {error}"))?;
+                    if again != context {
+                        return Err("manifest round trip changed the value".into());
+                    }
+                    Ok(Verdict::Accepted)
+                }
+                Err(error) => reject(error),
+            },
+        );
+        report.assert_clean();
+    }
 }

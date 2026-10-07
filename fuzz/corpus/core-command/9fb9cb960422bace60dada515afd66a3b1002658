@@ -1,0 +1,1 @@
+{"command":{"at":1,"command":"split","identities":{"nodes":["adversarial-a","adversarial-b","adversarial-c"]},"node":"splice-copy-0"},"expected_revision":"8acbf1bc-da27-4e45-b5dc-9dc3017175f1","new_revision":"adversarial-next","project_id":"77950d7f-03cd-4bad-ae5d-f7ffe750e234"}

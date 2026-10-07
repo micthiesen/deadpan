@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+import runpy
 import struct
 import sys
 
@@ -37,6 +38,28 @@ assert request["op"] == "prepare"
 assert request["contract"]["raster"] == [2, 2]
 assert request["contract"]["frame_count"] == 2
 identity = request["identity"]
+
+# Hostile modes (tests/hostile_workers): misbehave, or claim a hostile artifact.
+hostile = runpy.run_path(str(Path(__file__).parent.parent / "hostile_workers" / "hostile.py"))
+hostile["generic"](mode)
+claim = hostile["parse"](mode)
+if claim is not None:
+    planes = bytes([16, 16, 16, 16, 128, 128] * 2)
+    (claim[1] / "outside.bin").write_bytes(planes)
+    assert hostile["artifact"](mode, "output/pictures.i420", planes) is not None, mode
+    if claim[0] == "wrong_attempt":
+        identity = dict(identity, attempt_id="another-attempt")
+    emit({
+        "event": "completed", "protocol": 1, "identity": identity,
+        "manifest": {
+            "contract": request["contract"],
+            "document_sha256": request["document_sha256"],
+            "planes": {"reference": hostile["reference"](mode, "output/pictures.i420"),
+                       "sha256": hashlib.sha256(planes).hexdigest(), "byte_length": 12},
+            "pixel_policy": "i420_rec709_limited_left",
+        },
+    })
+    raise SystemExit(0)
 
 if mode == "failed_exit":
     emit({"event": "failed", "protocol": 1, "identity": identity,

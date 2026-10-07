@@ -473,3 +473,69 @@ fn adversarial_deep_cyclic_and_shared_structures_fail_cleanly() {
         }
     }
 }
+
+/// Gate G: saved Macro programs are register-bank rows and live request
+/// bodies, so they are untrusted JSON. Seeds cover motions, Visual state,
+/// yank/cut/paste/replace, Repeat, calls and a gag expansion; accepted values
+/// must round-trip to an equal register value.
+#[test]
+fn adversarial_macro_programs_reject_hostile_json() {
+    let programs = [
+        json!([{"type":"begin_selection"},{"type":"move_frames","forward":false,"count":6},
+            {"type":"cut","selector":{"type":"visual_selection"},"register":"b"},
+            {"type":"begin_selection"},{"type":"move_frames","forward":true,"count":4},
+            {"type":"finish_selection"},{"type":"replace_selection","register":"b"},
+            {"type":"begin_selection"},{"type":"move_frames","forward":true,"count":6},
+            {"type":"yank_selection","register":"c"}]),
+        json!([{"type":"yank_beat","register":"b"},{"type":"paste","register":"b","before":false},
+            {"type":"call","register":"z","count":1}]),
+        json!([{"type":"yank","selector":{"type":"motion","motion":{"type":"frames","forward":true,"count":2}},"register":"b"},
+            {"type":"repeat","selector":{"type":"visual_selection"},"plays":3},
+            {"type":"yank","selector":{"type":"selected_beat"},"register":"b"},
+            {"type":"paste","register":"a","before":true}]),
+    ];
+    let mut seeds: Vec<Vec<u8>> = programs
+        .iter()
+        .map(|instructions| {
+            serde_json::to_vec(&json!({"type":"macro","program":{"instructions":instructions}}))
+                .unwrap()
+        })
+        .collect();
+    let gag = GagRecipe::from_label("The Long Answer · v1 · pause 1500ms, creep to 1.350×")
+        .expect("known gag label");
+    let expanded = gag.expand(false, FrameRate::new(30, 1).unwrap()).unwrap();
+    seeds.push(
+        serde_json::to_vec(&RegisterValue::Macro {
+            program: std::sync::Arc::new(SemanticProgram::new(expanded).unwrap()),
+        })
+        .unwrap(),
+    );
+    let accepted = seeds
+        .iter()
+        .filter(|seed| serde_json::from_slice::<RegisterValue>(seed).is_ok())
+        .count();
+    assert_eq!(accepted, seeds.len(), "every Macro seed is a valid program");
+    let report = fuzz(
+        Target::json("core-macro-program").iterations(300),
+        seeds,
+        |input| match serde_json::from_slice::<RegisterValue>(input) {
+            Ok(value) => {
+                if let RegisterValue::Macro { program } = &value {
+                    program
+                        .validate()
+                        .map_err(|error| format!("accepted invalid program: {error}"))?;
+                }
+                let encoded =
+                    serde_json::to_vec(&value).map_err(|error| format!("re-encode: {error}"))?;
+                let again = serde_json::from_slice::<RegisterValue>(&encoded)
+                    .map_err(|error| format!("accepted register does not round-trip: {error}"))?;
+                if again != value {
+                    return Err("register round trip changed the value".into());
+                }
+                Ok(Verdict::Accepted)
+            }
+            Err(error) => reject(error),
+        },
+    );
+    report.assert_clean();
+}

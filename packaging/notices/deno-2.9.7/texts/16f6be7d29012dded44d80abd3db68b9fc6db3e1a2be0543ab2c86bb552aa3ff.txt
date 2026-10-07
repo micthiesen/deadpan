@@ -1,0 +1,5 @@
+  // From https://github.com/kkawakam/rustyline/blob/master/src/tty/windows.rs
+  // and https://github.com/kkawakam/rustyline/blob/master/src/tty/unix.rs
+  // and https://github.com/crossterm-rs/crossterm/blob/e35d4d2c1cc4c919e36d242e014af75f6127ab50/src/terminal/sys/windows.rs
+  // Copyright (c) 2015 Katsu Kawakami & Rustyline authors. MIT license.
+  // Copyright (c) 2019 Timon. MIT license.

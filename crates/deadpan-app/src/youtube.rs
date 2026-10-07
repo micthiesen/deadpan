@@ -83,6 +83,9 @@ impl Failure {
                 "The pinned downloader runs only on Apple Silicon Macs."
             }
             "DownloaderInstallFailed" => "Check the connection and try the install again.",
+            "DownloaderNetworkFailed" => {
+                "Connect to the internet and retry installing the downloader. Installed helpers and local editing remain available."
+            }
             "YouTubeVideoUnavailable" | "YouTubeVideoPrivate" => {
                 "Choose a video that is public or unlisted."
             }

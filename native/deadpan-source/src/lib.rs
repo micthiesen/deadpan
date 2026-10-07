@@ -21,6 +21,8 @@ mod input;
 mod matroska_input;
 mod video_codec;
 
+#[cfg(feature = "fuzzing")]
+pub use input::fuzzing;
 pub use input::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
     Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,

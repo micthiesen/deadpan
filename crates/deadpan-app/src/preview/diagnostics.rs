@@ -7,6 +7,7 @@
 //! exposed to assistive technology as "label: value". Nothing shown here is
 //! authored state, history or project data.
 
+use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
 use deadpan_diagnostics::{CacheSnapshot, IoSnapshot, Level, WorkerMemorySnapshot};
@@ -42,6 +43,10 @@ pub(super) struct State {
     pub(super) refreshes: u64,
     /// Rows formatted once per sample, not on every painted frame.
     formatted: Vec<Row>,
+    /// Capture the exact committed snapshot when the save action starts.
+    export_document: Option<Option<Arc<deadpan_core::ProjectDocument>>>,
+    exporting: Option<mpsc::Receiver<Result<deadpan_cli::diagnostic_export::Receipt, String>>>,
+    pub(super) export_status: Option<String>,
 }
 
 impl State {
@@ -350,6 +355,27 @@ impl DeadpanApp {
     /// Call once per outer frame, never on a layout retry.
     pub(super) fn reconcile_diagnostics(&mut self, context: &egui::Context) {
         self.diagnostics.count_frame();
+        if let Some(receiver) = &self.diagnostics.exporting {
+            let result = match receiver.try_recv() {
+                Ok(result) => Some(result),
+                Err(mpsc::TryRecvError::Empty) => None,
+                Err(mpsc::TryRecvError::Disconnected) => Some(Err(
+                    "Diagnostic export stopped before reporting a result.".into(),
+                )),
+            };
+            if let Some(result) = result {
+                self.diagnostics.exporting = None;
+                let status = match result {
+                    Ok(receipt) => format!(
+                        "Saved {} bytes. No media or user content attached.",
+                        receipt.byte_length
+                    ),
+                    Err(error) => error,
+                };
+                self.message = Some(status.clone());
+                self.diagnostics.export_status = Some(status);
+            }
+        }
         if !self.diagnostics.open {
             return;
         }
@@ -395,8 +421,9 @@ impl DeadpanApp {
         let width = (content.width() - 32.0).clamp(280.0, 380.0);
         // Header, sheet chrome and the footer stay outside the scroller, so
         // the sheet ends above the window's bottom edge.
-        let height = (content.height() - 250.0).max(160.0);
+        let height = (content.height() - 340.0).max(100.0);
         let mut close = false;
+        let mut export = false;
         // Anchored beside the picture with no dimming: the picture stays
         // dominant and playback continues underneath.
         let modal = egui::Modal::new(egui::Id::new("diagnostics-window"))
@@ -455,6 +482,14 @@ impl DeadpanApp {
                         }
                     });
                 ui.add_space(6.0);
+                ui.label(egui::RichText::new("Export versions, counters and structural error context. Excludes media, names, paths, URLs, transcripts and credentials.").size(11.0).weak());
+                export = ui.add_enabled(
+                    !self.dialogs.is_open() && self.diagnostics.exporting.is_none(),
+                    egui::Button::new("Save diagnostic report…"),
+                ).clicked();
+                if let Some(status) = &self.diagnostics.export_status {
+                    ui.label(egui::RichText::new(status).size(11.0));
+                }
                 ui.horizontal(|ui| {
                     let button = ui.add(style::action("Close", "Esc"));
                     if std::mem::take(&mut self.diagnostics.focus_pending) {
@@ -471,9 +506,66 @@ impl DeadpanApp {
                 });
             });
         self.diagnostics.formatted = rows;
+        if export {
+            self.diagnostics.export_document = Some(
+                self.workspace
+                    .as_ref()
+                    .map(|workspace| Arc::clone(&workspace.document)),
+            );
+            match self.dialogs.start(DialogKind::DiagnosticReport, context) {
+                Ok(()) => self.diagnostics.export_status = None,
+                Err(error) => {
+                    self.diagnostics.export_document = None;
+                    self.diagnostics.export_status = Some(error);
+                }
+            }
+        }
         close |= modal.should_close() && !self.ime_composing;
         if close {
             self.close_diagnostics(context);
+        }
+    }
+
+    pub(super) fn receive_diagnostic_dialog(
+        &mut self,
+        path: Option<PathBuf>,
+        error: Option<String>,
+        context: &egui::Context,
+    ) {
+        let captured = self.diagnostics.export_document.take();
+        if let Some(error) = error {
+            self.diagnostics.export_status = Some(error);
+            return;
+        }
+        let Some(path) = path else {
+            return;
+        };
+        let Some(document) = captured else {
+            self.diagnostics.export_status =
+                Some("Diagnostic export has no captured snapshot; start the save again.".into());
+            return;
+        };
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let context = context.clone();
+        match std::thread::Builder::new()
+            .name("deadpan-diagnostic-export".into())
+            .spawn(move || {
+                let result = deadpan_cli::diagnostic_export::DiagnosticReport::from_document(
+                    document.as_deref(),
+                )
+                .write(&path)
+                .map_err(|error| format!("{} ({})", error, error.code()));
+                let _ = sender.send(result);
+                context.request_repaint();
+            }) {
+            Ok(_) => {
+                self.diagnostics.exporting = Some(receiver);
+                self.diagnostics.export_status = Some("Saving diagnostic report…".into());
+            }
+            Err(_) => {
+                self.diagnostics.export_status =
+                    Some("Could not start diagnostic export; try again.".into())
+            }
         }
     }
 }

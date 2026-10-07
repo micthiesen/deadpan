@@ -661,3 +661,68 @@ fn hostile_verifier_messages_never_replace_private_bytes_with_success() {
     .unwrap();
     fixture.assert_project_unchanged();
 }
+
+// Hostile stand-ins through the real verification host
+// (docs/ADVERSARIAL.md#hostile-workers).
+
+#[path = "hostile_workers/support.rs"]
+mod support;
+
+#[test]
+fn hostile_verifier_processes_are_bounded_stopped_and_cannot_touch_the_candidate() {
+    let fixture = Fixture::new("nonzero");
+    let mut candidate = fixture.original_candidate();
+    let expected = fs::read(&fixture.movie_path).unwrap();
+    for (name, within) in [
+        ("malformed", PROCESS_LIMIT),
+        ("invalid_utf8", PROCESS_LIMIT),
+        ("zero_length", PROCESS_LIMIT),
+        ("truncated", PROCESS_LIMIT),
+        ("oversized", PROCESS_LIMIT),
+        ("just_over", PROCESS_LIMIT),
+        ("fork_spam_exit", PROCESS_LIMIT),
+        ("stderr_flood", PROCESS_LIMIT),
+        ("tamper_input", PROCESS_LIMIT),
+        ("slow_loris", Duration::from_millis(1_500)),
+        ("fork_spam", Duration::from_millis(1_500)),
+        ("escape", PROCESS_LIMIT),
+    ] {
+        let record = support::Record::new();
+        let started = Instant::now();
+        let rejected = verify(
+            &hostile(&record.mode(name)),
+            candidate,
+            request(name),
+            &NOT_CANCELLED,
+            Instant::now() + within,
+            |_| {},
+        )
+        .err()
+        .unwrap_or_else(|| panic!("host accepted hostile verifier {name}"));
+        support::assert_bounded(started, Duration::from_secs(12), name);
+        match &rejected.error {
+            EncodedRenderError::Deadline => {
+                assert!(["slow_loris", "fork_spam"].contains(&name), "{name}");
+            }
+            EncodedRenderError::Worker(message) => {
+                support::assert_generic_cause(name, message);
+                if name == "tamper_input" {
+                    assert!(message.contains("status: 5"), "{message}");
+                }
+                if name == "escape" {
+                    assert!(message.contains("pipes stayed open"), "{message}");
+                }
+            }
+            error => panic!("{name}: {error:?}"),
+        }
+        record.assert_group_gone();
+        if name == "escape" {
+            support::assert_alive(record.escaped(Duration::from_secs(5)));
+        }
+        // The host's private candidate never shares bytes with the verifier's
+        // staged input copy.
+        candidate = rejected.candidate;
+        assert_eq!(read_candidate(&mut candidate), expected, "{name}");
+    }
+    fixture.assert_project_unchanged();
+}

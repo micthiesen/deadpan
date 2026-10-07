@@ -6,6 +6,7 @@ import json
 import math
 import os
 from pathlib import Path
+import runpy
 import struct
 import sys
 import time
@@ -52,6 +53,10 @@ video_frames = picture["frame_count"]
 audio_samples = picture["project_audio_end"] - picture["project_audio_start"]
 payload = b"not an MP4: host-admission fixture\n"
 digest = hashlib.sha256(payload).hexdigest()
+# Hostile modes (tests/hostile_workers): misbehave, or claim a hostile artifact.
+hostile = runpy.run_path(str(Path(__file__).parent.parent / "hostile_workers" / "hostile.py"))
+hostile["generic"](mode)
+claim = hostile["parse"](mode)
 
 
 def progress(frames, samples):
@@ -65,7 +70,10 @@ def progress(frames, samples):
 # protocol/process outcome. The file is never a successful private candidate.
 artifact_modes = {"valid", "wrong_hash", "short_file", "long_file", "symlink", "hardlink"}
 movie = Path("output/movie.mp4")
-if mode in artifact_modes:
+if claim is not None:
+    (claim[1] / "outside.bin").write_bytes(payload)
+    assert hostile["artifact"](mode, movie, payload) is not None, mode
+elif mode in artifact_modes:
     if mode == "symlink":
         target = Path("output/other.mp4")
         target.write_bytes(payload)
@@ -192,6 +200,9 @@ manifest = {"contract": copy.deepcopy(request["contract"]),
             "document_sha256": request["document_sha256"],
             "movie": {"reference": "output/movie.mp4", "sha256": digest,
                       "byte_length": len(payload)}, "report": report}
+manifest["movie"]["reference"] = hostile["reference"](mode, "output/movie.mp4")
+if claim is not None and claim[0] == "wrong_attempt":
+    identity = dict(identity, attempt_id="another-attempt")
 if mode == "wrong_hash":
     manifest["movie"]["sha256"] = "0" * 64
 elif mode == "wrong_document":
