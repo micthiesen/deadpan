@@ -214,8 +214,8 @@ fn prepare_and_publish(
 }
 
 fn finish_committed(
-    movie: &filesystem::PartialFile,
-    report: &filesystem::PartialFile,
+    movie: &mut filesystem::PartialFile,
+    report: &mut filesystem::PartialFile,
     receipt: &PublicationReceipt,
     deadline: Instant,
 ) -> Result<(), PublicationDiagnostic> {
@@ -241,6 +241,27 @@ fn finish_committed(
 }
 
 fn confirm_published_bytes(
+    partial: &mut filesystem::PartialFile,
+    expected: &Sha256,
+    bytes: u64,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<(), PublicationDiagnostic> {
+    match hash_published_bytes(partial, expected, bytes, cancelled, deadline) {
+        Err(error) if error.code == "destination_changed" => {
+            if !partial.rebase_published_tracking().map_err(fs_error)? {
+                return Err(error);
+            }
+            // One retry from byte zero under the new exact state. A write
+            // before the rebase fails the expected hash; a later write fails
+            // ctime. Cancellation and the original deadline remain in force.
+            hash_published_bytes(partial, expected, bytes, cancelled, deadline)
+        }
+        result => result,
+    }
+}
+
+fn hash_published_bytes(
     partial: &filesystem::PartialFile,
     expected: &Sha256,
     bytes: u64,

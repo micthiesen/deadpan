@@ -591,7 +591,12 @@ impl DeadpanApp {
                     && ui.button("Cancel render").clicked() {
                     cancel = status.identity.clone().map(|identity| (workflow.context.clone(), identity));
                 }
-                if !status.cleanup_confirmed { ui.weak("Finishing worker cleanup; this render still owns its slot."); }
+                if !status.cleanup_confirmed
+                    && (status.cancellation_requested || status.outcome.is_some()
+                        || matches!(status.stage, WorkflowStage::Releasing | WorkflowStage::Unresolved))
+                {
+                    ui.weak("Worker cleanup is not confirmed; this render still owns its slot.");
+                }
             });
         self.render.open = open;
         if let Some((context, identity)) = cancel {

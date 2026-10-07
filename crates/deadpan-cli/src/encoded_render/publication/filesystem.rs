@@ -30,6 +30,8 @@ const MAX_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 const MAX_COMPONENTS: usize = 256;
 const MAX_PATH_BYTES: usize = 4096;
 const CREATE_ATTEMPTS: usize = 16;
+#[cfg(target_os = "macos")]
+const UF_TRACKED: u32 = 0x0000_0040;
 
 #[derive(Debug, thiserror::Error)]
 #[error("{code}: {operation}: {source}")]
@@ -522,6 +524,27 @@ impl PartialFile {
         })
     }
 
+    /// Admit only macOS adding its document-tracking flag. The caller must
+    /// immediately rehash the complete expected bytes: the accompanying ctime
+    /// change could also conceal a write with restored mtime. The new state
+    /// keeps UF_TRACKED set, so this cannot permit a second metadata rebase.
+    pub(super) fn rebase_published_tracking(&mut self) -> Result<bool> {
+        if !self.sealed || !self.published || self.poisoned {
+            return Err(FsError::invalid(
+                "partial_state",
+                "file is not published for tracking readback",
+            ));
+        }
+        self.destination.directory.confirm()?;
+        let state = self.current_state()?;
+        if !tracking_added(&self.state, &state) {
+            return Ok(false);
+        }
+        self.state = state;
+        self.confirm_published()?;
+        Ok(true)
+    }
+
     #[cfg(test)]
     fn commit_with_sync(
         &mut self,
@@ -617,21 +640,37 @@ impl PartialFile {
         })?;
         let after = inspect(&self.file)?;
         validate_file(&after, &self.destination.directory, self.maximum_bytes)?;
-        // Rename may change ctime. Content, owner, mode, size and link count
-        // must still match the sealed file; all later checks include ctime too.
-        if !same_state(&self.state, &after, false) {
+        // Rename may change ctime, and macOS may add its document-tracking
+        // flag. Every other field must match; mandatory post-rename readback
+        // proves the bytes under this newly captured exact state.
+        if !same_state(&self.state, &after, false) && !tracking_added(&self.state, &after) {
             return Err(FsError::invalid(
                 "destination_changed",
                 "published descriptor differs from sealed bytes",
             ));
         }
         self.state = after;
-        self.confirm()?;
+        if let Err(error) = self.confirm()
+            && !self.rebase_published_tracking()?
+        {
+            return Err(error);
+        }
         self.destination.directory.confirm()?;
         Ok(())
     }
 
     fn confirm(&self) -> Result<()> {
+        let state = self.current_state()?;
+        if !same_state(&self.state, &state, true) {
+            return Err(FsError::invalid(
+                "destination_changed",
+                "stable descriptor state changed",
+            ));
+        }
+        Ok(())
+    }
+
+    fn current_state(&self) -> Result<Stat> {
         let descriptor = inspect(&self.file)?;
         validate_file(&descriptor, &self.destination.directory, self.maximum_bytes)?;
         let name = if self.published {
@@ -646,13 +685,13 @@ impl PartialFile {
         )
         .map_err(|e| FsError::new("destination_changed", "inspect pinned file entry", e))?;
         validate_file(&named, &self.destination.directory, self.maximum_bytes)?;
-        if !same_state(&self.state, &descriptor, true) || !same_state(&descriptor, &named, true) {
+        if !same_state(&descriptor, &named, true) {
             return Err(FsError::invalid(
                 "destination_changed",
-                "file entry or stable descriptor state changed",
+                "file entry differs from retained descriptor",
             ));
         }
-        Ok(())
+        Ok(descriptor)
     }
 }
 
@@ -847,6 +886,31 @@ fn same_state(left: &Stat, right: &Stat, include_ctime: bool) -> bool {
         && left.st_mtime_nsec == right.st_mtime_nsec
         && (!include_ctime
             || (left.st_ctime == right.st_ctime && left.st_ctime_nsec == right.st_ctime_nsec))
+}
+
+#[cfg(target_os = "macos")]
+fn tracked_flag_added(before: u32, after: u32) -> bool {
+    before & UF_TRACKED == 0 && after == (before | UF_TRACKED)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn tracked_flag_added(_before: u32, _after: u32) -> bool {
+    false
+}
+
+#[cfg(target_os = "macos")]
+fn tracking_added(before: &Stat, after: &Stat) -> bool {
+    if !tracked_flag_added(before.st_flags, after.st_flags) {
+        return false;
+    }
+    let mut without_tracking = *after;
+    without_tracking.st_flags = before.st_flags;
+    same_state(before, &without_tracking, false)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn tracking_added(_before: &Stat, _after: &Stat) -> bool {
+    false
 }
 
 #[cfg(target_os = "macos")]

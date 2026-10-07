@@ -272,7 +272,21 @@ impl FileEvidence {
         Ok(())
     }
 
-    fn capture(file: &File) -> Result<Self> {
+    /// Persisted evidence stays exact. Only fresh byte verification may use
+    /// this narrow comparison with a later macOS document-tracking flag.
+    fn matches_observed(&self, observed: &Self) -> bool {
+        if self == observed {
+            return true;
+        }
+        if !tracked_flag_added(self.identity.flags, observed.identity.flags) {
+            return false;
+        }
+        let mut with_tracking = self.clone();
+        with_tracking.identity.flags = observed.identity.flags;
+        with_tracking == *observed
+    }
+
+    fn capture(file: &File) -> Result<(Self, Stat)> {
         let before = inspect(file)?;
         let identity = DurableIdentity::file(file)?;
         let after = inspect(file)?;
@@ -293,7 +307,7 @@ impl FileEvidence {
             modified_nanoseconds: after.st_mtime_nsec,
         };
         result.validate()?;
-        Ok(result)
+        Ok((result, after))
     }
 }
 
@@ -313,7 +327,7 @@ impl PartialFile {
         }
         self.destination.directory.confirm()?;
         self.confirm()?;
-        let evidence = FileEvidence::capture(&self.file)?;
+        let (evidence, _) = FileEvidence::capture(&self.file)?;
         self.confirm()?;
         self.destination.directory.confirm()?;
         Ok(evidence)
@@ -406,14 +420,14 @@ impl RecoveredDirectory {
         let state = inspect(&file)?;
         validate_file(&state, &self.directory, evidence.byte_length)?;
         lock_file(&file)?;
-        let observed = FileEvidence::capture(&file).map_err(|error| {
+        let (observed, state) = FileEvidence::capture(&file).map_err(|error| {
             FsError::new(
                 "destination_changed",
                 "capture recovered publication entry",
                 io::Error::other(error),
             )
         })?;
-        if observed != *evidence {
+        if !evidence.matches_observed(&observed) {
             return Err(FsError::invalid(
                 "destination_changed",
                 "publication entry differs from recorded identity or extent",

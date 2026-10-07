@@ -31,6 +31,97 @@ fn file_evidence() -> FileEvidence {
     }
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn saved_evidence_admits_only_tracking_addition_without_changing_equality() {
+    let original = file_evidence();
+    assert!(original.matches_observed(&original));
+    let mut tracked = original.clone();
+    tracked.identity.flags |= UF_TRACKED;
+    assert_ne!(original, tracked);
+    assert!(original.matches_observed(&tracked));
+    assert!(!tracked.matches_observed(&original));
+    assert!(tracked.matches_observed(&tracked));
+    let mut extra_flag = tracked.clone();
+    extra_flag.identity.flags |= 0x0000_8000; // UF_HIDDEN
+    assert!(!original.matches_observed(&extra_flag));
+    assert!(!tracked.matches_observed(&extra_flag));
+    let changes: [fn(&mut FileEvidence); 15] = [
+        |file| file.schema_version += 1,
+        |file| file.identity.volume_uuid[0] += 1,
+        |file| file.identity.device += 1,
+        |file| file.identity.inode += 1,
+        |file| file.identity.birth_seconds += 1,
+        |file| file.identity.birth_nanoseconds += 1,
+        |file| file.identity.generation = Some(1),
+        |file| file.identity.owner += 1,
+        |file| file.identity.group += 1,
+        |file| file.identity.mode ^= 0o040,
+        |file| file.identity.flags |= 0x0000_8000,
+        |file| file.byte_length += 1,
+        |file| file.links += 1,
+        |file| file.modified_seconds += 1,
+        |file| file.modified_nanoseconds += 1,
+    ];
+    for change in changes {
+        let mut changed = tracked.clone();
+        change(&mut changed);
+        assert!(!original.matches_observed(&changed));
+    }
+    let serialized = serde_json::to_value(&original).unwrap();
+    assert_eq!(serialized["identity"]["flags"], 0);
+    let round_trip: FileEvidence = serde_json::from_value(serialized).unwrap();
+    assert_eq!(round_trip, original);
+    assert_ne!(round_trip, tracked);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn tracked_movie_and_report_recovery_require_complete_matching_hashes() {
+    use super::super::super::{digest, hash_reader};
+    for name in ["movie.mp4", "report.json"] {
+        for mutate in [false, true] {
+            let folder = tempfile::tempdir().unwrap();
+            let destination = Destination::pin(folder.path(), OsStr::new(name)).unwrap();
+            let original = vec![0x52; IO_BYTES + 19];
+            let mut partial = staged(&destination, ".recorded.partial", &original);
+            let directory = destination.evidence().unwrap();
+            let evidence = partial.evidence().unwrap();
+            let saved = serde_json::to_value(&evidence).unwrap();
+            let cancelled = AtomicBool::new(false);
+            partial.commit(&cancelled, deadline()).unwrap();
+            let modified = partial.file.metadata().unwrap().modified().unwrap();
+            if mutate {
+                partial.file.write_all_at(b"x", IO_BYTES as u64).unwrap();
+                partial.file.set_modified(modified).unwrap();
+            }
+            super::super::tests::set_flags(&destination.path(), UF_TRACKED);
+            drop(partial);
+            let directory = RecoveredDirectory::open(&directory).unwrap();
+            let recovered = directory
+                .open_file(OsStr::new(name), &evidence)
+                .unwrap()
+                .unwrap();
+            assert_eq!(recovered.state.st_flags, UF_TRACKED);
+            let actual = hash_reader(
+                recovered.reader(&cancelled, deadline()).unwrap(),
+                evidence.byte_length(),
+                &cancelled,
+                deadline(),
+            )
+            .unwrap();
+            if mutate {
+                assert_ne!(actual, digest(&original));
+            } else {
+                assert_eq!(actual, digest(&original));
+                recovered.sync_verified().unwrap();
+                recovered.confirm().unwrap();
+            }
+            assert_eq!(serde_json::to_value(&evidence).unwrap(), saved);
+        }
+    }
+}
+
 #[test]
 fn strict_file_evidence_rejects_missing_identity_and_invalid_extents() {
     let original = serde_json::to_value(file_evidence()).unwrap();

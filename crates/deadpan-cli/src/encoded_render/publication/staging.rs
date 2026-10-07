@@ -239,7 +239,7 @@ impl PreparedFiles {
             .map_err(fs_error)?;
         controls.check()?;
         confirm_published_bytes(
-            &self.report,
+            &mut self.report,
             &self.receipt.report_sha256,
             self.receipt.report_bytes,
             controls.cancelled,
@@ -261,7 +261,18 @@ impl PreparedFiles {
                 "the report has not completed publication and readback",
             ));
         }
-        self.report.confirm_published().map_err(fs_error)?;
+        if let Err(error) = self.report.confirm_published() {
+            if error.code() != "destination_changed" {
+                return Err(fs_error(error));
+            }
+            confirm_published_bytes(
+                &mut self.report,
+                &self.receipt.report_sha256,
+                self.receipt.report_bytes,
+                controls.cancelled,
+                controls.deadline,
+            )?;
+        }
         let finish_deadline = Instant::now() + POST_COMMIT_READBACK_BUDGET;
         match self
             .movie
@@ -269,7 +280,12 @@ impl PreparedFiles {
                 controls.rename_guard()
             }) {
             Ok(()) => {
-                match finish_committed(&self.movie, &self.report, &self.receipt, finish_deadline) {
+                match finish_committed(
+                    &mut self.movie,
+                    &mut self.report,
+                    &self.receipt,
+                    finish_deadline,
+                ) {
                     Ok(()) => Ok(PublicationOutcome::Published(self.receipt.clone())),
                     Err(diagnostic) => Ok(PublicationOutcome::PublishedUnconfirmed {
                         receipt: self.receipt.clone(),

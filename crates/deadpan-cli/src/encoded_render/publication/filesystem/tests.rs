@@ -28,6 +28,178 @@ fn io_code(error: &io::Error) -> &str {
         .code()
 }
 
+#[cfg(target_os = "macos")]
+pub(super) fn set_flags(path: &Path, flags: u32) {
+    let mut command = std::process::Command::new("chflags");
+    command.arg(format!("{flags:o}")).arg(path);
+    assert!(
+        deadpan_native_process::spawn(&mut command)
+            .unwrap()
+            .wait()
+            .unwrap()
+            .success()
+    );
+    assert_eq!(inspect(&File::open(path).unwrap()).unwrap().st_flags, flags);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn tracking_addition_preserves_every_other_stable_field() {
+    let folder = tempfile::tempdir().unwrap();
+    let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+    let partial = sealed(&destination, b"verified movie");
+    let original = partial.state;
+    assert_eq!(original.st_flags & UF_TRACKED, 0);
+    assert!(same_state(&original, &original, true));
+    assert!(!tracking_added(&original, &original));
+    let mut tracked = original;
+    tracked.st_flags |= UF_TRACKED;
+    tracked.st_ctime += 1;
+    assert!(!same_state(&original, &tracked, false));
+    assert!(tracking_added(&original, &tracked));
+    assert!(!tracking_added(&tracked, &original));
+    assert!(!tracking_added(&tracked, &tracked));
+    let mut extra_flag = tracked;
+    extra_flag.st_flags |= 0x0000_8000; // UF_HIDDEN
+    assert!(!tracking_added(&original, &extra_flag));
+
+    let changes: [fn(&mut Stat); 12] = [
+        |state| state.st_dev += 1,
+        |state| state.st_ino += 1,
+        |state| state.st_birthtime += 1,
+        |state| state.st_birthtime_nsec += 1,
+        |state| state.st_gen += 1,
+        |state| state.st_uid += 1,
+        |state| state.st_gid += 1,
+        |state| state.st_mode ^= 0o040,
+        |state| state.st_size += 1,
+        |state| state.st_nlink += 1,
+        |state| state.st_mtime += 1,
+        |state| state.st_mtime_nsec += 1,
+    ];
+    for change in changes {
+        let mut changed = tracked;
+        change(&mut changed);
+        assert!(!tracking_added(&original, &changed));
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn tracked_publication_rehashes_complete_bytes_after_rename_or_later_addition() {
+    for during_rename in [false, true] {
+        let folder = tempfile::tempdir().unwrap();
+        let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+        let bytes = vec![0x52; IO_BYTES * 2 + 19];
+        let mut partial = sealed(&destination, &bytes);
+        let cancelled = AtomicBool::new(false);
+        partial
+            .commit_with_sync(&cancelled, deadline(), |phase, file| {
+                if during_rename && phase == SyncPhase::PublishedFile {
+                    set_flags(&destination.path(), UF_TRACKED);
+                }
+                if phase == SyncPhase::PublishedDirectory {
+                    fsync(file).map_err(Into::into)
+                } else {
+                    full_sync(file)
+                }
+            })
+            .unwrap();
+        if !during_rename {
+            set_flags(&destination.path(), UF_TRACKED);
+            assert_eq!(
+                partial.confirm_published().unwrap_err().code(),
+                "destination_changed"
+            );
+        }
+        super::super::confirm_published_bytes(
+            &mut partial,
+            &super::super::digest(&bytes),
+            bytes.len() as u64,
+            &cancelled,
+            deadline(),
+        )
+        .unwrap();
+        partial.confirm_published().unwrap();
+        assert!(!partial.rebase_published_tracking().unwrap());
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn tracked_publication_rejects_mutation_before_and_after_metadata_rebase() {
+    for before_rebase in [false, true] {
+        let folder = tempfile::tempdir().unwrap();
+        let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+        let original = vec![0x52; IO_BYTES + 19];
+        let mut partial = sealed(&destination, &original);
+        let cancelled = AtomicBool::new(false);
+        partial.commit(&cancelled, deadline()).unwrap();
+        let modified = partial.file.metadata().unwrap().modified().unwrap();
+        if before_rebase {
+            partial.file.write_all_at(b"x", IO_BYTES as u64).unwrap();
+            partial.file.set_modified(modified).unwrap();
+        }
+        set_flags(&destination.path(), UF_TRACKED);
+        if !before_rebase {
+            super::super::confirm_published_bytes(
+                &mut partial,
+                &super::super::digest(&original),
+                original.len() as u64,
+                &cancelled,
+                deadline(),
+            )
+            .unwrap();
+            partial.file.write_all_at(b"x", IO_BYTES as u64).unwrap();
+            partial.file.set_modified(modified).unwrap();
+        }
+        let error = super::super::confirm_published_bytes(
+            &mut partial,
+            &super::super::digest(&original),
+            original.len() as u64,
+            &cancelled,
+            deadline(),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.code,
+            if before_rebase {
+                "published_hash_mismatch"
+            } else {
+                "destination_changed"
+            }
+        );
+        assert!(partial.is_published());
+        assert_eq!(fs::read(destination.path()).unwrap()[IO_BYTES], b'x');
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn tracked_rebase_never_adopts_a_replaced_published_name() {
+    let folder = tempfile::tempdir().unwrap();
+    let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+    let original = b"verified movie";
+    let mut partial = sealed(&destination, original);
+    let cancelled = AtomicBool::new(false);
+    partial.commit(&cancelled, deadline()).unwrap();
+    let retained = folder.path().join("retained-movie");
+    fs::rename(destination.path(), &retained).unwrap();
+    fs::write(destination.path(), original).unwrap();
+    set_flags(&retained, UF_TRACKED);
+    let error = super::super::confirm_published_bytes(
+        &mut partial,
+        &super::super::digest(original),
+        original.len() as u64,
+        &cancelled,
+        deadline(),
+    )
+    .unwrap_err();
+    assert_eq!(error.code, "destination_changed");
+    assert_eq!(fs::read(retained).unwrap(), original);
+    assert_eq!(fs::read(destination.path()).unwrap(), original);
+}
+
 #[test]
 fn bounded_copy_readback_and_no_replace_commit_preserve_owner_writable_mode() {
     let folder = tempfile::tempdir().unwrap();
@@ -483,7 +655,7 @@ fn published_hash_admission_rejects_same_length_mutation_with_restored_mtime() {
         .unwrap();
     assert_eq!(observed, changed);
     let error = super::super::confirm_published_bytes(
-        &partial,
+        &mut partial,
         &super::super::digest(original),
         original.len() as u64,
         &uncancelled,

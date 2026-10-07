@@ -52,6 +52,14 @@ the receipt and an actionable diagnostic. It never reports an unpublished
 attempt or deletes the final file. The durable report is checked again before
 claiming full success.
 
+macOS may asynchronously add `UF_TRACKED` (`0x40`) to a published document and
+change its ctime. Publication permits only this one-way flag addition, with the
+same descriptor and named entry, device, inode, birth time, generation, owner,
+group, mode, extent, link count and mtime. It captures the new exact metadata and
+rehashes every expected byte before admission. A read interrupted by this change
+may restart once within its existing deadline. Clearing the flag, changing any
+other flag or changing ctime again fails; final entry checks remain exact.
+
 Crash recovery independently admits retained bytes before trusting them. Neither
 a serialized verification report nor a publication receipt can construct a
 `VerifiedCandidate`. The journal binds the live candidate to the exact completed
@@ -110,6 +118,12 @@ directory component, are checked again. Rename may change ctime; fresh reads
 instead require stable current metadata including ctime. This detects cooperative
 replacement and mutation; it is not authentication against a malicious same-user
 process. The standalone publisher retains its existing platform support.
+
+Saved file evidence also permits only a later `UF_TRACKED` addition when opening
+the recorded movie or report. The saved evidence and its serialized equality do
+not change. The opened handle captures fresh exact metadata, and reconciliation
+checks the complete recorded hash before synchronization. Same-inode writes with
+restored mtime fail the hash; writes after opening fail the live ctime checks.
 
 `journal::reconcile` has three outcomes:
 
