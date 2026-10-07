@@ -30,8 +30,15 @@ The full gate passed 4,700 workspace tests, 1,023 UI harness tests, strict
 lint and doc tests. DP-23 is complete within §29.1; the other requirements
 and all release gates retain their tracked work. Native §26.6 online and
 offline-distribution acceptance and the corrected bundle follow-up complete
-DP-22 within §29.1. DP-13 still needs the explicit conditioning, frame/raster,
-precision and hardware/OS manifest declarations in §14.3. Do not
+DP-22 within §29.1. DP-13 is also complete: schema-3 manifests now declare
+conditioning, frame/raster limits, precisions and hardware/OS requirements.
+Signed updates preserve these contracts, and the bridge planner consumes them.
+The full gate passed 4,740 workspace tests, 1,027 UI-harness tests, strict lint
+and both doc tests. A fresh bundle passed baseline import and every positive
+and negative check, then a real schema-3 signed update, installed retry,
+generation, explicit acceptance, rollback and verified Render passed with
+version 3 retained in both host and worker provenance. See
+[model constraints](../qualification/model-constraints-2026-10-07.md). Do not
 infer completion from older blanket status text below; consult the current
 requirements table and evidence.
 
