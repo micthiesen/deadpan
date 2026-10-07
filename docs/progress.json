@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-07T15:10:00Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Verifying AI generation and acceptance inside Repeat and Retime scopes. This work is excluded from the estimate until verified.",
+  "features": [
+    {
+      "id": "editing",
+      "name": "Keyboard editing",
+      "status": "mostly",
+      "requirements": [
+        "DP-03",
+        "DP-04",
+        "DP-05",
+        "DP-06",
+        "DP-07",
+        "DP-21"
+      ],
+      "note": "Slices, registers, repeats and macros work. Advanced operators and nested timing remain."
+    },
+    {
+      "id": "projects",
+      "name": "Projects and recovery",
+      "status": "mostly",
+      "requirements": [
+        "DP-01"
+      ],
+      "note": "Saving, durable history and recovery work. Remaining failure cases need qualification."
+    },
+    {
+      "id": "picture",
+      "name": "Framing and tracking",
+      "status": "mostly",
+      "requirements": [
+        "DP-08",
+        "DP-11"
+      ],
+      "note": "Camera paths and target tracking work. Some target controls and behaviors remain."
+    },
+    {
+      "id": "audio",
+      "name": "Audio editing and mixing",
+      "status": "partial",
+      "requirements": [
+        "DP-09"
+      ],
+      "note": "Playback, gain, sounds and timing work. Full voice processing and effects remain."
+    },
+    {
+      "id": "analysis",
+      "name": "Transcript and analysis",
+      "status": "mostly",
+      "requirements": [
+        "DP-10"
+      ],
+      "note": "Local transcription, corrections and proposals work. Refinement and selectors remain."
+    },
+    {
+      "id": "ai",
+      "name": "AI pause pictures",
+      "status": "mostly",
+      "requirements": [
+        "DP-12"
+      ],
+      "note": "Real generation, variants, acceptance and quality checks work. Nested scope work is in verification."
+    },
+    {
+      "id": "import",
+      "name": "Video and sound import",
+      "status": "mostly",
+      "requirements": [
+        "DP-14",
+        "DP-15"
+      ],
+      "note": "Local and YouTube Originals work. Some import UI and media cases remain."
+    },
+    {
+      "id": "render",
+      "name": "Playback and export",
+      "status": "mostly",
+      "requirements": [
+        "DP-02",
+        "DP-16",
+        "DP-17"
+      ],
+      "note": "Verified SDR/HDR paths and exact clocks work. Full effects and format coverage remain."
+    },
+    {
+      "id": "ui",
+      "name": "Native workspace",
+      "status": "mostly",
+      "requirements": [
+        "DP-20"
+      ],
+      "note": "Keyboard teaching, focus and accessibility are implemented. Full workflow polish remains."
+    },
+    {
+      "id": "performance",
+      "name": "Performance and background work",
+      "status": "partial",
+      "requirements": [
+        "DP-18",
+        "DP-24"
+      ],
+      "note": "Bounded workers and diagnostics work. Several measured latency and scheduling gaps remain."
+    },
+    {
+      "id": "models",
+      "name": "Model installation and updates",
+      "status": "done",
+      "requirements": [
+        "DP-13"
+      ],
+      "note": "Real model installation, signed updates, rollback and offline packs verified on this Mac."
+    },
+    {
+      "id": "portability",
+      "name": "Offline project portability",
+      "status": "done",
+      "requirements": [
+        "DP-19"
+      ],
+      "note": "Accepted AI projects reopen and render without model, source-package or network access."
+    },
+    {
+      "id": "release",
+      "name": "App packaging, privacy and security",
+      "status": "done",
+      "requirements": [
+        "DP-22",
+        "DP-23"
+      ],
+      "note": "Self-contained app, relocation, release audit and offline installation verified here."
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-10-06",
+      "percent": 75,
+      "complete_sections": 0,
+      "revision": "ae79d614",
+      "retrospective": true,
+      "summary": "Resumed after the separate session. Working editor foundation; release and AI qualification still open."
+    },
+    {
+      "date": "2026-10-07",
+      "percent": 85,
+      "complete_sections": 4,
+      "revision": "6210ea1e",
+      "retrospective": false,
+      "summary": "Verified release/security, model updates, offline portability, AI controls and motion, endpoint, face and region checks."
+    }
+  ]
+}
