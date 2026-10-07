@@ -85,7 +85,8 @@ impl StageAudio {
                 fades: fades.spans,
             });
         }
-        let retained = self.prepare_sound_processing_plans(&plan, control)?;
+        let retained =
+            self.prepare_sound_processing_plans(&plan, start..AudioSample(end), control)?;
         let beat_voices =
             self.prepare_beat_sounds(&plan, &retained, start..AudioSample(end), control)?;
         // Reserve the retained Original, the f64 sum and the source reader's

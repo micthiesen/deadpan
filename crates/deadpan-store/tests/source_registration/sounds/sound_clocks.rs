@@ -3,6 +3,9 @@ use deadpan_core::{SliceCaptureSelection, SoundClockJournal};
 use deadpan_store::registers::{RegisterName, RegisterValue};
 use std::{collections::BTreeMap, sync::Arc};
 
+#[path = "sound_clocks/repeats.rs"]
+mod repeats;
+
 fn capture_child(
     document: &ProjectDocument,
     parent: &NodeId,

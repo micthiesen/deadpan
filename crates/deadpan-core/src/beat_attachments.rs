@@ -25,14 +25,11 @@ impl ProjectDocument {
         }
         let nodes = crate::occurrence_edit::subtree_order(self, &child)?;
         let owned: BTreeSet<_> = nodes.iter().collect();
-        if owned.iter().any(|id| self.beat_sounds().contains_key(*id)) {
-            return Err(invalid(
-                "Repeat cannot yet preserve beat-owned sound clocks; remove those attachments before repeating",
-            ));
-        }
         let attached = nodes.iter().any(|id| {
             let node = &self.nodes()[id];
-            !node.captions.is_empty() || !node.cutaways.is_empty()
+            !node.captions.is_empty()
+                || !node.cutaways.is_empty()
+                || self.beat_sounds().contains_key(id)
         }) || self.marks().values().any(|mark| {
             mark.bindings().any(|binding| {
                 owned.contains(&binding.owner)
@@ -147,6 +144,8 @@ pub(crate) fn apply(
             .expect("admitted original subtree");
         node.captions.clear();
         node.cutaways.clear();
+        result.beat_sounds.remove(original);
+        result.audio_bindings.sound_clocks.remove(original);
     }
     // Cloning inherits the exact physical audio lattice. Removing temporal
     // picture attachments does not change that lattice or creative effects.

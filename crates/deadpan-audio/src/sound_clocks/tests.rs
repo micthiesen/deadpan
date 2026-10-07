@@ -177,7 +177,85 @@ fn prepare(
 ) -> Result<SoundProcessingPlans, StageAudioError> {
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
-    stage.prepare_sound_processing_plans(plan, control(&cancelled, &work))
+    stage.prepare_sound_processing_plans(
+        plan,
+        AudioSample(0)..AudioSample(1),
+        control(&cancelled, &work),
+    )
+}
+
+#[test]
+fn seeking_between_birth_cohorts_replaces_cached_processing_plans() {
+    use deadpan_core::{
+        Command, CommandRequest, RepeatSelectionIdentities, SliceCaptureSelection, SplitIdentities,
+    };
+    fn apply_edit(document: &ProjectDocument, name: &str, command: Command) -> ProjectDocument {
+        let edit = deadpan_core::apply(
+            document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: revision(name),
+                command,
+            },
+        )
+        .unwrap();
+        edit.forward.apply(document).unwrap()
+    }
+    let clock = |name| AudioTimingId {
+        allocation: revision(name),
+        ordinal: 0,
+    };
+    let original = document(&["asset-a"], 1);
+    let mut current = apply_edit(
+        &original,
+        "wrapped",
+        Command::RepeatSelection {
+            parent: id("root"),
+            selection: SliceCaptureSelection::Child { node: id("owner") },
+            plays: 2,
+            identities: RepeatSelectionIdentities {
+                repeat: id("repeat"),
+                group: None,
+                split: SplitIdentities::default(),
+            },
+            timing: clock("wrapped"),
+        },
+    );
+    for (name, plays) in [("three", 3), ("four", 4), ("five", 5)] {
+        current = apply_edit(
+            &current,
+            name,
+            Command::SetRepeatPlays {
+                node: id("repeat"),
+                plays,
+                timing: clock(name),
+            },
+        );
+    }
+    let plan = RenderPlan::compile(&current).unwrap();
+    let mut stage = StageAudio::new(Arc::new(plan.clone()));
+    let cancelled = AtomicBool::new(false);
+    // Third and fourth plays first existed at different retained captures.
+    for (sample, expected) in [
+        (320_320, Some(clock("four"))),
+        (480_480, Some(clock("five"))),
+        (640_640, None),
+    ] {
+        let work = RefCell::new(ReadWork::default());
+        let prepared = stage
+            .prepare_sound_processing_plans(
+                &plan,
+                AudioSample(sample)..AudioSample(sample + 1),
+                control(&cancelled, &work),
+            )
+            .unwrap();
+        assert_eq!(
+            prepared.keys().cloned().collect::<Vec<_>>(),
+            expected.into_iter().collect::<Vec<_>>()
+        );
+        assert_eq!(stage.sound_processing_plans.len(), prepared.len());
+    }
 }
 
 #[test]
@@ -210,7 +288,11 @@ fn one_sound_reuses_its_first_clock_plan_for_long_journal_and_retry() {
         ..Default::default()
     });
     assert!(matches!(
-        limited_stage.prepare_sound_processing_plans(&plan, control(&cancelled, &limited_work)),
+        limited_stage.prepare_sound_processing_plans(
+            &plan,
+            AudioSample(0)..AudioSample(1),
+            control(&cancelled, &limited_work)
+        ),
         Err(StageAudioError::Limit("plan work per read"))
     ));
     assert!(limited_stage.sound_processing_plans.is_empty());

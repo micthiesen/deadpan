@@ -13,6 +13,7 @@ Undo entry. Independent root sounds are moved once and are not duplicated.
 | `rl` / `3rl` | Repeat the next frame two / three times. |
 | `r3l` | Repeat the next three frames twice. |
 | `rj`, `rk`, `rgg`, `rG` | Repeat from the cursor to a beat or group boundary. |
+| `rib` / `rab` | Repeat the selected beat with its attachments on the first play / every play. |
 | Visual `r` / `3r` | Repeat the nonempty selected range two / three times. |
 | `:wrap-repeat 3` | Wrap the captured range, or the selected beat when no range exists. |
 | `:repeat 3` | Change an existing Repeat's total plays; otherwise wrap the selected beat. Clear Visual selection first. |
@@ -50,6 +51,10 @@ does not rewrite an established intrinsic lattice; see
 permissions gain the new wrapper's first occurrence. Those permissions do not
 automatically authorize added plays. Root sound insertion occurs at the old
 selection end for precisely the extra authored frames.
+
+Descendant-owned sounds retain explicit Repeat clock mappings through wraps,
+count/gap changes and copies, including first-play isolation for `rib`.
+See [sound clocks and remaining owner-local routing](SOUND_EVENTS.md#descendant-sound-clocks-through-repeat).
 
 `SetRepeatPlays` changes the count of an ordinary Sequence child while preserving
 its gap recipe and surviving stable iteration identities. It handles variable

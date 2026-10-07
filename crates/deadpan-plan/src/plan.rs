@@ -218,6 +218,16 @@ impl<'plan> AudioSoundClockScope<'plan> {
             .remap_instance_with_work(live, maximum_work)?)
     }
 
+    pub fn try_remap_instance_with_work(
+        &self,
+        live: &InstancePath,
+        maximum_work: usize,
+    ) -> Result<(Option<InstancePath>, usize), PlanError> {
+        Ok(self
+            .correspondence
+            .try_remap_instance_with_work(live, maximum_work)?)
+    }
+
     /// Bind one compiled plan to this exact frozen layout and sound recipe.
     /// The full layout and selected asset contract are compared once per read,
     /// not once per concrete Repeat occurrence.
@@ -930,10 +940,11 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidPlan(
                     "beat sound clock refers to a missing frozen layout",
                 ))?;
-            let correspondence = historical_layout.sound_clock_correspondence(
+            let correspondence = historical_layout.sound_clock_correspondence_with_repeats(
                 current_layout,
                 reference.scope(),
                 journal.scope(),
+                reference.repeats(),
                 remaining_work,
             )?;
             remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(

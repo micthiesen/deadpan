@@ -52,12 +52,14 @@ pub(super) fn capture(
                         reference.timing().clone(),
                         reference.scope().clone(),
                         previous.scope().clone(),
+                        reference.repeats().clone(),
                     );
                     if !proofs.contains_key(&key) {
-                        let proof = historical.sound_clock_correspondence(
+                        let proof = historical.sound_clock_correspondence_with_repeats(
                             &live,
                             reference.scope(),
                             previous.scope(),
+                            reference.repeats(),
                             budget(work)?,
                         )?;
                         work = work
@@ -74,11 +76,14 @@ pub(super) fn capture(
                     let historical_scope = proof
                         .historical_node(&scope)
                         .ok_or_else(|| invalid("slice sound clock scope is outside its history"))?;
-                    references.push(SoundClockReference::new(
-                        reference.timing().clone(),
-                        historical_scope.clone(),
-                        reference.owner().clone(),
-                    ));
+                    references.push(
+                        SoundClockReference::new(
+                            reference.timing().clone(),
+                            historical_scope.clone(),
+                            reference.owner().clone(),
+                        )
+                        .with_repeats(reference.repeats().clone()),
+                    );
                     if installed.insert(reference.timing().clone()) {
                         install(state, reference.timing(), historical)?;
                     }
@@ -86,11 +91,22 @@ pub(super) fn capture(
             }
             // The live source placement was implicit in its old journal. Make
             // it explicit before a fresh destination replaces that final clock.
-            references.push(SoundClockReference::new(
-                timing.clone(),
-                scope.clone(),
-                owner.clone(),
-            ));
+            let (ancestors, used) = live.sound_placement_repeats(&scope, budget(work)?)?;
+            work = work
+                .checked_add(used)
+                .ok_or_else(|| limit("slice sound ancestry work"))?;
+            references.push(
+                SoundClockReference::new(timing.clone(), scope.clone(), owner.clone())
+                    .with_repeats(crate::SoundClockRepeatMap::new(
+                        ancestors
+                            .into_iter()
+                            .map(|repeat| crate::SoundClockRepeatStep::Shared {
+                                live_repeat: repeat.clone(),
+                                historical_repeat: repeat,
+                            })
+                            .collect(),
+                    )?),
+            );
             journals.insert(sound.clone(), SoundClockJournal::new(scope, references)?);
         }
         state.sound_clocks.insert(owner, journals);

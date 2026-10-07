@@ -53,20 +53,7 @@ impl StageAudio {
                 for scope in &scopes {
                     control.spend_plan_work(scope.proof_work())?;
                 }
-                let retained_binding = if let Some(first_scope) = scopes.first() {
-                    let first_plan =
-                        retained
-                            .get(first_scope.timing())
-                            .ok_or(PlanError::InvalidPlan(
-                                "sound processing layout was not prepared",
-                            ))?;
-                    let (binding, work) = first_scope
-                        .bind_historical_plan(first_plan, control.query_limits()?.maximum_work)?;
-                    control.spend_plan_work(work)?;
-                    Some((first_plan, binding))
-                } else {
-                    None
-                };
+                let mut bindings = BTreeMap::new();
                 let batch = plan.source_voice_occurrences(
                     owner,
                     AudioSourceVoiceRecipe {
@@ -92,15 +79,38 @@ impl StageAudio {
                             .iter()
                             .filter_map(|owner| owner.treatments()),
                     )?;
-                    let (input, fades) = if let (Some(first_scope), Some((first_plan, binding))) =
-                        (scopes.first(), retained_binding.as_ref())
+                    let mut first = None;
+                    for (index, scope) in scopes.iter().enumerate() {
+                        let (instance, work) = scope.try_remap_instance_with_work(
+                            voice.instance(),
+                            control.query_limits()?.maximum_work,
+                        )?;
+                        control.spend_plan_work(work)?;
+                        if let Some(instance) = instance {
+                            first = Some((index, scope, instance));
+                            break;
+                        }
+                    }
+                    let (input, fades) = if let Some((index, first_scope, historical_instance)) =
+                        first
                     {
-                        let (historical_instance, remap_work) = first_scope
-                            .remap_instance_with_work(
-                                voice.instance(),
+                        let first_plan =
+                            retained
+                                .get(first_scope.timing())
+                                .ok_or(PlanError::InvalidPlan(
+                                    "sound processing layout was not prepared",
+                                ))?;
+                        if let std::collections::btree_map::Entry::Vacant(entry) =
+                            bindings.entry(index)
+                        {
+                            let (binding, work) = first_scope.bind_historical_plan(
+                                first_plan,
                                 control.query_limits()?.maximum_work,
                             )?;
-                        control.spend_plan_work(remap_work)?;
+                            control.spend_plan_work(work)?;
+                            entry.insert(binding);
+                        }
+                        let binding = &bindings[&index];
                         let original = super::sound_clocks::historical_occurrence(
                             first_plan,
                             event,

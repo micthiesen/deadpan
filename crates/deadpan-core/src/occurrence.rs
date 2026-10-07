@@ -15,7 +15,7 @@ pub struct IterationId {
     pub ordinal: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct IterationRun {
     allocation: RevisionId,
@@ -23,7 +23,7 @@ struct IterationRun {
     count: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(try_from = "OrderWire")]
 pub struct IterationOrder {
     runs: Vec<IterationRun>,

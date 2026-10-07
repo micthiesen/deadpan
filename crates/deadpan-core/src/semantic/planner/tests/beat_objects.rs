@@ -89,6 +89,97 @@ fn captions(document: &ProjectDocument) -> Vec<(NodeId, Vec<Caption>)> {
 }
 
 #[test]
+fn rib_and_rab_keep_their_distinct_sound_attachment_ownership() {
+    let mut document = attached();
+    let time_base = crate::SourceTimeBase::new(1, 48_000).unwrap();
+    let span = crate::SourceSpan::new(
+        crate::SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        crate::SourceTimestamp {
+            ticks: 1000,
+            time_base,
+        },
+    )
+    .unwrap();
+    let asset = crate::AssetId::new("sound").unwrap();
+    document.assets.insert(
+        asset.clone(),
+        crate::AssetRecord {
+            label: "Sound".into(),
+            content_hash: "a".repeat(64),
+            video: None,
+            audio: Some(span),
+            still_image: false,
+            frame_count: None,
+            source_qualification: Some(crate::SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    );
+    let sound = crate::SoundId::new("effect").unwrap();
+    let event = crate::BeatSound {
+        label: "Effect".into(),
+        source: crate::SourceAudio { asset, span },
+        mapping: crate::SourceAudioMapping::natural_rate(
+            span,
+            document.presentation_basis().frame_rate,
+        )
+        .unwrap(),
+        offset: crate::AudioSample(37),
+        gain_millidecibels: -1500,
+        start_edge: crate::AudioEdgePolicy::Hard,
+        end_edge: crate::AudioEdgePolicy::Automatic,
+        overflow: crate::SoundOverflowPolicy::Reject,
+    };
+    document.beat_sounds.insert(
+        node("beat"),
+        BTreeMap::from([(sound.clone(), event.clone())]),
+    );
+    document.validate().unwrap();
+    for kind in [InnerBeat, AroundBeat] {
+        let result = plan(
+            &document,
+            context("root", 3),
+            vec![repeat(kind, 3)],
+            &BTreeMap::new(),
+        )
+        .unwrap()
+        .document;
+        assert_eq!(result.beat_sounds().len(), 1);
+        let (owner, sounds) = result.beat_sounds().iter().next().unwrap();
+        assert_eq!(sounds[&sound], event);
+        assert_eq!(
+            result.audio_bindings().sound_clocks()[owner][&sound]
+                .clocks()
+                .len(),
+            1
+        );
+        let repeat = result.children(&node("root")).nth(1).unwrap();
+        let NodeKind::Repeat {
+            child, iterations, ..
+        } = &result.nodes()[repeat].kind
+        else {
+            panic!()
+        };
+        if kind == InnerBeat {
+            assert_ne!(owner, child);
+            assert_eq!(
+                result.overrides()[repeat].get(&iterations.at(0).unwrap()),
+                Some(owner)
+            );
+            assert!(
+                result.overrides()[repeat]
+                    .get(&iterations.at(1).unwrap())
+                    .is_none()
+            );
+        } else {
+            assert_eq!(owner, child);
+            assert!(!result.overrides().contains_key(repeat));
+        }
+    }
+}
+
+#[test]
 fn beat_objects_resolve_the_selected_or_right_hand_beat_with_one_picture_range() {
     let document = attached();
     for kind in [InnerBeat, AroundBeat] {

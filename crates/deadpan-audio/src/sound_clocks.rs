@@ -15,28 +15,81 @@ impl StageAudio {
     pub(super) fn prepare_sound_processing_plans(
         &mut self,
         plan: &RenderPlan,
+        samples: Range<AudioSample>,
         control: WorkControl<'_>,
     ) -> Result<SoundProcessingPlans, StageAudioError> {
-        // Only the first layout owns processing. Intermediate clocks translate
-        // that output; compiling them would duplicate graphs and asset records.
-        // There are at most MAX_DOCUMENT_SOUNDS first clocks, and their selected
-        // asset counts together cannot exceed the same authored event bound.
+        // Births can make a different reference first for different occurrences.
+        // Compile only first clocks needed by this bounded query. Asset sets are
+        // complete across the event inventory so a cached plan remains valid on
+        // a later query that encounters another event sharing the same clock.
         let mut definitions: BTreeMap<_, (&FrozenAudioLayout, BTreeSet<AssetId>)> = BTreeMap::new();
+        let mut needed = BTreeSet::new();
         for (owner, events) in plan.beat_sounds() {
             for (sound, event) in events {
                 let clocks = plan.beat_sound_clock_layouts(owner, sound)?;
                 control.spend_plan_work(clocks.len().max(1))?;
-                if let Some((clock, layout)) = clocks.first() {
+                for (clock, layout) in clocks {
                     definitions
-                        .entry((*clock).clone())
-                        .or_insert_with(|| (*layout, BTreeSet::new()))
+                        .entry(clock.clone())
+                        .or_insert_with(|| (layout, BTreeSet::new()))
                         .1
                         .insert(event.source.asset.clone());
                 }
+                let scopes = plan.beat_sound_clock_scopes(
+                    owner,
+                    sound,
+                    control.query_limits()?.maximum_work,
+                )?;
+                for scope in &scopes {
+                    control.spend_plan_work(scope.proof_work())?;
+                }
+                if scopes.is_empty() {
+                    continue;
+                }
+                let batch = plan.source_voice_occurrences(
+                    owner,
+                    AudioSourceVoiceRecipe {
+                        source: event.source.clone(),
+                        mapping: event.mapping,
+                        offset: event.offset,
+                    },
+                    samples.clone(),
+                    control.query_limits()?,
+                )?;
+                control.spend_plan_work(batch.construction_work())?;
+                for voice in batch.voices() {
+                    for scope in &scopes {
+                        let (instance, work) = scope.try_remap_instance_with_work(
+                            voice.instance(),
+                            control.query_limits()?.maximum_work,
+                        )?;
+                        control.spend_plan_work(work)?;
+                        if instance.is_some() {
+                            needed.insert(scope.timing().clone());
+                            break;
+                        }
+                    }
+                }
             }
         }
+        let mut selected_assets = 0usize;
+        for clock in &needed {
+            selected_assets = selected_assets
+                .checked_add(definitions[clock].1.len())
+                .ok_or(StageAudioError::Limit("sound processing assets per read"))?;
+            if selected_assets > deadpan_core::MAX_DOCUMENT_SOUNDS {
+                return Err(StageAudioError::Limit("sound processing assets per read"));
+            }
+        }
+        // Different birth cohorts can become first while seeking. Retain only
+        // this bounded query's plans so a long journal cannot grow the cache.
+        self.sound_processing_plans
+            .retain(|clock, _| needed.contains(clock));
         let mut prepared = BTreeMap::new();
         for (clock, (layout, assets)) in definitions {
+            if !needed.contains(&clock) {
+                continue;
+            }
             if !self.sound_processing_plans.contains_key(&clock) {
                 control
                     .spend_plan_work(RenderPlan::sound_processing_layout_work(layout, &assets)?)?;
@@ -116,9 +169,14 @@ pub(super) fn placements(
     let mut placements = Vec::with_capacity(clocks.len() + 1);
     let mut first_origin = None;
     for clock in clocks {
-        let (historical_instance, remap_work) = clock
-            .remap_instance_with_work(current.instance(), control.query_limits()?.maximum_work)?;
+        let (historical_instance, remap_work) = clock.try_remap_instance_with_work(
+            current.instance(),
+            control.query_limits()?.maximum_work,
+        )?;
         control.spend_plan_work(remap_work)?;
+        let Some(historical_instance) = historical_instance else {
+            continue;
+        };
         let projection = clock
             .historical_layout()
             .project(

@@ -1,6 +1,7 @@
 use super::*;
 
 mod grouping;
+mod repeats;
 
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {
@@ -479,7 +480,7 @@ fn direct_occurrence_clone_cannot_drop_retained_clocks() {
         &revision("cloned"),
     )
     .unwrap_err();
-    assert!(error.message.contains("occurrence copies"));
+    assert!(error.message.contains("complete processing scope"));
     assert_eq!(private, before);
 }
 

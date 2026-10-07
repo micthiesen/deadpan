@@ -461,13 +461,56 @@ pub(crate) fn clone_nodes(
     mapping: &BTreeMap<NodeId, NodeId>,
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
-    if mapping
-        .keys()
-        .any(|owner| document.audio_bindings.sound_clocks.contains_key(owner))
-    {
-        return Err(invalid(
-            "occurrence copies cannot yet remap retained beat sound clocks",
-        ));
+    let mut sound_clocks = Vec::new();
+    for (owner, copy) in mapping {
+        if let Some(events) = document.audio_bindings.sound_clocks.get(owner) {
+            let mut cloned = BTreeMap::new();
+            for (sound, journal) in events {
+                let scope = mapping.get(journal.scope()).ok_or_else(|| {
+                    invalid("sound clock isolation requires its complete processing scope")
+                })?;
+                let references = journal
+                    .clocks()
+                    .iter()
+                    .map(|reference| {
+                        let repeats = crate::SoundClockRepeatMap::new(
+                            reference
+                                .repeats()
+                                .steps()
+                                .iter()
+                                .map(|step| {
+                                    let live_repeat = mapping
+                                        .get(step.live_repeat())
+                                        .unwrap_or(step.live_repeat())
+                                        .clone();
+                                    match step {
+                                        crate::SoundClockRepeatStep::Shared {
+                                            historical_repeat,
+                                            ..
+                                        } => crate::SoundClockRepeatStep::Shared {
+                                            live_repeat,
+                                            historical_repeat: historical_repeat.clone(),
+                                        },
+                                        crate::SoundClockRepeatStep::Introduced {
+                                            plays, ..
+                                        } => crate::SoundClockRepeatStep::Introduced {
+                                            live_repeat,
+                                            plays: plays.clone(),
+                                        },
+                                    }
+                                })
+                                .collect(),
+                        )?;
+                        Ok(reference.clone().with_repeats(repeats))
+                    })
+                    .collect::<Result<Vec<_>, EditError>>()?;
+                cloned.insert(
+                    sound.clone(),
+                    crate::SoundClockJournal::new(scope.clone(), references)?,
+                );
+            }
+            sound_clocks.push((copy.clone(), cloned));
+        }
     }
     // Isolation and Split can duplicate existing contexts repeatedly. Check the
     // combined set before copying any recipe, not after all ancestors expand.
@@ -530,6 +573,7 @@ pub(crate) fn clone_nodes(
                 .insert(new.clone(), PlayOverrides::try_from(copied)?);
         }
     }
+    document.audio_bindings.sound_clocks.extend(sound_clocks);
     crate::audio_lineage::inherit(document, mapping, allocation);
     crate::audio_binding_lifecycle::inherit(document, mapping);
     Ok(())

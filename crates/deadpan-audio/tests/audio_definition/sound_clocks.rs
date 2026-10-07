@@ -1,6 +1,9 @@
 //! Exercise command-created clocks through the ordinary authored audio bus.
 use super::*;
 
+#[path = "sound_clocks/repeats.rs"]
+mod repeats;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

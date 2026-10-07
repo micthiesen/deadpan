@@ -1460,14 +1460,17 @@ impl AudioBindingState {
                             timing.clone(),
                             reference.scope().clone(),
                             journal.scope().clone(),
+                            reference.repeats().clone(),
                         );
                         if !checked.contains_key(&key) {
-                            let proof = self.timings[timing].sound_clock_correspondence(
-                                &live,
-                                reference.scope(),
-                                journal.scope(),
-                                work.remaining()?,
-                            )?;
+                            let proof = self.timings[timing]
+                                .sound_clock_correspondence_with_repeats(
+                                    &live,
+                                    reference.scope(),
+                                    journal.scope(),
+                                    reference.repeats(),
+                                    work.remaining()?,
+                                )?;
                             work.spend(proof.work())?;
                             checked.insert(key.clone(), proof);
                         }

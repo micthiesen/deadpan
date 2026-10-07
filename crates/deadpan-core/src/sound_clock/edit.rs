@@ -25,7 +25,10 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
         | Command::SpliceSlice { timing, .. }
         | Command::SpliceSliceAt { timing, .. }
         | Command::ReplaceSlice { timing, .. }
-        | Command::ReplaceSliceChildren { timing, .. } => Some(timing),
+        | Command::ReplaceSliceChildren { timing, .. }
+        | Command::RepeatSelection { timing, .. }
+        | Command::SetRepeatPlays { timing, .. }
+        | Command::SetRepeatGaps { timing, .. } => Some(timing),
         _ => None,
     }
 }
@@ -37,6 +40,8 @@ pub(crate) struct SoundClockEditCapture {
     before: FrozenAudioLayout,
     timing: AudioTimingId,
     removed: BTreeSet<NodeId>,
+    repeat_edit: bool,
+    introduced: Option<NodeId>,
 }
 
 impl SoundClockEditCapture {
@@ -80,6 +85,16 @@ impl SoundClockEditCapture {
             before,
             timing: timing.clone(),
             removed: removed_owners(document, command)?,
+            repeat_edit: matches!(
+                command,
+                Command::RepeatSelection { .. }
+                    | Command::SetRepeatPlays { .. }
+                    | Command::SetRepeatGaps { .. }
+            ),
+            introduced: match command {
+                Command::RepeatSelection { identities, .. } => Some(identities.repeat.clone()),
+                _ => None,
+            },
         }))
     }
 
@@ -93,12 +108,8 @@ impl SoundClockEditCapture {
         // Imported events already belong to the result. Never replace that map
         // with the entry snapshot, and never transport their newly born clocks.
         let current = FrozenAudioLayout::capture(document)?;
-        let mut moved: BTreeMap<(NodeId, NodeId), (crate::SoundClockCorrespondence, bool)> =
-            BTreeMap::new();
-        let mut historical: BTreeMap<
-            (AudioTimingId, NodeId, NodeId),
-            crate::SoundClockCorrespondence,
-        > = BTreeMap::new();
+        let mut moved = BTreeMap::new();
+        let mut historical = BTreeMap::new();
         let mut work = 0usize;
         for (owner, events) in self.events {
             if !document.nodes.contains_key(&owner) {
@@ -125,38 +136,77 @@ impl SoundClockEditCapture {
             let mut journals = self.journals.remove(&owner).unwrap_or_default();
             for id in events.keys() {
                 let previous = journals.remove(id);
-                let (old_scope, live_scope) = match &previous {
-                    Some(previous) => {
-                        if !document.nodes.contains_key(previous.scope()) {
-                            return Err(invalid(
-                                "sound owner scope disappeared without whole-owner deletion",
-                            ));
+                let (old_scope, live_scope) = if self.repeat_edit {
+                    let (scope, used) =
+                        self.before.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    (scope.clone(), scope)
+                } else {
+                    match &previous {
+                        Some(previous) => {
+                            if !document.nodes.contains_key(previous.scope()) {
+                                return Err(invalid(
+                                    "sound owner scope disappeared without whole-owner deletion",
+                                ));
+                            }
+                            (previous.scope().clone(), previous.scope().clone())
                         }
-                        (previous.scope().clone(), previous.scope().clone())
-                    }
-                    None => {
-                        let live_scope =
-                            current.branch_below(current.root(), &owner, budget(work)?)?;
-                        work = work.checked_add(live_scope.1).ok_or_else(exhausted)?;
-                        (top.clone(), live_scope.0)
+                        None => {
+                            let live_scope =
+                                current.branch_below(current.root(), &owner, budget(work)?)?;
+                            work = work.checked_add(live_scope.1).ok_or_else(exhausted)?;
+                            (top.clone(), live_scope.0)
+                        }
                     }
                 };
+                let (ancestors, used) =
+                    current.sound_placement_repeats(&live_scope, budget(work)?)?;
+                work = work.checked_add(used).ok_or_else(exhausted)?;
+                let before_map = crate::SoundClockRepeatMap::new(
+                    ancestors
+                        .iter()
+                        .map(|repeat| {
+                            if self.introduced.as_ref() == Some(repeat) {
+                                crate::SoundClockRepeatStep::Introduced {
+                                    live_repeat: repeat.clone(),
+                                    plays: introduced_plays(&current, repeat).clone(),
+                                }
+                            } else {
+                                crate::SoundClockRepeatStep::Shared {
+                                    live_repeat: repeat.clone(),
+                                    historical_repeat: repeat.clone(),
+                                }
+                            }
+                        })
+                        .collect(),
+                )?;
                 let key = (old_scope.clone(), live_scope.clone());
                 let (proof, changed_origin) = if let Some((proof, changed)) = moved.get(&key) {
-                    (proof.clone(), *changed)
+                    (crate::SoundClockCorrespondence::clone(proof), *changed)
                 } else {
-                    let proof = self.before.sound_clock_correspondence(
+                    let proof = self.before.sound_clock_correspondence_with_repeats(
                         &current,
                         &old_scope,
                         &live_scope,
+                        &before_map,
                         budget(work)?,
                     )?;
                     work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
-                    let (old, old_work) = origin(&self.before, &old_scope, budget(work)?)?;
-                    work = work.checked_add(old_work).ok_or_else(exhausted)?;
-                    let (new, new_work) = origin(&current, &live_scope, budget(work)?)?;
-                    work = work.checked_add(new_work).ok_or_else(exhausted)?;
-                    let changed = old != new;
+                    let changed = if !ancestors.is_empty() {
+                        let (same, used) = self.before.sound_placement_unchanged(
+                            &current,
+                            &old_scope,
+                            budget(work)?,
+                        )?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        !same
+                    } else {
+                        let (old, used) = origin(&self.before, &old_scope, budget(work)?)?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        let (new, used) = origin(&current, &live_scope, budget(work)?)?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        old != new
+                    };
                     moved.insert(key, (proof.clone(), changed));
                     (proof, changed)
                 };
@@ -166,19 +216,22 @@ impl SoundClockEditCapture {
                 if proof.historical_node(&owner) != Some(&owner) {
                     return Err(invalid("sound owner moved outside its captured scope"));
                 }
+                let mut references = Vec::new();
                 if let Some(previous) = &previous {
                     for reference in previous.clocks() {
                         let key = (
                             reference.timing().clone(),
                             reference.scope().clone(),
-                            live_scope.clone(),
+                            previous.scope().clone(),
+                            reference.repeats().clone(),
                         );
                         if !historical.contains_key(&key) {
                             let layout = &self.retained[reference.timing()];
-                            let historical_proof = layout.sound_clock_correspondence(
-                                &current,
+                            let historical_proof = layout.sound_clock_correspondence_with_repeats(
+                                &self.before,
                                 reference.scope(),
-                                &live_scope,
+                                previous.scope(),
+                                reference.repeats(),
                                 budget(work)?,
                             )?;
                             work = work
@@ -192,26 +245,48 @@ impl SoundClockEditCapture {
                         if historical_proof.historical_node(&owner) != Some(reference.owner()) {
                             return Err(invalid("sound owner processing subtree changed"));
                         }
+                        let scope =
+                            historical_proof
+                                .historical_node(&old_scope)
+                                .ok_or_else(|| {
+                                    invalid("sound clock cannot narrow outside its captured scope")
+                                })?;
+                        let repeats = crate::SoundClockRepeatMap::new(ancestors.iter().map(|repeat| {
+                            if self.introduced.as_ref() == Some(repeat) {
+                                Ok(crate::SoundClockRepeatStep::Introduced { live_repeat: repeat.clone(), plays: introduced_plays(&current, repeat).clone() })
+                            } else if let Some(step) = reference.repeats().steps().iter().find(|step| matches!(step,
+                                crate::SoundClockRepeatStep::Introduced { live_repeat, .. } if live_repeat == repeat)) {
+                                Ok(step.clone())
+                            } else {
+                                Ok(crate::SoundClockRepeatStep::Shared {
+                                    live_repeat: repeat.clone(),
+                                    historical_repeat: historical_proof.historical_node(repeat)
+                                        .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
+                                })
+                            }
+                        }).collect::<Result<Vec<_>, EditError>>()?)?;
+                        references.push(
+                            SoundClockReference::new(
+                                reference.timing().clone(),
+                                scope.clone(),
+                                reference.owner().clone(),
+                            )
+                            .with_repeats(repeats),
+                        );
                     }
                 }
-                let journal = if changed_origin {
-                    let reference = SoundClockReference::new(
-                        self.timing.clone(),
-                        old_scope.clone(),
-                        owner.clone(),
+                if changed_origin {
+                    references.push(
+                        SoundClockReference::new(
+                            self.timing.clone(),
+                            old_scope.clone(),
+                            owner.clone(),
+                        )
+                        .with_repeats(before_map),
                     );
-                    Some(match previous {
-                        Some(previous) => previous.with_appended(reference)?,
-                        None => SoundClockJournal::new(live_scope.clone(), vec![reference])?,
-                    })
-                } else {
-                    previous
-                        .map(|previous| {
-                            SoundClockJournal::new(live_scope.clone(), previous.clocks().to_vec())
-                        })
-                        .transpose()?
-                };
-                if let Some(journal) = journal {
+                }
+                if !references.is_empty() {
+                    let journal = SoundClockJournal::new(live_scope, references)?;
                     for reference in journal.clocks() {
                         let layout = if reference.timing() == &self.timing {
                             &self.before
@@ -231,6 +306,16 @@ impl SoundClockEditCapture {
         }
         Ok(())
     }
+}
+
+fn introduced_plays<'a>(
+    layout: &'a FrozenAudioLayout,
+    repeat: &NodeId,
+) -> &'a crate::IterationOrder {
+    let crate::FrozenAudioKind::Repeat { iterations, .. } = &layout.nodes()[repeat].kind else {
+        unreachable!("admitted Repeat ancestry")
+    };
+    iterations
 }
 
 fn install_layout(
@@ -283,6 +368,49 @@ fn removed_owners(
             }
             vec![node.clone()]
         }
+        Command::SetRepeatPlays { node, plays, .. } => {
+            let Some(crate::BeatNode {
+                kind: NodeKind::Repeat { iterations, .. },
+                ..
+            }) = document.nodes().get(node)
+            else {
+                return Err(invalid("sound clock count edit needs a Repeat"));
+            };
+            let entries = document
+                .overrides()
+                .get(node)
+                .map_or(0, crate::PlayOverrides::len)
+                + document
+                    .gap_overrides()
+                    .get(node)
+                    .map_or(0, crate::PlayOverrides::len);
+            if entries
+                .checked_mul(iterations.segment_count())
+                .is_none_or(|work| work > MAX_DOCUMENT_NODES)
+            {
+                return Err(exhausted());
+            }
+            document
+                .overrides()
+                .get(node)
+                .into_iter()
+                .chain(document.gap_overrides().get(node))
+                .flat_map(|entries| entries.iter())
+                .filter(|(play, _)| {
+                    iterations
+                        .position(play)
+                        .is_some_and(|position| position >= *plays)
+                })
+                .map(|(_, root)| root.clone())
+                .collect()
+        }
+        Command::SetRepeatGaps { node, .. } => document
+            .gap_overrides()
+            .get(node)
+            .into_iter()
+            .flat_map(|entries| entries.iter())
+            .map(|(_, root)| root.clone())
+            .collect(),
         Command::DeleteChildren {
             parent,
             first,

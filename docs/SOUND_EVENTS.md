@@ -223,8 +223,39 @@ The journal has a hard 1,024-edit bound and all document journals share a 1 MiB
 serialized bound. Existing compiled arena caps can apply earlier: 819 interior
 insertions fit the 4,096-node cap. History traversal is iterative and bounded;
 each Ripple map still has structural depth at most 64. Root Split, temporal
-occurrence edits, nested sound ownership, Repeat/Retime transformations and
+occurrence edits, nested sound ownership, owner-local Repeat/Retime transformations and
 general retained sound-bus captures remain required. Their guards stay closed.
+
+### Descendant sound clocks through Repeat
+
+Sound owners beneath a Repeat now retain their processing clocks through
+wrapping, count and gap changes, first-play isolation, copying and recopying.
+Each retained clock maps explicit live and historical Repeat identities.
+An introduced wrapper records the stable plays that existed at capture;
+later plays begin on their own exact sample phase. Dormant final gaps skip
+clocks where their sound had no occurrence. Removing and regrowing plays
+does not reuse retired identities.
+
+`rib` retains the selected beat's sounds on its first play; `rab` retains
+them on every play. Independent sample offsets remain independent of frame
+placement. Audio selects the first applicable retained clock for each
+concrete occurrence, preserving complete nested Preserve processing context.
+The retained-plan cache replaces the previous query's birth cohort and has
+an explicit 64-context bound. A suffix-only edit needs no new clock.
+
+This does not yet route a sound owned by the changed Repeat itself, an
+ancestor-owned sound spanning the changed subtree, changes inside an
+enclosing Retime processing scope, or partial sound-owner selections. Those
+cases still refuse atomically. They need an exact owner-local route before
+their existing guards can be removed.
+
+Focused verification on 2026-10-06 passed 29 core clock tests, 10 semantic
+beat-object tests, 3 cache tests, 11 PCM integration tests and one store
+reopen/register/Undo/Redo test. The PCM witnesses use 30000/1001 timing,
+an independent 37-sample offset, copied and later-born plays, changed gaps,
+cold seeks and nested Preserve context. Logs are under
+`/tmp/deadpan-resume-20261006/repeat-*.log`; independent review and the next
+full gate remain pending.
 
 The immutable render plan compiles sampled routes and transported envelope
 islands once. Construction has aggregate ceilings of 16,777,216 visits and

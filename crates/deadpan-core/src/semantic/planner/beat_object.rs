@@ -10,18 +10,10 @@ where
     S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
-    /// The shared Repeat reducer currently refuses beat sounds because their
-    /// independent processing clocks need a temporal transform. Never suggest
-    /// `rab` as a workaround: it has the same admission requirement.
+    /// Resolution still requires a complete live beat; sound admission and
+    /// retained processing clocks are checked by the atomic Repeat command.
     pub(super) fn check_first_play_attachments(&self, beat: &NodeId) -> Result<(), EditError> {
-        if crate::occurrence_edit::subtree_order(&self.current, beat)?
-            .iter()
-            .any(|node| self.current.beat_sounds().contains_key(node))
-        {
-            return Err(invalid(
-                "Repeat cannot yet preserve beat-owned sound clocks; remove those attachments before repeating",
-            ));
-        }
+        crate::occurrence_edit::subtree_order(&self.current, beat)?;
         Ok(())
     }
 

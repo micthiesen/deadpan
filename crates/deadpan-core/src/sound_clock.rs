@@ -10,12 +10,109 @@ use std::fmt;
 use serde::de::{self, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{AudioTimingId, DocumentError, DocumentErrorCode, NodeId, SoundId};
+use crate::{AudioTimingId, DocumentError, DocumentErrorCode, MAX_DOCUMENT_DEPTH, NodeId, SoundId};
 
 pub(crate) mod edit;
 
 pub const MAX_SOUND_CLOCKS: usize = 1024;
 pub const MAX_SOUND_CLOCK_BYTES: usize = 1024 * 1024;
+
+/// External Repeat ancestors of a retained processing scope, outermost first.
+/// Internal Repeats are paired by the complete subtree correspondence instead.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(try_from = "RepeatMapWire")]
+pub struct SoundClockRepeatMap {
+    steps: Vec<SoundClockRepeatStep>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SoundClockRepeatStep {
+    Shared {
+        live_repeat: NodeId,
+        historical_repeat: NodeId,
+    },
+    /// Only these stable plays copy the earlier definition clock. Later count
+    /// growth is born on its own allocation, even after a shrink and regrow.
+    Introduced {
+        live_repeat: NodeId,
+        plays: crate::IterationOrder,
+    },
+}
+
+impl SoundClockRepeatStep {
+    pub fn live_repeat(&self) -> &NodeId {
+        match self {
+            Self::Shared { live_repeat, .. } | Self::Introduced { live_repeat, .. } => live_repeat,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RepeatMapWire {
+    #[serde(deserialize_with = "repeat_steps")]
+    steps: Vec<SoundClockRepeatStep>,
+}
+
+fn repeat_steps<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<Vec<SoundClockRepeatStep>, D::Error> {
+    struct Steps;
+    impl<'de> Visitor<'de> for Steps {
+        type Value = Vec<SoundClockRepeatStep>;
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("a bounded Repeat ancestry map")
+        }
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            let mut steps = Vec::new();
+            while let Some(step) = seq.next_element()? {
+                if steps.len() == MAX_DOCUMENT_DEPTH {
+                    return Err(de::Error::custom("sound clock Repeat depth limit"));
+                }
+                steps.push(step);
+            }
+            Ok(steps)
+        }
+    }
+    decoder.deserialize_seq(Steps)
+}
+
+impl TryFrom<RepeatMapWire> for SoundClockRepeatMap {
+    type Error = DocumentError;
+    fn try_from(wire: RepeatMapWire) -> Result<Self, Self::Error> {
+        Self::new(wire.steps)
+    }
+}
+
+impl SoundClockRepeatMap {
+    pub fn new(steps: Vec<SoundClockRepeatStep>) -> Result<Self, DocumentError> {
+        if steps.len() > MAX_DOCUMENT_DEPTH {
+            return Err(limit("sound clock Repeat depth limit"));
+        }
+        let mut live = BTreeSet::new();
+        let mut historical = BTreeSet::new();
+        for step in &steps {
+            if !live.insert(step.live_repeat()) {
+                return Err(invalid("duplicate live sound clock Repeat"));
+            }
+            if let SoundClockRepeatStep::Shared {
+                historical_repeat, ..
+            } = step
+                && !historical.insert(historical_repeat)
+            {
+                return Err(invalid("duplicate historical sound clock Repeat"));
+            }
+        }
+        Ok(Self { steps })
+    }
+    pub fn steps(&self) -> &[SoundClockRepeatStep] {
+        &self.steps
+    }
+    pub fn is_empty(&self) -> bool {
+        self.steps.is_empty()
+    }
+}
 
 /// One historical owner's clock in a frozen processing scope.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,6 +121,8 @@ pub struct SoundClockReference {
     timing: AudioTimingId,
     scope: NodeId,
     owner: NodeId,
+    #[serde(default, skip_serializing_if = "SoundClockRepeatMap::is_empty")]
+    repeats: SoundClockRepeatMap,
 }
 
 impl SoundClockReference {
@@ -32,6 +131,7 @@ impl SoundClockReference {
             timing,
             scope,
             owner,
+            repeats: SoundClockRepeatMap::default(),
         }
     }
 
@@ -45,6 +145,15 @@ impl SoundClockReference {
 
     pub fn owner(&self) -> &NodeId {
         &self.owner
+    }
+
+    pub fn with_repeats(mut self, repeats: SoundClockRepeatMap) -> Self {
+        self.repeats = repeats;
+        self
+    }
+
+    pub fn repeats(&self) -> &SoundClockRepeatMap {
+        &self.repeats
     }
 }
 

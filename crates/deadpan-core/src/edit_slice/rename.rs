@@ -89,10 +89,22 @@ impl Inventory {
             for (owner, journals) in &slice.audio_bindings.sound_clocks {
                 for journal in journals.values() {
                     for reference in journal.clocks() {
+                        for step in reference.repeats().steps() {
+                            if let crate::SoundClockRepeatStep::Introduced { live_repeat, plays } =
+                                step
+                            {
+                                let family = result.key(&RepeatKey::Live(live_repeat.clone()))?;
+                                result.charge(plays.segment_count())?;
+                                for (allocation, first, count) in plays.segments() {
+                                    result.interval(family, allocation, first, count)?;
+                                }
+                            }
+                        }
                         let key = (
                             reference.timing().clone(),
                             reference.scope().clone(),
                             journal.scope().clone(),
+                            reference.repeats().clone(),
                         );
                         if !proofs.contains_key(&key) {
                             let historical = &slice.audio_bindings.timings[reference.timing()];
@@ -100,10 +112,11 @@ impl Inventory {
                                 .checked_sub(result.work)
                                 .filter(|remaining| *remaining > 0)
                                 .ok_or_else(|| limit("slice sound clock identity work limit"))?;
-                            let proof = historical.sound_clock_correspondence(
+                            let proof = historical.sound_clock_correspondence_with_repeats(
                                 &live,
                                 reference.scope(),
                                 journal.scope(),
+                                reference.repeats(),
                                 remaining.min(MAX_DOCUMENT_NODES),
                             )?;
                             result.charge(proof.work())?;
@@ -853,11 +866,43 @@ pub(super) fn prepare(
                         .clocks()
                         .iter()
                         .map(|reference| {
+                            let repeats = crate::SoundClockRepeatMap::new(
+                                reference
+                                    .repeats()
+                                    .steps()
+                                    .iter()
+                                    .map(|step| {
+                                        Ok(match step {
+                                            crate::SoundClockRepeatStep::Shared {
+                                                live_repeat,
+                                                historical_repeat,
+                                            } => crate::SoundClockRepeatStep::Shared {
+                                                live_repeat: rename.live(live_repeat)?,
+                                                historical_repeat: rename.historical(
+                                                    reference.timing(),
+                                                    historical_repeat,
+                                                )?,
+                                            },
+                                            crate::SoundClockRepeatStep::Introduced {
+                                                live_repeat,
+                                                plays,
+                                            } => crate::SoundClockRepeatStep::Introduced {
+                                                live_repeat: rename.live(live_repeat)?,
+                                                plays: rename.order(
+                                                    RepeatKey::Live(live_repeat.clone()),
+                                                    plays,
+                                                )?,
+                                            },
+                                        })
+                                    })
+                                    .collect::<Result<Vec<_>, EditError>>()?,
+                            )?;
                             Ok(SoundClockReference::new(
                                 rename.timings[reference.timing()].clone(),
                                 rename.historical(reference.timing(), reference.scope())?,
                                 rename.historical(reference.timing(), reference.owner())?,
-                            ))
+                            )
+                            .with_repeats(repeats))
                         })
                         .collect::<Result<_, EditError>>()?;
                     Ok((
