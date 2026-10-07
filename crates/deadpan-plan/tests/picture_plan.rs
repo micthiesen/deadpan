@@ -4,6 +4,8 @@ use deadpan_core::*;
 use deadpan_plan::{Picture, PlanError, RenderPlan};
 use proptest::prelude::*;
 
+#[path = "picture_plan/definition.rs"]
+mod definition;
 #[path = "picture_plan/follow.rs"]
 mod follow;
 #[path = "picture_plan/retained_framing.rs"]

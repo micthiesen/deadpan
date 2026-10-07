@@ -397,6 +397,300 @@ fn chosen(d: &Driver<'_>) -> Option<usize> {
     d.app().ai.chosen_variant().map(|(number, _)| number)
 }
 
+/// A scoped AI command must keep its authored target separate from the
+/// concrete Repeat picture used for preview. All setup and actions here use
+/// the production keyboard router; only model inference is synthetic.
+pub(super) fn scoped(d: &mut Driver<'_>) -> Result<(), String> {
+    if let Err(reason) = crate::project::generation::synthetic_tools() {
+        return Err(format!(
+            "ai-scoped requires the synthetic Ready worker's tools: {reason}"
+        ));
+    }
+    d.report.skipped.push("Model inference is synthetic boundary-blend footage. Conditioning, qualification, request history, scoped keyboard navigation, Metal preview and acceptance are real. This scenario opens no audio device.".into());
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    let before = d.revision();
+    d.command("group name=\"AI local\"")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let group = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("The new group is not selected")?;
+    d.key(Key::Enter)?;
+    d.chord(&[Key::Num1, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.command("hold 12f")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let hold = d
+        .app()
+        .ai_hold()
+        .ok_or("The authored local Hold is not selected")?;
+    let local_frames = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .plan
+        .node_duration(&group)
+        .ok_or("No local group duration")?
+        .frames();
+    d.key(Key::Backspace)?;
+    let before = d.revision();
+    d.command("wrap-repeat 2")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let repeat = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("The Repeat is not selected")?;
+    let baseline = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .document
+        .clone();
+    d.key(Key::Enter)?;
+    scoped_play_hold(d, 2)?;
+    d.settled()?;
+    let capture = d.app().scoped_target()?.ok_or("No scoped Hold capture")?;
+    let target = capture.target.clone();
+    let picture = d
+        .app()
+        .scoped_presentation()?
+        .ok_or("Play two Hold has no picture")?;
+    let expected_start = u64::try_from(local_frames + 10).map_err(|error| error.to_string())?;
+    d.check(
+        "Entering the local Hold captures Play 2 and its exact visible picture interval",
+        target.node == hold
+            && target.repeats.last().is_some_and(|step| matches!(&step.branch,
+                deadpan_core::RepeatEditBranch::Play { iteration } if iteration.ordinal == 1))
+            && picture.frames == (expected_start..expected_start + 12)
+            && d.app().sequence_cursor == expected_start
+            && d.app().workspace.as_ref().is_some_and(|workspace| workspace.document == baseline),
+        json!({"hold":hold,"play":2,"range":[expected_start,expected_start+12],"history":"unchanged"}),
+        json!({"target":capture.target,"presentation":capture.presentation,"range":picture.frames,"cursor":d.app().sequence_cursor}),
+    )?;
+    for label in [
+        "AI PICTURES",
+        "12 pictures before Repeat / Retime",
+        "Joins measured in this definition.",
+    ] {
+        scoped_painted(d, label)?;
+    }
+    d.check(
+        "The nested Hold inspector exposes the real generation action",
+        widget_text(d).contains("Generate AI pictures") && widget_text(d).contains(",a"),
+        json!("Generate AI pictures  ,a"),
+        d.widgets(),
+    )?;
+    d.capture("Play two Hold exposes scoped AI controls")?;
+
+    let unchanged = d.revision();
+    d.command("generate 2")?;
+    d.wait_for("Scoped variants reach Ready", |app| {
+        app.ai.job().is_some_and(|job| !job.running()) && app.ai.variant_count() == 2
+    })?;
+    let job = d
+        .app()
+        .ai
+        .job()
+        .cloned()
+        .ok_or("Scoped generation has no job")?;
+    let request_id = job
+        .request
+        .clone()
+        .ok_or("Scoped job has no retained request")?;
+    let request = scoped_request(d, &request_id)?;
+    d.check(
+        "Generation retains Play 2, all 12 intrinsic pictures and the immutable worker target",
+        job.target == target && matches!(job.outcome, Some(Outcome::Ready(_)))
+            && request.target == target && request.origin_target == target
+            && request.constraints.video.frames().frames() == 12 && d.revision() == unchanged,
+        json!({"target":target,"frames":12,"revision":unchanged}),
+        json!({"target":request.target,"origin_target":request.origin_target,"frames":request.constraints.video.frames().frames(),"revision":d.revision()}),
+    )?;
+    d.check(
+        "Ready variants in the nested inspector expose Preview and Accept",
+        widget_text(d).contains("Ready · 2 variants")
+            && widget_text(d).contains(":preview-ai")
+            && widget_text(d).contains(":accept-ai"),
+        json!(["Ready · 2 variants", ":preview-ai", ":accept-ai"]),
+        d.widgets(),
+    )?;
+
+    // Hold the actual service reply while keyboard navigation changes scope.
+    // A late reply must never pull the viewer back to the old play.
+    d.app_mut().feedback.hold_project_updates = true;
+    d.command("preview-ai")?;
+    d.wait_for(
+        "Scoped preview is prepared while its reply is withheld",
+        |app| !app.service.is_busy(),
+    )?;
+    scoped_play_hold(d, 1)?;
+    let other_cursor = d.app().sequence_cursor;
+    d.app_mut().feedback.hold_project_updates = false;
+    d.settled()?;
+    d.check(
+        "A delayed preview cannot reclaim the previous play after scoped navigation",
+        d.app().ai.preview_request().is_none()
+            && d.app().ai.retained_previews() == 0
+            && !d.app().presentation.displayed_candidate()
+            && d.app().sequence_cursor == other_cursor
+            && other_cursor == 10,
+        json!({"preview":null,"Edit":10}),
+        d.snapshot(),
+    )?;
+    scoped_play_hold(d, 2)?;
+    d.command("preview-ai")?;
+    d.wait_for("Scoped candidate is displayed at Play 2", |app| {
+        app.ai.preview_request() == Some(&request_id)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    let workspace = d.app().workspace.as_ref().ok_or("No workspace")?;
+    let proposed = d
+        .app()
+        .ai_preview_audio(workspace)
+        .ok_or("No proposed scoped preview")?;
+    let generated = proposed.document.nodes().values().any(|node| {
+        matches!(&node.kind,
+        NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))
+    });
+    d.check(
+        "Preview shows the proposed Play 2 provider at its captured root frame without saving",
+        generated
+            && d.app().sequence_cursor == expected_start
+            && d.revision() == unchanged
+            && proposed.document.nodes()[&hold] == baseline.nodes()[&hold]
+            && proposed
+                .document
+                .overrides()
+                .get(&repeat)
+                .is_some_and(|overrides| overrides.len() == 1),
+        json!({"Edit":expected_start,"overrides":1,"shared_hold":"unchanged","revision":unchanged}),
+        json!({"Edit":d.app().sequence_cursor,"generated":generated,"revision":d.revision()}),
+    )?;
+    d.capture("Play two candidate preview before acceptance")?;
+    scoped_play_hold(d, 1)?;
+    d.settled()?;
+    d.check(
+        "Changing plays revokes the admitted preview and all cached variants",
+        d.app().ai.preview_request().is_none()
+            && d.app().ai.retained_previews() == 0
+            && !d.app().presentation.displayed_candidate()
+            && d.app().sequence_cursor == 10,
+        json!({"preview":null,"retained":0,"Edit":10}),
+        d.snapshot(),
+    )?;
+    scoped_play_hold(d, 2)?;
+    d.command("preview-ai")?;
+    d.wait_for("Play two preview is prepared again", |app| {
+        app.ai.preview_request() == Some(&request_id)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    let before = d.revision();
+    d.command("accept-ai")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let mapped = d
+        .app()
+        .scoped_target()?
+        .ok_or("Acceptance lost scoped navigation")?;
+    let current = scoped_request(d, &request_id)?;
+    let document = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .document
+        .clone();
+    d.check(
+        "Accept isolates only Play 2 and follows its mapped Hold and request",
+        mapped.target.node != hold && mapped.target.repeats == target.repeats
+            && mapped.presentation.as_ref().map(|path| &path.repeats) == Some(&picture.instance.repeats)
+            && matches!(&document.nodes()[&mapped.target.node].kind,
+                NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))
+            && document.nodes()[&hold] == baseline.nodes()[&hold]
+            && document.overrides().get(&repeat).is_some_and(|overrides| overrides.len() == 1)
+            && current.target == mapped.target && current.origin_target == target
+            && d.app().sequence_cursor == expected_start && d.app().ai.preview_request().is_none(),
+        json!({"mapped_target":mapped.target,"origin_target":target,"overrides":1,"shared_hold":"unchanged"}),
+        json!({"target":current.target,"origin_target":current.origin_target,"cursor":d.app().sequence_cursor}),
+    )?;
+    d.capture("Accepted Play two keeps the mapped Hold inspector")?;
+    let before = d.revision();
+    d.key(Key::U)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let undone = scoped_request(d, &request_id)?;
+    d.check(
+        "Undo closes scoped inspection and restores the original request target",
+        d.app().scoped.is_none()
+            && undone.target == target
+            && undone.origin_target == target
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.document.overrides().is_empty())
+            && d.app().ai.variant_count() == 2,
+        json!({"scope":null,"request_target":target,"variants":2}),
+        d.snapshot(),
+    )?;
+    let before = d.revision();
+    d.key_modified(Key::R, egui::Modifiers::CTRL)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let redone = scoped_request(d, &request_id)?;
+    d.check(
+        "Redo restores the mapped request while immutable worker scope remains original",
+        d.app().scoped.is_none()
+            && redone.target == mapped.target
+            && redone.origin_target == target
+            && d.app().ai.variant_count() == 1,
+        json!({"scope":null,"request_target":mapped.target,"origin_target":target,"variants":1}),
+        d.snapshot(),
+    )?;
+    d.capture("Scoped acceptance and request mapping survive Redo")
+}
+
+fn scoped_request(
+    d: &Driver<'_>,
+    request: &deadpan_jobs::RequestId,
+) -> Result<deadpan_store::generation::StoredGenerationRequest, String> {
+    let workspace = d.app().workspace.as_ref().ok_or("No workspace")?;
+    let store =
+        deadpan_store::ProjectStore::open(&workspace.path, deadpan_store::AccessMode::ReadOnly)
+            .map_err(|error| error.to_string())?;
+    store
+        .generation_request(request)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "The scoped generation request is missing".into())
+}
+
+fn scoped_play_hold(d: &mut Driver<'_>, play: u32) -> Result<(), String> {
+    d.command(&format!("scope play {play}"))?;
+    d.key(Key::Enter)?;
+    d.key(Key::J)
+}
+
+fn scoped_painted(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    let parts = scenarios::text_paint_visibility(d, label);
+    d.check(
+        &format!("Scoped AI text is fully painted: {label}"),
+        !parts.is_empty() && parts.iter().all(|part| part["fully_visible"] == true),
+        json!("visible inside the nested inspector paint clip"),
+        json!(parts),
+    )
+}
+
 pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     if let Err(reason) = crate::project::generation::synthetic_tools() {
         d.report.skipped.push(format!(

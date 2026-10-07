@@ -19,12 +19,13 @@ use std::time::Duration;
 use deadpan_cli::generation::conditioning;
 use deadpan_cli::picture::{PreparedPicture, ProjectPictureSession};
 use deadpan_core::{
-    AudioTimingId, Command, FrameDuration, HoldAudio, HoldRecipe, HoldVideo, NodeId, ProjectFrame,
-    RevisionId, SourceFrameId, SplitIdentities,
+    AudioTimingId, Command, CommandRequest, ExactRatio, FrameDuration, HoldAudio, HoldRecipe,
+    HoldVideo, IterationId, NodeId, NodeKind, PitchPolicy, ProjectFrame, RepeatEditBranch,
+    RepeatEditStep, RevisionId, ScopedNodeTarget, SourceFrameId, SplitIdentities,
 };
 use deadpan_models::{
-    BoundaryPicture, BridgeContext, BridgeMatrix, BridgePrimaries, BridgeRange, BridgeTransfer,
-    CANONICAL_BRIDGE_COLOR, ModelInputConversion,
+    BoundaryClock, BoundaryPicture, BridgeContext, BridgeMatrix, BridgePrimaries, BridgeRange,
+    BridgeTransfer, CANONICAL_BRIDGE_COLOR, ModelInputConversion,
 };
 use deadpan_source::{DecodeControl, DecodeLimits, SourceDecoder};
 use deadpan_store::{AccessMode, ProjectStore};
@@ -68,6 +69,13 @@ fn picture_path(package: &Path, revision: &RevisionId, frame: i64) -> Result<Bou
     let cancelled = AtomicBool::new(false);
     let mut session = ProjectPictureSession::open_revision(package, revision, None, &cancelled)?;
     let prepared = session.prepare(ProjectFrame(frame), &cancelled)?;
+    let document = ProjectStore::open(package, AccessMode::ReadOnly)?.snapshot_at(revision)?;
+    let clock = BoundaryClock::Definition {
+        project_id: document.project_id().clone(),
+        revision_id: revision.clone(),
+        definition: document.root().clone(),
+        position: ExactRatio::new(i128::from(frame) * 2 + 1, 2)?,
+    };
     let info = session.source_info().cloned();
     let decoded = |id: SourceFrameId, picture: &deadpan_render::Rgba8Frame| -> Result<_> {
         let stream =
@@ -87,7 +95,7 @@ fn picture_path(package: &Path, revision: &RevisionId, frame: i64) -> Result<Bou
             id,
             frame: picture,
         } => BoundaryPicture::Original {
-            project_frame: frame,
+            clock: clock.clone(),
             asset: asset.clone(),
             qualification: qualification.clone(),
             picture: decoded(*id, picture)?,
@@ -97,14 +105,14 @@ fn picture_path(package: &Path, revision: &RevisionId, frame: i64) -> Result<Bou
             id,
             frame: picture,
         } => BoundaryPicture::Generated {
-            project_frame: frame,
+            clock: clock.clone(),
             sampled_asset: artifact.sampled_asset.clone(),
             sampled_object: artifact.sampled_object.clone(),
             provenance: artifact.provenance.clone(),
             picture: decoded(*id, picture)?,
         },
         PreparedPicture::Background => BoundaryPicture::AuthoredBlack {
-            project_frame: frame,
+            clock: clock.clone(),
         },
     })
 }
@@ -165,7 +173,7 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     let inputs =
         conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
     let context = manifest(&inputs)?;
-    assert_eq!(context.schema_version(), 4);
+    assert_eq!(context.schema_version(), 5);
     let geometry = context.geometry().ok_or("captured geometry")?;
     let expected_crop = deadpan_models::RasterRect::new(99, 0, 569, 320)?;
     assert_eq!(geometry.presentation, expected_crop);
@@ -189,14 +197,17 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     for (side, project_frame, ordinal) in [(&boundaries.left, 14, 26), (&boundaries.right, 27, 27)]
     {
         let BoundaryPicture::Original {
-            project_frame: recorded,
+            clock: recorded,
             picture,
             ..
         } = side
         else {
             panic!("an Original frame borders the pause: {side:?}")
         };
-        assert_eq!(*recorded, project_frame);
+        assert!(
+            matches!(recorded, BoundaryClock::Definition { position, revision_id, .. }
+            if *position == ExactRatio::new(i128::from(project_frame) * 2 + 1, 2)? && revision_id == &revision)
+        );
         assert_eq!(picture.source_frame, SourceFrameId(ordinal));
         assert_eq!(picture.pts.ticks, pts[ordinal as usize]);
         assert_eq!(
@@ -422,30 +433,239 @@ fn a_generated_neighbour_is_recorded_as_its_artifact() -> Result {
     )?;
     let context = manifest(&inputs)?;
     let boundaries = context.boundaries().ok_or("measured boundaries")?;
-    let BoundaryPicture::Generated {
-        project_frame,
-        picture,
-        ..
-    } = &boundaries.left
-    else {
+    let BoundaryPicture::Generated { clock, picture, .. } = &boundaries.left else {
         panic!("the accepted Hold borders the pause: {:?}", boundaries.left)
     };
-    assert_eq!(*project_frame, 26);
+    assert!(
+        matches!(clock, BoundaryClock::Definition { position, .. } if *position == ExactRatio::new(53, 2)?)
+    );
     assert_eq!(picture.stream.color, CANONICAL_BRIDGE_COLOR);
     assert_eq!(picture.stream.codec, "ffv1");
     assert_eq!(
         picture.model_input,
         ModelInputConversion::SrgbCodesUnchanged
     );
-    assert!(matches!(
-        boundaries.right,
-        BoundaryPicture::Original {
-            project_frame: 39,
-            ..
-        }
-    ));
+    assert!(matches!(boundaries.right, BoundaryPicture::Original { .. }));
     for (side, frame) in [(&boundaries.left, 26), (&boundaries.right, 39)] {
         assert_eq!(&picture_path(&fixture.package, &revision, frame)?, side);
+    }
+    let BoundaryPicture::Generated { sampled_object, .. } = &boundaries.left else {
+        unreachable!()
+    };
+    // A cold definition read must verify accepted media again, never replace a
+    // missing generated neighbor with the Hold's deterministic fallback.
+    std::fs::remove_file(
+        fixture
+            .package
+            .join("Media/Generated")
+            .join(format!("blake3-{}", sampled_object.content().digest())),
+    )?;
+    assert!(
+        conditioning::prepare(
+            &fixture.package,
+            &revision,
+            &NodeId::new("after")?,
+            &AtomicBool::new(false)
+        )
+        .is_err()
+    );
+    Ok(())
+}
+
+fn commit(package: &Path, name: &str, command: Command) -> Result<RevisionId> {
+    let mut store = ProjectStore::open(package, AccessMode::ReadWrite)?;
+    let document = store.snapshot()?;
+    let revision = RevisionId::new(name)?;
+    store.commit(&CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: revision.clone(),
+        command,
+    })?;
+    Ok(revision)
+}
+
+#[test]
+fn repeat_and_retime_condition_the_complete_definition_with_identical_raw_pixels() -> Result {
+    for repeat in [false, true] {
+        let root = tempfile::tempdir()?;
+        let fixture = recipes::black_pause(&root.path().join("fixture"))?;
+        let original_revision = RevisionId::new(fixture.revision.clone())?;
+        let hold = NodeId::new("black")?;
+        let original = conditioning::prepare(
+            &fixture.package,
+            &original_revision,
+            &hold,
+            &AtomicBool::new(false),
+        )?;
+        let document = ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.snapshot()?;
+        let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+            panic!("root Sequence")
+        };
+        let local = NodeId::new("local")?;
+        commit(
+            &fixture.package,
+            "grouped",
+            Command::Group {
+                parent: document.root().clone(),
+                start: 0,
+                end: children.len(),
+                id: local.clone(),
+                label: "Local".into(),
+            },
+        )?;
+        let wrapper = NodeId::new("wrapper")?;
+        let command = if repeat {
+            Command::WrapRepeat {
+                node: local.clone(),
+                id: wrapper.clone(),
+                plays: 3,
+                gap: None,
+                anchor_policy: Default::default(),
+            }
+        } else {
+            Command::WrapRetime {
+                node: local.clone(),
+                id: wrapper.clone(),
+                duration: FrameDuration::new(21)?,
+                pitch: PitchPolicy::Preserve,
+            }
+        };
+        let revision = commit(&fixture.package, "wrapped", command)?;
+        let branches = if repeat {
+            vec![
+                RepeatEditBranch::Default,
+                RepeatEditBranch::Play {
+                    iteration: IterationId {
+                        allocation: revision.clone(),
+                        ordinal: 2,
+                    },
+                },
+            ]
+        } else {
+            Vec::new()
+        };
+        let targets = if repeat {
+            branches
+                .into_iter()
+                .map(|branch| ScopedNodeTarget {
+                    node: hold.clone(),
+                    repeats: vec![RepeatEditStep {
+                        repeat: wrapper.clone(),
+                        branch,
+                    }],
+                })
+                .collect::<Vec<_>>()
+        } else {
+            vec![ScopedNodeTarget {
+                node: hold.clone(),
+                repeats: Vec::new(),
+            }]
+        };
+        for target in targets {
+            let inputs = conditioning::prepare_scoped_with_options(
+                &fixture.package,
+                &revision,
+                &target,
+                &Default::default(),
+                &AtomicBool::new(false),
+            )?;
+            assert_eq!(inputs.plan, original.plan);
+            assert_eq!(inputs.constraints.video.frames(), FrameDuration::new(12)?);
+            assert_eq!(inputs.left_png, original.left_png);
+            assert_eq!(inputs.right_png, original.right_png);
+            let context = manifest(&inputs)?;
+            assert_eq!(context.schema_version(), 5);
+            for (side, position) in [
+                (&context.boundaries().unwrap().left, 29),
+                (&context.boundaries().unwrap().right, 55),
+            ] {
+                assert_eq!(
+                    side.clock(),
+                    &BoundaryClock::Definition {
+                        project_id: document.project_id().clone(),
+                        revision_id: revision.clone(),
+                        definition: local.clone(),
+                        position: ExactRatio::new(position, 2)?,
+                    }
+                );
+            }
+            assert!(
+                conditioning::prepare_scoped_with_options(
+                    &fixture.package,
+                    &revision,
+                    &target,
+                    &Default::default(),
+                    &AtomicBool::new(true)
+                )
+                .unwrap_err()
+                .contains("cancelled")
+            );
+        }
+        if !repeat {
+            // An ordinary caller under Retime consumes exactly the same scoped path.
+            let inputs =
+                conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
+            assert_eq!(inputs.left_png, original.left_png);
+        } else {
+            // No omitted Repeat scope may silently choose one of the three plays.
+            assert!(
+                conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))
+                    .is_err()
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn definition_edges_refuse_even_when_outer_root_neighbors_exist() -> Result {
+    for missing_left in [false, true] {
+        let root = tempfile::tempdir()?;
+        let fixture = recipes::black_pause(&root.path().join("fixture"))?;
+        let document = ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.snapshot()?;
+        let hold = NodeId::new("black")?;
+        let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+            panic!("root Sequence")
+        };
+        let index = children
+            .iter()
+            .position(|child| child == &hold)
+            .ok_or("Hold child")?;
+        assert!(index > 0 && index + 1 < children.len());
+        commit(
+            &fixture.package,
+            "grouped",
+            Command::Group {
+                parent: document.root().clone(),
+                start: if missing_left { index } else { 0 },
+                end: if missing_left {
+                    children.len()
+                } else {
+                    index + 1
+                },
+                id: NodeId::new("local")?,
+                label: "At edge".into(),
+            },
+        )?;
+        let revision = commit(
+            &fixture.package,
+            "retimed",
+            Command::WrapRetime {
+                node: NodeId::new("local")?,
+                id: NodeId::new("retime")?,
+                duration: FrameDuration::new(40)?,
+                pitch: PitchPolicy::Preserve,
+            },
+        )?;
+        let error =
+            conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))
+                .unwrap_err();
+        assert!(error.contains("definition edge"), "{error}");
+        assert!(
+            error.contains(if missing_left { "before" } else { "after" }),
+            "{error}"
+        );
     }
     Ok(())
 }

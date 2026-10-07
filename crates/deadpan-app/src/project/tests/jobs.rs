@@ -149,6 +149,7 @@ fn start_ai(fixture: &Fixture, workspace: &Workspace, ticket: u64) {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             hold: fixture.hold.clone(),
+            authoring: None,
             variants: 1,
             options: None,
         }),

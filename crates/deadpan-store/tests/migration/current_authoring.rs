@@ -12,6 +12,7 @@ fn relevance(store: &ProjectStore, next: &RevisionId) -> Result<RelevancePlan> {
             .into_iter()
             .map(|request| RelevanceObservation {
                 request_id: request.request_id,
+                target: request.target,
                 after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
                 binding: request.binding,
             })

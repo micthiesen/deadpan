@@ -519,10 +519,10 @@ mod tests {
         ));
         assert_eq!(database_bytes(&path)?, before);
         assert!(crate::backups::list_backups(&path)?.is_empty());
-        // Only the two previous schemas migrate; older development formats
-        // are still refused.
-        assert!(chain(MIGRATIONS, schema::VERSION - 1, schema::VERSION).is_some());
-        assert!(chain(MIGRATIONS, schema::VERSION - 2, schema::VERSION).is_some());
+        // The scoped-generation format intentionally starts a new development
+        // schema. Historical migration steps do not bridge this break.
+        assert!(chain(MIGRATIONS, schema::VERSION - 1, schema::VERSION).is_none());
+        assert!(chain(MIGRATIONS, schema::VERSION - 2, schema::VERSION).is_none());
         assert!(chain(MIGRATIONS, schema::VERSION - 3, schema::VERSION).is_none());
         Ok(())
     }

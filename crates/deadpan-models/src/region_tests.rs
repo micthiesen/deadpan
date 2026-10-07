@@ -63,7 +63,9 @@ fn fixture(
     }))
     .unwrap();
     let boundary = |right: bool| BoundaryPicture::Original {
-        project_frame: if right { 31 } else { 0 },
+        clock: crate::BoundaryClock::Project {
+            frame: if right { 31 } else { 0 },
+        },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
         picture: DecodedBoundary {

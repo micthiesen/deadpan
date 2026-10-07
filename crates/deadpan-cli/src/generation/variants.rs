@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use deadpan_core::{HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId};
+use deadpan_core::{HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId, ScopedNodeTarget};
 use deadpan_jobs::{AttemptId, JobState, MessageIdentity, RequestId};
 use deadpan_store::generation_attempts::{
     AttemptMutationOutcome, BundleValidationReceipt, CandidateAvailability,
@@ -46,6 +46,8 @@ pub struct OfferedVariant {
 pub struct OfferedRequest {
     pub request: RequestId,
     pub hold: NodeId,
+    pub target: ScopedNodeTarget,
+    pub origin_target: ScopedNodeTarget,
     /// The revision the request was conditioned from.
     pub origin: RevisionId,
     /// Project frames the sampled master covers.
@@ -57,17 +59,20 @@ pub struct OfferedRequest {
     pub selected: AttemptId,
 }
 
-/// Every pause's offered variants in `document`, keyed by Hold.
+/// Every pause's offered variants in `document`, keyed by authoring scope.
 pub fn offered(
     store: &ProjectStore,
     document: &ProjectDocument,
-) -> Result<BTreeMap<NodeId, OfferedRequest>, StoreError> {
+) -> Result<BTreeMap<ScopedNodeTarget, OfferedRequest>, StoreError> {
     let mut found = BTreeMap::new();
     for request in store.current_generation_requests()? {
         if request.bridge_plan.is_none() {
             continue;
         }
-        let hold = request.binding.hold_id.clone();
+        if request.target.validate(document).is_err() {
+            continue;
+        }
+        let hold = request.target.node.clone();
         let Some(NodeKind::Hold { recipe }) = document.nodes().get(&hold).map(|node| &node.kind)
         else {
             continue;
@@ -127,10 +132,12 @@ pub fn offered(
             .filter(|attempt| variants.iter().any(|variant| &variant.attempt == attempt))
             .unwrap_or_else(|| newest.attempt.clone());
         found.insert(
-            hold.clone(),
+            request.target.clone(),
             OfferedRequest {
                 request: request.request_id.clone(),
                 hold,
+                target: request.target,
+                origin_target: request.origin_target,
                 origin: request.origin_revision.clone(),
                 frames: request.constraints.video.frames().frames(),
                 options: deadpan_jobs::GenerationOptions::from_constraints(&request.constraints),
@@ -190,6 +197,7 @@ pub fn report(offered: &OfferedRequest, joins: Option<&[Value]>) -> Value {
         .collect();
     json!({
         "hold": offered.hold,
+        "scope": offered.target,
         "request_id": offered.request,
         "origin_revision": offered.origin,
         "frames": offered.frames,
@@ -256,7 +264,7 @@ pub fn apply(
     };
     let after = offered(store, &document)
         .map_err(LiveError::store)?
-        .remove(&before.hold);
+        .remove(&before.target);
     Ok(json!({
         "protocol": 1,
         "action": action,
@@ -350,7 +358,7 @@ pub fn run_report(arguments: &[&str]) -> Result<(), crate::CliError> {
     let document = store.snapshot()?;
     let all = offered(&store, &document)?;
     if let Some(hold) = &hold
-        && !all.contains_key(hold)
+        && !all.values().any(|request| &request.hold == hold)
     {
         return Err(LiveError::new(
             "GenerationVariantUnavailable",
@@ -369,11 +377,11 @@ pub fn run_report(arguments: &[&str]) -> Result<(), crate::CliError> {
                     .variants
                     .iter()
                     .map(|variant| {
-                        match super::joins::measure_request_joins(
+                        match super::joins::measure_scoped_request_joins(
                             package,
                             &generated,
                             &candidate.origin,
-                            &candidate.hold,
+                            &candidate.origin_target,
                             &variant.receipt,
                             &cancelled,
                         ) {

@@ -355,7 +355,9 @@ fn fixture_boundaries(native: &[u8]) -> [(Vec<u8>, BoundaryPicture); 2] {
             .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
             .unwrap();
         let boundary = BoundaryPicture::Original {
-            project_frame,
+            clock: deadpan_models::BoundaryClock::Project {
+                frame: project_frame,
+            },
             asset: AssetId::new("original").unwrap(),
             qualification: deadpan_core::SourceQualificationId::new(sha256(native)).unwrap(),
             picture: DecodedBoundary {
@@ -419,8 +421,8 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 7);
-    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-7");
+    assert_eq!(envelope["schema_version"], 8);
+    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-8");
     let quality = envelope["quality"]
         .as_object()
         .expect("schema seven retains host motion/lighting evidence");
@@ -471,7 +473,10 @@ fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec()
     )
     .unwrap();
     let boundaries = bundle.conditioning().context().boundaries().unwrap();
-    assert_eq!(boundaries.left.project_frame(), 9);
+    assert_eq!(
+        boundaries.left.clock(),
+        &deadpan_models::BoundaryClock::Project { frame: 9 }
+    );
     assert_eq!(bundle.conditioning().context().schema_version(), 4);
 
     // A model declared to emit wide-gamut PQ would have its pictures silently
@@ -1347,6 +1352,7 @@ fn fixture_relevance(store: &ProjectStore, from: &RevisionId, to: &RevisionId) -
             .unwrap()
             .into_iter()
             .map(|request| RelevanceObservation {
+                target: request.target,
                 request_id: request.request_id,
                 after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
                 binding: request.binding,

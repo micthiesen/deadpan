@@ -6,10 +6,12 @@ developer adapter produces an unaccepted candidate, never a project mutation.
 
 import argparse
 import hashlib
+from fractions import Fraction
 import json
 import os
 from pathlib import Path
 import resource
+import re
 import stat
 import sys
 import threading
@@ -74,7 +76,7 @@ def valid_input_color_interpretation(value):
 
 
 def validate_context_shape(context):
-    """Admit captured-geometry schema 3 and older retained context grammars.
+    """Admit explicit definition clocks and older retained context grammars.
 
     The host records and checks boundary evidence; this worker validates the
     geometry binding before loading the model and refuses an unsupported model
@@ -82,12 +84,12 @@ def validate_context_shape(context):
     """
     if not isinstance(context, dict) or type(context.get("schema_version")) is not int:
         raise ValueError("unsupported context or color interpretation")
-    if context["schema_version"] in (2, 3, 4):
+    if context["schema_version"] in (2, 3, 4, 5):
         keys = ["schema_version", "model_color_space", "plan", "left", "right",
                 "input_color_interpretation", "boundaries"]
         if context["schema_version"] >= 3:
             keys.append("geometry")
-        if context["schema_version"] == 4:
+        if context["schema_version"] >= 4:
             keys.append("region")
         exact_keys(context, keys)
         boundaries = context["boundaries"]
@@ -105,8 +107,10 @@ def validate_context_shape(context):
                 integer(native.get("width"), 1, (1 << 32) - 1),
                 integer(native.get("height"), 1, (1 << 32) - 1),
             )
-        if context["schema_version"] == 4:
+        if context["schema_version"] >= 4:
             validate_context_region(context)
+        if context["schema_version"] == 5:
+            validate_definition_clocks(context)
     elif context["schema_version"] == 1:
         exact_keys(context, ["schema_version", "model_color", "plan", "left", "right",
                              "input_color_interpretation"])
@@ -116,6 +120,39 @@ def validate_context_shape(context):
     if (not supported
             or not valid_input_color_interpretation(context["input_color_interpretation"])):
         raise ValueError("unsupported context or color interpretation")
+
+
+def validate_definition_clocks(context):
+    """Require one immutable authored definition and an exact N+1 span."""
+    clocks = []
+    positions = []
+    for side in ("left", "right"):
+        payload = next(iter(context["boundaries"][side].values()))
+        clock = payload["clock"]
+        exact_keys(clock, ["kind", "project_id", "revision_id", "definition", "position"])
+        if clock["kind"] != "definition":
+            raise ValueError("schema5 requires definition boundary clocks")
+        for field in ("project_id", "revision_id", "definition"):
+            _core_identifier(clock[field], field)
+        exact_keys(clock["position"], ["numerator", "denominator"])
+        values = []
+        for field in ("numerator", "denominator"):
+            text = clock["position"][field]
+            if (not isinstance(text, str) or len(text) > 40
+                    or re.fullmatch(r"[+-]?[0-9]+", text) is None):
+                raise ValueError("invalid definition position")
+            values.append(integer(int(text), -(1 << 127), (1 << 127) - 1))
+        numerator, denominator = values
+        if numerator < 0 or denominator <= 0:
+            raise ValueError("invalid definition position")
+        positions.append(Fraction(numerator, denominator))
+        clocks.append(tuple(clock[field] for field in ("project_id", "revision_id", "definition")))
+    project = context["plan"].get("project")
+    if not isinstance(project, dict):
+        raise ValueError("missing boundary plan")
+    frames = integer(project.get("interior_frames"), 1, (1 << 63) - 2)
+    if clocks[0] != clocks[1] or positions[1] - positions[0] != frames + 1:
+        raise ValueError("boundary pictures do not enclose the planned Hold in one clock")
 
 
 def validate_context_geometry(context, native_width, native_height):
@@ -158,15 +195,15 @@ def validate_context_geometry(context, native_width, native_height):
         kind, payload = next(iter(boundary.items()))
         if kind not in {"original", "generated", "authored_black"} or not isinstance(payload, dict):
             raise ValueError("unsupported boundary picture")
+        clock_field = "clock" if context["schema_version"] == 5 else "project_frame"
         fields = {
-            "original": ["project_frame", "asset", "qualification", "picture"],
-            "generated": ["project_frame", "sampled_asset", "sampled_object", "provenance", "picture"],
-            "authored_black": ["project_frame"],
+            "original": [clock_field, "asset", "qualification", "picture"],
+            "generated": [clock_field, "sampled_asset", "sampled_object", "provenance", "picture"],
+            "authored_black": [clock_field],
         }[kind]
         exact_keys(payload, fields)
-        if "project_frame" not in payload:
-            raise ValueError("boundary picture has no project frame")
-        integer(payload["project_frame"], 0, (1 << 63) - 1)
+        if clock_field == "project_frame":
+            integer(payload["project_frame"], 0, (1 << 63) - 1)
         is_black = kind == "authored_black"
         content = geometry[side]
         if (content is None) != is_black:
@@ -253,6 +290,11 @@ def validate_bridge_context(context, request, video):
     result = validate_plan(context["plan"], video)
     if context.get("schema_version", 0) >= 3:
         validate_context_geometry(context, native_width, native_height)
+    if context.get("schema_version") == 5:
+        for side in ("left", "right"):
+            clock = next(iter(context["boundaries"][side].values()))["clock"]
+            if clock["project_id"] != request.project_id or clock["revision_id"] != request.revision_id:
+                raise ValueError("definition boundary differs from the worker origin")
     capture = context.get("region", {"selection": "none"})
     captured_target = capture.get("target") if capture["selection"] == "selected" else None
     if captured_target != request.constraints.region_target:

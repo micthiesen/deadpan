@@ -14,6 +14,11 @@ use serde::Serialize;
 
 use crate::{Picture, PictureFraming, PictureSample, PlanError};
 
+#[path = "picture_definition.rs"]
+mod picture_definition;
+pub use picture_definition::{DefinitionPictureSample, ScopedHoldBoundaries};
+use picture_definition::{PictureBudget, PictureWalk};
+
 #[path = "audio.rs"]
 mod audio;
 pub use audio::*;
@@ -1082,10 +1087,76 @@ impl RenderPlan {
                 duration: self.duration(),
             });
         }
-        let mut local = ExactRatio::new(i128::from(frame.0) * 2 + 1, 2)?;
-        let mut current = self.root;
+        let position = ExactRatio::new(i128::from(frame.0) * 2 + 1, 2)?;
+        let sample = self.walk_picture_at(
+            self.root,
+            position,
+            cutaways,
+            &mut PictureBudget::unlimited(),
+        )?;
+        Ok(PictureSample {
+            project_id: self.metadata.project_id.clone(),
+            revision_id: self.metadata.revision_id.clone(),
+            project_frame: frame,
+            instance: sample.instance,
+            gap_after: sample.gap_after,
+            local_position: sample.local_position,
+            picture: sample.picture,
+            picture_context: sample.picture_context,
+            framing: sample.framing,
+            captions: sample.captions,
+            lookup: sample.lookup,
+        })
+    }
+
+    fn sample_definition_picture(
+        &self,
+        definition: usize,
+        position: ExactRatio,
+        cutaways: bool,
+        budget: &mut PictureBudget,
+    ) -> Result<DefinitionPictureSample, PlanError> {
+        let sample = self.walk_picture_at(definition, position, cutaways, budget)?;
+        Ok(DefinitionPictureSample {
+            project_id: self.metadata.project_id.clone(),
+            revision_id: self.metadata.revision_id.clone(),
+            definition: self.nodes[definition].inspection.id.clone(),
+            position,
+            instance: sample.instance,
+            gap_after: sample.gap_after,
+            local_position: sample.local_position,
+            picture: sample.picture,
+            picture_context: sample.picture_context,
+            framing: sample.framing,
+            captions: sample.captions,
+            lookup: sample.lookup,
+        })
+    }
+
+    fn walk_picture_at(
+        &self,
+        definition: usize,
+        position: ExactRatio,
+        cutaways: bool,
+        budget: &mut PictureBudget,
+    ) -> Result<PictureWalk, PlanError> {
+        if self.audio_context {
+            return Err(PlanError::AudioOnlyContext);
+        }
+        let root = &self.nodes[definition].inspection;
+        if position.compare_integer(0).is_lt()
+            || !position.compare_integer(root.duration.frames()).is_lt()
+        {
+            return Err(PlanError::DefinitionPictureOutOfRange {
+                definition: root.id.clone(),
+                position: Box::new(position),
+                duration: root.duration,
+            });
+        }
+        let previous_lookup = budget.lookup;
+        let mut local = position;
+        let mut current = definition;
         let mut repeats = Vec::new();
-        let mut lookup = LookupStats::default();
         let mut framing = Vec::new();
         let mut captions = Vec::new();
         // The zero-based play of the innermost enclosing Repeat, for reveals.
@@ -1094,7 +1165,7 @@ impl RenderPlan {
         let mut follows = Vec::new();
         let (picture, picture_context, gap_after) = loop {
             let node = &self.nodes[current];
-            lookup.visited_nodes += 1;
+            budget.visit()?;
             if local.compare_integer(0).is_lt()
                 || !local
                     .compare_integer(node.inspection.duration.frames())
@@ -1223,8 +1294,8 @@ impl RenderPlan {
                     let index = upper_bound(
                         entries.len(),
                         |index| !local.compare_integer(entries[index].end).is_lt(),
-                        &mut lookup.sequence_comparisons,
-                    );
+                        budget,
+                    )?;
                     let entry = entries
                         .get(index)
                         .ok_or(PlanError::InvalidPlan("sequence prefix index has no child"))?;
@@ -1247,8 +1318,16 @@ impl RenderPlan {
                     escalation,
                     ..
                 } => {
-                    let location = layout.locate(local, InsertionBias::Right)?;
-                    lookup.iteration_run_comparisons += location.comparisons;
+                    let location = layout
+                        .locate_bounded(local, InsertionBias::Right, budget.comparisons_left())
+                        .map_err(|error| {
+                            if error.code == deadpan_core::DocumentErrorCode::LimitExceeded {
+                                PlanError::PictureQueryLimit("comparisons")
+                            } else {
+                                PlanError::Document(error)
+                            }
+                        })?;
+                    budget.repeat_comparisons(location.comparisons)?;
                     local = location.position;
                     play = Some(location.play.index);
                     // A play and the gap following it share that play's
@@ -1298,10 +1377,7 @@ impl RenderPlan {
         };
         self.resolve_follows(&mut framing, &follows, &picture, picture_context.is_some());
         framing.reverse();
-        Ok(PictureSample {
-            project_id: self.metadata.project_id.clone(),
-            revision_id: self.metadata.revision_id.clone(),
-            project_frame: frame,
+        Ok(PictureWalk {
             instance: InstancePath {
                 node: self.nodes[current].inspection.id.clone(),
                 repeats,
@@ -1312,7 +1388,7 @@ impl RenderPlan {
             picture_context,
             framing,
             captions,
-            lookup,
+            lookup: budget.since(previous_lookup),
         })
     }
 }
@@ -1363,18 +1439,18 @@ pub fn follow_pose(
 fn upper_bound(
     length: usize,
     mut preceding: impl FnMut(usize) -> bool,
-    comparisons: &mut usize,
-) -> usize {
+    budget: &mut PictureBudget,
+) -> Result<usize, PlanError> {
     let mut left = 0;
     let mut right = length;
     while left < right {
         let middle = left + (right - left) / 2;
-        *comparisons += 1;
+        budget.sequence_comparison()?;
         if preceding(middle) {
             left = middle + 1;
         } else {
             right = middle;
         }
     }
-    left
+    Ok(left)
 }

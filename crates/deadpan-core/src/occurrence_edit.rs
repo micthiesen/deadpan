@@ -331,12 +331,13 @@ impl<'a> Identities<'a> {
     }
 }
 
-pub(crate) fn apply(
+pub(crate) fn apply_captured(
     document: &ProjectDocument,
     instance: &InstancePath,
     edit: &OccurrenceEdit,
     supplied: &OccurrenceIdentities,
     mut context: crate::command::EditContext<'_>,
+    mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
 ) -> Result<ProjectDocument, EditError> {
     let allocation = context.allocation;
     instance.validate(document)?;
@@ -401,6 +402,20 @@ pub(crate) fn apply(
         clone_nodes(&mut result, &mapping, allocation)?;
         if let Some(allowances) = context.allowances.as_deref_mut() {
             allowances.isolate(&target.repeats[..=index], &mapping)?;
+        }
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.push(crate::ScopedIsolationStep::from_execution(
+                target.repeats[..=index]
+                    .iter()
+                    .map(|step| crate::RepeatEditStep {
+                        repeat: step.node.clone(),
+                        branch: crate::RepeatEditBranch::Play {
+                            iteration: step.iteration.clone(),
+                        },
+                    })
+                    .collect(),
+                mapping.clone(),
+            ));
         }
         result
             .overrides

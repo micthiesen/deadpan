@@ -2,6 +2,8 @@ use super::*;
 use deadpan_core::*;
 use std::collections::BTreeMap;
 
+mod scoped;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -192,6 +194,17 @@ fn a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
     let origin = with_target(&bare, "subject", target.clone());
     let request = StoredGenerationRequest {
         request_id: RequestId::new("request").unwrap(),
+        scope_id: deadpan_store::generation::GenerationScopeId::from_first_request(
+            RequestId::new("request").unwrap(),
+        ),
+        origin_target: deadpan_core::ScopedNodeTarget {
+            node: id("h"),
+            repeats: vec![],
+        },
+        target: deadpan_core::ScopedNodeTarget {
+            node: id("h"),
+            repeats: vec![],
+        },
         origin_revision: origin.revision_id().clone(),
         binding: TargetBinding {
             project_id: origin.project_id().clone(),

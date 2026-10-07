@@ -7,7 +7,7 @@ use deadpan_core::{
 use serde::{Serialize, Serializer};
 use std::sync::Arc;
 
-fn serialize_shared<T: Serialize, S>(
+pub(crate) fn serialize_shared<T: Serialize, S>(
     context: &Option<Arc<T>>,
     serializer: S,
 ) -> Result<S::Ok, S::Error>

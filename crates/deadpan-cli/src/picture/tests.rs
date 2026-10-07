@@ -400,6 +400,71 @@ fn real_retime_repeat_freeze_and_captured_framing_keep_distinct_clocks() -> Resu
 }
 
 #[test]
+fn definition_decode_retains_exact_clock_and_original_pixels_beneath_outer_owners() -> Result {
+    for name in ["vfr.mp4", "offset-bframes.mp4"] {
+        let mut fixture = Fixture::source(name)?;
+        let mut root_session = fixture.open(None)?;
+        let expected = root_session.prepare(ProjectFrame(20), &active())?;
+        let (expected_id, expected_frame) = decoded(&expected);
+        let expected_pts = expected_frame.metadata().pts;
+        let expected_bytes = expected_frame.bytes().to_vec();
+        let expected_id = *expected_id;
+        let retimed_frames = root_session.plan().duration().frames() * 2;
+        drop(root_session);
+        fixture.edit(
+            "retimed",
+            Command::WrapRetime {
+                node: node("source"),
+                id: node("retime"),
+                duration: frames(retimed_frames),
+                pitch: PitchPolicy::Preserve,
+            },
+        )?;
+        fixture.edit(
+            "repeated",
+            Command::WrapRepeat {
+                node: node("retime"),
+                id: node("repeat"),
+                plays: 3,
+                gap: None,
+                anchor_policy: Default::default(),
+            },
+        )?;
+        let mut session = fixture.open(None)?;
+        let position = ExactRatio::new(41, 2)?;
+        let prepared = session.prepare_definition(&node("source"), position, &active())?;
+        assert_eq!(
+            prepared.sample.project_id,
+            ProjectId::new("picture-worker")?
+        );
+        assert_eq!(prepared.sample.revision_id, revision("repeated"));
+        assert_eq!(prepared.sample.definition, node("source"));
+        assert_eq!(prepared.sample.position, position);
+        assert!(prepared.sample.instance.repeats.is_empty());
+        let PreparedPicture::Frame { id, frame, .. } = &prepared.picture else {
+            panic!("Original")
+        };
+        assert_eq!(*id, expected_id);
+        assert_eq!(frame.metadata().pts, expected_pts);
+        assert_eq!(frame.bytes(), expected_bytes);
+        assert!(matches!(
+            session.prepare_definition(&node("absent"), position, &active()),
+            Err(ProjectPictureError::Plan(_))
+        ));
+        assert!(matches!(
+            session.prepare_definition(&node("source"), ExactRatio::integer(-1), &active()),
+            Err(ProjectPictureError::Plan(_))
+        ));
+        assert!(matches!(
+            session.prepare_definition(&node("source"), position, &AtomicBool::new(true)),
+            Err(ProjectPictureError::Cancelled)
+        ));
+        assert_eq!(session.stats().source_opens, 1);
+    }
+    Ok(())
+}
+
+#[test]
 fn cached_verified_bytes_survive_path_loss_but_cold_or_changed_originals_fail() -> Result {
     let fixture = Fixture::source("offset-bframes.mp4")?;
     let mut retained = fixture.open(None)?;
@@ -427,6 +492,12 @@ fn cached_verified_bytes_survive_path_loss_but_cold_or_changed_originals_fail() 
         fixture
             .open(None)?
             .prepare(ProjectFrame(20), &active())
+            .is_err()
+    );
+    assert!(
+        fixture
+            .open(None)?
+            .prepare_definition(&node("source"), ExactRatio::new(41, 2)?, &active())
             .is_err()
     );
     fs::copy(fixture_path("cfr-bframes.mp4"), &fixture.source_path)?;
@@ -690,6 +761,17 @@ fn unqualified_source_still_and_accepted_providers_fail_without_fallback() -> Re
         let mut session =
             ProjectPictureSession::open_revision(&path, document.revision_id(), None, &active())?;
         let error = session.prepare(ProjectFrame(0), &active()).unwrap_err();
+        assert!(if still {
+            matches!(error, ProjectPictureError::StillUnsupported(_))
+        } else if kind == "source" {
+            matches!(error, ProjectPictureError::SourceEvidence { .. })
+        } else {
+            matches!(error, ProjectPictureError::AcceptedUnsupported(_))
+        });
+        assert!(session.retained.is_none());
+        let error = session
+            .prepare_definition(&node("provider"), ExactRatio::new(1, 2)?, &active())
+            .unwrap_err();
         assert!(if still {
             matches!(error, ProjectPictureError::StillUnsupported(_))
         } else if kind == "source" {

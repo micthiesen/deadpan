@@ -516,6 +516,7 @@ fn prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_
         to_revision: input.new_revision.clone(),
         observations: vec![RelevanceObservation {
             request_id: current.request_id.clone(),
+            target: current.target.clone(),
             binding: current.binding.clone(),
             // The inserted picture changes the host's resolved bridge context.
             after_context: ContextObservation::Resolved(Sha256::new("b".repeat(64))?),

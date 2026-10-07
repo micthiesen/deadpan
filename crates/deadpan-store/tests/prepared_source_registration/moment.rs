@@ -339,6 +339,7 @@ fn paste_reconciles_complete_generation_relevance_in_its_single_transaction() ->
         to_revision: input.new_revision.clone(),
         observations: vec![RelevanceObservation {
             request_id: current.request_id.clone(),
+            target: current.target.clone(),
             binding: current.binding.clone(),
             after_context: ContextObservation::Resolved(Sha256::new("b".repeat(64))?),
         }],

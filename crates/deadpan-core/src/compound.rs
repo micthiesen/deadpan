@@ -217,7 +217,16 @@ pub struct CompoundOutcome {
 pub fn replay_compound<E: From<EditError>>(
     document: &ProjectDocument,
     request: &CommandRequest,
+    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+) -> Result<CompoundOutcome, E> {
+    replay_compound_captured(document, request, visit, None)
+}
+
+pub(crate) fn replay_compound_captured<E: From<EditError>>(
+    document: &ProjectDocument,
+    request: &CommandRequest,
     mut visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+    mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
 ) -> Result<CompoundOutcome, E> {
     crate::command::check_revision(
         document,
@@ -293,7 +302,13 @@ pub fn replay_compound<E: From<EditError>>(
                 "staged document work byte limit",
             )?;
             // The validated result equals its forward patch applied to `current`.
-            let (_, next) = crate::apply_with_result(&current, leaf)?;
+            let next = if let Some(isolation) = isolation.as_deref_mut() {
+                let (_, next, steps) = crate::command::apply_with_isolation(&current, leaf)?;
+                isolation.extend(steps);
+                next
+            } else {
+                crate::apply_with_result(&current, leaf)?.1
+            };
             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
             charge(
                 &mut bytes,

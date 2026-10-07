@@ -280,11 +280,9 @@ fn accepted_variants_never_expire_and_their_media_stays() -> Result {
     Ok(())
 }
 
-/// A schema-67 package gains retention records on upgrade: present variants
-/// count from the upgrade, evictions read as discarded and accepted variants
-/// are recognised from the rows that name them.
+/// Retention states survive closing and reopening the current schema.
 #[test]
-fn schema67_variants_gain_retention_records_on_migration() -> Result {
+fn variant_retention_survives_reopening() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().canonicalize()?.join("previous.deadpan");
     let mut store = ProjectStore::create(&package, &document()?)?;
@@ -310,22 +308,8 @@ fn schema67_variants_gain_retention_records_on_migration() -> Result {
     )?;
     store.discard_generation_bundle_variant(&discarded)?;
     drop(store);
-    let database = Connection::open(package.join("project.sqlite"))?;
-    database.execute_batch(
-        "DROP TABLE generation_variant_retention; DROP TABLE generation_retention_state;",
-    )?;
-    database.pragma_update(None, "user_version", 67)?;
-    drop(database);
-    assert!(matches!(
-        ProjectStore::open(&package, AccessMode::ReadWrite),
-        Err(StoreError::MigrationRequired(67))
-    ));
-    let upgraded = SystemTime::now();
-    let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (67, 68));
     let store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let record = retention(&store, &plain)?;
-    assert!(record.ready_at + Duration::from_secs(1) >= upgraded);
     assert!(!record.kept && !record.accepted && record.eviction.is_none());
     assert!(retention(&store, &accepted)?.accepted);
     assert!(matches!(

@@ -99,9 +99,22 @@ The repository gate completed in parts, 44 replay checks passed, and the release
 bundle passed relocation and real-model generation/acceptance/export. The real
 model run reported honest unavailable region coverage; a moving-object native
 fixture measured and rejected sustained drift. Older schemas 3–6 rendered
-unchanged. DP-12 remains Partial for scoped Repeat/Retime generation and the
-other remaining contracts tracked in Requirements; corpus calibration remains
-on To verify (owner).
+unchanged. Corpus calibration remains on To verify (owner).
+
+[Scoped AI](../qualification/bridge-scopes-2026-10-07.md) now captures every
+Repeat Default/stable Play choice and conditions the full intrinsic Hold in
+its local definition clock, before outer Repeat/Retime sampling. Context 5,
+host profile 8 and runtime `0.15.8+deadpan5` retain and validate that origin.
+Schema 69 keeps independent scope clocks and maps current addresses through
+proven isolation history, including Undo/Redo; worker bindings remain immutable.
+Earlier development packages deliberately refuse opening. Native preview
+separately captures an exact visible occurrence, and play navigation revokes
+late replies and cached comparisons. The qualification record lists tests,
+replays and release evidence. DP-12 remains Partial: §12.7 still needs a
+replacement request, with prior controls, when a longer accepted Hold exceeds
+its available generated interval. Timing and the captured fallback already
+commit immediately. Check the [progress dashboard](../PROGRESS.md) at goal
+start and update it after meaningful verified milestones under spec §29.2.
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

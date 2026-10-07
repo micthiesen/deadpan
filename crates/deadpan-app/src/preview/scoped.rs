@@ -7,7 +7,7 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera and pause audio are available. Return to the parent to change timing or copy a range.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Return to the parent to change timing or copy a range.";
 
 impl DeadpanApp {
     pub(super) fn reconcile_scoped(
@@ -188,6 +188,7 @@ impl DeadpanApp {
     }
 
     fn scoped_changed(&mut self, context: &egui::Context) {
+        self.ai_stop_preview();
         self.cancel_camera();
         self.stop_playback();
         self.bindings.clear();
@@ -608,7 +609,7 @@ impl DeadpanApp {
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
                     ui.add_space(4.0);
                     if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
-                    if hold { self.hold_audio_controls(ui, ready); }
+                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
                     self.gain_inspector(ui, ready);
                     ui.add_space(8.0);
                     ui.label(style::section_title("EDIT", false));

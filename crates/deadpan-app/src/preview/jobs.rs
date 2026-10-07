@@ -306,7 +306,7 @@ impl DeadpanApp {
 
     fn retry_interrupted(&mut self, item: &Interrupted) {
         let result = match &item.pause {
-            Some(_) => self.ai_retry_interrupted(&item.hold),
+            Some(_) => self.ai_retry_interrupted(item),
             None => Err("That pause is no longer in your edit; Discard removes the entry.".into()),
         };
         self.jobs.status = Some(match result {
@@ -625,6 +625,7 @@ mod tests {
             request: "r".into(),
             attempt: "a".into(),
             hold: "hold-9".into(),
+            target: None,
             pause: None,
         };
         assert!(interrupted_text(&gone).contains("no longer in your edit"));
@@ -643,6 +644,7 @@ mod tests {
             request: "r".into(),
             attempt: "a".into(),
             hold: "h".into(),
+            target: None,
             pause: Some("Pause".into()),
         });
         let before = vec![

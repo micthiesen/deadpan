@@ -65,9 +65,11 @@ pub use plan::{
     AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity,
     AudioSourceVoiceRecipe,
 };
+pub use plan::{DefinitionPictureSample, ScopedHoldBoundaries};
 
 use deadpan_core::{
-    AssetId, DocumentError, FrameDuration, ProjectFrame, SourceFrameId, SourceTimeBase, TimeError,
+    AssetId, DocumentError, ExactRatio, FrameDuration, NodeId, ProjectFrame, SourceFrameId,
+    SourceTimeBase, TimeError,
 };
 use thiserror::Error;
 
@@ -88,6 +90,20 @@ pub enum PlanError {
         frame: ProjectFrame,
         duration: FrameDuration,
     },
+    #[error("picture definition {0} is absent from the plan")]
+    InvalidPictureDefinition(NodeId),
+    #[error("definition {definition} position {position:?} is outside its {duration:?} duration")]
+    DefinitionPictureOutOfRange {
+        definition: NodeId,
+        // Keep the i128-based coordinate's size and alignment out of every
+        // plan error and the host error types that contain one.
+        position: Box<ExactRatio>,
+        duration: FrameDuration,
+    },
+    #[error("invalid scoped Hold: {0}")]
+    InvalidScopedHold(&'static str),
+    #[error("picture query exceeded its {0} budget")]
+    PictureQueryLimit(&'static str),
     #[error("picture has no source video frame to select")]
     NoSourceFrame,
     #[error("audio sample range is reversed or outside the plan's mix duration")]

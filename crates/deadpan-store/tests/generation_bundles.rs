@@ -764,6 +764,17 @@ fn persisted_bundle_json_cannot_bypass_constructor_invariants() -> Result {
 fn object_alias_requires_an_identical_video_contract() -> Result {
     let candidate = native_candidate(&StoredGenerationRequest {
         request_id: RequestId::new("request")?,
+        scope_id: deadpan_store::generation::GenerationScopeId::from_first_request(RequestId::new(
+            "request",
+        )?),
+        origin_target: deadpan_core::ScopedNodeTarget {
+            node: NodeId::new("hold")?,
+            repeats: vec![],
+        },
+        target: deadpan_core::ScopedNodeTarget {
+            node: NodeId::new("hold")?,
+            repeats: vec![],
+        },
         origin_revision: RevisionId::new("origin")?,
         binding: deadpan_jobs::TargetBinding {
             project_id: ProjectId::new("project")?,
@@ -1044,6 +1055,7 @@ fn unchanged_relevance(store: &ProjectStore, next: &RevisionId) -> Result<Releva
             .into_iter()
             .map(|request| RelevanceObservation {
                 request_id: request.request_id,
+                target: request.target,
                 after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
                 binding: request.binding,
             })
@@ -1455,138 +1467,135 @@ fn stale_and_detached_bundles_never_revive_through_undo() -> Result {
 }
 
 #[test]
-fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result {
+fn scoped_acceptance_isolates_one_play_and_keeps_default_request_current() -> Result {
+    use deadpan_core::{RepeatEditBranch, RepeatEditStep, ScopedNodeTarget};
     let scratch = tempfile::tempdir()?;
-    let mut store = ProjectStore::create(&scratch.path().join("repeated.deadpan"), &document()?)?;
-    let mut input = ready_for_acceptance(&mut store)?;
+    let package = scratch.path().join("repeated.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
     edit_reconciled(
         &mut store,
         "repeat",
         Command::WrapRepeat {
             node: NodeId::new("hold")?,
             id: NodeId::new("repeat")?,
-            plays: 2,
+            plays: 3,
             gap: None,
             anchor_policy: Default::default(),
         },
     )?;
-    input.expected_revision = store.snapshot()?.revision_id().clone();
-    assert!(
-        matches!(store.preview_generation_acceptance(&input, media_limits()), Err(StoreError::GenerationAcceptance(message)) if message.contains("isolated"))
-    );
     assert!(allocate_bridge(&mut store, "ambiguous", 2).is_err());
+    let repeated = store.snapshot()?;
+    let NodeKind::Repeat { iterations, .. } = &repeated.nodes()[&NodeId::new("repeat")?].kind
+    else {
+        panic!()
+    };
+    let iteration = iterations.at(1).unwrap();
+    let target = |branch| ScopedNodeTarget {
+        node: NodeId::new("hold").unwrap(),
+        repeats: vec![RepeatEditStep {
+            repeat: NodeId::new("repeat").unwrap(),
+            branch,
+        }],
+    };
+    let mut allocate = |name, scope| {
+        store.record_scoped_bridge_generation_request(
+            GenerationRequestInput {
+                request_id: RequestId::new(name).unwrap(),
+                expected_revision: RevisionId::new("repeat").unwrap(),
+                hold_id: NodeId::new("hold").unwrap(),
+                context_sha256: sha('a'),
+                constraints: constraints(),
+                provider: provider(3),
+            },
+            scope,
+            plan(),
+        )
+    };
+    let default = allocate("default", target(RepeatEditBranch::Default))?;
+    let selected = allocate("second", target(RepeatEditBranch::Play { iteration }))?;
+    publish_bundle(&mut store)?;
+    publish_inputs(&mut store)?;
+    let (identity, expected_receipt) = ready_variant(&mut store, &selected, "ready", 1)?;
+    let input = GenerationAcceptance {
+        expected_revision: store.head_revision()?,
+        new_revision: RevisionId::new("accepted")?,
+        identity,
+        expected_receipt,
+        native_asset: AssetId::new("native")?,
+        sampled_asset: AssetId::new("sampled")?,
+    };
+    let before = store.snapshot()?;
+    let (preview, mapped) = store.preview_generation_acceptance_contexts(&input, media_limits())?;
+    assert_eq!(store.snapshot()?, before);
+    let wrong_address = unchanged_relevance(&store, &input.new_revision)?;
     assert!(
         store
-            .generation_request(&RequestId::new("ambiguous")?)?
-            .is_none()
-    );
-    let iteration = match &store.snapshot()?.nodes()[&NodeId::new("repeat")?].kind {
-        NodeKind::Repeat { iterations, .. } => iterations.at(0).unwrap(),
-        _ => panic!(),
-    };
-    let override_hold = NodeId::new("override-hold")?;
-    edit_reconciled(
-        &mut store,
-        "override",
-        Command::SetPlayOverride {
-            node: NodeId::new("repeat")?,
-            iteration,
-            subtree: Subtree {
-                root: override_hold.clone(),
-                nodes: BTreeMap::from([(
-                    override_hold.clone(),
-                    BeatNode::hold(
-                        "One occurrence",
-                        HoldRecipe {
-                            picture_context: None,
-                            duration: FrameDuration::new(12)?,
-                            video: HoldVideo::Background,
-                            audio: HoldAudio::Silence,
-                        },
-                    ),
-                )]),
-                overrides: BTreeMap::new(),
-                gap_overrides: BTreeMap::new(),
-            },
-        },
-    )?;
-    input.expected_revision = store.snapshot()?.revision_id().clone();
-    store.preview_generation_acceptance(&input, media_limits())?;
-    store.record_bridge_generation_request(
-        GenerationRequestInput {
-            request_id: RequestId::new("isolated-override")?,
-            expected_revision: input.expected_revision.clone(),
-            hold_id: override_hold.clone(),
-            context_sha256: sha('a'),
-            constraints: constraints(),
-            provider: provider(3),
-        },
-        plan(),
-    )?;
-    let iteration = match &store.snapshot()?.nodes()[&NodeId::new("repeat")?].kind {
-        NodeKind::Repeat { iterations, .. } => iterations.at(1).unwrap(),
-        _ => panic!(),
-    };
-    let second_override = NodeId::new("second-override")?;
-    edit_reconciled(
-        &mut store,
-        "hide-default",
-        Command::SetPlayOverride {
-            node: NodeId::new("repeat")?,
-            iteration,
-            subtree: Subtree {
-                root: second_override.clone(),
-                nodes: BTreeMap::from([(
-                    second_override,
-                    BeatNode::hold(
-                        "Other occurrence",
-                        HoldRecipe {
-                            picture_context: None,
-                            duration: FrameDuration::new(12)?,
-                            video: HoldVideo::Background,
-                            audio: HoldAudio::Silence,
-                        },
-                    ),
-                )]),
-                overrides: BTreeMap::new(),
-                gap_overrides: BTreeMap::new(),
-            },
-        },
-    )?;
-    input.expected_revision = store.snapshot()?.revision_id().clone();
-    assert!(
-        store
-            .preview_generation_acceptance(&input, media_limits())
+            .accept_generation_bundle(&input, &wrong_address, media_limits())
             .is_err()
     );
-    assert!(allocate_bridge(&mut store, "unreachable", 4).is_err());
-    edit_reconciled(
-        &mut store,
-        "nested-repeat",
-        Command::WrapRepeat {
-            node: NodeId::new("repeat")?,
-            id: NodeId::new("outer-repeat")?,
-            plays: 2,
-            gap: None,
-            anchor_policy: Default::default(),
+    assert_eq!(store.snapshot()?, before);
+    let relevance = RelevancePlan {
+        from_revision: input.expected_revision.clone(),
+        to_revision: input.new_revision.clone(),
+        observations: mapped
+            .iter()
+            .map(|request| RelevanceObservation {
+                request_id: request.request_id.clone(),
+                binding: request.binding.clone(),
+                target: request.target.clone(),
+                after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
+            })
+            .collect(),
+    };
+    store.accept_generation_bundle(&input, &relevance, media_limits())?;
+    assert_eq!(store.snapshot()?, preview.forward.apply(&before)?);
+    assert_eq!(
+        store.generation_request(&default.request_id)?.unwrap(),
+        default
+    );
+    let accepted = store.generation_request(&selected.request_id)?.unwrap();
+    assert_ne!(accepted.target.node, selected.target.node);
+    assert_eq!(accepted.binding, selected.binding);
+    assert_eq!(accepted.origin_target, selected.origin_target);
+    assert!(
+        matches!(&store.snapshot()?.nodes()[&accepted.target.node].kind,
+        NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))
+    );
+    assert!(
+        matches!(&store.snapshot()?.nodes()[&NodeId::new("hold")?].kind,
+        NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Background))
+    );
+    let next = RevisionId::new("undo")?;
+    let (_, mapped) = store.preview_undo_generation_contexts(&input.new_revision, next.clone())?;
+    store.undo_reconciled(
+        &input.new_revision,
+        next.clone(),
+        &RelevancePlan {
+            from_revision: input.new_revision.clone(),
+            to_revision: next,
+            observations: mapped
+                .iter()
+                .map(|request| RelevanceObservation {
+                    request_id: request.request_id.clone(),
+                    binding: request.binding.clone(),
+                    target: request.target.clone(),
+                    after_context: ContextObservation::Resolved(
+                        request.binding.context_sha256.clone(),
+                    ),
+                })
+                .collect(),
         },
     )?;
-    assert!(
+    assert_eq!(
         store
-            .record_bridge_generation_request(
-                GenerationRequestInput {
-                    request_id: RequestId::new("nested-override")?,
-                    expected_revision: store.snapshot()?.revision_id().clone(),
-                    hold_id: override_hold,
-                    context_sha256: sha('a'),
-                    constraints: constraints(),
-                    provider: provider(5),
-                },
-                plan()
-            )
-            .is_err()
+            .generation_request(&selected.request_id)?
+            .unwrap()
+            .target,
+        selected.target
     );
-    store.validate()?;
+    store.validate_full()?;
+    drop(store);
+    ProjectStore::open(&package, AccessMode::ReadOnly)?.validate_full()?;
     Ok(())
 }
 

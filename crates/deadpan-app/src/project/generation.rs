@@ -11,7 +11,10 @@ use std::sync::Arc;
 use std::time::{Instant, SystemTime};
 
 use deadpan_core::GeneratedObjectRef;
-use deadpan_core::{FrameRange, NodeId, ProjectDocument, ProjectFrame, ProjectId, RevisionId};
+use deadpan_core::{
+    FrameRange, InstancePath, NodeId, ProjectDocument, ProjectFrame, ProjectId, RevisionId,
+    ScopedNodeTarget,
+};
 use deadpan_jobs::{AttemptId, RequestId, WorkerStage};
 
 use super::SequenceScope;
@@ -33,6 +36,8 @@ pub enum GenerationOperation {
         session: u64,
         revision: RevisionId,
         hold: NodeId,
+        /// Captured authored owner; None is the ordinary empty ancestry.
+        authoring: Option<ScopedNodeTarget>,
         variants: u8,
         /// None retains the current request's controls; Some replaces them.
         options: Option<deadpan_jobs::GenerationOptions>,
@@ -59,6 +64,8 @@ pub enum GenerationOperation {
         request: RequestId,
         attempt: AttemptId,
         draft: u64,
+        /// Concrete captured occurrence to audition, independent of authoring.
+        presentation: Option<GenerationPresentation>,
     },
     /// Accept the variant as one undoable edit; the Hold stays selected.
     Accept {
@@ -69,6 +76,7 @@ pub enum GenerationOperation {
         hold: NodeId,
         cursor: ProjectFrame,
         scope: SequenceScope,
+        scoped: Option<super::scoped::Target>,
     },
     /// Durably discard one Ready variant. The store marks it unavailable
     /// (its retained objects stay until a retention policy removes them); it
@@ -100,12 +108,22 @@ pub enum GenerationOperation {
     },
 }
 
+/// One independently captured occurrence of an authored Hold. `range` is its
+/// complete visible root-picture window, which can differ from recipe duration.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GenerationPresentation {
+    pub target: ScopedNodeTarget,
+    pub instance: InstancePath,
+    pub range: FrameRange,
+}
+
 /// An attempt a previous app session left unfinished, offered for retry.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Interrupted {
     pub request: String,
     pub attempt: String,
     pub hold: String,
+    pub target: Option<ScopedNodeTarget>,
     /// The pause's label when it is still a pause in the current edit, so a
     /// retry can generate for it.
     pub pause: Option<String>,
@@ -187,6 +205,7 @@ pub struct Job {
     pub ticket: u64,
     pub session: u64,
     pub hold: NodeId,
+    pub target: ScopedNodeTarget,
     pub options: deadpan_jobs::GenerationOptions,
     /// The revision the inputs were prepared from.
     pub revision: RevisionId,
@@ -257,6 +276,8 @@ pub struct Variant {
 pub struct Candidate {
     pub request: RequestId,
     pub hold: NodeId,
+    pub target: ScopedNodeTarget,
+    pub origin_target: ScopedNodeTarget,
     /// The revision the request was conditioned from.
     pub origin: RevisionId,
     /// Project frames the sampled master covers.
@@ -289,6 +310,7 @@ pub struct CandidatePreview {
     request: RequestId,
     attempt: AttemptId,
     hold: NodeId,
+    target: ScopedNodeTarget,
     range: FrameRange,
     document: Arc<ProjectDocument>,
     /// The same proposed document admitted for audition against the exact
@@ -303,6 +325,7 @@ pub(super) struct PreviewParts {
     pub request: RequestId,
     pub attempt: AttemptId,
     pub hold: NodeId,
+    pub target: ScopedNodeTarget,
     pub range: FrameRange,
     pub document: Arc<ProjectDocument>,
     pub audio: Arc<deadpan_playback::Snapshot>,
@@ -318,6 +341,7 @@ impl std::fmt::Debug for CandidatePreview {
             .field("request", &self.request)
             .field("attempt", &self.attempt)
             .field("hold", &self.hold)
+            .field("target", &self.target)
             .field("range", &self.range)
             .field("content", &self.audio.content)
             .finish_non_exhaustive()
@@ -331,6 +355,7 @@ impl CandidatePreview {
             request,
             attempt,
             hold,
+            target,
             range,
             document,
             audio,
@@ -349,6 +374,7 @@ impl CandidatePreview {
             request,
             attempt,
             hold,
+            target,
             range,
             document,
             audio,
@@ -382,11 +408,17 @@ impl CandidatePreview {
         &self.request
     }
 
+    #[cfg(test)]
     pub fn hold(&self) -> &NodeId {
         &self.hold
     }
 
-    /// The Hold's project-frame range, unchanged by acceptance.
+    /// The authored target before this preview's acceptance isolation.
+    pub fn target(&self) -> &ScopedNodeTarget {
+        &self.target
+    }
+
+    /// The captured occurrence's visible project-frame range.
     pub fn range(&self) -> FrameRange {
         self.range
     }
@@ -401,10 +433,10 @@ impl CandidatePreview {
 pub struct Update {
     pub session: u64,
     pub job: Option<Job>,
-    /// Ready candidates by Hold for the published workspace revision.
-    pub candidates: Arc<BTreeMap<NodeId, Candidate>>,
+    /// Ready candidates by authored target for the published workspace revision.
+    pub candidates: Arc<BTreeMap<ScopedNodeTarget, Candidate>>,
     /// Stored controls, including requests with no Ready candidate yet.
-    pub options: Arc<BTreeMap<NodeId, deadpan_jobs::GenerationOptions>>,
+    pub options: Arc<BTreeMap<ScopedNodeTarget, deadpan_jobs::GenerationOptions>>,
     /// The latest preview reply, tagged by request and base revision.
     pub preview: Option<Arc<CandidatePreview>>,
     /// The latest independent command's ticket and refusal, if any. Accept

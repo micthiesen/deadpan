@@ -6,10 +6,16 @@ use deadpan_core::{
 
 fn boundary(decoded: bool, project_frame: i64) -> BoundaryPicture {
     if !decoded {
-        return BoundaryPicture::AuthoredBlack { project_frame };
+        return BoundaryPicture::AuthoredBlack {
+            clock: crate::BoundaryClock::Project {
+                frame: project_frame,
+            },
+        };
     }
     BoundaryPicture::Original {
-        project_frame,
+        clock: crate::BoundaryClock::Project {
+            frame: project_frame,
+        },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
         picture: DecodedBoundary {

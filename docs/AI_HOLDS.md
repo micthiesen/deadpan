@@ -21,8 +21,8 @@ ends in Ready, Failed or Cancelled.
 
 | Step | Thread | Function |
 | --- | --- | --- |
-| Conditioning | job (read-only store) | `generation::conditioning::prepare(package, revision, hold, cancelled) -> BridgeInputs` |
-| Allocation | writer | `generation::attempt::allocate(&mut store, AllocateInput) -> Allocated`, or `allocate_variant(&mut store, request, inputs)` for another attempt of a current request |
+| Conditioning | job (read-only store) | `generation::conditioning::prepare_scoped_with_options` captures the exact authoring address; `prepare` supplies empty Repeat ancestry |
+| Allocation | writer | `generation::attempt::allocate_scoped_with_provider` records that address; `allocate_variant` adds an attempt of a current request |
 | Worker and qualification | job, no store | `generation::attempt::run_worker(&Allocated, &BridgeRuntime, progress, records, cancelled) -> WorkerRun` |
 | Durable transitions | writer | `generation::attempt::record(&mut store, &Allocated, &AttemptRecord)` |
 | Publication or failure | writer | `generation::attempt::finish(&mut store, &Allocated, WorkerRun) -> Finished` |
@@ -30,7 +30,7 @@ ends in Ready, Failed or Cancelled.
 
 - `allocate` records a bridge request with the manifest hash as its context and
   `development_provider(seed)`, then begins a fresh attempt. A new request makes
-  the Hold's earlier requests stale.
+  that authoring scope's earlier requests stale.
 - `allocate_variant` begins another attempt of a current request with its exact
   constraints, plan and conditioning inputs (it refuses inputs whose manifest
   hash, constraints or plan differ). Every attempt of a request is a seeded
@@ -56,7 +56,7 @@ ends in Ready, Failed or Cancelled.
   declaration that differs from the plan or provider fails the attempt. After a
   clean exit it runs `qualify_bridge` with `deadpan-media-worker` and builds the
   `BundleValidationReceipt` with admission evidence (validator `native-ffv1`,
-  `bridge-7`). An error from `records` cancels the worker and fails the attempt.
+  `bridge-8`). An error from `records` cancels the worker and fails the attempt.
 - `finish` publishes the native and sampled masters, the provenance envelope
   and the three retained inputs, then records Ready. A publication failure is
   recorded as a host failure. Failures the store has not already recorded become
@@ -65,7 +65,7 @@ ends in Ready, Failed or Cancelled.
   from the new revision (`ai-hold-<revision>-native`/`-sampled`), previews the
   edit, and builds the relevance plan with `BoundaryContextResolver` for every
   current request, so the accepted request stays `Resolved` with its own hash.
-  `relevance_plan(store, before, after)` is public for other explicit writes.
+  `relevance_plan_for_requests` consumes the store preview's mapped request addresses for explicit writes that can isolate Repeat contents.
 
 ### Candidate checks
 
@@ -83,9 +83,9 @@ earlier Ready selection, and leaves the committed pause unchanged. See
 [measurement and verification](qualification/bridge-quality-2026-10-07.md).
 The host also compares the retained conditioning PNGs with the sampled master's
 first and last pictures inside the captured presentation crop. A separate gross
-endpoint guard rejects broad RGB discontinuity before Ready. Host schema 7
+endpoint guard rejects broad RGB discontinuity before Ready. Host schema 8
 retains these reports and binds measurements to the crop and immutable
-objects. Older schema 3/4/5/6 artifacts remain readable with their original evidence.
+objects. Older schema 3/4/5/6/7 artifacts remain readable with their original evidence.
 The existing Smooth/Noticeable/Jump readings remain advisory. See
 [endpoint checks](qualification/bridge-endpoints-2026-10-07.md).
 
@@ -112,7 +112,7 @@ under §29.1.
 
 ### Source and colour context
 
-Conditioning writes context manifest schema 4 (`deadpan_models::BridgeContext`,
+Conditioning writes context manifest schema 5 (`deadpan_models::BridgeContext`,
 [bundles](GENERATION_BUNDLES.md)). For each side of the pause it records what
 the committed picture path showed at the origin revision: for an Original
 frame, the asset, receipt, measured index ordinal and exact source PTS plus the
@@ -135,10 +135,51 @@ inputs explicitly marked `rec709_codes_as_srgb` remain readable and labelled
 as approximate; new inputs record `rec709_to_srgb`. The model's own colour
 handling remains a worker claim.
 
+## Repeat and Retime scopes
+
+The native inspector captures the selected Hold and every explicit Repeat
+Default or stable Play choice when a command begins. Generate fills the full
+authored Hold duration before outer Repeat/Retime sampling. Acceptance in one
+play isolates only that play in the same undoable transaction; Default changes
+the shared definition while retaining existing overrides. Several selected
+plays currently refuse with an explicit message.
+
+Conditioning uses the highest ordinary Sequence containing the Hold below its
+nearest Repeat/Retime ancestor, or the project root. For local Hold interval
+`[s,e)`, the boundary samples are exactly `s - 1/2` and `e + 1/2` in that
+definition clock. A missing boundary refuses generation; an outer neighbor or
+an arbitrary visible play cannot substitute for it. Context 5 retains the
+project, origin revision, definition and rational positions. The worker and
+stored admission validate that origin and the exact duration between samples.
+Historical contexts 2–4 retain their Project-clock interpretation.
+
+A request keeps its immutable worker binding and origin authoring address.
+Its current address follows only isolation maps rederived from validated
+history commands. Each authoring scope has an independent monotonic request
+clock, even when several scopes initially share one Hold node. Undo/Redo moves
+addresses through those same maps without reviving stale requests or attempts.
+Schema 69 deliberately rejects earlier unused development packages.
+
+Preview and audition separately capture a concrete occurrence and its root
+frame window. Changing scoped selection cancels pending previews and clears
+cached comparisons. The inspector states the intrinsic picture count and that
+join readings describe the definition before outer sampling. Editorial Camera,
+captions and gain do not change the raw conditioning pictures.
+
+For the CLI, `--scope` takes a strict `ScopedNodeTarget` JSON value, for example:
+
+```json
+{"node":"pause","repeats":[{"repeat":"repeat","branch":{"type":"play","iteration":{"allocation":"repeat-revision","ordinal":1}}}]}
+```
+
+The stable iteration comes from the observed document. Omitted scope means
+empty Repeat ancestry; it never adopts the app's current selection. Live job
+status includes the captured scope.
+
 ## Headless commands
 
 ```sh
-deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]
+deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]
 deadpan-cli accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
 ```
 
@@ -210,7 +251,7 @@ retain the current choices as native Generate does. Reports and `ai-variants`
 include the captured options. Failed or cancelled recorded requests retain
 them across reopening.
 
-Adapter `ltx-mlx` `0.15.8+deadpan4` uses `deadpan-hold-2`: a short locked-camera,
+Adapter `ltx-mlx` `0.15.8+deadpan5` uses `deadpan-hold-2`: a short locked-camera,
 preserved-identity/composition, no-speech/no-new-objects base, one motion
 sentence, and optional literal guidance. It uses no prompt enhancer. The exact
 prompt, version and token count are retained in worker provenance. Gemma's
@@ -643,7 +684,7 @@ filling the canvas like frame 285 before it.
 
 ## Superseding and partial allocation
 
-Generating again for the same Hold adds variants to its current request while
+Generating again for the same authoring scope adds variants to its current request while
 the pause's boundary pictures are unchanged; when they changed, the request is
 already stale and generation records a new one. Request recording and the
 first attempt are separate store writes: if beginning the attempt fails, the
@@ -655,8 +696,10 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-Generate inside scoped Repeat/Retime inspection and calibrated join thresholds
-remain open.
+Generation at definition edges, multi-play generation/acceptance and calibrated
+join thresholds remain open. A dormant definition can be generated and accepted
+when both local boundary pictures exist; viewer preview requires a visible
+concrete occurrence.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
 the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.

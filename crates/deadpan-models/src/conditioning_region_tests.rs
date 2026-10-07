@@ -34,7 +34,7 @@ fn target() -> AttentionTarget {
 }
 fn boundary(pts: i64) -> BoundaryPicture {
     BoundaryPicture::Original {
-        project_frame: pts,
+        clock: crate::BoundaryClock::Project { frame: pts },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
         picture: DecodedBoundary {
@@ -215,7 +215,9 @@ fn foreign_asset_span_and_non_original_have_no_subject_seed() {
             .is_none()
     );
     let mut bounds = boundaries();
-    bounds.left = BoundaryPicture::AuthoredBlack { project_frame: 100 };
+    bounds.left = BoundaryPicture::AuthoredBlack {
+        clock: crate::BoundaryClock::Project { frame: 100 },
+    };
     let mut layout = geometry();
     layout.left_content = None;
     let captured = RegionCapture::new(

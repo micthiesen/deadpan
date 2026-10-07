@@ -42,7 +42,10 @@ scopes, cancellation and one shared capture deadline. The strict context must ma
 the request's plan and manifest identity. Frames are opaque at this boundary;
 capturing them does not qualify image decoding, source-clock coordinates or color.
 
-Current conditioning writes context schema 4. It retains the explicit selected
+Current conditioning writes context schema 5 with explicit definition clocks.
+Both clocks bind the immutable project/origin revision, definition root and exact
+rational position; their difference is the authored Hold duration plus one.
+Historical context 4 retains explicit Project clocks. It retains the explicit selected
 region target or its absence, the target record's SHA-256, evaluated source
 regions and tracking state/confidence at the exact decoded boundary PTS.
 Unavailable capture reasons are retained. Model coordinates derive from
@@ -100,8 +103,9 @@ its Ready API relies on this independent host qualification.
    [quality evidence](qualification/bridge-quality-2026-10-07.md). Compare the
    actual sampled first/last pictures with retained conditioning PNGs inside
    the captured presentation crop, rejecting broad endpoint RGB discontinuity.
-   Fresh qualification requires context schema 4 with exact prepared geometry
-   and explicit region capture.
+   Fresh qualification requires context schema 4 or 5 with exact prepared geometry
+   and explicit region capture. The app emits schema 5. Retained context-4
+   qualification fixtures preserve their explicit Project-clock interpretation.
    Run `deadpan-track inspect-landmarks` on every canonical native picture and
    both retained RGB8 PNGs under the same deadline and cancellation. Pinned
    Vision revision 3 observations drive conservative boundary-anchored face
@@ -117,7 +121,9 @@ its Ready API relies on this independent host qualification.
    report's exact UTF-8 bytes, original request/declaration, both generated-object
    identities, host media-validation reports, measured native/sample source spans,
    conditioning receipt and typed motion/lighting, endpoint, face/mouth and
-   selected-region reports. Envelope schema 7 uses profile `deadpan-ffv1-bridge-7`.
+   selected-region reports. Envelope schema 8 uses profile `deadpan-ffv1-bridge-8`. It validates definition
+   clocks against the immutable worker project and origin revision. Definition
+   contexts cannot be admitted under earlier profiles.
    The face/mouth report
    binds raw observations, exact native PTS, pinned runtime, timings and
    recomputable policy results to the native movie, context and boundary objects.
@@ -125,7 +131,7 @@ its Ready API relies on this independent host qualification.
    the retained context. Schema 3 remains readable without these reports;
    schema 4 retains motion/lighting evidence; schema 5 also retains endpoints;
    schema 6 retains face/mouth evidence. These profiles reject selected-target
-   constraints, which require schema 7's bound region report;
+   constraints, which require schema 7 or 8's bound region report;
    earlier envelopes lack admission evidence and are not equivalent.
    Stop serialization at its budget.
 6. Return both masters, host provenance and all three immutable input snapshots.

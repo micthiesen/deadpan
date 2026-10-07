@@ -8,10 +8,12 @@ use std::collections::BTreeMap;
 
 use deadpan_core::{
     AssetId, AssetRecord, Command, CommandRequest, EditTransaction, GeneratedArtifact,
-    GeneratedObjectRef, NodeId, NodeKind, ProjectDocument, RevisionId, SourceSpan,
+    GeneratedObjectRef, MarkId, NodeId, NodeKind, OccurrenceIdentities, ProjectDocument,
+    RevisionId, ScopedNodeEdit, SourceSpan,
 };
 use deadpan_jobs::{JobState, MessageIdentity, Relevance, VideoSpec};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior};
+use sha2::{Digest, Sha256};
 
 use crate::generated_media::GeneratedMediaLimits;
 use crate::generation::{ContextObservation, RelevancePlan};
@@ -47,6 +49,32 @@ impl ProjectStore {
         self.verify_bundle_objects(&input.expected_receipt, limits)?;
         let transaction = self.connection.unchecked_transaction()?;
         Ok(prepare_acceptance(&transaction, &self.documents, input)?.edit)
+    }
+
+    /// The exact accepted edit and every current request at its proven after
+    /// address, for hosts preparing a complete explicit relevance plan.
+    pub fn preview_generation_acceptance_contexts(
+        &self,
+        input: &GenerationAcceptance,
+        limits: GeneratedMediaLimits,
+    ) -> Result<
+        (
+            EditTransaction,
+            Vec<crate::generation::StoredGenerationRequest>,
+        ),
+        StoreError,
+    > {
+        self.verify_bundle_objects(&input.expected_receipt, limits)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_acceptance(&transaction, &self.documents, input)?;
+        let request = serde_json::from_str(&plan.request_json)?;
+        let contexts = crate::generation_scope::preview_command(
+            &transaction,
+            &plan.current,
+            &request,
+            &plan.next,
+        )?;
+        Ok((plan.edit, contexts))
     }
 
     /// Revalidates all retained dependencies before taking the SQLite write
@@ -139,7 +167,7 @@ fn prepare_acceptance(
         .ok_or_else(|| invalid("legacy request has no bridge plan"))?;
     let Some(NodeKind::Hold { recipe }) = current
         .nodes()
-        .get(&request.binding.hold_id)
+        .get(&request.target.node)
         .map(|node| &node.kind)
     else {
         return Err(invalid("the target Hold no longer exists"));
@@ -153,7 +181,7 @@ fn prepare_acceptance(
             "the Hold, rate or context no longer matches the request",
         ));
     }
-    require_single_generation_occurrence(&current, &request.binding.hold_id)?;
+    request.target.validate(&current)?;
     for id in [&input.native_asset, &input.sampled_asset] {
         if current.assets().contains_key(id) {
             return Err(invalid("acceptance requires fresh asset identities"));
@@ -190,18 +218,47 @@ fn prepare_acceptance(
             current.presentation_basis().height,
         ]),
     };
+    let assets = BTreeMap::from([
+        (input.native_asset.clone(), native),
+        (input.sampled_asset.clone(), sampled),
+    ]);
+    let operation = if request.target.repeats.is_empty() {
+        Command::AcceptGeneratedHold {
+            node: request.target.node.clone(),
+            artifact: artifact.clone(),
+            assets,
+        }
+    } else {
+        let edit = ScopedNodeEdit::AcceptGeneratedHold {
+            artifact: artifact.clone(),
+            assets,
+        };
+        let requirements = current.scoped_edit_requirements(&request.target, &edit)?;
+        // Fresh identities are deterministic for this captured commit so the
+        // read-only preview and atomic write derive precisely the same clone.
+        let namespace: String = Sha256::digest(input.new_revision.as_str().as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        let identities = OccurrenceIdentities {
+            nodes: (0..requirements.nodes)
+                .map(|index| NodeId::new(format!("ai-{namespace}-node-{index}")))
+                .collect::<Result<_, _>>()?,
+            marks: (0..requirements.marks)
+                .map(|index| MarkId::new(format!("ai-{namespace}-mark-{index}")))
+                .collect::<Result<_, _>>()?,
+        };
+        Command::EditScoped {
+            target: request.target.clone(),
+            edit,
+            identities,
+        }
+    };
     let command = CommandRequest {
         project_id: current.project_id().clone(),
         expected_revision: input.expected_revision.clone(),
         new_revision: input.new_revision.clone(),
-        command: Command::AcceptGeneratedHold {
-            node: request.binding.hold_id,
-            artifact: artifact.clone(),
-            assets: BTreeMap::from([
-                (input.native_asset.clone(), native),
-                (input.sampled_asset.clone(), sampled),
-            ]),
-        },
+        command: operation,
     };
     prepare_admitted_command(connection, documents, &command, Some(&artifact))
 }

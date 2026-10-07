@@ -2,13 +2,13 @@
 //! contained into the provider's native raster, and the context manifest that
 //! binds them to the bridge plan.
 //!
-//! The left picture is the project frame before the Hold and the right one the
-//! frame after it, decoded from the committed revision through the shared
-//! project picture path. Each is fitted whole inside the native raster
+//! Each boundary is sampled in the Hold's containing authored definition,
+//! before outer Repeat/Retime owners, through the committed revision's shared
+//! qualified decoder path. Each is fitted whole inside the native raster
 //! (Lanczos, black bars), as the qualification probe prepared its inputs.
 //! Editorial framing around the Hold is not composed into these pictures yet.
 //!
-//! The version-3 manifest records, for each side, what the picture path
+//! The version-5 manifest records, for each side, what the picture path
 //! actually showed: an Original frame (asset, receipt, measured index identity,
 //! exact source PTS and the decoder's measured stream colour, pixel format and
 //! geometry), a frame of an accepted generated Hold (its artifact objects and
@@ -21,17 +21,20 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use deadpan_core::{FrameDuration, NodeId, NodeKind, ProjectFrame, RevisionId, SourceFrameId};
+use deadpan_core::{
+    BoundaryQueryLimits, ExactRatio, FrameDuration, NodeId, RevisionId, ScopedNodeTarget,
+    SourceFrameId,
+};
 use deadpan_jobs::{
     BridgeGenerationPlan, ConditioningMode, GenerationOptions, HoldConstraints, MotionAmount,
     Sha256, VideoSpec, WorkspaceArtifact, WorkspaceRef,
 };
 use deadpan_models::{
-    BoundaryPicture, BridgeBoundaries, BridgeColor, BridgeContext, BridgeMatrix, BridgePrimaries,
-    BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, ConditioningGeometry, DecodedBoundary,
-    MeasuredStream, ModelInputConversion, RasterRect, RegionCapture, model_input_conversion,
+    BoundaryClock, BoundaryPicture, BridgeBoundaries, BridgeColor, BridgeContext, BridgeMatrix,
+    BridgePrimaries, BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, ConditioningGeometry,
+    DecodedBoundary, MeasuredStream, ModelInputConversion, RasterRect, RegionCapture,
+    model_input_conversion,
 };
-use deadpan_plan::RenderPlan;
 use deadpan_render::{Rgba8Frame, SampleDepth};
 use deadpan_source::{ColorMatrix, ColorPrimaries, ColorRange, ColorTransfer, SourceStreamInfo};
 use image::{ImageBuffer, Rgb, RgbImage, RgbaImage, imageops};
@@ -91,6 +94,28 @@ pub fn prepare_with_options(
     options: &GenerationOptions,
     cancelled: &AtomicBool,
 ) -> Result<BridgeInputs, String> {
+    prepare_scoped_with_options(
+        package,
+        revision,
+        &ScopedNodeTarget {
+            node: hold.clone(),
+            repeats: Vec::new(),
+        },
+        options,
+        cancelled,
+    )
+}
+
+/// Prepare the complete Hold recipe in its authored definition, including a
+/// dormant Default. Scope validation and boundary lookup never choose a root
+/// occurrence. Missing definition-edge neighbors are explicit refusals.
+pub fn prepare_scoped_with_options(
+    package: &Path,
+    revision: &RevisionId,
+    target: &ScopedNodeTarget,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<BridgeInputs, String> {
     // Decoding polls `cancelled` itself; check between the uncancellable
     // steps too so a host shutdown is never held by a finished-but-unused step.
     let check = || {
@@ -106,7 +131,7 @@ pub fn prepare_with_options(
     check()?;
     let document = session.document().clone();
     let target_id = options.region_target.resolve(None);
-    let target = target_id
+    let captured_region = target_id
         .as_ref()
         .map(|id| {
             document
@@ -116,15 +141,11 @@ pub fn prepare_with_options(
                 .ok_or_else(|| format!("Region target {id} is not saved in this revision."))
         })
         .transpose()?;
-    let NodeKind::Hold { recipe } = &document
-        .nodes()
-        .get(hold)
-        .ok_or("The Hold is no longer in this revision.")?
-        .kind
-    else {
-        return Err("AI pictures fill a pause (Hold) beat.".into());
-    };
-    let duration = recipe.duration;
+    let boundaries = session
+        .plan()
+        .scoped_hold_boundaries(target, BoundaryQueryLimits::default())
+        .map_err(|error| error.to_string())?;
+    let duration = boundaries.duration;
     if duration.frames() > super::MAX_BRIDGE_PROJECT_FRAMES {
         return Err(format!(
             "AI pauses are limited to {} frames for now; this one has {}.",
@@ -132,18 +153,13 @@ pub fn prepare_with_options(
             duration.frames()
         ));
     }
-    let plan_picture = RenderPlan::compile(&document).map_err(|error| error.to_string())?;
     check()?;
-    let range = plan_picture
-        .single_occurrence_range(hold)
-        .ok_or("AI pictures need a pause that plays once, outside Repeats and speed changes.")?;
-    let total = plan_picture.duration().frames();
-    if range.start().0 == 0 || range.end().0 >= total {
-        return Err(
-            "An AI bridge needs pictures on both sides of the pause; it cannot start or end the edit."
-                .into(),
-        );
-    }
+    let left_sample = boundaries.left.as_ref().ok_or(
+        "An AI bridge needs a picture before the pause in its authored definition; this Hold starts at the definition edge.",
+    )?;
+    let right_sample = boundaries.right.as_ref().ok_or(
+        "An AI bridge needs a picture after the pause in its authored definition; this Hold ends at the definition edge.",
+    )?;
     let rate = document.presentation_basis().frame_rate;
     let plan = BridgeGenerationPlan::for_conditioning(
         ConditioningMode::Bridge,
@@ -166,13 +182,21 @@ pub fn prepare_with_options(
     let region = canvas_region([basis.width, basis.height]);
     let left = boundary(
         &mut session,
-        ProjectFrame(range.start().0 - 1),
+        &boundaries.definition,
+        left_sample.position,
         region,
         "before",
         cancelled,
     )?;
     check()?;
-    let right = boundary(&mut session, range.end(), region, "after", cancelled)?;
+    let right = boundary(
+        &mut session,
+        &boundaries.definition,
+        right_sample.position,
+        region,
+        "after",
+        cancelled,
+    )?;
     check()?;
     let presentation = RasterRect::centered(
         region.0,
@@ -180,7 +204,14 @@ pub fn prepare_with_options(
         [super::NATIVE_WIDTH, super::NATIVE_HEIGHT],
     )
     .map_err(str::to_owned)?;
-    assemble_captured(plan, constraints, left, right, presentation, target)
+    assemble_captured(
+        plan,
+        constraints,
+        left,
+        right,
+        presentation,
+        captured_region,
+    )
 }
 
 /// Bind two prepared boundaries and their captured crop with no region target.
@@ -332,17 +363,24 @@ impl ConditioningColour {
     }
 }
 
-/// Prepare the picture at `frame` and record what the picture path showed.
+/// Decode the exact definition position and retain its explicit clock.
 fn boundary(
     session: &mut ProjectPictureSession,
-    frame: ProjectFrame,
+    definition: &NodeId,
+    position: ExactRatio,
     region: (u32, u32),
     side: &str,
     cancelled: &AtomicBool,
 ) -> Result<PreparedBoundary, String> {
     let prepared = session
-        .prepare(frame, cancelled)
+        .prepare_definition(definition, position, cancelled)
         .map_err(|error| error.to_string())?;
+    let clock = BoundaryClock::Definition {
+        project_id: prepared.sample.project_id.clone(),
+        revision_id: prepared.sample.revision_id.clone(),
+        definition: prepared.sample.definition.clone(),
+        position: prepared.sample.position,
+    };
     let refuse =
         |reason: String| format!("The picture {side} the pause cannot condition it: {reason}.");
     let (picture, image) = match &prepared.picture {
@@ -358,7 +396,7 @@ fn boundary(
             let picture = decoded_boundary(info, *id, decoded).map_err(refuse)?;
             (
                 BoundaryPicture::Original {
-                    project_frame: frame.0,
+                    clock: clock.clone(),
                     asset: asset.clone(),
                     qualification: qualification.clone(),
                     picture,
@@ -377,7 +415,7 @@ fn boundary(
             let picture = decoded_boundary(info, *id, decoded).map_err(refuse)?;
             (
                 BoundaryPicture::Generated {
-                    project_frame: frame.0,
+                    clock: clock.clone(),
                     sampled_asset: artifact.sampled_asset.clone(),
                     sampled_object: artifact.sampled_object.clone(),
                     provenance: artifact.provenance.clone(),
@@ -388,7 +426,7 @@ fn boundary(
         }
         PreparedPicture::Background => (
             BoundaryPicture::AuthoredBlack {
-                project_frame: frame.0,
+                clock: clock.clone(),
             },
             None,
         ),
@@ -584,12 +622,16 @@ pub(crate) fn opaque_boundaries(
     (
         PreparedBoundary {
             png: left,
-            picture: BoundaryPicture::AuthoredBlack { project_frame: 14 },
+            picture: BoundaryPicture::AuthoredBlack {
+                clock: BoundaryClock::Project { frame: 14 },
+            },
             content_rect: None,
         },
         PreparedBoundary {
             png: right,
-            picture: BoundaryPicture::AuthoredBlack { project_frame: end },
+            picture: BoundaryPicture::AuthoredBlack {
+                clock: BoundaryClock::Project { frame: end },
+            },
             content_rect: None,
         },
     )
@@ -658,7 +700,7 @@ mod tests {
         let picture = frame(&RgbImage::from_pixel(4, 2, Rgb([1, 2, 3])));
         let (mut left, right) = opaque_boundaries(&plan, b"l".to_vec(), b"r".to_vec());
         left.picture = BoundaryPicture::Original {
-            project_frame: 14,
+            clock: BoundaryClock::Project { frame: 14 },
             asset: deadpan_core::AssetId::new("original").unwrap(),
             qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
             picture: decoded_boundary(

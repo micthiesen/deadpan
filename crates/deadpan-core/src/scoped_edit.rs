@@ -2,6 +2,7 @@
 //! Hosts allocate identities; browsing and allocation queries never isolate.
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 use crate::{
     AudioBoundaryKind, AudioEdgePolicy, AudioTreatments, Command, CommandRequest, EditError,
@@ -10,12 +11,16 @@ use crate::{
 };
 
 mod isolation;
+mod proof;
 pub use isolation::MAX_SCOPED_TARGETS;
-pub(crate) use isolation::{apply, apply_many, matches_prefix};
+pub(crate) use isolation::{apply_many_mapped, apply_mapped, matches_prefix};
+pub use proof::{
+    ScopedIsolationRecord, ScopedIsolationStep, ValidatedScopedIsolation, derive_scoped_isolation,
+};
 
 /// Default follows the authored template, even when no current play uses it.
 /// Play follows that stable iteration's effective child or explicitly owned gap.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum RepeatEditBranch {
     #[serde(deserialize_with = "deserialize_empty")]
@@ -32,7 +37,7 @@ fn deserialize_empty<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Resul
     Empty::deserialize(deserializer).map(|_| ())
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RepeatEditStep {
     pub repeat: NodeId,
@@ -41,7 +46,7 @@ pub struct RepeatEditStep {
 
 /// Every Repeat ancestor appears exactly once, outermost first. Ordinary
 /// Sequence/Retime owners remain in the tree but do not change this address.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ScopedNodeTarget {
     pub node: NodeId,
@@ -129,6 +134,11 @@ pub enum ScopedNodeEdit {
     SetHoldAudio {
         audio: HoldAudio,
     },
+    AcceptGeneratedHold {
+        artifact: crate::GeneratedArtifact,
+        #[serde(deserialize_with = "crate::document::unique_map")]
+        assets: BTreeMap<crate::AssetId, crate::AssetRecord>,
+    },
 }
 
 impl ScopedNodeEdit {
@@ -140,6 +150,9 @@ impl ScopedNodeEdit {
             Self::SetAudioEdge { edge, policy } => node.audio_edges.get(*edge) == *policy,
             Self::SetHoldAudio { audio } => matches!(&node.kind,
                 NodeKind::Hold { recipe } if &recipe.audio == audio),
+            Self::AcceptGeneratedHold { artifact, .. } => matches!(&node.kind,
+                NodeKind::Hold { recipe } if matches!(&recipe.video,
+                    crate::HoldVideo::Generated { accepted } if &accepted.artifact == artifact)),
         }
     }
 
@@ -165,6 +178,11 @@ impl ScopedNodeEdit {
             Self::SetHoldAudio { audio } => Command::SetHoldAudio {
                 node,
                 audio: audio.clone(),
+            },
+            Self::AcceptGeneratedHold { artifact, assets } => Command::AcceptGeneratedHold {
+                node,
+                artifact: artifact.clone(),
+                assets: assets.clone(),
             },
         }
     }
@@ -200,6 +218,14 @@ impl ScopedNodeEdit {
                 let mut recipe = recipe.clone();
                 recipe.audio = audio.clone();
                 document.validate_hold(&recipe)?;
+            }
+            Self::AcceptGeneratedHold { artifact, assets } => {
+                let mut staged = document.clone();
+                crate::command::accept_generated_hold(&mut staged, node, artifact, assets)?;
+                let NodeKind::Hold { recipe } = &staged.nodes()[node].kind else {
+                    unreachable!("acceptance checks Hold kind")
+                };
+                staged.validate_hold(recipe)?;
             }
         }
         Ok(())
@@ -240,10 +266,23 @@ pub struct PreparedScopedEdit {
     pub transaction: EditTransaction,
     pub document: ProjectDocument,
     pub target: ScopedNodeTarget,
-    mappings: Vec<isolation::IsolationMap>,
+    isolation: ScopedIsolationRecord,
 }
 
 impl PreparedScopedEdit {
+    pub fn isolation(&self) -> &ScopedIsolationRecord {
+        &self.isolation
+    }
+
+    pub fn map_target(
+        &self,
+        before: &ProjectDocument,
+        target: &ScopedNodeTarget,
+    ) -> Result<ScopedNodeTarget, EditError> {
+        self.isolation
+            .bind_prepared(before, &self.document)?
+            .map_forward(target)
+    }
     /// Carry a separately captured concrete presentation through the same
     /// isolation. Default authoring alone never manufactures such a path.
     pub fn map_instance(
@@ -261,9 +300,9 @@ impl PreparedScopedEdit {
         }
         instance.validate(before)?;
         let mut result = instance.clone();
-        for mapping in &self.mappings {
-            if isolation::matches_prefix(&result, &mapping.prefix) {
-                crate::occurrence_edit::remap_instance(&mut result, &mapping.nodes);
+        for mapping in self.isolation.steps() {
+            if isolation::matches_prefix(&result, mapping.before_prefix()) {
+                crate::occurrence_edit::remap_instance(&mut result, mapping.nodes());
             }
         }
         result.validate(&self.document)?;
@@ -283,24 +322,19 @@ pub fn prepare_scoped_edit(
         &request.expected_revision,
         &request.new_revision,
     )?;
-    let Command::EditScoped {
-        target,
-        edit,
-        identities,
-    } = &request.command
-    else {
+    let Command::EditScoped { target, .. } = &request.command else {
         return Err(invalid("scoped preparation requires an EditScoped command"));
     };
-    let plan = isolation::preflight(document, target, edit)?;
-    let resolved = plan.resolve(document, target, identities)?;
-    let transaction = crate::apply(document, request)?;
-    let after = transaction.forward.apply(document)?;
-    resolved.target.validate(&after)?;
+    let (transaction, after, steps) = crate::command::apply_with_isolation(document, request)?;
+    let isolation = ScopedIsolationRecord::from_execution(document, request, &after, steps)?;
+    let target = isolation
+        .bind_prepared(document, &after)?
+        .map_forward(target)?;
     Ok(PreparedScopedEdit {
         transaction,
         document: after,
-        target: resolved.target,
-        mappings: resolved.mappings,
+        target,
+        isolation,
     })
 }
 

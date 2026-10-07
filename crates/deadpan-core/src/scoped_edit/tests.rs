@@ -2,6 +2,9 @@ use super::*;
 use crate::*;
 use std::collections::BTreeMap;
 
+#[path = "proof_tests.rs"]
+mod proof_tests;
+
 fn node(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }

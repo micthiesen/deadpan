@@ -14,6 +14,7 @@ pub(crate) struct RevisionRecord {
 
 pub(crate) struct HistoryRecord {
     pub parent: Option<i64>,
+    pub request: CommandRequest,
     pub edit: EditTransaction,
 }
 
@@ -215,7 +216,11 @@ fn read_history_bounded(
             "history request and patch identities disagree",
         ));
     }
-    Ok(HistoryRecord { parent, edit })
+    Ok(HistoryRecord {
+        parent,
+        request,
+        edit,
+    })
 }
 
 fn read_history_json(
@@ -409,9 +414,14 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
         if rows.parent.as_deref() != index.checked_sub(1).map(|parent| order[parent].as_str()) {
             return Err(history_error("revision parent disagrees"));
         }
+        let mut scope_event_owner = None;
         let patch_bytes = match (rows.kind.as_str(), &rows.history, &rows.patch) {
             ("initial", None, None) if index == 0 => None,
             ("edit", Some(history), None) if index > 0 => {
+                scope_event_owner = Some(crate::generation_scope::Event {
+                    history_id: history.id,
+                    forward: true,
+                });
                 if history.parent != navigation.cursor {
                     return Err(history_error("history parent or revision disagrees"));
                 }
@@ -424,6 +434,10 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
                 let entry = navigation
                     .cursor
                     .ok_or_else(|| history_error("history navigation has no target"))?;
+                scope_event_owner = Some(crate::generation_scope::Event {
+                    history_id: entry,
+                    forward: false,
+                });
                 navigation.cursor = parent_entry.query_row([entry], |row| row.get(0))?;
                 navigation.redo.push(entry);
                 patch.as_ref().map(String::len)
@@ -433,6 +447,10 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
                     .redo
                     .pop()
                     .ok_or_else(|| history_error("history navigation has no target"))?;
+                scope_event_owner = Some(crate::generation_scope::Event {
+                    history_id: entry,
+                    forward: true,
+                });
                 let parent: Option<i64> = parent_entry.query_row([entry], |row| row.get(0))?;
                 if parent != navigation.cursor {
                     return Err(history_error(
@@ -445,6 +463,11 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
             ("edit", None, _) => return Err(history_error("edit has no history entry")),
             _ => return Err(history_error("noninitial revision has an invalid kind")),
         };
+        if rows.scope_event.is_some() && rows.scope_event != scope_event_owner {
+            return Err(history_error(
+                "generation scope event names the wrong history transition",
+            ));
+        }
         let stored =
             (rows.document != crate::revision_storage::ELIDED).then_some(rows.document.len());
         if !crate::revision_storage::metadata_holds(
@@ -476,6 +499,19 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
         ));
     }
 
+    // A scope dependency receipt proves the complete materialized address
+    // index at its head. If history has an unproved suffix, replay addresses
+    // and births together from the initial revision, once for all scopes.
+    if verified < order.len()
+        && connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM generation_scopes)",
+            [],
+            |row| row.get::<_, bool>(0),
+        )?
+    {
+        verified = 0;
+        verified_navigation = Navigation::default();
+    }
     if verified < order.len() {
         let (current, state) = if verified == 0 {
             (
@@ -552,6 +588,7 @@ fn replay_from(
         .iter()
         .map(|id| RevisionId::new(id.clone()))
         .collect::<Result<_, _>>()?;
+    let mut scopes = crate::generation_scope::Replay::new(connection, &current)?;
     for id in &order[from..] {
         let (parent, kind, next) = read_replay_revision(connection, id)?;
         if parent.as_deref() != Some(current.revision_id().as_str()) {
@@ -612,6 +649,21 @@ fn replay_from(
                         "inverse does not restore the preceding revision",
                     ));
                 }
+                let isolated = crate::generation_scope::with_command_proof(
+                    &current,
+                    &request,
+                    &next_document,
+                    |proof| scopes.map(proof, true),
+                )?;
+                let expected = isolated.then_some(crate::generation_scope::Event {
+                    history_id: entry,
+                    forward: true,
+                });
+                if crate::generation_scope::read_event(connection, id)? != expected {
+                    return Err(history_error(
+                        "generation scope isolation event is missing or unexpected",
+                    ));
+                }
                 cursor = Some(entry);
                 redo.clear();
                 edits += 1;
@@ -639,6 +691,19 @@ fn replay_from(
                         "history navigation disagrees with its revision",
                     ));
                 }
+                let isolated =
+                    crate::generation_scope::with_history_proof(connection, entry, |proof| {
+                        scopes.map(proof, is_redo)
+                    })?;
+                let expected = isolated.then_some(crate::generation_scope::Event {
+                    history_id: entry,
+                    forward: is_redo,
+                });
+                if crate::generation_scope::read_event(connection, id)? != expected {
+                    return Err(history_error(
+                        "generation scope navigation event is missing or unexpected",
+                    ));
+                }
                 cursor = plan.next_cursor;
                 if !is_redo {
                     redo.push(entry);
@@ -648,8 +713,10 @@ fn replay_from(
             _ => return Err(history_error("noninitial revision has an invalid kind")),
         };
         admitted.insert(next_document.revision_id().clone());
+        scopes.arrive(connection, &next_document)?;
         current = next_document;
     }
+    scopes.finish(connection)?;
     Ok(Navigation {
         cursor,
         redo,

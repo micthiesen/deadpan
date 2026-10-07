@@ -66,9 +66,11 @@ fn fixture(
         "fixture",
         crate::CANONICAL_BRIDGE_COLOR,
         crate::BridgeBoundaries {
-            left: crate::BoundaryPicture::AuthoredBlack { project_frame: 0 },
+            left: crate::BoundaryPicture::AuthoredBlack {
+                clock: crate::BoundaryClock::Project { frame: 0 },
+            },
             right: crate::BoundaryPicture::AuthoredBlack {
-                project_frame: frames + 1,
+                clock: crate::BoundaryClock::Project { frame: frames + 1 },
             },
         },
         geometry,

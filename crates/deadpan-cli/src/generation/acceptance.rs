@@ -17,13 +17,29 @@ pub fn relevance_plan(
     before: &ProjectDocument,
     after: &ProjectDocument,
 ) -> Result<RelevancePlan, GenerationError> {
+    relevance_plan_for_requests(store, before, after, store.current_generation_requests()?)
+}
+
+/// The store supplies these requests after applying the exact previewed
+/// identity mapping. The worker binding remains its immutable origin.
+pub fn relevance_plan_for_requests(
+    store: &ProjectStore,
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    requests: Vec<deadpan_store::generation::StoredGenerationRequest>,
+) -> Result<RelevancePlan, GenerationError> {
     let resolver = BoundaryContextResolver::default();
+    let prepared = (!requests.is_empty())
+        .then(|| resolver.prepare_transition(after))
+        .flatten();
+    let resolver = prepared.as_deref().unwrap_or(&resolver);
     let mut observations = Vec::new();
-    for request in store.current_generation_requests()? {
+    for request in requests {
         let origin = store.snapshot_at(&request.origin_revision)?;
         observations.push(RelevanceObservation {
             request_id: request.request_id.clone(),
             binding: request.binding.clone(),
+            target: request.target.clone(),
             after_context: resolver.observe(&origin, after, &request),
         });
     }
@@ -70,11 +86,11 @@ pub fn accept(
     let acceptance = acceptance_for(store, request, new_revision)?;
     let limits = object_limits();
     let before = store.snapshot()?;
-    let edit = store.preview_generation_acceptance(&acceptance, limits)?;
+    let (edit, requests) = store.preview_generation_acceptance_contexts(&acceptance, limits)?;
     let after = edit
         .forward
         .apply(&before)
         .map_err(|error| GenerationError::Invalid(error.to_string()))?;
-    let relevance = relevance_plan(store, &before, &after)?;
+    let relevance = relevance_plan_for_requests(store, &before, &after, requests)?;
     Ok(store.accept_generation_bundle(&acceptance, &relevance, limits)?)
 }

@@ -35,8 +35,25 @@ fn cut(count: u32) -> SemanticInstruction {
 fn setup(path: &Path) -> (Harness, ProjectUpdate) {
     drop(seed_holds(path, &["a", "b", "c"]));
     let harness = Harness::new();
-    let update = command(&harness.service, ProjectRequest::Open(path.into()));
+    let mut update = command(&harness.service, ProjectRequest::Open(path.into()));
     assert!(update.error.is_none(), "{:?}", update.error);
+    // Service construction loads global backup settings asynchronously. Its
+    // completion publishes a status update independently of remote macros.
+    // Consume that initial reply before asserting that a dry run publishes
+    // nothing; keep the strict no-publication assertions on the commands.
+    if matches!(
+        update.backups.settings.status,
+        crate::project::backups::SettingsStatus::Loading
+    ) {
+        update = wait(&harness.service, |update| {
+            !matches!(
+                update.backups.settings.status,
+                crate::project::backups::SettingsStatus::Loading
+            )
+        });
+    }
+    assert!(update.error.is_none(), "{:?}", update.error);
+    assert!(update.committed.is_none() && update.macros.is_none() && update.saved_macro.is_none());
     (harness, update)
 }
 

@@ -76,7 +76,7 @@ def bridge_request_wire():
             "pack_id": "ltx-2.3-q4-development",
             "pack_version": "56a5866d",
             "runtime_id": "ltx-mlx-development",
-            "runtime_version": "0.15.8+deadpan4",
+            "runtime_version": "0.15.8+deadpan5",
             "seed": 38_117,
         },
         "plan": plan(),
@@ -215,7 +215,7 @@ class BridgeProtocolTests(unittest.TestCase):
                     "ltx-2.3-q4-development",
                     "56a5866d",
                     "ltx-mlx-development",
-                    "0.15.8+deadpan4",
+                    "0.15.8+deadpan5",
                     38_117,
                 ),
             )
@@ -384,6 +384,61 @@ class WorkerContextShapeTests(unittest.TestCase):
             }
         }
         return context
+
+    def schema5_context(self):
+        context = self.schema4_context()
+        context["schema_version"] = 5
+        for side, numerator in (("left", "29"), ("right", "121")):
+            payload = next(iter(context["boundaries"][side].values()))
+            del payload["project_frame"]
+            payload["clock"] = {
+                "kind": "definition", "project_id": "project-1", "revision_id": "revision-9",
+                "definition": "local", "position": {"numerator": numerator, "denominator": "2"},
+            }
+        return context
+
+    def test_definition_clock_is_exact_and_matches_immutable_request_origin(self):
+        context = self.schema5_context()
+        wire = bridge_request_wire()
+        request = worker_protocol.parse_host_message(wire)
+        worker.validate_context_shape(context)
+        self.assertEqual(worker.validate_bridge_context(context, request, wire["constraints"]["video"]), (45, 41))
+        for field in ("project_id", "revision_id"):
+            changed = self.schema5_context()
+            for side in ("left", "right"):
+                next(iter(changed["boundaries"][side].values()))["clock"][field] = "other"
+            worker.validate_context_shape(changed)
+            with self.assertRaisesRegex(ValueError, "worker origin"):
+                worker.validate_bridge_context(changed, request, wire["constraints"]["video"])
+
+    def test_definition_clocks_reject_wrong_scope_span_and_ambiguous_clocks(self):
+        mutations = [
+            lambda clock: clock.update(project_id="other"),
+            lambda clock: clock.update(revision_id="other"),
+            lambda clock: clock.update(definition="other"),
+            lambda clock: clock.update(extra=True),
+            lambda clock: clock.update(kind="project"),
+            lambda clock: clock["position"].update(numerator="122"),
+            lambda clock: clock["position"].update(numerator="-1"),
+            lambda clock: clock["position"].update(numerator=str(1 << 127)),
+            lambda clock: clock["position"].update(numerator="1_21"),
+            lambda clock: clock["position"].update(denominator="0"),
+            lambda clock: clock["position"].update(denominator=True),
+        ]
+        for mutate in mutations:
+            changed = self.schema5_context()
+            mutate(next(iter(changed["boundaries"]["right"].values()))["clock"])
+            with self.assertRaises(ValueError):
+                worker.validate_context_shape(changed)
+        for schema in (3, 4, 5):
+            changed = self.schema5_context()
+            changed["schema_version"] = schema
+            if schema == 3:
+                del changed["region"]
+            if schema == 5:
+                next(iter(changed["boundaries"]["left"].values()))["project_frame"] = 14
+            with self.assertRaises(ValueError):
+                worker.validate_context_shape(changed)
 
     def test_captured_geometry_schema_three_is_admitted(self):
         worker.validate_context_shape(self.schema3_context())

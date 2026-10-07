@@ -5,7 +5,9 @@
 //! SHA-256 hash chain in chronological order. `history_receipt` records the
 //! chain value after the last revision that this exact validator build has
 //! proved, together with digests of the other rows those proofs read: the
-//! single-original profile and the qualification receipts that existed.
+//! single-original profile, qualification receipts, and generation scope
+//! addresses, clocks and immutable request bindings. Isolation events name
+//! their original history entry and participate in the revision hash chain.
 //!
 //! Opening rehashes the stored rows, which costs far less than recomputing
 //! every command, and replays only the revisions after the receipt. Any
@@ -47,7 +49,8 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             chain BLOB NOT NULL CHECK(length(chain)=32),
             profile BLOB NOT NULL CHECK(length(profile)=32),
             qualification_rowid INTEGER NOT NULL CHECK(qualification_rowid>=0),
-            qualifications BLOB NOT NULL CHECK(length(qualifications)=32)
+            qualifications BLOB NOT NULL CHECK(length(qualifications)=32),
+            generation_scopes BLOB NOT NULL CHECK(length(generation_scopes)=32)
         ) STRICT;",
     )?;
     Ok(())
@@ -64,6 +67,7 @@ pub(crate) struct RevisionRows {
     pub patch: Option<String>,
     pub history: Option<HistoryRow>,
     pub steps: Vec<(i64, String, Option<String>)>,
+    pub scope_event: Option<crate::generation_scope::Event>,
 }
 
 pub(crate) struct HistoryRow {
@@ -128,6 +132,14 @@ pub(crate) fn link(previous: &Chain, rows: &RevisionRows) -> Chain {
         integer(&mut hasher, *ordinal);
         field(&mut hasher, revision.as_bytes());
         optional(&mut hasher, document.as_deref().map(str::as_bytes));
+    }
+    match &rows.scope_event {
+        None => hasher.update([0]),
+        Some(event) => {
+            hasher.update([1]);
+            integer(&mut hasher, event.history_id);
+            hasher.update([u8::from(event.forward)]);
+        }
     }
     hasher.finalize().into()
 }
@@ -224,6 +236,7 @@ pub(crate) fn read_rows(connection: &Connection, id: &str) -> Result<RevisionRow
         patch,
         history,
         steps,
+        scope_event: crate::generation_scope::read_event(connection, id)?,
     })
 }
 
@@ -236,12 +249,13 @@ pub(crate) struct Receipt {
     pub profile: Chain,
     pub qualification_rowid: i64,
     pub qualifications: Chain,
+    pub generation_scopes: Chain,
 }
 
 pub(crate) fn read(connection: &Connection) -> Result<Option<Receipt>, StoreError> {
     let row = connection
         .query_row(
-            "SELECT validator,revisions,head,chain,profile,qualification_rowid,qualifications
+            "SELECT validator,revisions,head,chain,profile,qualification_rowid,qualifications,generation_scopes
              FROM history_receipt WHERE singleton=1
              AND typeof(validator)='text' AND length(CAST(validator AS BLOB))<=256
              AND typeof(head)='text' AND length(CAST(head AS BLOB)) BETWEEN 1 AND ?1",
@@ -255,27 +269,44 @@ pub(crate) fn read(connection: &Connection) -> Result<Option<Receipt>, StoreErro
                     row.get::<_, Vec<u8>>(4)?,
                     row.get::<_, i64>(5)?,
                     row.get::<_, Vec<u8>>(6)?,
+                    row.get::<_, Vec<u8>>(7)?,
                 ))
             },
         )
         .optional()?;
-    let Some((validator, revisions, head, chain, profile, qualification_rowid, qualifications)) =
-        row
+    let Some((
+        validator,
+        revisions,
+        head,
+        chain,
+        profile,
+        qualification_rowid,
+        qualifications,
+        generation_scopes,
+    )) = row
     else {
         return Ok(None);
     };
     let digest = |bytes: Vec<u8>| Chain::try_from(bytes).ok();
     Ok(
-        match (digest(chain), digest(profile), digest(qualifications)) {
-            (Some(chain), Some(profile), Some(qualifications)) => Some(Receipt {
-                validator,
-                revisions,
-                head,
-                chain,
-                profile,
-                qualification_rowid,
-                qualifications,
-            }),
+        match (
+            digest(chain),
+            digest(profile),
+            digest(qualifications),
+            digest(generation_scopes),
+        ) {
+            (Some(chain), Some(profile), Some(qualifications), Some(generation_scopes)) => {
+                Some(Receipt {
+                    validator,
+                    revisions,
+                    head,
+                    chain,
+                    profile,
+                    qualification_rowid,
+                    qualifications,
+                    generation_scopes,
+                })
+            }
             _ => None,
         },
     )
@@ -283,11 +314,12 @@ pub(crate) fn read(connection: &Connection) -> Result<Option<Receipt>, StoreErro
 
 pub(crate) fn write(connection: &Connection, receipt: &Receipt) -> Result<(), StoreError> {
     connection.execute(
-        "INSERT INTO history_receipt(singleton,validator,revisions,head,chain,profile,qualification_rowid,qualifications)
-         VALUES (1,?1,?2,?3,?4,?5,?6,?7)
+        "INSERT INTO history_receipt(singleton,validator,revisions,head,chain,profile,qualification_rowid,qualifications,generation_scopes)
+         VALUES (1,?1,?2,?3,?4,?5,?6,?7,?8)
          ON CONFLICT(singleton) DO UPDATE SET validator=excluded.validator,revisions=excluded.revisions,
             head=excluded.head,chain=excluded.chain,profile=excluded.profile,
-            qualification_rowid=excluded.qualification_rowid,qualifications=excluded.qualifications",
+            qualification_rowid=excluded.qualification_rowid,qualifications=excluded.qualifications,
+            generation_scopes=excluded.generation_scopes",
         params![
             receipt.validator,
             receipt.revisions,
@@ -295,7 +327,8 @@ pub(crate) fn write(connection: &Connection, receipt: &Receipt) -> Result<(), St
             &receipt.chain[..],
             &receipt.profile[..],
             receipt.qualification_rowid,
-            &receipt.qualifications[..]
+            &receipt.qualifications[..],
+            &receipt.generation_scopes[..]
         ],
     )?;
     Ok(())
@@ -394,6 +427,7 @@ pub(crate) fn certify(
             profile: profile_digest(connection)?,
             qualification_rowid,
             qualifications,
+            generation_scopes: crate::generation_scope::digest(connection)?,
         },
     )
 }
@@ -438,6 +472,7 @@ pub(crate) fn extend(
             profile: receipt.profile,
             qualification_rowid,
             qualifications,
+            generation_scopes: crate::generation_scope::digest(connection)?,
         },
     )
 }
@@ -457,13 +492,29 @@ pub(crate) fn refresh_profile(connection: &Connection) -> Result<(), StoreError>
     write(connection, &receipt)
 }
 
+/// Allocation changes clocks without an authored revision. Call only after
+/// validating the new request and its captured scope together.
+pub(crate) fn refresh_generation_scopes(connection: &Connection) -> Result<(), StoreError> {
+    let Some(mut receipt) = read(connection)? else {
+        return Ok(());
+    };
+    if receipt.validator != VALIDATOR || receipt.head != crate::validation::read_head(connection)? {
+        return Ok(());
+    }
+    receipt.generation_scopes = crate::generation_scope::digest(connection)?;
+    write(connection, &receipt)
+}
+
 /// Whether a stored receipt's dependency digests still hold. The caller then
 /// matches its revision chain while hashing the chronology.
 pub(crate) fn dependencies_hold(
     connection: &Connection,
     receipt: &Receipt,
 ) -> Result<bool, StoreError> {
-    if receipt.validator != VALIDATOR || receipt.profile != profile_digest(connection)? {
+    if receipt.validator != VALIDATOR
+        || receipt.profile != profile_digest(connection)?
+        || receipt.generation_scopes != crate::generation_scope::digest(connection)?
+    {
         return Ok(false);
     }
     let (digest, last) = extend_qualifications(

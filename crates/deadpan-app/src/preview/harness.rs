@@ -317,6 +317,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 jobs::backend()
                             } else if name == "ai-variants"
                                 || name == "ai-compare"
+                                || name == "ai-scoped"
                                 || name == "full-session"
                             {
                                 ai_pause::variants_backend()
@@ -502,6 +503,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     ai_pause::variants(&mut driver)
                 } else if name == "ai-compare" {
                     ai_pause::compare(&mut driver)
+                } else if name == "ai-scoped" {
+                    ai_pause::scoped(&mut driver)
                 } else if name == "model-packs" {
                     model_packs::run(&mut driver)
                 } else {

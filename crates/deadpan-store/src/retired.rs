@@ -10,7 +10,7 @@
 //! - `revision`: revision and Compound step identities (checked by
 //!   `ensure_unused_revisions`);
 //! - `generation_request`: request identities (attempts are scoped to them);
-//! - `hold_version`: the highest Hold request version per Hold;
+//! - `generation_scope_version`: the highest request version per authored scope;
 //! - `original_version`: the highest original location version per content.
 //!
 //! Allocation consults the table, so the never-reuse rules hold across
@@ -24,7 +24,7 @@ use crate::StoreError;
 pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     connection.execute_batch(
         "CREATE TABLE retired_identities (
-            kind TEXT NOT NULL CHECK (kind IN ('revision','generation_request','hold_version','original_version')),
+            kind TEXT NOT NULL CHECK (kind IN ('revision','generation_request','generation_scope_version','original_version')),
             key TEXT NOT NULL CHECK (length(CAST(key AS BLOB)) BETWEEN 1 AND 1024),
             value INTEGER NOT NULL DEFAULT 0 CHECK (value >= 0),
             PRIMARY KEY (kind, key)
@@ -79,12 +79,12 @@ pub(crate) fn carry_forward(live: &Connection, copy: &mut Connection) -> Result<
         "SELECT request_id FROM generation_requests
          UNION SELECT key FROM retired_identities WHERE kind='generation_request'",
     )?;
-    let holds = maxima(
+    let scopes = maxima(
         live,
-        "SELECT hold_id, MAX(high_water) FROM (
-            SELECT hold_id, high_water FROM hold_request_clocks
-            UNION ALL SELECT key, value FROM retired_identities WHERE kind='hold_version'
-         ) GROUP BY hold_id",
+        "SELECT scope_id, MAX(high_water) FROM (
+            SELECT scope_id, high_water FROM generation_scopes
+            UNION ALL SELECT key, value FROM retired_identities WHERE kind='generation_scope_version'
+         ) GROUP BY scope_id",
     )?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     let originals = maxima(
@@ -119,8 +119,8 @@ pub(crate) fn carry_forward(live: &Connection, copy: &mut Connection) -> Result<
             "INSERT INTO retired_identities(kind,key,value) VALUES (?1,?2,?3)
              ON CONFLICT(kind,key) DO UPDATE SET value=MAX(value, excluded.value)",
         )?;
-        for (hold, value) in &holds {
-            high.execute(params!["hold_version", hold, value])?;
+        for (scope, value) in &scopes {
+            high.execute(params!["generation_scope_version", scope, value])?;
         }
         for (content, value) in &originals {
             high.execute(params!["original_version", content, value])?;

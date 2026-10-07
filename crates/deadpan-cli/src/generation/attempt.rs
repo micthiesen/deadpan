@@ -20,7 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use deadpan_core::{NodeId, RevisionId};
+use deadpan_core::{NodeId, RevisionId, ScopedNodeTarget};
 use deadpan_jobs::artifact::ArtifactWorkspace;
 use deadpan_jobs::supervisor::{ProcessEvent, ProcessLimits, ProcessSpec, WorkerProcess};
 use deadpan_jobs::{
@@ -171,12 +171,27 @@ pub fn allocate(
 pub fn allocate_with_provider(
     store: &mut ProjectStore,
     input: AllocateInput,
+    provider: deadpan_jobs::ProviderSelection,
+) -> Result<Allocated, GenerationError> {
+    let target = ScopedNodeTarget {
+        node: input.hold.clone(),
+        repeats: Vec::new(),
+    };
+    allocate_scoped_with_provider(store, input, target, provider)
+}
+
+/// Allocate one explicit authoring scope. Other plays sharing its physical
+/// Hold retain their own request, version clock and chosen Ready variant.
+pub fn allocate_scoped_with_provider(
+    store: &mut ProjectStore,
+    input: AllocateInput,
+    target: ScopedNodeTarget,
     mut provider: deadpan_jobs::ProviderSelection,
 ) -> Result<Allocated, GenerationError> {
     let request_id =
         RequestId::new(format!("ai-hold-{}", uuid::Uuid::new_v4().simple())).map_err(invalid)?;
     provider.seed = input.seed;
-    let request = store.record_bridge_generation_request(
+    let request = store.record_scoped_bridge_generation_request(
         GenerationRequestInput {
             request_id: request_id.clone(),
             expected_revision: input.expected_revision.clone(),
@@ -185,6 +200,7 @@ pub fn allocate_with_provider(
             constraints: input.inputs.constraints.clone(),
             provider,
         },
+        target,
         input.inputs.plan.clone(),
     )?;
     allocate_variant(store, request, input.inputs)
@@ -195,10 +211,23 @@ pub fn current_bridge_request(
     store: &ProjectStore,
     hold: &NodeId,
 ) -> Result<Option<StoredGenerationRequest>, StoreError> {
+    current_scoped_bridge_request(
+        store,
+        &ScopedNodeTarget {
+            node: hold.clone(),
+            repeats: Vec::new(),
+        },
+    )
+}
+
+pub fn current_scoped_bridge_request(
+    store: &ProjectStore,
+    target: &ScopedNodeTarget,
+) -> Result<Option<StoredGenerationRequest>, StoreError> {
     Ok(store
         .current_generation_requests()?
         .into_iter()
-        .find(|request| &request.binding.hold_id == hold && request.bridge_plan.is_some()))
+        .find(|request| &request.target == target && request.bridge_plan.is_some()))
 }
 
 /// Begin another attempt of an existing current `request`: a new seeded
@@ -843,7 +872,7 @@ fn validation_receipt(
         bundle.provenance().object().clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-7").map_err(text)?,
+        ValidatorIdentity::new("native-ffv1", "bridge-8").map_err(text)?,
     )
     .map_err(text)?
     .with_admission(admission)

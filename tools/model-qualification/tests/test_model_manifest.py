@@ -122,10 +122,16 @@ class ModelManifestTests(unittest.TestCase):
                     mlx_backend._model_manifest(manifest, root, lambda: None, False)
 
     def test_runtime_and_operation_are_exact(self):
-        manifest = model_pack()
-        manifest["runtime_versions"] = ["0.15.9"]
-        with self.assertRaisesRegex(ValueError, "unsupported bridge pack or runtime compatibility"):
-            self.run_manifest(manifest)
+        pins = json.loads((QUALIFICATION.parent / "ai-runtime/pins.json").read_text())
+        self.assertEqual(pins["runtime_version"], "0.15.8+deadpan5")
+        self.assertEqual(model_pack()["runtime_versions"], [pins["runtime_version"]])
+        for versions in (["0.15.8+deadpan4"], ["0.15.9"],
+                         ["0.15.8+deadpan4", "0.15.8+deadpan5"]):
+            manifest = model_pack()
+            manifest["runtime_versions"] = versions
+            with self.subTest(versions=versions), self.assertRaisesRegex(
+                    ValueError, "unsupported bridge pack or runtime compatibility"):
+                self.run_manifest(manifest)
 
         manifest = model_pack()
         manifest["operations"] = ["transcribe"]

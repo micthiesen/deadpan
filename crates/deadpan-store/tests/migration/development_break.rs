@@ -87,8 +87,8 @@ pub(super) fn assert_refused(package: &Path, version: u32) -> Result {
 }
 
 #[test]
-fn schemas1_through65_fail_before_reading_document_or_acquiring_writer() -> Result {
-    for version in 1..=65 {
+fn schemas1_through68_fail_before_reading_document_or_acquiring_writer() -> Result {
+    for version in 1..=68 {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("unsupported.deadpan");
         fs::create_dir(&package)?;
@@ -114,7 +114,9 @@ fn schemas1_through65_fail_before_reading_document_or_acquiring_writer() -> Resu
 
 #[test]
 fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Result {
-    for version in [1, 16, 38, 51, 52, 53, 54, 55, 56, 59, 62, 63, 64, 65] {
+    for version in [
+        1, 16, 38, 51, 52, 53, 54, 55, 56, 59, 62, 63, 64, 65, 66, 67, 68,
+    ] {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("locked.deadpan");
         fs::create_dir(&package)?;
@@ -133,10 +135,10 @@ fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Resu
 }
 
 #[test]
-fn current_schema68_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema69_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 68);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 69);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -154,7 +156,7 @@ fn current_schema68_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (68, 68));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (69, 69));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
@@ -163,92 +165,5 @@ fn current_schema68_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
         assert_eq!(ProjectStore::open(&package, mode)?.snapshot()?, document);
     }
-    Ok(())
-}
-
-/// Packages of the builds before (schema 66) are upgraded, not stranded:
-/// opening asks for migration without writing, `migrate` backs up, upgrades a
-/// copy, validates the complete history and promotes it, and undo works.
-#[test]
-fn schema66_packages_migrate_to_68_with_a_backup_and_keep_their_history() -> Result {
-    use deadpan_core::{
-        BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, HoldAudio,
-        HoldRecipe, HoldVideo, PresentationBasis, ProjectId, Subtree,
-    };
-    assert_eq!(DATABASE_SCHEMA_VERSION, 68);
-    let scratch = tempfile::tempdir()?;
-    let package = scratch.path().canonicalize()?.join("previous.deadpan");
-    let document = ProjectDocument::new(
-        ProjectId::new("previous-build")?,
-        RevisionId::new("initial")?,
-        PresentationBasis {
-            width: 1280,
-            height: 720,
-            frame_rate: FrameRate::new(30, 1)?,
-            color_policy: ColorPolicy::SdrRec709,
-        },
-        NodeId::new("root")?,
-    )?;
-    let mut store = ProjectStore::create(&package, &document)?;
-    let node = NodeId::new("pause")?;
-    store.commit(&CommandRequest {
-        project_id: document.project_id().clone(),
-        expected_revision: document.revision_id().clone(),
-        new_revision: RevisionId::new("edit")?,
-        command: Command::Insert {
-            parent: document.root().clone(),
-            index: 0,
-            subtree: Subtree {
-                overrides: Default::default(),
-                gap_overrides: Default::default(),
-                root: node.clone(),
-                nodes: std::collections::BTreeMap::from([(
-                    node,
-                    BeatNode::hold(
-                        "Pause",
-                        HoldRecipe {
-                            picture_context: None,
-                            duration: FrameDuration::new(12)?,
-                            video: HoldVideo::Background,
-                            audio: HoldAudio::Silence,
-                        },
-                    ),
-                )]),
-            },
-        },
-    })?;
-    let edited = store.snapshot()?;
-    drop(store);
-    // Exactly what the schema-66 build wrote: no retired_identities or
-    // variant retention table.
-    let database = Connection::open(package.join("project.sqlite"))?;
-    database
-        .execute_batch("DROP TABLE retired_identities; DROP TABLE generation_variant_retention; DROP TABLE generation_retention_state;")?;
-    database.pragma_update(None, "user_version", 66)?;
-    drop(database);
-    let before = fs::read(package.join("project.sqlite"))?;
-    for mode in [AccessMode::ReadWrite, AccessMode::ReadOnly] {
-        assert!(matches!(
-            ProjectStore::open(&package, mode),
-            Err(StoreError::MigrationRequired(66))
-        ));
-    }
-    assert_eq!(fs::read(package.join("project.sqlite"))?, before);
-    let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (66, 68));
-    let backup = outcome.backup.ok_or("no backup")?;
-    let old = Connection::open_with_flags(&backup, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
-    assert_eq!(
-        old.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        66
-    );
-    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
-    assert_eq!(store.snapshot()?, edited);
-    store.validate_full()?;
-    store.undo(&RevisionId::new("edit")?, RevisionId::new("undone")?)?;
-    assert_eq!(store.snapshot()?.nodes().len(), document.nodes().len());
-    // Migrating again is a read-only validation.
-    drop(store);
-    assert!(ProjectStore::migrate(&package)?.backup.is_none());
     Ok(())
 }

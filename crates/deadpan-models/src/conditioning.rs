@@ -12,14 +12,16 @@ use std::io::{self, Read, Seek, SeekFrom};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use deadpan_core::{GeneratedContentId, GeneratedObjectRef};
+use deadpan_core::{ExactRatio, GeneratedContentId, GeneratedObjectRef, ProjectId, RevisionId};
 use deadpan_jobs::artifact::{
     ArtifactError, ArtifactLimits, ArtifactWorkspace, HashedArtifactSnapshot, SnapshotInterruption,
 };
 use deadpan_jobs::{BridgeGenerationPlan, HostMessage, WorkspaceArtifact, WorkspaceRef};
 use serde::{Deserialize, Serialize};
 
-use crate::{BridgeBoundaries, BridgeColor, CANONICAL_BRIDGE_COLOR, QualificationError};
+use crate::{
+    BoundaryClock, BridgeBoundaries, BridgeColor, CANONICAL_BRIDGE_COLOR, QualificationError,
+};
 
 #[path = "conditioning_geometry.rs"]
 mod geometry;
@@ -163,7 +165,8 @@ struct BridgeContextV4Wire {
 }
 
 impl BridgeContext {
-    /// A version-4 context with an explicit absence of a selected region target.
+    /// A context with explicit region absence. Definition clocks produce schema5;
+    /// retained Project-clock callers keep the schema4 grammar.
     pub fn new(
         plan: BridgeGenerationPlan,
         left: WorkspaceArtifact,
@@ -174,7 +177,11 @@ impl BridgeContext {
         geometry: ConditioningGeometry,
     ) -> Result<Self, QualificationError> {
         let context = Self {
-            schema_version: 4,
+            schema_version: if matches!(boundaries.left.clock(), BoundaryClock::Definition { .. }) {
+                5
+            } else {
+                4
+            },
             model_color_space,
             plan,
             left,
@@ -189,9 +196,9 @@ impl BridgeContext {
     }
 
     pub fn with_region(mut self, region: RegionCapture) -> Result<Self, QualificationError> {
-        if self.schema_version != 4 {
+        if !matches!(self.schema_version, 4 | 5) {
             return Err(conditioning_error(
-                "region capture requires context schema 4",
+                "region capture requires context schema 4 or 5",
             ));
         }
         self.region = Some(region);
@@ -303,11 +310,36 @@ impl BridgeContext {
         Ok(())
     }
 
+    /// Check definition provenance against the immutable worker origin. Legacy
+    /// contexts carry no such clock identity and retain their prior validation.
+    pub fn validate_definition_binding(
+        &self,
+        project_id: &ProjectId,
+        revision_id: &RevisionId,
+    ) -> Result<(), QualificationError> {
+        if let Some(boundaries) = &self.boundaries {
+            for side in [&boundaries.left, &boundaries.right] {
+                if let BoundaryClock::Definition {
+                    project_id: recorded_project,
+                    revision_id: recorded_revision,
+                    ..
+                } = side.clock()
+                    && (recorded_project != project_id || recorded_revision != revision_id)
+                {
+                    return Err(conditioning_error(
+                        "definition boundary differs from the worker origin",
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn validate_shape(&self) -> Result<(), QualificationError> {
-        if !matches!(self.schema_version, 1..=4)
+        if !matches!(self.schema_version, 1..=5)
             || (self.schema_version == 1) != self.boundaries.is_none()
             || (self.schema_version >= 3) != self.geometry.is_some()
-            || (self.schema_version == 4) != self.region.is_some()
+            || (self.schema_version >= 4) != self.region.is_some()
             || (self.schema_version == 1 && self.model_color_space != CANONICAL_BRIDGE_COLOR)
             || self.input_color_interpretation.trim().is_empty()
             || self.input_color_interpretation.len() > MAXIMUM_DESCRIPTION_BYTES
@@ -328,14 +360,35 @@ impl BridgeContext {
                 .frames()
                 .checked_add(1)
                 .ok_or_else(|| conditioning_error("boundary span overflow"))?;
-            if boundaries
-                .right
-                .project_frame()
-                .checked_sub(boundaries.left.project_frame())
-                != Some(span)
-            {
+            let valid_span = match (boundaries.left.clock(), boundaries.right.clock()) {
+                (
+                    BoundaryClock::Project { frame: left },
+                    BoundaryClock::Project { frame: right },
+                ) if self.schema_version < 5 => right.checked_sub(*left) == Some(span),
+                (
+                    BoundaryClock::Definition {
+                        project_id: lp,
+                        revision_id: lr,
+                        definition: ld,
+                        position: left,
+                    },
+                    BoundaryClock::Definition {
+                        project_id: rp,
+                        revision_id: rr,
+                        definition: rd,
+                        position: right,
+                    },
+                ) if self.schema_version == 5 => {
+                    lp == rp
+                        && lr == rr
+                        && ld == rd
+                        && right.checked_sub(*left) == Ok(ExactRatio::integer(span))
+                }
+                _ => false,
+            };
+            if !valid_span {
                 return Err(conditioning_error(
-                    "boundary pictures do not enclose the planned Hold",
+                    "boundary pictures do not enclose the planned Hold in one clock",
                 ));
             }
             if let Some(geometry) = &self.geometry {
@@ -466,7 +519,7 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     region: None,
                 }
             }
-            Some(4) => {
+            Some(4 | 5) => {
                 let wire: BridgeContextV4Wire = serde_json::from_value(value)?;
                 Self {
                     schema_version: wire.schema_version,
@@ -689,6 +742,8 @@ impl RetainedConditioning {
             .validate()
             .map_err(|error| conditioning_error(&error.to_string()))?;
         let HostMessage::GenerateBridge {
+            project_id,
+            revision_id,
             input,
             plan,
             constraints,
@@ -699,6 +754,8 @@ impl RetainedConditioning {
                 "retained conditioning requires a version-2 bridge request",
             ));
         };
+        self.context
+            .validate_definition_binding(project_id, revision_id)?;
         if self.manifest.declaration().reference() != &input.manifest
             || self.manifest.declaration().sha256() != &input.sha256
             || self.context.plan() != plan.as_ref()
@@ -1040,8 +1097,12 @@ mod tests {
             "opaque prepared sRGB input",
             CANONICAL_BRIDGE_COLOR,
             BridgeBoundaries {
-                left: crate::BoundaryPicture::AuthoredBlack { project_frame: 0 },
-                right: crate::BoundaryPicture::AuthoredBlack { project_frame: 4 },
+                left: crate::BoundaryPicture::AuthoredBlack {
+                    clock: crate::BoundaryClock::Project { frame: 0 },
+                },
+                right: crate::BoundaryPicture::AuthoredBlack {
+                    clock: crate::BoundaryClock::Project { frame: 4 },
+                },
             },
             ConditioningGeometry {
                 presentation: RasterRect::new(0, 0, 4, 2).unwrap(),
@@ -1469,6 +1530,111 @@ mod tests {
             ),
             Err(QualificationError::Request(_))
         ));
+    }
+
+    #[test]
+    fn definition_clocks_are_exact_bound_and_distinct_from_project_frames() {
+        let fixture = Fixture::new(false);
+        let clock = |numerator| BoundaryClock::Definition {
+            project_id: ProjectId::new("project").unwrap(),
+            revision_id: RevisionId::new("revision").unwrap(),
+            definition: NodeId::new("local").unwrap(),
+            position: ExactRatio::new(numerator, 2).unwrap(),
+        };
+        let context = BridgeContext::new(
+            plan(),
+            fixture.left.clone(),
+            fixture.right.clone(),
+            "sRGB",
+            CANONICAL_BRIDGE_COLOR,
+            BridgeBoundaries {
+                left: crate::BoundaryPicture::AuthoredBlack { clock: clock(29) },
+                right: crate::BoundaryPicture::AuthoredBlack { clock: clock(37) },
+            },
+            ConditioningGeometry {
+                presentation: RasterRect::new(0, 0, 4, 2).unwrap(),
+                left_content: None,
+                right_content: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(context.schema_version(), 5);
+        let wire = serde_json::to_value(&context).unwrap();
+        assert!(
+            wire["boundaries"]["left"]["authored_black"]
+                .get("project_frame")
+                .is_none()
+        );
+        assert_eq!(
+            wire["boundaries"]["left"]["authored_black"]["clock"]["position"],
+            serde_json::json!({"numerator":"29","denominator":"2"})
+        );
+        assert_eq!(
+            serde_json::from_value::<BridgeContext>(wire.clone()).unwrap(),
+            context
+        );
+        context
+            .validate_definition_binding(
+                &ProjectId::new("project").unwrap(),
+                &RevisionId::new("revision").unwrap(),
+            )
+            .unwrap();
+        assert!(
+            context
+                .validate_definition_binding(
+                    &ProjectId::new("other").unwrap(),
+                    &RevisionId::new("revision").unwrap()
+                )
+                .is_err()
+        );
+        assert!(
+            context
+                .validate_definition_binding(
+                    &ProjectId::new("project").unwrap(),
+                    &RevisionId::new("newer").unwrap()
+                )
+                .is_err()
+        );
+        for (field, value) in [
+            ("project_id", serde_json::json!("other")),
+            ("revision_id", serde_json::json!("other")),
+            ("definition", serde_json::json!("other")),
+            (
+                "position",
+                serde_json::json!({"numerator":"19","denominator":"1"}),
+            ),
+            (
+                "position",
+                serde_json::json!({"numerator":"-1","denominator":"2"}),
+            ),
+            (
+                "position",
+                serde_json::json!({"numerator":"37","denominator":"0"}),
+            ),
+            ("kind", serde_json::json!("project")),
+            ("extra", serde_json::json!(true)),
+        ] {
+            let mut changed = wire.clone();
+            changed["boundaries"]["right"]["authored_black"]["clock"][field] = value;
+            assert!(
+                serde_json::from_value::<BridgeContext>(changed).is_err(),
+                "{field}"
+            );
+        }
+        for schema in [2, 3, 4] {
+            let mut changed = wire.clone();
+            changed["schema_version"] = schema.into();
+            if schema < 4 {
+                changed.as_object_mut().unwrap().remove("region");
+            }
+            if schema < 3 {
+                changed.as_object_mut().unwrap().remove("geometry");
+            }
+            assert!(serde_json::from_value::<BridgeContext>(changed).is_err());
+        }
+        let mut double = wire;
+        double["boundaries"]["left"]["authored_black"]["project_frame"] = 14.into();
+        assert!(serde_json::from_value::<BridgeContext>(double).is_err());
     }
 
     #[test]

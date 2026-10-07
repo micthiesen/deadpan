@@ -19,6 +19,9 @@ use rusqlite::{Connection, params};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "generation/scopes.rs"]
+mod scopes;
+
 fn rate() -> FrameRate {
     FrameRate::new(30_000, 1_001).unwrap()
 }
@@ -126,6 +129,7 @@ fn edit(store: &ProjectStore, revision: &str, command: Command) -> Result<Comman
 fn observe(request: &StoredGenerationRequest, context: ContextObservation) -> RelevanceObservation {
     RelevanceObservation {
         request_id: request.request_id.clone(),
+        target: request.target.clone(),
         binding: request.binding.clone(),
         after_context: context,
     }
@@ -268,7 +272,7 @@ fn allocation_rejects_read_only_stale_invalid_and_exhausted_inputs() -> Result {
 
     let connection = Connection::open(path.join("project.sqlite"))?;
     connection.execute(
-        "UPDATE hold_request_clocks SET high_water=?1 WHERE hold_id='hold'",
+        "UPDATE generation_scopes SET high_water=?1 WHERE scope_id='current'",
         [i64::MAX],
     )?;
     connection.execute(
@@ -277,7 +281,7 @@ fn allocation_rejects_read_only_stale_invalid_and_exhausted_inputs() -> Result {
     )?;
     connection.execute(
         "INSERT INTO generation_requests
-         SELECT 'allocated-maximum',project_id,hold_id,?1,origin_revision,context_sha256,
+         SELECT 'allocated-maximum',project_id,hold_id,scope_id,origin_target,?1,origin_revision,context_sha256,
                 constraints,provider,NULL,'stale'
          FROM generation_requests WHERE request_id='current'",
         [i64::MAX],
@@ -331,6 +335,7 @@ fn incomplete_duplicate_and_wrong_binding_plans_are_atomic() -> Result {
             &change,
             vec![RelevanceObservation {
                 request_id: current.request_id.clone(),
+                target: current.target.clone(),
                 binding: deadpan_jobs::TargetBinding {
                     context_sha256: hash('b'),
                     ..current.binding.clone()
@@ -599,11 +604,13 @@ fn validation_does_not_depend_on_generation_uniqueness_indexes() -> Result {
         connection.execute_batch(
             "PRAGMA foreign_keys=OFF;
              ALTER TABLE generation_requests RENAME TO prior_generation_requests;
-             DROP INDEX one_current_generation_per_hold;
+             DROP INDEX one_current_generation_per_scope;
              CREATE TABLE generation_requests (
                  request_id TEXT,
                  project_id TEXT,
                  hold_id TEXT,
+                 scope_id TEXT,
+                 origin_target TEXT,
                  request_version INTEGER,
                  origin_revision TEXT,
                  context_sha256 TEXT,
@@ -616,14 +623,14 @@ fn validation_does_not_depend_on_generation_uniqueness_indexes() -> Result {
         )?;
         connection.execute(
             "INSERT INTO generation_requests
-            SELECT 'request-2',project_id,hold_id,?1,origin_revision,context_sha256,
+            SELECT 'request-2',project_id,hold_id,scope_id,origin_target,?1,origin_revision,context_sha256,
                     constraints,provider,NULL,?2
              FROM prior_generation_requests WHERE request_id='request-1'",
             params![duplicate_version, second_relevance],
         )?;
         if duplicate_version == 2 {
             connection.execute(
-                "UPDATE hold_request_clocks SET high_water=2 WHERE hold_id='hold'",
+                "UPDATE generation_scopes SET high_water=2 WHERE scope_id='request-1'",
                 [],
             )?;
         }
@@ -650,11 +657,13 @@ fn validation_streams_duplicate_request_ids_without_a_primary_key() -> Result {
     connection.execute_batch(
         "PRAGMA foreign_keys=OFF;
          ALTER TABLE generation_requests RENAME TO prior_generation_requests;
-         DROP INDEX one_current_generation_per_hold;
+         DROP INDEX one_current_generation_per_scope;
          CREATE TABLE generation_requests (
              request_id TEXT,
              project_id TEXT,
              hold_id TEXT,
+             scope_id TEXT,
+             origin_target TEXT,
              request_version INTEGER,
              origin_revision TEXT,
              context_sha256 TEXT,

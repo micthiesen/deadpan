@@ -11,14 +11,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_core::{
-    AssetId, CapturedFraming, FrameRange, FrameRate, GeneratedArtifact, IndexedSourceFrame,
-    IterationId, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceFrameId,
-    SourceQualificationId,
+    AssetId, BoundaryQueryLimits, CapturedFraming, ExactRatio, FrameRange, FrameRate,
+    GeneratedArtifact, IndexedSourceFrame, IterationId, NodeId, ProjectDocument, ProjectFrame,
+    ProjectId, RevisionId, SourceFrameId, SourceQualificationId,
 };
 use deadpan_media::source_session::{
     IndexMeasurement, SourceSession, SourceSessionError, SourceSessionLimits,
 };
-use deadpan_plan::{Picture, PictureFraming, PlanError, RenderPlan};
+use deadpan_plan::{DefinitionPictureSample, Picture, PictureFraming, PlanError, RenderPlan};
 use deadpan_render::{FramingLayer, RenderError, Rgba8Frame};
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
@@ -124,6 +124,18 @@ pub struct PreparedProjectPicture {
     pub gap_after: Option<IterationId>,
     /// Caption lines drawn over the composed picture.
     pub captions: Vec<deadpan_plan::PictureCaption>,
+}
+
+/// A qualified decoded picture in an authored definition's exact local clock.
+/// The sample's paths are relative to its branded definition, never root
+/// presentation coordinates. Preparation uses the same verified decoders as
+/// `PreparedProjectPicture` and does not compose editorial framing.
+#[derive(Debug)]
+pub struct PreparedDefinitionPicture {
+    pub sample: DefinitionPictureSample,
+    pub canvas: [u32; 2],
+    pub frame_rate: FrameRate,
+    pub picture: PreparedPicture,
 }
 
 impl PreparedProjectPicture {
@@ -372,12 +384,58 @@ impl ProjectPictureSession {
             });
         }
         let sample = self.plan.picture(frame)?;
-        let picture =
-            match &sample.picture {
+        let picture = self.prepare_picture(&sample.picture, cancelled)?;
+        check_cancel(cancelled)?;
+        let basis = self.document.presentation_basis();
+        Ok(PreparedProjectPicture {
+            project_id: sample.project_id,
+            revision_id: sample.revision_id,
+            project_frame: frame,
+            canvas: [basis.width, basis.height],
+            frame_rate: basis.frame_rate,
+            picture,
+            framing: sample.framing,
+            picture_context: sample.picture_context,
+            gap_after: sample.gap_after,
+            captions: sample.captions,
+        })
+    }
+
+    /// Prepare an exact authored definition position against this captured
+    /// revision. The plan validates the definition and bounds its descent;
+    /// callers cannot substitute an unverified sample or a project frame.
+    pub fn prepare_definition(
+        &mut self,
+        definition: &NodeId,
+        position: ExactRatio,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedDefinitionPicture, ProjectPictureError> {
+        check_cancel(cancelled)?;
+        let sample =
+            self.plan
+                .definition_picture(definition, position, BoundaryQueryLimits::default())?;
+        let picture = self.prepare_picture(&sample.picture, cancelled)?;
+        check_cancel(cancelled)?;
+        let basis = self.document.presentation_basis();
+        Ok(PreparedDefinitionPicture {
+            sample,
+            canvas: [basis.width, basis.height],
+            frame_rate: basis.frame_rate,
+            picture,
+        })
+    }
+
+    fn prepare_picture(
+        &mut self,
+        picture: &Picture,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedPicture, ProjectPictureError> {
+        check_cancel(cancelled)?;
+        let prepared =
+            match picture {
                 Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
                     let retained = self.source(asset, cancelled)?;
-                    let id = sample
-                        .picture
+                    let id = picture
                         .select_source_frame(retained.source.index().index())?
                         .identity;
                     let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
@@ -435,8 +493,7 @@ impl ProjectPictureSession {
                         self.stats.source_reuses += 1;
                     }
                     let retained = self.retained.as_mut().expect("generated source admitted");
-                    let id = sample
-                        .picture
+                    let id = picture
                         .select_source_frame(retained.source.index().index())?
                         .identity;
                     let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
@@ -461,19 +518,7 @@ impl ProjectPictureSession {
                 }
             };
         check_cancel(cancelled)?;
-        let basis = self.document.presentation_basis();
-        Ok(PreparedProjectPicture {
-            project_id: sample.project_id,
-            revision_id: sample.revision_id,
-            project_frame: frame,
-            canvas: [basis.width, basis.height],
-            frame_rate: basis.frame_rate,
-            picture,
-            framing: sample.framing,
-            picture_context: sample.picture_context,
-            gap_after: sample.gap_after,
-            captions: sample.captions,
-        })
+        Ok(prepared)
     }
 
     fn source(

@@ -7,7 +7,15 @@ use super::*;
 use crate::project::generation::{
     Backend, GenerationOperation, Job, Outcome, Phase, Script, ScriptEnding, ScriptQueue,
 };
+use deadpan_core::ScopedNodeTarget;
 use deadpan_jobs::JobState;
+
+fn ordinary(hold: &NodeId) -> ScopedNodeTarget {
+    ScopedNodeTarget {
+        node: hold.clone(),
+        repeats: Vec::new(),
+    }
+}
 
 struct Fixture {
     _scratch: tempfile::TempDir,
@@ -77,6 +85,7 @@ fn start(fixture: &Fixture, ticket: u64) -> GenerationOperation {
 
 fn start_variants(fixture: &Fixture, ticket: u64, variants: u8) -> GenerationOperation {
     GenerationOperation::Start {
+        authoring: None,
         ticket,
         session: fixture.workspace.session,
         revision: fixture.workspace.document.revision_id().clone(),
@@ -299,7 +308,7 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
             .as_ref()
             .unwrap()
             .options
-            .get(&fixture.hold),
+            .get(&ordinary(&fixture.hold)),
         Some(&choices)
     );
     fixture.workspace = reopened.workspace.unwrap();
@@ -576,6 +585,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
     let stale_revision = generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 1,
             session,
             revision: RevisionId::new("not-current").unwrap(),
@@ -591,6 +601,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
     let stale_session = generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 1,
             session: session + 1,
             revision: revision.clone(),
@@ -607,6 +618,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
     let not_a_pause = generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 1,
             session,
             revision: revision.clone(),
@@ -620,6 +632,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
         let too_many = generation(
             &fixture.service,
             GenerationOperation::Start {
+                authoring: None,
                 ticket: 2,
                 session,
                 revision: revision.clone(),
@@ -635,6 +648,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
     let preview = generation(
         &fixture.service,
         GenerationOperation::Preview {
+            presentation: None,
             ticket: 4,
             session,
             revision: revision.clone(),
@@ -648,6 +662,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
     let accept = generation(
         &fixture.service,
         GenerationOperation::Accept {
+            scoped: None,
             session,
             revision: revision.clone(),
             request: request.clone(),
@@ -735,7 +750,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
         panic!("expected Ready, got {:?}", job.outcome);
     };
     assert_eq!((job.variants, job.variant, job.ready), (2, 2, 2));
-    let candidate = generation_state.candidates[&fixture.hold].clone();
+    let candidate = generation_state.candidates[&ordinary(&fixture.hold)].clone();
     assert_eq!(candidate.request, request);
     assert_eq!(candidate.variants.len(), 2);
     assert_eq!(
@@ -760,6 +775,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
     let previewed = generation(
         &fixture.service,
         GenerationOperation::Preview {
+            presentation: None,
             ticket: 2,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -773,6 +789,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
     let accepted = generation(
         &fixture.service,
         GenerationOperation::Accept {
+            scoped: None,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             request: request.clone(),
@@ -795,7 +812,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
         candidate.variants[0].sampled
     );
     // The other variant is still offered for the accepted pause.
-    let offered = accepted.generation.unwrap().candidates[&fixture.hold].clone();
+    let offered = accepted.generation.unwrap().candidates[&ordinary(&fixture.hold)].clone();
     assert_eq!(offered.request, request);
     assert_eq!(
         offered
@@ -811,6 +828,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
     let again = generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 3,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -826,8 +844,8 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
         state.job.unwrap().outcome,
         Some(Outcome::Ready(request.clone()))
     );
-    assert_eq!(state.candidates[&fixture.hold].request, request);
-    assert_eq!(state.candidates[&fixture.hold].variants.len(), 2);
+    assert_eq!(state.candidates[&ordinary(&fixture.hold)].request, request);
+    assert_eq!(state.candidates[&ordinary(&fixture.hold)].variants.len(), 2);
     assert_eq!(
         attempt_states(&fixture.workspace, &request),
         vec![JobState::Ready, JobState::Ready, JobState::Ready]
@@ -870,7 +888,7 @@ fn partial_variants_are_kept_and_reported() {
             .contains("variant 2 failed")
     );
     assert_eq!(
-        failed.generation.unwrap().candidates[&fixture.hold]
+        failed.generation.unwrap().candidates[&ordinary(&fixture.hold)]
             .variants
             .len(),
         1
@@ -881,6 +899,7 @@ fn partial_variants_are_kept_and_reported() {
     generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 2,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -906,7 +925,7 @@ fn partial_variants_are_kept_and_reported() {
     assert_eq!(job.ready, 1);
     assert!(job.note.as_deref().unwrap().contains("was cancelled"));
     assert_eq!(
-        cancelled.generation.unwrap().candidates[&fixture.hold]
+        cancelled.generation.unwrap().candidates[&ordinary(&fixture.hold)]
             .variants
             .len(),
         2
@@ -1042,7 +1061,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
         panic!("expected Ready, got {:?}", job.outcome);
     };
     let generation_state = finished.generation.unwrap();
-    let candidate = generation_state.candidates[&fixture.hold].clone();
+    let candidate = generation_state.candidates[&ordinary(&fixture.hold)].clone();
     assert_eq!(candidate.request, request);
     assert_eq!(job.ready, 2);
     assert_eq!(candidate.variants.len(), 2);
@@ -1072,6 +1091,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
     let previewed = generation(
         &fixture.service,
         GenerationOperation::Preview {
+            presentation: None,
             ticket: 2,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -1088,6 +1108,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
     let accepted = generation(
         &fixture.service,
         GenerationOperation::Accept {
+            scoped: None,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             request,
@@ -1109,7 +1130,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
     ));
     // The other variant stays offered for the accepted pause.
     assert_eq!(
-        accepted.generation.unwrap().candidates[&fixture.hold]
+        accepted.generation.unwrap().candidates[&ordinary(&fixture.hold)]
             .variants
             .iter()
             .map(|variant| variant.attempt.clone())
@@ -1381,7 +1402,12 @@ mod ready_fixture {
     }
 
     fn offered(update: &ProjectUpdate, hold: &NodeId) -> Option<(Vec<AttemptId>, AttemptId)> {
-        let candidate = update.generation.as_ref()?.candidates.get(hold)?.clone();
+        let candidate = update
+            .generation
+            .as_ref()?
+            .candidates
+            .get(&ordinary(hold))?
+            .clone();
         Some((
             candidate
                 .variants
@@ -1399,9 +1425,9 @@ mod ready_fixture {
         let (hold, request, attempts) = seed(&path, 1);
         let (service, workspace, opened) = open(&path);
         let candidates = opened.generation.unwrap().candidates;
-        assert_eq!(candidates[&hold].request, request);
-        assert_eq!(candidates[&hold].frames, 12);
-        assert_eq!(candidates[&hold].variants.len(), 1);
+        assert_eq!(candidates[&ordinary(&hold)].request, request);
+        assert_eq!(candidates[&ordinary(&hold)].frames, 12);
+        assert_eq!(candidates[&ordinary(&hold)].variants.len(), 1);
         let attempt = attempts[0].clone();
 
         let session = workspace.session;
@@ -1409,6 +1435,7 @@ mod ready_fixture {
         let stale = generation(
             &service,
             GenerationOperation::Preview {
+                presentation: None,
                 ticket: 1,
                 session,
                 revision: RevisionId::new("stale").unwrap(),
@@ -1424,6 +1451,7 @@ mod ready_fixture {
         let previewed = generation(
             &service,
             GenerationOperation::Preview {
+                presentation: None,
                 ticket: 2,
                 session,
                 revision: revision.clone(),
@@ -1469,6 +1497,7 @@ mod ready_fixture {
         let again = generation(
             &service,
             GenerationOperation::Preview {
+                presentation: None,
                 ticket: 2,
                 session,
                 revision: revision.clone(),
@@ -1482,6 +1511,7 @@ mod ready_fixture {
         let unnumbered = generation(
             &service,
             GenerationOperation::Preview {
+                presentation: None,
                 ticket: 3,
                 session,
                 revision: revision.clone(),
@@ -1559,7 +1589,7 @@ mod ready_fixture {
             offered(&opened, &hold),
             Some((attempts.clone(), attempts[2].clone()))
         );
-        let candidate = opened.generation.as_ref().unwrap().candidates[&hold].clone();
+        let candidate = opened.generation.as_ref().unwrap().candidates[&ordinary(&hold)].clone();
         let seeds: Vec<_> = candidate
             .variants
             .iter()
@@ -1606,6 +1636,7 @@ mod ready_fixture {
         let previewed = generation(
             &service,
             GenerationOperation::Preview {
+                presentation: None,
                 ticket: 2,
                 session,
                 revision: revision.clone(),
@@ -1617,7 +1648,7 @@ mod ready_fixture {
         let state = previewed.generation.unwrap();
         let preview = state.preview.expect("preview of the second variant");
         assert_eq!(preview.attempt(), &attempts[1]);
-        assert_eq!(state.candidates[&hold].selected, attempts[1]);
+        assert_eq!(state.candidates[&ordinary(&hold)].selected, attempts[1]);
         let NodeKind::Hold { recipe } = &preview.document().nodes()[&hold].kind else {
             panic!("the pause is a Hold");
         };
@@ -1757,7 +1788,7 @@ mod ready_fixture {
             update
                 .generation
                 .as_ref()
-                .is_some_and(|generation| generation.candidates[&hold].variants[1].kept)
+                .is_some_and(|generation| generation.candidates[&ordinary(&hold)].variants[1].kept)
         });
         assert!(shown.message.unwrap().contains("command line"));
         let discarded = output(remote(&attempts[2], VariantAction::Discard).unwrap());
@@ -1801,9 +1832,9 @@ mod ready_fixture {
         let store = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
         let listed =
             deadpan_cli::generation::variants::offered(&store, &store.snapshot().unwrap()).unwrap();
-        assert_eq!(listed[&hold].selected, attempts[0]);
-        assert_eq!(listed[&hold].variants.len(), 2);
-        assert!(!listed[&hold].variants[1].kept);
+        assert_eq!(listed[&ordinary(&hold)].selected, attempts[0]);
+        assert_eq!(listed[&ordinary(&hold)].variants.len(), 2);
+        assert!(!listed[&ordinary(&hold)].variants[1].kept);
     }
 }
 
@@ -1832,6 +1863,7 @@ mod live {
                 project_id: fixture.workspace.document.project_id().clone(),
                 request: GenerateRequest {
                     hold: fixture.hold.clone(),
+                    scope: None,
                     expected_revision: fixture.workspace.document.revision_id().clone(),
                     variants,
                     seed: Some(40),
@@ -1884,6 +1916,7 @@ mod live {
                 project_id: project.clone(),
                 request: GenerateRequest {
                     hold: fixture.hold.clone(),
+                    scope: None,
                     expected_revision: RevisionId::new("stale").unwrap(),
                     variants: 1,
                     seed: None,
@@ -1897,23 +1930,23 @@ mod live {
 
         let started = generate(&fixture, &mut client, 1);
         assert!(started.job >= 1 << 62, "remote jobs use their own tickets");
+        assert_eq!(started.scope, ordinary(&fixture.hold));
         let done = finished(&fixture, &mut client, started.job);
         assert_eq!(done.outcome, Some(GenerationOutcome::Ready {}));
         assert_eq!((done.variants, done.ready), (1, 1));
         let request = done.request_id.clone().unwrap();
         // The app shows the same job and offers its Ready variant.
         let native = wait(&fixture.service, |update| {
-            update
-                .generation
-                .as_ref()
-                .is_some_and(|generation| generation.candidates.contains_key(&fixture.hold))
+            update.generation.as_ref().is_some_and(|generation| {
+                generation.candidates.contains_key(&ordinary(&fixture.hold))
+            })
         });
         let generation_state = native.generation.unwrap();
         assert_eq!(
             generation_state.job.as_ref().map(|job| job.ticket),
             Some(started.job)
         );
-        let candidate = &generation_state.candidates[&fixture.hold];
+        let candidate = &generation_state.candidates[&ordinary(&fixture.hold)];
         assert_eq!(candidate.request, request);
         assert_eq!(candidate.variants[0].seed, 40, "the caller's seed");
 
@@ -2161,6 +2194,53 @@ mod live {
     }
 
     #[test]
+    fn live_status_distinguishes_scopes_that_share_a_hold() {
+        let fixture = scoped_fixture(
+            scripted(Script {
+                ending: ScriptEnding::Fail("expected failure".into()),
+                ..waiting(1)
+            }),
+            false,
+        );
+        let mut client = Client::discover(&fixture.workspace.path)
+            .unwrap()
+            .expect("native owner discovery");
+        let mut jobs = Vec::new();
+        for target in [
+            scoped_owner(&fixture, None),
+            scoped_owner(&fixture, Some(1)),
+        ] {
+            let started = status(live_project::request(
+                &mut client,
+                Operation::Generate {
+                    project_id: fixture.workspace.document.project_id().clone(),
+                    request: GenerateRequest {
+                        hold: fixture.hold.clone(),
+                        scope: Some(target.clone()),
+                        expected_revision: fixture.workspace.document.revision_id().clone(),
+                        variants: 1,
+                        seed: None,
+                        options: None,
+                    },
+                },
+            ));
+            assert_eq!(started.hold, fixture.hold);
+            assert_eq!(started.scope, target);
+            let done = finished(&fixture, &mut client, started.job);
+            assert_eq!(done.scope, target);
+            assert!(matches!(
+                done.outcome,
+                Some(GenerationOutcome::Failed { .. })
+            ));
+            jobs.push((done.job, target));
+        }
+        assert_ne!(jobs[0].0, jobs[1].0);
+        for (job, target) in jobs {
+            assert_eq!(observe(&fixture, &mut client, job).scope, target);
+        }
+    }
+
+    #[test]
     fn a_live_cancellation_names_exactly_the_observed_job() {
         let fixture = project_with_pause(scripted(waiting(3)));
         let mut client = Client::discover(&fixture.workspace.path)
@@ -2223,7 +2303,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
     ]))));
     generation(&fixture.service, start_variants(&fixture, 1, 2));
     let finished = job_until(&fixture.service, |job| !job.running());
-    let candidate = finished.generation.unwrap().candidates[&fixture.hold].clone();
+    let candidate = finished.generation.unwrap().candidates[&ordinary(&fixture.hold)].clone();
     let (first, second) = (&candidate.variants[0], &candidate.variants[1]);
     assert_eq!(candidate.selected, second.attempt);
     assert!(!first.kept && first.expires_at.is_some());
@@ -2244,7 +2324,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
     assert!(refusal(&stale).is_some());
     let kept = generation(&fixture.service, keep(3, session, true));
     assert!(refusal(&kept).is_none(), "{:?}", refusal(&kept));
-    let variant = &kept.generation.unwrap().candidates[&fixture.hold].variants[0];
+    let variant = &kept.generation.unwrap().candidates[&ordinary(&fixture.hold)].variants[0];
     assert!(variant.kept && variant.expires_at.is_none());
 
     // Make every variant old, as if generated weeks ago, and reopen: the
@@ -2281,7 +2361,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
     };
     assert_eq!(expired, 0);
     assert_eq!(
-        reopened.generation.unwrap().candidates[&fixture.hold]
+        reopened.generation.unwrap().candidates[&ordinary(&fixture.hold)]
             .variants
             .len(),
         2
@@ -2296,7 +2376,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
         unreachable!()
     };
     assert_eq!(expired, 1);
-    let offered = reopened.generation.unwrap().candidates[&fixture.hold].clone();
+    let offered = reopened.generation.unwrap().candidates[&ordinary(&fixture.hold)].clone();
     assert_eq!(
         offered
             .variants
@@ -2312,6 +2392,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
     generation(
         &fixture.service,
         GenerationOperation::Start {
+            authoring: None,
             ticket: 5,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -2343,11 +2424,621 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
             attempt: second.attempt.clone(),
         },
     );
-    let candidates = picked.generation.unwrap().candidates[&fixture.hold].clone();
+    let candidates = picked.generation.unwrap().candidates[&ordinary(&fixture.hold)].clone();
     let variant = candidates
         .variants
         .iter()
         .find(|variant| variant.attempt == second.attempt)
         .unwrap();
     assert!(variant.picked && variant.expires_at.is_none());
+}
+
+fn scoped_fixture(backend: Backend, retime: bool) -> Fixture {
+    let mut fixture = project_with_pause(backend);
+    let path = fixture.workspace.path.clone();
+    command(&fixture.service, ProjectRequest::Close);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    let document = store.snapshot().unwrap();
+    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+        panic!("root")
+    };
+    seed_command(
+        &mut store,
+        Command::Group {
+            parent: document.root().clone(),
+            start: 0,
+            end: children.len(),
+            id: node("scope-local"),
+            label: "Local".into(),
+        },
+        "scope-grouped",
+    );
+    let wrapper = if retime {
+        Command::WrapRetime {
+            node: node("scope-local"),
+            id: node("scope-owner"),
+            duration: FrameDuration::new(document.duration().unwrap().frames() / 2).unwrap(),
+            pitch: deadpan_core::PitchPolicy::Preserve,
+        }
+    } else {
+        Command::WrapRepeat {
+            node: node("scope-local"),
+            id: node("scope-owner"),
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        }
+    };
+    seed_command(&mut store, wrapper, "scope-wrapped");
+    drop(store);
+    let opened = command(&fixture.service, ProjectRequest::Open(path));
+    assert!(opened.error.is_none(), "{:?}", opened.error);
+    fixture.workspace = opened.workspace.unwrap();
+    fixture
+}
+
+fn scoped_owner(fixture: &Fixture, play: Option<u32>) -> ScopedNodeTarget {
+    use deadpan_core::{IterationId, RepeatEditBranch, RepeatEditStep};
+    ScopedNodeTarget {
+        node: fixture.hold.clone(),
+        repeats: vec![RepeatEditStep {
+            repeat: node("scope-owner"),
+            branch: play.map_or(RepeatEditBranch::Default, |ordinal| {
+                RepeatEditBranch::Play {
+                    iteration: IterationId {
+                        allocation: RevisionId::new("scope-wrapped").unwrap(),
+                        ordinal,
+                    },
+                }
+            }),
+        }],
+    }
+}
+
+fn scoped_start(
+    fixture: &Fixture,
+    target: &ScopedNodeTarget,
+    ticket: u64,
+    variants: u8,
+) -> GenerationOperation {
+    GenerationOperation::Start {
+        ticket,
+        session: fixture.workspace.session,
+        revision: fixture.workspace.document.revision_id().clone(),
+        hold: target.node.clone(),
+        authoring: Some(target.clone()),
+        variants,
+        options: None,
+    }
+}
+
+fn scoped_capture(
+    fixture: &Fixture,
+    target: &ScopedNodeTarget,
+    instance: Option<deadpan_core::InstancePath>,
+    cursor: ProjectFrame,
+) -> crate::project::scoped::Target {
+    crate::project::scoped::Target {
+        session: fixture.workspace.session,
+        project: fixture.workspace.document.project_id().clone(),
+        revision: fixture.workspace.document.revision_id().clone(),
+        scope: SequenceScope::default(),
+        root: node("scope-owner"),
+        target: target.clone(),
+        presentation: instance,
+        cursor,
+        also: Vec::new(),
+    }
+}
+
+#[test]
+fn scoped_requests_and_options_are_independent_for_default_and_this_play() {
+    use deadpan_jobs::{GenerationOptions, GenerationTarget, MotionAmount};
+    let fixture = scoped_fixture(
+        scripted(Script {
+            ending: ScriptEnding::Fail("expected failure".into()),
+            ..waiting(1)
+        }),
+        false,
+    );
+    let before = fixture.workspace.document.clone();
+    let default = scoped_owner(&fixture, None);
+    let play = scoped_owner(&fixture, Some(1));
+    let mut requests = Vec::new();
+    for (ticket, target, motion) in [
+        (1, &default, MotionAmount::Subtle),
+        (2, &play, MotionAmount::Still),
+    ] {
+        let mut operation = scoped_start(&fixture, target, ticket, 1);
+        if let GenerationOperation::Start { options, .. } = &mut operation {
+            *options = Some(GenerationOptions {
+                motion,
+                instructions: None,
+                region_target: GenerationTarget::None,
+            });
+        }
+        let started = generation(&fixture.service, operation);
+        assert_eq!(refusal(&started), None);
+        let done = job_until(&fixture.service, |job| {
+            job.ticket == ticket && !job.running()
+        });
+        let job = done.generation.as_ref().unwrap().job.as_ref().unwrap();
+        assert!(matches!(job.outcome, Some(Outcome::Failed(_))));
+        assert_eq!(&job.target, target);
+        let request = reader(&fixture.workspace)
+            .generation_request(job.request.as_ref().unwrap())
+            .unwrap()
+            .unwrap();
+        assert_eq!(&request.target, target);
+        assert_eq!(&request.origin_target, target);
+        assert_eq!(request.constraints.video.frames().frames(), 12);
+        assert_eq!(request.constraints.motion, motion);
+        assert_eq!(&*done.workspace.unwrap().document, &*before);
+        requests.push(request.request_id);
+    }
+    assert_ne!(requests[0], requests[1]);
+    assert_eq!(
+        reader(&fixture.workspace)
+            .current_generation_requests()
+            .unwrap()
+            .len(),
+        2
+    );
+    let retry = generation(&fixture.service, scoped_start(&fixture, &default, 3, 1));
+    assert_eq!(refusal(&retry), None);
+    let done = job_until(&fixture.service, |job| job.ticket == 3 && !job.running());
+    let state = done.generation.unwrap();
+    assert_eq!(
+        state.job.as_ref().unwrap().request.as_ref(),
+        Some(&requests[0])
+    );
+    assert_eq!(
+        state.job.as_ref().unwrap().options.motion,
+        MotionAmount::Subtle
+    );
+    assert_eq!(state.options[&default].motion, MotionAmount::Subtle);
+    assert_eq!(state.options[&play].motion, MotionAmount::Still);
+    let omitted = generation(&fixture.service, start(&fixture, 4));
+    assert!(
+        refusal(&omitted).is_some(),
+        "Repeat ancestry cannot be inferred"
+    );
+    let mut mismatched = scoped_start(&fixture, &default, 5, 1);
+    if let GenerationOperation::Start { hold, .. } = &mut mismatched {
+        *hold = node("scope-owner");
+    }
+    assert!(
+        refusal(&generation(&fixture.service, mismatched))
+            .unwrap()
+            .contains("captured authoring")
+    );
+    assert_eq!(reader(&fixture.workspace).snapshot().unwrap(), *before);
+}
+
+#[test]
+fn scoped_cancellation_records_no_authored_edit() {
+    let fixture = scoped_fixture(scripted(waiting(2)), false);
+    let target = scoped_owner(&fixture, Some(1));
+    let before = fixture.workspace.document.clone();
+    assert_eq!(
+        refusal(&generation(
+            &fixture.service,
+            scoped_start(&fixture, &target, 1, 1)
+        )),
+        None
+    );
+    job_until(&fixture.service, |job| {
+        matches!(job.phase, Phase::Step { .. })
+    });
+    generation(
+        &fixture.service,
+        GenerationOperation::Cancel {
+            ticket: 2,
+            session: fixture.workspace.session,
+            job: 1,
+        },
+    );
+    let cancelled = job_until(&fixture.service, |job| !job.running());
+    assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
+    assert_eq!(&*cancelled.workspace.unwrap().document, &*before);
+    assert!(cancelled.generation.unwrap().candidates.is_empty());
+}
+
+#[test]
+fn interrupted_jobs_distinguish_nested_defaults_and_plays_of_the_same_hold() {
+    use deadpan_core::{RepeatEditBranch, RepeatEditStep};
+    let mut fixture = scoped_fixture(scripted(waiting(1)), false);
+    let path = fixture.workspace.path.clone();
+    command(&fixture.service, ProjectRequest::Close);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    seed_command(
+        &mut store,
+        Command::WrapRepeat {
+            node: node("scope-owner"),
+            id: node("scope-outer"),
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+        "scope-outer-wrapped",
+    );
+    seed_command(
+        &mut store,
+        Command::Rename {
+            node: node("scope-owner"),
+            label: "Inner".into(),
+        },
+        "scope-inner-named",
+    );
+    seed_command(
+        &mut store,
+        Command::Rename {
+            node: node("scope-outer"),
+            label: "Outer".into(),
+        },
+        "scope-outer-named",
+    );
+    drop(store);
+    fixture.workspace = command(&fixture.service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    let play = |owner: &str| {
+        let NodeKind::Repeat { iterations, .. } =
+            &fixture.workspace.document.nodes()[&node(owner)].kind
+        else {
+            panic!("Repeat")
+        };
+        RepeatEditBranch::Play {
+            iteration: iterations.at(1).unwrap(),
+        }
+    };
+    let targets = [
+        ScopedNodeTarget {
+            node: fixture.hold.clone(),
+            repeats: vec![
+                RepeatEditStep {
+                    repeat: node("scope-outer"),
+                    branch: RepeatEditBranch::Default,
+                },
+                RepeatEditStep {
+                    repeat: node("scope-owner"),
+                    branch: RepeatEditBranch::Default,
+                },
+            ],
+        },
+        ScopedNodeTarget {
+            node: fixture.hold.clone(),
+            repeats: vec![
+                RepeatEditStep {
+                    repeat: node("scope-outer"),
+                    branch: play("scope-outer"),
+                },
+                RepeatEditStep {
+                    repeat: node("scope-owner"),
+                    branch: play("scope-owner"),
+                },
+            ],
+        },
+    ];
+    let hold_label = fixture.workspace.document.nodes()[&fixture.hold]
+        .label
+        .clone();
+    let mut listed = None;
+    for (index, target) in targets.iter().enumerate() {
+        let ticket = u64::try_from(index + 1).unwrap();
+        assert_eq!(
+            refusal(&generation(
+                &fixture.service,
+                scoped_start(&fixture, target, ticket, 1)
+            )),
+            None
+        );
+        job_until(&fixture.service, |job| {
+            job.ticket == ticket && matches!(job.phase, Phase::Step { .. })
+        });
+        let copy = fixture
+            ._scratch
+            .path()
+            .join(format!("interrupted-scope-{index}.deadpan"));
+        crate::jobs::crash_copy(&fixture.workspace.path, &copy).unwrap();
+        let opened = command(&fixture.service, ProjectRequest::Open(copy));
+        assert!(opened.error.is_none(), "{:?}", opened.error);
+        let has_rows = |update: &ProjectUpdate| {
+            update
+                .generation
+                .as_ref()
+                .is_some_and(|state| state.interrupted.len() == index + 1)
+        };
+        let update = if has_rows(&opened) {
+            opened
+        } else {
+            wait(&fixture.service, has_rows)
+        };
+        fixture.workspace = update.workspace.unwrap();
+        listed = update.generation;
+    }
+    let rows = listed.unwrap().interrupted.clone();
+    let default = rows
+        .iter()
+        .find(|row| row.target.as_ref() == Some(&targets[0]))
+        .unwrap();
+    let selected = rows
+        .iter()
+        .find(|row| row.target.as_ref() == Some(&targets[1]))
+        .unwrap();
+    assert_eq!(
+        default.hold, selected.hold,
+        "both requests still share one authored Hold"
+    );
+    assert_eq!(
+        default.pause.as_deref(),
+        Some(format!("Outer: Default › Inner: Default › {hold_label}").as_str())
+    );
+    assert_eq!(
+        selected.pause.as_deref(),
+        Some(format!("Outer: play 2 › Inner: play 2 › {hold_label}").as_str())
+    );
+    assert_ne!(
+        default.pause, selected.pause,
+        "Jobs must visibly distinguish the retry scopes"
+    );
+    assert!(fixture.workspace.document.overrides().is_empty());
+}
+
+#[test]
+fn this_play_preview_acceptance_and_history_keep_the_exact_authoring_target() {
+    use crate::project::generation::GenerationPresentation;
+    use deadpan_core::{FrameRange, InstancePath, IterationId, RepeatInstance};
+    if !synthetic_ready_available() {
+        eprintln!("skipped: synthetic Ready tools unavailable");
+        return;
+    }
+    let fixture = scoped_fixture(scripted(ready_script()), false);
+    let target = scoped_owner(&fixture, Some(1));
+    let instance = InstancePath {
+        node: fixture.hold.clone(),
+        repeats: vec![RepeatInstance {
+            node: node("scope-owner"),
+            iteration: IterationId {
+                allocation: RevisionId::new("scope-wrapped").unwrap(),
+                ordinal: 1,
+            },
+        }],
+    };
+    let local_duration = fixture.workspace.plan.duration().frames() / 2;
+    let range = FrameRange::new(
+        ProjectFrame(local_duration + 10),
+        ProjectFrame(local_duration + 22),
+    )
+    .unwrap();
+    let captured = scoped_capture(&fixture, &target, Some(instance.clone()), range.start());
+    assert_eq!(
+        refusal(&generation(
+            &fixture.service,
+            scoped_start(&fixture, &target, 1, 2)
+        )),
+        None
+    );
+    let ready = job_until(&fixture.service, |job| !job.running());
+    assert!(
+        matches!(outcome(&ready), Some(Outcome::Ready(_))),
+        "{:?}",
+        outcome(&ready)
+    );
+    let candidate = ready.generation.unwrap().candidates[&target].clone();
+    let chosen = candidate.variants[0].attempt.clone();
+    let preview = |ticket, presentation| GenerationOperation::Preview {
+        ticket,
+        session: fixture.workspace.session,
+        revision: fixture.workspace.document.revision_id().clone(),
+        request: candidate.request.clone(),
+        attempt: chosen.clone(),
+        draft: 100 + ticket,
+        presentation,
+    };
+    assert!(
+        refusal(&generation(&fixture.service, preview(2, None)))
+            .unwrap()
+            .contains("captured visible")
+    );
+    let wrong = GenerationPresentation {
+        target: target.clone(),
+        instance: instance.clone(),
+        range: FrameRange::new(ProjectFrame(range.start().0 + 1), range.end()).unwrap(),
+    };
+    assert!(
+        refusal(&generation(&fixture.service, preview(3, Some(wrong))))
+            .unwrap()
+            .contains("window differs")
+    );
+    let presentation = GenerationPresentation {
+        target: target.clone(),
+        instance: instance.clone(),
+        range,
+    };
+    let proposed = generation(&fixture.service, preview(4, Some(presentation)));
+    assert_eq!(refusal(&proposed), None);
+    let proposed = proposed.generation.unwrap().preview.unwrap();
+    assert_eq!(proposed.target(), &target);
+    assert_eq!(proposed.range(), range);
+    assert_ne!(proposed.hold(), &fixture.hold);
+    assert!(fixture.workspace.document.overrides().is_empty());
+    let accept = |scoped| GenerationOperation::Accept {
+        session: fixture.workspace.session,
+        revision: fixture.workspace.document.revision_id().clone(),
+        request: candidate.request.clone(),
+        attempt: chosen.clone(),
+        hold: fixture.hold.clone(),
+        cursor: range.start(),
+        scope: SequenceScope::default(),
+        scoped: Some(scoped),
+    };
+    let mut wrong_target = captured.clone();
+    wrong_target.target = scoped_owner(&fixture, None);
+    let refused = generation(&fixture.service, accept(wrong_target));
+    assert!(refused.error.unwrap().contains("authored pause"));
+    let mut stale = captured.clone();
+    stale.revision = RevisionId::new("stale-capture").unwrap();
+    assert!(generation(&fixture.service, accept(stale)).error.is_some());
+    let mut multiple = captured.clone();
+    multiple.also.push(scoped_owner(&fixture, Some(0)));
+    let refused = generation(&fixture.service, accept(multiple));
+    assert!(refused.error.unwrap().contains("several selected Plays"));
+    let accepted = generation(&fixture.service, accept(captured.clone()));
+    assert!(accepted.error.is_none(), "{:?}", accepted.error);
+    let receipt = accepted
+        .committed
+        .as_ref()
+        .unwrap()
+        .scoped
+        .as_ref()
+        .unwrap();
+    assert_eq!(receipt.before, captured);
+    assert_eq!(
+        accepted.committed.as_ref().unwrap().selected_node.as_ref(),
+        Some(&node("scope-owner"))
+    );
+    assert_ne!(receipt.target.node, fixture.hold);
+    assert_eq!(
+        receipt.presentation.as_ref().unwrap().repeats,
+        instance.repeats
+    );
+    let mapped = receipt.target.clone();
+    let after = accepted.workspace.unwrap();
+    assert!(
+        matches!(&after.document.nodes()[&mapped.node].kind, NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))
+    );
+    assert_eq!(
+        after.document.nodes()[&fixture.hold],
+        fixture.workspace.document.nodes()[&fixture.hold]
+    );
+    assert_eq!(
+        accepted.generation.unwrap().candidates[&mapped].origin_target,
+        target
+    );
+    let undone = command(
+        &fixture.service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    );
+    assert!(undone.error.is_none(), "{:?}", undone.error);
+    assert_eq!(
+        undone.generation.as_ref().unwrap().candidates[&target].request,
+        candidate.request
+    );
+    let current = reader(undone.workspace.as_ref().unwrap())
+        .generation_request(&candidate.request)
+        .unwrap()
+        .unwrap();
+    assert_eq!(current.target, target);
+    assert_eq!(current.origin_target, target);
+    let redone = command(
+        &fixture.service,
+        ProjectRequest::Redo {
+            expected_revision: undone.workspace.unwrap().document.revision_id().clone(),
+        },
+    );
+    assert!(redone.error.is_none(), "{:?}", redone.error);
+    assert_eq!(
+        redone.generation.as_ref().unwrap().candidates[&mapped].request,
+        candidate.request
+    );
+    let after = redone.workspace.unwrap();
+    let again = GenerationOperation::Start {
+        ticket: 5,
+        session: after.session,
+        revision: after.document.revision_id().clone(),
+        hold: mapped.node.clone(),
+        authoring: Some(mapped.clone()),
+        variants: 1,
+        options: None,
+    };
+    assert_eq!(refusal(&generation(&fixture.service, again)), None);
+    let finished = job_until(&fixture.service, |job| job.ticket == 5 && !job.running());
+    assert_eq!(
+        outcome(&finished),
+        Some(Outcome::Ready(candidate.request.clone()))
+    );
+    assert_eq!(
+        finished.generation.unwrap().candidates[&mapped].origin_target,
+        target
+    );
+}
+
+#[test]
+fn retimed_hold_generates_intrinsic_duration_and_previews_its_visible_root_window() {
+    use crate::project::generation::GenerationPresentation;
+    use deadpan_core::{FrameRange, InstancePath};
+    if !synthetic_ready_available() {
+        eprintln!("skipped: synthetic Ready tools unavailable");
+        return;
+    }
+    let fixture = scoped_fixture(scripted(ready_script()), true);
+    let target = ordinary(&fixture.hold);
+    assert_eq!(
+        refusal(&generation(
+            &fixture.service,
+            scoped_start(&fixture, &target, 1, 1)
+        )),
+        None
+    );
+    let ready = job_until(&fixture.service, |job| !job.running());
+    assert!(
+        matches!(outcome(&ready), Some(Outcome::Ready(_))),
+        "{:?}",
+        outcome(&ready)
+    );
+    let candidate = ready.generation.unwrap().candidates[&target].clone();
+    assert_eq!(candidate.frames, 12);
+    let range = FrameRange::new(ProjectFrame(5), ProjectFrame(11)).unwrap();
+    let operation = |ticket, presentation| GenerationOperation::Preview {
+        ticket,
+        session: fixture.workspace.session,
+        revision: fixture.workspace.document.revision_id().clone(),
+        request: candidate.request.clone(),
+        attempt: candidate.selected.clone(),
+        draft: 200 + ticket,
+        presentation,
+    };
+    assert!(refusal(&generation(&fixture.service, operation(2, None))).is_some());
+    let instance = InstancePath {
+        node: fixture.hold.clone(),
+        repeats: Vec::new(),
+    };
+    let result = generation(
+        &fixture.service,
+        operation(
+            3,
+            Some(GenerationPresentation {
+                target: target.clone(),
+                instance: instance.clone(),
+                range,
+            }),
+        ),
+    );
+    assert_eq!(refusal(&result), None);
+    let preview = result.generation.unwrap().preview.unwrap();
+    assert_eq!(preview.range().duration().frames(), 6);
+    assert_eq!(preview.target(), &target);
+    let captured = scoped_capture(&fixture, &target, Some(instance), range.start());
+    let accepted = generation(
+        &fixture.service,
+        GenerationOperation::Accept {
+            session: fixture.workspace.session,
+            revision: fixture.workspace.document.revision_id().clone(),
+            request: candidate.request,
+            attempt: candidate.selected,
+            hold: fixture.hold.clone(),
+            cursor: range.start(),
+            scope: SequenceScope::default(),
+            scoped: Some(captured),
+        },
+    );
+    assert!(accepted.error.is_none(), "{:?}", accepted.error);
+    assert_eq!(accepted.committed.unwrap().scoped.unwrap().target, target);
+    assert_eq!(
+        accepted.workspace.unwrap().plan.duration(),
+        fixture.workspace.plan.duration()
+    );
 }

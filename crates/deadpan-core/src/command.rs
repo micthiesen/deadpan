@@ -1032,6 +1032,32 @@ fn apply_with_durations(
     request: &CommandRequest,
     previous: Option<&crate::ValidatedDocument>,
 ) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
+    apply_with_durations_captured(document, request, previous, None)
+}
+
+pub(crate) fn apply_with_isolation(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<
+    (
+        EditTransaction,
+        ProjectDocument,
+        Vec<crate::ScopedIsolationStep>,
+    ),
+    EditError,
+> {
+    let mut steps = Vec::new();
+    let (edit, result, _) =
+        apply_with_durations_captured(document, request, None, Some(&mut steps))?;
+    Ok((edit, result, steps))
+}
+
+fn apply_with_durations_captured(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    previous: Option<&crate::ValidatedDocument>,
+    mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
     check_revision(
         document,
         &request.project_id,
@@ -1066,7 +1092,12 @@ fn apply_with_durations(
         return Ok((edit, result, validation));
     }
     if matches!(request.command, Command::Compound { .. }) {
-        let outcome = crate::replay_compound::<EditError>(document, request, |_| Ok(()))?;
+        let outcome = crate::compound::replay_compound_captured::<EditError>(
+            document,
+            request,
+            |_| Ok(()),
+            isolation.as_deref_mut(),
+        )?;
         let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
         let validation = (
             validated.durations().clone(),
@@ -1353,17 +1384,36 @@ fn apply_with_durations(
             instance,
             edit,
             identities,
-        } => crate::occurrence_edit::apply(input, instance, edit, identities, context)?,
+        } => crate::occurrence_edit::apply_captured(
+            input,
+            instance,
+            edit,
+            identities,
+            context,
+            isolation.as_deref_mut(),
+        )?,
         Command::EditScoped {
             target,
             edit,
             identities,
-        } => crate::scoped_edit::apply(input, target, edit, identities, context)?,
+        } => {
+            let (result, mappings) =
+                crate::scoped_edit::apply_mapped(input, target, edit, identities, context)?;
+            if let Some(steps) = isolation.as_deref_mut() {
+                steps.extend(mappings.into_iter().map(|mapping| mapping.proof()));
+            }
+            result
+        }
         Command::EditScopedMany { edits, identities } => {
-            crate::scoped_edit::apply_many(input, edits, identities, context)?
+            let (result, mappings) =
+                crate::scoped_edit::apply_many_mapped(input, edits, identities, context)?;
+            if let Some(steps) = isolation.as_deref_mut() {
+                steps.extend(mappings.into_iter().map(|mapping| mapping.proof()));
+            }
+            result
         }
         Command::KeepFirstPlayAttachments { node, identities } => {
-            crate::beat_attachments::apply(input, node, identities, context)?
+            crate::beat_attachments::apply(input, node, identities, context, isolation)?
         }
         Command::Explode {
             node,
@@ -2802,7 +2852,7 @@ fn fallback_video(fallback: &HoldFallback) -> HoldVideo {
     }
 }
 
-fn accept_generated_hold(
+pub(crate) fn accept_generated_hold(
     document: &mut ProjectDocument,
     node: &NodeId,
     artifact: &GeneratedArtifact,

@@ -127,7 +127,7 @@ def _model_manifest(model_pack, model_cache, check_cancel, hash_assets):
             not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", model_pack["pack_version"]) or
             model_pack["model_family"] != "ltx-2.3" or
             model_pack["runtime_id"] != "ltx-mlx" or
-            model_pack["runtime_versions"] != ["0.15.8+deadpan4"] or
+            model_pack["runtime_versions"] != ["0.15.8+deadpan5"] or
             model_pack["operations"] != ["bridge_hold"]):
         raise ValueError("unsupported bridge pack or runtime compatibility")
 

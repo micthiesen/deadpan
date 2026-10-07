@@ -88,6 +88,7 @@ pub(crate) fn apply(
     repeat: &NodeId,
     identities: &OccurrenceIdentities,
     mut context: crate::command::EditContext<'_>,
+    isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
 ) -> Result<ProjectDocument, EditError> {
     let required = document.first_play_attachment_nodes(repeat)?;
     if required == 0 || identities.nodes.len() != required || !identities.marks.is_empty() {
@@ -126,6 +127,14 @@ pub(crate) fn apply(
         node: repeat.clone(),
         iteration: iteration.clone(),
     };
+    if let Some(steps) = isolation {
+        steps.push(crate::ScopedIsolationStep::for_definition_branch(
+            document,
+            repeat,
+            &iteration,
+            mapping.clone(),
+        )?);
+    }
     let mut result = document.clone();
     result.marks = crate::marks::move_occurrence_marks(document, &selected, &mapping)?;
     crate::occurrence_edit::clone_nodes(&mut result, &mapping, context.allocation)?;

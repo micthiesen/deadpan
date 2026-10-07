@@ -150,6 +150,16 @@ impl StoredBridgeProvenance {
         )?;
         let context: BridgeContext =
             serde_json::from_value(crate::strict_json::parse(context_bytes)?)?;
+        if context.schema_version() == 5 && envelope.schema_version < 8 {
+            return Err(invalid("definition clocks require stored bridge profile 8"));
+        }
+        // The immutable generation origin is authoritative even after an
+        // accepted artifact is copied, its provider is undone, or its current
+        // authored Hold changes. Project-clock contexts retain their grammar.
+        context.validate_definition_binding(
+            &envelope.binding.project_id,
+            &envelope.binding.revision_id,
+        )?;
         if context.plan() != &envelope.binding.plan
             || context.left() != envelope.conditioning.left().declaration()
             || context.right() != envelope.conditioning.right().declaration()
@@ -206,9 +216,10 @@ impl StoredEnvelope {
             && self.endpoints.is_some()
             && self.geometry.is_some()
             && self.region.is_none();
-        let region = self.schema_version == 7
-            && self.validation_profile == "deadpan-ffv1-bridge-7"
-            && self.quality.is_some()
+        let region = matches!(
+            (self.schema_version, self.validation_profile.as_str()),
+            (7, "deadpan-ffv1-bridge-7") | (8, "deadpan-ffv1-bridge-8")
+        ) && self.quality.is_some()
             && self.endpoints.is_some()
             && self.geometry.is_some()
             && self.region.is_some();

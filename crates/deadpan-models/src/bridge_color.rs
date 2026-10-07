@@ -9,7 +9,8 @@
 //! host fed the model, not a claim about the model's own colour handling.
 
 use deadpan_core::{
-    AssetId, GeneratedObjectRef, SourceFrameId, SourceQualificationId, SourceTimestamp,
+    AssetId, ExactRatio, GeneratedObjectRef, NodeId, ProjectId, RevisionId, SourceFrameId,
+    SourceQualificationId, SourceTimestamp,
 };
 use serde::{Deserialize, Serialize};
 
@@ -227,35 +228,170 @@ pub struct DecodedBoundary {
     pub model_input: ModelInputConversion,
 }
 
-/// What the project showed on one side of the Hold at the origin revision.
+/// The immutable clock in which a conditioning boundary was sampled.
+/// Definition positions are exact frame centers before outer Repeat/Retime
+/// owners; they are never converted to a root presentation frame.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", deny_unknown_fields)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum BoundaryClock {
+    Project {
+        frame: i64,
+    },
+    Definition {
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        definition: NodeId,
+        position: ExactRatio,
+    },
+}
+
+/// The provider and measured pixels sampled on one side of the authored Hold.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BoundaryPicture {
     /// A frame of the Original, admitted against its revision's receipt.
     Original {
-        project_frame: i64,
+        clock: BoundaryClock,
         asset: AssetId,
         qualification: SourceQualificationId,
         picture: DecodedBoundary,
     },
     /// A frame of an accepted generated Hold's sampled master.
     Generated {
-        project_frame: i64,
+        clock: BoundaryClock,
         sampled_asset: AssetId,
         sampled_object: GeneratedObjectRef,
         provenance: GeneratedObjectRef,
         picture: DecodedBoundary,
     },
     /// Authored Background/Blank: black RGB, nothing decoded.
-    AuthoredBlack { project_frame: i64 },
+    AuthoredBlack { clock: BoundaryClock },
+}
+
+// The modern internal shape has an explicit clock. Project clocks retain the
+// old project_frame wire field exactly, so accepted context2–4 remains readable
+// and serializes without rewriting its retained evidence.
+#[derive(Serialize, Deserialize)]
+#[serde(
+    remote = "BoundaryPicture",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
+enum BoundaryPictureWire {
+    /// A frame of the Original, admitted against its revision's receipt.
+    Original {
+        clock: BoundaryClock,
+        asset: AssetId,
+        qualification: SourceQualificationId,
+        picture: DecodedBoundary,
+    },
+    /// A frame of an accepted generated Hold's sampled master.
+    Generated {
+        clock: BoundaryClock,
+        sampled_asset: AssetId,
+        sampled_object: GeneratedObjectRef,
+        provenance: GeneratedObjectRef,
+        picture: DecodedBoundary,
+    },
+    /// Authored Background/Blank: black RGB, nothing decoded.
+    AuthoredBlack { clock: BoundaryClock },
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+enum LegacyBoundaryPictureWire<'a> {
+    Original {
+        project_frame: i64,
+        asset: &'a AssetId,
+        qualification: &'a SourceQualificationId,
+        picture: &'a DecodedBoundary,
+    },
+    Generated {
+        project_frame: i64,
+        sampled_asset: &'a AssetId,
+        sampled_object: &'a GeneratedObjectRef,
+        provenance: &'a GeneratedObjectRef,
+        picture: &'a DecodedBoundary,
+    },
+    AuthoredBlack {
+        project_frame: i64,
+    },
+}
+
+impl Serialize for BoundaryPicture {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let BoundaryClock::Project { frame } = self.clock() else {
+            return BoundaryPictureWire::serialize(self, serializer);
+        };
+        let legacy = match self {
+            Self::Original {
+                asset,
+                qualification,
+                picture,
+                ..
+            } => LegacyBoundaryPictureWire::Original {
+                project_frame: *frame,
+                asset,
+                qualification,
+                picture,
+            },
+            Self::Generated {
+                sampled_asset,
+                sampled_object,
+                provenance,
+                picture,
+                ..
+            } => LegacyBoundaryPictureWire::Generated {
+                project_frame: *frame,
+                sampled_asset,
+                sampled_object,
+                provenance,
+                picture,
+            },
+            Self::AuthoredBlack { .. } => LegacyBoundaryPictureWire::AuthoredBlack {
+                project_frame: *frame,
+            },
+        };
+        legacy.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for BoundaryPicture {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let mut value = serde_json::Value::deserialize(deserializer)?;
+        let object = value
+            .as_object_mut()
+            .filter(|object| object.len() == 1)
+            .ok_or_else(|| serde::de::Error::custom("invalid boundary picture"))?;
+        let payload = object
+            .values_mut()
+            .next()
+            .and_then(serde_json::Value::as_object_mut)
+            .ok_or_else(|| serde::de::Error::custom("invalid boundary picture"))?;
+        if let Some(frame) = payload.remove("project_frame") {
+            if payload.contains_key("clock") {
+                return Err(serde::de::Error::custom("boundary has two clocks"));
+            }
+            payload.insert(
+                "clock".into(),
+                serde_json::json!({"kind": "project", "frame": frame}),
+            );
+        } else if payload.get("clock").and_then(|clock| clock.get("kind"))
+            != Some(&serde_json::Value::String("definition".into()))
+        {
+            return Err(serde::de::Error::custom(
+                "boundary requires a definition clock or legacy project frame",
+            ));
+        }
+        BoundaryPictureWire::deserialize(value).map_err(serde::de::Error::custom)
+    }
 }
 
 impl BoundaryPicture {
-    pub const fn project_frame(&self) -> i64 {
+    pub const fn clock(&self) -> &BoundaryClock {
         match self {
-            Self::Original { project_frame, .. }
-            | Self::Generated { project_frame, .. }
-            | Self::AuthoredBlack { project_frame } => *project_frame,
+            Self::Original { clock, .. }
+            | Self::Generated { clock, .. }
+            | Self::AuthoredBlack { clock } => clock,
         }
     }
 
@@ -267,8 +403,14 @@ impl BoundaryPicture {
     }
 
     pub(crate) fn validate_shape(&self) -> Result<(), &'static str> {
-        if self.project_frame() < 0 {
-            return Err("negative boundary project frame");
+        match self.clock() {
+            BoundaryClock::Project { frame } if *frame < 0 => {
+                return Err("negative boundary project frame");
+            }
+            BoundaryClock::Definition { position, .. } if position.numerator() < 0 => {
+                return Err("negative boundary definition position");
+            }
+            _ => {}
         }
         if let Some(picture) = self.decoded() {
             picture.stream.validate_shape()?;
@@ -403,7 +545,7 @@ mod tests {
             model_input: ModelInputConversion::Rec709CodesAsSrgb,
         };
         let original = BoundaryPicture::Original {
-            project_frame: 14,
+            clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
             picture: decoded.clone(),
@@ -434,7 +576,7 @@ mod tests {
         let mut lying = decoded.clone();
         lying.model_input = ModelInputConversion::SrgbCodesUnchanged;
         let contradiction = BoundaryPicture::Original {
-            project_frame: 14,
+            clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
             picture: lying,
@@ -443,19 +585,24 @@ mod tests {
         let mut wide = decoded;
         wide.stream.color.primaries = BridgePrimaries::DisplayP3;
         let unsupported = BoundaryPicture::Original {
-            project_frame: 14,
+            clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
             picture: wide,
         };
         assert!(unsupported.validate_shape().is_err());
         assert!(
-            BoundaryPicture::AuthoredBlack { project_frame: -1 }
-                .validate_shape()
-                .is_err()
+            BoundaryPicture::AuthoredBlack {
+                clock: crate::BoundaryClock::Project { frame: -1 }
+            }
+            .validate_shape()
+            .is_err()
         );
         assert_eq!(
-            serde_json::to_value(BoundaryPicture::AuthoredBlack { project_frame: 3 }).unwrap(),
+            serde_json::to_value(BoundaryPicture::AuthoredBlack {
+                clock: crate::BoundaryClock::Project { frame: 3 }
+            })
+            .unwrap(),
             serde_json::json!({"authored_black": {"project_frame": 3}})
         );
     }

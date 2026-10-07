@@ -82,6 +82,35 @@ impl ProjectStore {
         self.preview_history(expected_revision, new_revision, true)
     }
 
+    pub fn preview_undo_generation_contexts(
+        &self,
+        expected_revision: &RevisionId,
+        new_revision: RevisionId,
+    ) -> Result<(EditTransaction, Vec<generation::StoredGenerationRequest>), StoreError> {
+        self.preview_history_contexts(expected_revision, new_revision, false)
+    }
+
+    pub fn preview_redo_generation_contexts(
+        &self,
+        expected_revision: &RevisionId,
+        new_revision: RevisionId,
+    ) -> Result<(EditTransaction, Vec<generation::StoredGenerationRequest>), StoreError> {
+        self.preview_history_contexts(expected_revision, new_revision, true)
+    }
+
+    fn preview_history_contexts(
+        &self,
+        expected: &RevisionId,
+        next_revision: RevisionId,
+        redo: bool,
+    ) -> Result<(EditTransaction, Vec<generation::StoredGenerationRequest>), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan =
+            prepare_navigation(&transaction, &self.documents, expected, next_revision, redo)?;
+        let contexts = crate::generation_scope::preview_history(&transaction, plan.entry, redo)?;
+        Ok((plan.edit, contexts))
+    }
+
     fn preview_history(
         &self,
         expected: &RevisionId,
@@ -112,6 +141,7 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_navigation(&transaction, documents, expected, next_revision, redo)?;
+        let isolated = crate::generation_scope::history_transition(&transaction, plan.entry, redo)?;
         generation::reconcile(
             &transaction,
             &plan.current,
@@ -140,6 +170,14 @@ impl ProjectStore {
             if redo { "redo" } else { "undo" },
             crate::revision_storage::StoredPatch::Navigation { json: &json },
         )?;
+        if isolated {
+            crate::generation_scope::insert_event(
+                &transaction,
+                plan.next.revision_id(),
+                plan.entry,
+                redo,
+            )?;
+        }
         if redo {
             transaction.execute(
                 "DELETE FROM redo WHERE position=(SELECT MAX(position) FROM redo)",

@@ -143,8 +143,12 @@ impl Fixture {
                 "fixture RGB",
                 model_color_space,
                 crate::BridgeBoundaries {
-                    left: crate::BoundaryPicture::AuthoredBlack { project_frame: 9 },
-                    right: crate::BoundaryPicture::AuthoredBlack { project_frame: 40 },
+                    left: crate::BoundaryPicture::AuthoredBlack {
+                        clock: crate::BoundaryClock::Project { frame: 9 },
+                    },
+                    right: crate::BoundaryPicture::AuthoredBlack {
+                        clock: crate::BoundaryClock::Project { frame: 40 },
+                    },
                 },
             )
             .unwrap()
@@ -353,8 +357,12 @@ impl Fixture {
                 "fixture RGB",
                 crate::CANONICAL_BRIDGE_COLOR,
                 crate::BridgeBoundaries {
-                    left: crate::BoundaryPicture::AuthoredBlack { project_frame: 9 },
-                    right: crate::BoundaryPicture::AuthoredBlack { project_frame: 40 },
+                    left: crate::BoundaryPicture::AuthoredBlack {
+                        clock: crate::BoundaryClock::Project { frame: 9 },
+                    },
+                    right: crate::BoundaryPicture::AuthoredBlack {
+                        clock: crate::BoundaryClock::Project { frame: 40 },
+                    },
                 },
                 crate::ConditioningGeometry {
                     presentation: crate::RasterRect::new(0, 0, 4, 2).unwrap(),
@@ -417,6 +425,53 @@ impl Fixture {
         fixture
     }
 
+    fn definition_checked() -> Self {
+        let mut fixture = Self::region_checked();
+        let mut context: Value = serde_json::from_slice(&fixture.context).unwrap();
+        context["schema_version"] = json!(5);
+        for (side, numerator) in [("left", "19"), ("right", "81")] {
+            context["boundaries"][side] = json!({"authored_black":{"clock":{
+                "kind":"definition",
+                "project_id":fixture.envelope["binding"]["project_id"],
+                "revision_id":fixture.envelope["binding"]["revision_id"],
+                "definition":"hold-definition",
+                "position":{"numerator":numerator,"denominator":"2"},
+            }}});
+        }
+        fixture.replace_bound_context(context);
+        fixture.envelope["schema_version"] = json!(8);
+        fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-8");
+        fixture
+    }
+
+    /// Recompute every content binding so admission failures isolate the
+    /// context's semantic relationship to the immutable generation origin.
+    fn replace_bound_context(&mut self, context: Value) {
+        self.replace_context(context.clone());
+        let object = self.envelope["conditioning"]["manifest"]["object"].clone();
+        for report in ["endpoints", "geometry"] {
+            self.envelope[report]["context_object"] = object.clone();
+        }
+        // Region evidence retains the exact boundary clocks as well as the
+        // context object. Rebuild it when the fixture changes those clocks.
+        let plan = serde_json::from_value(self.envelope["binding"]["plan"].clone()).unwrap();
+        let conditioning = serde_json::from_value(self.envelope["conditioning"].clone()).unwrap();
+        let retained: BridgeContext = serde_json::from_value(context.clone()).unwrap();
+        self.envelope["region"] = serde_json::to_value(crate::region::test_report(
+            &plan,
+            &self.artifact.native_object,
+            &conditioning,
+            &retained,
+        ))
+        .unwrap();
+        let mut worker: Value =
+            serde_json::from_str(self.envelope["worker_provenance_utf8"].as_str().unwrap())
+                .unwrap();
+        worker["request_binding"] = self.envelope["binding"].clone();
+        worker["context"] = context;
+        self.replace_worker(serde_json::to_string(&worker).unwrap());
+    }
+
     fn replace_worker(&mut self, worker: String) {
         self.envelope["declaration"]["provenance"] =
             serde_json::to_value(declaration("outputs/provenance.json", worker.as_bytes()))
@@ -431,6 +486,78 @@ impl Fixture {
             json!({"declaration":declared,"object":object(&self.context)});
         self.envelope["binding"]["input"]["sha256"] = json!(declared.sha256());
     }
+}
+
+#[test]
+fn schema8_admits_exact_definition_clocks_and_retained_project_clocks() {
+    let mut fixture = Fixture::definition_checked();
+    let context: BridgeContext = serde_json::from_slice(&fixture.context).unwrap();
+    assert_eq!(context.schema_version(), 5);
+    // An accepted provider remains usable after copy/alias changes. Its
+    // boundary clock still names the immutable historical generation origin.
+    fixture.artifact.sampled_asset = AssetId::new("copied-sampled").unwrap();
+    fixture.artifact.native_asset = AssetId::new("copied-native").unwrap();
+    let evidence = fixture.validate().unwrap();
+    assert!(evidence.geometry().is_some());
+    assert!(evidence.region().is_some());
+
+    // Profile 8 strengthens definition provenance, while the explicitly tagged
+    // Project clock of context4 keeps its established meaning.
+    let mut project_clock = Fixture::region_checked();
+    assert_eq!(
+        serde_json::from_slice::<BridgeContext>(&project_clock.context)
+            .unwrap()
+            .schema_version(),
+        4
+    );
+    assert!(project_clock.validate().is_ok()); // Retained profile 7.
+    project_clock.envelope["schema_version"] = json!(8);
+    project_clock.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-8");
+    assert!(project_clock.validate().is_ok());
+}
+
+#[test]
+fn schema8_rejects_definition_clocks_bound_to_another_immutable_origin() {
+    for field in ["project_id", "revision_id"] {
+        let mut fixture = Fixture::definition_checked();
+        let mut context: Value = serde_json::from_slice(&fixture.context).unwrap();
+        for side in ["left", "right"] {
+            context["boundaries"][side]["authored_black"]["clock"][field] = json!("other-origin");
+        }
+        fixture.replace_bound_context(context);
+        let error = match fixture.validate() {
+            Ok(_) => panic!("accepted another {field}"),
+            Err(error) => error,
+        };
+        assert!(
+            error.to_string().contains("worker origin"),
+            "{field}: {error}"
+        );
+    }
+}
+
+#[test]
+fn definition_clocks_cannot_be_downgraded_to_older_host_profiles() {
+    let mut fixture = Fixture::definition_checked();
+    fixture.envelope["schema_version"] = json!(7);
+    fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-7");
+    let error = match fixture.validate() {
+        Ok(_) => panic!("definition clocks admitted under profile 7"),
+        Err(error) => error,
+    };
+    assert!(
+        error
+            .to_string()
+            .contains("definition clocks require stored bridge profile 8")
+    );
+    for missing in ["quality", "endpoints", "geometry", "region"] {
+        let mut fixture = Fixture::definition_checked();
+        fixture.envelope.as_object_mut().unwrap().remove(missing);
+        assert!(fixture.validate().is_err(), "profile 8 missing {missing}");
+    }
+    let mut mismatched = Fixture::definition_checked();
+    mismatched.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-7");
+    assert!(mismatched.validate().is_err());
 }
 
 #[test]

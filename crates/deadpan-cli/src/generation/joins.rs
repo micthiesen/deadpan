@@ -25,7 +25,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use deadpan_core::{NodeId, ProjectFrame, RevisionId};
+use deadpan_core::{BoundaryQueryLimits, ExactRatio, NodeId, RevisionId, ScopedNodeTarget};
 use deadpan_render::{Rgba8Frame, Rotation, SampleDepth};
 use deadpan_store::generated_media::GeneratedReadHandle;
 use deadpan_store::generation_attempts::BundleValidationReceipt;
@@ -98,7 +98,7 @@ pub struct JoinReport {
 pub enum JoinError {
     #[error("Measuring the AI pause joins was cancelled.")]
     Cancelled,
-    #[error("the AI pause has no single committed occurrence with pictures on both sides")]
+    #[error("the AI pause has no pictures on both sides in its authored definition")]
     NoBoundaries,
     #[error("join pictures disagree with the variant's receipt: {0}")]
     Shape(&'static str),
@@ -144,6 +144,29 @@ pub fn measure_request_joins(
     receipt: &BundleValidationReceipt,
     cancelled: &AtomicBool,
 ) -> Result<JoinReport, JoinError> {
+    measure_scoped_request_joins(
+        package,
+        generated,
+        origin,
+        &ScopedNodeTarget {
+            node: hold.clone(),
+            repeats: Vec::new(),
+        },
+        receipt,
+        cancelled,
+    )
+}
+
+/// Measure the authored provider's joins before outer Repeat/Retime sampling.
+/// This does not claim to measure a cropped or retimed presentation seam.
+pub fn measure_scoped_request_joins(
+    package: &Path,
+    generated: &GeneratedReadHandle,
+    origin: &RevisionId,
+    target: &ScopedNodeTarget,
+    receipt: &BundleValidationReceipt,
+    cancelled: &AtomicBool,
+) -> Result<JoinReport, JoinError> {
     check(cancelled)?;
     let video = receipt.sampled_video();
     let native = [video.width(), video.height()];
@@ -156,23 +179,29 @@ pub fn measure_request_joins(
         .ok_or(JoinError::Shape("sampled frame count"))?;
 
     let mut session = ProjectPictureSession::open_revision(package, origin, None, cancelled)?;
-    let range = session
+    let boundaries = session
         .plan()
-        .single_occurrence_range(hold)
-        .ok_or(JoinError::NoBoundaries)?;
-    let total = session.plan().duration().frames();
-    if range.start().0 == 0 || range.end().0 >= total {
-        return Err(JoinError::NoBoundaries);
-    }
-    if range.duration().frames() != i64::from(frames) {
+        .scoped_hold_boundaries(target, BoundaryQueryLimits::default())
+        .map_err(ProjectPictureError::from)?;
+    let left_position = boundaries
+        .left
+        .as_ref()
+        .ok_or(JoinError::NoBoundaries)?
+        .position;
+    let right_position = boundaries
+        .right
+        .as_ref()
+        .ok_or(JoinError::NoBoundaries)?
+        .position;
+    if boundaries.duration.frames() != i64::from(frames) {
         return Err(JoinError::Shape(
             "Hold duration differs from the sampled master",
         ));
     }
     let basis = session.basis();
     let canvas = [basis.width, basis.height];
-    let mut boundary = |frame: i64| -> Result<Option<Rgba8Frame>, JoinError> {
-        let prepared = session.prepare(ProjectFrame(frame), cancelled)?;
+    let mut boundary = |position: ExactRatio| -> Result<Option<Rgba8Frame>, JoinError> {
+        let prepared = session.prepare_definition(&boundaries.definition, position, cancelled)?;
         Ok(match prepared.picture {
             PreparedPicture::Frame { frame, .. } | PreparedPicture::Generated { frame, .. } => {
                 Some(frame)
@@ -180,8 +209,8 @@ pub fn measure_request_joins(
             PreparedPicture::Background => None,
         })
     };
-    let left = boundary(range.start().0 - 1)?;
-    let right = boundary(range.end().0)?;
+    let left = boundary(left_position)?;
+    let right = boundary(right_position)?;
     drop(session);
     check(cancelled)?;
 

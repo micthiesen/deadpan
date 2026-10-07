@@ -1,6 +1,6 @@
 # Durable generated-bundle acceptance
 
-The store exposes `preview_generation_acceptance` and `accept_generation_bundle`
+The store exposes `preview_generation_acceptance_contexts` and `accept_generation_bundle`
 for an explicit host acceptance of the exact selected Ready bundle.
 [`generation::acceptance::accept`](AI_HOLDS.md) uses them with a relevance plan
 from the installed boundary resolver; `deadpan-cli accept-hold` (directly or
@@ -21,7 +21,7 @@ it clears a matching selection and is not reversible.
 
 ## Evidence and transaction
 
-Schema 9 adds optional `BundleAdmissionEvidence` to modern bundle receipts. It
+`BundleAdmissionEvidence`, introduced in store schema 9, accompanies modern bundle receipts. It
 contains measured native/sample `SourceSpan` values and `BundleInputObjects` for
 the retained context manifest and two prepared frames, bound to the request's
 context SHA-256. Checked constructors and deserialization reject incompatible
@@ -42,14 +42,17 @@ objects through verified snapshots. Inside the transaction it checks:
 - The authored head, selected attempt and complete receipt still match.
 - The request is current and the selected attempt is Ready and Present.
 - The Hold duration, project rate and context match the persisted bridge plan.
-- The Hold identifies one effective occurrence, without expanding Repeat plays.
+- The request's current authoring address resolves every explicit Repeat
+  Default or stable Play choice and the Hold's full intrinsic duration.
 - Complete before/after context reconciliation preserves the accepted request.
 
 Asset records come from the receipt's observed spans, exact frame counts and
 content identities. One command registers the assets and captures the fallback
-while changing the Hold's provider. Revision, forward/inverse history, cursor and
-request relevance commit together. A failed transaction leaves authored state
-unchanged; previously published files remain available.
+while changing the Hold's provider. A Play-scoped acceptance isolates the
+selected branch atomically; a Default acceptance retains existing overrides.
+Revision, forward/inverse history, scope address mappings, cursor and request
+relevance commit together. A failed transaction leaves authored state unchanged;
+previously published files remain available.
 
 Preview performs the same resolution and object checks without writes, including
 on a read-only store. The host uses its resulting edit to resolve context before
@@ -59,25 +62,40 @@ redo restores them under a fresh revision. Reversion restores the captured
 Background/Freeze provider. None of these operations deletes media bytes or
 revives a stale or detached request.
 
-## Occurrences and migration
+## Authoring scope and presentation
 
-Request bindings currently name a structural Hold ID. A multiply repeated or
-fully overridden default Hold is rejected. Isolate a concrete occurrence first;
-an override owned by one effective play is supported. Retime ancestors are
-conservatively rejected until crop visibility and occurrence context are resolved.
-Legacy operational records remain inspectable and migratable under their original
-contract; migration does not retroactively invalidate ambiguous old bindings.
+Worker bindings retain the original Hold ID, origin revision and immutable
+`ScopedNodeTarget`. Each persisted generation scope has an independent monotonic
+request clock and a current address. That address follows isolation maps
+rederived from the exact validated history command, including an edit to another
+node that clones the Hold. Undo and Redo reverse or reapply those mappings
+without reviving stale requests, attempts or discarded media. Reopen validates
+the retained chronological proof; forged mappings and sibling retargeting fail.
 
-Schemas 1 through 8 migrate through a consistent copy and retained backup. Schemas
-7 and 8 already use core schema 5, so their histories are validated without JSON
-rewriting. Schema-8 receipts retain their original bytes and have no admission
-evidence. New admission fields, even null values, are rejected in old schemas.
+Repeat and Retime ancestors do not change the generated picture count. Context
+5 describes exact boundary samples in the local definition clock and host
+schema 8 validates their origin and duration. A dormant Default can Generate
+and Accept when both local boundaries exist. Preview and audition additionally
+require a concrete visible occurrence and its complete root-frame window.
+Changing the scoped selection revokes pending and cached previews. Several
+selected plays currently refuse explicitly. See [scoped AI](AI_HOLDS.md#repeat-and-retime-scopes).
+
+The store's preview APIs return the prospective edit and mapped current request
+addresses together. Hosts reconcile those addresses against each request's
+immutable origin, preparing one render plan for the exact borrowed prospective
+document. The plan cannot leak across failed transactions that reuse a revision
+ID. Ordinary store writes use the same resolver preparation contract.
+
+Store schema 69 deliberately refuses earlier unused development packages under
+the session's breaking-format authorization. Historical generated provenance
+remains readable under its declared contract; it gains no invented evidence.
 
 ## Verification and limits
 
 Store tests cover stale selection/revision/receipt/context, missing and corrupt
-dependencies, aliases, rollback, read-only preview, history branches, occurrence
-isolation, and genuine schema-8 migration with pending redo. Native integration
+dependencies, aliases, rollback, read-only preview, history branches, scoped
+isolation, dormant Defaults, mapped request addresses and unsupported old
+development formats. Native integration
 tests exercise actual media qualification, acceptance and six-object readback
 after removing worker files and relocating the package.
 

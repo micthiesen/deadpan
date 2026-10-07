@@ -7,13 +7,13 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use deadpan_core::{NodeId, NodeKind, ProjectFrame};
+use deadpan_core::{FrameRange, NodeId, NodeKind, ProjectFrame, ScopedNodeTarget};
 use deadpan_jobs::{AttemptId, RequestId};
 
 use super::*;
 use crate::navigation::{AiAction, CompareChoice, VariantChoice};
 use crate::project::generation::{
-    Candidate, CandidatePreview, GenerationOperation, Job, Outcome, Update,
+    Candidate, CandidatePreview, GenerationOperation, GenerationPresentation, Job, Outcome, Update,
 };
 use crate::transport::Domain;
 use deadpan_core::{AudioSample, RevisionId};
@@ -28,6 +28,7 @@ struct PendingPreview {
     ticket: u64,
     request: RequestId,
     attempt: AttemptId,
+    target: Target,
     /// Start the looped audition once the preview is admitted.
     audition: bool,
     /// Admit it in comparison's Before state: the viewer and audition keep
@@ -416,13 +417,13 @@ impl Joins {
         let handle = workspace.generated.clone();
         let package = workspace.path.clone();
         let origin = candidate.origin.clone();
-        let hold = candidate.hold.clone();
+        let target = candidate.origin_target.clone();
         let receipt = Arc::clone(&variant.receipt);
         let spawned = std::thread::Builder::new()
             .name("deadpan-ai-joins".into())
             .spawn(move || {
-                let joins = deadpan_cli::generation::joins::measure_request_joins(
-                    &package, &handle, &origin, &hold, &receipt, &cancelled,
+                let joins = deadpan_cli::generation::joins::measure_scoped_request_joins(
+                    &package, &handle, &origin, &target, &receipt, &cancelled,
                 )
                 .map_err(|error| error.to_string());
                 let colour = conditioning_colour(&handle, &receipt, &cancelled);
@@ -546,12 +547,35 @@ pub(super) struct Target {
     session: u64,
     revision: deadpan_core::RevisionId,
     hold: Option<NodeId>,
+    authoring: Option<ScopedNodeTarget>,
+    scoped: Option<crate::project::scoped::Target>,
+    presentation: Option<GenerationPresentation>,
     /// The selected pause's offered variants and the chosen one, as shown.
     candidate: Option<Candidate>,
     /// Whether the AI audition was playing, before command entry paused it.
     auditioning: bool,
     cursor: ProjectFrame,
     scope: SequenceScope,
+}
+
+impl Target {
+    fn visible(&self) -> Result<(), String> {
+        if self.scoped.is_some() && self.presentation.is_none() {
+            return Err("This definition has no picture in the current edit. Choose a visible play to preview it.".into());
+        }
+        Ok(())
+    }
+
+    fn matches_preview(&self, preview: &CandidatePreview) -> bool {
+        self.visible().is_ok()
+            && preview.session() == self.session
+            && preview.base() == &self.revision
+            && self.authoring.as_ref() == Some(preview.target())
+            && self
+                .presentation
+                .as_ref()
+                .is_none_or(|shown| shown.range == preview.range())
+    }
 }
 
 impl State {
@@ -662,15 +686,11 @@ fn elapsed(job: &Job) -> String {
 impl DeadpanApp {
     /// The selected pause in Your edit, when AI pictures can target it.
     pub(super) fn ai_hold(&self) -> Option<NodeId> {
-        if self.view != View::Sequence
-            || self.event_focused()
-            || self.sound_focused()
-            || self.scoped.is_some()
-        {
+        if self.view != View::Sequence || self.event_focused() || self.sound_focused() {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
-        let node = self.selected_beat.as_ref()?;
+        let node = self.inspected_node()?;
         matches!(
             workspace.document.nodes().get(node)?.kind,
             NodeKind::Hold { .. }
@@ -687,8 +707,24 @@ impl DeadpanApp {
             .filter(|job| job.running())
     }
 
-    fn ai_candidate(&self, hold: &NodeId) -> Option<&Candidate> {
-        self.ai.update.as_ref()?.candidates.get(hold)
+    fn ai_authoring(&self) -> Result<Option<ScopedNodeTarget>, String> {
+        let Some(hold) = self.ai_hold() else {
+            return Ok(None);
+        };
+        match self.scoped_target()? {
+            Some(scoped) if !scoped.also.is_empty() => {
+                Err("Choose Default or one play before generating AI pictures.".into())
+            }
+            Some(scoped) => Ok(Some(scoped.target)),
+            None => Ok(Some(ScopedNodeTarget {
+                node: hold,
+                repeats: Vec::new(),
+            })),
+        }
+    }
+
+    fn ai_candidate(&self, target: &ScopedNodeTarget) -> Option<&Candidate> {
+        self.ai.update.as_ref()?.candidates.get(target)
     }
 
     /// The context an AI command acts on, captured at command entry or at the
@@ -700,13 +736,33 @@ impl DeadpanApp {
             .as_ref()
             .ok_or("Open a project before using AI pictures.")?;
         let hold = self.ai_hold();
-        let candidate = hold
+        let authoring = self.ai_authoring()?;
+        let scoped = self.scoped_target()?;
+        let presentation = self
+            .scoped_presentation()?
+            .zip(authoring.as_ref())
+            .map(|(shown, target)| {
+                Ok::<_, String>(GenerationPresentation {
+                    target: target.clone(),
+                    instance: shown.instance,
+                    range: FrameRange::new(
+                        ProjectFrame(i64::try_from(shown.frames.start).map_err(|e| e.to_string())?),
+                        ProjectFrame(i64::try_from(shown.frames.end).map_err(|e| e.to_string())?),
+                    )
+                    .map_err(|e| e.to_string())?,
+                })
+            })
+            .transpose()?;
+        let candidate = authoring
             .as_ref()
-            .and_then(|hold| self.ai_candidate(hold).cloned());
+            .and_then(|target| self.ai_candidate(target).cloned());
         Ok(Target {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             hold,
+            authoring,
+            scoped,
+            presentation,
             candidate,
             auditioning: self.ai_auditioning(),
             cursor: ProjectFrame(i64::try_from(self.sequence_cursor).unwrap_or(i64::MAX)),
@@ -754,6 +810,7 @@ impl DeadpanApp {
                 session,
                 revision,
                 hold,
+                authoring,
                 variants,
                 options,
                 ..
@@ -762,6 +819,7 @@ impl DeadpanApp {
                 session,
                 revision,
                 hold,
+                authoring,
                 variants,
                 options,
             },
@@ -787,6 +845,7 @@ impl DeadpanApp {
                 request,
                 attempt,
                 draft,
+                presentation,
                 ..
             } => GenerationOperation::Preview {
                 ticket,
@@ -795,6 +854,7 @@ impl DeadpanApp {
                 request,
                 attempt,
                 draft,
+                presentation,
             },
             GenerationOperation::Discard {
                 session,
@@ -880,6 +940,7 @@ impl DeadpanApp {
             session: target.session,
             revision: target.revision,
             hold,
+            authoring: target.authoring,
             variants,
             options,
         };
@@ -938,17 +999,26 @@ impl DeadpanApp {
     /// `:generate` does with that pause selected. Unchanged boundary
     /// pictures add an attempt to the same request (reusing its validated
     /// inputs); otherwise a new request replaces it.
-    pub(super) fn ai_retry_interrupted(&mut self, hold: &str) -> Result<(), String> {
+    pub(super) fn ai_retry_interrupted(
+        &mut self,
+        item: &crate::project::generation::Interrupted,
+    ) -> Result<(), String> {
         let workspace = self
             .workspace
             .as_ref()
             .ok_or("Open a project before using AI pictures.")?;
-        let hold = NodeId::new(hold.to_owned()).map_err(|error| error.to_string())?;
-        let candidate = self.ai_candidate(&hold).cloned();
+        let authoring = item
+            .target
+            .clone()
+            .ok_or("The interrupted pause is no longer available.")?;
+        let candidate = self.ai_candidate(&authoring).cloned();
         let target = Target {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
-            hold: Some(hold),
+            hold: Some(authoring.node.clone()),
+            authoring: Some(authoring),
+            scoped: None,
+            presentation: None,
             candidate,
             auditioning: false,
             cursor: ProjectFrame(i64::try_from(self.sequence_cursor).unwrap_or(i64::MAX)),
@@ -1077,12 +1147,15 @@ impl DeadpanApp {
     /// Compare the pause as committed (Before) with its Ready variants at the
     /// same frame and heard sample. Nothing is saved.
     fn ai_compare(&mut self, target: Target, choice: CompareChoice) -> Result<(), String> {
+        target.visible()?;
         let candidate = Self::ai_target_candidate(&target)?;
         let showing = self
             .ai
             .preview
             .as_ref()
-            .filter(|preview| preview.request() == &candidate.request)
+            .filter(|preview| {
+                preview.request() == &candidate.request && target.matches_preview(preview)
+            })
             .cloned();
         let pending = self
             .ai
@@ -1125,6 +1198,10 @@ impl DeadpanApp {
     /// otherwise after the service prepares it. Either way the frame and the
     /// heard sample are kept.
     fn ai_compare_variant(&mut self, target: &Target, index: usize) {
+        if let Err(error) = target.visible() {
+            self.error = Some(error);
+            return;
+        }
         let Some(candidate) = target.candidate.as_ref() else {
             return;
         };
@@ -1140,6 +1217,7 @@ impl DeadpanApp {
                     && preview.attempt() == &attempt
                     && preview.session() == target.session
                     && preview.base() == &target.revision
+                    && target.matches_preview(preview)
             })
             .cloned();
         match admitted {
@@ -1312,7 +1390,7 @@ impl DeadpanApp {
 
     /// The shown preview's 1-based variant number and the offered count.
     fn ai_variant_number(&self, preview: &CandidatePreview) -> Option<(usize, usize)> {
-        let candidate = self.ai.update.as_ref()?.candidates.get(preview.hold())?;
+        let candidate = self.ai.update.as_ref()?.candidates.get(preview.target())?;
         let index = candidate
             .variants
             .iter()
@@ -1322,7 +1400,11 @@ impl DeadpanApp {
 
     /// Ready variants offered for `hold`.
     pub(super) fn ai_offered_variants(&self, hold: &NodeId) -> usize {
-        self.ai_candidate(hold)
+        self.ai_authoring()
+            .ok()
+            .flatten()
+            .filter(|target| &target.node == hold)
+            .and_then(|target| self.ai_candidate(&target))
             .map_or(0, |candidate| candidate.variants.len())
     }
 
@@ -1334,6 +1416,10 @@ impl DeadpanApp {
         audition: bool,
         before: bool,
     ) {
+        if let Err(error) = target.visible() {
+            self.error = Some(error);
+            return;
+        }
         // The same counter as every other proposed edit's draft identity.
         let Some(draft) = self.next_serial() else {
             return;
@@ -1345,11 +1431,13 @@ impl DeadpanApp {
             request: request.clone(),
             attempt: attempt.clone(),
             draft,
+            presentation: target.presentation.clone(),
         }) {
             self.ai.pending_preview = Some(PendingPreview {
                 ticket,
                 request,
                 attempt,
+                target: target.clone(),
                 audition,
                 before,
             });
@@ -1398,6 +1486,7 @@ impl DeadpanApp {
     /// pause's own sound. Previews first when needed. Issued while that loop
     /// was playing (captured before command entry paused it), it pauses.
     fn ai_audition(&mut self, target: Target) -> Result<(), String> {
+        target.visible()?;
         if target.auditioning {
             self.pause_playback();
             self.message = Some(
@@ -1409,6 +1498,7 @@ impl DeadpanApp {
         let candidate = Self::ai_target_candidate(&target)?;
         let shown = self.ai.preview.as_ref().is_some_and(|preview| {
             preview.request() == &candidate.request
+                && target.matches_preview(preview)
                 && (self.ai.before || preview.attempt() == &self.ai_current_attempt(candidate))
         });
         if shown {
@@ -1435,6 +1525,7 @@ impl DeadpanApp {
             hold,
             cursor: target.cursor,
             scope: target.scope,
+            scoped: target.scoped,
         }));
         Ok(())
     }
@@ -1625,6 +1716,7 @@ impl DeadpanApp {
                     update.preview.clone().filter(|preview| {
                         preview.request() == &pending.request
                             && preview.attempt() == &pending.attempt
+                            && pending.target.matches_preview(preview)
                     })
                 });
                 if let Some(preview) = issued {
@@ -1714,7 +1806,7 @@ impl DeadpanApp {
             }) && self.ai.update.as_ref().is_some_and(|update| {
                 update
                     .candidates
-                    .get(preview.hold())
+                    .get(preview.target())
                     .is_some_and(|candidate| {
                         &candidate.request == preview.request()
                             && candidate
@@ -1736,9 +1828,9 @@ impl DeadpanApp {
             changed = true;
         }
         // Kept previews follow the same rule, without changing the viewer.
-        let offered = |attempt: &AttemptId, request: &RequestId, hold: &NodeId| {
+        let offered = |attempt: &AttemptId, request: &RequestId, target: &ScopedNodeTarget| {
             self.ai.update.as_ref().is_some_and(|update| {
-                update.candidates.get(hold).is_some_and(|candidate| {
+                update.candidates.get(target).is_some_and(|candidate| {
                     &candidate.request == request
                         && candidate
                             .variants
@@ -1753,7 +1845,7 @@ impl DeadpanApp {
             .filter(|kept| {
                 workspace.as_ref().is_some_and(|(session, revision)| {
                     kept.session() == *session && kept.base() == revision
-                }) && offered(kept.attempt(), kept.request(), kept.hold())
+                }) && offered(kept.attempt(), kept.request(), kept.target())
             })
             .collect();
         if workspace.is_none() {
@@ -1789,16 +1881,42 @@ impl DeadpanApp {
         };
         ui.add_space(8.0);
         ui.label(style::section_title("AI PICTURES", false));
+        let target = match self.ai_authoring() {
+            Ok(Some(target)) => target,
+            Ok(None) => return,
+            Err(error) => {
+                ui.label(error);
+                return;
+            }
+        };
+        if self.scoped.is_some() {
+            if let Some(NodeKind::Hold { recipe }) = self
+                .workspace
+                .as_ref()
+                .and_then(|workspace| workspace.document.nodes().get(&hold))
+                .map(|node| &node.kind)
+            {
+                ui.label(format!(
+                    "{} pictures before Repeat / Retime",
+                    recipe.duration.frames()
+                ));
+            }
+            ui.label(
+                egui::RichText::new("Joins measured in this definition.")
+                    .size(12.0)
+                    .weak(),
+            );
+        }
         let generate_key = self.editor_key(EditorKey::GenerateAi);
         let job = self
             .ai
             .update
             .as_ref()
             .and_then(|update| update.job.clone())
-            .filter(|job| job.hold == hold);
+            .filter(|job| job.target == target);
         let other_running = self
             .ai_running()
-            .is_some_and(|running| running.hold != hold);
+            .is_some_and(|running| running.target != target);
         let running = job.as_ref().is_some_and(Job::running);
         let options = job
             .as_ref()
@@ -1814,7 +1932,7 @@ impl DeadpanApp {
                 self.ai
                     .update
                     .as_ref()
-                    .and_then(|update| update.options.get(&hold))
+                    .and_then(|update| update.options.get(&target))
             })
             .cloned()
             .unwrap_or_default();
@@ -1894,7 +2012,7 @@ impl DeadpanApp {
             .as_ref()
             .filter(|job| !job.running())
             .and_then(|job| job.note.clone());
-        if let Some(candidate) = self.ai_candidate(&hold).cloned() {
+        if let Some(candidate) = self.ai_candidate(&target).cloned() {
             if running {
                 ui.add_space(6.0);
             }

@@ -5,7 +5,7 @@
 //! types carry no capability: a status is an observation of that job, and a
 //! cancellation names the exact job it observed.
 
-use deadpan_core::{NodeId, RevisionId};
+use deadpan_core::{NodeId, RevisionId, ScopedNodeTarget};
 use deadpan_jobs::RequestId;
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,10 @@ pub const MAX_STATUS_TEXT: usize = 4096;
 #[serde(deny_unknown_fields)]
 pub struct GenerateRequest {
     pub hold: NodeId,
+    /// Explicit authoring address. Absence selects an ordinary Hold with no
+    /// Repeat ancestors, never a play chosen from the owner's current cursor.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<ScopedNodeTarget>,
     /// The revision the caller observed; a different head is refused.
     pub expected_revision: RevisionId,
     pub variants: u8,
@@ -32,7 +36,24 @@ pub struct GenerateRequest {
 }
 
 impl GenerateRequest {
+    pub fn target(&self) -> ScopedNodeTarget {
+        self.scope.clone().unwrap_or_else(|| ScopedNodeTarget {
+            node: self.hold.clone(),
+            repeats: Vec::new(),
+        })
+    }
+
     pub fn validate(&self) -> Result<(), LiveError> {
+        if self
+            .scope
+            .as_ref()
+            .is_some_and(|scope| scope.node != self.hold)
+        {
+            return Err(LiveError::new(
+                "GenerationRefused",
+                "The scope names a different Hold",
+            ));
+        }
         if !(1..=MAX_VARIANTS).contains(&self.variants) {
             return Err(LiveError::new(
                 "GenerationRefused",
@@ -65,6 +86,7 @@ pub enum GenerationOutcome {
 pub struct GenerationStatus {
     pub job: u64,
     pub hold: NodeId,
+    pub scope: ScopedNodeTarget,
     pub options: deadpan_jobs::GenerationOptions,
     /// The recorded request, once allocated.
     pub request_id: Option<RequestId>,

@@ -126,7 +126,8 @@ pub use repeat_layout::*;
 pub use repeat_selection::{RepeatGapHold, RepeatSelectionIdentities, RepeatSelectionPlan};
 pub use scoped_edit::{
     MAX_SCOPED_TARGETS, PreparedScopedEdit, RepeatEditBranch, RepeatEditStep,
-    ScopedEditRequirements, ScopedNodeEdit, ScopedNodeTarget, ScopedTargetEdit,
+    ScopedEditRequirements, ScopedIsolationRecord, ScopedIsolationStep, ScopedNodeEdit,
+    ScopedNodeTarget, ScopedTargetEdit, ValidatedScopedIsolation, derive_scoped_isolation,
     prepare_scoped_edit,
 };
 pub use semantic::*;

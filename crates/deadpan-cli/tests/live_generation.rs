@@ -26,6 +26,10 @@ fn status(polls: usize) -> Result<GenerationStatus> {
         options: deadpan_jobs::GenerationOptions::default(),
         job: JOB,
         hold: NodeId::new("pause")?,
+        scope: deadpan_core::ScopedNodeTarget {
+            node: NodeId::new("pause")?,
+            repeats: Vec::new(),
+        },
         request_id: (polls > 0)
             .then(|| RequestId::new("ai-hold-live"))
             .transpose()?,

@@ -17,12 +17,18 @@ pub(super) struct IsolationPlan {
 }
 
 #[derive(Debug)]
-pub(super) struct IsolationMap {
+pub(crate) struct IsolationMap {
     /// Scope before this clone, including any earlier remapped ancestors.
     pub(super) prefix: Vec<RepeatEditStep>,
     pub(super) nodes: BTreeMap<NodeId, NodeId>,
     selected: RepeatInstance,
     root: NodeId,
+}
+
+impl IsolationMap {
+    pub(crate) fn proof(self) -> super::ScopedIsolationStep {
+        super::ScopedIsolationStep::from_execution(self.prefix, self.nodes)
+    }
 }
 
 pub(super) struct ResolvedIsolation {
@@ -292,16 +298,6 @@ impl IsolationPlan {
     }
 }
 
-pub(crate) fn apply(
-    document: &ProjectDocument,
-    target: &ScopedNodeTarget,
-    edit: &ScopedNodeEdit,
-    identities: &OccurrenceIdentities,
-    context: crate::command::EditContext<'_>,
-) -> Result<ProjectDocument, EditError> {
-    apply_mapped(document, target, edit, identities, context).map(|(result, _)| result)
-}
-
 /// Bound for one multi-target scoped edit, such as "plays 2-3 only".
 pub const MAX_SCOPED_TARGETS: usize = 1024;
 
@@ -309,12 +305,12 @@ pub const MAX_SCOPED_TARGETS: usize = 1024;
 /// Each target isolates only its own selected plays; a later target follows
 /// the identities an earlier isolation gave its shared ancestors. Targets
 /// whose value is already current are skipped and take an empty pool.
-pub(crate) fn apply_many(
+pub(crate) fn apply_many_mapped(
     document: &ProjectDocument,
     edits: &[ScopedTargetEdit],
     identities: &[OccurrenceIdentities],
     mut context: crate::command::EditContext<'_>,
-) -> Result<ProjectDocument, EditError> {
+) -> Result<(ProjectDocument, Vec<IsolationMap>), EditError> {
     if edits.is_empty() || edits.len() > MAX_SCOPED_TARGETS {
         return Err(limit("a multi-target scoped edit names 1..=1024 targets"));
     }
@@ -326,6 +322,7 @@ pub(crate) fn apply_many(
     let mut pending: Vec<_> = edits.iter().map(|edit| edit.target.clone()).collect();
     let mut result = document.clone();
     let mut changed = false;
+    let mut all_mappings = Vec::new();
     for index in 0..pending.len() {
         let target = pending[index].clone();
         let edit = &edits[index].edit;
@@ -350,20 +347,19 @@ pub(crate) fn apply_many(
         for later in &mut pending[index + 1..] {
             remap_target(later, &mappings);
         }
+        all_mappings.extend(mappings);
         result = next;
         changed = true;
     }
     if !changed {
         return Err(invalid("scoped edit does not change any selected value"));
     }
-    Ok(result)
+    Ok((result, all_mappings))
 }
 
 fn remap_target(target: &mut ScopedNodeTarget, mappings: &[IsolationMap]) {
     for mapping in mappings {
-        if target.repeats.len() >= mapping.prefix.len()
-            && target.repeats[..mapping.prefix.len()] == mapping.prefix[..]
-        {
+        if super::proof::matches_scoped_prefix(target, &mapping.prefix) {
             if let Some(node) = mapping.nodes.get(&target.node) {
                 target.node = node.clone();
             }
@@ -376,7 +372,7 @@ fn remap_target(target: &mut ScopedNodeTarget, mappings: &[IsolationMap]) {
     }
 }
 
-/// Exact per-target identity needs of [`apply_many`], staged in order.
+/// Exact per-target identity needs of [`apply_many_mapped`], staged in order.
 pub(crate) fn many_requirements(
     document: &ProjectDocument,
     edits: &[ScopedTargetEdit],
@@ -422,7 +418,7 @@ pub(crate) fn many_requirements(
     Ok(output)
 }
 
-fn apply_mapped(
+pub(crate) fn apply_mapped(
     document: &ProjectDocument,
     target: &ScopedNodeTarget,
     edit: &ScopedNodeEdit,

@@ -75,6 +75,7 @@ mod supported {
                 .current_generation_requests()?
                 .into_iter()
                 .map(|request| RelevanceObservation {
+                    target: request.target,
                     request_id: request.request_id,
                     after_context: ContextObservation::Resolved(
                         request.binding.context_sha256.clone(),

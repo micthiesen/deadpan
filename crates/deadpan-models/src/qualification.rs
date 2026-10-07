@@ -412,8 +412,8 @@ pub fn qualify_bridge(
         .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 7,
-            validation_profile: "deadpan-ffv1-bridge-7",
+            schema_version: 8,
+            validation_profile: "deadpan-ffv1-bridge-8",
             binding: &binding,
             selected_provider,
             declaration,

@@ -1754,6 +1754,7 @@ pub(crate) fn recover_nonterminal(
 
 #[derive(Debug, Clone)]
 pub(crate) struct RequestMetadata {
+    pub(crate) target: deadpan_core::ScopedNodeTarget,
     pub(crate) binding: TargetBinding,
     pub(crate) constraints: HoldConstraints,
     pub(crate) provider: ProviderSelection,
@@ -1813,7 +1814,23 @@ pub(crate) fn read_request(
             serde_json::from_str(&value).map_err(|_| integrity("invalid bridge generation plan"))
         })
         .transpose()?;
+    let target_json: Option<String> = connection.query_row(
+        "SELECT CASE WHEN typeof(s.current_target)='text'
+             AND length(CAST(s.current_target AS BLOB)) BETWEEN 1 AND ?2
+             THEN s.current_target END
+         FROM generation_requests r JOIN generation_scopes s ON s.scope_id=r.scope_id
+         WHERE r.request_id=?1",
+        params![
+            request_id.as_str(),
+            crate::generation_scope::MAX_TARGET_BYTES as i64
+        ],
+        |row| row.get(0),
+    )?;
+    let target = crate::generation_scope::parse_target(
+        &target_json.ok_or_else(|| integrity("invalid generation scope target"))?,
+    )?;
     Ok(RequestMetadata {
+        target,
         binding: TargetBinding {
             project_id: ProjectId::new(project)
                 .map_err(|_| integrity("invalid generation project ID"))?,

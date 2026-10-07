@@ -179,7 +179,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
         "pack_id": "ltx-2.3-q4-bridge",
         "pack_version": "2",
         "runtime_id": "ltx-mlx",
-        "runtime_version": "0.15.8+deadpan4",
+        "runtime_version": "0.15.8+deadpan5",
         "seed": 7,
     }))
     .unwrap();
@@ -444,7 +444,9 @@ fn picture_inputs_for_frames(left_rgb: [u8; 3], right_rgb: [u8; 3], frames: i64)
         let png = png(rgb);
         conditioning::PreparedBoundary {
             picture: deadpan_models::BoundaryPicture::Original {
-                project_frame,
+                clock: deadpan_models::BoundaryClock::Project {
+                    frame: project_frame,
+                },
                 asset: deadpan_core::AssetId::new(format!("synthetic-{side}-png")).unwrap(),
                 qualification: deadpan_core::SourceQualificationId::new(
                     conditioning::sha256(&png).unwrap().as_str().to_owned(),
@@ -549,7 +551,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     .unwrap();
     assert!(
         stored.quality().is_some(),
-        "successful output uses schema 7"
+        "successful output uses schema 8"
     );
     assert!(
         stored.endpoints().is_some(),
@@ -557,7 +559,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     );
     let geometry = stored
         .geometry()
-        .expect("schema 7 retains native observations");
+        .expect("schema 8 retains native observations");
     assert_eq!(geometry.assessment().mouth.measured_tracks, 0);
     assert_eq!(geometry.assessment().geometry.measured_tracks, 0);
     assert_eq!(

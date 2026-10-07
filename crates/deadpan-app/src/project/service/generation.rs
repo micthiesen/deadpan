@@ -13,6 +13,7 @@ use deadpan_cli::generation::attempt::{
 };
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
+use deadpan_core::{InstancePath, ProjectFrame, RepeatInstance, ScopedNodeTarget};
 use deadpan_jobs::{
     AttemptId, GenerationOptions, HostFailureCode, JobFailure, JobState, MessageIdentity,
     ProviderSelection, RequestId,
@@ -21,8 +22,8 @@ use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
 use super::*;
 use crate::project::generation::{
-    Backend, Candidate, CandidatePreview, GenerationOperation, Job, MAX_VARIANTS, Outcome, Phase,
-    PreviewParts, Update, Variant,
+    Backend, Candidate, CandidatePreview, GenerationOperation, GenerationPresentation, Job,
+    MAX_VARIANTS, Outcome, Phase, PreviewParts, Update, Variant,
 };
 
 /// Events the job thread may queue ahead of the writer.
@@ -33,6 +34,7 @@ struct StartInput {
     session: u64,
     revision: RevisionId,
     hold: NodeId,
+    authoring: Option<ScopedNodeTarget>,
     variants: u8,
     seed: Option<u64>,
     options: Option<GenerationOptions>,
@@ -41,7 +43,7 @@ struct StartInput {
 struct JobInput {
     package: PathBuf,
     revision: RevisionId,
-    hold: NodeId,
+    target: ScopedNodeTarget,
     options: GenerationOptions,
 }
 
@@ -97,8 +99,8 @@ pub(super) struct State {
     session: u64,
     running: Option<Running>,
     job: Option<Job>,
-    candidates: Arc<BTreeMap<NodeId, Candidate>>,
-    options: Arc<BTreeMap<NodeId, GenerationOptions>>,
+    candidates: Arc<BTreeMap<ScopedNodeTarget, Candidate>>,
+    options: Arc<BTreeMap<ScopedNodeTarget, GenerationOptions>>,
     candidates_key: Option<(u64, RevisionId, u64)>,
     /// Interrupted attempts offered for retry, read with the candidates.
     interrupted: Arc<Vec<crate::project::generation::Interrupted>>,
@@ -140,6 +142,7 @@ fn remote_status(job: &Job) -> deadpan_cli::live_project::generation::Generation
     GenerationStatus {
         job: job.ticket,
         hold: job.hold.clone(),
+        scope: job.target.clone(),
         options: job.options.clone(),
         request_id: job.request.clone(),
         variants: job.variants,
@@ -254,6 +257,7 @@ impl Service {
                 session,
                 revision,
                 hold,
+                authoring,
                 variants,
                 options,
             } => self.start_generation(StartInput {
@@ -261,6 +265,7 @@ impl Service {
                 session,
                 revision,
                 hold,
+                authoring,
                 variants,
                 seed: None,
                 options,
@@ -299,8 +304,9 @@ impl Service {
                 request,
                 attempt,
                 draft,
+                presentation,
                 ..
-            } => self.preview_generation(draft, session, &revision, request, attempt),
+            } => self.preview_generation(draft, session, &revision, request, attempt, presentation),
             GenerationOperation::Discard {
                 session,
                 request,
@@ -529,6 +535,7 @@ impl Service {
             session,
             revision,
             hold,
+            authoring,
             variants,
             seed,
             options,
@@ -547,9 +554,25 @@ impl Service {
                 "An AI pause is already generating. Cancel it with :cancel-ai first.".into(),
             );
         }
+        let target = authoring.unwrap_or_else(|| ScopedNodeTarget {
+            node: hold.clone(),
+            repeats: Vec::new(),
+        });
+        if target.node != hold {
+            return Err("The AI Hold differs from its captured authoring target.".into());
+        }
+        target
+            .validate(
+                &self
+                    .workspace
+                    .as_ref()
+                    .ok_or("Open a project first")?
+                    .document,
+            )
+            .map_err(display)?;
         let selected_before = self
             .current_candidates()
-            .get(&hold)
+            .get(&target)
             .map(|candidate| candidate.selected.clone());
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         if !matches!(
@@ -569,11 +592,11 @@ impl Service {
             .generation
             .job
             .as_ref()
-            .filter(|job| job.hold == hold && job.revision == revision && job.request.is_none())
+            .filter(|job| job.target == target && job.revision == revision && job.request.is_none())
             .map(|job| job.options.clone());
-        let current = attempt::current_bridge_request(
+        let current = attempt::current_scoped_bridge_request(
             self.store.as_ref().ok_or("Open a project first")?,
-            &hold,
+            &target,
         )
         .map_err(display)?;
         let previous = previous.or_else(|| {
@@ -597,6 +620,7 @@ impl Service {
             ticket,
             session,
             hold: hold.clone(),
+            target: target.clone(),
             options: options.clone(),
             revision: revision.clone(),
             started: Instant::now(),
@@ -638,12 +662,26 @@ impl Service {
                 deadpan_cli::generation::development_provider(seed.unwrap_or(0))
             }
         };
+        // A retry/variant reconstructs the exact immutable worker inputs even
+        // after acceptance has isolated and renamed the current destination.
+        let (input_revision, input_target) = current
+            .as_ref()
+            .filter(|request| {
+                GenerationOptions::from_constraints(&request.constraints) == options
+                    && deadpan_cli::generation::same_provider_identity(&request.provider, &provider)
+            })
+            .map(|request| {
+                (
+                    request.origin_revision.clone(),
+                    request.origin_target.clone(),
+                )
+            })
+            .unwrap_or_else(|| (revision.clone(), target.clone()));
         let cancelled = Arc::new(AtomicBool::new(false));
         let (events, receive_events) = mpsc::sync_channel(EVENT_CAPACITY);
         let (finished, receive_finished) = mpsc::sync_channel(1);
         let (allocation, receive_allocation) = mpsc::sync_channel(1);
         let thread_cancelled = cancelled.clone();
-        let revision = revision.clone();
         // Registered before the thread starts, so the Jobs panel and the
         // inference budget see the job from its first instant.
         let handle = self.shared.job_board.register(
@@ -664,8 +702,8 @@ impl Service {
                     worker,
                     JobInput {
                         package,
-                        revision,
-                        hold,
+                        revision: input_revision,
+                        target: input_target,
                         options,
                     },
                     thread_cancelled,
@@ -711,31 +749,74 @@ impl Service {
         revision: &RevisionId,
         request: RequestId,
         attempt: AttemptId,
+        presentation: Option<GenerationPresentation>,
     ) -> Result<()> {
         self.check_context(session, revision)?;
         if draft == 0 {
             return Err("The AI preview needs a fresh proposal identity.".into());
         }
-        let candidate = self.select_variant(session, &request, &attempt)?;
+        let candidate = self.offered(&request, &attempt)?;
         let workspace = self
             .workspace
             .as_ref()
             .ok_or("Open a project first")?
             .clone();
-        let range = workspace
-            .plan
-            .single_occurrence_range(&candidate.hold)
-            .ok_or("The pause no longer plays once in this edit.")?;
+        let presentation = match presentation {
+            Some(presentation) => presentation,
+            None => GenerationPresentation {
+                target: candidate.target.clone(),
+                instance: InstancePath {
+                    node: candidate.target.node.clone(),
+                    repeats: Vec::new(),
+                },
+                range: workspace
+                    .plan
+                    .single_occurrence_range(&candidate.hold)
+                    .ok_or("Preview needs a captured visible occurrence of this pause.")?,
+            },
+        };
+        validate_presentation(
+            &workspace.document,
+            &workspace.plan,
+            &candidate.target,
+            &presentation,
+        )?;
+        self.select_variant(session, &request, &attempt)?;
+        let range = presentation.range;
         let store = self.store.as_ref().ok_or("Open a project first")?;
         let acceptance =
             acceptance::acceptance_for(store, &request, revision_id()).map_err(display)?;
         if acceptance.identity.attempt_id != attempt {
             return Err("The selected AI variant changed; choose it again.".into());
         }
-        let edit = store
-            .preview_generation_acceptance(&acceptance, attempt::object_limits())
+        let (edit, requests) = store
+            .preview_generation_acceptance_contexts(&acceptance, attempt::object_limits())
             .map_err(display)?;
+        let mapped = requests
+            .iter()
+            .find(|item| item.request_id == request)
+            .ok_or("The accepted request has no mapped authoring target.")?
+            .target
+            .clone();
         let after = Arc::new(edit.forward.apply(&workspace.document).map_err(display)?);
+        let mapped_instance = map_presentation(
+            &workspace.document,
+            &after,
+            &candidate.target,
+            &mapped,
+            &presentation.instance,
+        )?;
+        let after_plan = RenderPlan::compile(&after).map_err(display)?;
+        validate_presentation(
+            &after,
+            &after_plan,
+            &mapped,
+            &GenerationPresentation {
+                target: mapped.clone(),
+                instance: mapped_instance,
+                range,
+            },
+        )?;
         // The same proposed document, admitted for audition against the
         // exact committed base: accepting pictures leaves the pause's sound
         // unchanged, so pictures and sound play together as they would after
@@ -755,7 +836,8 @@ impl Service {
                 session,
                 request,
                 attempt,
-                hold: candidate.hold,
+                hold: mapped.node,
+                target: candidate.target,
                 range,
                 document: after,
                 audio,
@@ -774,23 +856,90 @@ impl Service {
             hold,
             cursor,
             scope,
+            scoped,
         } = operation
         else {
             unreachable!("only acceptance is an ordinary edit");
         };
         self.check_context(session, &revision)?;
-        let candidate = self.select_variant(session, &request, &attempt)?;
-        if candidate.hold != hold {
-            return Err("These AI pictures are no longer offered for this pause.".into());
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("Open a project first")?
+            .clone();
+        let target = match &scoped {
+            Some(captured) => {
+                captured.validate_request(&workspace, session, &revision, &scope, cursor)?;
+                self.check_scoped_head(captured)?;
+                if !captured.also.is_empty() {
+                    return Err("Accept AI pictures for one Default or one Play at a time; several selected Plays are not supported yet.".into());
+                }
+                captured.target.clone()
+            }
+            None => {
+                if !scope.resolve(&workspace)?.children.contains(&hold)
+                    || cursor.0 < 0
+                    || cursor.0 > workspace.plan.duration().frames()
+                {
+                    return Err(
+                        "The AI acceptance differs from its captured Sequence selection.".into(),
+                    );
+                }
+                ScopedNodeTarget {
+                    node: hold.clone(),
+                    repeats: Vec::new(),
+                }
+            }
+        };
+        let candidate = self.offered(&request, &attempt)?;
+        if candidate.hold != hold || candidate.target != target {
+            return Err("These AI pictures are no longer offered for this authored pause.".into());
         }
-        let outcome = acceptance::accept(self.writer()?, &request, revision_id())
+        self.select_variant(session, &request, &attempt)?;
+        let new_revision = revision_id();
+        let store = self.store.as_ref().ok_or("Open a project first")?;
+        let acceptance =
+            acceptance::acceptance_for(store, &request, new_revision.clone()).map_err(display)?;
+        let (edit, requests) = store
+            .preview_generation_acceptance_contexts(&acceptance, attempt::object_limits())
+            .map_err(display)?;
+        let mapped = requests
+            .iter()
+            .find(|item| item.request_id == request)
+            .ok_or("The accepted request has no mapped authoring target.")?
+            .target
+            .clone();
+        let after = edit.forward.apply(&workspace.document).map_err(display)?;
+        mapped.validate(&after).map_err(display)?;
+        let scoped_receipt = scoped
+            .as_ref()
+            .map(|captured| {
+                let presentation = captured
+                    .presentation
+                    .as_ref()
+                    .map(|instance| {
+                        map_presentation(&workspace.document, &after, &target, &mapped, instance)
+                    })
+                    .transpose()?;
+                Ok::<_, String>(crate::project::scoped::Commit {
+                    before: captured.clone(),
+                    revision: new_revision.clone(),
+                    target: mapped.clone(),
+                    presentation,
+                })
+            })
+            .transpose()?;
+        let selected_node = scoped
+            .as_ref()
+            .map_or_else(|| mapped.node.clone(), |captured| captured.root.clone());
+        let outcome = acceptance::accept(self.writer()?, &request, new_revision)
             .map_err(|error| error.to_string())?;
         self.generation.preview = None;
         self.generation.epoch += 1;
         self.committed = Some(CommittedEdit {
-            scoped: None,
+            scoped: scoped_receipt,
             revision: outcome.revision_id,
-            selected_node: Some(hold),
+            selected_node: Some(selected_node),
             preserve_cursor: true,
             cursor: Some(cursor),
             scope,
@@ -803,7 +952,7 @@ impl Service {
         Ok(())
     }
 
-    fn current_candidates(&mut self) -> Arc<BTreeMap<NodeId, Candidate>> {
+    fn current_candidates(&mut self) -> Arc<BTreeMap<ScopedNodeTarget, Candidate>> {
         let Some(workspace) = &self.workspace else {
             return Arc::default();
         };
@@ -838,7 +987,7 @@ impl Service {
                     .filter(|request| request.bridge_plan.is_some())
                     .map(|request| {
                         (
-                            request.binding.hold_id,
+                            request.target,
                             GenerationOptions::from_constraints(&request.constraints),
                         )
                     })
@@ -851,24 +1000,44 @@ impl Service {
                 Arc::default()
             }
         };
+        let mut target_warning = None;
         self.generation.interrupted = Arc::new(
             interrupted
                 .into_iter()
                 .map(|attempt| {
-                    let pause = NodeId::new(attempt.hold_id.clone())
+                    let target = RequestId::new(attempt.request_id.clone())
                         .ok()
-                        .and_then(|hold| workspace.document.nodes().get(&hold))
-                        .filter(|node| matches!(node.kind, NodeKind::Hold { .. }))
-                        .map(|node| node.label.clone());
+                        .and_then(|id| match store.generation_request(&id) {
+                            Ok(request) => request,
+                            Err(error) => {
+                                target_warning = Some(format!(
+                                    "Interrupted AI authoring targets could not be read: {error}"
+                                ));
+                                None
+                            }
+                        })
+                        .map(|request| request.target)
+                        .filter(|target| target.validate(&workspace.document).is_ok());
+                    let pause = target
+                        .as_ref()
+                        .and_then(|target| interrupted_pause_label(&workspace.document, target));
                     crate::project::generation::Interrupted {
                         request: attempt.request_id,
                         attempt: attempt.attempt_id,
                         hold: attempt.hold_id,
+                        target,
                         pause,
                     }
                 })
                 .collect(),
         );
+        if let Some(warning) = target_warning {
+            self.generation.interrupted_warning =
+                Some(match self.generation.interrupted_warning.take() {
+                    Some(previous) => format!("{previous} {warning}"),
+                    None => warning,
+                });
+        }
         match candidates(store, &workspace.document) {
             Ok(found) => {
                 self.generation.candidates = Arc::new(found);
@@ -1008,11 +1177,11 @@ impl Service {
         let cancelled = running.cancelled.load(Ordering::Acquire);
         let requested_seed = running.seed;
         let provider = running.provider.clone();
-        let Some((hold, revision)) = self
+        let Some((target, revision)) = self
             .generation
             .job
             .as_ref()
-            .map(|job| (job.hold.clone(), job.revision.clone()))
+            .map(|job| (job.target.clone(), job.revision.clone()))
         else {
             return;
         };
@@ -1050,7 +1219,7 @@ impl Service {
             }
             // Unchanged boundary pictures add variants to the Hold's current
             // request; anything else is a new request that supersedes it.
-            let existing = attempt::current_bridge_request(store, &hold)
+            let existing = attempt::current_scoped_bridge_request(store, &target)
                 .map_err(display)?
                 .filter(|request| {
                     request.binding.context_sha256 == inputs.manifest_sha256
@@ -1071,10 +1240,10 @@ impl Service {
                     ));
                 }
                 Some(request) => attempt::allocate_variant(store, request, inputs),
-                None => attempt::allocate_with_provider(
+                None => attempt::allocate_scoped_with_provider(
                     store,
                     AllocateInput {
-                        hold,
+                        hold: target.node.clone(),
                         expected_revision: revision,
                         seed: requested_seed.unwrap_or_else(|| {
                             let random = uuid::Uuid::new_v4();
@@ -1084,6 +1253,7 @@ impl Service {
                         }),
                         inputs,
                     },
+                    target,
                     provider,
                 ),
             }
@@ -1417,6 +1587,7 @@ impl Service {
             session,
             revision: request.expected_revision,
             hold: request.hold,
+            authoring: request.scope,
             variants: request.variants,
             seed: request.seed,
             options: request.options,
@@ -1511,7 +1682,7 @@ impl Service {
 fn candidates(
     store: &ProjectStore,
     document: &ProjectDocument,
-) -> std::result::Result<BTreeMap<NodeId, Candidate>, StoreError> {
+) -> std::result::Result<BTreeMap<ScopedNodeTarget, Candidate>, StoreError> {
     Ok(deadpan_cli::generation::variants::offered(store, document)?
         .into_iter()
         .map(|(hold, offered)| {
@@ -1540,6 +1711,8 @@ fn candidates(
                 Candidate {
                     request: offered.request,
                     hold: offered.hold,
+                    target: offered.target,
+                    origin_target: offered.origin_target,
                     origin: offered.origin,
                     frames: offered.frames,
                     variants,
@@ -1548,6 +1721,103 @@ fn candidates(
             )
         })
         .collect())
+}
+
+/// A terminal Hold's single concrete occurrence has contiguous root-picture
+/// support under the structural tree's monotone clocks. Four picture queries
+/// prove its captured maximal window without expanding any Repeat plays.
+fn validate_presentation(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    target: &ScopedNodeTarget,
+    presentation: &GenerationPresentation,
+) -> Result<()> {
+    if &presentation.target != target
+        || !target
+            .matches_instance(document, &presentation.instance)
+            .map_err(display)?
+    {
+        return Err("The AI preview occurrence differs from its captured authoring target.".into());
+    }
+    let range = presentation.range;
+    let total = plan.duration().frames();
+    if range.duration().frames() == 0 || range.start().0 < 0 || range.end().0 > total {
+        return Err("This authored pause has no captured visible picture window.".into());
+    }
+    let matches = |frame| -> Result<bool> {
+        Ok(plan.picture(ProjectFrame(frame)).map_err(display)?.instance == presentation.instance)
+    };
+    if !matches(range.start().0)?
+        || !matches(range.end().0 - 1)?
+        || (range.start().0 > 0 && matches(range.start().0 - 1)?)
+        || (range.end().0 < total && matches(range.end().0)?)
+    {
+        return Err(
+            "The AI preview window differs from the exact captured Hold occurrence.".into(),
+        );
+    }
+    Ok(())
+}
+
+/// Isolation changes authored NodeIds, while concrete play identities remain
+/// stable. Validate both clocks independently before carrying that presentation.
+fn map_presentation(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    mapped: &ScopedNodeTarget,
+    instance: &InstancePath,
+) -> Result<InstancePath> {
+    if !target.matches_instance(before, instance).map_err(display)?
+        || target.repeats.len() != mapped.repeats.len()
+    {
+        return Err("The AI presentation cannot be mapped to the accepted target.".into());
+    }
+    let result = InstancePath {
+        node: mapped.node.clone(),
+        repeats: instance
+            .repeats
+            .iter()
+            .zip(&mapped.repeats)
+            .map(|(old, new)| RepeatInstance {
+                node: new.repeat.clone(),
+                iteration: old.iteration.clone(),
+            })
+            .collect(),
+    };
+    if !mapped.matches_instance(after, &result).map_err(display)? {
+        return Err("The accepted AI presentation differs from its mapped target.".into());
+    }
+    Ok(result)
+}
+
+/// An interrupted request needs its full authored scope in the Jobs row:
+/// different plays can still point to the same shared Hold and label.
+fn interrupted_pause_label(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+) -> Option<String> {
+    let hold = document.nodes().get(&target.node)?;
+    if !matches!(hold.kind, NodeKind::Hold { .. }) {
+        return None;
+    }
+    let mut labels = Vec::with_capacity(target.repeats.len() + 1);
+    for step in &target.repeats {
+        let repeat = document.nodes().get(&step.repeat)?;
+        let NodeKind::Repeat { iterations, .. } = &repeat.kind else {
+            return None;
+        };
+        let branch = match &step.branch {
+            deadpan_core::RepeatEditBranch::Default => "Default".to_owned(),
+            deadpan_core::RepeatEditBranch::Play { iteration } => {
+                let number = iterations.position(iteration)?.checked_add(1)?;
+                format!("play {number}")
+            }
+        };
+        labels.push(format!("{}: {branch}", repeat.label));
+    }
+    labels.push(hold.label.clone());
+    Some(labels.join(" › "))
 }
 
 fn revision_id() -> RevisionId {
@@ -1606,7 +1876,7 @@ fn job_thread(
     let JobInput {
         package,
         revision,
-        hold,
+        target,
         options,
     } = input;
     let Channels {
@@ -1614,8 +1884,8 @@ fn job_thread(
         finished,
         allocation,
     } = channels;
-    let prepared = conditioning::prepare_with_options(
-        &package, &revision, &hold, &options, &cancelled,
+    let prepared = conditioning::prepare_scoped_with_options(
+        &package, &revision, &target, &options, &cancelled,
     )
     .map(|mut inputs| {
         options.apply_to(&mut inputs.constraints);

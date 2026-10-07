@@ -339,10 +339,10 @@ fn a_moved_file_with_different_bytes_is_reported_missing_not_relinked() {
     );
 }
 
-/// Opening a package of the previous build (schema 66) upgrades it with a
-/// backup first and keeps editing, undo and the Renders history working.
+/// Older unused development formats are refused before authored state,
+/// operational tables or backup history can be changed.
 #[test]
-fn opening_a_schema66_package_migrates_it_first() {
+fn opening_a_schema66_package_refuses_without_rewriting_or_backing_it_up() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("previous.deadpan");
     drop(seed_holds(&path, &["first"]));
@@ -357,36 +357,52 @@ fn opening_a_schema66_package_migrates_it_first() {
             )
             .unwrap();
         connection.pragma_update(None, "user_version", 66).unwrap();
+        connection
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()))
+            .unwrap();
     }
+    let database = path.join("project.sqlite");
+    let before = std::fs::read(&database).unwrap();
+    assert!(list_backups(&path).unwrap().is_empty());
     let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    service.set_backup_interval_for_check(Duration::from_millis(1));
     let opened = command(&service, ProjectRequest::Open(path.clone()));
-    assert!(opened.error.is_none(), "{:?}", opened.error);
+    assert_eq!(
+        opened.error,
+        Some(crate::recovery::describe_store_error(
+            &deadpan_store::StoreError::UnsupportedSchema(66)
+        ))
+    );
     assert!(
         opened
-            .message
+            .error
             .as_deref()
             .unwrap()
-            .contains("Upgraded schema 66 to 68"),
-        "{:?}",
-        opened.message
+            .contains("Nothing was changed and no backup was made")
     );
-    let workspace = opened.workspace.unwrap();
-    assert!(workspace.read_only.is_none());
-    let migrated = list_backups(&path)
-        .unwrap()
-        .into_iter()
-        .any(|backup| backup.reason == BackupReason::BeforeMigration);
-    assert!(migrated);
-    let split = split_first(&service, &workspace, 6);
-    let undone = command(
-        &service,
-        ProjectRequest::Undo {
-            expected_revision: split.document.revision_id().clone(),
-        },
-    );
-    assert!(undone.error.is_none(), "{:?}", undone.error);
+    assert!(opened.workspace.is_none());
+    assert!(opened.committed.is_none());
+    assert!(opened.backups.latest.is_none() && opened.backups.running.is_none());
     command(&service, ProjectRequest::Close);
-    let store = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
-    store.validate_full().unwrap();
-    assert!(store.render_jobs(None, 8).unwrap().is_empty());
+    assert!(list_backups(&path).unwrap().is_empty());
+    assert_eq!(std::fs::read(&database).unwrap(), before);
+    let connection = rusqlite::Connection::open_with_flags(
+        &database,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .unwrap();
+    assert_eq!(
+        connection
+            .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))
+            .unwrap(),
+        66
+    );
+    let absent: i64 = connection.query_row(
+        "SELECT count(*) FROM sqlite_schema WHERE name IN ('retired_identities', 'generation_variant_retention', 'generation_retention_state')",
+        [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(
+        absent, 0,
+        "refusal must not recreate newer operational tables"
+    );
 }

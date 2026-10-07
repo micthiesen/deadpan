@@ -39,7 +39,7 @@ whose plays `]r` then steps independently. `Backspace` keeps each outer play
 choice. The inspector's Previous/Next buttons and the footer teach the keys.
 Stepping is read-only, like `:scope`, and Macros do not record it.
 
-Gain, Camera and Hold audio use the captured scope. Changing a shared node in
+Gain, Camera, Hold audio and [AI pictures](AI_HOLDS.md#repeat-and-retime-scopes) use the captured scope. Changing a shared node in
 This play isolates only the necessary selected ancestors, then applies the
 value in the same reversible transaction. An unchanged value creates no
 override or history entry. Timing edits, copy/paste and macros inside these
@@ -60,8 +60,9 @@ whose centers actually sample the selected occurrence are offered for seeking.
 The model caches its structural index, rows and selected projection. Play
 counts stay compact; it does not create one widget or node per play.
 
-A dormant or unsampled definition can still receive a typed gain value or Hold
-audio edit. Its inspector reports the missing picture and retains the last
+A dormant or unsampled definition can still receive a typed gain value, Hold
+audio edit or generated-picture acceptance. AI generation requires both local
+definition boundaries. Its inspector reports the missing picture and retains the last
 displayed image. Camera and comparison audition require a visible representative.
 A bounded representative search does not prove that every other play is
 unsampled; the UI distinguishes that case from a proven dormant default.
@@ -70,7 +71,7 @@ unsampled; the UI distinguishes that case from a proven dormant default.
 
 `scoped_edit_requirements` returns exact fresh node/mark needs and recognizes
 unchanged values. `EditScoped` accepts gain, framing, endpoint policy, Hold
-audio and rename value edits. Preparation returns the remapped authoring target
+audio, rename and `AcceptGeneratedHold` edits. Preparation returns the remapped authoring target
 and can map an independently captured presentation. The host allocates
 identities, validates media and commits through the same store command path.
 

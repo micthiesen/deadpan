@@ -18,6 +18,7 @@ pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
 pub mod generation_retention;
+mod generation_scope;
 mod history;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host_owner;
@@ -1383,6 +1384,9 @@ fn write_command_plan(
     resolver: Option<&dyn generation::GenerationContextResolver>,
 ) -> Result<(CommitOutcome, deadpan_core::ValidatedDocument), StoreError> {
     compound::require_authored(&plan)?;
+    let request: CommandRequest = serde_json::from_str(&plan.request_json)?;
+    let isolated =
+        generation_scope::command_transition(connection, &plan.current, &request, &plan.next)?;
     generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     source_registration::check_revision_assets(connection, &plan.current, &plan.next)?;
@@ -1427,6 +1431,9 @@ fn write_command_plan(
         .store_revisions
         .write((plan.request_json.len() + plan.edit_json.len()) as u64);
     let history_id = connection.last_insert_rowid();
+    if isolated {
+        generation_scope::insert_event(connection, plan.next.revision_id(), history_id, true)?;
+    }
     connection.execute(
         "UPDATE state SET head_revision=?1,cursor=?2 WHERE singleton=1",
         params![plan.next.revision_id().as_str(), history_id],

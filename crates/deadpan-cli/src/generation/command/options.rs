@@ -1,4 +1,4 @@
-use deadpan_core::NodeId;
+use deadpan_core::{NodeId, ScopedNodeTarget};
 use deadpan_jobs::{GenerationOptions, GenerationTarget, HoldInstructions};
 
 use crate::CliError;
@@ -6,6 +6,7 @@ use crate::CliError;
 pub(super) struct Arguments<'a> {
     pub path: &'a str,
     pub hold: NodeId,
+    pub scope: ScopedNodeTarget,
     pub seed: Option<u64>,
     pub variants: u32,
     pub another: bool,
@@ -14,12 +15,13 @@ pub(super) struct Arguments<'a> {
 
 pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError> {
     let usage = || {
-        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--target ID|none] [--instructions TEXT] [--another]".into())
+        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--target ID|none] [--instructions TEXT] [--another]".into())
     };
     let [path, rest @ ..] = arguments else {
         return Err(usage());
     };
     let mut hold = None;
+    let mut scope = None;
     let mut seed = None;
     let mut variants = 1;
     let mut another = false;
@@ -38,6 +40,16 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
         let value = options.next().ok_or_else(usage)?;
         match *option {
             "--hold" => hold = Some(NodeId::new(*value)?),
+            "--scope" => {
+                if value.len() > 128 * 1024 {
+                    return Err(CliError::Usage("--scope exceeds its size limit".into()));
+                }
+                scope = Some(
+                    serde_json::from_str::<ScopedNodeTarget>(value).map_err(|error| {
+                        CliError::Usage(format!("--scope must be a scoped target: {error}"))
+                    })?,
+                );
+            }
             "--seed" => {
                 seed = Some(
                     value
@@ -79,9 +91,20 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
     if another && (seed.is_some() || controls_given) {
         return Err(CliError::Usage("--another retains the current request's seed, motion, target and instructions; omit it to change those controls.".into()));
     }
+    let hold = hold.ok_or_else(usage)?;
+    let scope = scope.unwrap_or_else(|| ScopedNodeTarget {
+        node: hold.clone(),
+        repeats: Vec::new(),
+    });
+    if scope.node != hold {
+        return Err(CliError::Usage(
+            "--scope must name the same Hold as --hold".into(),
+        ));
+    }
     Ok(Arguments {
         path,
-        hold: hold.ok_or_else(usage)?,
+        hold,
+        scope,
         seed,
         variants,
         another,
@@ -93,6 +116,41 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
 mod tests {
     use super::*;
     use deadpan_jobs::MotionAmount;
+
+    #[test]
+    fn scope_is_strict_bounded_and_names_the_requested_hold() {
+        let scope = r#"{"node":"pause","repeats":[{"repeat":"repeat","branch":{"type":"play","iteration":{"allocation":"r","ordinal":1}}}]}"#;
+        let result = parse(&["p.deadpan", "--hold", "pause", "--scope", scope]).unwrap();
+        assert_eq!(result.scope.node, result.hold);
+        assert_eq!(result.scope.repeats.len(), 1);
+        assert!(parse(&["p.deadpan", "--hold", "other", "--scope", scope]).is_err());
+        assert!(
+            parse(&[
+                "p.deadpan",
+                "--hold",
+                "pause",
+                "--scope",
+                scope,
+                "--scope",
+                scope
+            ])
+            .is_err()
+        );
+        for invalid in [
+            r#"{"node":"pause","repeats":[],"ignored":true}"#.to_owned(),
+            " ".repeat(128 * 1024 + 1),
+            "null".to_owned(),
+        ] {
+            assert!(parse(&["p.deadpan", "--hold", "pause", "--scope", &invalid]).is_err());
+        }
+        assert!(
+            parse(&["p.deadpan", "--hold", "pause"])
+                .unwrap()
+                .scope
+                .repeats
+                .is_empty()
+        );
+    }
 
     #[test]
     fn explicit_controls_are_bounded_and_cannot_change_another_request() {

@@ -53,6 +53,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     let options::Arguments {
         path,
         hold,
+        scope,
         seed: chosen_seed,
         variants,
         another,
@@ -81,6 +82,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         return live::run(
             path,
             hold,
+            scope,
             variants,
             seed_given.then_some(seed),
             options,
@@ -88,7 +90,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         );
     };
     let runtime = BridgeRuntime::from_environment().map_err(GenerationError::from)?;
-    let current = attempt::current_bridge_request(&store, &hold)?;
+    let current = attempt::current_scoped_bridge_request(&store, &scope)?;
     let existing = if another {
         let request = current.clone().ok_or_else(|| {
                 GenerationError::Invalid(
@@ -128,15 +130,23 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
             .and_then(|request| request.constraints.region_target.as_ref()),
     );
     let started = Instant::now();
-    let mut inputs =
-        super::conditioning::prepare_with_options(path, &revision, &hold, &options, &cancelled)
-            .map_err(|error| {
-                if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
-                    GenerationError::Cancelled
-                } else {
-                    GenerationError::Inputs(error)
-                }
-            })?;
+    let conditioning_target = existing
+        .as_ref()
+        .map_or(&scope, |request| &request.origin_target);
+    let mut inputs = super::conditioning::prepare_scoped_with_options(
+        path,
+        &revision,
+        conditioning_target,
+        &options,
+        &cancelled,
+    )
+    .map_err(|error| {
+        if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
+            GenerationError::Cancelled
+        } else {
+            GenerationError::Inputs(error)
+        }
+    })?;
     if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
         return Err(GenerationError::Cancelled.into());
     }
@@ -144,7 +154,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     let conditioning = started.elapsed();
     let mut allocated = match existing {
         Some(request) => attempt::allocate_variant(&mut store, request, inputs)?,
-        None => attempt::allocate_with_provider(
+        None => attempt::allocate_scoped_with_provider(
             &mut store,
             AllocateInput {
                 hold,
@@ -152,6 +162,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
                 seed,
                 inputs,
             },
+            scope,
             runtime.provider(seed),
         )?,
     };
@@ -410,6 +421,7 @@ mod live {
     pub(super) fn run(
         package: &Path,
         hold: NodeId,
+        scope: deadpan_core::ScopedNodeTarget,
         variants: u8,
         seed: Option<u64>,
         options: Option<deadpan_jobs::GenerationOptions>,
@@ -435,6 +447,7 @@ mod live {
                     project_id: project_id.clone(),
                     request: GenerateRequest {
                         hold,
+                        scope: Some(scope),
                         expected_revision: context.revision_id,
                         variants,
                         seed,

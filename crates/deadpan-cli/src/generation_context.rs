@@ -2,54 +2,62 @@
 //! edit, decided without decoding media.
 //!
 //! A bridge Hold's context is its duration, the project rate and canvas, and
-//! the pictures on each side of it: the exact Original picture (asset and
-//! source time, or a freeze), its captured geometry and every framing pose
-//! that composes it. Two documents agree when that identity is equal, even
-//! if the Hold moved in time. Anything else, including a Hold that no longer
-//! has exactly one plain occurrence, makes the request stale; the conditioning
-//! that produced its candidate would no longer match the edit.
+//! the raw pictures on each side in its authored definition clock. Two
+//! documents agree when that identity is equal, even if the Hold moved or
+//! was isolated into one Repeat play. Outer retiming and editorial Camera
+//! do not change the pictures supplied to the model.
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use deadpan_core::{NodeId, NodeKind, ProjectDocument, ProjectFrame, RevisionId, TargetId};
-use deadpan_plan::{PictureSample, RenderPlan};
+use deadpan_core::{
+    BoundaryQueryLimits, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+    ScopedNodeTarget, TargetId,
+};
+use deadpan_plan::{DefinitionPictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
 };
 use sha2::{Digest, Sha256};
 
 /// The context identity of `hold` in `document`, or `None` when the Hold is
-/// absent, not a Hold, or has no single plain occurrence.
+/// absent, not a Hold, or needs an explicit Repeat scope.
 pub fn context_identity(document: &ProjectDocument, hold: &NodeId) -> Option<[u8; 32]> {
+    scoped_context_identity(
+        document,
+        &ScopedNodeTarget {
+            node: hold.clone(),
+            repeats: Vec::new(),
+        },
+    )
+}
+
+pub fn scoped_context_identity(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+) -> Option<[u8; 32]> {
     let plan = RenderPlan::compile(document).ok()?;
-    identity_in(document, &plan, hold, None)
+    identity_in(document, &plan, target, None)
 }
 
 fn identity_in(
     document: &ProjectDocument,
     plan: &RenderPlan,
-    hold: &NodeId,
+    scope: &ScopedNodeTarget,
     target: Option<&TargetId>,
 ) -> Option<[u8; 32]> {
-    let NodeKind::Hold { recipe } = &document.nodes().get(hold)?.kind else {
+    let NodeKind::Hold { recipe } = &document.nodes().get(&scope.node)?.kind else {
         return None;
     };
-    let range = plan.single_occurrence_range(hold)?;
-    let total = plan.duration().frames();
-    let boundary = |frame: i64| -> Option<serde_json::Value> {
-        if frame < 0 || frame >= total {
-            return Some(serde_json::Value::Null);
-        }
-        let sample = plan.picture(ProjectFrame(frame)).ok()?;
-        Some(boundary_identity(&sample))
-    };
+    let boundaries = plan
+        .scoped_hold_boundaries(scope, BoundaryQueryLimits::default())
+        .ok()?;
     let basis = document.presentation_basis();
     let mut identity = serde_json::json!({
         "duration": recipe.duration.frames(),
         "rate": [basis.frame_rate.numerator(), basis.frame_rate.denominator()],
         "canvas": [basis.width, basis.height],
-        "left": boundary(range.start().0 - 1)?,
-        "right": boundary(range.end().0)?,
+        "left": boundaries.left.as_ref().map(boundary_identity),
+        "right": boundaries.right.as_ref().map(boundary_identity),
     });
     if let Some(target) = target {
         // A correction can change the seed without changing either picture.
@@ -63,61 +71,104 @@ fn identity_in(
     Some(Sha256::digest(serde_json::to_vec(&identity).ok()?).into())
 }
 
-/// The picture and its composition, without positions or revision ids.
-fn boundary_identity(sample: &PictureSample) -> serde_json::Value {
+/// Model input precedes editorial composition. Captured framing, gain and
+/// captions may change without invalidating the same raw conditioning picture.
+fn boundary_identity(sample: &DefinitionPictureSample) -> serde_json::Value {
     serde_json::json!({
         "picture": sample.picture,
-        "picture_context": sample.picture_context,
-        "gap": sample.gap_after.is_some(),
-        "framing": sample
-            .framing
-            .iter()
-            .map(|layer| serde_json::json!({"pose": layer.pose, "escalation": layer.escalation}))
-            .collect::<Vec<_>>(),
     })
 }
 
 /// The store resolver used by the app and CLI writers.
 #[derive(Default)]
 pub struct BoundaryContextResolver {
-    /// The most recent origin plan, which repeats across edits.
-    origin: Mutex<Option<(RevisionId, RenderPlan)>>,
+    /// Origins are immutable stored revisions and repeat across edits.
+    origin: PlanCache,
+}
+
+type PlanCache = Mutex<Option<(ProjectId, RevisionId, Arc<RenderPlan>)>>;
+
+/// A prospective document has no persistent cache identity. Borrow the exact
+/// snapshot for one observation batch, including an unsuccessful compilation.
+struct PreparedBoundaryContext<'a> {
+    origin: &'a PlanCache,
+    after: &'a ProjectDocument,
+    plan: Option<RenderPlan>,
+}
+
+fn cached_plan(cache: &PlanCache, document: &ProjectDocument) -> Option<Arc<RenderPlan>> {
+    let mut cached = cache.lock().ok()?;
+    if cached.as_ref().is_none_or(|(project, revision, _)| {
+        project != document.project_id() || revision != document.revision_id()
+    }) {
+        let plan = Arc::new(RenderPlan::compile(document).ok()?);
+        *cached = Some((
+            document.project_id().clone(),
+            document.revision_id().clone(),
+            plan,
+        ));
+    }
+    Some(Arc::clone(&cached.as_ref()?.2))
 }
 
 impl GenerationContextResolver for BoundaryContextResolver {
+    fn prepare_transition<'a>(
+        &'a self,
+        after: &'a ProjectDocument,
+    ) -> Option<Box<dyn GenerationContextResolver + 'a>> {
+        Some(Box::new(PreparedBoundaryContext {
+            origin: &self.origin,
+            after,
+            plan: RenderPlan::compile(after).ok(),
+        }))
+    }
+
     fn observe(
         &self,
         origin: &ProjectDocument,
         after: &ProjectDocument,
         request: &StoredGenerationRequest,
     ) -> ContextObservation {
-        let hold = &request.binding.hold_id;
-        let target = request.constraints.region_target.as_ref();
-        let before = {
-            let Ok(mut cached) = self.origin.lock() else {
-                return ContextObservation::Unresolved;
-            };
-            if cached
-                .as_ref()
-                .is_none_or(|(revision, _)| revision != origin.revision_id())
-            {
-                let Ok(plan) = RenderPlan::compile(origin) else {
-                    return ContextObservation::Unresolved;
-                };
-                *cached = Some((origin.revision_id().clone(), plan));
-            }
-            let (_, plan) = cached.as_ref().expect("cached origin plan");
-            identity_in(origin, plan, hold, target)
-        };
-        let after = RenderPlan::compile(after)
-            .ok()
-            .and_then(|plan| identity_in(after, &plan, hold, target));
-        match (before, after) {
-            (Some(before), Some(after)) if before == after => {
-                ContextObservation::Resolved(request.binding.context_sha256.clone())
-            }
-            _ => ContextObservation::Unresolved,
+        observe_with_plan(
+            &self.origin,
+            origin,
+            after,
+            RenderPlan::compile(after).ok().as_ref(),
+            request,
+        )
+    }
+}
+
+impl GenerationContextResolver for PreparedBoundaryContext<'_> {
+    fn observe(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+    ) -> ContextObservation {
+        if !std::ptr::eq(self.after, after) {
+            return ContextObservation::Unresolved;
         }
+        observe_with_plan(self.origin, origin, after, self.plan.as_ref(), request)
+    }
+}
+
+fn observe_with_plan(
+    origin_cache: &PlanCache,
+    origin: &ProjectDocument,
+    after: &ProjectDocument,
+    after_plan: Option<&RenderPlan>,
+    request: &StoredGenerationRequest,
+) -> ContextObservation {
+    let target = request.constraints.region_target.as_ref();
+    let before = cached_plan(origin_cache, origin)
+        .and_then(|plan| identity_in(origin, &plan, &request.origin_target, target));
+    let after = after_plan.and_then(|plan| identity_in(after, plan, &request.target, target));
+    match (before, after) {
+        (Some(before), Some(after)) if before == after => {
+            ContextObservation::Resolved(request.binding.context_sha256.clone())
+        }
+        _ => ContextObservation::Unresolved,
     }
 }
 
