@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T16:05:45Z",
+  "updated_at": "2026-10-07T20:55:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Automatic replacement AI requests after an accepted pause is lengthened.",
+  "focus": "Completing AI pause creation, provider controls and native timing.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "Generation and acceptance now work inside Repeat and Retime. Automatic replacement after extending a pause remains."
+      "note": "AI pauses and automatic replacements work. Creation shortcuts, generation at video edges and timing feedback remain."
     },
     {
       "id": "import",
@@ -157,6 +157,14 @@
       "revision": "b68bb5d6",
       "retrospective": false,
       "summary": "Verified AI generation inside Repeat and Retime, isolated acceptance, Undo/Redo and packaged real-model export."
+    },
+    {
+      "date": "2026-10-07",
+      "percent": 86,
+      "complete_sections": 4,
+      "revision": "a20a5b35",
+      "retrospective": false,
+      "summary": "Verified automatic AI replacements after lengthening a pause, with real-model generation, packaged export and native workflow checks."
     }
   ]
 }
