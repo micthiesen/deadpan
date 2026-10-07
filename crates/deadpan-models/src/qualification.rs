@@ -213,6 +213,8 @@ struct HostProvenance<'a> {
     worker_provenance_utf8: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     quality: Option<&'a crate::BridgeQualityReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    endpoints: Option<&'a crate::BridgeEndpointReport>,
 }
 
 /// Worker declarations paired with independently selected host inputs.
@@ -241,7 +243,7 @@ pub fn qualify_bridge(
         request,
         declaration,
         selected_provider,
-        conditioning,
+        mut conditioning,
     } = inputs;
     limits.validate()?;
     let deadline = Instant::now() + Duration::from_millis(limits.media.timeout_ms);
@@ -278,6 +280,11 @@ pub fn qualify_bridge(
     // The masters are derived below as canonical sRGB; refuse a context whose
     // declared model space would make that a reinterpretation.
     conditioning.context().check_model_output()?;
+    if conditioning.context().geometry().is_none() {
+        return Err(QualificationError::Request(
+            "fresh candidates require captured conditioning geometry".into(),
+        ));
+    }
     let HostMessage::GenerateBridge {
         output_workspace, ..
     } = request
@@ -365,6 +372,14 @@ pub fn qualify_bridge(
         cancelled,
     )?;
     check()?;
+    let endpoints = crate::endpoints::measure(
+        masters.sampled(),
+        &mut conditioning,
+        &binding.plan,
+        deadline,
+        cancelled,
+    )?;
+    check()?;
     let worker_provenance_utf8 = std::str::from_utf8(&provenance_bytes)
         .map_err(|error| QualificationError::Provenance(error.to_string()))?;
     let native_span = masters
@@ -379,8 +394,8 @@ pub fn qualify_bridge(
         .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 4,
-            validation_profile: "deadpan-ffv1-bridge-4",
+            schema_version: 5,
+            validation_profile: "deadpan-ffv1-bridge-5",
             binding: &binding,
             selected_provider,
             declaration,
@@ -393,6 +408,7 @@ pub fn qualify_bridge(
             sampled_span,
             worker_provenance_utf8,
             quality: Some(&quality),
+            endpoints: Some(&endpoints),
         },
         limits.maximum_host_provenance_bytes,
     )

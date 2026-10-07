@@ -466,6 +466,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "The chosen variant visibly reports measured quality coverage before acceptance",
         quality.starts_with("Motion/lighting sampled;")
+            && quality.contains("Both edit joins checked for gross discontinuity.")
             && compact.starts_with("Motion coverage ")
             && widget_text(d).contains(&quality)
             && !paint.is_empty()

@@ -33,6 +33,39 @@ pub struct SyntheticWorker {
     pub media_worker: PathBuf,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(super) enum SyntheticMode {
+    Blend,
+    #[cfg(test)]
+    LightingFlash,
+    #[cfg(test)]
+    Uniform([u8; 3]),
+}
+
+impl SyntheticMode {
+    fn write_override(self, index: u64, count: u32, frame: &mut [u8]) -> bool {
+        #[cfg(test)]
+        match self {
+            Self::LightingFlash if index == u64::from(count / 2) => {
+                frame.fill(u8::MAX);
+                true
+            }
+            Self::Uniform(rgb) => {
+                for pixel in frame.chunks_exact_mut(3) {
+                    pixel.copy_from_slice(&rgb);
+                }
+                true
+            }
+            _ => false,
+        }
+        #[cfg(not(test))]
+        {
+            let _ = (index, count, frame);
+            false
+        }
+    }
+}
+
 /// Run `allocated` with synthetic footage in place of the model worker.
 /// Durable transitions reach `records` exactly as a real run's do; an `Err`
 /// from it fails the attempt.
@@ -43,20 +76,28 @@ pub fn run(
     records: impl FnMut(AttemptRecord) -> Result<(), String>,
     cancelled: &AtomicBool,
 ) -> WorkerRun {
-    run_inner(allocated, worker, progress, records, cancelled, false)
+    run_inner(
+        allocated,
+        worker,
+        progress,
+        records,
+        cancelled,
+        SyntheticMode::Blend,
+    )
 }
 
-/// Test-only path for exercising host qualification with a one-frame flash.
+/// Test-only path for exercising host qualification with deliberate defects.
 /// The normal synthetic worker and its public configuration stay unchanged.
 #[cfg(test)]
-pub(super) fn run_with_lighting_flash(
+pub(super) fn run_with_mode(
     allocated: &Allocated,
     worker: &SyntheticWorker,
     progress: impl FnMut(AttemptProgress),
     records: impl FnMut(AttemptRecord) -> Result<(), String>,
     cancelled: &AtomicBool,
+    mode: SyntheticMode,
 ) -> WorkerRun {
-    run_inner(allocated, worker, progress, records, cancelled, true)
+    run_inner(allocated, worker, progress, records, cancelled, mode)
 }
 
 fn run_inner(
@@ -65,7 +106,7 @@ fn run_inner(
     mut progress: impl FnMut(AttemptProgress),
     mut records: impl FnMut(AttemptRecord) -> Result<(), String>,
     cancelled: &AtomicBool,
-    flash_middle_frame: bool,
+    mode: SyntheticMode,
 ) -> WorkerRun {
     let mut timings = RunTimings::default();
     let started = Instant::now();
@@ -130,13 +171,7 @@ fn run_inner(
             );
         }
     }
-    let declaration = match synthesize(
-        allocated,
-        worker,
-        &prepared.worker,
-        cancelled,
-        flash_middle_frame,
-    ) {
+    let declaration = match synthesize(allocated, worker, &prepared.worker, cancelled, mode) {
         Ok(declaration) => declaration,
         Err(_) if cancelled.load(Ordering::Acquire) => {
             return finish(cancel(&mut records), timings, prepared.directory);
@@ -190,7 +225,7 @@ fn synthesize(
     worker: &SyntheticWorker,
     root: &Path,
     cancelled: &AtomicBool,
-    flash_middle_frame: bool,
+    mode: SyntheticMode,
 ) -> Result<NativeCandidateManifest, String> {
     let text = |error: &dyn std::fmt::Display| error.to_string();
     let plan = &allocated.inputs.plan;
@@ -258,9 +293,7 @@ fn synthesize(
             if cancelled.load(Ordering::Acquire) {
                 return Err("cancelled".into());
             }
-            if flash_middle_frame && index == u64::from(count / 2) {
-                frame.fill(u8::MAX);
-            } else {
+            if !mode.write_override(index, count, &mut frame) {
                 for (offset, (a, b)) in left.as_raw().iter().zip(right.as_raw()).enumerate() {
                     let mixed = (u64::from(*a) * (last - index.min(last))
                         + u64::from(*b) * index.min(last)
@@ -302,12 +335,12 @@ fn synthesize(
         "loaded_ltx_sources_sha256": {"synthetic/none": receipt},
         "verified_assets": [{"repository": "synthetic", "path": "none", "size": 1, "sha256": receipt}],
         "prompt_version": "synthetic-1",
-        "prompt": "Synthetic test footage: a blend of the two boundary pictures; no model ran.",
+        "prompt": format!("Synthetic test footage using {mode:?}; no model ran."),
         "seed": seed,
         "context": context,
-        "configuration": {"backend": "synthetic"},
+        "configuration": {"backend": "synthetic", "mode": format!("{mode:?}")},
         "model_color_interpretation": "synthetic encoded sRGB",
-        "temporal_interpolation": "synthetic linear blend",
+        "temporal_interpolation": "synthetic linear blend or explicit test override",
         "conditioning_preprocessing": "none",
         "native_sha256": native_sha,
         "native_bytes": footage.len(),

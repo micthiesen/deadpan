@@ -23,7 +23,7 @@ ADAPTER_SOURCES = {name: hashlib.sha256((Path(__file__).resolve().parent / name)
                    for name in ["worker.py", "worker_protocol.py", "worker_media.py", "mlx_backend.py",
                                 "runtime_source.py", "ltx-source-manifest.json"]}
 
-from worker_media import exact_keys, validate_plan
+from worker_media import exact_keys, integer, validate_plan
 from worker_protocol import (
     FrameRate,
     GenerateBridgeRequest,
@@ -55,32 +55,119 @@ def strict_json(data):
 # The only colour space this model takes and produces: full-range sRGB RGB
 # with BT.709 primaries (deadpan_models::CANONICAL_BRIDGE_COLOR).
 MODEL_COLOR_SPACE = {"transfer": "srgb", "primaries": "bt709", "matrix": "rgb", "range": "full"}
+RUST_WHITESPACE = "\t\n\v\f\r \u0085\u00a0\u1680" + "".join(
+    chr(codepoint) for codepoint in range(0x2000, 0x200B)
+) + "\u2028\u2029\u202f\u205f\u3000"
+
+
+def valid_input_color_interpretation(value):
+    """Match Rust's trimmed nonempty, NUL-free, 4096 UTF-8-byte string rule."""
+    if not isinstance(value, str) or "\0" in value:
+        return False
+    try:
+        if len(value.encode("utf-8")) > 4096:
+            return False
+    except UnicodeEncodeError:
+        return False
+    return any(character not in RUST_WHITESPACE for character in value)
 
 
 def validate_context_shape(context):
-    """Admit a version-2 context (measured boundary pictures, explicit model
-    colour space) or a version-1 context from an earlier host. The host
-    records and checks the boundary evidence; the worker refuses a declared
-    model colour space it does not produce."""
+    """Admit captured-geometry schema 3 and older retained context grammars.
+
+    The host records and checks boundary evidence; this worker validates the
+    geometry binding before loading the model and refuses an unsupported model
+    colour space.
+    """
     if not isinstance(context, dict) or type(context.get("schema_version")) is not int:
         raise ValueError("unsupported context or color interpretation")
-    if context["schema_version"] == 2:
-        exact_keys(context, ["schema_version", "model_color_space", "plan", "left", "right",
-                             "input_color_interpretation", "boundaries"])
+    if context["schema_version"] in (2, 3):
+        keys = ["schema_version", "model_color_space", "plan", "left", "right",
+                "input_color_interpretation", "boundaries"]
+        if context["schema_version"] == 3:
+            keys.append("geometry")
+        exact_keys(context, keys)
         boundaries = context["boundaries"]
         if not isinstance(boundaries, dict):
             raise ValueError("unsupported context boundaries")
         exact_keys(boundaries, ["left", "right"])
         supported = context["model_color_space"] == MODEL_COLOR_SPACE
+        if context["schema_version"] == 3:
+            plan = context.get("plan")
+            native = plan.get("native") if isinstance(plan, dict) else None
+            if not isinstance(native, dict):
+                raise ValueError("unsupported context geometry raster")
+            validate_context_geometry(
+                context,
+                integer(native.get("width"), 1, (1 << 32) - 1),
+                integer(native.get("height"), 1, (1 << 32) - 1),
+            )
     elif context["schema_version"] == 1:
         exact_keys(context, ["schema_version", "model_color", "plan", "left", "right",
                              "input_color_interpretation"])
         supported = context["model_color"] == "srgb"
     else:
         supported = False
-    if (not supported or not isinstance(context["input_color_interpretation"], str)
-            or not 1 <= len(context["input_color_interpretation"]) <= 4096):
+    if (not supported
+            or not valid_input_color_interpretation(context["input_color_interpretation"])):
         raise ValueError("unsupported context or color interpretation")
+
+
+def validate_context_geometry(context, native_width, native_height):
+    """Validate schema-3 rects against the native raster and boundary types."""
+    geometry = context["geometry"]
+    exact_keys(geometry, ["presentation", "left_content", "right_content"])
+    native_width = integer(native_width, 1, (1 << 32) - 1)
+    native_height = integer(native_height, 1, (1 << 32) - 1)
+
+    def rect(value, label, *, contained_by=None):
+        if not isinstance(value, dict):
+            raise ValueError(f"unsupported {label} rectangle")
+        exact_keys(value, ["x", "y", "width", "height"])
+        x = integer(value["x"], 0, (1 << 32) - 1)
+        y = integer(value["y"], 0, (1 << 32) - 1)
+        width = integer(value["width"], 1, (1 << 32) - 1)
+        height = integer(value["height"], 1, (1 << 32) - 1)
+        right, bottom = x + width, y + height
+        if right > (1 << 32) - 1 or bottom > (1 << 32) - 1:
+            raise ValueError(f"{label} rectangle overflows u32")
+        if (width > native_width or height > native_height
+                or right > native_width or bottom > native_height):
+            raise ValueError(f"{label} rectangle exceeds the native raster")
+        if x != (native_width - width) // 2 or y != (native_height - height) // 2:
+            raise ValueError(f"{label} rectangle is not centered in the native raster")
+        if contained_by is not None:
+            parent_right = contained_by["x"] + contained_by["width"]
+            parent_bottom = contained_by["y"] + contained_by["height"]
+            if (x < contained_by["x"] or y < contained_by["y"]
+                    or right > parent_right or bottom > parent_bottom):
+                raise ValueError(f"{label} rectangle is outside the presentation")
+        return {"x": x, "y": y, "width": width, "height": height}
+
+    presentation = rect(geometry["presentation"], "presentation")
+    boundaries = context["boundaries"]
+    for side, boundary_key in (("left_content", "left"), ("right_content", "right")):
+        boundary = boundaries[boundary_key]
+        if not isinstance(boundary, dict) or len(boundary) != 1:
+            raise ValueError("unsupported boundary picture")
+        kind, payload = next(iter(boundary.items()))
+        if kind not in {"original", "generated", "authored_black"} or not isinstance(payload, dict):
+            raise ValueError("unsupported boundary picture")
+        fields = {
+            "original": ["project_frame", "asset", "qualification", "picture"],
+            "generated": ["project_frame", "sampled_asset", "sampled_object", "provenance", "picture"],
+            "authored_black": ["project_frame"],
+        }[kind]
+        exact_keys(payload, fields)
+        if "project_frame" not in payload:
+            raise ValueError("boundary picture has no project frame")
+        integer(payload["project_frame"], 0, (1 << 63) - 1)
+        is_black = kind == "authored_black"
+        content = geometry[side]
+        if (content is None) != is_black:
+            raise ValueError("content geometry must be absent only for authored black")
+        if content is not None:
+            rect(content, side, contained_by=presentation)
 
 
 def validate_bridge_context(context, request, video):
@@ -88,7 +175,14 @@ def validate_bridge_context(context, request, video):
         raise ValueError("development worker requires protocol-2 generate_bridge")
     if not isinstance(context, dict) or context.get("plan") != request.plan:
         raise ValueError("request plan differs from context plan")
-    return validate_plan(context["plan"], video)
+    if "schema_version" in context:
+        validate_context_shape(context)
+    native_width = request.plan["native"]["width"]
+    native_height = request.plan["native"]["height"]
+    result = validate_plan(context["plan"], video)
+    if context.get("schema_version") == 3:
+        validate_context_geometry(context, native_width, native_height)
+    return result
 
 
 def contained_read(root, reference, maximum):

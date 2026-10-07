@@ -76,7 +76,7 @@ def bridge_request_wire():
             "pack_id": "ltx-2.3-q4-development",
             "pack_version": "56a5866d",
             "runtime_id": "ltx-mlx-development",
-            "runtime_version": "0.15.8+deadpan2",
+            "runtime_version": "0.15.8+deadpan3",
             "seed": 38_117,
         },
         "plan": plan(),
@@ -204,7 +204,7 @@ class BridgeProtocolTests(unittest.TestCase):
                     "ltx-2.3-q4-development",
                     "56a5866d",
                     "ltx-mlx-development",
-                    "0.15.8+deadpan2",
+                    "0.15.8+deadpan3",
                     38_117,
                 ),
             )
@@ -286,18 +286,105 @@ class WorkerContextShapeTests(unittest.TestCase):
                            "right": {"authored_black": {"project_frame": 46}}},
         }
 
+    def schema1_context(self):
+        context = self.context()
+        del context["model_color_space"], context["boundaries"]
+        context.update(schema_version=1, model_color="srgb")
+        return context
+
     def test_measured_and_legacy_contexts_are_admitted(self):
         worker.validate_context_shape(self.context())
-        legacy = self.context()
-        del legacy["model_color_space"], legacy["boundaries"]
-        legacy.update(schema_version=1, model_color="srgb")
-        worker.validate_context_shape(legacy)
+        worker.validate_context_shape(self.schema1_context())
+
+    def schema3_context(self):
+        context = self.context()
+        context.update(
+            schema_version=3,
+            geometry={
+                "presentation": {"x": 4, "y": 10, "width": 760, "height": 300},
+                "left_content": {"x": 64, "y": 40, "width": 640, "height": 240},
+                "right_content": None,
+            },
+        )
+        context["boundaries"]["left"] = {
+            "original": {
+                "project_frame": 0,
+                "asset": "asset",
+                "qualification": "a" * 64,
+                "picture": {
+                    "source_frame": 0,
+                    "pts": {"ticks": 0, "time_base": {"numerator": 1, "denominator": 24}},
+                    "stream": {
+                        "codec": "h264", "pixel_format": "yuv420p", "width": 768, "height": 320,
+                        "sample_aspect": [1, 1], "rotation_quarter_turns": 0,
+                        "decoded_sample_bits": 8,
+                        "color": {"transfer": "bt709", "primaries": "bt709",
+                                  "matrix": "bt709", "range": "limited"},
+                    },
+                    "model_input": "rec709_to_srgb",
+                },
+            }
+        }
+        return context
+
+    def test_captured_geometry_schema_three_is_admitted(self):
+        worker.validate_context_shape(self.schema3_context())
+
+    def test_schema_three_geometry_is_strict_and_raster_bound(self):
+        mutations = [
+            lambda value: value.pop("geometry"),
+            lambda value: value["geometry"].update(extra=True),
+            lambda value: value["geometry"]["presentation"].update(extra=True),
+            lambda value: value["geometry"]["presentation"].update(x=True),
+            lambda value: value["geometry"]["presentation"].update(width=0),
+            lambda value: value["geometry"]["presentation"].update(x=(1 << 32) - 1, width=2),
+            lambda value: value["geometry"]["presentation"].update(width=769),
+            lambda value: value["geometry"]["presentation"].update(x=5),
+            lambda value: value["geometry"]["left_content"].update(y=41),
+            lambda value: value["geometry"]["left_content"].update(width=767),
+            lambda value: value["geometry"].update(right_content={"x": 64, "y": 40,
+                                                                   "width": 640, "height": 240}),
+            lambda value: value["geometry"].update(left_content=None),
+            lambda value: value["boundaries"]["left"]["original"].update(extra=True),
+            lambda value: value["boundaries"]["left"]["original"].pop("picture"),
+        ]
+        for mutate in mutations:
+            value = self.schema3_context()
+            mutate(value)
+            with self.subTest(mutation=mutate):
+                with self.assertRaises(ValueError):
+                    worker.validate_context_shape(value)
+
+    def test_bridge_validation_rechecks_geometry_against_the_request(self):
+        request = worker_protocol.parse_host_message(bridge_request_wire())
+        context = self.schema3_context()
+        video = bridge_request_wire()["constraints"]["video"]
+        self.assertEqual(worker.validate_bridge_context(context, request, video), (45, 41))
+        context["geometry"]["presentation"]["x"] = 5
+        with self.assertRaisesRegex(ValueError, "not centered"):
+            worker.validate_bridge_context(context, request, video)
+
+    def test_input_color_interpretation_matches_rust_utf8_and_trim_rules(self):
+        factories = (self.schema1_context, self.context, self.schema3_context)
+        for make_context in factories:
+            for value in (" \t\n\u0085\u3000", "opaque\0interpretation", "界" * 1366):
+                with self.subTest(schema=make_context().get("schema_version"), value=value[:16]):
+                    context = make_context()
+                    context["input_color_interpretation"] = value
+                    with self.assertRaises(ValueError):
+                        worker.validate_context_shape(context)
+
+            for value in ("é" * 2048, "\u001c"):
+                with self.subTest(schema=make_context().get("schema_version"), value=value[:16]):
+                    context = make_context()
+                    context["input_color_interpretation"] = value
+                    worker.validate_context_shape(context)
 
     def test_foreign_model_colour_and_unknown_shapes_are_refused(self):
         mutations = [
             lambda value: value["model_color_space"].update(primaries="bt2020"),
             lambda value: value["model_color_space"].update(gamma=2.2),
-            lambda value: value.update(schema_version=3),
+            lambda value: value.update(schema_version=4),
             lambda value: value.update(schema_version=True),
             lambda value: value.update(model_color="srgb"),
             lambda value: value.pop("boundaries"),

@@ -165,7 +165,12 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     let inputs =
         conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
     let context = manifest(&inputs)?;
-    assert_eq!(context.schema_version(), 2);
+    assert_eq!(context.schema_version(), 3);
+    let geometry = context.geometry().ok_or("captured geometry")?;
+    let expected_crop = deadpan_models::RasterRect::new(99, 0, 569, 320)?;
+    assert_eq!(geometry.presentation, expected_crop);
+    assert_eq!(geometry.left_content, Some(expected_crop));
+    assert_eq!(geometry.right_content, Some(expected_crop));
     assert_eq!(context.model_color_space(), CANONICAL_BRIDGE_COLOR);
     assert_eq!(
         context.input_color_interpretation(),

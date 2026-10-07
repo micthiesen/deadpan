@@ -6,7 +6,7 @@
   "model_family": "ltx-2.3",
   "runtime_id": "ltx-mlx",
   "runtime_versions": [
-    "0.15.8+deadpan2"
+    "0.15.8+deadpan3"
   ],
   "operations": [
     "bridge_hold"

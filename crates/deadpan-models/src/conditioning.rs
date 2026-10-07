@@ -1,9 +1,10 @@
 //! Immutable retention of opaque bridge-conditioning inputs.
 //!
 //! This boundary proves containment and exact byte identity for a context
-//! manifest and its two declared frame artifacts. A version-2 manifest also
-//! records the measured colour, frame identity and PTS of each boundary
-//! picture and checks them for internal consistency; this layer does not
+//! manifest and its two declared frame artifacts. Modern manifests also
+//! record the measured colour, frame identity and PTS of each boundary
+//! picture, plus version 3's exact prepared rectangles, and check them for
+//! internal consistency; this layer does not
 //! decode images or confirm those records against media. The host establishes
 //! that by deriving the manifest from the project's committed pictures.
 
@@ -19,6 +20,10 @@ use deadpan_jobs::{BridgeGenerationPlan, HostMessage, WorkspaceArtifact, Workspa
 use serde::{Deserialize, Serialize};
 
 use crate::{BridgeBoundaries, BridgeColor, CANONICAL_BRIDGE_COLOR, QualificationError};
+
+#[path = "conditioning_geometry.rs"]
+mod geometry;
+pub use geometry::{ConditioningGeometry, RasterRect};
 
 const MAXIMUM_MANIFEST_BYTES: u64 = 1024 * 1024;
 const MAXIMUM_FRAME_BYTES: u64 = 64 * 1024 * 1024;
@@ -87,10 +92,9 @@ impl TryFrom<ConditioningLimitsWire> for ConditioningLimits {
 /// A strict bridge context manifest. The frame artifacts remain opaque bytes
 /// at this layer; later media preparation owns their actual image semantics.
 ///
-/// Version 2 (written by current conditioning) declares the model's colour
-/// space explicitly and records the measured boundary pictures. Version 1 is
-/// retained only to admit bundles captured before it: it states its colour
-/// interpretation as text and implies the canonical sRGB model space.
+/// Version 3 records the exact presentation and fitted content rectangles in
+/// addition to version 2's explicit model colour and measured boundaries.
+/// Earlier contexts remain readable without inventing missing geometry.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "serde_json::Value")]
 pub struct BridgeContext {
@@ -101,6 +105,7 @@ pub struct BridgeContext {
     right: WorkspaceArtifact,
     input_color_interpretation: String,
     boundaries: Option<BridgeBoundaries>,
+    geometry: Option<ConditioningGeometry>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -126,9 +131,47 @@ struct BridgeContextV2Wire {
     boundaries: BridgeBoundaries,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BridgeContextV3Wire {
+    schema_version: u32,
+    model_color_space: BridgeColor,
+    plan: BridgeGenerationPlan,
+    left: WorkspaceArtifact,
+    right: WorkspaceArtifact,
+    input_color_interpretation: String,
+    boundaries: BridgeBoundaries,
+    geometry: ConditioningGeometry,
+}
+
 impl BridgeContext {
-    /// A version-2 context recording the measured boundary pictures.
+    /// A version-3 context recording measured boundaries and prepared geometry.
     pub fn new(
+        plan: BridgeGenerationPlan,
+        left: WorkspaceArtifact,
+        right: WorkspaceArtifact,
+        input_color_interpretation: impl Into<String>,
+        model_color_space: BridgeColor,
+        boundaries: BridgeBoundaries,
+        geometry: ConditioningGeometry,
+    ) -> Result<Self, QualificationError> {
+        let context = Self {
+            schema_version: 3,
+            model_color_space,
+            plan,
+            left,
+            right,
+            input_color_interpretation: input_color_interpretation.into(),
+            boundaries: Some(boundaries),
+            geometry: Some(geometry),
+        };
+        context.validate_shape()?;
+        Ok(context)
+    }
+
+    /// Retained version-2 evidence has measured boundaries but no captured
+    /// presentation crop. New conditioning must use [`Self::new`].
+    pub fn legacy_v2(
         plan: BridgeGenerationPlan,
         left: WorkspaceArtifact,
         right: WorkspaceArtifact,
@@ -144,6 +187,7 @@ impl BridgeContext {
             right,
             input_color_interpretation: input_color_interpretation.into(),
             boundaries: Some(boundaries),
+            geometry: None,
         };
         context.validate_shape()?;
         Ok(context)
@@ -165,6 +209,7 @@ impl BridgeContext {
             right,
             input_color_interpretation: input_color_interpretation.into(),
             boundaries: None,
+            geometry: None,
         };
         context.validate_shape()?;
         Ok(context)
@@ -201,6 +246,11 @@ impl BridgeContext {
         self.boundaries.as_ref()
     }
 
+    /// Exact model-raster geometry; absent from retained version-1/2 contexts.
+    pub fn geometry(&self) -> Option<&ConditioningGeometry> {
+        self.geometry.as_ref()
+    }
+
     /// Require the declared model space to equal the canonical masters' space.
     ///
     /// Qualification derives both masters through the canonical FFV1 converter,
@@ -218,8 +268,9 @@ impl BridgeContext {
     }
 
     fn validate_shape(&self) -> Result<(), QualificationError> {
-        if !matches!(self.schema_version, 1 | 2)
+        if !matches!(self.schema_version, 1..=3)
             || (self.schema_version == 1) != self.boundaries.is_none()
+            || (self.schema_version == 3) != self.geometry.is_some()
             || (self.schema_version == 1 && self.model_color_space != CANONICAL_BRIDGE_COLOR)
             || self.input_color_interpretation.trim().is_empty()
             || self.input_color_interpretation.len() > MAXIMUM_DESCRIPTION_BYTES
@@ -250,6 +301,12 @@ impl BridgeContext {
                     "boundary pictures do not enclose the planned Hold",
                 ));
             }
+            if let Some(geometry) = &self.geometry {
+                let native = self.plan.native_dimensions();
+                geometry
+                    .validate([native.width(), native.height()], boundaries)
+                    .map_err(conditioning_error)?;
+            }
         }
         Ok(())
     }
@@ -257,8 +314,8 @@ impl BridgeContext {
 
 impl Serialize for BridgeContext {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        match &self.boundaries {
-            None => BridgeContextV1Wire {
+        match (&self.boundaries, &self.geometry) {
+            (None, None) => BridgeContextV1Wire {
                 schema_version: self.schema_version,
                 model_color: "srgb".into(),
                 plan: self.plan.clone(),
@@ -267,7 +324,7 @@ impl Serialize for BridgeContext {
                 input_color_interpretation: self.input_color_interpretation.clone(),
             }
             .serialize(serializer),
-            Some(boundaries) => BridgeContextV2Wire {
+            (Some(boundaries), None) => BridgeContextV2Wire {
                 schema_version: self.schema_version,
                 model_color_space: self.model_color_space,
                 plan: self.plan.clone(),
@@ -277,6 +334,20 @@ impl Serialize for BridgeContext {
                 boundaries: boundaries.clone(),
             }
             .serialize(serializer),
+            (Some(boundaries), Some(geometry)) => BridgeContextV3Wire {
+                schema_version: self.schema_version,
+                model_color_space: self.model_color_space,
+                plan: self.plan.clone(),
+                left: self.left.clone(),
+                right: self.right.clone(),
+                input_color_interpretation: self.input_color_interpretation.clone(),
+                boundaries: boundaries.clone(),
+                geometry: *geometry,
+            }
+            .serialize(serializer),
+            (None, Some(_)) => Err(serde::ser::Error::custom(
+                "geometry requires measured boundaries",
+            )),
         }
     }
 }
@@ -302,6 +373,7 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     right: wire.right,
                     input_color_interpretation: wire.input_color_interpretation,
                     boundaries: None,
+                    geometry: None,
                 }
             }
             Some(2) => {
@@ -314,6 +386,20 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     right: wire.right,
                     input_color_interpretation: wire.input_color_interpretation,
                     boundaries: Some(wire.boundaries),
+                    geometry: None,
+                }
+            }
+            Some(3) => {
+                let wire: BridgeContextV3Wire = serde_json::from_value(value)?;
+                Self {
+                    schema_version: wire.schema_version,
+                    model_color_space: wire.model_color_space,
+                    plan: wire.plan,
+                    left: wire.left,
+                    right: wire.right,
+                    input_color_interpretation: wire.input_color_interpretation,
+                    boundaries: Some(wire.boundaries),
+                    geometry: Some(wire.geometry),
                 }
             }
             _ => {
@@ -500,6 +586,16 @@ impl RetainedConditioning {
 
     pub fn right(&self) -> &ConditioningObject {
         &self.right
+    }
+
+    /// Read/seek only: endpoint qualification inspects the retained snapshot,
+    /// never a path still writable by the generation worker.
+    pub(crate) fn boundary_mut(&mut self, left: bool) -> &mut ConditioningObject {
+        if left {
+            &mut self.left
+        } else {
+            &mut self.right
+        }
     }
 
     pub fn context(&self) -> &BridgeContext {
@@ -842,7 +938,7 @@ mod tests {
         }
     }
 
-    /// A version-2 context: authored black on both sides of the 3-frame Hold.
+    /// A version-3 context: authored black on both sides of the 3-frame Hold.
     fn measured(
         plan: BridgeGenerationPlan,
         left: WorkspaceArtifact,
@@ -857,6 +953,11 @@ mod tests {
             BridgeBoundaries {
                 left: crate::BoundaryPicture::AuthoredBlack { project_frame: 0 },
                 right: crate::BoundaryPicture::AuthoredBlack { project_frame: 4 },
+            },
+            ConditioningGeometry {
+                presentation: RasterRect::new(0, 0, 4, 2).unwrap(),
+                left_content: None,
+                right_content: None,
             },
         )
         .unwrap()
@@ -923,7 +1024,7 @@ mod tests {
     fn capture_freezes_exact_bytes_and_receipt_bindings() {
         let fixture = Fixture::new(false);
         let request = fixture.request();
-        let retained = capture_bridge_conditioning(
+        let mut retained = capture_bridge_conditioning(
             &fixture.workspace(),
             &request,
             &fixture.manifest,
@@ -943,6 +1044,18 @@ mod tests {
         let receipt_json = serde_json::to_value(retained.receipt()).unwrap();
         let receipt: ConditioningReceipt = serde_json::from_value(receipt_json).unwrap();
         assert_eq!(&receipt, retained.receipt());
+
+        let context = retained.context().clone();
+        for (is_left, expected) in [(true, &fixture.left_bytes), (false, &fixture.right_bytes)] {
+            let mut inspected = Vec::new();
+            let boundary = retained.boundary_mut(is_left);
+            boundary.read_to_end(&mut inspected).unwrap();
+            assert_eq!(&inspected, expected);
+            boundary.rewind().unwrap();
+        }
+        assert_eq!(retained.context(), &context);
+        assert_eq!(retained.receipt(), &receipt);
+        retained.validate_for(&request).unwrap();
 
         fs::write(
             fixture.directory.path().join("inputs/left.bin"),
@@ -1270,7 +1383,7 @@ mod tests {
     }
 
     #[test]
-    fn version_two_grammar_is_strict_deterministic_and_bounded() {
+    fn version_three_grammar_is_strict_deterministic_and_bounded() {
         let fixture = Fixture::new(false);
         let context = measured(plan(), fixture.left.clone(), fixture.right.clone());
         let bytes = serde_json::to_vec(&context).unwrap();
@@ -1280,7 +1393,7 @@ mod tests {
             "deterministic"
         );
         let wire: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(wire["schema_version"], 2);
+        assert_eq!(wire["schema_version"], 3);
         assert!(wire.get("model_color").is_none());
         assert_eq!(
             wire["model_color_space"],
@@ -1303,8 +1416,17 @@ mod tests {
                 "{changed}"
             );
         };
-        reject(&|wire| wire["schema_version"] = serde_json::json!(3));
+        reject(&|wire| wire["schema_version"] = serde_json::json!(4));
+        reject(&|wire| wire["schema_version"] = serde_json::json!(2));
         reject(&|wire| wire["schema_version"] = serde_json::json!(1));
+        reject(&|wire| {
+            wire.as_object_mut().unwrap().remove("geometry");
+        });
+        reject(&|wire| wire["geometry"] = serde_json::Value::Null);
+        reject(&|wire| wire["geometry"]["presentation"]["width"] = serde_json::json!(5));
+        reject(&|wire| wire["geometry"]["presentation"]["width"] = serde_json::json!(0));
+        reject(&|wire| wire["geometry"]["presentation"]["x"] = serde_json::json!(1));
+        reject(&|wire| wire["geometry"]["left_content"] = wire["geometry"]["presentation"].clone());
         reject(&|wire| {
             wire.as_object_mut().unwrap().remove("boundaries");
         });
@@ -1339,6 +1461,25 @@ mod tests {
         assert!(legacy.boundaries().is_none());
         assert_eq!(legacy.model_color_space(), CANONICAL_BRIDGE_COLOR);
         legacy.check_model_output().unwrap();
+
+        let legacy = BridgeContext::legacy_v2(
+            plan(),
+            fixture.left.clone(),
+            fixture.right.clone(),
+            context.input_color_interpretation(),
+            context.model_color_space(),
+            context.boundaries().unwrap().clone(),
+        )
+        .unwrap();
+        let legacy_wire = serde_json::to_value(&legacy).unwrap();
+        assert_eq!(legacy_wire["schema_version"], 2);
+        assert!(legacy_wire.get("geometry").is_none());
+        let parsed: BridgeContext = serde_json::from_value(legacy_wire.clone()).unwrap();
+        assert_eq!(parsed, legacy);
+        assert!(parsed.geometry().is_none());
+        let mut invalid_legacy = legacy_wire;
+        invalid_legacy["geometry"] = serde_json::Value::Null;
+        assert!(serde_json::from_value::<BridgeContext>(invalid_legacy).is_err());
 
         // A declared model space other than the canonical masters' fails.
         let mut foreign = wire;

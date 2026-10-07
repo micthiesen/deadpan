@@ -18,6 +18,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 blake3.workspace = true
 sha2.workspace = true
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
 rustix = { workspace = true, features = ["fs"] }
 # HTTPS model-pack downloads only; rustls with the system trust store.
 # Ed25519 verification of signed update manifests (already linked by rustls).

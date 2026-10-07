@@ -1,7 +1,8 @@
-"""Prepare an isolated developer probe from already-installed runtime and data.
+"""Prepare an explicitly legacy-only developer probe from installed runtime and data.
 
 Run with the pinned private environment (Pillow is already an MLX dependency).
-No downloads or environment installation occur here.
+No downloads or environment installation occur here. This helper writes schema-1
+context without captured geometry and cannot qualify fresh host conditioning.
 """
 
 import argparse
@@ -36,7 +37,11 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--cancel-after-millis", type=int)
     parser.add_argument("--cancel-at-stage", choices=["preflight", "runtime_loading", "model_loading", "inference", "decoding", "encoding", "worker_validation"])
+    parser.add_argument("--legacy-only-probe", action="store_true",
+                        help="allow schema-1 context without host-captured boundary geometry")
     args = parser.parse_args()
+    if not args.legacy_only_probe:
+        parser.error("this helper emits schema-1 context; pass --legacy-only-probe for a legacy-only probe")
     if not 1 <= args.frames <= 180 or not 0 <= args.seed < 2**32:
         parser.error("frame count or seed outside this probe envelope")
     root = Path(__file__).resolve().parents[2]

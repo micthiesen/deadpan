@@ -17,20 +17,30 @@ use crate::generation::runtime::BridgeRuntime;
 
 const FRAMES: i64 = 24;
 
+fn fixture_rate(frames: i64) -> deadpan_core::FrameRate {
+    // A single sampled frame must still request a native interval within the
+    // real provider's minimum. At 2 fps its two boundaries span one second.
+    deadpan_core::FrameRate::new(if frames == 1 { 2 } else { 24 }, 1).unwrap()
+}
+
 fn hold_id() -> NodeId {
     NodeId::new("pause").unwrap()
 }
 
 /// A project whose root Sequence holds one 24-frame silent Hold at 24 fps.
 fn project(directory: &Path) -> ProjectStore {
+    project_with_frames(directory, FRAMES)
+}
+
+fn project_with_frames(directory: &Path, frames: i64) -> ProjectStore {
     let root = NodeId::new("root").unwrap();
     let initial = ProjectDocument::new(
         ProjectId::new("ai-hold-test").unwrap(),
         RevisionId::new("initial").unwrap(),
         PresentationBasis {
-            width: 1920,
-            height: 1080,
-            frame_rate: deadpan_core::FrameRate::new(24, 1).unwrap(),
+            width: 768,
+            height: 320,
+            frame_rate: fixture_rate(frames),
             color_policy: ColorPolicy::SdrRec709,
         },
         root.clone(),
@@ -52,7 +62,7 @@ fn project(directory: &Path) -> ProjectStore {
                         BeatNode::hold(
                             "Pause",
                             HoldRecipe {
-                                duration: FrameDuration::new(FRAMES).unwrap(),
+                                duration: FrameDuration::new(frames).unwrap(),
                                 picture_context: None,
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
@@ -71,8 +81,12 @@ fn project(directory: &Path) -> ProjectStore {
 }
 
 fn inputs() -> BridgeInputs {
-    let rate = deadpan_core::FrameRate::new(24, 1).unwrap();
-    let duration = FrameDuration::new(FRAMES).unwrap();
+    inputs_for_frames(FRAMES)
+}
+
+fn inputs_for_frames(frames: i64) -> BridgeInputs {
+    let rate = fixture_rate(frames);
+    let duration = FrameDuration::new(frames).unwrap();
     let plan = BridgeGenerationPlan::for_conditioning(
         ConditioningMode::Bridge,
         duration,
@@ -89,7 +103,11 @@ fn inputs() -> BridgeInputs {
     };
     // Prepared pictures are opaque retained bytes to capture and the store.
     let (left, right) = conditioning::opaque_boundaries(&plan, b"left".to_vec(), b"right".to_vec());
-    conditioning::assemble(plan, constraints, left, right).unwrap()
+    conditioning::assemble(plan, constraints, left, right, full_raster()).unwrap()
+}
+
+fn full_raster() -> deadpan_models::RasterRect {
+    deadpan_models::RasterRect::new(0, 0, 768, 320).unwrap()
 }
 
 fn allocated(store: &mut ProjectStore) -> Allocated {
@@ -159,7 +177,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
         "pack_id": "ltx-2.3-q4-bridge",
         "pack_version": "2",
         "runtime_id": "ltx-mlx",
-        "runtime_version": "0.15.8+deadpan2",
+        "runtime_version": "0.15.8+deadpan3",
         "seed": 7,
     }))
     .unwrap();
@@ -395,6 +413,10 @@ fn picture_inputs() -> BridgeInputs {
 }
 
 fn picture_inputs_with(left_rgb: [u8; 3], right_rgb: [u8; 3]) -> BridgeInputs {
+    picture_inputs_for_frames(left_rgb, right_rgb, FRAMES)
+}
+
+fn picture_inputs_for_frames(left_rgb: [u8; 3], right_rgb: [u8; 3], frames: i64) -> BridgeInputs {
     let png = |rgb| {
         let image = image::RgbImage::from_pixel(768, 320, image::Rgb(rgb));
         let mut bytes = Vec::new();
@@ -406,10 +428,50 @@ fn picture_inputs_with(left_rgb: [u8; 3], right_rgb: [u8; 3]) -> BridgeInputs {
             .unwrap();
         bytes
     };
-    let template = inputs();
-    let (left, right) =
-        conditioning::opaque_boundaries(&template.plan, png(left_rgb), png(right_rgb));
-    conditioning::assemble(template.plan, template.constraints, left, right).unwrap()
+    let template = inputs_for_frames(frames);
+    let boundary = |rgb, side: &str, project_frame| {
+        let png = png(rgb);
+        conditioning::PreparedBoundary {
+            picture: deadpan_models::BoundaryPicture::Original {
+                project_frame,
+                asset: deadpan_core::AssetId::new(format!("synthetic-{side}-png")).unwrap(),
+                qualification: deadpan_core::SourceQualificationId::new(
+                    conditioning::sha256(&png).unwrap().as_str().to_owned(),
+                )
+                .unwrap(),
+                picture: deadpan_models::DecodedBoundary {
+                    source_frame: deadpan_core::SourceFrameId(0),
+                    pts: deadpan_core::SourceTimestamp {
+                        ticks: 0,
+                        time_base: deadpan_core::SourceTimeBase::new(1, 24).unwrap(),
+                    },
+                    stream: deadpan_models::MeasuredStream {
+                        codec: "png".into(),
+                        pixel_format: "rgb24".into(),
+                        width: 768,
+                        height: 320,
+                        sample_aspect: [1, 1],
+                        rotation_quarter_turns: 0,
+                        decoded_sample_bits: 8,
+                        color: deadpan_models::CANONICAL_BRIDGE_COLOR,
+                    },
+                    model_input: deadpan_models::ModelInputConversion::SrgbCodesUnchanged,
+                },
+            },
+            png,
+            content_rect: Some(full_raster()),
+        }
+    };
+    let left = boundary(left_rgb, "left", 14);
+    let right = boundary(right_rgb, "right", 15 + frames);
+    conditioning::assemble(
+        template.plan,
+        template.constraints,
+        left,
+        right,
+        full_raster(),
+    )
+    .unwrap()
 }
 
 fn run_synthetic(
@@ -476,7 +538,11 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     .unwrap();
     assert!(
         stored.quality().is_some(),
-        "successful output uses schema 4"
+        "successful output uses schema 5"
+    );
+    assert!(
+        stored.endpoints().is_some(),
+        "successful output records both joins"
     );
 
     let second =
@@ -560,12 +626,13 @@ fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
     let flash =
         allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
     let expected_flash_frame = flash.inputs().plan.native_frame_count() / 2;
-    let run = synthetic::run_with_lighting_flash(
+    let run = synthetic::run_with_mode(
         &flash,
         &worker,
         |_| {},
         |record| super::record(&mut store, &flash, &record).map_err(|error| error.to_string()),
         &AtomicBool::new(false),
+        synthetic::SyntheticMode::LightingFlash,
     );
     let RunResult::Failed(JobFailure::Host(failure)) = &run.result else {
         panic!("a one-frame full-picture flash must fail host qualification");
@@ -599,6 +666,137 @@ fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
         Some(selected_before)
     );
     store.validate_full().unwrap();
+}
+
+fn endpoint_rejection_preserves_ready(
+    worker: &synthetic::SyntheticWorker,
+    left: [u8; 3],
+    right: [u8; 3],
+    generated: [u8; 3],
+    expected_side: &str,
+    frames: i64,
+) {
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project_with_frames(directory.path(), frames);
+    let fallback_document = store.snapshot().unwrap();
+    let fallback_revision = store.head_revision().unwrap();
+    let first = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision: fallback_revision.clone(),
+            seed: 7,
+            inputs: picture_inputs_for_frames(left, right, frames),
+        },
+    )
+    .unwrap();
+    let ready = run_synthetic(&mut store, &first, worker);
+    assert_eq!(ready.state, JobState::Ready, "{:?}", ready.failure);
+    let receipt = ready.receipt.unwrap();
+    let selected = store
+        .selected_generation_bundle(&first.request.request_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(selected.identity, first.identity);
+    if frames == 1 {
+        let mut snapshot = store
+            .generated_read_handle()
+            .snapshot(
+                receipt.provenance_object(),
+                deadpan_store::generated_media::GeneratedReadLimits::new(
+                    receipt.provenance_object().byte_length(),
+                    Duration::from_secs(30),
+                )
+                .unwrap(),
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        let mut bytes = Vec::new();
+        snapshot.read_to_end(&mut bytes).unwrap();
+        let provenance =
+            deadpan_models::StoredBridgeProvenance::from_bytes(&bytes, receipt.provenance_object())
+                .unwrap();
+        let endpoints = provenance.endpoints().unwrap();
+        assert_eq!(
+            (
+                endpoints.entry().sampled_frame,
+                endpoints.exit().sampled_frame
+            ),
+            (0, 0)
+        );
+        assert_eq!(
+            (endpoints.entry().sampled_pts, endpoints.exit().sampled_pts),
+            (0, 0)
+        );
+    }
+
+    let bad = allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
+    let run = synthetic::run_with_mode(
+        &bad,
+        worker,
+        |_| {},
+        |record| super::record(&mut store, &bad, &record).map_err(|error| error.to_string()),
+        &AtomicBool::new(false),
+        synthetic::SyntheticMode::Uniform(generated),
+    );
+    let RunResult::Failed(JobFailure::Host(failure)) = &run.result else {
+        panic!("uniform wrong pictures must fail the actual edit join");
+    };
+    assert_eq!(failure.code, HostFailureCode::OutputValidationFailed);
+    // Every native picture is identical: pair motion/lighting cannot reveal
+    // the wrong scene. Qualification reaches the separate endpoint guard.
+    assert!(
+        failure.detail.as_str().contains(&format!(
+            "deadpan-endpoints-1: gross {expected_side} discontinuity"
+        )),
+        "{}",
+        failure.detail.as_str()
+    );
+    let failed = failure.clone();
+    let finished = finish(&mut store, &bad, run).unwrap();
+    assert_eq!(finished.state, JobState::Failed);
+    assert!(finished.receipt.is_none());
+    let attempt = store.generation_attempt(&bad.identity).unwrap().unwrap();
+    assert_eq!(attempt.checkpoint.state, JobState::Failed);
+    assert_eq!(attempt.checkpoint.failure, Some(JobFailure::Host(failed)));
+    assert!(attempt.bundle_receipt.is_none());
+    assert_eq!(store.head_revision().unwrap(), fallback_revision);
+    assert_eq!(store.snapshot().unwrap(), fallback_document);
+    assert_eq!(
+        store
+            .selected_generation_bundle(&first.request.request_id)
+            .unwrap(),
+        Some(selected)
+    );
+    store.validate_full().unwrap();
+}
+
+#[test]
+fn synthetic_wrong_uniform_endpoints_preserve_ready_and_fallback() {
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    endpoint_rejection_preserves_ready(&worker, [80; 3], [80; 3], [240; 3], "entry", FRAMES);
+}
+
+#[test]
+fn synthetic_entry_and_exit_mismatches_are_checked_independently() {
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    endpoint_rejection_preserves_ready(&worker, [80; 3], [240; 3], [240; 3], "entry", FRAMES);
+    endpoint_rejection_preserves_ready(&worker, [240; 3], [80; 3], [240; 3], "exit", FRAMES);
+}
+
+#[test]
+fn synthetic_one_frame_hold_measures_both_joins_at_the_same_sample() {
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    endpoint_rejection_preserves_ready(&worker, [80; 3], [80; 3], [240; 3], "entry", 1);
 }
 
 // Hostile AI pause workers through the real attempt host

@@ -56,7 +56,7 @@ ends in Ready, Failed or Cancelled.
   declaration that differs from the plan or provider fails the attempt. After a
   clean exit it runs `qualify_bridge` with `deadpan-media-worker` and builds the
   `BundleValidationReceipt` with admission evidence (validator `native-ffv1`,
-  `bridge-4`). An error from `records` cancels the worker and fails the attempt.
+  `bridge-5`). An error from `records` cancels the worker and fails the attempt.
 - `finish` publishes the native and sampled masters, the provenance envelope
   and the three retained inputs, then records Ready. A publication failure is
   recorded as a host failure. Failures the store has not already recorded become
@@ -76,16 +76,23 @@ texture, ambiguous matches and motion beyond the bounded search remain
 unavailable. The inspector shows this coverage; all candidates still need
 audition before acceptance.
 
-Schema-4 host provenance retains the measurements, thresholds and coverage.
+Host provenance retains the measurements, thresholds and coverage.
 Previously accepted schema-3 footage remains readable and is labelled as
 lacking these checks. Rejection records `OutputValidationFailed`, preserves
 earlier Ready selection, and leaves the committed pause unchanged. See
 [measurement and verification](qualification/bridge-quality-2026-10-07.md).
-Endpoint RGB readings remain advisory; face/region and mouth checks remain open.
+The host also compares the retained conditioning PNGs with the sampled master's
+first and last pictures inside the captured presentation crop. A separate gross
+endpoint guard rejects broad RGB discontinuity before Ready. Host schema 5
+retains both reports and binds endpoint measurements to the crop and immutable
+objects. Older schema 3/4 artifacts remain readable with their original evidence.
+The existing Smooth/Noticeable/Jump readings remain advisory. See
+[endpoint checks](qualification/bridge-endpoints-2026-10-07.md).
+Face/region and mouth checks remain open.
 
 ### Source and colour context
 
-Conditioning writes context manifest schema 2 (`deadpan_models::BridgeContext`,
+Conditioning writes context manifest schema 3 (`deadpan_models::BridgeContext`,
 [bundles](GENERATION_BUNDLES.md)). For each side of the pause it records what
 the committed picture path showed at the origin revision: for an Original
 frame, the asset, receipt, measured index ordinal and exact source PTS plus the
@@ -180,7 +187,7 @@ retain the current choices as native Generate does. Reports and `ai-variants`
 include the captured options. Failed or cancelled recorded requests retain
 them across reopening.
 
-Adapter `ltx-mlx` `0.15.8+deadpan2` uses `deadpan-hold-2`: a short locked-camera,
+Adapter `ltx-mlx` `0.15.8+deadpan3` uses `deadpan-hold-2`: a short locked-camera,
 preserved-identity/composition, no-speech/no-new-objects base, one motion
 sentence, and optional literal guidance. It uses no prompt enhancer. The exact
 prompt, version and token count are retained in worker provenance. Gemma's
@@ -626,9 +633,8 @@ publication); a second exits at once with status 130.
 ## Remaining work
 
 The worker exposes motion and optional guidance as described above. §12.5 still
-needs motion, lighting and detectable region/mouth checks beyond the current
-endpoint RGB comparison. Generate inside scoped Repeat/Retime inspection
-and calibrated join thresholds also remain open.
+needs detectable face/region geometry and mouth checks. Generate inside scoped
+Repeat/Retime inspection and calibrated join thresholds also remain open.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
 the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.

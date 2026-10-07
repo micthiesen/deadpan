@@ -37,10 +37,18 @@ cargo build -p deadpan-models --examples --locked
 cargo run -p deadpan-jobs --example plan_mlx_bridge --locked -- 24 24 1
 ```
 
+`prepare_run.py` is an explicit legacy-only probe helper. It creates a schema-1
+context from user-selected pictures and cannot supply the host-captured source
+boundaries or presentation geometry required for fresh qualification. It exits
+unless `--legacy-only-probe` is passed. Use a production context captured by the
+app for schema-3 conditioning; do not use this helper's schema-1 output as fresh
+host qualification evidence.
+
 Run `prepare_run.py --help` inside the already pinned private environment for
-the required local paths. It prepares fresh, padded conditioning images, records
-their original hashes and explicit color interpretation, obtains the plan from
-Rust, invokes `retain_bridge_conditioning` to freeze the prepared inputs in
+the required local paths. Include `--legacy-only-probe` in the actual
+invocation. It prepares fresh, padded conditioning images, records their
+original hashes and explicit color interpretation, obtains the plan from Rust,
+invokes `retain_bridge_conditioning` to freeze the prepared inputs in
 `retained-conditioning/`, and writes a host configuration only after capture.
 `retention-config.json` records the exact capture request and limits.
 Its `--input-color-interpretation` field
@@ -62,18 +70,22 @@ It checks native media only. Legacy protocol-1 runs still use
 `host/candidate.snapshot.mp4`. The host stays in `Validating`; no project edit,
 candidate acceptance, promotion, or job persistence happens here. Provenance and
 the native sequence remain development outputs, not yet managed project assets.
-Then use the Rust `deadpan-models` example `qualify_bridge_bundle` with the
-original request, completed native declaration and the pre-launch host-retained
-conditioning workspace to derive and verify both
-masters. [Bundle qualification](../../docs/GENERATION_BUNDLES.md) documents the
-boundary, configuration fields are in the example, and measured runs retain
-their exact configurations. Its output is still separate from project Ready
-publication and authored acceptance.
+This legacy-only helper exercises the development worker path; it does not
+qualify captured source context or create a fresh bridge bundle.
 
-`qualify_generated_acceptance` accepts the same configuration shape. It creates a
-fresh synthetic Hold project, qualifies the captured result, publishes all six
-objects, records Ready, previews and explicitly accepts, then relocates/reopens,
-undoes/redoes/reverts and reads back the objects. Run it with an absolute config:
+For fresh bridge-bundle qualification, use the schema-3 context captured by the
+app and its pre-launch host-retained conditioning workspace with the Rust
+`deadpan-models` example `qualify_bridge_bundle`. Supply the original request
+and completed native declaration. [Bundle qualification](../../docs/GENERATION_BUNDLES.md)
+documents the boundary, configuration fields are in the example, and measured
+runs retain their exact configurations. Its output is still separate from
+project Ready publication and authored acceptance.
+
+`qualify_generated_acceptance` consumes a completed schema-3 bridge qualification.
+It creates a fresh synthetic Hold project, qualifies the captured result,
+publishes all six objects, records Ready, previews and explicitly accepts, then
+relocates/reopens, undoes/redoes/reverts and reads back the objects. Run it with
+an absolute config:
 
 ```sh
 cargo run --locked -p deadpan-models --example qualify_generated_acceptance -- /absolute/configuration.json

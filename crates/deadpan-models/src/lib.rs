@@ -16,6 +16,11 @@ mod quality;
 pub use quality::{BridgeQualityReport, FrameObservation, MotionObservation, QualityThresholds};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod endpoints;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use endpoints::{BridgeEndpointReport, EndpointObservation, EndpointThresholds};
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stored_bridge;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stored_bridge::{AcceptedBridgeEvidence, StoredBridgeProvenance};

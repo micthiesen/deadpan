@@ -207,18 +207,25 @@ fn quality_status(
         }
     };
     let Some(report) = provenance.quality() else {
-        return QualityReading::unavailable("Older candidate: motion/lighting checks unavailable.");
+        return QualityReading::unavailable(
+            "Older candidate: motion/lighting and endpoint checks unavailable.",
+        );
     };
     let unavailable = report.unavailable_motion_pairs();
     let total = report.transitions().len();
     let measurable = total.saturating_sub(unavailable);
-    let detail = if unavailable == 0 {
+    let mut detail: String = if unavailable == 0 {
         "Motion/lighting sampled; audition before accepting. Motion uses bounded block matching and may cover only part of each frame.".into()
     } else {
         format!(
             "Motion/lighting sampled; audition before accepting. Motion unavailable in {unavailable} of {total} frame pairs. Motion uses bounded block matching and may cover only part of each frame."
         )
     };
+    detail.push_str(if provenance.endpoints().is_some() {
+        " Both edit joins checked for gross discontinuity."
+    } else {
+        " Endpoint checks unavailable for this older candidate."
+    });
     QualityReading {
         compact: format!("Motion coverage {measurable}/{total}"),
         detail,

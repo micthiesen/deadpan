@@ -364,7 +364,7 @@ fn ai_runtime_checks(
     );
     check(
         ai["identity"]["runtime_id"] == "ltx-mlx"
-            && ai["identity"]["runtime_version"] == "0.15.8+deadpan2",
+            && ai["identity"]["runtime_version"] == "0.15.8+deadpan3",
         format!("doctor: AI runtime identity {}", ai["identity"]),
         failures,
     );

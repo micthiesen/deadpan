@@ -8,7 +8,7 @@
 //! (Lanczos, black bars), as the qualification probe prepared its inputs.
 //! Editorial framing around the Hold is not composed into these pictures yet.
 //!
-//! The version-2 manifest records, for each side, what the picture path
+//! The version-3 manifest records, for each side, what the picture path
 //! actually showed: an Original frame (asset, receipt, measured index identity,
 //! exact source PTS and the decoder's measured stream colour, pixel format and
 //! geometry), a frame of an accepted generated Hold (its artifact objects and
@@ -16,6 +16,7 @@
 //! space (canonical full-range sRGB BT.709 RGB) and the conversion applied to
 //! each decoded picture. Conditioning refuses a picture whose measured colour
 //! no stated conversion covers (`deadpan_models::model_input_conversion`).
+//! It also retains the exact presentation crop and fitted content rectangles.
 
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
@@ -27,8 +28,8 @@ use deadpan_jobs::{
 };
 use deadpan_models::{
     BoundaryPicture, BridgeBoundaries, BridgeColor, BridgeContext, BridgeMatrix, BridgePrimaries,
-    BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, DecodedBoundary, MeasuredStream,
-    ModelInputConversion, model_input_conversion,
+    BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, ConditioningGeometry, DecodedBoundary,
+    MeasuredStream, ModelInputConversion, RasterRect, model_input_conversion,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_render::{Rgba8Frame, SampleDepth};
@@ -64,6 +65,7 @@ pub struct BridgeInputs {
 pub struct PreparedBoundary {
     pub png: Vec<u8>,
     pub picture: BoundaryPicture,
+    pub content_rect: Option<RasterRect>,
 }
 
 /// Prepare the inputs for `hold` at `revision` of the project at `package`.
@@ -143,15 +145,22 @@ pub fn prepare(
     check()?;
     let right = boundary(&mut session, range.end(), region, "after", cancelled)?;
     check()?;
-    assemble(plan, constraints, left, right)
+    let presentation = RasterRect::centered(
+        region.0,
+        region.1,
+        [super::NATIVE_WIDTH, super::NATIVE_HEIGHT],
+    )
+    .map_err(str::to_owned)?;
+    assemble(plan, constraints, left, right, presentation)
 }
 
-/// Bind two prepared boundaries to `plan` in a version-2 context manifest.
+/// Bind two prepared boundaries and their captured crop in a version-3 context.
 pub fn assemble(
     plan: BridgeGenerationPlan,
     constraints: HoldConstraints,
     left: PreparedBoundary,
     right: PreparedBoundary,
+    presentation: RasterRect,
 ) -> Result<BridgeInputs, String> {
     let artifact = |reference: &str, bytes: &[u8]| -> Result<WorkspaceArtifact, String> {
         WorkspaceArtifact::new(
@@ -170,6 +179,11 @@ pub fn assemble(
         BridgeBoundaries {
             left: left.picture,
             right: right.picture,
+        },
+        ConditioningGeometry {
+            presentation,
+            left_content: left.content_rect,
+            right_content: right.content_rect,
         },
     )
     .map_err(|error| error.to_string())?;
@@ -321,9 +335,11 @@ fn boundary(
             None,
         ),
     };
+    let (raster, content_rect) = contain(image.as_ref(), region)?;
     Ok(PreparedBoundary {
-        png: encode(&contain(image.as_ref(), region))?,
+        png: encode(&raster)?,
         picture,
+        content_rect,
     })
 }
 
@@ -446,24 +462,36 @@ fn fitted(size: (u32, u32), bounds: (u32, u32)) -> (u32, u32) {
 
 /// Fit the whole picture inside the centered canvas `region` of the native
 /// raster, on black.
-fn contain(picture: Option<&RgbaImage>, region: (u32, u32)) -> RgbImage {
+fn contain(
+    picture: Option<&RgbaImage>,
+    region: (u32, u32),
+) -> Result<(RgbImage, Option<RasterRect>), String> {
     let (width, height) = (super::NATIVE_WIDTH, super::NATIVE_HEIGHT);
+    RasterRect::centered(region.0, region.1, [width, height]).map_err(str::to_owned)?;
     let mut canvas: RgbImage = ImageBuffer::from_pixel(width, height, Rgb([0, 0, 0]));
     let Some(picture) = picture else {
-        return canvas;
+        return Ok((canvas, None));
     };
+    if picture.width() == 0 || picture.height() == 0 {
+        return Err("cannot fit an empty conditioning picture".into());
+    }
     let (fitted_width, fitted_height) = fitted((picture.width(), picture.height()), region);
+    let content = RasterRect::centered(fitted_width, fitted_height, [width, height])
+        .map_err(str::to_owned)?;
     let fitted = imageops::resize(
         picture,
         fitted_width,
         fitted_height,
         imageops::FilterType::Lanczos3,
     );
-    let (left, top) = ((width - fitted_width) / 2, (height - fitted_height) / 2);
     for (x, y, pixel) in fitted.enumerate_pixels() {
-        canvas.put_pixel(left + x, top + y, Rgb([pixel[0], pixel[1], pixel[2]]));
+        canvas.put_pixel(
+            content.x + x,
+            content.y + y,
+            Rgb([pixel[0], pixel[1], pixel[2]]),
+        );
     }
-    canvas
+    Ok((canvas, Some(content)))
 }
 
 fn encode(image: &RgbImage) -> Result<Vec<u8>, String> {
@@ -499,10 +527,12 @@ pub(crate) fn opaque_boundaries(
         PreparedBoundary {
             png: left,
             picture: BoundaryPicture::AuthoredBlack { project_frame: 14 },
+            content_rect: None,
         },
         PreparedBoundary {
             png: right,
             picture: BoundaryPicture::AuthoredBlack { project_frame: end },
+            content_rect: None,
         },
     )
 }
@@ -579,7 +609,15 @@ mod tests {
             )
             .unwrap(),
         };
-        let inputs = assemble(plan.clone(), constraints, left, right).unwrap();
+        let presentation = RasterRect::new(
+            0,
+            0,
+            super::super::NATIVE_WIDTH,
+            super::super::NATIVE_HEIGHT,
+        )
+        .unwrap();
+        left.content_rect = Some(RasterRect::centered(640, 320, [768, 320]).unwrap());
+        let inputs = assemble(plan.clone(), constraints, left, right, presentation).unwrap();
         let colour = ConditioningColour::from_manifest(&inputs.manifest).unwrap();
         assert!(!colour.approximate());
         assert_eq!(
@@ -720,7 +758,7 @@ mod tests {
         assert_eq!(prepared.get_pixel(0, 0).0, [36, 79, 140, 255]);
         assert_eq!(prepared.get_pixel(1, 1).0, [36, 79, 140, 71]);
         assert_eq!(prepared.len(), 16, "row padding is not picture content");
-        let png = encode(&contain(Some(&prepared), (320, 320))).unwrap();
+        let png = encode(&contain(Some(&prepared), (320, 320)).unwrap().0).unwrap();
         let input = image::load_from_memory(&png).unwrap().to_rgb8();
         assert_eq!(input.get_pixel(384, 160).0, [36, 79, 140]);
         assert_eq!(input.get_pixel(0, 160).0, [0, 0, 0]);
@@ -737,11 +775,15 @@ mod tests {
         // at the sides of the 2.4:1 raster.
         let region = canvas_region([1920, 1080]);
         assert_eq!(region, (569, 320));
-        let canvas = contain(Some(&RgbaImage::from_pixel(1920, 1080, orange)), region);
+        let (canvas, content) =
+            contain(Some(&RgbaImage::from_pixel(1920, 1080, orange)), region).unwrap();
+        assert_eq!(content, Some(RasterRect::new(99, 0, 569, 320).unwrap()));
         assert_eq!(canvas.dimensions(), (768, 320));
         assert_eq!(canvas.get_pixel(0, 160), &Rgb([0, 0, 0]), "left bar");
         assert_eq!(canvas.get_pixel(384, 160), &Rgb([200, 100, 50]), "picture");
-        assert_eq!(contain(None, region).get_pixel(384, 160), &Rgb([0, 0, 0]));
+        let (black, black_content) = contain(None, region).unwrap();
+        assert_eq!(black.get_pixel(384, 160), &Rgb([0, 0, 0]));
+        assert_eq!(black_content, None);
         assert_eq!(&encode(&canvas).unwrap()[1..4], b"PNG");
         // Cropping the generated raster to the canvas aspect removes exactly
         // those bars.
@@ -790,8 +832,73 @@ mod tests {
         );
         // A 4:3 picture keeps its own pillar bars inside the 16:9 region, as
         // presentation shows it on the canvas.
-        let narrow = contain(Some(&RgbaImage::from_pixel(640, 480, orange)), region);
+        let (narrow, content) =
+            contain(Some(&RgbaImage::from_pixel(640, 480, orange)), region).unwrap();
+        assert_eq!(content, Some(RasterRect::new(170, 0, 427, 320).unwrap()));
         assert_eq!(narrow.get_pixel(384 - 260, 160), &Rgb([0, 0, 0]));
         assert_eq!(narrow.get_pixel(384, 160), &Rgb([200, 100, 50]));
+    }
+
+    #[test]
+    fn captured_rectangles_match_portrait_odd_and_anamorphic_preparation() {
+        let orange = image::Rgba([200, 100, 50, 255]);
+        for (canvas_size, picture_size) in [
+            ([1080, 1920], [1080, 1920]),
+            ([1001, 999], [641, 479]),
+            ([3, 1], [4, 3]),
+        ] {
+            let region = canvas_region(canvas_size);
+            let presentation = RasterRect::centered(region.0, region.1, [768, 320]).unwrap();
+            let (raster, content) = contain(
+                Some(&RgbaImage::from_pixel(
+                    picture_size[0],
+                    picture_size[1],
+                    orange,
+                )),
+                region,
+            )
+            .unwrap();
+            let content = content.unwrap();
+            assert!(content.x >= presentation.x && content.y >= presentation.y);
+            assert!(content.x + content.width <= presentation.x + presentation.width);
+            assert!(content.y + content.height <= presentation.y + presentation.height);
+            for (x, y, pixel) in raster.enumerate_pixels() {
+                let inside = (content.x..content.x + content.width).contains(&x)
+                    && (content.y..content.y + content.height).contains(&y);
+                assert_eq!(
+                    *pixel,
+                    if inside {
+                        Rgb([200, 100, 50])
+                    } else {
+                        Rgb([0, 0, 0])
+                    }
+                );
+            }
+            let cropped = crate::picture::fill_canvas_aspect(frame(&raster), canvas_size).unwrap();
+            assert_eq!(
+                (cropped.metadata().width, cropped.metadata().height),
+                (presentation.width, presentation.height)
+            );
+        }
+
+        // Apply sample aspect before fitting, as the production rgba path does.
+        let source = frame(&RgbImage::from_pixel(1440, 1080, Rgb([200, 100, 50])));
+        let mut metadata = *source.metadata();
+        metadata.sample_aspect_ratio = deadpan_render::SampleAspectRatio::new(4, 3).unwrap();
+        let anamorphic = Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap();
+        let expanded = rgba(&anamorphic).unwrap();
+        assert_eq!(expanded.dimensions(), (1920, 1080));
+        let (_, content) = contain(Some(&expanded), canvas_region([1920, 1080])).unwrap();
+        assert_eq!(content, Some(RasterRect::new(99, 0, 569, 320).unwrap()));
+
+        // Real decoded black has content; it is not an authored background.
+        let (_, black_content) = contain(Some(&RgbaImage::new(4, 2)), (768, 320)).unwrap();
+        assert_eq!(
+            black_content,
+            Some(RasterRect::new(64, 0, 640, 320).unwrap())
+        );
+        assert!(contain(Some(&RgbaImage::new(0, 2)), (768, 320)).is_err());
+        assert!(contain(None, (769, 320)).is_err());
+        assert!(contain(None, (768, 0)).is_err());
     }
 }

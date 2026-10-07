@@ -69,8 +69,13 @@ inspects every native pair before Ready using the authored clock, retains
 measurements and unavailable coverage in strict host schema 4, and shows the
 coverage in the inspector. A failed flash candidate leaves the fallback,
 revision and earlier selected Ready bundle intact. Older accepted schema-3
-footage remains readable. §12.5 still needs endpoint rejection and detectable
-face/region/mouth checks; DP-12 remains Partial.
+footage remains readable. [Sampled endpoint rejection](../qualification/bridge-endpoints-2026-10-07.md)
+now compares the actual first/last inserted pictures with retained PNGs inside
+captured geometry. Context schema 3 and adapter `0.15.8+deadpan3` retain and
+validate the exact crop; host schema 5 binds both quality reports to their
+objects. Broad RGB discontinuity fails before Ready without changing the
+freeze or prior Ready selection. Schema 3/4 accepted evidence remains readable.
+§12.5 still needs detectable face/region/mouth checks; DP-12 remains Partial.
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

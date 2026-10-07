@@ -18,6 +18,62 @@ use crate::{
     StoredBridgeProvenance,
 };
 
+#[test]
+fn stored_schema5_requires_endpoint_evidence_bound_to_retained_geometry() {
+    let evidence = Fixture::endpoint_checked().validate().unwrap();
+    assert!(evidence.quality().is_some());
+    assert_eq!(evidence.endpoints().unwrap().entry().sampled_frame, 0);
+    assert_eq!(evidence.endpoints().unwrap().exit().sampled_frame, 29);
+    let mut missing = Fixture::endpoint_checked();
+    missing
+        .envelope
+        .as_object_mut()
+        .unwrap()
+        .remove("endpoints");
+    assert!(missing.validate().is_err());
+    let mut null = Fixture::endpoint_checked();
+    null.envelope["endpoints"] = Value::Null;
+    assert!(null.validate().is_err());
+    for field in [
+        "sampled_object",
+        "context_object",
+        "left_object",
+        "right_object",
+    ] {
+        let mut changed = Fixture::endpoint_checked();
+        changed.envelope["endpoints"][field] = json!(object(b"different retained object"));
+        assert!(changed.validate().is_err(), "{field}");
+    }
+    let mut wrong_geometry = Fixture::endpoint_checked();
+    wrong_geometry.envelope["endpoints"]["geometry"]["presentation"] =
+        json!({"x":1,"y":0,"width":2,"height":2});
+    let (bytes, artifact) = wrong_geometry.wire();
+    // The centered rectangle is structurally valid but disagrees with the
+    // separately retained context. Full media admission must bind both.
+    let parsed = StoredBridgeProvenance::from_bytes(&bytes, &artifact.provenance).unwrap();
+    assert!(
+        parsed
+            .validate_for(&artifact, &wrong_geometry.project, &wrong_geometry.context)
+            .is_err()
+    );
+    for endpoint in ["entry", "exit"] {
+        let mut rejected = Fixture::endpoint_checked();
+        rejected.envelope["endpoints"][endpoint]["mean_absolute_rgb_difference"] = json!(100.0);
+        rejected.envelope["endpoints"][endpoint]["gross_cell_fraction"] = json!(1.0);
+        assert!(rejected.validate().is_err(), "{endpoint}");
+    }
+    for profile in [3, 4] {
+        let mut wrong_version = Fixture::endpoint_checked();
+        wrong_version.envelope["schema_version"] = json!(profile);
+        wrong_version.envelope["validation_profile"] =
+            json!(format!("deadpan-ffv1-bridge-{profile}"));
+        assert!(wrong_version.validate().is_err());
+    }
+    let mut unknown = Fixture::endpoint_checked();
+    unknown.envelope["endpoints"]["unknown"] = json!(true);
+    assert!(unknown.validate().is_err());
+}
+
 fn object(bytes: &[u8]) -> GeneratedObjectRef {
     GeneratedObjectRef::new(
         GeneratedContentId::new(blake3::hash(bytes).to_hex().to_string()).unwrap(),
@@ -80,7 +136,7 @@ impl Fixture {
     /// The same bundle with a version-2 context declaring `model_color_space`.
     fn measured(model_color_space: crate::BridgeColor) -> Self {
         Self::with_context(|plan, left, right| {
-            BridgeContext::new(
+            BridgeContext::legacy_v2(
                 plan,
                 left,
                 right,
@@ -232,6 +288,7 @@ impl Fixture {
                 sampled_span: sampled_report.output_span().unwrap(),
                 worker_provenance_utf8: &worker,
                 quality: None,
+                endpoints: None,
             },
             128 * 1024,
         )
@@ -282,6 +339,43 @@ impl Fixture {
         ))
         .unwrap();
         self
+    }
+
+    fn endpoint_checked() -> Self {
+        let mut fixture = Self::with_context(|plan, left, right| {
+            BridgeContext::new(
+                plan,
+                left,
+                right,
+                "fixture RGB",
+                crate::CANONICAL_BRIDGE_COLOR,
+                crate::BridgeBoundaries {
+                    left: crate::BoundaryPicture::AuthoredBlack { project_frame: 9 },
+                    right: crate::BoundaryPicture::AuthoredBlack { project_frame: 40 },
+                },
+                crate::ConditioningGeometry {
+                    presentation: crate::RasterRect::new(0, 0, 4, 2).unwrap(),
+                    left_content: None,
+                    right_content: None,
+                },
+            )
+            .unwrap()
+        })
+        .schema4(None);
+        let plan = serde_json::from_value(fixture.envelope["binding"]["plan"].clone()).unwrap();
+        let conditioning =
+            serde_json::from_value(fixture.envelope["conditioning"].clone()).unwrap();
+        let context: BridgeContext = serde_json::from_slice(&fixture.context).unwrap();
+        let endpoints = crate::endpoints::test_report(
+            &plan,
+            &fixture.artifact.sampled_object,
+            &conditioning,
+            *context.geometry().unwrap(),
+        );
+        fixture.envelope["schema_version"] = json!(5);
+        fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-5");
+        fixture.envelope["endpoints"] = serde_json::to_value(endpoints).unwrap();
+        fixture
     }
 
     fn replace_worker(&mut self, worker: String) {

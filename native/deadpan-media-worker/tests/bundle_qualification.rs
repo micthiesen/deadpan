@@ -24,10 +24,12 @@ use deadpan_jobs::{
     WorkerStage, WorkspaceArtifact, WorkspaceRef,
 };
 use deadpan_media::protocol::ConversionLimits;
+use deadpan_media::source_index::SourceContentIdentity;
+use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
 use deadpan_models::{
-    BridgeQualification, ConditioningLimits, GenerationBinding, QualificationError,
-    QualificationLimits, RetainedConditioning, SelectedBridgeProvider, capture_bridge_conditioning,
-    qualify_bridge,
+    BoundaryPicture, BridgeBoundaries, BridgeQualification, ConditioningLimits, DecodedBoundary,
+    GenerationBinding, QualificationError, QualificationLimits, RetainedConditioning,
+    SelectedBridgeProvider, capture_bridge_conditioning, qualify_bridge,
 };
 use deadpan_store::generated_media::{GeneratedMediaError, GeneratedMediaLimits};
 use deadpan_store::generation::{
@@ -142,6 +144,8 @@ struct Fixture {
     declaration: NativeCandidateManifest,
     provenance: Vec<u8>,
     manifest: WorkspaceArtifact,
+    left_png: Vec<u8>,
+    right_png: Vec<u8>,
 }
 
 impl Fixture {
@@ -177,62 +181,52 @@ impl Fixture {
         SelectedBridgeProvider::new(self.declaration.provider.clone(), capability())
     }
 
-    /// The retained version-1 grammar: bundles captured before measured
-    /// boundary evidence must still qualify and admit.
+    /// Current admission requires exact retained boundary pictures and crop.
     fn new() -> Self {
-        Self::with_context(|left, right| {
-            json!({
-                "schema_version":1, "model_color":"srgb", "plan":plan(),
-                "left":left, "right":right,
-                "input_color_interpretation":"fixture RGB"
-            })
-        })
+        Self::measured(serde_json::to_value(deadpan_models::CANONICAL_BRIDGE_COLOR).unwrap())
     }
 
-    /// A version-2 context whose model declares `model_color_space`.
+    /// A version-3 context whose model declares `model_color_space`.
     fn measured(model_color_space: serde_json::Value) -> Self {
-        Self::with_context(|left, right| {
+        Self::with_context(|left, right, boundaries| {
             json!({
-                "schema_version":2, "model_color_space":model_color_space, "plan":plan(),
+                "schema_version":3, "model_color_space":model_color_space, "plan":plan(),
                 "left":left, "right":right,
-                "input_color_interpretation":"fixture RGB",
-                "boundaries":{
-                    "left":{"original":{
-                        "project_frame":9, "asset":"original", "qualification":"d".repeat(64),
-                        "picture":{
-                            "source_frame":9,
-                            "pts":{"ticks":9009, "time_base":{"numerator":1, "denominator":30000}},
-                            "stream":{
-                                "codec":"h264", "pixel_format":"yuv420p", "width":320,
-                                "height":180, "sample_aspect":[1,1], "rotation_quarter_turns":0,
-                                "decoded_sample_bits":8,
-                                "color":{"transfer":"bt709", "primaries":"bt709",
-                                    "matrix":"bt709", "range":"limited"}
-                            },
-                            "model_input":"rec709_codes_as_srgb"
-                        }
-                    }},
-                    "right":{"authored_black":{"project_frame":40}}
-                }
+                "input_color_interpretation":"fixture decoded RGB8 sRGB without resizing",
+                "boundaries":boundaries,
+                "geometry": {
+                    "presentation":{"x":0,"y":0,"width":4,"height":2},
+                    "left_content":{"x":0,"y":0,"width":4,"height":2},
+                    "right_content":{"x":0,"y":0,"width":4,"height":2}
+                },
             })
         })
     }
 
     fn with_context(
-        context: impl FnOnce(WorkspaceArtifact, WorkspaceArtifact) -> serde_json::Value,
+        context: impl FnOnce(
+            WorkspaceArtifact,
+            WorkspaceArtifact,
+            BridgeBoundaries,
+        ) -> serde_json::Value,
     ) -> Self {
         let directory = tempfile::tempdir().unwrap();
         fs::create_dir(directory.path().join("outputs")).unwrap();
         fs::create_dir(directory.path().join("inputs")).unwrap();
         let workspace = ArtifactWorkspace::open(directory.path()).unwrap();
-        // Opaque prepared-byte fixtures exercise retention, not PNG validation.
-        let left = b"prepared left image";
-        let right = b"prepared right image";
-        fs::write(directory.path().join("inputs/left.png"), left).unwrap();
-        fs::write(directory.path().join("inputs/right.png"), right).unwrap();
+        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/rgb25_24_smooth_candidate.mp4");
+        let native = fs::read(source).unwrap();
+        let [(left, left_picture), (right, right_picture)] = fixture_boundaries(&native);
+        fs::write(directory.path().join("inputs/left.png"), &left).unwrap();
+        fs::write(directory.path().join("inputs/right.png"), &right).unwrap();
         let context = context(
-            declared("inputs/left.png", left),
-            declared("inputs/right.png", right),
+            declared("inputs/left.png", &left),
+            declared("inputs/right.png", &right),
+            BridgeBoundaries {
+                left: left_picture,
+                right: right_picture,
+            },
         );
         let context_bytes = serde_json::to_vec_pretty(&context).unwrap();
         fs::write(directory.path().join("inputs/context.json"), &context_bytes).unwrap();
@@ -243,9 +237,6 @@ impl Fixture {
         };
         input.sha256 = manifest.sha256().clone();
         let binding = GenerationBinding::from_request(&request).unwrap();
-        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/rgb25_24_smooth_candidate.mp4");
-        let native = fs::read(source).unwrap();
         fs::write(directory.path().join("outputs/native.mp4"), &native).unwrap();
         let provenance = serde_json::to_vec_pretty(&json!({
             "schema_version": 2, "request_binding": binding,
@@ -286,6 +277,8 @@ impl Fixture {
             declaration,
             provenance,
             manifest,
+            left_png: left,
+            right_png: right,
         }
     }
 
@@ -298,6 +291,67 @@ impl Fixture {
         self.declaration.provenance = declared("outputs/provenance.json", &bytes);
         self.provenance = bytes;
     }
+}
+
+/// Prepare actual native endpoint pixels and retain their measured decoder
+/// metadata. This synthetic Original is the checked-in candidate fixture.
+fn fixture_boundaries(native: &[u8]) -> [(Vec<u8>, BoundaryPicture); 2] {
+    let identity =
+        SourceContentIdentity::new(Hasher::digest(native).into(), native.len() as u64).unwrap();
+    let cancelled = AtomicBool::new(false);
+    let mut session = SourceSession::open_verified(
+        &mut std::io::Cursor::new(native),
+        identity,
+        AssetId::new("original").unwrap(),
+        SourceSessionLimits {
+            opening_timeout: std::time::Duration::from_secs(30),
+            ..Default::default()
+        },
+        &cancelled,
+    )
+    .unwrap();
+    [(0, 9), (24, 40)].map(|(ordinal, project_frame)| {
+        let decoded = session
+            .frame(
+                SourceFrameId(ordinal),
+                std::time::Duration::from_secs(30),
+                &cancelled,
+            )
+            .unwrap();
+        let frame = deadpan_cli::picture::source_to_render_frame(decoded, session.info()).unwrap();
+        let stream = deadpan_cli::generation::conditioning::measured_stream(session.info(), &frame);
+        let model_input = deadpan_models::model_input_conversion(&stream).unwrap();
+        assert_eq!(
+            model_input,
+            deadpan_models::ModelInputConversion::SrgbCodesUnchanged
+        );
+        let mut rgb = Vec::new();
+        for row in frame
+            .bytes()
+            .chunks_exact(frame.metadata().row_stride_bytes as usize)
+        {
+            for pixel in row[..4 * 4].chunks_exact(4) {
+                rgb.extend_from_slice(&pixel[..3]);
+            }
+        }
+        let image = image::RgbImage::from_raw(4, 2, rgb).unwrap();
+        let mut png = Vec::new();
+        image
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        let boundary = BoundaryPicture::Original {
+            project_frame,
+            asset: AssetId::new("original").unwrap(),
+            qualification: deadpan_core::SourceQualificationId::new(sha256(native)).unwrap(),
+            picture: DecodedBoundary {
+                source_frame: SourceFrameId(ordinal),
+                pts: frame.metadata().pts,
+                stream,
+                model_input,
+            },
+        };
+        (png, boundary)
+    })
 }
 
 #[test]
@@ -339,8 +393,8 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
     let mut right_bytes = Vec::new();
     left.read_to_end(&mut left_bytes).unwrap();
     right.read_to_end(&mut right_bytes).unwrap();
-    assert_eq!(left_bytes, b"prepared left image");
-    assert_eq!(right_bytes, b"prepared right image");
+    assert_eq!(left_bytes, fixture.left_png);
+    assert_eq!(right_bytes, fixture.right_png);
     let mut bytes = Vec::new();
     provenance.read_to_end(&mut bytes).unwrap();
     assert_eq!(bytes.len() as u64, provenance_ref.byte_length());
@@ -349,13 +403,17 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 4);
+    assert_eq!(envelope["schema_version"], 5);
+    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-5");
     let quality = envelope["quality"]
         .as_object()
-        .expect("schema four retains host motion/lighting evidence");
+        .expect("schema five retains host motion/lighting evidence");
     assert_eq!(quality["profile"], "deadpan-motion-lighting-1");
     assert_eq!(quality["native"]["frames"], 25);
     assert_eq!(quality["transitions"].as_array().unwrap().len(), 24);
+    assert_eq!(envelope["endpoints"]["profile"], "deadpan-endpoints-1");
+    assert_eq!(envelope["endpoints"]["entry"]["sampled_frame"], 0);
+    assert_eq!(envelope["endpoints"]["exit"]["sampled_frame"], 29);
     assert_eq!(
         envelope["conditioning"],
         serde_json::to_value(retained_receipt).unwrap()
@@ -392,7 +450,7 @@ fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec()
     .unwrap();
     let boundaries = bundle.conditioning().context().boundaries().unwrap();
     assert_eq!(boundaries.left.project_frame(), 9);
-    assert_eq!(bundle.conditioning().context().schema_version(), 2);
+    assert_eq!(bundle.conditioning().context().schema_version(), 3);
 
     // A model declared to emit wide-gamut PQ would have its pictures silently
     // reinterpreted as the canonical sRGB masters; qualification refuses it
@@ -945,7 +1003,7 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
         provenance_ref.clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-3").unwrap(),
+        ValidatorIdentity::new("native-ffv1", "bridge-5").unwrap(),
     )
     .unwrap()
     .with_admission(admission)

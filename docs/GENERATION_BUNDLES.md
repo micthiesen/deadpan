@@ -92,12 +92,16 @@ its Ready API relies on this independent host qualification.
    lighting changes through the verified canonical descriptor. Motion uses the
    authored sampling clock; insufficient evidence stays unavailable. Reject
    measured policy failures before Ready. See
-   [quality evidence](qualification/bridge-quality-2026-10-07.md).
+   [quality evidence](qualification/bridge-quality-2026-10-07.md). Compare the
+   actual sampled first/last pictures with retained conditioning PNGs inside
+   the captured presentation crop, rejecting broad endpoint RGB discontinuity.
+   Fresh qualification requires context schema 3 with exact prepared geometry.
 5. Produce a bounded immutable provenance envelope containing the original worker
    report's exact UTF-8 bytes, original request/declaration, both generated-object
    identities, host media-validation reports, measured native/sample source spans,
-   conditioning receipt and typed quality report. Envelope schema 4 uses profile
-   `deadpan-ffv1-bridge-4`. Schema 3 remains readable without the quality report;
+   conditioning receipt and typed motion/lighting and endpoint reports. Envelope
+   schema 5 uses profile `deadpan-ffv1-bridge-5`. Schema 3 remains readable without
+   either report; schema 4 retains motion/lighting evidence without endpoints;
    earlier envelopes lack admission evidence and are not equivalent.
    Stop serialization at its budget.
 6. Return both masters, host provenance and all three immutable input snapshots.
