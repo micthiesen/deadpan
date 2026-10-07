@@ -10,6 +10,7 @@ reference tracking and cleanup are in [STORAGE.md](STORAGE.md).
 Code: [`deadpan_store::backups`](../crates/deadpan-store/src/backups.rs),
 [`deadpan_store::migration`](../crates/deadpan-store/src/migration.rs),
 `ProjectStore::open` (newer schemas), [`deadpan_cli::backups`](../crates/deadpan-cli/src/backups.rs),
+[`deadpan_cli::backup_settings`](../crates/deadpan-cli/src/backup_settings.rs),
 the app's [backup service](../crates/deadpan-app/src/project/service/backups.rs)
 and [Backups section](../crates/deadpan-app/src/preview/backups.rs).
 
@@ -67,7 +68,7 @@ anything is created: a newer or older package gets no `Backups/` folder.
 
 | Reason | When | Where |
 |---|---|---|
-| `periodic` (Automatic) | Every 15 minutes while the database changed since the latest backup began; the first one 15 minutes after opening a project that has none | App backup thread |
+| `periodic` (Automatic) | At the configured interval while the database changed since the latest backup began; the first one interval after opening a project that has none (15 minutes by default) | App backup thread |
 | `close` (When closed) | A project closes, another opens, or the app quits, with changes the latest backup does not hold | Detached thread; quitting waits at most 1.5 s for it |
 | `manual` (Backed up by you) | `B` in the Backups section, `project backup` | App backup thread, CLI |
 | `before-restore` | Before every restore, of the state being replaced | Store, inside `restore_backup` |
@@ -92,8 +93,8 @@ database backup could not bring back.
 
 ## Rotation
 
-After each publication, under an exclusive `flock` on `Backups/.backups.lock`,
-rotation keeps (default `BackupPolicy`):
+After regular backup publications, under an exclusive `flock` on
+`Backups/.backups.lock`, rotation keeps:
 
 - the 8 newest backups;
 - the newest per UTC hour for the last 24 hours, per day for 14 days and per
@@ -101,10 +102,46 @@ rotation keeps (default `BackupPolicy`):
 - the 4 newest `before-restore`/`before-migration` backups and the 4 newest
   manual ones;
 
-then trims that set to 48 backups and 4 GiB from the oldest. The newest backup
-is always kept even if it alone exceeds the byte budget. A restore tells
-rotation to keep the backup it is restoring. Removed backups are listed in the
-creation result. Policy is code, not yet a user setting.
+then trims that set to the configured count and storage budget from the
+oldest. The defaults are 48 backups and 4 GiB. The newest backup is always
+kept even if it alone exceeds the byte budget. A restore tells rotation to
+keep the backup it is restoring. Removed backups are listed in the creation
+result.
+
+### Per-user policy
+
+The Backups section exposes the same settings in every project state,
+including when no project is open or the current project is read-only. The
+values belong to the current macOS user, not to an individual project, and
+never create an edit or history entry. The CLI uses the same settings file and
+validation:
+
+```text
+deadpan-cli backup-policy show
+deadpan-cli backup-policy set --interval-minutes 15 --max-count 48 --budget-mib 4096
+deadpan-cli backup-policy reset
+```
+
+The file is `~/Library/Application Support/Deadpan/backups.json`. It is
+strictly validated, atomically replaced, and stored with mode `0600`. If it is
+missing, Deadpan uses defaults without creating it. The interval accepts 1 to
+1,440 minutes, the count accepts 8 to 256, and the budget accepts 256 to
+65,536 MiB. The default values are 15 minutes, 48 backups and 4,096 MiB. The
+hourly, daily, weekly, manual and safety retention buckets remain as described
+above.
+
+If settings cannot be read or validated, Deadpan reports the problem and
+continues automatic backups at the default 15-minute interval while keeping
+all existing backups. It does not apply an uncertain retention policy. The
+CLI's `project backup` response includes the same warning. Saving new settings
+changes the effective policy only after the atomic replacement succeeds; a
+parent-folder sync failure is reported as a warning because the replacement
+already happened.
+
+`before-migration` is a special safety copy. It uses the raw backup path for a
+database this build cannot validate and never rotates or removes existing
+backups, regardless of the per-user settings. This preserves all recovery
+points while the package format is being rewritten.
 
 ## Restore
 
@@ -257,8 +294,8 @@ runner (`migrate_package_with`):
 2. **Back up first.** Publish a raw `before-migration` backup of the old
    database in `Backups/` (backup API, integrity-checked; this build cannot
    validate an older schema's history, so the raw check is SQLite's
-   `integrity_check` and the application identity). Restoring it needs the
-   build that wrote it.
+   `integrity_check` and the application identity). This publication does not
+   rotate existing backups. Restoring it needs the build that wrote it.
 3. **Migrate a copy.** Copy the database to a hidden staging file beside it and
    apply each `N → N+1` step, in order, in one transaction on that copy, ending
    at the target `user_version`. Steps must be contiguous; a gap is
@@ -361,7 +398,9 @@ The regression run is 8 kills per test with a fixed seed;
 - A process kill is not a power loss: the kernel still writes back cached
   pages. Physical power loss during commits, backups, restores and
   migrations is not qualified (owner: To verify).
-- The backup policy is fixed in code; there is no per-project setting.
+- Backup cadence and the maximum count and size are per-user settings, shared
+  by the app and CLI; the age and reason retention buckets remain fixed. There
+  is no per-project setting.
 - Restore is whole-database: operational state (render jobs, AI attempts,
   registers) returns to the backup's too. Media published after the backup
   stays in the package and is cleaned only once nothing references it.

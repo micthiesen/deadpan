@@ -312,6 +312,7 @@ impl DeadpanApp {
         self.storage.open = true;
         self.storage.focus_pending = true;
         self.storage.preview = None;
+        self.reload_backup_settings();
         self.refresh_storage();
         context.request_repaint();
     }
@@ -853,7 +854,37 @@ impl DeadpanApp {
         let composing = &mut self.ime_composing;
         context.input(|input| help_scroll::observe_composition(&input.events, composing));
         self.bindings.clear();
-        if !self.ime_composing {
+        let settings_saving = matches!(
+            &self.storage.backups.settings.status,
+            crate::project::backups::SettingsStatus::Saving
+        );
+        if self.storage.backups.settings_draft.is_some() && !settings_saving && !self.ime_composing
+        {
+            let mut escape = false;
+            context.input_mut(|input| {
+                input.events.retain(|event| {
+                    if matches!(
+                        event,
+                        egui::Event::Key {
+                            key: egui::Key::Escape,
+                            pressed: true,
+                            ..
+                        }
+                    ) {
+                        escape = true;
+                        false
+                    } else {
+                        true
+                    }
+                });
+            });
+            if escape {
+                self.cancel_backup_settings_edit();
+                return true;
+            }
+        }
+        let settings_field = super::backups::settings_field_focused(context);
+        if !self.ime_composing && !settings_field {
             use crate::navigation::panels::{StorageKey, storage_key};
             // Keys are read by their typed character, as in Jobs, so a
             // non-Latin layout reaches them at their positions. The first
@@ -1097,6 +1128,9 @@ impl DeadpanApp {
         match action.or(backup_action) {
             Some('b') => self.back_up_now(),
             Some('o') => self.restore_selected_backup(),
+            Some('i') => self.begin_backup_settings_edit(),
+            Some('w') => self.save_backup_settings(),
+            Some('q') => self.cancel_backup_settings_edit(),
             Some('p') => self.preview_storage_cleanup(),
             Some('r') => self.confirm_storage_cleanup(),
             Some('c') => self.clean_user_caches(),

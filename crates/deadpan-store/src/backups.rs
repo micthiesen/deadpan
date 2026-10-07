@@ -636,12 +636,18 @@ fn create_backup_keeping(
     // The backup just published always survives its own rotation, even if
     // the clock moved backwards and its name sorts below older ones.
     let keep: Vec<&str> = keep.into_iter().chain([backup.id.as_str()]).collect();
-    let (removed, removed_staging) = match rotate_locked(package, policy, &keep, SystemTime::now())
-    {
-        Ok(rotated) => rotated,
-        Err(error) => {
-            warnings.push(format!("rotation failed: {error}"));
-            (Vec::new(), 0)
+    // A raw before-migration copy is a last recovery path for a database this
+    // build cannot validate. Publishing it must not delete any existing
+    // recovery point based on a policy that belongs to the other schema.
+    let (removed, removed_staging) = if mode == Verify::Raw {
+        (Vec::new(), 0)
+    } else {
+        match rotate_locked(package, policy, &keep, SystemTime::now()) {
+            Ok(rotated) => rotated,
+            Err(error) => {
+                warnings.push(format!("rotation failed: {error}"));
+                (Vec::new(), 0)
+            }
         }
     };
     drop(lock);
@@ -1328,6 +1334,25 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
 mod tests {
     use super::*;
 
+    fn test_document() -> Result<deadpan_core::ProjectDocument, Box<dyn std::error::Error>> {
+        use deadpan_core::{
+            ColorPolicy, FrameRate, NodeId, PresentationBasis, ProjectDocument, ProjectId,
+            RevisionId,
+        };
+
+        Ok(ProjectDocument::new(
+            ProjectId::new("raw-backup")?,
+            RevisionId::new("r0")?,
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(30, 1)?,
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root")?,
+        )?)
+    }
+
     fn info(age_ms: u64, now: u64, reason: BackupReason, bytes: u64) -> BackupInfo {
         BackupInfo {
             id: format!("b{age_ms}"),
@@ -1433,5 +1458,43 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![0, 1]
         );
+    }
+
+    #[test]
+    fn raw_before_migration_backup_does_not_prune_existing_backups()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("raw-backup.deadpan");
+        let store = ProjectStore::create(&package, &test_document()?)?;
+        drop(store);
+
+        let folder = directory(&package);
+        fs::create_dir_all(&folder)?;
+        let mut existing = Vec::new();
+        for index in 0..49_u64 {
+            let name = format!(
+                "{PREFIX}{}-manual-{index:08x}{SUFFIX}",
+                format_stamp(1_000 + index)
+            );
+            fs::write(folder.join(&name), b"existing backup")?;
+            existing.push(name.trim_end_matches(SUFFIX).to_owned());
+        }
+
+        let outcome = create_raw_backup(
+            &package,
+            BackupReason::BeforeMigration,
+            &AtomicBool::new(false),
+        )?;
+
+        assert!(outcome.removed.is_empty());
+        let listed = list_backups(&package)?;
+        let listed_ids: std::collections::BTreeSet<_> =
+            listed.iter().map(|backup| backup.id.as_str()).collect();
+        for id in &existing {
+            assert!(listed_ids.contains(id.as_str()), "raw backup pruned {id}");
+        }
+        assert!(listed_ids.contains(outcome.backup.id.as_str()));
+        assert_eq!(listed.len(), 50);
+        Ok(())
     }
 }

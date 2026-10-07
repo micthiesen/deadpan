@@ -10,7 +10,20 @@
 use egui::Key;
 
 use super::*;
+use crate::project::backups::SettingsStatus;
 use deadpan_store::backups::{BackupReason, list_backups};
+
+fn replace_text(d: &mut Driver<'_>, label: &str, value: &str) -> Result<(), String> {
+    // Opening the draft changes the panel after its action row is painted.
+    // Let the next frame expose and size the newly added fields.
+    d.step("Backup settings fields after panel action", false)?;
+    d.click(label)?;
+    d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
+    d.events(
+        &format!("Type {value} into {label}"),
+        vec![egui::Event::Text(value.into())],
+    )
+}
 
 fn labels(d: &Driver<'_>) -> Vec<String> {
     d.harness
@@ -48,6 +61,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     // Per-user caches are measured from a private root, never the person's.
     let root = d.options.output.join("backups-caches");
     let _ = std::fs::remove_dir_all(&root);
+    let settings_path = d.options.output.join("backup-settings/backups.json");
+    d.app()
+        .service
+        .set_backup_settings_path_for_check(settings_path.clone());
     d.app_mut().storage.user = Some(deadpan_cli::storage::UserStorage {
         caches: root.join("Caches/Deadpan"),
         support: root.join("Application Support/Deadpan"),
@@ -61,17 +78,88 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     d.command("backups")?;
     d.wait_for("Backups listed", |app| {
-        app.storage.open && app.storage.backups.listed()
+        app.storage.open
+            && app.storage.backups.listed()
+            && matches!(
+                &app.storage.backups.settings.status,
+                SettingsStatus::Ready { .. }
+            )
     })?;
     d.settled()?;
     d.check(
         "`:backups` opens Storage with a BACKUPS section and its keys",
         d.app().storage.open
             && d.rect("Back up now  B").is_ok()
+            && d.rect("Change backup settings…").is_ok()
             && labels(d).iter().any(|label| label == "Restore…  O")
             && labels(d).iter().any(|label| label.starts_with("None yet.")),
         json!({"open":true,"buttons":["Back up now  B","Restore…  O (disabled without a backup)"],"list":"None yet."}),
         d.widgets(),
+    )?;
+    d.click("Change backup settings…")?;
+    replace_text(d, "Automatic backup interval in minutes", "90")?;
+    d.events(
+        "IME owns Escape while editing backup settings",
+        vec![
+            egui::Event::Ime(egui::ImeEvent::Preedit {
+                text: "９".into(),
+                active_range_chars: Some(0..1),
+            }),
+            egui::Event::Key {
+                key: Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+    )?;
+    d.check(
+        "Escape during composition keeps the backup settings draft open",
+        d.app().storage.backups.settings_draft.is_some() && !settings_path.exists(),
+        json!({"draft_open":true,"settings_file":false}),
+        json!({
+            "draft_open":d.app().storage.backups.settings_draft.is_some(),
+            "settings_file":settings_path.exists(),
+        }),
+    )?;
+    d.events(
+        "Finish backup settings composition",
+        vec![egui::Event::Ime(egui::ImeEvent::Commit(String::new()))],
+    )?;
+    d.key(Key::Escape)?;
+    d.settled()?;
+    d.check(
+        "Escape cancels an uncommitted settings draft without creating the settings file",
+        d.app().storage.backups.settings_draft.is_none()
+            && !settings_path.exists()
+            && d.app().storage.backups.settings.settings.interval_minutes() == 15,
+        json!({"draft":"cancelled","settings_file":false,"interval_minutes":15}),
+        json!({
+            "draft_open":d.app().storage.backups.settings_draft.is_some(),
+            "settings_file":settings_path.exists(),
+            "interval_minutes":d.app().storage.backups.settings.settings.interval_minutes(),
+        }),
+    )?;
+    d.click("Change backup settings…")?;
+    replace_text(d, "Automatic backup interval in minutes", "25")?;
+    d.click("Save settings")?;
+    d.wait_for("Backup settings saved", |app| {
+        matches!(
+            &app.storage.backups.settings.status,
+            SettingsStatus::Saved { .. }
+        ) && app.storage.backups.settings.settings.interval_minutes() == 25
+    })?;
+    d.settled()?;
+    let persisted = deadpan_cli::backup_settings::Settings::load_from(&settings_path)
+        .map_err(|error| error.to_string())?;
+    d.check(
+        "Save persists the visible policy without changing the project revision",
+        persisted.settings.interval_minutes() == 25
+            && d.revision() == saved
+            && d.app().storage.backups.settings_draft.is_none(),
+        json!({"interval_minutes":25,"revision":saved}),
+        json!({"interval_minutes":persisted.settings.interval_minutes(),"revision":d.revision()}),
     )?;
     d.key(Key::B)?;
     d.wait_for("Backed up", |app| {
@@ -206,5 +294,80 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"revision":revision,"error":"Not saved: … newer Deadpan …","database":"unchanged"}),
         json!({"revision":d.revision(),"error":d.app().project_error,"database_unchanged":after == before}),
     )?;
-    d.capture("An edit refused in a read-only project")
+    d.capture("An edit refused in a read-only project")?;
+
+    d.command("backups")?;
+    d.wait_for("Backup settings available in read-only project", |app| {
+        matches!(
+            &app.storage.backups.settings.status,
+            SettingsStatus::Ready { .. }
+        )
+    })?;
+    let read_only_bytes =
+        std::fs::read(path.join("project.sqlite")).map_err(|error| error.to_string())?;
+    d.check(
+        "Backup settings remain available in a read-only project",
+        d.app()
+            .workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.read_only.is_some())
+            && d.rect("Change backup settings…").is_ok()
+            && d.rect("Back up now  B").is_err(),
+        json!({"settings_available":true,"project_backup_disabled":true}),
+        json!({
+            "settings_button":d.rect("Change backup settings…").is_ok(),
+            "backup_button":d.rect("Back up now  B").is_ok(),
+        }),
+    )?;
+    d.click("Change backup settings…")?;
+    d.key(Key::Escape)?;
+    d.settled()?;
+    let after_cancel =
+        std::fs::read(path.join("project.sqlite")).map_err(|error| error.to_string())?;
+    d.check(
+        "Cancelling settings in a read-only project leaves its database untouched",
+        d.revision() == revision && after_cancel == read_only_bytes,
+        json!({"revision":revision,"database":"unchanged"}),
+        json!({"revision":d.revision(),"database_unchanged":after_cancel == read_only_bytes}),
+    )?;
+
+    d.key(Key::Escape)?;
+    d.app()
+        .service
+        .submit(crate::project::ProjectRequest::Close)
+        .map_err(|error| error.to_string())?;
+    d.wait_for("Closed after read-only backup check", |app| {
+        app.workspace.is_none() && !app.service.is_busy()
+    })?;
+    d.command("backups")?;
+    d.wait_for("Backup settings available without a project", |app| {
+        app.workspace.is_none()
+            && matches!(
+                &app.storage.backups.settings.status,
+                SettingsStatus::Ready { .. }
+            )
+    })?;
+    d.check(
+        "Per-user backup settings remain available with no project open",
+        d.app().workspace.is_none()
+            && d.rect("Change backup settings…").is_ok()
+            && d.rect("Back up now  B").is_err(),
+        json!({"settings_available":true,"project_backup_disabled":true}),
+        json!({
+            "settings_button":d.rect("Change backup settings…").is_ok(),
+            "backup_button":d.rect("Back up now  B").is_ok(),
+        }),
+    )?;
+    d.click("Change backup settings…")?;
+    d.key(Key::Escape)?;
+    d.check(
+        "The no-project settings form supports a native Escape cancel",
+        d.app().workspace.is_none() && d.app().storage.backups.settings_draft.is_none(),
+        json!({"draft":"cancelled","project":null}),
+        json!({
+            "draft_open":d.app().storage.backups.settings_draft.is_some(),
+            "project":null,
+        }),
+    )?;
+    d.capture("Backup settings without a project")
 }

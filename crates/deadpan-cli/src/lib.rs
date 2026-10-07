@@ -7,6 +7,8 @@ mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod backup_settings;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod backups;
 pub mod bundle;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -92,6 +94,7 @@ const HELP: &str = "Deadpan headless commands:
   project view <project.deadpan>
   project backups <project.deadpan> [--verify]
   project backup <project.deadpan>
+  backup-policy show | set --interval-minutes <1-1440> --max-count <8-256> --budget-mib <256-65536> | reset
   project restore <project.deadpan> <backup-id> [--expected <revision>] [--dry-run]
   project restore <project.deadpan> <backup-id> --damaged [--force-project <id>]
   project storage <project.deadpan> [--clean [--files-only] [--dry-run]] [--grace-hours N]
@@ -196,6 +199,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Backup(#[from] deadpan_store::backups::BackupError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    BackupSettings(#[from] backup_settings::SettingsError),
     #[error(transparent)]
     Document(#[from] deadpan_core::DocumentError),
     #[error(transparent)]
@@ -272,6 +278,8 @@ impl CliError {
             Self::Store(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Backup(error) => error.code(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::BackupSettings(_) => "BackupSettingsFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceInput(_) => "SourceSnapshotFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -588,6 +596,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["project", "restore", rest @ ..] => backups::run_restore(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "view", rest @ ..] => backups::run_view(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["backup-policy", rest @ ..] => backups::run_policy(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["cache", rest @ ..] => storage::run_cache(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

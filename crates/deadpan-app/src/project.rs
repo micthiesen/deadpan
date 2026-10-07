@@ -1126,6 +1126,10 @@ struct Shared {
     /// keeps the production interval.
     #[cfg(any(test, feature = "ui-harness"))]
     backup_interval_ms: std::sync::atomic::AtomicU64,
+    /// Replay/tests: isolate global backup settings from the user's support
+    /// directory. Production always resolves the per-user default path.
+    #[cfg(any(test, feature = "ui-harness"))]
+    backup_settings_path: Mutex<Option<PathBuf>>,
     /// The automatic AI variant retention check runs (production default).
     /// Off, a session never starts one; explicit cleanup and the Storage
     /// panel's clock confirmation still work.
@@ -1223,6 +1227,8 @@ impl ProjectService {
             storage_failure: AtomicBool::new(false),
             #[cfg(any(test, feature = "ui-harness"))]
             backup_interval_ms: std::sync::atomic::AtomicU64::new(0),
+            #[cfg(any(test, feature = "ui-harness"))]
+            backup_settings_path: Mutex::new(None),
             automatic_retention: AtomicBool::new(true),
             #[cfg(test)]
             retention_paused: AtomicBool::new(false),
@@ -1360,6 +1366,17 @@ impl ProjectService {
                 .max(1),
             Ordering::Release,
         );
+    }
+
+    /// Replays use a private settings file rather than the user's global
+    /// preferences. Set this before opening the Backups panel.
+    #[cfg(feature = "ui-harness")]
+    pub fn set_backup_settings_path_for_check(&self, path: PathBuf) {
+        *self
+            .shared
+            .backup_settings_path
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = Some(path);
     }
 
     #[cfg(feature = "ui-harness")]

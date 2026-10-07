@@ -14,7 +14,7 @@ use std::sync::mpsc;
 use deadpan_store::backups::{BackupInfo, BackupPreview, list_backups, preview_backup};
 
 use super::*;
-use crate::project::backups::{Request, Update};
+use crate::project::backups::{Request, SettingsStatus, SettingsUpdate, Update};
 
 type Listing = mpsc::Receiver<Result<Vec<BackupInfo>, String>>;
 type Previewing = mpsc::Receiver<Result<BackupPreview, String>>;
@@ -38,6 +38,29 @@ pub(super) struct View {
     pub(super) only: bool,
     /// The session the state above belongs to.
     session: Option<u64>,
+    /// Current global settings, independent of the project session.
+    pub(super) settings: SettingsUpdate,
+    settings_ticket: u64,
+    settings_expected: Option<u64>,
+    pub(super) settings_draft: Option<SettingsDraft>,
+    settings_error: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct SettingsDraft {
+    interval: String,
+    count: String,
+    budget: String,
+}
+
+const SETTINGS_INTERVAL_ID: &str = "backup-settings-interval";
+const SETTINGS_COUNT_ID: &str = "backup-settings-count";
+const SETTINGS_BUDGET_ID: &str = "backup-settings-budget";
+
+pub(super) fn settings_field_focused(context: &egui::Context) -> bool {
+    [SETTINGS_INTERVAL_ID, SETTINGS_COUNT_ID, SETTINGS_BUDGET_ID]
+        .into_iter()
+        .any(|id| context.memory(|memory| memory.has_focus(egui::Id::new(id))))
 }
 
 #[cfg(feature = "ui-harness")]
@@ -99,6 +122,26 @@ fn row(info: &BackupInfo) -> String {
 }
 
 impl DeadpanApp {
+    /// Refresh the per-user settings off the UI thread through the bounded
+    /// project-service worker. The ticket admits only this request's reply.
+    pub(super) fn reload_backup_settings(&mut self) {
+        let view = &mut self.storage.backups;
+        view.settings_ticket = view.settings_ticket.saturating_add(1);
+        let ticket = view.settings_ticket;
+        view.settings_expected = Some(ticket);
+        view.settings_draft = None;
+        view.settings_error = None;
+        match self.service.submit(crate::project::ProjectRequest::Backup(
+            Request::LoadSettings { ticket },
+        )) {
+            Ok(()) => view.settings.status = SettingsStatus::Loading,
+            Err(error) => {
+                view.settings_expected = None;
+                view.settings_error = Some(error);
+            }
+        }
+    }
+
     /// List backups again, off the UI thread.
     pub(super) fn refresh_backups(&mut self) {
         let Some(package) = self
@@ -133,6 +176,28 @@ impl DeadpanApp {
     pub(super) fn receive_backups(&mut self, update: Update) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         let view = &mut self.storage.backups;
+        let settings_ticket = update.settings.ticket;
+        let settings_is_current = view
+            .settings_expected
+            .is_some_and(|expected| expected == settings_ticket)
+            || (view.settings_expected.is_none() && settings_ticket >= view.settings.ticket);
+        if settings_is_current {
+            view.settings = update.settings.clone();
+            view.settings_ticket = settings_ticket;
+            if view.settings_expected == Some(settings_ticket) {
+                match &view.settings.status {
+                    SettingsStatus::Ready { .. } | SettingsStatus::Saved { .. } => {
+                        view.settings_expected = None;
+                        view.settings_draft = None;
+                        view.settings_error = None;
+                    }
+                    SettingsStatus::Failed(_) => {
+                        view.settings_expected = None;
+                    }
+                    SettingsStatus::Loading | SettingsStatus::Saving => {}
+                }
+            }
+        }
         let changed = view.session != session;
         view.session = session;
         if changed {
@@ -333,22 +398,91 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn begin_backup_settings_edit(&mut self) {
+        let settings = &self.storage.backups.settings.settings;
+        self.storage.backups.settings_draft = Some(SettingsDraft {
+            interval: settings.interval_minutes().to_string(),
+            count: settings.max_count().to_string(),
+            budget: settings.budget_mib().to_string(),
+        });
+        self.storage.backups.settings_error = None;
+    }
+
+    pub(super) fn cancel_backup_settings_edit(&mut self) {
+        self.storage.backups.settings_draft = None;
+        self.storage.backups.settings_error = None;
+    }
+
+    pub(super) fn save_backup_settings(&mut self) {
+        let Some(draft) = self.storage.backups.settings_draft.as_ref() else {
+            return;
+        };
+        let parsed = (|| {
+            let interval = draft
+                .interval
+                .parse::<u32>()
+                .map_err(|_| "Enter a whole number of minutes from 1 to 1440.".to_owned())?;
+            let count = draft
+                .count
+                .parse::<u32>()
+                .map_err(|_| "Enter a whole number of backups from 8 to 256.".to_owned())?;
+            let budget = draft
+                .budget
+                .parse::<u32>()
+                .map_err(|_| "Enter a whole number of MiB from 256 to 65536.".to_owned())?;
+            deadpan_cli::backup_settings::Settings::new(interval, count, budget)
+                .map_err(|error| error.to_string())
+        })();
+        let settings = match parsed {
+            Ok(settings) => settings,
+            Err(error) => {
+                self.storage.backups.settings_error = Some(error);
+                return;
+            }
+        };
+        let view = &mut self.storage.backups;
+        view.settings_ticket = view.settings_ticket.saturating_add(1);
+        let ticket = view.settings_ticket;
+        view.settings_expected = Some(ticket);
+        view.settings.status = SettingsStatus::Saving;
+        view.settings_error = None;
+        match self.service.submit(crate::project::ProjectRequest::Backup(
+            Request::SaveSettings { ticket, settings },
+        )) {
+            Ok(()) => {}
+            Err(error) => {
+                view.settings_expected = None;
+                view.settings.status = SettingsStatus::Failed(error.clone());
+                view.settings_error = Some(error);
+            }
+        }
+    }
+
     /// The BACKUPS section of the Storage panel. Returns a clicked action.
-    pub(super) fn backups_section(&self, ui: &mut egui::Ui, focus: bool) -> Option<char> {
+    pub(super) fn backups_section(&mut self, ui: &mut egui::Ui, focus: bool) -> Option<char> {
         let mut action = None;
         ui.label(style::section_title("BACKUPS", false));
-        let view = &self.storage.backups;
-        if self
+        let read_only = self
             .workspace
             .as_ref()
-            .is_some_and(|workspace| workspace.read_only.is_some())
-        {
+            .is_some_and(|workspace| workspace.read_only.is_some());
+        let (list, selected, preview, backup_update, status, settings) = {
+            let view = &self.storage.backups;
+            (
+                view.list.clone(),
+                view.selected,
+                view.preview.clone(),
+                view.update.clone(),
+                view.status.clone(),
+                view.settings.clone(),
+            )
+        };
+        if read_only {
             ui.label(
                 egui::RichText::new("This project is open read-only; it is not backed up here.")
                     .size(11.5)
                     .weak(),
             );
-            return None;
         }
         let line = |ui: &mut egui::Ui, text: String, selected: bool| {
             let rich = egui::RichText::new(&text).monospace().size(11.5);
@@ -369,7 +503,7 @@ impl DeadpanApp {
                 },
             );
         };
-        match &view.list {
+        match &list {
             None => line(ui, "Reading backups…".into(), false),
             Some(Err(error)) => line(ui, format!("Backups unavailable: {error}"), false),
             Some(Ok(list)) if list.is_empty() => line(
@@ -380,9 +514,9 @@ impl DeadpanApp {
             ),
             Some(Ok(list)) => {
                 for (index, info) in list.iter().enumerate() {
-                    line(ui, row(info), index == view.selected);
+                    line(ui, row(info), index == selected);
                 }
-                let contents = match (&view.preview, list.get(view.selected)) {
+                let contents = match (&preview, list.get(selected)) {
                     (Some((id, Ok(preview))), Some(info)) if *id == info.id => describe(preview),
                     (Some((id, Err(error))), Some(info)) if *id == info.id => {
                         format!("Cannot be read: {error}")
@@ -392,19 +526,131 @@ impl DeadpanApp {
                 ui.label(egui::RichText::new(contents).size(11.5).weak());
             }
         }
-        if let Some(reason) = view.update.running {
+        if let Some(reason) = backup_update.running {
             ui.label(
                 egui::RichText::new(format!("Backing up now ({})…", reason.label())).size(11.5),
             );
         }
-        if let Some(failure) = &view.update.failure {
+        if let Some(failure) = &backup_update.failure {
             ui.colored_label(
                 style::WARNING,
                 format!("The last automatic backup failed: {failure}"),
             );
         }
+        ui.separator();
+        ui.label(style::section_title("AUTOMATIC BACKUPS", false));
+        match &settings.status {
+            SettingsStatus::Loading => {
+                ui.label(egui::RichText::new("Reading backup settings…").weak());
+            }
+            SettingsStatus::Ready { source, warning } => {
+                let origin = match source {
+                    deadpan_cli::backup_settings::Source::Default => "Defaults are in use.",
+                    deadpan_cli::backup_settings::Source::File => "Saved per-user settings.",
+                };
+                ui.label(egui::RichText::new(origin).weak());
+                if let Some(warning) = warning {
+                    ui.colored_label(style::WARNING, warning);
+                }
+            }
+            SettingsStatus::Saving => {
+                ui.label(egui::RichText::new("Saving backup settings…").weak());
+            }
+            SettingsStatus::Saved { warning } => {
+                ui.label(egui::RichText::new("Backup settings saved.").weak());
+                if let Some(warning) = warning {
+                    ui.colored_label(style::WARNING, warning);
+                }
+            }
+            SettingsStatus::Failed(error) => {
+                ui.colored_label(style::WARNING, format!("Backup settings: {error}"));
+                if !settings.trusted {
+                    ui.colored_label(
+                        style::WARNING,
+                        "Using the default interval and keeping every backup until settings are repaired.",
+                    );
+                }
+            }
+        }
+        if let Some(draft) = &mut self.storage.backups.settings_draft {
+            egui::Grid::new("backup-settings-grid")
+                .num_columns(2)
+                .min_col_width(112.0)
+                .spacing(egui::vec2(8.0, 4.0))
+                .show(ui, |ui| {
+                    ui.label("Interval (minutes)");
+                    let field = ui.add(
+                        egui::TextEdit::singleline(&mut draft.interval)
+                            .id(egui::Id::new(SETTINGS_INTERVAL_ID))
+                            .return_key(None)
+                            .desired_width(80.0),
+                    );
+                    accessibility::name(&field, "Automatic backup interval in minutes");
+                    ui.end_row();
+                    ui.label("Backups kept");
+                    let count = ui.add(
+                        egui::TextEdit::singleline(&mut draft.count)
+                            .id(egui::Id::new(SETTINGS_COUNT_ID))
+                            .return_key(None)
+                            .desired_width(80.0),
+                    );
+                    accessibility::name(&count, "Maximum backup count");
+                    ui.end_row();
+                    ui.label("Storage budget (MiB)");
+                    let budget = ui.add(
+                        egui::TextEdit::singleline(&mut draft.budget)
+                            .id(egui::Id::new(SETTINGS_BUDGET_ID))
+                            .return_key(None)
+                            .desired_width(100.0),
+                    );
+                    accessibility::name(&budget, "Maximum backup storage in MiB");
+                    ui.end_row();
+                });
+            ui.label(
+                egui::RichText::new("Limits: 1–1440 minutes, 8–256 backups, 256–65536 MiB.")
+                    .size(11.0)
+                    .weak(),
+            );
+            if let Some(error) = &self.storage.backups.settings_error {
+                let response = ui.colored_label(style::WARNING, error);
+                accessibility::full_text(response, error);
+            }
+            let saving = matches!(
+                &self.storage.backups.settings.status,
+                SettingsStatus::Saving
+            ) || self.storage.backups.settings_expected.is_some();
+            ui.horizontal_wrapped(|ui| {
+                if ui
+                    .add_enabled(!saving, egui::Button::new("Save settings"))
+                    .clicked()
+                {
+                    action = Some('w');
+                }
+                if ui
+                    .add_enabled(!saving, egui::Button::new("Cancel settings"))
+                    .clicked()
+                {
+                    action = Some('q');
+                }
+            });
+        } else {
+            let summary = format!(
+                "Every {} min · up to {} backups · {} MiB",
+                settings.settings.interval_minutes(),
+                settings.settings.max_count(),
+                settings.settings.budget_mib()
+            );
+            ui.label(egui::RichText::new(summary).monospace().size(11.5));
+            let loading = matches!(&settings.status, SettingsStatus::Loading);
+            if ui
+                .add_enabled(!loading, egui::Button::new("Change backup settings…"))
+                .clicked()
+            {
+                action = Some('i');
+            }
+        }
         ui.horizontal_wrapped(|ui| {
-            let project = self.workspace.is_some();
+            let project = self.workspace.is_some() && !read_only;
             let back_up = ui.add_enabled(project, style::action("Back up now", "B"));
             if focus {
                 back_up.request_focus();
@@ -412,7 +658,7 @@ impl DeadpanApp {
             if back_up.clicked() {
                 action = Some('b');
             }
-            let any = matches!(&view.list, Some(Ok(list)) if !list.is_empty());
+            let any = matches!(&list, Some(Ok(list)) if !list.is_empty());
             if ui
                 .add_enabled(project && any, style::action("Restore…", "O"))
                 .clicked()
@@ -420,7 +666,7 @@ impl DeadpanApp {
                 action = Some('o');
             }
         });
-        if let Some(status) = &view.status {
+        if let Some(status) = &status {
             let response = ui.add(egui::Label::new(egui::RichText::new(status).size(12.0)).wrap());
             accessibility::full_text(response, status);
         }

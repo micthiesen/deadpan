@@ -816,6 +816,10 @@ impl Service {
                 | ProjectRequest::Close
                 | ProjectRequest::CreateFromSource { .. }
                 | ProjectRequest::CancelImport
+                | ProjectRequest::Backup(
+                    super::backups::Request::LoadSettings { .. }
+                        | super::backups::Request::SaveSettings { .. }
+                )
                 | ProjectRequest::AbandonSplice(_)
                 | ProjectRequest::AbandonSlip(_)
                 | ProjectRequest::AbandonTrim(_)

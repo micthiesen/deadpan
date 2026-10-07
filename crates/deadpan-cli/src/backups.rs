@@ -11,6 +11,7 @@ use deadpan_store::backups::{
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
+use crate::backup_settings::Settings;
 use crate::live_project::{LiveError, ShortOperation};
 use crate::{CliError, write_json};
 
@@ -54,14 +55,107 @@ pub fn run_create(arguments: &[&str]) -> Result<(), CliError> {
             "usage: project backup <project.deadpan>".into(),
         ));
     };
+    let (policy, settings_warning) = effective_policy();
     let outcome = create_backup(
         Path::new(path),
         BackupReason::Manual,
-        &BackupPolicy::default(),
+        &policy,
         BackupLimits::default(),
         &AtomicBool::new(false),
     )?;
-    write_json(&serde_json::json!({ "protocol": 1, "created": outcome }))
+    write_json(&serde_json::json!({
+        "protocol": 1,
+        "created": outcome,
+        "settings_warning": settings_warning,
+    }))
+}
+
+fn effective_policy() -> (BackupPolicy, Option<String>) {
+    match Settings::load_current() {
+        Ok(loaded) => (loaded.settings.policy(), None),
+        Err(error) => (
+            Settings::default().policy_without_pruning(),
+            Some(format!(
+                "{error}; using the default interval and keeping every backup until settings are repaired"
+            )),
+        ),
+    }
+}
+
+/// `backup-policy show|set|reset`: per-user settings shared with Deadpan.app.
+pub fn run_policy(arguments: &[&str]) -> Result<(), CliError> {
+    let path = crate::backup_settings::default_path()?;
+    let result = policy_command(arguments, &path)?;
+    write_json(&result)
+}
+
+fn policy_command(arguments: &[&str], path: &Path) -> Result<serde_json::Value, CliError> {
+    match arguments {
+        [] | ["show"] => {
+            let loaded = Settings::load_from(path)?;
+            Ok(serde_json::json!({
+                "protocol": 1,
+                "settings": loaded.settings,
+                "source": match loaded.source {
+                    crate::backup_settings::Source::Default => "default",
+                    crate::backup_settings::Source::File => "file",
+                },
+            }))
+        }
+        ["reset"] => {
+            let settings = Settings::default();
+            let saved = settings.save_to(path)?;
+            Ok(serde_json::json!({
+                "protocol": 1,
+                "settings": settings,
+                "saved": true,
+                "warning": saved.warning,
+            }))
+        }
+        ["set", rest @ ..] => set_policy(rest, path),
+        _ => Err(policy_usage()),
+    }
+}
+
+fn set_policy(arguments: &[&str], path: &Path) -> Result<serde_json::Value, CliError> {
+    let mut interval = None;
+    let mut count = None;
+    let mut budget = None;
+    let mut args = arguments;
+    while let Some((option, tail)) = args.split_first() {
+        let (value, remaining) = tail.split_first().ok_or_else(policy_usage)?;
+        let parsed = value
+            .parse::<u32>()
+            .map_err(|_| CliError::Usage(format!("{option} expects a whole number")))?;
+        let slot = match *option {
+            "--interval-minutes" => &mut interval,
+            "--max-count" => &mut count,
+            "--budget-mib" => &mut budget,
+            _ => return Err(policy_usage()),
+        };
+        if slot.replace(parsed).is_some() {
+            return Err(policy_usage());
+        }
+        args = remaining;
+    }
+    let settings = Settings::new(
+        interval.ok_or_else(policy_usage)?,
+        count.ok_or_else(policy_usage)?,
+        budget.ok_or_else(policy_usage)?,
+    )?;
+    let saved = settings.save_to(path)?;
+    Ok(serde_json::json!({
+        "protocol": 1,
+        "settings": settings,
+        "saved": true,
+        "warning": saved.warning,
+    }))
+}
+
+fn policy_usage() -> CliError {
+    CliError::Usage(
+        "usage: backup-policy show | backup-policy set --interval-minutes <1-1440> --max-count <8-256> --budget-mib <256-65536> | backup-policy reset".into(),
+    )
 }
 
 /// `project restore <package> <backup-id> [--expected <revision>] [--dry-run]`:
@@ -153,10 +247,11 @@ pub(crate) fn restore_on(
     expected: Option<&RevisionId>,
 ) -> Result<RestoreOutcome, LiveError> {
     check_expected(&store.head_revision().map_err(LiveError::store)?, expected)?;
+    let (policy, _) = effective_policy();
     store
         .restore_backup(
             id,
-            &BackupPolicy::default(),
+            &policy,
             BackupLimits::default(),
             &AtomicBool::new(false),
         )
@@ -192,4 +287,77 @@ pub fn run_view(arguments: &[&str]) -> Result<(), CliError> {
         "read_only_reason": read_only,
         "backups": list_backups(Path::new(path)).map(|backups| backups.len()).unwrap_or(0),
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cli_policy_commands_share_the_persisted_settings_api() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("Application Support/Deadpan/backups.json");
+        let shown = policy_command(&["show"], &path).unwrap();
+        assert_eq!(shown["source"], "default");
+        assert_eq!(shown["settings"]["interval_minutes"], 15);
+        assert!(!path.exists());
+
+        let set = policy_command(
+            &[
+                "set",
+                "--budget-mib",
+                "8192",
+                "--max-count",
+                "96",
+                "--interval-minutes",
+                "30",
+            ],
+            &path,
+        )
+        .unwrap();
+        assert_eq!(set["settings"]["interval_minutes"], 30);
+        assert_eq!(set["settings"]["max_count"], 96);
+        assert_eq!(set["settings"]["budget_mib"], 8192);
+
+        let loaded = Settings::load_from(&path).unwrap();
+        let policy = loaded.settings.policy();
+        assert_eq!(policy.interval, std::time::Duration::from_secs(30 * 60));
+        assert_eq!(policy.max_count, 96);
+        assert_eq!(policy.max_total_bytes, 8192 * 1024 * 1024);
+
+        let reset = policy_command(&["reset"], &path).unwrap();
+        assert_eq!(reset["settings"]["interval_minutes"], 15);
+        assert_eq!(
+            Settings::load_from(&path).unwrap().settings,
+            Settings::default()
+        );
+    }
+
+    #[test]
+    fn cli_policy_rejects_incomplete_and_out_of_range_values_without_replacing() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("backups.json");
+        let original = Settings::new(25, 72, 3072).unwrap();
+        original.save_to(&path).unwrap();
+        assert!(policy_command(&["set", "--interval-minutes", "0"], &path).is_err());
+        assert_eq!(Settings::load_from(&path).unwrap().settings, original);
+        assert!(
+            policy_command(
+                &[
+                    "set",
+                    "--interval-minutes",
+                    "20",
+                    "--interval-minutes",
+                    "30",
+                    "--max-count",
+                    "48",
+                    "--budget-mib",
+                    "4096",
+                ],
+                &path,
+            )
+            .is_err()
+        );
+        assert_eq!(Settings::load_from(&path).unwrap().settings, original);
+    }
 }

@@ -19,10 +19,11 @@
 //! state first, and then starts a new session so that nothing derived from
 //! the replaced revisions survives.
 
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
+use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -31,13 +32,98 @@ use deadpan_store::backups::{
     BackupLimits, BackupOutcome, BackupPolicy, BackupReason, create_backup, list_backups,
 };
 
-use super::super::backups::{Reply, Request, Update, age};
+use super::super::backups::{Reply, Request, SettingsStatus, SettingsUpdate, Update, age};
 use super::{Result, Service, recovery, registers, snapshot};
 
 /// How long quitting waits for a closing backup still copying.
 const EXIT_WAIT: Duration = Duration::from_millis(1500);
 
 type Outcome = mpsc::Receiver<std::result::Result<BackupOutcome, String>>;
+
+enum SettingsJob {
+    Load {
+        ticket: u64,
+        path: PathBuf,
+    },
+    Save {
+        ticket: u64,
+        settings: deadpan_cli::backup_settings::Settings,
+        path: PathBuf,
+    },
+}
+
+impl SettingsJob {
+    fn ticket(&self) -> u64 {
+        match self {
+            Self::Load { ticket, .. } | Self::Save { ticket, .. } => *ticket,
+        }
+    }
+}
+
+enum SettingsResult {
+    Loaded {
+        ticket: u64,
+        result: std::result::Result<deadpan_cli::backup_settings::Loaded, String>,
+    },
+    Saved {
+        ticket: u64,
+        settings: deadpan_cli::backup_settings::Settings,
+        result: std::result::Result<deadpan_cli::backup_settings::SaveOutcome, String>,
+    },
+}
+
+struct SettingsWorker {
+    jobs: SyncSender<SettingsJob>,
+    results: Receiver<SettingsResult>,
+    _handle: JoinHandle<()>,
+}
+
+impl SettingsWorker {
+    fn start() -> std::io::Result<Self> {
+        let (job_sender, job_receiver) = mpsc::sync_channel::<SettingsJob>(1);
+        let (result_sender, result_receiver) = mpsc::sync_channel::<SettingsResult>(1);
+        let handle = std::thread::Builder::new()
+            .name("deadpan-backup-settings".into())
+            .spawn(move || {
+                while let Ok(job) = job_receiver.recv() {
+                    let result = match job {
+                        SettingsJob::Load { ticket, path } => SettingsResult::Loaded {
+                            ticket,
+                            result: deadpan_cli::backup_settings::Settings::load_from(&path)
+                                .map_err(|error| error.to_string()),
+                        },
+                        SettingsJob::Save {
+                            ticket,
+                            settings,
+                            path,
+                        } => SettingsResult::Saved {
+                            ticket,
+                            result: settings.save_to(&path).map_err(|error| error.to_string()),
+                            settings,
+                        },
+                    };
+                    if result_sender.send(result).is_err() {
+                        break;
+                    }
+                }
+            })?;
+        Ok(Self {
+            jobs: job_sender,
+            results: result_receiver,
+            _handle: handle,
+        })
+    }
+
+    fn submit(&self, job: SettingsJob) -> std::result::Result<(), String> {
+        self.jobs
+            .try_send(job)
+            .map_err(|error| format!("Backup settings worker is busy: {error}"))
+    }
+
+    fn try_recv(&self) -> std::result::Result<SettingsResult, TryRecvError> {
+        self.results.try_recv()
+    }
+}
 
 struct Running {
     session: u64,
@@ -52,6 +138,10 @@ struct Running {
 
 pub(super) struct State {
     policy: BackupPolicy,
+    settings: SettingsUpdate,
+    settings_worker: Option<SettingsWorker>,
+    settings_in_flight: Option<u64>,
+    pending_settings: VecDeque<SettingsJob>,
     running: Option<Running>,
     /// The database change version the latest backup holds, per session;
     /// `None` until a backup of this session or the existing folder says
@@ -70,8 +160,15 @@ pub(super) struct State {
 
 impl Default for State {
     fn default() -> Self {
-        Self {
-            policy: BackupPolicy::default(),
+        let settings_worker = SettingsWorker::start().ok();
+        let settings = SettingsUpdate::default();
+        let policy = settings.settings.policy_without_pruning();
+        let mut state = Self {
+            policy,
+            settings,
+            settings_worker,
+            settings_in_flight: None,
+            pending_settings: VecDeque::new(),
             running: None,
             covered: None,
             monitor: None,
@@ -79,7 +176,20 @@ impl Default for State {
             since: Instant::now(),
             detached: Vec::new(),
             update: Update::default(),
+        };
+        if state.settings_worker.is_some() {
+            match deadpan_cli::backup_settings::default_path() {
+                Ok(path) => state.queue_settings(SettingsJob::Load { ticket: 0, path }),
+                Err(error) => {
+                    state.settings.status = SettingsStatus::Failed(error.to_string());
+                }
+            }
+        } else {
+            state.settings.status = SettingsStatus::Failed(
+                "The backup settings worker could not start; backups will keep every copy.".into(),
+            );
         }
+        state
     }
 }
 
@@ -90,13 +200,189 @@ impl State {
     }
 
     pub(super) fn update(&self) -> Update {
-        self.update.clone()
+        let mut update = self.update.clone();
+        update.settings = self.settings.clone();
+        update
     }
 
-    /// Wait briefly for closing backups when the app quits. A copy still
+    fn queue_settings(&mut self, job: SettingsJob) {
+        let ticket = job.ticket();
+        if self.settings_in_flight.is_some() {
+            match &job {
+                SettingsJob::Load { .. } => {
+                    // Keep an explicit save ahead of the newest reload. A
+                    // repeated panel-open request can replace an older load,
+                    // but it must never silently discard a Save request.
+                    self.pending_settings
+                        .retain(|pending| matches!(pending, SettingsJob::Save { .. }));
+                    self.pending_settings.push_back(job);
+                }
+                SettingsJob::Save { .. } => {
+                    // The latest explicit settings value supersedes queued
+                    // work; a reload before it would only observe the file
+                    // before this save is published.
+                    self.pending_settings.clear();
+                    self.pending_settings.push_back(job);
+                }
+            }
+            return;
+        }
+        let Some(worker) = &self.settings_worker else {
+            self.settings.ticket = ticket;
+            self.settings.trusted = false;
+            self.settings.status = SettingsStatus::Failed(
+                "The backup settings worker is unavailable; backups will keep every copy.".into(),
+            );
+            return;
+        };
+        match worker.submit(job) {
+            Ok(()) => self.settings_in_flight = Some(ticket),
+            Err(error) => {
+                self.settings.ticket = ticket;
+                self.settings.status = SettingsStatus::Failed(error);
+            }
+        }
+    }
+
+    fn request_settings_load(&mut self, ticket: u64, path: PathBuf) {
+        self.settings.ticket = ticket;
+        self.settings.trusted = false;
+        self.settings.status = SettingsStatus::Loading;
+        self.policy = self.settings.settings.policy_without_pruning();
+        self.queue_settings(SettingsJob::Load { ticket, path });
+    }
+
+    fn request_settings_save(
+        &mut self,
+        ticket: u64,
+        settings: deadpan_cli::backup_settings::Settings,
+        path: PathBuf,
+    ) {
+        self.settings.ticket = ticket;
+        self.settings.status = SettingsStatus::Saving;
+        self.queue_settings(SettingsJob::Save {
+            ticket,
+            settings,
+            path,
+        });
+    }
+
+    fn pump_settings(&mut self) -> bool {
+        let Some(worker) = &self.settings_worker else {
+            return false;
+        };
+        let mut changed = false;
+        match worker.try_recv() {
+            Ok(result) => {
+                let ticket = match &result {
+                    SettingsResult::Loaded { ticket, .. }
+                    | SettingsResult::Saved { ticket, .. } => *ticket,
+                };
+                self.settings_in_flight = None;
+                if self.settings.ticket == ticket {
+                    match result {
+                        SettingsResult::Loaded { result, .. } => match result {
+                            Ok(loaded) => {
+                                let interval_changed = self.settings.settings.interval_minutes()
+                                    != loaded.settings.interval_minutes();
+                                self.settings.settings = loaded.settings;
+                                self.settings.trusted = true;
+                                self.settings.status = SettingsStatus::Ready {
+                                    source: loaded.source,
+                                    warning: None,
+                                };
+                                self.policy = self.settings.settings.policy();
+                                if interval_changed {
+                                    self.since = Instant::now();
+                                    self.failures = 0;
+                                }
+                            }
+                            Err(error) => {
+                                let interval_changed =
+                                    self.settings.settings.interval_minutes() != 15;
+                                self.settings.settings =
+                                    deadpan_cli::backup_settings::Settings::default();
+                                self.settings.trusted = false;
+                                self.settings.status = SettingsStatus::Failed(error);
+                                self.policy = self.settings.settings.policy_without_pruning();
+                                if interval_changed {
+                                    self.since = Instant::now();
+                                    self.failures = 0;
+                                }
+                            }
+                        },
+                        SettingsResult::Saved {
+                            settings, result, ..
+                        } => match result {
+                            Ok(saved) => {
+                                let interval_changed = self.settings.settings.interval_minutes()
+                                    != settings.interval_minutes();
+                                self.settings.settings = settings;
+                                self.settings.trusted = true;
+                                self.settings.status = SettingsStatus::Saved {
+                                    warning: saved.warning,
+                                };
+                                self.policy = self.settings.settings.policy();
+                                if interval_changed {
+                                    self.since = Instant::now();
+                                    self.failures = 0;
+                                }
+                            }
+                            Err(error) => {
+                                // The old file remains authoritative unless
+                                // the save reports a completed replacement.
+                                self.settings.status = SettingsStatus::Failed(error);
+                            }
+                        },
+                    }
+                    changed = true;
+                }
+            }
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
+                if let Some(ticket) = self.settings_in_flight.take()
+                    && self.settings.ticket == ticket
+                {
+                    self.settings.status = SettingsStatus::Failed(
+                        "The backup settings worker stopped before replying.".into(),
+                    );
+                    changed = true;
+                }
+            }
+        }
+        if self.settings_in_flight.is_none()
+            && let Some(job) = self.pending_settings.pop_front()
+        {
+            self.queue_settings(job);
+            changed = true;
+        }
+        changed
+    }
+
+    /// Finish explicit settings writes, then wait briefly for closing backups.
+    /// Settings contain at most 4 KiB and are replaced atomically. A Save
+    /// already accepted by the service must finish before shutdown completes.
+    /// A backup copy still
     /// running afterwards is abandoned with the process; its hidden staging
     /// file is removed by a later rotation and nothing is published.
     pub(super) fn finish_on_exit(&mut self) {
+        while self.settings_in_flight.is_some() || !self.pending_settings.is_empty() {
+            if !self.pump_settings() {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+        if let Some(SettingsWorker {
+            jobs,
+            results,
+            _handle,
+        }) = self.settings_worker.take()
+        {
+            drop(jobs);
+            drop(results);
+            if _handle.join().is_err() {
+                eprintln!("Backup settings worker failed during shutdown.");
+            }
+        }
         let deadline = Instant::now() + EXIT_WAIT;
         if let Some(running) = self.running.take() {
             running.cancel.store(true, Ordering::Release);
@@ -144,6 +430,20 @@ fn describe(error: &deadpan_store::backups::BackupError) -> String {
 }
 
 impl Service {
+    fn backup_settings_path(&self) -> std::result::Result<PathBuf, String> {
+        #[cfg(any(test, feature = "ui-harness"))]
+        if let Some(path) = self
+            .shared
+            .backup_settings_path
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
+        {
+            return Ok(path);
+        }
+        deadpan_cli::backup_settings::default_path().map_err(|error| error.to_string())
+    }
+
     /// The store revoked its writer ownership with the replaced state; the
     /// live command endpoint is bound again to the restored one.
     fn rebind_host_after_restore(&mut self) {
@@ -269,7 +569,7 @@ impl Service {
     /// Poll the running backup and start a periodic one when due. Returns
     /// whether published state changed.
     pub(super) fn pump_backups(&mut self) -> bool {
-        let mut changed = false;
+        let mut changed = self.backups.pump_settings();
         if let Some(running) = &self.backups.running {
             match running.receiver.try_recv() {
                 Ok(result) => {
@@ -388,6 +688,22 @@ impl Service {
                 let result = self.restore(expected_session, &id);
                 self.backups.update.reply = Some(Reply { ticket, result });
             }
+            Request::LoadSettings { ticket } => match self.backup_settings_path() {
+                Ok(path) => self.backups.request_settings_load(ticket, path),
+                Err(error) => {
+                    self.backups.settings.ticket = ticket;
+                    self.backups.settings.status = SettingsStatus::Failed(error);
+                    self.backups.settings.trusted = false;
+                    self.backups.policy = self.backups.settings.settings.policy_without_pruning();
+                }
+            },
+            Request::SaveSettings { ticket, settings } => match self.backup_settings_path() {
+                Ok(path) => self.backups.request_settings_save(ticket, settings, path),
+                Err(error) => {
+                    self.backups.settings.ticket = ticket;
+                    self.backups.settings.status = SettingsStatus::Failed(error);
+                }
+            },
         }
     }
 
@@ -648,5 +964,99 @@ impl From<String> for RestoreFailure {
 impl From<&str> for RestoreFailure {
     fn from(message: &str) -> Self {
         message.to_owned().into()
+    }
+}
+
+#[cfg(test)]
+mod settings_tests {
+    use super::*;
+
+    #[test]
+    fn quitting_finishes_an_explicit_settings_save_before_releasing_the_worker() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("backups.json");
+        let settings = deadpan_cli::backup_settings::Settings::new(25, 72, 3072).unwrap();
+        let mut state = State::default();
+        state.request_settings_save(1, settings.clone(), path.clone());
+        state.finish_on_exit();
+        assert_eq!(
+            deadpan_cli::backup_settings::Settings::load_from(&path)
+                .unwrap()
+                .settings,
+            settings,
+        );
+        assert!(matches!(
+            state.settings.status,
+            SettingsStatus::Saved { .. }
+        ));
+        assert!(state.settings_worker.is_none());
+        assert!(state.settings_in_flight.is_none());
+        assert!(state.pending_settings.is_empty());
+    }
+
+    #[test]
+    fn a_failed_pre_replace_save_keeps_the_effective_policy() {
+        let old = deadpan_cli::backup_settings::Settings::new(30, 96, 8192).unwrap();
+        let attempted = deadpan_cli::backup_settings::Settings::new(5, 16, 512).unwrap();
+        let mut state = State::default();
+        let (jobs, _job_receiver) = mpsc::sync_channel(1);
+        let (sender, results) = mpsc::sync_channel(1);
+        sender
+            .send(SettingsResult::Saved {
+                ticket: 9,
+                settings: attempted,
+                result: Err("the temporary file could not be written".into()),
+            })
+            .unwrap();
+        state.settings_worker = Some(SettingsWorker {
+            jobs,
+            results,
+            _handle: std::thread::spawn(|| {}),
+        });
+        state.settings_in_flight = Some(9);
+        state.pending_settings.clear();
+        state.settings = SettingsUpdate {
+            ticket: 9,
+            settings: old.clone(),
+            trusted: true,
+            status: SettingsStatus::Saving,
+        };
+        state.policy = old.policy();
+
+        assert!(state.pump_settings());
+        assert_eq!(state.settings.settings, old);
+        assert!(state.settings.trusted);
+        assert_eq!(state.policy, old.policy());
+        assert!(matches!(
+            &state.settings.status,
+            SettingsStatus::Failed(message) if message.contains("temporary file")
+        ));
+    }
+
+    #[test]
+    fn a_settings_reload_cannot_replace_a_queued_save() {
+        let mut state = State {
+            settings_in_flight: Some(1),
+            ..State::default()
+        };
+        state.queue_settings(SettingsJob::Save {
+            ticket: 2,
+            settings: deadpan_cli::backup_settings::Settings::new(25, 72, 3072).unwrap(),
+            path: PathBuf::from("settings.json"),
+        });
+        state.queue_settings(SettingsJob::Load {
+            ticket: 3,
+            path: PathBuf::from("settings.json"),
+        });
+
+        assert_eq!(state.pending_settings.len(), 2);
+        assert!(matches!(
+            state.pending_settings.front(),
+            Some(SettingsJob::Save { ticket: 2, .. })
+        ));
+        assert!(matches!(
+            state.pending_settings.back(),
+            Some(SettingsJob::Load { ticket: 3, .. })
+        ));
     }
 }

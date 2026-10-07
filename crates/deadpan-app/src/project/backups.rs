@@ -6,6 +6,7 @@
 //! database on the writer and starts a new session. None of this is an
 //! authored edit.
 
+use deadpan_cli::backup_settings::{Settings, Source as SettingsSource};
 use deadpan_store::backups::{BackupInfo, BackupReason};
 
 #[derive(Clone, Debug)]
@@ -19,6 +20,10 @@ pub enum Request {
         expected_session: u64,
         id: String,
     },
+    /// Read the global per-user policy, independent of project/session state.
+    LoadSettings { ticket: u64 },
+    /// Validate and persist the global per-user policy.
+    SaveSettings { ticket: u64, settings: Settings },
 }
 
 /// What the latest backup work of this app did, for the current session.
@@ -34,6 +39,42 @@ pub struct Update {
     pub failure: Option<String>,
     /// The reply to an explicit request, matched by its ticket.
     pub reply: Option<Reply>,
+    /// Global backup settings; never scoped to the open project session.
+    pub settings: SettingsUpdate,
+}
+
+#[derive(Clone, Debug)]
+pub enum SettingsStatus {
+    Loading,
+    Ready {
+        source: SettingsSource,
+        warning: Option<String>,
+    },
+    Saving,
+    Saved {
+        warning: Option<String>,
+    },
+    Failed(String),
+}
+
+#[derive(Clone, Debug)]
+pub struct SettingsUpdate {
+    pub ticket: u64,
+    pub settings: Settings,
+    /// False means the app could not trust the saved file and must not prune.
+    pub trusted: bool,
+    pub status: SettingsStatus,
+}
+
+impl Default for SettingsUpdate {
+    fn default() -> Self {
+        Self {
+            ticket: 0,
+            settings: Settings::default(),
+            trusted: false,
+            status: SettingsStatus::Loading,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

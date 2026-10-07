@@ -1540,8 +1540,11 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("backups", ":backups  backups and restore")],
         contexts: C::ANYWHERE,
         replay: Replay::Ignored,
-        headless: eq("project backups|backup|restore <p>", PROJECT),
-        help: "Open Storage on the project's backups: what each one holds, back up now, and restore one.",
+        headless: eq(
+            "project backups|backup|restore <p>; backup-policy show|set|reset",
+            PROJECT,
+        ),
+        help: "Open Storage on the project's backups: inspect what each one holds, adjust the per-user interval and retention limits, back up now, or restore one.",
     },
     Spec {
         id: "portable-copy",
@@ -2405,7 +2408,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::STORAGE,
         replay: Replay::Ignored,
         headless: eq("project backup <p>", PROJECT),
-        help: "Make a verified backup of the project's saved state now. Deadpan also backs up every 15 minutes while you edit, when you close a project, and before a restore.",
+        help: "Make a verified backup of the project's saved state now. Deadpan also backs up on the saved per-user interval while you edit, when you close a project, and before a restore.",
     },
     Spec {
         id: "storage.backup-select",
