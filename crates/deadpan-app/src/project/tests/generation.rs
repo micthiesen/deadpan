@@ -3,6 +3,8 @@
 //! replaces only the model worker; the real worker runs with
 //! DEADPAN_BRIDGE_REAL=1.
 
+mod preparations;
+
 use super::*;
 use crate::project::generation::{
     Backend, GenerationOperation, Job, Outcome, Phase, Script, ScriptEnding, ScriptQueue,

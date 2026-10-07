@@ -390,6 +390,7 @@ pub(super) fn run(
 
 impl Service {
     fn publish(&mut self) {
+        self.publish_preparation_notice();
         self.observe_semantic();
         self.observe_storage();
         let update = ProjectUpdate {
@@ -788,6 +789,7 @@ impl Service {
                     .writer()?
                     .undo(&expected_revision, revision())
                     .map_err(display)?;
+                self.capture_preparation_notices(&outcome.generation_preparation_notices);
                 self.preserve_semantic(&expected_revision, &outcome.revision_id);
                 self.refresh_saved("Undo saved")?;
                 self.message = Some("Undo saved".into());
@@ -798,6 +800,7 @@ impl Service {
                     .writer()?
                     .redo(&expected_revision, revision())
                     .map_err(display)?;
+                self.capture_preparation_notices(&outcome.generation_preparation_notices);
                 self.preserve_semantic(&expected_revision, &outcome.revision_id);
                 self.refresh_saved("Redo saved")?;
                 self.message = Some("Redo saved".into());
@@ -969,6 +972,7 @@ impl Service {
         // Recheck revision-bound source evidence and the existing generation
         // relevance guard in the writer transaction. Do not invent observations.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.committed = Some(CommittedEdit {
             scoped: None,
             revision: outcome.revision_id,
@@ -1121,6 +1125,7 @@ impl Service {
             // As for every native edit, current generation requests require the
             // real host relevance resolver. Never invent observations here.
             let outcome = self.writer()?.commit(&request).map_err(display)?;
+            self.capture_preparation_notices(&outcome.generation_preparation_notices);
             self.committed = Some(CommittedEdit {
                 scoped: None,
                 revision: outcome.revision_id,
@@ -1424,6 +1429,7 @@ impl Service {
         // An unresolved active generation request must fail rather than receive
         // invented observations from a widget or this service.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         if let Some(intent) = repeat_intent {
             self.semantic.prove(
                 expected_session,

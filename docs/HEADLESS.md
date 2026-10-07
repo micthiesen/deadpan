@@ -1474,6 +1474,22 @@ Motion, the saved region target and optional guidance are captured in the reques
 [Generation controls](AI_HOLDS.md#generation-controls) for bounds and the
 open-project behavior.
 
+### Replacement requests after resizing
+
+Extending accepted footage beyond its retained interval saves the new duration,
+fallback and replacement preparation in one transaction. Command and semantic
+macro receipts report `generation_preparations`; bounded
+`generation_preparation_notices` report queue-capacity cancellations when present.
+
+`ai-replacements <project.deadpan>` lists unfinished preparations, with `next`
+for `--after ID` pagination. `--id ID` reads one recent terminal or active result.
+`--retry ID --expected REVISION` retries an unavailable/interrupted preparation;
+`--discard ID --sequence N` cancels exactly the observed preparation version.
+Both preserve the saved edit. The app processes queued work automatically.
+With the project closed, `--run [--limit 1-16]` owns the writer and processes
+that bounded number synchronously (default one). Ready results still require
+`accept-hold`. See [replacement lifecycle](AI_HOLDS.md#lengthening-accepted-pauses).
+
 ### Choosing, keeping and discarding variants
 
 ```sh

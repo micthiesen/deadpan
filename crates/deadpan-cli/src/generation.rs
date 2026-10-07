@@ -19,6 +19,8 @@ pub(crate) mod command;
 pub mod conditioning;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod joins;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod preparations;
 pub mod runtime;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod variants;

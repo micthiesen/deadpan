@@ -88,6 +88,7 @@ fn map_scopes(
         }
     }
     super::validation::check_budget(connection)?;
+    crate::generation_preparations::map(connection, proof, forward)?;
     Ok(())
 }
 

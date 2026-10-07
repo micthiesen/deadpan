@@ -124,6 +124,8 @@ impl ProjectStore {
             revision_id: plan.next.revision_id().clone(),
             edit: plan.edit,
             register_bank: None,
+            generation_preparations: Vec::new(),
+            generation_preparation_notices: Vec::new(),
         })
     }
 
@@ -141,6 +143,10 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_navigation(&transaction, documents, expected, next_revision, redo)?;
+        crate::generation_preparations::verify(&transaction)?;
+        crate::generation_preparations::history_provider_changes(&transaction, plan.entry, redo)?;
+        let preparations =
+            crate::generation_preparations::history_births(&transaction, plan.entry, redo)?;
         let isolated = crate::generation_scope::history_transition(&transaction, plan.entry, redo)?;
         generation::reconcile(
             &transaction,
@@ -190,6 +196,14 @@ impl ProjectStore {
             "UPDATE state SET head_revision=?1,cursor=?2 WHERE singleton=1",
             params![plan.next.revision_id().as_str(), plan.next_cursor],
         )?;
+        crate::generation_preparations::reconcile(&transaction, &plan.next, resolver.as_deref())?;
+        let (generation_preparations, generation_preparation_notices) =
+            crate::generation_preparations::insert_births(
+                &transaction,
+                &plan.next,
+                plan.entry,
+                preparations,
+            )?;
         crate::audit::extend(
             &transaction,
             plan.current.revision_id().as_str(),
@@ -201,6 +215,8 @@ impl ProjectStore {
             revision_id: plan.next.revision_id().clone(),
             edit: plan.edit,
             register_bank: None,
+            generation_preparations,
+            generation_preparation_notices,
         })
     }
 }

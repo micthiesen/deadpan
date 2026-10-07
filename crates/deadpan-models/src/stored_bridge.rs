@@ -351,6 +351,15 @@ pub struct AcceptedBridgeEvidence {
 }
 
 impl AcceptedBridgeEvidence {
+    /// The controls that produced this accepted artifact, recovered from its
+    /// verified immutable binding. They remain available after copying the
+    /// Hold or retiring its operational request and need no installed model.
+    pub fn generation_options(&self) -> deadpan_jobs::GenerationOptions {
+        deadpan_jobs::GenerationOptions::from_constraints(
+            &self.provenance.envelope.binding.constraints,
+        )
+    }
+
     pub fn region(&self) -> Option<&BridgeRegionReport> {
         self.provenance.envelope.region.as_ref()
     }

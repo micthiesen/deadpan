@@ -21,6 +21,12 @@ use deadpan_jobs::{
 use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
 use super::*;
+use deadpan_store::generation_preparations::{
+    PreparationClaim, PreparationFailure, PreparationId, PreparationState,
+    StoredGenerationPreparation,
+};
+
+mod preparations;
 use crate::project::generation::{
     Backend, Candidate, CandidatePreview, GenerationOperation, GenerationPresentation, Job,
     MAX_VARIANTS, Outcome, Phase, PreviewParts, Update, Variant,
@@ -45,6 +51,7 @@ struct JobInput {
     revision: RevisionId,
     target: ScopedNodeTarget,
     options: GenerationOptions,
+    preparation: Option<StoredGenerationPreparation>,
 }
 
 /// Job-to-writer events. The service loop drains them every iteration, so a
@@ -53,6 +60,7 @@ struct JobInput {
 /// exhaust. A record the writer refuses, or a writer that has stopped
 /// (disconnected channel), cancels and fails the attempt.
 enum Event {
+    Controls(GenerationOptions),
     Prepared(std::result::Result<Box<BridgeInputs>, String>),
     /// The recorded attempt waits for the coordinator's inference slot.
     Queued,
@@ -82,6 +90,8 @@ struct Running {
     seed: Option<u64>,
     /// Pack/runtime identity captured when this job selected its worker.
     provider: ProviderSelection,
+    preparation: Option<PreparationClaim>,
+    preparation_checked_epoch: u64,
     thread: Option<JoinHandle<()>>,
 }
 
@@ -105,6 +115,12 @@ pub(super) struct State {
     /// Interrupted attempts offered for retry, read with the candidates.
     interrupted: Arc<Vec<crate::project::generation::Interrupted>>,
     interrupted_warning: Option<String>,
+    preparations: Arc<Vec<crate::project::generation::Preparation>>,
+    preparation_warning: Option<String>,
+    preparation_capacity_notice: Option<String>,
+    pending_preparation_notice: Option<String>,
+    preparation_scan: preparations::Scan,
+    automatic: u64,
     epoch: u64,
     preview: Option<Arc<CandidatePreview>>,
     reply: Option<(u64, Option<String>)>,
@@ -144,6 +160,7 @@ fn remote_status(job: &Job) -> deadpan_cli::live_project::generation::Generation
         hold: job.hold.clone(),
         scope: job.target.clone(),
         options: job.options.clone(),
+        controls_pending: job.controls_pending,
         request_id: job.request.clone(),
         variants: job.variants,
         variant: job.variant,
@@ -209,6 +226,11 @@ impl State {
         self.options = Arc::default();
         self.candidates_key = None;
         self.interrupted = Arc::default();
+        self.preparations = Arc::default();
+        self.preparation_warning = None;
+        self.preparation_capacity_notice = None;
+        self.pending_preparation_notice = None;
+        self.preparation_scan = preparations::Scan::default();
         self.interrupted_warning = None;
         self.preview = None;
         self.reply = None;
@@ -246,7 +268,9 @@ impl Service {
             | GenerationOperation::Preview { ticket, .. }
             | GenerationOperation::Discard { ticket, .. }
             | GenerationOperation::Keep { ticket, .. }
-            | GenerationOperation::DismissInterrupted { ticket, .. } => *ticket,
+            | GenerationOperation::DismissInterrupted { ticket, .. }
+            | GenerationOperation::RetryPreparation { ticket, .. }
+            | GenerationOperation::DiscardPreparation { ticket, .. } => *ticket,
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
             }
@@ -326,6 +350,25 @@ impl Service {
                 attempt,
                 ..
             } => self.dismiss_interrupted(session, &request, &attempt),
+            GenerationOperation::RetryPreparation {
+                session,
+                revision,
+                id,
+                ..
+            } => self.check_context(session, &revision).and_then(|()| {
+                self.writer()?
+                    .retry_generation_preparation(&id, &revision)
+                    .map_err(display)?;
+                self.generation.variants_changed();
+                self.generation.preparation_scan.recheck();
+                Ok(())
+            }),
+            GenerationOperation::DiscardPreparation {
+                session,
+                id,
+                sequence,
+                ..
+            } => self.discard_preparation(session, &id, sequence),
             GenerationOperation::Accept { .. } => {
                 unreachable!("acceptance is an ordinary edit")
             }
@@ -592,7 +635,12 @@ impl Service {
             .generation
             .job
             .as_ref()
-            .filter(|job| job.target == target && job.revision == revision && job.request.is_none())
+            .filter(|job| {
+                !job.controls_pending
+                    && job.target == target
+                    && job.revision == revision
+                    && job.request.is_none()
+            })
             .map(|job| job.options.clone());
         let current = attempt::current_scoped_bridge_request(
             self.store.as_ref().ok_or("Open a project first")?,
@@ -622,6 +670,7 @@ impl Service {
             hold: hold.clone(),
             target: target.clone(),
             options: options.clone(),
+            controls_pending: false,
             revision: revision.clone(),
             started: Instant::now(),
             request: None,
@@ -677,6 +726,47 @@ impl Service {
                 )
             })
             .unwrap_or_else(|| (revision.clone(), target.clone()));
+        self.launch_generation(
+            WorkerSelection {
+                worker,
+                seed,
+                provider,
+            },
+            JobInput {
+                package,
+                revision: input_revision,
+                target: input_target,
+                options,
+                preparation: None,
+            },
+            job,
+            label,
+            None,
+        )
+    }
+
+    fn launch_generation(
+        &mut self,
+        selection: WorkerSelection,
+        input: JobInput,
+        job: Job,
+        label: String,
+        claim: Option<PreparationClaim>,
+    ) -> Result<()> {
+        let WorkerSelection {
+            worker,
+            seed,
+            provider,
+        } = selection;
+        let JobInput {
+            package,
+            revision: input_revision,
+            target: input_target,
+            options,
+            preparation,
+        } = input;
+        let session = job.session;
+        let variants = job.variants;
         let cancelled = Arc::new(AtomicBool::new(false));
         let (events, receive_events) = mpsc::sync_channel(EVENT_CAPACITY);
         let (finished, receive_finished) = mpsc::sync_channel(1);
@@ -705,6 +795,7 @@ impl Service {
                         revision: input_revision,
                         target: input_target,
                         options,
+                        preparation,
                     },
                     thread_cancelled,
                     Channels {
@@ -725,6 +816,8 @@ impl Service {
             started: false,
             seed,
             provider,
+            preparation: claim,
+            preparation_checked_epoch: self.generation.epoch,
             thread: Some(thread),
         });
         self.generation.job = Some(job);
@@ -980,6 +1073,15 @@ impl Service {
             ),
         };
         self.generation.interrupted_warning = warning;
+        self.refresh_preparations();
+        let store = self
+            .store
+            .as_ref()
+            .expect("writer retained during generation refresh");
+        let workspace = self
+            .workspace
+            .as_ref()
+            .expect("workspace retained during generation refresh");
         self.generation.options = match store.current_generation_requests() {
             Ok(requests) => Arc::new(
                 requests
@@ -1074,13 +1176,28 @@ impl Service {
             preview,
             reply: self.generation.reply.clone(),
             interrupted: self.generation.interrupted.clone(),
-            interrupted_warning: self.generation.interrupted_warning.clone(),
+            preparations: self.generation.preparations.clone(),
+            interrupted_warning: {
+                let warnings = [
+                    self.generation.interrupted_warning.as_deref(),
+                    self.generation.preparation_warning.as_deref(),
+                    self.generation.preparation_capacity_notice.as_deref(),
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+                .join(" ");
+                (!warnings.is_empty()).then_some(warnings)
+            },
         })
     }
 
     /// Apply queued job events on the writer. True when published state changed.
     pub(super) fn pump_generation(&mut self) -> bool {
-        let mut changed = false;
+        if self.generation.running.is_none() {
+            return self.pump_preparations();
+        }
+        let mut changed = self.check_preparation_claim();
         for _ in 0..EVENT_CAPACITY {
             let Some(running) = &self.generation.running else {
                 return changed;
@@ -1113,6 +1230,12 @@ impl Service {
 
     fn generation_event(&mut self, event: Event) {
         match event {
+            Event::Controls(options) => {
+                if let Some(job) = &mut self.generation.job {
+                    job.options = options;
+                    job.controls_pending = false;
+                }
+            }
             Event::Prepared(prepared) => self.generation_prepared(prepared),
             Event::Queued => {
                 if let Some(job) = &mut self.generation.job
@@ -1177,6 +1300,7 @@ impl Service {
         let cancelled = running.cancelled.load(Ordering::Acquire);
         let requested_seed = running.seed;
         let provider = running.provider.clone();
+        let preparation = running.preparation.clone();
         let Some((target, revision)) = self
             .generation
             .job
@@ -1216,6 +1340,10 @@ impl Service {
                     "The project changed while the pause's pictures were being read. Generate again."
                         .into(),
                 );
+            }
+            if let Some(claim) = &preparation {
+                return attempt::allocate_preparation_with_provider(store, claim, inputs, provider)
+                    .map_err(display);
             }
             // Unchanged boundary pictures add variants to the Hold's current
             // request; anything else is a new request that supersedes it.
@@ -1443,6 +1571,21 @@ impl Service {
             return;
         }
         let cancelled = running.cancelled.load(Ordering::Acquire);
+        if running.allocated.is_none()
+            && let Some(claim) = &running.preparation
+        {
+            let failure = if cancelled
+                && !self.shared.stopping.load(Ordering::Acquire)
+                && self.pending_session_change.is_none()
+            {
+                PreparationFailure::Cancelled("Replacement preparation was cancelled.".into())
+            } else {
+                PreparationFailure::Interrupted(
+                    "Replacement preparation stopped before recording its request.".into(),
+                )
+            };
+            self.finish_preparation(claim, failure);
+        }
         let outcome = if let (Some(allocated), Some(store)) =
             (running.allocated.as_ref(), self.store.as_mut())
         {
@@ -1476,6 +1619,7 @@ impl Service {
     }
 
     fn conclude_generation(&mut self, outcome: Outcome) {
+        self.finish_preparation_for_outcome(&outcome);
         self.generation.epoch += 1;
         // A Ready attempt is offered only while its request is current and
         // its Hold has not accepted it; derive the message from that.
@@ -1838,6 +1982,12 @@ struct Channels {
     allocation: Receiver<std::result::Result<Allocated, String>>,
 }
 
+struct WorkerSelection {
+    worker: Worker,
+    seed: Option<u64>,
+    provider: ProviderSelection,
+}
+
 /// What runs for each attempt: the real supervised worker, or the test seam.
 enum Worker {
     Real(Box<BridgeRuntime>),
@@ -1877,13 +2027,32 @@ fn job_thread(
         package,
         revision,
         target,
-        options,
+        mut options,
+        preparation,
     } = input;
     let Channels {
         events,
         finished,
         allocation,
     } = channels;
+    if let Some(preparation) = &preparation {
+        match deadpan_cli::generation::preparations::resolve_options(
+            &package,
+            preparation,
+            &cancelled,
+        ) {
+            Ok(resolved) => {
+                options = resolved;
+                if send(&events, Event::Controls(options.clone())).is_err() {
+                    return;
+                }
+            }
+            Err(error) => {
+                let _ = send(&events, Event::Prepared(Err(error.to_string())));
+                return;
+            }
+        }
+    }
     let prepared = conditioning::prepare_scoped_with_options(
         &package, &revision, &target, &options, &cancelled,
     )

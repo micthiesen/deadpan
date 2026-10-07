@@ -856,78 +856,7 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let request = read_request(&transaction, &input.identity.request_id)?;
-        if request.relevance != Relevance::Current {
-            return Err(attempt_error(
-                "only a current generation request may start an attempt",
-            ));
-        }
-        if attempt_exists(&transaction, &input.identity)? {
-            return Err(StoreError::GenerationAttemptReused {
-                request: input.identity.request_id.as_str().into(),
-                attempt: input.identity.attempt_id.as_str().into(),
-            });
-        }
-        let has_nonterminal: bool = transaction.query_row(
-            &format!(
-                "SELECT EXISTS(SELECT 1 FROM generation_attempts
-                 WHERE request_id=?1 AND state IN ({NONTERMINAL_STATES}))"
-            ),
-            [input.identity.request_id.as_str()],
-            |row| row.get::<_, i64>(0).map(|value| value != 0),
-        )?;
-        if has_nonterminal {
-            return Err(attempt_error(
-                "generation request already has a nonterminal attempt",
-            ));
-        }
-        let head = read_head(&transaction, &input.identity.request_id)?;
-        let ordinal = match head.as_ref().map(|head| head.high_water) {
-            Some(MAX_SQL_COUNTER) => {
-                return Err(StoreError::GenerationAttemptExhausted(
-                    input.identity.request_id.as_str().into(),
-                ));
-            }
-            Some(value) => value + 1,
-            None => 1,
-        };
-        transaction.execute(
-            "INSERT INTO generation_attempts(
-                request_id,attempt_id,ordinal,cancellation_token,state,transition_sequence
-             ) VALUES (?1,?2,?3,?4,'queued',1)",
-            params![
-                input.identity.request_id.as_str(),
-                input.identity.attempt_id.as_str(),
-                ordinal,
-                input.cancellation_token.as_str(),
-            ],
-        )?;
-        match head {
-            Some(_) => {
-                transaction.execute(
-                    "UPDATE generation_attempt_heads SET high_water=?1,latest_attempt_id=?2
-                     WHERE request_id=?3",
-                    params![
-                        ordinal,
-                        input.identity.attempt_id.as_str(),
-                        input.identity.request_id.as_str()
-                    ],
-                )?;
-            }
-            None => {
-                transaction.execute(
-                    "INSERT INTO generation_attempt_heads(
-                        request_id,high_water,latest_attempt_id,selected_ready_attempt_id
-                     ) VALUES (?1,?2,?3,NULL)",
-                    params![
-                        input.identity.request_id.as_str(),
-                        ordinal,
-                        input.identity.attempt_id.as_str()
-                    ],
-                )?;
-            }
-        }
-        let result = read_attempt(&transaction, &input.identity)?;
+        let result = begin_attempt(&transaction, input)?;
         transaction.commit()?;
         Ok(result)
     }
@@ -2549,4 +2478,84 @@ fn attempt_error(message: &str) -> StoreError {
 
 fn integrity(message: &str) -> StoreError {
     StoreError::Integrity(message.into())
+}
+
+/// Insert an attempt in the caller's transaction, including its ordinal head.
+pub(crate) fn begin_attempt(
+    connection: &Connection,
+    input: BeginGenerationAttempt,
+) -> Result<StoredGenerationAttempt, StoreError> {
+    let request = read_request(connection, &input.identity.request_id)?;
+    if request.relevance != Relevance::Current {
+        return Err(attempt_error(
+            "only a current generation request may start an attempt",
+        ));
+    }
+    if attempt_exists(connection, &input.identity)? {
+        return Err(StoreError::GenerationAttemptReused {
+            request: input.identity.request_id.as_str().into(),
+            attempt: input.identity.attempt_id.as_str().into(),
+        });
+    }
+    let has_nonterminal: bool = connection.query_row(
+        &format!(
+            "SELECT EXISTS(SELECT 1 FROM generation_attempts
+             WHERE request_id=?1 AND state IN ({NONTERMINAL_STATES}))"
+        ),
+        [input.identity.request_id.as_str()],
+        |row| row.get::<_, i64>(0).map(|value| value != 0),
+    )?;
+    if has_nonterminal {
+        return Err(attempt_error(
+            "generation request already has a nonterminal attempt",
+        ));
+    }
+    let head = read_head(connection, &input.identity.request_id)?;
+    let ordinal = match head.as_ref().map(|head| head.high_water) {
+        Some(MAX_SQL_COUNTER) => {
+            return Err(StoreError::GenerationAttemptExhausted(
+                input.identity.request_id.as_str().into(),
+            ));
+        }
+        Some(value) => value + 1,
+        None => 1,
+    };
+    connection.execute(
+        "INSERT INTO generation_attempts(
+            request_id,attempt_id,ordinal,cancellation_token,state,transition_sequence
+         ) VALUES (?1,?2,?3,?4,'queued',1)",
+        params![
+            input.identity.request_id.as_str(),
+            input.identity.attempt_id.as_str(),
+            ordinal,
+            input.cancellation_token.as_str(),
+        ],
+    )?;
+    match head {
+        Some(_) => {
+            connection.execute(
+                "UPDATE generation_attempt_heads SET high_water=?1,latest_attempt_id=?2
+                 WHERE request_id=?3",
+                params![
+                    ordinal,
+                    input.identity.attempt_id.as_str(),
+                    input.identity.request_id.as_str()
+                ],
+            )?;
+        }
+        None => {
+            connection.execute(
+                "INSERT INTO generation_attempt_heads(
+                    request_id,high_water,latest_attempt_id,selected_ready_attempt_id
+                 ) VALUES (?1,?2,?3,NULL)",
+                params![
+                    input.identity.request_id.as_str(),
+                    ordinal,
+                    input.identity.attempt_id.as_str()
+                ],
+            )?;
+        }
+    }
+    let result = read_attempt(connection, &input.identity)?;
+    Ok(result)
 }

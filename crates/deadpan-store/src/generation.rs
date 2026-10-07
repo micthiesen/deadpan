@@ -291,102 +291,11 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let document = read_snapshot(&transaction)?;
-        require_revision(&document, &input.expected_revision)?;
-        validate_new_target(&document, &input.hold_id, &input.constraints)?;
-        let explicit_scope = target.is_some();
-        let target = target.unwrap_or_else(|| ScopedNodeTarget {
-            node: input.hold_id.clone(),
-            repeats: Vec::new(),
-        });
-        if target.node != input.hold_id {
-            return Err(StoreError::GenerationTarget(
-                "scope differs from the requested Hold".into(),
-            ));
-        }
-        target.validate(&document)?;
-        if let Some(plan) = bridge_plan.as_ref() {
-            validate_bridge_plan_binding(&input.constraints, plan)?;
-            if !explicit_scope {
-                crate::generation_acceptance::require_single_generation_occurrence(
-                    &document,
-                    &input.hold_id,
-                )?;
-            }
-        }
-
-        let exists: Option<i64> = transaction
-            .query_row(
-                "SELECT 1 FROM generation_requests WHERE request_id=?1",
-                [input.request_id.as_str()],
-                |row| row.get(0),
-            )
-            .optional()?;
-        if exists.is_some()
-            || crate::retired::contains(
-                &transaction,
-                "generation_request",
-                input.request_id.as_str(),
-            )?
-        {
-            return Err(StoreError::GenerationRequestReused(
-                input.request_id.as_str().to_owned(),
-            ));
-        }
-
-        let (scope_id, version) =
-            crate::generation_scope::allocate(&transaction, &document, &target, &input.request_id)?;
-        transaction.execute(
-            "UPDATE generation_requests SET relevance='stale'
-             WHERE scope_id=?1 AND relevance='current'",
-            [scope_id.as_str()],
-        )?;
-
-        let constraints = bounded_json(&input.constraints, "generation constraints")?;
-        let provider = bounded_json(&input.provider, "generation provider")?;
-        let bridge_plan_json = bridge_plan
-            .as_ref()
-            .map(|plan| bounded_json(plan, "bridge generation plan"))
-            .transpose()?;
-        transaction.execute(
-            "INSERT INTO generation_requests(
-                request_id,project_id,hold_id,request_version,origin_revision,
-                context_sha256,constraints,provider,bridge_plan,relevance,scope_id,origin_target
-             ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'current',?10,?11)",
-            params![
-                input.request_id.as_str(),
-                document.project_id().as_str(),
-                input.hold_id.as_str(),
-                request_version_i64(version)?,
-                document.revision_id().as_str(),
-                input.context_sha256.as_str(),
-                constraints,
-                provider,
-                bridge_plan_json,
-                scope_id.as_str(),
-                crate::generation_scope::target_json(&target)?,
-            ],
-        )?;
-        crate::generation_scope::check_stored_sizes(&transaction)?;
+        crate::generation_preparations::verify(&transaction)?;
+        let result = allocate_request(&transaction, input, bridge_plan, target, true)?;
         crate::audit::refresh_generation_scopes(&transaction)?;
         transaction.commit()?;
-        Ok(StoredGenerationRequest {
-            request_id: input.request_id,
-            origin_revision: document.revision_id().clone(),
-            scope_id,
-            origin_target: target.clone(),
-            target,
-            binding: TargetBinding {
-                project_id: document.project_id().clone(),
-                hold_id: input.hold_id,
-                request_version: version,
-                context_sha256: input.context_sha256,
-            },
-            constraints: input.constraints,
-            provider: input.provider,
-            bridge_plan,
-            relevance: Relevance::Current,
-        })
+        Ok(result)
     }
 
     pub fn generation_request(
@@ -412,10 +321,125 @@ impl ProjectStore {
     }
 }
 
+/// Transaction-local allocation shared with preparation fulfilment.
+pub(crate) fn allocate_request(
+    connection: &Connection,
+    input: GenerationRequestInput,
+    bridge_plan: Option<BridgeGenerationPlan>,
+    target: Option<ScopedNodeTarget>,
+    supersede: bool,
+) -> Result<StoredGenerationRequest, StoreError> {
+    let document = read_snapshot(connection)?;
+    require_revision(&document, &input.expected_revision)?;
+    validate_new_target(&document, &input.hold_id, &input.constraints)?;
+    let explicit_scope = target.is_some();
+    let target = target.unwrap_or_else(|| ScopedNodeTarget {
+        node: input.hold_id.clone(),
+        repeats: Vec::new(),
+    });
+    if target.node != input.hold_id {
+        return Err(StoreError::GenerationTarget(
+            "scope differs from the requested Hold".into(),
+        ));
+    }
+    target.validate(&document)?;
+    if let Some(plan) = bridge_plan.as_ref() {
+        validate_bridge_plan_binding(&input.constraints, plan)?;
+        if !explicit_scope {
+            crate::generation_acceptance::require_single_generation_occurrence(
+                &document,
+                &input.hold_id,
+            )?;
+        }
+    }
+
+    let exists: Option<i64> = connection
+        .query_row(
+            "SELECT 1 FROM generation_requests WHERE request_id=?1",
+            [input.request_id.as_str()],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if exists.is_some()
+        || crate::retired::contains(connection, "generation_request", input.request_id.as_str())?
+    {
+        return Err(StoreError::GenerationRequestReused(
+            input.request_id.as_str().to_owned(),
+        ));
+    }
+
+    if supersede {
+        crate::generation_preparations::supersede(connection, &target)?;
+    }
+
+    let (scope_id, version) =
+        crate::generation_scope::allocate(connection, &document, &target, &input.request_id)?;
+    connection.execute(
+        "UPDATE generation_requests SET relevance='stale'
+         WHERE scope_id=?1 AND relevance='current'",
+        [scope_id.as_str()],
+    )?;
+
+    let constraints = bounded_json(&input.constraints, "generation constraints")?;
+    let provider = bounded_json(&input.provider, "generation provider")?;
+    let bridge_plan_json = bridge_plan
+        .as_ref()
+        .map(|plan| bounded_json(plan, "bridge generation plan"))
+        .transpose()?;
+    connection.execute(
+        "INSERT INTO generation_requests(
+            request_id,project_id,hold_id,request_version,origin_revision,
+            context_sha256,constraints,provider,bridge_plan,relevance,scope_id,origin_target
+         ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'current',?10,?11)",
+        params![
+            input.request_id.as_str(),
+            document.project_id().as_str(),
+            input.hold_id.as_str(),
+            request_version_i64(version)?,
+            document.revision_id().as_str(),
+            input.context_sha256.as_str(),
+            constraints,
+            provider,
+            bridge_plan_json,
+            scope_id.as_str(),
+            crate::generation_scope::target_json(&target)?,
+        ],
+    )?;
+    crate::generation_scope::check_stored_sizes(connection)?;
+    Ok(StoredGenerationRequest {
+        request_id: input.request_id,
+        origin_revision: document.revision_id().clone(),
+        scope_id,
+        origin_target: target.clone(),
+        target,
+        binding: TargetBinding {
+            project_id: document.project_id().clone(),
+            hold_id: input.hold_id,
+            request_version: version,
+            context_sha256: input.context_sha256,
+        },
+        constraints: input.constraints,
+        provider: input.provider,
+        bridge_plan,
+        relevance: Relevance::Current,
+    })
+}
+
 /// A host's view of whether a current generation request still describes
 /// the same context after a document change. The store asks it for every
 /// current request when a write supplies no explicit relevance plan.
 pub trait GenerationContextResolver: Send + Sync {
+    /// Whether a pending replacement retains its original raw input context.
+    /// Conservative resolvers may return false; no stale preparation is revived.
+    fn preparation_is_relevant(
+        &self,
+        _origin: &ProjectDocument,
+        _after: &ProjectDocument,
+        _preparation: &crate::generation_preparations::StoredGenerationPreparation,
+    ) -> bool {
+        false
+    }
+
     /// Prepare shared work for this exact prospective document. A failed
     /// write may reuse its revision ID with different contents, so prepared
     /// state must be confined to this borrowed transition, not cached by ID.

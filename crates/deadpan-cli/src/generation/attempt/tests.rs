@@ -17,6 +17,8 @@ use crate::generation::runtime::BridgeRuntime;
 
 const FRAMES: i64 = 24;
 
+mod preparations;
+
 fn fixture_rate(frames: i64) -> deadpan_core::FrameRate {
     // A single sampled frame must still request a native interval within the
     // real provider's minimum. At 2 fps its two boundaries span one second.

@@ -63,6 +63,7 @@ pub(crate) fn digest(connection: &Connection) -> Result<crate::audit::Chain, Sto
         hasher.update(row.get::<_, i64>(5)?.to_le_bytes());
     }
     hasher.update([0]);
+    hasher.update(crate::generation_preparations::digest(connection)?);
     Ok(hasher.finalize().into())
 }
 
@@ -78,6 +79,29 @@ pub(crate) struct Replay {
 }
 
 impl Replay {
+    pub(crate) fn request_has_target(
+        &self,
+        connection: &Connection,
+        request: &deadpan_jobs::RequestId,
+        target: &ScopedNodeTarget,
+    ) -> Result<bool, StoreError> {
+        use rusqlite::OptionalExtension;
+        let scope: Option<String> = connection
+            .query_row(
+                "SELECT scope_id FROM generation_requests WHERE request_id=?1",
+                [request.as_str()],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let Some(scope) = scope else {
+            return Ok(false);
+        };
+        Ok(self
+            .addresses
+            .get(&parse_id(scope)?)
+            .is_some_and(|address| &address.target == target))
+    }
+
     pub(crate) fn new(
         connection: &Connection,
         initial: &ProjectDocument,

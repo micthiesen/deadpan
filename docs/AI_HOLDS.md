@@ -158,7 +158,7 @@ Its current address follows only isolation maps rederived from validated
 history commands. Each authoring scope has an independent monotonic request
 clock, even when several scopes initially share one Hold node. Undo/Redo moves
 addresses through those same maps without reviving stale requests or attempts.
-Schema 69 deliberately rejects earlier unused development packages.
+Schema 70 deliberately rejects earlier unused development packages.
 
 Preview and audition separately capture a concrete occurrence and its root
 frame window. Changing scoped selection cancels pending previews and clears
@@ -175,6 +175,57 @@ For the CLI, `--scope` takes a strict `ScopedNodeTarget` JSON value, for example
 The stable iteration comes from the observed document. Omitted scope means
 empty Repeat ancestry; it never adopts the app's current selection. Live job
 status includes the captured scope.
+
+## Lengthening accepted pauses
+
+Shortening an accepted pause, or extending it within the retained sampling
+interval, reuses its pictures. Extending beyond that interval commits the new
+duration and captured fallback immediately. The same transaction records a
+replacement preparation with its exact authoring scope and prior generation
+controls. Typed commands, native duration entry and semantic compounds share
+this path. A copied accepted pause recovers its controls from verified retained
+provenance when no original request exists.
+
+The app processes queued preparations through its existing single AI job thread.
+Boundary decoding and provenance reads stay off the writer. Fulfilment records
+the prepared request and its first attempt atomically, only while the claim and
+revision remain current. Unrelated edits preserve the intent and prepare again
+against the new revision; changed boundaries, deleted pauses, Undo and explicit
+discard invalidate late replies. Redo creates a fresh preparation. Ready pictures
+still require explicit acceptance; background generation never changes the
+committed fallback.
+
+A missing runtime, model or conditioning input leaves an Unavailable entry in
+Jobs. **R** retries the selected preparation and **D** discards it without
+changing the saved timing. Closing during preparation leaves an Interrupted
+entry for explicit retry. Work that has already recorded an attempt uses the
+ordinary attempt recovery controls. Installing models remains an explicit
+action with license acceptance.
+
+The queue admits at most 4,096 unfinished preparations and 32 MiB of reserved
+record space. Each admission includes space for the longest later failure
+message, revision and isolated identities, so status updates cannot exhaust
+the budget. A new duration edit can displace older waiting or retryable work
+before claimed work; the saved edit and Jobs report that cancellation. The
+latest 256 terminal records remain directly readable when space permits.
+Older results compact to immutable birth and controls proofs for history
+validation and Redo; `--id` then returns no full record. Historical documents
+continue to retain their generated media.
+
+`ai-replacements` lists the unfinished queue in pages of 64. `--id` reads a
+particular preparation, including a recent terminal result. With the project
+closed, `--run` owns the writer and processes one queued item synchronously;
+`--limit 1-16` bounds a batch. SIGINT/SIGTERM cancel cooperatively. The open app
+owns its automatic queue; status, retry and discard work through the shared
+headless path. These operations never accept a candidate.
+
+```sh
+deadpan-cli ai-replacements <project.deadpan>
+deadpan-cli ai-replacements <project.deadpan> --id <preparation-id>
+deadpan-cli ai-replacements <project.deadpan> --retry <preparation-id> --expected <revision>
+deadpan-cli ai-replacements <project.deadpan> --discard <preparation-id> --sequence <observed-sequence>
+deadpan-cli ai-replacements <project.deadpan> --run --limit 1
+```
 
 ## Headless commands
 

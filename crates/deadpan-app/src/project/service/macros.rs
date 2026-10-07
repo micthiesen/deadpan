@@ -305,6 +305,9 @@ impl Service {
                     .writer()?
                     .commit_compound(request, None)
                     .map_err(display)?;
+                if let Some(saved) = &outcome.committed {
+                    self.capture_preparation_notices(&saved.generation_preparation_notices);
+                }
                 if let Some(saved) = &outcome.committed
                     && let Operation::Apply { instruction, .. } = operation
                     && let Some(edit) =

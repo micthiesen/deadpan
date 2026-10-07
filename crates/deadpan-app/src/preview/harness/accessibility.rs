@@ -319,10 +319,13 @@ fn sheets(d: &mut Driver<'_>) -> Result<(), String> {
     d.click("Keys  ?")?;
     d.settled()?;
     let hint = node(d, |value| {
-        text(value, "value").starts_with("j/k · Up/Down scroll")
+        let value = text(value, "value");
+        value.starts_with("/ search")
+            && value.contains("j / k · PgUp / PgDn · Home / End scroll")
+            && value.ends_with("Esc close")
     });
     d.check(
-        "Opening Help announces how to scroll and close it",
+        "Opening Help announces how to search, scroll and close it",
         d.app().help_open && hint.as_ref().is_some_and(|hint| live(hint) == "Polite"),
         json!({"help_open":true,"live":"Polite"}),
         json!({"help_open":d.app().help_open,"hint":hint}),

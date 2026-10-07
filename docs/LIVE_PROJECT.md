@@ -22,6 +22,7 @@ readers.
 | Render cancellation | Require the exact job, attempt and cancellation token. |
 | AI pause generation (`generate-hold`) | `Generate` starts the app's own AI job for the submitted Hold, revision, variant count and optional seed, exactly as `:generate N`; `GenerationStatus` observes and `CancelGeneration` cancels exactly that job. |
 | AI pause acceptance (`accept-hold`) | `AcceptHold` optionally selects the submitted Ready variant, then accepts the request's selected bundle in one transaction with the owner's relevance resolver. |
+| AI replacement queue (`ai-replacements`) | Duration edits record replacement preparations atomically. The app drains them through its AI job; bounded status reads and revision/sequence-checked Retry/Discard use the same durable store operations as Jobs. `--run` owns processing only when the project is closed. |
 | AI variant choices (`select-hold`, `keep-hold`, `discard-hold`, `dismiss-attempt`) | `GenerationVariant` checks the variant is offered and selects, keeps, releases or discards it; `DismissInterruptedAttempt` stops offering an interrupted attempt. Operational, not edits; the app rereads its candidates and closes a preview the change made stale. |
 | Transcript corrections (`corrections`) | `Corrections` applies one versioned change with the closed command's checks; the app republishes its corrected transcript and pauses. |
 | Original copies (`macro` `yank_original`) | A Macro operation: checks revision and bank version, saves the copy and adds the same runtime value to the app's bank. |

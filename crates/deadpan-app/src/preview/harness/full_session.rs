@@ -809,8 +809,8 @@ fn ai_pause(d: &mut Driver<'_>, hold: &NodeId) -> Result<(), String> {
         app.ai.job().is_some_and(|job| !job.running()) && app.ai.variant_count() >= 1
     })?;
     d.step("Variant listed", true)?;
-    taught(d, "preview AI", &[":preview-ai"])?;
-    d.command("preview-ai")?;
+    taught(d, "preview AI", &[",x"])?;
+    plain(d, ",x")?;
     d.wait_for("Candidate previewed", |app| {
         app.presentation.displayed_candidate()
             && !app.presentation.loading()

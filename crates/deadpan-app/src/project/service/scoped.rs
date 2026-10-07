@@ -226,6 +226,7 @@ impl Service {
         }
         let prepared = prepare(workspace, &target, &edit)?;
         let outcome = self.writer()?.commit(&prepared.request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.committed = Some(CommittedEdit {
             revision: outcome.revision_id,
             selected_node: Some(target.root),

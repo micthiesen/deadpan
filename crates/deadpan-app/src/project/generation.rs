@@ -98,6 +98,20 @@ pub enum GenerationOperation {
         attempt: AttemptId,
         keep: bool,
     },
+    /// Retry replacement conditioning with its preserved controls.
+    RetryPreparation {
+        ticket: u64,
+        session: u64,
+        revision: RevisionId,
+        id: deadpan_store::generation_preparations::PreparationId,
+    },
+    /// Discard a captured replacement preparation without changing timing.
+    DiscardPreparation {
+        ticket: u64,
+        session: u64,
+        id: deadpan_store::generation_preparations::PreparationId,
+        sequence: u64,
+    },
     /// Discard an interrupted attempt from the Jobs panel's retry list. The
     /// attempt keeps its failed record; it is just no longer offered.
     DismissInterrupted {
@@ -127,6 +141,29 @@ pub struct Interrupted {
     /// The pause's label when it is still a pause in the current edit, so a
     /// retry can generate for it.
     pub pause: Option<String>,
+}
+
+/// A durable replacement waiting for conditioning or explicit recovery.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Preparation {
+    pub id: deadpan_store::generation_preparations::PreparationId,
+    pub target: ScopedNodeTarget,
+    pub revision: RevisionId,
+    pub sequence: u64,
+    pub label: String,
+    pub frames: i64,
+    pub state: deadpan_store::generation_preparations::PreparationState,
+    pub reason: Option<String>,
+}
+
+impl Preparation {
+    pub fn retryable(&self) -> bool {
+        use deadpan_store::generation_preparations::PreparationState;
+        matches!(
+            self.state,
+            PreparationState::Interrupted | PreparationState::Unavailable
+        )
+    }
 }
 
 /// Where a running job is.
@@ -207,6 +244,8 @@ pub struct Job {
     pub hold: NodeId,
     pub target: ScopedNodeTarget,
     pub options: deadpan_jobs::GenerationOptions,
+    /// Replacement controls are read from retained provenance off the writer.
+    pub controls_pending: bool,
     /// The revision the inputs were prepared from.
     pub revision: RevisionId,
     pub started: Instant,
@@ -444,6 +483,7 @@ pub struct Update {
     pub reply: Option<(u64, Option<String>)>,
     /// Interrupted attempts offered for retry or discard.
     pub interrupted: Arc<Vec<Interrupted>>,
+    pub preparations: Arc<Vec<Preparation>>,
     /// Why earlier discards could not be read, when they could not.
     pub interrupted_warning: Option<String>,
 }

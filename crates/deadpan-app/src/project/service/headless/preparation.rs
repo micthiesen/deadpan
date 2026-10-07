@@ -341,6 +341,7 @@ impl Service {
         let state = match result {
             Err(error) => PreparationState::Failed { error },
             Ok(outcome) => {
+                self.capture_preparation_output(&outcome.output);
                 let refresh_error =
                     if outcome.inventory_changed || outcome.committed_revision.is_some() {
                         self.cached = None;

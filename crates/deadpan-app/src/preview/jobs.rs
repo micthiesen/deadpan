@@ -10,7 +10,7 @@
 //! shows is exactly what admission, queueing and yielding act on.
 
 use crate::jobs::{CancelOutcome, JobHandle, JobId, JobKind, JobRow, JobSpec, RowState};
-use crate::project::generation::Interrupted;
+use crate::project::generation::{Interrupted, Preparation};
 
 use super::*;
 
@@ -38,6 +38,7 @@ pub(super) enum RowKey {
     Job(JobId),
     /// Request and attempt of an interrupted AI attempt.
     Interrupted(String, String),
+    Preparation(deadpan_store::generation_preparations::PreparationId),
 }
 
 /// One panel row.
@@ -45,12 +46,14 @@ pub(super) enum RowKey {
 pub(super) enum Row {
     Job(JobRow),
     Interrupted(Interrupted),
+    Preparation(Preparation),
 }
 
 impl Row {
     pub(super) fn key(&self) -> RowKey {
         match self {
             Self::Job(job) => RowKey::Job(job.id),
+            Self::Preparation(item) => RowKey::Preparation(item.id.clone()),
             Self::Interrupted(item) => {
                 RowKey::Interrupted(item.request.clone(), item.attempt.clone())
             }
@@ -60,6 +63,7 @@ impl Row {
     /// What the row's action buttons name, so each is distinguishable.
     fn subject(&self) -> String {
         match self {
+            Self::Preparation(item) => format!("replacement pictures for “{}”", item.label),
             Self::Job(job) if job.detail.is_empty() => job.kind.label().to_owned(),
             Self::Job(job) => format!("{} · {}", job.kind.label(), job.detail),
             Self::Interrupted(item) => match &item.pause {
@@ -147,6 +151,27 @@ pub(super) fn interrupted_text(item: &Interrupted) -> String {
             item.hold
         ),
     }
+}
+
+pub(super) fn preparation_text(item: &Preparation) -> String {
+    use deadpan_store::generation_preparations::PreparationState;
+    let state = match item.state {
+        PreparationState::Queued => "Queued",
+        PreparationState::Claimed => "Reading boundary pictures",
+        PreparationState::Interrupted => "Interrupted; R retries",
+        PreparationState::Unavailable => "Unavailable; R retries",
+        PreparationState::Fulfilled => "Request recorded",
+        PreparationState::Cancelled => "Discarded",
+    };
+    let mut text = format!(
+        "Replacement pictures for “{}” · {} frames · {state}. D discards; timing stays saved.",
+        item.label, item.frames
+    );
+    if let Some(reason) = &item.reason {
+        text.push(' ');
+        text.push_str(reason);
+    }
+    text
 }
 
 impl DeadpanApp {
@@ -243,6 +268,7 @@ impl DeadpanApp {
             .into_iter()
             .map(Row::Job)
             .collect();
+        rows.extend(self.ai_preparations().into_iter().map(Row::Preparation));
         rows.extend(self.ai_interrupted().into_iter().map(Row::Interrupted));
         rows
     }
@@ -334,6 +360,18 @@ impl DeadpanApp {
         };
         self.jobs.selected = Some(row.key());
         match (action, row) {
+            ('r' | 'd', Row::Preparation(item)) => {
+                self.jobs.status = Some(match self.ai_preparation_action(&item, action == 'r') {
+                    Ok(()) if action == 'r' => {
+                        "Queued the replacement preparation for retry…".into()
+                    }
+                    Ok(()) => "Discarding the replacement preparation…".into(),
+                    Err(error) => error,
+                });
+            }
+            ('x', Row::Preparation(_)) => {
+                self.jobs.status = Some("D discards a replacement preparation. R retries an unavailable or interrupted preparation.".into());
+            }
             ('x', Row::Job(job)) => self.cancel_job(&job),
             ('r', Row::Interrupted(item)) => self.retry_interrupted(&item),
             ('d', Row::Interrupted(item)) => self.discard_interrupted(&item),
@@ -343,7 +381,7 @@ impl DeadpanApp {
             }
             (_, Row::Job(_)) => {
                 self.jobs.status =
-                    Some("X cancels a job; R and D act on interrupted attempts.".into());
+                    Some("X cancels a job; R and D act on interrupted attempts and replacement preparations.".into());
             }
             _ => {}
         }
@@ -468,10 +506,19 @@ impl DeadpanApp {
                             accessibility::full_text(response, "Nothing is running in the background.");
                         }
                         let mut heading = false;
+                        let mut preparation_heading = false;
                         for (index, row) in rows.iter().enumerate() {
                             let selected = Some(index) == selected_at;
                             let text = match row {
                                 Row::Job(job) => job_text(job, current),
+                                Row::Preparation(item) => {
+                                    if !preparation_heading {
+                                        preparation_heading = true;
+                                        ui.add_space(6.0);
+                                        ui.label(style::section_title("REPLACEMENT PICTURES", false));
+                                    }
+                                    preparation_text(item)
+                                }
                                 Row::Interrupted(item) => {
                                     if !heading {
                                         heading = true;
@@ -513,6 +560,10 @@ impl DeadpanApp {
                                         "X",
                                         'x',
                                     ),
+                                    Row::Preparation(item) => {
+                                        action(ui, item.retryable(), "Retry", "R", 'r');
+                                        action(ui, true, "Discard", "D", 'd');
+                                    }
                                     Row::Interrupted(item) => {
                                         action(ui, item.pause.is_some(), "Retry", "R", 'r');
                                         action(ui, true, "Discard", "D", 'd');

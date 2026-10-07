@@ -23,6 +23,7 @@ const JOB: u64 = (1 << 62) + 3;
 fn status(polls: usize) -> Result<GenerationStatus> {
     let finished = polls >= 2;
     Ok(GenerationStatus {
+        controls_pending: false,
         options: deadpan_jobs::GenerationOptions::default(),
         job: JOB,
         hold: NodeId::new("pause")?,

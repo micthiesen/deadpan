@@ -110,11 +110,31 @@ proven isolation history, including Undo/Redo; worker bindings remain immutable.
 Earlier development packages deliberately refuse opening. Native preview
 separately captures an exact visible occurrence, and play navigation revokes
 late replies and cached comparisons. The qualification record lists tests,
-replays and release evidence. DP-12 remains Partial: §12.7 still needs a
-replacement request, with prior controls, when a longer accepted Hold exceeds
-its available generated interval. Timing and the captured fallback already
-commit immediately. Check the [progress dashboard](../PROGRESS.md) at goal
-start and update it after meaningful verified milestones under spec §29.2.
+replays and release evidence.
+
+[Automatic replacements](../qualification/ai-replacements-2026-10-07.md) now
+save a longer accepted Hold's timing, captured fallback and durable preparation
+atomically. Exact current requests or verified accepted-artifact provenance
+retain the previous controls. One bounded AI thread prepares conditioning off
+the writer; fulfilment binds the exact claim and revision and allocates the
+request/attempt atomically. Unrelated edits requeue, superseding edits cancel,
+restart exposes interrupted work, and Jobs offers Retry/Discard. Ready still
+requires explicit undoable acceptance. Closed projects use
+`ai-replacements --run`; the native owner processes its queue automatically.
+Schema 70 deliberately refuses earlier unused development packages.
+
+The qualification records the completed repository gate in parts, 73 real-model
+assertions, relocated bundle verification, packaged accepted-media export, all
+68 runnable replay scenarios and separate release performance. The two
+fixture-only replay scenarios remain explicitly skipped. The four full-run
+failures were harness assumptions; the five affected corrective replays passed.
+DP-12 still needs counted `,a` insertion, `:hold-provider ai`, keyboard revert,
+source-boundary replacement, one-sided extension and native duration reporting.
+The proposed timing report patch at
+`/tmp/deadpan-resume-20261006/native-duration-reporting.patch` has not been
+applied or qualified; its adjacent `.md` records the design and checks owed.
+Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
+meaningful verified milestones under spec §29.2; the estimate remains about 86%.
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

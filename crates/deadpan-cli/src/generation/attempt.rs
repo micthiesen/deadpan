@@ -206,6 +206,42 @@ pub fn allocate_scoped_with_provider(
     allocate_variant(store, request, input.inputs)
 }
 
+/// Admit one claimed replacement preparation, its fully bound request and its
+/// first attempt in one store transaction. A stale claim creates none of them.
+pub fn allocate_preparation_with_provider(
+    store: &mut ProjectStore,
+    claim: &deadpan_store::generation_preparations::PreparationClaim,
+    inputs: BridgeInputs,
+    provider: deadpan_jobs::ProviderSelection,
+) -> Result<Allocated, GenerationError> {
+    let request_id =
+        RequestId::new(format!("ai-hold-{}", uuid::Uuid::new_v4().simple())).map_err(invalid)?;
+    let identity = MessageIdentity::new(
+        request_id.clone(),
+        AttemptId::new(uuid::Uuid::new_v4().simple().to_string()).map_err(invalid)?,
+    );
+    let cancellation_token =
+        CancellationToken::new(uuid::Uuid::new_v4().simple().to_string()).map_err(invalid)?;
+    let preparation = &claim.preparation;
+    let (request, begun) = store.fulfil_generation_preparation(
+        claim,
+        GenerationRequestInput {
+            request_id,
+            expected_revision: preparation.current_revision.clone(),
+            hold_id: preparation.target.node.clone(),
+            context_sha256: inputs.manifest_sha256.clone(),
+            constraints: inputs.constraints.clone(),
+            provider,
+        },
+        inputs.plan.clone(),
+        BeginGenerationAttempt {
+            identity: identity.clone(),
+            cancellation_token: cancellation_token.clone(),
+        },
+    )?;
+    allocated(request, inputs, identity, cancellation_token, begun.ordinal)
+}
+
 /// The Hold's current bridge request, whose attempts are its variants.
 pub fn current_bridge_request(
     store: &ProjectStore,
@@ -257,7 +293,17 @@ pub fn allocate_variant(
         identity: identity.clone(),
         cancellation_token: cancellation_token.clone(),
     })?;
-    let provider = request.provider.for_attempt(begun.ordinal);
+    allocated(request, inputs, identity, cancellation_token, begun.ordinal)
+}
+
+fn allocated(
+    request: StoredGenerationRequest,
+    inputs: BridgeInputs,
+    identity: MessageIdentity,
+    cancellation_token: CancellationToken,
+    ordinal: u64,
+) -> Result<Allocated, GenerationError> {
+    let provider = request.provider.for_attempt(ordinal);
     let host_message = HostMessage::GenerateBridge {
         protocol: ProtocolVersion::V2,
         identity: identity.clone(),
@@ -283,7 +329,7 @@ pub fn allocate_variant(
         identity,
         cancellation_token,
         host_message,
-        ordinal: begun.ordinal,
+        ordinal,
         inputs,
     })
 }

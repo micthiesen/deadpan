@@ -17,6 +17,7 @@ pub mod generated_media;
 pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
+pub mod generation_preparations;
 pub mod generation_retention;
 mod generation_scope;
 mod history;
@@ -203,6 +204,11 @@ pub struct CommitOutcome {
     /// Prepared inside the commit transaction; no fallible read follows saving.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub register_bank: Option<registers::RegisterBank>,
+    /// Replacement inputs queued atomically with this exact duration edit.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub generation_preparations: Vec<generation_preparations::PreparationId>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub generation_preparation_notices: Vec<generation_preparations::PreparationNotice>,
 }
 
 impl ProjectStore {
@@ -568,6 +574,7 @@ impl ProjectStore {
                 ..Default::default()
             };
             let generations = generation_attempts::recover_nonterminal(&mut store.connection)?;
+            generation_preparations::recover(&mut store.connection)?;
             found.interrupted_generation_count = generations.len();
             found.interrupted_generations = generations
                 .into_iter()
@@ -901,6 +908,7 @@ fn validate_database(
     compound::check_stored_sizes(&transaction)?;
     registers::check_stored_sizes(&transaction)?;
     generation::check_stored_sizes(&transaction)?;
+    generation_preparations::check_stored_sizes(&transaction)?;
     generation_attempts::check_stored_sizes(&transaction)?;
     transcripts::check_stored_sizes(&transaction)?;
     speech_activity::check_stored_sizes(&transaction)?;
@@ -932,6 +940,7 @@ fn validate_database(
     let audit = validation::validate_history(&transaction, mode)?;
     generation::validate_store(&transaction)?;
     generation_attempts::validate_store(&transaction)?;
+    generation_preparations::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     render_jobs::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -1384,7 +1393,10 @@ fn write_command_plan(
     resolver: Option<&dyn generation::GenerationContextResolver>,
 ) -> Result<(CommitOutcome, deadpan_core::ValidatedDocument), StoreError> {
     compound::require_authored(&plan)?;
+    generation_preparations::verify(connection)?;
     let request: CommandRequest = serde_json::from_str(&plan.request_json)?;
+    let preparations =
+        generation_preparations::command_births(connection, &plan.current, &request, &plan.next)?;
     let isolated =
         generation_scope::command_transition(connection, &plan.current, &request, &plan.next)?;
     generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
@@ -1439,6 +1451,9 @@ fn write_command_plan(
         params![plan.next.revision_id().as_str(), history_id],
     )?;
     connection.execute("DELETE FROM redo", [])?;
+    generation_preparations::reconcile(connection, &plan.next, resolver)?;
+    let (generation_preparations, generation_preparation_notices) =
+        generation_preparations::insert_births(connection, &plan.next, history_id, preparations)?;
     audit::extend(
         connection,
         plan.current.revision_id().as_str(),
@@ -1449,6 +1464,8 @@ fn write_command_plan(
             revision_id: plan.next.revision_id().clone(),
             edit: plan.edit,
             register_bank,
+            generation_preparations,
+            generation_preparation_notices,
         },
         plan.next,
     ))

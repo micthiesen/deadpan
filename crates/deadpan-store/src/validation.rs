@@ -504,7 +504,7 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
     // and births together from the initial revision, once for all scopes.
     if verified < order.len()
         && connection.query_row(
-            "SELECT EXISTS(SELECT 1 FROM generation_scopes)",
+            "SELECT EXISTS(SELECT 1 FROM generation_scopes) OR EXISTS(SELECT 1 FROM generation_preparations) OR EXISTS(SELECT 1 FROM generation_preparation_retirements)",
             [],
             |row| row.get::<_, bool>(0),
         )?
@@ -589,6 +589,7 @@ fn replay_from(
         .map(|id| RevisionId::new(id.clone()))
         .collect::<Result<_, _>>()?;
     let mut scopes = crate::generation_scope::Replay::new(connection, &current)?;
+    let mut preparations = crate::generation_preparations::Replay::default();
     for id in &order[from..] {
         let (parent, kind, next) = read_replay_revision(connection, id)?;
         if parent.as_deref() != Some(current.revision_id().as_str()) {
@@ -653,7 +654,11 @@ fn replay_from(
                     &current,
                     &request,
                     &next_document,
-                    |proof| scopes.map(proof, true),
+                    |proof| {
+                        scopes.map(proof, true)?;
+                        preparations.map(proof, true);
+                        Ok(())
+                    },
                 )?;
                 let expected = isolated.then_some(crate::generation_scope::Event {
                     history_id: entry,
@@ -664,6 +669,9 @@ fn replay_from(
                         "generation scope isolation event is missing or unexpected",
                     ));
                 }
+                let births =
+                    crate::generation_preparations::derive(&current, &request, &next_document)?;
+                preparations.arrive(connection, &next_document, entry, births, &scopes)?;
                 cursor = Some(entry);
                 redo.clear();
                 edits += 1;
@@ -693,7 +701,9 @@ fn replay_from(
                 }
                 let isolated =
                     crate::generation_scope::with_history_proof(connection, entry, |proof| {
-                        scopes.map(proof, is_redo)
+                        scopes.map(proof, is_redo)?;
+                        preparations.map(proof, is_redo);
+                        Ok(())
                     })?;
                 let expected = isolated.then_some(crate::generation_scope::Event {
                     history_id: entry,
@@ -704,6 +714,9 @@ fn replay_from(
                         "generation scope navigation event is missing or unexpected",
                     ));
                 }
+                let births =
+                    crate::generation_preparations::history_births(connection, entry, is_redo)?;
+                preparations.arrive(connection, &plan.next, entry, births, &scopes)?;
                 cursor = plan.next_cursor;
                 if !is_redo {
                     redo.push(entry);
@@ -717,6 +730,7 @@ fn replay_from(
         current = next_document;
     }
     scopes.finish(connection)?;
+    preparations.finish(connection)?;
     Ok(Navigation {
         cursor,
         redo,

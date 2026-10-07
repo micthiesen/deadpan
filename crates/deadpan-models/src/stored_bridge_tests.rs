@@ -19,6 +19,28 @@ use crate::{
 };
 
 #[test]
+fn accepted_controls_require_matching_host_and_worker_bindings() {
+    let mut fixture = Fixture::new();
+    fixture.envelope["binding"]["constraints"]["motion"] = json!("subtle");
+    fixture.envelope["binding"]["constraints"]["instructions"] = json!("Keep the hands still.");
+    assert!(
+        fixture.validate().is_err(),
+        "a host-only controls change must fail"
+    );
+    let mut worker: Value =
+        serde_json::from_str(fixture.envelope["worker_provenance_utf8"].as_str().unwrap()).unwrap();
+    worker["request_binding"] = fixture.envelope["binding"].clone();
+    fixture.replace_worker(serde_json::to_string(&worker).unwrap());
+    let options = fixture.validate().unwrap().generation_options();
+    assert_eq!(options.motion, MotionAmount::Subtle);
+    assert_eq!(
+        options.instructions.unwrap().as_str(),
+        "Keep the hands still."
+    );
+    assert_eq!(options.region_target, deadpan_jobs::GenerationTarget::None);
+}
+
+#[test]
 fn stored_schema5_requires_endpoint_evidence_bound_to_retained_geometry() {
     let evidence = Fixture::endpoint_checked().validate().unwrap();
     assert!(evidence.quality().is_some());

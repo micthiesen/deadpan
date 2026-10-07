@@ -1,6 +1,6 @@
 # Supported development project formats
 
-The current package uses SQLite schema 68 and core document schema 46. Schema
+The current package uses SQLite schema 70 and core document schema 46. Schema
 64 stores revision documents only at [keyframes](TIMING_STORAGE.md#revision-storage-database-schema-64),
 records each revision's patch-chain depth and JSON size bound, and adds the
 [verified history receipt](TIMING_STORAGE.md#verified-history-receipts).
@@ -11,23 +11,24 @@ Schema 66 adds [analysis corrections](ANALYSIS_CORRECTIONS.md) and
 discarded from being issued again. Schema 68 adds
 `generation_variant_retention` and `generation_retention_state`, the
 [AI variant retention](STORAGE.md#retention-of-unaccepted-ai-variants)
-records and clock watermark; upgrading a schema-67 package counts every offered variant's
-retention period from the upgrade.
-Schema 66 and 67 packages (the previous builds) migrate: opening one returns
-`MigrationRequired` without writing, and native Open or `project migrate`
-backs it up, adds the missing tables on a copy, validates the complete history
-and promotes it ([release migrations](BACKUPS.md#release-migration-policy)).
-Under the 2026-09-30 development-format authorization this build still
-refuses schemas 1 through 65, including the former schema-59 through 62
-additive upgrades, as `UnsupportedSchema` without changes. A schema *above*
-67 (a newer build's package) is refused by writers as `NewerSchema` and opens
-read-only for viewing.
+records and clock watermark. Schema 69 adds explicit AI authoring scopes,
+independent version clocks and audited isolation addresses. Schema 70 adds
+[durable AI replacement preparations](AI_HOLDS.md), including exact claims,
+retained controls and compact immutable history proofs.
+
+Under the 2026-09-30 development-format authorization, this build refuses
+schemas 1 through 69 as `UnsupportedSchema` without changes. The retained
+66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 70.
+The [release migration runner](BACKUPS.md#release-migration-policy) remains
+implemented and tested; this development build does not invent missing steps.
+A schema *above* 70 is refused by writers as `NewerSchema` and opens read-only
+for viewing.
 
 History patches now record retained audio timing as granular
 `AudioBindingPatch` entries rather than two complete binding states, and new
 timing tables are sliced to the aliases their placements name. Both are
 breaking changes to the history and document representation of new edits.
-Stored literal fixtures that embedded complete binding states were converted. It refuses schemas 1 through 63 with the
+Stored literal fixtures that embedded complete binding states were converted. It refuses schemas 1 through 69 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
@@ -76,17 +77,16 @@ cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Core schema 46 retains scoped historical aliases in chronological sample clocks
-for beat-owned sounds, addressed by owner and local sound ID. Database 58 stores
+for beat-owned sounds, addressed by owner and local sound ID. Database 70 stores
 these documents and their reversible patches. Prior unused packages have no
 supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 68 performs read-only validation and reports
+Calling `project migrate` on schema 70 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
-native writer. Calling it on schema 66 or 67 upgrades it as above; on an older
-package it returns `SchemaUnsupported` before creating a backup or obtaining
-a writer. An open native endpoint only
+native writer. On an older package it returns `SchemaUnsupported` before
+creating a backup or obtaining a writer. An open native endpoint only
 validates its already admitted current package.
 
 ## Current recovery remains required

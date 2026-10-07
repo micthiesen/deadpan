@@ -1381,7 +1381,7 @@ pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> 
     }).collect()
 }
 
-fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     let fully_visible = |d: &Driver<'_>| {
         let Ok(rect) = d.rect(label) else {
             return false;
@@ -1401,13 +1401,34 @@ fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String
     let heading = d.rect("Selected beat inspector pane")?;
     let point = heading.center() + egui::vec2(0.0, 120.0);
     for attempt in 0..3 {
+        // Selecting a different beat can retain the inspector's scroll offset.
+        // Reveal controls above the viewport as well as those below it.
+        let bounds = d
+            .harness
+            .root()
+            .children_recursive()
+            .find_map(|node| {
+                let access = node.accesskit_node();
+                (access.label().as_deref() == Some(label)
+                    && !access.is_disabled()
+                    && !access.is_hidden()
+                    && access.bounding_box().is_some()
+                    && node.rect().is_positive())
+                .then(|| node.rect())
+            })
+            .ok_or_else(|| format!("Missing enabled inspector action {label:?}"))?;
+        let delta = if bounds.center().y < point.y {
+            240.0
+        } else {
+            -240.0
+        };
         d.events(
             &format!("Wheel inspector to reveal {label}, attempt {}", attempt + 1),
             vec![
                 egui::Event::PointerMoved(point),
                 egui::Event::MouseWheel {
                     unit: egui::MouseWheelUnit::Point,
-                    delta: egui::vec2(0.0, -240.0),
+                    delta: egui::vec2(0.0, delta),
                     phase: egui::TouchPhase::Move,
                     modifiers: egui::Modifiers::NONE,
                 },
@@ -1421,7 +1442,7 @@ fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String
         }
         if fully_visible(d) {
             return d.check(
-                "Inspector wheel reveals the complete Camera action hit target",
+                "Inspector wheel reveals the complete action hit target",
                 true,
                 json!("button and click target inside the actual paint clip"),
                 json!({"label":label,"wheel_attempts":attempt+1}),
@@ -1429,7 +1450,7 @@ fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String
         }
     }
     d.check(
-        "Inspector wheel reveals the complete Camera action hit target",
+        "Inspector wheel reveals the complete action hit target",
         false,
         json!("button and click target inside the actual paint clip"),
         json!({"label":label,"wheel_attempts":3,"widgets":d.widgets()}),

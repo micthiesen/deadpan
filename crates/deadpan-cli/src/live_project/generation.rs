@@ -88,6 +88,10 @@ pub struct GenerationStatus {
     pub hold: NodeId,
     pub scope: ScopedNodeTarget,
     pub options: deadpan_jobs::GenerationOptions,
+    /// Replacement controls are still being recovered from retained evidence;
+    /// `options` is not authoritative until this is false.
+    #[serde(default)]
+    pub controls_pending: bool,
     /// The recorded request, once allocated.
     pub request_id: Option<RequestId>,
     pub variants: u8,

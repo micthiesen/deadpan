@@ -17,6 +17,7 @@ use deadpan_plan::{DefinitionPictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
 };
+use deadpan_store::generation_preparations::{PreparationControls, StoredGenerationPreparation};
 use sha2::{Digest, Sha256};
 
 /// The context identity of `hold` in `document`, or `None` when the Hold is
@@ -112,6 +113,21 @@ fn cached_plan(cache: &PlanCache, document: &ProjectDocument) -> Option<Arc<Rend
 }
 
 impl GenerationContextResolver for BoundaryContextResolver {
+    fn preparation_is_relevant(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        preparation: &StoredGenerationPreparation,
+    ) -> bool {
+        preparation_with_plan(
+            &self.origin,
+            origin,
+            after,
+            RenderPlan::compile(after).ok().as_ref(),
+            preparation,
+        )
+    }
+
     fn prepare_transition<'a>(
         &'a self,
         after: &'a ProjectDocument,
@@ -140,6 +156,16 @@ impl GenerationContextResolver for BoundaryContextResolver {
 }
 
 impl GenerationContextResolver for PreparedBoundaryContext<'_> {
+    fn preparation_is_relevant(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        preparation: &StoredGenerationPreparation,
+    ) -> bool {
+        std::ptr::eq(self.after, after)
+            && preparation_with_plan(self.origin, origin, after, self.plan.as_ref(), preparation)
+    }
+
     fn observe(
         &self,
         origin: &ProjectDocument,
@@ -151,6 +177,31 @@ impl GenerationContextResolver for PreparedBoundaryContext<'_> {
         }
         observe_with_plan(self.origin, origin, after, self.plan.as_ref(), request)
     }
+}
+
+fn preparation_with_plan(
+    origin_cache: &PlanCache,
+    origin: &ProjectDocument,
+    after: &ProjectDocument,
+    after_plan: Option<&RenderPlan>,
+    preparation: &StoredGenerationPreparation,
+) -> bool {
+    let target = match &preparation.controls {
+        PreparationControls::Request { options, .. } => options.region_target.resolve(None),
+        PreparationControls::AcceptedArtifact => {
+            // Its exact saved target is in verified provenance, read later on
+            // the preparation worker. No target changes may cross this gap.
+            if origin.targets() != after.targets() {
+                return false;
+            }
+            None
+        }
+    };
+    let before = cached_plan(origin_cache, origin)
+        .and_then(|plan| identity_in(origin, &plan, &preparation.origin_target, target.as_ref()));
+    let after =
+        after_plan.and_then(|plan| identity_in(after, plan, &preparation.target, target.as_ref()));
+    matches!((before, after), (Some(before), Some(after)) if before == after)
 }
 
 fn observe_with_plan(

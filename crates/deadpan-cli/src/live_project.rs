@@ -131,6 +131,21 @@ pub enum ShortOperation {
     /// Stop offering one AI attempt a crash interrupted for retry (Jobs `d`).
     /// Operational, not an edit; the pause is unchanged.
     DismissInterruptedAttempt { request: String, attempt: String },
+    /// Bounded, paged operational status for replacement AI preparations.
+    GenerationPreparations {
+        after: Option<deadpan_store::generation_preparations::PreparationId>,
+    },
+    GenerationPreparation {
+        id: deadpan_store::generation_preparations::PreparationId,
+    },
+    RetryGenerationPreparation {
+        id: deadpan_store::generation_preparations::PreparationId,
+        expected_revision: RevisionId,
+    },
+    CancelGenerationPreparation {
+        id: deadpan_store::generation_preparations::PreparationId,
+        expected_sequence: u64,
+    },
     /// One versioned transcript or pause correction (`:correct`).
     Corrections {
         request: Box<crate::corrections::Request>,
@@ -164,6 +179,8 @@ impl ShortOperation {
             || matches!(
                 self,
                 Self::Edit { dry_run: true, .. }
+                    | Self::GenerationPreparations { .. }
+                    | Self::GenerationPreparation { .. }
                     | Self::History { dry_run: true, .. }
                     | Self::AdoptPrimaryGeometry { dry_run: true, .. }
                     | Self::CleanStorage { dry_run: true, .. }
@@ -609,6 +626,47 @@ pub fn execute_short(
             (
                 serde_json::json!({"protocol":1,"dismissed":{"request_id":request,"attempt_id":attempt},
                     "interrupted":remaining.attempts,"warning":remaining.warning}),
+                None,
+            )
+        }
+        ShortOperation::GenerationPreparations { after } => {
+            let preparations = store
+                .generation_preparations(after.as_ref(), 64)
+                .map_err(LiveError::store)?;
+            let next = (preparations.len() == 64).then(|| preparations.last().unwrap().id.clone());
+            (
+                serde_json::json!({"protocol":1,"preparations":preparations,"next":next}),
+                None,
+            )
+        }
+        ShortOperation::GenerationPreparation { id } => {
+            let preparation = store.generation_preparation(id).map_err(LiveError::store)?;
+            (
+                serde_json::json!({"protocol":1,"preparation":preparation}),
+                None,
+            )
+        }
+        ShortOperation::RetryGenerationPreparation {
+            id,
+            expected_revision,
+        } => {
+            let preparation = store
+                .retry_generation_preparation(id, expected_revision)
+                .map_err(LiveError::store)?;
+            (
+                serde_json::json!({"protocol":1,"preparation":preparation}),
+                None,
+            )
+        }
+        ShortOperation::CancelGenerationPreparation {
+            id,
+            expected_sequence,
+        } => {
+            let preparation = store
+                .cancel_generation_preparation(id, *expected_sequence)
+                .map_err(LiveError::store)?;
+            (
+                serde_json::json!({"protocol":1,"preparation":preparation}),
                 None,
             )
         }

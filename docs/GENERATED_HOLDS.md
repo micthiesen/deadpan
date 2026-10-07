@@ -44,8 +44,11 @@ Neither changes Hold audio or downstream source coordinates.
 Shortening a generated Hold retains the original artifact and sampling map. Its
 visible interval is the sampled master's prefix `[0, duration)`. Re-extending up to
 N reuses those retained frames. Extending beyond N restores the captured fallback
-in the same duration edit. The host must separately reconcile context and allocate
-a replacement request; this core operation does not launch a job.
+in the same duration edit. The store atomically records a replacement preparation
+with the accepted artifact, original generation controls and exact authoring
+scope. The app prepares and generates the replacement through its bounded AI
+worker; the core remains independent of jobs. See
+[replacement lifecycle and recovery](AI_HOLDS.md#lengthening-accepted-pauses).
 
 The picture plan requests sampled-master frame ordinals and keeps compiled revisions
 immutable. It never resamples the original map after a duration change. Reversion

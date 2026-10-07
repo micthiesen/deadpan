@@ -25,7 +25,7 @@ use crate::generation_context::BoundaryContextResolver;
 mod options;
 
 /// The project's writer, or None when the app already owns it.
-fn writer(path: &Path) -> Result<Option<ProjectStore>, CliError> {
+pub(super) fn writer(path: &Path) -> Result<Option<ProjectStore>, CliError> {
     let mut store = match ProjectStore::open(path, AccessMode::ReadWrite) {
         Ok(store) => store,
         Err(StoreError::AlreadyOpen) => return Ok(None),
@@ -217,7 +217,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
 }
 
 /// Run one allocated attempt to its durable outcome and describe it.
-fn run_one(
+pub(super) fn run_one(
     store: &mut ProjectStore,
     package: &Path,
     allocated: &attempt::Allocated,
@@ -303,11 +303,11 @@ fn join_report(
     receipt: &deadpan_store::generation_attempts::BundleValidationReceipt,
     cancelled: &AtomicBool,
 ) -> serde_json::Value {
-    match super::joins::measure_request_joins(
+    match super::joins::measure_scoped_request_joins(
         package,
         &store.generated_read_handle(),
         &allocated.request.origin_revision,
-        &allocated.request.binding.hold_id,
+        &allocated.request.origin_target,
         receipt,
         cancelled,
     ) {

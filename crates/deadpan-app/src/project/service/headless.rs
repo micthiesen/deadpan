@@ -424,6 +424,7 @@ impl Service {
         } = execution;
         let mut refresh_error = None;
         if !command.is_preview() {
+            self.capture_preparation_output(&output);
             self.host_operational_change(command, &output);
         }
         if let Some(revision) = &committed_revision {
@@ -508,6 +509,11 @@ impl Service {
                         "Stopped keeping an AI variant from the command line."
                     }
                 }
+            }
+            Short::RetryGenerationPreparation { .. }
+            | Short::CancelGenerationPreparation { .. } => {
+                self.generation.variants_changed();
+                "Updated the replacement preparation from the command line. The pause's timing is unchanged."
             }
             Short::DismissInterruptedAttempt { .. } => {
                 self.generation.variants_changed();

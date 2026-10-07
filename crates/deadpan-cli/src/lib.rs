@@ -156,6 +156,7 @@ const HELP: &str = "Deadpan headless commands:
   generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
   accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
   ai-variants <project.deadpan> [--hold <node-id>] [--joins]
+  ai-replacements <project.deadpan> [--after <id> | --id <id> | --retry <id> --expected <revision> | --discard <id> --sequence <n> | --run [--limit 1-16]]
   select-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
   discard-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
   keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]
@@ -632,6 +633,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["dismiss-attempt", rest @ ..] => generation::variants::run_action(rest, "dismiss-attempt"),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["ai-variants", rest @ ..] => generation::variants::run_report(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["ai-replacements", rest @ ..] => generation::preparations::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["sound", rest @ ..] => sound_events::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

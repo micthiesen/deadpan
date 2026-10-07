@@ -309,8 +309,8 @@ Headless status links to [PARITY](PARITY.md).
 | --- | --- | --- | --- | --- | --- |
 | **Choose a job** (`jobs.select`)<br>Choose the next / previous job. Held keys repeat. | `j / k · Up / Down` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 | **Cancel a job** (`jobs.cancel`)<br>Cancel the chosen job. A held key never repeats a cancel. | `x` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `SIGINT to the job's command` |
-| **Retry a job** (`jobs.retry`)<br>Retry the chosen failed or interrupted job. | `r` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `rerun the job's command` |
-| **Discard an interrupted attempt** (`jobs.discard`)<br>Discard an AI attempt a crash interrupted. | `d` (fixed) | - | Jobs | not recorded | [Equivalent](PARITY.md#ai-pauses): `dismiss-attempt <p> --request <id> --attempt <id>` |
+| **Retry a job** (`jobs.retry`)<br>Retry the chosen interrupted AI attempt or unavailable replacement preparation. | `r` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `rerun the job's command` |
+| **Discard an attempt or replacement preparation** (`jobs.discard`)<br>Discard an interrupted AI attempt or a queued, unavailable or interrupted replacement preparation. Committed pause timing stays saved. | `d` (fixed) | - | Jobs | not recorded | [Equivalent](PARITY.md#ai-pauses): `dismiss-attempt <p> --request <id> --attempt <id>` |
 | **Close jobs** (`jobs.close`)<br>Close the panel; jobs keep running. | `Esc` (native) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 
 ## Storage Panel

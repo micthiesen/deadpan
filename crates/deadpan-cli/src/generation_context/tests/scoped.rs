@@ -152,6 +152,75 @@ fn mapped_request(
     request
 }
 
+fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGenerationPreparation {
+    use deadpan_store::generation_preparations::{PreparationId, PreparationState};
+    let object =
+        GeneratedObjectRef::new(GeneratedContentId::new("a".repeat(64)).unwrap(), 1).unwrap();
+    StoredGenerationPreparation {
+        id: PreparationId::new("preparation".to_owned()).unwrap(),
+        project_id: origin.project_id().clone(),
+        origin_revision: origin.revision_id().clone(),
+        current_revision: origin.revision_id().clone(),
+        origin_target: target.clone(),
+        target,
+        duration: FrameDuration::new(6).unwrap(),
+        accepted: GeneratedArtifact {
+            sampled_asset: AssetId::new("sampled").unwrap(),
+            native_asset: AssetId::new("native").unwrap(),
+            sampled_object: object.clone(),
+            native_object: object.clone(),
+            provenance: object,
+            sampling: BridgeSamplingMap::new(
+                FrameRate::new(30000, 1001).unwrap(),
+                FrameRate::new(24, 1).unwrap(),
+                FrameDuration::new(5).unwrap(),
+                FrameDuration::new(4).unwrap(),
+                BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+            )
+            .unwrap(),
+            content_aspect: None,
+        },
+        controls: PreparationControls::AcceptedArtifact,
+        state: PreparationState::Queued,
+        claim_sequence: 0,
+        reason: None,
+        request_id: None,
+    }
+}
+
+#[test]
+fn replacement_preparation_keeps_raw_context_through_proven_sibling_isolation() {
+    let origin = fixture();
+    let isolated = isolate_sibling(&origin);
+    let resolver = BoundaryContextResolver::default();
+    for play in [None, Some(1), Some(2)] {
+        let mut preparation = preparation(&origin, scope("h", play));
+        preparation.target = isolated
+            .map_target(&origin, &preparation.origin_target)
+            .unwrap();
+        assert!(resolver.preparation_is_relevant(&origin, &isolated.document, &preparation));
+        let prepared = resolver.prepare_transition(&isolated.document).unwrap();
+        assert!(prepared.preparation_is_relevant(&origin, &isolated.document, &preparation));
+        let changed = changed(
+            &isolated.document,
+            "changed-source",
+            Command::SetCutaways {
+                node: isolated.target.node.clone(),
+                cutaways: vec![cutaway(0, 10, false)],
+            },
+        );
+        assert!(
+            !prepared.preparation_is_relevant(&origin, &changed, &preparation),
+            "a prepared resolver may not observe a different document"
+        );
+        assert_eq!(
+            resolver.preparation_is_relevant(&origin, &changed, &preparation),
+            play != Some(1),
+            "only the edited play loses its raw boundary"
+        );
+    }
+}
+
 #[test]
 fn sibling_isolation_keeps_default_and_other_plays_separate_from_the_mapped_hold() {
     let origin = fixture();

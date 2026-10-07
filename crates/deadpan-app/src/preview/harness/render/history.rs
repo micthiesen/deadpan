@@ -195,15 +195,25 @@ fn coalesced_owner_render(d: &mut Driver<'_>, output: &Path) -> Result<(), Strin
         !app.service.is_busy()
     })?;
     d.app().service.submit(ProjectRequest::Open(path))?;
-    d.wait_for("Owner reopens while UI delivery is held", |app| {
-        !app.service.is_busy()
-    })?;
-    let workspace = d
-        .app()
-        .service
-        .take_update()
-        .and_then(|update| update.workspace)
-        .ok_or("No new owner workspace")?;
+    let reopened = std::cell::RefCell::new(None);
+    d.wait_for(
+        "Owner publishes its reopened session while UI delivery is held",
+        |app| {
+            // Command admission is released before the owner publishes its reply.
+            // Wait for the actual new session, rather than consuming the old Close
+            // reply or treating a temporarily locked mailbox as a failed reopen.
+            if let Some(update) = app.service.take_update()
+                && update
+                    .workspace
+                    .as_ref()
+                    .is_some_and(|workspace| workspace.session != old_session)
+            {
+                *reopened.borrow_mut() = update.workspace;
+            }
+            reopened.borrow().is_some() && !app.service.is_busy()
+        },
+    )?;
+    let workspace = reopened.into_inner().ok_or("No new owner workspace")?;
     let limits = deadpan_cli::render::default_limits().map_err(|error| error.to_string())?;
     let request = deadpan_cli::render::start_request(
         &deadpan_cli::render::RenderContext::from_document(&workspace.document),
@@ -231,16 +241,33 @@ fn coalesced_owner_render(d: &mut Driver<'_>, output: &Path) -> Result<(), Strin
             },
         },
     ))?;
+    let rendered = std::cell::RefCell::new(None);
     d.wait_for(
-        "Owner admits rendering before the UI sees the new session",
-        |app| !app.service.is_busy(),
+        "Owner publishes rendering before the UI sees the new session",
+        |app| {
+            if let Some(update) = app.service.take_update()
+                && update
+                    .workspace
+                    .as_ref()
+                    .is_some_and(|current| current.session == workspace.session)
+                && update
+                    .render
+                    .as_ref()
+                    .and_then(|render| render.workflow.as_ref())
+                    .is_some_and(|workflow| workflow.context.session == workspace.session)
+            {
+                *rendered.borrow_mut() = Some(update);
+            }
+            rendered.borrow().is_some() && !app.service.is_busy()
+        },
     )?;
-    d.app_mut().feedback.hold_project_updates = false;
+    d.app_mut().feedback.release_project_update = rendered.into_inner();
     d.wait_for("Coalesced session and render status reach the UI", |app| {
         app.workspace
             .as_ref()
             .is_some_and(|workspace| workspace.session != old_session)
     })?;
+    d.app_mut().feedback.hold_project_updates = false;
     d.check(
         "A coalesced new-session owner render opens its matching status window",
         d.app().render.open

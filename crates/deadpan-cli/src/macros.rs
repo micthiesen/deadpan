@@ -721,6 +721,11 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
                 let result = store
                     .commit_compound(command, None)
                     .map_err(LiveError::store)?;
+                if let Some(outcome) = &result.committed {
+                    output["generation_preparations"] = json!(outcome.generation_preparations);
+                    output["generation_preparation_notices"] =
+                        json!(outcome.generation_preparation_notices);
+                }
                 let revision = result.committed.map(|outcome| outcome.revision_id);
                 let registers =
                     (result.register_bank.version != prepared.bank.version).then(|| {
@@ -757,6 +762,8 @@ impl Prepared {
             "before_revision": self.document.revision_id(), "before_bank_version": self.bank.version,
             "bank_version": self.final_bank.version, "committed": false,
             "committed_revision": null, "committed_registers": null,
+            "generation_preparations": [],
+            "generation_preparation_notices": [],
         });
         match &self.request.operation {
             Operation::Save { register, program } => {

@@ -891,6 +891,28 @@ impl DeadpanApp {
                 attempt,
                 keep,
             },
+            GenerationOperation::RetryPreparation {
+                session,
+                revision,
+                id,
+                ..
+            } => GenerationOperation::RetryPreparation {
+                ticket,
+                session,
+                revision,
+                id,
+            },
+            GenerationOperation::DiscardPreparation {
+                session,
+                id,
+                sequence,
+                ..
+            } => GenerationOperation::DiscardPreparation {
+                ticket,
+                session,
+                id,
+                sequence,
+            },
             accept @ GenerationOperation::Accept { .. } => accept,
         };
         match self.service.submit(ProjectRequest::Generation(operation)) {
@@ -983,6 +1005,48 @@ impl DeadpanApp {
             .filter(|update| Some(update.session) == session)
             .map(|update| update.interrupted.as_ref().clone())
             .unwrap_or_default()
+    }
+
+    pub(super) fn ai_preparations(&self) -> Vec<crate::project::generation::Preparation> {
+        let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        self.ai
+            .update
+            .as_ref()
+            .filter(|update| Some(update.session) == session)
+            .map(|update| update.preparations.as_ref().clone())
+            .unwrap_or_default()
+    }
+
+    pub(super) fn ai_preparation_action(
+        &mut self,
+        item: &crate::project::generation::Preparation,
+        retry: bool,
+    ) -> Result<(), String> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        let operation = if retry {
+            if !item.retryable() {
+                return Err("This replacement is queued or preparing. D discards it.".into());
+            }
+            GenerationOperation::RetryPreparation {
+                ticket: 0,
+                session: workspace.session,
+                revision: item.revision.clone(),
+                id: item.id.clone(),
+            }
+        } else {
+            GenerationOperation::DiscardPreparation {
+                ticket: 0,
+                session: workspace.session,
+                id: item.id.clone(),
+                sequence: item.sequence,
+            }
+        };
+        self.ai_submit(operation).ok_or_else(|| {
+            self.error
+                .clone()
+                .unwrap_or_else(|| "The project service is busy.".into())
+        })?;
+        Ok(())
     }
 
     /// Why earlier discards of interrupted attempts could not be read.
@@ -1936,29 +2000,38 @@ impl DeadpanApp {
             })
             .cloned()
             .unwrap_or_default();
-        ui.label(format!("Requested motion: {}", options.motion.name()));
-        let region_target = match &options.region_target {
-            deadpan_jobs::GenerationTarget::Inherit | deadpan_jobs::GenerationTarget::None => {
-                "None".to_owned()
+        let controls_pending = job.as_ref().is_some_and(|job| job.controls_pending);
+        if controls_pending {
+            ui.label(if running {
+                "Reading the accepted pictures' generation controls…"
+            } else {
+                "Previous generation controls are unavailable. Retry the replacement in Jobs."
+            });
+        } else {
+            ui.label(format!("Requested motion: {}", options.motion.name()));
+            let region_target = match &options.region_target {
+                deadpan_jobs::GenerationTarget::Inherit | deadpan_jobs::GenerationTarget::None => {
+                    "None".to_owned()
+                }
+                deadpan_jobs::GenerationTarget::Saved(target) => self
+                    .workspace
+                    .as_ref()
+                    .and_then(|workspace| workspace.document.targets().get(target))
+                    .map_or_else(
+                        || format!("Unavailable ({target})"),
+                        |record| format!("{} ({target})", record.label),
+                    ),
+            };
+            ui.label(format!("Region target: {region_target}"));
+            if let Some(text) = &options.instructions {
+                ui.label(
+                    egui::RichText::new(format!("Guidance: {}", text.as_str()))
+                        .size(12.0)
+                        .weak(),
+                );
             }
-            deadpan_jobs::GenerationTarget::Saved(target) => self
-                .workspace
-                .as_ref()
-                .and_then(|workspace| workspace.document.targets().get(target))
-                .map_or_else(
-                    || format!("Unavailable ({target})"),
-                    |record| format!("{} ({target})", record.label),
-                ),
-        };
-        ui.label(format!("Region target: {region_target}"));
-        if let Some(text) = &options.instructions {
-            ui.label(
-                egui::RichText::new(format!("Guidance: {}", text.as_str()))
-                    .size(12.0)
-                    .weak(),
-            );
         }
-        if ui.add_enabled(ready && !running && !other_running,
+        if ui.add_enabled(ready && !running && !other_running && !controls_pending,
             style::row_action(ui, "Generation controls…", ":generate motion=…"))
             .on_hover_text("Choose still, subtle or moderate, target=ID for a saved region or target=none, and optional text=guidance (last, up to 512 UTF-8 bytes). Omitted target retains this captured choice. Enter generates with those choices; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
             .clicked()
