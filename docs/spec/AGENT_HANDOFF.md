@@ -163,7 +163,7 @@ bounded real-runtime `extension-probe` experiments establish both directional
 frame mappings on one synthetic input; they do not establish app integration
 or production quality.
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
-meaningful verified milestones under spec §29.2; the estimate remains about 86%.
+meaningful verified milestones under spec §29.2; the estimate is about 87%.
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T20:55:20Z",
+  "updated_at": "2026-10-07T22:41:36Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing AI pause creation, provider controls and native timing.",
+  "focus": "Implementing AI replacements when source boundaries change, followed by generation at video edges.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and automatic replacements work. Creation shortcuts, generation at video edges and timing feedback remain."
+      "note": "Counted AI pauses, provider controls and timing are verified. Source-boundary replacements and generation at video edges remain."
     },
     {
       "id": "import",
@@ -165,6 +165,14 @@
       "revision": "a20a5b35",
       "retrospective": false,
       "summary": "Verified automatic AI replacements after lengthening a pause, with real-model generation, packaged export and native workflow checks."
+    },
+    {
+      "date": "2026-10-07",
+      "percent": 87,
+      "complete_sections": 4,
+      "revision": "fa7e3d63",
+      "retrospective": false,
+      "summary": "Verified counted AI pause creation, provider and revert controls, exact timing, real-model generation, packaged export and native responsiveness."
     }
   ]
 }
