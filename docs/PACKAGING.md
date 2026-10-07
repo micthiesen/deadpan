@@ -550,7 +550,7 @@ separate scrubbed run of the copied app generated, accepted and rendered an AI
 pause (76.8–98.9 s of generation depending on load)
 ([record](qualification/ai-runtime-2026-10-05.md)).
 
-Not verified:
+Not verified in that run:
 
 - a quarantined download, a second Mac or a clean user account;
 - Developer ID signing, notarization and stapling;
@@ -687,21 +687,19 @@ attribution line. The exact upstream copyright notices of OpenAI Whisper and
 Silero VAD are not compiled into Deadpan yet. Add them before redistributing
 the folder to anyone else.
 
+### 2026-10-06 native follow-up
+
+The [native installation record](qualification/native-install-2026-10-06.md)
+adds a full distribution containing the rebuilt 721.9 MiB app and both packs.
+`offline-dist-verify` passed checksums, nested signatures and fresh imports
+with both runtime smoke tests. The native Models panel then installed both
+archives; the app generated and explicitly accepted a Hold, restarted and
+rendered its retained footage with IP networking denied. The record retains
+the nested-sandbox limitation during AI installation and generation.
+
 To verify (owner):
 
-1. Bridge pack from a current AI-runtime bundle (verified on 2026-10-06 with
-   the older bundle above): install it into the default root by clone, then
-   build and verify. This needs about 2 × 36 GB free for the archive and the
-   verifier's import.
-
-   ```sh
-   deadpan-cli models import ltx-2.3-q4-bridge ~/Library/Caches/Deadpan/ltx-qualification --accept-license
-   cargo xtask offline-dist --app <bundle>/Deadpan.app --output <new dir> \
-     --pack whisper-base-en --pack ltx-2.3-q4-bridge
-   cargo xtask offline-dist-verify <new dir>
-   ```
-
-2. Second Mac: copy the folder offline (for example on an external drive, or
+1. Second Mac: copy the folder offline (for example on an external drive, or
    download it so it is quarantined) and run `shasum -a 256 -c SHA256SUMS`
    in it. Then open `Deadpan.app` with the network off, run `:models` →
    Install from archive… → `Packs/whisper-base-en-2.tar`, and transcribe a
@@ -728,7 +726,8 @@ To verify (owner):
   byte for byte on 2026-10-06; the rebuilt bundle also passed its native load
   audit ([evidence](RELEASE_AUDIT.md)). Personal use does not require public
   distribution.
-- Bit-for-bit reproducibility: comparing two builds, deterministic signing and
-  `env!` paths.
+- Bit-for-bit reproducibility is optional future build work. Checksums and
+  build provenance identify the shipped artifacts; the specification does
+  not require two builds to have identical bytes.
 - `tools/build-app.py` remains the quick wrapper for an existing debug
   executable. It is not relocatable.

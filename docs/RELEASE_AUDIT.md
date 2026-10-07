@@ -150,3 +150,26 @@ offline-distribution acceptance for DP-22 is still in progress.
 
 No campaign result is inferred from the presence of a target or corpus.
 Clean-machine and physical/human checks follow the owner scope in spec §29.1.
+
+## Native installation follow-up
+
+[Native workflow evidence](qualification/native-install-2026-10-06.md) records
+local and permitted YouTube import, native model downloads and archive installs,
+generation with unchanged fallback until explicit acceptance, and restart/render
+with IP networking denied. The archive-installed project's movie was confirmed
+published. The Documents export exposed an asynchronous macOS `UF_TRACKED`
+change in its report; the corrected bundle recovered that exact movie with
+full byte verification and published a fresh native Documents render. The
+whole-app offline test also retains the macOS nested-sandbox limitation and
+the exact nonblocking owner check. DP-22 is complete within §29.1's scope;
+the broader import/export and release gates retain their own open work.
+
+The [2026-10-07 follow-up](qualification/followup-2026-10-07.md) records
+descendant Repeat clocks, backup settings, signed bridge updates, publication
+recovery and their focused checks. It also retains the full-gate failures
+and fixes. Its full gate passes 4,734 workspace tests, 1,027 UI-harness tests,
+strict lint and doc tests. The corrected packaged update also passes real
+generation, explicit acceptance, rollback and verified Render with the selected
+provider retained. Native backup settings survive Save and restart. The real
+generation's initial missing receipt-field failure remains recorded, with its
+regression and corrected run. All test windows and workers are closed.

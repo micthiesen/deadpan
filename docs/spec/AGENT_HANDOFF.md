@@ -6,8 +6,11 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 Build on `ae79d614` and the [current release audit](../RELEASE_AUDIT.md).
 `ib`/`ab` now resolve through the native and semantic grammars. First-play
-attachment handling is atomic for marks, captions and cutaways; sounds still
-need retained-clock Repeat mapping. Shared layout normalization covers
+attachment handling is atomic for marks, captions and cutaways. Descendant
+sounds now retain Repeat clocks through wraps, count/gap changes, copies and
+first-play isolation; Repeat-owned and ancestor-spanning sounds still need
+owner-local routing. All 54 focused clock/PCM/persistence tests and independent
+review pass; the follow-up full gate also passed. Shared layout normalization covers
 Corrections, URL and Marks. Native and headless diagnostic export saves a
 bounded allowlisted report without authored text, identifiers or media.
 
@@ -26,9 +29,29 @@ Complete application replacement and rollback preserved the project's bytes.
 The full gate passed 4,700 workspace tests, 1,023 UI harness tests, strict
 lint and doc tests. DP-23 is complete within §29.1; the other requirements
 and all release gates retain their tracked work. Native §26.6 online and
-offline-distribution acceptance is underway on the current bundle. Do not
+offline-distribution acceptance and the corrected bundle follow-up complete
+DP-22 within §29.1. DP-13 still needs the explicit conditioning, frame/raster,
+precision and hardware/OS manifest declarations in §14.3. Do not
 infer completion from older blanket status text below; consult the current
 requirements table and evidence.
+
+[Native installation evidence](../qualification/native-install-2026-10-06.md)
+now includes online downloads/imports and local archive installation, real AI
+acceptance, restart and export. Both test windows are closed. An asynchronous
+macOS `UF_TRACKED` report change exposed a publication confirmation/recovery
+bug; the narrow fix passed native recovery of that movie and fresh Documents
+publication, with full byte verification.
+Backup cadence/count/budget settings pass focused persistence/service tests
+and 31 UI replay checks, plus native Save and restart. Bridge updates now pin tensor schemas and revalidate
+installed retries through the real smoke test, retaining a version lock until
+selection; 35 pack tests and 66 Python worker tests pass. Real packaged update,
+installed retry, generation, explicit acceptance, rollback and verified Render
+pass with version 2 in host and worker provenance. The first real generation
+found a missing repository field in worker asset receipts; its regression and
+the corrected packaged run pass. All native windows and workers are closed.
+The follow-up gate passed 4,734 workspace tests,
+1,027 UI-harness tests, strict lint and two doc tests; see the
+[follow-up evidence](../qualification/followup-2026-10-07.md).
 
 ## Gags and macro pauses, 2026-10-04
 
