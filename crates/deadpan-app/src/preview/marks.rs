@@ -551,23 +551,32 @@ impl DeadpanApp {
             && !self.service.is_busy()
             && self.marks.pending.is_none()
         {
-            let forward = events.iter().find_map(|event| match event {
-                egui::Event::Key {
-                    key,
-                    pressed: true,
-                    repeat: false,
-                    modifiers,
-                    ..
-                } => crate::navigation::panels::marks_key(*key, *modifiers),
-                _ => None,
-            });
-            if let Some(forward) = forward {
+            let forward = events
+                .iter()
+                .enumerate()
+                .find_map(|(index, event)| match event {
+                    egui::Event::Key {
+                        key,
+                        pressed: true,
+                        repeat: false,
+                        modifiers,
+                        ..
+                    } => {
+                        let companion = match events.get(index + 1) {
+                            Some(egui::Event::Text(text)) => Some(text.as_str()),
+                            _ => None,
+                        };
+                        crate::navigation::mode_key(*key, *modifiers, companion)
+                            .and_then(|(logical, modifiers)| {
+                                crate::navigation::panels::marks_key(logical, modifiers)
+                            })
+                            .map(|forward| (forward, *key, *modifiers))
+                    }
+                    _ => None,
+                });
+            if let Some((forward, key, modifiers)) = forward {
                 context.input_mut(|input| {
-                    input.events.retain(|event| {
-                        !matches!(event,
-                    egui::Event::Key { key: egui::Key::O | egui::Key::I, modifiers, .. }
-                        if *modifiers == egui::Modifiers::CTRL)
-                    })
+                    input.consume_key(modifiers, key);
                 });
                 self.jump_history(forward, context);
                 if self.error.is_none() {

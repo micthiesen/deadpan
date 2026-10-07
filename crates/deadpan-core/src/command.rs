@@ -522,6 +522,14 @@ define_commands! {
         edits: Vec<crate::ScopedTargetEdit>,
         identities: Vec<OccurrenceIdentities>,
     },
+    /// Keep a freshly wrapped beat's owned temporal attachments on its first
+    /// play. The remaining shared definition keeps pictures, linked audio and
+    /// effects. Exact node identities come from `first_play_attachment_nodes`;
+    /// logical mark identities are moved, never duplicated.
+    KeepFirstPlayAttachments {
+        node: NodeId,
+        identities: OccurrenceIdentities,
+    },
     /// Convert a Repeat into an ordinary Sequence of independent plays,
     /// preserving every current picture, sample, timing, override and
     /// attachment. `timing` names a materialized default gap's captured clock.
@@ -1354,6 +1362,9 @@ fn apply_with_durations(
         Command::EditScopedMany { edits, identities } => {
             crate::scoped_edit::apply_many(input, edits, identities, context)?
         }
+        Command::KeepFirstPlayAttachments { node, identities } => {
+            crate::beat_attachments::apply(input, node, identities, context)?
+        }
         Command::Explode {
             node,
             identities,
@@ -1900,6 +1911,7 @@ pub(crate) fn reduce(
         }
         Command::EditOccurrence { .. }
         | Command::EditScoped { .. }
+        | Command::KeepFirstPlayAttachments { .. }
         | Command::EditScopedMany { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -3187,6 +3199,7 @@ fn description(command: &Command) -> &'static str {
         Command::EditOccurrence { .. } => "Edit selected occurrence",
         Command::EditScoped { .. } => "Edit scoped value",
         Command::EditScopedMany { .. } => "Edit scoped value in several plays",
+        Command::KeepFirstPlayAttachments { .. } => "Keep beat attachments on first play",
         Command::Explode { .. } => "Explode repeat",
         Command::Duplicate { .. } => "Duplicate",
     }

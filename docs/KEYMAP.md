@@ -74,6 +74,7 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `structure.explode`, `structure.duplicate` | `:explode` turns the selected Repeat into an ordinary group of its plays; `:duplicate` copies the Visual range, or else the selected beat, after itself. Command aliases only, no shipped key path or count; both are recordable and dot-repeatable |
 | `visual`, `copy` | Select time; immediate Original or Visual copy |
 | `object.inner_group`, `object.around_group` | `ig` / `ag`: Visual group contents / whole group; also compose after `y`, `d`, `r` |
+| `object.inner_beat`, `object.around_beat` | `ib` / `ab`: same beat picture range, excluding / including owned captions, cutaways, sounds and marks; also compose after `y`, `d`, `r`. Inner Repeat keeps captions, cutaways and marks on play 1; beat-owned sounds currently prevent either Repeat form |
 | `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit |
 | `paste.after`, `paste.before` | Paste, or replace a captured Time range or group Object |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
@@ -136,7 +137,9 @@ rectangle fields and Place slice counts, unshifted `&é"(` name no key there,
 and a non-Latin letter acts at its position (Russian `л` on L nudges Trim).
 Gain and room tone route only Enter, Space and Escape, which carry no layout
 character, so they need no translation. Corrections, the YouTube URL step and
-the Marks modal still match the delivered key.
+the Marks modal use the same companion-text normalization. Opening a correction
+word field consumes the command's own text companion while preserving later
+text in the batch. Text fields and composition retain native input.
 
 Egui uses `Quote` for both apostrophe and double quote. In logical mode the
 companion text decides; without it, and in physical mode, Quote preserves Shift:

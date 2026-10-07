@@ -113,11 +113,32 @@ against the surrounding revision and ordinary navigation scope. Historical
 media admission still recaptures stored slices. No schema migration is provided
 for the earlier development-only Visual envelope.
 
-## Remaining objects
+## Beat objects
 
-`ib` and `ab` require an additional attachment distinction. Current inline beat
-effects remain part of the beat in either case; marks are owned boundaries,
-and current sounds belong to the independent root bus. Full `ab` support needs
-the specified beat-owned temporal attachment model and its editing lifecycle.
-Root sounds must never be collected solely because their time overlaps a beat.
-Analysis-based objects and occurrence editing also remain required.
+`ib` and `ab` resolve one explicitly selected direct beat, or the beat at the
+cursor when none is selected. At a seam the right-hand positive-duration beat
+wins; at scope end the final positive-duration beat wins. Empty children require
+explicit selection. Both objects have the same primary-picture bounds.
+
+`ab` carries the subtree's captions, cutaways, beat-owned sounds with their
+retained clocks, and owned marks. `ib` carries the same structure, linked audio
+and effects without those attachments. Root sound events remain independent.
+`SliceAttachments` is part of the immutable capture and store recapture proof.
+Cutting either object removes the host and its attachments; only its register
+contents differ. Paste and Visual replacement retain that captured choice.
+
+`rab` repeats the attached definition. `rib` retains captions, cutaways and marks
+on the first play by isolating the complete body once. Later plays share the
+attachment-free definition. Nested play and gap overrides travel with that body;
+logical mark identities and outside fragments survive, and unresolved marks
+remain unresolved. Repeat wrapping and attachment isolation form one Compound
+transaction and one Undo. One-play Repeat needs no isolation.
+
+Both Repeat forms still refuse beat-owned sounds: repeating or isolating their
+saved processing clocks needs a separate temporal transform. Capture, cut and
+paste already preserve or exclude those sound recipes and clocks. The complete
+beat-sound Repeat lifecycle remains required.
+
+Native Visual selection, operator grammar, macros and dot retain the unresolved
+object kind. The `groups` replay covers `yib`/`yab`, `vib`, counted `rib`, dot on
+another beat and macro replay with `ab` at a new location.

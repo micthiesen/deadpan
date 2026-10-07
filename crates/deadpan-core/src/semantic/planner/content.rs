@@ -57,7 +57,12 @@ where
         let slice = if cut {
             self.cut(register, &target)?
         } else {
-            self.capture(register, &target.parent, selection.clone())?
+            self.capture(
+                register,
+                &target.parent,
+                selection.clone(),
+                target.attachments,
+            )?
         };
         let trace = &mut self.trace[trace_index];
         trace.resolved_parent = Some(target.parent.clone());
@@ -79,6 +84,7 @@ where
         register: RegisterName,
         parent: &NodeId,
         selection: SliceCaptureSelection,
+        attachments: crate::SliceAttachments,
     ) -> Result<Arc<CapturedEditSlice>, EditError> {
         self.charge_step(true)?;
         let SemanticAllocation::Yank { capture_revision } =
@@ -89,10 +95,11 @@ where
             return Err(invalid("macro yank requires a Yank allocation"));
         };
         self.reserve_revision(&capture_revision)?;
-        let slice = Arc::new(CapturedEditSlice::capture_selection(
+        let slice = Arc::new(CapturedEditSlice::capture_selection_with(
             &self.current,
             parent,
             &selection,
+            attachments,
             AudioTimingId {
                 allocation: capture_revision,
                 ordinal: 0,

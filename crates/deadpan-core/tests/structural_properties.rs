@@ -285,6 +285,16 @@ enum Op {
         first: u8,
         count: u8,
     },
+    /// Caption a root Source or Hold: an owned temporal attachment.
+    Caption {
+        pick: u16,
+        len: u8,
+    },
+    /// Paste a whole root child captured as `ib`: without its attachments.
+    PasteBeatContent {
+        pick: u16,
+        dest: u16,
+    },
 }
 
 fn operation() -> impl Strategy<Value = Op> {
@@ -321,6 +331,8 @@ fn operation() -> impl Strategy<Value = Op> {
         1 => (p(), p()).prop_map(|(start, len)| Op::DuplicateRange { start, len }),
         1 => (p(), any::<u8>(), 1_u8..=3)
             .prop_map(|(pick, first, count)| Op::ScopedRenameMany { pick, first, count }),
+        2 => (p(), 1_u8..=8).prop_map(|(pick, len)| Op::Caption { pick, len }),
+        2 => (p(), p()).prop_map(|(pick, dest)| Op::PasteBeatContent { pick, dest }),
     ]
 }
 
@@ -338,6 +350,7 @@ fn time_neutral(op: &Op) -> bool {
             | Op::SetMark { .. }
             | Op::Explode { .. }
             | Op::ScopedRenameMany { .. }
+            | Op::Caption { .. }
     )
 }
 
@@ -351,6 +364,7 @@ fn lossless(op: &Op) -> bool {
                 | Op::PasteChild { .. }
                 | Op::DuplicateChild { .. }
                 | Op::DuplicateRange { .. }
+                | Op::PasteBeatContent { .. }
         )
 }
 
@@ -622,6 +636,43 @@ impl Runner {
             Op::Paste { start, len, dest } => {
                 let range = self.range(*start, *len)?;
                 let slice = self.capture(SliceCaptureSelection::Range { range })?;
+                let delta = slice.duration().frames();
+                let at = i64::from(*dest) % (self.total() + 1);
+                self.placement(at, slice, timing)?.with(delta)
+            }
+            Op::Caption { pick: p, len } => {
+                let node = pick(
+                    &self.kind_children(|kind| {
+                        matches!(kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
+                    }),
+                    *p,
+                )?;
+                let end = i64::from(*len).min(self.duration_of(&node));
+                Command::SetCaptions {
+                    node,
+                    captions: vec![Caption {
+                        range: FrameRange::new(ProjectFrame(0), ProjectFrame(end)).ok()?,
+                        text: format!("Caption {revision}"),
+                        placement: CaptionPlacement::Bottom,
+                        reveal: None,
+                    }],
+                }
+                .with(0)
+            }
+            Op::PasteBeatContent { pick: p, dest } => {
+                let node = pick(&self.children(), *p)?;
+                let slice = CapturedEditSlice::capture_selection_with(
+                    &self.document,
+                    self.document.root(),
+                    &SliceCaptureSelection::Child { node },
+                    SliceAttachments::Excluded,
+                    AudioTimingId {
+                        allocation: rev("scratch-capture"),
+                        ordinal: 0,
+                    },
+                )
+                .ok()?;
+                slice.validate_capture(&self.document).ok()?;
                 let delta = slice.duration().frames();
                 let at = i64::from(*dest) % (self.total() + 1);
                 self.placement(at, slice, timing)?.with(delta)
@@ -1160,6 +1211,23 @@ fn check(
             }
         }
     }
+    if matches!(op, Op::PasteBeatContent { .. }) {
+        // An `ib` paste adds structure but no owned temporal attachment.
+        let captioned = |document: &ProjectDocument| {
+            document
+                .nodes()
+                .values()
+                .filter(|node| !node.captions.is_empty() || !node.cutaways.is_empty())
+                .count()
+        };
+        prop_assert!(
+            captioned(after) <= captioned(before),
+            "{:?}: an ib paste added captions or cutaways",
+            op
+        );
+        prop_assert_eq!(after.marks().len(), before.marks().len());
+        prop_assert_eq!(after.beat_sounds().len(), before.beat_sounds().len());
+    }
     if time_neutral(op) {
         let old = clocks(before);
         let new = clocks(after);
@@ -1348,6 +1416,8 @@ fn generated_sequences_commit_every_command_family() {
         "DuplicateChild",
         "DuplicateRange",
         "ScopedRenameMany",
+        "Caption",
+        "PasteBeatContent",
     ];
     let missing: Vec<_> = expected
         .iter()

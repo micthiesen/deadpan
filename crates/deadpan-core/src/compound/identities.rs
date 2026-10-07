@@ -167,7 +167,9 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
                 marks.extend(&pool.marks);
             }
         }
-        Command::EditScoped { identities, .. } | Command::Explode { identities, .. } => {
+        Command::EditScoped { identities, .. }
+        | Command::KeepFirstPlayAttachments { identities, .. }
+        | Command::Explode { identities, .. } => {
             nodes.extend(&identities.nodes);
             marks.extend(&identities.marks);
         }

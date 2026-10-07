@@ -757,7 +757,23 @@ fn correction_composition(d: &mut Driver<'_>) -> Result<(), String> {
         d.events("Select the second word", plain(key))?;
         d.settled()?;
     }
-    d.events("Edit the word text", plain(Key::C))?;
+    // An unnamed Latin character at C must not open the editor. A real c
+    // arrives with companion text, which opens the field without inserting c.
+    d.events(
+        "A Latin fallback at C cannot become a Corrections command",
+        events(press(Key::C, Key::C, Modifiers::NONE, "ç")),
+    )?;
+    d.settled()?;
+    d.check(
+        "Corrections reads the produced character before selecting an action",
+        focused_text(d).is_none(),
+        json!(null),
+        json!(focused_text(d)),
+    )?;
+    d.events(
+        "Edit the word with its native text companion",
+        Layout::Azerty.events("c"),
+    )?;
     d.settled()?;
     d.check(
         "c opens the selected word's text field with focus",

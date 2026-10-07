@@ -3691,6 +3691,8 @@ impl DeadpanApp {
                             }
                             if pauses { self.add_editor_hint(&mut hints, EditorKey::InnerPause, "pause"); }
                             if shots { self.add_editor_hint(&mut hints, EditorKey::InnerShot, "shot"); }
+                            self.add_editor_hint(&mut hints, EditorKey::InnerBeat, "beat contents");
+                            self.add_editor_hint(&mut hints, EditorKey::AroundBeat, "beat + attachments");
                             self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
                             self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
                         }

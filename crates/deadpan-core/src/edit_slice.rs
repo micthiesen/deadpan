@@ -44,6 +44,25 @@ pub enum SliceCaptureSelection {
     Children { first: NodeId, last: NodeId },
 }
 
+/// Which owned temporal attachments a whole-beat capture takes. `Owned` (the
+/// `ab` object and every earlier capture) keeps the selected subtree's
+/// captions, cutaways, beat-owned sounds with their retained clocks, and owned
+/// marks. `Excluded` (the `ib` object) takes the same pictures, linked audio,
+/// structure and effects (framing, gain treatments, edges) without them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SliceAttachments {
+    #[default]
+    Owned,
+    Excluded,
+}
+
+impl SliceAttachments {
+    pub fn is_owned(&self) -> bool {
+        *self == Self::Owned
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct SlicePart {
@@ -69,6 +88,9 @@ struct SliceWire {
         deserialize_with = "read_selection"
     )]
     selection: Option<SliceCaptureSelection>,
+    /// Absent for every capture that keeps its owned attachments.
+    #[serde(default, skip_serializing_if = "SliceAttachments::is_owned")]
+    attachments: SliceAttachments,
     source_duration: FrameDuration,
     parts: Vec<SlicePart>,
     #[serde(deserialize_with = "crate::audio_gain::node_map")]
@@ -232,7 +254,41 @@ impl CapturedEditSlice {
         selection: &SliceCaptureSelection,
         timing: AudioTimingId,
     ) -> Result<Self, EditError> {
+        Self::capture_selection_with(document, parent, selection, SliceAttachments::Owned, timing)
+    }
+
+    /// [`Self::capture_selection`] with an explicit attachment choice.
+    /// Excluding attachments requires one whole direct child (`ib`): its
+    /// subtree's captions, cutaways, beat-owned sounds and their retained
+    /// clocks, and the marks it owns are left out of the copy. The source
+    /// document is unchanged; only a private view is stripped.
+    pub fn capture_selection_with(
+        document: &ProjectDocument,
+        parent: &NodeId,
+        selection: &SliceCaptureSelection,
+        attachments: SliceAttachments,
+        timing: AudioTimingId,
+    ) -> Result<Self, EditError> {
         document.validate()?;
+        let stripped;
+        let document = match (attachments, selection) {
+            (SliceAttachments::Owned, _) => document,
+            (SliceAttachments::Excluded, SliceCaptureSelection::Child { node }) => {
+                if !document.children(parent).any(|child| child == node) {
+                    return Err(EditError::new(
+                        EditErrorCode::SelectionUnavailable,
+                        "capture target is not a direct child of its named Sequence",
+                    ));
+                }
+                stripped = without_attachments(document, node)?;
+                &stripped
+            }
+            (SliceAttachments::Excluded, _) => {
+                return Err(invalid(
+                    "only one whole beat can be captured without its attachments",
+                ));
+            }
+        };
         if let SliceCaptureSelection::Range { range } = selection {
             crate::insert_time::sequence_range::preflight_capture(document, parent, *range)?;
         }
@@ -310,7 +366,11 @@ impl CapturedEditSlice {
             }
             offset = end;
         }
-        let marks = crate::marks::capture_slice_mark_bindings(document, &parts, &selected)?;
+        let marks = if attachments.is_owned() {
+            crate::marks::capture_slice_mark_bindings(document, &parts, &selected)?
+        } else {
+            BTreeMap::new()
+        };
         let state = if range.duration() == FrameDuration::ZERO {
             // A validated zero-duration owned tree can contain only Sequences.
             // Prove this rather than discarding a physical owner's clock.
@@ -373,6 +433,7 @@ impl CapturedEditSlice {
             parent: parent.clone(),
             range,
             selection: Some(selection.clone()),
+            attachments,
             source_duration: document.duration()?,
             parts,
             nodes,
@@ -427,10 +488,11 @@ impl CapturedEditSlice {
                 "slice capture source is a different revision",
             ));
         }
-        let captured = Self::capture_selection(
+        let captured = Self::capture_selection_with(
             source,
             &self.0.parent,
             self.selection(),
+            self.0.attachments,
             self.0.capture_timing.clone(),
         )?;
         if captured != *self {
@@ -463,6 +525,10 @@ impl CapturedEditSlice {
             .selection
             .as_ref()
             .expect("normalized slice selector")
+    }
+    /// Whether this copy carries its owned temporal attachments (`ab`).
+    pub fn attachments(&self) -> SliceAttachments {
+        self.0.attachments
     }
     /// A readable outline of the captured structure for inspection before
     /// reuse: each part's root with its kind, label and length, and the
@@ -509,6 +575,9 @@ impl CapturedEditSlice {
             format!("“{}” · {kind}{extras}", node.label)
         };
         let mut lines = Vec::new();
+        if !self.0.attachments.is_owned() {
+            lines.push("beat contents without captions, cutaways, sounds or marks".into());
+        }
         for part in &self.0.parts {
             lines.push(format!(
                 "{} · {} f in the copy",
@@ -693,6 +762,21 @@ impl CapturedEditSlice {
         if boundary != value.range.end().0 {
             return Err(invalid("slice windows do not cover its range"));
         }
+        if !value.attachments.is_owned() {
+            let bare = matches!(self.selection(), SliceCaptureSelection::Child { .. })
+                && value.marks.is_empty()
+                && value.beat_sounds.is_empty()
+                && value.audio_bindings.sound_clocks.is_empty()
+                && value
+                    .nodes
+                    .values()
+                    .all(|node| node.captions.is_empty() && node.cutaways.is_empty());
+            if !bare {
+                return Err(invalid(
+                    "a capture without attachments must be one whole beat with none of them",
+                ));
+            }
+        }
         crate::marks::validate_slice_marks(&context, &value.marks, value.source_duration)?;
         self.identity_requirements()?;
         Ok(())
@@ -806,6 +890,31 @@ fn capture_audio(
         .collect();
     state.timings.retain(|id, _| retained.contains(id));
     Ok(state)
+}
+
+/// A private view of `document` in which `beat`'s subtree carries no owned
+/// temporal attachments: captions, cutaways, beat-owned sounds and their
+/// retained clocks. Marks are excluded by the caller. Effects, structure,
+/// physical audio bindings and the independent root bus are unchanged.
+fn without_attachments(
+    document: &ProjectDocument,
+    beat: &NodeId,
+) -> Result<ProjectDocument, EditError> {
+    let subtree = crate::occurrence_edit::subtree_order(document, beat)?;
+    let mut stripped = document.clone();
+    for id in &subtree {
+        let node = stripped
+            .nodes
+            .get_mut(id)
+            .expect("subtree order names authored nodes");
+        node.captions.clear();
+        node.cutaways.clear();
+        stripped.beat_sounds.remove(id);
+        stripped.audio_bindings.sound_clocks.remove(id);
+    }
+    crate::audio_binding_lifecycle::prune(&mut stripped);
+    stripped.validate()?;
+    Ok(stripped)
 }
 
 struct SliceJson(Vec<u8>, bool);

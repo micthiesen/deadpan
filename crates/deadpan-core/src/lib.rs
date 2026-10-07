@@ -21,6 +21,7 @@ mod audio_lineage;
 mod audio_mapping;
 mod audio_reference;
 mod basis;
+mod beat_attachments;
 mod caption;
 mod command;
 mod command_work;
@@ -101,8 +102,8 @@ pub use cutaway::*;
 pub use document::*;
 pub use duplicate::DuplicateRequirements;
 pub use edit_slice::{
-    CapturedEditSlice, SequenceChildrenPlan, SliceCaptureSelection, SliceIdentityRequirements,
-    SlicePasteIdentities,
+    CapturedEditSlice, SequenceChildrenPlan, SliceAttachments, SliceCaptureSelection,
+    SliceIdentityRequirements, SlicePasteIdentities,
 };
 pub use exact::ExactRatio;
 pub use explode::ExplodeRequirements;

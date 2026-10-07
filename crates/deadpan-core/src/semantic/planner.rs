@@ -20,6 +20,7 @@ use crate::{
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 
+mod beat_object;
 mod content;
 mod gag_edit;
 mod group;
@@ -142,6 +143,13 @@ pub enum SemanticAllocationRequest {
         nodes: usize,
         marks: usize,
     },
+    /// Fresh identities for `rib` keeping a beat's attachments on its first
+    /// play. Logical marks move without allocating replacement identities.
+    Isolation {
+        step_index: usize,
+        nodes: usize,
+        marks: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -203,6 +211,10 @@ pub enum SemanticAllocation {
         id: NodeId,
     },
     Explode {
+        new_revision: RevisionId,
+        identities: crate::OccurrenceIdentities,
+    },
+    Isolation {
         new_revision: RevisionId,
         identities: crate::OccurrenceIdentities,
     },
@@ -954,10 +966,11 @@ where
                 return Err(identity("macro reuses a Split node identity"));
             }
         }
-        let slice = Arc::new(CapturedEditSlice::capture_selection(
+        let slice = Arc::new(CapturedEditSlice::capture_selection_with(
             &self.current,
             parent,
             selection,
+            target.attachments,
             AudioTimingId {
                 allocation: capture_revision,
                 ordinal: 0,

@@ -279,9 +279,13 @@ or Object selection. `:splice`, then `r`, previews the same exact Object
 replacement with Original or Edited content. Cancel restores the captured
 Object state. A successful inside `ag` edit continues in its outer Sequence;
 outside `ig` keeps the surviving group selected, while inside `ig` stays inside.
-A prepared receipt carries that continuation before commit. These object
-operations do not add beat-owned temporal attachment semantics; `ib`/`ab` remain
-required. See [qualification](qualification/group-objects-2026-10-03.md).
+A prepared receipt carries that continuation before commit. Beat objects use
+the same path: `ib` stores `SliceAttachments::Excluded`, while `ab` includes
+owned captions, cutaways, sounds with retained clocks and marks. Store admission
+recaptures that exact choice from the immutable revision. Both objects remove
+the same host on cut and paste the same picture duration. See
+[beat ownership](STRUCTURAL_SELECTIONS.md#beat-objects) and the earlier
+[group qualification](qualification/group-objects-2026-10-03.md).
 
 ### Placement and historical previews
 
@@ -324,9 +328,10 @@ ordinary Sequence scopes, preserving whole-unit identities. Native `:splice`
 provides explicit Move selection and local removal/insertion picture comparison
 and audition. Historical copies remain copyable but cannot authorize removal
 from a newer revision. See [native qualification](qualification/native-move-2026-09-30.md).
-Role-only placement, beat objects `ib`/`ab` with their temporal attachment
-lifecycle, analysis-dependent objects/motions and nested occurrence interiors
-remain required. Group `ig`/`ag` does not complete those selectors.
+Role-only placement, beat-sound Repeat and remaining temporal transforms,
+and nested occurrence interiors remain required. Beat-object copy, cut and
+paste preserve their explicit attachment choice; they do not establish those
+remaining sound transforms.
 These workflows remain open beyond the capture and placement commands described
 above. Native media, interaction and performance evidence is recorded separately
 from the core timing proofs.

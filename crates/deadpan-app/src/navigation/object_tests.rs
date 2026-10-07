@@ -6,8 +6,13 @@ fn key(bindings: &mut Bindings, key: Key, selection: EditSelection) -> Option<Ac
 }
 
 #[test]
-fn group_objects_compose_with_operators_and_visual_selection() {
-    for (prefix, object) in [(Key::I, Object::InnerGroup), (Key::A, Object::AroundGroup)] {
+fn structural_objects_compose_with_operators_and_visual_selection() {
+    for (prefix, terminal, object) in [
+        (Key::I, Key::G, Object::InnerGroup),
+        (Key::A, Key::G, Object::AroundGroup),
+        (Key::I, Key::B, Object::InnerBeat),
+        (Key::A, Key::B, Object::AroundBeat),
+    ] {
         for operator in [Key::D, Key::Y, Key::R] {
             let mut bindings = Bindings::default();
             assert_eq!(
@@ -18,7 +23,7 @@ fn group_objects_compose_with_operators_and_visual_selection() {
             assert!(bindings.pending_hint().unwrap().contains("group"));
             let selector = Selector::TextObject { object };
             assert_eq!(
-                key(&mut bindings, Key::G, EditSelection::None),
+                key(&mut bindings, terminal, EditSelection::None),
                 Some(if operator == Key::R {
                     Action::Repeat {
                         selector,
@@ -40,7 +45,7 @@ fn group_objects_compose_with_operators_and_visual_selection() {
             let mut bindings = Bindings::default();
             assert_eq!(key(&mut bindings, prefix, selection), None);
             assert_eq!(
-                key(&mut bindings, Key::G, selection),
+                key(&mut bindings, terminal, selection),
                 Some(Action::SelectObject(object))
             );
         }
@@ -119,5 +124,58 @@ fn native_text_and_composition_cancel_pending_object_paths() {
             );
             assert!(bindings.pending().is_empty());
         }
+    }
+}
+
+#[test]
+fn beat_repeat_counts_and_remapping_retain_the_attachment_choice() {
+    for (prefix, object) in [(Key::I, Object::InnerBeat), (Key::A, Object::AroundBeat)] {
+        for operator in [Key::Y, Key::D, Key::R] {
+            let mut bindings = Bindings::default();
+            for stroke in [Key::Num3, operator, prefix] {
+                key(&mut bindings, stroke, EditSelection::None);
+            }
+            let action = key(&mut bindings, Key::B, EditSelection::None);
+            if operator == Key::R {
+                assert_eq!(
+                    action,
+                    Some(Action::Repeat {
+                        selector: Selector::TextObject { object },
+                        plays: std::num::NonZeroU32::new(3).unwrap(),
+                    })
+                );
+            } else {
+                assert!(matches!(action, Some(Action::Invalid(_))));
+            }
+            let mut conflicting = Bindings::default();
+            for stroke in [Key::Num3, Key::R, Key::Num2, prefix] {
+                key(&mut conflicting, stroke, EditSelection::None);
+            }
+            assert!(matches!(
+                key(&mut conflicting, Key::B, EditSelection::None),
+                Some(Action::Invalid(_))
+            ));
+        }
+    }
+    let mut bindings = Bindings::from_json(br#"{"version":1,"key_mode":"logical","bindings":[{"action":"object.inner_beat","keys":[["F7","F8"]]}]}"#).unwrap();
+    assert_eq!(bindings.key_label(BindingId::InnerBeat), "F7 F8");
+    for selection in [EditSelection::None, EditSelection::Object] {
+        if selection == EditSelection::None {
+            key(&mut bindings, Key::Y, selection);
+        }
+        assert_eq!(key(&mut bindings, Key::F7, selection), None);
+        assert_eq!(
+            key(&mut bindings, Key::F8, selection),
+            Some(if selection == EditSelection::None {
+                Action::Operator {
+                    cut: false,
+                    selector: Selector::TextObject {
+                        object: Object::InnerBeat,
+                    },
+                }
+            } else {
+                Action::SelectObject(Object::InnerBeat)
+            })
+        );
     }
 }

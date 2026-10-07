@@ -120,7 +120,7 @@ impl DeadpanApp {
                     if ui.add_enabled(enabled, style::action("Previous seam", "k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
                     if ui.add_enabled(enabled, style::action("Next seam", "j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
                 } else if draft.replacing && let Some(range) = draft.replacement {
-                    ui.label(format!("Fixed {} [{}..{})", if draft.replacement_object.is_some() { "group object" } else { "Edit" }, range.start().0, range.end().0));
+                    ui.label(format!("Fixed {} [{}..{})", draft.replacement_object.as_ref().map_or("Edit", |selection| selection.kind.noun()), range.start().0, range.end().0));
                 }
             });
             ui.horizontal_wrapped(|ui| {
@@ -221,10 +221,7 @@ impl Footer {
                     .map_or("Group", |node| node.label.as_str());
                 format!("{} / {label}", draft.scope_label)
             };
-            let kind = match selection.kind {
-                deadpan_core::SemanticTextObject::InnerGroup => "group contents",
-                deadpan_core::SemanticTextObject::AroundGroup => "whole group",
-            };
+            let kind = selection.kind.noun();
             format!(
                 "Replace {kind}: {path} · Edit [{}..{})",
                 range.start().0,

@@ -81,6 +81,8 @@ pub enum BindingId {
     Visual,
     InnerGroup,
     AroundGroup,
+    InnerBeat,
+    AroundBeat,
     InnerWord,
     AroundWord,
     InnerSentence,
@@ -136,7 +138,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 81] = [
+    pub const ALL: [Self; 83] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -166,6 +168,8 @@ impl BindingId {
         Self::Visual,
         Self::InnerGroup,
         Self::AroundGroup,
+        Self::InnerBeat,
+        Self::AroundBeat,
         Self::InnerWord,
         Self::AroundWord,
         Self::InnerSentence,
@@ -250,6 +254,8 @@ impl BindingId {
             Self::Visual => "visual",
             Self::InnerGroup => "object.inner_group",
             Self::AroundGroup => "object.around_group",
+            Self::InnerBeat => "object.inner_beat",
+            Self::AroundBeat => "object.around_beat",
             Self::InnerWord => "object.inner_word",
             Self::AroundWord => "object.around_word",
             Self::InnerSentence => "object.inner_sentence",
@@ -451,7 +457,7 @@ impl Rule {
                 let selector = match selector {
                     S::TextObject { .. } if count.is_some_and(|count| count > 1) => {
                         return Action::Invalid(
-                            "A group object selects one group; larger counts are not supported.",
+                            "A group or beat object selects one; larger counts are not supported.",
                         );
                     }
                     S::Speech { .. } if count.is_some_and(|count| count > 1) => {
@@ -681,6 +687,8 @@ impl Rule {
             Action::VisualMoment => I::Visual,
             Action::SelectObject(deadpan_core::SemanticTextObject::InnerGroup) => I::InnerGroup,
             Action::SelectObject(deadpan_core::SemanticTextObject::AroundGroup) => I::AroundGroup,
+            Action::SelectObject(deadpan_core::SemanticTextObject::InnerBeat) => I::InnerBeat,
+            Action::SelectObject(deadpan_core::SemanticTextObject::AroundBeat) => I::AroundBeat,
             Action::CopyMoment => I::Copy,
             Action::PasteMoment { before: false } => I::PasteAfter,
             Action::PasteMoment { before: true } => I::PasteBefore,
@@ -1243,6 +1251,12 @@ fn repeat_description(
         S::TextObject {
             object: deadpan_core::SemanticTextObject::AroundGroup,
         } => "the whole group".into(),
+        S::TextObject {
+            object: deadpan_core::SemanticTextObject::InnerBeat,
+        } => "the beat, attachments on play 1".into(),
+        S::TextObject {
+            object: deadpan_core::SemanticTextObject::AroundBeat,
+        } => "the beat with its attachments".into(),
         S::Motion {
             motion: M::Scope { end },
         } => if end {
@@ -1316,6 +1330,8 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
         id,
         BindingId::InnerGroup
             | BindingId::AroundGroup
+            | BindingId::InnerBeat
+            | BindingId::AroundBeat
             | BindingId::InnerWord
             | BindingId::AroundWord
             | BindingId::InnerSentence
@@ -1493,6 +1509,22 @@ fn compile_mode(
                                                     false,
                                                     deadpan_core::SemanticTextObject::AroundGroup,
                                                 ) => "copies the whole group",
+                                                (
+                                                    true,
+                                                    deadpan_core::SemanticTextObject::InnerBeat,
+                                                ) => "cuts the beat, copying no attachments",
+                                                (
+                                                    false,
+                                                    deadpan_core::SemanticTextObject::InnerBeat,
+                                                ) => "copies the beat without attachments",
+                                                (
+                                                    true,
+                                                    deadpan_core::SemanticTextObject::AroundBeat,
+                                                ) => "cuts the beat with its attachments",
+                                                (
+                                                    false,
+                                                    deadpan_core::SemanticTextObject::AroundBeat,
+                                                ) => "copies the beat with its attachments",
                                             },
                                             deadpan_core::SemanticSelector::Speech { object } => {
                                                 speech_operator_description(cut, object)
@@ -1758,6 +1790,26 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             &[plain(key), plain(Key::G)],
             Action::SelectObject(object),
             C::Refuse("Select one group object without a count."),
+            short,
+            false,
+        );
+    }
+    for (key, object, short) in [
+        (
+            Key::I,
+            deadpan_core::SemanticTextObject::InnerBeat,
+            "selects the beat without its attachments",
+        ),
+        (
+            Key::A,
+            deadpan_core::SemanticTextObject::AroundBeat,
+            "selects the beat with its attachments",
+        ),
+    ] {
+        add(
+            &[plain(key), plain(Key::B)],
+            Action::SelectObject(object),
+            C::Refuse("Select one beat object without a count."),
             short,
             false,
         );

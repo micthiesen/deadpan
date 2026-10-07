@@ -105,6 +105,12 @@ where
         self.charge_step(false)?;
         let target = self.resolve_selector(selector)?;
         let selection = target.selection()?.clone();
+        // `rib` repeats only the beat's content; its attachments stay with the
+        // first play. Refuse unsupported owners before authoring anything.
+        let first_play_only = !target.attachments.is_owned();
+        if first_play_only && let SliceCaptureSelection::Child { node } = &selection {
+            self.check_first_play_attachments(node)?;
+        }
         let plan = self
             .current
             .repeat_selection(&target.parent, &selection, plays)?;
@@ -159,6 +165,9 @@ where
         )?;
         self.current = next;
         self.steps.push(ResolvedStep::Edit { edit });
+        if first_play_only {
+            self.keep_attachments_on_first_play(&selected)?;
+        }
         if let Some(escalation) = escalation {
             self.charge_step(false)?;
             let SemanticAllocation::ParameterEdit { new_revision } =

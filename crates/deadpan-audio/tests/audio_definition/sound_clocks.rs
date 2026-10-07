@@ -852,3 +852,70 @@ fn retained_sound_and_current_bus_share_the_pcm_residency_cap() {
         32
     );
 }
+
+/// `yab` then `p` carries a beat's own sound with its retained clock: at the
+/// same 30000/1001 sample phase the pasted copy renders bit-identical decoded
+/// PCM. `yib` then `p` pastes the same picture time without the sound, so the
+/// copy (a picture-only Original) is exact digital silence. The original
+/// occurrence is unchanged by either paste.
+#[test]
+fn beat_object_copies_carry_the_beat_sound_only_with_its_attachments() {
+    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
+    // Pad so the copy starts at frame 12: 10 frames after the owner's frame 2,
+    // which is an exact multiple of 8008 samples on the NTSC grid.
+    wire["nodes"]["pad"] = serde_json::to_value(hold(4, HoldAudio::Silence)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "owner", "tail", "pad"]);
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let render = |document: &ProjectDocument, start: i64, end: i64| {
+        let mut renderer = StageAudio::new(compile(document, false));
+        let mut provider = ClockProvider::new(document);
+        let mut output = Vec::new();
+        let mut cursor = start;
+        while cursor < end {
+            let count = u32::try_from((end - cursor).min(1024)).unwrap();
+            output.extend(bus(&mut renderer, &mut provider, cursor, count).samples);
+            cursor += i64::from(count);
+        }
+        output
+    };
+    let (owner_start, owner_end) = (frame_sample_boundary(2), frame_sample_boundary(6));
+    let (copy_start, copy_end) = (frame_sample_boundary(12), frame_sample_boundary(16));
+    assert_eq!(copy_start - owner_start, 16_016);
+    assert_eq!(copy_end - copy_start, owner_end - owner_start);
+    let original = render(&before, owner_start, owner_end);
+    assert!(original.iter().any(|sample| *sample != [0.0; 2]));
+
+    for attachments in [SliceAttachments::Owned, SliceAttachments::Excluded] {
+        let name = format!("{attachments:?}").to_lowercase();
+        let slice = CapturedEditSlice::capture_selection_with(
+            &before,
+            &id("root"),
+            &SliceCaptureSelection::Child { node: id("owner") },
+            attachments,
+            AudioTimingId {
+                allocation: RevisionId::new(format!("capture-{name}")).unwrap(),
+                ordinal: 0,
+            },
+        )
+        .unwrap();
+        slice.validate_capture(&before).unwrap();
+        let pasted = paste_repeat_slice(&before, "root", 4, &slice, &format!("paste-{name}"));
+        assert_eq!(pasted.duration().unwrap().frames(), 16);
+        assert_eq!(render(&pasted, owner_start, owner_end), original);
+        let copy = render(&pasted, copy_start, copy_end);
+        assert_eq!(copy.len(), original.len());
+        match attachments {
+            SliceAttachments::Owned => {
+                assert_eq!(pasted.beat_sounds().len(), 2);
+                assert_eq!(copy, original, "the ab copy renders the same sound");
+            }
+            SliceAttachments::Excluded => {
+                assert_eq!(pasted.beat_sounds().len(), 1);
+                assert!(
+                    copy.iter().all(|sample| *sample == [0.0; 2]),
+                    "the ib copy has no sound of its own"
+                );
+            }
+        }
+    }
+}

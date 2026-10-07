@@ -5,6 +5,7 @@ use crate::{
 };
 use std::num::NonZeroU32;
 
+mod beat_objects;
 mod content;
 mod explode;
 mod gag_edit;
@@ -142,6 +143,21 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                     .collect(),
                 marks: (0..marks)
                     .map(|n| crate::MarkId::new(format!("explode-{step_index}-{n}")).unwrap())
+                    .collect(),
+            },
+        },
+        SemanticAllocationRequest::Isolation {
+            step_index,
+            nodes,
+            marks,
+        } => SemanticAllocation::Isolation {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: crate::OccurrenceIdentities {
+                nodes: (0..nodes)
+                    .map(|n| node(&format!("isolate-{step_index}-{n}")))
+                    .collect(),
+                marks: (0..marks)
+                    .map(|n| crate::MarkId::new(format!("isolate-{step_index}-{n}")).unwrap())
                     .collect(),
             },
         },

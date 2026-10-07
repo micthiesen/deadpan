@@ -408,11 +408,11 @@ fn all_reviewed_physical_reservations_outrank_different_logical_symbols() {
 
 #[test]
 fn complete_candidate_audit_enumerates_new_unannotated_branches() {
-    let map = configured(serde_json::json!([{"action":"frame.next","keys":[["a","b","c","h"]]}]));
+    let map = configured(serde_json::json!([{"action":"frame.next","keys":[["a","z","c","h"]]}]));
     let paths = map.map.prefix_paths();
     assert!(paths.contains(&vec![
         Stroke::Key(Key::A, false),
-        Stroke::Key(Key::B, false),
+        Stroke::Key(Key::Z, false),
         Stroke::Key(Key::C, false)
     ]));
     let report = crate::navigation::shortcut_audit::audit_bindings(&map).unwrap();

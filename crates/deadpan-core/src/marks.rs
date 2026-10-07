@@ -1007,6 +1007,29 @@ pub(crate) fn clone_occurrence_marks(
     before: &ProjectDocument,
     selected: &RepeatInstance,
     mapping: &BTreeMap<NodeId, NodeId>,
+    fresh_mark: impl FnMut() -> std::result::Result<MarkId, DocumentError>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    remap_occurrence_marks(before, selected, mapping, true, fresh_mark)
+}
+
+/// Unlike ordinary occurrence isolation, `ib` transfers local/source mark
+/// ownership to the first play. One logical identity keeps all its fragments,
+/// including fragments outside the selected subtree and unresolved intent.
+pub(crate) fn move_occurrence_marks(
+    before: &ProjectDocument,
+    selected: &RepeatInstance,
+    mapping: &BTreeMap<NodeId, NodeId>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    remap_occurrence_marks(before, selected, mapping, false, || {
+        unreachable!("moving a mark never allocates an identity")
+    })
+}
+
+fn remap_occurrence_marks(
+    before: &ProjectDocument,
+    selected: &RepeatInstance,
+    mapping: &BTreeMap<NodeId, NodeId>,
+    copy_owned: bool,
     mut fresh_mark: impl FnMut() -> std::result::Result<MarkId, DocumentError>,
 ) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
     if before.marks().is_empty() {
@@ -1015,16 +1038,19 @@ pub(crate) fn clone_occurrence_marks(
     let mut total_bindings = check_binding_limits(before.marks())?;
     let mut copies = 0_usize;
     for mark in before.marks().values() {
-        let owned = mark
-            .bindings()
-            .filter(|binding| {
-                mapping.contains_key(&binding.owner)
-                    && matches!(
-                        binding.coordinate,
-                        Anchor::Local { .. } | Anchor::Source { .. }
-                    )
-            })
-            .count();
+        let owned = if copy_owned {
+            mark.bindings()
+                .filter(|binding| {
+                    mapping.contains_key(&binding.owner)
+                        && matches!(
+                            binding.coordinate,
+                            Anchor::Local { .. } | Anchor::Source { .. }
+                        )
+                })
+                .count()
+        } else {
+            0
+        };
         copies += usize::from(owned > 0);
         total_bindings = total_bindings.checked_add(owned).ok_or_else(|| {
             DocumentError::new(
@@ -1083,7 +1109,6 @@ pub(crate) fn clone_occurrence_marks(
                     crate::occurrence_edit::remap_instance(instance, mapping);
                 }
             }
-            retained.push(binding);
             if matches!(
                 original_binding.coordinate,
                 Anchor::Local { .. } | Anchor::Source { .. }
@@ -1099,8 +1124,15 @@ pub(crate) fn clone_occurrence_marks(
                 {
                     *node = host.clone();
                 }
-                copied.push(copy);
+                if copy_owned {
+                    copied.push(copy);
+                } else {
+                    // Replace this binding in place. Other fragments retain
+                    // their exact host, bias, loss policy and unresolved state.
+                    binding = copy;
+                }
             }
+            retained.push(binding);
         }
         if let Some(mark) = original.with_bindings(retained) {
             output.insert(id.clone(), mark);

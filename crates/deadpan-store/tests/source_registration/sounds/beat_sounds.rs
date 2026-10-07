@@ -1,9 +1,11 @@
 use super::*;
 use deadpan_core::{
-    BeatSound, CapturedEditSlice, LeafEdit, OccurrenceIdentities, ResolvedStep,
-    ResolvedTransaction, SliceCaptureSelection, SlicePasteIdentities,
+    BeatSound, CapturedEditSlice, LeafEdit, OccurrenceIdentities, RegisterName, RegisterValue,
+    ResolvedStep, ResolvedTransaction, SliceAttachments, SliceCaptureSelection,
+    SlicePasteIdentities,
 };
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 #[path = "sound_clocks.rs"]
 mod sound_clocks;
@@ -441,5 +443,110 @@ fn historical_copy_restores_admitted_beat_sound_media_after_registration_undo() 
     assert_authored(&store.snapshot()?, &restored)?;
     drop(store);
     ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+    Ok(())
+}
+
+/// `dib` and `dab` on a beat that owns a sound: the store admits both cuts by
+/// recapturing the exact attachment choice at the immutable revision, removes
+/// the same content, and keeps the choice in the durable register across
+/// reopen. Pasting the `ib` copy adds no sound; the `ab` copy restores it.
+#[test]
+fn beat_object_cuts_keep_their_attachment_choice_in_durable_registers() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    store.register_source(
+        &request(&store, &original, "import", "camera", Some("clip"))?,
+        &decoded,
+        None,
+        limits(),
+        &active(),
+    )?;
+    let before = store.snapshot()?;
+    let owner = NodeId::new("clip")?;
+    store.commit(&edit(
+        &before,
+        "sound",
+        Command::SetBeatSound {
+            owner: owner.clone(),
+            id: SoundId::new("overlay")?,
+            event: event(&before)?,
+        },
+    ))?;
+    let sounded = store.snapshot()?;
+    let mut removed = Vec::new();
+    for (register, attachments) in [
+        ('i', SliceAttachments::Excluded),
+        ('a', SliceAttachments::Owned),
+    ] {
+        let current = store.snapshot()?;
+        // Re-add the sound for the second cut so both cuts see an owner.
+        let current = if current.beat_sounds().is_empty() {
+            store.undo(current.revision_id(), revision("restore-for-ab"))?;
+            store.snapshot()?
+        } else {
+            current
+        };
+        assert_eq!(current.beat_sounds().len(), 1);
+        let slice = CapturedEditSlice::capture_selection_with(
+            &current,
+            current.root(),
+            &SliceCaptureSelection::Child {
+                node: owner.clone(),
+            },
+            attachments,
+            AudioTimingId {
+                allocation: revision(&format!("capture-{register}")),
+                ordinal: 0,
+            },
+        )?;
+        let request = edit(
+            &current,
+            &format!("cut-{register}"),
+            Command::DeleteRipple {
+                node: owner.clone(),
+                timing: AudioTimingId {
+                    allocation: revision(&format!("cut-{register}")),
+                    ordinal: 0,
+                },
+            },
+        );
+        store.cut_to_register(
+            &request,
+            RegisterName::new(register)?,
+            Arc::new(slice),
+            None,
+        )?;
+        let after = store.snapshot()?;
+        assert!(after.beat_sounds().is_empty());
+        assert!(!after.nodes().contains_key(&owner));
+        removed.push(after);
+    }
+    // Both cuts removed the same authored content.
+    assert_eq!(removed[0].nodes(), removed[1].nodes());
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let bank = store.registers()?;
+    let slice = |register: char| -> Result<CapturedEditSlice> {
+        match bank.entries[&RegisterName::new(register)?].as_ref() {
+            RegisterValue::Edited { slice } => Ok(slice.as_ref().clone()),
+            _ => panic!("edited register expected"),
+        }
+    };
+    let (inner, around) = (slice('i')?, slice('a')?);
+    assert_eq!(inner.attachments(), SliceAttachments::Excluded);
+    assert_eq!(around.attachments(), SliceAttachments::Owned);
+    assert_eq!(inner.range(), around.range());
+    for (copy, sounds) in [(&inner, 0), (&around, 1)] {
+        let destination = store.snapshot()?;
+        let request = paste(&destination, copy, &format!("paste-{sounds}"))?;
+        store.commit(&request)?;
+        let pasted = store.snapshot()?;
+        assert_eq!(pasted.beat_sounds().len(), sounds);
+        store.undo(pasted.revision_id(), revision(&format!("unpaste-{sounds}")))?;
+    }
+    assert_eq!(sounded.beat_sounds().len(), 1);
+    store.validate()?;
     Ok(())
 }

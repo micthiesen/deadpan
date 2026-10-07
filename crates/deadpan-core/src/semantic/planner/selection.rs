@@ -1,11 +1,14 @@
 //! Visual ownership, exact selector targets and motions on the staged scope.
 
 use super::*;
+use crate::SliceAttachments;
 
 pub(super) struct ResolvedTarget {
     pub parent: NodeId,
     pub selection: Option<SliceCaptureSelection>,
     pub range: FrameRange,
+    /// Only the `ib` object leaves owned temporal attachments out of a copy.
+    pub attachments: SliceAttachments,
     navigation_parent: NodeId,
     retained_group: Option<NodeId>,
 }
@@ -20,6 +23,7 @@ impl ResolvedTarget {
             parent: parent.clone(),
             selection: Some(selection),
             range,
+            attachments: SliceAttachments::Owned,
             navigation_parent: parent.clone(),
             retained_group: None,
         }
@@ -174,6 +178,7 @@ where
             parent,
             selection,
             range,
+            attachments,
         } = self
             .current
             .resolve_object_selection(&self.context.parent, object)?;
@@ -189,6 +194,7 @@ where
             parent,
             selection,
             range,
+            attachments,
         })
     }
 

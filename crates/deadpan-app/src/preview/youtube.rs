@@ -117,6 +117,7 @@ fn failure_title(failure: &Failure) -> &'static str {
         "YouTubePlaylistNeedsVideo" | "YouTubePlaylistRefused" => "This link is a playlist",
         "DownloaderHelperInvalid" => "The downloader failed verification",
         "DownloaderInstallFailed" => "The downloader did not install",
+        "DownloaderNetworkFailed" => "Cannot download the helper",
         "DownloaderUnsupportedPlatform" => "The downloader is not available on this Mac",
         "YouTubeVideoUnavailable" => "Video unavailable",
         "YouTubeVideoPrivate" => "This video is private",
@@ -208,7 +209,7 @@ impl DeadpanApp {
         }
         let field = context.memory(|memory| memory.has_focus(egui::Id::new(URL_ID)));
         let control = native_control_focused(context) && !field;
-        for event in &events {
+        for (index, event) in events.iter().enumerate() {
             let &egui::Event::Key {
                 key,
                 modifiers,
@@ -219,7 +220,13 @@ impl DeadpanApp {
             else {
                 continue;
             };
-            if let Some(routed) = route_key(key, modifiers, control, ime, repeat) {
+            let companion = match events.get(index + 1) {
+                Some(egui::Event::Text(text)) => Some(text.as_str()),
+                _ => None,
+            };
+            if let Some(routed) = navigation::mode_key(key, modifiers, companion)
+                .and_then(|(key, modifiers)| route_key(key, modifiers, control, ime, repeat))
+            {
                 self.youtube.key = Some(routed);
                 self.bindings.clear();
                 context.input_mut(|input| {

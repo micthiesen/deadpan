@@ -460,6 +460,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::DeleteMark { .. }
         | Command::EditScoped { .. }
         | Command::EditScopedMany { .. }
+        | Command::KeepFirstPlayAttachments { .. }
         | Command::Group { .. }
         | Command::GroupSelection { .. }
         | Command::Ungroup { .. } => true,

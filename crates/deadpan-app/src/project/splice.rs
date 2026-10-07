@@ -179,7 +179,8 @@ impl Destination {
             .map_err(|error| error.to_string())?;
         let (slot, endpoints) = match target.selection {
             Some(SliceCaptureSelection::Child { node })
-                if selection.kind == SemanticTextObject::AroundGroup
+                if (selection.kind == SemanticTextObject::AroundGroup
+                    || selection.kind.is_beat())
                     && node == selection.group
                     && target.parent != selection.group =>
             {
@@ -187,7 +188,7 @@ impl Destination {
                     .sequence_children(&target.parent, &node, &node)
                     .map_err(|error| error.to_string())?;
                 if selected.range != target.range {
-                    return Err("Group object child range changed during placement".into());
+                    return Err("Object child range changed during placement".into());
                 }
                 (selected.first, Some((node.clone(), node)))
             }

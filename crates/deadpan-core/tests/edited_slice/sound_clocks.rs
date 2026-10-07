@@ -410,3 +410,90 @@ fn sound_clock_states_skip_the_structural_byte_bound_and_count_exactly() {
     assert_eq!(bound, None);
     assert_eq!(outcome, state.to_json().map(|_| ()));
 }
+
+/// `ib` leaves the beat's own sound, its retained clock and its caption
+/// behind; `ab` copies them. Both copies paste the same picture time.
+#[test]
+fn excluded_attachments_leave_beat_sounds_clocks_and_captions_behind() {
+    let base = shifted(&fixture(), "one");
+    // A caption on the sound's owner, as `:caption` authors it.
+    let captioned = edit(
+        &base,
+        &request(
+            &base,
+            "captioned",
+            Command::SetCaptions {
+                node: id("owner"),
+                captions: vec![Caption {
+                    range: range(0, 2),
+                    text: "boom".into(),
+                    placement: CaptionPlacement::Top,
+                    reveal: None,
+                }],
+            },
+        ),
+    );
+    assert!(
+        captioned
+            .audio_bindings()
+            .sound_clocks()
+            .contains_key(&id("owner"))
+    );
+    let owned = capture(&captioned, "group", &id("owner"), "owned");
+    let bare = CapturedEditSlice::capture_selection_with(
+        &captioned,
+        &id("group"),
+        &SliceCaptureSelection::Child { node: id("owner") },
+        SliceAttachments::Excluded,
+        timing("bare"),
+    )
+    .unwrap();
+    assert_eq!(owned.range(), bare.range());
+    assert_eq!(bare.attachments(), SliceAttachments::Excluded);
+    bare.validate_capture(&captioned).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&bare.to_json().unwrap()).unwrap();
+    assert_eq!(json["beat_sounds"], json!({}));
+    assert!(
+        json["audio_bindings"]
+            .get("sound_clocks")
+            .is_none_or(|clocks| clocks == &json!({}))
+    );
+    assert!(json["assets"].get("effect").is_none());
+    let owned_json: serde_json::Value = serde_json::from_str(&owned.to_json().unwrap()).unwrap();
+    assert!(owned_json["assets"].get("effect").is_some());
+    // Excluding attachments is a whole-beat choice only.
+    assert!(
+        CapturedEditSlice::capture_selection_with(
+            &captioned,
+            &id("group"),
+            &SliceCaptureSelection::Range { range: range(2, 4) },
+            SliceAttachments::Excluded,
+            timing("range"),
+        )
+        .is_err()
+    );
+    // Pasting each copy at the end of the root: only `ab` adds a sound owner,
+    // its retained journal and a caption.
+    let end = captioned.children(&id("root")).count();
+    for (slice, name, carries) in [(&owned, "paste-owned", true), (&bare, "paste-bare", false)] {
+        let pasted = edit(&captioned, &paste(&captioned, slice, name, end));
+        assert_eq!(
+            pasted.duration().unwrap().frames(),
+            captioned.duration().unwrap().frames() + 4
+        );
+        let owners = pasted.beat_sounds().len();
+        assert_eq!(owners, if carries { 2 } else { 1 });
+        assert_eq!(
+            pasted.audio_bindings().sound_clocks().len(),
+            if carries { 2 } else { 1 }
+        );
+        let captions = pasted
+            .nodes()
+            .values()
+            .filter(|node| !node.captions.is_empty())
+            .count();
+        assert_eq!(captions, if carries { 2 } else { 1 });
+    }
+    // The source document is unchanged by a stripped private capture.
+    assert_eq!(captioned.beat_sounds().len(), 1);
+}

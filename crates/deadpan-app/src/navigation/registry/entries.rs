@@ -500,6 +500,17 @@ pub static SPECS: &[Spec] = &[
         help: "Select exact group contents or the whole group, in Visual or after {yank.operator}/{cut.operator}/{repeat.operator}. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste.",
     },
     Spec {
+        id: "object.beat",
+        name: "Beat without / with attachments",
+        section: Section::Select,
+        keys: &[Keys::Editor(B::InnerBeat), Keys::Editor(B::AroundBeat)],
+        commands: &[],
+        contexts: C::VISUAL,
+        replay: Replay::Motion,
+        headless: eq("select_object instruction", SEL),
+        help: "Select the current beat in Visual or after {yank.operator}/{cut.operator}/{repeat.operator}. Both objects select the same picture time. The inner copy excludes captions, cutaways, beat sounds and marks; the around copy includes them. Inner Repeat keeps captions, cutaways and marks on its first play. Beat-owned sounds currently prevent Repeat because their processing clocks cannot yet be transformed. A cut removes the host and its owned attachments in either case; only the saved copy differs.",
+    },
+    Spec {
         id: "object.speech",
         name: "Word / sentence objects",
         section: Section::Select,

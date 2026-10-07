@@ -1920,13 +1920,28 @@ mod tests {
     }
 
     #[test]
-    fn invalid_operator_counts_and_unimplemented_selectors_never_commit() {
+    fn operator_counts_and_selectors_accept_beat_objects_and_reject_invalid_forms() {
+        for (prefix, object) in [
+            (Key::I, deadpan_core::SemanticTextObject::InnerBeat),
+            (Key::A, deadpan_core::SemanticTextObject::AroundBeat),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                keys(&mut bindings, &[Key::R, prefix, Key::B]),
+                Some(Action::Repeat {
+                    selector: deadpan_core::SemanticSelector::TextObject { object },
+                    plays: std::num::NonZeroU32::new(2).unwrap(),
+                })
+            );
+            assert!(bindings.pending().is_empty());
+        }
         for sequence in [
             vec![Key::Num0, Key::R, Key::R],
             vec![Key::Num0, Key::D, Key::D],
             vec![Key::Num2, Key::D, Key::D],
             vec![Key::Num3, Key::R, Key::Num2, Key::L],
-            vec![Key::R, Key::I, Key::B],
+            vec![Key::R, Key::I, Key::O],
+            vec![Key::R, Key::Num2, Key::I, Key::B],
             vec![Key::D, Key::O],
             vec![Key::R, Key::D],
         ] {
@@ -2462,6 +2477,20 @@ mod tests {
                     slip::route_key(key, modifiers, false, true, false, false)
                 })
                 .is_some()
+        );
+        let correction = |key, text| {
+            mode_key(key, none, Some(text)).and_then(|(key, modifiers)| {
+                corrections::route_key(key, modifiers, false, false, false, false)
+            })
+        };
+        assert_eq!(correction(Key::C, "ç"), None);
+        assert_eq!(
+            correction(Key::C, "c"),
+            Some(corrections::CorrectionKey::EditText)
+        );
+        assert_eq!(
+            correction(Key::L, "д"),
+            Some(corrections::CorrectionKey::Next)
         );
         // Gain and room tone route only Enter, Space and Escape, which carry
         // no layout character to reinterpret.

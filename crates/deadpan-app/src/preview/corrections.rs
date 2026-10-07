@@ -299,8 +299,8 @@ impl DeadpanApp {
             .correction
             .as_ref()
             .is_some_and(|draft| draft.edge.is_some());
-        for event in events {
-            let egui::Event::Key {
+        for (index, event) in events.iter().enumerate() {
+            let &egui::Event::Key {
                 key,
                 modifiers,
                 pressed: true,
@@ -310,15 +310,33 @@ impl DeadpanApp {
             else {
                 continue;
             };
+            let companion = match events.get(index + 1) {
+                Some(egui::Event::Text(text)) => Some(text.as_str()),
+                _ => None,
+            };
             if let Some(action) =
-                navigation::corrections::route_key(key, modifiers, field, editing_edge, ime, repeat)
+                navigation::mode_key(key, modifiers, companion).and_then(|(key, modifiers)| {
+                    navigation::corrections::route_key(
+                        key,
+                        modifiers,
+                        field,
+                        editing_edge,
+                        ime,
+                        repeat,
+                    )
+                })
             {
                 if let Some(draft) = &mut self.correction {
                     draft.key = Some(action);
                 }
-                context.input_mut(|input| {
-                    input.consume_key(modifiers, key);
-                });
+                if action == CorrectionKey::EditText && !field {
+                    let consumed = index + 1 + usize::from(companion.is_some());
+                    camera::retain_field_input_suffix(context, &events[consumed..]);
+                } else {
+                    context.input_mut(|input| {
+                        input.consume_key(modifiers, key);
+                    });
+                }
                 break;
             }
         }

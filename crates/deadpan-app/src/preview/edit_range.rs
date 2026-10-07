@@ -320,8 +320,11 @@ impl DeadpanApp {
                 }
                 self.record_macro_local(deadpan_core::SemanticInstruction::SelectObject { object });
                 self.error = None;
+                let noun = object.noun();
                 self.message = Some(format!(
-                    "Group object selected. {} copies; {} cuts; {} repeats; {} replaces. Motion changes this into a time range; {} retains the object.",
+                    "{}{} selected. {} copies; {} cuts; {} repeats; {} replaces. Motion changes this into a time range; {} retains the object.",
+                    noun[..1].to_uppercase(),
+                    &noun[1..],
                     self.editor_key(EditorKey::Copy),
                     self.editor_key(EditorKey::CutRange),
                     self.editor_key(EditorKey::Repeat),
@@ -406,7 +409,7 @@ impl DeadpanApp {
             )
         } else if self.edit_selection() == navigation::EditSelection::Object {
             format!(
-                "Group object retained. {} copies; {} cuts; :splice previews replacement; {} replaces now.",
+                "Object retained. {} copies; {} cuts; :splice previews replacement; {} replaces now.",
                 self.editor_key(EditorKey::Copy),
                 self.editor_key(EditorKey::CutRange),
                 self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
@@ -438,10 +441,8 @@ impl DeadpanApp {
                 .get(&selection.group)?
                 .label
                 .as_str();
-            let kind = match selection.kind {
-                deadpan_core::SemanticTextObject::InnerGroup => "Group contents",
-                deadpan_core::SemanticTextObject::AroundGroup => "Whole group",
-            };
+            let noun = selection.kind.noun();
+            let kind = format!("{}{}", noun[..1].to_uppercase(), &noun[1..]);
             return Some(format!(
                 "{kind}: {label} · [{}..{}) · {} f · {}",
                 range.start().0,

@@ -785,7 +785,12 @@ fn late_object_failure_and_wrong_replacement_identity_pool_leave_inputs_unchange
 
 #[test]
 fn object_and_time_wire_is_tagged_closed_and_keeps_programs_relative() {
-    let body = program(vec![select(InnerGroup), yank(AroundGroup, 'a')]);
+    let body = program(vec![
+        select(InnerGroup),
+        yank(AroundGroup, 'a'),
+        select(SemanticTextObject::InnerBeat),
+        yank(SemanticTextObject::AroundBeat, 'b'),
+    ]);
     let wire = serde_json::to_string(&body).unwrap();
     assert_eq!(
         serde_json::from_str::<SemanticProgram>(&wire).unwrap(),
@@ -796,7 +801,9 @@ fn object_and_time_wire_is_tagged_closed_and_keeps_programs_relative() {
         r#"{"instructions":[{"type":"select_object","object":{"type":"inner_group","node":"fixed"}}]}"#,
         r#"{"instructions":[{"type":"select_object","object":{"type":"around_group"},"group":"fixed"}]}"#,
         r#"{"instructions":[{"type":"yank","register":"a","selector":{"type":"text_object","object":{"type":"around_group"},"range":[0,1]}}]}"#,
-        r#"{"instructions":[{"type":"select_object","object":{"type":"inner_beat"}}]}"#,
+        r#"{"instructions":[{"type":"select_object","object":{"type":"inner_beat","node":"fixed"}}]}"#,
+        r#"{"instructions":[{"type":"select_object","object":{"type":"around_beat","extra":true}}]}"#,
+        r#"{"instructions":[{"type":"select_object","object":{"type":"unknown_object"}}]}"#,
     ] {
         assert!(
             serde_json::from_str::<SemanticProgram>(invalid).is_err(),
@@ -813,6 +820,20 @@ fn object_and_time_wire_is_tagged_closed_and_keeps_programs_relative() {
             selection: SemanticObjectSelection {
                 kind: InnerGroup,
                 group: node("inner"),
+            },
+            extending: true,
+        },
+        SemanticVisualSelection::Object {
+            selection: SemanticObjectSelection {
+                kind: SemanticTextObject::InnerBeat,
+                group: node("beat"),
+            },
+            extending: false,
+        },
+        SemanticVisualSelection::Object {
+            selection: SemanticObjectSelection {
+                kind: SemanticTextObject::AroundBeat,
+                group: node("beat"),
             },
             extending: true,
         },

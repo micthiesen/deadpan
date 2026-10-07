@@ -4,7 +4,8 @@ Beat-owned sounds have independent source recipes and processing histories.
 The saved command path now connects those recipes to bounded occurrence
 preparation and the canonical authored bus. Independent retained clocks now
 support moving and copying unchanged sound-bearing subtrees through ordinary
-Sequence edits. This does not enable `ib`/`ab` or add a native placement control.
+Sequence edits. Beat objects now select those attachments explicitly for copy,
+cut and paste; native beat-sound placement and Repeat transforms remain open.
 
 ## Saved attachment contract
 
@@ -31,8 +32,9 @@ attachments fails explicitly.
 Identity-preserving metadata edits and sound Set/Delete remain available.
 Deleting an attachment before pasting a historical copy is an explicit change
 of authored intent. Existing root-only sound editing keeps its qualified routes.
-Partial-copy timing qualification and `ib`/`ab` await the full attachment
-transform lifecycle.
+`ib` excludes these attachments and their clocks from its immutable copy; `ab`
+retains them. Both cut forms remove the owner and its sounds. Partial-copy
+timing qualification and sound-bearing Repeat still need their transforms.
 
 Database 58 stores core schema 46. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
@@ -102,8 +104,9 @@ original ownership. A warm cache cannot conceal source revocation.
 
 Remaining work includes temporal edits inside the surviving processing branch,
 retained-clock copy/import aliases, occurrence isolation, root-owned attachment
-transport, allowances, tails and native placement. Full beat objects still
-require their complete attachment lifecycle.
+transport, allowances, tails and native placement. Beat-object Repeat still
+requires its sound attachment lifecycle; copy, cut and paste preserve the
+explicit attachment choice.
 
 ## Ownership and clocks
 
@@ -234,8 +237,8 @@ The final product still requires all of the following:
 - Preserve or transform sound intervals through Split, Trim, grouping inside
   a retained scope or with endpoint Splits, Repeat, Retime and occurrence
   isolation.
-- Extend whole-owner copying to partial captures and timing-preserving edits;
-  distinguish `ib` from `ab` without changing picture bounds.
+- Extend whole-owner copying to partial captures and timing-preserving edits.
+  Whole-beat `ib`/`ab` copies already differ without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.
 - Expose captured native placement/editing through the common command path,
   then verify preview/export equivalence and audible behavior.

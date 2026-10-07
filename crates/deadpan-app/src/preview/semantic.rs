@@ -137,11 +137,7 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
     match selector {
         SemanticSelector::SelectedBeat => "beat".into(),
         SemanticSelector::VisualSelection => "range".into(),
-        SemanticSelector::TextObject { object } => match object {
-            deadpan_core::SemanticTextObject::InnerGroup => "group contents",
-            deadpan_core::SemanticTextObject::AroundGroup => "whole group",
-        }
-        .into(),
+        SemanticSelector::TextObject { object } => object.noun().into(),
         SemanticSelector::Speech { object } => match object {
             deadpan_core::SpeechObject::InnerWord => "word",
             deadpan_core::SpeechObject::AroundWord => "word with pauses",
