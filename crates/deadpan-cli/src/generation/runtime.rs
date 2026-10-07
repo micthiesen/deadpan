@@ -152,6 +152,24 @@ pub fn os_requirement(runtime: &Path, current: Option<(u32, u32)>) -> Option<Str
     }
 }
 
+fn pack_os_requirement(manifest: &PackManifest, current: Option<(u32, u32)>) -> Option<String> {
+    let required = manifest.constraints.hardware.minimum_macos;
+    if current.is_some_and(|current| current >= (required.major, required.minor)) {
+        return None;
+    }
+    Some(format!(
+        "model pack {} {} requires macOS {}.{} or later; this Mac's version is {}",
+        manifest.pack_id,
+        manifest.pack_version,
+        required.major,
+        required.minor,
+        current.map_or_else(
+            || "unknown".into(),
+            |(major, minor)| format!("{major}.{minor}")
+        ),
+    ))
+}
+
 /// The qualified `ltx-2-mlx` checkout and its private environment.
 pub const RUNTIME_COMMIT: &str = "3392d75934120b7e69eefbe55893f7ef82be92a4";
 /// The durable development checkout, relative to the home directory.
@@ -477,6 +495,9 @@ impl BridgeRuntime {
             .map(Path::to_path_buf)
             .or_else(|| selected.map(|pack| pack.directory));
         let needs_model_pack = model_cache.is_none();
+        if let Some(problem) = pack_os_requirement(&selected_manifest, current_macos()) {
+            missing.push(problem);
+        }
         if needs_model_pack {
             let size = approved_pack(BRIDGE_PACK)
                 .map_or(0, |pack| pack.total_bytes())
@@ -888,6 +909,38 @@ mod tests {
                 .missing
                 .iter()
                 .any(|line| line.contains("pinned model snapshot"))
+        );
+    }
+
+    #[test]
+    fn selected_manifest_keeps_its_os_and_picture_constraints() {
+        let mut pack = approved_pack(BRIDGE_PACK).unwrap();
+        assert!(pack_os_requirement(&pack, Some((26, 0))).is_none());
+        assert!(
+            pack_os_requirement(&pack, Some((15, 7)))
+                .unwrap()
+                .contains("requires macOS 26.0")
+        );
+        assert!(
+            pack_os_requirement(&pack, None)
+                .unwrap()
+                .contains("unknown")
+        );
+        pack.constraints.hardware.minimum_macos.minor = 6;
+        assert!(pack_os_requirement(&pack, Some((26, 5))).is_some());
+        assert!(pack_os_requirement(&pack, Some((26, 6))).is_none());
+        let capability = super::super::development_capability();
+        assert_eq!(
+            capability.dimensions().width().minimum(),
+            super::super::NATIVE_WIDTH
+        );
+        assert_eq!(
+            capability.dimensions().height().minimum(),
+            super::super::NATIVE_HEIGHT
+        );
+        assert_eq!(
+            i64::from(pack.constraints.bridge.unwrap().maximum_project_frames),
+            super::super::MAX_BRIDGE_PROJECT_FRAMES
         );
     }
 

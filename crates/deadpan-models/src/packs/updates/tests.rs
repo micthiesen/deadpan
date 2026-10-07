@@ -402,6 +402,11 @@ fn untrusted_tampered_and_incompatible_updates_are_refused() {
     );
     let mut unsupported = bridge_pack("3", &"c".repeat(40), &"d".repeat(40));
     unsupported.operations.push(Operation::Transcribe);
+    unsupported.constraints.audio = approved_pack("whisper-base-en").unwrap().constraints.audio;
+    unsupported
+        .constraints
+        .conditioning
+        .push(super::super::constraints::Conditioning::MonoAudio);
     assert_eq!(
         code(store.admit_update(
             &signed(&pkcs8, 2, unsupported),
@@ -472,6 +477,52 @@ fn untrusted_tampered_and_incompatible_updates_are_refused() {
     );
     assert!(!root.path().join(".updates").join("unknown-pack").exists());
     assert_eq!(approved_packs().len(), 2);
+}
+
+#[test]
+fn a_valid_signature_cannot_expand_the_shipped_runtime_constraints() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_owned());
+    let (pkcs8, trusted) = key();
+    for mutate in [
+        |pack: &mut PackManifest| pack.constraints.hardware.minimum_macos.major = 27,
+        |pack: &mut PackManifest| {
+            pack.constraints.weight_precisions = vec![super::super::constraints::Precision::Float16]
+        },
+        |pack: &mut PackManifest| {
+            pack.constraints
+                .bridge
+                .as_mut()
+                .unwrap()
+                .frame_counts
+                .maximum = 105
+        },
+        |pack: &mut PackManifest| pack.constraints.bridge.as_mut().unwrap().width.maximum = 1024,
+        |pack: &mut PackManifest| {
+            pack.constraints
+                .bridge
+                .as_mut()
+                .unwrap()
+                .maximum_project_frames = 181
+        },
+    ] {
+        let mut pack = bridge_pack("2", &"a".repeat(40), &"b".repeat(40));
+        mutate(&mut pack);
+        pack.validate().unwrap();
+        assert!(matches!(
+            store.admit_update(
+                &signed(&pkcs8, 1, pack),
+                std::slice::from_ref(&trusted),
+                &["ltx-2".into(), "gemma".into()],
+                false
+            ),
+            Err(PackError::Update {
+                code: "UpdateIncompatible",
+                ..
+            })
+        ));
+        assert!(!root.path().join(".active").exists());
+    }
 }
 
 #[test]

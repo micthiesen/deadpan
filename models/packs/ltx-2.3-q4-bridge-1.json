@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "pack_id": "ltx-2.3-q4-bridge",
   "pack_version": "1",
   "title": "AI pauses (LTX-2.3 video model, 4-bit, with Gemma 3 text encoder)",
@@ -12,6 +12,52 @@
     "bridge_hold"
   ],
   "languages": [],
+  "constraints": {
+    "hardware": {
+      "architecture": "apple_silicon",
+      "minimum_macos": {
+        "major": 26,
+        "minor": 0
+      },
+      "accelerators": [
+        "metal"
+      ]
+    },
+    "weight_precisions": [
+      "quantized4",
+      "bfloat16",
+      "float32"
+    ],
+    "conditioning": [
+      "left_boundary_image",
+      "right_boundary_image",
+      "fixed_prompt"
+    ],
+    "audio": null,
+    "bridge": {
+      "native_frame_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "frame_counts": {
+        "step": 8,
+        "offset": 1,
+        "minimum": 9,
+        "maximum": 97
+      },
+      "width": {
+        "minimum": 768,
+        "maximum": 768,
+        "multiple": 64
+      },
+      "height": {
+        "minimum": 320,
+        "maximum": 320,
+        "multiple": 64
+      },
+      "maximum_project_frames": 180
+    }
+  },
   "files": [
     {
       "name": "mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",

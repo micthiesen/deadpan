@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "pack_id": "whisper-base-en",
   "pack_version": "2",
   "title": "English transcription and pause detection (whisper base.en, Silero VAD)",
@@ -15,6 +15,32 @@
   "languages": [
     "en"
   ],
+  "constraints": {
+    "hardware": {
+      "architecture": "apple_silicon",
+      "minimum_macos": {
+        "major": 15,
+        "minor": 0
+      },
+      "accelerators": [
+        "cpu",
+        "metal"
+      ]
+    },
+    "weight_precisions": [
+      "float16",
+      "float32"
+    ],
+    "conditioning": [
+      "mono_audio"
+    ],
+    "audio": {
+      "sample_rate": 16000,
+      "channels": 1,
+      "maximum_samples": 172800000
+    },
+    "bridge": null
+  },
   "files": [
     {
       "name": "ggml-base.en.bin",

@@ -2,7 +2,7 @@
 //!
 //! Approved manifests compiled into the app remain the baseline. A signed
 //! update ([`crate::updates::SignedManifest`] of kind `model-pack`) carries a
-//! [`PackUpdate`]: a serial, the minimum app version and one complete schema-2
+//! [`PackUpdate`]: a serial, the minimum app version and one complete schema-3
 //! [`PackManifest`] for a pack family this build already knows, with the same
 //! runtime and a runtime version this build ships. The store retains the exact
 //! envelope under `.updates/<pack>/<version>.json` and re-verifies it against
@@ -127,6 +127,12 @@ impl PackUpdate {
                     baseline.runtime_id,
                     baseline.runtime_versions
                 ),
+            ));
+        }
+        if self.pack.constraints != baseline.constraints {
+            return Err(refuse(
+                "UpdateIncompatible",
+                "model conditioning, media, precision or hardware requirements changed; update the application runtime first",
             ));
         }
         if self.pack.supports(Operation::BridgeHold) || baseline.supports(Operation::BridgeHold) {

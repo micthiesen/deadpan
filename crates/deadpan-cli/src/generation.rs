@@ -21,11 +21,7 @@ pub mod runtime;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod variants;
 
-use deadpan_core::FrameRate;
-use deadpan_jobs::{
-    AxisLimits, BridgeCapability, DimensionLimits, FrameCountFormula, NativeDimensions,
-    ProviderSelection,
-};
+use deadpan_jobs::{BridgeCapability, NativeDimensions, ProviderSelection};
 
 /// The shipped provider's native raster.
 pub const NATIVE_WIDTH: u32 = 768;
@@ -36,15 +32,13 @@ pub const MAX_BRIDGE_PROJECT_FRAMES: i64 = 180;
 /// The capability of the pinned LTX MLX worker: still two-sided
 /// bridges at 24 fps, 8k+1 native frames from 9 to 97, at 768×320.
 pub fn development_capability() -> BridgeCapability {
-    BridgeCapability::new(
-        true,
-        FrameRate::new(24, 1).expect("constant rate"),
-        FrameCountFormula::new(8, 1, 9, 97).expect("constant formula"),
-        DimensionLimits::new(
-            AxisLimits::new(NATIVE_WIDTH, NATIVE_WIDTH, 64).expect("constant axis"),
-            AxisLimits::new(NATIVE_HEIGHT, NATIVE_HEIGHT, 64).expect("constant axis"),
-        ),
-    )
+    deadpan_models::packs::approved_pack(runtime::BRIDGE_PACK)
+        .expect("compiled bridge pack")
+        .constraints
+        .bridge
+        .expect("bridge pack has declared frame and image constraints")
+        .capability()
+        .expect("compiled bridge constraints validate")
 }
 
 pub fn native_dimensions() -> NativeDimensions {

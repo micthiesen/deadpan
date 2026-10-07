@@ -8,7 +8,7 @@ implemented manager in [`deadpan_models::packs`](../crates/deadpan-models/src/pa
 ## Approved manifests
 
 Manifests live in [`models/packs`](../models/packs/) and are compiled into the
-application, so code signing covers which weights Deadpan accepts. Schema 2
+application, so code signing covers which weights Deadpan accepts. Schema 3
 lists the pack identity and version, model family, runtime and compatible
 runtime versions, supported operations and languages, every file's HTTPS URL,
 SHA-256 and exact size, one or more license layers, memory and temporary-space
@@ -17,6 +17,25 @@ most four safe components (`mlx_ltx_q4_pack/<revision>/vocoder.safetensors`);
 absolute paths, `..`, hidden components and duplicates are refused. Validation
 also requires HTTPS on an approved host (currently `huggingface.co`), lowercase
 SHA-256, bounded sizes and at most 64 files. Weights are never committed.
+
+The required `constraints` record declares conditioning inputs, stored weight
+precisions, Apple Silicon architecture, minimum macOS and the backends the
+runtime uses. Audio analysis declares mono 16 kHz PCM and at most 172,800,000
+samples (three hours). Bridge generation declares two boundary images and a
+fixed prompt; 24 fps; `8k+1` native frames from 9 through 97; exactly 768×320
+pixels, with 64-pixel axis multiples; and at most 180 project frames. Speech
+weights use float16/float32; the bridge pack combines 4-bit weights with
+bfloat16/float32 components. These are the existing qualified runtime limits,
+not choices that enable other models or precision modes.
+
+The host's bridge planner reads the manifest's count/raster contract, and the
+packaged resolver checks its minimum OS alongside the runtime's own minimum.
+Speech requires macOS 15; the bundled MLX bridge requires macOS 26. Signed
+data updates must preserve these declarations exactly. Changed requirements
+need a new application runtime. Missing required fields, malformed or
+contradictory constraints, and unknown fields refuse admission; schema-2 development update manifests
+must be regenerated. Installed baseline weights and their receipts need no
+rewrite because their file identities have not changed.
 
 Each license layer (specification §14.4) has an `id`, `title`, SPDX identifier
 or `LicenseRef-…`, attribution, HTTPS link, a plain `terms` summary shown before
@@ -109,7 +128,7 @@ converters' licenses (mlx-forge, mlx-vlm) do not replace the weight licenses.
 
 A newer pack version can arrive without an app rebuild as a
 [signed model-pack update](UPDATES.md#model-pack-updates): an Ed25519-signed
-envelope whose payload is a complete schema-2 manifest for a pack family this
+envelope whose payload is a complete schema-3 manifest for a pack family this
 build compiles, with the same runtime and a runtime version this build ships.
 `models update <file|https-url> [--from <folder|archive.tar>]
 [--accept-license] [--allow-downgrade]` verifies it, installs the version

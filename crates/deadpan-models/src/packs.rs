@@ -26,9 +26,10 @@ use sha2::Digest;
 use thiserror::Error;
 
 pub mod archive;
+pub mod constraints;
 pub mod updates;
 
-pub const MANIFEST_SCHEMA: u32 = 2;
+pub const MANIFEST_SCHEMA: u32 = 3;
 /// Largest single pack file accepted from a manifest.
 pub const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const MAX_FILES: usize = 64;
@@ -174,6 +175,7 @@ pub struct PackManifest {
     pub runtime_versions: Vec<String>,
     pub operations: Vec<Operation>,
     pub languages: Vec<String>,
+    pub constraints: constraints::PackConstraints,
     pub files: Vec<PackFile>,
     pub licenses: Vec<PackLicense>,
     pub memory_bytes: u64,
@@ -237,6 +239,7 @@ impl PackManifest {
         if self.operations.is_empty() {
             return fail("pack supports no operation");
         }
+        self.constraints.validate(&self.operations)?;
         if self.licenses.is_empty() || self.licenses.len() > MAX_LICENSES {
             return fail("pack license count outside its bound");
         }

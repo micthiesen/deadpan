@@ -193,7 +193,7 @@ updates automatically, and a helper update never modifies the signed bundle.
 ## Model-pack updates
 
 Payload ([`PackUpdate`](../crates/deadpan-models/src/packs/updates.rs)):
-`schema` 1, `serial`, `issued`, `min_app_version` and one complete schema-2
+`schema` 1, `serial`, `issued`, `min_app_version` and one complete schema-3
 pack manifest. It must name a pack family this build compiles, keep its
 `runtime_id`, list a runtime version this build ships and add no operation.
 The bridge pack accepts data updates under a narrower contract: it must keep
