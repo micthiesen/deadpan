@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T15:10:00Z",
+  "updated_at": "2026-10-07T16:05:45Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Verifying AI generation and acceptance inside Repeat and Retime scopes. This work is excluded from the estimate until verified.",
+  "focus": "Automatic replacement AI requests after an accepted pause is lengthened.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "Real generation, variants, acceptance and quality checks work. Nested scope work is in verification."
+      "note": "Generation and acceptance now work inside Repeat and Retime. Automatic replacement after extending a pause remains."
     },
     {
       "id": "import",
@@ -149,6 +149,14 @@
       "revision": "6210ea1e",
       "retrospective": false,
       "summary": "Verified release/security, model updates, offline portability, AI controls and motion, endpoint, face and region checks."
+    },
+    {
+      "date": "2026-10-07",
+      "percent": 86,
+      "complete_sections": 4,
+      "revision": "b68bb5d6",
+      "retrospective": false,
+      "summary": "Verified AI generation inside Repeat and Retime, isolated acceptance, Undo/Redo and packaged real-model export."
     }
   ]
 }

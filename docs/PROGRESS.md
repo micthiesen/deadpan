@@ -49,8 +49,8 @@ implementation can appear in Current work without raising the percentage.
 Feature groups partition all DP-01 through DP-24 requirements. The top percentage
 is a rough engineering estimate across the detailed spec, not the fraction of
 closed groups. Strict section completion remains visible separately. The initial
-75% baseline is retrospective; 85% is the October 7 estimate. Both have roughly
-±5 percentage points of uncertainty. The displayed average uses calendar days
+75% baseline is retrospective. Each estimate has roughly ±5 percentage points
+of uncertainty. The displayed average uses calendar days
 between observations and is not a completion forecast.
 
 ## Change the dashboard itself
