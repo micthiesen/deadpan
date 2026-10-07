@@ -9,6 +9,15 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+AI motion and guidance extend `:generate` and `:generate-ai` with optional
+`motion=still|subtle|moderate` and final `text=…` arguments. Existing `,a` and
+`:generate N` keep their routes. The command reference and routing snapshot
+record the new usage and refusal text; global key reservations are unchanged.
+The AI generation, variants and comparison replays exercise the production
+router against the pinned Kestrel fixture. A separate hash comparison confirms
+that the current local Kestrel source matches that fixture. See
+[control qualification](qualification/hold-controls-2026-10-07.md).
+
 Named Group uses `,g` (`group.create`) to open captured command entry.
 `structure.explode` and `structure.duplicate` are configurable with no default
 key path; `:explode` and `:duplicate` are their command aliases and take no count.

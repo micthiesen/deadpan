@@ -50,6 +50,7 @@ pub struct OfferedRequest {
     pub origin: RevisionId,
     /// Project frames the sampled master covers.
     pub frames: i64,
+    pub options: deadpan_jobs::GenerationOptions,
     /// Never empty, in attempt order.
     pub variants: Vec<OfferedVariant>,
     /// The store's selection when it is offered, otherwise the newest.
@@ -132,6 +133,7 @@ pub fn offered(
                 hold,
                 origin: request.origin_revision.clone(),
                 frames: request.constraints.video.frames().frames(),
+                options: deadpan_jobs::GenerationOptions::from_constraints(&request.constraints),
                 variants,
                 selected,
             },
@@ -191,6 +193,7 @@ pub fn report(offered: &OfferedRequest, joins: Option<&[Value]>) -> Value {
         "request_id": offered.request,
         "origin_revision": offered.origin,
         "frames": offered.frames,
+        "options": offered.options,
         "selected_attempt": offered.selected,
         "variants": variants,
     })

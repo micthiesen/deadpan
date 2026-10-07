@@ -26,6 +26,9 @@ pub struct GenerateRequest {
     /// The seed of a new request; variants of an existing request derive
     /// theirs from its own seed. None lets the owner choose.
     pub seed: Option<u64>,
+    /// None retains the current request's controls; Some explicitly replaces them.
+    #[serde(default)]
+    pub options: Option<deadpan_jobs::GenerationOptions>,
 }
 
 impl GenerateRequest {
@@ -62,6 +65,7 @@ pub enum GenerationOutcome {
 pub struct GenerationStatus {
     pub job: u64,
     pub hold: NodeId,
+    pub options: deadpan_jobs::GenerationOptions,
     /// The recorded request, once allocated.
     pub request_id: Option<RequestId>,
     pub variants: u8,

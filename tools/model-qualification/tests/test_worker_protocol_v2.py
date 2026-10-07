@@ -76,7 +76,7 @@ def bridge_request_wire():
             "pack_id": "ltx-2.3-q4-development",
             "pack_version": "56a5866d",
             "runtime_id": "ltx-mlx-development",
-            "runtime_version": "0.15.8+deadpan1",
+            "runtime_version": "0.15.8+deadpan2",
             "seed": 38_117,
         },
         "plan": plan(),
@@ -117,6 +117,40 @@ def native_candidate_wire(protocol=2):
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_all_motion_levels_and_optional_guidance_round_trip(self):
+        for motion in ("still", "subtle", "moderate"):
+            for instructions in (None, "Keep the hands still.", "目線をそのまま保つ。", "a" * 512,
+                                 "界" * 170, 'Keep "$(code)" and /tmp/example as text.'):
+                with self.subTest(motion=motion, instructions=instructions):
+                    wire = bridge_request_wire()
+                    wire["constraints"]["motion"] = motion
+                    if instructions is not None:
+                        wire["constraints"]["instructions"] = instructions
+                    request = worker_protocol.parse_host_message(wire)
+                    self.assertEqual(request.constraints.instructions, instructions)
+                    self.assertEqual(request.to_wire(), wire)
+
+        wire = bridge_request_wire()
+        wire["constraints"]["instructions"] = None
+        self.assertNotIn("instructions", worker_protocol.parse_host_message(wire).to_wire()["constraints"])
+
+    def test_guidance_is_bounded_utf8_without_control_characters(self):
+        for instructions in ("", "   ", "\u2003", "a" * 513, "界" * 171, "\ud800", 42, [],
+                             "a\0b", "a\tb", "a\nb", "a\x7fb", "a\x85b", "a\x9fb"):
+            with self.subTest(instructions=instructions):
+                wire = bridge_request_wire()
+                wire["constraints"]["instructions"] = instructions
+                with self.assertRaises(worker_protocol.ProtocolError):
+                    worker_protocol.parse_host_message(wire)
+
+    def test_optional_guidance_does_not_open_unknown_fields_or_invalid_motion(self):
+        for field, value in (("unknown", "text"), ("motion", "fast")):
+            wire = bridge_request_wire()
+            wire["constraints"]["instructions"] = "Keep the head still."
+            wire["constraints"][field] = value
+            with self.assertRaises(worker_protocol.ProtocolError):
+                worker_protocol.parse_host_message(wire)
+
     def test_generate_bridge_round_trips_plan_and_uses_protocol_two(self):
         message = worker_protocol.parse_host_message(bridge_request_wire())
         self.assertIsInstance(message, worker_protocol.GenerateBridgeRequest)
@@ -170,7 +204,7 @@ class BridgeProtocolTests(unittest.TestCase):
                     "ltx-2.3-q4-development",
                     "56a5866d",
                     "ltx-mlx-development",
-                    "0.15.8+deadpan1",
+                    "0.15.8+deadpan2",
                     38_117,
                 ),
             )

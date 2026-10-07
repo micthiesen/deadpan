@@ -95,7 +95,7 @@ handling remains a worker claim.
 ## Headless commands
 
 ```sh
-deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
+deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]
 deadpan-cli accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
 ```
 
@@ -138,6 +138,41 @@ and is never replayed. Error codes: `GenerationUnavailable` (runtime missing),
 `GenerationFailed`, `GenerationUnknown` (the observed job is no longer the
 app's current one), host codes, and store codes.
 
+## Motion and guidance
+
+The inspector shows requested motion and optional plain-language guidance.
+**Motion and guidance…** opens a command prefilled with the current choices;
+Enter generates and Escape closes it without starting work. For example:
+
+```text
+:generate 2 motion=subtle text=Keep the hands still.
+```
+
+Motion is `still`, `subtle` or `moderate`. `text=` consumes the rest of the
+command as literal model input, including spaces. Guidance must be nonblank,
+at most 512 UTF-8 bytes, and contain no control characters. Explicit controls
+replace the previous choices; `:generate motion=still` also clears old text.
+Bare `,a`, `:generate N` and Retry retain the current request's choices.
+Changed controls start a new request, so old candidates are never relabelled.
+Timing, pause sound and acceptance remain unchanged. These are requests to the
+model; review its result before accepting.
+
+The closed-project CLI accepts `--motion` and `--instructions`; a fresh request
+defaults to Still without guidance. `--another` retains the stored controls
+and refuses either flag or `--seed`. Through an open app, absent controls
+retain the current choices as native Generate does. Reports and `ai-variants`
+include the captured options. Failed or cancelled recorded requests retain
+them across reopening.
+
+Adapter `ltx-mlx` `0.15.8+deadpan2` uses `deadpan-hold-2`: a short locked-camera,
+preserved-identity/composition, no-speech/no-new-objects base, one motion
+sentence, and optional literal guidance. It uses no prompt enhancer. The exact
+prompt, version and token count are retained in worker provenance. Gemma's
+actual token count must fit 1,024; overlong prompts fail instead of truncating.
+The same prompt reaches the pipeline. Model bytes are unchanged. Schema-4
+pack manifests declare the three motion values and the guidance byte limit;
+signed data updates cannot expand the shipped adapter's capabilities.
+
 ## Native app workflow
 
 Select a pause (Hold) in Your edit. The inspector's **AI PICTURES** section and
@@ -147,6 +182,7 @@ the footer teach the actions:
 | --- | --- | --- |
 | Generate | `,a`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant |
 | Generate several | `:generate N` (1 to 4) | One job that generates N variants, one attempt after another |
+| Motion and guidance | `:generate [N] motion=subtle text=Keep the hands still.` | Replace the generation controls and generate; `text=` is optional and comes last |
 | Cancel | `:cancel-ai`, or X in the Jobs panel (`:jobs`) (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
 | Choose | `:next-ai`, `:prev-ai`, `:pick-ai N`, a click on a variant row | Choose which variant Preview, Audition and Accept use; stored as the request's selection, never an edit |
 | Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the chosen variant's pictures in the viewer at the edit cursor |
@@ -573,9 +609,8 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-The current worker accepts only the fixed Still motion prompt. §12.5 still
-needs user motion controls and optional plain-language constraints, plus
-motion, lighting and detectable region/mouth checks beyond the current
+The worker exposes motion and optional guidance as described above. §12.5 still
+needs motion, lighting and detectable region/mouth checks beyond the current
 endpoint RGB comparison. Generate inside scoped Repeat/Retime inspection
 and calibrated join thresholds also remain open.
 

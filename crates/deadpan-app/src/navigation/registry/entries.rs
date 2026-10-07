@@ -1193,13 +1193,22 @@ pub static SPECS: &[Spec] = &[
         section: Section::Ai,
         keys: &[Keys::Editor(B::GenerateAi)],
         commands: &[
-            verb("generate", ":generate [N]  AI pictures for the pause"),
-            verb("generate-ai", ":generate-ai [N]  same as :generate"),
+            verb(
+                "generate",
+                ":generate [N] [motion=still|subtle|moderate] [text=guidance]",
+            ),
+            verb(
+                "generate-ai",
+                ":generate-ai [N] [motion=…] [text=…]  same as :generate",
+            ),
         ],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
-        headless: eq("generate-hold <p> --hold <id> [--variants N]", AI),
-        help: "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. :generate 3 makes several variants (1 to 4), each from a different seed; when the neighbouring pictures are unchanged, new variants join the ones already offered. The inspector and footer show the stage and time; Escape never cancels it.",
+        headless: eq(
+            "generate-hold <p> --hold <id> [--variants N] [--motion LEVEL] [--instructions TEXT]",
+            AI,
+        ),
+        help: "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. :generate 3 makes several variants (1 to 4), each from a different seed; bare Generate retains the current motion and text. Use :generate motion=subtle text=Keep the hands still. to replace those controls (text last, up to 512 UTF-8 bytes); motion=still without text clears guidance. Still, subtle and moderate describe requested motion, not a guarantee. Changed controls start a new request. When controls and neighbouring pictures are unchanged, new variants join the ones already offered. The inspector and footer show the stage and time; Escape never cancels it.",
     },
     Spec {
         id: "ai.cancel",

@@ -11,8 +11,8 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use deadpan_core::{NodeId, RevisionId};
-use deadpan_jobs::{JobFailure, JobState, RequestId};
+use deadpan_core::RevisionId;
+use deadpan_jobs::{GenerationOptions, JobFailure, JobState, RequestId};
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 use super::attempt::{
@@ -21,6 +21,8 @@ use super::attempt::{
 use super::runtime::BridgeRuntime;
 use crate::CliError;
 use crate::generation_context::BoundaryContextResolver;
+
+mod options;
 
 /// The project's writer, or None when the app already owns it.
 fn writer(path: &Path) -> Result<Option<ProjectStore>, CliError> {
@@ -48,55 +50,16 @@ pub const MAX_VARIANTS: u32 = 4;
 /// are added to the Hold's current request, conditioned from its original
 /// revision. Stops at the first attempt that does not reach Ready.
 pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
-    let usage = || {
-        CliError::Usage(
-            "usage: generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]"
-                .into(),
-        )
-    };
-    let [path, rest @ ..] = arguments else {
-        return Err(usage());
-    };
-    let mut hold = None;
-    let mut seed = 0_u64;
-    let mut seed_given = false;
-    let mut variants = 1_u32;
-    let mut another = false;
-    let mut options = rest.iter();
-    while let Some(option) = options.next() {
-        if *option == "--another" {
-            another = true;
-            continue;
-        }
-        let value = options.next().ok_or_else(usage)?;
-        match *option {
-            "--hold" => hold = Some(NodeId::new(*value)?),
-            "--seed" => {
-                seed_given = true;
-                seed = value
-                    .parse()
-                    .ok()
-                    .filter(|seed| *seed < 1 << 32)
-                    .ok_or_else(|| CliError::Usage("--seed must be below 2^32".into()))?;
-            }
-            "--variants" => {
-                variants = value
-                    .parse()
-                    .ok()
-                    .filter(|count| (1..=MAX_VARIANTS).contains(count))
-                    .ok_or_else(|| {
-                        CliError::Usage(format!("--variants must be 1 to {MAX_VARIANTS}"))
-                    })?;
-            }
-            _ => return Err(usage()),
-        }
-    }
-    let hold = hold.ok_or_else(usage)?;
-    if another && seed_given {
-        return Err(CliError::Usage(
-            "--seed applies to a new request; --another adds variants whose seeds derive from the current request's seed".into(),
-        ));
-    }
+    let options::Arguments {
+        path,
+        hold,
+        seed: chosen_seed,
+        variants,
+        another,
+        options,
+    } = options::parse(arguments)?;
+    let seed_given = chosen_seed.is_some();
+    let mut seed = chosen_seed.unwrap_or(0);
     if !seed_given {
         // As in the app: a fresh random seed below 2^32 for a new request.
         let random = uuid::Uuid::new_v4();
@@ -115,7 +78,14 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         // The app's own job decides between a new request and another
         // variant of the current one, exactly as :generate does.
         let variants = u8::try_from(variants).expect("validated variant count");
-        return live::run(path, hold, variants, seed_given.then_some(seed), &cancelled);
+        return live::run(
+            path,
+            hold,
+            variants,
+            seed_given.then_some(seed),
+            options,
+            &cancelled,
+        );
     };
     let runtime = BridgeRuntime::from_environment().map_err(GenerationError::from)?;
     let existing = if another {
@@ -147,7 +117,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         None => store.head_revision()?,
     };
     let started = Instant::now();
-    let inputs =
+    let mut inputs =
         super::conditioning::prepare(path, &revision, &hold, &cancelled).map_err(|error| {
             if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
                 GenerationError::Cancelled
@@ -158,6 +128,12 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
         return Err(GenerationError::Cancelled.into());
     }
+    let options = existing
+        .as_ref()
+        .map(|request| GenerationOptions::from_constraints(&request.constraints))
+        .or(options)
+        .unwrap_or_default();
+    options.apply_to(&mut inputs.constraints);
     let conditioning = started.elapsed();
     let mut allocated = match existing {
         Some(request) => attempt::allocate_variant(&mut store, request, inputs)?,
@@ -192,6 +168,10 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     let mut report = reports.last().cloned().unwrap_or_default();
     if let serde_json::Value::Object(fields) = &mut report {
         fields.insert("protocol".into(), serde_json::json!(1));
+        fields.insert(
+            "options".into(),
+            serde_json::to_value(&options).expect("generation controls serialize"),
+        );
         fields.insert(
             "conditioning_ms".into(),
             serde_json::json!(millis(conditioning)),
@@ -425,6 +405,7 @@ mod live {
         hold: NodeId,
         variants: u8,
         seed: Option<u64>,
+        options: Option<deadpan_jobs::GenerationOptions>,
         cancelled: &AtomicBool,
     ) -> Result<(), CliError> {
         let mut client = Client::discover(package)
@@ -450,6 +431,7 @@ mod live {
                         expected_revision: context.revision_id,
                         variants,
                         seed,
+                        options,
                     },
                 },
             )?,
@@ -508,6 +490,7 @@ mod live {
             "job": job,
             "request_id": current.request_id,
             "hold_id": current.hold,
+            "options": current.options,
             "variants_requested": current.variants,
             "ready": current.ready,
             "elapsed_ms": current.elapsed_ms,

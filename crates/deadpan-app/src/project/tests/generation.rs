@@ -82,6 +82,7 @@ fn start_variants(fixture: &Fixture, ticket: u64, variants: u8) -> GenerationOpe
         revision: fixture.workspace.document.revision_id().clone(),
         hold: fixture.hold.clone(),
         variants,
+        options: None,
     }
 }
 
@@ -151,6 +152,45 @@ fn an_unavailable_runtime_reports_its_reason_and_records_nothing() {
 }
 
 #[test]
+fn controls_survive_a_runtime_failure_before_the_request_is_recorded() {
+    let fixture = project_with_pause(Backend::Scripted(Arc::new(ScriptQueue::new([
+        Script {
+            unavailable: Some("runtime missing".into()),
+            ..waiting(0)
+        },
+        Script {
+            ending: ScriptEnding::Fail("planned failure".into()),
+            ..waiting(1)
+        },
+    ]))));
+    let controls = deadpan_jobs::GenerationOptions {
+        motion: deadpan_jobs::MotionAmount::Moderate,
+        instructions: Some(deadpan_jobs::HoldInstructions::new("Keep the eyes open.").unwrap()),
+    };
+    let mut operation = start(&fixture, 1);
+    if let GenerationOperation::Start { options, .. } = &mut operation {
+        *options = Some(controls.clone());
+    }
+    let unavailable = generation(&fixture.service, operation);
+    let job = unavailable.generation.unwrap().job.unwrap();
+    assert!(matches!(job.outcome, Some(Outcome::Unavailable(_))));
+    assert!(job.request.is_none());
+    assert_eq!(job.options, controls);
+    generation(&fixture.service, start(&fixture, 2));
+    let done = job_until(&fixture.service, |job| !job.running());
+    let job = done.generation.unwrap().job.unwrap();
+    let request = reader(&fixture.workspace)
+        .generation_request(&job.request.unwrap())
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        deadpan_jobs::GenerationOptions::from_constraints(&request.constraints),
+        controls
+    );
+    assert_eq!(job.options, controls);
+}
+
+#[test]
 fn a_running_job_reports_progress_and_cancels_to_a_recorded_cancellation() {
     let fixture = project_with_pause(scripted(waiting(4)));
     let started = generation(&fixture.service, start(&fixture, 7));
@@ -195,6 +235,78 @@ fn a_running_job_reports_progress_and_cancels_to_a_recorded_cancellation() {
     );
     assert_eq!(attempt_states(&workspace, &request), [JobState::Cancelled]);
     assert!(cancelled.generation.unwrap().candidates.is_empty());
+}
+
+#[test]
+fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_request() {
+    use deadpan_jobs::{GenerationOptions, HoldInstructions, MotionAmount};
+    let mut fixture = project_with_pause(scripted(Script {
+        ending: ScriptEnding::Fail("planned failure".into()),
+        ..waiting(1)
+    }));
+    let choices = GenerationOptions {
+        motion: MotionAmount::Subtle,
+        instructions: Some(HoldInstructions::new("Keep the hands still.").unwrap()),
+    };
+    let original = fixture.workspace.document.clone();
+    let run = |fixture: &Fixture, ticket, options| {
+        let mut operation = start(fixture, ticket);
+        if let GenerationOperation::Start {
+            options: stored, ..
+        } = &mut operation
+        {
+            *stored = options;
+        }
+        let started = generation(&fixture.service, operation);
+        assert_eq!(refusal(&started), None);
+        let done = job_until(&fixture.service, |job| !job.running());
+        assert!(matches!(outcome(&done), Some(Outcome::Failed(_))));
+        let request = done
+            .generation
+            .as_ref()
+            .unwrap()
+            .job
+            .as_ref()
+            .unwrap()
+            .request
+            .clone()
+            .unwrap();
+        let stored = reader(&fixture.workspace)
+            .generation_request(&request)
+            .unwrap()
+            .unwrap();
+        assert_eq!(done.workspace.unwrap().document.as_ref(), original.as_ref());
+        (
+            request,
+            GenerationOptions::from_constraints(&stored.constraints),
+        )
+    };
+    let (first, actual) = run(&fixture, 1, Some(choices.clone()));
+    assert_eq!(actual, choices);
+    let (retry, actual) = run(&fixture, 2, None);
+    assert_eq!(first, retry);
+    assert_eq!(actual, choices);
+    assert_eq!(attempt_states(&fixture.workspace, &first).len(), 2);
+
+    let path = fixture.workspace.path.clone();
+    command(&fixture.service, ProjectRequest::Close);
+    let reopened = command(&fixture.service, ProjectRequest::Open(path));
+    assert_eq!(
+        reopened
+            .generation
+            .as_ref()
+            .unwrap()
+            .options
+            .get(&fixture.hold),
+        Some(&choices)
+    );
+    fixture.workspace = reopened.workspace.unwrap();
+    let (changed, actual) = run(&fixture, 3, Some(GenerationOptions::default()));
+    assert_ne!(first, changed);
+    assert_eq!(actual, GenerationOptions::default());
+    let (retry, actual) = run(&fixture, 4, None);
+    assert_eq!(changed, retry);
+    assert_eq!(actual, GenerationOptions::default());
 }
 
 #[test]
@@ -293,6 +405,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             revision: RevisionId::new("not-current").unwrap(),
             hold: fixture.hold.clone(),
             variants: 1,
+            options: None,
         },
     );
     assert_eq!(
@@ -307,6 +420,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             revision: revision.clone(),
             hold: fixture.hold.clone(),
             variants: 1,
+            options: None,
         },
     );
     assert_eq!(
@@ -322,6 +436,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
             revision: revision.clone(),
             hold: root,
             variants: 1,
+            options: None,
         },
     );
     assert!(refusal(&not_a_pause).unwrap().contains("Select a pause"));
@@ -334,6 +449,7 @@ fn stale_and_invalid_generation_requests_are_refused_by_identity() {
                 revision: revision.clone(),
                 hold: fixture.hold.clone(),
                 variants,
+                options: None,
             },
         );
         assert!(refusal(&too_many).unwrap().contains("1 to 4 AI variants"));
@@ -524,6 +640,7 @@ fn generated_variants_share_a_request_and_one_is_accepted() {
             revision: workspace.document.revision_id().clone(),
             hold: fixture.hold.clone(),
             variants: 1,
+            options: None,
         },
     );
     assert!(refusal(&again).is_none(), "{:?}", refusal(&again));
@@ -593,6 +710,7 @@ fn partial_variants_are_kept_and_reported() {
             revision: workspace.document.revision_id().clone(),
             hold: fixture.hold.clone(),
             variants: 2,
+            options: None,
         },
     );
     job_until(&fixture.service, |job| {
@@ -972,6 +1090,7 @@ mod ready_fixture {
                         video: video.clone(),
                         conditioning: ConditioningMode::Bridge,
                         motion: MotionAmount::Still,
+                        instructions: None,
                     },
                     provider: provider.clone(),
                 },
@@ -1539,6 +1658,7 @@ mod live {
                     expected_revision: fixture.workspace.document.revision_id().clone(),
                     variants,
                     seed: Some(40),
+                    options: None,
                 },
             },
         ))
@@ -1590,6 +1710,7 @@ mod live {
                     expected_revision: RevisionId::new("stale").unwrap(),
                     variants: 1,
                     seed: None,
+                    options: None,
                 },
             },
         )
@@ -2019,6 +2140,7 @@ fn kept_variants_survive_and_the_automatic_pass_expires_old_ones() {
             revision: workspace.document.revision_id().clone(),
             hold: fixture.hold.clone(),
             variants: 1,
+            options: None,
         },
     );
     let finished = job_until(&fixture.service, |job| job.ticket == 5 && !job.running());

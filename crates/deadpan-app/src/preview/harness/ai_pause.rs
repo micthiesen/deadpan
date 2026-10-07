@@ -93,7 +93,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Pause selected with its AI pictures action")?;
 
-    d.chord(&[Key::Comma, Key::A])?;
+    d.command("generate motion=moderate text=Keep the eyes open.")?;
     d.wait_for("Unavailable runtime reported", |app| {
         app.ai
             .job()
@@ -105,13 +105,15 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "A missing runtime shows its exact reason without an edit",
         widgets.contains("AI pauses are unavailable on this Mac")
             && widgets.contains("set DEADPAN_BRIDGE_RUNTIME_SOURCE")
+            && widgets.contains("Requested motion: moderate")
+            && widgets.contains("Guidance: Keep the eyes open.")
             && d.revision() == paused,
-        json!({"title":"AI pauses are unavailable on this Mac","reason":UNAVAILABLE,"revision":paused}),
+        json!({"title":"AI pauses are unavailable on this Mac","reason":UNAVAILABLE,"revision":paused,"motion":"moderate","guidance":"Keep the eyes open."}),
         json!({"outcome":format!("{:?}", outcome(d)),"revision":d.revision()}),
     )?;
     d.capture("Unavailable model runtime")?;
 
-    d.command("generate")?;
+    d.command("generate motion=subtle text=Keep the hands still.")?;
     d.wait_for("Scripted generation reaches its last step", |app| {
         app.ai
             .job()
@@ -130,6 +132,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"job":format!("{:?}", d.app().ai.job()),"revision":d.revision()}),
     )?;
     d.capture("Generating with progress")?;
+    d.check(
+        "Motion and guidance are visible and captured by the running job",
+        widgets.contains("Requested motion: subtle")
+            && widgets.contains("Guidance: Keep the hands still.")
+            && d.app().ai.job().is_some_and(|job| {
+                job.options.motion == deadpan_jobs::MotionAmount::Subtle
+                    && job.options.instructions.as_ref().map(|text| text.as_str())
+                        == Some("Keep the hands still.")
+            }),
+        json!({"motion":"subtle","instructions":"Keep the hands still."}),
+        json!({"job": format!("{:?}", d.app().ai.job())}),
+    )?;
     // Editing stays immediate while the job runs.
     d.check(
         "Generation never makes the project busy",
@@ -187,6 +201,16 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"outcome":format!("{:?}", outcome(d)),"revision":d.revision()}),
     )?;
     d.capture("Failed")?;
+    d.check(
+        "Keyboard retry retains the current motion and guidance",
+        d.app().ai.job().is_some_and(|job| {
+            job.options.motion == deadpan_jobs::MotionAmount::Subtle
+                && job.options.instructions.as_ref().map(|text| text.as_str())
+                    == Some("Keep the hands still.")
+        }),
+        json!({"motion":"subtle","instructions":"Keep the hands still."}),
+        json!({"job": format!("{:?}", d.app().ai.job())}),
+    )?;
     Ok(())
 }
 

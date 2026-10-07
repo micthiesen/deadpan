@@ -87,6 +87,7 @@ fn constraints(frames: i64) -> HoldConstraints {
         video: VideoSpec::new(FrameDuration::new(frames).unwrap(), rate(), 512, 320).unwrap(),
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
+        instructions: None,
     }
 }
 
@@ -243,6 +244,7 @@ fn allocation_rejects_read_only_stale_invalid_and_exhausted_inputs() -> Result {
                 video: VideoSpec::new(FrameDuration::new(12)?, wrong_rate, 512, 320)?,
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
+                instructions: None,
             },
             provider: provider(1),
         }),

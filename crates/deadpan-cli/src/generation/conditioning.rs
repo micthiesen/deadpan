@@ -129,6 +129,7 @@ pub fn prepare(
             .map_err(|error| error.to_string())?,
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
+        instructions: None,
     };
     let basis = document.presentation_basis();
     let region = canvas_region([basis.width, basis.height]);
@@ -563,6 +564,7 @@ mod tests {
             .unwrap(),
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         };
         let picture = frame(&RgbImage::from_pixel(4, 2, Rgb([1, 2, 3])));
         let (mut left, right) = opaque_boundaries(&plan, b"l".to_vec(), b"r".to_vec());

@@ -93,6 +93,7 @@ fn request() -> HostMessage {
             .unwrap(),
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         },
         provider: Box::new(ProviderSelection {
             pack_id: ProviderPackId::new("fixture").unwrap(),

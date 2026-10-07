@@ -2996,6 +2996,9 @@ impl DeadpanApp {
                     }),
                 );
             }
+            Ok(navigation::command::Entry::Generate { variants, options }) => {
+                self.ai_generate_options(ai_target, variants, options);
+            }
             Ok(navigation::command::Entry::Action(Action::Ai(action))) => {
                 self.ai_action(action, ai_target);
             }

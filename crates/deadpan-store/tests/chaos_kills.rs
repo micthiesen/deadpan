@@ -160,6 +160,7 @@ fn attempt(
             video: VideoSpec::new(FrameDuration::new(12)?, rate(), 512, 320)?,
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         },
         provider: ProviderSelection {
             pack_id: ProviderPackId::new("pack")?,

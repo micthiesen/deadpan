@@ -120,6 +120,7 @@ fn constraints() -> HoldConstraints {
         video: VideoSpec::new(FrameDuration::new(12).unwrap(), rate(), 512, 320).unwrap(),
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
+        instructions: None,
     }
 }
 
@@ -930,6 +931,7 @@ fn identical_masters_can_share_one_fresh_asset_identity() -> Result {
                 video: candidate.video.clone(),
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
+                instructions: None,
             },
         },
         same_contract_plan(),

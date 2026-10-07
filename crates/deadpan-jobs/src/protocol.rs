@@ -360,9 +360,10 @@ pub enum ConditioningMode {
     ExtendFromRight,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MotionAmount {
+    #[default]
     Still,
     Subtle,
     Moderate,
@@ -374,6 +375,8 @@ pub struct HoldConstraints {
     pub video: VideoSpec,
     pub conditioning: ConditioningMode,
     pub motion: MotionAmount,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<crate::HoldInstructions>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -892,6 +895,10 @@ impl Write for BoundedBuffer {
 
 #[derive(Debug, Error)]
 pub enum ValueError {
+    #[error(
+        "AI instructions must contain 1-512 UTF-8 bytes, non-whitespace text and no control characters"
+    )]
+    InvalidHoldInstructions,
     #[error("unsupported worker protocol version {0}")]
     UnsupportedProtocol(u32),
     #[error("{0} must contain 1-128 ASCII letters, digits, '.', '+', '-', or '_'")]

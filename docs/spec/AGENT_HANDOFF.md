@@ -56,9 +56,15 @@ functions. Join readings compare in the same space. Old approximate contexts
 remain readable and clearly labelled; accepted media remains unchanged.
 Seventeen focused tests, the full 4,744-workspace/1,027-UI gate, packaged checks
 and a real generation/acceptance/render passed. The new bundle also rendered
-an older accepted artifact. §12.5 still needs motion and optional text controls
-and motion/lighting/detectable geometry heuristics beyond endpoint RGB joins.
-The fixed Still worker explicitly refuses the other motion amounts today.
+an older accepted artifact. [Motion and optional text controls](../AI_HOLDS.md#motion-and-guidance)
+now flow through native commands, CLI/live jobs, stored requests and the real
+worker. Bare Generate/Retry retains the current choices; changed controls
+start a new request. The inspector shows them, including before a runtime
+failure can record the request. Adapter `0.15.8+deadpan2` records prompt v2 and
+rejects actual Gemma input above 1,024 tokens. Schema-4 pack manifests declare
+the controls. §12.5 still needs motion/lighting/detectable geometry heuristics
+beyond endpoint RGB joins. See the
+[control qualification](../qualification/hold-controls-2026-10-07.md).
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

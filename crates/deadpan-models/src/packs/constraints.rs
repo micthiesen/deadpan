@@ -2,7 +2,10 @@
 //! shipped runtime before an update can be selected.
 
 use deadpan_core::FrameRate;
-use deadpan_jobs::{AxisLimits, BridgeCapability, DimensionLimits, FrameCountFormula};
+use deadpan_jobs::{
+    AxisLimits, BridgeCapability, DimensionLimits, FrameCountFormula, MAX_HOLD_INSTRUCTION_BYTES,
+    MotionAmount,
+};
 use serde::{Deserialize, Serialize};
 
 use super::{Operation, PackError};
@@ -52,6 +55,7 @@ pub enum Conditioning {
     LeftBoundaryImage,
     RightBoundaryImage,
     FixedPrompt,
+    UserInstructions,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,6 +93,8 @@ pub struct BridgeConstraints {
     pub width: ImageAxis,
     pub height: ImageAxis,
     pub maximum_project_frames: u32,
+    pub motion_amounts: Vec<MotionAmount>,
+    pub maximum_instruction_bytes: u32,
 }
 
 impl BridgeConstraints {
@@ -97,9 +103,12 @@ impl BridgeConstraints {
             || self.frame_counts.maximum > 65_536
             || self.maximum_project_frames == 0
             || self.maximum_project_frames > 65_536
+            || !distinct(&self.motion_amounts, 3)
+            || self.maximum_instruction_bytes == 0
+            || self.maximum_instruction_bytes > MAX_HOLD_INSTRUCTION_BYTES as u32
         {
             return Err(PackError::Manifest(
-                "bridge frame limits exceed their bounds",
+                "bridge frame or prompt limits exceed their bounds",
             ));
         }
         let counts = self.frame_counts;
@@ -149,7 +158,7 @@ impl PackConstraints {
             || self.hardware.minimum_macos.minor > 99
             || !distinct(&self.hardware.accelerators, 2)
             || !distinct(&self.weight_precisions, 4)
-            || !distinct(&self.conditioning, 4)
+            || !distinct(&self.conditioning, 5)
         {
             return Err(invalid(
                 "invalid hardware, precision or conditioning constraints",
@@ -167,6 +176,7 @@ impl PackConstraints {
             (Conditioning::LeftBoundaryImage, bridge),
             (Conditioning::RightBoundaryImage, bridge),
             (Conditioning::FixedPrompt, bridge),
+            (Conditioning::UserInstructions, bridge),
         ] {
             if self.conditioning.contains(&input) != supported {
                 return Err(invalid("conditioning does not match supported operations"));

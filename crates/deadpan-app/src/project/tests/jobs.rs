@@ -150,6 +150,7 @@ fn start_ai(fixture: &Fixture, workspace: &Workspace, ticket: u64) {
             revision: workspace.document.revision_id().clone(),
             hold: fixture.hold.clone(),
             variants: 1,
+            options: None,
         }),
     );
     assert_eq!(update.generation.unwrap().reply.unwrap().1, None);

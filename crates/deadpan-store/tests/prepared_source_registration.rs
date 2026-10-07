@@ -496,6 +496,7 @@ fn prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_
             )?,
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         },
         provider: ProviderSelection {
             pack_id: ProviderPackId::new("pack")?,

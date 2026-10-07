@@ -3404,8 +3404,8 @@ verb "gag-save" usage ":gag-save NAME"
 verb "gag-set" usage ":gag-set NAME key=value"
 verb "gain" usage ":gain +3dB | +=3dB | mute | +3dB range=4-10"
 verb "gain-mute" usage ":gain-mute  mute or unmute the beat"
-verb "generate" usage ":generate [N]  AI pictures for the pause"
-verb "generate-ai" usage ":generate-ai [N]  same as :generate"
+verb "generate" usage ":generate [N] [motion=still|subtle|moderate] [text=guidance]"
+verb "generate-ai" usage ":generate-ai [N] [motion=…] [text=…]  same as :generate"
 verb "group" usage ":group name=\"the answer\""
 verb "help" usage ":help  all keys and commands"
 verb "hold" usage ":hold 0.5s [video=black]"
@@ -3605,12 +3605,12 @@ parse ":gain-mute x y z" = Err("Extra arguments are not supported by this comman
 parse ":gain-mute" = Ok(GainMute)
 parse ":generate" = Ok(Action(Ai(Generate { variants: 1 })))
 parse ":GENERATE" = Ok(Action(Ai(Generate { variants: 1 })))
-parse ":generate x y z" = Err("Extra arguments are not supported by this command.")
-parse ":generate N" = Err("Use :generate or :generate N for 1 to 4 AI variants.")
+parse ":generate x y z" = Err("Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.")
+parse ":generate N motion=still text=guidance" = Err("Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.")
 parse ":generate-ai" = Ok(Action(Ai(Generate { variants: 1 })))
 parse ":GENERATE-AI" = Ok(Action(Ai(Generate { variants: 1 })))
-parse ":generate-ai x y z" = Err("Extra arguments are not supported by this command.")
-parse ":generate-ai N" = Err("Use :generate or :generate N for 1 to 4 AI variants.")
+parse ":generate-ai x y z" = Err("Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.")
+parse ":generate-ai N motion=… text=…" = Err("Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.")
 parse ":group" = Err("Use :group name=\"the uncomfortable answer\" with one JSON-quoted name.")
 parse ":GROUP" = Err("Use :group name=\"the uncomfortable answer\" with one JSON-quoted name.")
 parse ":group x y z" = Err("Use :group name=\"the uncomfortable answer\" with one JSON-quoted name.")
@@ -4004,7 +4004,7 @@ parse ":register 1" = Err("Use :register a–z or :register \" to select the unn
 parse ":mark Z" = Ok(Action(SetMark('Z')))
 parse ":jump" = Err("A mark name must be exactly one ASCII letter, a–z or A–Z.")
 parse ":generate 3" = Ok(Action(Ai(Generate { variants: 3 })))
-parse ":generate 9" = Err("Use :generate or :generate N for 1 to 4 AI variants.")
+parse ":generate 9" = Err("Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.")
 parse ":pick-ai 0" = Err("Use :pick-ai N with the variant number the inspector shows.")
 parse ":delete-frames" = Ok(Action(DeleteFrames(1)))
 parse ":delete-frames 0f" = Err("Use :delete-frames Nf with 1..4294967295 whole project frames, for example 12f.")

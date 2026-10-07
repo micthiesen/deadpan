@@ -1452,6 +1452,7 @@ change.
 ## AI pauses
 
 `generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4]
+[--motion still|subtle|moderate] [--instructions TEXT]
 [--another]` fills a Hold with pictures from the local LTX MLX runtime: it
 records a bridge request (or, with `--another`, joins the Hold's current one),
 runs one attempt per variant with its own seed, qualifies and publishes each
@@ -1467,6 +1468,11 @@ own AI job. Errors use `GenerationUnavailable`, `GenerationInputsUnavailable`,
 (`srgb_codes_unchanged`, `rec709_to_srgb` or `authored_black`). Older retained
 inputs may record `rec709_codes_as_srgb` with `approximate: true`; newly
 prepared BT.709 inputs are converted before fitting. See [AI Holds](AI_HOLDS.md).
+
+Motion and optional guidance are captured in the request and reported under
+`options`; `--another` retains them and refuses control or seed flags. See
+[Motion and guidance](AI_HOLDS.md#motion-and-guidance) for bounds and the
+open-project behavior.
 
 ### Choosing, keeping and discarding variants
 

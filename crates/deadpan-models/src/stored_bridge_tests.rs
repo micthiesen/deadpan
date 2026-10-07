@@ -151,6 +151,7 @@ impl Fixture {
                     .unwrap(),
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
+                instructions: None,
             },
             provider: ProviderSelection {
                 pack_id: ProviderPackId::new("fixture").unwrap(),

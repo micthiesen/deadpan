@@ -50,11 +50,17 @@ pub fn native_dimensions() -> NativeDimensions {
 /// The compiled bridge pack and runtime identity, used by scripted tests and
 /// explicit development runs without an installed pack selection.
 pub fn development_provider(seed: u64) -> ProviderSelection {
+    let manifest =
+        deadpan_models::packs::approved_pack(runtime::BRIDGE_PACK).expect("compiled bridge pack");
+    let runtime_version = manifest
+        .runtime_versions
+        .first()
+        .expect("compiled bridge pack declares a runtime version");
     serde_json::from_value(serde_json::json!({
         "pack_id": "ltx-2.3-q4-bridge",
         "pack_version": "1",
         "runtime_id": "ltx-mlx",
-        "runtime_version": "0.15.8+deadpan1",
+        "runtime_version": runtime_version,
         "seed": seed,
     }))
     .expect("constant provider")
@@ -84,5 +90,14 @@ mod provider_tests {
         assert!(same_provider_identity(&request, &variant));
 
         assert!(!same_provider_identity(&request, &selected));
+    }
+
+    #[test]
+    fn development_provider_uses_the_compiled_bridge_runtime_version() {
+        let pack = deadpan_models::packs::approved_pack(runtime::BRIDGE_PACK).unwrap();
+        assert_eq!(
+            development_provider(7).runtime_version.as_str(),
+            pack.runtime_versions[0].as_str()
+        );
     }
 }

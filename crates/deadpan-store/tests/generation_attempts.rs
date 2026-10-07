@@ -111,6 +111,7 @@ fn allocate(
             video: video(),
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         },
         provider: provider(seed),
     })?)

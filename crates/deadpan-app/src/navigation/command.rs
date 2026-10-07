@@ -4,6 +4,8 @@ use deadpan_core::FrameDuration;
 
 use super::{Action, BeatEdit, duration::DurationInput};
 
+pub(crate) mod generate;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScopeChoice {
     All,
@@ -52,6 +54,10 @@ fn scope_plays(input: &str) -> Result<Vec<u32>, String> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Entry {
     Action(Action),
+    Generate {
+        variants: u8,
+        options: deadpan_jobs::GenerationOptions,
+    },
     Group {
         label: String,
     },
@@ -265,6 +271,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             "Unknown command: {}. Use :help for available commands.",
             verb.to_ascii_lowercase()
         ));
+    }
+    if verb.eq_ignore_ascii_case("generate") || verb.eq_ignore_ascii_case("generate-ai") {
+        return generate::parse(Some(&input[verb.len()..]));
     }
     if verb.eq_ignore_ascii_case("group") {
         return super::group::parse(&input[verb.len()..]);
@@ -569,22 +578,6 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }));
         }
         "marks" => Action::Marks,
-        "generate" | "generate-ai" => {
-            let maximum = crate::project::generation::MAX_VARIANTS;
-            let variants = match argument {
-                None => 1,
-                Some(count) => count
-                    .parse::<u8>()
-                    .ok()
-                    .filter(|count| (1..=maximum).contains(count))
-                    .ok_or_else(|| {
-                        format!("Use :generate or :generate N for 1 to {maximum} AI variants.")
-                    })?,
-            };
-            return Ok(Entry::Action(Action::Ai(super::AiAction::Generate {
-                variants,
-            })));
-        }
         "pick-ai" => {
             let number = argument
                 .and_then(|value| value.parse::<u8>().ok())

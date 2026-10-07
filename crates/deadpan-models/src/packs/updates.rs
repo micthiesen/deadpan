@@ -2,7 +2,7 @@
 //!
 //! Approved manifests compiled into the app remain the baseline. A signed
 //! update ([`crate::updates::SignedManifest`] of kind `model-pack`) carries a
-//! [`PackUpdate`]: a serial, the minimum app version and one complete schema-3
+//! [`PackUpdate`]: a serial, the minimum app version and one complete schema-4
 //! [`PackManifest`] for a pack family this build already knows, with the same
 //! runtime and a runtime version this build ships. The store retains the exact
 //! envelope under `.updates/<pack>/<version>.json` and re-verifies it against
@@ -180,9 +180,10 @@ fn validate_bridge_update(pack: &PackManifest, baseline: &PackManifest) -> Resul
         || pack.languages != baseline.languages
         || pack.memory_bytes != baseline.memory_bytes
         || pack.temporary_bytes != baseline.temporary_bytes
+        || pack.constraints != baseline.constraints
     {
         return Err(incompatible(
-            "model family, runtime, operations, resource profile or language set changed",
+            "model family, runtime, operations, constraints or resource profile changed",
         ));
     }
 

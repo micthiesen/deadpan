@@ -447,7 +447,7 @@ impl DeadpanApp {
             }
             let target = target.ok_or("Enter the AI command again to capture its pause.")??;
             match action {
-                AiAction::Generate { variants } => self.ai_generate(target, variants),
+                AiAction::Generate { variants } => self.ai_generate(target, variants, None),
                 AiAction::Choose(choice) => self.ai_choose(target, choice),
                 AiAction::Preview => self.ai_preview(target, false),
                 AiAction::Audition => self.ai_audition(target),
@@ -473,6 +473,7 @@ impl DeadpanApp {
                 revision,
                 hold,
                 variants,
+                options,
                 ..
             } => GenerationOperation::Start {
                 ticket,
@@ -480,6 +481,7 @@ impl DeadpanApp {
                 revision,
                 hold,
                 variants,
+                options,
             },
             GenerationOperation::Cancel { session, job, .. } => GenerationOperation::Cancel {
                 ticket,
@@ -562,7 +564,27 @@ impl DeadpanApp {
         }
     }
 
-    fn ai_generate(&mut self, target: Target, variants: u8) -> Result<(), String> {
+    pub(super) fn ai_generate_options(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        variants: u8,
+        options: deadpan_jobs::GenerationOptions,
+    ) {
+        let result = target
+            .ok_or_else(|| "Enter the AI command again to capture its pause.".to_owned())
+            .and_then(|target| target)
+            .and_then(|target| self.ai_generate(target, variants, Some(options)));
+        if let Err(error) = result {
+            self.error = Some(error);
+        }
+    }
+
+    fn ai_generate(
+        &mut self,
+        target: Target,
+        variants: u8,
+        options: Option<deadpan_jobs::GenerationOptions>,
+    ) -> Result<(), String> {
         let hold = target.hold.ok_or(
             "AI pictures fill a pause. Select a pause beat in Your edit, then press the key again.",
         )?;
@@ -577,6 +599,7 @@ impl DeadpanApp {
             revision: target.revision,
             hold,
             variants,
+            options,
         };
         if !self.macro_request_allowed(&ProjectRequest::Generation(start.clone())) {
             return Ok(());
@@ -649,7 +672,7 @@ impl DeadpanApp {
             cursor: ProjectFrame(i64::try_from(self.sequence_cursor).unwrap_or(i64::MAX)),
             scope: self.sequence_scope.clone(),
         };
-        self.ai_generate(target, 1)
+        self.ai_generate(target, 1, None)
     }
 
     /// Durably stop offering an interrupted attempt.
@@ -1495,6 +1518,39 @@ impl DeadpanApp {
             .ai_running()
             .is_some_and(|running| running.hold != hold);
         let running = job.as_ref().is_some_and(Job::running);
+        let options = job
+            .as_ref()
+            .filter(|job| {
+                job.running()
+                    || (job.request.is_none()
+                        && self.workspace.as_ref().is_some_and(|workspace| {
+                            workspace.document.revision_id() == &job.revision
+                        }))
+            })
+            .map(|job| &job.options)
+            .or_else(|| {
+                self.ai
+                    .update
+                    .as_ref()
+                    .and_then(|update| update.options.get(&hold))
+            })
+            .cloned()
+            .unwrap_or_default();
+        ui.label(format!("Requested motion: {}", options.motion.name()));
+        if let Some(text) = &options.instructions {
+            ui.label(
+                egui::RichText::new(format!("Guidance: {}", text.as_str()))
+                    .size(12.0)
+                    .weak(),
+            );
+        }
+        if ui.add_enabled(ready && !running && !other_running,
+            style::row_action(ui, "Motion and guidance…", ":generate motion=…"))
+            .on_hover_text("Choose still, subtle or moderate and optional text=guidance (last, up to 512 UTF-8 bytes). Enter generates with those choices; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
+            .clicked()
+        {
+            self.open_command(crate::navigation::command::generate::command(&options), ui.ctx());
+        }
         if let Some(job) = job.as_ref().filter(|job| job.running()) {
             ui.horizontal(|ui| {
                 crate::preview::accessibility::busy(ui);

@@ -34,6 +34,8 @@ pub enum GenerationOperation {
         revision: RevisionId,
         hold: NodeId,
         variants: u8,
+        /// None retains the current request's controls; Some replaces them.
+        options: Option<deadpan_jobs::GenerationOptions>,
     },
     /// Cancel the job started with ticket `job`.
     Cancel { ticket: u64, session: u64, job: u64 },
@@ -185,6 +187,7 @@ pub struct Job {
     pub ticket: u64,
     pub session: u64,
     pub hold: NodeId,
+    pub options: deadpan_jobs::GenerationOptions,
     /// The revision the inputs were prepared from.
     pub revision: RevisionId,
     pub started: Instant,
@@ -400,6 +403,8 @@ pub struct Update {
     pub job: Option<Job>,
     /// Ready candidates by Hold for the published workspace revision.
     pub candidates: Arc<BTreeMap<NodeId, Candidate>>,
+    /// Stored controls, including requests with no Ready candidate yet.
+    pub options: Arc<BTreeMap<NodeId, deadpan_jobs::GenerationOptions>>,
     /// The latest preview reply, tagged by request and base revision.
     pub preview: Option<Arc<CandidatePreview>>,
     /// The latest independent command's ticket and refusal, if any. Accept

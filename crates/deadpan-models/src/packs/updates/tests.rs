@@ -505,6 +505,17 @@ fn a_valid_signature_cannot_expand_the_shipped_runtime_constraints() {
                 .unwrap()
                 .maximum_project_frames = 181
         },
+        |pack: &mut PackManifest| {
+            pack.constraints.bridge.as_mut().unwrap().motion_amounts =
+                vec![deadpan_jobs::MotionAmount::Still]
+        },
+        |pack: &mut PackManifest| {
+            pack.constraints
+                .bridge
+                .as_mut()
+                .unwrap()
+                .maximum_instruction_bytes = 511
+        },
     ] {
         let mut pack = bridge_pack("2", &"a".repeat(40), &"b".repeat(40));
         mutate(&mut pack);

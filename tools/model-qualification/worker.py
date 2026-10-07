@@ -220,8 +220,7 @@ def run():
             if os.environ.get(key) != "1":
                 raise ValueError("missing isolated offline runtime environment")
         wire = request.to_wire()
-        if (request.constraints.conditioning != "bridge" or request.constraints.motion != "still"
-                or request.provider.seed >= 2**32):
+        if request.constraints.conditioning != "bridge" or request.provider.seed >= 2**32:
             raise ValueError("unsupported hold constraints or seed")
         root = os.open(".", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:

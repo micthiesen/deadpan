@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "runtime_id": "ltx-mlx",
-  "runtime_version": "0.15.8+deadpan1",
+  "runtime_version": "0.15.8+deadpan2",
   "platform_floor": "26.0",
   "python": {
     "version": "3.12.13",

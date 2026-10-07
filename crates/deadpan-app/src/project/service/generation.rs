@@ -14,7 +14,8 @@ use deadpan_cli::generation::attempt::{
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
 use deadpan_jobs::{
-    AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, ProviderSelection, RequestId,
+    AttemptId, GenerationOptions, HostFailureCode, JobFailure, JobState, MessageIdentity,
+    ProviderSelection, RequestId,
 };
 use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
@@ -26,6 +27,23 @@ use crate::project::generation::{
 
 /// Events the job thread may queue ahead of the writer.
 const EVENT_CAPACITY: usize = 64;
+
+struct StartInput {
+    ticket: u64,
+    session: u64,
+    revision: RevisionId,
+    hold: NodeId,
+    variants: u8,
+    seed: Option<u64>,
+    options: Option<GenerationOptions>,
+}
+
+struct JobInput {
+    package: PathBuf,
+    revision: RevisionId,
+    hold: NodeId,
+    options: GenerationOptions,
+}
 
 /// Job-to-writer events. The service loop drains them every iteration, so a
 /// record waits only for the writer's current operation, never for a timer
@@ -80,6 +98,7 @@ pub(super) struct State {
     running: Option<Running>,
     job: Option<Job>,
     candidates: Arc<BTreeMap<NodeId, Candidate>>,
+    options: Arc<BTreeMap<NodeId, GenerationOptions>>,
     candidates_key: Option<(u64, RevisionId, u64)>,
     /// Interrupted attempts offered for retry, read with the candidates.
     interrupted: Arc<Vec<crate::project::generation::Interrupted>>,
@@ -121,6 +140,7 @@ fn remote_status(job: &Job) -> deadpan_cli::live_project::generation::Generation
     GenerationStatus {
         job: job.ticket,
         hold: job.hold.clone(),
+        options: job.options.clone(),
         request_id: job.request.clone(),
         variants: job.variants,
         variant: job.variant,
@@ -183,6 +203,7 @@ impl State {
         self.session = session;
         self.job = None;
         self.candidates = Arc::default();
+        self.options = Arc::default();
         self.candidates_key = None;
         self.interrupted = Arc::default();
         self.interrupted_warning = None;
@@ -234,7 +255,16 @@ impl Service {
                 revision,
                 hold,
                 variants,
-            } => self.start_generation(ticket, session, &revision, hold, variants, None),
+                options,
+            } => self.start_generation(StartInput {
+                ticket,
+                session,
+                revision,
+                hold,
+                variants,
+                seed: None,
+                options,
+            }),
             GenerationOperation::Cancel {
                 session,
                 job: started,
@@ -493,16 +523,17 @@ impl Service {
         }
     }
 
-    fn start_generation(
-        &mut self,
-        ticket: u64,
-        session: u64,
-        revision: &RevisionId,
-        hold: NodeId,
-        variants: u8,
-        seed: Option<u64>,
-    ) -> Result<()> {
-        self.check_context(session, revision)?;
+    fn start_generation(&mut self, input: StartInput) -> Result<()> {
+        let StartInput {
+            ticket,
+            session,
+            revision,
+            hold,
+            variants,
+            seed,
+            options,
+        } = input;
+        self.check_context(session, &revision)?;
         if self.pending_session_change.is_some() {
             return Err("The project is closing or changing.".into());
         }
@@ -534,10 +565,29 @@ impl Service {
             .map(|node| node.label.clone())
             .unwrap_or_default();
         let package = workspace.path.clone();
+        let options = options.or_else(|| {
+            self.generation
+                .job
+                .as_ref()
+                .filter(|job| job.hold == hold && job.revision == revision && job.request.is_none())
+                .map(|job| job.options.clone())
+        });
+        let options = match options {
+            Some(options) => options,
+            None => attempt::current_bridge_request(
+                self.store.as_ref().ok_or("Open a project first")?,
+                &hold,
+            )
+            .map_err(display)?
+            .as_ref()
+            .map(|request| GenerationOptions::from_constraints(&request.constraints))
+            .unwrap_or_default(),
+        };
         let job = Job {
             ticket,
             session,
             hold: hold.clone(),
+            options: options.clone(),
             revision: revision.clone(),
             started: Instant::now(),
             request: None,
@@ -602,9 +652,12 @@ impl Service {
             .spawn(move || {
                 job_thread(
                     worker,
-                    package,
-                    revision,
-                    hold,
+                    JobInput {
+                        package,
+                        revision,
+                        hold,
+                        options,
+                    },
                     thread_cancelled,
                     Channels {
                         events,
@@ -768,6 +821,26 @@ impl Service {
             ),
         };
         self.generation.interrupted_warning = warning;
+        self.generation.options = match store.current_generation_requests() {
+            Ok(requests) => Arc::new(
+                requests
+                    .into_iter()
+                    .filter(|request| request.bridge_plan.is_some())
+                    .map(|request| {
+                        (
+                            request.binding.hold_id,
+                            GenerationOptions::from_constraints(&request.constraints),
+                        )
+                    })
+                    .collect(),
+            ),
+            Err(error) => {
+                self.message = Some(format!(
+                    "Could not read this project's AI controls: {error}"
+                ));
+                Arc::default()
+            }
+        };
         self.generation.interrupted = Arc::new(
             interrupted
                 .into_iter()
@@ -818,6 +891,7 @@ impl Service {
                 .clone()
                 .filter(|job| job.session == session),
             candidates,
+            options: self.generation.options.clone(),
             preview,
             reply: self.generation.reply.clone(),
             interrupted: self.generation.interrupted.clone(),
@@ -1328,14 +1402,15 @@ impl Service {
         }
         self.generation.remote = self.generation.remote.wrapping_add(1);
         let ticket = REMOTE_TICKETS + (self.generation.remote % REMOTE_TICKETS);
-        self.start_generation(
+        self.start_generation(StartInput {
             ticket,
             session,
-            &request.expected_revision,
-            request.hold,
-            request.variants,
-            request.seed,
-        )
+            revision: request.expected_revision,
+            hold: request.hold,
+            variants: request.variants,
+            seed: request.seed,
+            options: request.options,
+        })
         .map_err(|error| LiveError::new("GenerationRefused", error))?;
         self.publish();
         self.host_generation_status(ticket)
@@ -1513,19 +1588,27 @@ fn progress_phase(progress: AttemptProgress) -> Phase {
 
 fn job_thread(
     mut worker: Worker,
-    package: PathBuf,
-    revision: RevisionId,
-    hold: NodeId,
+    input: JobInput,
     cancelled: Arc<AtomicBool>,
     channels: Channels,
     handle: crate::jobs::JobHandle,
 ) {
+    let JobInput {
+        package,
+        revision,
+        hold,
+        options,
+    } = input;
     let Channels {
         events,
         finished,
         allocation,
     } = channels;
-    let prepared = conditioning::prepare(&package, &revision, &hold, &cancelled);
+    let prepared =
+        conditioning::prepare(&package, &revision, &hold, &cancelled).map(|mut inputs| {
+            options.apply_to(&mut inputs.constraints);
+            inputs
+        });
     let ready = prepared.is_ok();
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;

@@ -312,6 +312,7 @@ fn paste_reconciles_complete_generation_relevance_in_its_single_transaction() ->
             video: VideoSpec::new(duration, before.presentation_basis().frame_rate, 512, 320)?,
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
+            instructions: None,
         },
         provider: ProviderSelection {
             pack_id: ProviderPackId::new("pack")?,

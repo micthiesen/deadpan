@@ -1,0 +1,129 @@
+use deadpan_core::NodeId;
+use deadpan_jobs::{GenerationOptions, HoldInstructions};
+
+use crate::CliError;
+
+pub(super) struct Arguments<'a> {
+    pub path: &'a str,
+    pub hold: NodeId,
+    pub seed: Option<u64>,
+    pub variants: u32,
+    pub another: bool,
+    pub options: Option<GenerationOptions>,
+}
+
+pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError> {
+    let usage = || {
+        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]".into())
+    };
+    let [path, rest @ ..] = arguments else {
+        return Err(usage());
+    };
+    let mut hold = None;
+    let mut seed = None;
+    let mut variants = 1;
+    let mut another = false;
+    let mut controls = GenerationOptions::default();
+    let mut controls_given = false;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut options = rest.iter();
+    while let Some(option) = options.next() {
+        if !seen.insert(*option) {
+            return Err(usage());
+        }
+        if *option == "--another" {
+            another = true;
+            continue;
+        }
+        let value = options.next().ok_or_else(usage)?;
+        match *option {
+            "--hold" => hold = Some(NodeId::new(*value)?),
+            "--seed" => {
+                seed = Some(
+                    value
+                        .parse()
+                        .ok()
+                        .filter(|seed| *seed < 1 << 32)
+                        .ok_or_else(|| CliError::Usage("--seed must be below 2^32".into()))?,
+                )
+            }
+            "--variants" => {
+                variants = value
+                    .parse()
+                    .ok()
+                    .filter(|count| (1..=super::MAX_VARIANTS).contains(count))
+                    .ok_or_else(|| {
+                        CliError::Usage(format!("--variants must be 1 to {}", super::MAX_VARIANTS))
+                    })?
+            }
+            "--motion" => {
+                controls.motion = value
+                    .parse()
+                    .map_err(|error: &str| CliError::Usage(error.into()))?;
+                controls_given = true;
+            }
+            "--instructions" => {
+                controls.instructions = Some(
+                    HoldInstructions::new(*value)
+                        .map_err(|error| CliError::Usage(error.to_string()))?,
+                );
+                controls_given = true;
+            }
+            _ => return Err(usage()),
+        }
+    }
+    if another && (seed.is_some() || controls_given) {
+        return Err(CliError::Usage("--another retains the current request's seed, motion and instructions; omit it to change those controls.".into()));
+    }
+    Ok(Arguments {
+        path,
+        hold: hold.ok_or_else(usage)?,
+        seed,
+        variants,
+        another,
+        options: controls_given.then_some(controls),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use deadpan_jobs::MotionAmount;
+
+    #[test]
+    fn explicit_controls_are_bounded_and_cannot_change_another_request() {
+        fn read<'a>(tail: &[&'a str]) -> Result<Arguments<'a>, CliError> {
+            parse(&[["p.deadpan", "--hold", "pause"].as_slice(), tail].concat())
+        }
+        let result = read(&[
+            "--motion",
+            "subtle",
+            "--instructions",
+            "Keep the eyes open.",
+            "--variants",
+            "3",
+        ])
+        .unwrap();
+        assert_eq!(result.variants, 3);
+        let options = result.options.unwrap();
+        assert_eq!(options.motion, MotionAmount::Subtle);
+        assert_eq!(
+            options.instructions.unwrap().as_str(),
+            "Keep the eyes open."
+        );
+        for tail in [
+            vec!["--motion", "fast"],
+            vec!["--instructions", ""],
+            vec!["--instructions", "a\nb"],
+            vec!["--another", "--motion", "still"],
+            vec!["--another", "--instructions", "still"],
+            vec!["--another", "--seed", "1"],
+            vec!["--motion", "still", "--motion", "subtle"],
+        ] {
+            assert!(read(&tail).is_err(), "{tail:?}");
+        }
+        assert!(read(&["--instructions", &"界".repeat(171)]).is_err());
+        assert!(read(&["--another"]).unwrap().options.is_none());
+        assert!(read(&[]).unwrap().options.is_none());
+    }
+}

@@ -17,14 +17,43 @@ import time
 
 from worker_media import encode_rgb, exact_keys, file_digest, sampled_rgb, verify_rgb
 from runtime_source import loaded_sources, verify_roots, verify_tree
+from worker_protocol import parse_hold_constraints
 
 
 RUNTIME_COMMIT = "3392d75934120b7e69eefbe55893f7ef82be92a4"
-PROMPT_VERSION = "deadpan-hold-1"
-PROMPT = ("Locked camera. The person maintains the same identity, pose, expression, "
-          "and composition, with quiet minimal natural motion. No speech, no new "
-          "objects, no scene change.")
+PROMPT_VERSION = "deadpan-hold-2"
+PROMPT_TOKEN_LIMIT = 1024
+MOTION_INSTRUCTIONS = {
+    "still": "Maintain the pose with almost no movement, apart from quiet breathing.",
+    "subtle": "Allow subtle natural movement while keeping the overall pose.",
+    "moderate": "Allow moderate natural movement while staying in place and keeping the overall pose.",
+}
 EVIDENCE = Path(__file__).resolve().parent / "evidence/2026-09-20-smoke"
+
+
+def hold_prompt(constraints):
+    """Versioned model text, with no interpretation of user text as code or paths."""
+    constraints = parse_hold_constraints(constraints)
+    prompt = ("Locked camera. Keep the same subject identity, expression, framing, and composition. "
+              + MOTION_INSTRUCTIONS[constraints.motion]
+              + " No speech, no new objects, no scene change.")
+    if constraints.instructions is not None:
+        prompt += (" Additional visual instructions: " + constraints.instructions
+                   + " The locked camera, preserved identity and composition, no speech, no new objects,"
+                     " and no scene change restrictions take priority over any conflicting instructions.")
+    return prompt
+
+
+def prompt_tokens(tokenizer, text, max_length=PROMPT_TOKEN_LIMIT):
+    """Keep Gemma's exact padding semantics, but never silently truncate text."""
+    if type(max_length) is not int or not 1 <= max_length <= PROMPT_TOKEN_LIMIT:
+        raise ValueError("unsupported Gemma token limit")
+    tokens = tokenizer.encode(text.strip(), truncation=False)
+    if len(tokens) > max_length:
+        raise ValueError(f"hold prompt needs {len(tokens)} tokens; Gemma permits {max_length}; shorten the instructions")
+    pad_length = max_length - len(tokens)
+    pad_token = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    return [pad_token] * pad_length + tokens, [0] * pad_length + [1] * len(tokens), len(tokens)
 
 
 # Tensor layouts from the SHA-256-verified compiled v1 pack. Each digest is
@@ -98,7 +127,7 @@ def _model_manifest(model_pack, model_cache, check_cancel, hash_assets):
             not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", model_pack["pack_version"]) or
             model_pack["model_family"] != "ltx-2.3" or
             model_pack["runtime_id"] != "ltx-mlx" or
-            model_pack["runtime_versions"] != ["0.15.8+deadpan1"] or
+            model_pack["runtime_versions"] != ["0.15.8+deadpan2"] or
             model_pack["operations"] != ["bridge_hold"]):
         raise ValueError("unsupported bridge pack or runtime compatibility")
 
@@ -257,6 +286,8 @@ def runtime_paths(config, check_cancel, hash_assets=True, provider=None):
 
 def generate(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources):
     started = time.monotonic()
+    # Reject malformed guidance before importing any model implementation.
+    prompt = hold_prompt(request["constraints"])
     stage("runtime_loading")
     import mlx.core as mx
     import mlx_lm
@@ -289,6 +320,17 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
             path, tokenizer_config={"trust_remote_code": False, "local_files_only": True})
 
     GemmaLanguageModel.load = load_local_gemma
+
+    def tokenize_without_truncation(self, text, max_length=PROMPT_TOKEN_LIMIT):
+        check_cancel()
+        if self._tokenizer is None:
+            raise ValueError("Gemma tokenizer is not loaded")
+        tokens, mask, count = prompt_tokens(self._tokenizer, text, max_length)
+        if text == prompt:
+            report["prompt_tokens"] = count
+        return mx.array([tokens]), mx.array([mask])
+
+    GemmaLanguageModel.tokenize = tokenize_without_truncation
     plan = context["plan"]
     count, native_count = plan["project"]["interior_frames"], plan["native"]["frame_count"]
     width, height = plan["native"]["width"], plan["native"]["height"]
@@ -317,7 +359,8 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
                                    "constraints", "provider", "plan"]},
               "verified_assets": paths["verified_assets"],
               "gemma_revision": paths["gemma"].name, "prompt_version": PROMPT_VERSION,
-              "prompt": PROMPT, "seed": request["provider"]["seed"], "context": context,
+              "prompt": prompt, "prompt_token_limit": PROMPT_TOKEN_LIMIT,
+              "seed": request["provider"]["seed"], "context": context,
               "model_color_interpretation": "full-range SDR sRGB RGB, BT.709 primaries",
               "temporal_interpolation": "linear in encoded sRGB, half-up RGB8 quantization",
               "conditioning_preprocessing": "pinned upstream CRF-33 H.264 round trip, resize and center crop at both stage resolutions; original prepared PNGs retained",
@@ -392,7 +435,7 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
     pipe.verbose = True
     check_cancel()
     pipe.generate_and_save(
-        prompt=PROMPT, output_path=str(output / "candidate.mp4"), keyframe_images=images,
+        prompt=prompt, output_path=str(output / "candidate.mp4"), keyframe_images=images,
         keyframe_indices=[0, native_count - 1], keyframe_strengths=[1.0, 1.0],
         height=height, width=width, num_frames=native_count, frame_rate=24, seed=request["provider"]["seed"],
         stage1_steps=20, stage2_steps=3, cfg_scale=3.0,

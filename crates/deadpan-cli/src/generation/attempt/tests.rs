@@ -84,6 +84,7 @@ fn inputs() -> BridgeInputs {
         video: VideoSpec::new(duration, rate, 768, 320).unwrap(),
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
+        instructions: None,
     };
     // Prepared pictures are opaque retained bytes to capture and the store.
     let (left, right) = conditioning::opaque_boundaries(&plan, b"left".to_vec(), b"right".to_vec());
@@ -157,7 +158,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
         "pack_id": "ltx-2.3-q4-bridge",
         "pack_version": "2",
         "runtime_id": "ltx-mlx",
-        "runtime_version": "0.15.8+deadpan1",
+        "runtime_version": "0.15.8+deadpan2",
         "seed": 7,
     }))
     .unwrap();

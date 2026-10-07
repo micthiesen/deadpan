@@ -16,6 +16,7 @@ import math
 import os
 import struct
 import threading
+import unicodedata
 from typing import Any, BinaryIO, Mapping
 
 
@@ -26,6 +27,7 @@ MAX_PROTOCOL_ID_BYTES = 128
 MAX_WORKSPACE_REF_BYTES = 1_024
 MAX_DIAGNOSTIC_BYTES = 4_096
 MAX_VIDEO_DIMENSION = 32_768
+MAX_HOLD_INSTRUCTION_BYTES = 512
 _MAX_U32 = 2**32 - 1
 _MAX_U64 = 2**64 - 1
 _MAX_I64 = 2**63 - 1
@@ -169,12 +171,13 @@ def write_frame(stream: BinaryIO, value: Mapping[str, Any]) -> None:
             raise ProtocolError(f"protocol flush failed: {error}") from error
 
 
-def _object(value: Any, keys: set[str], where: str) -> dict[str, Any]:
+def _object(value: Any, keys: set[str], where: str, *,
+            optional: set[str] | frozenset[str] = frozenset()) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ProtocolError(f"{where} must be an object")
     actual = set(value)
     missing = keys - actual
-    extra = actual - keys
+    extra = actual - keys - optional
     if missing:
         raise ProtocolError(f"{where} is missing field(s): {sorted(missing)}")
     if extra:
@@ -334,6 +337,7 @@ class HoldConstraints:
     video: VideoSpec
     conditioning: str
     motion: str
+    instructions: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.video, VideoSpec):
@@ -346,13 +350,33 @@ class HoldConstraints:
             raise ProtocolError("invalid conditioning mode")
         if type(self.motion) is not str or self.motion not in {"still", "subtle", "moderate"}:
             raise ProtocolError("invalid motion amount")
+        if self.instructions is not None:
+            text = _string(self.instructions, "hold instructions")
+            if (len(text.encode("utf-8")) > MAX_HOLD_INSTRUCTION_BYTES or not text.strip()
+                    or any(unicodedata.category(char) == "Cc" for char in text)):
+                raise ProtocolError("hold instructions must be nonblank text of at most 512 UTF-8 bytes without control characters")
 
     def _wire(self) -> dict[str, Any]:
-        return {
+        result = {
             "video": self.video._wire(),
             "conditioning": self.conditioning,
             "motion": self.motion,
         }
+        if self.instructions is not None:
+            result["instructions"] = self.instructions
+        return result
+
+
+def parse_hold_constraints(value: Mapping[str, Any]) -> HoldConstraints:
+    constraints = _object(
+        value, {"video", "conditioning", "motion"}, "constraints", optional={"instructions"}
+    )
+    return HoldConstraints(
+        _parse_video(constraints["video"]),
+        _string(constraints["conditioning"], "conditioning"),
+        _string(constraints["motion"], "motion"),
+        constraints.get("instructions"),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -833,9 +857,7 @@ def parse_host_message(
         value = _object(value, expected, "generate_hold")
         target = _object(value["target"], {"hold_id", "request_version"}, "target")
         input_value = _object(value["input"], {"manifest", "sha256"}, "input")
-        constraints = _object(
-            value["constraints"], {"video", "conditioning", "motion"}, "constraints"
-        )
+        constraints = parse_hold_constraints(value["constraints"])
         return GenerateHoldRequest(
             _parse_protocol(value["protocol"], expected=PROTOCOL_VERSION),
             _parse_identity(value["identity"]),
@@ -851,11 +873,7 @@ def parse_host_message(
                 _sha256(input_value["sha256"]),
             ),
             _workspace_ref(value["output_workspace"], "output workspace"),
-            HoldConstraints(
-                _parse_video(constraints["video"]),
-                _string(constraints["conditioning"], "conditioning"),
-                _string(constraints["motion"], "motion"),
-            ),
+            constraints,
             _parse_provider(value["provider"]),
         )
     if operation == "generate_bridge":
@@ -876,9 +894,7 @@ def parse_host_message(
         value = _object(value, expected, "generate_bridge")
         target = _object(value["target"], {"hold_id", "request_version"}, "target")
         input_value = _object(value["input"], {"manifest", "sha256"}, "input")
-        constraints = _object(
-            value["constraints"], {"video", "conditioning", "motion"}, "constraints"
-        )
+        constraints = parse_hold_constraints(value["constraints"])
         return GenerateBridgeRequest(
             _parse_protocol(value["protocol"], expected=BRIDGE_PROTOCOL_VERSION),
             _parse_identity(value["identity"]),
@@ -894,11 +910,7 @@ def parse_host_message(
                 _sha256(input_value["sha256"]),
             ),
             _workspace_ref(value["output_workspace"], "output workspace"),
-            HoldConstraints(
-                _parse_video(constraints["video"]),
-                _string(constraints["conditioning"], "conditioning"),
-                _string(constraints["motion"], "motion"),
-            ),
+            constraints,
             _parse_provider(value["provider"]),
             _parse_plan(value["plan"]),
         )

@@ -13,6 +13,7 @@ pub mod artifact;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod faces;
 pub mod generation_plan;
+mod hold_prompt;
 pub mod lifecycle;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod process;
@@ -26,5 +27,6 @@ pub mod tracking;
 pub mod transcription;
 
 pub use generation_plan::*;
+pub use hold_prompt::*;
 pub use lifecycle::*;
 pub use protocol::*;

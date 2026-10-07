@@ -23,6 +23,7 @@ const JOB: u64 = (1 << 62) + 3;
 fn status(polls: usize) -> Result<GenerationStatus> {
     let finished = polls >= 2;
     Ok(GenerationStatus {
+        options: deadpan_jobs::GenerationOptions::default(),
         job: JOB,
         hold: NodeId::new("pause")?,
         request_id: (polls > 0)
@@ -140,6 +141,10 @@ fn generate_and_accept_route_to_the_open_projects_owner() -> Result {
             "2",
             "--seed",
             "9",
+            "--motion",
+            "moderate",
+            "--instructions",
+            "Keep the hands still.",
         ],
         false,
     )?;
@@ -163,6 +168,16 @@ fn generate_and_accept_route_to_the_open_projects_owner() -> Result {
     assert_eq!(request.hold.as_str(), "pause");
     assert_eq!(request.expected_revision.as_str(), "initial");
     assert_eq!((request.variants, request.seed), (2, Some(9)));
+    let options = request.options.as_ref().unwrap();
+    assert_eq!(options.motion, deadpan_jobs::MotionAmount::Moderate);
+    assert_eq!(
+        options.instructions.as_ref().unwrap().as_str(),
+        "Keep the hands still."
+    );
+    assert_eq!(
+        report["options"]["motion"], "still",
+        "the report is the owner's observation"
+    );
     assert!(matches!(
         operations.last(),
         Some(Operation::ReleaseGenerationStatus { job: JOB, .. })

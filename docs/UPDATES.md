@@ -193,12 +193,12 @@ updates automatically, and a helper update never modifies the signed bundle.
 ## Model-pack updates
 
 Payload ([`PackUpdate`](../crates/deadpan-models/src/packs/updates.rs)):
-`schema` 1, `serial`, `issued`, `min_app_version` and one complete schema-3
+`schema` 1, `serial`, `issued`, `min_app_version` and one complete schema-4
 pack manifest. It must name a pack family this build compiles, keep its
 `runtime_id`, list a runtime version this build ships and add no operation.
 The bridge pack accepts data updates under a narrower contract: it must keep
 the shipped `ltx-2.3` q4 and Gemma components, exact file inventory, runtime
-`ltx-mlx` version `0.15.8+deadpan1`, `bridge_hold` operation, resource profile,
+`ltx-mlx` version `0.15.8+deadpan2`, `bridge_hold` operation, resource profile,
 and language set. The component revision directories and pack version may
 change. Safetensors hashes and `LICENSE`/`README.md` contents may change, but
 weight sizes stay fixed; config, quantization, tensor index, tokenizer and

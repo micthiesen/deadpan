@@ -62,6 +62,7 @@ fn request() -> HostMessage {
             video: video(),
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Subtle,
+            instructions: None,
         },
         provider: Box::new(provider()),
     }
@@ -124,6 +125,7 @@ fn bridge_request() -> HostMessage {
             .unwrap(),
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Subtle,
+            instructions: None,
         },
         provider: Box::new(provider()),
         plan: Box::new(bridge_plan()),

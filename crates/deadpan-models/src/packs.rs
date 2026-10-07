@@ -29,7 +29,7 @@ pub mod archive;
 pub mod constraints;
 pub mod updates;
 
-pub const MANIFEST_SCHEMA: u32 = 3;
+pub const MANIFEST_SCHEMA: u32 = 4;
 /// Largest single pack file accepted from a manifest.
 pub const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const MAX_FILES: usize = 64;

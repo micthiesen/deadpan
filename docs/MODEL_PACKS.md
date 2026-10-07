@@ -18,11 +18,15 @@ absolute paths, `..`, hidden components and duplicates are refused. Validation
 also requires HTTPS on an approved host (currently `huggingface.co`), lowercase
 SHA-256, bounded sizes and at most 64 files. Weights are never committed.
 
+Schema 4 also declares supported bridge motion values and the maximum optional
+instruction length (512 UTF-8 bytes). This is a data capability contract; the
+versioned prompt and token limit belong to the shipped worker.
+
 The required `constraints` record declares conditioning inputs, stored weight
 precisions, Apple Silicon architecture, minimum macOS and the backends the
 runtime uses. Audio analysis declares mono 16 kHz PCM and at most 172,800,000
 samples (three hours). Bridge generation declares two boundary images and a
-fixed prompt; 24 fps; `8k+1` native frames from 9 through 97; exactly 768×320
+versioned base prompt with optional guidance; 24 fps; `8k+1` native frames from 9 through 97; exactly 768×320
 pixels, with 64-pixel axis multiples; and at most 180 project frames. Speech
 weights use float16/float32; the bridge pack combines 4-bit weights with
 bfloat16/float32 components. These are the existing qualified runtime limits,
@@ -33,7 +37,7 @@ packaged resolver checks its minimum OS alongside the runtime's own minimum.
 Speech requires macOS 15; the bundled MLX bridge requires macOS 26. Signed
 data updates must preserve these declarations exactly. Changed requirements
 need a new application runtime. Missing required fields, malformed or
-contradictory constraints, and unknown fields refuse admission; schema-2 development update manifests
+contradictory constraints, and unknown fields refuse admission; schema-2/3 development update manifests
 must be regenerated. Installed baseline weights and their receipts need no
 rewrite because their file identities have not changed.
 
@@ -128,7 +132,7 @@ converters' licenses (mlx-forge, mlx-vlm) do not replace the weight licenses.
 
 A newer pack version can arrive without an app rebuild as a
 [signed model-pack update](UPDATES.md#model-pack-updates): an Ed25519-signed
-envelope whose payload is a complete schema-3 manifest for a pack family this
+envelope whose payload is a complete schema-4 manifest for a pack family this
 build compiles, with the same runtime and a runtime version this build ships.
 `models update <file|https-url> [--from <folder|archive.tar>]
 [--accept-license] [--allow-downgrade]` verifies it, installs the version
@@ -143,7 +147,7 @@ compiled approved version.
 
 The AI pause pack has a narrower compatibility contract. A signed update must
 keep the same LTX-2.3 q4 and Gemma components, file inventory, 4-bit
-configuration, tokenizer, runtime `ltx-mlx` at `0.15.8+deadpan1`, and
+configuration, tokenizer, runtime `ltx-mlx` at `0.15.8+deadpan2`, and
 `bridge_hold` operation. Component revision directories and pack version may
 change. Safetensors hashes and the human-readable license/readme contents may
 change, but weight sizes stay fixed; config, quantization, tensor index,
