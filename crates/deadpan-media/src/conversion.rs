@@ -16,6 +16,8 @@ use crate::protocol::{
     BridgeConversionRequest, ContractError, ConversionReport, ConversionRequest, MAX_REPLY_BYTES,
     MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply, WorkerRequest,
 };
+use crate::source_index::SourceContentIdentity;
+use crate::source_input::{SourceInputError, VerifiedSourceInput};
 
 mod proxy;
 mod remux;
@@ -61,6 +63,7 @@ pub enum ConversionError {
 pub struct CanonicalMedia {
     file: File,
     object: GeneratedObjectRef,
+    source_sha256: [u8; 32],
     report: ConversionReport,
 }
 
@@ -71,6 +74,18 @@ impl CanonicalMedia {
 
     pub fn report(&self) -> &ConversionReport {
         &self.report
+    }
+
+    /// Share this canonical output with the admitted source decoders without
+    /// copying or reopening it. The SHA-256 and byte length were measured over
+    /// the complete private output while its BLAKE3 object identity was
+    /// established. The returned input holds only a cloned descriptor; it
+    /// exposes neither the path nor a writable file handle.
+    pub fn verified_source_input(&self) -> Result<VerifiedSourceInput, SourceInputError> {
+        let identity = SourceContentIdentity::new(self.source_sha256, self.object.byte_length())
+            .map_err(|_| SourceInputError::Limits)?;
+        let file = self.file.try_clone().map_err(ConversionError::from)?;
+        VerifiedSourceInput::from_verified_file(file, identity)
     }
 }
 
@@ -283,7 +298,7 @@ fn convert_snapshot(
         ));
     }
     output.rewind()?;
-    let digest = hash_output(&mut output, report.output_bytes, deadline)?;
+    let (digest, source_sha256) = hash_output(&mut output, report.output_bytes, deadline)?;
     output.rewind()?;
     let content = GeneratedContentId::new(digest)
         .map_err(|error| ConversionError::Protocol(error.to_string()))?;
@@ -293,6 +308,7 @@ fn convert_snapshot(
     Ok(CanonicalMedia {
         file: output,
         object,
+        source_sha256,
         report,
     })
 }
@@ -349,8 +365,9 @@ fn hash_output(
     file: &mut File,
     length: u64,
     deadline: &Deadline<'_>,
-) -> Result<String, ConversionError> {
-    let mut hash = blake3::Hasher::new();
+) -> Result<(String, [u8; 32]), ConversionError> {
+    let mut blake3_hash = blake3::Hasher::new();
+    let mut sha256_hash = Sha256::new();
     let mut total = 0u64;
     let mut buffer = [0u8; 64 * 1024];
     loop {
@@ -363,14 +380,18 @@ fn hash_output(
             .checked_add(count as u64)
             .filter(|total| *total <= length)
             .ok_or_else(|| ConversionError::Protocol("output grew during hashing".into()))?;
-        hash.update(&buffer[..count]);
+        blake3_hash.update(&buffer[..count]);
+        sha256_hash.update(&buffer[..count]);
     }
     if total != length || file.metadata()?.len() != length {
         return Err(ConversionError::Protocol(
             "output changed during hashing".into(),
         ));
     }
-    Ok(hash.finalize().to_hex().to_string())
+    Ok((
+        blake3_hash.finalize().to_hex().to_string(),
+        <[u8; 32]>::from(sha256_hash.finalize()),
+    ))
 }
 
 struct OwnedProcess {
@@ -620,6 +641,65 @@ mod tests {
     use std::io::Cursor;
 
     struct PendingPipe;
+
+    #[test]
+    fn canonical_output_shares_its_verified_descriptor_with_source_decoders() {
+        let bytes = b"canonical media bytes";
+        let mut file = tempfile::tempfile().unwrap();
+        file.write_all(bytes).unwrap();
+        file.rewind().unwrap();
+
+        let cancelled = AtomicBool::new(false);
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(1),
+            cancelled: &cancelled,
+        };
+        let (blake3_digest, sha256) =
+            hash_output(&mut file, bytes.len() as u64, &deadline).unwrap();
+        file.rewind().unwrap();
+
+        let object = GeneratedObjectRef::new(
+            GeneratedContentId::new(blake3_digest).unwrap(),
+            bytes.len() as u64,
+        )
+        .unwrap();
+        let video = crate::protocol::VideoContract {
+            width: 1,
+            height: 1,
+            frames: 1,
+            rate_num: 24,
+            rate_den: 1,
+        };
+        let media = CanonicalMedia {
+            file,
+            object,
+            source_sha256: sha256,
+            report: ConversionReport {
+                protocol: 2,
+                video,
+                output_bytes: bytes.len() as u64,
+                input_rgb_sha256: "a".repeat(64),
+                output_rgb_sha256: "a".repeat(64),
+                input_time_base_num: 1,
+                input_time_base_den: 24,
+                output_time_base_num: 1,
+                output_time_base_den: 1000,
+                first_output_pts: 0,
+                last_output_pts: 0,
+                last_output_duration: 1,
+                ffv1_version: 3,
+                slice_crc: true,
+                discarded_audio_streams: 0,
+            },
+        };
+
+        let input = media.verified_source_input().unwrap();
+        assert_eq!(input.identity().byte_length(), bytes.len() as u64);
+        assert_eq!(
+            input.identity().sha256(),
+            <[u8; 32]>::from(Sha256::digest(bytes))
+        );
+    }
 
     #[test]
     fn failed_reap_is_terminal_even_after_confirmed_group_cleanup() {

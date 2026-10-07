@@ -97,6 +97,8 @@ pub enum QualificationError {
     Request(String),
     #[error("invalid bridge provenance: {0}")]
     Provenance(String),
+    #[error("bridge candidate quality check failed: {0}")]
+    Quality(String),
     #[error(transparent)]
     Artifact(#[from] ArtifactError),
     #[error(transparent)]
@@ -209,6 +211,8 @@ struct HostProvenance<'a> {
     // A string preserves original bytes exactly, including formatting. Backend
     // claims are retained as provenance, never used as media validation results.
     worker_provenance_utf8: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    quality: Option<&'a crate::BridgeQualityReport>,
 }
 
 /// Worker declarations paired with independently selected host inputs.
@@ -353,6 +357,14 @@ pub fn qualify_bridge(
         cancelled,
     )?;
     check()?;
+    let quality = crate::quality::measure(
+        masters.native(),
+        &binding.plan,
+        binding.constraints.motion,
+        deadline,
+        cancelled,
+    )?;
+    check()?;
     let worker_provenance_utf8 = std::str::from_utf8(&provenance_bytes)
         .map_err(|error| QualificationError::Provenance(error.to_string()))?;
     let native_span = masters
@@ -367,8 +379,8 @@ pub fn qualify_bridge(
         .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 3,
-            validation_profile: "deadpan-ffv1-bridge-3",
+            schema_version: 4,
+            validation_profile: "deadpan-ffv1-bridge-4",
             binding: &binding,
             selected_provider,
             declaration,
@@ -380,6 +392,7 @@ pub fn qualify_bridge(
             native_span,
             sampled_span,
             worker_provenance_utf8,
+            quality: Some(&quality),
         },
         limits.maximum_host_provenance_bytes,
     )

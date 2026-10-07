@@ -10,6 +10,7 @@
 
 pub mod activity;
 pub mod corrections;
+pub mod generation_quality;
 pub mod shots;
 pub mod tracking;
 pub mod transcript;

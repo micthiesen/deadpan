@@ -56,7 +56,7 @@ ends in Ready, Failed or Cancelled.
   declaration that differs from the plan or provider fails the attempt. After a
   clean exit it runs `qualify_bridge` with `deadpan-media-worker` and builds the
   `BundleValidationReceipt` with admission evidence (validator `native-ffv1`,
-  `bridge-3`). An error from `records` cancels the worker and fails the attempt.
+  `bridge-4`). An error from `records` cancels the worker and fails the attempt.
 - `finish` publishes the native and sampled masters, the provenance envelope
   and the three retained inputs, then records Ready. A publication failure is
   recorded as a host failure. Failures the store has not already recorded become
@@ -66,6 +66,22 @@ ends in Ready, Failed or Cancelled.
   edit, and builds the relevance plan with `BoundaryContextResolver` for every
   current request, so the accepted request stays `Resolved` with its own hash.
   `relevance_plan(store, before, after)` is public for other explicit writes.
+
+### Candidate motion and lighting
+
+Before Ready, the host inspects every adjacent native picture pair for gross
+motion and abrupt lighting changes. Motion is block displacement measured in
+the authored Hold clock, with limits following Still/Subtle/Moderate. Low
+texture, ambiguous matches and motion beyond the bounded search remain
+unavailable. The inspector shows this coverage; all candidates still need
+audition before acceptance.
+
+Schema-4 host provenance retains the measurements, thresholds and coverage.
+Previously accepted schema-3 footage remains readable and is labelled as
+lacking these checks. Rejection records `OutputValidationFailed`, preserves
+earlier Ready selection, and leaves the committed pause unchanged. See
+[measurement and verification](qualification/bridge-quality-2026-10-07.md).
+Endpoint RGB readings remain advisory; face/region and mouth checks remain open.
 
 ### Source and colour context
 

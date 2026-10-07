@@ -1373,7 +1373,7 @@ pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> 
             (covered.is_positive()).then(|| rect(covered))
         }).collect::<Vec<_>>();
         Some(json!({
-            "text":text.galley.text(),"bounds":rect(bounds),
+            "text":text.galley.text(),"elided":text.galley.elided,"bounds":rect(bounds),
             "clip":rect(clipped.clip_rect),"viewport":rect(viewport),
             "fully_visible":clipped.clip_rect.contains_rect(bounds) && viewport.contains_rect(bounds) && occluders.is_empty(),
             "opaque_rect_occluders":occluders,

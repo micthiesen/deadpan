@@ -199,7 +199,7 @@ mod supported {
             bundle.provenance().object().clone(),
             binding.constraints.video.clone(),
             binding.plan.clone(),
-            ValidatorIdentity::new("native-ffv1", "bridge-3")?,
+            ValidatorIdentity::new("native-ffv1", "bridge-4")?,
         )?
         .with_admission(admission)?;
         let document = create_document(&binding)?;

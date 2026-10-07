@@ -838,7 +838,7 @@ fn validation_receipt(
         bundle.provenance().object().clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-3").map_err(text)?,
+        ValidatorIdentity::new("native-ffv1", "bridge-4").map_err(text)?,
     )
     .map_err(text)?
     .with_admission(admission)

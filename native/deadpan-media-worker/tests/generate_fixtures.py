@@ -31,6 +31,22 @@ def rgb_frames(frame_count: int) -> bytes:
     return bytes(output)
 
 
+def smooth_candidate_rgb_frames(frame_count: int) -> bytes:
+    """A distinct, gradual RGB drift for bridge acceptance fixtures."""
+    output = bytearray()
+    for frame in range(frame_count):
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                output.extend(
+                    (
+                        3 * frame + 31 * x + 7 * y + 3,
+                        2 * frame + 5 * x + 47 * y + 11,
+                        frame + 13 * x + 19 * y + 23,
+                    )
+                )
+    return bytes(output)
+
+
 def run_encoder(
     ffmpeg: Path,
     destination: Path,
@@ -128,14 +144,15 @@ def fixture(
     *,
     tagged: bool = True,
     audio: bool = False,
+    smooth_candidate: bool = False,
 ) -> dict[str, object]:
-    raw = rgb_frames(frames)
+    raw = smooth_candidate_rgb_frames(frames) if smooth_candidate else rgb_frames(frames)
     with tempfile.NamedTemporaryFile(prefix="deadpan-rgb-", suffix=".raw") as source:
         source.write(raw)
         source.flush()
         destination = output / f"{name}.mp4"
         run_encoder(ffmpeg, destination, Path(source.name), rate_num, rate_den, tagged, audio)
-    return {
+    entry = {
         "name": name,
         "file": destination.name,
         "width": WIDTH,
@@ -150,6 +167,11 @@ def fixture(
         "tags": tagged,
         "raw_bytes": len(raw),
     }
+    if smooth_candidate:
+        entry["pattern"] = (
+            "r=3f+31x+7y+3; g=2f+5x+47y+11; b=f+13x+19y+23"
+        )
+    return entry
 
 
 def main() -> None:
@@ -166,6 +188,15 @@ def main() -> None:
     entries = [
         fixture(args.ffmpeg, args.output, "rgb30_30000_1001", 30, 30000, 1001),
         fixture(args.ffmpeg, args.output, "rgb25_24", 25, 24, 1),
+        fixture(
+            args.ffmpeg,
+            args.output,
+            "rgb25_24_smooth_candidate",
+            25,
+            24,
+            1,
+            smooth_candidate=True,
+        ),
         fixture(args.ffmpeg, args.output, "rgb1_24", 1, 24, 1),
         fixture(args.ffmpeg, args.output, "rgb2_24_audio", 2, 24, 1, audio=True),
         fixture(args.ffmpeg, args.output, "rgb1_24_no_tags", 1, 24, 1, tagged=False),

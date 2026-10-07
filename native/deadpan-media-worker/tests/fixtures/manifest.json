@@ -38,6 +38,22 @@
       "raw_bytes": 600
     },
     {
+      "name": "rgb25_24_smooth_candidate",
+      "file": "rgb25_24_smooth_candidate.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 25,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "d401d035d54519b4ad225dccd6883b22577c7d0450d063766adabea604e856a1",
+      "file_sha256": "9a71af1614ac56b2516fb97c334a704a0d1e9cb91f22ae42aec85b8dd6d5fd6a",
+      "file_bytes": 10396,
+      "has_audio": false,
+      "tags": true,
+      "raw_bytes": 600,
+      "pattern": "r=3f+31x+7y+3; g=2f+5x+47y+11; b=f+13x+19y+23"
+    },
+    {
       "name": "rgb1_24",
       "file": "rgb1_24.mp4",
       "width": 4,

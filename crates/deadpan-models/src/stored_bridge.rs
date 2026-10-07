@@ -7,7 +7,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    BridgeContext, ConditioningReceipt, GenerationBinding, QualificationError,
+    BridgeContext, BridgeQualityReport, ConditioningReceipt, GenerationBinding, QualificationError,
     SelectedBridgeProvider,
 };
 
@@ -16,7 +16,7 @@ const MAXIMUM_WORKER_PROVENANCE_BYTES: usize = 4 * 1024 * 1024;
 const MAXIMUM_CONTEXT_BYTES: usize = 1024 * 1024;
 const MAXIMUM_FRAME_BYTES: u64 = 64 * 1024 * 1024;
 
-/// An object-verified schema-3 envelope. This alone does not admit media: use
+/// An object-verified stored envelope. This alone does not admit media: use
 /// `validate_for` against the captured authored artifact and retained context.
 /// No stored workspace paths are opened, and no installed provider is consulted.
 pub struct StoredBridgeProvenance {
@@ -40,6 +40,18 @@ struct StoredEnvelope {
     native_span: SourceSpan,
     sampled_span: SourceSpan,
     worker_provenance_utf8: String,
+    #[serde(default, deserialize_with = "deserialize_quality")]
+    quality: Option<BridgeQualityReport>,
+}
+
+// `Option<T>` normally treats a present JSON `null` like an absent field.
+// Keep those states distinct so schema 3 really has no quality field and
+// schema 4 must carry an actual report.
+fn deserialize_quality<'de, D>(deserializer: D) -> Result<Option<BridgeQualityReport>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    BridgeQualityReport::deserialize(deserializer).map(Some)
 }
 
 impl StoredBridgeProvenance {
@@ -60,6 +72,12 @@ impl StoredBridgeProvenance {
 
     pub fn context_object(&self) -> &GeneratedObjectRef {
         self.envelope.conditioning.manifest().object()
+    }
+
+    /// Host-recorded quality-screen metadata, when present. This reports the
+    /// bounded motion/lighting checks; it does not admit or validate media bytes.
+    pub fn quality(&self) -> Option<&BridgeQualityReport> {
+        self.envelope.quality.as_ref()
     }
 
     /// Bind durable evidence to an immutable authored artifact and its project.
@@ -115,7 +133,13 @@ impl StoredBridgeProvenance {
 
 impl StoredEnvelope {
     fn validate(&self) -> Result<(), QualificationError> {
-        if self.schema_version != 3 || self.validation_profile != "deadpan-ffv1-bridge-3" {
+        let legacy = self.schema_version == 3
+            && self.validation_profile == "deadpan-ffv1-bridge-3"
+            && self.quality.is_none();
+        let measured = self.schema_version == 4
+            && self.validation_profile == "deadpan-ffv1-bridge-4"
+            && self.quality.is_some();
+        if !legacy && !measured {
             return Err(invalid(
                 "unsupported stored bridge provenance profile/schema",
             ));
@@ -161,6 +185,9 @@ impl StoredEnvelope {
         self.sampled_validation
             .validate_canonical(&sampled)
             .map_err(invalid)?;
+        if let Some(quality) = &self.quality {
+            quality.validate(plan, binding.constraints.motion)?;
+        }
         if self.native_validation.output_bytes != self.native.byte_length()
             || self.sampled_validation.output_bytes != self.sampled.byte_length()
             || self.native_validation.input_rgb_sha256 != self.native_validation.output_rgb_sha256
@@ -205,6 +232,9 @@ pub struct AcceptedBridgeEvidence {
 }
 
 impl AcceptedBridgeEvidence {
+    pub fn quality(&self) -> Option<&BridgeQualityReport> {
+        self.provenance.envelope.quality.as_ref()
+    }
     pub fn native_contract(&self) -> VideoContract {
         self.provenance.envelope.native_validation.video
     }

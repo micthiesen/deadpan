@@ -1123,6 +1123,7 @@ name = "deadpan-models"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "deadpan-analysis",
  "deadpan-chaos",
  "deadpan-core",
  "deadpan-jobs",

@@ -88,13 +88,19 @@ its Ready API relies on this independent host qualification.
    sampled FFV1 masters under the remaining shared deadline, using
    [`canonicalize_bridge`](MEDIA_CONVERSION.md). Independently decode outputs and
    verify exact picture/timing contracts.
-4. Produce a bounded immutable provenance envelope containing the original worker
+4. Inspect every adjacent native frame pair for motion magnitude and abrupt
+   lighting changes through the verified canonical descriptor. Motion uses the
+   authored sampling clock; insufficient evidence stays unavailable. Reject
+   measured policy failures before Ready. See
+   [quality evidence](qualification/bridge-quality-2026-10-07.md).
+5. Produce a bounded immutable provenance envelope containing the original worker
    report's exact UTF-8 bytes, original request/declaration, both generated-object
    identities, host media-validation reports, measured native/sample source spans,
-   and conditioning receipt. Envelope schema 3 uses profile `deadpan-ffv1-bridge-3`.
-   Earlier envelopes lack some of this evidence and must not be treated as equivalent.
+   conditioning receipt and typed quality report. Envelope schema 4 uses profile
+   `deadpan-ffv1-bridge-4`. Schema 3 remains readable without the quality report;
+   earlier envelopes lack admission evidence and are not equivalent.
    Stop serialization at its budget.
-5. Return both masters, host provenance and all three immutable input snapshots.
+6. Return both masters, host provenance and all three immutable input snapshots.
    Publish these through the store's [generated-media API](GENERATED_MEDIA.md).
    Construct admission evidence from the measured spans and retained inputs. Ready
    and the dedicated [acceptance transaction](GENERATION_ACCEPTANCE.md) verify all

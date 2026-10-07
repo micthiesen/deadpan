@@ -72,13 +72,39 @@ struct JoinsState {
 
 use deadpan_cli::generation::joins::{JoinClass, JoinReport};
 
-/// What a variant's background reading found: its advisory joins and how its
-/// conditioning colour reached the model.
+/// Compact quality text fits in the chosen variant card; detail remains
+/// available to accessibility and the row tooltip.
+#[derive(Clone, Debug)]
+struct QualityReading {
+    compact: String,
+    detail: String,
+}
+
+impl QualityReading {
+    fn pending() -> Self {
+        Self {
+            compact: "Checks reading…".into(),
+            detail: "Motion/lighting status is being read.".into(),
+        }
+    }
+
+    fn unavailable(detail: impl Into<String>) -> Self {
+        Self {
+            compact: "Checks unavailable".into(),
+            detail: detail.into(),
+        }
+    }
+}
+
+/// What a variant's background reading found: its advisory joins, conditioning
+/// colour and host motion/lighting screen status.
 #[derive(Clone, Debug)]
 struct Reading {
     joins: Result<JoinReport, String>,
     /// `ConditioningColour::describe` of the retained manifest, when readable.
     colour: Option<String>,
+    /// Explicit status for the host's bounded motion/lighting screen.
+    quality: QualityReading,
 }
 
 /// Read a variant's retained conditioning manifest and describe how its
@@ -110,6 +136,95 @@ fn conditioning_colour(
         .map(|colour| colour.describe())
 }
 
+/// Read only the bounded host provenance needed to summarize its quality
+/// screen. This is metadata for the inspector, not media admission.
+fn quality_status(
+    handle: &deadpan_store::generated_media::GeneratedReadHandle,
+    receipt: &deadpan_store::generation_attempts::BundleValidationReceipt,
+    cancelled: &std::sync::atomic::AtomicBool,
+) -> QualityReading {
+    use std::io::Read;
+    const MAX_PROVENANCE_BYTES: u64 = 32 * 1024 * 1024;
+    const READ_TIMEOUT: Duration = Duration::from_secs(15);
+
+    let reference = receipt.provenance_object();
+    if reference.byte_length() > MAX_PROVENANCE_BYTES {
+        return QualityReading::unavailable(
+            "Motion/lighting report unavailable: retained provenance exceeds the 32 MiB read limit.",
+        );
+    }
+    let limits = match deadpan_store::generated_media::GeneratedReadLimits::new(
+        MAX_PROVENANCE_BYTES,
+        READ_TIMEOUT,
+    ) {
+        Ok(limits) => limits,
+        Err(_) => {
+            return QualityReading::unavailable(
+                "Motion/lighting report unavailable: could not set read limits.",
+            );
+        }
+    };
+    let mut snapshot = match handle.snapshot(reference, limits, cancelled) {
+        Ok(snapshot) => snapshot,
+        Err(_) => {
+            return QualityReading::unavailable(
+                "Motion/lighting report unavailable: retained provenance could not be read.",
+            );
+        }
+    };
+    let Ok(capacity) = usize::try_from(reference.byte_length()) else {
+        return QualityReading::unavailable(
+            "Motion/lighting report unavailable: retained provenance size is unsupported.",
+        );
+    };
+    let mut bytes = Vec::new();
+    if bytes.try_reserve_exact(capacity).is_err() {
+        return QualityReading::unavailable(
+            "Motion/lighting report unavailable: could not allocate the bounded read buffer.",
+        );
+    }
+    if snapshot
+        .by_ref()
+        .take(MAX_PROVENANCE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .is_err()
+    {
+        return QualityReading::unavailable(
+            "Motion/lighting report unavailable: reading retained provenance failed.",
+        );
+    }
+    if u64::try_from(bytes.len()).ok() != Some(reference.byte_length()) {
+        return QualityReading::unavailable(
+            "Motion/lighting report unavailable: retained provenance length changed.",
+        );
+    }
+    let provenance = match deadpan_models::StoredBridgeProvenance::from_bytes(&bytes, reference) {
+        Ok(provenance) => provenance,
+        Err(_) => {
+            return QualityReading::unavailable(
+                "Motion/lighting report unavailable: retained provenance is invalid.",
+            );
+        }
+    };
+    let Some(report) = provenance.quality() else {
+        return QualityReading::unavailable("Older candidate: motion/lighting checks unavailable.");
+    };
+    let unavailable = report.unavailable_motion_pairs();
+    let total = report.transitions().len();
+    let measurable = total.saturating_sub(unavailable);
+    let detail = if unavailable == 0 {
+        "Motion/lighting sampled; audition before accepting. Motion uses bounded block matching and may cover only part of each frame.".into()
+    } else {
+        format!(
+            "Motion/lighting sampled; audition before accepting. Motion unavailable in {unavailable} of {total} frame pairs. Motion uses bounded block matching and may cover only part of each frame."
+        )
+    };
+    QualityReading {
+        compact: format!("Motion coverage {measurable}/{total}"),
+        detail,
+    }
+}
+
 /// Ends a measurement whatever happens to its thread, including a panic, so
 /// the next variant can start and this one is not retried every frame.
 struct JoinGuard {
@@ -137,6 +252,9 @@ impl Drop for JoinGuard {
             let result = self.result.take().unwrap_or_else(|| Reading {
                 joins: Err("The join measurement stopped unexpectedly.".into()),
                 colour: None,
+                quality: QualityReading::unavailable(
+                    "Motion/lighting report unavailable: background reading stopped.",
+                ),
             });
             state.measured.insert(self.attempt.clone(), result);
         }
@@ -207,7 +325,12 @@ impl Joins {
                 )
                 .map_err(|error| error.to_string());
                 let colour = conditioning_colour(&handle, &receipt, &cancelled);
-                guard.finish(Reading { joins, colour });
+                let quality = quality_status(&handle, &receipt, &cancelled);
+                guard.finish(Reading {
+                    joins,
+                    colour,
+                    quality,
+                });
             });
         if let Err(error) = spawned {
             // The guard moved into the failed closure and was dropped with
@@ -218,6 +341,9 @@ impl Joins {
                 Reading {
                     joins: Err(format!("Could not start the join measurement: {error}")),
                     colour: None,
+                    quality: QualityReading::unavailable(
+                        "Motion/lighting report unavailable: background reading could not start.",
+                    ),
                 },
             );
         }
@@ -340,6 +466,30 @@ impl State {
     pub(crate) fn chosen_variant(&self) -> Option<(usize, AttemptId)> {
         let candidate = self.update.as_ref()?.candidates.values().next()?;
         Some((candidate.selected_index() + 1, candidate.selected.clone()))
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn chosen_quality(&self) -> Option<String> {
+        let (_, attempt) = self.chosen_variant()?;
+        self.joins
+            .0
+            .lock()
+            .ok()?
+            .measured
+            .get(&attempt)
+            .map(|reading| reading.quality.detail.clone())
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn chosen_quality_compact(&self) -> Option<String> {
+        let (_, attempt) = self.chosen_variant()?;
+        self.joins
+            .0
+            .lock()
+            .ok()?
+            .measured
+            .get(&attempt)
+            .map(|reading| reading.quality.compact.clone())
     }
 
     #[cfg(feature = "ui-harness")]
@@ -1729,20 +1879,38 @@ impl DeadpanApp {
             });
             let chosen = index == selected;
             let shown = previewed.as_ref() == Some(&variant.attempt);
-            let response = variant_row(
-                ui,
-                ready,
-                VariantRow {
-                    number: index + 1,
-                    seed: variant.seed,
-                    retention: retention_label(variant),
-                    joins: joins_label(reading.as_ref()),
-                    chosen,
-                    shown,
-                    aspect,
-                    painted,
-                },
-            )
+            let quality_tooltip = reading
+                .as_ref()
+                .map(|reading| format!(" {}", reading.quality.detail))
+                .unwrap_or_else(|| " Motion/lighting status is being read.".into());
+            // The chosen row's coverage note can move between rows. Keep
+            // native focus tied to the attempt, independent of automatic IDs.
+            let response = ui.push_id(("ai-variant", &variant.attempt), |ui| {
+                variant_row(
+                    ui,
+                    ready,
+                    VariantRow {
+                        number: index + 1,
+                        seed: variant.seed,
+                        retention: retention_label(variant),
+                        joins: joins_label(reading.as_ref()),
+                        chosen,
+                        shown,
+                        quality: if chosen {
+                            Some(
+                                reading
+                                    .as_ref()
+                                    .map(|reading| reading.quality.clone())
+                                    .unwrap_or_else(QualityReading::pending),
+                            )
+                        } else {
+                            None
+                        },
+                        aspect,
+                        painted,
+                    },
+                )
+            }).inner
             .on_hover_text(format!(
                 "AI variant {} of {count}, seed {}. Choose it with :pick-ai {} or :next-ai / :prev-ai.{}",
                 index + 1,
@@ -1763,6 +1931,7 @@ impl DeadpanApp {
                     .and_then(|reading| reading.colour.as_ref())
                     .map(|colour| format!(" {colour}"))
                     .unwrap_or_default()
+                    + &quality_tooltip
             ));
             if chosen
                 && let Some(colour) = reading.as_ref().and_then(|reading| reading.colour.clone())
@@ -2061,6 +2230,9 @@ struct VariantRow {
     retention: String,
     chosen: bool,
     shown: bool,
+    /// The chosen row's compact screen summary; detail is exposed to assistive
+    /// technology and in the row tooltip.
+    quality: Option<QualityReading>,
     aspect: f32,
     painted: Option<thumbnails::Painted>,
 }
@@ -2069,14 +2241,21 @@ struct VariantRow {
 /// thumbnail, number and state, and its seed.
 fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Response {
     let width = ui.available_width().max(1.0);
-    let padding = 3.0;
-    let height = VARIANT_THUMBNAIL_HEIGHT + 2.0 * padding;
+    let padding = 2.0;
+    let thumbnail_width = (VARIANT_THUMBNAIL_HEIGHT * row.aspect).min(width * 0.45);
+    let text_left_inset = thumbnail_width + 8.0 + padding;
+    let text_width = (width - padding - text_left_inset).max(1.0);
+    let galley = |text: String, color: egui::Color32, size: f32| {
+        let mut job =
+            egui::text::LayoutJob::simple_singleline(text, egui::FontId::proportional(size), color);
+        job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
+        ui.fonts_mut(|fonts| fonts.layout_job(job))
+    };
     let sense = if enabled {
         egui::Sense::click()
     } else {
         egui::Sense::hover()
     };
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), sense);
     let state = if row.shown {
         "showing"
     } else if row.chosen {
@@ -2089,19 +2268,55 @@ fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Respo
     } else {
         format!("Variant {} · {state}", row.number)
     };
+    let title_galley = galley(
+        title.clone(),
+        if row.chosen {
+            style::LAVENDER
+        } else {
+            ui.visuals().text_color()
+        },
+        14.0,
+    );
+    let seed_text = if row.retention.is_empty() {
+        format!("seed {} · {}", row.seed, row.joins)
+    } else {
+        format!("seed {} · {} · {}", row.seed, row.retention, row.joins)
+    };
+    let seed_galley = galley(seed_text, style::muted(ui), 12.0);
+    let quality_galley = row
+        .quality
+        .as_ref()
+        .map(|quality| galley(quality.compact.clone(), style::muted(ui), 10.0));
+    let line_gap = 1.0;
+    let text_height = title_galley.size().y
+        + line_gap
+        + seed_galley.size().y
+        + quality_galley
+            .as_ref()
+            .map_or(0.0, |quality| line_gap + quality.size().y);
+    let content_height = text_height.max(VARIANT_THUMBNAIL_HEIGHT);
+    let height = content_height + 2.0 * padding;
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), sense);
+    let accessible_label = if row.retention.is_empty() {
+        format!("{title}, seed {}, {}", row.seed, row.joins)
+    } else {
+        format!(
+            "{title}, seed {}, {}, {}",
+            row.seed, row.retention, row.joins
+        )
+    };
+    let accessible_label = row
+        .quality
+        .as_ref()
+        .map_or(accessible_label.clone(), |quality| {
+            format!("{accessible_label}. {}", quality.detail)
+        });
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::SelectableLabel,
             enabled,
             row.chosen,
-            if row.retention.is_empty() {
-                format!("{title}, seed {}, {}", row.seed, row.joins)
-            } else {
-                format!(
-                    "{title}, seed {}, {}, {}",
-                    row.seed, row.retention, row.joins
-                )
-            },
+            accessible_label.clone(),
         )
     });
     if !ui.is_rect_visible(rect) {
@@ -2119,7 +2334,6 @@ fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Respo
             egui::StrokeKind::Inside,
         );
     }
-    let thumbnail_width = (VARIANT_THUMBNAIL_HEIGHT * row.aspect).min(width * 0.45);
     let thumbnail = egui::Rect::from_min_size(
         rect.min + egui::vec2(padding, padding),
         egui::vec2(thumbnail_width, VARIANT_THUMBNAIL_HEIGHT),
@@ -2133,42 +2347,28 @@ fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Respo
             egui::StrokeKind::Outside,
         );
     }
-    let text_left = thumbnail.right() + 8.0;
-    let text_width = (rect.right() - padding - text_left).max(1.0);
-    let galley = |text: String, color: egui::Color32, size: f32| {
-        let mut job =
-            egui::text::LayoutJob::simple_singleline(text, egui::FontId::proportional(size), color);
-        job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
-        ui.fonts_mut(|fonts| fonts.layout_job(job))
-    };
-    let title = galley(
-        title,
-        if row.chosen {
-            style::LAVENDER
-        } else {
-            ui.visuals().text_color()
-        },
-        14.0,
-    );
-    let seed = galley(
-        if row.retention.is_empty() {
-            format!("seed {} · {}", row.seed, row.joins)
-        } else {
-            format!("seed {} · {} · {}", row.seed, row.retention, row.joins)
-        },
-        style::muted(ui),
-        12.0,
-    );
-    let top = rect.top() + padding + 2.0;
+    let top = rect.top() + padding + ((content_height - text_height) / 2.0);
+    let text_left = rect.left() + text_left_inset;
+    let seed_height = seed_galley.size().y;
     ui.painter().galley(
         egui::pos2(text_left, top),
-        title.clone(),
+        title_galley.clone(),
         egui::Color32::WHITE,
     );
     ui.painter().galley(
-        egui::pos2(text_left, top + title.size().y + 2.0),
-        seed,
+        egui::pos2(text_left, top + title_galley.size().y + line_gap),
+        seed_galley,
         egui::Color32::WHITE,
     );
+    if let Some(quality) = quality_galley {
+        ui.painter().galley(
+            egui::pos2(
+                text_left,
+                top + title_galley.size().y + line_gap + seed_height + line_gap,
+            ),
+            quality,
+            egui::Color32::WHITE,
+        );
+    }
     response
 }

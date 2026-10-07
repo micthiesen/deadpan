@@ -243,7 +243,8 @@ impl Fixture {
         };
         input.sha256 = manifest.sha256().clone();
         let binding = GenerationBinding::from_request(&request).unwrap();
-        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rgb25_24.mp4");
+        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/rgb25_24_smooth_candidate.mp4");
         let native = fs::read(source).unwrap();
         fs::write(directory.path().join("outputs/native.mp4"), &native).unwrap();
         let provenance = serde_json::to_vec_pretty(&json!({
@@ -322,11 +323,11 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
     );
     assert_eq!(
         bundle.native().report().output_rgb_sha256,
-        "324eb76430a9f2cf8303120656a8c167edd986418b763926d9250b1a3dd2adc9"
+        "d401d035d54519b4ad225dccd6883b22577c7d0450d063766adabea604e856a1"
     );
     assert_eq!(
         bundle.sampled().report().output_rgb_sha256,
-        "3f44a221f04474dd1804beb59556259e03f4fd2b518b3b4c3a9efa431efa4ee5"
+        "5f3104be330ef87155cb7bda146377fc76c4aa7cd7f0490386da04a9f6787b57"
     );
     let provenance_ref = bundle.provenance().object().clone();
     let native_ref = bundle.native().object().clone();
@@ -348,7 +349,13 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 3);
+    assert_eq!(envelope["schema_version"], 4);
+    let quality = envelope["quality"]
+        .as_object()
+        .expect("schema four retains host motion/lighting evidence");
+    assert_eq!(quality["profile"], "deadpan-motion-lighting-1");
+    assert_eq!(quality["native"]["frames"], 25);
+    assert_eq!(quality["transitions"].as_array().unwrap().len(), 24);
     assert_eq!(
         envelope["conditioning"],
         serde_json::to_value(retained_receipt).unwrap()
@@ -607,8 +614,8 @@ fn generated_picture_context() -> CapturedFraming {
 
 fn expected_generated_rgba(ordinal: u32) -> [u8; 32] {
     assert!(ordinal < 30);
-    // The retained fixture has 25 native frames. Its 30 sampled interior
-    // positions are (ordinal + 1) * 24 / 31. Compute the documented RGB
+    // The smooth candidate fixture has 25 native frames. Its 30 sampled interior
+    // positions are (ordinal + 1) * 24 / 31. Compute the fixture RGB
     // fixture pattern and encoded-RGB half-up interpolation independently of
     // the production sampling map, converter and picture decoder.
     let position = (ordinal + 1) * 24;
@@ -619,9 +626,9 @@ fn expected_generated_rgba(ordinal: u32) -> [u8; 32] {
         for x in 0..4_u32 {
             let native_pixel = |frame| {
                 [
-                    (17 * frame + 31 * x + 7 * y + 3) % 256,
-                    (29 * frame + 5 * x + 47 * y + 11) % 256,
-                    (43 * frame + 13 * x + 19 * y + 23) % 256,
+                    3 * frame + 31 * x + 7 * y + 3,
+                    2 * frame + 5 * x + 47 * y + 11,
+                    frame + 13 * x + 19 * y + 23,
                 ]
             };
             let left = native_pixel(lower);
@@ -736,7 +743,7 @@ fn retain_generated_picture_fixture(
     fs::rename(package, &retained_package).expect("move the closed qualified fixture package");
     let expectations = json!({
         "schema_version": 1,
-        "fixture": "rgb25_24 sampled to 30 frames at 30000/1001",
+        "fixture": "rgb25_24_smooth_candidate sampled to 30 frames at 30000/1001",
         "project_id": document.project_id(),
         "revision_id": revision,
         "artifact": artifact,

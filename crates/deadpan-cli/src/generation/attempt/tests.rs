@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::io::Read as _;
 use std::path::PathBuf;
 
 use deadpan_core::{
@@ -358,14 +359,30 @@ fn reaping_finishes_cancel_and_keeps_the_first_failure() {
 
 /// The synthetic worker's two external tools, when this machine has them.
 fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
-    let ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG")
-        .map(PathBuf::from)
+    let configured_ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG");
+    let configured_media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER");
+    let ffmpeg = configured_ffmpeg
+        .as_ref()
+        .map(|value| PathBuf::from(value.as_os_str()))
         .unwrap_or_else(|| PathBuf::from("/opt/homebrew/bin/ffmpeg"));
-    let media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER")
-        .map(PathBuf::from)
+    let media_worker = configured_media_worker
+        .as_ref()
+        .map(|value| PathBuf::from(value.as_os_str()))
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/deadpan-media-worker")
         });
+    if configured_ffmpeg.is_some() || configured_media_worker.is_some() {
+        assert!(
+            ffmpeg.is_file(),
+            "configured DEADPAN_BRIDGE_FFMPEG does not name a file: {}",
+            ffmpeg.display()
+        );
+        assert!(
+            media_worker.is_file(),
+            "configured DEADPAN_MEDIA_WORKER does not name a file: {}",
+            media_worker.display()
+        );
+    }
     (ffmpeg.is_file() && media_worker.is_file()).then_some(synthetic::SyntheticWorker {
         ffmpeg,
         media_worker,
@@ -374,7 +391,11 @@ fn synthetic_tools() -> Option<synthetic::SyntheticWorker> {
 
 /// Real PNG conditioning pictures at the native raster.
 fn picture_inputs() -> BridgeInputs {
-    let png = |rgb: [u8; 3]| {
+    picture_inputs_with([200, 40, 40], [40, 40, 200])
+}
+
+fn picture_inputs_with(left_rgb: [u8; 3], right_rgb: [u8; 3]) -> BridgeInputs {
+    let png = |rgb| {
         let image = image::RgbImage::from_pixel(768, 320, image::Rgb(rgb));
         let mut bytes = Vec::new();
         image
@@ -387,7 +408,7 @@ fn picture_inputs() -> BridgeInputs {
     };
     let template = inputs();
     let (left, right) =
-        conditioning::opaque_boundaries(&template.plan, png([200, 40, 40]), png([40, 40, 200]));
+        conditioning::opaque_boundaries(&template.plan, png(left_rgb), png(right_rgb));
     conditioning::assemble(template.plan, template.constraints, left, right).unwrap()
 }
 
@@ -432,6 +453,31 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     let finished = run_synthetic(&mut store, &first, &worker);
     assert_eq!(finished.state, JobState::Ready, "{:?}", finished.failure);
     let first_receipt = finished.receipt.unwrap();
+    let mut provenance_snapshot = store
+        .generated_read_handle()
+        .snapshot(
+            first_receipt.provenance_object(),
+            deadpan_store::generated_media::GeneratedReadLimits::new(
+                first_receipt.provenance_object().byte_length(),
+                Duration::from_secs(30),
+            )
+            .unwrap(),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    let mut provenance_bytes = Vec::new();
+    provenance_snapshot
+        .read_to_end(&mut provenance_bytes)
+        .unwrap();
+    let stored = deadpan_models::StoredBridgeProvenance::from_bytes(
+        &provenance_bytes,
+        first_receipt.provenance_object(),
+    )
+    .unwrap();
+    assert!(
+        stored.quality().is_some(),
+        "successful output uses schema 4"
+    );
 
     let second =
         allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
@@ -479,6 +525,80 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
             .is_none()
     );
     assert!(allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).is_err());
+}
+
+#[test]
+fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let fallback_document = store.snapshot().unwrap();
+    let fallback_revision = store.head_revision().unwrap();
+    let matching_inputs = picture_inputs_with([80, 80, 80], [80, 80, 80]);
+    assert_eq!(matching_inputs.left_png, matching_inputs.right_png);
+    let first = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision: fallback_revision.clone(),
+            seed: 7,
+            inputs: matching_inputs,
+        },
+    )
+    .unwrap();
+    let ready = run_synthetic(&mut store, &first, &worker);
+    assert_eq!(ready.state, JobState::Ready, "{:?}", ready.failure);
+    let selected_before = store
+        .selected_generation_bundle(&first.request.request_id)
+        .unwrap()
+        .expect("the successful first attempt is selected");
+    assert_eq!(selected_before.identity, first.identity);
+
+    let flash =
+        allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
+    let expected_flash_frame = flash.inputs().plan.native_frame_count() / 2;
+    let run = synthetic::run_with_lighting_flash(
+        &flash,
+        &worker,
+        |_| {},
+        |record| super::record(&mut store, &flash, &record).map_err(|error| error.to_string()),
+        &AtomicBool::new(false),
+    );
+    let RunResult::Failed(JobFailure::Host(failure)) = &run.result else {
+        panic!("a one-frame full-picture flash must fail host qualification");
+    };
+    assert_eq!(failure.code, HostFailureCode::OutputValidationFailed);
+    assert!(
+        failure.detail.as_str().contains(&format!(
+            "abrupt lighting at native frame {expected_flash_frame}"
+        )),
+        "{}",
+        failure.detail.as_str()
+    );
+    let rejected_failure = failure.clone();
+
+    let finished = finish(&mut store, &flash, run).unwrap();
+    assert_eq!(finished.state, JobState::Failed);
+    assert!(finished.receipt.is_none());
+    let failed_attempt = store.generation_attempt(&flash.identity).unwrap().unwrap();
+    assert_eq!(failed_attempt.checkpoint.state, JobState::Failed);
+    assert_eq!(
+        failed_attempt.checkpoint.failure,
+        Some(JobFailure::Host(rejected_failure))
+    );
+    assert!(failed_attempt.bundle_receipt.is_none());
+    assert_eq!(store.head_revision().unwrap(), fallback_revision);
+    assert_eq!(store.snapshot().unwrap(), fallback_document);
+    assert_eq!(
+        store
+            .selected_generation_bundle(&first.request.request_id)
+            .unwrap(),
+        Some(selected_before)
+    );
+    store.validate_full().unwrap();
 }
 
 // Hostile AI pause workers through the real attempt host

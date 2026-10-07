@@ -456,6 +456,26 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Two variants with thumbnails")?;
 
+    d.wait_for("Chosen variant quality report read", |app| {
+        app.ai.chosen_quality().is_some()
+    })?;
+    d.step("Quality coverage shown", false)?;
+    let quality = d.app().ai.chosen_quality().unwrap_or_default();
+    let compact = d.app().ai.chosen_quality_compact().unwrap_or_default();
+    let paint = scenarios::text_paint_visibility(d, &compact);
+    d.check(
+        "The chosen variant visibly reports measured quality coverage before acceptance",
+        quality.starts_with("Motion/lighting sampled;")
+            && compact.starts_with("Motion coverage ")
+            && widget_text(d).contains(&quality)
+            && !paint.is_empty()
+            && paint
+                .iter()
+                .all(|item| item["fully_visible"] == true && item["elided"] == false),
+        json!({"quality":"Motion/lighting sampled; audition before accepting."}),
+        json!({"quality":quality,"compact":compact,"paint":paint}),
+    )?;
+
     d.command("prev-ai")?;
     d.wait_for("First variant chosen", |app| {
         app.ai

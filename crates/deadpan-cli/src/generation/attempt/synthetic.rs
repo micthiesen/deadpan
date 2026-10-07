@@ -39,9 +39,33 @@ pub struct SyntheticWorker {
 pub fn run(
     allocated: &Allocated,
     worker: &SyntheticWorker,
+    progress: impl FnMut(AttemptProgress),
+    records: impl FnMut(AttemptRecord) -> Result<(), String>,
+    cancelled: &AtomicBool,
+) -> WorkerRun {
+    run_inner(allocated, worker, progress, records, cancelled, false)
+}
+
+/// Test-only path for exercising host qualification with a one-frame flash.
+/// The normal synthetic worker and its public configuration stay unchanged.
+#[cfg(test)]
+pub(super) fn run_with_lighting_flash(
+    allocated: &Allocated,
+    worker: &SyntheticWorker,
+    progress: impl FnMut(AttemptProgress),
+    records: impl FnMut(AttemptRecord) -> Result<(), String>,
+    cancelled: &AtomicBool,
+) -> WorkerRun {
+    run_inner(allocated, worker, progress, records, cancelled, true)
+}
+
+fn run_inner(
+    allocated: &Allocated,
+    worker: &SyntheticWorker,
     mut progress: impl FnMut(AttemptProgress),
     mut records: impl FnMut(AttemptRecord) -> Result<(), String>,
     cancelled: &AtomicBool,
+    flash_middle_frame: bool,
 ) -> WorkerRun {
     let mut timings = RunTimings::default();
     let started = Instant::now();
@@ -106,7 +130,13 @@ pub fn run(
             );
         }
     }
-    let declaration = match synthesize(allocated, worker, &prepared.worker, cancelled) {
+    let declaration = match synthesize(
+        allocated,
+        worker,
+        &prepared.worker,
+        cancelled,
+        flash_middle_frame,
+    ) {
         Ok(declaration) => declaration,
         Err(_) if cancelled.load(Ordering::Acquire) => {
             return finish(cancel(&mut records), timings, prepared.directory);
@@ -160,6 +190,7 @@ fn synthesize(
     worker: &SyntheticWorker,
     root: &Path,
     cancelled: &AtomicBool,
+    flash_middle_frame: bool,
 ) -> Result<NativeCandidateManifest, String> {
     let text = |error: &dyn std::fmt::Display| error.to_string();
     let plan = &allocated.inputs.plan;
@@ -227,17 +258,21 @@ fn synthesize(
             if cancelled.load(Ordering::Acquire) {
                 return Err("cancelled".into());
             }
-            for (offset, (a, b)) in left.as_raw().iter().zip(right.as_raw()).enumerate() {
-                let mixed = (u64::from(*a) * (last - index.min(last))
-                    + u64::from(*b) * index.min(last)
-                    + last / 2)
-                    / last;
-                frame[offset] = mixed as u8;
-            }
-            for row in band_rows.clone() {
-                let start = (row * width * 3) as usize;
-                for pixel in frame[start..start + (width * 3) as usize].chunks_exact_mut(3) {
-                    pixel.copy_from_slice(&band);
+            if flash_middle_frame && index == u64::from(count / 2) {
+                frame.fill(u8::MAX);
+            } else {
+                for (offset, (a, b)) in left.as_raw().iter().zip(right.as_raw()).enumerate() {
+                    let mixed = (u64::from(*a) * (last - index.min(last))
+                        + u64::from(*b) * index.min(last)
+                        + last / 2)
+                        / last;
+                    frame[offset] = mixed as u8;
+                }
+                for row in band_rows.clone() {
+                    let start = (row * width * 3) as usize;
+                    for pixel in frame[start..start + (width * 3) as usize].chunks_exact_mut(3) {
+                        pixel.copy_from_slice(&band);
+                    }
                 }
             }
             stdin.write_all(&frame).map_err(|error| text(&error))?;

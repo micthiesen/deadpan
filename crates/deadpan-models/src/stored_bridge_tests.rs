@@ -4,9 +4,10 @@
 
 use deadpan_core::{AssetId, FrameDuration, FrameRate, GeneratedArtifact, NodeId};
 use deadpan_jobs::{
-    AttemptId, AxisLimits, BridgeCapability, ConditioningMode, DimensionLimits, FrameCountFormula,
-    MotionAmount, NativeDimensions, ProviderPackId, ProviderPackVersion, RequestId, RequestVersion,
-    RuntimeId, RuntimeVersion, VideoSpec, WorkspaceArtifact, WorkspaceRef,
+    AttemptId, AxisLimits, BridgeCapability, BridgeGenerationPlan, ConditioningMode,
+    DimensionLimits, FrameCountFormula, MotionAmount, NativeDimensions, ProviderPackId,
+    ProviderPackVersion, RequestId, RequestVersion, RuntimeId, RuntimeVersion, VideoSpec,
+    WorkspaceArtifact, WorkspaceRef,
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256 as Sha256Hasher};
@@ -230,6 +231,7 @@ impl Fixture {
                 native_span: native_report.output_span().unwrap(),
                 sampled_span: sampled_report.output_span().unwrap(),
                 worker_provenance_utf8: &worker,
+                quality: None,
             },
             128 * 1024,
         )
@@ -264,6 +266,22 @@ impl Fixture {
             &self.project,
             &self.context,
         )
+    }
+
+    fn schema4(mut self, report_motion: Option<MotionAmount>) -> Self {
+        let plan: BridgeGenerationPlan =
+            serde_json::from_value(self.envelope["binding"]["plan"].clone()).unwrap();
+        let motion: MotionAmount =
+            serde_json::from_value(self.envelope["binding"]["constraints"]["motion"].clone())
+                .unwrap();
+        self.envelope["schema_version"] = json!(4);
+        self.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-4");
+        self.envelope["quality"] = serde_json::to_value(crate::quality::test_report(
+            &plan,
+            report_motion.unwrap_or(motion),
+        ))
+        .unwrap();
+        self
     }
 
     fn replace_worker(&mut self, worker: String) {
@@ -311,6 +329,108 @@ fn stored_production_envelope_preserves_measured_clocks_and_historical_identity(
             .as_str()
     );
     assert_eq!(evidence.provenance_object(), &fixture.wire().1.provenance);
+    assert!(evidence.quality().is_none());
+}
+
+#[test]
+fn schema_four_requires_a_strict_quality_report_matching_the_request() {
+    let fixture = Fixture::new().schema4(None);
+    let evidence = fixture.validate().unwrap();
+    assert_eq!(
+        serde_json::to_value(
+            evidence
+                .quality()
+                .expect("schema four has quality evidence")
+        )
+        .unwrap(),
+        fixture.envelope["quality"]
+    );
+
+    let mut missing = Fixture::new().schema4(None);
+    missing.envelope.as_object_mut().unwrap().remove("quality");
+    assert!(missing.validate().is_err(), "schema four needs a report");
+
+    let mut null = Fixture::new().schema4(None);
+    null.envelope["quality"] = Value::Null;
+    assert!(null.validate().is_err(), "quality cannot be null");
+
+    let mut unknown = Fixture::new().schema4(None);
+    unknown.envelope["quality"]["unknown"] = json!(true);
+    assert!(unknown.validate().is_err(), "quality fields are strict");
+
+    let mut missing_field = Fixture::new().schema4(None);
+    let quality = missing_field.envelope["quality"].as_object_mut().unwrap();
+    let field = quality
+        .keys()
+        .next()
+        .cloned()
+        .expect("quality report has required fields");
+    quality.remove(&field);
+    assert!(
+        missing_field.validate().is_err(),
+        "quality report fields are required"
+    );
+
+    let mut wrong_native_contract = Fixture::new().schema4(None);
+    wrong_native_contract.envelope["quality"]["native"]["frames"] = json!(24);
+    assert!(
+        wrong_native_contract.validate().is_err(),
+        "quality evidence must describe the planned native contract"
+    );
+
+    let mut bad_thresholds = Fixture::new().schema4(None);
+    bad_thresholds.envelope["quality"]["thresholds"]["maximum_motion_per_second"] = json!(99.0);
+    assert!(
+        bad_thresholds.validate().is_err(),
+        "quality thresholds must match the motion policy"
+    );
+
+    let mut missing_transition = Fixture::new().schema4(None);
+    missing_transition.envelope["quality"]["transitions"]
+        .as_array_mut()
+        .unwrap()
+        .pop();
+    assert!(
+        missing_transition.validate().is_err(),
+        "every native adjacent-frame pair must be represented"
+    );
+
+    let mut out_of_order = Fixture::new().schema4(None);
+    out_of_order.envelope["quality"]["transitions"][0]["after_frame"] = json!(2);
+    assert!(
+        out_of_order.validate().is_err(),
+        "native transition identities must be ordered"
+    );
+
+    let inconsistent = Fixture::new().schema4(Some(MotionAmount::Moderate));
+    assert!(
+        inconsistent.validate().is_err(),
+        "quality motion must match the bound request"
+    );
+
+    let mut rejected_lighting = Fixture::new().schema4(None);
+    rejected_lighting.envelope["quality"]["transitions"][0]["mean_luma_shift"] = json!(33.0);
+    rejected_lighting.envelope["quality"]["transitions"][0]["mean_absolute_luma_change"] =
+        json!(40.0);
+    assert!(
+        rejected_lighting.validate().is_err(),
+        "a report rejected for abrupt lighting cannot admit media"
+    );
+
+    let mut legacy_with_quality = Fixture::new().schema4(None);
+    legacy_with_quality.envelope["schema_version"] = json!(3);
+    legacy_with_quality.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-3");
+    assert!(
+        legacy_with_quality.validate().is_err(),
+        "schema three does not admit schema four quality data"
+    );
+
+    let mut legacy_with_null_quality = Fixture::new();
+    legacy_with_null_quality.envelope["quality"] = Value::Null;
+    assert!(
+        legacy_with_null_quality.validate().is_err(),
+        "schema three must omit the quality field entirely"
+    );
 }
 
 #[test]
