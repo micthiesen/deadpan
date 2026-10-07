@@ -42,7 +42,11 @@ scopes, cancellation and one shared capture deadline. The strict context must ma
 the request's plan and manifest identity. Frames are opaque at this boundary;
 capturing them does not qualify image decoding, source-clock coordinates or color.
 
-Current conditioning writes context schema 3. It retains the exact centered
+Current conditioning writes context schema 4. It retains the explicit selected
+region target or its absence, the target record's SHA-256, evaluated source
+regions and tracking state/confidence at the exact decoded boundary PTS.
+Unavailable capture reasons are retained. Model coordinates derive from
+those source regions and the actual fitted rectangles. It retains the exact centered
 presentation crop and each fitted boundary content rectangle, and declares the model's colour
 space (`model_color_space`, canonical full-range sRGB, BT.709 primaries, RGB
 matrix) and, under `boundaries`, what the project showed on each side of the
@@ -96,7 +100,8 @@ its Ready API relies on this independent host qualification.
    [quality evidence](qualification/bridge-quality-2026-10-07.md). Compare the
    actual sampled first/last pictures with retained conditioning PNGs inside
    the captured presentation crop, rejecting broad endpoint RGB discontinuity.
-   Fresh qualification requires context schema 3 with exact prepared geometry.
+   Fresh qualification requires context schema 4 with exact prepared geometry
+   and explicit region capture.
    Run `deadpan-track inspect-landmarks` on every canonical native picture and
    both retained RGB8 PNGs under the same deadline and cancellation. Pinned
    Vision revision 3 observations drive conservative boundary-anchored face
@@ -104,16 +109,23 @@ its Ready API relies on this independent host qualification.
    association remain unavailable; later faces start new continuous segments.
    A measured rejection fails qualification. See
    [face and mouth evidence](qualification/bridge-landmarks-2026-10-07.md).
+   When both captured region seeds are available, the same inspection also
+   follows that subject continuously through left PNG, native pictures and
+   right PNG with Vision object tracker revision 2. The host rejects sustained
+   gross drift and keeps loss or weak tracking explicitly unavailable.
 5. Produce a bounded immutable provenance envelope containing the original worker
    report's exact UTF-8 bytes, original request/declaration, both generated-object
    identities, host media-validation reports, measured native/sample source spans,
-   conditioning receipt and typed motion/lighting, endpoint and face/mouth reports.
-   Envelope schema 6 uses profile `deadpan-ffv1-bridge-6`. The face/mouth report
+   conditioning receipt and typed motion/lighting, endpoint, face/mouth and
+   selected-region reports. Envelope schema 7 uses profile `deadpan-ffv1-bridge-7`.
+   The face/mouth report
    binds raw observations, exact native PTS, pinned runtime, timings and
    recomputable policy results to the native movie, context and boundary objects.
    Stored admission recomputes the assessment and checks its geometry against
    the retained context. Schema 3 remains readable without these reports;
    schema 4 retains motion/lighting evidence; schema 5 also retains endpoints;
+   schema 6 retains face/mouth evidence. These profiles reject selected-target
+   constraints, which require schema 7's bound region report;
    earlier envelopes lack admission evidence and are not equivalent.
    Stop serialization at its budget.
 6. Return both masters, host provenance and all three immutable input snapshots.

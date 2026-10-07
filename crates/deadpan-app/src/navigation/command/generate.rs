@@ -1,15 +1,16 @@
-use deadpan_jobs::{GenerationOptions, HoldInstructions};
+use deadpan_jobs::{GenerationOptions, GenerationTarget, HoldInstructions};
 
 use super::Entry;
 use crate::navigation::{Action, AiAction};
 
 pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
-    let usage = "Use :generate [1-4] [motion=still|subtle|moderate] [text=guidance]. Put text last. Explicit controls replace the previous choices.";
+    let usage = "Use :generate [1-4] [motion=still|subtle|moderate] [target=ID|none] [text=guidance]. Put text last. Omitted target retains the captured target.";
     let mut rest = argument.unwrap_or("").trim();
     let mut variants = 1;
     let mut controls = GenerationOptions::default();
     let mut count_seen = false;
     let mut motion_seen = false;
+    let mut target_seen = false;
     let mut explicit = false;
     while !rest.is_empty() {
         if let Some(text) = rest.strip_prefix("text=") {
@@ -25,6 +26,13 @@ pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
             }
             controls.motion = motion.parse().map_err(str::to_owned)?;
             motion_seen = true;
+            explicit = true;
+        } else if let Some(target) = word.strip_prefix("target=") {
+            if target_seen {
+                return Err(usage.into());
+            }
+            controls.region_target = GenerationTarget::parse(target)?;
+            target_seen = true;
             explicit = true;
         } else {
             if count_seen || explicit {
@@ -52,6 +60,11 @@ pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
 /// A complete, editable command. Omitting text clears old guidance when run.
 pub(crate) fn command(options: &GenerationOptions) -> String {
     let mut command = format!("generate motion={}", options.motion.name());
+    match &options.region_target {
+        // The controls editor captures the displayed absence explicitly.
+        GenerationTarget::Inherit | GenerationTarget::None => command.push_str(" target=none"),
+        GenerationTarget::Saved(target) => command.push_str(&format!(" target={target}")),
+    }
     if let Some(text) = &options.instructions {
         command.push_str(" text=");
         command.push_str(text.as_str());
@@ -72,6 +85,7 @@ mod tests {
                 HoldInstructions::new("Keep eyes open, 目線 unchanged. motion=still is text")
                     .unwrap(),
             ),
+            region_target: GenerationTarget::Saved(deadpan_core::TargetId::new("subject").unwrap()),
         };
         assert_eq!(
             super::super::parse(&command(&options)).unwrap(),
@@ -86,7 +100,8 @@ mod tests {
                 variants: 3,
                 options: GenerationOptions {
                     motion: MotionAmount::Subtle,
-                    instructions: Some(HoldInstructions::new("Keep hands still.").unwrap())
+                    instructions: Some(HoldInstructions::new("Keep hands still.").unwrap()),
+                    region_target: GenerationTarget::Inherit,
                 }
             }
         );
@@ -106,6 +121,8 @@ mod tests {
             "2 3",
             "motion=still 2",
             "text=a\tb",
+            "target=",
+            "target=one target=two",
         ] {
             assert!(parse(Some(text)).is_err(), "{text}");
         }
@@ -113,6 +130,16 @@ mod tests {
         assert_eq!(
             parse(None).unwrap(),
             Entry::Action(Action::Ai(AiAction::Generate { variants: 1 }))
+        );
+        assert_eq!(
+            parse(Some("target=none")).unwrap(),
+            Entry::Generate {
+                variants: 1,
+                options: GenerationOptions {
+                    region_target: GenerationTarget::None,
+                    ..GenerationOptions::default()
+                }
+            }
         );
     }
 }

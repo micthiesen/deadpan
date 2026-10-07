@@ -217,6 +217,8 @@ struct HostProvenance<'a> {
     endpoints: Option<&'a crate::BridgeEndpointReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     geometry: Option<&'a crate::BridgeGeometryReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    region: Option<&'a crate::BridgeRegionReport>,
 }
 
 /// Worker declarations paired with independently selected host inputs.
@@ -286,6 +288,11 @@ pub fn qualify_bridge(
     if conditioning.context().geometry().is_none() {
         return Err(QualificationError::Request(
             "fresh candidates require captured conditioning geometry".into(),
+        ));
+    }
+    if conditioning.context().region().is_none() {
+        return Err(QualificationError::Request(
+            "fresh candidates require an explicit selected-region capture".into(),
         ));
     }
     let HostMessage::GenerateBridge {
@@ -384,7 +391,7 @@ pub fn qualify_bridge(
         cancelled,
     )?;
     check()?;
-    let geometry = crate::geometry::measure(
+    let (geometry, region) = crate::geometry::measure(
         landmark_executable,
         &mut native,
         &mut conditioning,
@@ -405,8 +412,8 @@ pub fn qualify_bridge(
         .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 6,
-            validation_profile: "deadpan-ffv1-bridge-6",
+            schema_version: 7,
+            validation_profile: "deadpan-ffv1-bridge-7",
             binding: &binding,
             selected_provider,
             declaration,
@@ -421,6 +428,7 @@ pub fn qualify_bridge(
             quality: Some(&quality),
             endpoints: Some(&endpoints),
             geometry: Some(&geometry),
+            region: Some(&region),
         },
         limits.maximum_host_provenance_bytes,
     )

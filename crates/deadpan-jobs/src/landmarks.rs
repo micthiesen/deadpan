@@ -8,6 +8,8 @@
 
 use std::io::{Read, Write};
 
+use deadpan_analysis::generated_geometry::RawLandmarkBatch;
+use deadpan_analysis::generated_region::{RawRegionBatch, RegionSeeds};
 use serde::{Deserialize, Serialize};
 
 use crate::process::{ResponseKind, SupervisorError, WorkerProtocol};
@@ -17,7 +19,8 @@ use crate::protocol::{
 };
 pub use crate::tracking::ExpectedStream;
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
+pub const OBSERVATIONS_SCHEMA_VERSION: u32 = 2;
 pub const WORKER_ARGUMENT: &str = "inspect-landmarks";
 pub const OUTPUT_FILE: &str = "landmarks.json";
 pub const MAX_FRAMES: usize = 1_025;
@@ -31,6 +34,47 @@ pub const ENGINE: &str = "Apple Vision VNDetectFaceLandmarksRequest";
 pub const REQUEST_REVISION: u64 = 3;
 /// Number of points in the pinned Vision constellation, not its ObjC enum value.
 pub const CONSTELLATION: u32 = 76;
+pub const REGION_ENGINE: &str = "Apple Vision VNTrackObjectRequest";
+pub const REGION_REQUEST_REVISION: u64 = 2;
+/// Actual property reported by revision 2 on the qualified runtime. Apple's
+/// revision 2 ignores the level distinction and reads back Fast even after
+/// Accurate is assigned; the host records that measured value truthfully.
+pub const REGION_TRACKING_LEVEL: &str = "fast";
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InspectionObservations {
+    pub schema_version: u32,
+    pub landmarks: RawLandmarkBatch,
+    pub region: Option<RawRegionBatch>,
+}
+
+impl InspectionObservations {
+    pub fn validate(
+        &self,
+        expected_pts: &[i64],
+        requested_seeds: Option<&RegionSeeds>,
+    ) -> Result<(), String> {
+        if self.schema_version != OBSERVATIONS_SCHEMA_VERSION {
+            return Err("unsupported inspection observations schema".into());
+        }
+        self.landmarks
+            .validate(expected_pts)
+            .map_err(|error| error.to_string())?;
+        match (&self.region, requested_seeds) {
+            (Some(region), Some(seeds)) if &region.seeds == seeds => {
+                if self.landmarks.boundaries.is_none() {
+                    return Err("region observations require retained boundary observations".into());
+                }
+                region
+                    .validate(expected_pts)
+                    .map_err(|error| error.to_string())
+            }
+            (None, None) => Ok(()),
+            _ => Err("region observations differ from the captured seeds".into()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -61,6 +105,26 @@ impl RuntimeReport {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegionRuntimeReport {
+    pub engine: String,
+    pub request_revision: u64,
+    pub tracking_level: String,
+}
+
+impl RegionRuntimeReport {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.engine != REGION_ENGINE
+            || self.request_revision != REGION_REQUEST_REVISION
+            || self.tracking_level != REGION_TRACKING_LEVEL
+        {
+            return Err("region tracker differs from its pinned configuration".into());
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum HostMessage {
     InspectLandmarks {
@@ -74,6 +138,8 @@ pub enum HostMessage {
         picture_pts: Vec<i64>,
         /// Unmodified retained PNG bytes, each with the native raster size.
         boundaries: Option<Box<BoundaryInputs>>,
+        /// Explicit authored subject boxes in the retained boundary PNGs.
+        region_seeds: Option<Box<RegionSeeds>>,
         output_scope: WorkspaceRef,
         maximum_output_bytes: u64,
         timeout_millis: u64,
@@ -106,6 +172,7 @@ impl HostMessage {
                 stream,
                 picture_pts,
                 boundaries,
+                region_seeds,
                 output_scope,
                 maximum_output_bytes,
                 timeout_millis,
@@ -137,6 +204,12 @@ impl HostMessage {
                         && boundaries.left != boundaries.right
                     {
                         return Err("aliased landmark PNG inputs disagree".into());
+                    }
+                }
+                if let Some(seeds) = region_seeds {
+                    seeds.validate().map_err(|error| error.to_string())?;
+                    if boundaries.is_none() || stream.rotation_quarter_turns != 0 {
+                        return Err("region tracking requires retained boundaries and an unrotated canonical raster".into());
                     }
                 }
                 // Restrict the output to one sibling directory. A nested path
@@ -172,6 +245,7 @@ pub enum WorkerMessage {
         attempt: AttemptId,
         observations: WorkspaceArtifact,
         runtime: RuntimeReport,
+        region_runtime: Option<RegionRuntimeReport>,
         /// Native pictures decoded, excluding boundary PNGs.
         decoded: u32,
         /// Native pictures plus two when boundary PNGs were requested.
@@ -225,6 +299,7 @@ impl WorkerMessage {
                 protocol,
                 observations,
                 runtime,
+                region_runtime,
                 decoded,
                 analysed,
                 decode_millis,
@@ -233,6 +308,9 @@ impl WorkerMessage {
                 ..
             } => {
                 runtime.validate()?;
+                if let Some(runtime) = region_runtime {
+                    runtime.validate()?;
+                }
                 if !(2..=MAX_FRAMES as u32).contains(decoded)
                     || (*analysed != *decoded && *analysed != decoded + 2)
                     || observations.byte_length() == 0
@@ -267,6 +345,7 @@ pub struct LandmarkProtocol {
     maximum_output_bytes: u64,
     decoded: u32,
     analysed: u32,
+    region_requested: bool,
 }
 
 impl WorkerProtocol for LandmarkProtocol {
@@ -284,6 +363,7 @@ impl WorkerProtocol for LandmarkProtocol {
             maximum_output_bytes,
             picture_pts,
             boundaries,
+            region_seeds,
             ..
         } = message
         else {
@@ -300,6 +380,7 @@ impl WorkerProtocol for LandmarkProtocol {
             maximum_output_bytes: *maximum_output_bytes,
             decoded,
             analysed: decoded + if boundaries.is_some() { 2 } else { 0 },
+            region_requested: region_seeds.is_some(),
         })
     }
 
@@ -336,12 +417,14 @@ impl WorkerProtocol for LandmarkProtocol {
                 observations,
                 decoded,
                 analysed,
+                region_runtime,
                 ..
             } => {
                 if observations.reference().as_str() != self.output_reference
                     || observations.byte_length() > self.maximum_output_bytes
                     || *decoded != self.decoded
                     || *analysed != self.analysed
+                    || region_runtime.is_some() != self.region_requested
                 {
                     return Err("landmark completion differs from the captured request".into());
                 }

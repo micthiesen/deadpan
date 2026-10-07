@@ -28,6 +28,11 @@ mod landmark_inspection;
 pub use geometry::BridgeGeometryReport;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod region;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use region::BridgeRegionReport;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stored_bridge;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stored_bridge::{AcceptedBridgeEvidence, StoredBridgeProvenance};

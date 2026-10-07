@@ -96,6 +96,7 @@ fn request() -> HostMessage {
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
             instructions: None,
+            region_target: None,
         },
         provider: Box::new(ProviderSelection {
             pack_id: ProviderPackId::new("fixture").unwrap(),
@@ -199,11 +200,12 @@ impl Fixture {
         Self::measured(serde_json::to_value(deadpan_models::CANONICAL_BRIDGE_COLOR).unwrap())
     }
 
-    /// A version-3 context whose model declares `model_color_space`.
+    /// A current context with an explicit absence of selected-region seeds.
     fn measured(model_color_space: serde_json::Value) -> Self {
         Self::with_context(|left, right, boundaries| {
             json!({
-                "schema_version":3, "model_color_space":model_color_space, "plan":plan(),
+                "schema_version":4, "model_color_space":model_color_space, "plan":plan(),
+                "region":{"selection":"none"},
                 "left":left, "right":right,
                 "input_color_interpretation":"fixture decoded RGB8 sRGB without resizing",
                 "boundaries":boundaries,
@@ -417,17 +419,22 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 6);
-    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-6");
+    assert_eq!(envelope["schema_version"], 7);
+    assert_eq!(envelope["validation_profile"], "deadpan-ffv1-bridge-7");
     let quality = envelope["quality"]
         .as_object()
-        .expect("schema six retains host motion/lighting evidence");
+        .expect("schema seven retains host motion/lighting evidence");
     assert_eq!(quality["profile"], "deadpan-motion-lighting-1");
     assert_eq!(quality["native"]["frames"], 25);
     assert_eq!(quality["transitions"].as_array().unwrap().len(), 24);
     assert_eq!(envelope["endpoints"]["profile"], "deadpan-endpoints-1");
     assert_eq!(envelope["endpoints"]["entry"]["sampled_frame"], 0);
     assert_eq!(envelope["endpoints"]["exit"]["sampled_frame"], 29);
+    assert_eq!(envelope["region"]["capture"], json!({"selection":"none"}));
+    assert_eq!(
+        envelope["region"]["evidence"],
+        json!({"status":"unavailable", "reason":"no selected region target"})
+    );
     assert_eq!(
         envelope["conditioning"],
         serde_json::to_value(retained_receipt).unwrap()
@@ -465,7 +472,7 @@ fn measured_context_qualifies_and_a_foreign_model_space_fails_before_any_codec()
     .unwrap();
     let boundaries = bundle.conditioning().context().boundaries().unwrap();
     assert_eq!(boundaries.left.project_frame(), 9);
-    assert_eq!(bundle.conditioning().context().schema_version(), 3);
+    assert_eq!(bundle.conditioning().context().schema_version(), 4);
 
     // A model declared to emit wide-gamut PQ would have its pictures silently
     // reinterpreted as the canonical sRGB masters; qualification refuses it

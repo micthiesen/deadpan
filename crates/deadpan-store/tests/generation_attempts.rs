@@ -112,6 +112,7 @@ fn allocate(
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
             instructions: None,
+            region_target: None,
         },
         provider: provider(seed),
     })?)

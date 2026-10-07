@@ -8,7 +8,8 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     BridgeContext, BridgeEndpointReport, BridgeGeometryReport, BridgeQualityReport,
-    ConditioningReceipt, GenerationBinding, QualificationError, SelectedBridgeProvider,
+    BridgeRegionReport, ConditioningReceipt, GenerationBinding, QualificationError,
+    SelectedBridgeProvider,
 };
 
 const MAXIMUM_HOST_PROVENANCE_BYTES: usize = 32 * 1024 * 1024;
@@ -46,6 +47,8 @@ struct StoredEnvelope {
     endpoints: Option<BridgeEndpointReport>,
     #[serde(default, deserialize_with = "deserialize_geometry")]
     geometry: Option<BridgeGeometryReport>,
+    #[serde(default, deserialize_with = "deserialize_region")]
+    region: Option<BridgeRegionReport>,
 }
 
 // `Option<T>` normally treats a present JSON `null` like an absent field.
@@ -70,6 +73,13 @@ where
     D: serde::Deserializer<'de>,
 {
     BridgeGeometryReport::deserialize(deserializer).map(Some)
+}
+
+fn deserialize_region<'de, D>(deserializer: D) -> Result<Option<BridgeRegionReport>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    BridgeRegionReport::deserialize(deserializer).map(Some)
 }
 
 impl StoredBridgeProvenance {
@@ -104,6 +114,10 @@ impl StoredBridgeProvenance {
 
     pub fn geometry(&self) -> Option<&BridgeGeometryReport> {
         self.envelope.geometry.as_ref()
+    }
+
+    pub fn region(&self) -> Option<&BridgeRegionReport> {
+        self.envelope.region.as_ref()
     }
 
     /// Bind durable evidence to an immutable authored artifact and its project.
@@ -151,6 +165,9 @@ impl StoredBridgeProvenance {
         if let Some(geometry) = &envelope.geometry {
             geometry.validate_context(&context)?;
         }
+        if let Some(region) = &envelope.region {
+            region.validate_context(&context)?;
+        }
         let worker = envelope.worker_provenance_utf8.as_bytes();
         verify_declaration(worker, &envelope.declaration.provenance)?;
         crate::provenance::validate(
@@ -169,28 +186,43 @@ impl StoredEnvelope {
             && self.validation_profile == "deadpan-ffv1-bridge-3"
             && self.quality.is_none()
             && self.endpoints.is_none()
-            && self.geometry.is_none();
+            && self.geometry.is_none()
+            && self.region.is_none();
         let measured = self.schema_version == 4
             && self.validation_profile == "deadpan-ffv1-bridge-4"
             && self.quality.is_some()
             && self.endpoints.is_none()
-            && self.geometry.is_none();
+            && self.geometry.is_none()
+            && self.region.is_none();
         let endpoints = self.schema_version == 5
             && self.validation_profile == "deadpan-ffv1-bridge-5"
             && self.quality.is_some()
             && self.endpoints.is_some()
-            && self.geometry.is_none();
+            && self.geometry.is_none()
+            && self.region.is_none();
         let geometry = self.schema_version == 6
             && self.validation_profile == "deadpan-ffv1-bridge-6"
             && self.quality.is_some()
             && self.endpoints.is_some()
-            && self.geometry.is_some();
-        if !legacy && !measured && !endpoints && !geometry {
+            && self.geometry.is_some()
+            && self.region.is_none();
+        let region = self.schema_version == 7
+            && self.validation_profile == "deadpan-ffv1-bridge-7"
+            && self.quality.is_some()
+            && self.endpoints.is_some()
+            && self.geometry.is_some()
+            && self.region.is_some();
+        if !legacy && !measured && !endpoints && !geometry && !region {
             return Err(invalid(
                 "unsupported stored bridge provenance profile/schema",
             ));
         }
         let binding = &self.binding;
+        if self.schema_version < 7 && binding.constraints.region_target.is_some() {
+            return Err(invalid(
+                "selected region targets require stored region evidence",
+            ));
+        }
         let plan = &binding.plan;
         plan.validate_for(self.selected_provider.capability())
             .map_err(invalid)?;
@@ -249,6 +281,21 @@ impl StoredEnvelope {
                 ));
             }
         }
+        if let Some(region) = &self.region {
+            region.validate(plan, &self.native, &self.conditioning)?;
+            if region.capture().target_id() != binding.constraints.region_target.as_ref()
+                || self.geometry.as_ref().is_none_or(|geometry| {
+                    geometry.geometry() != region.geometry()
+                        || region
+                            .inspection_timings()
+                            .is_some_and(|timings| timings != geometry.inspection_timings())
+                })
+            {
+                return Err(invalid(
+                    "region report differs from the requested target or shared inspection",
+                ));
+            }
+        }
         if self.native_validation.output_bytes != self.native.byte_length()
             || self.sampled_validation.output_bytes != self.sampled.byte_length()
             || self.native_validation.input_rgb_sha256 != self.native_validation.output_rgb_sha256
@@ -293,6 +340,9 @@ pub struct AcceptedBridgeEvidence {
 }
 
 impl AcceptedBridgeEvidence {
+    pub fn region(&self) -> Option<&BridgeRegionReport> {
+        self.provenance.envelope.region.as_ref()
+    }
     pub fn geometry(&self) -> Option<&BridgeGeometryReport> {
         self.provenance.envelope.geometry.as_ref()
     }

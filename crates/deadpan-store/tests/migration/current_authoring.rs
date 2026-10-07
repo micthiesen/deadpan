@@ -66,6 +66,7 @@ fn current_mapping_and_edge_edits_preserve_independent_audio_and_operational_sta
             conditioning: deadpan_jobs::ConditioningMode::Bridge,
             motion: deadpan_jobs::MotionAmount::Still,
             instructions: None,
+            region_target: None,
         },
         provider: deadpan_jobs::ProviderSelection {
             pack_id: deadpan_jobs::ProviderPackId::new("pack")?,

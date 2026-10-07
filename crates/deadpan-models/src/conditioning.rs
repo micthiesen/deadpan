@@ -24,6 +24,9 @@ use crate::{BridgeBoundaries, BridgeColor, CANONICAL_BRIDGE_COLOR, Qualification
 #[path = "conditioning_geometry.rs"]
 mod geometry;
 pub use geometry::{ConditioningGeometry, RasterRect};
+#[path = "conditioning_region.rs"]
+mod region;
+pub use region::{CapturedRegionBoundary, RegionCapture, RegionCaptureUnavailable};
 
 const MAXIMUM_MANIFEST_BYTES: u64 = 1024 * 1024;
 const MAXIMUM_FRAME_BYTES: u64 = 64 * 1024 * 1024;
@@ -106,6 +109,7 @@ pub struct BridgeContext {
     input_color_interpretation: String,
     boundaries: Option<BridgeBoundaries>,
     geometry: Option<ConditioningGeometry>,
+    region: Option<RegionCapture>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -144,8 +148,22 @@ struct BridgeContextV3Wire {
     geometry: ConditioningGeometry,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BridgeContextV4Wire {
+    schema_version: u32,
+    model_color_space: BridgeColor,
+    plan: BridgeGenerationPlan,
+    left: WorkspaceArtifact,
+    right: WorkspaceArtifact,
+    input_color_interpretation: String,
+    boundaries: BridgeBoundaries,
+    geometry: ConditioningGeometry,
+    region: RegionCapture,
+}
+
 impl BridgeContext {
-    /// A version-3 context recording measured boundaries and prepared geometry.
+    /// A version-4 context with an explicit absence of a selected region target.
     pub fn new(
         plan: BridgeGenerationPlan,
         left: WorkspaceArtifact,
@@ -156,7 +174,7 @@ impl BridgeContext {
         geometry: ConditioningGeometry,
     ) -> Result<Self, QualificationError> {
         let context = Self {
-            schema_version: 3,
+            schema_version: 4,
             model_color_space,
             plan,
             left,
@@ -164,9 +182,25 @@ impl BridgeContext {
             input_color_interpretation: input_color_interpretation.into(),
             boundaries: Some(boundaries),
             geometry: Some(geometry),
+            region: Some(RegionCapture::None),
         };
         context.validate_shape()?;
         Ok(context)
+    }
+
+    pub fn with_region(mut self, region: RegionCapture) -> Result<Self, QualificationError> {
+        if self.schema_version != 4 {
+            return Err(conditioning_error(
+                "region capture requires context schema 4",
+            ));
+        }
+        self.region = Some(region);
+        self.validate_shape()?;
+        Ok(self)
+    }
+
+    pub fn region(&self) -> Option<&RegionCapture> {
+        self.region.as_ref()
     }
 
     /// Retained version-2 evidence has measured boundaries but no captured
@@ -188,6 +222,7 @@ impl BridgeContext {
             input_color_interpretation: input_color_interpretation.into(),
             boundaries: Some(boundaries),
             geometry: None,
+            region: None,
         };
         context.validate_shape()?;
         Ok(context)
@@ -210,6 +245,7 @@ impl BridgeContext {
             input_color_interpretation: input_color_interpretation.into(),
             boundaries: None,
             geometry: None,
+            region: None,
         };
         context.validate_shape()?;
         Ok(context)
@@ -268,9 +304,10 @@ impl BridgeContext {
     }
 
     fn validate_shape(&self) -> Result<(), QualificationError> {
-        if !matches!(self.schema_version, 1..=3)
+        if !matches!(self.schema_version, 1..=4)
             || (self.schema_version == 1) != self.boundaries.is_none()
-            || (self.schema_version == 3) != self.geometry.is_some()
+            || (self.schema_version >= 3) != self.geometry.is_some()
+            || (self.schema_version == 4) != self.region.is_some()
             || (self.schema_version == 1 && self.model_color_space != CANONICAL_BRIDGE_COLOR)
             || self.input_color_interpretation.trim().is_empty()
             || self.input_color_interpretation.len() > MAXIMUM_DESCRIPTION_BYTES
@@ -306,6 +343,11 @@ impl BridgeContext {
                 geometry
                     .validate([native.width(), native.height()], boundaries)
                     .map_err(conditioning_error)?;
+                if let Some(region) = &self.region {
+                    region
+                        .validate(boundaries, geometry, [native.width(), native.height()])
+                        .map_err(|error| conditioning_error(&error))?;
+                }
             }
         }
         Ok(())
@@ -314,6 +356,25 @@ impl BridgeContext {
 
 impl Serialize for BridgeContext {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if let Some(region) = &self.region {
+            return BridgeContextV4Wire {
+                schema_version: self.schema_version,
+                model_color_space: self.model_color_space,
+                plan: self.plan.clone(),
+                left: self.left.clone(),
+                right: self.right.clone(),
+                input_color_interpretation: self.input_color_interpretation.clone(),
+                boundaries: self
+                    .boundaries
+                    .clone()
+                    .ok_or_else(|| serde::ser::Error::custom("region requires boundaries"))?,
+                geometry: self
+                    .geometry
+                    .ok_or_else(|| serde::ser::Error::custom("region requires geometry"))?,
+                region: region.clone(),
+            }
+            .serialize(serializer);
+        }
         match (&self.boundaries, &self.geometry) {
             (None, None) => BridgeContextV1Wire {
                 schema_version: self.schema_version,
@@ -374,6 +435,7 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     input_color_interpretation: wire.input_color_interpretation,
                     boundaries: None,
                     geometry: None,
+                    region: None,
                 }
             }
             Some(2) => {
@@ -387,6 +449,7 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     input_color_interpretation: wire.input_color_interpretation,
                     boundaries: Some(wire.boundaries),
                     geometry: None,
+                    region: None,
                 }
             }
             Some(3) => {
@@ -400,6 +463,21 @@ impl TryFrom<serde_json::Value> for BridgeContext {
                     input_color_interpretation: wire.input_color_interpretation,
                     boundaries: Some(wire.boundaries),
                     geometry: Some(wire.geometry),
+                    region: None,
+                }
+            }
+            Some(4) => {
+                let wire: BridgeContextV4Wire = serde_json::from_value(value)?;
+                Self {
+                    schema_version: wire.schema_version,
+                    model_color_space: wire.model_color_space,
+                    plan: wire.plan,
+                    left: wire.left,
+                    right: wire.right,
+                    input_color_interpretation: wire.input_color_interpretation,
+                    boundaries: Some(wire.boundaries),
+                    geometry: Some(wire.geometry),
+                    region: Some(wire.region),
                 }
             }
             _ => {
@@ -610,7 +688,13 @@ impl RetainedConditioning {
         request
             .validate()
             .map_err(|error| conditioning_error(&error.to_string()))?;
-        let HostMessage::GenerateBridge { input, plan, .. } = request else {
+        let HostMessage::GenerateBridge {
+            input,
+            plan,
+            constraints,
+            ..
+        } = request
+        else {
             return Err(conditioning_error(
                 "retained conditioning requires a version-2 bridge request",
             ));
@@ -618,6 +702,8 @@ impl RetainedConditioning {
         if self.manifest.declaration().reference() != &input.manifest
             || self.manifest.declaration().sha256() != &input.sha256
             || self.context.plan() != plan.as_ref()
+            || self.context.region().and_then(RegionCapture::target_id)
+                != constraints.region_target.as_ref()
             || self.context.left() != self.left.declaration()
             || self.context.right() != self.right.declaration()
             || self.receipt.manifest.declaration() != self.manifest.declaration()
@@ -660,6 +746,7 @@ pub fn capture_bridge_conditioning(
         input,
         output_workspace,
         plan,
+        constraints,
         ..
     } = request
     else {
@@ -698,6 +785,7 @@ pub fn capture_bridge_conditioning(
         serde_json::from_value(crate::strict_json::parse(&manifest_bytes)?)?;
     check_control(cancelled, deadline)?;
     if context.plan() != plan.as_ref()
+        || context.region().and_then(RegionCapture::target_id) != constraints.region_target.as_ref()
         || context.left().reference() == manifest_declaration.reference()
         || context.right().reference() == manifest_declaration.reference()
     {
@@ -926,6 +1014,7 @@ mod tests {
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
                 instructions: None,
+                region_target: None,
             },
             provider: Box::new(ProviderSelection {
                 pack_id: ProviderPackId::new("pack").unwrap(),
@@ -938,7 +1027,7 @@ mod tests {
         }
     }
 
-    /// A version-3 context: authored black on both sides of the 3-frame Hold.
+    /// A current context: authored black on both sides of the 3-frame Hold.
     fn measured(
         plan: BridgeGenerationPlan,
         left: WorkspaceArtifact,
@@ -1383,7 +1472,7 @@ mod tests {
     }
 
     #[test]
-    fn version_three_grammar_is_strict_deterministic_and_bounded() {
+    fn version_four_grammar_is_strict_deterministic_and_bounded() {
         let fixture = Fixture::new(false);
         let context = measured(plan(), fixture.left.clone(), fixture.right.clone());
         let bytes = serde_json::to_vec(&context).unwrap();
@@ -1393,7 +1482,8 @@ mod tests {
             "deterministic"
         );
         let wire: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(wire["schema_version"], 3);
+        assert_eq!(wire["schema_version"], 4);
+        assert_eq!(wire["region"], serde_json::json!({"selection":"none"}));
         assert!(wire.get("model_color").is_none());
         assert_eq!(
             wire["model_color_space"],
@@ -1416,7 +1506,7 @@ mod tests {
                 "{changed}"
             );
         };
-        reject(&|wire| wire["schema_version"] = serde_json::json!(4));
+        reject(&|wire| wire["schema_version"] = serde_json::json!(5));
         reject(&|wire| wire["schema_version"] = serde_json::json!(2));
         reject(&|wire| wire["schema_version"] = serde_json::json!(1));
         reject(&|wire| {

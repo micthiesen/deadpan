@@ -11,7 +11,7 @@
 
 use std::sync::Mutex;
 
-use deadpan_core::{NodeId, NodeKind, ProjectDocument, ProjectFrame, RevisionId};
+use deadpan_core::{NodeId, NodeKind, ProjectDocument, ProjectFrame, RevisionId, TargetId};
 use deadpan_plan::{PictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
@@ -22,10 +22,15 @@ use sha2::{Digest, Sha256};
 /// absent, not a Hold, or has no single plain occurrence.
 pub fn context_identity(document: &ProjectDocument, hold: &NodeId) -> Option<[u8; 32]> {
     let plan = RenderPlan::compile(document).ok()?;
-    identity_in(document, &plan, hold)
+    identity_in(document, &plan, hold, None)
 }
 
-fn identity_in(document: &ProjectDocument, plan: &RenderPlan, hold: &NodeId) -> Option<[u8; 32]> {
+fn identity_in(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    hold: &NodeId,
+    target: Option<&TargetId>,
+) -> Option<[u8; 32]> {
     let NodeKind::Hold { recipe } = &document.nodes().get(hold)?.kind else {
         return None;
     };
@@ -39,13 +44,22 @@ fn identity_in(document: &ProjectDocument, plan: &RenderPlan, hold: &NodeId) -> 
         Some(boundary_identity(&sample))
     };
     let basis = document.presentation_basis();
-    let identity = serde_json::json!({
+    let mut identity = serde_json::json!({
         "duration": recipe.duration.frames(),
         "rate": [basis.frame_rate.numerator(), basis.frame_rate.denominator()],
         "canvas": [basis.width, basis.height],
         "left": boundary(range.start().0 - 1)?,
         "right": boundary(range.end().0)?,
     });
+    if let Some(target) = target {
+        // A correction can change the seed without changing either picture.
+        // Bind the entire saved target conservatively, including its path,
+        // corrections and provenance. Absence never selects another target.
+        identity["region_target"] = serde_json::json!({
+            "id": target,
+            "record": document.targets().get(target)?,
+        });
+    }
     Some(Sha256::digest(serde_json::to_vec(&identity).ok()?).into())
 }
 
@@ -78,6 +92,7 @@ impl GenerationContextResolver for BoundaryContextResolver {
         request: &StoredGenerationRequest,
     ) -> ContextObservation {
         let hold = &request.binding.hold_id;
+        let target = request.constraints.region_target.as_ref();
         let before = {
             let Ok(mut cached) = self.origin.lock() else {
                 return ContextObservation::Unresolved;
@@ -92,9 +107,12 @@ impl GenerationContextResolver for BoundaryContextResolver {
                 *cached = Some((origin.revision_id().clone(), plan));
             }
             let (_, plan) = cached.as_ref().expect("cached origin plan");
-            identity_in(origin, plan, hold)
+            identity_in(origin, plan, hold, target)
         };
-        match (before, context_identity(after, hold)) {
+        let after = RenderPlan::compile(after)
+            .ok()
+            .and_then(|plan| identity_in(after, &plan, hold, target));
+        match (before, after) {
             (Some(before), Some(after)) if before == after => {
                 ContextObservation::Resolved(request.binding.context_sha256.clone())
             }

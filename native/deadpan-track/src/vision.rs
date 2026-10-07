@@ -18,9 +18,9 @@ use deadpan_analysis::generated_geometry::{
     MAX_LANDMARK_POINTS_PER_REGION,
 };
 
-use objc2::AnyThread;
 use objc2::rc::{Retained, autoreleasepool};
 use objc2::runtime::AnyObject;
+use objc2::{AnyThread, ClassType};
 use objc2_core_foundation::{CFRetained, CGPoint, CGRect, CGSize};
 use objc2_core_video::{
     CVPixelBuffer, CVPixelBufferCreate, CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow,
@@ -61,6 +61,7 @@ pub struct Picture<'a> {
 pub struct Tracker {
     handler: Retained<VNSequenceRequestHandler>,
     request: Retained<VNTrackObjectRequest>,
+    pinned_revision: Option<u64>,
 }
 
 impl Tracker {
@@ -84,8 +85,62 @@ impl Tracker {
             Self {
                 handler: VNSequenceRequestHandler::new(),
                 request,
+                pinned_revision: None,
             }
         }
+    }
+
+    /// Fixed candidate-inspection configuration. Revision 2 is Apple's
+    /// general-purpose tracker. It reports Fast even after Accurate is set
+    /// on the qualified runtime; Apple's SDK says this revision ignores the
+    /// level distinction. Pin that measured property without claiming a
+    /// speed or accuracy tradeoff, and leave ordinary selected-target
+    /// tracking on its existing configuration.
+    pub fn new_pinned(seed: VisionRect) -> Result<Self, String> {
+        let revision = deadpan_jobs::landmarks::REGION_REQUEST_REVISION;
+        // SAFETY: class capability query and property assignment on live
+        // retained objects; unsupported revisions are rejected before use.
+        unsafe {
+            // This inherited class method must be sent to the concrete
+            // tracker class. The generated VNRequest associated function
+            // would ask the superclass and report the wrong capability set.
+            let supported: Retained<objc2_foundation::NSIndexSet> =
+                objc2::msg_send![VNTrackObjectRequest::class(), supportedRevisions];
+            if !supported.containsIndex(revision as usize) {
+                return Err("Vision does not support object tracking revision 2".into());
+            }
+        }
+        let mut tracker = Self::new(seed);
+        // SAFETY: supported revision and declared tracking level assigned
+        // before any request. The revision-2 smoke measured Fast both before
+        // and after an explicit Accurate assignment. Require that actual
+        // property together with the pinned revision on every picture.
+        unsafe {
+            tracker.request.setRevision(revision as usize);
+            tracker
+                .request
+                .setTrackingLevel(VNRequestTrackingLevel::Fast);
+        }
+        tracker.pinned_revision = Some(revision);
+        tracker
+            .check_pinned_configuration()
+            .map_err(|error| format!("initialize region tracker: {error}"))?;
+        Ok(tracker)
+    }
+
+    fn check_pinned_configuration(&self) -> Result<(), String> {
+        if let Some(revision) = self.pinned_revision {
+            // SAFETY: property reads from the live request.
+            let actual_revision = self.revision();
+            let actual_level = unsafe { self.request.trackingLevel() };
+            if actual_revision != revision || actual_level != VNRequestTrackingLevel::Fast {
+                return Err(format!(
+                    "Vision changed the pinned object tracking configuration: revision {actual_revision}, tracking level {} (0=accurate, 1=fast); expected revision {revision}, level 1",
+                    actual_level.0
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// The request revision Vision actually uses.
@@ -102,6 +157,8 @@ impl Tracker {
         picture: &Picture<'_>,
         last: bool,
     ) -> Result<Option<(VisionRect, f32)>, String> {
+        self.check_pinned_configuration()
+            .map_err(|error| format!("before tracking picture: {error}"))?;
         if last {
             // SAFETY: a property write on a live request before it is performed.
             unsafe { self.request.setLastFrame(true) };
@@ -120,6 +177,8 @@ impl Tracker {
             if let Err(error) = performed {
                 return Err(error.localizedDescription().to_string());
             }
+            self.check_pinned_configuration()
+                .map_err(|error| format!("after tracking picture: {error}"))?;
             // SAFETY: `results` may be read after the request was performed.
             let Some(results) = (unsafe { self.request.results() }) else {
                 return Ok(None);

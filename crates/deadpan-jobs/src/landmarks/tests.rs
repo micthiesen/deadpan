@@ -30,6 +30,7 @@ fn request() -> HostMessage {
             left: artifact("input/left.png", 800),
             right: artifact("input/right.png", 900),
         })),
+        region_seeds: None,
         output_scope: WorkspaceRef::new("output").unwrap(),
         maximum_output_bytes: 16_384,
         timeout_millis: 60_000,
@@ -47,6 +48,7 @@ fn completed() -> WorkerMessage {
             request_revision: REQUEST_REVISION,
             constellation: CONSTELLATION,
         },
+        region_runtime: None,
         decoded: 4,
         analysed: 6,
         decode_millis: 2,
@@ -104,7 +106,7 @@ fn inputs_outputs_and_deadlines_cannot_escape_their_bounds() {
         ),
         ("timeout_millis", serde_json::json!(0)),
         ("timeout_millis", serde_json::json!(MAX_TIMEOUT_MILLIS + 1)),
-        ("protocol", serde_json::json!(2)),
+        ("protocol", serde_json::json!(1)),
     ] {
         let mut wire = serde_json::to_value(request()).unwrap();
         wire[field] = value;
@@ -233,4 +235,151 @@ fn optional_boundaries_change_the_exact_analysed_count() {
         protocol.classify(&completion).unwrap(),
         ResponseKind::Completed
     );
+}
+
+fn seeds() -> RegionSeeds {
+    RegionSeeds {
+        left: deadpan_analysis::NormalizedRect::new(0.1, 0.2, 0.2, 0.3).unwrap(),
+        right: deadpan_analysis::NormalizedRect::new(0.2, 0.2, 0.2, 0.3).unwrap(),
+    }
+}
+
+fn region_runtime() -> RegionRuntimeReport {
+    RegionRuntimeReport {
+        engine: REGION_ENGINE.into(),
+        request_revision: REGION_REQUEST_REVISION,
+        tracking_level: REGION_TRACKING_LEVEL.into(),
+    }
+}
+
+#[test]
+fn authored_region_seeds_require_both_boundaries_and_canonical_orientation() {
+    let mut value = request();
+    if let HostMessage::InspectLandmarks { region_seeds, .. } = &mut value {
+        *region_seeds = Some(Box::new(seeds()));
+    }
+    value.validate().unwrap();
+    let mut wire = serde_json::to_value(&value).unwrap();
+    wire["region_seeds"]["left"]["width"] = (-1.0).into();
+    assert!(serde_json::from_value::<HostMessage>(wire).is_err());
+    let mut wire = serde_json::to_value(&value).unwrap();
+    wire["region_seeds"]["extra"] = true.into();
+    assert!(serde_json::from_value::<HostMessage>(wire).is_err());
+    if let HostMessage::InspectLandmarks { stream, .. } = &mut value {
+        stream.rotation_quarter_turns = 1;
+    }
+    assert!(value.validate().is_err());
+    if let HostMessage::InspectLandmarks {
+        stream, boundaries, ..
+    } = &mut value
+    {
+        stream.rotation_quarter_turns = 0;
+        *boundaries = None;
+    }
+    assert!(value.validate().is_err());
+}
+
+#[test]
+fn region_runtime_is_pinned_and_present_exactly_when_requested() {
+    let unseeded = LandmarkProtocol::from_request(&request()).unwrap();
+    let mut request = request();
+    if let HostMessage::InspectLandmarks { region_seeds, .. } = &mut request {
+        *region_seeds = Some(Box::new(seeds()));
+    }
+    let seeded = LandmarkProtocol::from_request(&request).unwrap();
+    assert!(seeded.classify(&completed()).is_err());
+    let mut completion = completed();
+    if let WorkerMessage::Completed {
+        region_runtime: runtime,
+        ..
+    } = &mut completion
+    {
+        *runtime = Some(region_runtime());
+    }
+    assert!(unseeded.classify(&completion).is_err());
+    assert_eq!(
+        seeded.classify(&completion).unwrap(),
+        ResponseKind::Completed
+    );
+    for (field, value) in [
+        ("engine", serde_json::json!("other")),
+        ("request_revision", serde_json::json!(1)),
+        ("tracking_level", serde_json::json!("accurate")),
+    ] {
+        let mut wire = serde_json::to_value(&completion).unwrap();
+        wire["region_runtime"][field] = value;
+        assert!(
+            seeded
+                .classify(&serde_json::from_value::<WorkerMessage>(wire).unwrap())
+                .is_err()
+        );
+    }
+}
+
+#[test]
+fn observations_bind_complete_native_pts_and_exact_optional_seeds() {
+    use deadpan_analysis::generated_geometry::{
+        BoundaryObservations, FaceObservationSet, FrameObservation,
+    };
+    use deadpan_analysis::generated_region::{
+        RAW_REGION_SCHEMA_VERSION, RawRegionFrame, RegionObservation,
+    };
+    let seeds = seeds();
+    let empty = FaceObservationSet::Detected { faces: vec![] };
+    let tracked = RegionObservation::Tracked {
+        region: seeds.left,
+        confidence: 0.9,
+    };
+    let mut batch = InspectionObservations {
+        schema_version: OBSERVATIONS_SCHEMA_VERSION,
+        landmarks: RawLandmarkBatch {
+            schema_version: 1,
+            boundaries: Some(BoundaryObservations {
+                left: empty.clone(),
+                right: empty.clone(),
+            }),
+            frames: [0, 42]
+                .iter()
+                .enumerate()
+                .map(|(ordinal, &pts)| FrameObservation {
+                    ordinal: ordinal as u32,
+                    pts,
+                    observation: empty.clone(),
+                })
+                .collect(),
+        },
+        region: Some(RawRegionBatch {
+            schema_version: RAW_REGION_SCHEMA_VERSION,
+            seeds,
+            left: tracked,
+            frames: [0, 42]
+                .iter()
+                .enumerate()
+                .map(|(ordinal, &pts)| RawRegionFrame {
+                    ordinal: ordinal as u32,
+                    pts,
+                    observation: tracked,
+                })
+                .collect(),
+            right: tracked,
+        }),
+    };
+    batch.validate(&[0, 42], Some(&seeds)).unwrap();
+    assert!(batch.validate(&[0, 43], Some(&seeds)).is_err());
+    assert!(batch.validate(&[0, 42], None).is_err());
+    let different = RegionSeeds {
+        left: seeds.right,
+        right: seeds.left,
+    };
+    assert!(batch.validate(&[0, 42], Some(&different)).is_err());
+    let mut wire = serde_json::to_value(&batch).unwrap();
+    wire["extra"] = true.into();
+    assert!(serde_json::from_value::<InspectionObservations>(wire).is_err());
+    batch.region.as_mut().unwrap().frames.pop();
+    assert!(batch.validate(&[0, 42], Some(&seeds)).is_err());
+    batch.region = None;
+    assert!(batch.validate(&[0, 42], Some(&seeds)).is_err());
+    batch.validate(&[0, 42], None).unwrap();
+    batch.schema_version = 1;
+    assert!(batch.validate(&[0, 42], None).is_err());
 }

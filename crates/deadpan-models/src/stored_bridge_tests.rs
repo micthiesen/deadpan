@@ -209,6 +209,7 @@ impl Fixture {
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
                 instructions: None,
+                region_target: None,
             },
             provider: ProviderSelection {
                 pack_id: ProviderPackId::new("fixture").unwrap(),
@@ -290,6 +291,7 @@ impl Fixture {
                 quality: None,
                 endpoints: None,
                 geometry: None,
+                region: None,
             },
             128 * 1024,
         )
@@ -397,6 +399,24 @@ impl Fixture {
         fixture
     }
 
+    fn region_checked() -> Self {
+        let mut fixture = Self::geometry_checked();
+        let plan = serde_json::from_value(fixture.envelope["binding"]["plan"].clone()).unwrap();
+        let conditioning =
+            serde_json::from_value(fixture.envelope["conditioning"].clone()).unwrap();
+        let context: BridgeContext = serde_json::from_slice(&fixture.context).unwrap();
+        let region = crate::region::test_report(
+            &plan,
+            &fixture.artifact.native_object,
+            &conditioning,
+            &context,
+        );
+        fixture.envelope["schema_version"] = json!(7);
+        fixture.envelope["validation_profile"] = json!("deadpan-ffv1-bridge-7");
+        fixture.envelope["region"] = serde_json::to_value(region).unwrap();
+        fixture
+    }
+
     fn replace_worker(&mut self, worker: String) {
         self.envelope["declaration"]["provenance"] =
             serde_json::to_value(declaration("outputs/provenance.json", worker.as_bytes()))
@@ -410,6 +430,110 @@ impl Fixture {
         self.envelope["conditioning"]["manifest"] =
             json!({"declaration":declared,"object":object(&self.context)});
         self.envelope["binding"]["input"]["sha256"] = json!(declared.sha256());
+    }
+}
+
+#[test]
+fn schema6_with_actual_context3_remains_readable_without_region_capture() {
+    let mut fixture = Fixture::geometry_checked();
+    let mut context: Value = serde_json::from_slice(&fixture.context).unwrap();
+    context["schema_version"] = json!(3);
+    context.as_object_mut().unwrap().remove("region");
+    fixture.replace_context(context.clone());
+    let context_object = fixture.envelope["conditioning"]["manifest"]["object"].clone();
+    for report in ["geometry", "endpoints"] {
+        fixture.envelope[report]["context_object"] = context_object.clone();
+    }
+    let mut worker: Value =
+        serde_json::from_str(fixture.envelope["worker_provenance_utf8"].as_str().unwrap()).unwrap();
+    worker["request_binding"] = fixture.envelope["binding"].clone();
+    worker["context"] = context;
+    fixture.replace_worker(serde_json::to_string(&worker).unwrap());
+    let retained: BridgeContext = serde_json::from_slice(&fixture.context).unwrap();
+    assert_eq!(retained.schema_version(), 3);
+    assert!(retained.region().is_none());
+    let evidence = fixture.validate().unwrap();
+    assert!(evidence.geometry().is_some());
+    assert!(evidence.region().is_none());
+}
+
+#[test]
+fn schema7_requires_region_evidence_and_explicit_capture_binding() {
+    let evidence = Fixture::region_checked().validate().unwrap();
+    assert_eq!(
+        evidence.region().unwrap().unavailable_reason(),
+        Some("no selected region target")
+    );
+    assert!(evidence.geometry().is_some());
+    assert!(
+        Fixture::geometry_checked()
+            .validate()
+            .unwrap()
+            .region()
+            .is_none()
+    );
+    for mutation in [
+        "missing", "null", "unknown", "reason", "native", "geometry", "target",
+    ] {
+        let mut fixture = Fixture::region_checked();
+        match mutation {
+            "missing" => {
+                fixture.envelope.as_object_mut().unwrap().remove("region");
+            }
+            "null" => fixture.envelope["region"] = Value::Null,
+            "unknown" => fixture.envelope["region"]["unknown"] = json!(true),
+            "reason" => fixture.envelope["region"]["evidence"]["reason"] = json!("passes"),
+            "native" => {
+                fixture.envelope["region"]["native_object"] = json!(object(b"other native"))
+            }
+            "geometry" => {
+                fixture.envelope["region"]["geometry"]["presentation"] =
+                    json!({"x":1,"y":0,"width":2,"height":2})
+            }
+            "target" => {
+                fixture.envelope["binding"]["constraints"]["region_target"] = json!("other-subject")
+            }
+            _ => unreachable!(),
+        }
+        assert!(fixture.validate().is_err(), "{mutation}");
+    }
+    for version in [3, 4, 5, 6] {
+        let mut fixture = Fixture::region_checked();
+        fixture.envelope["schema_version"] = json!(version);
+        fixture.envelope["validation_profile"] = json!(format!("deadpan-ffv1-bridge-{version}"));
+        assert!(
+            fixture.validate().is_err(),
+            "region injected in legacy schema {version}"
+        );
+    }
+}
+
+#[test]
+fn legacy_profiles_cannot_claim_a_selected_region_without_evidence() {
+    for mut fixture in [
+        Fixture::new(),
+        Fixture::new().schema4(None),
+        Fixture::endpoint_checked(),
+        Fixture::geometry_checked(),
+    ] {
+        fixture.envelope["binding"]["constraints"]["region_target"] = json!("subject");
+        let mut worker: Value =
+            serde_json::from_str(fixture.envelope["worker_provenance_utf8"].as_str().unwrap())
+                .unwrap();
+        worker["request_binding"] = fixture.envelope["binding"].clone();
+        fixture.replace_worker(serde_json::to_string(&worker).unwrap());
+        let (bytes, artifact) = fixture.wire();
+        let result = StoredBridgeProvenance::from_bytes(&bytes, &artifact.provenance);
+        let error = match result {
+            Ok(_) => panic!("admitted selected target under legacy profile"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("selected region targets require stored region evidence"),
+            "{error}"
+        );
     }
 }
 

@@ -313,6 +313,7 @@ fn paste_reconciles_complete_generation_relevance_in_its_single_transaction() ->
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
             instructions: None,
+            region_target: None,
         },
         provider: ProviderSelection {
             pack_id: ProviderPackId::new("pack")?,

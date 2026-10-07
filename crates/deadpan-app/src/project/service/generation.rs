@@ -565,24 +565,34 @@ impl Service {
             .map(|node| node.label.clone())
             .unwrap_or_default();
         let package = workspace.path.clone();
-        let options = options.or_else(|| {
-            self.generation
-                .job
-                .as_ref()
-                .filter(|job| job.hold == hold && job.revision == revision && job.request.is_none())
-                .map(|job| job.options.clone())
-        });
-        let options = match options {
-            Some(options) => options,
-            None => attempt::current_bridge_request(
-                self.store.as_ref().ok_or("Open a project first")?,
-                &hold,
-            )
-            .map_err(display)?
+        let previous = self
+            .generation
+            .job
             .as_ref()
-            .map(|request| GenerationOptions::from_constraints(&request.constraints))
-            .unwrap_or_default(),
-        };
+            .filter(|job| job.hold == hold && job.revision == revision && job.request.is_none())
+            .map(|job| job.options.clone());
+        let current = attempt::current_bridge_request(
+            self.store.as_ref().ok_or("Open a project first")?,
+            &hold,
+        )
+        .map_err(display)?;
+        let previous = previous.or_else(|| {
+            current
+                .as_ref()
+                .map(|request| GenerationOptions::from_constraints(&request.constraints))
+        });
+        let previous_target = previous
+            .as_ref()
+            .and_then(|options| options.region_target.resolve(None));
+        let mut options = options.or(previous).unwrap_or_default();
+        options.resolve_target(previous_target.as_ref());
+        if let deadpan_jobs::GenerationTarget::Saved(target) = &options.region_target
+            && !workspace.document.targets().contains_key(target)
+        {
+            return Err(format!(
+                "AI region target {target} is no longer in this project. Choose a saved target or target=none."
+            ));
+        }
         let job = Job {
             ticket,
             session,
@@ -1604,11 +1614,13 @@ fn job_thread(
         finished,
         allocation,
     } = channels;
-    let prepared =
-        conditioning::prepare(&package, &revision, &hold, &cancelled).map(|mut inputs| {
-            options.apply_to(&mut inputs.constraints);
-            inputs
-        });
+    let prepared = conditioning::prepare_with_options(
+        &package, &revision, &hold, &options, &cancelled,
+    )
+    .map(|mut inputs| {
+        options.apply_to(&mut inputs.constraints);
+        inputs
+    });
     let ready = prepared.is_ok();
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;

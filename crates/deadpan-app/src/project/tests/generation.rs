@@ -166,6 +166,7 @@ fn controls_survive_a_runtime_failure_before_the_request_is_recorded() {
     let controls = deadpan_jobs::GenerationOptions {
         motion: deadpan_jobs::MotionAmount::Moderate,
         instructions: Some(deadpan_jobs::HoldInstructions::new("Keep the eyes open.").unwrap()),
+        region_target: deadpan_jobs::GenerationTarget::None,
     };
     let mut operation = start(&fixture, 1);
     if let GenerationOperation::Start { options, .. } = &mut operation {
@@ -247,6 +248,7 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
     let choices = GenerationOptions {
         motion: MotionAmount::Subtle,
         instructions: Some(HoldInstructions::new("Keep the hands still.").unwrap()),
+        region_target: deadpan_jobs::GenerationTarget::None,
     };
     let original = fixture.workspace.document.clone();
     let run = |fixture: &Fixture, ticket, options| {
@@ -303,10 +305,184 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
     fixture.workspace = reopened.workspace.unwrap();
     let (changed, actual) = run(&fixture, 3, Some(GenerationOptions::default()));
     assert_ne!(first, changed);
-    assert_eq!(actual, GenerationOptions::default());
+    assert_eq!(
+        actual,
+        GenerationOptions {
+            region_target: deadpan_jobs::GenerationTarget::None,
+            ..GenerationOptions::default()
+        }
+    );
     let (retry, actual) = run(&fixture, 4, None);
     assert_eq!(changed, retry);
-    assert_eq!(actual, GenerationOptions::default());
+    assert_eq!(
+        actual,
+        GenerationOptions {
+            region_target: deadpan_jobs::GenerationTarget::None,
+            ..GenerationOptions::default()
+        }
+    );
+}
+
+fn save_generation_target(fixture: &mut Fixture, name: &str, center: [u32; 2]) {
+    use deadpan_core::{AttentionTarget, TargetId, TargetRegion};
+    let (asset, record) = fixture
+        .workspace
+        .document
+        .assets()
+        .iter()
+        .find(|(_, record)| record.video.is_some())
+        .unwrap();
+    let target = AttentionTarget {
+        label: format!("Subject {name}"),
+        asset: asset.clone(),
+        span: record.video.unwrap(),
+        region: TargetRegion {
+            center,
+            size: [200_000, 200_000],
+        },
+        samples: vec![],
+        corrections: vec![],
+        provenance: None,
+    };
+    let update = command(
+        &fixture.service,
+        ProjectRequest::Target(crate::project::targets::Operation::Save {
+            ticket: 100,
+            session: fixture.workspace.session,
+            revision: fixture.workspace.document.revision_id().clone(),
+            id: TargetId::new(name).unwrap(),
+            target: Box::new(target),
+        }),
+    );
+    assert!(update.error.is_none(), "{:?}", update.error);
+    assert!(
+        update
+            .targets
+            .as_ref()
+            .unwrap()
+            .reply
+            .as_ref()
+            .unwrap()
+            .1
+            .is_none(),
+        "{:?}",
+        update.targets
+    );
+    fixture.workspace = update.workspace.unwrap();
+}
+
+#[test]
+fn region_choice_is_retained_when_omitted_and_explicit_none_stays_empty() {
+    use deadpan_jobs::{GenerationOptions, GenerationTarget, MotionAmount};
+    let mut fixture = project_with_pause(scripted(Script {
+        ending: ScriptEnding::Fail("planned failure".into()),
+        ..waiting(1)
+    }));
+    save_generation_target(&mut fixture, "subject", [400_000, 500_000]);
+    let chosen = deadpan_core::TargetId::new("subject").unwrap();
+    let run = |fixture: &Fixture, ticket, choices| {
+        let mut operation = start(fixture, ticket);
+        if let GenerationOperation::Start { options, .. } = &mut operation {
+            *options = choices;
+        }
+        let started = generation(&fixture.service, operation);
+        assert_eq!(refusal(&started), None);
+        let done = job_until(&fixture.service, |job| !job.running());
+        let job = done.generation.unwrap().job.unwrap();
+        assert!(
+            matches!(job.outcome, Some(Outcome::Failed(_))),
+            "{:?}",
+            job.outcome
+        );
+        let request = reader(&fixture.workspace)
+            .generation_request(&job.request.unwrap())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            GenerationOptions::from_constraints(&request.constraints),
+            job.options
+        );
+        request
+    };
+    let first = run(
+        &fixture,
+        1,
+        Some(GenerationOptions {
+            region_target: GenerationTarget::Saved(chosen.clone()),
+            ..GenerationOptions::default()
+        }),
+    );
+    assert_eq!(first.constraints.region_target, Some(chosen.clone()));
+    let changed = run(
+        &fixture,
+        2,
+        Some(GenerationOptions {
+            motion: MotionAmount::Subtle,
+            ..GenerationOptions::default()
+        }),
+    );
+    assert_ne!(first.request_id, changed.request_id);
+    assert_eq!(changed.constraints.region_target, Some(chosen));
+    let retry = run(&fixture, 3, None);
+    assert_eq!(changed.request_id, retry.request_id);
+    let cleared = run(
+        &fixture,
+        4,
+        Some(GenerationOptions {
+            region_target: GenerationTarget::None,
+            ..GenerationOptions::default()
+        }),
+    );
+    assert_ne!(cleared.request_id, retry.request_id);
+    assert!(cleared.constraints.region_target.is_none());
+    save_generation_target(&mut fixture, "later", [600_000, 500_000]);
+    let retry = run(&fixture, 5, None);
+    assert_eq!(cleared.request_id, retry.request_id);
+    assert!(retry.constraints.region_target.is_none());
+    let mut invalid = start(&fixture, 6);
+    if let GenerationOperation::Start { options, .. } = &mut invalid {
+        *options = Some(GenerationOptions {
+            region_target: GenerationTarget::Saved(deadpan_core::TargetId::new("missing").unwrap()),
+            ..GenerationOptions::default()
+        });
+    }
+    let rejected = generation(&fixture.service, invalid);
+    assert!(
+        refusal(&rejected)
+            .unwrap()
+            .contains("no longer in this project")
+    );
+    assert_eq!(
+        reader(&fixture.workspace)
+            .current_generation_requests()
+            .unwrap()[0]
+            .request_id,
+        cleared.request_id
+    );
+}
+
+#[test]
+fn target_arriving_after_job_start_does_not_fill_the_captured_absence() {
+    let mut fixture = project_with_pause(scripted(Script {
+        ending: ScriptEnding::Fail("planned late failure".into()),
+        ..waiting(300)
+    }));
+    generation(&fixture.service, start(&fixture, 1));
+    let running = job_until(&fixture.service, |job| job.request.is_some());
+    let request_id = running.generation.unwrap().job.unwrap().request.unwrap();
+    save_generation_target(&mut fixture, "later", [400_000, 500_000]);
+    let done = job_until(&fixture.service, |job| !job.running());
+    let job = done.generation.unwrap().job.unwrap();
+    assert_eq!(
+        job.options.region_target,
+        deadpan_jobs::GenerationTarget::None
+    );
+    let request = reader(&fixture.workspace)
+        .generation_request(&request_id)
+        .unwrap()
+        .unwrap();
+    assert!(request.constraints.region_target.is_none());
+    assert_eq!(request.relevance, deadpan_jobs::Relevance::Current);
 }
 
 #[test]
@@ -1091,6 +1267,7 @@ mod ready_fixture {
                         conditioning: ConditioningMode::Bridge,
                         motion: MotionAmount::Still,
                         instructions: None,
+                        region_target: None,
                     },
                     provider: provider.clone(),
                 },

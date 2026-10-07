@@ -377,6 +377,8 @@ pub struct HoldConstraints {
     pub motion: MotionAmount,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<crate::HoldInstructions>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region_target: Option<deadpan_core::TargetId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

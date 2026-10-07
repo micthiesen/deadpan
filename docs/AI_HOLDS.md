@@ -56,7 +56,7 @@ ends in Ready, Failed or Cancelled.
   declaration that differs from the plan or provider fails the attempt. After a
   clean exit it runs `qualify_bridge` with `deadpan-media-worker` and builds the
   `BundleValidationReceipt` with admission evidence (validator `native-ffv1`,
-  `bridge-5`). An error from `records` cancels the worker and fails the attempt.
+  `bridge-7`). An error from `records` cancels the worker and fails the attempt.
 - `finish` publishes the native and sampled masters, the provenance envelope
   and the three retained inputs, then records Ready. A publication failure is
   recorded as a host failure. Failures the store has not already recorded become
@@ -83,9 +83,9 @@ earlier Ready selection, and leaves the committed pause unchanged. See
 [measurement and verification](qualification/bridge-quality-2026-10-07.md).
 The host also compares the retained conditioning PNGs with the sampled master's
 first and last pictures inside the captured presentation crop. A separate gross
-endpoint guard rejects broad RGB discontinuity before Ready. Host schema 6
+endpoint guard rejects broad RGB discontinuity before Ready. Host schema 7
 retains these reports and binds measurements to the crop and immutable
-objects. Older schema 3/4/5 artifacts remain readable with their original evidence.
+objects. Older schema 3/4/5/6 artifacts remain readable with their original evidence.
 The existing Smooth/Noticeable/Jump readings remain advisory. See
 [endpoint checks](qualification/bridge-endpoints-2026-10-07.md).
 
@@ -98,12 +98,21 @@ A later occlusion cannot erase an earlier measured rejection. Missing, weak,
 ambiguous or out-of-crop observations remain explicitly unavailable; they do
 not establish identity or silence. The inspector exposes this coverage.
 See [face and mouth checks](qualification/bridge-landmarks-2026-10-07.md).
-Generic drift checks for a selected non-face region remain open. The versioned
-engineering thresholds need calibration on the owner corpus under §29.1.
+An optional saved target also enables a continuous non-face region check.
+`target=ID` captures that target in the exact decoded Original pictures on
+both sides. Vision object tracking revision 2 follows the left PNG, every
+native picture and the right PNG without restarting after loss. Gross center
+or size/aspect drift over two consecutive native frames rejects the candidate.
+The report retains raw boxes, confidence, exact PTS, capture identity and
+recomputed coverage. Missing, lost, interpolated, weak, off-source or too-small
+authored regions remain unavailable. Crop rectangles never supply a subject.
+See [selected-region checks](qualification/bridge-region-2026-10-07.md).
+The versioned engineering thresholds need calibration on the owner corpus
+under §29.1.
 
 ### Source and colour context
 
-Conditioning writes context manifest schema 3 (`deadpan_models::BridgeContext`,
+Conditioning writes context manifest schema 4 (`deadpan_models::BridgeContext`,
 [bundles](GENERATION_BUNDLES.md)). For each side of the pause it records what
 the committed picture path showed at the origin revision: for an Original
 frame, the asset, receipt, measured index ordinal and exact source PTS plus the
@@ -172,33 +181,36 @@ and is never replayed. Error codes: `GenerationUnavailable` (runtime missing),
 `GenerationFailed`, `GenerationUnknown` (the observed job is no longer the
 app's current one), host codes, and store codes.
 
-## Motion and guidance
+## Generation controls
 
-The inspector shows requested motion and optional plain-language guidance.
-**Motion and guidance…** opens a command prefilled with the current choices;
+The inspector shows requested motion, the selected region target and optional
+plain-language guidance. **Generation controls…** opens a command prefilled with the current choices;
 Enter generates and Escape closes it without starting work. For example:
 
 ```text
-:generate 2 motion=subtle text=Keep the hands still.
+:generate 2 motion=subtle target=hand text=Keep the hands still.
 ```
 
 Motion is `still`, `subtle` or `moderate`. `text=` consumes the rest of the
 command as literal model input, including spaces. Guidance must be nonblank,
 at most 512 UTF-8 bytes, and contain no control characters. Explicit controls
 replace the previous choices; `:generate motion=still` also clears old text.
+`target=ID` names a saved attention target; `target=none` clears it. Omitted
+target retains the captured choice, including its absence. The first request
+has no target. A target correction or removal makes its request stale.
 Bare `,a`, `:generate N` and Retry retain the current request's choices.
 Changed controls start a new request, so old candidates are never relabelled.
 Timing, pause sound and acceptance remain unchanged. These are requests to the
 model; review its result before accepting.
 
-The closed-project CLI accepts `--motion` and `--instructions`; a fresh request
+The closed-project CLI accepts `--motion`, `--target ID|none` and `--instructions`; a fresh request
 defaults to Still without guidance. `--another` retains the stored controls
-and refuses either flag or `--seed`. Through an open app, absent controls
+and refuses those flags or `--seed`. Through an open app, absent controls
 retain the current choices as native Generate does. Reports and `ai-variants`
 include the captured options. Failed or cancelled recorded requests retain
 them across reopening.
 
-Adapter `ltx-mlx` `0.15.8+deadpan3` uses `deadpan-hold-2`: a short locked-camera,
+Adapter `ltx-mlx` `0.15.8+deadpan4` uses `deadpan-hold-2`: a short locked-camera,
 preserved-identity/composition, no-speech/no-new-objects base, one motion
 sentence, and optional literal guidance. It uses no prompt enhancer. The exact
 prompt, version and token count are retained in worker provenance. Gemma's
@@ -643,9 +655,8 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-The worker exposes motion and optional guidance as described above. §12.5 still
-needs drift checks for a selected non-face region. Generate inside scoped
-Repeat/Retime inspection and calibrated join thresholds also remain open.
+Generate inside scoped Repeat/Retime inspection and calibrated join thresholds
+remain open.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
 the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.

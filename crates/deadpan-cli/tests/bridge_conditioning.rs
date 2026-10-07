@@ -165,7 +165,7 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     let inputs =
         conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
     let context = manifest(&inputs)?;
-    assert_eq!(context.schema_version(), 3);
+    assert_eq!(context.schema_version(), 4);
     let geometry = context.geometry().ok_or("captured geometry")?;
     let expected_crop = deadpan_models::RasterRect::new(99, 0, 569, 320)?;
     assert_eq!(geometry.presentation, expected_crop);
@@ -262,6 +262,108 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     // Conditioning is deterministic for one revision.
     let again = conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
     assert_eq!(again.manifest, inputs.manifest);
+    Ok(())
+}
+
+#[test]
+fn saved_target_capture_is_bound_to_the_revision_and_retained_decoded_pictures() -> Result {
+    use deadpan_core::{AttentionTarget, TargetId, TargetRegion};
+    use deadpan_jobs::{GenerationOptions, GenerationTarget};
+    use deadpan_models::{CapturedRegionBoundary, RegionCapture};
+    let root = tempfile::tempdir()?;
+    let fixture = recipes::black_pause(&root.path().join("fixture"))?;
+    let before = RevisionId::new(fixture.revision.clone())?;
+    let hold = NodeId::new("black")?;
+    let initial = conditioning::prepare(&fixture.package, &before, &hold, &AtomicBool::new(false))?;
+    let context = manifest(&initial)?;
+    let BoundaryPicture::Original { asset, .. } = &context.boundaries().ok_or("boundaries")?.left
+    else {
+        return Err("Original boundary".into());
+    };
+    let document = ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.snapshot()?;
+    let target_id = TargetId::new("hand")?;
+    let target = AttentionTarget {
+        label: "Hand".into(),
+        asset: asset.clone(),
+        span: document.assets()[asset].video.ok_or("video span")?,
+        region: TargetRegion {
+            center: [500_000, 500_000],
+            size: [200_000, 200_000],
+        },
+        samples: vec![],
+        corrections: vec![],
+        provenance: None,
+    };
+    let revision = RevisionId::new("target-captured")?;
+    let request = root.path().join("set-target.json");
+    std::fs::write(
+        &request,
+        serde_json::to_vec(
+            &json!({"protocol":1,"project_id":document.project_id(),"expected_revision":before,"new_revision":revision,"command":Command::SetTarget {id:target_id.clone(),target:target.clone()}}),
+        )?,
+    )?;
+    recipes::success(&[
+        "command",
+        fixture.package.to_str().ok_or("path")?,
+        "--json",
+        request.to_str().ok_or("path")?,
+    ])?;
+    let controls = GenerationOptions {
+        region_target: GenerationTarget::Saved(target_id.clone()),
+        ..Default::default()
+    };
+    let inputs = conditioning::prepare_with_options(
+        &fixture.package,
+        &revision,
+        &hold,
+        &controls,
+        &AtomicBool::new(false),
+    )?;
+    assert_eq!(inputs.constraints.region_target, Some(target_id));
+    let captured = manifest(&inputs)?;
+    assert_eq!(inputs.left_png, initial.left_png);
+    assert_eq!(inputs.right_png, initial.right_png);
+    let region = captured.region().ok_or("region capture")?;
+    let RegionCapture::Selected { left, right, .. } = region else {
+        return Err("selected capture".into());
+    };
+    let (
+        CapturedRegionBoundary::Available { point: lp, .. },
+        CapturedRegionBoundary::Available { point: rp, .. },
+    ) = (left.as_ref(), right.as_ref())
+    else {
+        return Err("available selected capture".into());
+    };
+    let boundaries = captured.boundaries().ok_or("boundaries")?;
+    assert_eq!(
+        lp.ticks,
+        deadpan_core::ExactRatio::integer(boundaries.left.decoded().ok_or("left")?.pts.ticks)
+    );
+    assert_eq!(
+        rp.ticks,
+        deadpan_core::ExactRatio::integer(boundaries.right.decoded().ok_or("right")?.pts.ticks)
+    );
+    let seeds = region
+        .seeds(
+            boundaries,
+            captured.geometry().ok_or("geometry")?,
+            [768, 320],
+        )?
+        .ok_or("seeds")?;
+    assert!((seeds.left.width() - 0.2 * 569.0 / 768.0).abs() < 1e-12);
+    let missing = conditioning::prepare_with_options(
+        &fixture.package,
+        &before,
+        &hold,
+        &controls,
+        &AtomicBool::new(false),
+    )
+    .unwrap_err();
+    assert!(missing.contains("not saved in this revision"), "{missing}");
+    assert_eq!(
+        ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.head_revision()?,
+        revision
+    );
     Ok(())
 }
 

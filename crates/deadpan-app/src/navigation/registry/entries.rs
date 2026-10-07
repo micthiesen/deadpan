@@ -1195,20 +1195,20 @@ pub static SPECS: &[Spec] = &[
         commands: &[
             verb(
                 "generate",
-                ":generate [N] [motion=still|subtle|moderate] [text=guidance]",
+                ":generate [N] [motion=still|subtle|moderate] [target=ID|none] [text=guidance]",
             ),
             verb(
                 "generate-ai",
-                ":generate-ai [N] [motion=…] [text=…]  same as :generate",
+                ":generate-ai [N] [motion=…] [target=…] [text=…]  same as :generate",
             ),
         ],
         contexts: C::EDIT,
         replay: Replay::NotRecorded,
         headless: eq(
-            "generate-hold <p> --hold <id> [--variants N] [--motion LEVEL] [--instructions TEXT]",
+            "generate-hold <p> --hold <id> [--variants N] [--motion LEVEL] [--target ID|none] [--instructions TEXT]",
             AI,
         ),
-        help: "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. :generate 3 makes several variants (1 to 4), each from a different seed; bare Generate retains the current motion and text. Use :generate motion=subtle text=Keep the hands still. to replace those controls (text last, up to 512 UTF-8 bytes); motion=still without text clears guidance. Still, subtle and moderate describe requested motion, not a guarantee. Changed controls start a new request. When controls and neighbouring pictures are unchanged, new variants join the ones already offered. The inspector and footer show the stage and time; Escape never cancels it.",
+        help: "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. :generate 3 makes several variants (1 to 4), each from a different seed; bare Generate retains the current motion, target and text. Use :generate motion=subtle target=subject text=Keep the hands still. to change controls (text last, up to 512 UTF-8 bytes). target=ID captures a saved target for region checks; target=none clears it, and omitting target retains the captured choice. A missing target fails without choosing another. motion=still without text clears guidance. Still, subtle and moderate describe requested motion, not a guarantee. Changed controls start a new request. When controls, target and neighbouring pictures are unchanged, new variants join the ones already offered. The inspector and footer show the stage and time; Escape never cancels it.",
     },
     Spec {
         id: "ai.cancel",

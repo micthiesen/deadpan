@@ -1,6 +1,7 @@
 //! Bounded user intent for a local AI pause. Timing and provider identity stay
 //! in the request's existing constraints and binding.
 
+use deadpan_core::TargetId;
 use serde::{Deserialize, Serialize};
 
 use crate::{HoldConstraints, MotionAmount, ValueError};
@@ -69,12 +70,48 @@ impl From<HoldInstructions> for String {
 
 /// Captured generation controls, independent of the pause's exact duration.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "selection",
+    content = "target",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
+pub enum GenerationTarget {
+    #[default]
+    Inherit,
+    None,
+    Saved(TargetId),
+}
+
+impl GenerationTarget {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        if value == "none" {
+            Ok(Self::None)
+        } else {
+            TargetId::new(value)
+                .map(Self::Saved)
+                .map_err(|error| error.to_string())
+        }
+    }
+
+    pub fn resolve(&self, previous: Option<&TargetId>) -> Option<TargetId> {
+        match self {
+            Self::Inherit => previous.cloned(),
+            Self::None => None,
+            Self::Saved(target) => Some(target.clone()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GenerationOptions {
     #[serde(default)]
     pub motion: MotionAmount,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<HoldInstructions>,
+    #[serde(default)]
+    pub region_target: GenerationTarget,
 }
 
 impl GenerationOptions {
@@ -82,6 +119,10 @@ impl GenerationOptions {
         Self {
             motion: constraints.motion,
             instructions: constraints.instructions.clone(),
+            region_target: constraints
+                .region_target
+                .clone()
+                .map_or(GenerationTarget::None, GenerationTarget::Saved),
         }
     }
 
@@ -89,6 +130,17 @@ impl GenerationOptions {
     pub fn apply_to(&self, constraints: &mut HoldConstraints) {
         constraints.motion = self.motion;
         constraints.instructions.clone_from(&self.instructions);
+        constraints.region_target = self
+            .region_target
+            .resolve(constraints.region_target.as_ref());
+    }
+
+    /// Resolve omission once, before asynchronous conditioning begins.
+    pub fn resolve_target(&mut self, previous: Option<&TargetId>) {
+        self.region_target = self
+            .region_target
+            .resolve(previous)
+            .map_or(GenerationTarget::None, GenerationTarget::Saved);
     }
 }
 
@@ -138,5 +190,30 @@ mod tests {
             serde_json::from_value::<GenerationOptions>(serde_json::json!({})).unwrap(),
             GenerationOptions::default()
         );
+    }
+
+    #[test]
+    fn resolving_omission_captures_presence_or_absence_once() {
+        let target = TargetId::new("subject").unwrap();
+        let later = TargetId::new("later").unwrap();
+        let mut inherited = GenerationOptions::default();
+        inherited.resolve_target(Some(&target));
+        assert_eq!(
+            inherited.region_target,
+            GenerationTarget::Saved(target.clone())
+        );
+        inherited.resolve_target(Some(&later));
+        assert_eq!(inherited.region_target, GenerationTarget::Saved(target));
+        let mut absent = GenerationOptions::default();
+        absent.resolve_target(None);
+        absent.resolve_target(Some(&later));
+        assert_eq!(absent.region_target, GenerationTarget::None);
+        let mut cleared = GenerationOptions {
+            region_target: GenerationTarget::None,
+            ..GenerationOptions::default()
+        };
+        cleared.resolve_target(Some(&later));
+        assert_eq!(cleared.region_target, GenerationTarget::None);
+        assert!(GenerationTarget::parse("").is_err());
     }
 }

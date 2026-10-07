@@ -76,7 +76,7 @@ def bridge_request_wire():
             "pack_id": "ltx-2.3-q4-development",
             "pack_version": "56a5866d",
             "runtime_id": "ltx-mlx-development",
-            "runtime_version": "0.15.8+deadpan3",
+            "runtime_version": "0.15.8+deadpan4",
             "seed": 38_117,
         },
         "plan": plan(),
@@ -117,6 +117,17 @@ def native_candidate_wire(protocol=2):
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_region_target_is_bounded_and_round_trips(self):
+        wire = bridge_request_wire()
+        wire["constraints"]["region_target"] = "hand-1"
+        parsed = worker_protocol.parse_host_message(wire)
+        self.assertEqual(parsed.constraints.region_target, "hand-1")
+        self.assertEqual(parsed.constraints._wire()["region_target"], "hand-1")
+        for target in ("", "../hand", "a" * 129, 1, "hand label"):
+            wire["constraints"]["region_target"] = target
+            with self.subTest(target=target), self.assertRaises(ValueError):
+                worker_protocol.parse_host_message(wire)
+
     def test_all_motion_levels_and_optional_guidance_round_trip(self):
         for motion in ("still", "subtle", "moderate"):
             for instructions in (None, "Keep the hands still.", "目線をそのまま保つ。", "a" * 512,
@@ -204,7 +215,7 @@ class BridgeProtocolTests(unittest.TestCase):
                     "ltx-2.3-q4-development",
                     "56a5866d",
                     "ltx-mlx-development",
-                    "0.15.8+deadpan3",
+                    "0.15.8+deadpan4",
                     38_117,
                 ),
             )
@@ -274,6 +285,53 @@ class BridgeProtocolTests(unittest.TestCase):
 
 
 class WorkerContextShapeTests(unittest.TestCase):
+    def schema4_context(self, selected=False):
+        context = self.schema3_context()
+        context.update(schema_version=4, region={"selection": "none"})
+        if selected:
+            context["region"] = {
+                "selection": "selected", "target": "hand", "label": "Hand", "target_sha256": SHA_A,
+                "left": {"status": "available", "asset": "asset",
+                         "point": {"ticks": {"numerator": "0", "denominator": "1"},
+                                   "time_base": {"numerator": 1, "denominator": 24}},
+                         "source": "initial", "region": {"center": [500000, 500000], "size": [100000, 100000]},
+                         "confidence": None},
+                "right": {"status": "unavailable", "reason": "not_original"},
+            }
+        return context
+
+    def test_captured_region_schema_four_is_strict_and_pts_bound(self):
+        worker.validate_context_shape(self.schema4_context())
+        worker.validate_context_shape(self.schema4_context(selected=True))
+        mutations = [
+            lambda value: value.pop("region"),
+            lambda value: value["region"].update(extra=True),
+            lambda value: value["region"].update(selection="implicit"),
+            lambda value: value["region"].update(target="../hand"),
+            lambda value: value["region"]["left"]["point"]["ticks"].update(numerator="1"),
+            lambda value: value["region"]["left"].update(source={"tracked": "lost"}, confidence=900),
+            lambda value: value["region"]["left"].update(source={"tracked": "tracked"}, confidence=699),
+            lambda value: value["region"]["left"]["region"].update(center=[0, 500000]),
+            lambda value: value["region"]["left"]["region"].update(size=[1, 1]),
+            lambda value: value["region"]["left"].update(asset="other"),
+            lambda value: value["region"]["right"].update(reason="ignored"),
+        ]
+        for mutate in mutations:
+            value = self.schema4_context(selected=True)
+            mutate(value)
+            with self.subTest(mutation=mutate), self.assertRaises(ValueError):
+                worker.validate_context_shape(value)
+
+    def test_request_target_must_match_retained_capture_even_if_unavailable(self):
+        wire = bridge_request_wire()
+        context = self.schema4_context(selected=True)
+        with self.assertRaisesRegex(ValueError, "target differs"):
+            worker.validate_bridge_context(context, worker_protocol.parse_host_message(wire), wire["constraints"]["video"])
+        wire["constraints"]["region_target"] = "hand"
+        worker.validate_bridge_context(context, worker_protocol.parse_host_message(wire), wire["constraints"]["video"])
+        with self.assertRaisesRegex(ValueError, "target differs"):
+            worker.validate_bridge_context(self.schema4_context(), worker_protocol.parse_host_message(wire), wire["constraints"]["video"])
+
     def context(self):
         artifact = {"reference": "inputs/left.png", "sha256": SHA_A, "byte_length": 1}
         return {

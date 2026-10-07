@@ -121,6 +121,7 @@ fn constraints() -> HoldConstraints {
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
         instructions: None,
+        region_target: None,
     }
 }
 
@@ -932,6 +933,7 @@ fn identical_masters_can_share_one_fresh_asset_identity() -> Result {
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
                 instructions: None,
+                region_target: None,
             },
         },
         same_contract_plan(),

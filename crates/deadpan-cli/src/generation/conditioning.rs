@@ -23,13 +23,13 @@ use std::sync::atomic::AtomicBool;
 
 use deadpan_core::{FrameDuration, NodeId, NodeKind, ProjectFrame, RevisionId, SourceFrameId};
 use deadpan_jobs::{
-    BridgeGenerationPlan, ConditioningMode, HoldConstraints, MotionAmount, Sha256, VideoSpec,
-    WorkspaceArtifact, WorkspaceRef,
+    BridgeGenerationPlan, ConditioningMode, GenerationOptions, HoldConstraints, MotionAmount,
+    Sha256, VideoSpec, WorkspaceArtifact, WorkspaceRef,
 };
 use deadpan_models::{
     BoundaryPicture, BridgeBoundaries, BridgeColor, BridgeContext, BridgeMatrix, BridgePrimaries,
     BridgeRange, BridgeTransfer, CANONICAL_BRIDGE_COLOR, ConditioningGeometry, DecodedBoundary,
-    MeasuredStream, ModelInputConversion, RasterRect, model_input_conversion,
+    MeasuredStream, ModelInputConversion, RasterRect, RegionCapture, model_input_conversion,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_render::{Rgba8Frame, SampleDepth};
@@ -75,6 +75,22 @@ pub fn prepare(
     hold: &NodeId,
     cancelled: &AtomicBool,
 ) -> Result<BridgeInputs, String> {
+    prepare_with_options(
+        package,
+        revision,
+        hold,
+        &GenerationOptions::default(),
+        cancelled,
+    )
+}
+
+pub fn prepare_with_options(
+    package: &Path,
+    revision: &RevisionId,
+    hold: &NodeId,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<BridgeInputs, String> {
     // Decoding polls `cancelled` itself; check between the uncancellable
     // steps too so a host shutdown is never held by a finished-but-unused step.
     let check = || {
@@ -89,6 +105,17 @@ pub fn prepare(
         .map_err(|error| error.to_string())?;
     check()?;
     let document = session.document().clone();
+    let target_id = options.region_target.resolve(None);
+    let target = target_id
+        .as_ref()
+        .map(|id| {
+            document
+                .targets()
+                .get(id)
+                .map(|record| (id, record))
+                .ok_or_else(|| format!("Region target {id} is not saved in this revision."))
+        })
+        .transpose()?;
     let NodeKind::Hold { recipe } = &document
         .nodes()
         .get(hold)
@@ -126,13 +153,15 @@ pub fn prepare(
         super::native_dimensions(),
     )
     .map_err(|error| error.to_string())?;
-    let constraints = HoldConstraints {
+    let mut constraints = HoldConstraints {
         video: VideoSpec::new(duration, rate, super::NATIVE_WIDTH, super::NATIVE_HEIGHT)
             .map_err(|error| error.to_string())?,
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
         instructions: None,
+        region_target: None,
     };
+    options.apply_to(&mut constraints);
     let basis = document.presentation_basis();
     let region = canvas_region([basis.width, basis.height]);
     let left = boundary(
@@ -151,16 +180,27 @@ pub fn prepare(
         [super::NATIVE_WIDTH, super::NATIVE_HEIGHT],
     )
     .map_err(str::to_owned)?;
-    assemble(plan, constraints, left, right, presentation)
+    assemble_captured(plan, constraints, left, right, presentation, target)
 }
 
-/// Bind two prepared boundaries and their captured crop in a version-3 context.
+/// Bind two prepared boundaries and their captured crop with no region target.
 pub fn assemble(
     plan: BridgeGenerationPlan,
     constraints: HoldConstraints,
     left: PreparedBoundary,
     right: PreparedBoundary,
     presentation: RasterRect,
+) -> Result<BridgeInputs, String> {
+    assemble_captured(plan, constraints, left, right, presentation, None)
+}
+
+fn assemble_captured(
+    plan: BridgeGenerationPlan,
+    constraints: HoldConstraints,
+    left: PreparedBoundary,
+    right: PreparedBoundary,
+    presentation: RasterRect,
+    target: Option<(&deadpan_core::TargetId, &deadpan_core::AttentionTarget)>,
 ) -> Result<BridgeInputs, String> {
     let artifact = |reference: &str, bytes: &[u8]| -> Result<WorkspaceArtifact, String> {
         WorkspaceArtifact::new(
@@ -170,22 +210,40 @@ pub fn assemble(
         )
         .map_err(|error| error.to_string())
     };
+    let boundaries = BridgeBoundaries {
+        left: left.picture,
+        right: right.picture,
+    };
+    let geometry = ConditioningGeometry {
+        presentation,
+        left_content: left.content_rect,
+        right_content: right.content_rect,
+    };
+    let region = target
+        .map(|(id, record)| {
+            RegionCapture::new(
+                id.clone(),
+                record,
+                &boundaries,
+                &geometry,
+                [super::NATIVE_WIDTH, super::NATIVE_HEIGHT],
+            )
+        })
+        .transpose()?
+        .unwrap_or(RegionCapture::None);
+    if constraints.region_target.as_ref() != region.target_id() {
+        return Err("Region target controls differ from captured conditioning.".into());
+    }
     let context = BridgeContext::new(
         plan.clone(),
         artifact(LEFT, &left.png)?,
         artifact(RIGHT, &right.png)?,
         INPUT_COLOR_INTERPRETATION,
         MODEL_COLOR_SPACE,
-        BridgeBoundaries {
-            left: left.picture,
-            right: right.picture,
-        },
-        ConditioningGeometry {
-            presentation,
-            left_content: left.content_rect,
-            right_content: right.content_rect,
-        },
+        boundaries,
+        geometry,
     )
+    .and_then(|context| context.with_region(region))
     .map_err(|error| error.to_string())?;
     let manifest = serde_json::to_vec(&context).map_err(|error| error.to_string())?;
     let manifest_sha256 = sha256(&manifest)?;
@@ -595,6 +653,7 @@ mod tests {
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
             instructions: None,
+            region_target: None,
         };
         let picture = frame(&RgbImage::from_pixel(4, 2, Rgb([1, 2, 3])));
         let (mut left, right) = opaque_boundaries(&plan, b"l".to_vec(), b"r".to_vec());

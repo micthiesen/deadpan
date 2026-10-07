@@ -100,6 +100,7 @@ fn inputs_for_frames(frames: i64) -> BridgeInputs {
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
         instructions: None,
+        region_target: None,
     };
     // Prepared pictures are opaque retained bytes to capture and the store.
     let (left, right) = conditioning::opaque_boundaries(&plan, b"left".to_vec(), b"right".to_vec());
@@ -178,7 +179,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
         "pack_id": "ltx-2.3-q4-bridge",
         "pack_version": "2",
         "runtime_id": "ltx-mlx",
-        "runtime_version": "0.15.8+deadpan3",
+        "runtime_version": "0.15.8+deadpan4",
         "seed": 7,
     }))
     .unwrap();
@@ -548,7 +549,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     .unwrap();
     assert!(
         stored.quality().is_some(),
-        "successful output uses schema 6"
+        "successful output uses schema 7"
     );
     assert!(
         stored.endpoints().is_some(),
@@ -556,9 +557,16 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     );
     let geometry = stored
         .geometry()
-        .expect("schema 6 retains native observations");
+        .expect("schema 7 retains native observations");
     assert_eq!(geometry.assessment().mouth.measured_tracks, 0);
     assert_eq!(geometry.assessment().geometry.measured_tracks, 0);
+    assert_eq!(
+        stored
+            .region()
+            .expect("explicit region evidence")
+            .unavailable_reason(),
+        Some("no selected region target")
+    );
 
     let second =
         allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();

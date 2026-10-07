@@ -1,17 +1,23 @@
-//! Complete, bounded landmark inspection of a private candidate and its PNGs.
+//! Complete, bounded face and authored-region inspection of a private candidate.
 
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
+use deadpan_analysis::NormalizedRect;
 use deadpan_analysis::generated_geometry::{
     BoundaryObservations, FaceObservationSet, FrameObservation, RawLandmarkBatch,
 };
+use deadpan_analysis::generated_region::{
+    RAW_REGION_SCHEMA_VERSION, RawRegionBatch, RawRegionFrame, RegionObservation,
+    RegionObservationUnavailableReason, RegionSeeds,
+};
 use deadpan_jobs::landmarks::{
-    BoundaryInputs, CONSTELLATION, ENGINE, ExpectedStream, HostMessage, MAX_DIMENSION, MAX_FRAMES,
-    MAX_PIXELS, OUTPUT_FILE, REQUEST_REVISION, RuntimeReport, VERSION, WorkerMessage, read_host,
-    write_worker,
+    BoundaryInputs, CONSTELLATION, ENGINE, ExpectedStream, HostMessage, InspectionObservations,
+    MAX_DIMENSION, MAX_FRAMES, MAX_PIXELS, OBSERVATIONS_SCHEMA_VERSION, OUTPUT_FILE, REGION_ENGINE,
+    REGION_REQUEST_REVISION, REGION_TRACKING_LEVEL, REQUEST_REVISION, RegionRuntimeReport,
+    RuntimeReport, VERSION, WorkerMessage, read_host, write_worker,
 };
 use deadpan_jobs::protocol::{AttemptId, Diagnostic, RequestId, WorkspaceArtifact, WorkspaceRef};
 use deadpan_source::{DecodeLimits, SourceDecoder};
@@ -38,6 +44,7 @@ struct Request {
     stream: ExpectedStream,
     picture_pts: Vec<i64>,
     boundaries: Option<Box<BoundaryInputs>>,
+    region_seeds: Option<Box<RegionSeeds>>,
     output_scope: WorkspaceRef,
     maximum_output_bytes: u64,
     deadline: Instant,
@@ -53,6 +60,7 @@ pub(super) fn main() -> ExitCode {
         stream,
         picture_pts,
         boundaries,
+        region_seeds,
         output_scope,
         maximum_output_bytes,
         timeout_millis,
@@ -95,6 +103,7 @@ pub(super) fn main() -> ExitCode {
         stream,
         picture_pts,
         boundaries,
+        region_seeds,
         output_scope,
         maximum_output_bytes,
         deadline,
@@ -137,6 +146,41 @@ fn inspect(
     let started = Instant::now();
     let control = || decode_control(cancelled, request.deadline);
     control()?;
+    let mut vision_time = Duration::ZERO;
+    let total = request.picture_pts.len() + if request.boundaries.is_some() { 2 } else { 0 };
+    let mut last_percent = None;
+    // The seed image must be the first item in the tracking sequence. Retain
+    // decoded pixels only when both endpoint descriptors refer to the same PNG.
+    let left_png = request
+        .boundaries
+        .as_ref()
+        .map(|inputs| decode_png(&inputs.left, request, cancelled))
+        .transpose()?;
+    let mut region_tracker = request
+        .region_seeds
+        .as_ref()
+        .map(|seeds| RegionTracker::new(seeds.left))
+        .transpose()?;
+    let mut region_left = None;
+    let left_faces = if let Some(png) = &left_png {
+        let started = Instant::now();
+        let faces = png.detect()?;
+        control()?;
+        if let Some(tracker) = &mut region_tracker {
+            region_left = Some(tracker.track(png, false)?);
+        }
+        vision_time += started.elapsed();
+        control()?;
+        progress(job, 1, total, &mut last_percent)?;
+        Some(faces)
+    } else {
+        None
+    };
+    let alias_png = request
+        .boundaries
+        .as_ref()
+        .is_some_and(|inputs| inputs.left == inputs.right);
+    let retained_left_png = if alias_png { left_png } else { None };
     let file = open_source(&request.source)?;
     verify_source(&file, &request.source, cancelled, request.deadline)?;
     let limits = DecodeLimits {
@@ -152,9 +196,11 @@ fn inspect(
         .map_err(|error| format!("open landmark source: {error}"))?;
     check_stream(decoder.info(), &request.stream)?;
     let mut frames = Vec::with_capacity(request.picture_pts.len());
-    let mut vision_time = Duration::ZERO;
-    let total = request.picture_pts.len() + if request.boundaries.is_some() { 2 } else { 0 };
-    let mut last_percent = None;
+    let mut region_frames = Vec::with_capacity(if region_tracker.is_some() {
+        request.picture_pts.len()
+    } else {
+        0
+    });
     for (ordinal, &pts) in request.picture_pts.iter().enumerate() {
         let metadata = decoder
             .next_metadata(control()?)
@@ -188,6 +234,21 @@ fn inspect(
             &picture.rgba,
             request.stream.rotation_quarter_turns,
         )?;
+        control()?;
+        if let Some(tracker) = &mut region_tracker {
+            let observation = tracker.track_picture(
+                picture.width,
+                picture.height,
+                picture.row_stride_bytes,
+                &picture.rgba,
+                false,
+            )?;
+            region_frames.push(RawRegionFrame {
+                ordinal: ordinal as u32,
+                pts,
+                observation,
+            });
+        }
         vision_time += vision_started.elapsed();
         control()?;
         frames.push(FrameObservation {
@@ -195,7 +256,12 @@ fn inspect(
             pts,
             observation,
         });
-        progress(job, ordinal + 1, total, &mut last_percent)?;
+        progress(
+            job,
+            ordinal + 1 + usize::from(left_faces.is_some()),
+            total,
+            &mut last_percent,
+        )?;
     }
     if decoder
         .next_metadata(control()?)
@@ -207,28 +273,57 @@ fn inspect(
             .into());
     }
     drop(decoder);
-    let boundaries = if let Some(inputs) = &request.boundaries {
-        let left = inspect_png(&inputs.left, request, cancelled, &mut vision_time)?;
-        progress(job, frames.len() + 1, total, &mut last_percent)?;
-        let right = if inputs.left == inputs.right {
+    let mut region_right = None;
+    let boundaries = if let (Some(inputs), Some(left)) = (&request.boundaries, left_faces) {
+        let png = match retained_left_png {
+            Some(png) => png,
+            None => decode_png(&inputs.right, request, cancelled)?,
+        };
+        let started = Instant::now();
+        let right = if alias_png {
             left.clone()
         } else {
-            inspect_png(&inputs.right, request, cancelled, &mut vision_time)?
+            png.detect()?
         };
+        control()?;
+        // An aliased endpoint reuses its decode and face detection. Tracking
+        // still consumes it at this final position, never reuses its old box.
+        if let Some(tracker) = &mut region_tracker {
+            region_right = Some(tracker.track(&png, true)?);
+        }
+        vision_time += started.elapsed();
         control()?;
         progress(job, total, total, &mut last_percent)?;
         Some(BoundaryObservations { left, right })
     } else {
         None
     };
-    let batch = RawLandmarkBatch {
+    let landmarks = RawLandmarkBatch {
         schema_version: 1,
         boundaries,
         frames,
     };
-    batch
-        .validate(&request.picture_pts)
-        .map_err(|error| error.to_string())?;
+    let region = match (&request.region_seeds, region_left, region_right) {
+        (Some(seeds), Some(left), Some(right)) => Some(RawRegionBatch {
+            schema_version: RAW_REGION_SCHEMA_VERSION,
+            seeds: *seeds.as_ref(),
+            left,
+            frames: region_frames,
+            right,
+        }),
+        (None, None, None) => None,
+        _ => {
+            return Err("region inspection lost its retained boundary observations"
+                .to_owned()
+                .into());
+        }
+    };
+    let batch = InspectionObservations {
+        schema_version: OBSERVATIONS_SCHEMA_VERSION,
+        landmarks,
+        region,
+    };
+    batch.validate(&request.picture_pts, request.region_seeds.as_deref())?;
     control()?;
     let mut bytes = BoundedBytes {
         bytes: Vec::new(),
@@ -255,6 +350,11 @@ fn inspect(
             request_revision: REQUEST_REVISION,
             constellation: CONSTELLATION,
         },
+        region_runtime: request.region_seeds.as_ref().map(|_| RegionRuntimeReport {
+            engine: REGION_ENGINE.into(),
+            request_revision: REGION_REQUEST_REVISION,
+            tracking_level: REGION_TRACKING_LEVEL.into(),
+        }),
         decoded: request.picture_pts.len() as u32,
         analysed: total as u32,
         decode_millis: millis(elapsed.saturating_sub(vision_time)),
@@ -282,12 +382,11 @@ fn progress(
     Ok(())
 }
 
-fn inspect_png(
+fn decode_png(
     artifact: &WorkspaceArtifact,
     request: &Request,
     cancelled: &AtomicBool,
-    vision_time: &mut Duration,
-) -> Result<FaceObservationSet, Interrupted> {
+) -> Result<PngPicture, Interrupted> {
     let control = || decode_control(cancelled, request.deadline);
     control()?;
     let mut file = open_source(artifact)?;
@@ -342,18 +441,113 @@ fn inspect_png(
         .checked_mul(4)
         .ok_or_else(|| "landmark PNG stride overflow".to_owned())?;
     control()?;
-    let started = Instant::now();
-    // Retained conditioning PNGs are already in displayed native orientation.
-    let found = detect_picture(
-        request.stream.width,
-        request.stream.height,
+    Ok(PngPicture {
+        width: request.stream.width,
+        height: request.stream.height,
         stride,
-        &rgba,
-        0,
-    )?;
-    *vision_time += started.elapsed();
-    control()?;
-    Ok(found)
+        rgba,
+    })
+}
+
+struct PngPicture {
+    width: u32,
+    height: u32,
+    stride: usize,
+    rgba: Vec<u8>,
+}
+
+impl PngPicture {
+    fn detect(&self) -> Result<FaceObservationSet, String> {
+        // Retained conditioning PNGs are already in displayed orientation.
+        detect_picture(self.width, self.height, self.stride, &self.rgba, 0)
+    }
+}
+
+struct RegionTracker {
+    #[cfg(target_os = "macos")]
+    inner: Option<super::vision::Tracker>,
+}
+
+impl RegionTracker {
+    #[cfg(target_os = "macos")]
+    fn new(seed: NormalizedRect) -> Result<Self, String> {
+        let inner = super::vision::Tracker::new_pinned(super::vision::VisionRect {
+            x: seed.x(),
+            y: 1.0 - seed.y() - seed.height(),
+            width: seed.width(),
+            height: seed.height(),
+        })?;
+        Ok(Self { inner: Some(inner) })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn new(_seed: NormalizedRect) -> Result<Self, String> {
+        Err("this platform has no qualified region tracking runtime".into())
+    }
+
+    fn track(&mut self, png: &PngPicture, last: bool) -> Result<RegionObservation, String> {
+        self.track_picture(png.width, png.height, png.stride, &png.rgba, last)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn track_picture(
+        &mut self,
+        width: u32,
+        height: u32,
+        row_stride_bytes: usize,
+        rgba: &[u8],
+        last: bool,
+    ) -> Result<RegionObservation, String> {
+        let Some(tracker) = &mut self.inner else {
+            return Ok(RegionObservation::Unavailable {
+                reason: RegionObservationUnavailableReason::LostTrack,
+            });
+        };
+        let observation = match tracker.track(
+            &super::vision::Picture {
+                width,
+                height,
+                row_stride_bytes,
+                rgba,
+            },
+            last,
+        )? {
+            None => RegionObservation::Unavailable {
+                reason: RegionObservationUnavailableReason::Missing,
+            },
+            Some((rect, confidence)) => {
+                measured_region(rect.x, rect.y, rect.width, rect.height, confidence)
+            }
+        };
+        if matches!(observation, RegionObservation::Unavailable { .. }) {
+            self.inner = None;
+        }
+        Ok(observation)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn track_picture(
+        &mut self,
+        _width: u32,
+        _height: u32,
+        _row_stride_bytes: usize,
+        _rgba: &[u8],
+        _last: bool,
+    ) -> Result<RegionObservation, String> {
+        Err("this platform has no qualified region tracking runtime".into())
+    }
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn measured_region(x: f64, y: f64, width: f64, height: f64, confidence: f32) -> RegionObservation {
+    match NormalizedRect::new(x, 1.0 - y - height, width, height) {
+        Ok(region) if confidence.is_finite() && (0.0..=1.0).contains(&confidence) => {
+            RegionObservation::Tracked { region, confidence }
+        }
+        _ => RegionObservation::Unavailable {
+            reason: RegionObservationUnavailableReason::InvalidGeometry,
+        },
+    }
 }
 
 #[cfg(target_os = "macos")]

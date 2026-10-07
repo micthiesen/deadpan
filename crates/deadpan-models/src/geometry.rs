@@ -42,6 +42,9 @@ impl BridgeGeometryReport {
     pub(crate) fn geometry(&self) -> ConditioningGeometry {
         self.geometry
     }
+    pub(crate) fn inspection_timings(&self) -> InspectionTimings {
+        self.timings
+    }
     pub fn assessment(&self) -> &GeneratedGeometryReport {
         &self.assessment
     }
@@ -128,24 +131,26 @@ pub(crate) fn measure(
     plan: &BridgeGenerationPlan,
     deadline: Instant,
     cancelled: &AtomicBool,
-) -> Result<BridgeGeometryReport, QualificationError> {
+) -> Result<(BridgeGeometryReport, crate::BridgeRegionReport), QualificationError> {
     let geometry = conditioning
         .context()
         .geometry()
         .copied()
         .ok_or_else(|| invalid("fresh inspection requires captured geometry"))?;
     let contract = contract(plan);
+    let region_seeds = crate::region::captured_seeds(conditioning.context(), contract)?;
     let observed = crate::landmark_inspection::inspect(
         executable,
         native,
         conditioning,
         contract,
+        region_seeds,
         deadline,
         cancelled,
     )?;
     let crop = geometry.presentation;
     let assessment = generated_geometry::analyze(
-        &observed.batch,
+        &observed.batch.landmarks,
         &picture_pts(contract)?,
         [contract.width, contract.height],
         [crop.x, crop.y, crop.width, crop.height],
@@ -155,6 +160,14 @@ pub(crate) fn measure(
         ],
     )
     .map_err(invalid)?;
+    let region = crate::region::from_observations(
+        plan,
+        native.object(),
+        conditioning,
+        observed.batch.region,
+        observed.region_runtime,
+        observed.timings,
+    )?;
     let report = BridgeGeometryReport {
         schema_version: 1,
         profile: PROFILE.into(),
@@ -166,15 +179,15 @@ pub(crate) fn measure(
         geometry,
         runtime: observed.runtime,
         timings: observed.timings,
-        observations: observed.batch,
+        observations: observed.batch.landmarks,
         assessment,
     };
     report.validate(plan, native.object(), conditioning.receipt())?;
     report.validate_context(conditioning.context())?;
-    Ok(report)
+    Ok((report, region))
 }
 
-fn contract(plan: &BridgeGenerationPlan) -> VideoContract {
+pub(crate) fn contract(plan: &BridgeGenerationPlan) -> VideoContract {
     VideoContract {
         width: plan.native_dimensions().width(),
         height: plan.native_dimensions().height(),

@@ -96,6 +96,36 @@ fn regions_follow_samples_and_corrections_in_source_time() {
 }
 
 #[test]
+fn evaluated_confidence_follows_the_same_interpolation_and_correction() {
+    let mut value = target();
+    value.corrections.clear();
+    value.samples[1].state = TrackState::Tracked;
+    value.samples[1].confidence = 600;
+    value.samples[1].region = region(400_000);
+    let initial = value.evaluated_region_at(point(10)).unwrap();
+    assert_eq!(initial.confidence, None);
+    assert_eq!(
+        value.evaluated_region_at(point(20)).unwrap().confidence,
+        Some(900)
+    );
+    let between = value.evaluated_region_at(point(30)).unwrap();
+    assert_eq!(between.region, region(300_000));
+    assert_eq!(between.confidence, Some(600));
+    value.corrections.push(TargetCorrection {
+        at: 25,
+        region: region(500_000),
+    });
+    let manual = value.evaluated_region_at(point(30)).unwrap();
+    assert_eq!(manual.source, TargetSource::Manual);
+    assert_eq!(manual.confidence, None);
+    value.samples[1].state = TrackState::Lost;
+    assert_eq!(
+        value.evaluated_region_at(point(45)).unwrap().source,
+        TargetSource::Tracked(TrackState::Lost)
+    );
+}
+
+#[test]
 fn invalid_targets_are_refused() {
     let assets = assets();
     let mut unordered = target();

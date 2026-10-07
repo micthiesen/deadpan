@@ -56,7 +56,7 @@ functions. Join readings compare in the same space. Old approximate contexts
 remain readable and clearly labelled; accepted media remains unchanged.
 Seventeen focused tests, the full 4,744-workspace/1,027-UI gate, packaged checks
 and a real generation/acceptance/render passed. The new bundle also rendered
-an older accepted artifact. [Motion and optional text controls](../AI_HOLDS.md#motion-and-guidance)
+an older accepted artifact. [Generation controls](../AI_HOLDS.md#generation-controls)
 now flow through native commands, CLI/live jobs, stored requests and the real
 worker. Bare Generate/Retry retains the current choices; changed controls
 start a new request. The inspector shows them, including before a runtime
@@ -81,13 +81,27 @@ and both retained PNGs. Host schema 6 binds raw observations and recomputable
 policy to the immutable inputs. Conservative face association and continuous
 native mouth segments retain explicit unavailable coverage; late faces are
 checked and an interruption cannot erase an earlier rejection. Old schema 3/4/5
-accepted evidence remains readable. §12.5 still needs selected non-face region
-drift; DP-12 remains Partial. The full 4,829-workspace/1,030-UI gate, 43 replay
+accepted evidence remains readable. The full 4,829-workspace/1,030-UI gate, 43 replay
 checks, relocated release verification and real packaged generation/acceptance/
 render passed. Native inspection took 264 ms for 25 pictures and both inputs;
 this fixture correctly reports unavailable face/mouth coverage. The separate
 drawn-face fixture verifies positive landmarks. Older schema 3/4/5 projects
 rendered unchanged. Threshold calibration is on To verify (owner).
+
+[Selected-region checks](../qualification/bridge-region-2026-10-07.md) now
+capture an explicitly saved target with `:generate target=ID` or `--target ID`,
+retain its exact boundary regions in context 4, and inspect continuous region
+tracking with pinned Vision revision 2. Host schema 7 retains raw observations,
+coverage and recomputable drift rejection; missing or lost tracking stays
+unavailable. Target corrections make requests stale. The inspector shows the
+choice and coverage, and reveals new/chosen variants without trapping scrolling.
+The repository gate completed in parts, 44 replay checks passed, and the release
+bundle passed relocation and real-model generation/acceptance/export. The real
+model run reported honest unavailable region coverage; a moving-object native
+fixture measured and rejected sustained drift. Older schemas 3–6 rendered
+unchanged. DP-12 remains Partial for scoped Repeat/Retime generation and the
+other remaining contracts tracked in Requirements; corpus calibration remains
+on To verify (owner).
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

@@ -1,5 +1,5 @@
 use deadpan_core::NodeId;
-use deadpan_jobs::{GenerationOptions, HoldInstructions};
+use deadpan_jobs::{GenerationOptions, GenerationTarget, HoldInstructions};
 
 use crate::CliError;
 
@@ -14,7 +14,7 @@ pub(super) struct Arguments<'a> {
 
 pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError> {
     let usage = || {
-        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]".into())
+        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--target ID|none] [--instructions TEXT] [--another]".into())
     };
     let [path, rest @ ..] = arguments else {
         return Err(usage());
@@ -62,6 +62,10 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
                     .map_err(|error: &str| CliError::Usage(error.into()))?;
                 controls_given = true;
             }
+            "--target" => {
+                controls.region_target = GenerationTarget::parse(value).map_err(CliError::Usage)?;
+                controls_given = true;
+            }
             "--instructions" => {
                 controls.instructions = Some(
                     HoldInstructions::new(*value)
@@ -73,7 +77,7 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
         }
     }
     if another && (seed.is_some() || controls_given) {
-        return Err(CliError::Usage("--another retains the current request's seed, motion and instructions; omit it to change those controls.".into()));
+        return Err(CliError::Usage("--another retains the current request's seed, motion, target and instructions; omit it to change those controls.".into()));
     }
     Ok(Arguments {
         path,
@@ -118,6 +122,9 @@ mod tests {
             vec!["--another", "--motion", "still"],
             vec!["--another", "--instructions", "still"],
             vec!["--another", "--seed", "1"],
+            vec!["--another", "--target", "none"],
+            vec!["--target", ""],
+            vec!["--target", "one", "--target", "two"],
             vec!["--motion", "still", "--motion", "subtle"],
         ] {
             assert!(read(&tail).is_err(), "{tail:?}");
@@ -125,5 +132,29 @@ mod tests {
         assert!(read(&["--instructions", &"界".repeat(171)]).is_err());
         assert!(read(&["--another"]).unwrap().options.is_none());
         assert!(read(&[]).unwrap().options.is_none());
+        assert_eq!(
+            read(&["--motion", "still"])
+                .unwrap()
+                .options
+                .unwrap()
+                .region_target,
+            GenerationTarget::Inherit
+        );
+        assert_eq!(
+            read(&["--target", "none"])
+                .unwrap()
+                .options
+                .unwrap()
+                .region_target,
+            GenerationTarget::None
+        );
+        assert_eq!(
+            read(&["--target", "subject"])
+                .unwrap()
+                .options
+                .unwrap()
+                .region_target,
+            GenerationTarget::Saved(deadpan_core::TargetId::new("subject").unwrap())
+        );
     }
 }

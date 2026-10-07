@@ -168,11 +168,21 @@ pub struct AttentionTarget {
 }
 
 /// The region a target gives one source time, and where it came from.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TargetSource {
     Initial,
     Manual,
     Tracked(TrackState),
+}
+
+/// Exact target evaluation with the weakest confidence supporting its region.
+/// Authored regions have no detector confidence; lost samples remain explicit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EvaluatedTargetRegion {
+    pub region: TargetRegion,
+    pub source: TargetSource,
+    pub confidence: Option<u16>,
 }
 
 impl AttentionTarget {
@@ -261,6 +271,11 @@ impl AttentionTarget {
     /// such as `Follow` framing then uses its fallback rather than a region the
     /// target does not describe.
     pub fn region_at(&self, point: SourcePoint) -> Option<(TargetRegion, TargetSource)> {
+        self.evaluated_region_at(point)
+            .map(|value| (value.region, value.source))
+    }
+
+    pub fn evaluated_region_at(&self, point: SourcePoint) -> Option<EvaluatedTargetRegion> {
         let (start, end) = (self.span.start(), self.span.end());
         if point.time_base != start.time_base
             || point.ticks.compare_integer(start.ticks).is_lt()
@@ -280,27 +295,37 @@ impl AttentionTarget {
             .partition_point(|correction| at_or_before(correction.at))
             .checked_sub(1)
             .map(|index| &self.corrections[index]);
-        Some(match (sample, correction) {
-            (Some(sample), Some(correction)) if sample.at > correction.at => (
-                self.sample_region(sample_index?, point)?,
-                TargetSource::Tracked(sample.state),
-            ),
-            (_, Some(correction)) => (correction.region, TargetSource::Manual),
-            (Some(sample), None) => (
-                self.sample_region(sample_index?, point)?,
-                TargetSource::Tracked(sample.state),
-            ),
-            (None, None) => (self.region, TargetSource::Initial),
-        })
+        let tracked = |sample: &TargetSample| -> Option<EvaluatedTargetRegion> {
+            let (region, confidence) = self.sample_region(sample_index?, point)?;
+            Some(EvaluatedTargetRegion {
+                region,
+                source: TargetSource::Tracked(sample.state),
+                confidence: Some(confidence),
+            })
+        };
+        match (sample, correction) {
+            (Some(sample), Some(correction)) if sample.at > correction.at => tracked(sample),
+            (_, Some(correction)) => Some(EvaluatedTargetRegion {
+                region: correction.region,
+                source: TargetSource::Manual,
+                confidence: None,
+            }),
+            (Some(sample), None) => tracked(sample),
+            (None, None) => Some(EvaluatedTargetRegion {
+                region: self.region,
+                source: TargetSource::Initial,
+                confidence: None,
+            }),
+        }
     }
 
     /// The region from sample `index` (the last at or before `point`),
     /// interpolated towards the next sample where both move together, or
     /// `None` when that interpolation overflows.
-    fn sample_region(&self, index: usize, point: SourcePoint) -> Option<TargetRegion> {
+    fn sample_region(&self, index: usize, point: SourcePoint) -> Option<(TargetRegion, u16)> {
         let first = &self.samples[index];
         let Some(next) = self.samples.get(index + 1) else {
-            return Some(first.region);
+            return Some((first.region, first.confidence));
         };
         let moving = matches!(first.state, TrackState::Tracked | TrackState::Interpolated);
         let corrected = self
@@ -312,7 +337,7 @@ impl AttentionTarget {
             || corrected
             || point.ticks.compare_integer(first.at).is_eq()
         {
-            return Some(first.region);
+            return Some((first.region, first.confidence));
         }
         let fraction = point
             .ticks
@@ -333,16 +358,19 @@ impl AttentionTarget {
                 .ok()?;
             u32::try_from(value.clamp(i128::from(minimum), i128::from(TARGET_UNITS))).ok()
         };
-        Some(TargetRegion {
-            center: [
-                mix(first.region.center[0], next.region.center[0], 0)?,
-                mix(first.region.center[1], next.region.center[1], 0)?,
-            ],
-            size: [
-                mix(first.region.size[0], next.region.size[0], 1)?,
-                mix(first.region.size[1], next.region.size[1], 1)?,
-            ],
-        })
+        Some((
+            TargetRegion {
+                center: [
+                    mix(first.region.center[0], next.region.center[0], 0)?,
+                    mix(first.region.center[1], next.region.center[1], 0)?,
+                ],
+                size: [
+                    mix(first.region.size[0], next.region.size[0], 1)?,
+                    mix(first.region.size[1], next.region.size[1], 1)?,
+                ],
+            },
+            first.confidence.min(next.confidence),
+        ))
     }
 
     /// The tracked range a correction at `at` invalidates: from it to the next

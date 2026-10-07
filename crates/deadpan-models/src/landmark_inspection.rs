@@ -8,11 +8,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use deadpan_analysis::generated_geometry::RawLandmarkBatch;
+use deadpan_analysis::generated_region::RegionSeeds;
 use deadpan_core::GeneratedObjectRef;
 use deadpan_jobs::artifact::{ArtifactLimits, ArtifactWorkspace, SnapshotInterruption};
 use deadpan_jobs::landmarks::{
-    self, BoundaryInputs, HostMessage, LandmarkProtocol, RuntimeReport, WorkerMessage,
+    self, BoundaryInputs, HostMessage, InspectionObservations, LandmarkProtocol,
+    RegionRuntimeReport, RuntimeReport, WorkerMessage,
 };
 use deadpan_jobs::process::{ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess};
 use deadpan_jobs::{
@@ -34,8 +35,9 @@ pub struct InspectionTimings {
 }
 
 pub(super) struct Observed {
-    pub batch: RawLandmarkBatch,
+    pub batch: InspectionObservations,
     pub runtime: RuntimeReport,
+    pub region_runtime: Option<RegionRuntimeReport>,
     pub timings: InspectionTimings,
 }
 
@@ -44,6 +46,7 @@ pub(super) fn inspect(
     native: &mut CanonicalMedia,
     conditioning: &mut RetainedConditioning,
     contract: VideoContract,
+    region_seeds: Option<RegionSeeds>,
     deadline: Instant,
     cancelled: &AtomicBool,
 ) -> Result<Observed, QualificationError> {
@@ -110,6 +113,7 @@ pub(super) fn inspect(
         },
         picture_pts: expected.clone(),
         boundaries: Some(Box::new(boundaries)),
+        region_seeds: region_seeds.map(Box::new),
         output_scope: output_scope.clone(),
         maximum_output_bytes: landmarks::MAX_OBSERVATION_BYTES,
         timeout_millis: u64::try_from(remaining.as_millis()).map_err(invalid)?,
@@ -141,7 +145,7 @@ pub(super) fn inspect(
             "worker I/O pump panicked; observations cannot be admitted",
         ));
     }
-    let (artifact, runtime, timings) = result?;
+    let completion = result?;
     if !stopped.status().success() {
         return Err(invalid(format!(
             "worker completion has failed exit status {}",
@@ -152,30 +156,45 @@ pub(super) fn inspect(
     let snapshot = pinned
         .snapshot_with_control(
             &output_scope,
-            &artifact,
+            &completion.artifact,
             ArtifactLimits::new(landmarks::MAX_OBSERVATION_BYTES)?,
             || control.snapshot_check(),
         )
         .map_err(super::qualification::snapshot_error)?;
-    let batch: RawLandmarkBatch = serde_json::from_reader(snapshot)?;
+    let batch: InspectionObservations = serde_json::from_reader(snapshot)?;
     control.check()?;
-    batch.validate(&expected).map_err(invalid)?;
-    if batch.boundaries.is_none() {
+    batch
+        .validate(&expected, region_seeds.as_ref())
+        .map_err(invalid)?;
+    if region_seeds.is_some() != completion.region_runtime.is_some() {
+        return Err(invalid(
+            "region runtime differs from requested capture availability",
+        ));
+    }
+    if batch.landmarks.boundaries.is_none() {
         return Err(invalid(
             "worker omitted the requested conditioning observations",
         ));
     }
     Ok(Observed {
         batch,
-        runtime,
-        timings,
+        runtime: completion.runtime,
+        region_runtime: completion.region_runtime,
+        timings: completion.timings,
     })
+}
+
+struct Completion {
+    artifact: WorkspaceArtifact,
+    runtime: RuntimeReport,
+    region_runtime: Option<RegionRuntimeReport>,
+    timings: InspectionTimings,
 }
 
 fn supervise(
     process: &mut SupervisedProcess<LandmarkProtocol>,
     control: &Control<'_>,
-) -> Result<(WorkspaceArtifact, RuntimeReport, InspectionTimings), QualificationError> {
+) -> Result<Completion, QualificationError> {
     let mut completion = None;
     let mut failure = None;
     let mut cancelling = false;
@@ -199,20 +218,22 @@ fn supervise(
                     WorkerMessage::Completed {
                         observations,
                         runtime,
+                        region_runtime,
                         decode_millis,
                         vision_millis,
                         elapsed_millis,
                         ..
                     } => {
-                        completion = Some((
-                            observations,
+                        completion = Some(Completion {
+                            artifact: observations,
                             runtime,
-                            InspectionTimings {
+                            region_runtime,
+                            timings: InspectionTimings {
                                 decode_millis,
                                 vision_millis,
                                 elapsed_millis,
                             },
-                        ));
+                        });
                     }
                     WorkerMessage::Failed { diagnostic, .. } => {
                         failure.get_or_insert_with(|| invalid(diagnostic.as_str()));

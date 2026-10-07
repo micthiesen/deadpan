@@ -161,6 +161,7 @@ fn attempt(
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Still,
             instructions: None,
+            region_target: None,
         },
         provider: ProviderSelection {
             pack_id: ProviderPackId::new("pack")?,

@@ -25,7 +25,7 @@ sha2.workspace = true
 # Vision's tracking, face rectangles and face landmarks over BGRA
 # CVPixelBuffers; see docs/DEPENDENCIES.md.
 objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSEnumerator", "NSError", "NSString"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSEnumerator", "NSError", "NSIndexSet", "NSString"] }
 objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFBase", "CFCGTypes", "CFDictionary"] }
 objc2-core-video = { version = "=0.3.2", default-features = false, features = ["std", "objc2", "CVBase", "CVBuffer", "CVImageBuffer", "CVPixelBuffer", "CVReturn"] }
 objc2-vision = { version = "=0.3.2", default-features = false, features = ["std", "objc2-core-foundation", "objc2-core-video", "VNDetectFaceRectanglesRequest", "VNDetectFaceLandmarksRequest", "VNFaceLandmarks", "VNObservation", "VNRequest", "VNRequestHandler", "VNTrackingRequest", "VNTrackObjectRequest", "VNTypes"] }

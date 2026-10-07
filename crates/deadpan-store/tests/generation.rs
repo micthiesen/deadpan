@@ -88,6 +88,7 @@ fn constraints(frames: i64) -> HoldConstraints {
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
         instructions: None,
+        region_target: None,
     }
 }
 
@@ -245,6 +246,7 @@ fn allocation_rejects_read_only_stale_invalid_and_exhausted_inputs() -> Result {
                 conditioning: ConditioningMode::Bridge,
                 motion: MotionAmount::Still,
                 instructions: None,
+                region_target: None,
             },
             provider: provider(1),
         }),

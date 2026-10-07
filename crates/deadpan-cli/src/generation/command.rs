@@ -88,8 +88,9 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         );
     };
     let runtime = BridgeRuntime::from_environment().map_err(GenerationError::from)?;
+    let current = attempt::current_bridge_request(&store, &hold)?;
     let existing = if another {
-        let request = attempt::current_bridge_request(&store, &hold)?.ok_or_else(|| {
+        let request = current.clone().ok_or_else(|| {
                 GenerationError::Invalid(
                     "This pause has no current AI pictures request to add a variant to; generate without --another."
                         .into(),
@@ -116,23 +117,29 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         Some(request) => request.origin_revision.clone(),
         None => store.head_revision()?,
     };
-    let started = Instant::now();
-    let mut inputs =
-        super::conditioning::prepare(path, &revision, &hold, &cancelled).map_err(|error| {
-            if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
-                GenerationError::Cancelled
-            } else {
-                GenerationError::Inputs(error)
-            }
-        })?;
-    if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
-        return Err(GenerationError::Cancelled.into());
-    }
-    let options = existing
+    let mut options = existing
         .as_ref()
         .map(|request| GenerationOptions::from_constraints(&request.constraints))
         .or(options)
         .unwrap_or_default();
+    options.resolve_target(
+        current
+            .as_ref()
+            .and_then(|request| request.constraints.region_target.as_ref()),
+    );
+    let started = Instant::now();
+    let mut inputs =
+        super::conditioning::prepare_with_options(path, &revision, &hold, &options, &cancelled)
+            .map_err(|error| {
+                if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
+                    GenerationError::Cancelled
+                } else {
+                    GenerationError::Inputs(error)
+                }
+            })?;
+    if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
+        return Err(GenerationError::Cancelled.into());
+    }
     options.apply_to(&mut inputs.constraints);
     let conditioning = started.elapsed();
     let mut allocated = match existing {

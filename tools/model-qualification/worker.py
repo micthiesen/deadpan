@@ -31,6 +31,7 @@ from worker_protocol import (
     VideoSpec,
     WorkerProtocol,
     WorkspaceArtifact,
+    _core_identifier,
 )
 
 
@@ -81,18 +82,20 @@ def validate_context_shape(context):
     """
     if not isinstance(context, dict) or type(context.get("schema_version")) is not int:
         raise ValueError("unsupported context or color interpretation")
-    if context["schema_version"] in (2, 3):
+    if context["schema_version"] in (2, 3, 4):
         keys = ["schema_version", "model_color_space", "plan", "left", "right",
                 "input_color_interpretation", "boundaries"]
-        if context["schema_version"] == 3:
+        if context["schema_version"] >= 3:
             keys.append("geometry")
+        if context["schema_version"] == 4:
+            keys.append("region")
         exact_keys(context, keys)
         boundaries = context["boundaries"]
         if not isinstance(boundaries, dict):
             raise ValueError("unsupported context boundaries")
         exact_keys(boundaries, ["left", "right"])
         supported = context["model_color_space"] == MODEL_COLOR_SPACE
-        if context["schema_version"] == 3:
+        if context["schema_version"] >= 3:
             plan = context.get("plan")
             native = plan.get("native") if isinstance(plan, dict) else None
             if not isinstance(native, dict):
@@ -102,6 +105,8 @@ def validate_context_shape(context):
                 integer(native.get("width"), 1, (1 << 32) - 1),
                 integer(native.get("height"), 1, (1 << 32) - 1),
             )
+        if context["schema_version"] == 4:
+            validate_context_region(context)
     elif context["schema_version"] == 1:
         exact_keys(context, ["schema_version", "model_color", "plan", "left", "right",
                              "input_color_interpretation"])
@@ -170,6 +175,72 @@ def validate_context_geometry(context, native_width, native_height):
             rect(content, side, contained_by=presentation)
 
 
+def validate_context_region(context):
+    """Check the captured subject's exact Original coordinates and coverage."""
+    region = context["region"]
+    if not isinstance(region, dict):
+        raise ValueError("unsupported captured region")
+    if region.get("selection") == "none":
+        exact_keys(region, ["selection"])
+        return
+    if region.get("selection") != "selected":
+        raise ValueError("unsupported region selection")
+    exact_keys(region, ["selection", "target", "label", "target_sha256", "left", "right"])
+    _core_identifier(region["target"], "region target")
+    label = region["label"]
+    digest = region["target_sha256"]
+    if (not isinstance(label, str) or not label.strip(RUST_WHITESPACE)
+            or len(label.encode("utf-8")) > 128 or not isinstance(digest, str)
+            or len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest)):
+        raise ValueError("invalid captured region identity")
+    reasons = {"not_original", "different_asset", "outside_target_span", "lost_track",
+               "interpolated_track", "low_confidence", "outside_source", "missing_content", "too_small"}
+    for side in ("left", "right"):
+        seed = region[side]
+        if not isinstance(seed, dict):
+            raise ValueError("unsupported captured region boundary")
+        if seed.get("status") == "unavailable":
+            exact_keys(seed, ["status", "reason"])
+            if seed["reason"] not in reasons:
+                raise ValueError("unsupported region unavailable reason")
+            continue
+        if seed.get("status") != "available":
+            raise ValueError("unsupported region boundary status")
+        exact_keys(seed, ["status", "asset", "point", "source", "region", "confidence"])
+        boundary = context["boundaries"][side].get("original")
+        if boundary is None or seed["asset"] != boundary["asset"]:
+            raise ValueError("region seed requires the same Original boundary")
+        exact_keys(seed["point"], ["ticks", "time_base"])
+        pts = boundary["picture"]["pts"]
+        if (seed["point"]["time_base"] != pts["time_base"]
+                or seed["point"]["ticks"] != {"numerator": str(pts["ticks"]), "denominator": "1"}):
+            raise ValueError("region seed differs from the decoded Original PTS")
+        if seed["source"] in ("initial", "manual"):
+            if seed["confidence"] is not None:
+                raise ValueError("authored region has detector confidence")
+        elif seed["source"] == {"tracked": "tracked"}:
+            integer(seed["confidence"], 700, 1000)
+        else:
+            raise ValueError("region seed has unavailable authored tracking evidence")
+        rectangle = seed["region"]
+        exact_keys(rectangle, ["center", "size"])
+        if any(not isinstance(rectangle[key], list) or len(rectangle[key]) != 2
+               for key in ("center", "size")):
+            raise ValueError("invalid captured region dimensions")
+        for center, size in zip(rectangle["center"], rectangle["size"]):
+            center = integer(center, 0, 1_000_000)
+            size = integer(size, 1, 1_000_000)
+            if 2 * center < size or 2 * center + size > 2_000_000:
+                raise ValueError("region seed extends outside its Original")
+        if context["geometry"][side + "_content"] is None:
+            raise ValueError("region seed has no fitted content")
+        content = context["geometry"][side + "_content"]
+        native = context["plan"]["native"]
+        for size, axis in zip(rectangle["size"], ("width", "height")):
+            if size * content[axis] * 4096 < 1_000_000 * native[axis]:
+                raise ValueError("region seed is too small in the conditioning picture")
+
+
 def validate_bridge_context(context, request, video):
     if not isinstance(request, GenerateBridgeRequest):
         raise ValueError("development worker requires protocol-2 generate_bridge")
@@ -180,8 +251,12 @@ def validate_bridge_context(context, request, video):
     native_width = request.plan["native"]["width"]
     native_height = request.plan["native"]["height"]
     result = validate_plan(context["plan"], video)
-    if context.get("schema_version") == 3:
+    if context.get("schema_version", 0) >= 3:
         validate_context_geometry(context, native_width, native_height)
+    capture = context.get("region", {"selection": "none"})
+    captured_target = capture.get("target") if capture["selection"] == "selected" else None
+    if captured_target != request.constraints.region_target:
+        raise ValueError("region target differs from captured context")
     return result
 
 

@@ -8,13 +8,16 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
+use deadpan_analysis::NormalizedRect;
 use deadpan_analysis::generated_geometry::{
-    FaceObservationSet, LandmarkAvailability, LandmarkRegion, RawLandmarkBatch,
+    FaceObservationSet, LandmarkAvailability, LandmarkRegion,
 };
+use deadpan_analysis::generated_region::{RegionObservation, RegionSeeds};
 use deadpan_jobs::artifact::{ArtifactLimits, ArtifactWorkspace};
 use deadpan_jobs::landmarks::{
-    BoundaryInputs, CONSTELLATION, ENGINE, ExpectedStream, HostMessage, LandmarkProtocol,
-    REQUEST_REVISION, RuntimeReport, VERSION, WORKER_ARGUMENT, WorkerMessage,
+    BoundaryInputs, CONSTELLATION, ENGINE, ExpectedStream, HostMessage, InspectionObservations,
+    LandmarkProtocol, REGION_ENGINE, REGION_REQUEST_REVISION, REGION_TRACKING_LEVEL,
+    REQUEST_REVISION, RegionRuntimeReport, RuntimeReport, VERSION, WORKER_ARGUMENT, WorkerMessage,
 };
 use deadpan_jobs::process::{ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess};
 use deadpan_jobs::protocol::{
@@ -109,6 +112,7 @@ impl Fixture {
             },
             picture_pts: PTS.to_vec(),
             boundaries,
+            region_seeds: None,
             output_scope: WorkspaceRef::new("output").unwrap(),
             maximum_output_bytes: OUTPUT_BYTES,
             timeout_millis: 120_000,
@@ -116,7 +120,93 @@ impl Fixture {
         Self { workspace, request }
     }
 
-    fn run(&self, cancel: bool) -> Result<(RawLandmarkBatch, RuntimeReport), String> {
+    fn square() -> Self {
+        let mut fixture = Self::new(false);
+        let source = include_bytes!("fixtures/moving-square-cut.mkv");
+        let path = fixture.workspace.path().join("input/source.mkv");
+        std::fs::write(&path, source).unwrap();
+        let cancelled = AtomicBool::new(false);
+        let control = || DecodeControl {
+            timeout: Duration::from_secs(30),
+            cancelled: &cancelled,
+        };
+        let mut decoder = SourceDecoder::open(
+            File::open(&path).unwrap(),
+            DecodeLimits::default(),
+            control(),
+        )
+        .unwrap();
+        let mut points = Vec::new();
+        let mut first = None;
+        let mut last = None;
+        while let Some(metadata) = decoder.next_metadata(control()).unwrap() {
+            points.push(metadata.pts);
+            let frame = decoder.copy_current_rgba(control()).unwrap();
+            let mut rgb = Vec::with_capacity((frame.width * frame.height * 3) as usize);
+            for row in frame
+                .rgba
+                .chunks(frame.row_stride_bytes)
+                .take(frame.height as usize)
+            {
+                for pixel in row[..frame.width as usize * 4].chunks_exact(4) {
+                    rgb.extend_from_slice(&pixel[..3]);
+                }
+            }
+            let image = image::RgbImage::from_raw(frame.width, frame.height, rgb).unwrap();
+            if first.is_none() {
+                first = Some(image.clone());
+            }
+            last = Some(image);
+        }
+        let mut endpoints = Vec::new();
+        for (name, image) in [("left", first.unwrap()), ("right", last.unwrap())] {
+            let mut png = Cursor::new(Vec::new());
+            image::DynamicImage::ImageRgb8(image)
+                .write_to(&mut png, image::ImageFormat::Png)
+                .unwrap();
+            let bytes = png.into_inner();
+            let reference = format!("input/{name}.png");
+            std::fs::write(fixture.workspace.path().join(&reference), &bytes).unwrap();
+            endpoints.push(artifact(&reference, &bytes));
+        }
+        let HostMessage::InspectLandmarks {
+            source: artifact_source,
+            stream,
+            picture_pts,
+            boundaries,
+            region_seeds,
+            ..
+        } = &mut fixture.request
+        else {
+            unreachable!()
+        };
+        *artifact_source = artifact("input/source.mkv", source);
+        stream.width = 320;
+        stream.height = 180;
+        *picture_pts = points;
+        *boundaries = Some(Box::new(BoundaryInputs {
+            left: endpoints.remove(0),
+            right: endpoints.remove(0),
+        }));
+        let left =
+            NormalizedRect::new(40.0 / 320.0, 40.0 / 180.0, 36.0 / 320.0, 36.0 / 180.0).unwrap();
+        // The right authored box is deliberately independent of the actual
+        // tracked result; worker evidence must retain both unchanged.
+        *region_seeds = Some(Box::new(RegionSeeds { left, right: left }));
+        fixture
+    }
+
+    fn run(
+        &self,
+        cancel: bool,
+    ) -> Result<
+        (
+            InspectionObservations,
+            RuntimeReport,
+            Option<RegionRuntimeReport>,
+        ),
+        String,
+    > {
         let pinned =
             ArtifactWorkspace::open(self.workspace.path()).map_err(|error| error.to_string())?;
         let HostMessage::InspectLandmarks { timeout_millis, .. } = &self.request else {
@@ -165,6 +255,7 @@ impl Fixture {
                         WorkerMessage::Completed {
                             observations,
                             runtime,
+                            region_runtime,
                             decoded,
                             analysed,
                             decode_millis,
@@ -175,7 +266,7 @@ impl Fixture {
                             eprintln!(
                                 "landmark worker: decoded {decoded}, analysed {analysed}, decode {decode_millis}ms, Vision {vision_millis}ms, total {elapsed_millis}ms"
                             );
-                            completion = Some((observations, runtime));
+                            completion = Some((observations, runtime, region_runtime));
                         }
                         WorkerMessage::Failed { diagnostic, .. } => {
                             failure = Some(diagnostic.as_str().to_owned());
@@ -212,7 +303,8 @@ impl Fixture {
         if let Some(failure) = failure {
             return Err(failure);
         }
-        let (artifact, runtime) = completion.ok_or("no clean landmark completion")?;
+        let (artifact, runtime, region_runtime) =
+            completion.ok_or("no clean landmark completion")?;
         let mut snapshot = pinned
             .snapshot(
                 &WorkspaceRef::new("output").unwrap(),
@@ -224,17 +316,28 @@ impl Fixture {
         snapshot
             .read_to_end(&mut bytes)
             .map_err(|error| error.to_string())?;
-        let batch: RawLandmarkBatch =
+        let batch: InspectionObservations =
             serde_json::from_slice(&bytes).map_err(|error| error.to_string())?;
-        batch.validate(&PTS).map_err(|error| error.to_string())?;
-        Ok((batch, runtime))
+        let HostMessage::InspectLandmarks {
+            picture_pts,
+            region_seeds,
+            ..
+        } = &self.request
+        else {
+            unreachable!()
+        };
+        batch.validate(picture_pts, region_seeds.as_deref())?;
+        Ok((batch, runtime, region_runtime))
     }
 }
 
 #[test]
 fn vision_landmarks_cover_every_picture_and_optional_retained_pngs() {
     let fixture = Fixture::new(true);
-    let (batch, runtime) = fixture.run(false).unwrap();
+    let (batch, runtime, region_runtime) = fixture.run(false).unwrap();
+    assert!(batch.region.is_none());
+    assert!(region_runtime.is_none());
+    let batch = batch.landmarks;
     assert_eq!(runtime.engine, ENGINE);
     assert_eq!(runtime.request_revision, REQUEST_REVISION);
     assert_eq!(runtime.constellation, CONSTELLATION);
@@ -412,5 +515,73 @@ fn source_links_and_fifos_fail_without_waiting_for_a_writer() {
             }),
             "{error}"
         );
+    }
+}
+
+#[test]
+fn pinned_region_tracker_follows_the_square_with_complete_native_and_endpoint_evidence() {
+    let fixture = Fixture::square();
+    let (batch, _, runtime) = fixture.run(false).unwrap();
+    let runtime = runtime.expect("requested region runtime");
+    assert_eq!(runtime.engine, REGION_ENGINE);
+    assert_eq!(runtime.request_revision, REGION_REQUEST_REVISION);
+    assert_eq!(runtime.tracking_level, REGION_TRACKING_LEVEL);
+    let region = batch.region.expect("requested region observations");
+    assert!(matches!(region.left, RegionObservation::Tracked { .. }));
+    assert_eq!(region.frames.len(), batch.landmarks.frames.len());
+    // The existing fixture's first twelve pictures show a clear moving
+    // square before occlusion and a later hard cut. Measure positive tracking
+    // there; retain every later observation, including losses, without repair.
+    for (ordinal, frame) in region.frames.iter().take(12).enumerate() {
+        let RegionObservation::Tracked { region, confidence } = frame.observation else {
+            panic!(
+                "unoccluded picture {ordinal} unavailable: {:?}",
+                frame.observation
+            );
+        };
+        let (x, y) = region.center();
+        let expected_x = (40.0 + 5.0 * ordinal as f64).round() + 18.0;
+        let expected_y = (40.0 + 1.5 * ordinal as f64).round() + 18.0;
+        let error = (x * 320.0 - expected_x).hypot(y * 180.0 - expected_y);
+        eprintln!("region picture {ordinal}: confidence {confidence}, center error {error:.2}px");
+        assert!(error < 8.0, "picture {ordinal}: {error}px");
+    }
+    // Detection confidence is measured evidence, not promised by the fixture.
+    // Its subject moves far from the stationary authored seeds before losing
+    // confidence. The host policy must preserve that measured rejection.
+    let expected_pts: Vec<_> = region.frames.iter().map(|frame| frame.pts).collect();
+    let assessment = deadpan_analysis::generated_region::analyze(
+        &region,
+        &expected_pts,
+        [320, 180],
+        [0, 0, 320, 180],
+    )
+    .unwrap();
+    assert!(assessment.measured_frames >= 2, "{assessment:?}");
+    assert!(assessment.rejection.is_some(), "{assessment:?}");
+    assert!(assessment.unavailable_frames > 0, "{assessment:?}");
+    eprintln!("real region policy: {assessment:?}");
+    eprintln!(
+        "region left {:?}, right {:?}, {} native observations",
+        region.left,
+        region.right,
+        region.frames.len(),
+    );
+    // A lost request cannot silently reacquire after the cut or at the right
+    // endpoint. This assertion depends on observed loss, never invents one.
+    if let Some(first_lost) = region
+        .frames
+        .iter()
+        .position(|frame| matches!(frame.observation, RegionObservation::Unavailable { .. }))
+    {
+        assert!(
+            region.frames[first_lost..]
+                .iter()
+                .all(|frame| matches!(frame.observation, RegionObservation::Unavailable { .. }))
+        );
+        assert!(matches!(
+            region.right,
+            RegionObservation::Unavailable { .. }
+        ));
     }
 }

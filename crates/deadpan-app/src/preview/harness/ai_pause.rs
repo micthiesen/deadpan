@@ -106,6 +106,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         widgets.contains("AI pauses are unavailable on this Mac")
             && widgets.contains("set DEADPAN_BRIDGE_RUNTIME_SOURCE")
             && widgets.contains("Requested motion: moderate")
+            && widgets.contains("Region target: None")
             && widgets.contains("Guidance: Keep the eyes open.")
             && d.revision() == paused,
         json!({"title":"AI pauses are unavailable on this Mac","reason":UNAVAILABLE,"revision":paused,"motion":"moderate","guidance":"Keep the eyes open."}),
@@ -113,7 +114,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Unavailable model runtime")?;
 
-    d.command("generate motion=subtle text=Keep the hands still.")?;
+    d.command("generate motion=subtle target=none text=Keep the hands still.")?;
     d.wait_for("Scripted generation reaches its last step", |app| {
         app.ai
             .job()
@@ -135,6 +136,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Motion and guidance are visible and captured by the running job",
         widgets.contains("Requested motion: subtle")
+            && widgets.contains("Region target: None")
             && widgets.contains("Guidance: Keep the hands still.")
             && d.app().ai.job().is_some_and(|job| {
                 job.options.motion == deadpan_jobs::MotionAmount::Subtle
@@ -471,6 +473,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
                 "Face geometry unavailable: no reliable track connects both input pictures.",
             )
             && quality.contains("Mouth motion unavailable: no reliable eye and lip track.")
+            && quality.contains("Selected-region check unavailable:")
             && compact.starts_with("Motion coverage ")
             && widget_text(d).contains(&quality)
             && !paint.is_empty()
@@ -479,6 +482,36 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
                 .all(|item| item["fully_visible"] == true && item["elided"] == false),
         json!({"quality":"Motion/lighting sampled; audition before accepting."}),
         json!({"quality":quality,"compact":compact,"paint":paint}),
+    )?;
+    d.capture("Chosen coverage revealed inside the inspector")?;
+
+    let motion_top = |d: &Driver<'_>| {
+        scenarios::text_paint_visibility(d, "Requested motion: still")
+            .first()
+            .and_then(|paint| paint["bounds"][1].as_f64())
+    };
+    let before_scroll = motion_top(d).ok_or("Missing generation controls paint")?;
+    d.events(
+        "Scroll the inspector back to the top after revealing a candidate",
+        vec![
+            egui::Event::PointerMoved(egui::pos2(1200.0, 450.0)),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, 2048.0),
+                phase: egui::TouchPhase::Move,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+    )?;
+    for _ in 0..8 {
+        d.step("Candidate inspector scroll settles", false)?;
+    }
+    let after_scroll = motion_top(d).ok_or("Missing scrolled generation controls paint")?;
+    d.check(
+        "Revealing a chosen variant leaves subsequent inspector scrolling alone",
+        after_scroll > before_scroll + 1.0 && chosen(d) == Some(2) && d.revision() == paused,
+        json!({"native_scroll":true,"chosen":2,"revision":paused}),
+        json!({"before_y":before_scroll,"after_y":after_scroll,"chosen":chosen(d),"revision":d.revision()}),
     )?;
 
     d.command("prev-ai")?;

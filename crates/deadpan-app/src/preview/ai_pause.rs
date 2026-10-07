@@ -208,7 +208,7 @@ fn quality_status(
     };
     let Some(report) = provenance.quality() else {
         return QualityReading::unavailable(
-            "Older candidate: motion/lighting, endpoint, face and mouth checks unavailable.",
+            "Older candidate: motion/lighting, endpoint, face, mouth and selected-region checks unavailable.",
         );
     };
     let unavailable = report.unavailable_motion_pairs();
@@ -247,6 +247,78 @@ fn quality_status(
         }
     } else {
         detail.push_str(" Face and mouth checks unavailable for this older candidate.");
+    }
+    if let Some(region) = provenance.region() {
+        match region.assessment() {
+            Some(assessment) => {
+                detail.push_str(&format!(
+                    " Selected-region coverage: {} measured of {} native frames; {} unavailable.",
+                    assessment.measured_frames,
+                    assessment.native_frames,
+                    assessment.unavailable_frames
+                ));
+                if assessment.measured_frames == 0 {
+                    detail.push_str(
+                        " Selected-region drift unavailable: no reliable continuous track.",
+                    );
+                }
+                detail.push_str(&format!(
+                    " Region endpoints: entry {}, exit {}.",
+                    if assessment.left_boundary.measured {
+                        "measured"
+                    } else {
+                        "unavailable"
+                    },
+                    if assessment.right_boundary.measured {
+                        "measured"
+                    } else {
+                        "unavailable"
+                    }
+                ));
+                if let (Some(center), Some(size)) = (
+                    assessment.maximum_center_residual,
+                    assessment.maximum_log_size_residual,
+                ) {
+                    detail.push_str(&format!(" Maximum center deviation {:.1}% of the picture diagonal; maximum size/aspect ratio {:.2}×.", center * 100.0, size.exp()));
+                }
+                if !assessment.unavailable_reasons.is_empty() {
+                    let reasons = assessment
+                        .unavailable_reasons
+                        .iter()
+                        .map(|reason| {
+                            use deadpan_analysis::generated_region::RegionUnavailableReason;
+                            match reason {
+                                RegionUnavailableReason::Missing => "missing observation",
+                                RegionUnavailableReason::InvalidGeometry => {
+                                    "invalid measured rectangle"
+                                }
+                                RegionUnavailableReason::LowConfidence => "low tracking confidence",
+                                RegionUnavailableReason::LostTrack => "tracking lost",
+                                RegionUnavailableReason::Unsupported => {
+                                    "unsupported tracking input"
+                                }
+                                RegionUnavailableReason::OutsidePresentation => {
+                                    "subject outside the picture"
+                                }
+                                RegionUnavailableReason::BoundarySeedMismatch => {
+                                    "endpoint differs from the saved target"
+                                }
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    detail.push_str(&format!(" Region coverage limits: {reasons}."));
+                }
+            }
+            None => detail.push_str(&format!(
+                " Selected-region check unavailable: {}.",
+                region
+                    .unavailable_reason()
+                    .unwrap_or("no reliable authored region")
+            )),
+        }
+    } else {
+        detail.push_str(" Selected-region check unavailable for this older candidate.");
     }
     QualityReading {
         compact: format!("Motion coverage {measurable}/{total}"),
@@ -404,6 +476,35 @@ fn joins_label(reading: Option<&Reading>) -> String {
 /// The most admitted previews a comparison keeps ready besides the shown one.
 const RETAINED_PREVIEWS: usize = 8;
 
+/// Reveal a new choice once, repeating the request only within layout retries
+/// of that same outer frame. Later wheel and keyboard scrolling stay native.
+#[derive(Default)]
+struct VariantReveal {
+    identity: Option<(RequestId, AttemptId)>,
+    seen_frame: Option<u64>,
+    reveal_frame: Option<u64>,
+}
+
+impl VariantReveal {
+    fn observe(&mut self, request: &RequestId, attempt: &AttemptId, frame: u64) -> bool {
+        if self
+            .identity
+            .as_ref()
+            .is_none_or(|(previous_request, previous_attempt)| {
+                previous_request != request || previous_attempt != attempt
+            })
+            || self
+                .seen_frame
+                .is_none_or(|seen| frame > seen.saturating_add(1))
+        {
+            self.identity = Some((request.clone(), attempt.clone()));
+            self.reveal_frame = Some(frame);
+        }
+        self.seen_frame = Some(frame);
+        self.reveal_frame == Some(frame)
+    }
+}
+
 #[derive(Default)]
 pub(super) struct State {
     update: Option<Update>,
@@ -429,6 +530,8 @@ pub(super) struct State {
     /// Advisory join measurements by variant, filled one at a time off the
     /// UI thread.
     joins: Joins,
+    /// A newly offered/chosen row is kept inside the inspector viewport.
+    inspector_variant: VariantReveal,
     /// Independent command tickets whose refusal the editor should show.
     awaiting: Option<u64>,
     /// Context captured at the first `,a` ancestor.
@@ -1716,6 +1819,20 @@ impl DeadpanApp {
             .cloned()
             .unwrap_or_default();
         ui.label(format!("Requested motion: {}", options.motion.name()));
+        let region_target = match &options.region_target {
+            deadpan_jobs::GenerationTarget::Inherit | deadpan_jobs::GenerationTarget::None => {
+                "None".to_owned()
+            }
+            deadpan_jobs::GenerationTarget::Saved(target) => self
+                .workspace
+                .as_ref()
+                .and_then(|workspace| workspace.document.targets().get(target))
+                .map_or_else(
+                    || format!("Unavailable ({target})"),
+                    |record| format!("{} ({target})", record.label),
+                ),
+        };
+        ui.label(format!("Region target: {region_target}"));
         if let Some(text) = &options.instructions {
             ui.label(
                 egui::RichText::new(format!("Guidance: {}", text.as_str()))
@@ -1724,8 +1841,8 @@ impl DeadpanApp {
             );
         }
         if ui.add_enabled(ready && !running && !other_running,
-            style::row_action(ui, "Motion and guidance…", ":generate motion=…"))
-            .on_hover_text("Choose still, subtle or moderate and optional text=guidance (last, up to 512 UTF-8 bytes). Enter generates with those choices; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
+            style::row_action(ui, "Generation controls…", ":generate motion=…"))
+            .on_hover_text("Choose still, subtle or moderate, target=ID for a saved region or target=none, and optional text=guidance (last, up to 512 UTF-8 bytes). Omitted target retains this captured choice. Enter generates with those choices; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
             .clicked()
         {
             self.open_command(crate::navigation::command::generate::command(&options), ui.ctx());
@@ -1966,6 +2083,15 @@ impl DeadpanApp {
                 && let Some(colour) = reading.as_ref().and_then(|reading| reading.colour.clone())
             {
                 colour_note = Some(colour);
+            }
+            if chosen
+                && self.ai.inspector_variant.observe(
+                    &candidate.request,
+                    &variant.attempt,
+                    ui.ctx().cumulative_frame_nr(),
+                )
+            {
+                response.scroll_to_me(None);
             }
             let number = u8::try_from(index + 1).unwrap_or(u8::MAX);
             if response.clicked() && !chosen {
@@ -2400,4 +2526,26 @@ fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Respo
         );
     }
     response
+}
+
+#[cfg(test)]
+mod reveal_tests {
+    use super::*;
+
+    #[test]
+    fn choice_reveal_survives_layout_retries_and_leaves_later_scrolling_alone() {
+        let request = RequestId::new("request").unwrap();
+        let first = AttemptId::new("first").unwrap();
+        let second = AttemptId::new("second").unwrap();
+        let mut reveal = VariantReveal::default();
+        assert!(reveal.observe(&request, &first, 10));
+        assert!(reveal.observe(&request, &first, 10), "layout retry");
+        assert!(!reveal.observe(&request, &first, 11), "ordinary scroll");
+        assert!(!reveal.observe(&request, &first, 12), "idle repaint");
+        assert!(reveal.observe(&request, &second, 12), "new choice");
+        assert!(reveal.observe(&request, &second, 12), "choice layout retry");
+        assert!(!reveal.observe(&request, &second, 13));
+        assert!(reveal.observe(&request, &second, 18), "inspector reopened");
+        assert!(!reveal.observe(&request, &second, 19));
+    }
 }

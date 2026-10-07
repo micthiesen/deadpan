@@ -63,6 +63,7 @@ fn request() -> HostMessage {
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Subtle,
             instructions: None,
+            region_target: None,
         },
         provider: Box::new(provider()),
     }
@@ -126,6 +127,7 @@ fn bridge_request() -> HostMessage {
             conditioning: ConditioningMode::Bridge,
             motion: MotionAmount::Subtle,
             instructions: None,
+            region_target: None,
         },
         provider: Box::new(provider()),
         plan: Box::new(bridge_plan()),

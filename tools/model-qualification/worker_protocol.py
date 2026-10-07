@@ -338,6 +338,7 @@ class HoldConstraints:
     conditioning: str
     motion: str
     instructions: str | None = None
+    region_target: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.video, VideoSpec):
@@ -355,6 +356,8 @@ class HoldConstraints:
             if (len(text.encode("utf-8")) > MAX_HOLD_INSTRUCTION_BYTES or not text.strip()
                     or any(unicodedata.category(char) == "Cc" for char in text)):
                 raise ProtocolError("hold instructions must be nonblank text of at most 512 UTF-8 bytes without control characters")
+        if self.region_target is not None:
+            _core_identifier(self.region_target, "region target")
 
     def _wire(self) -> dict[str, Any]:
         result = {
@@ -364,18 +367,21 @@ class HoldConstraints:
         }
         if self.instructions is not None:
             result["instructions"] = self.instructions
+        if self.region_target is not None:
+            result["region_target"] = self.region_target
         return result
 
 
 def parse_hold_constraints(value: Mapping[str, Any]) -> HoldConstraints:
     constraints = _object(
-        value, {"video", "conditioning", "motion"}, "constraints", optional={"instructions"}
+        value, {"video", "conditioning", "motion"}, "constraints", optional={"instructions", "region_target"}
     )
     return HoldConstraints(
         _parse_video(constraints["video"]),
         _string(constraints["conditioning"], "conditioning"),
         _string(constraints["motion"], "motion"),
         constraints.get("instructions"),
+        constraints.get("region_target"),
     )
 
 
