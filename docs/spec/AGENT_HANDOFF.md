@@ -42,6 +42,14 @@ version 3 retained in both host and worker provenance. See
 infer completion from older blanket status text below; consult the current
 requirements table and evidence.
 
+DP-19 is complete within §29.1 after the
+[real-model portability run](../qualification/accepted-portability-2026-10-07.md):
+two verified copies, removal of the intermediate copy, full history validation,
+picture comparison, cleanup and verified renders with source-package, model,
+runtime and outbound-IP access denied. The original and copied documents were
+unchanged. Exact another-Mac, File Provider and physical power-loss checks are
+on To verify (owner).
+
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI
 acceptance, restart and export. Both test windows are closed. An asynchronous
