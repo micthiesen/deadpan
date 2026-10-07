@@ -710,6 +710,12 @@ struct Context {
 
 fn failed(error: CliError, cancel: &AtomicBool) -> Ending {
     match error {
+        CliError::ModelPack(
+            error @ PackError::Update {
+                code: "ModelPackSelectionDurabilityUncertain",
+                ..
+            },
+        ) => Ending::Failed(pack_failure(&error)),
         _ if cancel.load(Ordering::Acquire) => Ending::Cancelled,
         CliError::ModelPack(PackError::Cancelled) => Ending::Cancelled,
         CliError::Import(error) if error.code == "DownloaderInstallCancelled" => Ending::Cancelled,
@@ -725,11 +731,11 @@ fn install_with(
     source: Option<&Path>,
     cancel: &AtomicBool,
     send: &dyn Fn(Event),
-) -> Result<(), CliError> {
+) -> Result<Option<deadpan_models::packs::VerifiedInstalledPack>, CliError> {
     match &context.backend {
         Backend::Real => {
             let source = source.map(ImportSource::at).transpose()?;
-            deadpan_cli::models::install_pack(
+            deadpan_cli::models::install_pack_for_selection(
                 &context.store,
                 manifest,
                 &context.accepted,
@@ -743,16 +749,18 @@ fn install_with(
                     }))
                 },
             )
-            .map(|_| ())
+            .map(Some)
         }
         #[cfg(any(test, feature = "ui-harness"))]
-        Backend::Scripted(script) => script.install(
-            &context.store,
-            manifest,
-            &context.accepted,
-            cancel,
-            &|event| send(event),
-        ),
+        Backend::Scripted(script) => script
+            .install(
+                &context.store,
+                manifest,
+                &context.accepted,
+                cancel,
+                &|event| send(event),
+            )
+            .map(|()| None),
     }
 }
 
@@ -772,7 +780,7 @@ fn run(context: &Context, work: &Work, cancel: &AtomicBool, send: &dyn Fn(Event)
     match work {
         Work::Install { source } => {
             match install_with(context, manifest, source.as_deref(), cancel, send) {
-                Ok(()) => Ending::Installed,
+                Ok(_) => Ending::Installed,
                 Err(error) => failed(error, cancel),
             }
         }
@@ -802,10 +810,23 @@ fn run(context: &Context, work: &Work, cancel: &AtomicBool, send: &dyn Fn(Event)
             let result = (|| -> Result<String, CliError> {
                 let admitted =
                     store.admit_update(signed, &context.keys, &context.accepted, false)?;
-                if store.installed(&admitted)?.is_none() {
-                    install_with(context, &admitted, None, cancel, send)?;
-                }
-                // Retained and selected only after its smoke test passed.
+                let verified = match &context.backend {
+                    Backend::Real => deadpan_cli::models::revalidate_installed_pack(
+                        store,
+                        &admitted,
+                        cancel,
+                        |progress| send(Event::Progress(progress)),
+                        || send(Event::Phase(Phase::SmokeTest)),
+                    )?,
+                    #[cfg(any(test, feature = "ui-harness"))]
+                    Backend::Scripted(_) => None,
+                };
+                let _verified = match verified {
+                    Some(verified) => Some(verified),
+                    None => install_with(context, &admitted, None, cancel, send)?,
+                };
+                // Retain the revalidation lock until the pointer changes.
+                send(Event::Phase(Phase::Activating));
                 store.activate_update(signed, &context.keys, &context.accepted, false)?;
                 Ok(admitted.pack_version)
             })();
@@ -1322,6 +1343,22 @@ mod tests {
 
     fn accepted(ids: &[&str]) -> BTreeSet<String> {
         ids.iter().map(|id| (*id).to_owned()).collect()
+    }
+
+    #[test]
+    fn cancellation_cannot_hide_a_committed_selection_with_uncertain_durability() {
+        let ending = failed(
+            PackError::Update {
+                code: "ModelPackSelectionDurabilityUncertain",
+                message: "selection is now version 2; crash durability is uncertain".into(),
+            }
+            .into(),
+            &AtomicBool::new(true),
+        );
+        assert_eq!(
+            ending,
+            Ending::Failed("Selection is now version 2; crash durability is uncertain.".into())
+        );
     }
 
     #[test]

@@ -120,6 +120,7 @@ fn runtime(directory: &Path, python: &str) -> BridgeRuntime {
         python: PathBuf::from(python),
         runtime_source: directory.to_path_buf(),
         model_cache: directory.to_path_buf(),
+        model_manifest: deadpan_models::packs::approved_pack("ltx-2.3-q4-bridge").unwrap(),
         ffmpeg: stand_in.clone(),
         ffprobe: stand_in.clone(),
         worker_script: stand_in.clone(),
@@ -145,6 +146,50 @@ fn allocation_records_a_current_bridge_request_and_a_queued_attempt() {
     let current = store.current_generation_requests().unwrap();
     assert_eq!(current.len(), 1);
     assert_eq!(current[0].request_id, second.identity.request_id);
+}
+
+#[test]
+fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let expected_revision = store.head_revision().unwrap();
+    let selected: deadpan_jobs::ProviderSelection = serde_json::from_value(serde_json::json!({
+        "pack_id": "ltx-2.3-q4-bridge",
+        "pack_version": "2",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan1",
+        "seed": 7,
+    }))
+    .unwrap();
+    let first = allocate_with_provider(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision,
+            seed: 7,
+            inputs: inputs(),
+        },
+        selected,
+    )
+    .unwrap();
+    assert_eq!(first.request.provider.pack_version.as_str(), "2");
+    assert_eq!(first.provider().pack_version.as_str(), "2");
+
+    let cancelled = run_worker(
+        &first,
+        &runtime(directory.path(), "/usr/bin/false"),
+        |_| {},
+        |_| Ok(()),
+        &AtomicBool::new(true),
+    );
+    assert_eq!(
+        finish(&mut store, &first, cancelled).unwrap().state,
+        JobState::Cancelled
+    );
+    let second = allocate_variant(&mut store, first.request.clone(), inputs()).unwrap();
+    assert_eq!(second.provider().pack_version.as_str(), "2");
+    assert_eq!(second.provider().seed, 8);
+    assert_eq!(second.request.provider.pack_version.as_str(), "2");
 }
 
 #[test]

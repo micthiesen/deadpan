@@ -17,7 +17,7 @@ use deadpan_jobs::transcription::{Language, ModelInput};
 use deadpan_models::packs::updates::PackUpdate;
 use deadpan_models::packs::{
     HttpsTransport, ImportSource, InstallProgress, InstalledPack, Operation, PackFile,
-    PackManifest, PackState, PackStore, StagedPack, available_space, license_text,
+    PackManifest, PackState, PackStore, VerifiedInstalledPack, available_space, license_text,
 };
 
 use crate::CliError;
@@ -319,29 +319,34 @@ fn update(store: &PackStore, source: &str, options: &Options<'_>) -> Result<(), 
         .from
         .map(|from| ImportSource::at(Path::new(from)))
         .transpose()?;
-    let installed = match store.installed(&manifest)? {
-        Some(installed) => installed,
-        None => install_pack(
+    let cancelled = AtomicBool::new(false);
+    let verified =
+        revalidate_installed_pack(store, &manifest, &cancelled, progress_lines(), || {
+            let _ = emit(&serde_json::json!({ "event": "smoke_test" }));
+        })?;
+    let verified = match verified {
+        Some(verified) => verified,
+        None => install_pack_for_selection(
             store,
             &manifest,
             &accepted,
             import.as_ref(),
-            &AtomicBool::new(false),
+            &cancelled,
             progress_lines(),
             |event| {
                 let _ = emit(&serde_json::json!({ "event": event }));
             },
         )?,
     };
-    // Retained and selected only after its smoke test passed (or it was
-    // already installed, which required one).
+    // The retained guard prevents another installer or removal from
+    // replacing a revalidated version before its selection.
     store.activate_update(&signed, &keys, &accepted, options.allow_downgrade)?;
     let pointer = store.pointer(&manifest.pack_id)?;
     crate::write_json(&serde_json::json!({
         "protocol": 1, "pack_id": manifest.pack_id,
         "active_version": manifest.pack_version,
         "previous_version": pointer.and_then(|pointer| pointer.previous),
-        "installed": installed.directory,
+        "installed": verified.installed().directory,
     }))
 }
 
@@ -397,8 +402,31 @@ pub fn install_pack(
     source: Option<&ImportSource>,
     cancelled: &AtomicBool,
     progress: impl FnMut(InstallProgress),
-    mut phase: impl FnMut(&'static str),
+    phase: impl FnMut(&'static str),
 ) -> Result<InstalledPack, CliError> {
+    Ok(install_pack_for_selection(
+        store,
+        manifest,
+        accepted_licenses,
+        source,
+        cancelled,
+        progress,
+        phase,
+    )?
+    .installed()
+    .clone())
+}
+
+/// The ordinary installer with its version lock retained for update selection.
+pub fn install_pack_for_selection(
+    store: &PackStore,
+    manifest: &PackManifest,
+    accepted_licenses: &[String],
+    source: Option<&ImportSource>,
+    cancelled: &AtomicBool,
+    progress: impl FnMut(InstallProgress),
+    mut phase: impl FnMut(&'static str),
+) -> Result<VerifiedInstalledPack, CliError> {
     let staged = match source {
         None => store.stage(
             manifest,
@@ -418,9 +446,27 @@ pub fn install_pack(
         )?,
     };
     phase("smoke_test");
-    smoke_test(&staged, cancelled)?;
+    smoke_test(staged.manifest(), staged.directory(), cancelled)?;
     phase("activating");
-    Ok(store.activate(staged)?)
+    Ok(store.activate_guarded(staged)?)
+}
+
+/// Revalidate every byte and run the real runtime again when an update
+/// resumes after installation but before pointer activation. Keep the guard
+/// alive until selection finishes; no files are rewritten by this path.
+pub fn revalidate_installed_pack(
+    store: &PackStore,
+    manifest: &PackManifest,
+    cancelled: &AtomicBool,
+    progress: impl FnMut(InstallProgress),
+    smoke_phase: impl FnOnce(),
+) -> Result<Option<VerifiedInstalledPack>, CliError> {
+    let Some(verified) = store.verify_installed(manifest, cancelled, progress)? else {
+        return Ok(None);
+    };
+    smoke_phase();
+    smoke_test(manifest, &verified.installed().directory, cancelled)?;
+    Ok(Some(verified))
 }
 
 /// One complete JSON object per stdout line, as `render` reports progress.
@@ -434,15 +480,18 @@ fn emit(value: &serde_json::Value) -> Result<(), CliError> {
 
 /// Load the staged models in their real runtime. A pack that cannot do this
 /// never replaces a known-good one.
-fn smoke_test(staged: &StagedPack, cancelled: &AtomicBool) -> Result<(), CliError> {
-    let manifest = staged.manifest();
+fn smoke_test(
+    manifest: &PackManifest,
+    directory: &Path,
+    cancelled: &AtomicBool,
+) -> Result<(), CliError> {
     let silence = AnalysisInput {
         samples: vec![0.0; 16_000],
         origin: 0,
         source_rate: 16_000,
     };
     if let Some(file) = manifest.transcription_file() {
-        let model = model_input(file, staged.file(&file.name))?;
+        let model = model_input(file, Some(directory.join(&file.name)))?;
         transcribe(
             &TranscriptionRuntime::beside_current_executable()?,
             &model,
@@ -455,7 +504,7 @@ fn smoke_test(staged: &StagedPack, cancelled: &AtomicBool) -> Result<(), CliErro
         )?;
     }
     if let Some(file) = manifest.speech_activity_file() {
-        let model = model_input(file, staged.file(&file.name))?;
+        let model = model_input(file, Some(directory.join(&file.name)))?;
         crate::activity::detect_speech(
             &TranscriptionRuntime::beside_current_executable()?,
             &model,
@@ -469,7 +518,7 @@ fn smoke_test(staged: &StagedPack, cancelled: &AtomicBool) -> Result<(), CliErro
         // The bundled (or development) runtime imports its pinned sources,
         // runs Metal and reads every staged model header; no inference.
         let runtime =
-            crate::generation::runtime::BridgeRuntime::with_model_data(staged.directory())
+            crate::generation::runtime::BridgeRuntime::with_model_manifest(directory, manifest)
                 .map_err(|error| CliError::Usage(error.to_string()))?;
         let report = runtime.check(cancelled).map_err(CliError::Usage)?;
         let _ = emit(&serde_json::json!({ "event": "smoke_test_passed", "report": report }));

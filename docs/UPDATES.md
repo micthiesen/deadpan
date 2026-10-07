@@ -196,8 +196,20 @@ Payload ([`PackUpdate`](../crates/deadpan-models/src/packs/updates.rs)):
 `schema` 1, `serial`, `issued`, `min_app_version` and one complete schema-2
 pack manifest. It must name a pack family this build compiles, keep its
 `runtime_id`, list a runtime version this build ships and add no operation.
-Bridge (AI pause) packs refuse: the AI worker verifies its own compiled weight
-receipt, so they change only with an app update.
+The bridge pack accepts data updates under a narrower contract: it must keep
+the shipped `ltx-2.3` q4 and Gemma components, exact file inventory, runtime
+`ltx-mlx` version `0.15.8+deadpan1`, `bridge_hold` operation, resource profile,
+and language set. The component revision directories and pack version may
+change. Safetensors hashes and `LICENSE`/`README.md` contents may change, but
+weight sizes stay fixed; config, quantization, tensor index, tokenizer and
+other assets remain hash- and size-pinned to the compiled manifest. Both
+`--check` and inference compare every safetensors header's complete names,
+dtypes, shapes, data offsets, loader metadata and header extent with compiled
+schema pins derived from the fully hash-verified, qualified v1 files. Reads
+are bounded to 2 MiB per header. Weight values may change within that loader schema.
+The pinned worker derives component paths from the selected manifest and
+verifies the files. A signature authorizes the listed data;
+it cannot select code, a loader, or another pipeline.
 
 `models update <file|https-url> [--from <folder|archive.tar>] [--accept-license]
 [--allow-downgrade]` verifies the envelope, prints its size and every license
@@ -217,12 +229,26 @@ envelopes are written by temporary file and rename, a torn one is replaced,
 pointer changes hold an exclusive lock on `.active/.lock` across processes, and
 `.updates` and `.active` must be private to this user.
 
-Consumers (transcription, pause detection, `doctor`, `models list`) use the
+If an update is already installed when installation is retried, the host
+fully rehashes its files and reruns its runtime smoke test, holding its version
+lock through pointer selection. Validation failures preserve the installed
+files and the previous selection. A pointer rename followed by a failed
+directory sync returns `ModelPackSelectionDurabilityUncertain`, explicitly
+naming the now-visible version and uncertain crash durability. The app
+refreshes the selected version even for that error; it never reports that the
+previous selection remained active after a committed rename.
+
+Consumers (transcription, pause detection, `doctor`, `models list` and AI
+generation) use the
 selected version: the pointer's when it is in the verified catalog and
 installed, otherwise the compiled approved version. `installed` checks the
 receipt and each file's exact size, not its hash (the consuming worker hashes
 before loading), so a missing or resized file, a missing envelope or a key this
-build no longer trusts falls back to the compiled version. `models list`,
+build no longer trusts falls back to the compiled version. AI generation
+captures the selected pack and runtime versions in its durable request before
+launch; later rollback does not relabel an existing request or accepted
+candidate. The Models panel's signed model update uses the same stage, smoke
+test, activate, side-by-side retention and rollback path. `models list`,
 `doctor` and the Models panel then show a note saying why.
 
 ## In the app

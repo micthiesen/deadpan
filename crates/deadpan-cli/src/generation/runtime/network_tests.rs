@@ -68,6 +68,7 @@ impl Probe {
             worker_script: self.directory.path().join("worker.py"),
             runtime_source: self.directory.path().to_owned(),
             model_cache: self.directory.path().to_owned(),
+            model_manifest: deadpan_models::packs::approved_pack("ltx-2.3-q4-bridge").unwrap(),
             ffmpeg: PathBuf::from("/usr/bin/true"),
             ffprobe: PathBuf::from("/usr/bin/true"),
             media_worker: PathBuf::from("/usr/bin/true"),

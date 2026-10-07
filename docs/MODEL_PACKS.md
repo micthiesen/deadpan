@@ -38,11 +38,13 @@ loads and runs in whisper.cpp 1.8.3. A pack's operations name what it supports
 (`transcribe`, `speech_activity`, `bridge_hold`); the recognizer is its first
 file and the detector the file named `ggml-silero-*`.
 
-The bridge pack's files, hashes, sizes and URLs are exactly the
-[qualified receipt](../tools/model-qualification/evidence/2026-09-20-smoke/download-manifest.json)
-the worker verifies on every attempt (a unit test compares them). Its install
-directory is the worker's model cache: `<pack>/<version>/mlx_ltx_q4_pack/<rev>/…`
-and `…/mlx_gemma_default_text_encoder/<rev>/…`. Both repositories are public and
+The compiled bridge baseline's files, hashes, sizes and URLs match the
+[qualified receipt](../tools/model-qualification/evidence/2026-09-20-smoke/download-manifest.json).
+The pinned worker also verifies every selected manifest file on inference and
+checks its exact supported component/configuration contract before loading.
+Its install directory is the worker's model cache:
+`<pack>/<version>/mlx_ltx_q4_pack/<rev>/…` and
+`…/mlx_gemma_default_text_encoder/<rev>/…`. Both repositories are public and
 ungated on Hugging Face (checked 2026-10-05 through the API); downloads need no
 account. The terms that matter to a user:
 
@@ -118,8 +120,36 @@ active in `.active/<pack>.json` with the version previously in effect. `models r
 selects the previous version again; nothing is deleted, and `models remove`
 refuses the active version until it is rolled back. Consumers use the selected
 version: the pointer's when it is verified and installed, otherwise the
-compiled approved version. Bridge packs are excluded because the AI worker
-verifies its compiled weight receipt; they change with an app update.
+compiled approved version.
+
+The AI pause pack has a narrower compatibility contract. A signed update must
+keep the same LTX-2.3 q4 and Gemma components, file inventory, 4-bit
+configuration, tokenizer, runtime `ltx-mlx` at `0.15.8+deadpan1`, and
+`bridge_hold` operation. Component revision directories and pack version may
+change. Safetensors hashes and the human-readable license/readme contents may
+change, but weight sizes stay fixed; config, quantization, tensor index,
+tokenizer and other pipeline data remain hash- and size-pinned. The installed
+runtime and worker stay inside
+the app. The host passes the selected manifest to that pinned worker, which
+checks the same manifest on `--check` and inference and records pack/runtime
+identity and verified file hashes in each generation receipt. A staged update
+is selected only after its runtime smoke test succeeds, and rollback leaves
+both versions installed.
+
+The worker also reads each safetensors header within a 2 MiB bound and compares
+its complete tensor names, dtypes, shapes, data offsets, loader metadata and
+header extent with the qualified v1 loader schema. The pins were derived after
+verifying all ten baseline weight files against the compiled full-file hashes. Equal file size
+alone cannot admit a new tensor layout. The weight values remain updateable;
+changing the loader schema requires an app update.
+
+Retrying an already installed update fully rehashes its files and reruns the
+runtime smoke test. A version lock remains held through pointer selection;
+validation failures preserve both the installed bytes and active pointer. If
+the pointer rename succeeds but its directory sync fails, the error is
+`ModelPackSelectionDurabilityUncertain`: the new selection is visible, but
+its persistence across a crash is uncertain. The error names that version;
+it does not claim that the previous selection was preserved.
 
 ### Gated weights
 
@@ -293,9 +323,8 @@ the installed bridge pack (see [AI pauses](AI_HOLDS.md#runtime)).
 
 ## Remaining
 
-Signed updates of the bridge pack (refused until the AI worker reads its
-receipt from the selected manifest), a gated-weight flow if a future pack
-needs one, per-hardware pack qualification beyond the reference M5 Max, a
+A gated-weight flow if a future pack needs one, per-hardware pack
+qualification beyond the reference M5 Max, a
 "Fast" label (no pack meets the §13.4 target), and, To verify (owner), the
 real 36 GB download with a physical interruption and the clean-machine
 interrupted-install test of §26.6 on a second Mac.

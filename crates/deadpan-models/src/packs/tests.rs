@@ -249,6 +249,70 @@ fn manifests_require_https_approved_hosts_safe_names_and_hashes() {
 }
 
 #[test]
+fn installed_update_revalidation_checks_bytes_without_removing_damaged_files() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let manifest = manifest(&bytes);
+    let cancelled = AtomicBool::new(false);
+    let staged = store
+        .stage(
+            &manifest,
+            &[],
+            &Memory::new(bytes.clone()),
+            plenty,
+            &cancelled,
+            |_| {},
+        )
+        .unwrap();
+    let installed_guard = store.activate_guarded(staged).unwrap();
+    assert!(matches!(store.remove(&manifest), Err(PackError::Busy)));
+    let installed = installed_guard.installed().clone();
+    drop(installed_guard);
+    let path = installed.file("model.bin").unwrap();
+    let mut progress = Vec::new();
+    let verified = store
+        .verify_installed(&manifest, &cancelled, |p| progress.push(p.completed_bytes))
+        .unwrap()
+        .unwrap();
+    assert_eq!(verified.installed(), &installed);
+    assert_eq!(progress.last(), Some(&manifest.total_bytes()));
+    assert!(matches!(store.remove(&manifest), Err(PackError::Busy)));
+    assert!(matches!(
+        store.verify_installed(&manifest, &cancelled, |_| {}),
+        Err(PackError::Busy)
+    ));
+    drop(verified);
+
+    let mut damaged = bytes.clone();
+    damaged[123] ^= 0xff;
+    std::fs::write(&path, &damaged).unwrap();
+    // A receipt/size check still succeeds, reproducing the update retry gap.
+    assert!(store.installed(&manifest).unwrap().is_some());
+    assert!(matches!(
+        store.verify_installed(&manifest, &cancelled, |_| {}),
+        Err(PackError::Verification { .. })
+    ));
+    assert_eq!(std::fs::read(&path).unwrap(), damaged);
+    assert!(store.pointer(&manifest.pack_id).unwrap().is_none());
+
+    std::fs::write(&path, &bytes).unwrap();
+    cancelled.store(true, Ordering::Release);
+    assert!(matches!(
+        store.verify_installed(&manifest, &cancelled, |_| {}),
+        Err(PackError::Cancelled)
+    ));
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+    cancelled.store(false, Ordering::Release);
+    assert!(
+        store
+            .verify_installed(&manifest, &cancelled, |_| {})
+            .unwrap()
+            .is_some()
+    );
+}
+
+#[test]
 fn install_verifies_stages_and_activates_one_complete_version() {
     let root = tempfile::tempdir().unwrap();
     let store = PackStore::new(root.path().to_path_buf());

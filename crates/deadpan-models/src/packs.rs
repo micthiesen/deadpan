@@ -464,6 +464,20 @@ pub struct InstalledPack {
     pub directory: PathBuf,
 }
 
+/// An installed version whose complete bytes were checked for this attempt.
+/// Retain this guard through the runtime smoke test and pointer activation.
+#[derive(Debug)]
+pub struct VerifiedInstalledPack {
+    installed: InstalledPack,
+    _lock: File,
+}
+
+impl VerifiedInstalledPack {
+    pub fn installed(&self) -> &InstalledPack {
+        &self.installed
+    }
+}
+
 impl InstalledPack {
     pub fn file(&self, name: &str) -> Option<PathBuf> {
         self.manifest
@@ -637,6 +651,40 @@ impl PackStore {
         Ok(Some(InstalledPack {
             manifest: manifest.clone(),
             directory,
+        }))
+    }
+
+    /// Recheck an existing version before selecting it on an update retry.
+    /// Failure leaves both its files and the active pointer untouched.
+    pub fn verify_installed(
+        &self,
+        manifest: &PackManifest,
+        cancelled: &AtomicBool,
+        mut progress: impl FnMut(InstallProgress),
+    ) -> Result<Option<VerifiedInstalledPack>, PackError> {
+        manifest.validate()?;
+        let lock = self.lock(manifest)?;
+        let Some(installed) = self.installed(manifest)? else {
+            return Ok(None);
+        };
+        let mut completed = 0;
+        for file in &manifest.files {
+            verify_bytes(
+                file,
+                &installed.directory.join(&file.name),
+                cancelled,
+                |bytes| {
+                    progress(InstallProgress {
+                        completed_bytes: completed + bytes,
+                        total_bytes: manifest.total_bytes(),
+                    });
+                },
+            )?;
+            completed += file.bytes;
+        }
+        Ok(Some(VerifiedInstalledPack {
+            installed,
+            _lock: lock,
         }))
     }
 
@@ -981,6 +1029,12 @@ impl PackStore {
 
     /// Move a smoke-tested staged pack into place as one directory rename.
     pub fn activate(&self, staged: StagedPack) -> Result<InstalledPack, PackError> {
+        Ok(self.activate_guarded(staged)?.installed)
+    }
+
+    /// Install a smoke-tested version while retaining its lock through the
+    /// caller's separate active-pointer selection.
+    pub fn activate_guarded(&self, staged: StagedPack) -> Result<VerifiedInstalledPack, PackError> {
         let destination = self.active(&staged.manifest);
         let parent = destination
             .parent()
@@ -993,9 +1047,12 @@ impl PackStore {
         }
         std::fs::rename(&staged.directory, &destination)?;
         File::open(parent)?.sync_all()?;
-        Ok(InstalledPack {
-            manifest: staged.manifest,
-            directory: destination,
+        Ok(VerifiedInstalledPack {
+            installed: InstalledPack {
+                manifest: staged.manifest,
+                directory: destination,
+            },
+            _lock: staged._lock,
         })
     }
 
@@ -1019,6 +1076,7 @@ impl PackStore {
     /// version an update selected stays until it is rolled back.
     pub fn remove(&self, manifest: &PackManifest) -> Result<(), PackError> {
         manifest.validate()?;
+        let _lock = self.lock(manifest)?;
         if self
             .pointer(&manifest.pack_id)?
             .is_some_and(|pointer| pointer.version == manifest.pack_version)
@@ -1234,10 +1292,41 @@ fn verify_file(
     file: &PackFile,
     path: &Path,
     cancelled: &AtomicBool,
+    progress: impl FnMut(u64),
+) -> Result<(), PackError> {
+    let result = verify_bytes(file, path, cancelled, progress);
+    if matches!(
+        &result,
+        Err(PackError::Verification {
+            reason: "SHA-256 differs from its manifest",
+            ..
+        })
+    ) {
+        // Only staging callers discard corrupt downloads. Installed bytes
+        // are preserved when revalidation fails.
+        std::fs::remove_file(path)?;
+    }
+    result
+}
+
+fn verify_bytes(
+    file: &PackFile,
+    path: &Path,
+    cancelled: &AtomicBool,
     mut progress: impl FnMut(u64),
 ) -> Result<(), PackError> {
-    let mut input = File::open(path)?;
-    if input.metadata()?.len() != file.bytes {
+    let descriptor = rustix::fs::open(
+        path,
+        rustix::fs::OFlags::RDONLY
+            | rustix::fs::OFlags::NOFOLLOW
+            | rustix::fs::OFlags::NONBLOCK
+            | rustix::fs::OFlags::CLOEXEC,
+        rustix::fs::Mode::empty(),
+    )
+    .map_err(io::Error::from)?;
+    let mut input = File::from(descriptor);
+    let metadata = input.metadata()?;
+    if !metadata.is_file() || metadata.len() != file.bytes {
         return Err(PackError::Verification {
             file: file.name.clone(),
             reason: "size differs from its manifest",
@@ -1254,8 +1343,14 @@ fn verify_file(
         if read == 0 {
             break;
         }
-        hasher.update(&buffer[..read]);
         hashed += read as u64;
+        if hashed > file.bytes {
+            return Err(PackError::Verification {
+                file: file.name.clone(),
+                reason: "size differs from its manifest",
+            });
+        }
+        hasher.update(&buffer[..read]);
         if hashed % (64 << 20) < read as u64 {
             progress(hashed);
         }
@@ -1267,8 +1362,6 @@ fn verify_file(
         .map(|byte| format!("{byte:02x}"))
         .collect();
     if digest != file.sha256 {
-        // A corrupt download cannot be resumed into a valid file.
-        std::fs::remove_file(path)?;
         return Err(PackError::Verification {
             file: file.name.clone(),
             reason: "SHA-256 differs from its manifest",

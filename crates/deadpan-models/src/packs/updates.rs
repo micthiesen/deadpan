@@ -130,11 +130,7 @@ impl PackUpdate {
             ));
         }
         if self.pack.supports(Operation::BridgeHold) || baseline.supports(Operation::BridgeHold) {
-            // The AI pause worker verifies its own compiled weight receipt.
-            return Err(refuse(
-                "UpdateIncompatible",
-                "the AI pause runtime verifies its compiled weight receipt; bridge packs change only with an app update",
-            ));
+            validate_bridge_update(&self.pack, &baseline)?;
         }
         if self
             .pack
@@ -159,6 +155,123 @@ impl PackUpdate {
             )
         })
     }
+}
+
+/// The pinned AI worker supports one data layout and quantization contract.
+/// Signed updates may replace safetensors data, but cannot select another
+/// component, configuration, tokenizer, quantization scheme or pipeline.
+fn validate_bridge_update(pack: &PackManifest, baseline: &PackManifest) -> Result<(), PackError> {
+    let incompatible = |reason: &str| {
+        refuse(
+            "UpdateIncompatible",
+            format!("bridge pack is outside the shipped LTX-2.3 q4 pipeline contract: {reason}"),
+        )
+    };
+    if pack.operations != baseline.operations
+        || pack.model_family != baseline.model_family
+        || pack.runtime_id != baseline.runtime_id
+        || pack.runtime_versions != baseline.runtime_versions
+        || pack.languages != baseline.languages
+        || pack.memory_bytes != baseline.memory_bytes
+        || pack.temporary_bytes != baseline.temporary_bytes
+    {
+        return Err(incompatible(
+            "model family, runtime, operations, resource profile or language set changed",
+        ));
+    }
+
+    fn component(name: &str) -> Option<(&str, &str, &str)> {
+        let mut parts = name.split('/');
+        let family = parts.next()?;
+        let revision = parts.next()?;
+        let file = parts.next()?;
+        if parts.next().is_some()
+            || !matches!(family, "mlx_ltx_q4_pack" | "mlx_gemma_default_text_encoder")
+            || revision.len() != 40
+            || !revision
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+            || file.is_empty()
+        {
+            return None;
+        }
+        Some((family, revision, file))
+    }
+
+    let mut revisions = std::collections::BTreeMap::<String, String>::new();
+    let mut normalized = std::collections::BTreeMap::new();
+    for file in &pack.files {
+        let Some((family, revision, relative)) = component(&file.name) else {
+            return Err(incompatible("component path or revision changed"));
+        };
+        if revisions
+            .insert(family.to_owned(), revision.to_owned())
+            .is_some_and(|previous| previous != revision)
+        {
+            return Err(incompatible("one component names multiple revisions"));
+        }
+        if normalized
+            .insert((family.to_owned(), relative.to_owned()), file)
+            .is_some()
+        {
+            return Err(incompatible("component file is duplicated"));
+        }
+    }
+    if revisions.len() != 2 || normalized.len() != baseline.files.len() {
+        return Err(incompatible("component inventory changed"));
+    }
+    if pack.total_bytes() > baseline.total_bytes() {
+        return Err(incompatible(
+            "total model data exceeds the qualified pack size",
+        ));
+    }
+
+    for known in &baseline.files {
+        let Some((family, old_revision, relative)) = component(&known.name) else {
+            return Err(incompatible("compiled component path is invalid"));
+        };
+        let Some(file) = normalized.get(&(family.to_owned(), relative.to_owned())) else {
+            return Err(incompatible("component file inventory changed"));
+        };
+        let Some((_, revision, _)) = component(&file.name) else {
+            return Err(incompatible("component path or revision changed"));
+        };
+        let expected_url = known.url.replace(old_revision, revision);
+        if file.url != expected_url || file.license != known.license {
+            return Err(incompatible("component source or file license changed"));
+        }
+        // The worker's component selection and quantization are pinned to the
+        // exact signed non-weight assets. Only the explicitly loaded weight
+        // tensors may change under this runtime.
+        if !relative.ends_with(".safetensors")
+            && (file.sha256 != known.sha256 || file.bytes != known.bytes)
+        {
+            if relative == "LICENSE" && file.bytes <= 256 * 1024
+                || relative == "README.md" && file.bytes <= 1024 * 1024
+            {
+                continue;
+            }
+            return Err(incompatible(&format!(
+                "configuration or tokenizer asset {relative} changed"
+            )));
+        }
+        // Exact tensor names, shapes, dtypes and offsets are verified against
+        // the qualified header schema by the pinned worker before selection.
+        // File size alone is only the download/resource admission bound.
+        if relative.ends_with(".safetensors") && file.bytes != known.bytes {
+            return Err(incompatible(&format!(
+                "qualified weight file size changed for {relative}"
+            )));
+        }
+        if relative == "LICENSE" && file.bytes > 256 * 1024
+            || relative == "README.md" && file.bytes > 1024 * 1024
+        {
+            return Err(incompatible(&format!(
+                "human-readable asset {relative} exceeds its size bound"
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// Verify a signed pack update's envelope and structure, for showing its
@@ -354,6 +467,17 @@ impl PackStore {
 
     /// Replace the pointer atomically: write, sync, rename, sync directory.
     fn write_pointer(&self, pack_id: &str, pointer: &ActivePointer) -> Result<(), PackError> {
+        self.write_pointer_with_sync(pack_id, pointer, |directory| {
+            File::open(directory)?.sync_all()
+        })
+    }
+
+    fn write_pointer_with_sync(
+        &self,
+        pack_id: &str,
+        pointer: &ActivePointer,
+        sync_directory: impl FnOnce(&Path) -> io::Result<()>,
+    ) -> Result<(), PackError> {
         let path = self.pointer_path(pack_id);
         let directory = path.parent().ok_or(PackError::Manifest("no parent"))?;
         create_private(directory)?;
@@ -368,7 +492,17 @@ impl PackStore {
             file.sync_all()?;
         }
         fs::rename(&temporary, &path)?;
-        File::open(directory)?.sync_all()?;
+        // Rename committed the visible selection. A later durability failure
+        // must not be reported as though the previous version were retained.
+        sync_directory(directory).map_err(|error| {
+            refuse(
+                "ModelPackSelectionDurabilityUncertain",
+                format!(
+                    "{pack_id} selection is now version {}; its directory sync failed, so crash durability is uncertain: {error}",
+                    pointer.version
+                ),
+            )
+        })?;
         Ok(())
     }
 

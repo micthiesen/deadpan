@@ -1,5 +1,5 @@
 use super::*;
-use crate::packs::{Download, InstallProgress, PackFile, Transport, approved_packs};
+use crate::packs::{Download, InstallProgress, Operation, PackFile, Transport, approved_packs};
 use crate::updates::generate_key;
 use sha2::Digest;
 use std::path::Path;
@@ -48,6 +48,27 @@ fn whisper(version: &str, bytes: &[u8]) -> PackManifest {
     manifest
 }
 
+/// A signed bridge data update that keeps the pinned component inventory and
+/// changes only its revision directories and pack identity.
+fn bridge_pack(version: &str, ltx_revision: &str, gemma_revision: &str) -> PackManifest {
+    let mut pack = approved_pack("ltx-2.3-q4-bridge").unwrap();
+    pack.pack_version = version.into();
+    for file in &mut pack.files {
+        let mut parts = file.name.split('/');
+        let component = parts.next().unwrap();
+        let old_revision = parts.next().unwrap();
+        let rest = parts.next().unwrap();
+        let revision = if component == "mlx_ltx_q4_pack" {
+            ltx_revision
+        } else {
+            gemma_revision
+        };
+        file.url = file.url.replace(old_revision, revision);
+        file.name = format!("{component}/{revision}/{rest}");
+    }
+    pack
+}
+
 fn signed(pkcs8: &[u8], serial: u64, pack: PackManifest) -> Vec<u8> {
     let update = PackUpdate {
         schema: UPDATE_SCHEMA,
@@ -79,6 +100,37 @@ fn install(store: &PackStore, manifest: &PackManifest, bytes: &[u8]) -> Installe
         )
         .unwrap();
     store.activate(staged).unwrap()
+}
+
+#[test]
+fn pointer_directory_sync_failure_reports_the_committed_selection() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_owned());
+    let old = ActivePointer {
+        schema: POINTER_SCHEMA,
+        version: "1".into(),
+        previous: None,
+    };
+    store.write_pointer("whisper-base-en", &old).unwrap();
+    let next = ActivePointer {
+        schema: POINTER_SCHEMA,
+        version: "2".into(),
+        previous: Some("1".into()),
+    };
+    let error = store
+        .write_pointer_with_sync("whisper-base-en", &next, |_| {
+            Err(io::Error::other("injected directory sync failure"))
+        })
+        .unwrap_err();
+    assert!(matches!(
+        &error,
+        PackError::Update {
+            code: "ModelPackSelectionDurabilityUncertain",
+            message,
+        } if message.contains("selection is now version 2")
+            && message.contains("crash durability is uncertain")
+    ));
+    assert_eq!(store.pointer("whisper-base-en").unwrap(), Some(next));
 }
 
 #[test]
@@ -332,11 +384,59 @@ fn untrusted_tampered_and_incompatible_updates_are_refused() {
         code(store.admit_update(&signed(&pkcs8, 1, runtime), &keys, &[], false)),
         "UpdateIncompatible"
     );
-    // Bridge packs are pinned by the AI worker's compiled receipt.
-    let mut bridge = approved_pack("ltx-2.3-q4-bridge").unwrap();
-    bridge.pack_version = "2".into();
+    // Bridge updates may replace data only within the shipped component,
+    // q4 configuration and operation contract.
+    let mut valid_bridge = bridge_pack("2", &"a".repeat(40), &"b".repeat(40));
+    let transformer = valid_bridge
+        .files
+        .iter_mut()
+        .find(|file| file.name.ends_with("/transformer-dev.safetensors"))
+        .unwrap();
+    transformer.sha256 = "e".repeat(64);
+    let signed_bridge = signed(&pkcs8, 1, valid_bridge.clone());
     assert_eq!(
-        code(store.admit_update(&signed(&pkcs8, 1, bridge), &keys, &[], false)),
+        store
+            .admit_update(&signed_bridge, &keys, &valid_bridge.license_ids(), false)
+            .unwrap(),
+        valid_bridge
+    );
+    let mut unsupported = bridge_pack("3", &"c".repeat(40), &"d".repeat(40));
+    unsupported.operations.push(Operation::Transcribe);
+    assert_eq!(
+        code(store.admit_update(
+            &signed(&pkcs8, 2, unsupported),
+            &keys,
+            &["ltx-2".into(), "gemma".into()],
+            false,
+        )),
+        "UpdateIncompatible"
+    );
+    let mut changed_quantization = bridge_pack("3", &"c".repeat(40), &"d".repeat(40));
+    let quantization = changed_quantization
+        .files
+        .iter_mut()
+        .find(|file| file.name.ends_with("/quantize_config.json"))
+        .unwrap();
+    quantization.sha256 = "f".repeat(64);
+    assert_eq!(
+        code(store.admit_update(
+            &signed(&pkcs8, 2, changed_quantization),
+            &keys,
+            &["ltx-2".into(), "gemma".into()],
+            false,
+        )),
+        "UpdateIncompatible"
+    );
+    let mut changed_component = bridge_pack("3", &"c".repeat(40), &"d".repeat(40));
+    changed_component.files[0].name =
+        "mlx_unapproved/cccccccccccccccccccccccccccccccccccccccc/LICENSE".into();
+    assert_eq!(
+        code(store.admit_update(
+            &signed(&pkcs8, 2, changed_component),
+            &keys,
+            &["ltx-2".into(), "gemma".into()],
+            false,
+        )),
         "UpdateIncompatible"
     );
     // A newer minimum app version.

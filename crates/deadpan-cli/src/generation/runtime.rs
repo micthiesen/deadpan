@@ -23,15 +23,17 @@
 //! | `DEADPAN_BRIDGE_WORKER` | `tools/model-qualification/worker.py` in this checkout |
 //!
 //! `deadpan-media-worker` must be installed beside the current executable.
-//! The worker verifies the runtime source tree and every model file against
-//! its pinned manifests on each attempt; this module checks only presence.
+//! The worker verifies the runtime source tree, checks the selected manifest
+//! against its pinned component/configuration contract and verifies every
+//! model file on each attempt; this module checks only component presence.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use deadpan_models::packs::{PackStore, approved_pack};
+use deadpan_models::packs::{InstalledPack, PackManifest, PackStore, approved_pack};
+use sha2::Digest;
 
 mod launch;
 pub use launch::{LaunchError, WorkerLaunch, WorkerMode};
@@ -97,14 +99,12 @@ pub fn lookup() -> Lookup {
     }
 }
 
-/// The installed bridge pack's directory, which holds both pinned snapshots.
-pub fn installed_pack(models_root: &Path) -> Option<PathBuf> {
-    let manifest = approved_pack(BRIDGE_PACK)?;
+/// The installed selected bridge pack, including its exact manifest snapshot.
+pub fn installed_pack(models_root: &Path) -> Option<InstalledPack> {
     PackStore::new(models_root.to_path_buf())
-        .installed(&manifest)
+        .current(BRIDGE_PACK)
         .ok()
         .flatten()
-        .map(|installed| installed.directory)
 }
 
 /// `major.minor` of a version string such as `26.5.2`.
@@ -180,6 +180,8 @@ pub struct BridgeRuntime {
     pub python: PathBuf,
     pub runtime_source: PathBuf,
     pub model_cache: PathBuf,
+    /// Immutable manifest snapshot selected for this worker configuration.
+    pub model_manifest: PackManifest,
     pub ffmpeg: PathBuf,
     pub ffprobe: PathBuf,
     pub worker_script: PathBuf,
@@ -238,6 +240,15 @@ impl BridgeRuntime {
     /// The runtime for this process with explicit model data, such as a
     /// staged pack that a smoke test checks before activation.
     pub fn with_model_data(model_data: &Path) -> Result<Self, RuntimeError> {
+        let manifest = approved_pack(BRIDGE_PACK).expect("compiled bridge pack");
+        Self::with_model_manifest(model_data, &manifest)
+    }
+
+    /// Resolve a staged or selected pack against this immutable manifest.
+    pub fn with_model_manifest(
+        model_data: &Path,
+        manifest: &PackManifest,
+    ) -> Result<Self, RuntimeError> {
         let executable_directory = std::env::current_exe()
             .ok()
             .and_then(|path| path.parent().map(Path::to_path_buf));
@@ -248,6 +259,7 @@ impl BridgeRuntime {
             &lookup(),
             None,
             Some(model_data),
+            Some(manifest),
         )
     }
 
@@ -266,6 +278,7 @@ impl BridgeRuntime {
             lookup,
             models_root,
             None,
+            None,
         )
     }
 
@@ -276,9 +289,16 @@ impl BridgeRuntime {
         lookup: &Lookup,
         models_root: Option<&Path>,
         model_data: Option<&Path>,
+        model_manifest: Option<&PackManifest>,
     ) -> Result<Self, RuntimeError> {
         if let Lookup::Bundled { runtime } = lookup {
-            return Self::bundled(runtime, executable_directory, models_root, model_data);
+            return Self::bundled(
+                runtime,
+                executable_directory,
+                models_root,
+                model_data,
+                model_manifest,
+            );
         }
         let development_defaults = *lookup == Lookup::Development;
         let mut missing = Vec::new();
@@ -309,14 +329,22 @@ impl BridgeRuntime {
                     .as_ref()
                     .map(|source| source.join(".venv/bin/python3"))
             });
-        let model_cache = model_data.map(Path::to_path_buf).or_else(|| {
-            chosen(
-                MODEL_CACHE,
-                models_root.and_then(installed_pack).or_else(|| {
-                    home.map(|home| home.join("Library/Caches/Deadpan/ltx-qualification"))
-                }),
-            )
-        });
+        let explicit_model_cache = variable(MODEL_CACHE).filter(|value| !value.is_empty());
+        let selected = if model_data.is_none() && explicit_model_cache.is_none() {
+            models_root.and_then(installed_pack)
+        } else {
+            None
+        };
+        let selected_manifest = model_manifest
+            .cloned()
+            .or_else(|| selected.as_ref().map(|pack| pack.manifest.clone()))
+            .or_else(|| approved_pack(BRIDGE_PACK))
+            .expect("compiled bridge pack");
+        let model_cache = model_data
+            .map(Path::to_path_buf)
+            .or_else(|| explicit_model_cache.map(PathBuf::from))
+            .or_else(|| selected.map(|pack| pack.directory))
+            .or_else(|| home.map(|home| home.join("Library/Caches/Deadpan/ltx-qualification")));
         let ffmpeg = chosen(FFMPEG, Some("/opt/homebrew/bin/ffmpeg".into()));
         let ffprobe = chosen(FFPROBE, Some("/opt/homebrew/bin/ffprobe".into()));
         let worker_script = chosen(WORKER, Some(DEFAULT_WORKER.into()));
@@ -356,6 +384,7 @@ impl BridgeRuntime {
             },
             runtime_source: require("LTX runtime source", RUNTIME_SOURCE, runtime_source, true),
             model_cache: require("model data", MODEL_CACHE, model_cache, true),
+            model_manifest: selected_manifest,
             ffmpeg: require("ffmpeg", FFMPEG, ffmpeg, false),
             ffprobe: require("ffprobe", FFPROBE, ffprobe, false),
             worker_script: require("worker adapter", WORKER, worker_script, false),
@@ -378,10 +407,10 @@ impl BridgeRuntime {
             ));
         }
         if !runtime.model_cache.as_os_str().is_empty() {
-            for directory in MODEL_DIRECTORIES {
-                if !runtime.model_cache.join(directory).is_dir() {
+            for directory in model_component_directories(&runtime.model_manifest) {
+                if !runtime.model_cache.join(&directory).is_dir() {
                     missing.push(format!(
-                        "pinned model snapshot {directory} is not in {}",
+                        "model component {directory} is not in {}",
                         runtime.model_cache.display()
                     ));
                 }
@@ -405,6 +434,7 @@ impl BridgeRuntime {
         executable_directory: Option<&Path>,
         models_root: Option<&Path>,
         model_data: Option<&Path>,
+        model_manifest: Option<&PackManifest>,
     ) -> Result<Self, RuntimeError> {
         let mut missing = Vec::new();
         let mut part = |label: &str, path: PathBuf, directory: bool| {
@@ -433,9 +463,19 @@ impl BridgeRuntime {
         if let Some(problem) = os_requirement(runtime, current_macos()) {
             missing.push(problem);
         }
+        let selected = if model_data.is_none() {
+            models_root.and_then(installed_pack)
+        } else {
+            None
+        };
+        let selected_manifest = model_manifest
+            .cloned()
+            .or_else(|| selected.as_ref().map(|pack| pack.manifest.clone()))
+            .or_else(|| approved_pack(BRIDGE_PACK))
+            .expect("compiled bridge pack");
         let model_cache = model_data
             .map(Path::to_path_buf)
-            .or_else(|| models_root.and_then(installed_pack));
+            .or_else(|| selected.map(|pack| pack.directory));
         let needs_model_pack = model_cache.is_none();
         if needs_model_pack {
             let size = approved_pack(BRIDGE_PACK)
@@ -452,6 +492,7 @@ impl BridgeRuntime {
                 python,
                 runtime_source,
                 model_cache: model_cache.unwrap_or_default(),
+                model_manifest: selected_manifest,
                 ffmpeg,
                 ffprobe,
                 worker_script,
@@ -523,9 +564,58 @@ impl BridgeRuntime {
             "model_cache": path(&self.model_cache),
             "ffmpeg": path(&self.ffmpeg),
             "ffprobe": path(&self.ffprobe),
+            "model_pack": {
+                "pack_id": &self.model_manifest.pack_id,
+                "pack_version": &self.model_manifest.pack_version,
+                "model_family": &self.model_manifest.model_family,
+                "runtime_id": &self.model_manifest.runtime_id,
+                "runtime_versions": &self.model_manifest.runtime_versions,
+                "operations": &self.model_manifest.operations,
+                "files": self.model_manifest.files.iter().map(|file| serde_json::json!({
+                    "name": &file.name,
+                    "sha256": &file.sha256,
+                    "bytes": file.bytes,
+                })).collect::<Vec<_>>(),
+            },
+            "model_manifest_sha256": self.model_manifest_sha256(),
         }))
         .expect("string map serializes")
     }
+
+    /// Provider identity captured with this runtime, including the selected
+    /// pack version and the exact worker compatibility version.
+    pub fn provider(&self, seed: u64) -> deadpan_jobs::ProviderSelection {
+        serde_json::from_value(serde_json::json!({
+            "pack_id": &self.model_manifest.pack_id,
+            "pack_version": &self.model_manifest.pack_version,
+            "runtime_id": &self.model_manifest.runtime_id,
+            "runtime_version": self.model_manifest.runtime_versions[0],
+            "seed": seed,
+        }))
+        .expect("admitted bridge manifest has a protocol-compatible identity")
+    }
+
+    /// Stable identity of the complete selected manifest, including its
+    /// licenses, source URLs, file hashes and runtime compatibility.
+    pub fn model_manifest_sha256(&self) -> String {
+        let bytes =
+            serde_json::to_vec(&self.model_manifest).expect("validated model manifest serializes");
+        sha2::Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+}
+
+fn model_component_directories(manifest: &PackManifest) -> Vec<String> {
+    let mut directories = std::collections::BTreeSet::new();
+    for file in &manifest.files {
+        let mut parts = file.name.split('/');
+        if let (Some(component), Some(revision)) = (parts.next(), parts.next()) {
+            directories.insert(format!("{component}/{revision}"));
+        }
+    }
+    directories.into_iter().collect()
 }
 
 #[cfg(test)]
@@ -580,6 +670,8 @@ mod tests {
         assert_eq!(resolved.python, linked);
         assert_eq!(runtime.model_cache, cache);
         assert_eq!(runtime.media_worker, executables.join(MEDIA_WORKER));
+        assert_eq!(runtime.model_manifest.pack_id, BRIDGE_PACK);
+        assert_eq!(runtime.provider(17).pack_version.as_str(), "1");
         let configuration: serde_json::Value =
             serde_json::from_slice(&runtime.worker_configuration()).unwrap();
         assert_eq!(
@@ -588,7 +680,14 @@ mod tests {
                 .unwrap()
                 .keys()
                 .collect::<Vec<_>>(),
-            ["ffmpeg", "ffprobe", "model_cache", "runtime_source"]
+            [
+                "ffmpeg",
+                "ffprobe",
+                "model_cache",
+                "model_manifest_sha256",
+                "model_pack",
+                "runtime_source"
+            ]
         );
     }
 
@@ -614,7 +713,7 @@ mod tests {
             "(set DEADPAN_BRIDGE_FFPROBE)",
             "(set DEADPAN_BRIDGE_WORKER)",
             "deadpan-media-worker beside this executable not found at no location",
-            "pinned model snapshot mlx_gemma_default_text_encoder",
+            "model component mlx_gemma_default_text_encoder",
         ] {
             assert!(message.contains(expected), "{expected} in {message}");
         }

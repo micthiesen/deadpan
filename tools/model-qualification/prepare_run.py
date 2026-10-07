@@ -40,6 +40,7 @@ def main():
     if not 1 <= args.frames <= 180 or not 0 <= args.seed < 2**32:
         parser.error("frame count or seed outside this probe envelope")
     root = Path(__file__).resolve().parents[2]
+    pack = json.loads((root / "models/packs/ltx-2.3-q4-bridge-1.json").read_text())
     run = args.run_directory.absolute()
     run.mkdir()
     workspace = run / "worker"
@@ -78,8 +79,20 @@ def main():
                "left": references[0], "right": references[1],
                "input_color_interpretation": args.input_color_interpretation}
     save(inputs / "context.json", context)
-    save(run / "runtime.json", {key: str(getattr(args, key).absolute()) for key in
-                               ["runtime_source", "model_cache", "ffmpeg", "ffprobe"]})
+    save(run / "runtime.json", {
+        **{key: str(getattr(args, key).absolute()) for key in
+           ["runtime_source", "model_cache", "ffmpeg", "ffprobe"]},
+        "model_pack": {
+            "pack_id": pack["pack_id"], "pack_version": pack["pack_version"],
+            "model_family": pack["model_family"], "runtime_id": pack["runtime_id"],
+            "runtime_versions": pack["runtime_versions"], "operations": pack["operations"],
+            "files": [{"name": file["name"], "sha256": file["sha256"], "bytes": file["bytes"]}
+                      for file in pack["files"]],
+        },
+        "model_manifest_sha256": hashlib.sha256(json.dumps(
+            pack, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest(),
+    })
     identity = uuid.uuid4().hex
     request = {
         "operation": "generate_bridge", "protocol": 2,
@@ -91,8 +104,9 @@ def main():
         "constraints": {"conditioning": "bridge", "motion": "still", "video": {
             "frames": args.frames, "frame_rate": {"numerator": fps.numerator, "denominator": fps.denominator},
             "width": 768, "height": 320}},
-        "provider": {"pack_id": "ltx-2.3-q4-development", "pack_version": "56a5866d",
-                     "runtime_id": "ltx-mlx-development", "runtime_version": "0.15.8+deadpan1", "seed": args.seed},
+        "provider": {"pack_id": pack["pack_id"], "pack_version": pack["pack_version"],
+                     "runtime_id": pack["runtime_id"],
+                     "runtime_version": pack["runtime_versions"][0], "seed": args.seed},
         "plan": plan,
     }
     retention = {

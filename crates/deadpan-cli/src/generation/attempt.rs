@@ -159,9 +159,21 @@ pub fn allocate(
     store: &mut ProjectStore,
     input: AllocateInput,
 ) -> Result<Allocated, GenerationError> {
+    let provider = super::development_provider(input.seed);
+    allocate_with_provider(store, input, provider)
+}
+
+/// Record a new request with the provider captured by its selected runtime.
+/// This identity becomes durable request and candidate provenance, so a later
+/// pack rollback cannot change what an existing request claims to use.
+pub fn allocate_with_provider(
+    store: &mut ProjectStore,
+    input: AllocateInput,
+    mut provider: deadpan_jobs::ProviderSelection,
+) -> Result<Allocated, GenerationError> {
     let request_id =
         RequestId::new(format!("ai-hold-{}", uuid::Uuid::new_v4().simple())).map_err(invalid)?;
-    let provider = super::development_provider(input.seed);
+    provider.seed = input.seed;
     let request = store.record_bridge_generation_request(
         GenerationRequestInput {
             request_id: request_id.clone(),

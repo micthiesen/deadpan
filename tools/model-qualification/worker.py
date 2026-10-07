@@ -221,12 +221,8 @@ def run():
                 raise ValueError("missing isolated offline runtime environment")
         wire = request.to_wire()
         if (request.constraints.conditioning != "bridge" or request.constraints.motion != "still"
-                or request.provider.pack_id != "ltx-2.3-q4-development"
-                or request.provider.pack_version != "56a5866d"
-                or request.provider.runtime_id != "ltx-mlx-development"
-                or request.provider.runtime_version != "0.15.8+deadpan1"
                 or request.provider.seed >= 2**32):
-            raise ValueError("unsupported development provider or hold constraints")
+            raise ValueError("unsupported hold constraints or seed")
         root = os.open(".", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
             raw = contained_read(root, request.input.manifest, 256 * 1024)
@@ -258,7 +254,7 @@ def run():
         if len(runtime_bytes) > 64 * 1024:
             raise ValueError("runtime configuration exceeds its budget")
         from mlx_backend import generate, runtime_paths
-        paths = runtime_paths(strict_json(runtime_bytes), check_cancel)
+        paths = runtime_paths(strict_json(runtime_bytes), check_cancel, provider=request.provider)
         native, provenance, _report = generate(
             paths, wire, context, inputs, output, stage, check_cancel, ADAPTER_SOURCES
         )

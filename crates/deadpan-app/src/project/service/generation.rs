@@ -13,7 +13,9 @@ use deadpan_cli::generation::attempt::{
 };
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
-use deadpan_jobs::{AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, RequestId};
+use deadpan_jobs::{
+    AttemptId, HostFailureCode, JobFailure, JobState, MessageIdentity, ProviderSelection, RequestId,
+};
 use deadpan_store::generation_retention::DEFAULT_VARIANT_RETENTION;
 
 use super::*;
@@ -58,6 +60,8 @@ struct Running {
     started: bool,
     /// The seed for a new request, when the caller chose one.
     seed: Option<u64>,
+    /// Pack/runtime identity captured when this job selected its worker.
+    provider: ProviderSelection,
     thread: Option<JoinHandle<()>>,
 }
 
@@ -548,7 +552,7 @@ impl Service {
         };
         let worker = match &self.generation.backend {
             Backend::Environment => match BridgeRuntime::from_environment() {
-                Ok(runtime) => Worker::Real(runtime),
+                Ok(runtime) => Worker::Real(Box::new(runtime)),
                 Err(error) => {
                     self.conclude_unavailable(job, error.to_string());
                     return Ok(());
@@ -565,6 +569,13 @@ impl Service {
                     queue: queue.clone(),
                     first: Some(script),
                 }
+            }
+        };
+        let provider = match &worker {
+            Worker::Real(runtime) => runtime.provider(seed.unwrap_or(0)),
+            #[cfg(any(test, feature = "ui-harness"))]
+            Worker::Scripted { .. } => {
+                deadpan_cli::generation::development_provider(seed.unwrap_or(0))
             }
         };
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -612,6 +623,7 @@ impl Service {
             allocated: None,
             started: false,
             seed,
+            provider,
             thread: Some(thread),
         });
         self.generation.job = Some(job);
@@ -911,6 +923,7 @@ impl Service {
         }
         let cancelled = running.cancelled.load(Ordering::Acquire);
         let requested_seed = running.seed;
+        let provider = running.provider.clone();
         let Some((hold, revision)) = self
             .generation
             .job
@@ -959,6 +972,10 @@ impl Service {
                     request.binding.context_sha256 == inputs.manifest_sha256
                         && request.constraints == inputs.constraints
                         && request.bridge_plan.as_ref() == Some(&inputs.plan)
+                        && deadpan_cli::generation::same_provider_identity(
+                            &request.provider,
+                            &provider,
+                        )
                 });
             match existing {
                 // Variants of an existing request derive their seeds from its
@@ -970,7 +987,7 @@ impl Service {
                     ));
                 }
                 Some(request) => attempt::allocate_variant(store, request, inputs),
-                None => attempt::allocate(
+                None => attempt::allocate_with_provider(
                     store,
                     AllocateInput {
                         hold,
@@ -983,6 +1000,7 @@ impl Service {
                         }),
                         inputs,
                     },
+                    provider,
                 ),
             }
             .map_err(|error: GenerationError| error.to_string())
@@ -1467,7 +1485,7 @@ struct Channels {
 
 /// What runs for each attempt: the real supervised worker, or the test seam.
 enum Worker {
-    Real(BridgeRuntime),
+    Real(Box<BridgeRuntime>),
     #[cfg(any(test, feature = "ui-harness"))]
     Scripted {
         queue: Arc<crate::project::generation::ScriptQueue>,

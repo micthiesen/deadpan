@@ -119,14 +119,26 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     };
     let runtime = BridgeRuntime::from_environment().map_err(GenerationError::from)?;
     let existing = if another {
-        Some(
-            attempt::current_bridge_request(&store, &hold)?.ok_or_else(|| {
+        let request = attempt::current_bridge_request(&store, &hold)?.ok_or_else(|| {
                 GenerationError::Invalid(
                     "This pause has no current AI pictures request to add a variant to; generate without --another."
                         .into(),
                 )
-            })?,
-        )
+            })?;
+        if !crate::generation::same_provider_identity(
+            &request.provider,
+            &runtime.provider(request.provider.seed),
+        ) {
+            return Err(GenerationError::Invalid(format!(
+                "This pause's current request uses {} {}, but the selected AI pack is {} {}. Generate without --another to start a request with the selected pack.",
+                request.provider.pack_id,
+                request.provider.pack_version,
+                runtime.provider(0).pack_id,
+                runtime.provider(0).pack_version,
+            ))
+            .into());
+        }
+        Some(request)
     } else {
         None
     };
@@ -149,7 +161,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     let conditioning = started.elapsed();
     let mut allocated = match existing {
         Some(request) => attempt::allocate_variant(&mut store, request, inputs)?,
-        None => attempt::allocate(
+        None => attempt::allocate_with_provider(
             &mut store,
             AllocateInput {
                 hold,
@@ -157,6 +169,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
                 seed,
                 inputs,
             },
+            runtime.provider(seed),
         )?,
     };
     let mut reports = Vec::new();

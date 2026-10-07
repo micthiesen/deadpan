@@ -96,6 +96,7 @@ mod tests {
             python,
             runtime_source: PathBuf::new(),
             model_cache: PathBuf::new(),
+            model_manifest: deadpan_models::packs::approved_pack("ltx-2.3-q4-bridge").unwrap(),
             ffmpeg: PathBuf::new(),
             ffprobe: PathBuf::new(),
             worker_script: PathBuf::from("/private/worker with spaces.py"),
