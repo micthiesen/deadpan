@@ -471,11 +471,25 @@ fn hdr_pq_and_hlg_main10_files_pass_complete_inspection() {
     for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
         for b_frames in [BFramePolicy::None, BFramePolicy::TargetTwo] {
             let encoded = encode(transfer, RASTER, hardware(b_frames), Content::Probe, None);
-            let report = match transfer {
+            let inspected = match transfer {
                 HdrTransfer::Pq => inspect(&encoded),
                 HdrTransfer::Hlg => inspect_hlg(&encoded),
-            }
-            .unwrap_or_else(|error| panic!("{transfer:?} {b_frames:?}: {error}"));
+            };
+            let report = match inspected {
+                Ok(report) => report,
+                Err(error) => {
+                    let directory = encoded._directory.keep();
+                    std::fs::write(
+                        directory.join("encoded-manifest.json"),
+                        serde_json::to_vec_pretty(&encoded.manifest).unwrap(),
+                    )
+                    .unwrap();
+                    panic!(
+                        "{transfer:?} {b_frames:?}: {error}; emitted file and contract retained at {}",
+                        directory.display()
+                    );
+                }
+            };
             report.validate(VerificationLimits::default()).unwrap();
             assert_eq!(report.fresh_gop_frames, report.video_frames);
             assert_eq!(
