@@ -1484,6 +1484,48 @@ Verification that needs anything unavailable to the agent here is recorded as **
 | DP-23 | License/SBOM/privacy/security requirements. | Release audit and malicious-input tests. |
 | DP-24 | Measured performance budgets and diagnostics. | Published reproducible hardware benchmark report. |
 
+## 29.2 Persistent progress dashboard
+
+Maintain the [Deadpan progress Executor artifact](https://mcp.syas.ca/boris/artifacts/art_6hz2jxipjvvmuy979s3),
+identifier **`art_6hz2jxipjvvmuy979s3`**, during any goal against this specification.
+The owner must not need to request updates. It shows a large overall progress
+bar, high-level feature completion stages, current work, dated milestones and
+the rate of estimated progress. Requirements and evidence remain authoritative.
+
+The artifact reads **`docs/progress.json` from `micthiesen/deadpan`, branch
+`main`**, through Executor's GitHub `get_file_contents` tool. Routine progress
+updates need no MCP write: update the repository data, commit and push it; the
+artifact reads the new report on opening or Refresh. Use
+`python3 tools/progress/update.py record --percent N --summary "Verified milestone" --focus "Current work"`,
+then `python3 tools/progress/update.py check`. Update feature notes/stages in
+the JSON when needed. Full instructions are in [Progress reporting](../PROGRESS.md).
+
+At goal start, read the report alongside Requirements. Update it after a
+meaningful verified milestone or a substantial work block that changes the
+report. A few milestone updates per active day are enough; unchanged work,
+individual tests, polling and routine commits do not need updates. Preserve the
+dated history so the owner can see progress and its rate. Do not schedule work
+while the goal is inactive. A publishing outage does not block independent
+implementation; retain the update locally and retry publication at the next
+useful checkpoint.
+
+The percentage is an explicitly labelled engineering estimate, with its
+uncertainty and a separate strict completed-requirement count. Do not infer it
+from elapsed time, tokens, commits, tests passed or the number of partial rows.
+Only implemented and appropriately verified work earns progress. Mark a feature
+group Done & verified only when all its mapped requirements are complete under
+§29.1; reserve 100% for the full specification and delivery gates. Correct
+estimates downward when evidence warrants it and explain the change. Label
+retrospective baselines; never fabricate intermediate observations or a finish
+date from the rate.
+
+If the dashboard layout needs changing, edit the existing artifact with
+Executor `edit-artifact`, passing `artifactId: "art_6hz2jxipjvvmuy979s3"` and
+exact source replacements. Keep `tools/progress/artifact.tsx` in sync. For a
+full rewrite, use `create-artifact` with that same `artifactId` and the complete
+component. Read Executor's current artifact guides before either operation;
+never create a duplicate dashboard for this goal.
+
 # 30. Implementation workstreams and delivery gates
 
 This is an ordered full-product build plan. Work can proceed in parallel behind the stated interfaces; completing an early gate does not redefine the requested scope.
