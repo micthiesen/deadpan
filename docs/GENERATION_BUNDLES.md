@@ -1,10 +1,41 @@
-# Native bridge candidate bundles
+# Native generation candidate bundles
 
 [`deadpan-models`](../crates/deadpan-models/) qualifies a native bridge candidate
 against its original host request. The worker declares native footage and
 provenance. The host derives both canonical masters from the same immutable
 native snapshot, using the persisted exact generation plan. Neither completion,
 qualification, nor Ready changes an authored Hold.
+
+## Extension qualification
+
+`qualify_extension` admits an explicit `NativeExtensionV3` declaration against
+an immutable `ExtensionGenerationBinding`, an independently supplied
+`SelectedExtensionProvider` and pre-launch `RetainedExtensionConditioning`.
+The provider retains its context count, generated-frame formula, dimensions,
+native rate and maximum authored duration independently of the worker's claims.
+
+Worker schema 3 must agree on operation, direction, request, provider, context,
+generated interval, native declaration and all seven exact timing values.
+Loading receipts remain bounded claims; they do not attest installed model bytes.
+The host snapshots provenance before decoding, then derives both canonical
+movies from the same native snapshot. Pixel and geometry checks run under that
+same deadline. Context pictures remain in the native movie and never become
+inserted output.
+
+Host profile `deadpan-ffv1-extension-1` requires both quality reports, exact
+media contracts and spans, provider capability, retained input receipt and the
+original worker provenance bytes. There is no extension profile that permits
+missing checks. Before returning a `QualifiedExtensionBundle`, qualification
+round-trips the envelope through `StoredExtensionProvenance` and the exact
+retained manifest bytes. Its pure validators recompute policy and bind every
+saved observation without rerunning the model or Vision. Later consumers must
+still verify every referenced media/input object and decode media against its
+contract.
+
+This completes host candidate qualification only. Store completion/Ready,
+accepted sampling and media representations, project publication and native
+controls remain separate unfinished work. Approved provider packs still do not
+advertise extension support. See the [qualification record](qualification/extension-bundles-2026-10-08.md).
 
 ## Wire and storage contracts
 

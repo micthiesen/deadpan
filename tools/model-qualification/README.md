@@ -77,17 +77,23 @@ last independently canonicalizes the complete native movie and generated-only
 sampled master through the native media worker, then checks generated motion,
 lighting and the actual sampled joins against the retained PNGs, then inspects
 single-anchor face/region geometry and chronological generated-only mouth motion.
-The media configuration also requires `tracker`, the absolute path to the built
-`deadpan-track` helper. Its
+The media configuration requires `tracker`, the absolute path to the built
+`deadpan-track` helper, an independently selected `SelectedExtensionProvider`
+as `selected_provider`, and `QualificationLimits` as `limits` (conversion limits
+under `media`, plus worker/host provenance byte limits). It validates the exact
+schema-3 worker claims before decoding and round-trips the complete host
+envelope before returning. Its
 `retained_inputs` configuration contains `directory` (the first tool's private
 output), `receipt` (the first tool's `conditioning` report field), `input_scope`
 and `limits` (the same conditioning limits used during capture). It refuses
 inputs that differ from that host-owned pre-launch receipt. Retention rechecks,
-native conversion, pixel checks and supervised Vision inspection share the media
-configuration's deadline.
+native conversion, provenance admission, pixel checks and supervised Vision
+inspection share the configuration's deadline. Output retains both movies,
+the host provenance envelope and every conditioning object, including signatures.
 
-These tools do not authorize Ready or acceptance. Complete provenance admission, accepted artifact integration,
-UI integration and a larger measured duration envelope remain required.
+These tools do not authorize Ready or acceptance. Saved completion/Ready,
+accepted artifact integration, UI integration and a larger measured duration
+envelope remain required.
 
 ## Build and run the bridge harness
 

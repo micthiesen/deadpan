@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use crate::landmark_inspection::{InspectionTimings, extension_picture_pts};
 use crate::quality_input::Control;
 use crate::{
-    ExtensionConditioningReceipt, ExtensionContext, QualificationError,
+    ExtensionConditioningReceipt, ExtensionContext, ExtensionGenerationBinding, QualificationError,
     RetainedExtensionConditioning,
 };
 
@@ -69,13 +69,36 @@ impl ExtensionGeometryChecks {
         conditioning: &RetainedExtensionConditioning,
         request: &HostMessage,
     ) -> Result<(), QualificationError> {
-        let plan = validate_inputs(native, conditioning, request)?;
+        validate_inputs(native, conditioning, request)?;
+        let binding = ExtensionGenerationBinding::from_request(request)?;
+        self.validate_bound(
+            &native.report().video,
+            native.object(),
+            conditioning.context(),
+            conditioning.receipt(),
+            &binding,
+        )
+    }
+
+    /// Recompute saved policy and bind its inputs without opening media or
+    /// rerunning Vision. The caller separately admits bytes to these identities.
+    pub(crate) fn validate_bound(
+        &self,
+        native: &VideoContract,
+        native_object: &GeneratedObjectRef,
+        context: &ExtensionContext,
+        receipt: &ExtensionConditioningReceipt,
+        binding: &ExtensionGenerationBinding,
+    ) -> Result<(), QualificationError> {
+        receipt.validate_binding(context, binding)?;
+        let plan = &binding.plan;
         if self.schema_version != 1
             || self.profile != PROFILE
-            || self.native != native.report().video
-            || &self.native_object != native.object()
-            || &self.context != conditioning.context()
-            || &self.conditioning != conditioning.receipt()
+            || *native != crate::extension_motion::native_contract(plan)
+            || self.native != *native
+            || &self.native_object != native_object
+            || &self.context != context
+            || &self.conditioning != receipt
             || self.timings.decode_millis > self.timings.elapsed_millis
             || self.timings.vision_millis > self.timings.elapsed_millis
         {

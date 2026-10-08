@@ -1,0 +1,34 @@
+{
+  "binaries.json": {
+    "bytes": 294,
+    "sha256": "8dcae0dbc493b348044ebda4d65d72d39adfacc18819639375310878fda4063e"
+  },
+  "check.log.gz": {
+    "bytes": 787,
+    "sha256": "768b3b0876607b2c06e0a33673818b5e48a7fb8bb71b31c4d1cd6ffaf34709fb"
+  },
+  "environment.json": {
+    "bytes": 338,
+    "sha256": "094595054c559ad87b0e0389f88ab79d87bf3b8f37b6d1040633bfd13d207ef2"
+  },
+  "gate.log.gz": {
+    "bytes": 202567,
+    "sha256": "0730b9b7abd72da2f5a3d1e8e1badbf58e3bb5f1cbf16dbb0a061780f680cd3e"
+  },
+  "integration-tests.log.gz": {
+    "bytes": 1606,
+    "sha256": "4929c0387bd348d821f017065ae4872da8aa847a4ea11a0fb8efef85c8315f3a"
+  },
+  "models-tests.log.gz": {
+    "bytes": 5938,
+    "sha256": "bce21bb9ee1c798f05ef918a188e238f25ccd7f7f68de1cb7eb53e30d8215fab"
+  },
+  "results.json": {
+    "bytes": 2385,
+    "sha256": "2a6e3a9304d06d9c9f2f630b85ca0b2cc4f76ff8106c1f6c221b5d8408382b26"
+  },
+  "source.json": {
+    "bytes": 3166,
+    "sha256": "c7cd4075a2e2a6aab3c6da2ec6876eee7acb6c14630759479978c23969bcbe77"
+  }
+}

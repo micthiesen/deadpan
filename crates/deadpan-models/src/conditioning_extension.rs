@@ -671,6 +671,42 @@ impl ExtensionConditioningReceipt {
         &self.signatures
     }
 
+    /// Bind saved metadata to the captured request without opening inputs. The
+    /// caller must separately verify that the manifest bytes have this receipt's
+    /// identity; this check does not admit the referenced media bytes.
+    pub(crate) fn validate_binding(
+        &self,
+        context: &ExtensionContext,
+        binding: &crate::ExtensionGenerationBinding,
+    ) -> Result<(), QualificationError> {
+        context.validate_shape()?;
+        self.validate_shape()?;
+        validate_context_binding(context, self.manifest.declaration(), binding)?;
+        if self.context.len() != context.context.len()
+            || self.signatures.declaration() != context.continuity.signatures()
+            || self
+                .context
+                .iter()
+                .zip(&context.context)
+                .any(|(receipt, picture)| receipt.declaration() != &picture.frame)
+        {
+            return Err(extension_error(
+                "conditioning receipt differs from chronological inputs or signatures",
+            ));
+        }
+        match (&context.opposite, &self.opposite) {
+            (ExtensionOppositeSeam::Absent, None) => {}
+            (ExtensionOppositeSeam::PresentUnconditioned { frame, .. }, Some(receipt))
+                if receipt.declaration() == frame => {}
+            _ => {
+                return Err(extension_error(
+                    "conditioning receipt differs from the opposite seam",
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn validate_shape(&self) -> Result<(), QualificationError> {
         if self.schema_version != 2
             || self.context.is_empty()
@@ -735,6 +771,9 @@ impl RetainedExtensionConditioning {
     pub fn manifest(&self) -> &ConditioningObject {
         &self.manifest
     }
+    pub(crate) fn manifest_mut(&mut self) -> &mut ConditioningObject {
+        &mut self.manifest
+    }
     pub fn context_frames(&self) -> &[ConditioningObject] {
         &self.context_frames
     }
@@ -766,9 +805,8 @@ impl RetainedExtensionConditioning {
     }
 
     pub fn validate_for(&self, request: &HostMessage) -> Result<(), QualificationError> {
-        self.context.validate_shape()?;
-        self.receipt.validate_shape()?;
-        validate_request(&self.context, self.manifest.declaration(), request)?;
+        let binding = crate::ExtensionGenerationBinding::from_request(request)?;
+        self.receipt.validate_binding(&self.context, &binding)?;
         if self.context_frames.len() != self.context.context.len()
             || self.receipt.context.len() != self.context_frames.len()
             || !receipt_matches(&self.receipt.manifest, &self.manifest)
@@ -956,27 +994,21 @@ fn validate_request(
     manifest: &WorkspaceArtifact,
     request: &HostMessage,
 ) -> Result<(), QualificationError> {
-    request
-        .validate()
-        .map_err(|error| extension_error(&error.to_string()))?;
-    let HostMessage::GenerateExtension {
-        project_id,
-        revision_id,
-        input,
-        plan,
-        constraints,
-        ..
-    } = request
-    else {
-        return Err(extension_error(
-            "retained conditioning requires a version-3 extension request",
-        ));
-    };
-    context.validate_definition_binding(project_id, revision_id)?;
-    if manifest.reference() != &input.manifest
-        || manifest.sha256() != &input.sha256
-        || context.plan() != plan.as_ref()
-        || context.region().target_id() != constraints.region_target.as_ref()
+    let binding = crate::ExtensionGenerationBinding::from_request(request)?;
+    validate_context_binding(context, manifest, &binding)
+}
+
+fn validate_context_binding(
+    context: &ExtensionContext,
+    manifest: &WorkspaceArtifact,
+    binding: &crate::ExtensionGenerationBinding,
+) -> Result<(), QualificationError> {
+    binding.validate()?;
+    context.validate_definition_binding(&binding.project_id, &binding.revision_id)?;
+    if manifest.reference() != &binding.input.manifest
+        || manifest.sha256() != &binding.input.sha256
+        || context.plan() != &binding.plan
+        || context.region().target_id() != binding.constraints.region_target.as_ref()
     {
         return Err(extension_error(
             "context differs from extension request plan, region or manifest",

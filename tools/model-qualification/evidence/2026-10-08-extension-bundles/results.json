@@ -1,0 +1,68 @@
+{
+  "scope": "Complete host extension candidate qualification and pure retained evidence validation; store Ready/acceptance remain closed.",
+  "checks": {
+    "all_target_check": {
+      "exit_code": 0,
+      "log": "check.log.gz"
+    },
+    "model_tests": {
+      "exit_code": 0,
+      "passed": 167,
+      "skipped": 1,
+      "log": "models-tests.log.gz"
+    },
+    "initial_real_media_integration": {
+      "exit_code": 0,
+      "passed": 22,
+      "skipped": 0,
+      "log": "integration-tests.log.gz"
+    },
+    "repository_gate": {
+      "command": "cargo xtask gate",
+      "exit_code": 0,
+      "workspace": {
+        "passed": 5372,
+        "seconds": 438.529,
+        "detail": "(14 slow, 2 leaky), 10 skipped"
+      },
+      "ui": {
+        "passed": 1071,
+        "seconds": 231.097,
+        "detail": "(8 slow), 2 skipped"
+      },
+      "doc_tests_passed": 2,
+      "log": "gate.log.gz",
+      "includes": [
+        "locked dependencies",
+        "formatting",
+        "strict workspace and UI Clippy",
+        "final input-reader and original-provenance-byte assertions"
+      ]
+    }
+  },
+  "warnings": {
+    "cause": "unproven",
+    "assertions": "passed",
+    "nextest_pipe_closure_lines": [
+      "LEAK [   0.382s] (4485/5372) deadpan-playback tests::waveform::replacement_coalesces_pending_work_and_drops_stale_success_and_failure",
+      "LEAK [   0.661s] (4912/5372) deadpan-store::edited_slice child_capture::historical_recapture_rejects_forged_same_time_child_parent_bounds_and_contents_without_writes"
+    ]
+  },
+  "review": {
+    "independent_lenses": [
+      "binding and worker provenance against the Python producer",
+      "qualification, stored reader, developer example"
+    ],
+    "root_review": [
+      "pure report and receipt extraction",
+      "real-media qualification tests"
+    ],
+    "outstanding_findings": []
+  },
+  "limits": [
+    "Real converter and Vision processes use explicitly synthetic worker loading claims; no new model inference is claimed.",
+    "No new packaged or native UI run: this increment changes host validation, developer tooling and tests, with no new app control or worker protocol.",
+    "Store completion/Ready, accepted extension representations, native controls and a larger measured model envelope remain unfinished.",
+    "Real-person quality and rejection-threshold calibration remain owner verification."
+  ]
+}

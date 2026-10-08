@@ -76,7 +76,7 @@ pub struct QualificationLimits {
 }
 
 impl QualificationLimits {
-    fn validate(self) -> Result<(), QualificationError> {
+    pub(crate) fn validate(self) -> Result<(), QualificationError> {
         self.media.validate().map_err(ConversionError::from)?;
         if self.maximum_worker_provenance_bytes == 0
             || self.maximum_worker_provenance_bytes > 4 * 1024 * 1024
@@ -93,11 +93,11 @@ impl QualificationLimits {
 
 #[derive(Debug, Error)]
 pub enum QualificationError {
-    #[error("invalid bridge qualification request: {0}")]
+    #[error("invalid generation qualification request: {0}")]
     Request(String),
-    #[error("invalid bridge provenance: {0}")]
+    #[error("invalid generation provenance: {0}")]
     Provenance(String),
-    #[error("bridge candidate quality check failed: {0}")]
+    #[error("generation candidate quality check failed: {0}")]
     Quality(String),
     #[error(transparent)]
     Artifact(#[from] ArtifactError),
@@ -107,9 +107,9 @@ pub enum QualificationError {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Io(#[from] io::Error),
-    #[error("bridge qualification was cancelled")]
+    #[error("generation qualification was cancelled")]
     Cancelled,
-    #[error("bridge qualification exceeded its deadline")]
+    #[error("generation qualification exceeded its deadline")]
     Deadline,
 }
 
@@ -121,6 +121,20 @@ pub struct QualifiedProvenance {
 }
 
 impl QualifiedProvenance {
+    pub(crate) fn from_bytes(bytes: Vec<u8>) -> Result<Self, QualificationError> {
+        let object = GeneratedObjectRef::new(
+            GeneratedContentId::new(blake3::hash(&bytes).to_hex().to_string())
+                .map_err(|error| QualificationError::Provenance(error.to_string()))?,
+            u64::try_from(bytes.len())
+                .map_err(|error| QualificationError::Provenance(error.to_string()))?,
+        )
+        .map_err(|error| QualificationError::Provenance(error.to_string()))?;
+        Ok(Self {
+            bytes: Cursor::new(bytes),
+            object,
+        })
+    }
+
     pub fn object(&self) -> &GeneratedObjectRef {
         &self.object
     }
@@ -455,7 +469,7 @@ pub fn qualify_bridge(
     })
 }
 
-fn input_identity(hash: &Sha256) -> InputIdentity {
+pub(crate) fn input_identity(hash: &Sha256) -> InputIdentity {
     let mut sha256 = [0; 32];
     for (index, byte) in sha256.iter_mut().enumerate() {
         *byte = u8::from_str_radix(&hash.as_str()[index * 2..index * 2 + 2], 16)

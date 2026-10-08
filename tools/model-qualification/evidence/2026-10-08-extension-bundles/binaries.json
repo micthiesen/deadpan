@@ -1,0 +1,10 @@
+{
+  "target/debug/deadpan-track": {
+    "bytes": 8354608,
+    "sha256": "40b608f6e2c7d1811cf50a3a087d459faa4520e0b530bf90fef2a4eb5b741c63"
+  },
+  "target/debug/deadpan-media-worker": {
+    "bytes": 3213016,
+    "sha256": "adf0f49ddc3e2bf4b7edb3b68570b8d5cffd1bdaa1a44c9e29f077f798da5e6c"
+  }
+}

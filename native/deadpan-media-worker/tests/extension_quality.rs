@@ -17,6 +17,9 @@ mod fixture;
 #[cfg(target_os = "macos")]
 #[path = "extension_quality/geometry.rs"]
 mod geometry;
+#[cfg(target_os = "macos")]
+#[path = "extension_quality/qualification.rs"]
+mod qualification;
 use fixture::{
     CONTEXT, Fixture, GENERATED, HEIGHT, WIDTH, convert, plan, plan_with_dimensions,
     retained_inputs,

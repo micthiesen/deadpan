@@ -1,25 +1,21 @@
-//! Developer verification of a completed, reaped extension worker's media.
-//! Includes pixel, face, mouth and region checks against retained inputs.
+//! Developer qualification of a completed, reaped extension worker's bundle.
+//! Includes provenance and all output checks against retained inputs.
 //! It does not admit Ready or edit a project.
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::fs::{self, File, OpenOptions};
-    use std::io::{Read, Write};
+    use std::io::{Read, Seek, Write};
     use std::path::{Path, PathBuf};
     use std::sync::atomic::AtomicBool;
     use std::time::{Duration, Instant};
 
-    use deadpan_jobs::artifact::{ArtifactLimits, ArtifactWorkspace, SnapshotInterruption};
-    use deadpan_jobs::{HostMessage, NativeCandidateManifest};
-    use deadpan_media::protocol::{
-        ConversionLimits, EXTENSION_PROTOCOL_VERSION, ExtensionConversionRequest,
-        ExtensionOperation, VideoContract,
-    };
-    use deadpan_media::{InputIdentity, canonicalize_extension};
+    use deadpan_jobs::artifact::ArtifactWorkspace;
+    use deadpan_jobs::{CandidateDeclaration, HostMessage, NativeCandidateManifest};
     use deadpan_models::{
-        ConditioningLimits, ExtensionConditioningReceipt, capture_extension_conditioning,
-        inspect_extension_geometry, inspect_extension_pixels,
+        ConditioningLimits, ExtensionConditioningReceipt, ExtensionQualification,
+        QualificationLimits, SelectedExtensionProvider, capture_extension_conditioning,
+        qualify_extension,
     };
     use serde::Deserialize;
     use serde_json::json;
@@ -32,8 +28,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         workspace: PathBuf,
         request: HostMessage,
         candidate: NativeCandidateManifest,
+        selected_provider: SelectedExtensionProvider,
         output_directory: PathBuf,
-        limits: ConversionLimits,
+        limits: QualificationLimits,
         retained_inputs: RetainedInputs,
     }
 
@@ -81,9 +78,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     config.request.validate()?;
     config.candidate.validate()?;
-    config.limits.validate()?;
+    config.limits.media.validate()?;
     let started = Instant::now();
-    let deadline = started + Duration::from_millis(config.limits.timeout_ms);
+    let deadline = started + Duration::from_millis(config.limits.media.timeout_ms);
     let remaining_ms = || -> Result<u64, Box<dyn std::error::Error>> {
         let remaining = u64::try_from(
             deadline
@@ -97,7 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let cancelled = AtomicBool::new(false);
     let retained_workspace = ArtifactWorkspace::open(&config.retained_inputs.directory)?;
-    let mut conditioning = capture_extension_conditioning(
+    let conditioning = capture_extension_conditioning(
         &retained_workspace,
         &config.request,
         config.retained_inputs.receipt.manifest().declaration(),
@@ -111,97 +108,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if conditioning.receipt() != &config.retained_inputs.receipt {
         return Err("retained inputs differ from the host's pre-launch receipt".into());
     }
-    let HostMessage::GenerateExtension {
-        plan,
-        provider,
-        output_workspace,
-        ..
-    } = &config.request
-    else {
-        return Err("expected an extension request".into());
-    };
-    let dimensions = plan.native_dimensions();
-    let rate = plan.native_frame_rate();
-    let video = &config.candidate.video;
-    if video.frames().frames() != i64::from(plan.native_frame_count())
-        || video.frame_rate() != rate
-        || video.width() != dimensions.width()
-        || video.height() != dimensions.height()
-        || &config.candidate.provider != provider.as_ref()
-    {
-        return Err("candidate differs from captured request".into());
-    }
     let workspace = ArtifactWorkspace::open(&config.workspace)?;
-    let mut input = workspace.snapshot_with_control(
-        output_workspace,
-        &config.candidate.native,
-        ArtifactLimits::new(config.limits.max_input_bytes)?,
-        || {
-            if Instant::now() >= deadline {
-                Err(SnapshotInterruption::Deadline)
-            } else {
-                Ok(())
-            }
-        },
-    )?;
-    let mut digest = [0_u8; 32];
-    for (index, byte) in digest.iter_mut().enumerate() {
-        *byte = u8::from_str_radix(
-            &config.candidate.native.sha256().as_str()[2 * index..2 * index + 2],
-            16,
-        )?;
-    }
-    let canonical = canonicalize_extension(
+    let bundle = qualify_extension(
         &config.codec,
-        &mut input,
-        InputIdentity { sha256: digest },
-        &ExtensionConversionRequest {
-            protocol: EXTENSION_PROTOCOL_VERSION,
-            operation: ExtensionOperation::SampleExtension,
-            native: VideoContract {
-                width: dimensions.width(),
-                height: dimensions.height(),
-                frames: plan.native_frame_count(),
-                rate_num: rate.numerator(),
-                rate_den: rate.denominator(),
-            },
-            sampling: plan.sampling_map().clone(),
-            input_byte_length: config.candidate.native.byte_length(),
-            limits: ConversionLimits {
-                timeout_ms: remaining_ms()?,
-                ..config.limits
-            },
-        },
-        &cancelled,
-    )?;
-    let pixels = inspect_extension_pixels(
-        &canonical,
-        &mut conditioning,
-        &config.request,
-        deadline,
-        &cancelled,
-    )?;
-    let (mut native, mut sampled, sampling) = canonical.into_parts();
-    let geometry = inspect_extension_geometry(
         &config.tracker,
-        &mut native,
-        &mut conditioning,
-        &config.request,
-        deadline,
+        &workspace,
+        ExtensionQualification {
+            request: &config.request,
+            declaration: &CandidateDeclaration::NativeExtensionV3(config.candidate),
+            selected_provider: &config.selected_provider,
+            conditioning,
+        },
+        QualificationLimits {
+            media: deadpan_media::protocol::ConversionLimits {
+                timeout_ms: remaining_ms()?,
+                ..config.limits.media
+            },
+            ..config.limits
+        },
         &cancelled,
     )?;
     let report = json!({
-        "scope": "decoded native and generated-only sampled media with motion, lighting, real-join, single-anchor face/region and chronological mouth rejection; provenance admission, Ready and acceptance remain open",
-        "native": {"object": native.object(), "report": native.report()},
-        "sampled": {"object": sampled.object(), "report": sampled.report()},
-        "sampling": sampling,
-        "pixels": pixels,
-        "geometry": geometry,
+        "scope": "complete extension media, provenance and rejection checks; no selected-Ready persistence or acceptance",
+        "binding": bundle.binding(), "declaration": bundle.declaration(),
+        "native": {"object": bundle.native().object(), "report": bundle.native().report()},
+        "sampled": {"object": bundle.sampled().object(), "report": bundle.sampled().report()},
+        "provenance": bundle.provenance().object(),
+        "conditioning": bundle.conditioning().receipt(),
+        "native_span": bundle.native_span(), "sampled_span": bundle.sampled_span(),
         "elapsed_seconds": started.elapsed().as_secs_f64(),
     });
     fs::create_dir(&config.output_directory)?;
+    let provenance_length = bundle.provenance().object().byte_length();
+    let (mut native, mut sampled, mut provenance, conditioning) = bundle.into_parts();
+    let (manifest, frames, opposite, signatures) = conditioning.into_parts();
+    let retained_directory = config.output_directory.join("conditioning");
+    fs::create_dir(&retained_directory)?;
+    let mut written = std::collections::BTreeSet::new();
+    for mut input in std::iter::once(manifest)
+        .chain(frames)
+        .chain(opposite)
+        .chain(std::iter::once(signatures))
+    {
+        if !written.insert(input.declaration().reference().clone()) {
+            continue;
+        }
+        let path = retained_directory.join(input.declaration().reference().as_str());
+        fs::create_dir_all(path.parent().ok_or("input path lacks a parent")?)?;
+        let length = input.object().byte_length();
+        input.rewind()?;
+        write_object(&path, &mut input, length)?;
+    }
     let native_length = native.object().byte_length();
     let sampled_length = sampled.object().byte_length();
+    write_object(
+        &config.output_directory.join("provenance.json"),
+        &mut provenance,
+        provenance_length,
+    )?;
     write_object(
         &config.output_directory.join("native.mkv"),
         &mut native,

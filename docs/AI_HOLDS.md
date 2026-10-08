@@ -310,11 +310,16 @@ joins against those retained inputs. Present opposite seams stay explicitly
 unconditioned. [Directional geometry checks](qualification/extension-geometry-2026-10-08.md)
 now inspect faces and the selected region outward from the one retained anchor,
 and mouth motion over generated pictures chronologically. Lost tracking cannot
-erase measured rejection. Full provenance admission still precedes extension Ready.
+erase measured rejection. [Complete host qualification](qualification/extension-bundles-2026-10-08.md)
+now binds those reports to the exact request, independently selected provider,
+retained inputs, converted media and strict worker provenance, and verifies the
+saved envelope without rerunning the model. Store promotion and accepted media
+integration still precede extension Ready.
 
-This is persistence groundwork. Native and headless execution still admit Bridge
-jobs only; extension Ready and acceptance remain closed until output qualification
-is implemented. See [durable extension inputs](qualification/extension-inputs-2026-10-07.md).
+Native and headless job execution still admit Bridge jobs only. Extension
+completion/Ready and acceptance remain closed until the qualified bundle is
+connected to storage and the accepted-media representation. See
+[durable extension inputs](qualification/extension-inputs-2026-10-07.md).
 
 ## Headless commands
 

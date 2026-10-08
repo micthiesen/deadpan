@@ -6,12 +6,27 @@ use serde_json::{Map, Value};
 
 use crate::{GenerationBinding, QualificationError};
 
+mod extension;
+pub(crate) use extension::validate as validate_extension;
+
 // Required provenance fields are typed. Additional backend diagnostics are
 // preserved in the original bytes, but never authorize media or model identity.
 #[derive(Deserialize)]
 struct WorkerProvenance {
     schema_version: u32,
     request_binding: GenerationBinding,
+    #[serde(flatten)]
+    claims: WorkerClaims,
+    seed: u64,
+    context: crate::BridgeContext,
+    native_sha256: Sha256,
+    native_bytes: u64,
+}
+
+/// Loading claims shared by Bridge and Extension. Their shape and bounds do
+/// not attest that the worker loaded the claimed installed bytes.
+#[derive(Deserialize)]
+struct WorkerClaims {
     runtime_commit: String,
     pack_revision: String,
     gemma_revision: String,
@@ -20,14 +35,10 @@ struct WorkerProvenance {
     verified_assets: Vec<AssetClaim>,
     prompt_version: String,
     prompt: String,
-    seed: u64,
-    context: crate::BridgeContext,
     configuration: Map<String, Value>,
     model_color_interpretation: String,
     temporal_interpolation: String,
     conditioning_preprocessing: String,
-    native_sha256: Sha256,
-    native_bytes: u64,
 }
 
 #[derive(Deserialize)]
@@ -61,6 +72,11 @@ pub(crate) fn validate(
             "worker provenance contradicts its request or native declaration",
         ));
     }
+    validate_claims(&report.claims)
+}
+
+fn validate_claims(report: &WorkerClaims) -> Result<(), QualificationError> {
+    let invalid = |reason: &str| QualificationError::Provenance(reason.into());
     for revision in [
         &report.runtime_commit,
         &report.pack_revision,
@@ -107,16 +123,16 @@ pub(crate) fn validate(
         return Err(invalid("missing or oversized model asset receipts"));
     }
     let mut identities = BTreeSet::new();
-    for asset in report.verified_assets {
+    for asset in &report.verified_assets {
         if WorkspaceRef::new(asset.repository.clone()).is_err()
             || asset.size == 0
-            || !identities.insert((asset.repository, asset.path))
+            || !identities.insert((&asset.repository, &asset.path))
         {
             return Err(invalid("invalid or duplicate model asset receipt"));
         }
         // Deserialization checked the digest; retaining it does not independently
         // attest the worker's claim that these bytes were loaded by its runtime.
-        let _ = asset.sha256;
+        let _ = &asset.sha256;
     }
     // Exact prepared input bytes are independently retained by the host. The
     // worker's source/model loading claims still require installed-pack attestation.

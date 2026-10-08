@@ -422,7 +422,7 @@ impl AcceptedBridgeEvidence {
     }
 }
 
-fn verify_object(
+pub(crate) fn verify_object(
     bytes: &[u8],
     expected: &GeneratedObjectRef,
     maximum: usize,
@@ -439,7 +439,7 @@ fn verify_object(
     Ok(())
 }
 
-fn verify_declaration(
+pub(crate) fn verify_declaration(
     bytes: &[u8],
     declaration: &WorkspaceArtifact,
 ) -> Result<(), QualificationError> {

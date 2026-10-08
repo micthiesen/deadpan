@@ -207,7 +207,7 @@ policy. FromRight swaps the conditioned join; absent and unconditioned opposite
 seams remain explicit. Real decoder/converter fixtures cover hidden flashes,
 worker-input tampering and the single sampled middle. The development media
 example requires the saved input receipt and reports these checks. Ready remains
-closed pending full provenance admission and accepted-extension integration.
+closed pending saved completion and accepted-extension integration.
 
 [Directional extension geometry](../qualification/extension-geometry-2026-10-08.md)
 now uses one retained anchor and generated-only coverage. The real Vision worker
@@ -217,8 +217,15 @@ prefix rejection after later loss; mouth checks stay chronological. Host reports
 bind the private movie, retained context/receipt and captured selected target,
 and recompute the unchanged numeric policies. The developer media qualifier
 requires `tracker` and runs pixel plus geometry checks under one deadline.
-The next product boundary is complete worker/host provenance admission, followed
-by the accepted-extension representation, store promotion and native controls.
+[Complete extension qualification](../qualification/extension-bundles-2026-10-08.md)
+now admits strict schema-3 worker provenance, independently selected capability,
+both canonical movies and all required rejection reports under one deadline.
+The host envelope is revalidated against exact retained manifest bytes before
+returning a private qualified bundle. Stored readers recompute policy without
+the model or Vision, while media consumers still must verify/decode object bytes.
+The next product boundary is the accepted-extension representation, store
+completion/promotion and native controls. Approved extension capability remains
+closed pending the larger measured generation envelope.
 Use a true single anchor for those checks, with FromRight tracking outward in
 reverse and mouth inspection restricted to chronological generated pictures.
 

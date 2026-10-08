@@ -16,6 +16,9 @@ use sha2::Digest;
 
 use super::*;
 
+#[path = "conditioning_extension_pure_tests.rs"]
+mod pure;
+
 #[test]
 fn adversarial_extension_conditioning_and_receipts() {
     use deadpan_chaos::{Target, Verdict, fuzz, reject};

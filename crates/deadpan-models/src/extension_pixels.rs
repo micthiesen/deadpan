@@ -4,13 +4,16 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
+use deadpan_core::GeneratedObjectRef;
 use deadpan_jobs::{ExtensionGenerationPlan, HostMessage, MotionAmount};
 use deadpan_media::CanonicalExtension;
+use deadpan_media::protocol::VideoContract;
 use serde::{Deserialize, Serialize};
 
 use crate::quality_input::Control;
 use crate::{
-    ExtensionEndpointReport, ExtensionMotionReport, QualificationError,
+    ExtensionConditioningReceipt, ExtensionContext, ExtensionEndpointReport,
+    ExtensionGenerationBinding, ExtensionMotionReport, QualificationError,
     RetainedExtensionConditioning,
 };
 
@@ -47,19 +50,43 @@ impl ExtensionPixelReport {
         conditioning: &RetainedExtensionConditioning,
         request: &HostMessage,
     ) -> Result<(), QualificationError> {
-        let (plan, motion) = validate_inputs(media, conditioning, request)?;
+        validate_inputs(media, conditioning, request)?;
+        let binding = ExtensionGenerationBinding::from_request(request)?;
+        self.validate_bound(
+            (&media.native().report().video, media.native().object()),
+            (&media.sampled().report().video, media.sampled().object()),
+            conditioning.context(),
+            conditioning.receipt(),
+            &binding,
+        )
+    }
+
+    /// Validate saved observations and exact contracts without opening media.
+    /// The caller owns admission of manifest and media bytes to these identities.
+    pub(crate) fn validate_bound(
+        &self,
+        native: (&VideoContract, &GeneratedObjectRef),
+        sampled: (&VideoContract, &GeneratedObjectRef),
+        context: &ExtensionContext,
+        receipt: &ExtensionConditioningReceipt,
+        binding: &ExtensionGenerationBinding,
+    ) -> Result<(), QualificationError> {
+        receipt.validate_binding(context, binding)?;
+        let plan = &binding.plan;
+        let motion = binding.constraints.motion;
+        if *native.0 != crate::extension_motion::native_contract(plan)
+            || *sampled.0 != crate::extension_endpoints::sampled_contract(plan)?
+        {
+            return Err(invalid(
+                "native/sampled contracts differ from the captured extension plan",
+            ));
+        }
         if self.schema_version != 1 || self.profile != PROFILE {
             return Err(invalid("unsupported extension pixel report"));
         }
-        self.motion
-            .validate(plan, media.native().object(), motion)?;
-        self.endpoints.validate(
-            plan,
-            media.sampled().object(),
-            conditioning.context(),
-            conditioning.receipt(),
-            motion,
-        )
+        self.motion.validate(plan, native.1, motion)?;
+        self.endpoints
+            .validate(plan, sampled.1, context, receipt, motion)
     }
 }
 

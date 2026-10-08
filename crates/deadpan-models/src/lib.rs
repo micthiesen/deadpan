@@ -1,4 +1,4 @@
-//! Host validation of complete bridge candidate bundles.
+//! Host validation of complete bridge and extension candidate bundles.
 //!
 //! The worker supplies native footage and provenance. The host retains their
 //! declared identities, derives both masters from one immutable native snapshot,
@@ -9,6 +9,21 @@
 mod qualification;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use qualification::*;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_binding;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_binding::{ExtensionGenerationBinding, SelectedExtensionProvider};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_qualification;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_qualification::{
+    ExtensionQualification, QualifiedExtensionBundle, qualify_extension,
+};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod stored_extension;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use stored_extension::{StoredExtensionProvenance, ValidatedExtensionEvidence};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod quality;
