@@ -64,6 +64,8 @@ pub(crate) fn digest(connection: &Connection) -> Result<crate::audit::Chain, Sto
     }
     hasher.update([0]);
     hasher.update(crate::generation_preparations::digest(connection)?);
+    hasher.update(crate::generation_origins::digest(connection)?);
+    hasher.update(crate::generation_intents::digest(connection)?);
     Ok(hasher.finalize().into())
 }
 

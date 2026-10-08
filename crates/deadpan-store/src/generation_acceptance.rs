@@ -87,25 +87,63 @@ impl ProjectStore {
     ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
         self.verify_bundle_objects(&input.expected_receipt, limits)?;
+        let resolver = self.context_resolver.clone();
         let documents = &self.documents;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_acceptance(&transaction, documents, input)?;
-        if !relevance.observations.iter().any(|observation| {
-            observation.request_id == input.identity.request_id
-                && observation.after_context
-                    == ContextObservation::Resolved(observation.binding.context_sha256.clone())
-        }) {
+        let admitted_request =
+            crate::generation::read_stored_request(&transaction, &input.identity.request_id)?
+                .ok_or_else(|| invalid("qualified acceptance has no retained request"))?;
+        let authored: CommandRequest = serde_json::from_str(&plan.request_json)?;
+        let artifact = match authored.command.base_command() {
+            Command::AcceptGeneratedHold { artifact, .. }
+            | Command::EditScoped {
+                edit: ScopedNodeEdit::AcceptGeneratedHold { artifact, .. },
+                ..
+            } => artifact.clone(),
+            _ => {
+                return Err(invalid(
+                    "qualified acceptance has no exact generated artifact",
+                ));
+            }
+        };
+        let automatically_replaced = plan.boundary_births.iter().any(|birth| {
+            matches!(&birth.origin,
+                crate::generation_preparations::PreparationOrigin::AcceptedBoundary { accepted, .. }
+                if **accepted == artifact)
+        });
+        if !automatically_replaced
+            && !relevance.observations.iter().any(|observation| {
+                observation.request_id == input.identity.request_id
+                    && observation.after_context
+                        == ContextObservation::Resolved(observation.binding.context_sha256.clone())
+            })
+        {
             return Err(invalid(
                 "acceptance must preserve the selected request's resolved context",
             ));
         }
-        let (outcome, next) =
-            write_command_plan(&transaction, documents, plan, Some(relevance), None)?;
+        let (outcome, next) = write_command_plan(
+            &transaction,
+            documents,
+            plan,
+            Some(relevance),
+            resolver.as_deref(),
+        )?;
         // Operational: an accepted variant never expires, even after Undo,
         // because history keeps naming it.
         crate::generation_retention::record_accepted(&transaction, &input.identity)?;
+        let origin = crate::generation_origins::capture(
+            &transaction,
+            &admitted_request,
+            &input.identity,
+            &artifact,
+            &input.new_revision,
+        )?;
+        crate::generation_origins::insert(&transaction, &origin)?;
+        crate::audit::refresh_generation_scopes(&transaction)?;
         transaction.commit()?;
         documents.insert(next);
         Ok(outcome)
@@ -260,10 +298,26 @@ fn prepare_acceptance(
         new_revision: input.new_revision.clone(),
         command: operation,
     };
-    prepare_admitted_command(connection, documents, &command, Some(&artifact))
+    let stored = crate::generation::read_stored_request(connection, &input.identity.request_id)?
+        .ok_or_else(|| invalid("qualified acceptance has no retained request"))?;
+    let origin = crate::generation_origins::prepare_acceptance_origin(
+        connection,
+        &stored,
+        &input.identity,
+        &artifact,
+        &input.new_revision,
+    )?;
+    let mut plan =
+        prepare_admitted_command(connection, documents, &command, Some((&artifact, &origin)))?;
+    plan.acceptance = Some(input.identity.clone());
+    Ok(plan)
 }
 
-fn asset_record(object: &GeneratedObjectRef, video: &VideoSpec, span: SourceSpan) -> AssetRecord {
+pub(crate) fn asset_record(
+    object: &GeneratedObjectRef,
+    video: &VideoSpec,
+    span: SourceSpan,
+) -> AssetRecord {
     AssetRecord {
         source_qualification: None,
         label: format!("Generated {}", object.content().digest()),

@@ -414,17 +414,86 @@ fn an_hdr_original_is_refused_with_a_truthful_reason() -> Result {
 #[cfg(feature = "synthetic-worker")]
 #[test]
 fn a_generated_neighbour_is_recorded_as_its_artifact() -> Result {
-    let root = tempfile::tempdir()?;
-    let fixture = match recipes::generated::generated_pause(&root.path().join("fixture")) {
-        Ok(fixture) => fixture,
-        Err(error) => {
-            eprintln!("skipped: {error}");
+    use deadpan_cli::generation::acceptance;
+    use deadpan_cli::generation::attempt::{self, AllocateInput, synthetic};
+    use deadpan_jobs::JobState;
+    use std::path::PathBuf;
+
+    let ffmpeg = std::env::var_os("DEADPAN_BRIDGE_FFMPEG")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/opt/homebrew/bin/ffmpeg"));
+    let media_worker = std::env::var_os("DEADPAN_MEDIA_WORKER")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(recipes::cli_path()).with_file_name("deadpan-media-worker"));
+    let worker = synthetic::SyntheticWorker {
+        ffmpeg,
+        landmark_worker: media_worker.with_file_name("deadpan-track"),
+        media_worker,
+    };
+    for tool in [
+        &worker.ffmpeg,
+        &worker.media_worker,
+        &worker.landmark_worker,
+    ] {
+        if !tool.is_file() {
+            eprintln!(
+                "skipped: synthetic generated-neighbour fixture needs {}",
+                tool.display()
+            );
             return Ok(());
         }
+    }
+    let root = tempfile::tempdir()?;
+    let fixture = recipes::black_pause(&root.path().join("fixture"))?;
+    // Author both Holds before conditioning the first one. Adding `after`
+    // after acceptance would change the first Hold's right input and correctly
+    // restore its fallback. The first Hold occupies Edit [15, 27); `after`
+    // occupies [27, 39), followed by Original 27 at Edit 39.
+    let origin = insert_hold(&fixture.package, 27, "after", 12)?;
+    let cancelled = AtomicBool::new(false);
+    let inputs = conditioning::prepare(
+        &fixture.package,
+        &origin,
+        &NodeId::new("black")?,
+        &cancelled,
+    )?;
+    assert!(matches!(
+        manifest(&inputs)?
+            .boundaries()
+            .ok_or("initial boundaries")?
+            .right,
+        BoundaryPicture::AuthoredBlack { .. }
+    ));
+    let mut store = ProjectStore::open(&fixture.package, AccessMode::ReadWrite)?;
+    let allocated = attempt::allocate(
+        &mut store,
+        AllocateInput {
+            hold: NodeId::new("black")?,
+            expected_revision: origin,
+            seed: 11,
+            inputs,
+        },
+    )?;
+    let run = synthetic::run(
+        &allocated,
+        &worker,
+        |_| {},
+        |record| {
+            attempt::record(&mut store, &allocated, &record).map_err(|error| error.to_string())
+        },
+        &cancelled,
+    );
+    let finished = attempt::finish(&mut store, &allocated, run)?;
+    assert_eq!(finished.state, JobState::Ready, "{:?}", finished.failure);
+    let revision = RevisionId::new("generated-neighbour-accepted")?;
+    acceptance::accept(&mut store, &allocated.request.request_id, revision.clone())?;
+    let accepted = store.snapshot()?;
+    let NodeKind::Hold { recipe } = &accepted.nodes()[&NodeId::new("black")?].kind else {
+        panic!("first Hold remains authored");
     };
-    // The generated Hold occupies Edit [15, 27); a new pause at 27 has it on
-    // its left and Original 27 (Edit 39) on its right.
-    let revision = insert_hold(&fixture.package, 27, "after", 12)?;
+    assert!(matches!(recipe.video, HoldVideo::Generated { .. }));
+    assert!(store.generation_preparations(None, 64)?.is_empty());
+    drop(store);
     let inputs = conditioning::prepare(
         &fixture.package,
         &revision,

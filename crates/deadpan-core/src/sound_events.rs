@@ -429,7 +429,7 @@ fn validate_group_ownership(
 
 fn preserves_sound_clocks(command: &Command) -> bool {
     match command {
-        Command::Compound { .. } => false,
+        Command::Compound { .. } | Command::WithBoundaryReplacements { .. } => false,
         Command::SetSound { .. }
         | Command::SetBeatSound { .. }
         | Command::DeleteBeatSound { .. }

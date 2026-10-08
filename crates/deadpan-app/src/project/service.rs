@@ -1784,6 +1784,11 @@ impl Service {
                     .register_prepared_source(&registration, &token, None, &cancel)
                 {
                     Ok(outcome) => {
+                        if let Some(commit) = &outcome.commit {
+                            self.capture_preparation_notices(
+                                &commit.generation_preparation_notices,
+                            );
+                        }
                         self.cached = Some((cached_asset, token));
                         self.committed = outcome.commit.and_then(|commit| {
                             registration
@@ -2006,6 +2011,9 @@ impl Service {
             .writer()?
             .register_prepared_source(&registration, &prepared, None, &active.cancelled)
             .map_err(display)?;
+        if let Some(commit) = &outcome.commit {
+            self.capture_preparation_notices(&commit.generation_preparation_notices);
+        }
         self.cached = Some((outcome.asset_id.clone(), prepared));
         if let (Some(insertion), Some(commit)) = (&registration.insertion, &outcome.commit) {
             self.committed = Some(CommittedEdit {

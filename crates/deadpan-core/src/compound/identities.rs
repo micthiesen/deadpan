@@ -190,6 +190,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             marks.extend(&identities.authored.marks);
         }
         Command::Compound { .. }
+        | Command::WithBoundaryReplacements { .. }
         | Command::SlipSource { .. }
         | Command::SetSound { .. }
         | Command::SetBeatSound { .. }

@@ -67,6 +67,7 @@ impl Service {
                     .commit(self.writer()?, Some(&token), &cancelled);
                 match outcome {
                     Ok(commit) => {
+                        self.capture_preparation_notices(&commit.generation_preparation_notices);
                         self.cached = Some((cached_asset, token));
                         self.complete_moment(&moment, commit.revision_id);
                         return Ok(());
@@ -129,6 +130,7 @@ impl Service {
             .request
             .commit(self.writer()?, Some(&prepared), &active.cancelled)
             .map_err(display)?;
+        self.capture_preparation_notices(&commit.generation_preparation_notices);
         let asset = moment
             .request
             .asset()

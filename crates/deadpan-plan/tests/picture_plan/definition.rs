@@ -1,7 +1,7 @@
 use super::*;
 use deadpan_plan::{DefinitionPictureSample, PictureSample};
 
-fn target(node: &str, repeats: &[(&str, Option<u32>)]) -> ScopedNodeTarget {
+pub(super) fn target(node: &str, repeats: &[(&str, Option<u32>)]) -> ScopedNodeTarget {
     ScopedNodeTarget {
         node: id(node),
         repeats: repeats
@@ -38,7 +38,7 @@ fn same_picture(local: &DefinitionPictureSample, root: &PictureSample) {
     assert_eq!(local.lookup, root.lookup);
 }
 
-fn nested(plays: u32) -> ProjectDocument {
+pub(super) fn nested(plays: u32) -> ProjectDocument {
     document(
         &["outer"],
         vec![

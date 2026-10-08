@@ -769,6 +769,19 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
     let package = scratch.path().join("compacted.deadpan");
     let mut store = accepted(&package)?;
     let recipe = recipe(&store)?;
+    // Preserve the accepted Original inside its own absent-boundary definition
+    // while ordinary authored insertion admits the copied artifacts below.
+    store.commit(&command(
+        &store,
+        "isolate-original",
+        Command::WrapRepeat {
+            node: NodeId::new("hold")?,
+            id: NodeId::new("original-definition")?,
+            plays: 1,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+    )?)?;
     let count = 257;
     let children = (0..count)
         .map(|index| NodeId::new(format!("copy-{index}")))
@@ -783,10 +796,24 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
             )
         })
         .collect();
-    nodes.insert(
-        group.clone(),
-        BeatNode::sequence("Copies", children.clone()),
-    );
+    // Each copy owns a one-play definition with the same absent endpoints as
+    // the accepted origin. Sequential unwrapped copies would correctly become
+    // boundary replacements before this duration/compaction fixture reaches
+    // its extension commands.
+    let mut wrappers = Vec::new();
+    for (index, child) in children.iter().enumerate() {
+        let wrapper = NodeId::new(format!("copy-definition-{index}"))?;
+        let mut node = BeatNode::sequence("Copied definition", Vec::new());
+        node.kind = NodeKind::Repeat {
+            child: child.clone(),
+            iterations: deadpan_core::IterationOrder::new(RevisionId::new("copies")?, 1)?,
+            gap: None,
+            escalation: None,
+        };
+        nodes.insert(wrapper.clone(), node);
+        wrappers.push(wrapper);
+    }
+    nodes.insert(group.clone(), BeatNode::sequence("Copies", wrappers));
     store.commit(&command(
         &store,
         "copies",
@@ -826,6 +853,21 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
         .generation_preparations
         .remove(0);
     store.cancel_generation_preparation(&inserted, 0)?;
+    // Capture current controls for this explicit definition. Wrapping changed
+    // the original request address; its old request must not become current.
+    let source_request = RequestId::new("extension-controls")?;
+    let (input, plan, _) = replacement_input(&store, source_request.as_str(), 12)?;
+    store.record_scoped_bridge_generation_request(
+        input,
+        deadpan_core::ScopedNodeTarget {
+            node: NodeId::new("hold")?,
+            repeats: vec![deadpan_core::RepeatEditStep {
+                repeat: NodeId::new("original-definition")?,
+                branch: deadpan_core::RepeatEditBranch::Default,
+            }],
+        },
+        plan,
+    )?;
     let source_id = resize(&mut store, "first-extension", 18)?
         .generation_preparations
         .remove(0);
@@ -900,15 +942,15 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
     // The source constraints remain a dependency after full-row compaction.
     // Changing them must invalidate the receipt, including the warm read path.
     let original_constraints: String = database.query_row(
-        "SELECT constraints FROM generation_requests WHERE request_id='request'",
-        [],
+        "SELECT constraints FROM generation_requests WHERE request_id=?1",
+        [source_request.as_str()],
         |row| row.get(0),
     )?;
     let mut changed = constraints();
     changed.motion = MotionAmount::Subtle;
     database.execute(
-        "UPDATE generation_requests SET constraints=?1 WHERE request_id='request'",
-        [serde_json::to_string(&changed)?],
+        "UPDATE generation_requests SET constraints=?1 WHERE request_id=?2",
+        rusqlite::params![serde_json::to_string(&changed)?, source_request.as_str()],
     )?;
     assert!(store.generation_preparations(None, 1).is_err());
     let before = store.snapshot()?;
@@ -923,8 +965,8 @@ fn compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls(
     assert!(store.commit(&late).is_err());
     assert_eq!(store.snapshot()?, before);
     database.execute(
-        "UPDATE generation_requests SET constraints=?1 WHERE request_id='request'",
-        [original_constraints],
+        "UPDATE generation_requests SET constraints=?1 WHERE request_id=?2",
+        rusqlite::params![original_constraints, source_request.as_str()],
     )?;
     store.validate_full()?;
     database.execute(

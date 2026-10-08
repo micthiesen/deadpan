@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Build and freeze the exact Cargo-reported executables for qualification."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--release', action='store_true')
+parser.add_argument('--output', type=Path, required=True)
+args = parser.parse_args()
+args.output.mkdir()
+names = ['deadpan-app', 'deadpan-cli', 'deadpan-media-worker', 'deadpan-transcribe', 'deadpan-track']
+command = ['cargo', 'build', '--locked', '--features', 'deadpan-app/ui-harness', '--message-format=json-render-diagnostics']
+if args.release:
+    command.append('--release')
+for name in names:
+    command.extend(['-p', name])
+environment = dict(os.environ)
+environment['DEADPAN_FFMPEG_PREFIX'] = '/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix'
+started = time.monotonic()
+with (args.output / 'cargo.jsonl').open('w') as output, (args.output / 'build.log').open('w') as errors:
+    build = subprocess.run(command, cwd='/Users/michael/Code/deadpan', env=environment, stdout=output, stderr=errors, check=False)
+result = {'command': command, 'exit': build.returncode, 'seconds': round(time.monotonic() - started, 3), 'binaries': {}}
+if build.returncode == 0:
+    artifacts = {}
+    for line in (args.output / 'cargo.jsonl').read_text().splitlines():
+        item = json.loads(line)
+        if item.get('reason') == 'compiler-artifact' and item.get('executable') and 'bin' in item['target']['kind']:
+            artifacts[item['target']['name']] = Path(item['executable'])
+    if not all(name in artifacts for name in names):
+        raise RuntimeError(f'Missing binaries from Cargo inventory: {set(names) - artifacts.keys()}')
+    directory = args.output / 'bin'
+    directory.mkdir()
+    for name in names:
+        copied = directory / name
+        shutil.copy2(artifacts[name], copied)
+        with copied.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        result['binaries'][name] = {'source': str(artifacts[name]), 'path': str(copied), 'sha256': digest}
+(args.output / 'summary.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2), flush=True)
+raise SystemExit(build.returncode)

@@ -58,6 +58,10 @@ macro_rules! define_commands {
     };
 }
 define_commands! {
+    /// Replay the unchanged base command, then restore exact accepted providers.
+    WithBoundaryReplacements {
+        edit: crate::BoundaryReplacementEdit,
+    },
     /// One resolved, bounded sequence with frozen register inputs.
     Compound {
         transaction: crate::ResolvedTransaction,
@@ -564,6 +568,17 @@ impl<'de> Deserialize<'de> for Command {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let value = crate::compound::wire::read(deserializer)?;
         CommandWire::deserialize(value).map_err(serde::de::Error::custom)
+    }
+}
+
+impl Command {
+    /// The explicit command beneath the one permitted automatic-effect envelope.
+    /// This classifies admissions and user intent; execution replays the envelope.
+    pub fn base_command(&self) -> &Self {
+        match self {
+            Self::WithBoundaryReplacements { edit } => edit.command(),
+            command => command,
+        }
     }
 }
 
@@ -1074,6 +1089,24 @@ fn apply_with_durations_captured(
         &request.expected_revision,
         &request.new_revision,
     )?;
+    if let Command::WithBoundaryReplacements { edit } = &request.command {
+        let base = CommandRequest {
+            project_id: request.project_id.clone(),
+            expected_revision: request.expected_revision.clone(),
+            new_revision: request.new_revision.clone(),
+            command: edit.command().clone(),
+        };
+        let (_, mut result, _) =
+            apply_with_durations_captured(document, &base, previous, isolation)?;
+        edit.restore(&mut result)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(edit.command()),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
     if let Command::Duplicate {
         parent,
         selection,
@@ -1813,6 +1846,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::WithBoundaryReplacements { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "boundary replacements require the complete replay entrypoint",
+            ));
+        }
         Command::Compound { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -3214,6 +3253,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::WithBoundaryReplacements { edit } => description(edit.command()),
         Command::Compound { .. } => "Apply resolved transaction",
         Command::SetSound { .. } => "Set sound event",
         Command::SetBeatSound { .. } => "Set beat sound event",

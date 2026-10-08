@@ -271,7 +271,7 @@ fn assert_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Resu
 }
 
 #[test]
-fn interior_and_replacement_reuse_accepted_artifacts_without_reviving_generation() -> Result {
+fn interior_and_replacement_keep_artifacts_and_replace_changed_conditioning() -> Result {
     for replace in [false, true] {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("historical-placement.deadpan");
@@ -349,7 +349,8 @@ fn interior_and_replacement_reuse_accepted_artifacts_without_reviving_generation
         let preview = store.preview(&command)?;
         assert_eq!(preview.duration_delta, if replace { 9 } else { 12 });
         assert_eq!(authored(&package)?, cells);
-        assert_eq!(store.commit(&command)?.edit, preview);
+        let committed = store.commit(&command)?;
+        assert_eq!(committed.edit, preview);
         let after = store.snapshot()?;
         assert_eq!(after.duration()?.frames(), if replace { 14 } else { 17 });
         assert_eq!(after.assets(), accepted.assets());
@@ -357,9 +358,33 @@ fn interior_and_replacement_reuse_accepted_artifacts_without_reviving_generation
             NodeKind::Hold { recipe } => &recipe.video,
             _ => unreachable!(),
         };
-        assert!(after.nodes().values().any(|node| {
+        assert!(!after.nodes().values().any(|node| {
             matches!(&node.kind, NodeKind::Hold { recipe } if &recipe.video == expected_provider)
         }));
+        // The copied media remains admitted and retained, but its new black
+        // neighbors differ from the original absent definition endpoints.
+        assert_eq!(committed.generation_preparations.len(), 1);
+        let preparation = store
+            .generation_preparation(&committed.generation_preparations[0])?
+            .unwrap();
+        let HoldVideo::Generated {
+            accepted: generated,
+        } = expected_provider
+        else {
+            unreachable!()
+        };
+        assert_eq!(
+            preparation.origin.accepted_artifact(),
+            Some(&generated.artifact)
+        );
+        assert_eq!(
+            preparation.intent.cause,
+            deadpan_store::generation_intents::IntentCause::SourceBoundaryChanged
+        );
+        assert_eq!(
+            preparation.state,
+            deadpan_store::generation_preparations::PreparationState::Queued
+        );
         assert_eq!(
             store
                 .generation_request(&input.identity.request_id)?
@@ -369,12 +394,17 @@ fn interior_and_replacement_reuse_accepted_artifacts_without_reviving_generation
         );
         store.undo(after.revision_id(), RevisionId::new("undo-placement")?)?;
         assert_authored(&store.snapshot()?, &before)?;
-        store.redo(
+        let redone = store.redo(
             &RevisionId::new("undo-placement")?,
             RevisionId::new("redo-placement")?,
         )?;
+        assert_eq!(redone.generation_preparations.len(), 1);
+        assert_ne!(
+            redone.generation_preparations,
+            committed.generation_preparations
+        );
         assert_authored(&store.snapshot()?, &after)?;
-        store.validate()?;
+        store.validate_full()?;
         drop(store);
         let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
         assert_authored(&reader.snapshot()?, &after)?;

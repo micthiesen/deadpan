@@ -18,6 +18,9 @@ use crate::{Picture, PictureFraming, PictureSample, PlanError};
 mod picture_definition;
 pub use picture_definition::{DefinitionPictureSample, ScopedHoldBoundaries};
 use picture_definition::{PictureBudget, PictureWalk};
+#[path = "picture_definition_index.rs"]
+mod picture_definition_index;
+use picture_definition_index::DefinitionIndex;
 
 #[path = "audio.rs"]
 mod audio;
@@ -144,6 +147,7 @@ pub struct RenderPlan {
     // correspondence proofs. Historical clocks live in `audio_bindings`.
     sound_clock_layout: Option<Arc<deadpan_core::FrozenAudioLayout>>,
     parents: Vec<Option<usize>>,
+    definition_index: Option<Arc<DefinitionIndex>>,
 }
 
 /// One journal reference paired with the live processing scope. The proof is
@@ -778,6 +782,9 @@ impl RenderPlan {
                 parents[position(child)] = Some(parent);
             }
         }
+        let definition_index = Some(Arc::new(DefinitionIndex::compile(
+            document, &nodes, &by_id, &parents, root,
+        )?));
         let mut plan = Self {
             metadata: PlanMetadata {
                 project_id: document.project_id().clone(),
@@ -791,6 +798,7 @@ impl RenderPlan {
             by_id,
             root,
             parents,
+            definition_index,
             audio_bindings: document.audio_bindings().clone(),
             sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
                 None
@@ -1117,6 +1125,7 @@ impl RenderPlan {
         budget: &mut PictureBudget,
     ) -> Result<DefinitionPictureSample, PlanError> {
         let sample = self.walk_picture_at(definition, position, cutaways, budget)?;
+        let hold_provider = self.definition_hold_witness(definition, position, &sample);
         Ok(DefinitionPictureSample {
             project_id: self.metadata.project_id.clone(),
             revision_id: self.metadata.revision_id.clone(),
@@ -1130,6 +1139,7 @@ impl RenderPlan {
             framing: sample.framing,
             captions: sample.captions,
             lookup: sample.lookup,
+            hold_provider,
         })
     }
 

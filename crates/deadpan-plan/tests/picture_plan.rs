@@ -6,6 +6,8 @@ use proptest::prelude::*;
 
 #[path = "picture_plan/definition.rs"]
 mod definition;
+#[path = "picture_plan/definition_batch.rs"]
+mod definition_batch;
 #[path = "picture_plan/follow.rs"]
 mod follow;
 #[path = "picture_plan/retained_framing.rs"]

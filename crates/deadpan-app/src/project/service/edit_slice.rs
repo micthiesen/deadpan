@@ -265,6 +265,7 @@ impl Service {
         let outcome = request
             .commit(self.writer()?, None, &AtomicBool::new(false))
             .map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.complete_slice_placement(
             cursor,
             continuation_scope,

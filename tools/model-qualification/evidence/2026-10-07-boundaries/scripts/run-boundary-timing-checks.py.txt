@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+root = Path('/tmp/deadpan-resume-20261006')
+repo = Path('/Users/michael/Code/deadpan')
+env = dict(os.environ)
+env['DEADPAN_FFMPEG_PREFIX'] = '/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix'
+env['DEADPAN_REQUIRE_SYNTHETIC_WORKER'] = '1'
+reports = []
+
+def run(name, command):
+    started = time.monotonic()
+    load = subprocess.check_output(['uptime'], text=True).strip()
+    with (root / f'boundary-timing-{name}.log').open('w') as log:
+        result = subprocess.run([str(item) for item in command], cwd=repo,
+                                env=env, stdout=log, stderr=subprocess.STDOUT)
+    report = {'name': name, 'command': [str(item) for item in command],
+              'exit': result.returncode, 'seconds': round(time.monotonic()-started, 3),
+              'load_before': load}
+    reports.append(report)
+    (root / 'boundary-timing-checks.json').write_text(json.dumps(reports, indent=2) + '\n')
+    print(json.dumps(report), flush=True)
+    if result.returncode:
+        raise SystemExit(result.returncode)
+
+run('fmt', ['cargo', 'fmt', '--all'])
+run('default-clippy', ['cargo', 'clippy', '-p', 'deadpan-app', '--all-targets', '--locked', '--', '-D', 'warnings'])
+run('ui-clippy', ['cargo', 'clippy', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--locked', '--', '-D', 'warnings'])
+run('tests', ['cargo', 'nextest', 'run', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked',
+              '-E', 'test(preview::harness::telemetry)'])
+run('diff', ['git', 'diff', '--check'])
+source = json.loads((root / 'boundary-final-source.json').read_text())
+changed = {}
+for name, before in source['changed_source_sha256'].items():
+    after = hashlib.sha256((repo / name).read_bytes()).hexdigest()
+    if before != after:
+        changed[name] = {'before': before, 'after': after}
+for name in ['crates/deadpan-app/src/preview/slip.rs', 'crates/deadpan-app/src/preview/harness/telemetry.rs']:
+    changed[name] = {'before': source['changed_source_sha256'].get(name),
+                     'after': hashlib.sha256((repo / name).read_bytes()).hexdigest()}
+(root / 'boundary-timing-source.json').write_text(json.dumps({
+    'base_source_manifest': 'boundary-final-source.json', 'changes': changed,
+    'scope': 'Only ui-harness instrumentation and its regression test changed after the packaged build.'
+}, indent=2) + '\n')
+build = root / 'boundary-timing-release-build'
+run('build', ['python3', root / 'build-insertion-snapshots.py', '--release', '--output', build])
+app = build / 'bin/deadpan-app'
+for scenario in ['ai-boundaries', 'rapid-input', 'edit-latency', 'large-project']:
+    suffix = '-2' if scenario == 'ai-boundaries' else ''
+    run('performance-' + scenario, [app, '--ui-check', '--mode', 'performance', '--scenario', scenario,
+        '--output', root / ('boundary-performance-' + scenario + suffix)])

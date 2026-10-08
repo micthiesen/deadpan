@@ -1,0 +1,1286 @@
+[
+  {
+    "path": "boundary-bundles-final.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-bundles-final.log",
+    "bytes": 5803,
+    "sha256": "e9b8af9170570fc037f1f8bc2f83f031d9ee16722d51ae2c632fb5fbe6bccd3c"
+  },
+  {
+    "path": "boundary-bundles.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-bundles.log",
+    "bytes": 6822,
+    "sha256": "f2245ec0588760d983346fb8453d3785ada4c19c1ecd099738ece3335ba0360e"
+  },
+  {
+    "path": "boundary-bundles2.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-bundles2.log",
+    "bytes": 6021,
+    "sha256": "09922a54652c30c4eff9b6841cf453c5962b01f38bb90a3f9c056fa90d22e894"
+  },
+  {
+    "path": "boundary-clippy-1.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-clippy-1.log",
+    "bytes": 1548,
+    "sha256": "b53cf5cc0bdfb0e4c22225ed6a0e08fcfd726299ff39bda2b9c1d5628072ea3d"
+  },
+  {
+    "path": "boundary-compaction.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-compaction.log",
+    "bytes": 606,
+    "sha256": "df72460f720c49b4f959a4c3774b1897fafdb18221a705b35ca67f54c3b252af"
+  },
+  {
+    "path": "boundary-debug-build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-debug-build.log",
+    "bytes": 1761,
+    "sha256": "ac8704b2516c184014d21e519f2160f5e5097b93e474c36546e9767b9061dbac"
+  },
+  {
+    "path": "boundary-debug-replay-startup-sample.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-debug-replay-startup-sample.log",
+    "bytes": 244,
+    "sha256": "2587f3cda9a6c1c3d926181f641c79509d74b441b7dcb16d0af7ca8f33ad1a15"
+  },
+  {
+    "path": "boundary-derivation-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-derivation-tests.log",
+    "bytes": 12627,
+    "sha256": "aa8a4ebffe22b0a8c321bf8665b0c8aa50fd06f76ce9f2ea6ef4b588efc9491b"
+  },
+  {
+    "path": "boundary-derivation-tests2.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-derivation-tests2.log",
+    "bytes": 3262,
+    "sha256": "4a919e1c6a5ddcdac1c6b58fd9605acd21ebde3d68977f7dd6f74674dd550b2c"
+  },
+  {
+    "path": "boundary-final-checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-checks.json",
+    "bytes": 2319,
+    "sha256": "352b3b883059f662010b1ad4de7f8f6613e908d51064788a5d225e8534142100"
+  },
+  {
+    "path": "boundary-final-clippy-ui.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-clippy-ui.log",
+    "bytes": 1269,
+    "sha256": "3a5287185045854967eb4d4a47a5ef685b2c1feedb6fa8af3b40cb72faed6be0"
+  },
+  {
+    "path": "boundary-final-clippy.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-clippy.log",
+    "bytes": 777,
+    "sha256": "eb692b6445ec2fb9ff8ef919ee14316d31b6e5896c79f04aacf2fb81de1064da"
+  },
+  {
+    "path": "boundary-final-diff-check.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-diff-check.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-final-doc-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-doc-tests.log",
+    "bytes": 3648,
+    "sha256": "5576740b93207f970cc81d9a759d0a137a3ac850deb5ebe356757f00b8b97962"
+  },
+  {
+    "path": "boundary-final-fmt-check.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-fmt-check.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-final-fmt.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-final-native-default.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-native-default.log",
+    "bytes": 8405,
+    "sha256": "6021c46b034dadcf6dce50ef5844b5f8fb436280910905103512ed1fa22f47b0"
+  },
+  {
+    "path": "boundary-final-native-ui.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-native-ui.log",
+    "bytes": 172752,
+    "sha256": "95a2d7f8cd5bceadfcbf6d2bbfb5f9726045e68f50c481ab4c3038ce10fc7909"
+  },
+  {
+    "path": "boundary-final-playback-leak.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-playback-leak.log",
+    "bytes": 1182,
+    "sha256": "132c596a6000996f52795d5c4ca9faeb234d71ab95772a84273e82fee6b6fd5e"
+  },
+  {
+    "path": "boundary-final-release-build/build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-release-build/build.log",
+    "bytes": 401,
+    "sha256": "297d0f3ec3c64dd42b1cfd50b78687c38a20022b1f1f76dcbd02e2713472789b"
+  },
+  {
+    "path": "boundary-final-release-build/cargo.jsonl.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-release-build/cargo.jsonl",
+    "bytes": 304799,
+    "sha256": "60e7365a5f5164964aaee84240ddb731976d5335663b7cecd2871f556e8e53bd"
+  },
+  {
+    "path": "boundary-final-release-build/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-release-build/summary.json",
+    "bytes": 1829,
+    "sha256": "8469ee8dd6785775760ad709fa903a5defe5fecda5811b5cb263a8a383dca5cc"
+  },
+  {
+    "path": "boundary-final-source.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-source.json",
+    "bytes": 10026,
+    "sha256": "626a8ffd82ddafeef6374d8a14f014a5a1406f85e21e9bff3e95d407af870425"
+  },
+  {
+    "path": "boundary-final-store-fixture.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-store-fixture.log",
+    "bytes": 587,
+    "sha256": "c8fa2074e5c692bc68e33b8058765bc5d325bc282612c46b1938a3eb22080dbb"
+  },
+  {
+    "path": "boundary-final-visual-ai-boundaries/ai-boundaries-062.png",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-boundaries/ai-boundaries-062.png",
+    "bytes": 421195,
+    "sha256": "eff0334fb351d3fee005515775c18879c7c59f2c9ceba780f95ebe5ce43b2da3"
+  },
+  {
+    "path": "boundary-final-visual-ai-boundaries/ai-boundaries-076.png",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-boundaries/ai-boundaries-076.png",
+    "bytes": 453446,
+    "sha256": "997ae667d0b681496c6d5a9f53b49f4fb91c9f13033bde143ba14f6138611594"
+  },
+  {
+    "path": "boundary-final-visual-ai-boundaries/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-boundaries/report.json",
+    "bytes": 15101802,
+    "sha256": "f3e2686d02e995c5f60e2cdce5302557fb35db75277bcba6998ddc2ee6ffb0f6"
+  },
+  {
+    "path": "boundary-final-visual-ai-insertion/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-insertion/report.json",
+    "bytes": 17403505,
+    "sha256": "c3454c014ceb87ee2257ec91ba083e6ce6ac36ecdaf3d425aecf444631762814"
+  },
+  {
+    "path": "boundary-final-visual-ai-replacements/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-replacements/report.json",
+    "bytes": 11320216,
+    "sha256": "c91988e646e6bde0b3aa3910a0cb8119a51f5d9240a943853c226906ad89f6c8"
+  },
+  {
+    "path": "boundary-final-visual-ai-scoped/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-scoped/report.json",
+    "bytes": 27385222,
+    "sha256": "01aabcc186a555d5b6b8d4903810b567d03e120b446ab730fc4a6c332d23792c"
+  },
+  {
+    "path": "boundary-final-visual-ai-variants/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-final-visual-ai-variants/report.json",
+    "bytes": 25221337,
+    "sha256": "1b31380c4cbe8f92a623330d7a380dffab99649384070e9d6f8d00791fe7ec64"
+  },
+  {
+    "path": "boundary-fixture-tests-cli.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-fixture-tests-cli.log",
+    "bytes": 1919,
+    "sha256": "8a8689c6c9ddaca698a987832e05e76e9bd76927280a1fbd5c728e39b73d0228"
+  },
+  {
+    "path": "boundary-fixture-tests-store.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-fixture-tests-store.log",
+    "bytes": 4969,
+    "sha256": "6853b5323dd59531417a91c568a9ab5a0842821012c69aafe2480f6e20d0e18a"
+  },
+  {
+    "path": "boundary-generated-export-cli.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-generated-export-cli.json",
+    "bytes": 312,
+    "sha256": "8779e9df65aedf9e73efa2c02597678fbcc161f772645a7da4b39b75477b4fa9"
+  },
+  {
+    "path": "boundary-generated-exports.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-generated-exports.json",
+    "bytes": 2909,
+    "sha256": "3909d5ddb9c726b9935cca82fd8f410746a1b0a583bb2f771dc9da9470f809b2"
+  },
+  {
+    "path": "boundary-integration-check.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-integration-check.log",
+    "bytes": 5710,
+    "sha256": "df0d039859896839ccb8bd474714e96b9927e1545c4ce53149d7b5f4b560fb09"
+  },
+  {
+    "path": "boundary-integration-check2.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-integration-check2.log",
+    "bytes": 1343,
+    "sha256": "69dd5225b6ab6475e56f74c1002ce07a23bb7bff806a6c9b8118793ed7dc6efd"
+  },
+  {
+    "path": "boundary-intents-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-intents-tests.log",
+    "bytes": 1641,
+    "sha256": "c5272a036f698d15ebccbd2f289a49910affe512bb306556febcf09063978439"
+  },
+  {
+    "path": "boundary-native-preparations-final.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-preparations-final.log",
+    "bytes": 1047,
+    "sha256": "87883df0dc548374c177857beef70aae7f67fbe1a58594c577b5655e4b872c08"
+  },
+  {
+    "path": "boundary-native-preparations-required.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-preparations-required.log",
+    "bytes": 1385,
+    "sha256": "64a1be45779d828d3e65be7ede918a71ad40f30487b947f98203f7034f6af251"
+  },
+  {
+    "path": "boundary-native-preparations.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-preparations.log",
+    "bytes": 1583,
+    "sha256": "11ff0baa709d5f24344b00f255e02e2a5d5ce9235fc09a7979bc586e7b85f2da"
+  },
+  {
+    "path": "boundary-native-provider.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-provider.log",
+    "bytes": 1618,
+    "sha256": "2f7858b0be55c98e3d32899172494a29589d8b650acb262f8ef51432b18eb48b"
+  },
+  {
+    "path": "boundary-native-replay-1.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-replay-1.log",
+    "bytes": 171,
+    "sha256": "5defc917e3efed51b7c08809bbb121059bbc8e4b2842eb4bd77207c71079e3d5"
+  },
+  {
+    "path": "boundary-native-replay-1/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-replay-1/report.json",
+    "bytes": 9169775,
+    "sha256": "3c627f57c74a8a0473ffc2cd1e9a7bf0c6fa2fc8e4f455637759a790bbcb1b8c"
+  },
+  {
+    "path": "boundary-native-replay-2.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-replay-2.log",
+    "bytes": 99,
+    "sha256": "bf0f71e262045a69da999954e2f2fd65d6b9f9491ce524e03e4127f5b93f10af"
+  },
+  {
+    "path": "boundary-native-replay-2/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-native-replay-2/report.json",
+    "bytes": 8991474,
+    "sha256": "156c55ade66091ff69b700829079c3dea48b79ec0fe1870594be33b9f787f294"
+  },
+  {
+    "path": "boundary-packaged-generation-1/checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/checks.json",
+    "bytes": 9682,
+    "sha256": "2a93addad486cfa9b4d6e2a7a751aaa010a95ee77800f8fab00fe8317e038277"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-after.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-after.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-after.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-after.stdout",
+    "bytes": 16261,
+    "sha256": "37205c672b701d95d671c96e3733972587a2969a3e48117a0ddadee14cb80f68"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-before.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-before.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-before.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-before.stdout",
+    "bytes": 16261,
+    "sha256": "37205c672b701d95d671c96e3733972587a2969a3e48117a0ddadee14cb80f68"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-doctor.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-doctor.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-doctor.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-doctor.stdout",
+    "bytes": 8283,
+    "sha256": "2fe086a3aac48993f9a34b90fc8b5307a636d0f3c2b62f00ecf7bcb740af92f5"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-render-without-model-reports.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-render-without-model-reports.json",
+    "bytes": 23157,
+    "sha256": "339e542b697eeede8fac5acde6fa1103b776df114409f2bff5ffdafaf12cb7cc"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-render-without-model.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-render-without-model.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-render-without-model.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-render-without-model.stdout",
+    "bytes": 17874,
+    "sha256": "d81ccd5cb520caaec1840c65a61b3dc1120cec2ad3d08a1fc539e26b3be75f28"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-validate.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-validate.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-packaged-generation-1/packaged-validate.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/packaged-validate.stdout",
+    "bytes": 714,
+    "sha256": "ff5bfbafa018278149e5b0fbf0949ffb02ee4751fa13e49eadaa0250dc04d75e"
+  },
+  {
+    "path": "boundary-packaged-generation-1/steps.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/steps.json",
+    "bytes": 3384,
+    "sha256": "057348a6b7b3b25e3cc538a5e09bba727643cdde21f3210f41a499b73e276ac1"
+  },
+  {
+    "path": "boundary-packaged-generation-1/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-packaged-generation-1/summary.json",
+    "bytes": 18231,
+    "sha256": "ea77c5765b22509eec8f5f8035c965df6a30163c636c9ace32793b1e3bc0473b"
+  },
+  {
+    "path": "boundary-performance-ai-boundaries-2/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-ai-boundaries-2/report.json",
+    "bytes": 26154230,
+    "sha256": "c355071291710b9b42957dcd545a39985c309d26a672d9f1fc39c482cc841d87"
+  },
+  {
+    "path": "boundary-performance-ai-boundaries/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-ai-boundaries/report.json",
+    "bytes": 7021156,
+    "sha256": "9579b53fac53a0854bf7a63fee04a2693cfe3b663d699693e2ab812157a6ec77"
+  },
+  {
+    "path": "boundary-performance-edit-latency/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-edit-latency/report.json",
+    "bytes": 16586647,
+    "sha256": "2bfc48f53f660557cd1cd9b6034eda73fd677f76b8a1477c3b88a75744565c53"
+  },
+  {
+    "path": "boundary-performance-large-project/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-large-project/report.json",
+    "bytes": 2412510,
+    "sha256": "fe6506350b6befdb1fe44eed20c56593739b038c4e4b3a80ccd4785bd5617ba2"
+  },
+  {
+    "path": "boundary-performance-rapid-input/report.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-rapid-input/report.json",
+    "bytes": 6342345,
+    "sha256": "d75707c3b06541531ebb91d06771dbf4c5ae572f9b1d737bb61db1adf91ada19"
+  },
+  {
+    "path": "boundary-performance-summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-performance-summary.json",
+    "bytes": 3231,
+    "sha256": "fee4a7483bbab238bb0ece14d0182eaab679f594c19c7cef15ef26d91d00f169"
+  },
+  {
+    "path": "boundary-python-audio-measurements.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-audio-measurements.log",
+    "bytes": 3393,
+    "sha256": "1419a93b7b791df650d41166c9ce167e8eda004041e67c67099d82a1d6f98daf"
+  },
+  {
+    "path": "boundary-python-checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-checks.json",
+    "bytes": 1222,
+    "sha256": "29172d7432a1cec14d068bfe44b36c24daa1c9bdf4c1de247e3cbe81d291b280"
+  },
+  {
+    "path": "boundary-python-ffv1.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-ffv1.log",
+    "bytes": 820,
+    "sha256": "3363f17975e7cef81ac35d41e10e5b0b8d1a91093b8cd32166fe231a277a5861"
+  },
+  {
+    "path": "boundary-python-media-host.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-media-host.log",
+    "bytes": 576,
+    "sha256": "721964401a7e77b10e0a58ef4eb885a659e0c67deceefde679cc3d5fb2bf738e"
+  },
+  {
+    "path": "boundary-python-model-worker.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-model-worker.log",
+    "bytes": 13479,
+    "sha256": "eae41375cda25ca0abaa41ba0e66e2318cb0c7910a64aaedce524c0771728f98"
+  },
+  {
+    "path": "boundary-python-source-audio-fixtures.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-python-source-audio-fixtures.log",
+    "bytes": 115,
+    "sha256": "25fd946faf1ed7eddb37a452410be2c4b27ed0de51fd4c9d476805378c653c9a"
+  },
+  {
+    "path": "boundary-real-generation-1.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1.log",
+    "bytes": 2093,
+    "sha256": "7cd12ad9ee50bfb116137d9fc953ba83d2bb505595f1521f1cd9bdaf7bec555e"
+  },
+  {
+    "path": "boundary-real-generation-1/accept-initial.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/accept-initial.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/accept-initial.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/accept-initial.stdout",
+    "bytes": 5404,
+    "sha256": "89be93c4c8b465181afa0b77c896b432fd675a78fa739ffecdd742ac9cd709fc"
+  },
+  {
+    "path": "boundary-real-generation-1/accept-replacement.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/accept-replacement.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/accept-replacement.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/accept-replacement.stdout",
+    "bytes": 5664,
+    "sha256": "5e3016ec6338007b73ac5f9aa541060bb267e68e86c73aa334fce0e00259df3d"
+  },
+  {
+    "path": "boundary-real-generation-1/after-render-model-free.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-render-model-free.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/after-render-model-free.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-render-model-free.stdout",
+    "bytes": 16261,
+    "sha256": "37205c672b701d95d671c96e3733972587a2969a3e48117a0ddadee14cb80f68"
+  },
+  {
+    "path": "boundary-real-generation-1/after-slip-preview.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-slip-preview.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/after-slip-preview.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-slip-preview.stdout",
+    "bytes": 14377,
+    "sha256": "309f94783bf9a56baf1333bc6541e0b7ebf31a515241c924b403747709bd47f7"
+  },
+  {
+    "path": "boundary-real-generation-1/after-stale-refusal.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-stale-refusal.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/after-stale-refusal.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/after-stale-refusal.stdout",
+    "bytes": 13119,
+    "sha256": "9faeb003274f2be09ef58955074f496aa7afe9fb0c20c04833ae80895be6f6fe"
+  },
+  {
+    "path": "boundary-real-generation-1/baseline-plan.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/baseline-plan.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/baseline-plan.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/baseline-plan.stdout",
+    "bytes": 1036,
+    "sha256": "4842b58df2bd70f8a07399b50d45e763abbba47f7375bcaafb01906e979781ef"
+  },
+  {
+    "path": "boundary-real-generation-1/baseline.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/baseline.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/baseline.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/baseline.stdout",
+    "bytes": 4072,
+    "sha256": "bad8412d7467e51c956398f6d4d1ba9694decf109554c3495654b72b39aa20a7"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-fallback-plan.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-fallback-plan.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-fallback-plan.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-fallback-plan.stdout",
+    "bytes": 1530,
+    "sha256": "015c0a1ba2f16ae3e9cbb9ce4f5c539ec85e30850c651e4561baade522dddb74"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-fallback.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-fallback.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-fallback.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-fallback.stdout",
+    "bytes": 13119,
+    "sha256": "9faeb003274f2be09ef58955074f496aa7afe9fb0c20c04833ae80895be6f6fe"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-history-command.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-history-command.json",
+    "bytes": 2289,
+    "sha256": "4dacd2d6cc4d0bd7decd5b4ebbe644b68f56a174275a01f4735deb948e10738b"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-queue.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-queue.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-queue.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-queue.stdout",
+    "bytes": 3437,
+    "sha256": "1063d294bda23cc75d71d471d28a0b3930a9c54b3748f7d6ff272a570fca8da4"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-redone-queue.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-redone-queue.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-redone-queue.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-redone-queue.stdout",
+    "bytes": 3579,
+    "sha256": "3c366df860d7272d2f8fbcbe5edff9c4486768105af8bb503fbbae69fd708fe8"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-redone.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-redone.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-redone.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-redone.stdout",
+    "bytes": 13139,
+    "sha256": "b4e2c86bea397fdc6409e450e9527fb3209d11e7dd4043b169cc358d665c303d"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slip-preview.command.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slip-preview.command.json",
+    "bytes": 337,
+    "sha256": "5511bef07212b8dbb7ff0c850c3b58434a5303cb9ff813b150a903ac31da8e41"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slip-preview.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slip-preview.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slip-preview.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slip-preview.stdout",
+    "bytes": 15423,
+    "sha256": "49bcc2a675f41de4c3984dfdfd26a24f8f7a5925468557828c4a3fd6b6eacb29"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slipped.command.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slipped.command.json",
+    "bytes": 332,
+    "sha256": "870355aad5948bd70442df07a49c0ec19821407c50835a54abb007e17c1cf66a"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slipped.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slipped.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-slipped.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-slipped.stdout",
+    "bytes": 11548,
+    "sha256": "8f7e5bdaa73e7b6169ed7b7f00d4c467e1317e927f4b5ef56462a506c86ac41e"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-undone-queue.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-undone-queue.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-undone-queue.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-undone-queue.stdout",
+    "bytes": 58,
+    "sha256": "99a25fc6bf8dc0718e3e64a3e5f093623c6ca8da57cb333610041d98d1852b37"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-undone.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-undone.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/boundary-undone.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/boundary-undone.stdout",
+    "bytes": 14377,
+    "sha256": "b811b737b6e90b3727f67798bc34aaa49e3c46e419d647375fea6306609b84e1"
+  },
+  {
+    "path": "boundary-real-generation-1/checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/checks.json",
+    "bytes": 72386,
+    "sha256": "0407cf28bab9c2be8f5b965dd65f06f2215500899f23b1b2e3eb401b612bb9a8"
+  },
+  {
+    "path": "boundary-real-generation-1/create.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/create.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/create.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/create.stdout",
+    "bytes": 992,
+    "sha256": "40b63ae6c0f125391fadcfc4c1467ee22a0744f1e0ba82fc4ac852f42a5bdfef"
+  },
+  {
+    "path": "boundary-real-generation-1/final-document.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-document.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/final-document.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-document.stdout",
+    "bytes": 16261,
+    "sha256": "37205c672b701d95d671c96e3733972587a2969a3e48117a0ddadee14cb80f68"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-0.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-0.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-0.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-0.stdout",
+    "bytes": 2762,
+    "sha256": "3e1c0e3236e0ebc3caf4e3407b3301e559ac782826e304ddacb376f4815df2df"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-15.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-15.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-15.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-15.stdout",
+    "bytes": 2766,
+    "sha256": "016ab0284fed113a4d9a1f82bfcc55a9f73f0a7e5a0c126666e7bc0fdd2e224d"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-29.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-29.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/final-picture-29.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/final-picture-29.stdout",
+    "bytes": 2766,
+    "sha256": "02e7497fbbaa3695352b5172bd20561ebe1f27ddcbe14d3f4d5aa64eb4e43ac1"
+  },
+  {
+    "path": "boundary-real-generation-1/generate-initial.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/generate-initial.stderr",
+    "bytes": 242,
+    "sha256": "291ca9ac6c9ccf15b182e6b00ebef94e5af594ec1f3ff97ede2ac72721f610bc"
+  },
+  {
+    "path": "boundary-real-generation-1/generate-initial.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/generate-initial.stdout",
+    "bytes": 6715,
+    "sha256": "79343614d7a0b6c2b10f7c84690810eb237a03fb6637b44f5831ce62abb4d7ce"
+  },
+  {
+    "path": "boundary-real-generation-1/generate-replacement.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/generate-replacement.stderr",
+    "bytes": 242,
+    "sha256": "291ca9ac6c9ccf15b182e6b00ebef94e5af594ec1f3ff97ede2ac72721f610bc"
+  },
+  {
+    "path": "boundary-real-generation-1/generate-replacement.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/generate-replacement.stdout",
+    "bytes": 7618,
+    "sha256": "c556f645ceee6da899f44617ed1fa235d7b0d1e6b5d785890f75e6ce670552c2"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-accepted.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-accepted.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-accepted.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-accepted.stdout",
+    "bytes": 14377,
+    "sha256": "309f94783bf9a56baf1333bc6541e0b7ebf31a515241c924b403747709bd47f7"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-context.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-context.json",
+    "bytes": 4356,
+    "sha256": "34796477c0c3d79760f3cec9bb9d7d87fb7cf883a0d9c9b8dee197083117395f"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-fallback.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-fallback.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-fallback.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-fallback.stdout",
+    "bytes": 11231,
+    "sha256": "4563f19a6b6c823ae3491604c3fccbcd12d5b57bf502d30343078dce96708d7a"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-origin-receipt.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-origin-receipt.json",
+    "bytes": 3840,
+    "sha256": "3afb8a0faa9a841536dcb3e21bf2cb0f9fd0535afc9327a9e2e941fe16ec6d68"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-provenance.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-provenance.json",
+    "bytes": 74308,
+    "sha256": "128c7733d938f722bc3714d3d4714b838122cd821ce8c8e8be0da28146f153a1"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-queue.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-queue.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-queue.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-queue.stdout",
+    "bytes": 58,
+    "sha256": "99a25fc6bf8dc0718e3e64a3e5f093623c6ca8da57cb333610041d98d1852b37"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-ready-document.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-ready-document.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-ready-document.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-ready-document.stdout",
+    "bytes": 11231,
+    "sha256": "4563f19a6b6c823ae3491604c3fccbcd12d5b57bf502d30343078dce96708d7a"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-request.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-request.json",
+    "bytes": 1797,
+    "sha256": "d349a08fbe5fc2f4579f68240002fe9fc07ca731ea838455e8525217e6186476"
+  },
+  {
+    "path": "boundary-real-generation-1/initial-worker.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/initial-worker.json",
+    "bytes": 41099,
+    "sha256": "f8086bdacfb3baf10690e0bcf041d8fe57a9cd540dbf1819b8f18c3e622804d2"
+  },
+  {
+    "path": "boundary-real-generation-1/insert-pause.command.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/insert-pause.command.json",
+    "bytes": 620,
+    "sha256": "a089a23c55d2912729687de4066ecfd0b1baa88d26a90906adaeaf03365aa632"
+  },
+  {
+    "path": "boundary-real-generation-1/insert-pause.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/insert-pause.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/insert-pause.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/insert-pause.stdout",
+    "bytes": 11032,
+    "sha256": "2f500149da3cdfd856bdc945d3f5736052bc7075822d4ea5f614ab07ada578d3"
+  },
+  {
+    "path": "boundary-real-generation-1/redo-boundary.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/redo-boundary.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/redo-boundary.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/redo-boundary.stdout",
+    "bytes": 11593,
+    "sha256": "8986dd796844f52eb2ff591d5b58bf296d30e1e99fd3c4c61105a8fe2864bc10"
+  },
+  {
+    "path": "boundary-real-generation-1/redo-replacement-acceptance.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/redo-replacement-acceptance.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/redo-replacement-acceptance.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/redo-replacement-acceptance.stdout",
+    "bytes": 5669,
+    "sha256": "900802f34f724d26267cc84d7125ad25d2fe4d000e8fe8caf5b6ec905a6e4ff7"
+  },
+  {
+    "path": "boundary-real-generation-1/refuse-old-candidate.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/refuse-old-candidate.stderr",
+    "bytes": 202,
+    "sha256": "80ba7fabab37e570fceb89615894cacd809bb73bcd59c8528ea319797645f404"
+  },
+  {
+    "path": "boundary-real-generation-1/refuse-old-candidate.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/refuse-old-candidate.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/render-without-model-reports.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/render-without-model-reports.json",
+    "bytes": 23088,
+    "sha256": "c765e452daf0ead24c68bd8dfc1b4abe4af7e22ee9b8573273f8769476ba005e"
+  },
+  {
+    "path": "boundary-real-generation-1/render-without-model.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/render-without-model.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/render-without-model.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/render-without-model.stdout",
+    "bytes": 17805,
+    "sha256": "ab3fa6d13c052d0ba6f7dedc57914a786ab7501ada5037a8bed8763eb878bafc"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-acceptance-undone.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-acceptance-undone.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-acceptance-undone.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-acceptance-undone.stdout",
+    "bytes": 13139,
+    "sha256": "9569118f59c2de857e60502961bf09d3ef6f83d19414a88bbd7f51c28a8a7342"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-accepted.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-accepted.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-accepted.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-accepted.stdout",
+    "bytes": 16261,
+    "sha256": "ce515a9ac3fd0b1b037cdba97c635951804fa17f0f07ac3e992ff82567ff848a"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-context.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-context.json",
+    "bytes": 4404,
+    "sha256": "d044b4a8e4bac36cbb31def9d3252dc6b2175f8aa4d8346311bc73f6f31a62ad"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-provenance.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-provenance.json",
+    "bytes": 74553,
+    "sha256": "d84b0ce901c40e7a1d58f234b447715de035001a38aa994293b2b03316ff4ade"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-ready-document.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-ready-document.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-ready-document.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-ready-document.stdout",
+    "bytes": 13139,
+    "sha256": "b4e2c86bea397fdc6409e450e9527fb3209d11e7dd4043b169cc358d665c303d"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-request.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-request.json",
+    "bytes": 1830,
+    "sha256": "93bc65414c435f3c0655fc19b24039d247d9b9d07b26690bdb92bbefca4a0765"
+  },
+  {
+    "path": "boundary-real-generation-1/replacement-worker.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/replacement-worker.json",
+    "bytes": 41188,
+    "sha256": "96c61632329f1dda57c878928c85884c23982f2787be99eda7d5117b6b90b21b"
+  },
+  {
+    "path": "boundary-real-generation-1/stale-initial-request.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/stale-initial-request.json",
+    "bytes": 1795,
+    "sha256": "dbb011d73475e46101781217537f40a15690edd4f17b1bba7c1b8609066c5707"
+  },
+  {
+    "path": "boundary-real-generation-1/steps.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/steps.json",
+    "bytes": 26505,
+    "sha256": "066fada467c703e5085bd2bf6387841d3b992910d131505c450b6dfe0e728e91"
+  },
+  {
+    "path": "boundary-real-generation-1/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/summary.json",
+    "bytes": 118189,
+    "sha256": "8ce57d12aa51fb8efb6e113157b1e767c25df8fa9f2df7a8780b0ad137ba691a"
+  },
+  {
+    "path": "boundary-real-generation-1/undo-boundary.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/undo-boundary.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/undo-boundary.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/undo-boundary.stdout",
+    "bytes": 11448,
+    "sha256": "bb18064e64a1df5acdff7ebbcfc682cfc130891d379c41203c2730e92cc24bb4"
+  },
+  {
+    "path": "boundary-real-generation-1/undo-replacement-acceptance.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/undo-replacement-acceptance.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/undo-replacement-acceptance.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/undo-replacement-acceptance.stdout",
+    "bytes": 5669,
+    "sha256": "3529ded7802a2009603b377000688147c9eefc6a12297533908a4b8b7c51b4bb"
+  },
+  {
+    "path": "boundary-real-generation-1/validate-boundary-history.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/validate-boundary-history.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/validate-boundary-history.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/validate-boundary-history.stdout",
+    "bytes": 714,
+    "sha256": "6a67275a841977b3f1edfb067c27e2397dbe5f6c1ba720022125bd189d4da389"
+  },
+  {
+    "path": "boundary-real-generation-1/validate-final-model-free.stderr.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/validate-final-model-free.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-real-generation-1/validate-final-model-free.stdout.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-real-generation-1/validate-final-model-free.stdout",
+    "bytes": 714,
+    "sha256": "ff5bfbafa018278149e5b0fbf0949ffb02ee4751fa13e49eadaa0250dc04d75e"
+  },
+  {
+    "path": "boundary-release-build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-build.log",
+    "bytes": 1829,
+    "sha256": "8469ee8dd6785775760ad709fa903a5defe5fecda5811b5cb263a8a383dca5cc"
+  },
+  {
+    "path": "boundary-release-build/build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-build/build.log",
+    "bytes": 1538,
+    "sha256": "95a842f23d17a99fd090ee4488b79438f0a4e67ffa0eea48c62d7f9c1b662c17"
+  },
+  {
+    "path": "boundary-release-build/cargo.jsonl.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-build/cargo.jsonl",
+    "bytes": 304812,
+    "sha256": "0ae129f062a0257139daffa37a046249ea7f50d3ac44d73ef2f1cd14d3477e41"
+  },
+  {
+    "path": "boundary-release-build/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-build/summary.json",
+    "bytes": 1799,
+    "sha256": "45ef74244f797231d4656b335a2c649c051d9076e9439166b86a286ac9ae847c"
+  },
+  {
+    "path": "boundary-release-bundle-verify.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-bundle-verify.log",
+    "bytes": 22812,
+    "sha256": "debf6c485f0b58aaa4ca6270bbc7165ca5f80acd36840f29e956c552762d6e6a"
+  },
+  {
+    "path": "boundary-release-bundle.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-bundle.log",
+    "bytes": 2933,
+    "sha256": "1993bab733c890e9a0509673ed117f156c208f9b74ac3027a644c6e9122e02f3"
+  },
+  {
+    "path": "boundary-release-checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-checks.json",
+    "bytes": 5396,
+    "sha256": "1dc155755967a7ab2c0fa732da35c3c6bbd2d9b1977c1ab07c8c6939f627a645"
+  },
+  {
+    "path": "boundary-release-compaction.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-compaction.log",
+    "bytes": 1344,
+    "sha256": "ff8917a60453ee5ebf879d2e57ff188de75f0c56a6cc909341533d65137268a0"
+  },
+  {
+    "path": "boundary-release-generated-exports.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-generated-exports.log",
+    "bytes": 3719,
+    "sha256": "c03bd8453f4b99b4ae27860aebbc73347449cab9d16e80f4025f667115d7d0f7"
+  },
+  {
+    "path": "boundary-release-packaged-export.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-packaged-export.log",
+    "bytes": 420,
+    "sha256": "58bc025acaa294b73504cfcbf958ff8ffa684d55d0377eaa49b7a47614869a6c"
+  },
+  {
+    "path": "boundary-release-performance-ai-boundaries.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-performance-ai-boundaries.log",
+    "bytes": 181,
+    "sha256": "9b5d81cead06bd88bff438f8271c3dfc23530c1578927dd95d752b758dc810b0"
+  },
+  {
+    "path": "boundary-release-source.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-source.json",
+    "bytes": 8491,
+    "sha256": "5a29190ccea3f5bac6a4a14e155838c66b01c0be9062777aee6e0e081bea4b12"
+  },
+  {
+    "path": "boundary-release-visual-ai-boundaries.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-visual-ai-boundaries.log",
+    "bytes": 110,
+    "sha256": "9e3c13345f1452e2ccedbd8323bc7a7dc479e0f37dad5648e226082f3da6901d"
+  },
+  {
+    "path": "boundary-release-visual-ai-insertion.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-visual-ai-insertion.log",
+    "bytes": 108,
+    "sha256": "a02f3e743219f732fb92da6910c621df27a5213998f102103bfaf037c6440806"
+  },
+  {
+    "path": "boundary-release-visual-ai-replacements.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-visual-ai-replacements.log",
+    "bytes": 114,
+    "sha256": "dfeae21410ad88f4c4938fad42c913514f4b5827d16995e1c19c6774d8414f5d"
+  },
+  {
+    "path": "boundary-release-visual-ai-scoped.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-visual-ai-scoped.log",
+    "bytes": 102,
+    "sha256": "9b012ff0f896f96a06529bb6eeca1fc1db5f386ba3b65705d5a28b17e12d504a"
+  },
+  {
+    "path": "boundary-release-visual-ai-variants.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-release-visual-ai-variants.log",
+    "bytes": 106,
+    "sha256": "2d7900ecbffaf6949a1e1f18e33b88a52d577a5ca34d90a4126a3b1a9f4080e0"
+  },
+  {
+    "path": "boundary-store-all-unit-final.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-store-all-unit-final.log",
+    "bytes": 18733,
+    "sha256": "906084c9fdedf3be0b26016fcaf0ff4f1e2a8d7f1b58dae8a00f924bf40529cb"
+  },
+  {
+    "path": "boundary-store-unit-final.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-store-unit-final.log",
+    "bytes": 6121,
+    "sha256": "8462ec529160f39387bc6c8e3b82d082a09416f55fe6e4155070c02a2d9508ae"
+  },
+  {
+    "path": "boundary-store-unit.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-store-unit.log",
+    "bytes": 5533,
+    "sha256": "c25923ba9e52146b85d6f98e660b091b0fe340db182c3dff5a9e88d24140ef3e"
+  },
+  {
+    "path": "boundary-timing-build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-build.log",
+    "bytes": 1833,
+    "sha256": "4b85d41e96927036dee5fcd508054b2c69d2cd3e79e7139de37a65836c854371"
+  },
+  {
+    "path": "boundary-timing-checks.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-checks.json",
+    "bytes": 3753,
+    "sha256": "580055c5c7df13a7d0654438c7e2dc32e7e79d204b355b07c9ee4801212e5c86"
+  },
+  {
+    "path": "boundary-timing-default-clippy.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-default-clippy.log",
+    "bytes": 1269,
+    "sha256": "27d227c210d74fc48d55f1d16cae58b06620bfc76e4ccd52ee628175d14f0b65"
+  },
+  {
+    "path": "boundary-timing-diff.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-diff.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-timing-fmt.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "boundary-timing-performance-ai-boundaries.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-performance-ai-boundaries.log",
+    "bytes": 111,
+    "sha256": "21549e5f5ab0f03d8d611ca94f3d59c7fbb450f08bc0143db8ad519718ea7bbc"
+  },
+  {
+    "path": "boundary-timing-performance-edit-latency.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-performance-edit-latency.log",
+    "bytes": 107,
+    "sha256": "e8091075f5e94f1b6fdd76722223c5098fdb43e76fed6d949cb1cc9991882991"
+  },
+  {
+    "path": "boundary-timing-performance-large-project.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-performance-large-project.log",
+    "bytes": 109,
+    "sha256": "2b7b2eb6a2413599d5680793a793f1deec260ac25cfef5e86e79151fd42c765e"
+  },
+  {
+    "path": "boundary-timing-performance-rapid-input.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-performance-rapid-input.log",
+    "bytes": 105,
+    "sha256": "9a18dc4b95830eac226b65a9c6cd4b2b05741404448f489ba350c0ab82e7f99d"
+  },
+  {
+    "path": "boundary-timing-release-build/build.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-release-build/build.log",
+    "bytes": 144,
+    "sha256": "4c0b7374e5938f1d1b40a49694d33e3684a12e4963d7f5d3cd4a7205e1471d67"
+  },
+  {
+    "path": "boundary-timing-release-build/cargo.jsonl.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-release-build/cargo.jsonl",
+    "bytes": 304794,
+    "sha256": "c420db9e2083f3f153ec28bd68d6c47f0840b4bcea24c6b1ed2bfbda240adef3"
+  },
+  {
+    "path": "boundary-timing-release-build/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-release-build/summary.json",
+    "bytes": 1833,
+    "sha256": "4b85d41e96927036dee5fcd508054b2c69d2cd3e79e7139de37a65836c854371"
+  },
+  {
+    "path": "boundary-timing-source.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-source.json",
+    "bytes": 513,
+    "sha256": "f581d57d8977b2addcf96a9674e80f144600e165d217b890589c1009277ef71f"
+  },
+  {
+    "path": "boundary-timing-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-tests.log",
+    "bytes": 2727,
+    "sha256": "ef94f2df7c47dd652c6fb1e21760e70b8d060358b3c0b485bcf01071097f18c5"
+  },
+  {
+    "path": "boundary-timing-ui-clippy.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-ui-clippy.log",
+    "bytes": 153,
+    "sha256": "4e7869b08a577f34e2aacbdc8f0ea591c14c5543536ca68201d146ae9d80a893"
+  },
+  {
+    "path": "boundary-transaction-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-transaction-tests.log",
+    "bytes": 745,
+    "sha256": "07f1f6c4316800138f0ef680176bf18d2e2cb580cd5cd64e15b49b5e810562e9"
+  },
+  {
+    "path": "boundary-visual-review.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-visual-review.json",
+    "bytes": 1049,
+    "sha256": "9dc4338655acc0ce5db24d233c0250b530596d1fa6a29afe4348538fa7393781"
+  },
+  {
+    "path": "boundary-workspace-tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-workspace-tests.log",
+    "bytes": 737815,
+    "sha256": "2a2ae0bd3bfdea3acc04aa5405b5adb55122766bd5e9968fad8df907bc5279cb"
+  },
+  {
+    "path": "scripts/boundary-timing-instrumentation-notes.md.txt",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-instrumentation-notes.md",
+    "bytes": 1912,
+    "sha256": "c1ac86c1c113462161d2d1368f11da8ad87df85bb4048f9b05a5bb1512522f30"
+  },
+  {
+    "path": "scripts/boundary-timing-instrumentation.patch.txt.gz",
+    "source": "/tmp/deadpan-resume-20261006/boundary-timing-instrumentation.patch",
+    "bytes": 5372,
+    "sha256": "436d9ac5c9d08f1929a10aedd070f71de9c145e38059569ec23b2d117d41f1c3"
+  },
+  {
+    "path": "scripts/build-insertion-snapshots.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/build-insertion-snapshots.py",
+    "bytes": 2301,
+    "sha256": "b6eb405ac8168584cbe6d44f3a7cdf5a9280ead62b1dcce1bc91537b6701e63f"
+  },
+  {
+    "path": "scripts/run-boundary-final-checks.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/run-boundary-final-checks.py",
+    "bytes": 1897,
+    "sha256": "9e86f0569216a214369a34cb27febfa4fa9fb242a043bed1f1a5b95f1fbf6c66"
+  },
+  {
+    "path": "scripts/run-boundary-release-checks.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/run-boundary-release-checks.py",
+    "bytes": 3972,
+    "sha256": "227a77c9b9c18f47aa3a52a09449280d21dccf37aebfa83c1d6e0a2bf7b8927b"
+  },
+  {
+    "path": "scripts/run-boundary-timing-checks.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/run-boundary-timing-checks.py",
+    "bytes": 2971,
+    "sha256": "69e59ec38d8c92a352f753910ef3c977b7eb1ccc257f4bcee723c5c1a87088b9"
+  },
+  {
+    "path": "scripts/verify-boundary-generation.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/verify-boundary-generation.py",
+    "bytes": 33968,
+    "sha256": "aeae12b2689110c7d97c52d851a1a989039b670811fef0ad68369a89caafd1ad"
+  }
+]

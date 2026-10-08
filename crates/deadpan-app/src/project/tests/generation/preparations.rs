@@ -457,6 +457,13 @@ fn a_replacement_uses_the_existing_cancellable_model_slot() {
         job.revision == *extended.document.revision_id() && job.phase.steps() == Some((2, 2))
     });
     let job = active.generation.unwrap().job.unwrap();
+    assert_eq!(
+        reader(&extended)
+            .generation_intents(None, 10)
+            .unwrap()
+            .len(),
+        1
+    );
     let rows = fixture.service.jobs().snapshot();
     assert_eq!(
         rows.iter()
@@ -482,4 +489,29 @@ fn a_replacement_uses_the_existing_cancellable_model_slot() {
         attempt_states(&extended, job.request.as_ref().unwrap()),
         [JobState::Cancelled]
     );
+    assert!(
+        reader(&extended)
+            .generation_intents(None, 10)
+            .unwrap()
+            .is_empty()
+    );
+    let resized = command(
+        &fixture.service,
+        edit_request(
+            &extended,
+            ProjectEdit::HoldDuration {
+                node: fixture.hold.clone(),
+                duration: FrameDuration::new(20).unwrap(),
+            },
+        ),
+    );
+    assert!(resized.error.is_none(), "{:?}", resized.error);
+    let workspace = resized.workspace.unwrap();
+    assert!(
+        reader(&workspace)
+            .generation_intents(None, 10)
+            .unwrap()
+            .is_empty()
+    );
+    reader(&workspace).validate_full().unwrap();
 }

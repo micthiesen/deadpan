@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+import json, os, subprocess, time
+from pathlib import Path
+root=Path("/tmp/deadpan-resume-20261006")
+env=dict(os.environ)
+env["DEADPAN_FFMPEG_PREFIX"]="/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
+env["DEADPAN_REQUIRE_SYNTHETIC_WORKER"]="1"
+steps=[
+("fmt",["cargo","fmt","--all"]),
+("diff-check",["git","diff","--check"]),
+("clippy",["cargo","clippy","--workspace","--all-targets","--locked","--","-D","warnings"]),
+("clippy-ui",["cargo","clippy","-p","deadpan-app","--features","ui-harness","--all-targets","--locked","--","-D","warnings"]),
+("store-fixture",["cargo","nextest","run","-p","deadpan-store","--test","generation_bundles","--locked","-E","test(existing_authored_artifact_resizes_reverts_and_navigates_durable_history)"]),
+("native-default",["cargo","nextest","run","-p","deadpan-app","--locked","-E","test(project::service::generation) | test(project::tests::generation) | test(project::generation::final_provider)"]),
+("native-ui",["cargo","nextest","run","-p","deadpan-app","--features","ui-harness","--locked","--no-fail-fast"]),
+("doc-tests",["cargo","test","--workspace","--doc","--locked"]),
+("playback-leak",["cargo","nextest","run","-p","deadpan-playback","--locked","-E","test(loop_faults_invalid_windows_and_overflow_are_explicit)"]),
+("fmt-check",["cargo","fmt","--all","--","--check"]),
+]
+reports=[]
+for name,args in steps:
+    start=time.monotonic()
+    with (root/f"boundary-final-{name}.log").open("w") as log:
+        r=subprocess.run(args,cwd="/Users/michael/Code/deadpan",env=env,stdout=log,stderr=subprocess.STDOUT)
+    report={"name":name,"command":args,"exit":r.returncode,"seconds":round(time.monotonic()-start,3)}
+    reports.append(report)
+    (root/"boundary-final-checks.json").write_text(json.dumps(reports,indent=2)+"\n")
+    print(json.dumps(report),flush=True)
+    if r.returncode: raise SystemExit(r.returncode)

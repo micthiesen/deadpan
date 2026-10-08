@@ -69,12 +69,43 @@ impl Scan {
 fn capacity_notice(
     notices: &[deadpan_store::generation_preparations::PreparationNotice],
 ) -> Option<String> {
-    let total = notices.iter().fold(0u64, |sum, notice| match notice {
-        deadpan_store::generation_preparations::PreparationNotice::QueueCapacity {
-            total, ..
-        } => sum.saturating_add(*total),
-    });
-    (total > 0).then(|| format!("AI queue was full: {total} older pending preparations were discarded. Timing edits stay saved."))
+    use deadpan_store::generation_preparations::PreparationNotice;
+    let (queued, intents) = notices
+        .iter()
+        .fold((0u64, 0u64), |(queued, intents), notice| match notice {
+            PreparationNotice::QueueCapacity { total, .. } => {
+                (queued.saturating_add(*total), intents)
+            }
+            PreparationNotice::IntentCapacity { total, .. } => {
+                (queued, intents.saturating_add(*total))
+            }
+        });
+    let mut messages = Vec::new();
+    if queued > 0 {
+        messages.push(format!(
+            "AI queue was full: {queued} older pending preparations were discarded."
+        ));
+    }
+    if intents > 0 {
+        messages.push(format!(
+            "AI intent limit reached: {intents} older automatic requests were closed."
+        ));
+    }
+    if messages.is_empty() {
+        None
+    } else {
+        messages.push("Timing edits stay saved.".into());
+        Some(messages.join(" "))
+    }
+}
+
+fn preparation_output_notices(output: &serde_json::Value) -> Option<&serde_json::Value> {
+    output.get("generation_preparation_notices").or_else(|| {
+        let outcome = output.get("outcome")?;
+        outcome
+            .get("generation_preparation_notices")
+            .or_else(|| outcome.get("commit")?.get("generation_preparation_notices"))
+    })
 }
 
 impl Service {
@@ -92,11 +123,7 @@ impl Service {
         &mut self,
         output: &serde_json::Value,
     ) {
-        if let Some(notices) = output.get("generation_preparation_notices").or_else(|| {
-            output
-                .get("outcome")
-                .and_then(|outcome| outcome.get("generation_preparation_notices"))
-        }) {
+        if let Some(notices) = preparation_output_notices(output) {
             match serde_json::from_value::<
                 Vec<deadpan_store::generation_preparations::PreparationNotice>,
             >(notices.clone())
@@ -489,6 +516,74 @@ mod tests {
         assert!(text.contains("301 older pending preparations"));
         assert!(text.contains("Timing edits stay saved"));
         assert!(!text.contains("first-displaced"));
+    }
+
+    #[test]
+    fn intent_capacity_does_not_claim_that_only_queued_work_was_discarded() {
+        use deadpan_store::generation_preparations::PreparationNotice;
+        let text = capacity_notice(&[
+            PreparationNotice::QueueCapacity {
+                displaced: Vec::new(),
+                total: 3,
+            },
+            PreparationNotice::IntentCapacity {
+                displaced: Vec::new(),
+                total: 2,
+            },
+        ])
+        .unwrap();
+        assert!(text.contains("3 older pending preparations"));
+        assert!(text.contains("2 older automatic requests were closed"));
+        assert!(text.ends_with("Timing edits stay saved."));
+    }
+
+    #[test]
+    fn host_source_registration_commit_preserves_capacity_notices() {
+        use deadpan_store::generation_preparations::PreparationNotice;
+        let notices = serde_json::to_value([
+            PreparationNotice::QueueCapacity {
+                displaced: vec![PreparationId::new("displaced-queued").unwrap()],
+                total: 3,
+            },
+            PreparationNotice::IntentCapacity {
+                displaced: vec![PreparationId::new("displaced-intent").unwrap()],
+                total: 2,
+            },
+        ])
+        .unwrap();
+        // Macro, ordinary command/history and prepared source registration
+        // replies carry the same notices at these three different depths.
+        for output in [
+            serde_json::json!({"generation_preparation_notices": notices}),
+            serde_json::json!({"outcome": {"generation_preparation_notices": notices}}),
+            serde_json::json!({
+                "protocol": 1,
+                "committed": true,
+                "outcome": {
+                    "commit": {"generation_preparation_notices": notices}
+                }
+            }),
+        ] {
+            let captured = preparation_output_notices(&output).unwrap();
+            assert_eq!(captured, &notices);
+            let decoded: Vec<PreparationNotice> = serde_json::from_value(captured.clone()).unwrap();
+            assert_eq!(
+                capacity_notice(&decoded).as_deref(),
+                Some(
+                    "AI queue was full: 3 older pending preparations were discarded. AI intent limit reached: 2 older automatic requests were closed. Timing edits stay saved."
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn host_source_registration_without_an_edit_has_no_capacity_notice() {
+        let output = serde_json::json!({
+            "protocol": 1,
+            "committed": false,
+            "outcome": {"commit": null}
+        });
+        assert!(preparation_output_notices(&output).is_none());
     }
 
     #[test]

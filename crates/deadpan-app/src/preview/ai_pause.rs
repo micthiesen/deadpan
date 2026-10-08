@@ -15,7 +15,8 @@ use deadpan_jobs::{AttemptId, RequestId};
 use super::*;
 use crate::navigation::{AiAction, CompareChoice, VariantChoice};
 use crate::project::generation::{
-    Candidate, CandidatePreview, GenerationOperation, GenerationPresentation, Job, Outcome, Update,
+    Candidate, CandidatePreview, FinalProvider, GenerationOperation, GenerationPresentation, Job,
+    Outcome, Update,
 };
 use crate::transport::Domain;
 use deadpan_core::{AudioSample, RevisionId};
@@ -1440,21 +1441,12 @@ impl DeadpanApp {
             return;
         };
         let compare = self.editor_key(EditorKey::CompareAi);
-        self.message = Some(if self.ai.before {
-            format!(
-                "Comparing: Before, the pause as it is now. {compare} shows the AI variant at this frame; nothing is saved."
-            )
-        } else {
-            let number = self.ai_variant_number(preview);
-            match number {
-                Some((number, count)) if count > 1 => format!(
-                    "Comparing: AI variant {number} of {count}. {compare} shows Before at this frame; nothing is saved."
-                ),
-                _ => format!(
-                    "Comparing: AI pictures. {compare} shows Before at this frame; nothing is saved."
-                ),
-            }
-        });
+        self.message = Some(comparison_message(
+            preview.final_provider(),
+            self.ai.before,
+            self.ai_variant_number(preview),
+            &compare,
+        ));
     }
 
     /// The shown preview's 1-based variant number and the offered count.
@@ -1866,20 +1858,14 @@ impl DeadpanApp {
                         .as_ref()
                         .and_then(|preview| self.ai_variant_number(preview));
                     let compare = self.editor_key(EditorKey::CompareAi);
-                    self.message = Some(if self.ai.before {
-                        format!(
-                            "Comparing: Before, the pause as it is now. {compare} shows the AI variant at this frame; nothing is saved."
-                        )
-                    } else {
-                        match number {
-                            Some((number, count)) if count > 1 => format!(
-                                "Previewing AI variant {number} of {count}. Nothing is saved; {compare} compares with Before, :audition-ai plays it with the pause's sound, :accept-ai keeps it, Esc returns."
-                            ),
-                            _ => format!(
-                                "Previewing AI pictures. Nothing is saved; {compare} compares with Before, :audition-ai plays them with the pause's sound, :accept-ai keeps them, Esc returns."
-                            ),
-                        }
-                    });
+                    if let Some(preview) = &self.ai.preview {
+                        self.message = Some(preview_message(
+                            preview.final_provider(),
+                            self.ai.before,
+                            number,
+                            &compare,
+                        ));
+                    }
                     if resumed {
                         // A paused switch is not navigation: keep the paused
                         // position instead of the caller's stopping refresh.
@@ -2272,11 +2258,23 @@ impl DeadpanApp {
             .preview
             .as_ref()
             .is_some_and(|preview| preview.request() == &candidate.request);
+        let replacement_fallback = self.ai.preview.as_ref().is_some_and(|preview| {
+            preview.request() == &candidate.request
+                && candidate
+                    .variants
+                    .get(selected)
+                    .is_some_and(|variant| &variant.attempt == preview.attempt())
+                && preview.final_provider() == FinalProvider::ReplacementFallback
+        });
         let previewed = self
             .ai
             .preview
             .as_ref()
-            .filter(|preview| preview.request() == &candidate.request && !self.ai.before)
+            .filter(|preview| {
+                preview.request() == &candidate.request
+                    && !self.ai.before
+                    && preview.final_provider() == FinalProvider::AiPictures
+            })
             .map(|preview| preview.attempt().clone());
         let mut colour_note = None;
         for (index, variant) in candidate.variants.iter().enumerate() {
@@ -2414,6 +2412,13 @@ impl DeadpanApp {
                     .color(style::LAVENDER),
             );
         }
+        if replacement_fallback {
+            ui.label(
+                egui::RichText::new("Replacement fallback: neighboring inputs change on acceptance. Accept saves the fallback and prepares fresh AI pictures.")
+                    .size(12.0)
+                    .color(style::LAVENDER),
+            );
+        }
         let compare_key = self.editor_key(EditorKey::CompareAi);
         if ui
             .add_enabled(
@@ -2428,10 +2433,12 @@ impl DeadpanApp {
                     &compare_key,
                 ),
             )
-            .on_hover_text(format!(
+            .on_hover_text(if replacement_fallback {
+                "Switch between the pause as it is now (Before) and the replacement fallback at the same frame. Neighboring inputs change on acceptance. Nothing is saved.".into()
+            } else { format!(
                 "Switch between the pause as it is now (Before) and the chosen variant at the same frame. While auditioning, the sound continues from the same heard sample. {} shows the next variant. Nothing is saved.",
                 self.editor_key(EditorKey::NextAi)
-            ))
+            ) })
             .clicked()
         {
             self.ai_action(
@@ -2447,7 +2454,11 @@ impl DeadpanApp {
         };
         if ui
             .add_enabled(ready, style::row_action(ui, label, key))
-            .on_hover_text("Show the chosen variant's pictures in the viewer at the edit cursor. Move through the pause to see every frame; nothing is saved.")
+            .on_hover_text(if replacement_fallback {
+                "Show the replacement fallback that accepting this variant would save because neighboring inputs change. Nothing is saved."
+            } else {
+                "Show the chosen variant's pictures in the viewer at the edit cursor. Move through the pause to see every frame; nothing is saved."
+            })
             .clicked()
         {
             self.ai_action(AiAction::Preview, Some(self.ai_capture()));
@@ -2462,7 +2473,11 @@ impl DeadpanApp {
                     ":audition-ai",
                 ),
             )
-            .on_hover_text("Loop the pause with its lead-in and follow-through: the chosen variant's pictures with the pause's own sound, as they would play after Accept. Nothing is saved.")
+            .on_hover_text(if replacement_fallback {
+                "Loop the replacement fallback with the pause's own sound, lead-in and follow-through, as they would play after Accept. Neighboring inputs change on acceptance. Nothing is saved."
+            } else {
+                "Loop the pause with its lead-in and follow-through: the chosen variant's pictures with the pause's own sound, as they would play after Accept. Nothing is saved."
+            })
             .clicked()
         {
             self.ai_action(AiAction::Audition, Some(self.ai_capture()));
@@ -2472,7 +2487,11 @@ impl DeadpanApp {
                 ready,
                 style::row_action(ui, "Accept", ":accept-ai").fill(style::SELECTED),
             )
-            .on_hover_text("Make the chosen variant the pause's picture as one undoable edit.")
+            .on_hover_text(if replacement_fallback {
+                "Save the replacement fallback and prepare fresh AI pictures because neighboring inputs change, as one undoable edit."
+            } else {
+                "Make the chosen variant the pause's picture as one undoable edit."
+            })
             .clicked()
         {
             self.ai_action(AiAction::Accept, Some(self.ai_capture()));
@@ -2585,23 +2604,25 @@ impl DeadpanApp {
                 let number = self.ai_variant_number(preview);
                 ui.colored_label(
                     style::LAVENDER,
-                    match number {
-                        _ if self.ai.before => "AI COMPARE · BEFORE · NOT SAVED".to_owned(),
-                        Some((number, count)) if count > 1 => {
-                            format!("AI PREVIEW · VARIANT {number} OF {count} · NOT SAVED")
-                        }
-                        _ => "AI PREVIEW · NOT SAVED".to_owned(),
-                    },
+                    preview_label(preview.final_provider(), self.ai.before, number),
                 );
                 style::key_hint(
                     ui,
                     &self.editor_key(EditorKey::CompareAi),
-                    if self.ai.before {
+                    if self.ai.before
+                        && preview.final_provider() == FinalProvider::ReplacementFallback
+                    {
+                        "show replacement fallback"
+                    } else if self.ai.before {
                         "show AI variant"
                     } else {
                         "show before"
                     },
                 );
+                if !self.ai.before && preview.final_provider() == FinalProvider::ReplacementFallback
+                {
+                    ui.label("Neighboring inputs change on acceptance");
+                }
                 if number.is_some_and(|(_, count)| count > 1) {
                     style::key_hint(ui, &self.editor_key(EditorKey::NextAi), "next variant");
                 }
@@ -2822,6 +2843,125 @@ fn variant_row(ui: &mut egui::Ui, enabled: bool, row: VariantRow) -> egui::Respo
         );
     }
     response
+}
+
+fn comparison_message(
+    provider: FinalProvider,
+    before: bool,
+    number: Option<(usize, usize)>,
+    compare: &str,
+) -> String {
+    if provider == FinalProvider::ReplacementFallback {
+        if before {
+            format!(
+                "Comparing: Before, the pause as it is now. {compare} shows the replacement fallback at this frame because neighboring inputs change on acceptance; nothing is saved."
+            )
+        } else {
+            format!(
+                "Comparing: Replacement fallback because neighboring inputs change on acceptance. {compare} shows Before at this frame; nothing is saved."
+            )
+        }
+    } else if before {
+        format!(
+            "Comparing: Before, the pause as it is now. {compare} shows the AI variant at this frame; nothing is saved."
+        )
+    } else {
+        match number {
+            Some((number, count)) if count > 1 => format!(
+                "Comparing: AI variant {number} of {count}. {compare} shows Before at this frame; nothing is saved."
+            ),
+            _ => format!(
+                "Comparing: AI pictures. {compare} shows Before at this frame; nothing is saved."
+            ),
+        }
+    }
+}
+
+fn preview_message(
+    provider: FinalProvider,
+    before: bool,
+    number: Option<(usize, usize)>,
+    compare: &str,
+) -> String {
+    if before {
+        comparison_message(provider, true, number, compare)
+    } else if provider == FinalProvider::ReplacementFallback {
+        format!(
+            "Previewing replacement fallback because neighboring inputs change on acceptance. Nothing is saved; {compare} compares with Before, :audition-ai plays it with the pause's sound, :accept-ai saves the fallback and prepares fresh AI pictures, Esc returns."
+        )
+    } else {
+        match number {
+            Some((number, count)) if count > 1 => format!(
+                "Previewing AI variant {number} of {count}. Nothing is saved; {compare} compares with Before, :audition-ai plays it with the pause's sound, :accept-ai keeps it, Esc returns."
+            ),
+            _ => format!(
+                "Previewing AI pictures. Nothing is saved; {compare} compares with Before, :audition-ai plays them with the pause's sound, :accept-ai keeps them, Esc returns."
+            ),
+        }
+    }
+}
+
+fn preview_label(provider: FinalProvider, before: bool, number: Option<(usize, usize)>) -> String {
+    if before {
+        "AI COMPARE · BEFORE · NOT SAVED".into()
+    } else if provider == FinalProvider::ReplacementFallback {
+        "REPLACEMENT FALLBACK · NOT SAVED".into()
+    } else {
+        match number {
+            Some((number, count)) if count > 1 => {
+                format!("AI PREVIEW · VARIANT {number} OF {count} · NOT SAVED")
+            }
+            _ => "AI PREVIEW · NOT SAVED".into(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod final_provider_feedback_tests {
+    use super::*;
+
+    #[test]
+    fn final_fallback_is_named_during_preview_and_both_comparison_sides() {
+        let provider = FinalProvider::ReplacementFallback;
+        assert_eq!(
+            preview_label(provider, false, Some((2, 3))),
+            "REPLACEMENT FALLBACK · NOT SAVED"
+        );
+        for before in [false, true] {
+            for message in [
+                comparison_message(provider, before, Some((2, 3)), "Tab"),
+                preview_message(provider, before, Some((2, 3)), "Tab"),
+            ] {
+                assert!(
+                    message.to_lowercase().contains("replacement fallback"),
+                    "{message}"
+                );
+                assert!(message.contains("neighboring inputs change"), "{message}");
+                assert!(!message.contains("AI variant 2"), "{message}");
+                assert!(!message.contains("keeps it"), "{message}");
+            }
+        }
+        assert!(
+            preview_message(provider, false, None, "Tab")
+                .contains("saves the fallback and prepares fresh AI pictures")
+        );
+    }
+
+    #[test]
+    fn ordinary_ai_preview_feedback_is_unchanged() {
+        assert_eq!(
+            preview_label(FinalProvider::AiPictures, false, Some((2, 3))),
+            "AI PREVIEW · VARIANT 2 OF 3 · NOT SAVED"
+        );
+        assert_eq!(
+            comparison_message(FinalProvider::AiPictures, false, None, "Tab"),
+            "Comparing: AI pictures. Tab shows Before at this frame; nothing is saved."
+        );
+        assert_eq!(
+            preview_message(FinalProvider::AiPictures, false, None, "Tab"),
+            "Previewing AI pictures. Nothing is saved; Tab compares with Before, :audition-ai plays them with the pause's sound, :accept-ai keeps them, Esc returns."
+        );
+    }
 }
 
 #[cfg(test)]

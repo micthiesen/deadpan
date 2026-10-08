@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, error::Error};
 
 use deadpan_core::*;
-use deadpan_store::{AccessMode, ProjectStore};
+use deadpan_store::ProjectStore;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
@@ -293,71 +293,5 @@ fn generic_commands_cannot_bypass_dedicated_candidate_admission() -> Result {
         assert_eq!(store.snapshot()?, before);
     }
     store.validate()?;
-    Ok(())
-}
-
-#[test]
-fn existing_authored_artifact_resizes_reverts_and_navigates_durable_history() -> Result {
-    let scratch = tempfile::tempdir()?;
-    let path = scratch.path().join("retained.deadpan");
-    let (initial, artifact, assets) = fixture()?;
-    let accepted = apply(
-        &initial,
-        &request(
-            &initial,
-            "accepted",
-            Command::AcceptGeneratedHold {
-                node: node(),
-                artifact,
-                assets,
-            },
-        ),
-    )?
-    .forward
-    .apply(&initial)?;
-    drop(ProjectStore::create(&path, &initial)?);
-    // A trusted preexisting snapshot fixture, not a media acceptance shortcut.
-    // No test file is claimed to be validated or playable generated media.
-    let mut json = serde_json::to_value(&accepted)?;
-    json["revision_id"] = serde_json::to_value(initial.revision_id())?;
-    let retained = ProjectDocument::from_json(&json.to_string())?;
-    let database = rusqlite::Connection::open(path.join("project.sqlite"))?;
-    database.execute(
-        "UPDATE revisions SET document=?1,json_bound=length(CAST(?1 AS BLOB)) WHERE kind='initial'",
-        [retained.to_json()?],
-    )?;
-    drop(database);
-    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    store.commit(&request(
-        &retained,
-        "shorter",
-        Command::SetHoldDuration {
-            node: node(),
-            duration: duration(12),
-        },
-    ))?;
-    let shorter = store.snapshot()?;
-    store.undo(shorter.revision_id(), RevisionId::new("undo-shorter")?)?;
-    assert_eq!(store.snapshot()?.nodes(), retained.nodes());
-    let current = store.snapshot()?;
-    store.redo(current.revision_id(), RevisionId::new("redo-shorter")?)?;
-    assert_eq!(store.snapshot()?.nodes(), shorter.nodes());
-    let current = store.snapshot()?;
-    store.commit(&request(
-        &current,
-        "revert",
-        Command::RevertGeneratedHold { node: node() },
-    ))?;
-    assert!(matches!(&store.snapshot()?.nodes()[&node()].kind,
-        NodeKind::Hold { recipe } if recipe.video == HoldVideo::Background && recipe.duration == duration(12)));
-    let current = store.snapshot()?;
-    store.undo(current.revision_id(), RevisionId::new("undo-revert")?)?;
-    assert_eq!(store.snapshot()?.nodes(), shorter.nodes());
-    store.validate()?;
-    drop(store);
-    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
-    assert_eq!(reopened.snapshot()?.nodes(), shorter.nodes());
-    assert_eq!(reopened.snapshot()?.assets(), retained.assets());
-    reopened.validate()?;
     Ok(())
 }

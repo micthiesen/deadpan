@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 71;
+pub const VERSION: u32 = 72;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,6 +18,8 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
+    // Schema 72 retains accepted input evidence and durable automatic-generation
+    // intent through conditioning, Ready candidates and history navigation.
     // Schema 71 proves AI pause insertion and accepted extension as distinct
     // durable preparation origins. Schema 70 queues conditioning after accepted Holds
     // outgrow their retained frames. Schema 69 gives AI requests explicit authoring scopes and
@@ -96,6 +98,8 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::generation_attempts::create_tables(&transaction)?;
     crate::generation_preparations::create_tables(&transaction)?;
     crate::generation_retention::create_tables(&transaction)?;
+    crate::generation_origins::create_tables(&transaction)?;
+    crate::generation_intents::create_tables(&transaction)?;
     crate::transcripts::create_tables(&transaction)?;
     crate::speech_activity::create_tables(&transaction)?;
     crate::shot_analysis::create_tables(&transaction)?;

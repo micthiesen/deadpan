@@ -16,7 +16,7 @@ pub(crate) struct Event {
 }
 
 fn may_isolate(command: &Command) -> bool {
-    match command {
+    match command.base_command() {
         Command::EditScoped { .. }
         | Command::EditScopedMany { .. }
         | Command::EditOccurrence { .. }

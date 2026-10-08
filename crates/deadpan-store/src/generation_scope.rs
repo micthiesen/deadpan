@@ -203,7 +203,8 @@ impl crate::ProjectStore {
         let transaction = self.connection.unchecked_transaction()?;
         let plan = crate::prepare_command(&transaction, &self.documents, request)?;
         crate::compound::require_authored(&plan)?;
-        let contexts = preview_command(&transaction, &plan.current, request, &plan.next)?;
+        let effective = serde_json::from_str(&plan.request_json)?;
+        let contexts = preview_command(&transaction, &plan.current, &effective, &plan.next)?;
         Ok((plan.edit, contexts))
     }
 }

@@ -1,0 +1,20 @@
+# Boundary timing instrumentation patch
+
+Scope: preview/slip.rs and preview/harness/telemetry.rs only. No checkout files changed.
+
+- Emit harness admission/rejection only after the actual CommitSlip submission result, matching submit_now. Eligibility guards still perform no submission.
+- Preserve the same-frame commit origin through an idle dispatch; actual current input still takes precedence. begin_frame still clears the transient committed origin.
+- Regression follows one admitted input through deferred request, next-frame decode/submission and composition. It asserts a 9 ms commit, 13 ms request-to-picture and 24 ms input-to-picture interval, exactly one picture completion, then no inherited input timing for a later unrelated request.
+- Existing completion_before_new_input_keeps_its_admitted_origin retains its explicit real-new-input precedence checks and updates the empty-dispatch expectation.
+- boundary_performance.rs remains strict and unchanged. No synthetic samples or timing fallback.
+
+Observed failure: /tmp/deadpan-resume-20261006/boundary-performance-ai-boundaries/report.json. Frame 1177 Enter had no admission event; frame 1196 committed, then idle-dispatched, then requested new picture ticket 22; frame 1197 decoded/submitted/composed ticket 22. The apparent 55.861 ms commit sample was anchored to an earlier Undo admission, not Enter. Retain that failed report.
+
+Tests to run after applying: telemetry unit tests and the strict release ai-boundaries performance replay. No tests, Cargo, builds or rustfmt run while preparing this patch.
+
+## Patch base SHA-256
+
+- `crates/deadpan-app/src/preview/slip.rs`: `9df07d969a40da428085f8bd51d9a237c8dc9906880d28ab4b45b7278945b1c5`
+- `crates/deadpan-app/src/preview/harness/telemetry.rs`: `a7d40044170821cd9bf3af31d606cdb6c0218d8217cfa375884fd161557591bf`
+
+Patch SHA-256: `436d9ac5c9d08f1929a10aedd070f71de9c145e38059569ec23b2d117d41f1c3`

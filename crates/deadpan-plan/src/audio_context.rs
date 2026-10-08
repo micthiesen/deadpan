@@ -250,6 +250,7 @@ impl RenderPlan {
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
             parents,
+            definition_index: None,
         })
     }
 
@@ -450,6 +451,7 @@ impl RenderPlan {
             // Context schema 1 cannot carry bindings. Definition exclusions
             // are therefore immaterial in these retained legacy operands.
             parents: vec![None; layout.nodes().len()],
+            definition_index: None,
         })
     }
 }

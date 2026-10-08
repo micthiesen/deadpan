@@ -231,8 +231,8 @@ fn accepted_variants_never_expire_and_their_media_stays() -> Result {
     assert!(offered(&store, &accepted)? && offered(&store, &newest)?);
     assert!(!offered(&store, &other)?);
 
-    // Without the flag (an acceptance it did not record), the reference
-    // scan still recognises the media history names.
+    // Even if the operational flag is corrupted, the defensive reference
+    // scan still recognises the media history names and prevents expiry.
     let database = Connection::open(package.join("project.sqlite"))?;
     database.execute(
         "UPDATE generation_variant_retention SET accepted=0 WHERE attempt_id='attempt-1'",
@@ -258,6 +258,22 @@ fn accepted_variants_never_expire_and_their_media_stays() -> Result {
         false,
     )?;
     assert_eq!((again.expired.len(), again.skipped_accepted), (0, 0));
+
+    // The immutable origin also requires the acceptance's retention evidence.
+    // Pinning media defensively does not make this deliberate corruption valid.
+    assert!(
+        store
+            .validate_full()
+            .unwrap_err()
+            .to_string()
+            .contains("accepted origin bundle lacks accepted retention evidence")
+    );
+    let database = Connection::open(package.join("project.sqlite"))?;
+    database.execute(
+        "UPDATE generation_variant_retention SET accepted=1 WHERE attempt_id='attempt-1'",
+        [],
+    )?;
+    drop(database);
 
     // Cleanup removes only the expired variant's masters; the accepted
     // variant's objects stay referenced by history and on disk.

@@ -50,27 +50,29 @@ scope. The app prepares and generates the replacement through its bounded AI
 worker; the core remains independent of jobs. See
 [replacement lifecycle and recovery](AI_HOLDS.md#lengthening-accepted-pauses).
 
+Changed raw source boundaries also restore the captured fallback and create
+replacement work, atomically with the source edit. The store derives the final
+provider set after the complete base command, including Compound commands and
+dependent neighboring Holds. The core applies the derived
+`WithBoundaryReplacements` envelope as one reversible patch; it performs no
+media or model work. Hosts cannot supply an unverified replacement list. See
+[changed source boundaries](AI_HOLDS.md#changed-source-boundaries).
+
 The picture plan requests sampled-master frame ordinals and keeps compiled revisions
 immutable. It never resamples the original map after a duration change. Reversion
 does not delete asset records or files; inverse history retains the full provider.
-History-aware media reference accounting and cleanup remain unimplemented.
+History-aware media reference accounting keeps accepted objects until no
+authored or retained history reference needs them; see [Storage](STORAGE.md).
 
 ## Storage and migration
 
-Database schema 11 stores core schema 6 while retaining the operational generation
-tables introduced in database schemas 5 and 6, plus separate
-[modern bundle receipts](GENERATION_BUNDLES.md) with optional admission evidence.
-Database schemas 1 through 10 migrate through
-complete chronological replay on a consistent backup. Frozen core-schema-1-through-4 adapters reject
-new generated providers and commands even when nested in old subtrees, gaps, or
-patches. Those asset records also retain their original SHA-256-only contract;
-the newer BLAKE3 vocabulary cannot enter an old document, command, or patch.
-Every old snapshot and forward/inverse transaction is compared during
-replay. Existing requests, clocks, attempts, candidate receipts, and selection rows
-remain unchanged. Interrupted-job recovery occurs only on a subsequent writer open.
-Schema-7/8/9/10 history uses the frozen core schema-5 adapter; old Source nodes
-gain explicit `fit_beat` audio mappings without changing generated Hold semantics.
-Old requests gain no inferred bridge plan and old receipts gain no admission evidence.
+Database schema 72 stores core document schema 46, qualified bundle receipts,
+immutable accepted-origin receipts and durable automatic-intent history. Older
+unused development packages are refused before admission without modification,
+under the owner's breaking-format authorization for this session. Accepted
+origins are proven through their original qualified acceptance; raw generated
+snapshots cannot stand in for that proof. Historical media contracts retain
+their declared interpretation without invented evidence.
 
 Generic store ingress examines the resulting authored providers, including Repeat
 gaps and override-owned nodes. It can retain or copy an already present artifact,

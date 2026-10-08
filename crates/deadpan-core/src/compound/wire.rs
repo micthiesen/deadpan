@@ -57,16 +57,18 @@ struct Read<'a> {
     budget: &'a mut Budget,
     depth: usize,
     collection_limit: Option<usize>,
-    refuse: bool,
+    refuse: Option<usize>,
     transaction: bool,
 }
 impl<'de> DeserializeSeed<'de> for Read<'_> {
     type Value = Value;
     fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Value, D::Error> {
-        if self.refuse {
-            return Err(D::Error::custom(
-                "resolved transaction exceeds 1024 expanded steps",
-            ));
+        if let Some(maximum) = self.refuse {
+            return Err(D::Error::custom(if maximum == crate::MAX_DOCUMENT_NODES {
+                "boundary replacements exceed the document node limit"
+            } else {
+                "resolved transaction exceeds 1024 expanded steps"
+            }));
         }
         if self.depth > 64 {
             return Err(D::Error::custom("resolved transaction depth limit"));
@@ -119,9 +121,7 @@ impl<'de> Visitor<'de> for Read<'_> {
             budget: self.budget,
             depth: self.depth + 1,
             collection_limit: None,
-            refuse: self
-                .collection_limit
-                .is_some_and(|limit| values.len() == limit),
+            refuse: self.collection_limit.filter(|limit| values.len() == *limit),
             transaction: false,
         })? {
             values.push(value);
@@ -146,9 +146,10 @@ impl<'de> Visitor<'de> for Read<'_> {
                     (true, "steps") => Some(super::MAX_COMPOUND_STEPS),
                     (true, "inputs") => Some(27),
                     (_, "instructions") => Some(crate::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS),
+                    (_, "replacements") => Some(crate::MAX_DOCUMENT_NODES),
                     _ => None,
                 },
-                refuse: false,
+                refuse: None,
                 transaction: key == "transaction",
             })?;
             values.insert(key, value);
@@ -213,7 +214,7 @@ fn read_root<'de, D: Deserializer<'de>>(
         budget: &mut budget,
         depth: 0,
         collection_limit: None,
-        refuse: false,
+        refuse: None,
         transaction,
     }
     .deserialize(deserializer)?;

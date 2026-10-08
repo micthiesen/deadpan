@@ -727,7 +727,15 @@ fn ready_script() -> Script {
 
 /// Whether this machine can run the synthetic Ready worker.
 fn synthetic_ready_available() -> bool {
-    crate::project::generation::synthetic_tools().is_ok()
+    let tools = crate::project::generation::synthetic_tools();
+    if std::env::var_os("DEADPAN_REQUIRE_SYNTHETIC_WORKER").is_some_and(|value| value == "1") {
+        assert!(
+            tools.is_ok(),
+            "Required synthetic Ready tools unavailable: {:?}",
+            tools.as_ref().err()
+        );
+    }
+    tools.is_ok()
 }
 
 /// Variants through the real job thread: conditioning, allocation, the

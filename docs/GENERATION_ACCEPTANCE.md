@@ -44,7 +44,9 @@ objects through verified snapshots. Inside the transaction it checks:
 - The Hold duration, project rate and context match the persisted bridge plan.
 - The request's current authoring address resolves every explicit Repeat
   Default or stable Play choice and the Hold's full intrinsic duration.
-- Complete before/after context reconciliation preserves the accepted request.
+- Complete before/after context reconciliation preserves the accepted request,
+  or independently derives the exact fallback required when this acceptance
+  changes neighboring inputs.
 
 Asset records come from the receipt's observed spans, exact frame counts and
 content identities. One command registers the assets and captures the fallback
@@ -53,6 +55,13 @@ selected branch atomically; a Default acceptance retains existing overrides.
 Revision, forward/inverse history, scope address mappings, cursor and request
 relevance commit together. A failed transaction leaves authored state unchanged;
 previously published files remain available.
+
+The same transaction records an immutable accepted-origin receipt and derives
+the final providers of dependent Holds. A newly accepted candidate can itself
+return to its captured fallback when the final boundary calculation requires
+it; fresh replacement intent is retained. Native comparison and acceptance
+feedback describe that actual final provider. Preview uses the same complete
+prospective document and performs no writes.
 
 Preview performs the same resolution and object checks without writes, including
 on a read-only store. The host uses its resulting edit to resolve context before
@@ -86,7 +95,7 @@ immutable origin, preparing one render plan for the exact borrowed prospective
 document. The plan cannot leak across failed transactions that reuse a revision
 ID. Ordinary store writes use the same resolver preparation contract.
 
-Store schema 69 deliberately refuses earlier unused development packages under
+Store schema 72 deliberately refuses earlier unused development packages under
 the session's breaking-format authorization. Historical generated provenance
 remains readable under its declared contract; it gains no invented evidence.
 

@@ -7,6 +7,8 @@
 mod audit;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod backups;
+mod boundary_replacements;
+mod boundary_transition;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod checkpoint;
 mod compound;
@@ -17,6 +19,9 @@ pub mod generated_media;
 pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
+pub mod generation_intents;
+pub mod generation_origins;
+pub mod generation_pictures;
 pub mod generation_preparations;
 pub mod generation_retention;
 mod generation_scope;
@@ -909,6 +914,8 @@ fn validate_database(
     registers::check_stored_sizes(&transaction)?;
     generation::check_stored_sizes(&transaction)?;
     generation_preparations::check_stored_sizes(&transaction)?;
+    generation_intents::check_sizes(&transaction)?;
+    generation_origins::check_stored_sizes(&transaction)?;
     generation_attempts::check_stored_sizes(&transaction)?;
     transcripts::check_stored_sizes(&transaction)?;
     speech_activity::check_stored_sizes(&transaction)?;
@@ -941,6 +948,8 @@ fn validate_database(
     generation::validate_store(&transaction)?;
     generation_attempts::validate_store(&transaction)?;
     generation_preparations::validate_store(&transaction)?;
+    generation_intents::validate_store(&transaction)?;
+    generation_origins::validate_store(&transaction, audit.verified)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     render_jobs::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -1152,6 +1161,8 @@ struct CommandPlan {
     request_json: String,
     edit_json: String,
     compound: Option<compound::Prepared>,
+    acceptance: Option<deadpan_jobs::MessageIdentity>,
+    boundary_births: Vec<generation_preparations::Birth>,
 }
 
 fn prepare_command(
@@ -1166,7 +1177,10 @@ fn prepare_admitted_command(
     connection: &Connection,
     documents: &document_cache::DocumentCache,
     request: &CommandRequest,
-    admitted: Option<&deadpan_core::GeneratedArtifact>,
+    admitted: Option<(
+        &deadpan_core::GeneratedArtifact,
+        &generation_origins::AcceptedOriginReceipt,
+    )>,
 ) -> Result<CommandPlan, StoreError> {
     prepare_command_with_admission(connection, documents, request, admitted, None, None)
 }
@@ -1175,7 +1189,10 @@ fn prepare_command_with_admission(
     connection: &Connection,
     documents: &document_cache::DocumentCache,
     request: &CommandRequest,
-    generated: Option<&deadpan_core::GeneratedArtifact>,
+    generated: Option<(
+        &deadpan_core::GeneratedArtifact,
+        &generation_origins::AcceptedOriginReceipt,
+    )>,
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
@@ -1186,6 +1203,40 @@ fn prepare_command_with_admission(
 }
 
 fn prepare_current_command_with_admission(
+    connection: &Connection,
+    documents: &document_cache::DocumentCache,
+    current: deadpan_core::ValidatedDocument,
+    request: &CommandRequest,
+    generated: Option<(
+        &deadpan_core::GeneratedArtifact,
+        &generation_origins::AcceptedOriginReceipt,
+    )>,
+    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+    geometry: Option<(u32, u32)>,
+) -> Result<CommandPlan, StoreError> {
+    let base = CommandRequest {
+        command: request.command.base_command().clone(),
+        ..request.clone()
+    };
+    let plan = prepare_base_command(
+        connection,
+        documents,
+        current.clone(),
+        &base,
+        generated.map(|(artifact, _)| artifact),
+        source,
+        geometry,
+    )?;
+    boundary_transition::prepare(
+        connection,
+        &current,
+        request,
+        plan,
+        generated.map(|(_, origin)| origin),
+    )
+}
+
+fn prepare_base_command(
     connection: &Connection,
     documents: &document_cache::DocumentCache,
     current: deadpan_core::ValidatedDocument,
@@ -1277,6 +1328,8 @@ fn command_plan(
         request_json,
         edit_json,
         compound,
+        acceptance: None,
+        boundary_births: Vec::new(),
     })
 }
 
@@ -1395,8 +1448,10 @@ fn write_command_plan(
     compound::require_authored(&plan)?;
     generation_preparations::verify(connection)?;
     let request: CommandRequest = serde_json::from_str(&plan.request_json)?;
-    let preparations =
+    let mut preparations =
         generation_preparations::command_births(connection, &plan.current, &request, &plan.next)?;
+    preparations.extend(plan.boundary_births.iter().cloned());
+    boundary_transition::sort_births(&mut preparations)?;
     let isolated =
         generation_scope::command_transition(connection, &plan.current, &request, &plan.next)?;
     generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
@@ -1451,9 +1506,18 @@ fn write_command_plan(
         params![plan.next.revision_id().as_str(), history_id],
     )?;
     connection.execute("DELETE FROM redo", [])?;
-    generation_preparations::reconcile(connection, &plan.next, resolver)?;
-    let (generation_preparations, generation_preparation_notices) =
+    generation_preparations::apply_command_terminals(
+        connection,
+        &plan.current,
+        &request,
+        &plan.next,
+        plan.acceptance.as_ref(),
+    )?;
+    let (generation_preparations, mut generation_preparation_notices) =
         generation_preparations::insert_births(connection, &plan.next, history_id, preparations)?;
+    generation_preparation_notices.extend(generation_preparations::reconcile(
+        connection, &plan.next, resolver,
+    )?);
     audit::extend(
         connection,
         plan.current.revision_id().as_str(),

@@ -19,7 +19,8 @@ use std::sync::atomic::AtomicBool;
 use deadpan_cli::generation::acceptance;
 use deadpan_cli::generation::attempt::{self, AllocateInput, synthetic};
 use deadpan_cli::generation::conditioning;
-use deadpan_jobs::JobState;
+use deadpan_core::{RepeatEditBranch, RepeatEditStep, ScopedNodeTarget};
+use deadpan_jobs::{GenerationOptions, JobState};
 
 use super::*;
 
@@ -65,7 +66,20 @@ const HOLD_FRAMES: u64 = 12;
 /// Fill Hold `black` of a `black_pause` project with one synthetic Ready
 /// variant seeded `seed` and accept it as the next revision.
 fn accept_synthetic(dir: &Path, name: &'static str, seed: u64) -> Result<Project> {
-    let worker = tools()?;
+    let project = synthetic_fallback(dir, name)?;
+    accept_synthetic_target(
+        project,
+        seed,
+        ScopedNodeTarget {
+            node: node(HOLD)?,
+            repeats: Vec::new(),
+        },
+    )
+}
+
+/// Build the deterministic pause before authoring its final context.
+fn synthetic_fallback(dir: &Path, name: &'static str) -> Result<Project> {
+    tools()?;
     let mut project = Project::create(dir, name)?;
     project.shorten()?;
     let at = ProjectFrame(HOLD_START as i64);
@@ -85,12 +99,28 @@ fn accept_synthetic(dir: &Path, name: &'static str, seed: u64) -> Result<Project
             },
         })
     })?;
+    Ok(project)
+}
+
+/// Qualify and accept only after the Hold's complete authored definition exists.
+fn accept_synthetic_target(
+    mut project: Project,
+    seed: u64,
+    target: ScopedNodeTarget,
+) -> Result<Project> {
+    let worker = tools()?;
     let hold = node(HOLD)?;
     let origin = project.document()?.revision_id().clone();
     let cancelled = AtomicBool::new(false);
-    let inputs = conditioning::prepare(&project.package, &origin, &hold, &cancelled)?;
+    let inputs = conditioning::prepare_scoped_with_options(
+        &project.package,
+        &origin,
+        &target,
+        &GenerationOptions::default(),
+        &cancelled,
+    )?;
     let mut store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
-    let allocated = attempt::allocate(
+    let allocated = attempt::allocate_scoped_with_provider(
         &mut store,
         AllocateInput {
             hold: hold.clone(),
@@ -98,6 +128,8 @@ fn accept_synthetic(dir: &Path, name: &'static str, seed: u64) -> Result<Project
             seed,
             inputs,
         },
+        target,
+        deadpan_cli::generation::development_provider(seed),
     )?;
     let run = synthetic::run(
         &allocated,
@@ -127,6 +159,12 @@ fn accept_synthetic(dir: &Path, name: &'static str, seed: u64) -> Result<Project
         NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }) => {}
         other => return Err(format!("the Hold was not accepted: {other:?}").into()),
     }
+    if !ProjectStore::open(&project.package, AccessMode::ReadOnly)?
+        .generation_preparations(None, 64)?
+        .is_empty()
+    {
+        return Err("synthetic acceptance unexpectedly queued a boundary replacement".into());
+    }
     Ok(project)
 }
 
@@ -152,40 +190,84 @@ pub fn generated_pause(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
-/// The accepted Hold wrapped as two total plays with a silent 4-frame
-/// Background gap: Edit [15, 27) and [31, 43) both show sampled 0..12,
-/// [27, 31) is Background, then Original 27..42. 15 + 28 + 15 = 58 frames.
+/// Two plays of a local definition containing Original 26, the 12-frame Hold,
+/// and Original 27, with a silent 4-frame Background gap. Its real endpoints
+/// exist before Default generation and acceptance. Edit [15, 27) and [33, 45)
+/// show sampled 0..12; [28, 32) is Background. 14 + 2·14 + 4 + 14 = 60 frames.
 pub fn generated_repeat(dir: &Path) -> Result<Fixture> {
-    let mut project = accept_synthetic(dir, "generated-repeat", 12)?;
+    let mut project = synthetic_fallback(dir, "generated-repeat")?;
+    project.split_root(14)?;
+    project.split_root(28)?;
+    project.apply(|_, document, _| {
+        let children = root_children(document)?;
+        let first = root_child_at(document, 14)?.0;
+        let last = root_child_at(document, 27)?.0;
+        Ok(Command::Group {
+            parent: document.root().clone(),
+            start: children
+                .iter()
+                .position(|node| node == &first)
+                .ok_or("local first child")?,
+            end: children
+                .iter()
+                .position(|node| node == &last)
+                .ok_or("local last child")?
+                + 1,
+            id: node("ai-local")?,
+            label: "AI pause with Original endpoints".into(),
+        })
+    })?;
     project.apply(|_, _, _| {
         Ok(Command::WrapRepeat {
-            node: node(HOLD)?,
+            node: node("ai-local")?,
             id: node("ai-repeat")?,
             plays: 2,
             gap: Some(silent(4, HoldVideo::Background)?),
             anchor_policy: WrapAnchorPolicy::First,
         })
     })?;
+    let project = accept_synthetic_target(
+        project,
+        12,
+        ScopedNodeTarget {
+            node: node(HOLD)?,
+            repeats: vec![RepeatEditStep {
+                repeat: node("ai-repeat")?,
+                branch: RepeatEditBranch::Default,
+            }],
+        },
+    )?;
     let mut expectations = vec![(0, base(0)), (14, original(26))];
-    for play in [HOLD_START, HOLD_START + HOLD_FRAMES + 4] {
+    for play in [HOLD_START, HOLD_START + HOLD_FRAMES + 6] {
         for k in [0, 1, 6, 11] {
             expectations.push((play + k, generated(k)));
         }
     }
     expectations.extend([
-        (27, Expected::Background),
-        (30, Expected::Background),
-        (43, original(27)),
-        (57, original(41)),
+        (27, original(27)),
+        (28, Expected::Background),
+        (31, Expected::Background),
+        (32, original(26)),
+        (45, original(27)),
+        (46, original(28)),
+        (59, original(41)),
     ]);
     let mut fixture = project.finish(
         vec!["Living stare", "Repeat operator"],
         expectations,
-        Vec::new(),
+        vec![
+            "Repeat Default is admitted after authoring its one-frame Original endpoint handles."
+                .into(),
+        ],
     )?;
-    // 28 inserted frames (44,844.8 samples) before the click; the second
-    // play and the gap are silent.
-    fixture.audio = vec![(30_000, false), (45_000, false), (73_500, true)];
+    // Thirty inserted frames (48,048 samples) move the base click at sample
+    // 28,781 to 76,829. Both generated Holds and the gap remain silent.
+    fixture.audio = vec![
+        (30_000, false),
+        (45_000, false),
+        (60_000, false),
+        (76_700, true),
+    ];
     Ok(fixture)
 }
 

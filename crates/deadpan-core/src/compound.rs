@@ -28,6 +28,11 @@ impl AtomicCommand {
         if matches!(command, Command::Compound { .. }) {
             return Err(invalid("nested compound commands are forbidden"));
         }
+        if matches!(command, Command::WithBoundaryReplacements { .. }) {
+            return Err(invalid(
+                "boundary replacement envelopes are forbidden in Compound leaves",
+            ));
+        }
         if matches!(command, Command::Delete { .. }) {
             return Err(invalid(
                 "resolved transactions require DeleteRipple, not historical Delete",
@@ -46,6 +51,13 @@ impl<'de> Deserialize<'de> for AtomicCommand {
         if value.get("command").and_then(serde_json::Value::as_str) == Some("compound") {
             return Err(serde::de::Error::custom(
                 "nested compound commands are forbidden",
+            ));
+        }
+        if value.get("command").and_then(serde_json::Value::as_str)
+            == Some("with_boundary_replacements")
+        {
+            return Err(serde::de::Error::custom(
+                "boundary replacement envelopes are forbidden in Compound leaves",
             ));
         }
         let command = Command::deserialize(value).map_err(serde::de::Error::custom)?;

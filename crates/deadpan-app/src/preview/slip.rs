@@ -530,10 +530,16 @@ impl DeadpanApp {
                     .submit(ProjectRequest::CommitSlip(draft.proposal.id()))
                 {
                     Ok(()) => {
+                        #[cfg(feature = "ui-harness")]
+                        self.feedback.record("command_admitted");
                         draft.applying = true;
                         draft.keys.clear();
                     }
-                    Err(error) => draft.error = Some(error),
+                    Err(error) => {
+                        #[cfg(feature = "ui-harness")]
+                        self.feedback.record("command_rejected");
+                        draft.error = Some(error);
+                    }
                 }
             }
             SlipKey::Nudge(delta) => {

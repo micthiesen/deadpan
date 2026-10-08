@@ -17,6 +17,7 @@ use deadpan_plan::{DefinitionPictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
 };
+use deadpan_store::generation_pictures::GenerationPictures;
 use deadpan_store::generation_preparations::StoredGenerationPreparation;
 use sha2::{Digest, Sha256};
 
@@ -37,7 +38,7 @@ pub fn scoped_context_identity(
     target: &ScopedNodeTarget,
 ) -> Option<[u8; 32]> {
     let plan = RenderPlan::compile(document).ok()?;
-    identity_in(document, &plan, target, None)
+    identity_in(document, &plan, target, None, None)
 }
 
 fn identity_in(
@@ -45,6 +46,7 @@ fn identity_in(
     plan: &RenderPlan,
     scope: &ScopedNodeTarget,
     target: Option<&TargetId>,
+    pictures: Option<&dyn GenerationPictures>,
 ) -> Option<[u8; 32]> {
     let NodeKind::Hold { recipe } = &document.nodes().get(&scope.node)?.kind else {
         return None;
@@ -57,8 +59,8 @@ fn identity_in(
         "duration": recipe.duration.frames(),
         "rate": [basis.frame_rate.numerator(), basis.frame_rate.denominator()],
         "canvas": [basis.width, basis.height],
-        "left": boundaries.left.as_ref().map(boundary_identity),
-        "right": boundaries.right.as_ref().map(boundary_identity),
+        "left": boundary_identity(document, boundaries.left.as_ref(), pictures)?,
+        "right": boundary_identity(document, boundaries.right.as_ref(), pictures)?,
     });
     if let Some(target) = target {
         // A correction can change the seed without changing either picture.
@@ -74,10 +76,20 @@ fn identity_in(
 
 /// Model input precedes editorial composition. Captured framing, gain and
 /// captions may change without invalidating the same raw conditioning picture.
-fn boundary_identity(sample: &DefinitionPictureSample) -> serde_json::Value {
-    serde_json::json!({
-        "picture": sample.picture,
-    })
+fn boundary_identity(
+    document: &ProjectDocument,
+    sample: Option<&DefinitionPictureSample>,
+    pictures: Option<&dyn GenerationPictures>,
+) -> Option<serde_json::Value> {
+    let Some(sample) = sample else {
+        return Some(serde_json::Value::Null);
+    };
+    match pictures {
+        Some(pictures) => {
+            serde_json::to_value(pictures.identity(document, &sample.picture).ok()?).ok()
+        }
+        None => Some(serde_json::json!({ "picture": sample.picture })),
+    }
 }
 
 /// The store resolver used by the app and CLI writers.
@@ -113,6 +125,40 @@ fn cached_plan(cache: &PlanCache, document: &ProjectDocument) -> Option<Arc<Rend
 }
 
 impl GenerationContextResolver for BoundaryContextResolver {
+    fn preparation_is_relevant_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        preparation: &StoredGenerationPreparation,
+        pictures: &dyn GenerationPictures,
+    ) -> bool {
+        preparation_with_plan(
+            &self.origin,
+            origin,
+            after,
+            RenderPlan::compile(after).ok().as_ref(),
+            preparation,
+            Some(pictures),
+        )
+    }
+
+    fn observe_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+        pictures: &dyn GenerationPictures,
+    ) -> ContextObservation {
+        observe_with_plan(
+            &self.origin,
+            origin,
+            after,
+            RenderPlan::compile(after).ok().as_ref(),
+            request,
+            Some(pictures),
+        )
+    }
+
     fn preparation_is_relevant(
         &self,
         origin: &ProjectDocument,
@@ -125,6 +171,7 @@ impl GenerationContextResolver for BoundaryContextResolver {
             after,
             RenderPlan::compile(after).ok().as_ref(),
             preparation,
+            None,
         )
     }
 
@@ -151,11 +198,50 @@ impl GenerationContextResolver for BoundaryContextResolver {
             after,
             RenderPlan::compile(after).ok().as_ref(),
             request,
+            None,
         )
     }
 }
 
 impl GenerationContextResolver for PreparedBoundaryContext<'_> {
+    fn preparation_is_relevant_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        preparation: &StoredGenerationPreparation,
+        pictures: &dyn GenerationPictures,
+    ) -> bool {
+        std::ptr::eq(self.after, after)
+            && preparation_with_plan(
+                self.origin,
+                origin,
+                after,
+                self.plan.as_ref(),
+                preparation,
+                Some(pictures),
+            )
+    }
+
+    fn observe_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+        pictures: &dyn GenerationPictures,
+    ) -> ContextObservation {
+        if !std::ptr::eq(self.after, after) {
+            return ContextObservation::Unresolved;
+        }
+        observe_with_plan(
+            self.origin,
+            origin,
+            after,
+            self.plan.as_ref(),
+            request,
+            Some(pictures),
+        )
+    }
+
     fn preparation_is_relevant(
         &self,
         origin: &ProjectDocument,
@@ -163,7 +249,14 @@ impl GenerationContextResolver for PreparedBoundaryContext<'_> {
         preparation: &StoredGenerationPreparation,
     ) -> bool {
         std::ptr::eq(self.after, after)
-            && preparation_with_plan(self.origin, origin, after, self.plan.as_ref(), preparation)
+            && preparation_with_plan(
+                self.origin,
+                origin,
+                after,
+                self.plan.as_ref(),
+                preparation,
+                None,
+            )
     }
 
     fn observe(
@@ -175,7 +268,14 @@ impl GenerationContextResolver for PreparedBoundaryContext<'_> {
         if !std::ptr::eq(self.after, after) {
             return ContextObservation::Unresolved;
         }
-        observe_with_plan(self.origin, origin, after, self.plan.as_ref(), request)
+        observe_with_plan(
+            self.origin,
+            origin,
+            after,
+            self.plan.as_ref(),
+            request,
+            None,
+        )
     }
 }
 
@@ -185,6 +285,7 @@ fn preparation_with_plan(
     after: &ProjectDocument,
     after_plan: Option<&RenderPlan>,
     preparation: &StoredGenerationPreparation,
+    pictures: Option<&dyn GenerationPictures>,
 ) -> bool {
     let target = match preparation.origin.options() {
         Some(options) => options.region_target.resolve(None),
@@ -197,10 +298,17 @@ fn preparation_with_plan(
             None
         }
     };
-    let before = cached_plan(origin_cache, origin)
-        .and_then(|plan| identity_in(origin, &plan, &preparation.origin_target, target.as_ref()));
-    let after =
-        after_plan.and_then(|plan| identity_in(after, plan, &preparation.target, target.as_ref()));
+    let before = cached_plan(origin_cache, origin).and_then(|plan| {
+        identity_in(
+            origin,
+            &plan,
+            &preparation.origin_target,
+            target.as_ref(),
+            pictures,
+        )
+    });
+    let after = after_plan
+        .and_then(|plan| identity_in(after, plan, &preparation.target, target.as_ref(), pictures));
     matches!((before, after), (Some(before), Some(after)) if before == after)
 }
 
@@ -210,11 +318,13 @@ fn observe_with_plan(
     after: &ProjectDocument,
     after_plan: Option<&RenderPlan>,
     request: &StoredGenerationRequest,
+    pictures: Option<&dyn GenerationPictures>,
 ) -> ContextObservation {
     let target = request.constraints.region_target.as_ref();
     let before = cached_plan(origin_cache, origin)
-        .and_then(|plan| identity_in(origin, &plan, &request.origin_target, target));
-    let after = after_plan.and_then(|plan| identity_in(after, plan, &request.target, target));
+        .and_then(|plan| identity_in(origin, &plan, &request.origin_target, target, pictures));
+    let after =
+        after_plan.and_then(|plan| identity_in(after, plan, &request.target, target, pictures));
     match (before, after) {
         (Some(before), Some(after)) if before == after => {
             ContextObservation::Resolved(request.binding.context_sha256.clone())

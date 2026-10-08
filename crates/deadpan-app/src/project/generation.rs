@@ -12,8 +12,8 @@ use std::time::{Instant, SystemTime};
 
 use deadpan_core::GeneratedObjectRef;
 use deadpan_core::{
-    FrameRange, InstancePath, NodeId, ProjectDocument, ProjectFrame, ProjectId, RevisionId,
-    ScopedNodeTarget,
+    AcceptedGeneration, FrameRange, HoldFallback, HoldVideo, InstancePath, NodeId, NodeKind,
+    ProjectDocument, ProjectFrame, ProjectId, RevisionId, ScopedNodeTarget,
 };
 use deadpan_jobs::{AttemptId, RequestId, WorkerStage};
 
@@ -340,6 +340,43 @@ impl Candidate {
     }
 }
 
+/// The selected Hold's provider in the complete acceptance result. Accepting
+/// a candidate can change a neighboring provider and invalidate this candidate
+/// in the same atomic edit, leaving its deterministic fallback visible.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FinalProvider {
+    AiPictures,
+    ReplacementFallback,
+}
+
+impl FinalProvider {
+    pub(super) fn resolve(
+        document: &ProjectDocument,
+        target: &ScopedNodeTarget,
+        expected: &AcceptedGeneration,
+    ) -> Result<Self, String> {
+        target
+            .validate(document)
+            .map_err(|error| error.to_string())?;
+        let Some(NodeKind::Hold { recipe }) =
+            document.nodes().get(&target.node).map(|node| &node.kind)
+        else {
+            return Err("The final AI acceptance target is no longer a pause.".into());
+        };
+        match (&recipe.video, &expected.fallback) {
+            (HoldVideo::Generated { accepted }, _) if accepted.as_ref() == expected => {
+                Ok(Self::AiPictures)
+            }
+            (HoldVideo::Background, HoldFallback::Background) => Ok(Self::ReplacementFallback),
+            (
+                HoldVideo::Freeze { asset, timestamp },
+                HoldFallback::Freeze { asset: saved_asset, timestamp: saved_timestamp },
+            ) if asset == saved_asset && timestamp == saved_timestamp => Ok(Self::ReplacementFallback),
+            _ => Err("The final pause provider differs from the accepted candidate and its saved fallback.".into()),
+        }
+    }
+}
+
 /// The read-only document that accepting `request` would commit, issued by
 /// the service from the store's own acceptance preview. Its fields are
 /// private: only the service constructs it, and the preview worker admits it
@@ -353,10 +390,11 @@ pub struct CandidatePreview {
     hold: NodeId,
     target: ScopedNodeTarget,
     range: FrameRange,
+    final_provider: FinalProvider,
     document: Arc<ProjectDocument>,
     /// The same proposed document admitted for audition against the exact
     /// committed base's sources: the pause's own sound, unchanged by
-    /// accepting pictures, plays with the candidate's pictures.
+    /// accepting pictures, plays with the final provider's pictures.
     audio: Arc<deadpan_playback::Snapshot>,
 }
 
@@ -365,7 +403,8 @@ pub(super) struct PreviewParts {
     pub session: u64,
     pub request: RequestId,
     pub attempt: AttemptId,
-    pub hold: NodeId,
+    pub mapped_target: ScopedNodeTarget,
+    pub expected: AcceptedGeneration,
     pub target: ScopedNodeTarget,
     pub range: FrameRange,
     pub document: Arc<ProjectDocument>,
@@ -384,6 +423,7 @@ impl std::fmt::Debug for CandidatePreview {
             .field("hold", &self.hold)
             .field("target", &self.target)
             .field("range", &self.range)
+            .field("final_provider", &self.final_provider)
             .field("content", &self.audio.content)
             .finish_non_exhaustive()
     }
@@ -395,7 +435,8 @@ impl CandidatePreview {
             session,
             request,
             attempt,
-            hold,
+            mapped_target,
+            expected,
             target,
             range,
             document,
@@ -408,21 +449,23 @@ impl CandidatePreview {
         {
             return Err("The AI preview does not match its project revision.".into());
         }
+        let final_provider = FinalProvider::resolve(&document, &mapped_target, &expected)?;
         Ok(Self {
             session,
             project: base.project_id().clone(),
             base: base.revision_id().clone(),
             request,
             attempt,
-            hold,
+            hold: mapped_target.node,
             target,
             range,
+            final_provider,
             document,
             audio,
         })
     }
 
-    /// The Ready variant this preview shows.
+    /// The Ready variant whose complete acceptance result this preview shows.
     pub fn attempt(&self) -> &AttemptId {
         &self.attempt
     }
@@ -467,7 +510,14 @@ impl CandidatePreview {
     pub fn document(&self) -> &Arc<ProjectDocument> {
         &self.document
     }
+
+    pub fn final_provider(&self) -> FinalProvider {
+        self.final_provider
+    }
 }
+
+#[cfg(test)]
+mod final_provider_tests;
 
 /// Generation state for one project session, independent of editor feedback.
 #[derive(Clone, Debug, Default)]
@@ -573,10 +623,15 @@ pub fn synthetic_tools()
             [directory, directory.parent()?]
                 .into_iter()
                 .map(|directory| directory.join(deadpan_cli::generation::runtime::MEDIA_WORKER))
-                .find(|path| path.is_file())
+                .find(|path| {
+                    path.is_file()
+                        && path
+                            .with_file_name(deadpan_cli::generation::runtime::LANDMARK_WORKER)
+                            .is_file()
+                })
         })
         .ok_or(
-            "The scripted Ready worker needs deadpan-media-worker (set DEADPAN_MEDIA_WORKER).",
+            "The scripted Ready worker needs deadpan-media-worker and its sibling deadpan-track (set DEADPAN_MEDIA_WORKER).",
         )?;
     if !ffmpeg.is_file() || !media_worker.is_file() {
         return Err(format!(

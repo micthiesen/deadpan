@@ -177,6 +177,7 @@ impl Service {
             return Err("source slip resolves to no change".into());
         }
         let outcome = self.writer()?.commit(&draft.request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         let target = draft.proposal.target;
         Ok(CommittedEdit {
             scoped: None,

@@ -315,7 +315,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(library),
                             if name == "ai-pause" {
                                 ai_pause::backend()
-                            } else if name == "ai-replacements" {
+                            } else if name == "ai-replacements" || name == "ai-boundaries" {
                                 ai_replacements::backend()
                             } else if name == "ai-insertion" {
                                 ai_insertion::backend()
@@ -511,6 +511,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     ai_pause::compare(&mut driver)
                 } else if name == "ai-replacements" {
                     ai_replacements::run(&mut driver)
+                } else if name == "ai-boundaries" {
+                    ai_replacements::boundaries(&mut driver)
                 } else if name == "ai-insertion" {
                     ai_insertion::run(&mut driver)
                 } else if name == "ai-scoped" {

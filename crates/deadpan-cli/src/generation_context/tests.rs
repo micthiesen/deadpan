@@ -2,6 +2,7 @@ use super::*;
 use deadpan_core::*;
 use std::collections::BTreeMap;
 
+mod measured;
 mod scoped;
 
 fn id(value: &str) -> NodeId {

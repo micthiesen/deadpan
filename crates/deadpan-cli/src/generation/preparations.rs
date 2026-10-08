@@ -37,8 +37,16 @@ pub fn resolve_options(
         | PreparationOrigin::AcceptedExtension {
             controls: PreparationControls::Request { options, .. },
             ..
+        }
+        | PreparationOrigin::AcceptedBoundary {
+            controls: PreparationControls::Request { options, .. },
+            ..
         } => Ok(options.clone()),
         PreparationOrigin::AcceptedExtension {
+            accepted: artifact,
+            controls: PreparationControls::AcceptedArtifact,
+        }
+        | PreparationOrigin::AcceptedBoundary {
             accepted: artifact,
             controls: PreparationControls::AcceptedArtifact,
         } => {

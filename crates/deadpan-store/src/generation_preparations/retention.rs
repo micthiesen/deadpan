@@ -10,8 +10,26 @@ pub(super) struct Retirement {
     pub origin_revision: RevisionId,
     pub history: i64,
     pub origin: PreparationOrigin,
+    pub project_id: ProjectId,
+    pub origin_target: ScopedNodeTarget,
+    pub duration: FrameDuration,
+    pub intent: crate::generation_intents::IntentBirthReceipt,
     pub state: PreparationState,
     pub request_id: Option<RequestId>,
+}
+
+impl Retirement {
+    pub(super) fn birth(&self) -> crate::generation_intents::IntentBirth {
+        crate::generation_intents::IntentBirth {
+            activation_id: self.id.clone(),
+            project_id: self.project_id.clone(),
+            activation_revision: self.origin_revision.clone(),
+            origin_target: self.origin_target.clone(),
+            duration: self.duration,
+            origin: self.origin.clone(),
+            receipt: self.intent.clone(),
+        }
+    }
 }
 
 pub(super) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
@@ -54,6 +72,10 @@ pub(super) fn parse(row: &rusqlite::Row<'_>) -> Result<Retirement, StoreError> {
     {
         return Err(invalid("retirement columns or terminal state differ"));
     }
+    value.birth().validate()?;
+    if value.intent.history_id != value.history {
+        return Err(invalid("retired birth history differs"));
+    }
     Ok(value)
 }
 
@@ -79,6 +101,10 @@ fn retire(
         origin_revision: value.origin_revision,
         history,
         origin: value.origin,
+        project_id: value.project_id,
+        origin_target: value.origin_target,
+        duration: value.duration,
+        intent: value.intent,
         state: value.state,
         request_id: value.request_id,
     };
@@ -104,13 +130,17 @@ fn oldest(
 }
 
 pub(super) fn compact(connection: &Connection) -> Result<(), StoreError> {
+    compact_to(connection, MAX_TERMINAL_PREPARATIONS)
+}
+
+pub(super) fn compact_to(connection: &Connection, retain: usize) -> Result<(), StoreError> {
     loop {
         let count: i64 = connection.query_row(
             "SELECT count(*) FROM generation_preparations WHERE state IN ('fulfilled','cancelled')",
             [],
             |row| row.get(0),
         )?;
-        if count <= MAX_TERMINAL_PREPARATIONS as i64 {
+        if count <= retain as i64 {
             break;
         }
         let (value, history) =
@@ -224,6 +254,17 @@ mod tests {
                     content_aspect: None,
                 }),
                 controls: PreparationControls::AcceptedArtifact,
+            },
+            intent: crate::generation_intents::IntentBirthReceipt {
+                schema_version: 1,
+                history_id: 1,
+                cause: crate::generation_intents::IntentCause::InsertedPause,
+                authorization: crate::generation_intents::IntentAuthorization::AuthoredOrigin,
+                fallback: deadpan_core::HoldFallback::Background,
+                input_binding: crate::generation_intents::IntentInputBinding::Unavailable {
+                    cause: crate::generation_intents::InputUnavailableCause::MissingQualification,
+                    detail: "Synthetic queue capacity fixture.".into(),
+                },
             },
             state,
             claim_sequence: 1,

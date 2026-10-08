@@ -312,8 +312,9 @@ them with public `render` and verify them with `verify-export`:
   `accept_generation_bundle`; only the model is replaced. The result is an
   ordinary schema-3 Generated Hold with all six retained objects, and the
   export reads its sampled master through the shared cold reader.
-  `generated-pause` (the accepted Hold in place), `generated-repeat` (wrapped
-  as two plays with a 4-frame Background gap), `generated-reframe` (static
+  `generated-pause` (the accepted Hold in place), `generated-repeat` (two
+  plays of a local Sequence with one-frame Original endpoints and a 4-frame
+  Background gap, authored before Default generation), `generated-reframe` (static
   1.35x live Hold framing) and `generated-prefix` (shortened to 7 frames,
   reusing the accepted sampled prefix) expect Hold-local frame `k` to show
   sampled frame `k` (`provenance.kind = generated`, `source_frame = k`) in

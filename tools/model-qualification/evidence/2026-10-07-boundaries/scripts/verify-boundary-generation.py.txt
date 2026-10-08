@@ -1,0 +1,496 @@
+#!/usr/bin/env python3
+"""Qualify schema-72 boundary replacement with two actual local-model runs.
+
+Generation: --bin-dir DIR --model-cache DIR --fixture FILE --output NEW_DIR
+Packaged follow-up (no inference): --bin-dir Deadpan.app/Contents/MacOS
+  --project PACKAGE --expected-report GENERATION_DIR/summary.json --output NEW_DIR
+
+Uses only existing binaries/runtime/weights. It never builds, downloads, signs,
+or edits the repository. Every project mutation uses Deadpan's CLI; SQLite reads
+are evidence only. Use a short moving SDR Original with at least 27 frames.
+"""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import sqlite3
+import subprocess
+import time
+import traceback
+from datetime import datetime, timezone
+
+
+def sha256(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def document_hash(document):
+    return hashlib.sha256(json.dumps(document, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def without_revision(document):
+    return {key: value for key, value in document.items() if key != 'revision_id'}
+
+
+def json_stream(text):
+    decoder, values = json.JSONDecoder(), []
+    while text.strip():
+        text = text.lstrip()
+        value, count = decoder.raw_decode(text)
+        values.append(value)
+        text = text[count:]
+    return values
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ['bin-dir', 'output']:
+        parser.add_argument('--' + name, type=Path, required=True)
+    for name in ['fixture', 'model-cache', 'project', 'expected-report', 'runtime-source']:
+        parser.add_argument('--' + name, type=Path)
+    args = parser.parse_args()
+    packaged = args.project is not None
+    if packaged and (args.expected_report is None or args.fixture or args.model_cache):
+        parser.error('--project requires --expected-report and excludes --fixture/--model-cache')
+    if not packaged and (args.fixture is None or args.model_cache is None or args.expected_report):
+        parser.error('Generation requires --fixture and --model-cache; --expected-report belongs to --project')
+    root = args.output.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    if any(root.iterdir()):
+        raise RuntimeError('Use a fresh empty --output directory; evidence is never overwritten')
+    (root / 'tmp').mkdir()
+    binary_directory = args.bin_dir.resolve()
+    cli, app = binary_directory / 'deadpan-cli', binary_directory / 'deadpan-app'
+    package = args.project.resolve() if packaged else root / 'boundary-generation.deadpan'
+    runtime = (args.runtime_source or Path(os.environ.get('DEADPAN_BRIDGE_RUNTIME_SOURCE',
+        '/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4'))).resolve()
+    if packaged:
+        (root / 'home').mkdir()
+        environment = {'HOME': str(root / 'home'), 'TMPDIR': str(root / 'tmp'), 'PATH': '/usr/bin:/bin'}
+        recorded_environment = environment.copy()
+    else:
+        recorded_environment = {
+            'DEADPAN_BRIDGE_MODEL_CACHE': str(args.model_cache.resolve()),
+            'DEADPAN_BRIDGE_RUNTIME_SOURCE': str(runtime),
+            'DEADPAN_BRIDGE_PYTHON': os.environ.get('DEADPAN_BRIDGE_PYTHON', str(runtime / '.venv/bin/python3')),
+            'DEADPAN_BRIDGE_WORKER': os.environ.get('DEADPAN_BRIDGE_WORKER', '/Users/michael/Code/deadpan/tools/model-qualification/worker.py'),
+            'DEADPAN_BRIDGE_FFMPEG': os.environ.get('DEADPAN_BRIDGE_FFMPEG', '/opt/homebrew/bin/ffmpeg'),
+            'DEADPAN_BRIDGE_FFPROBE': os.environ.get('DEADPAN_BRIDGE_FFPROBE', '/opt/homebrew/bin/ffprobe'),
+            'TMPDIR': str(root / 'tmp'),
+        }
+        environment = dict(os.environ)
+        environment.update(recorded_environment)
+    steps, checks = {}, []
+    summary = {
+        'status': 'running', 'started_utc': datetime.now(timezone.utc).isoformat(),
+        'mode': 'packaged_model_free_reopen' if packaged else 'real_generation',
+        'package': str(package), 'binary_directory': str(binary_directory),
+        'environment_overrides': recorded_environment,
+        'script_sha256': sha256(Path(__file__)), 'steps': steps, 'checks': checks,
+        'limits': {'model_runs': 0 if packaged else 2, 'hold_frames': 30,
+                   'inference_command_seconds': 2100, 'cancel_grace_seconds': 120},
+    }
+
+    def save(name, value):
+        (root / name).write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n')
+
+    def check(label, condition, actual=None):
+        checks.append({'check': label, 'passed': bool(condition), 'actual': actual})
+        save('checks.json', checks)
+        if not condition:
+            raise AssertionError(f'{label}: {actual!r}')
+
+    def run(label, arguments, timeout=600, inference=False, expect_failure=False):
+        if label in steps:
+            raise RuntimeError(f'Duplicate evidence label: {label}')
+        command = [str(value) for value in arguments]
+        out_path, err_path = root / f'{label}.stdout', root / f'{label}.stderr'
+        child_environment = dict(environment)
+        if not packaged and not inference:
+            child_environment['DEADPAN_BRIDGE_MODEL_CACHE'] = str(root / 'intentionally-absent-model')
+            child_environment['DEADPAN_BRIDGE_PYTHON'] = str(root / 'intentionally-absent-python')
+        result = {'argv': command, 'timeout_seconds': timeout, 'inference_authorized': inference,
+                  'model_intentionally_unavailable': not inference, 'expected_failure': expect_failure}
+        steps[label] = result
+        save('steps.json', steps)
+        started = time.monotonic()
+        with out_path.open('w') as out, err_path.open('w') as err:
+            child = subprocess.Popen(command, env=child_environment, cwd=root, stdin=subprocess.DEVNULL,
+                                     stdout=out, stderr=err, start_new_session=True)
+            result['pid'] = child.pid
+            save('steps.json', steps)
+
+            def cancel():
+                if child.poll() is not None:
+                    return
+                # First SIGINT asks Deadpan to cancel and reap its owned worker
+                # group. Never report a timed-out run as a qualification pass.
+                child.send_signal(signal.SIGINT)
+                try:
+                    child.wait(timeout=120)
+                    result['owner_reaped_after_cancel'] = True
+                except subprocess.TimeoutExpired:
+                    # Workers may lead separate groups; killing the CLI alone
+                    # would orphan them. Preserve its supervision and expose
+                    # this exact still-owned PID for the invoking root session.
+                    result['cleanup_incomplete'] = True
+                    result['cleanup_note'] = (
+                        f'Owner PID {child.pid} has not drained. Do not launch another inference. '
+                        'Inspect and finish its owned-worker cleanup before continuing.')
+                    raise RuntimeError(result['cleanup_note'])
+
+            try:
+                result['exit'] = child.wait(timeout=timeout)
+            except subprocess.TimeoutExpired as error:
+                result['timed_out'] = True
+                cancel()
+                raise RuntimeError(f'{label} exceeded its deadline; see cleanup evidence') from error
+            except BaseException:
+                cancel()
+                raise
+            finally:
+                result['exit'] = child.returncode
+                result['seconds'] = round(time.monotonic() - started, 3)
+                out.flush()
+                err.flush()
+                result['stdout_sha256'], result['stderr_sha256'] = sha256(out_path), sha256(err_path)
+                save('steps.json', steps)
+        print(label, json.dumps({'exit': result['exit'], 'seconds': result['seconds']}), flush=True)
+        if expect_failure:
+            check(f'{label} refuses the stale candidate without a signal/crash', result['exit'] == 1, result['exit'])
+        elif result['exit'] != 0:
+            raise RuntimeError(f'{label} failed; inspect retained stdout/stderr')
+        return out_path.read_text()
+
+    def output(label, arguments, **options):
+        return json.loads(run(label, arguments, **options))
+
+    def dump(label):
+        return output(label, [cli, 'project', 'dump', package, '--json'])
+
+    def rows(query, parameters=()):
+        with sqlite3.connect((package / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as db:
+            db.row_factory = sqlite3.Row
+            return [dict(row) for row in db.execute(query, parameters)]
+
+    def counts():
+        return {table: rows(f'SELECT count(*) AS n FROM {table}')[0]['n']
+                for table in ['revisions', 'history', 'generation_requests', 'generation_attempts']}
+
+    def plan(label):
+        return output(label, [cli, 'inspect-plan', package])['plan']
+
+    def picture(label, frame):
+        return output(label, [cli, 'inspect-plan', package, '--frame', frame])['sample']
+
+    def request(label, request_id):
+        retained = rows('''SELECT r.request_id,r.project_id,r.hold_id,r.scope_id,r.request_version,
+            r.origin_revision,r.origin_target,r.context_sha256,r.constraints,r.provider,r.bridge_plan,
+            r.relevance,s.current_target FROM generation_requests r
+            JOIN generation_scopes s USING(scope_id) WHERE r.request_id=?''', (request_id,))
+        check(f'{label} retains exactly one request', len(retained) == 1)
+        value = retained[0]
+        for key in ['origin_target', 'current_target', 'constraints', 'provider', 'bridge_plan']:
+            value[key] = json.loads(value[key])
+        save(label + '.json', value)
+        return value
+
+    def edit(label, before, command, dry=False):
+        envelope = {'protocol': 1, 'project_id': before['project_id'],
+                    'expected_revision': before['revision_id'], 'new_revision': label, 'command': command}
+        save(label + '.command.json', envelope)
+        return output(label, [cli, 'command', package, '--json', root / (label + '.command.json')]
+                      + (['--dry-run'] if dry else []))
+
+    def object_path(reference):
+        digest = reference['content']['digest']
+        check('Generated object has a bounded BLAKE3 identity', reference['content']['algorithm'] == 'blake3'
+              and re.fullmatch('[0-9a-f]{64}', digest) is not None)
+        path = package / 'Media/Generated' / f'blake3-{digest}'
+        check(f'Generated object {digest} retains its declared bytes', path.is_file()
+              and path.stat().st_size == reference['byte_length'])
+        return path
+
+    def retained_media(attempt, label):
+        ready = attempt['ready']
+        media = {name: {'reference': ready[name], 'sha256': sha256(object_path(ready[name]))}
+                 for name in ['native', 'sampled', 'provenance']}
+        provenance = json.loads(object_path(ready['provenance']).read_text())
+        worker = json.loads(provenance['worker_provenance_utf8'])
+        context_receipt = provenance['conditioning']['manifest']
+        context_path = object_path(context_receipt['object'])
+        context = json.loads(context_path.read_text())
+        save(label + '-provenance.json', provenance)
+        save(label + '-worker.json', worker)
+        save(label + '-context.json', context)
+        check(f'{label} actually executed the admitted LTX request',
+              worker['pack_id'] == 'ltx-2.3-q4-bridge'
+              and worker['runtime_version'] == '0.15.8+deadpan5'
+              and worker['request_binding'] == provenance['binding']
+              and provenance['binding']['identity']['request_id'] == attempt['request_id']
+              and provenance['binding']['identity']['attempt_id'] == attempt['attempt_id'])
+        check(f'{label} retains identical host/worker plan and context bytes',
+              context == worker['context'] and context['plan'] == attempt['plan'] == provenance['binding']['plan']
+              and sha256(context_path) == context_receipt['declaration']['sha256']
+              == provenance['binding']['input']['sha256'])
+        for side in ['left', 'right']:
+            boundary = context['boundaries'][side]
+            check(f'{label} {side} endpoint is a genuinely decoded Original',
+                  set(boundary) == {'original'} and 'source_frame' in boundary['original']['picture'], boundary)
+            receipt = provenance['conditioning'][side]
+            check(f'{label} {side} retained conditioning PNG matches its receipt',
+                  sha256(object_path(receipt['object'])) == receipt['declaration']['sha256'])
+        return {'media': media, 'provenance': provenance, 'worker': worker, 'context': context}
+
+    def render(label):
+        exports = root / 'Exports'
+        exports.mkdir(exist_ok=True)
+        reports = json_stream(run(label, [app, '--headless', 'render', package,
+            '--output', exports, '--name', 'boundary-accepted.mp4'], timeout=1200))
+        save(label + '-reports.json', reports)
+        check(f'{label} passes emitted-file verification and publishes', bool(reports)
+              and reports[-1]['status']['outcome'] == 'published', reports[-1] if reports else reports)
+        movie = exports / 'boundary-accepted.mp4'
+        check(f'{label} published a nonempty movie', movie.is_file() and movie.stat().st_size > 0)
+        return {'path': str(movie), 'bytes': movie.stat().st_size, 'sha256': sha256(movie), 'report': reports[-1]}
+
+    started = time.monotonic()
+    save('summary.json', summary)
+    try:
+        for path in [cli, app]:
+            check(f'Explicit executable is available: {path.name}', path.is_file(), str(path))
+        binaries = {str(path): sha256(path) for path in sorted(binary_directory.iterdir())
+                    if path.is_file() and path.name.startswith('deadpan-')}
+        summary['binary_sha256'] = binaries
+        if packaged:
+            expected = json.loads(args.expected_report.resolve().read_text())
+            summary['expected_report'] = {'path': str(args.expected_report.resolve()), 'sha256': sha256(args.expected_report.resolve())}
+            check('Prior generation/export qualification passed', expected['status'] == 'passed_generation_and_export_packaged_reopen_pending', expected['status'])
+            check('Packaged follow-up names that exact package', Path(expected['package']).resolve() == package)
+            doctor = output('packaged-doctor', [cli, 'doctor'])
+            check('Running an actual packaged bundle with no ready model', doctor['runtime']['packaged']
+                  and not doctor['runtime']['ai_runtime']['ready'], doctor['runtime'])
+            before = dump('packaged-before')
+            check('Fresh process reopens the exact accepted final document', document_hash(before) == expected['final_document_sha256'])
+            check('Reopened package remains schema 72', rows('PRAGMA user_version')[0]['user_version'] == 72)
+            output('packaged-validate', [cli, 'project', 'validate', package])
+            for label, media in expected['media'].items():
+                for name, record in media.items():
+                    check(f'Packaged reopen retains {label} {name}', sha256(object_path(record['reference'])) == record['sha256'])
+            summary['render'] = render('packaged-render-without-model')
+            check('Packaged render leaves authoring unchanged', dump('packaged-after') == before)
+            summary['status'] = 'passed_packaged_model_free_reopen_and_export'
+        else:
+            fixture = args.fixture.resolve()
+            for path in [fixture, Path(recorded_environment['DEADPAN_BRIDGE_WORKER']), Path(recorded_environment['DEADPAN_BRIDGE_PYTHON'])]:
+                check(f'Required existing input is available: {path.name}', path.is_file(), str(path))
+            check('Existing model cache is available', args.model_cache.resolve().is_dir())
+            check('Generation preserves HOME', environment.get('HOME') == os.environ.get('HOME'))
+            summary.update({'fixture': str(fixture), 'fixture_sha256': sha256(fixture),
+                'worker_script_sha256': sha256(Path(recorded_environment['DEADPAN_BRIDGE_WORKER']))})
+            output('create', [cli, 'project', 'create-original', package, fixture])
+            schema = rows('PRAGMA user_version')[0]['user_version']
+            check('Fresh package uses schema 72', schema == 72, schema)
+            baseline = dump('baseline')
+            original_frames = plan('baseline-plan')['metadata']['duration']
+            at, frames, delta, hold = 20, 30, 5, 'boundary-hold'
+            target = {'node': hold, 'repeats': []}
+            check('Fixture has real endpoints and a five-frame later handle', original_frames > at + delta + 1, original_frames)
+            edit('insert-pause', baseline, {'command': 'insert_time', 'at': at,
+                'hold': {'duration': frames, 'video': {'type': 'background'}, 'audio': {'type': 'silence'}},
+                'id': hold, 'identities': {'nodes': ['boundary-left', 'boundary-right', 'boundary-context']},
+                'timing': {'allocation': 'insert-pause', 'ordinal': 0}})
+            fallback = dump('initial-fallback')
+            fallback_recipe = fallback['nodes'][hold]['kind']['recipe']
+            children = fallback['nodes'][fallback['root']]['kind']['children']
+            slot = children.index(hold)
+            check('Hold has adjacent authored content on both sides', 0 < slot < len(children) - 1, children)
+            left = children[slot - 1]
+            check('Insert saved exactly thirty silent background frames', fallback_recipe['duration'] == frames
+                  and fallback_recipe['audio'] == {'type': 'silence'} and fallback_recipe['video'] == {'type': 'background'})
+            check('Ordinary insertion starts with no automatic generation',
+                  not output('initial-queue', [cli, 'ai-replacements', package])['preparations'])
+            generation_counts = counts()
+            first = output('generate-initial', [app, '--headless', 'generate-hold', package, '--hold', hold,
+                '--seed', '1', '--motion', 'subtle', '--target', 'none', '--instructions', 'Keep the subject steady.'],
+                timeout=2100, inference=True)
+            check('First actual model run reaches Ready', first['state'] == 'Ready', first)
+            initial_evidence = retained_media(first, 'initial')
+            check('Ready preserves the exact deterministic document', dump('initial-ready-document') == fallback)
+            check('Ready adds no authored history', {k: counts()[k] for k in ['revisions', 'history']}
+                  == {k: generation_counts[k] for k in ['revisions', 'history']})
+            first_request = request('initial-request', first['request_id'])
+            output('accept-initial', [app, '--headless', 'accept-hold', package, '--request', first['request_id']])
+            accepted = dump('initial-accepted')
+            accepted_recipe = accepted['nodes'][hold]['kind']['recipe']
+            check('Explicit first acceptance installs the admitted artifact', accepted_recipe['video']['type'] == 'generated'
+                  and accepted_recipe['video']['accepted']['artifact']['sampled_object'] == first['ready']['sampled'])
+            accepted_provider = accepted_recipe['video']['accepted']
+            check('Accepted Hold retains its exact deterministic fallback and duration',
+                  accepted_provider['fallback'] == fallback_recipe['video'] and accepted_recipe['duration'] == frames)
+            origins = rows('SELECT receipt,receipt_sha256 FROM generation_accepted_origins WHERE request_id=? AND attempt_id=?',
+                           (first['request_id'], first['attempt_id']))
+            check('Explicit acceptance retained one immutable origin receipt', len(origins) == 1)
+            origin = json.loads(origins[0]['receipt'])
+            save('initial-origin-receipt.json', origin)
+            receipt_bytes = origins[0]['receipt'].encode()
+            receipt_digest = hashlib.sha256(b'deadpan-accepted-origin-1'
+                + len(receipt_bytes).to_bytes(8, 'little') + receipt_bytes).hexdigest()
+            check('Origin receipt hash and artifact match the accepted provider',
+                  receipt_digest == origins[0]['receipt_sha256']
+                  and origin['artifact'] == accepted_provider['artifact'])
+            for side in ['left', 'right']:
+                check(f'Origin {side} measured identity matches actual worker decode',
+                      origin['input_binding'][side]['kind'] == 'original'
+                      and origin['input_binding'][side]['frame'] == initial_evidence['context']['boundaries'][side]['original']['picture']['source_frame']
+                      and origin['input_binding'][side]['qualification'] == initial_evidence['context']['boundaries'][side]['original']['qualification'])
+
+            command = {'command': 'slip_source', 'parent': accepted['root'], 'node': left, 'delta_frames': delta}
+            before_edit_counts = counts()
+            preview = edit('boundary-slip-preview', accepted, command, dry=True)
+            check('Source slip has the complete requested later handle',
+                  preview['source_slip']['applied_delta_frames'] == delta, preview['source_slip'])
+            check('Boundary preview is read-only', dump('after-slip-preview') == accepted and counts() == before_edit_counts)
+            saved = edit('boundary-slipped', accepted, command)
+            replaced = dump('boundary-fallback')
+            recipe = replaced['nodes'][hold]['kind']['recipe']
+            check('Boundary edit commits the saved fallback with unchanged Hold duration and sound',
+                  recipe == dict(accepted_recipe, video=accepted_provider['fallback']))
+            check('Slip and provider replacement preserve complete output duration',
+                  plan('boundary-fallback-plan')['metadata']['duration'] == original_frames + frames)
+            queue = output('boundary-queue', [cli, 'ai-replacements', package])['preparations']
+            check('Boundary commit and queue name exactly one same-revision replacement', len(queue) == 1
+                  and saved['outcome']['generation_preparations'] == [queue[0]['id']], queue)
+            preparation = queue[0]
+            check('Replacement retains exact target, artifact, and boundary-change cause',
+                  preparation['state'] == 'queued' and preparation['target'] == target
+                  and preparation['current_revision'] == replaced['revision_id'] == preparation['origin_revision']
+                  and preparation['duration'] == frames and preparation['origin']['kind'] == 'accepted_boundary'
+                  and preparation['origin']['accepted'] == accepted_provider['artifact']
+                  and preparation['intent']['cause'] == {'kind': 'source_boundary_changed'}, preparation)
+            check('Replacement binding is measured', preparation['intent']['input_binding']['kind'] == 'measured')
+            changed_binding = preparation['intent']['input_binding']['binding']
+            check('Only the measured left input changed', changed_binding['left'] != origin['input_binding']['left']
+                  and changed_binding['right'] == origin['input_binding']['right']
+                  and all(changed_binding[k] == origin['input_binding'][k] for k in ['duration', 'frame_rate', 'canvas']), changed_binding)
+            history = rows('SELECT id,request FROM history WHERE revision_id=?', (replaced['revision_id'],))
+            check('Boundary edit made exactly one authored revision and history entry',
+                  len(history) == 1 and counts()['revisions'] == before_edit_counts['revisions'] + 1
+                  and counts()['history'] == before_edit_counts['history'] + 1)
+            authored = json.loads(history[0]['request'])
+            save('boundary-history-command.json', authored)
+            check('One replayable envelope retains the exact source edit and accepted fallback proof',
+                  authored['command']['command'] == 'with_boundary_replacements'
+                  and authored['command']['edit']['command'] == command
+                  and authored['command']['edit']['replacements'] == [{'target': target, 'accepted': accepted_provider}]
+                  and preparation['intent']['history_id'] == history[0]['id'])
+            stale = request('stale-initial-request', first['request_id'])
+            check('The original request is stale with immutable origin retained', stale['relevance'] == 'stale'
+                  and all(stale[k] == first_request[k] for k in ['origin_revision', 'origin_target', 'context_sha256', 'constraints', 'provider', 'bridge_plan']))
+            refusal_counts = counts()
+            run('refuse-old-candidate', [app, '--headless', 'accept-hold', package, '--request', first['request_id']], expect_failure=True)
+            refusal = json.loads((root / 'refuse-old-candidate.stderr').read_text())
+            check('Stale candidate fails through the typed generation refusal path',
+                  refusal['error']['code'] == 'GenerationRefused'
+                  and refusal['error'].get('committed_revision') is None, refusal)
+            check('Stale acceptance writes no document, revision, history, request or attempt',
+                  dump('after-stale-refusal') == replaced and counts() == refusal_counts)
+            output('undo-boundary', [cli, 'project', 'undo', package, '--expected', replaced['revision_id']])
+            undone = dump('boundary-undone')
+            check('One Undo restores source selection and accepted Hold together', without_revision(undone) == without_revision(accepted))
+            check('Undo closes the pending replacement', not output('boundary-undone-queue', [cli, 'ai-replacements', package])['preparations'])
+            output('redo-boundary', [cli, 'project', 'redo', package, '--expected', undone['revision_id']])
+            redone = dump('boundary-redone')
+            check('One Redo restores source edit and fallback together', without_revision(redone) == without_revision(replaced))
+            redo_queue = output('boundary-redone-queue', [cli, 'ai-replacements', package])['preparations']
+            check('Redo creates a fresh exact replacement activation', len(redo_queue) == 1
+                  and redo_queue[0]['id'] != preparation['id'] and redo_queue[0]['target'] == target
+                  and redo_queue[0]['intent']['authorization'] == {'kind': 'redo', 'original_activation': preparation['id']}
+                  and redo_queue[0]['intent']['input_binding']['binding'] == changed_binding, redo_queue)
+            output('validate-boundary-history', [cli, 'project', 'validate', package])
+
+            drained = output('generate-replacement', [app, '--headless', 'ai-replacements', package, '--run', '--limit', '1'],
+                             timeout=2100, inference=True)
+            check('Owned replacement drain returns exactly one actual result', len(drained['replacements']) == 1, drained)
+            replacement = drained['replacements'][0]
+            second = replacement['attempt']
+            check('The replacement preparation fulfils and actual inference reaches Ready',
+                  replacement['preparation']['id'] == redo_queue[0]['id']
+                  and replacement['preparation']['state'] == 'fulfilled' and second['state'] == 'Ready', replacement)
+            replacement_evidence = retained_media(second, 'replacement')
+            second_request = request('replacement-request', second['request_id'])
+            check('Fresh request binds the redone revision, exact Hold and preserved controls',
+                  second_request['origin_revision'] == redone['revision_id'] and second_request['origin_target'] == target
+                  and second_request['scope_id'] == first_request['scope_id']
+                  and second_request['request_version'] == first_request['request_version'] + 1
+                  and second_request['constraints'] == first_request['constraints'])
+            for side in ['left', 'right']:
+                check(f'Replacement {side} conditioning uses the final measured binding',
+                      replacement_evidence['context']['boundaries'][side]['original']['picture']['source_frame'] == changed_binding[side]['frame']
+                      and replacement_evidence['context']['boundaries'][side]['original']['qualification'] == changed_binding[side]['qualification'])
+            check('Replacement decodes a different left Original and the same right Original',
+                  replacement_evidence['context']['boundaries']['left']['original']['picture']['source_frame']
+                  != initial_evidence['context']['boundaries']['left']['original']['picture']['source_frame']
+                  and replacement_evidence['context']['boundaries']['right']['original']['picture']
+                  == initial_evidence['context']['boundaries']['right']['original']['picture'])
+            check('Ready replacement leaves fallback and history untouched', dump('replacement-ready-document') == redone)
+            output('accept-replacement', [app, '--headless', 'accept-hold', package, '--request', second['request_id']])
+            final = dump('replacement-accepted')
+            final_recipe = final['nodes'][hold]['kind']['recipe']
+            check('Explicit replacement acceptance installs the fresh master without changing timing or audio',
+                  final_recipe['duration'] == frames and final_recipe['audio'] == recipe['audio']
+                  and final_recipe['video']['type'] == 'generated'
+                  and final_recipe['video']['accepted']['artifact']['sampled_object'] == second['ready']['sampled']
+                  and final_recipe['video']['accepted']['fallback'] == accepted_provider['fallback'])
+            for offset in [0, frames // 2, frames - 1]:
+                observed = picture(f'final-picture-{offset}', at + offset)
+                check(f'Final frame {offset} resolves the accepted replacement sampled master',
+                      observed['instance']['node'] == hold and observed['picture']['type'] == 'accepted'
+                      and observed['picture']['frame'] == offset
+                      and observed['picture']['generated']['sampled_object'] == second['ready']['sampled'], observed)
+            output('undo-replacement-acceptance', [cli, 'project', 'undo', package, '--expected', final['revision_id']])
+            undone = dump('replacement-acceptance-undone')
+            check('Undo acceptance restores the changed-boundary fallback', without_revision(undone) == without_revision(redone))
+            output('redo-replacement-acceptance', [cli, 'project', 'redo', package, '--expected', undone['revision_id']])
+            final_redone = dump('final-document')
+            check('Redo acceptance restores the complete final edit', without_revision(final_redone) == without_revision(final))
+            media = {'initial': initial_evidence['media'], 'replacement': replacement_evidence['media']}
+            for label, records in media.items():
+                for name, record in records.items():
+                    check(f'History retains exact {label} {name} bytes after all replacements and Undo/Redo',
+                          sha256(object_path(record['reference'])) == record['sha256'])
+            check('Original accepted origin proof survives replacement and history',
+                  rows('SELECT receipt,receipt_sha256 FROM generation_accepted_origins WHERE request_id=? AND attempt_id=?',
+                       (first['request_id'], first['attempt_id'])) == origins)
+            output('validate-final-model-free', [cli, 'project', 'validate', package])
+            summary['render'] = render('render-without-model')
+            check('Model-free export preserves the final document', dump('after-render-model-free') == final_redone)
+            summary.update({'status': 'passed_generation_and_export_packaged_reopen_pending',
+                'hold_id': hold, 'initial_request': first_request, 'replacement_request': second_request,
+                'initial_preparation_id': preparation['id'], 'redone_preparation_id': redo_queue[0]['id'],
+                'input_binding_before': origin['input_binding'], 'input_binding_after': changed_binding,
+                'media': media, 'runtime_version': replacement_evidence['worker']['runtime_version'],
+                'model_manifest_sha256': replacement_evidence['worker']['model_manifest_sha256'],
+                'final_revision': final_redone['revision_id'], 'final_document_sha256': document_hash(final_redone),
+                'packaged_follow_up': ['python3', str(Path(__file__).resolve()), '--bin-dir', '<release Deadpan.app/Contents/MacOS>',
+                    '--project', str(package), '--expected-report', str(root / 'summary.json'), '--output', '<fresh packaged evidence directory>']})
+        check('Executed binaries stayed unchanged during qualification', all(sha256(Path(path)) == digest for path, digest in binaries.items()))
+        check('Qualification script stayed unchanged', sha256(Path(__file__)) == summary['script_sha256'])
+    except BaseException as error:
+        summary['status'] = 'failed'
+        summary['error'] = f'{type(error).__name__}: {error}'
+        (root / 'failure.txt').write_text(traceback.format_exc())
+        raise
+    finally:
+        summary['seconds'] = round(time.monotonic() - started, 3)
+        summary['finished_utc'] = datetime.now(timezone.utc).isoformat()
+        save('summary.json', summary)
+    print(json.dumps({'status': summary['status'], 'checks': len(checks), 'report': str(root / 'summary.json')}, indent=2), flush=True)
+
+
+if __name__ == '__main__':
+    main()

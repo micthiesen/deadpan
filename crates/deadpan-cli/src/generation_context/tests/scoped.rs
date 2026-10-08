@@ -184,6 +184,18 @@ fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGene
             }),
             controls: PreparationControls::AcceptedArtifact,
         },
+        intent: deadpan_store::generation_intents::IntentBirthReceipt {
+            schema_version: 1,
+            history_id: 1,
+            cause: deadpan_store::generation_intents::IntentCause::DurationExtension,
+            authorization: deadpan_store::generation_intents::IntentAuthorization::AuthoredOrigin,
+            fallback: deadpan_core::HoldFallback::Background,
+            input_binding: deadpan_store::generation_intents::IntentInputBinding::Unavailable {
+                cause:
+                    deadpan_store::generation_intents::InputUnavailableCause::MissingQualification,
+                detail: "The resolver fixture has no measured source receipt.".into(),
+            },
+        },
         state: PreparationState::Queued,
         claim_sequence: 0,
         reason: None,

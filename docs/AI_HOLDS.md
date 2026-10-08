@@ -255,6 +255,35 @@ deadpan-cli ai-replacements <project.deadpan> --discard <preparation-id> --seque
 deadpan-cli ai-replacements <project.deadpan> --run --limit 1
 ```
 
+## Changed source boundaries
+
+An edit that changes an accepted pause's raw conditioning pictures restores its
+captured fallback and queues a replacement in the same reversible transaction.
+For example, slipping the preceding Source changes the saved Source and the
+pause's provider together; one Undo restores both. The pause keeps its exact
+duration, audio policy, scope and prior generation controls. Ready replacements
+still require explicit acceptance.
+
+Identity comparisons use measured Original picture ordinals or the exact
+generated master, ordinal and saved crop. Captions, gain and editorial zoom do
+not change those raw inputs. Neighboring generated Holds are evaluated together
+against their final providers; dependent changes and cycles cannot leave a
+candidate displaying inputs that no longer match. Preview and acceptance report
+the final provider, including an acceptance that returns to fallback and queues
+fresh work.
+
+Small immutable accepted-origin receipts retain controls and admission evidence
+after candidate discard or work-record compaction. Automatic intent remains
+current after request fulfilment and Ready, so a later input change can renew it.
+Explicit cancellation, Discard in Jobs or provider choice closes that activation; Undo does
+not revive it, while Redo can create fresh work from the original authored
+operation. The intent table is bounded separately at 100,000 current heads and
+64 MiB of reserved records. Capacity notices identify closed automatic requests
+separately from displaced pending preparations and preserve the saved edit.
+
+This is store schema 72. See the [boundary qualification
+record](qualification/ai-boundaries-2026-10-07.md) for verification and limits.
+
 ## Headless commands
 
 ```sh

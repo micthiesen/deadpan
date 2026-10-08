@@ -2,8 +2,8 @@
 
 use std::time::Instant;
 
-/// Keeps background completion tied to its admitted input until this frame
-/// begins routing new keyboard and pointer input.
+/// Keeps background completion tied to its admitted input through this frame,
+/// unless routing actual new keyboard or pointer input replaces that origin.
 #[derive(Default)]
 pub(super) struct InputOrigins {
     admitted: Option<Instant>,
@@ -60,7 +60,10 @@ impl InputOrigins {
 
     pub fn picture_input(&self) -> Option<Instant> {
         if self.dispatching {
-            self.current
+            // Final-layout requests can follow an idle input-dispatch stage.
+            // Preserve this frame's commit origin until actual input replaces it;
+            // begin_frame clears it before any unrelated following frame.
+            self.current.or(self.committed)
         } else {
             self.committed
         }
@@ -369,9 +372,88 @@ mod tests {
         assert_eq!(origins.observe("command_committed"), Some(later));
         assert_eq!(origins.picture_input(), Some(later));
         origins.observe("input_dispatch");
-        assert_eq!(origins.picture_input(), None);
+        assert_eq!(origins.picture_input(), Some(later));
         origins.begin_frame(None);
         assert_eq!(origins.picture_input(), None);
+    }
+
+    #[test]
+    fn deferred_commit_picture_keeps_its_input_without_leaking_to_later_requests() {
+        let base = Instant::now();
+        let input = base + Duration::from_millis(1);
+        let mut origins = InputOrigins::default();
+        let mut pictures = PictureTelemetry::default();
+        origins.begin_frame(Some(input));
+        origins.observe("input_dispatch");
+        origins.observe("command_admitted");
+
+        // Slip completion is consumed before idle input routing, but its new
+        // committed picture is requested in the final layout pass afterward.
+        origins.begin_frame(None);
+        let committed_input = origins.observe("command_committed").unwrap();
+        assert_eq!(committed_input, input);
+        assert_eq!(
+            milliseconds(base + Duration::from_millis(10), committed_input),
+            9.0
+        );
+        origins.observe("input_dispatch");
+        pictures.observe(
+            event(base, 12, "picture_requested", 1, Outcome::Requested),
+            origins.picture_input(),
+        );
+
+        // The request owns its captured input even after the next frame clears
+        // the origin. Completion still requires decode, submit and compose events.
+        origins.begin_frame(None);
+        origins.observe("input_dispatch");
+        assert_eq!(origins.picture_input(), None);
+        pictures.observe(
+            event(base, 18, "picture_received", 1, Outcome::Decoded),
+            origins.picture_input(),
+        );
+        pictures.observe(
+            event(base, 20, "picture_submitted", 1, Outcome::Submitted),
+            origins.picture_input(),
+        );
+        let completed = pictures.composed(base + Duration::from_millis(25));
+        assert_eq!(completed.events[0].ticket, Some(1));
+        assert_eq!(completed.events[0].outcome, Some(Outcome::Completed));
+        assert_eq!(
+            measured(&completed),
+            vec![
+                ("request_to_picture_complete_ms", 13.0),
+                ("input_to_picture_complete_ms", 24.0),
+            ]
+        );
+        assert!(
+            pictures
+                .composed(base + Duration::from_millis(26))
+                .measurements
+                .is_empty()
+        );
+
+        // An unrelated request on a later idle frame has no admitted input.
+        origins.begin_frame(None);
+        origins.observe("input_dispatch");
+        assert_eq!(origins.picture_input(), None);
+        pictures.observe(
+            event(base, 30, "picture_requested", 2, Outcome::Requested),
+            origins.picture_input(),
+        );
+        pictures.observe(
+            event(base, 35, "picture_received", 2, Outcome::Decoded),
+            origins.picture_input(),
+        );
+        pictures.observe(
+            event(base, 36, "picture_submitted", 2, Outcome::Submitted),
+            origins.picture_input(),
+        );
+        let unrelated = pictures.composed(base + Duration::from_millis(40));
+        assert_eq!(unrelated.events[0].ticket, Some(2));
+        assert_eq!(
+            measured(&unrelated),
+            vec![("request_to_picture_complete_ms", 10.0)]
+        );
     }
 
     #[test]

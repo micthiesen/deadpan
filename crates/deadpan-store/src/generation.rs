@@ -302,23 +302,29 @@ impl ProjectStore {
         &self,
         request_id: &RequestId,
     ) -> Result<Option<StoredGenerationRequest>, StoreError> {
-        let mut statement = self
-            .connection
-            .prepare(&format!("{BOUNDED_REQUEST_SELECT} WHERE request_id=?2"))?;
-        let mut rows = statement.query(params![MAX_IDENTITY_BYTES as i64, request_id.as_str()])?;
-        let result = rows
-            .next()?
-            .map(|row| parse_request_row(&self.connection, row))
-            .transpose()?;
-        if rows.next()?.is_some() {
-            return Err(integrity("duplicate generation request identity"));
-        }
-        Ok(result)
+        read_stored_request(&self.connection, request_id)
     }
 
     pub fn current_generation_requests(&self) -> Result<Vec<StoredGenerationRequest>, StoreError> {
         read_current_requests(&self.connection)
     }
+}
+
+pub(crate) fn read_stored_request(
+    connection: &Connection,
+    request_id: &RequestId,
+) -> Result<Option<StoredGenerationRequest>, StoreError> {
+    let mut statement =
+        connection.prepare(&format!("{BOUNDED_REQUEST_SELECT} WHERE request_id=?2"))?;
+    let mut rows = statement.query(params![MAX_IDENTITY_BYTES as i64, request_id.as_str()])?;
+    let result = rows
+        .next()?
+        .map(|row| parse_request_row(connection, row))
+        .transpose()?;
+    if rows.next()?.is_some() {
+        return Err(integrity("duplicate generation request identity"));
+    }
+    Ok(result)
 }
 
 /// Transaction-local allocation shared with preparation fulfilment.
@@ -369,7 +375,7 @@ pub(crate) fn allocate_request(
     }
 
     if supersede {
-        crate::generation_preparations::supersede(connection, &target)?;
+        crate::generation_preparations::supersede(connection, &target, &input.request_id)?;
     }
 
     let (scope_id, version) =
@@ -429,6 +435,28 @@ pub(crate) fn allocate_request(
 /// the same context after a document change. The store asks it for every
 /// current request when a write supplies no explicit relevance plan.
 pub trait GenerationContextResolver: Send + Sync {
+    /// Production observers compare selected measured frames. The default
+    /// preserves custom resolvers that do not inspect picture context.
+    fn preparation_is_relevant_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        preparation: &crate::generation_preparations::StoredGenerationPreparation,
+        _pictures: &dyn crate::generation_pictures::GenerationPictures,
+    ) -> bool {
+        self.preparation_is_relevant(origin, after, preparation)
+    }
+
+    fn observe_with_pictures(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+        _pictures: &dyn crate::generation_pictures::GenerationPictures,
+    ) -> ContextObservation {
+        self.observe(origin, after, request)
+    }
+
     /// Whether a pending replacement retains its original raw input context.
     /// Conservative resolvers may return false; no stale preparation is revived.
     fn preparation_is_relevant(
@@ -480,6 +508,7 @@ pub(crate) fn reconcile(
             }
             let prepared = resolver.prepare_transition(after);
             let resolver = prepared.as_deref().unwrap_or(resolver);
+            let pictures = crate::generation_pictures::QualifiedGenerationPictures::new(connection);
             let mut observations = Vec::with_capacity(current.len());
             for request in current {
                 let origin =
@@ -489,7 +518,8 @@ pub(crate) fn reconcile(
                     request_id: request.request_id.clone(),
                     binding: request.binding.clone(),
                     target: request.target.clone(),
-                    after_context: resolver.observe(&origin, after, &request),
+                    after_context: resolver
+                        .observe_with_pictures(&origin, after, &request, &pictures),
                 });
             }
             apply_relevance_plan(

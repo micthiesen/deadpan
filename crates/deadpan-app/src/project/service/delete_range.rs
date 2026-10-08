@@ -36,6 +36,7 @@ impl Service {
             },
         };
         let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.committed = Some(CommittedEdit {
             scoped: None,
             revision: outcome.revision_id,

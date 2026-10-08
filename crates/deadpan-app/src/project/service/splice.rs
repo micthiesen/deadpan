@@ -514,6 +514,7 @@ impl Service {
         let outcome = draft.request.commit(store, source.as_ref(), &cancelled);
         self.cache_splice_source(draft.request.asset(), source);
         let commit = outcome.map_err(display)?;
+        self.capture_preparation_notices(&commit.generation_preparation_notices);
         Ok(CommittedEdit {
             scoped: None,
             revision: commit.revision_id,

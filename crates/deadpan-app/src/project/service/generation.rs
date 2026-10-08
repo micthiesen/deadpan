@@ -13,7 +13,10 @@ use deadpan_cli::generation::attempt::{
 };
 use deadpan_cli::generation::conditioning::{self, BridgeInputs};
 use deadpan_cli::generation::runtime::BridgeRuntime;
-use deadpan_core::{InstancePath, ProjectFrame, RepeatInstance, ScopedNodeTarget};
+use deadpan_core::{
+    AcceptedGeneration, GeneratedArtifact, HoldFallback, HoldVideo, InstancePath, ProjectFrame,
+    RepeatInstance, ScopedNodeTarget,
+};
 use deadpan_jobs::{
     AttemptId, GenerationOptions, HostFailureCode, JobFailure, JobState, MessageIdentity,
     ProviderSelection, RequestId,
@@ -28,8 +31,8 @@ use deadpan_store::generation_preparations::{
 
 mod preparations;
 use crate::project::generation::{
-    Backend, Candidate, CandidatePreview, GenerationOperation, GenerationPresentation, Job,
-    MAX_VARIANTS, Outcome, Phase, PreviewParts, Update, Variant,
+    Backend, Candidate, CandidatePreview, FinalProvider, GenerationOperation,
+    GenerationPresentation, Job, MAX_VARIANTS, Outcome, Phase, PreviewParts, Update, Variant,
 };
 
 /// Events the job thread may queue ahead of the writer.
@@ -258,6 +261,25 @@ impl Service {
         }
     }
 
+    fn user_cancel_generation(&mut self) -> Result<()> {
+        let activation = self
+            .generation
+            .running
+            .as_ref()
+            .and_then(|running| running.preparation.as_ref())
+            .map(|claim| claim.preparation.id.clone());
+        if let Some(activation) = activation {
+            let store = self.writer()?;
+            let revision = store.head_revision().map_err(display)?;
+            store
+                .cancel_generation_intent(&activation, &revision)
+                .map_err(display)?;
+            self.generation.variants_changed();
+        }
+        self.cancel_generation();
+        Ok(())
+    }
+
     /// Independent generation feedback. Accept is an ordinary edit and is
     /// handled through [`Service::accept_generation`].
     pub(super) fn generation_command(&mut self, operation: GenerationOperation) {
@@ -307,9 +329,9 @@ impl Service {
                         .as_ref()
                         .is_some_and(|job| job.ticket == started && job.running());
                 if matches {
-                    self.cancel_generation();
-                    self.message = Some("Cancelling the AI pause…".into());
-                    Ok(())
+                    self.user_cancel_generation().map(|()| {
+                        self.message = Some("Cancelling the AI pause…".into());
+                    })
                 } else {
                     Err("No matching AI pause is generating.".into())
                 }
@@ -886,12 +908,17 @@ impl Service {
         let (edit, requests) = store
             .preview_generation_acceptance_contexts(&acceptance, attempt::object_limits())
             .map_err(display)?;
-        let mapped = requests
+        let mapped_request = requests
             .iter()
             .find(|item| item.request_id == request)
-            .ok_or("The accepted request has no mapped authoring target.")?
-            .target
-            .clone();
+            .ok_or("The accepted request has no mapped authoring target.")?;
+        let mapped = mapped_request.target.clone();
+        let expected = expected_accepted_provider(
+            &workspace.document,
+            &candidate.target,
+            &acceptance,
+            mapped_request,
+        )?;
         let after = Arc::new(edit.forward.apply(&workspace.document).map_err(display)?);
         let mapped_instance = map_presentation(
             &workspace.document,
@@ -930,7 +957,8 @@ impl Service {
                 session,
                 request,
                 attempt,
-                hold: mapped.node,
+                mapped_target: mapped,
+                expected,
                 target: candidate.target,
                 range,
                 document: after,
@@ -997,14 +1025,16 @@ impl Service {
         let (edit, requests) = store
             .preview_generation_acceptance_contexts(&acceptance, attempt::object_limits())
             .map_err(display)?;
-        let mapped = requests
+        let mapped_request = requests
             .iter()
             .find(|item| item.request_id == request)
-            .ok_or("The accepted request has no mapped authoring target.")?
-            .target
-            .clone();
+            .ok_or("The accepted request has no mapped authoring target.")?;
+        let mapped = mapped_request.target.clone();
+        let expected =
+            expected_accepted_provider(&workspace.document, &target, &acceptance, mapped_request)?;
         let after = edit.forward.apply(&workspace.document).map_err(display)?;
         mapped.validate(&after).map_err(display)?;
+        FinalProvider::resolve(&after, &mapped, &expected)?;
         let scoped_receipt = scoped
             .as_ref()
             .map(|captured| {
@@ -1028,11 +1058,12 @@ impl Service {
             .map_or_else(|| mapped.node.clone(), |captured| captured.root.clone());
         let outcome = acceptance::accept(self.writer()?, &request, new_revision)
             .map_err(|error| error.to_string())?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.generation.preview = None;
         self.generation.epoch += 1;
         self.committed = Some(CommittedEdit {
             scoped: scoped_receipt,
-            revision: outcome.revision_id,
+            revision: outcome.revision_id.clone(),
             selected_node: Some(selected_node),
             preserve_cursor: true,
             cursor: Some(cursor),
@@ -1040,9 +1071,24 @@ impl Service {
             sound: None,
             range_selection: None,
         });
-        self.refresh_saved("AI pictures accepted")?;
-        self.message =
-            Some("Accepted the AI pictures for this pause and saved. Undo restores the previous picture.".into());
+        // Inspect the actual committed patch, including its automatic replacement
+        // tail. An error after this point must still acknowledge the saved edit.
+        let final_provider = outcome.edit.forward.apply(&workspace.document)
+            .map_err(display)
+            .and_then(|saved| FinalProvider::resolve(&saved, &mapped, &expected))
+            .map_err(|error| format!("AI acceptance saved, but its final picture provider could not be confirmed: {error}. Reopen this project before editing or undoing."))?;
+        let feedback = match final_provider {
+            FinalProvider::AiPictures => "Accepted the AI pictures for this pause and saved. Undo restores the previous picture.".into(),
+            FinalProvider::ReplacementFallback => replacement_acceptance_message(
+                self.store.as_ref().ok_or("AI acceptance saved, but the project store is unavailable.")?,
+                &outcome, &mapped, &expected.artifact,
+            ),
+        };
+        self.refresh_saved(match final_provider {
+            FinalProvider::AiPictures => "AI pictures accepted",
+            FinalProvider::ReplacementFallback => &feedback,
+        })?;
+        self.message = Some(feedback);
         Ok(())
     }
 
@@ -1813,7 +1859,9 @@ impl Service {
                 .as_ref()
                 .is_some_and(|job| job.ticket == ticket && job.running())
         {
-            self.cancel_generation();
+            self.user_cancel_generation().map_err(|message| {
+                deadpan_cli::live_project::LiveError::new("GenerationCancelFailed", message)
+            })?;
             self.message = Some("Cancelling the AI pause…".into());
             self.publish();
             return self.host_generation_status(ticket);
@@ -1821,6 +1869,108 @@ impl Service {
         Ok(reply)
     }
 }
+
+/// Reconstruct the exact provider admitted by the store, including the selected
+/// receipt's objects, retained sampling and current canvas. The final snapshot
+/// can then prove either this provider or its exact deterministic fallback.
+fn expected_accepted_provider(
+    before: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    acceptance: &deadpan_store::generation_acceptance::GenerationAcceptance,
+    request: &deadpan_store::generation::StoredGenerationRequest,
+) -> Result<AcceptedGeneration> {
+    target.validate(before).map_err(display)?;
+    let Some(NodeKind::Hold { recipe }) = before.nodes().get(&target.node).map(|node| &node.kind)
+    else {
+        return Err("The AI acceptance target is no longer a pause.".into());
+    };
+    let fallback = match &recipe.video {
+        HoldVideo::Background => HoldFallback::Background,
+        HoldVideo::Freeze { asset, timestamp } => HoldFallback::Freeze {
+            asset: asset.clone(),
+            timestamp: *timestamp,
+        },
+        HoldVideo::Generated { accepted } => accepted.fallback.clone(),
+        _ => return Err("The AI acceptance target has no deterministic fallback.".into()),
+    };
+    if request.request_id != acceptance.identity.request_id {
+        return Err("The AI acceptance refers to a different request.".into());
+    }
+    let receipt = &acceptance.expected_receipt;
+    let plan = request
+        .bridge_plan
+        .as_ref()
+        .ok_or("The AI acceptance has no retained sampling plan.")?;
+    Ok(AcceptedGeneration {
+        artifact: GeneratedArtifact {
+            sampled_asset: acceptance.sampled_asset.clone(),
+            sampled_object: receipt.sampled_object().clone(),
+            native_asset: acceptance.native_asset.clone(),
+            native_object: receipt.native_object().clone(),
+            provenance: receipt.provenance_object().clone(),
+            sampling: plan.sampling_map().map_err(display)?,
+            content_aspect: Some([
+                before.presentation_basis().width,
+                before.presentation_basis().height,
+            ]),
+        },
+        fallback,
+    })
+}
+
+/// Only read preparations created by this commit, and bind the notice to the
+/// exact mapped Hold and accepted artifact. This runs on the service writer,
+/// before another job can advance the newly committed preparation.
+fn replacement_acceptance_message(
+    store: &ProjectStore,
+    outcome: &deadpan_store::CommitOutcome,
+    target: &ScopedNodeTarget,
+    accepted: &GeneratedArtifact,
+) -> String {
+    let status = (|| -> Result<String> {
+        for id in &outcome.generation_preparations {
+            let Some(preparation) = store.generation_preparation(id).map_err(display)? else {
+                continue;
+            };
+            if preparation.current_revision != outcome.revision_id
+                || preparation.target != *target
+                || !matches!(&preparation.origin,
+                    deadpan_store::generation_preparations::PreparationOrigin::AcceptedBoundary { accepted: saved, .. }
+                    if saved.as_ref() == accepted)
+            {
+                continue;
+            }
+            return Ok(replacement_preparation_status(preparation.state, preparation.reason.as_deref()));
+        }
+        // Capacity notices can omit displaced IDs once their bounded list is
+        // full. Publish those notices separately without attributing an
+        // unrelated displacement to this Hold.
+        Ok("Fresh AI preparation could not be confirmed; check Jobs before retrying.".into())
+    })().unwrap_or_else(|error| format!("Fresh AI preparation status could not be read: {error}"));
+    format!(
+        "Replacement fallback saved because neighboring inputs changed. {status} Undo restores the previous picture."
+    )
+}
+
+fn replacement_preparation_status(state: PreparationState, reason: Option<&str>) -> String {
+    let status = match state {
+        PreparationState::Queued => "Fresh AI preparation queued.",
+        PreparationState::Claimed => "Fresh AI preparation is running.",
+        PreparationState::Fulfilled => {
+            "Fresh AI preparation completed; new pictures still need explicit acceptance."
+        }
+        PreparationState::Interrupted => "Fresh AI preparation was interrupted.",
+        PreparationState::Unavailable => "Fresh AI preparation is unavailable.",
+        PreparationState::Cancelled => "Fresh AI preparation was cancelled.",
+    };
+    match reason {
+        Some(reason) if !reason.is_empty() => format!("{status} {reason}"),
+        _ => status.into(),
+    }
+}
+
+#[cfg(test)]
+mod final_provider_feedback_tests;
 
 /// Every current bridge request's present Ready variants that its Hold has
 /// not accepted, by Hold.

@@ -33,6 +33,7 @@ pub fn relevance_plan_for_requests(
         .then(|| resolver.prepare_transition(after))
         .flatten();
     let resolver = prepared.as_deref().unwrap_or(&resolver);
+    let pictures = store.generation_pictures();
     let mut observations = Vec::new();
     for request in requests {
         let origin = store.snapshot_at(&request.origin_revision)?;
@@ -40,7 +41,7 @@ pub fn relevance_plan_for_requests(
             request_id: request.request_id.clone(),
             binding: request.binding.clone(),
             target: request.target.clone(),
-            after_context: resolver.observe(&origin, after, &request),
+            after_context: resolver.observe_with_pictures(&origin, after, &request, &pictures),
         });
     }
     Ok(RelevancePlan {

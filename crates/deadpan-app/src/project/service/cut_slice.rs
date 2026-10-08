@@ -128,6 +128,7 @@ impl Service {
             .writer()?
             .cut_to_register(&request, name, copied.slice().clone(), None)
             .map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         if let Some(attempt) = attempt {
             self.semantic.prove(
                 capture.id.session,

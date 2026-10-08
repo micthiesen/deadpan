@@ -15,7 +15,8 @@ mod retention;
 mod transitions;
 mod validation;
 pub(crate) use transitions::{
-    command_births, derive, history_births, history_provider_changes, insert_births, map, reconcile,
+    Birth, apply_command_terminals, apply_history_terminals, command_births, derive,
+    history_births, id_for, insert_births, map, provider_choices, reconcile,
 };
 pub(crate) use validation::{Replay, digest, validate_store};
 
@@ -92,6 +93,10 @@ pub enum PreparationControls {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum PreparationOrigin {
+    AcceptedBoundary {
+        accepted: Box<GeneratedArtifact>,
+        controls: PreparationControls,
+    },
     AcceptedExtension {
         accepted: Box<GeneratedArtifact>,
         controls: PreparationControls,
@@ -121,8 +126,16 @@ impl PreparationOrigin {
             | Self::AcceptedExtension {
                 controls: PreparationControls::Request { options, .. },
                 ..
+            }
+            | Self::AcceptedBoundary {
+                controls: PreparationControls::Request { options, .. },
+                ..
             } => Some(options),
             Self::AcceptedExtension {
+                controls: PreparationControls::AcceptedArtifact,
+                ..
+            }
+            | Self::AcceptedBoundary {
                 controls: PreparationControls::AcceptedArtifact,
                 ..
             } => None,
@@ -131,7 +144,9 @@ impl PreparationOrigin {
 
     pub fn accepted_artifact(&self) -> Option<&GeneratedArtifact> {
         match self {
-            Self::AcceptedExtension { accepted, .. } => Some(accepted.as_ref()),
+            Self::AcceptedExtension { accepted, .. } | Self::AcceptedBoundary { accepted, .. } => {
+                Some(accepted.as_ref())
+            }
             Self::InsertedPause { .. } => None,
         }
     }
@@ -141,6 +156,10 @@ impl PreparationOrigin {
             Self::AcceptedExtension {
                 controls: PreparationControls::Request { request_id, .. },
                 ..
+            }
+            | Self::AcceptedBoundary {
+                controls: PreparationControls::Request { request_id, .. },
+                ..
             } => Some(request_id),
             _ => None,
         }
@@ -148,9 +167,12 @@ impl PreparationOrigin {
 
     fn supports_duration(&self, duration: FrameDuration) -> bool {
         duration != FrameDuration::ZERO
-            && self
-                .accepted_artifact()
-                .is_none_or(|accepted| duration > accepted.sampling.output_frame_count())
+            && match self {
+                Self::AcceptedExtension { accepted, .. } => {
+                    duration > accepted.sampling.output_frame_count()
+                }
+                _ => true,
+            }
     }
 
     /// Request controls enrich an accepted birth after pure command replay;
@@ -160,6 +182,12 @@ impl PreparationOrigin {
             (
                 Self::AcceptedExtension { accepted, .. },
                 Self::AcceptedExtension {
+                    accepted: expected, ..
+                },
+            ) => accepted == expected,
+            (
+                Self::AcceptedBoundary { accepted, .. },
+                Self::AcceptedBoundary {
                     accepted: expected, ..
                 },
             ) => accepted == expected,
@@ -182,6 +210,7 @@ pub struct StoredGenerationPreparation {
     pub target: ScopedNodeTarget,
     pub duration: FrameDuration,
     pub origin: PreparationOrigin,
+    pub intent: crate::generation_intents::IntentBirthReceipt,
     pub state: PreparationState,
     pub claim_sequence: u64,
     pub reason: Option<String>,
@@ -205,6 +234,10 @@ pub enum PreparationFailure {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum PreparationNotice {
+    IntentCapacity {
+        displaced: Vec<PreparationId>,
+        total: u64,
+    },
     QueueCapacity {
         displaced: Vec<PreparationId>,
         total: u64,
@@ -270,6 +303,7 @@ fn parse_row(row: &rusqlite::Row<'_>) -> Result<(StoredGenerationPreparation, i6
         || value.state.name() != state
         || serde_json::to_string(&value)? != text
         || history < 1
+        || value.intent.history_id != history
         || value.duration.frames() <= 0
         || value.claim_sequence > i64::MAX as u64
         || value
@@ -286,6 +320,7 @@ fn parse_row(row: &rusqlite::Row<'_>) -> Result<(StoredGenerationPreparation, i6
     {
         return Err(invalid("preparation columns or state are inconsistent"));
     }
+    value.intent_birth().validate()?;
     Ok((value, history))
 }
 
@@ -382,7 +417,8 @@ pub(crate) fn verify(connection: &Connection) -> Result<(), StoreError> {
 fn claim_matches(connection: &Connection, claim: &PreparationClaim) -> Result<bool, StoreError> {
     Ok(claim.preparation.state == PreparationState::Claimed
         && crate::validation::read_head(connection)? == claim.preparation.current_revision.as_str()
-        && read(connection, &claim.preparation.id)?.as_ref() == Some(&claim.preparation))
+        && read(connection, &claim.preparation.id)?.as_ref() == Some(&claim.preparation)
+        && has_current_intent(connection, &claim.preparation)?)
 }
 
 impl ProjectStore {
@@ -431,6 +467,7 @@ impl ProjectStore {
         if value.state != PreparationState::Queued
             || &value.current_revision != expected
             || crate::validation::read_head(&transaction)? != expected.as_str()
+            || !has_current_intent(&transaction, &value)?
         {
             return Err(invalid(
                 "preparation is not queued at the captured revision",
@@ -462,6 +499,7 @@ impl ProjectStore {
             PreparationState::Interrupted | PreparationState::Unavailable
         ) || &value.current_revision != expected
             || crate::validation::read_head(&transaction)? != expected.as_str()
+            || !has_current_intent(&transaction, &value)?
         {
             return Err(invalid("preparation cannot retry at the captured revision"));
         }
@@ -490,10 +528,21 @@ impl ProjectStore {
         if !value.state.is_active() || value.claim_sequence != expected_sequence {
             return Err(invalid("preparation changed before cancellation"));
         }
-        advance(&mut value)?;
-        value.state = PreparationState::Cancelled;
-        value.reason = Some("Cancelled by the user; the committed pause is unchanged.".into());
-        save(&transaction, &value)?;
+        let head = crate::generation_intents::read_head(&transaction, id)?
+            .ok_or_else(|| invalid("preparation no longer owns current intent"))?;
+        crate::generation_intents::close(
+            &transaction,
+            &head,
+            crate::generation_intents::IntentTerminal {
+                activation_id: id.clone(),
+                at_revision: value.current_revision.clone(),
+                phase: crate::generation_intents::TerminalPhase::AfterRevision,
+                target: head.target.clone(),
+                reason: crate::generation_intents::IntentTerminalReason::UserCancelled,
+            },
+        )?;
+        value =
+            read(&transaction, id)?.ok_or_else(|| invalid("cancelled preparation disappeared"))?;
         retention::compact(&transaction)?;
         crate::audit::refresh_generation_scopes(&transaction)?;
         transaction.commit()?;
@@ -576,6 +625,12 @@ impl ProjectStore {
             false,
         )?;
         let attempt = crate::generation_attempts::begin_attempt(&transaction, attempt)?;
+        crate::generation_intents::link_request(
+            &transaction,
+            &value.id,
+            &value.target,
+            &request.request_id,
+        )?;
         value.state = PreparationState::Fulfilled;
         value.request_id = Some(request.request_id.clone());
         advance(&mut value)?;
@@ -590,17 +645,110 @@ impl ProjectStore {
 pub(crate) fn supersede(
     connection: &Connection,
     target: &ScopedNodeTarget,
+    request_id: &RequestId,
 ) -> Result<(), StoreError> {
-    for (mut value, _) in all(connection)? {
-        if value.target == *target && value.state.is_active() {
-            advance(&mut value)?;
-            value.state = PreparationState::Cancelled;
-            value.reason = Some("Superseded by an explicit generation request.".into());
-            save(connection, &value)?;
+    if let Some(head) = crate::generation_intents::load_current(connection, target)? {
+        crate::generation_intents::close(
+            connection,
+            &head,
+            crate::generation_intents::IntentTerminal {
+                activation_id: head.activation_id.clone(),
+                at_revision: RevisionId::new(crate::validation::read_head(connection)?)?,
+                phase: crate::generation_intents::TerminalPhase::AfterRevision,
+                target: head.target.clone(),
+                reason:
+                    crate::generation_intents::IntentTerminalReason::ExplicitGenerationRequest {
+                        request_id: request_id.clone(),
+                    },
+            },
+        )?;
+    }
+    retention::compact(connection)
+}
+
+pub(crate) fn has_current_intent(
+    connection: &Connection,
+    value: &StoredGenerationPreparation,
+) -> Result<bool, StoreError> {
+    Ok(crate::generation_intents::read_head(connection, &value.id)?
+        .is_some_and(|head| head.target == value.target && head.request_id == value.request_id))
+}
+
+pub(crate) fn close_intent_work(
+    connection: &Connection,
+    id: &PreparationId,
+    detail: &str,
+) -> Result<(), StoreError> {
+    if let Some(mut value) = read(connection, id)?
+        && value.state.is_active()
+    {
+        advance(&mut value)?;
+        value.state = PreparationState::Cancelled;
+        value.reason = Some(reason(detail.into())?);
+        save(connection, &value)?;
+    }
+    Ok(())
+}
+
+impl StoredGenerationPreparation {
+    pub fn intent_birth(&self) -> crate::generation_intents::IntentBirth {
+        crate::generation_intents::IntentBirth {
+            activation_id: self.id.clone(),
+            project_id: self.project_id.clone(),
+            activation_revision: self.origin_revision.clone(),
+            origin_target: self.origin_target.clone(),
+            duration: self.duration,
+            origin: self.origin.clone(),
+            receipt: self.intent.clone(),
         }
     }
-    retention::compact(connection)?;
-    Ok(())
+}
+
+pub(crate) fn read_intent_birth(
+    connection: &Connection,
+    id: &PreparationId,
+) -> Result<Option<crate::generation_intents::IntentBirth>, StoreError> {
+    if let Some(value) = read(connection, id)? {
+        return Ok(Some(value.intent_birth()));
+    }
+    Ok(retention::read(connection, id)?.map(|value| value.birth()))
+}
+
+pub(crate) fn read_intent_births_at(
+    connection: &Connection,
+    revision: &RevisionId,
+) -> Result<Vec<crate::generation_intents::IntentBirth>, StoreError> {
+    let mut statement = connection.prepare("SELECT id FROM generation_preparations WHERE origin_revision=?1 UNION ALL SELECT id FROM generation_preparation_retirements WHERE origin_revision=?1 ORDER BY id")?;
+    let mut rows = statement.query([revision.as_str()])?;
+    let mut result = Vec::new();
+    while let Some(row) = rows.next()? {
+        if result.len() >= deadpan_core::MAX_DOCUMENT_NODES {
+            return Err(invalid("birth batch exceeds its node bound"));
+        }
+        let id = PreparationId::new(row.get::<_, String>(0)?)?;
+        result.push(
+            read_intent_birth(connection, &id)?
+                .ok_or_else(|| invalid("indexed birth is missing"))?,
+        );
+    }
+    Ok(result)
+}
+
+pub(crate) fn intent_request(
+    connection: &Connection,
+    id: &PreparationId,
+) -> Result<Option<RequestId>, StoreError> {
+    if let Some(value) = read(connection, id)? {
+        return Ok(value.request_id);
+    }
+    retention::read(connection, id)?
+        .map(|value| value.request_id)
+        .ok_or_else(|| invalid("intent has no preparation birth"))
+}
+
+#[cfg(test)]
+pub(crate) fn compact_completed_for_test(connection: &Connection) -> Result<(), StoreError> {
+    retention::compact_to(connection, 0)
 }
 
 pub(crate) fn recover(connection: &mut Connection) -> Result<(), StoreError> {

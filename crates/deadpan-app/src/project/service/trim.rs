@@ -282,6 +282,7 @@ impl Service {
             .ok_or("Trim proposal is not admitted for Apply.")?;
         let target = draft.target.clone();
         let outcome = self.writer()?.commit(&ready.request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
         Ok((
             CommittedEdit {
                 scoped: None,

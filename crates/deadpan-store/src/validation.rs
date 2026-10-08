@@ -504,7 +504,7 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
     // and births together from the initial revision, once for all scopes.
     if verified < order.len()
         && connection.query_row(
-            "SELECT EXISTS(SELECT 1 FROM generation_scopes) OR EXISTS(SELECT 1 FROM generation_preparations) OR EXISTS(SELECT 1 FROM generation_preparation_retirements)",
+            "SELECT EXISTS(SELECT 1 FROM generation_scopes) OR EXISTS(SELECT 1 FROM generation_preparations) OR EXISTS(SELECT 1 FROM generation_preparation_retirements) OR EXISTS(SELECT 1 FROM generation_intent_heads) OR EXISTS(SELECT 1 FROM generation_intent_terminals)",
             [],
             |row| row.get::<_, bool>(0),
         )?
@@ -590,6 +590,7 @@ fn replay_from(
         .collect::<Result<_, _>>()?;
     let mut scopes = crate::generation_scope::Replay::new(connection, &current)?;
     let mut preparations = crate::generation_preparations::Replay::default();
+    let mut intents = crate::generation_intents::Replay::default();
     for id in &order[from..] {
         let (parent, kind, next) = read_replay_revision(connection, id)?;
         if parent.as_deref() != Some(current.revision_id().as_str()) {
@@ -613,32 +614,17 @@ fn replay_from(
                     return Err(history_error("history parent or revision disagrees"));
                 }
                 let request: CommandRequest = serde_json::from_str(&request_json)?;
-                let calculated =
-                    if matches!(request.command, deadpan_core::Command::Compound { .. }) {
-                        crate::compound::replay(connection, &current, &request, &admitted)?
-                    } else {
-                        deadpan_core::apply_validated(&current, &request)?.0
-                    };
+                let (calculated, boundary_births) = crate::boundary_transition::replay(
+                    connection,
+                    &current,
+                    &request,
+                    &admitted,
+                    &intents.heads(),
+                )?;
                 let matches_edit =
                     calculated == serde_json::from_str::<EditTransaction>(&edit_json)?;
                 // Validated once, reusing unchanged binding owners' proofs.
                 let next_document = current.apply_patch(&calculated.forward)?;
-                if !matches!(request.command, deadpan_core::Command::Compound { .. }) {
-                    crate::compound::validate_ordinary_history(
-                        connection,
-                        &current,
-                        &next_document,
-                        &request,
-                        &admitted,
-                    )?;
-                }
-                #[cfg(any(target_os = "macos", target_os = "linux"))]
-                crate::source_registration::validate_hold_audio_source(
-                    connection,
-                    &current,
-                    &next_document,
-                    &request,
-                )?;
                 if !matches_edit || next.as_ref().is_some_and(|next| *next != *next_document) {
                     return Err(history_error(
                         "stored command, patches, and revision disagree",
@@ -650,6 +636,7 @@ fn replay_from(
                         "inverse does not restore the preceding revision",
                     ));
                 }
+                validate_acceptance_target(connection, &scopes, &request)?;
                 let isolated = crate::generation_scope::with_command_proof(
                     &current,
                     &request,
@@ -669,8 +656,18 @@ fn replay_from(
                         "generation scope isolation event is missing or unexpected",
                     ));
                 }
-                let births =
+                let mut births =
                     crate::generation_preparations::derive(&current, &request, &next_document)?;
+                births.extend(boundary_births);
+                crate::boundary_transition::sort_births(&mut births)?;
+                intents.command(
+                    connection,
+                    &current,
+                    &request,
+                    &next_document,
+                    entry,
+                    &births,
+                )?;
                 preparations.arrive(connection, &next_document, entry, births, &scopes)?;
                 cursor = Some(entry);
                 redo.clear();
@@ -716,6 +713,7 @@ fn replay_from(
                 }
                 let births =
                     crate::generation_preparations::history_births(connection, entry, is_redo)?;
+                intents.history(connection, &current, entry, is_redo, &plan.next, &births)?;
                 preparations.arrive(connection, &plan.next, entry, births, &scopes)?;
                 cursor = plan.next_cursor;
                 if !is_redo {
@@ -731,11 +729,47 @@ fn replay_from(
     }
     scopes.finish(connection)?;
     preparations.finish(connection)?;
+    intents.finish(connection)?;
     Ok(Navigation {
         cursor,
         redo,
         edits,
     })
+}
+
+/// First admission is bound to the request's chronological scope before the
+/// acceptance command performs any isolation. Later copies keep that receipt.
+fn validate_acceptance_target(
+    connection: &Connection,
+    scopes: &crate::generation_scope::Replay,
+    request: &CommandRequest,
+) -> Result<(), StoreError> {
+    use deadpan_core::{Command, ScopedNodeEdit, ScopedNodeTarget};
+    let (target, artifact) = match request.command.base_command() {
+        Command::AcceptGeneratedHold { node, artifact, .. } => (
+            ScopedNodeTarget {
+                node: node.clone(),
+                repeats: Vec::new(),
+            },
+            artifact,
+        ),
+        Command::EditScoped {
+            target,
+            edit: ScopedNodeEdit::AcceptGeneratedHold { artifact, .. },
+            ..
+        } => (target.clone(), artifact),
+        _ => return Ok(()),
+    };
+    let origin = crate::generation_origins::read(connection, artifact)?
+        .ok_or_else(|| history_error("accepted artifact has no immutable origin receipt"))?;
+    if origin.accepted_revision() == &request.new_revision
+        && !scopes.request_has_target(connection, origin.request_id(), &target)?
+    {
+        return Err(history_error(
+            "first generated admission differs from its request's chronological scope",
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
