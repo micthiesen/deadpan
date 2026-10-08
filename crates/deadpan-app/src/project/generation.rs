@@ -246,13 +246,19 @@ pub struct Job {
     pub options: deadpan_jobs::GenerationOptions,
     /// Replacement controls are read from retained provenance off the writer.
     pub controls_pending: bool,
+    /// Resolved against authored endpoints before choosing the model pack.
+    pub operation: Option<deadpan_jobs::ConditioningMode>,
+    /// Typed missing-pack metadata from runtime lookup, never parsed from text.
+    pub missing_pack: Option<&'static str>,
+    /// Extension's other join is absent or observed but unconditioned.
+    pub opposite_boundary_present: Option<bool>,
     /// The revision the inputs were prepared from.
     pub revision: RevisionId,
     pub started: Instant,
     /// The recorded request, once allocated.
     pub request: Option<RequestId>,
     /// Exact timing admitted with the durable request, available after conditioning.
-    pub plan: Option<deadpan_jobs::BridgeGenerationPlan>,
+    pub plan: Option<deadpan_jobs::GenerationPlan>,
     /// Variants this job generates, and the 1-based one in progress.
     pub variants: u8,
     pub variant: u8,

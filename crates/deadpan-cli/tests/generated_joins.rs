@@ -403,7 +403,7 @@ fn scenario(media: Media) -> Result<Option<Scenario>> {
             hold: hold.clone(),
             expected_revision: freeze.clone(),
             seed: 11,
-            inputs,
+            inputs: inputs.into(),
         },
     )?;
     let first = run_variant(&mut store, &first_attempt, &worker)?;

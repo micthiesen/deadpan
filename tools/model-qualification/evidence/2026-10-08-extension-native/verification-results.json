@@ -1,0 +1,111 @@
+[
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 4.349150208290666
+  },
+  {
+    "name": "final-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-models",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 9.660325082950294
+  },
+  {
+    "name": "catalog-fuzz",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "-E",
+      "test(adversarial_pack_manifests)"
+    ],
+    "exit_code": 0,
+    "seconds": 19.65703187463805
+  },
+  {
+    "name": "ui-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 269.15447712503374
+  },
+  {
+    "name": "doc-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--doc",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 4.736170541960746
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/model-qualification/tests",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.34373433282598853
+  },
+  {
+    "name": "replays",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--scenario",
+      "ai-pause,ai-variants,ai-extension,ai-compare,model-packs",
+      "--output",
+      "/private/tmp/deadpan-extension-native-20261008/replays",
+      "--jobs",
+      "1"
+    ],
+    "exit_code": 1,
+    "seconds": 482.21574595803395
+  }
+]

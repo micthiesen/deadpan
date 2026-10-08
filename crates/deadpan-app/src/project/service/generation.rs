@@ -11,7 +11,8 @@ use deadpan_cli::generation::attempt::{
     self, AllocateInput, Allocated, AttemptProgress, AttemptRecord, GenerationError, RunResult,
     RunTimings, WorkerRun,
 };
-use deadpan_cli::generation::conditioning::{self, BridgeInputs};
+use deadpan_cli::generation::conditioning::PreparedInputs;
+use deadpan_cli::generation::prepare;
 use deadpan_cli::generation::runtime::BridgeRuntime;
 use deadpan_core::{
     AcceptedGeneration, GeneratedArtifact, HoldFallback, HoldVideo, InstancePath, ProjectFrame,
@@ -64,7 +65,7 @@ struct JobInput {
 /// (disconnected channel), cancels and fails the attempt.
 enum Event {
     Controls(GenerationOptions),
-    Prepared(std::result::Result<Box<BridgeInputs>, String>),
+    Prepared(std::result::Result<Box<PreparedInputs>, String>),
     /// The recorded attempt waits for the coordinator's inference slot.
     Queued,
     /// The coordinator admitted the job; its worker starts now.
@@ -653,6 +654,11 @@ impl Service {
             .map(|node| node.label.clone())
             .unwrap_or_default();
         let package = workspace.path.clone();
+        let current = attempt::current_scoped_request(
+            self.store.as_ref().ok_or("Open a project first")?,
+            &target,
+        )
+        .map_err(display)?;
         let previous = self
             .generation
             .job
@@ -661,14 +667,14 @@ impl Service {
                 !job.controls_pending
                     && job.target == target
                     && job.revision == revision
-                    && job.request.is_none()
+                    && job.request.as_ref().is_none_or(|id| {
+                        current.as_ref().is_some_and(|request| {
+                            &request.request_id == id
+                                && options_match_resolved(&job.options, &request.constraints)
+                        })
+                    })
             })
             .map(|job| job.options.clone());
-        let current = attempt::current_scoped_bridge_request(
-            self.store.as_ref().ok_or("Open a project first")?,
-            &target,
-        )
-        .map_err(display)?;
         let previous = previous.or_else(|| {
             current
                 .as_ref()
@@ -679,9 +685,12 @@ impl Service {
             .and_then(|options| options.region_target.resolve(None));
         let mut options = options.or(previous).unwrap_or_default();
         options.resolve_target(previous_target.as_ref());
-        options
-            .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
-            .map_err(display)?;
+        let resolved = prepare::resolve_with_plan(
+            &workspace.plan,
+            workspace.document.presentation_basis().frame_rate,
+            &target,
+            &options,
+        )?;
         if let deadpan_jobs::GenerationTarget::Saved(target) = &options.region_target
             && !workspace.document.targets().contains_key(target)
         {
@@ -689,13 +698,16 @@ impl Service {
                 "AI region target {target} is no longer in this project. Choose a saved target or target=none."
             ));
         }
-        let job = Job {
+        let mut job = Job {
             ticket,
             session,
             hold: hold.clone(),
             target: target.clone(),
             options: options.clone(),
             controls_pending: false,
+            operation: Some(resolved.operation),
+            missing_pack: None,
+            opposite_boundary_present: resolved.opposite_boundary_present,
             revision: revision.clone(),
             started: Instant::now(),
             request: None,
@@ -710,9 +722,12 @@ impl Service {
             unprotected: None,
         };
         let worker = match &self.generation.backend {
-            Backend::Environment => match BridgeRuntime::from_environment() {
+            Backend::Environment => match BridgeRuntime::from_environment_for(resolved.operation) {
                 Ok(runtime) => Worker::Real(Box::new(runtime)),
                 Err(error) => {
+                    job.missing_pack = error
+                        .needs_model_pack
+                        .then_some(prepare::pack_for(resolved.operation));
                     self.conclude_unavailable(job, error.to_string());
                     return Ok(());
                 }
@@ -733,9 +748,10 @@ impl Service {
         let provider = match &worker {
             Worker::Real(runtime) => runtime.provider(seed.unwrap_or(0)),
             #[cfg(any(test, feature = "ui-harness"))]
-            Worker::Scripted { .. } => {
-                deadpan_cli::generation::development_provider(seed.unwrap_or(0))
-            }
+            Worker::Scripted { .. } => deadpan_cli::generation::development_provider_for(
+                resolved.operation,
+                seed.unwrap_or(0),
+            ),
         };
         // A retry/variant reconstructs the exact immutable worker inputs even
         // after acceptance has isolated and renamed the current destination.
@@ -1341,7 +1357,7 @@ impl Service {
         }
     }
 
-    fn generation_prepared(&mut self, prepared: std::result::Result<Box<BridgeInputs>, String>) {
+    fn generation_prepared(&mut self, prepared: std::result::Result<Box<PreparedInputs>, String>) {
         let Some(running) = &mut self.generation.running else {
             return;
         };
@@ -1398,12 +1414,12 @@ impl Service {
             }
             // Unchanged boundary pictures add variants to the Hold's current
             // request; anything else is a new request that supersedes it.
-            let existing = attempt::current_scoped_bridge_request(store, &target)
+            let existing = attempt::current_scoped_request(store, &target)
                 .map_err(display)?
                 .filter(|request| {
-                    request.binding.context_sha256 == inputs.manifest_sha256
-                        && request.constraints == inputs.constraints
-                        && request.bridge_plan() == Some(&inputs.plan)
+                    &request.binding.context_sha256 == inputs.manifest_sha256()
+                        && &request.constraints == inputs.constraints()
+                        && request.plan.as_ref() == Some(&inputs.plan())
                         && deadpan_cli::generation::same_provider_identity(
                             &request.provider,
                             &provider,
@@ -1451,7 +1467,7 @@ impl Service {
     fn dispatch_attempt(&mut self, allocated: Allocated) {
         if let Some(job) = &mut self.generation.job {
             job.request = Some(allocated.request.request_id.clone());
-            job.plan = allocated.request.bridge_plan().cloned();
+            job.plan = allocated.request.plan.clone();
             job.phase = Phase::Preparing;
         }
         // A new request supersedes the Hold's earlier candidate; a new
@@ -2213,6 +2229,15 @@ fn job_thread(
         ) {
             Ok(resolved) => {
                 options = resolved;
+                if let Some(capture) = preparation.intent.capture {
+                    if let Err(error) =
+                        options.validate_resolved_conditioning(capture.conditioning())
+                    {
+                        let _ = send(&events, Event::Prepared(Err(error.to_string())));
+                        return;
+                    }
+                    options.mode = capture.conditioning().into();
+                }
                 if send(&events, Event::Controls(options.clone())).is_err() {
                     return;
                 }
@@ -2223,18 +2248,23 @@ fn job_thread(
             }
         }
     }
-    let prepared = options
-        .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
-        .map_err(display)
-        .and_then(|()| {
-            conditioning::prepare_scoped_with_options(
-                &package, &revision, &target, &options, &cancelled,
+    let prepared = match &worker {
+        Worker::Real(runtime) => {
+            prepare::with_runtime(&package, &revision, &target, &options, runtime, &cancelled)
+        }
+        #[cfg(any(test, feature = "ui-harness"))]
+        Worker::Scripted { .. } => prepare::resolve_at(
+            &package, &revision, &target, &options, &cancelled,
+        )
+        .and_then(|resolved| {
+            let manifest =
+                deadpan_models::packs::approved_pack(prepare::pack_for(resolved.operation))
+                    .ok_or("The scripted worker's compiled model pack is missing.")?;
+            prepare::with_manifest(
+                &package, &revision, &target, &options, &manifest, &cancelled,
             )
-        })
-        .map(|mut inputs| {
-            options.apply_to(&mut inputs.constraints);
-            inputs
-        });
+        }),
+    };
     let ready = prepared.is_ok();
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;

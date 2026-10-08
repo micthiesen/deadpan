@@ -83,7 +83,7 @@ fn payload() -> Vec<u8> {
 #[test]
 fn the_approved_whisper_pack_is_valid_and_pinned() {
     let packs = approved_packs();
-    assert_eq!(packs.len(), 2);
+    assert_eq!(packs.len(), 3);
     let whisper = &packs[0];
     assert_eq!(whisper.pack_id, "whisper-base-en");
     assert_eq!(whisper.pack_version, "2");
@@ -106,6 +106,34 @@ fn the_approved_whisper_pack_is_valid_and_pinned() {
     assert!(whisper.licenses[0].redistribution);
     assert!(!whisper.acceptance_required());
     assert!(whisper.check_acceptance(&[]).is_ok());
+}
+
+#[test]
+fn extension_catalog_has_independent_capability_and_the_same_pinned_assets() {
+    let bridge = approved_pack("ltx-2.3-q4-bridge").unwrap();
+    let extension = approved_pack("ltx-2.3-q4-extension").unwrap();
+    extension.validate().unwrap();
+    assert_eq!(extension.operations, [Operation::ExtensionHold]);
+    assert_eq!(extension.runtime_versions, ["0.15.8+deadpan-extension1"]);
+    assert_eq!(extension.files, bridge.files);
+    assert_eq!(extension.licenses, bridge.licenses);
+    assert_eq!(extension.constraints.hardware, bridge.constraints.hardware);
+    assert!(extension.constraints.bridge.is_none());
+    let constraints = extension.constraints.extension.unwrap();
+    assert_eq!(constraints.context_frame_count, 9);
+    assert_eq!(constraints.generated_frame_counts.minimum, 8);
+    assert_eq!(constraints.generated_frame_counts.maximum, 72);
+    assert_eq!(constraints.generated_frame_counts.step, 8);
+    assert_eq!(constraints.generated_frame_counts.offset, 0);
+    assert_eq!(constraints.maximum_project_frames, 180);
+    assert_eq!(
+        constraints.maximum_requested_duration,
+        deadpan_core::ExactRatio::new(3, 1).unwrap()
+    );
+    assert_eq!(
+        constraints.motion_amounts,
+        bridge.constraints.bridge.unwrap().motion_amounts
+    );
 }
 
 #[test]
@@ -1358,7 +1386,7 @@ fn adversarial_pack_manifests() {
     use deadpan_chaos::{Target, Verdict, fuzz, reject};
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/packs");
     let seeds = deadpan_chaos::seeds_from_dir(&directory);
-    assert_eq!(seeds.len(), 2);
+    assert_eq!(seeds.len(), 3);
     let report = fuzz(
         Target::json("models-pack-manifest").iterations(600),
         seeds,

@@ -126,7 +126,7 @@ fn accept_synthetic_target(
             hold: hold.clone(),
             expected_revision: origin,
             seed,
-            inputs,
+            inputs: inputs.into(),
         },
         target,
         deadpan_cli::generation::development_provider(seed),

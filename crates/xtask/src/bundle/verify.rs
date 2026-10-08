@@ -364,7 +364,10 @@ fn ai_runtime_checks(
     );
     check(
         ai["identity"]["runtime_id"] == "ltx-mlx"
-            && ai["identity"]["runtime_version"] == "0.15.8+deadpan5",
+            && ai["identity"]["runtime_version"] == "0.15.8+deadpan6"
+            && ai["identity"]["provider_runtime_versions"]["bridge_hold"] == "0.15.8+deadpan5"
+            && ai["identity"]["provider_runtime_versions"]["extension_hold"]
+                == "0.15.8+deadpan-extension1",
         format!("doctor: AI runtime identity {}", ai["identity"]),
         failures,
     );
@@ -388,34 +391,28 @@ fn ai_runtime_checks(
     );
     if let Some(source) = models_from {
         let source = source.to_str().ok_or("non-UTF-8 models path")?;
-        let started = std::time::Instant::now();
-        let (success, stdout, stderr) = scrubbed.run(
-            cli,
-            &[
-                "models",
-                "import",
-                "ltx-2.3-q4-bridge",
-                source,
-                "--accept-license",
-            ],
-        )?;
-        let passed = stdout
-            .lines()
-            .any(|line| line.contains("\"smoke_test_passed\""));
-        check(
-            success && passed,
-            format!(
-                "models import ltx-2.3-q4-bridge with the bundled smoke test in {:.1} s: {}{}",
-                started.elapsed().as_secs_f64(),
-                stdout
-                    .lines()
-                    .rev()
-                    .find(|line| line.contains("smoke_test_passed"))
-                    .unwrap_or_default(),
-                stderr.trim()
-            ),
-            failures,
-        );
+        for pack in ["ltx-2.3-q4-bridge", "ltx-2.3-q4-extension"] {
+            let started = std::time::Instant::now();
+            let (success, stdout, stderr) =
+                scrubbed.run(cli, &["models", "import", pack, source, "--accept-license"])?;
+            let passed = stdout
+                .lines()
+                .any(|line| line.contains("\"smoke_test_passed\""));
+            check(
+                success && passed,
+                format!(
+                    "models import {pack} with the bundled smoke test in {:.1} s: {}{}",
+                    started.elapsed().as_secs_f64(),
+                    stdout
+                        .lines()
+                        .rev()
+                        .find(|line| line.contains("smoke_test_passed"))
+                        .unwrap_or_default(),
+                    stderr.trim()
+                ),
+                failures,
+            );
+        }
         let doctor = scrubbed.json(cli, &["doctor"])?;
         let ai = &doctor["runtime"]["ai_runtime"];
         check(

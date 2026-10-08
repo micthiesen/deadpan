@@ -1,0 +1,12 @@
+{
+  "source": "/private/tmp/deadpan-extension-native-20261008/replays-2/model-packs/report.json",
+  "hardware": "Apple M5 Max",
+  "os": "26.5.2",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "fixture": "cfr-bframes.mp4",
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+  "physical_display_measured": false,
+  "packaged_build_metadata": "bundle/build-provenance.json",
+  "capture_note": "Existing replay/build records; no new system or native probes were run to package evidence."
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "case": "12f-from_left",
+    "native_frames": 17,
+    "generated_frames": 8,
+    "output_frames": 12,
+    "rgb_channel_comparisons": 8847360,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "ff0887730a2a3e72f7115d5f548865386411edc4a6dae772c69c3ec19c64c809",
+    "native_rgb_sha256": "321b79e02769c23b428b2489aecd58f1e5d1a18b48cdbcadd5efbd610405e090"
+  },
+  {
+    "case": "12f-from_right",
+    "native_frames": 17,
+    "generated_frames": 8,
+    "output_frames": 12,
+    "rgb_channel_comparisons": 8847360,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "5108371cba305b43dfe0cf7d8dd28cd3079078b6fe10822cbbd4388475760ef1",
+    "native_rgb_sha256": "13f7569129756a136637d33c37d7dac0d99be3f5fa65e414c700eb32724dbd65"
+  },
+  {
+    "case": "24f-from_left",
+    "native_frames": 33,
+    "generated_frames": 24,
+    "output_frames": 24,
+    "rgb_channel_comparisons": 17694720,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "553a3052d86e8d35b4a0eab1427d524aa57f1862594201ae0d0ecb19734c1c79",
+    "native_rgb_sha256": "54297623ae81ade18fa38a7492278e1e7969ac6ddefb3b65837c3bce320a355b"
+  },
+  {
+    "case": "24f-from_right",
+    "native_frames": 33,
+    "generated_frames": 24,
+    "output_frames": 24,
+    "rgb_channel_comparisons": 17694720,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "e211cc9c4e810542467d3a47970f5922c4586527234cad27bb46276f4b8f85b2",
+    "native_rgb_sha256": "239f028a3543e63079b8bf969903266768d66cf5be617c548cb92d6f6b07dfc7"
+  },
+  {
+    "case": "48f-from_left",
+    "native_frames": 57,
+    "generated_frames": 48,
+    "output_frames": 48,
+    "rgb_channel_comparisons": 35389440,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "2fbd7895a3aad7104e1a122f16498f2bba67fed90cc0af9864771e6aed44ef87",
+    "native_rgb_sha256": "c0b53eca92414c7395603ad2f550a31b618939ae5674d548fa36bd22a7db7c81"
+  },
+  {
+    "case": "48f-from_right",
+    "native_frames": 57,
+    "generated_frames": 48,
+    "output_frames": 48,
+    "rgb_channel_comparisons": 35389440,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "f2804c979311a152a2cc1f832ef53b6960f1d4d7a189bddf328ae488e309f847",
+    "native_rgb_sha256": "7b9d16dcc3a17d164781a8ecd00bb2cabc71284b80f56f1d9f0558545c03452f"
+  },
+  {
+    "case": "72f-from_left",
+    "native_frames": 81,
+    "generated_frames": 72,
+    "output_frames": 72,
+    "rgb_channel_comparisons": 53084160,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "31671dc6c94c9520434da9ca0062c85540c60c5ff301a3c7c5e4dccb037642ab",
+    "native_rgb_sha256": "5a768f68127e62c2d74d91ee54164c27a75d77c9209b9879bb7712754dc1343a"
+  },
+  {
+    "case": "72f-from_right",
+    "native_frames": 81,
+    "generated_frames": 72,
+    "output_frames": 72,
+    "rgb_channel_comparisons": 53084160,
+    "context_fetches": 0,
+    "sampled_rgb_sha256": "f16cbe8920d14484ea899c46e492a0ed7b2a4aa96e5e2aad8c1db910e4f4077f",
+    "native_rgb_sha256": "acfb955944f4dd585bc4cdb226f551d6e098992af14df9506152b8a8cc72edf5"
+  }
+]

@@ -38,7 +38,14 @@ fn list_shows_every_pack_with_size_licenses_and_free_space() {
         .iter()
         .map(|pack| pack["pack_id"].as_str().unwrap())
         .collect();
-    assert_eq!(ids, ["whisper-base-en", "ltx-2.3-q4-bridge"]);
+    assert_eq!(
+        ids,
+        [
+            "whisper-base-en",
+            "ltx-2.3-q4-bridge",
+            "ltx-2.3-q4-extension"
+        ]
+    );
     let bridge = &packs[1];
     assert_eq!(bridge["bytes"], 36_152_862_913_u64);
     assert_eq!(bridge["remaining_bytes"], 36_152_862_913_u64);
@@ -57,6 +64,9 @@ fn list_shows_every_pack_with_size_licenses_and_free_space() {
         36_152_862_913
     );
     assert_eq!(packs[0]["licenses"][0]["acceptance_required"], false);
+    assert_eq!(packs[2]["bytes"], bridge["bytes"]);
+    assert_eq!(packs[2]["licenses"], bridge["licenses"]);
+    assert!(packs[2]["installed"].is_null());
 }
 
 #[test]
@@ -85,6 +95,8 @@ fn install_refuses_without_explicit_acceptance_before_staging_anything() {
     for command in [
         vec!["install", "ltx-2.3-q4-bridge"],
         vec!["import", "ltx-2.3-q4-bridge", "/nonexistent-but-unused"],
+        vec!["install", "ltx-2.3-q4-extension"],
+        vec!["import", "ltx-2.3-q4-extension", "/nonexistent-but-unused"],
     ] {
         let output = models(&models_root, &command);
         assert!(!output.status.success());

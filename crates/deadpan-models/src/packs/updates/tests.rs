@@ -476,7 +476,7 @@ fn untrusted_tampered_and_incompatible_updates_are_refused() {
         "UpdateSignatureInvalid"
     );
     assert!(!root.path().join(".updates").join("unknown-pack").exists());
-    assert_eq!(approved_packs().len(), 2);
+    assert_eq!(approved_packs().len(), 3);
 }
 
 #[test]

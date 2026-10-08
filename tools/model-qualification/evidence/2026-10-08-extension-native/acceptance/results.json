@@ -1,0 +1,534 @@
+{
+  "derived_from": "acceptance/summary.json.gz",
+  "source_sha256": "f88275da6463ce362c9611a43521a507393ff504a9813136af2e62bbdefa7500",
+  "passed": true,
+  "complete_batch": true,
+  "qualified_count": 8,
+  "cli_sha256": "760e08b9c505a42aa8206da323a04c18f24b8bab8194534c9b451859e96677cb",
+  "cases": [
+    {
+      "case": {
+        "case": "12f-from_left",
+        "frames": 12,
+        "generated_frames": 8,
+        "direction": "from_left",
+        "motion": "still"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "ac2c58f4-1077-4e0d-83de-a2cecdc13bfb",
+      "undo_revision": "2d35fc03-81a0-439d-af30-1b138574802d",
+      "redo_revision": "d1813a1c-070a-4eb1-b71a-897a505690f4",
+      "picture_frames": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        15,
+        19,
+        20
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            16976,
+            19024
+          ],
+          [
+            28976,
+            31024
+          ],
+          [
+            40976,
+            42000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "fbc048ad-e222-4a84-92d4-3c959a528d25",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/12f-from_left/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/12f-from_left/Exports/deadpan-render-fbc048ad-e222-4a84-92d4-3c959a528d25.json",
+        "movie_sha256": "c5166d749f84b488b071ca3b59612a1b6ba9c721e486c0d07b3a87ba88cfa2ba",
+        "movie_bytes": 69282,
+        "report_sha256": "01f264b9931bf30ce452425578a7fab6e2dd94f41199505a91803b2b600bad62",
+        "report_bytes": 34634,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/12f-from_left.tar.gz"
+    },
+    {
+      "case": {
+        "case": "12f-from_right",
+        "frames": 12,
+        "generated_frames": 8,
+        "direction": "from_right",
+        "motion": "still"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "3c42bc1a-aa57-4acb-b1ae-05f57e44c188",
+      "undo_revision": "d7dda70b-5e17-4b59-b96c-9015e89327be",
+      "redo_revision": "62a9b117-2c96-4c55-bae0-885cfe18106b",
+      "picture_frames": [
+        0,
+        1,
+        6,
+        10,
+        11,
+        12,
+        13,
+        19,
+        20
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            10976,
+            13024
+          ],
+          [
+            22976,
+            25024
+          ],
+          [
+            40976,
+            42000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "71150ce1-8b33-415e-9b59-c35356cafc76",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/12f-from_right/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/12f-from_right/Exports/deadpan-render-71150ce1-8b33-415e-9b59-c35356cafc76.json",
+        "movie_sha256": "aa5e0ef86277094272a26c94d3fed5dc26bb9cc497023e4ea463670a859499f6",
+        "movie_bytes": 20162,
+        "report_sha256": "b72cfd559a676bfb1efc85eede8821aec13dedd27888647265c8819a0bd8c675",
+        "report_bytes": 34635,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/12f-from_right.tar.gz"
+    },
+    {
+      "case": {
+        "case": "24f-from_left",
+        "frames": 24,
+        "generated_frames": 24,
+        "direction": "from_left",
+        "motion": "still"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "54a5a8a4-0871-4db9-b13b-4c4fff94d658",
+      "undo_revision": "2b6decee-21ba-47bc-bcc4-8f4ae5d4eaa5",
+      "redo_revision": "4d226cc8-a68a-4ef5-b428-89daee6719a2",
+      "picture_frames": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        21,
+        31,
+        32
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            16976,
+            19024
+          ],
+          [
+            40976,
+            43024
+          ],
+          [
+            64976,
+            66000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "8ab99bd8-8367-4d0b-9278-74857a342838",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/24f-from_left/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/24f-from_left/Exports/deadpan-render-8ab99bd8-8367-4d0b-9278-74857a342838.json",
+        "movie_sha256": "0a1fd406c43af9459890e4dac48c93eaba6998b520b7d72fb6dad4242d580326",
+        "movie_bytes": 110698,
+        "report_sha256": "a6621baaa9572fe989244a6d8234c7951857640ac5cc2868732006790812327c",
+        "report_bytes": 34641,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/24f-from_left.tar.gz"
+    },
+    {
+      "case": {
+        "case": "24f-from_right",
+        "frames": 24,
+        "generated_frames": 24,
+        "direction": "from_right",
+        "motion": "still"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "ebee4a23-490d-4377-9e87-aecac1fe29ff",
+      "undo_revision": "1392b6cf-a089-4e46-a4f6-3e1ce35be804",
+      "redo_revision": "c002c3e8-30dd-4f77-bc7e-d818c064c0a2",
+      "picture_frames": [
+        0,
+        1,
+        12,
+        22,
+        23,
+        24,
+        25,
+        31,
+        32
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            22976,
+            25024
+          ],
+          [
+            46976,
+            49024
+          ],
+          [
+            64976,
+            66000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "f14f6589-b650-4bfc-b445-bcf7b7632c96",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/24f-from_right/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/24f-from_right/Exports/deadpan-render-f14f6589-b650-4bfc-b445-bcf7b7632c96.json",
+        "movie_sha256": "f01ea3f149f9e9b6c86e2baa9b077fa7f945f5249e85156a8929eb04d3922dcd",
+        "movie_bytes": 62411,
+        "report_sha256": "951ad27e50c85610605eecfb050b62373155f322068a6f40fec0aeffec7de673",
+        "report_bytes": 34637,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/24f-from_right.tar.gz"
+    },
+    {
+      "case": {
+        "case": "48f-from_left",
+        "frames": 48,
+        "generated_frames": 48,
+        "direction": "from_left",
+        "motion": "subtle"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "8d2ffcfe-c922-4f03-861e-82d765dff3f2",
+      "undo_revision": "ec1c8415-f9b9-4cd1-9996-d204b96c1625",
+      "redo_revision": "dcbedc29-40b5-4556-9ee2-774606867b87",
+      "picture_frames": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        33,
+        55,
+        56
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            16976,
+            19024
+          ],
+          [
+            64976,
+            67024
+          ],
+          [
+            112976,
+            114000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "3ae621d0-60ac-47da-ab46-28d2af22e7f4",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/48f-from_left/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/48f-from_left/Exports/deadpan-render-3ae621d0-60ac-47da-ab46-28d2af22e7f4.json",
+        "movie_sha256": "fff4f0308a33f4968ce21b9ee079d45079014e0c68225e942422f76025a9973b",
+        "movie_bytes": 403663,
+        "report_sha256": "fec75c0b934c82202aa1b46b5adabc5f5e69bc43fdb0289c841b89a1b3f26c06",
+        "report_bytes": 34650,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/48f-from_left.tar.gz"
+    },
+    {
+      "case": {
+        "case": "48f-from_right",
+        "frames": 48,
+        "generated_frames": 48,
+        "direction": "from_right",
+        "motion": "subtle"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "535a4877-46eb-4786-805f-353288a5b482",
+      "undo_revision": "b4185e3f-e44f-42c3-a4e8-a9debe50e6dd",
+      "redo_revision": "b7843d4d-9de3-4be9-a9e7-1c046328ec9e",
+      "picture_frames": [
+        0,
+        1,
+        24,
+        46,
+        47,
+        48,
+        49,
+        55,
+        56
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            46976,
+            49024
+          ],
+          [
+            94976,
+            97024
+          ],
+          [
+            112976,
+            114000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "934d71f6-c383-4196-b255-9a15592b2604",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/48f-from_right/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/48f-from_right/Exports/deadpan-render-934d71f6-c383-4196-b255-9a15592b2604.json",
+        "movie_sha256": "c2c7b6860a9cb8d13bb1f28d1aeeaa262d8e13b5a529621c298886aea8f63447",
+        "movie_bytes": 277779,
+        "report_sha256": "213a23d04b28b53c7f176c38913a10a90c85f9a36ca733f19dc1478525266984",
+        "report_bytes": 34651,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/48f-from_right.tar.gz"
+    },
+    {
+      "case": {
+        "case": "72f-from_left",
+        "frames": 72,
+        "generated_frames": 72,
+        "direction": "from_left",
+        "motion": "moderate"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "6658469f-d9b1-439c-b2f3-1c3f25d8de63",
+      "undo_revision": "fbd8d93d-3b4d-4eb4-b82e-2e07e2243829",
+      "redo_revision": "0f3e8944-65c6-4010-81cf-7bded193364d",
+      "picture_frames": [
+        0,
+        1,
+        8,
+        9,
+        10,
+        45,
+        79,
+        80
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            16976,
+            19024
+          ],
+          [
+            88976,
+            91024
+          ],
+          [
+            160976,
+            162000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "ceffd254-44c6-427d-82f1-c3257609890c",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/72f-from_left/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/72f-from_left/Exports/deadpan-render-ceffd254-44c6-427d-82f1-c3257609890c.json",
+        "movie_sha256": "85d95a5f7ed9c55f5f6587127350d478d422d1d2d91a90e984788ea42fe17272",
+        "movie_bytes": 588140,
+        "report_sha256": "6336eb7fd5aef056ffdd5de5440aa9171190e45fcbe3684432aaefcf5a61f521",
+        "report_bytes": 34652,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/72f-from_left.tar.gz"
+    },
+    {
+      "case": {
+        "case": "72f-from_right",
+        "frames": 72,
+        "generated_frames": 72,
+        "direction": "from_right",
+        "motion": "moderate"
+      },
+      "passed": true,
+      "before_revision": "inserted-pause",
+      "accepted_revision": "3ec81687-1c3f-4b39-a36d-6221a509bb3c",
+      "undo_revision": "5a4b6bfe-1f39-4edb-8081-576b844e7df7",
+      "redo_revision": "965699e8-1d22-457e-aaf6-344cf9c251eb",
+      "picture_frames": [
+        0,
+        1,
+        36,
+        70,
+        71,
+        72,
+        73,
+        79,
+        80
+      ],
+      "silent_audio": {
+        "status": "passed",
+        "windows": [
+          [
+            0,
+            1024
+          ],
+          [
+            70976,
+            73024
+          ],
+          [
+            142976,
+            145024
+          ],
+          [
+            160976,
+            162000
+          ]
+        ],
+        "timing_observation": "not applicable to silence"
+      },
+      "receipt": {
+        "publication_id": "969ddc30-f6cd-4d8f-8e62-b233a7b8fed2",
+        "movie": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/72f-from_right/Exports/accepted.mp4",
+        "report": "/private/tmp/deadpan-extension-native-20261008/accepted-verification/72f-from_right/Exports/deadpan-render-969ddc30-f6cd-4d8f-8e62-b233a7b8fed2.json",
+        "movie_sha256": "b394fd32e234b7e9f3cab5754fdd9ba645bbeb103657f868879f4680c7994e85",
+        "movie_bytes": 395307,
+        "report_sha256": "5925a75964f3b007c642f34694d37dd2542543993332108339e6b96bdaa32b63",
+        "report_bytes": 34653,
+        "contains_generated_pictures": true
+      },
+      "successful_steps": 27,
+      "denied": [
+        "ai-runtime",
+        "default-model-root",
+        "development-model-cache",
+        "outbound-ip",
+        "source-project"
+      ],
+      "archive": "acceptance/72f-from_right.tar.gz"
+    }
+  ]
+}

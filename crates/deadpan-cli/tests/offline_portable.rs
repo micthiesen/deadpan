@@ -208,7 +208,7 @@ fn accepted_ai_pause_renders_offline_and_from_a_portable_copy() -> Result {
             hold: hold.clone(),
             expected_revision: revision.clone(),
             seed: 11,
-            inputs,
+            inputs: inputs.into(),
         },
     )?;
     let finished = run_variant(&mut store, &first, &worker)?;

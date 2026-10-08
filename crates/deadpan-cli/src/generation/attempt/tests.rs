@@ -12,11 +12,12 @@ use deadpan_jobs::{
 };
 
 use super::*;
-use crate::generation::conditioning;
+use crate::generation::conditioning::{self, BridgeInputs};
 use crate::generation::runtime::BridgeRuntime;
 
 const FRAMES: i64 = 24;
 
+mod extension;
 mod preparations;
 
 fn fixture_rate(frames: i64) -> deadpan_core::FrameRate {
@@ -121,7 +122,7 @@ fn allocated(store: &mut ProjectStore) -> Allocated {
             hold: hold_id(),
             expected_revision,
             seed: 7,
-            inputs: inputs(),
+            inputs: inputs().into(),
         },
     )
     .unwrap()
@@ -191,7 +192,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
             hold: hold_id(),
             expected_revision,
             seed: 7,
-            inputs: inputs(),
+            inputs: inputs().into(),
         },
         selected,
     )
@@ -210,7 +211,7 @@ fn selected_pack_identity_is_durable_and_variants_keep_that_identity() {
         finish(&mut store, &first, cancelled).unwrap().state,
         JobState::Cancelled
     );
-    let second = allocate_variant(&mut store, first.request.clone(), inputs()).unwrap();
+    let second = allocate_variant(&mut store, first.request.clone(), inputs().into()).unwrap();
     assert_eq!(second.provider().pack_version.as_str(), "2");
     assert_eq!(second.provider().seed, 8);
     assert_eq!(second.request.provider.pack_version.as_str(), "2");
@@ -522,7 +523,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
             hold: hold_id(),
             expected_revision,
             seed: 7,
-            inputs: picture_inputs(),
+            inputs: picture_inputs().into(),
         },
     )
     .unwrap();
@@ -597,7 +598,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
     // Inputs from another context cannot extend this request.
     let mut changed = picture_inputs();
     changed.manifest_sha256 = deadpan_jobs::Sha256::new("f".repeat(64)).unwrap();
-    assert!(allocate_variant(&mut store, first.request.clone(), changed).is_err());
+    assert!(allocate_variant(&mut store, first.request.clone(), changed.into()).is_err());
 
     let expected_revision = store.head_revision().unwrap();
     let replacement = allocate(
@@ -606,7 +607,7 @@ fn synthetic_variants_publish_distinct_ready_bundles_for_one_request() {
             hold: hold_id(),
             expected_revision,
             seed: 30,
-            inputs: picture_inputs(),
+            inputs: picture_inputs().into(),
         },
     )
     .unwrap();
@@ -638,7 +639,7 @@ fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
             hold: hold_id(),
             expected_revision: fallback_revision.clone(),
             seed: 7,
-            inputs: matching_inputs,
+            inputs: matching_inputs.into(),
         },
     )
     .unwrap();
@@ -652,7 +653,7 @@ fn synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback() {
 
     let flash =
         allocate_variant(&mut store, first.request.clone(), first.inputs().clone()).unwrap();
-    let expected_flash_frame = flash.inputs().plan.native_frame_count() / 2;
+    let expected_flash_frame = native_frame_count(&flash.inputs().plan()) / 2;
     let run = synthetic::run_with_mode(
         &flash,
         &worker,
@@ -711,7 +712,7 @@ fn missing_landmark_helper_fails_without_replacing_ready_or_fallback() {
             hold: hold_id(),
             expected_revision: revision.clone(),
             seed: 7,
-            inputs: picture_inputs(),
+            inputs: picture_inputs().into(),
         },
     )
     .unwrap();
@@ -768,7 +769,7 @@ fn endpoint_rejection_preserves_ready(
             hold: hold_id(),
             expected_revision: fallback_revision.clone(),
             seed: 7,
-            inputs: picture_inputs_for_frames(left, right, frames),
+            inputs: picture_inputs_for_frames(left, right, frames).into(),
         },
     )
     .unwrap();

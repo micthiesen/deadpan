@@ -4,7 +4,8 @@ This directory contains the worker adapter and measurement evidence. Packaged
 apps ship the adapter files inside their private runtime
 (`Contents/Resources/ai-runtime/worker`, built by
 [`tools/ai-runtime`](../ai-runtime/build.py)) and run it with the installed
-`ltx-2.3-q4-bridge` model pack ([AI pauses](../../docs/AI_HOLDS.md#runtime)).
+`ltx-2.3-q4-bridge` or `ltx-2.3-q4-extension` model pack selected for the
+operation ([AI pauses](../../docs/AI_HOLDS.md#runtime)).
 Development builds run it from this checkout with a developer environment.
 `worker.py --check --runtime-config <file>` is the model pack smoke test: it
 verifies the pinned sources, imports the pipeline, runs Metal and reads every
@@ -32,10 +33,14 @@ intermediates. Packaged applications use their qualified bundled helpers.
 ## Supervised extension probe
 
 Protocol 3 uses `generate_extension` and `completed_extension`, with a separate
-strict plan, context and development pack identity. It currently admits nine
-chronological context pictures and eight generated pictures at 768×320/24 fps.
-The authored interval must be positive and at most 1/3 second. This finite
-development envelope does not advertise a production provider capability.
+strict plan, context and pack identity. All current envelopes use nine
+chronological context pictures at 768×320/24 fps. The first development identity
+admits E8 generated pictures and at most 1/3 authored second; development
+identity 2 admits E24 and at most one second. Those identities remain unchanged.
+The normal `ltx-2.3-q4-extension` version 1 pack independently admits E8 through
+E72 in steps of eight, at most three seconds and at most 180 project frames.
+See [normal workflow qualification](../../docs/qualification/extension-native-2026-10-08.md)
+for current implementation and measured limits.
 
 `ExtensionContext` retains each picture's definition clock, measured identity,
 PNG declaration and fitted content rectangle. The opposite seam is explicitly
@@ -51,7 +56,7 @@ see [project capture](../../docs/qualification/extension-context-2026-10-07.md).
 
 The worker calls pinned `RetakePipeline.extend` on host-prepared RGB tensors,
 passing generated **latent** frames (`E/8`). It verifies unchanged source
-latents, decodes all 17 native pictures and samples only the eight-picture
+latents, decodes all K+E native pictures and samples only the E-picture
 generated interval into exactly N authored frames. Frame-center sampling clamps
 both fetches inside that interval. Joint audio latents are computed and discarded.
 Complete native and sampled movies receive independent decoded RGB and timing
@@ -60,7 +65,8 @@ verification; worker provenance uses its own schema 3 and exact duration fields.
 The development configuration uses pack `ltx-2.3-q4-extension-development`,
 version `1`, runtime `ltx-mlx`/`0.15.8+deadpan-extension-dev1` and operation
 `extension_hold`. Model files retain the approved weights' exact hashes and
-tensor schemas. Approved installable manifests are unchanged.
+tensor schemas. The normal installable pack uses runtime provider identity
+`0.15.8+deadpan-extension1`; Bridge remains independently selected.
 
 Build the examples below, then run these in order with absolute configuration
 paths and fresh output directories:
@@ -91,9 +97,9 @@ native conversion, provenance admission, pixel checks and supervised Vision
 inspection share the configuration's deadline. Output retains both movies,
 the host provenance envelope and every conditioning object, including signatures.
 
-These tools do not authorize Ready or acceptance. Saved completion/Ready,
-accepted artifact integration, UI integration and a larger measured duration
-envelope remain required.
+These developer tools do not publish Ready or accept pictures. The normal
+[app/headless chain](../../docs/AI_HOLDS.md) now owns those steps through the
+same preparation and qualification boundaries.
 
 ## Build and run the bridge harness
 

@@ -1,11 +1,11 @@
-//! The bridge runtime: the private Python environment, the pinned LTX source,
+//! The generation runtime: the private Python environment, the pinned LTX source,
 //! the model pack, FFmpeg, the worker adapter and the native media and
 //! landmark workers that qualify its output.
 //!
 //! A packaged `Deadpan.app` carries the runtime in
 //! `Contents/Resources/ai-runtime` (built by `cargo xtask bundle` from
 //! `tools/ai-runtime`) and takes the model data from the installed
-//! `ltx-2.3-q4-bridge` pack in the models root. It never reads
+//! Bridge or Extension pack selected for the operation in the models root. It never reads
 //! `DEADPAN_BRIDGE_*` variables, development defaults, Homebrew or the
 //! checkout, unless a developer opts in with `DEADPAN_DEVELOPER_BRIDGE=1`; the
 //! packaged app then uses only explicitly set variables (docs/PACKAGING.md).
@@ -33,11 +33,18 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
+use deadpan_jobs::{ConditioningMode, GenerationPlan};
 use deadpan_models::packs::{InstalledPack, PackManifest, PackStore, approved_pack};
 use sha2::Digest;
 
 mod launch;
 pub use launch::{LaunchError, WorkerLaunch, WorkerMode};
+mod selection;
+pub use selection::{
+    SelectedGenerationProvider, plan_for_manifest, selected_provider_for_manifest,
+    validate_constraints_for_manifest, validate_controls_for_manifest,
+};
+mod check;
 #[cfg(all(test, target_os = "macos"))]
 pub(crate) mod network_tests;
 
@@ -51,6 +58,7 @@ pub const WORKER: &str = "DEADPAN_BRIDGE_WORKER";
 pub const DEVELOPER_OPT_IN: &str = "DEADPAN_DEVELOPER_BRIDGE";
 /// The model pack that supplies the bridge model data.
 pub const BRIDGE_PACK: &str = "ltx-2.3-q4-bridge";
+pub const EXTENSION_PACK: &str = "ltx-2.3-q4-extension";
 /// The bundled runtime below `Contents`.
 pub const BUNDLED_RUNTIME: &str = "Resources/ai-runtime";
 /// Bundled runtime layout, relative to its directory.
@@ -102,10 +110,18 @@ pub fn lookup() -> Lookup {
 
 /// The installed selected bridge pack, including its exact manifest snapshot.
 pub fn installed_pack(models_root: &Path) -> Option<InstalledPack> {
+    installed_pack_for(models_root, ConditioningMode::Bridge)
+}
+
+pub fn installed_pack_for(models_root: &Path, mode: ConditioningMode) -> Option<InstalledPack> {
     PackStore::new(models_root.to_path_buf())
-        .current(BRIDGE_PACK)
+        .current(selection::pack_id(mode))
         .ok()
         .flatten()
+}
+
+pub fn pack_for_mode(mode: ConditioningMode) -> &'static str {
+    selection::pack_id(mode)
 }
 
 /// `major.minor` of a version string such as `26.5.2`.
@@ -211,6 +227,13 @@ pub struct BridgeRuntime {
     pub landmark_worker: PathBuf,
 }
 
+struct ModelLookup<'a> {
+    root: Option<&'a Path>,
+    data: Option<&'a Path>,
+    manifest: Option<&'a PackManifest>,
+    mode: ConditioningMode,
+}
+
 /// The runtime pieces that are missing, in user terms.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{}: {}", if *bundled { "AI pauses are not ready" } else { "AI pauses need the development model runtime" }, missing.join("; "))]
@@ -227,20 +250,32 @@ impl BridgeRuntime {
     /// packaged app, otherwise `DEADPAN_BRIDGE_*` and their defaults. Model
     /// data comes from the bridge pack in the default models root.
     pub fn from_environment() -> Result<Self, RuntimeError> {
-        Self::from_environment_in(crate::models::default_root().ok().as_deref())
+        Self::from_environment_for(ConditioningMode::Bridge)
+    }
+
+    pub fn from_environment_for(mode: ConditioningMode) -> Result<Self, RuntimeError> {
+        Self::from_environment_in_for(crate::models::default_root().ok().as_deref(), mode)
     }
 
     /// As [`Self::from_environment`] with an explicit models root.
     pub fn from_environment_in(models_root: Option<&Path>) -> Result<Self, RuntimeError> {
+        Self::from_environment_in_for(models_root, ConditioningMode::Bridge)
+    }
+
+    pub fn from_environment_in_for(
+        models_root: Option<&Path>,
+        mode: ConditioningMode,
+    ) -> Result<Self, RuntimeError> {
         let executable_directory = std::env::current_exe()
             .ok()
             .and_then(|path| path.parent().map(Path::to_path_buf));
-        Self::resolve_with(
+        Self::resolve_with_for(
             |name| std::env::var_os(name),
             std::env::var_os("HOME").map(PathBuf::from),
             executable_directory.as_deref(),
             &lookup(),
             models_root,
+            mode,
         )
     }
 
@@ -272,6 +307,11 @@ impl BridgeRuntime {
         model_data: &Path,
         manifest: &PackManifest,
     ) -> Result<Self, RuntimeError> {
+        let mode = selection::manifest_mode(manifest).map_err(|error| RuntimeError {
+            missing: vec![error],
+            bundled: matches!(lookup(), Lookup::Bundled { .. }),
+            needs_model_pack: false,
+        })?;
         let executable_directory = std::env::current_exe()
             .ok()
             .and_then(|path| path.parent().map(Path::to_path_buf));
@@ -280,9 +320,12 @@ impl BridgeRuntime {
             std::env::var_os("HOME").map(PathBuf::from),
             executable_directory.as_deref(),
             &lookup(),
-            None,
-            Some(model_data),
-            Some(manifest),
+            ModelLookup {
+                root: None,
+                data: Some(model_data),
+                manifest: Some(manifest),
+                mode,
+            },
         )
     }
 
@@ -294,14 +337,35 @@ impl BridgeRuntime {
         lookup: &Lookup,
         models_root: Option<&Path>,
     ) -> Result<Self, RuntimeError> {
-        Self::resolve_inner(
+        Self::resolve_with_for(
             variable,
             home,
             executable_directory,
             lookup,
             models_root,
-            None,
-            None,
+            ConditioningMode::Bridge,
+        )
+    }
+
+    pub fn resolve_with_for(
+        variable: impl Fn(&str) -> Option<OsString>,
+        home: Option<PathBuf>,
+        executable_directory: Option<&Path>,
+        lookup: &Lookup,
+        models_root: Option<&Path>,
+        mode: ConditioningMode,
+    ) -> Result<Self, RuntimeError> {
+        Self::resolve_inner(
+            variable,
+            home,
+            executable_directory,
+            lookup,
+            ModelLookup {
+                root: models_root,
+                data: None,
+                manifest: None,
+                mode,
+            },
         )
     }
 
@@ -310,19 +374,17 @@ impl BridgeRuntime {
         home: Option<PathBuf>,
         executable_directory: Option<&Path>,
         lookup: &Lookup,
-        models_root: Option<&Path>,
-        model_data: Option<&Path>,
-        model_manifest: Option<&PackManifest>,
+        models: ModelLookup<'_>,
     ) -> Result<Self, RuntimeError> {
         if let Lookup::Bundled { runtime } = lookup {
-            return Self::bundled(
-                runtime,
-                executable_directory,
-                models_root,
-                model_data,
-                model_manifest,
-            );
+            return Self::bundled(runtime, executable_directory, models);
         }
+        let ModelLookup {
+            root: models_root,
+            data: model_data,
+            manifest: model_manifest,
+            mode,
+        } = models;
         let development_defaults = *lookup == Lookup::Development;
         let mut missing = Vec::new();
         let chosen = |name: &str, default: Option<PathBuf>| {
@@ -354,15 +416,18 @@ impl BridgeRuntime {
             });
         let explicit_model_cache = variable(MODEL_CACHE).filter(|value| !value.is_empty());
         let selected = if model_data.is_none() && explicit_model_cache.is_none() {
-            models_root.and_then(installed_pack)
+            models_root.and_then(|root| installed_pack_for(root, mode))
         } else {
             None
         };
         let selected_manifest = model_manifest
             .cloned()
             .or_else(|| selected.as_ref().map(|pack| pack.manifest.clone()))
-            .or_else(|| approved_pack(BRIDGE_PACK))
-            .expect("compiled bridge pack");
+            .or_else(|| approved_pack(selection::pack_id(mode)))
+            .expect("compiled generation pack");
+        if let Err(error) = selection::manifest_mode(&selected_manifest) {
+            missing.push(error);
+        }
         let model_cache = model_data
             .map(Path::to_path_buf)
             .or_else(|| explicit_model_cache.map(PathBuf::from))
@@ -462,10 +527,14 @@ impl BridgeRuntime {
     fn bundled(
         runtime: &Path,
         executable_directory: Option<&Path>,
-        models_root: Option<&Path>,
-        model_data: Option<&Path>,
-        model_manifest: Option<&PackManifest>,
+        models: ModelLookup<'_>,
     ) -> Result<Self, RuntimeError> {
+        let ModelLookup {
+            root: models_root,
+            data: model_data,
+            manifest: model_manifest,
+            mode,
+        } = models;
         let mut missing = Vec::new();
         let mut part = |label: &str, path: PathBuf, directory: bool| {
             let found =
@@ -501,15 +570,18 @@ impl BridgeRuntime {
             missing.push(problem);
         }
         let selected = if model_data.is_none() {
-            models_root.and_then(installed_pack)
+            models_root.and_then(|root| installed_pack_for(root, mode))
         } else {
             None
         };
         let selected_manifest = model_manifest
             .cloned()
             .or_else(|| selected.as_ref().map(|pack| pack.manifest.clone()))
-            .or_else(|| approved_pack(BRIDGE_PACK))
-            .expect("compiled bridge pack");
+            .or_else(|| approved_pack(selection::pack_id(mode)))
+            .expect("compiled generation pack");
+        if let Err(error) = selection::manifest_mode(&selected_manifest) {
+            missing.push(error);
+        }
         let model_cache = model_data
             .map(Path::to_path_buf)
             .or_else(|| selected.map(|pack| pack.directory));
@@ -518,11 +590,12 @@ impl BridgeRuntime {
             missing.push(problem);
         }
         if needs_model_pack {
-            let size = approved_pack(BRIDGE_PACK)
+            let pack = selection::pack_id(mode);
+            let size = approved_pack(pack)
                 .map_or(0, |pack| pack.total_bytes())
                 .div_ceil(100_000_000);
             missing.push(format!(
-                "install the AI model pack ({}.{} GB) from Models… or with `deadpan-cli models install {BRIDGE_PACK} --accept-license`",
+                "install the AI model pack ({}.{} GB) from Models… or with `deadpan-cli models install {pack} --accept-license`",
                 size / 10,
                 size % 10
             ));
@@ -593,8 +666,7 @@ impl BridgeRuntime {
                 run.status
             ));
         }
-        serde_json::from_slice(&run.stdout)
-            .map_err(|error| format!("the AI runtime check printed no report: {error}"))
+        self.validate_check_report(&run.stdout)
     }
 
     /// The worker's `--runtime-config` document.
@@ -626,14 +698,25 @@ impl BridgeRuntime {
     /// Provider identity captured with this runtime, including the selected
     /// pack version and the exact worker compatibility version.
     pub fn provider(&self, seed: u64) -> deadpan_jobs::ProviderSelection {
-        serde_json::from_value(serde_json::json!({
-            "pack_id": &self.model_manifest.pack_id,
-            "pack_version": &self.model_manifest.pack_version,
-            "runtime_id": &self.model_manifest.runtime_id,
-            "runtime_version": self.model_manifest.runtime_versions[0],
-            "seed": seed,
-        }))
-        .expect("admitted bridge manifest has a protocol-compatible identity")
+        selection::provider(&self.model_manifest, seed)
+            .expect("admitted generation manifest has a protocol-compatible identity")
+    }
+
+    pub fn selected_provider(
+        &self,
+        plan: &GenerationPlan,
+        seed: u64,
+    ) -> Result<SelectedGenerationProvider, String> {
+        selected_provider_for_manifest(&self.model_manifest, plan, seed)
+    }
+
+    pub fn plan_for(
+        &self,
+        mode: ConditioningMode,
+        frames: deadpan_core::FrameDuration,
+        rate: deadpan_core::FrameRate,
+    ) -> Result<GenerationPlan, String> {
+        plan_for_manifest(&self.model_manifest, mode, frames, rate)
     }
 
     /// Stable identity of the complete selected manifest, including its
@@ -888,6 +971,33 @@ mod tests {
                 .any(|problem| problem.contains("bundled landmark worker is missing")),
             "{error}"
         );
+    }
+
+    #[test]
+    fn an_installed_bridge_pack_does_not_satisfy_an_extension_request() {
+        let root = tempfile::tempdir().unwrap();
+        let (runtime, executables, models) = bundled_layout(root.path(), true);
+        assert!(installed_pack_for(&models, ConditioningMode::Bridge).is_some());
+        for mode in [
+            ConditioningMode::ExtendFromLeft,
+            ConditioningMode::ExtendFromRight,
+        ] {
+            assert!(installed_pack_for(&models, mode).is_none());
+            let error = BridgeRuntime::resolve_with_for(
+                |_| None,
+                None,
+                Some(&executables),
+                &Lookup::Bundled {
+                    runtime: runtime.clone(),
+                },
+                Some(&models),
+                mode,
+            )
+            .unwrap_err();
+            assert!(error.needs_model_pack, "{error}");
+            assert!(error.to_string().contains(EXTENSION_PACK), "{error}");
+            assert!(!error.to_string().contains(BRIDGE_PACK), "{error}");
+        }
     }
 
     #[test]

@@ -50,7 +50,8 @@ fn extension_round_trip_declares_temporal_conditioning_without_bridge_authority(
     assert!(
         approved_packs()
             .iter()
-            .all(|pack| !pack.supports(Operation::ExtensionHold))
+            .filter(|pack| pack.supports(Operation::ExtensionHold))
+            .all(|pack| pack.pack_id == "ltx-2.3-q4-extension")
     );
 }
 

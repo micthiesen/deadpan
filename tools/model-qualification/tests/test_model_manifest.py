@@ -123,8 +123,10 @@ class ModelManifestTests(unittest.TestCase):
 
     def test_runtime_and_operation_are_exact(self):
         pins = json.loads((QUALIFICATION.parent / "ai-runtime/pins.json").read_text())
-        self.assertEqual(pins["runtime_version"], "0.15.8+deadpan5")
-        self.assertEqual(model_pack()["runtime_versions"], [pins["runtime_version"]])
+        self.assertEqual(pins["runtime_version"], "0.15.8+deadpan6")
+        self.assertEqual(model_pack()["runtime_versions"], [pins["provider_runtime_versions"]["bridge_hold"]])
+        extension = json.loads((QUALIFICATION.parents[1] / "models/packs/ltx-2.3-q4-extension-1.json").read_text())
+        self.assertEqual(extension["runtime_versions"], [pins["provider_runtime_versions"]["extension_hold"]])
         for versions in (["0.15.8+deadpan4"], ["0.15.9"],
                          ["0.15.8+deadpan4", "0.15.8+deadpan5"]):
             manifest = model_pack()

@@ -305,8 +305,33 @@ impl Service {
             }
         };
         self.generation.variants_changed();
+        let prepared = &claim.preparation;
+        let mut options = prepared.origin.options().cloned().unwrap_or_default();
+        options.resolve_target(None);
+        if let Some(capture) = prepared.intent.capture {
+            // A retry retains the operation chosen at birth, even after an
+            // unavailable endpoint has been restored. Controls from accepted
+            // provenance are independently checked on the preparation thread.
+            options.mode = capture.conditioning().into();
+        }
+        let workspace = self.workspace.as_ref().expect("checked workspace");
+        let resolved = match prepare::resolve_with_plan(
+            &workspace.plan,
+            workspace.document.presentation_basis().frame_rate,
+            &prepared.target,
+            &options,
+        ) {
+            Ok(resolved) => resolved,
+            Err(reason) => {
+                self.finish_preparation(&claim, PreparationFailure::Unavailable(reason.clone()));
+                self.message = Some(format!(
+                    "AI pictures unavailable: {reason}. Retry or Discard in Jobs."
+                ));
+                return true;
+            }
+        };
         let worker = match &self.generation.backend {
-            Backend::Environment => BridgeRuntime::from_environment()
+            Backend::Environment => BridgeRuntime::from_environment_for(resolved.operation)
                 .map(|runtime| Worker::Real(Box::new(runtime)))
                 .map_err(display),
             #[cfg(any(test, feature = "ui-harness"))]
@@ -340,12 +365,11 @@ impl Service {
         let provider = match &worker {
             Worker::Real(runtime) => runtime.provider(0),
             #[cfg(any(test, feature = "ui-harness"))]
-            Worker::Scripted { .. } => deadpan_cli::generation::development_provider(0),
+            Worker::Scripted { .. } => {
+                deadpan_cli::generation::development_provider_for(resolved.operation, 0)
+            }
         };
         self.generation.automatic = self.generation.automatic.wrapping_add(1).max(1);
-        let prepared = &claim.preparation;
-        let mut options = prepared.origin.options().cloned().unwrap_or_default();
-        options.resolve_target(None);
         let job = Job {
             ticket: AUTOMATIC_TICKETS + self.generation.automatic,
             session,
@@ -354,6 +378,9 @@ impl Service {
             revision: prepared.current_revision.clone(),
             options: options.clone(),
             controls_pending: prepared.origin.options().is_none(),
+            operation: Some(resolved.operation),
+            missing_pack: None,
+            opposite_boundary_present: resolved.opposite_boundary_present,
             started: Instant::now(),
             request: None,
             plan: None,

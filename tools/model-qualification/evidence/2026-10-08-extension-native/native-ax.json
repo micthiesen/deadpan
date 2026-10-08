@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-08",
+  "method": "macOS Accessibility API via cua_repl; no screenshots",
+  "binary": "/private/tmp/deadpan-extension-native-20261008/bundle-2/Deadpan.app/Contents/MacOS/deadpan-app",
+  "sha256": "747120492f77d81abcdb24fe23661c8069e3712ea9525a4b7388654e8bbb5be8",
+  "project": "72f-from_right/project.deadpan",
+  "checks": [
+    {
+      "action": "Open accepted project",
+      "observed": [
+        "Saved",
+        "Accepted AI",
+        "Accepted operation: Extend from right",
+        "Saved mode: Extend from right",
+        "Requested motion: moderate",
+        "Region target: None"
+      ]
+    },
+    {
+      "action": "Invoke Generation controls",
+      "observed": [
+        "COMMAND",
+        "generate mode=extend-right motion=moderate target=none"
+      ],
+      "focused": "command text field"
+    },
+    {
+      "action": "Escape",
+      "observed": [
+        "NORMAL",
+        "Saved",
+        "Accepted AI"
+      ],
+      "document_unchanged": true
+    },
+    {
+      "action": "Command-Q",
+      "observed": "owned native process exited 0"
+    }
+  ],
+  "limitations": [
+    "No new inference during native check.",
+    "Expanded timing disclosure content was below the returned accessibility viewport and was not inspected.",
+    "No physical keyboard, screenshots, VoiceOver speech or human video-quality assessment.",
+    "The app ran alongside focused Cargo verification; no responsiveness measurement is claimed."
+  ],
+  "after_document_matches_retained_acceptance_receipt": true
+}

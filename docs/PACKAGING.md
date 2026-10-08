@@ -464,8 +464,8 @@ Positive checks:
 - the copied runtime's Python imports MLX and the LTX pipeline and computes on
   the GPU from the scrubbed environment, and its `ffmpeg` has libx264;
 - with `--ai-models-from <folder or .tar>`, the copy's own CLI imports the
-  bridge pack into the isolated home (`--accept-license`), its smoke test runs
-  through the bundled runtime, and `doctor` then reports AI pauses ready with
+  Bridge and Extension packs into the isolated home (`--accept-license`), each
+  operation's smoke test runs through the bundled runtime, and `doctor` then reports AI pauses ready with
   every path inside the copy.
 
 Negative checks run on separate copies, with the managed fallback present:

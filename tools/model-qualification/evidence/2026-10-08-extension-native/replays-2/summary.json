@@ -1,0 +1,70 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/private/tmp/deadpan-extension-native-20261008/replays-2/bin/deadpan-app",
+      "sha256": "0b3375ff7a89c79ef3cb7f03c58abf5d0dd9119f82ca841b7a213f032f0b2834",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/private/tmp/deadpan-extension-native-20261008/replays-2/bin/deadpan-media-worker",
+      "sha256": "2fabd4b67861f0fc20836a6c30bbff54e25713dd73582f257334f7ba9a683eb3",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/private/tmp/deadpan-extension-native-20261008/replays-2/bin/deadpan-track",
+      "sha256": "28aeee4881ecd628d96a2f9574a004edf038c7512528ba5a47d1e293ec148ac8",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/private/tmp/deadpan-extension-native-20261008/replays-2/bin/deadpan-transcribe",
+      "sha256": "32d586bcee27e58512207e2003486ec977f805c4d2ee6faa3de6c49bd3afe07d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.6109325,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 19,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-pause",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 89.742607625,
+      "status": "PASS"
+    },
+    {
+      "checks": 18,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-extension",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 90.9283885,
+      "status": "PASS"
+    },
+    {
+      "checks": 28,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "model-packs",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 100.490078875,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 281.581274333
+}

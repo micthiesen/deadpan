@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use deadpan_core::{FrameRange, NodeId, NodeKind, ProjectFrame, ScopedNodeTarget};
-use deadpan_jobs::{AttemptId, RequestId};
+use deadpan_jobs::{AttemptId, ConditioningMode, GenerationModePreference, RequestId};
 
 use super::*;
 use crate::navigation::{AiAction, CompareChoice, VariantChoice};
@@ -293,6 +293,63 @@ fn join_detail(name: &str, join: &JoinObservation) -> String {
             join_word(measure.class)
         ),
     }
+}
+
+fn mode_label(mode: GenerationModePreference) -> &'static str {
+    match mode {
+        GenerationModePreference::Automatic => "Auto",
+        GenerationModePreference::Bridge => "Bridge",
+        GenerationModePreference::ExtendFromLeft => "Extend from left",
+        GenerationModePreference::ExtendFromRight => "Extend from right",
+    }
+}
+
+fn operation_label(operation: ConditioningMode) -> &'static str {
+    mode_label(operation.into())
+}
+
+fn operation_seams(operation: ConditioningMode, opposite_present: Option<bool>) -> &'static str {
+    match (operation, opposite_present) {
+        (ConditioningMode::Bridge, _) => "Both joins conditioned.",
+        (ConditioningMode::ExtendFromLeft, Some(true)) => {
+            "Incoming join conditioned; outgoing seam unconditioned."
+        }
+        (ConditioningMode::ExtendFromLeft, Some(false)) => {
+            "Incoming join conditioned; outgoing seam absent (no neighbor)."
+        }
+        (ConditioningMode::ExtendFromRight, Some(true)) => {
+            "Outgoing join conditioned; incoming seam unconditioned."
+        }
+        (ConditioningMode::ExtendFromRight, Some(false)) => {
+            "Outgoing join conditioned; incoming seam absent (no neighbor)."
+        }
+        (ConditioningMode::ExtendFromLeft, None) => {
+            "Outgoing seam is not conditioned; neighbor presence is not available."
+        }
+        (ConditioningMode::ExtendFromRight, None) => {
+            "Incoming seam is not conditioned; neighbor presence is not available."
+        }
+    }
+}
+
+fn generation_pack(
+    mode: GenerationModePreference,
+    operation: Option<ConditioningMode>,
+    missing_pack: Option<&'static str>,
+) -> Option<&'static str> {
+    missing_pack.or_else(|| {
+        match operation
+            .map(GenerationModePreference::from)
+            .unwrap_or(mode)
+        {
+            GenerationModePreference::Automatic => None,
+            GenerationModePreference::Bridge => Some(deadpan_cli::generation::runtime::BRIDGE_PACK),
+            GenerationModePreference::ExtendFromLeft
+            | GenerationModePreference::ExtendFromRight => {
+                Some(deadpan_cli::generation::runtime::EXTENSION_PACK)
+            }
+        }
+    })
 }
 
 /// The most admitted previews a comparison keeps ready besides the shown one.
@@ -1811,6 +1868,19 @@ impl DeadpanApp {
         {
             // The original sampling map survives shortening, copying and reopening.
             // A shorter Hold does not squeeze the accepted motion into a new span.
+            let operation = match &accepted.artifact.sampling {
+                deadpan_core::GeneratedSamplingMap::Bridge(_) => ConditioningMode::Bridge,
+                deadpan_core::GeneratedSamplingMap::Extension(map) => match map.direction() {
+                    deadpan_core::ExtensionDirection::FromLeft => ConditioningMode::ExtendFromLeft,
+                    deadpan_core::ExtensionDirection::FromRight => {
+                        ConditioningMode::ExtendFromRight
+                    }
+                },
+            };
+            ui.label(format!(
+                "Accepted operation: {}",
+                operation_label(operation)
+            ));
             ui.push_id(("accepted-timing", &target.node), |ui| {
                 timing::show(
                     ui,
@@ -1846,25 +1916,40 @@ impl DeadpanApp {
             .ai_running()
             .is_some_and(|running| running.target != target);
         let running = job.as_ref().is_some_and(Job::running);
-        let options = job
-            .as_ref()
-            .filter(|job| {
-                job.running()
-                    || (job.request.is_none()
-                        && self.workspace.as_ref().is_some_and(|workspace| {
-                            workspace.document.revision_id() == &job.revision
-                        }))
-            })
-            .map(|job| &job.options)
-            .or_else(|| {
-                self.ai
-                    .update
+        let current_job = job.as_ref().filter(|job| {
+            job.running()
+                || self
+                    .workspace
                     .as_ref()
-                    .and_then(|update| update.options.get(&target))
-            })
+                    .is_some_and(|workspace| workspace.document.revision_id() == &job.revision)
+        });
+        let saved_options = self
+            .ai
+            .update
+            .as_ref()
+            .and_then(|update| update.options.get(&target));
+        let options = current_job
+            .map(|job| &job.options)
+            .or(saved_options)
             .cloned()
             .unwrap_or_default();
-        let controls_pending = job.as_ref().is_some_and(|job| job.controls_pending);
+        let controls_pending = current_job.is_some_and(|job| job.controls_pending);
+        let resolved = current_job
+            .and_then(|job| {
+                job.operation
+                    .map(|operation| (operation, job.opposite_boundary_present))
+            })
+            .or_else(|| {
+                let candidate = self.ai_candidate(&target)?;
+                let variant = candidate.variants.get(candidate.selected_index())?;
+                Some((
+                    variant.receipt.plan().conditioning(),
+                    variant
+                        .receipt
+                        .admission()
+                        .map(|admission| admission.inputs().opposite().is_some()),
+                ))
+            });
         if controls_pending {
             ui.label(if running {
                 "Reading the accepted pictures' generation controls…"
@@ -1872,6 +1957,31 @@ impl DeadpanApp {
                 "Previous generation controls are unavailable. Retry the AI preparation in Jobs."
             });
         } else {
+            let mode_source = if current_job.is_none() && saved_options.is_some() {
+                "Saved mode"
+            } else {
+                "Requested mode"
+            };
+            ui.label(format!("{mode_source}: {}", mode_label(options.mode)));
+            if let Some((operation, opposite_present)) = resolved {
+                ui.label(format!(
+                    "Resolved operation: {}",
+                    operation_label(operation)
+                ));
+                ui.label(
+                    egui::RichText::new(operation_seams(operation, opposite_present))
+                        .size(12.0)
+                        .weak(),
+                );
+            } else if options.mode == GenerationModePreference::Automatic {
+                ui.label(
+                    egui::RichText::new(
+                        "Auto checks this definition's neighbors when generation starts.",
+                    )
+                    .size(12.0)
+                    .weak(),
+                );
+            }
             ui.label(format!("Requested motion: {}", options.motion.name()));
             let region_target = match &options.region_target {
                 deadpan_jobs::GenerationTarget::Inherit | deadpan_jobs::GenerationTarget::None => {
@@ -1896,8 +2006,8 @@ impl DeadpanApp {
             }
         }
         if ui.add_enabled(ready && !running && !other_running && !controls_pending,
-            style::row_action(ui, "Generation controls…", ":generate motion=…"))
-            .on_hover_text("Choose still, subtle or moderate, target=ID for a saved region or target=none, and optional text=guidance (last, up to 512 UTF-8 bytes). Omitted target retains this captured choice. Enter generates with those choices; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
+            style::row_action(ui, "Generation controls…", ":generate mode=…"))
+            .on_hover_text("Choose mode=auto|bridge|extend-left|extend-right, motion=still|subtle|moderate, target=ID for a saved region or target=none, and optional text=guidance (last, up to 512 UTF-8 bytes). Auto uses Bridge with both neighbors, or Extension from the available side. An explicit Extension keeps its direction; its opposite seam is unconditioned or absent. Omitted target retains this captured choice. Enter generates; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
             .clicked()
         {
             self.open_command(crate::navigation::command::generate::command(&options), ui.ctx());
@@ -1937,7 +2047,7 @@ impl DeadpanApp {
                 )
             }) {
                 ui.push_id(("generation-timing", job.ticket), |ui| {
-                    timing::show(ui, "Generation", timing::Report::planned(plan));
+                    timing::show(ui, "Generation", timing::Report::candidate(plan));
                 });
             }
             ui.label(
@@ -1961,12 +2071,38 @@ impl DeadpanApp {
             .as_ref()
             .filter(|job| !job.running())
             .and_then(|job| job.note.clone());
-        if let Some(candidate) = self.ai_candidate(&target).cloned() {
-            if running {
-                ui.add_space(6.0);
+        if !running {
+            match job.as_ref().and_then(|job| job.outcome.as_ref()) {
+                Some(Outcome::Unavailable(reason)) => {
+                    ui.colored_label(style::WARNING, "AI pauses are unavailable on this Mac");
+                    ui.label(egui::RichText::new(reason).size(12.0).weak());
+                }
+                Some(Outcome::Failed(reason)) => {
+                    ui.colored_label(style::ERROR, "Generation failed; the pause is unchanged");
+                    ui.label(egui::RichText::new(reason).size(12.0).weak());
+                }
+                Some(Outcome::Cancelled) => {
+                    ui.label(
+                        egui::RichText::new("Cancelled. The pause is unchanged.")
+                            .size(12.0)
+                            .weak(),
+                    );
+                }
+                Some(Outcome::Ready(_)) | None => {}
             }
             if let Some(note) = &note {
                 ui.label(egui::RichText::new(note).size(12.0).weak());
+            }
+            let pack = generation_pack(
+                options.mode,
+                resolved.map(|(operation, _)| operation),
+                current_job.and_then(|job| job.missing_pack),
+            );
+            self.ai_model_offer(ui, pack);
+        }
+        if let Some(candidate) = self.ai_candidate(&target).cloned() {
+            if running {
+                ui.add_space(6.0);
             }
             self.ai_variants(ui, ready, &candidate);
             if !running
@@ -1988,34 +2124,12 @@ impl DeadpanApp {
         if running {
             return;
         }
-        match job.as_ref().and_then(|job| job.outcome.as_ref()) {
-            Some(Outcome::Unavailable(reason)) => {
-                ui.colored_label(style::WARNING, "AI pauses are unavailable on this Mac");
-                ui.label(egui::RichText::new(reason).size(12.0).weak());
-            }
-            Some(Outcome::Failed(reason)) => {
-                ui.colored_label(style::ERROR, "Generation failed; the pause is unchanged");
-                ui.label(egui::RichText::new(reason).size(12.0).weak());
-            }
-            Some(Outcome::Cancelled) => {
-                ui.label(
-                    egui::RichText::new("Cancelled. The pause is unchanged.")
-                        .size(12.0)
-                        .weak(),
-                );
-            }
-            Some(Outcome::Ready(_)) | None => {}
-        }
-        if let Some(note) = &note {
-            ui.label(egui::RichText::new(note).size(12.0).weak());
-        }
-        self.ai_model_offer(ui);
         if ui
             .add_enabled(
                 ready && !other_running,
                 style::row_action(ui, "Generate AI pictures", generate_key),
             )
-            .on_hover_text("Fill this pause from the pictures on both sides with the local model. It runs in the background; nothing changes until you accept. :generate 3 makes three variants to choose from.")
+            .on_hover_text("Fill this pause using the selected generation mode and local model. It runs in the background; nothing changes until you accept. :generate 3 makes three variants to choose from.")
             .clicked()
         {
             self.ai_action(AiAction::Generate { variants: 1 }, Some(self.ai_capture()));
@@ -2024,7 +2138,7 @@ impl DeadpanApp {
             egui::RichText::new(if other_running {
                 "Another pause is generating; cancel it first."
             } else {
-                "Proposes pictures from both sides of this pause. Nothing changes until you accept."
+                "Proposes pictures for this pause. Nothing changes until you accept."
             })
             .size(12.0)
             .weak(),
@@ -2365,9 +2479,17 @@ impl DeadpanApp {
 
     /// Without the installed AI model pack, its size and the way to install
     /// it. Generation still reports exactly why it cannot run.
-    fn ai_model_offer(&mut self, ui: &mut egui::Ui) {
-        let pack_id = deadpan_cli::generation::runtime::BRIDGE_PACK;
+    fn ai_model_offer(&mut self, ui: &mut egui::Ui, pack_id: Option<&str>) {
         self.models.manager.refresh_if_stale(Duration::from_secs(5));
+        let Some(pack_id) = pack_id else {
+            let button = ui.add(style::row_action(ui, "Show AI models…", ":models"))
+                .on_hover_text("Auto chooses Bridge or Extension after checking this pause's neighbors. Browse both model packs and their licenses.");
+            super::model_packs::reveal(&button);
+            if button.clicked() {
+                self.open_models(None, ui.ctx());
+            }
+            return;
+        };
         if self.models.manager.installed(pack_id) {
             return;
         }
@@ -2395,7 +2517,8 @@ impl DeadpanApp {
             };
             ui.label(
                 egui::RichText::new(format!(
-                    "AI pictures need the AI model pack: a {} download{partial}, {licenses}, about {} of memory while running.",
+                    "{}: a {} download{partial}, {licenses}, about {} of memory while running.",
+                    pack.title,
                     crate::model_packs::format_bytes(pack.total_bytes()),
                     crate::model_packs::format_bytes(pack.memory_bytes)
                 ))
@@ -2735,6 +2858,89 @@ fn preview_label(provider: FinalProvider, before: bool, number: Option<(usize, u
 #[cfg(test)]
 mod final_provider_feedback_tests {
     use super::*;
+
+    #[test]
+    fn resolved_extension_seams_keep_direction_and_presence_distinct() {
+        for (operation, present, expected) in [
+            (ConditioningMode::Bridge, None, "Both joins conditioned."),
+            (
+                ConditioningMode::ExtendFromLeft,
+                Some(true),
+                "Incoming join conditioned; outgoing seam unconditioned.",
+            ),
+            (
+                ConditioningMode::ExtendFromLeft,
+                Some(false),
+                "Incoming join conditioned; outgoing seam absent (no neighbor).",
+            ),
+            (
+                ConditioningMode::ExtendFromRight,
+                Some(true),
+                "Outgoing join conditioned; incoming seam unconditioned.",
+            ),
+            (
+                ConditioningMode::ExtendFromRight,
+                Some(false),
+                "Outgoing join conditioned; incoming seam absent (no neighbor).",
+            ),
+        ] {
+            assert_eq!(operation_seams(operation, present), expected);
+        }
+        for operation in [
+            ConditioningMode::ExtendFromLeft,
+            ConditioningMode::ExtendFromRight,
+        ] {
+            let unknown = operation_seams(operation, None);
+            assert!(unknown.contains("not conditioned"));
+            assert!(unknown.contains("presence is not available"));
+            assert!(!unknown.contains("absent"));
+        }
+    }
+
+    #[test]
+    fn model_offer_uses_captured_operation_and_does_not_guess_auto() {
+        use deadpan_cli::generation::runtime::{BRIDGE_PACK, EXTENSION_PACK};
+        assert_eq!(
+            generation_pack(GenerationModePreference::Automatic, None, None),
+            None
+        );
+        assert_eq!(
+            generation_pack(GenerationModePreference::Bridge, None, None),
+            Some(BRIDGE_PACK)
+        );
+        for (mode, operation) in [
+            (
+                GenerationModePreference::ExtendFromLeft,
+                ConditioningMode::ExtendFromLeft,
+            ),
+            (
+                GenerationModePreference::ExtendFromRight,
+                ConditioningMode::ExtendFromRight,
+            ),
+        ] {
+            assert_eq!(generation_pack(mode, None, None), Some(EXTENSION_PACK));
+            assert_eq!(
+                generation_pack(GenerationModePreference::Automatic, Some(operation), None),
+                Some(EXTENSION_PACK)
+            );
+        }
+        assert_eq!(
+            generation_pack(
+                GenerationModePreference::Automatic,
+                Some(ConditioningMode::Bridge),
+                None
+            ),
+            Some(BRIDGE_PACK)
+        );
+        assert_eq!(
+            generation_pack(
+                GenerationModePreference::Automatic,
+                None,
+                Some(EXTENSION_PACK)
+            ),
+            Some(EXTENSION_PACK)
+        );
+    }
 
     #[test]
     fn advisory_join_text_distinguishes_conditioned_unconditioned_and_absent_sides() {

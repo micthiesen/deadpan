@@ -26,7 +26,7 @@ pub(super) fn current_job_plan<'a>(
     session: u64,
     revision: &RevisionId,
     target: &ScopedNodeTarget,
-) -> Option<&'a BridgeGenerationPlan> {
+) -> Option<&'a GenerationPlan> {
     current_binding(
         job.session,
         &job.revision,

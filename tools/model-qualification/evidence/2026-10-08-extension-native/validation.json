@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "archive_count": 8,
+  "archive_members_verified": 680,
+  "redundant_case_gzip_files_removed": 680,
+  "archives_reconstructed_twice_identically": true,
+  "original_copies_verified": 113,
+  "production_files_unchanged": 68,
+  "payload_counts_before_this_report": {
+    "text_payloads": 808,
+    "json_payloads": 324,
+    "json_or_jsonl_stdout_payloads": 216,
+    "python_ast_payloads": 10,
+    "gzip_files": 107,
+    "tar_archives": 8,
+    "tar_members": 680
+  },
+  "credential_patterns_checked": [
+    "aws-key",
+    "bearer-value",
+    "credential-assignment",
+    "github-token",
+    "private-key",
+    "provider-token"
+  ],
+  "credential_findings": [],
+  "review_scope": "Task-specific qualification payloads and scripts; paths and lifecycle cancellation tokens are provenance, not external credentials.",
+  "execution": "File processing and syntax checks only; no qualification script, Cargo, native app, model or media helper executed.",
+  "independent_manifest_and_original_archive_recheck": "Passed after compaction: exact retained file set, every archive hash/member length/raw SHA-256, and every original scratch member byte sequence."
+}

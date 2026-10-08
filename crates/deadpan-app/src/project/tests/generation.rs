@@ -3,6 +3,7 @@
 //! replaces only the model worker; the real worker runs with
 //! DEADPAN_BRIDGE_REAL=1.
 
+mod extensions;
 mod preparations;
 
 use super::*;
@@ -41,6 +42,10 @@ fn waiting(steps: u64) -> Script {
 
 /// A full Original with a 12-frame pause at frame 10, pictures on both sides.
 fn project_with_pause(backend: Backend) -> Fixture {
+    project_with_pause_at(backend, None)
+}
+
+fn project_with_pause_at(backend: Backend, extension_from_left: Option<bool>) -> Fixture {
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start_with(
         Arc::new(|| {}),
@@ -59,14 +64,19 @@ fn project_with_pause(backend: Backend) -> Fixture {
         }) && !service.is_busy()
     });
     let workspace = initialized.workspace.unwrap();
+    let at = match extension_from_left {
+        None => ProjectFrame(10),
+        Some(true) => ProjectFrame(workspace.plan.duration().frames()),
+        Some(false) => ProjectFrame(0),
+    };
     let paused = command(
         &service,
         edit_request_in(
             &workspace,
             SequenceScope::default(),
-            ProjectFrame(10),
+            at,
             ProjectEdit::InsertTime {
-                at: ProjectFrame(10),
+                at,
                 duration: FrameDuration::new(12).unwrap(),
             },
         ),
@@ -273,8 +283,11 @@ fn a_running_job_reports_progress_and_cancels_to_a_recorded_cancellation() {
 }
 
 #[test]
-fn bridge_service_refuses_explicit_extension_before_worker_or_request_admission() {
-    let fixture = project_with_pause(scripted(waiting(1)));
+fn explicit_extension_selects_its_operation_before_runtime_availability() {
+    let fixture = project_with_pause(scripted(Script {
+        unavailable: Some("Extension runtime unavailable in this test.".into()),
+        ..waiting(1)
+    }));
     let before = fixture.workspace.document.clone();
     for (ticket, mode) in [
         (1, deadpan_jobs::GenerationModePreference::ExtendFromLeft),
@@ -288,9 +301,18 @@ fn bridge_service_refuses_explicit_extension_before_worker_or_request_admission(
             });
         }
         let rejected = generation(&fixture.service, operation);
-        assert!(refusal(&rejected).is_some_and(|message| {
-            message.contains("disagrees with resolved conditioning Bridge")
-        }));
+        assert!(refusal(&rejected).is_none(), "{:?}", refusal(&rejected));
+        let job = rejected.generation.as_ref().unwrap().job.as_ref().unwrap();
+        assert!(matches!(job.outcome, Some(Outcome::Unavailable(_))));
+        assert_eq!(
+            job.operation,
+            Some(if ticket == 1 {
+                deadpan_jobs::ConditioningMode::ExtendFromLeft
+            } else {
+                deadpan_jobs::ConditioningMode::ExtendFromRight
+            })
+        );
+        assert_eq!(job.opposite_boundary_present, Some(true));
         assert_eq!(
             rejected.workspace.as_ref().unwrap().document.as_ref(),
             before.as_ref()
@@ -301,28 +323,7 @@ fn bridge_service_refuses_explicit_extension_before_worker_or_request_admission(
                 .unwrap()
                 .is_empty()
         );
-        assert!(
-            rejected
-                .generation
-                .as_ref()
-                .is_none_or(|generation| generation.job.is_none())
-        );
     }
-    // Refusal did not consume the scripted worker or strand a running job.
-    let started = generation(&fixture.service, start(&fixture, 3));
-    assert_eq!(refusal(&started), None);
-    let running = job_until(&fixture.service, |job| job.request.is_some());
-    assert!(running.generation.unwrap().job.unwrap().request.is_some());
-    generation(
-        &fixture.service,
-        GenerationOperation::Cancel {
-            ticket: 4,
-            session: fixture.workspace.session,
-            job: 3,
-        },
-    );
-    let cancelled = job_until(&fixture.service, |job| !job.running());
-    assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
 }
 
 #[test]
@@ -355,6 +356,19 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
         assert_eq!(refusal(&started), None);
         let done = job_until(&fixture.service, |job| !job.running());
         assert!(matches!(outcome(&done), Some(Outcome::Failed(_))));
+        // A bare retry retains the current request's captured Auto preference;
+        // reopening below deliberately exposes only its durable resolved mode.
+        assert_eq!(
+            done.generation
+                .as_ref()
+                .unwrap()
+                .job
+                .as_ref()
+                .unwrap()
+                .options
+                .mode,
+            deadpan_jobs::GenerationModePreference::Automatic
+        );
         let request = done
             .generation
             .as_ref()

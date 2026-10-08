@@ -471,7 +471,7 @@ fn a_generated_neighbour_is_recorded_as_its_artifact() -> Result {
             hold: NodeId::new("black")?,
             expected_revision: origin,
             seed: 11,
-            inputs,
+            inputs: inputs.into(),
         },
     )?;
     let run = synthetic::run(

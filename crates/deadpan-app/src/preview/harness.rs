@@ -322,11 +322,12 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             } else if name == "jobs" {
                                 jobs::backend()
                             } else if name == "ai-variants"
+                                || name == "ai-extension"
                                 || name == "ai-compare"
                                 || name == "ai-scoped"
                                 || name == "full-session"
                             {
-                                ai_pause::variants_backend()
+                                ai_pause::variants_backend(name == "ai-variants")
                             } else {
                                 crate::project::generation::Backend::Environment
                             },
@@ -507,6 +508,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     ai_pause::run(&mut driver)
                 } else if name == "ai-variants" {
                     ai_pause::variants(&mut driver)
+                } else if name == "ai-extension" {
+                    ai_pause::extension(&mut driver)
                 } else if name == "ai-compare" {
                     ai_pause::compare(&mut driver)
                 } else if name == "ai-replacements" {

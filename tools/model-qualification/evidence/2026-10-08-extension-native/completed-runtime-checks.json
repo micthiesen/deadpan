@@ -1,0 +1,113 @@
+{
+  "scope": "Completed pre-matrix commands only; later matrix/oracle/acceptance records are intentionally excluded.",
+  "source": "/private/tmp/deadpan-extension-native-20261008/runtime-fix-results.json",
+  "commands": [
+    {
+      "name": "format-3",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 4.632935833185911
+    },
+    {
+      "name": "runtime-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-cli",
+        "--all-targets",
+        "--features",
+        "synthetic-worker",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 18.83439362468198
+    },
+    {
+      "name": "runtime-tests",
+      "command": [
+        "cargo",
+        "nextest",
+        "run",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--features",
+        "synthetic-worker",
+        "-E",
+        "test(generation::runtime) + test(models::tests)",
+        "--no-fail-fast"
+      ],
+      "exit_code": 0,
+      "seconds": 23.84485304169357
+    },
+    {
+      "name": "gain-pipe-check",
+      "command": [
+        "cargo",
+        "nextest",
+        "run",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "-E",
+        "test(invalid_edits_are_atomic_and_range_changes_do_not_drop_hidden_keys)"
+      ],
+      "exit_code": 0,
+      "seconds": 11.131492540705949
+    },
+    {
+      "name": "bundle-2",
+      "command": [
+        "cargo",
+        "xtask",
+        "bundle",
+        "--output",
+        "/private/tmp/deadpan-extension-native-20261008/bundle-2",
+        "--allow-dirty",
+        "--ltx-checkout",
+        "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4"
+      ],
+      "exit_code": 0,
+      "seconds": 198.3706911248155
+    },
+    {
+      "name": "bundle-verify-2",
+      "command": [
+        "cargo",
+        "xtask",
+        "bundle-verify",
+        "/private/tmp/deadpan-extension-native-20261008/bundle-2/Deadpan.app",
+        "--ai-models-from",
+        "/private/tmp/deadpan-resume-20261006/scoped-home/Library/Application Support/Deadpan/Models/ltx-2.3-q4-bridge/1",
+        "--keep"
+      ],
+      "exit_code": 0,
+      "seconds": 53.66109004197642
+    },
+    {
+      "name": "install-extension",
+      "command": [
+        "/private/tmp/deadpan-extension-native-20261008/bundle-2/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "import",
+        "ltx-2.3-q4-extension",
+        "/private/tmp/deadpan-resume-20261006/scoped-home/Library/Application Support/Deadpan/Models/ltx-2.3-q4-bridge/1",
+        "--accept-license"
+      ],
+      "exit_code": 0,
+      "seconds": 12.498166000004858
+    }
+  ]
+}

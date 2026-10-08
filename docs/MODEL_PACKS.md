@@ -49,8 +49,8 @@ is floored onto the selected project grid before applying the output-frame
 limit. Requests outside either bound fail without changing authored time.
 Extension requires Metal and explicit context, raster, rate, motion and prompt
 limits. Older manifests omit this optional record and retain their canonical
-hashes. The approved catalog still has no Extension pack; this schema does not
-enable generation by itself.
+hashes. The compiled `ltx-2.3-q4-extension` pack has its own operation and
+runtime compatibility identity; installing Bridge does not select it.
 
 Each license layer (specification §14.4) has an `id`, `title`, SPDX identifier
 or `LicenseRef-…`, attribution, HTTPS link, a plain `terms` summary shown before
@@ -64,15 +64,16 @@ and the Models panel show both.
 | --- | --- | --- | --- |
 | `whisper-base-en` 2 | `ggml-base.en.bin`, 147,964,211 bytes; `ggml-silero-v6.2.0.bin`, 885,098 bytes | MIT (OpenAI Whisper weights and Silero VAD by snakers4/silero-vad, ggml conversions by whisper.cpp); no acceptance step | English [transcription](TRANSCRIPTION.md) and [speech activity](SPEECH_ACTIVITY.md) |
 | `ltx-2.3-q4-bridge` 1 | 31 files, 36,152,862,913 bytes: `dgrauet/ltx-2.3-mlx-q4` at `56a5866d638ecfe37c54d348e88938235185c2d4` (17 files, 28.08 GB) and `mlx-community/gemma-3-12b-it-4bit` at `86cc6a8dedbc456dd0e4af01a9d09f396f77e558` (14 files, 8.07 GB) | LTX-2 Community License Agreement (weights) and Gemma Terms of Use (text encoder), both requiring acceptance | [AI pauses](AI_HOLDS.md) (`bridge_hold`) |
+| `ltx-2.3-q4-extension` 1 | The same 31 pinned files and byte identities, installed under a separate operation identity | The same two license layers, shown before installation | [AI extensions](AI_HOLDS.md#saved-extension-operations) (`extension_hold`), chronological K9 context and up to three authored seconds |
 
 Version 2 of the whisper pack replaced version 1 (the recognizer alone). Its detector is pinned to
 ggml-org/whisper-vad revision `9ffd54a1e1ee413ddf265af9913beaf518d1639b`, SHA-256
 `2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987`; Silero v6.2.0
 loads and runs in whisper.cpp 1.8.3. A pack's operations name what it supports
-(`transcribe`, `speech_activity`, `bridge_hold`); the recognizer is its first
+(`transcribe`, `speech_activity`, `bridge_hold`, `extension_hold`); the recognizer is its first
 file and the detector the file named `ggml-silero-*`.
 
-The compiled bridge baseline's files, hashes, sizes and URLs match the
+Both compiled generation baselines' files, hashes, sizes and URLs match the
 [qualified receipt](../tools/model-qualification/evidence/2026-09-20-smoke/download-manifest.json).
 The pinned worker also verifies every selected manifest file on inference and
 checks its exact supported component/configuration contract before loading.

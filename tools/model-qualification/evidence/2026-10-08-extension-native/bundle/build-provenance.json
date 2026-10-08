@@ -1,0 +1,39 @@
+{
+  "ai_runtime": {
+    "cache_key": "18226cf976709e94d02f",
+    "ffmpeg_configuration": "--prefix=<build> --enable-static --disable-shared --enable-gpl --enable-libx264 --disable-nonfree --disable-version3 --disable-autodetect --enable-zlib --disable-network --disable-doc --disable-debug --disable-ffplay --arch=aarch64 --target-os=darwin --sysroot=<build> --pkg-config-flags=--static --extra-cflags='-mmacosx-version-min=26.0' --extra-ldflags='-mmacosx-version-min=26.0'",
+    "gpl_distribution_approved": false,
+    "gpl_programs": [
+      "Contents/Resources/ai-runtime/bin/ffmpeg",
+      "Contents/Resources/ai-runtime/bin/ffprobe"
+    ],
+    "ltx_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+    "python": "3.12.13",
+    "runtime_id": "ltx-mlx",
+    "runtime_version": "0.15.8+deadpan6",
+    "wheels": 36
+  },
+  "built_at": "2026-10-08T22:09:29Z",
+  "deployment_target": "15.0",
+  "ffmpeg_configuration": "--prefix=<build prefix> --enable-shared --disable-static --enable-pic --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-network --disable-doc --disable-debug --disable-ffmpeg --disable-ffplay --arch=aarch64 --cpu=generic --target-os=darwin --sysroot=<macOS SDK> --enable-videotoolbox --enable-audiotoolbox --extra-cflags='-arch arm64 -mmacosx-version-min=15.0' --extra-ldflags='-arch arm64 -mmacosx-version-min=15.0'",
+  "git_changes": true,
+  "git_commit": "a3e2e00b3d12bc59765ce12dadf63a58e77f0af0",
+  "limitations": [
+    "Not notarized unless Deadpan.release.json beside the bundle says so.",
+    "Model weights are not bundled; they install as verified model packs. The AI runtime's ffmpeg/ffprobe are GPL-2.0-or-later (libx264).",
+    "Application updates use complete verified bundles with the previous build retained for rollback. Helpers and model packs use independent signed manifests and rollback."
+  ],
+  "macos_sdk": "26.5",
+  "notarization": "none",
+  "path_remapping": [
+    "/deadpan",
+    "/cargo"
+  ],
+  "profile": "release",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "schema": 2,
+  "signature": "ad-hoc",
+  "source_date_epoch": null,
+  "version": "0.1.0",
+  "xcode": "Xcode 26.6\nBuild version 17F113"
+}

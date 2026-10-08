@@ -1,0 +1,77 @@
+[
+  {
+    "name": "format-2",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 4.333780582994223
+  },
+  {
+    "name": "final-clippy-2",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 9.331358165945858
+  },
+  {
+    "name": "replays-2",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--scenario",
+      "ai-pause,ai-extension,model-packs",
+      "--output",
+      "/private/tmp/deadpan-extension-native-20261008/replays-2",
+      "--jobs",
+      "1"
+    ],
+    "exit_code": 0,
+    "seconds": 291.3082954999991
+  },
+  {
+    "name": "bundle",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/private/tmp/deadpan-extension-native-20261008/bundle",
+      "--allow-dirty",
+      "--ltx-checkout",
+      "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4"
+    ],
+    "exit_code": 0,
+    "seconds": 228.8068067501299
+  },
+  {
+    "name": "bundle-verify",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/private/tmp/deadpan-extension-native-20261008/bundle/Deadpan.app",
+      "--ai-models-from",
+      "/private/tmp/deadpan-resume-20261006/scoped-home/Library/Application Support/Deadpan/Models/ltx-2.3-q4-bridge/1",
+      "--keep"
+    ],
+    "exit_code": 1,
+    "seconds": 53.74358091689646
+  }
+]

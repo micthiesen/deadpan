@@ -454,7 +454,7 @@ def assemble(args, pins, cache, key, result, work) -> None:
 
     # 8. A smoke check of the assembled tree, as the host launches it.
     check = ("import sys, mlx.core as mx, numpy, PIL, transformers, mlx_lm, safetensors, ltx_core_mlx, "
-             "ltx_pipelines_mlx.keyframe_interpolation; a = mx.arange(10); "
+             "ltx_pipelines_mlx.keyframe_interpolation, ltx_pipelines_mlx.retake; a = mx.arange(10); "
              "assert int((a*a).sum().item()) == 285; print(mx.default_device())")
     device = run([python, "-I", "-B", "-c", check],
                  env={"PATH": "/usr/bin:/bin", "HOME": str(work)})[0].strip().splitlines()[-1]
@@ -465,6 +465,7 @@ def assemble(args, pins, cache, key, result, work) -> None:
         "schema": 1,
         "runtime_id": pins["runtime_id"],
         "runtime_version": pins["runtime_version"],
+        "provider_runtime_versions": pins["provider_runtime_versions"],
         "cache_key": key,
         "platform_floor": pins["platform_floor"],
         "python": {"version": version, **{k: python_pin[k] for k in ["release", "url", "sha256", "license"]}},
@@ -481,6 +482,7 @@ def assemble(args, pins, cache, key, result, work) -> None:
     }
     (runtime / "runtime.json").write_text(json.dumps({
         "schema": 1, "runtime_id": pins["runtime_id"], "runtime_version": pins["runtime_version"],
+        "provider_runtime_versions": pins["provider_runtime_versions"],
         "python": version, "ltx_commit": source_pin["commit"],
         "minimum_macos": pins["platform_floor"],
         "worker": "worker/worker.py", "python_executable": "python/bin/python3.12",

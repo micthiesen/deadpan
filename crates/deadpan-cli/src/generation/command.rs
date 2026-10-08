@@ -89,8 +89,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
             &cancelled,
         );
     };
-    let runtime = BridgeRuntime::from_environment().map_err(GenerationError::from)?;
-    let current = attempt::current_scoped_bridge_request(&store, &scope)?;
+    let current = attempt::current_scoped_request(&store, &scope)?;
     let existing = if another {
         let request = current.clone().ok_or_else(|| {
                 GenerationError::Invalid(
@@ -98,19 +97,6 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
                         .into(),
                 )
             })?;
-        if !crate::generation::same_provider_identity(
-            &request.provider,
-            &runtime.provider(request.provider.seed),
-        ) {
-            return Err(GenerationError::Invalid(format!(
-                "This pause's current request uses {} {}, but the selected AI pack is {} {}. Generate without --another to start a request with the selected pack.",
-                request.provider.pack_id,
-                request.provider.pack_version,
-                runtime.provider(0).pack_id,
-                runtime.provider(0).pack_version,
-            ))
-            .into());
-        }
         Some(request)
     } else {
         None
@@ -129,18 +115,33 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
             .as_ref()
             .and_then(|request| request.constraints.region_target.as_ref()),
     );
-    options
-        .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
-        .map_err(|error| GenerationError::Invalid(error.to_string()))?;
     let started = Instant::now();
     let conditioning_target = existing
         .as_ref()
         .map_or(&scope, |request| &request.origin_target);
-    let mut inputs = super::conditioning::prepare_scoped_with_options(
+    let resolution =
+        super::prepare::resolve_at(path, &revision, conditioning_target, &options, &cancelled)
+            .map_err(GenerationError::Inputs)?;
+    let runtime =
+        BridgeRuntime::from_environment_for(resolution.operation).map_err(GenerationError::from)?;
+    if let Some(request) = &existing
+        && !crate::generation::same_provider_identity(
+            &request.provider,
+            &runtime.provider(request.provider.seed),
+        )
+    {
+        return Err(GenerationError::Invalid(format!(
+            "This pause's current request uses {} {}, but the selected AI pack is {} {}. Generate without --another to start a request with the selected pack.",
+            request.provider.pack_id, request.provider.pack_version,
+            runtime.provider(0).pack_id, runtime.provider(0).pack_version,
+        )).into());
+    }
+    let inputs = super::prepare::with_runtime(
         path,
         &revision,
         conditioning_target,
         &options,
+        &runtime,
         &cancelled,
     )
     .map_err(|error| {
@@ -153,7 +154,6 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
     if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
         return Err(GenerationError::Cancelled.into());
     }
-    options.apply_to(&mut inputs.constraints);
     let conditioning = started.elapsed();
     let mut allocated = match existing {
         Some(request) => attempt::allocate_variant(&mut store, request, inputs)?,
@@ -199,7 +199,7 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
         );
         // Per request: every variant shares these conditioning inputs.
         if let Some(colour) =
-            super::conditioning::ConditioningColour::from_manifest(&allocated.inputs().manifest)
+            super::conditioning::ConditioningColour::from_manifest(allocated.inputs().manifest())
         {
             fields.insert("colour".into(), colour.to_json());
         }
@@ -281,7 +281,7 @@ pub(super) fn run_one(
         "hold_id": allocated.request.binding.hold_id,
         "request_version": allocated.request.binding.request_version,
         "context_sha256": allocated.request.binding.context_sha256,
-        "plan": allocated.request.bridge_plan(),
+        "plan": allocated.request.plan,
         "state": format!("{:?}", finished.state),
         "failure": finished.failure.as_ref().map(failure_text),
         "record_error": record_error,

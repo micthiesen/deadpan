@@ -24,7 +24,7 @@ const BRIDGE: &str = "ltx-2.3-q4-bridge";
 const WHISPER: &str = "whisper-base-en";
 const LTX: &str = "LTX-2 Community License Agreement";
 const GEMMA: &str = "Gemma Terms of Use";
-const OFFER: &str = "Install AI models…  :models";
+const OFFER: &str = "Show AI models…  :models";
 
 fn import_failure() -> String {
     pack_failure(&PackError::ImportIncomplete {
@@ -109,28 +109,27 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()?;
     let paused = d.revision();
     d.check(
-        "Without the AI pack a selected pause offers it with its size and licenses",
+        "An unresolved Auto pause opens the model catalog without guessing a pack",
         d.app().ai_hold().is_some()
             && widget(d, OFFER).is_some()
-            && visible(d, "36.15 GB download")
-            && visible(d, "two licenses to accept")
+            && d.widgets().to_string().contains("Requested mode: Auto")
             && state(d, BRIDGE) == "absent",
-        json!({"offer":OFFER,"size":"36.15 GB download","state":"absent"}),
+        json!({"offer":OFFER,"mode":"Auto","state":"absent"}),
         json!({"offer":widget(d, OFFER),"state":state(d, BRIDGE)}),
     )?;
-    d.capture("AI PICTURES offers the model pack")?;
+    d.capture("AI PICTURES opens the model catalog")?;
 
     d.click(OFFER)?;
     d.step("Models opened from the offer", true)?;
     d.check(
-        "The offer opens Models focused on the AI pack's first license acceptance",
+        "The unresolved Auto offer opens Models with Close focused",
         d.app().models.open
-            && d.app().models.focus.as_deref() == Some(BRIDGE)
-            && focused(d).as_deref() == Some(&format!("I accept the {LTX}")),
-        json!({"open":true,"focus":BRIDGE,"focused":format!("I accept the {LTX}")}),
+            && d.app().models.focus.is_none()
+            && focused(d).as_deref() == Some("Close  Esc"),
+        json!({"open":true,"focus":null,"focused":"Close  Esc"}),
         json!({"open":d.app().models.open,"focus":d.app().models.focus,"focused":focused(d)}),
     )?;
-    d.capture("Models focused on the AI pack")?;
+    d.capture("Models catalog")?;
     d.key(Key::Escape)?;
     d.step("Models closed", false)?;
     d.check(
@@ -157,7 +156,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && !scenarios::text_paint_visibility(d, "AI pauses (LTX-2.3").is_empty()
             && !scenarios::text_paint_visibility(d, "Free for individuals").is_empty()
             && !scenarios::text_paint_visibility(d, "Not installed · 36.15 GB download").is_empty(),
-        json!({"open":true,"packs":2}),
+        json!({"open":true,"packs":3}),
         json!({"open":d.app().models.open,"widgets":d.widgets()}),
     )?;
     d.check(
@@ -307,12 +306,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.step("Back to the pause", false)?;
     d.check(
-        "With the pack installed AI PICTURES no longer offers it; the edit is unchanged",
+        "After Bridge installation unresolved Auto still opens the catalog; the edit is unchanged",
         !d.app().models.open
-            && widget(d, OFFER).is_none()
+            && widget(d, OFFER).is_some()
             && d.widgets().to_string().contains("Generate AI pictures")
             && d.revision() == paused,
-        json!({"offer":null,"generate":true,"revision":paused}),
+        json!({"offer":OFFER,"generate":true,"revision":paused}),
         json!({"offer":widget(d, OFFER),"revision":d.revision()}),
     )?;
     d.capture("AI PICTURES after install")?;

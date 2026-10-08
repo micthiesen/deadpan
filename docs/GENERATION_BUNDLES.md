@@ -41,9 +41,10 @@ the common cold picture reader checks that operation's complete provenance and
 retained objects before opening its sampled master. Reopening, copying and
 undo/redo need no model or worker directory.
 
-Normal app/headless worker allocation still runs Bridge jobs. Approved provider
-packs do not advertise extension support; the larger measured duration envelope
-and native generation controls remain open. See the
+Normal app/headless allocation now selects Bridge or Extension before input
+capture, with independent provider capabilities and native mode controls.
+The [normal workflow record](qualification/extension-native-2026-10-08.md)
+tracks production duration and packaging qualification. See also the
 [qualification record](qualification/extension-bundles-2026-10-08.md) and
 [saved acceptance record](qualification/extension-saved-2026-10-08.md).
 

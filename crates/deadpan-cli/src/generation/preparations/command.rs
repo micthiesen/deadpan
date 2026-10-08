@@ -115,13 +115,28 @@ fn drain(path: &Path, limit: usize) -> Result<(), CliError> {
         let head = store.head_revision()?;
         let claim = store.claim_generation_preparation(&preparation.id, &head)?;
         let prepared = (|| {
-            let runtime = BridgeRuntime::from_environment()?;
-            let options = super::resolve_options(path, &claim.preparation, &cancelled)?;
-            let inputs = crate::generation::conditioning::prepare_scoped_with_options(
+            let mut options = super::resolve_options(path, &claim.preparation, &cancelled)?;
+            if let Some(capture) = claim.preparation.intent.capture {
+                options
+                    .validate_resolved_conditioning(capture.conditioning())
+                    .map_err(|error| GenerationError::Inputs(error.to_string()))?;
+                options.mode = capture.conditioning().into();
+            }
+            let resolution = crate::generation::prepare::resolve_at(
                 path,
                 &claim.preparation.current_revision,
                 &claim.preparation.target,
                 &options,
+                &cancelled,
+            )
+            .map_err(GenerationError::Inputs)?;
+            let runtime = BridgeRuntime::from_environment_for(resolution.operation)?;
+            let inputs = crate::generation::prepare::with_runtime(
+                path,
+                &claim.preparation.current_revision,
+                &claim.preparation.target,
+                &options,
+                &runtime,
                 &cancelled,
             )
             .map_err(GenerationError::Inputs)?;

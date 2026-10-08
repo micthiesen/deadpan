@@ -97,32 +97,37 @@ def sample_positions(count, model_count):
         yield lower, lower + (remainder != 0), remainder, count + 1
 
 
-EXTENSION_RUNTIME_GENERATED_FRAMES = {
-    "0.15.8+deadpan-extension-dev1": 8,
-    "0.15.8+deadpan-extension-dev2": 24,
+EXTENSION_RUNTIME_FRAME_COUNTS = {
+    "0.15.8+deadpan-extension-dev1": (8, 8),
+    "0.15.8+deadpan-extension-dev2": (24, 24),
+    "0.15.8+deadpan-extension1": (8, 72),
 }
 
 
 def validate_extension_plan(plan, video, runtime_version):
-    """Bind an explicit development identity to its bounded experiment.
+    """Bind the selected runtime identity to its exact legal-count policy.
 
     Dev1 retains the measured K9/E8 envelope. Dev2 permits only K9/E24 for the
-    one-second experiment; neither identity advertises an installable provider.
+    one-second experiment. The production adapter rounds to the nearest legal
+    generated count, choosing the shorter interval on ties, within three seconds.
     """
     from worker_protocol import _parse_extension_plan
     _parse_extension_plan(plan)
-    if not isinstance(runtime_version, str) or runtime_version not in EXTENSION_RUNTIME_GENERATED_FRAMES:
+    if not isinstance(runtime_version, str) or runtime_version not in EXTENSION_RUNTIME_FRAME_COUNTS:
         raise ValueError("unsupported development extension runtime identity")
-    generated_count = EXTENSION_RUNTIME_GENERATED_FRAMES[runtime_version]
+    minimum, maximum = EXTENSION_RUNTIME_FRAME_COUNTS[runtime_version]
     sampling, dimensions = plan["sampling"], plan["native_dimensions"]
     count = integer(sampling["output_frame_count"], 1, 180)
     project_rate, native_rate = rate(sampling["project_rate"]), rate(sampling["native_rate"])
+    ideal = Fraction(count) * 24 / project_rate
+    lower = max(minimum, int(ideal // 8) * 8)
+    generated_count = min(maximum, lower if ideal <= lower + 4 else lower + 8)
     if (sampling["context_frame_count"], sampling["generated_frame_count"]) != (9, generated_count):
         raise ValueError(f"extension runtime {runtime_version} requires nine context and {generated_count} generated frames")
     if (dimensions["width"], dimensions["height"]) != (768, 320) or native_rate != 24:
         raise ValueError("unsupported extension model raster or native rate")
-    if not 1 <= project_rate <= 120 or Fraction(count) / project_rate > Fraction(generated_count, 24):
-        raise ValueError("extension requested duration is outside the measured envelope")
+    if not 1 <= project_rate <= 120 or Fraction(count) / project_rate > Fraction(maximum, 24):
+        raise ValueError("extension requested duration is outside the declared envelope")
     exact_keys(video, ["frames", "frame_rate", "width", "height"])
     integer(video["frames"], 1, 180)
     integer(video["width"], 1, 32768)

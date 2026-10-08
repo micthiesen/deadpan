@@ -50,7 +50,7 @@ fn replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
             hold: hold_id(),
             expected_revision: revision,
             seed: 7,
-            inputs,
+            inputs: inputs.into(),
         },
     )
     .unwrap();
@@ -123,7 +123,7 @@ fn replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
         allocate_preparation_with_provider(
             &mut store,
             &claim,
-            replacement_inputs(),
+            replacement_inputs().into(),
             crate::generation::development_provider(8)
         )
         .is_err()
@@ -138,7 +138,7 @@ fn replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
     let replacement = allocate_preparation_with_provider(
         &mut store,
         &claim,
-        replacement_inputs(),
+        replacement_inputs().into(),
         crate::generation::development_provider(8),
     )
     .unwrap();

@@ -1,5 +1,7 @@
 use deadpan_core::{NodeId, ScopedNodeTarget};
-use deadpan_jobs::{GenerationOptions, GenerationTarget, HoldInstructions};
+use deadpan_jobs::{
+    GenerationModePreference, GenerationOptions, GenerationTarget, HoldInstructions,
+};
 
 use crate::CliError;
 
@@ -15,7 +17,7 @@ pub(super) struct Arguments<'a> {
 
 pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError> {
     let usage = || {
-        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--target ID|none] [--instructions TEXT] [--another]".into())
+        CliError::Usage("usage: generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--mode auto|bridge|extend-left|extend-right] [--motion still|subtle|moderate] [--target ID|none] [--instructions TEXT] [--another]".into())
     };
     let [path, rest @ ..] = arguments else {
         return Err(usage());
@@ -68,6 +70,20 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
                         CliError::Usage(format!("--variants must be 1 to {}", super::MAX_VARIANTS))
                     })?
             }
+            "--mode" => {
+                controls.mode = match *value {
+                    "auto" => GenerationModePreference::Automatic,
+                    "bridge" => GenerationModePreference::Bridge,
+                    "extend-left" => GenerationModePreference::ExtendFromLeft,
+                    "extend-right" => GenerationModePreference::ExtendFromRight,
+                    _ => {
+                        return Err(CliError::Usage(
+                            "--mode must be auto, bridge, extend-left or extend-right".into(),
+                        ));
+                    }
+                };
+                controls_given = true;
+            }
             "--motion" => {
                 controls.motion = value
                     .parse()
@@ -89,7 +105,7 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
         }
     }
     if another && (seed.is_some() || controls_given) {
-        return Err(CliError::Usage("--another retains the current request's seed, motion, target and instructions; omit it to change those controls.".into()));
+        return Err(CliError::Usage("--another retains the current request's seed, mode, motion, target and instructions; omit it to change those controls.".into()));
     }
     let hold = hold.ok_or_else(usage)?;
     let scope = scope.unwrap_or_else(|| ScopedNodeTarget {
@@ -116,6 +132,43 @@ pub(super) fn parse<'a>(arguments: &[&'a str]) -> Result<Arguments<'a>, CliError
 mod tests {
     use super::*;
     use deadpan_jobs::MotionAmount;
+
+    #[test]
+    fn modes_are_explicit_and_another_cannot_replace_the_captured_operation() {
+        for (value, mode) in [
+            ("auto", GenerationModePreference::Automatic),
+            ("bridge", GenerationModePreference::Bridge),
+            ("extend-left", GenerationModePreference::ExtendFromLeft),
+            ("extend-right", GenerationModePreference::ExtendFromRight),
+        ] {
+            assert_eq!(
+                parse(&["p.deadpan", "--hold", "pause", "--mode", value])
+                    .unwrap()
+                    .options
+                    .unwrap()
+                    .mode,
+                mode
+            );
+            assert!(
+                parse(&["p.deadpan", "--hold", "pause", "--another", "--mode", value]).is_err()
+            );
+        }
+        for value in ["extend", "automatic", "from_left", ""] {
+            assert!(parse(&["p.deadpan", "--hold", "pause", "--mode", value]).is_err());
+        }
+        assert!(
+            parse(&[
+                "p.deadpan",
+                "--hold",
+                "pause",
+                "--mode",
+                "bridge",
+                "--mode",
+                "auto"
+            ])
+            .is_err()
+        );
+    }
 
     #[test]
     fn scope_is_strict_bounded_and_names_the_requested_hold() {

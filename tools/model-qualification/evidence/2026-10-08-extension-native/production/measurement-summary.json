@@ -1,0 +1,2579 @@
+{
+  "executed_binary": {
+    "path": "/private/tmp/deadpan-extension-native-20261008/bundle-2/Deadpan.app/Contents/MacOS/deadpan-cli",
+    "sha256": "760e08b9c505a42aa8206da323a04c18f24b8bab8194534c9b451859e96677cb"
+  },
+  "complete": true,
+  "ready_count": 8,
+  "limits": [
+    "One attempt per duration/direction; no warm-model distribution.",
+    "Synthetic footage; human acceptability and real-person identity are unmeasured.",
+    "Separate cold worker processes on a shared Mac; OS file cache uncontrolled.",
+    "Process peak RSS and sampled system state do not establish peak unified-memory pressure.",
+    "No interactive editing workload was run during this matrix."
+  ],
+  "cases": [
+    {
+      "case": "12f-from_left",
+      "frames": 12,
+      "generated_frames": 8,
+      "direction": "from_left",
+      "motion": "still",
+      "ready": true,
+      "request": "ai-hold-c3511d6cf3ee434094d8b49b2326fcb8",
+      "attempt": "a2144cb3178b44a2a27af23cd3efa3d6",
+      "timings_ms": {
+        "publication": 204,
+        "qualification": 1170,
+        "worker": 154323,
+        "workspace": 49
+      },
+      "wall_seconds": 156.0024060420692,
+      "conditioning_ms": 36,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 8,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 12,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 2760051,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "a1e4bf400de09f040722aa1f381d056118a7bfeb57093ad5c6bcc6340df6ca26"
+          }
+        },
+        "sampled": {
+          "byte_length": 1938188,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "a2faf08f814b55fe88a0437198f48ead4d7d7006644f147f9b51d830e56ecfaf"
+          }
+        },
+        "provenance": {
+          "byte_length": 98180,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "baddcb8be2df0622a69bbe35f09598bb3a20929730f4d00c836640c44b36870c"
+          }
+        }
+      },
+      "backend_seconds": 142.63091008318588,
+      "worker_reported_peak_rss_bytes": 14497660928,
+      "mlx_counter_at_end_bytes": 17022794766,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 0,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          3,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "1",
+          "denominator": "2"
+        },
+        "generated_duration": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "native_movie_duration": {
+          "numerator": "17",
+          "denominator": "24"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "2",
+          "denominator": "3"
+        },
+        "retime_deviation": {
+          "numerator": "-1",
+          "denominator": "6"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 7
+      },
+      "entry": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "18e4afaf-af12-4aff-9190-a2a9730cb316",
+              "revision_id": "inserted-pause",
+              "definition": "ca8f4d00-5254-4c6c-ad48-fc927dea8c7a",
+              "position": {
+                "numerator": "17",
+                "denominator": "2"
+              }
+            },
+            "asset": "22102d81-505d-41cb-bac6-3771a8a56fee",
+            "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742",
+            "picture": {
+              "source_frame": 8,
+              "pts": {
+                "ticks": 8,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 0,
+          "sampled_pts": 0,
+          "mean_absolute_rgb_difference": 7.227053493923611,
+          "gross_cell_fraction": 0.04169921875
+        },
+        "quality": {
+          "after_frame": 0,
+          "mean_luma_shift": -0.8702256944444444,
+          "mean_absolute_luma_change": 6.200086805555555,
+          "lighting_agreement_fraction": 0.8901909722222222,
+          "textured_blocks": 8,
+          "matched_blocks": 1,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "exit": {
+        "status": "absent"
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_left",
+          "start": 9,
+          "end": 17
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 8,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 12,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 69,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "12f-from_right",
+      "frames": 12,
+      "generated_frames": 8,
+      "direction": "from_right",
+      "motion": "still",
+      "ready": true,
+      "request": "ai-hold-381139df78b3444c9147cce7a7595045",
+      "attempt": "9bedbb9150b64f9b86fb3bdda01b6b83",
+      "timings_ms": {
+        "publication": 192,
+        "qualification": 1056,
+        "worker": 208714,
+        "workspace": 53
+      },
+      "wall_seconds": 210.2094881660305,
+      "conditioning_ms": 23,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_right",
+            "generated_frame_count": 8,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 12,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 2644695,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "fc23e82526a52ce04d2203e8abbfe42ed4b583b880422f14cba01bdf59405739"
+          }
+        },
+        "sampled": {
+          "byte_length": 1745899,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "2a76c569c4f40c316ae98195cfd8595cc107fd928b6465da01447f137e6a05de"
+          }
+        },
+        "provenance": {
+          "byte_length": 98049,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "22f1b693cb04e167bbf9c4f3c6062e99219d315ce1267b02e112dc485e8e2eb6"
+          }
+        }
+      },
+      "backend_seconds": 196.3408462079242,
+      "worker_reported_peak_rss_bytes": 14266580992,
+      "mlx_counter_at_end_bytes": 17022794766,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 1,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          3,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "1",
+          "denominator": "2"
+        },
+        "generated_duration": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "native_movie_duration": {
+          "numerator": "17",
+          "denominator": "24"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "2",
+          "denominator": "3"
+        },
+        "retime_deviation": {
+          "numerator": "-1",
+          "denominator": "6"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 7
+      },
+      "entry": {
+        "status": "absent"
+      },
+      "exit": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "e63efd44-4a85-4ebb-88c8-bf3cde9beb9a",
+              "revision_id": "inserted-pause",
+              "definition": "999dde57-c9ae-4579-b0c3-06447327e9c1",
+              "position": {
+                "numerator": "25",
+                "denominator": "2"
+              }
+            },
+            "asset": "41254643-95a2-4e51-9a1e-d594a6b601b3",
+            "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52",
+            "picture": {
+              "source_frame": 0,
+              "pts": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 11,
+          "sampled_pts": 458,
+          "mean_absolute_rgb_difference": 0.8811333550347222,
+          "gross_cell_fraction": 0.0
+        },
+        "quality": {
+          "after_frame": 11,
+          "mean_luma_shift": 0.5373263888888888,
+          "mean_absolute_luma_change": 0.5546875,
+          "lighting_agreement_fraction": 0.9939236111111112,
+          "textured_blocks": 8,
+          "matched_blocks": 6,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_right",
+          "start": 0,
+          "end": 8
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 8,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 15,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 70,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "24f-from_left",
+      "frames": 24,
+      "generated_frames": 24,
+      "direction": "from_left",
+      "motion": "still",
+      "ready": true,
+      "request": "ai-hold-cc86d8ef6fcd4fb1a95d0af1d7f5354d",
+      "attempt": "d28eeb65f9b040b08786768d81382513",
+      "timings_ms": {
+        "publication": 211,
+        "qualification": 2074,
+        "worker": 329017,
+        "workspace": 50
+      },
+      "wall_seconds": 331.63738191733137,
+      "conditioning_ms": 22,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 24,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 24,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 5098821,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "3b0399b8b53db0edf0c4f889a73b749aed29c920ddd129bc1496aff902a3e42c"
+          }
+        },
+        "sampled": {
+          "byte_length": 3659177,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "ee2ad2d591d6a1e2cf10614f6bf78e9c792684516072fb914f865894fa60a575"
+          }
+        },
+        "provenance": {
+          "byte_length": 105086,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "88b1c415187bfe7138ea7ef6f93d642d2036aa571fac5ed26cbd38f2c8e6adb0"
+          }
+        }
+      },
+      "backend_seconds": 316.9655993329361,
+      "worker_reported_peak_rss_bytes": 14498054144,
+      "mlx_counter_at_end_bytes": 17022794766,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 0,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          5,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "11",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 23
+      },
+      "entry": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "7e31736a-cdea-46ee-b202-fe29b0198878",
+              "revision_id": "inserted-pause",
+              "definition": "c067cc28-b7ed-496b-81f2-bfe8be910612",
+              "position": {
+                "numerator": "17",
+                "denominator": "2"
+              }
+            },
+            "asset": "481fb364-b5d0-4235-a62a-986219266cd2",
+            "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742",
+            "picture": {
+              "source_frame": 8,
+              "pts": {
+                "ticks": 8,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 0,
+          "sampled_pts": 0,
+          "mean_absolute_rgb_difference": 6.607191297743055,
+          "gross_cell_fraction": 0.04169921875
+        },
+        "quality": {
+          "after_frame": 0,
+          "mean_luma_shift": -0.7973090277777778,
+          "mean_absolute_luma_change": 5.408420138888889,
+          "lighting_agreement_fraction": 0.9231770833333334,
+          "textured_blocks": 8,
+          "matched_blocks": 0,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "exit": {
+        "status": "absent"
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_left",
+          "start": 9,
+          "end": 33
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 24,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 24,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 73,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "24f-from_right",
+      "frames": 24,
+      "generated_frames": 24,
+      "direction": "from_right",
+      "motion": "still",
+      "ready": true,
+      "request": "ai-hold-0e373c2877ef4a31ab532d988ab1c2b7",
+      "attempt": "7033d29ddbe34777bca78236fe93d404",
+      "timings_ms": {
+        "publication": 202,
+        "qualification": 2049,
+        "worker": 321632,
+        "workspace": 49
+      },
+      "wall_seconds": 324.2070784168318,
+      "conditioning_ms": 22,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_right",
+            "generated_frame_count": 24,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 24,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 4947440,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "f8402b7be798bb1f1dd6792c0fe3d4ff6aa18c6d79d1a27310d6588bf6e8b81a"
+          }
+        },
+        "sampled": {
+          "byte_length": 3499613,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "fa2931cff50824bbd04f8b5cafc701c0f68eba1cce6b7d2bc9e8a4e98de3ef67"
+          }
+        },
+        "provenance": {
+          "byte_length": 105041,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "911103fcbb785b17693c0b5ef38a4a3b70339362d67b366ac46a51917397cf65"
+          }
+        }
+      },
+      "backend_seconds": 309.74605945916846,
+      "worker_reported_peak_rss_bytes": 14509244416,
+      "mlx_counter_at_end_bytes": 17022794766,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 3,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          5,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "11",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 23
+      },
+      "entry": {
+        "status": "absent"
+      },
+      "exit": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "9554d7a7-3656-4927-ac35-4ed51469ac97",
+              "revision_id": "inserted-pause",
+              "definition": "573d74f5-c5ef-4ff1-bff7-8b621aeed763",
+              "position": {
+                "numerator": "49",
+                "denominator": "2"
+              }
+            },
+            "asset": "ef352f0b-bceb-417a-8502-87121dc4ec52",
+            "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52",
+            "picture": {
+              "source_frame": 0,
+              "pts": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 23,
+          "sampled_pts": 958,
+          "mean_absolute_rgb_difference": 1.3059366861979167,
+          "gross_cell_fraction": 0.0
+        },
+        "quality": {
+          "after_frame": 23,
+          "mean_luma_shift": 1.1662326388888888,
+          "mean_absolute_luma_change": 1.1662326388888888,
+          "lighting_agreement_fraction": 0.9761284722222222,
+          "textured_blocks": 8,
+          "matched_blocks": 6,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_right",
+          "start": 0,
+          "end": 24
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 24,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 23,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 73,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "48f-from_left",
+      "frames": 48,
+      "generated_frames": 48,
+      "direction": "from_left",
+      "motion": "subtle",
+      "ready": true,
+      "request": "ai-hold-442627e6306344faa34b28afdc2e54a4",
+      "attempt": "8d1aa15e58d44c978ed10f4d70f18e3e",
+      "timings_ms": {
+        "publication": 222,
+        "qualification": 4030,
+        "worker": 502337,
+        "workspace": 50
+      },
+      "wall_seconds": 507.10072650015354,
+      "conditioning_ms": 22,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 48,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 48,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 9420896,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "418094d494fda64561637b0f9d80f6cd0c124b95acc9eaaf9209e0d7c9603fe4"
+          }
+        },
+        "sampled": {
+          "byte_length": 7976036,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "31bc0362304c864ee7c057b496b42a8a3abd811b3fd70521d5848c4aca1ffc8a"
+          }
+        },
+        "provenance": {
+          "byte_length": 116705,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "c6ccc4bdb1b523c12dd39000f3ea44931f11d4ee14d5c9580812d71dbcf13718"
+          }
+        }
+      },
+      "backend_seconds": 490.4572412921116,
+      "worker_reported_peak_rss_bytes": 14513684480,
+      "mlx_counter_at_end_bytes": 17022794760,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 0,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          8,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "2",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "2",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "19",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 24,
+        "measured": 23
+      },
+      "entry": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "67ba96c9-ed9c-46e1-bcc8-9533ab1c8247",
+              "revision_id": "inserted-pause",
+              "definition": "a124503d-748e-47a3-a1fb-6ee0e7313c36",
+              "position": {
+                "numerator": "17",
+                "denominator": "2"
+              }
+            },
+            "asset": "bedfaa8a-0ba7-48b0-91dc-fe2cba7eb9a6",
+            "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742",
+            "picture": {
+              "source_frame": 8,
+              "pts": {
+                "ticks": 8,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 0,
+          "sampled_pts": 0,
+          "mean_absolute_rgb_difference": 6.353256564670139,
+          "gross_cell_fraction": 0.04169921875
+        },
+        "quality": {
+          "after_frame": 0,
+          "mean_luma_shift": -0.3871527777777778,
+          "mean_absolute_luma_change": 5.155381944444445,
+          "lighting_agreement_fraction": 0.9227430555555556,
+          "textured_blocks": 8,
+          "matched_blocks": 0,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "exit": {
+        "status": "absent"
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_left",
+          "start": 9,
+          "end": 57
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 48,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 35,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 74,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "48f-from_right",
+      "frames": 48,
+      "generated_frames": 48,
+      "direction": "from_right",
+      "motion": "subtle",
+      "ready": true,
+      "request": "ai-hold-76c443e6258e433fa909246ccdcacc59",
+      "attempt": "4354dc835e894fb6b03abc6e20b1db7c",
+      "timings_ms": {
+        "publication": 219,
+        "qualification": 3730,
+        "worker": 497193,
+        "workspace": 48
+      },
+      "wall_seconds": 501.66466683289036,
+      "conditioning_ms": 22,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_right",
+            "generated_frame_count": 48,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 48,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 8685167,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "4b490a3441d79a1e442e52f79b343060fff6dc9382edfd60d842e052b938930f"
+          }
+        },
+        "sampled": {
+          "byte_length": 7227974,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "bd2e3299a765e3603cfc7ca3470639a6ec2b3ef3141b061782d2af82a3244305"
+          }
+        },
+        "provenance": {
+          "byte_length": 116129,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "748daf9c7c02a8cb06e4fa6ecafd54994639220af6d5c41ae5c0b0872582addd"
+          }
+        }
+      },
+      "backend_seconds": 485.2520192088559,
+      "worker_reported_peak_rss_bytes": 14233370624,
+      "mlx_counter_at_end_bytes": 17022794760,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 6,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          8,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "2",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "2",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "19",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 47
+      },
+      "entry": {
+        "status": "absent"
+      },
+      "exit": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "2b48da04-4c4f-4750-9bcc-5d49125abdac",
+              "revision_id": "inserted-pause",
+              "definition": "cff9b74b-3787-40c0-837f-424522cf81a4",
+              "position": {
+                "numerator": "97",
+                "denominator": "2"
+              }
+            },
+            "asset": "6f888f5d-c361-4a7a-9a52-922b39012636",
+            "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52",
+            "picture": {
+              "source_frame": 0,
+              "pts": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 47,
+          "sampled_pts": 1958,
+          "mean_absolute_rgb_difference": 1.5210557725694445,
+          "gross_cell_fraction": 0.0
+        },
+        "quality": {
+          "after_frame": 47,
+          "mean_luma_shift": 1.2473958333333333,
+          "mean_absolute_luma_change": 1.2526041666666667,
+          "lighting_agreement_fraction": 0.96484375,
+          "textured_blocks": 8,
+          "matched_blocks": 6,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_right",
+          "start": 0,
+          "end": 48
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 48,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 35,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 74,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "72f-from_left",
+      "frames": 72,
+      "generated_frames": 72,
+      "direction": "from_left",
+      "motion": "moderate",
+      "ready": true,
+      "request": "ai-hold-846efbb97cff4e4e9f4ec24150befcab",
+      "attempt": "51d80ddb309e4082927b0492ead03e91",
+      "timings_ms": {
+        "publication": 229,
+        "qualification": 5598,
+        "worker": 697463,
+        "workspace": 50
+      },
+      "wall_seconds": 703.9573063747957,
+      "conditioning_ms": 21,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 72,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 72,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 14168700,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "f6433f81911360737d9095554d5d18dfc85213d3cab8a98c5e75d57eafe0b680"
+          }
+        },
+        "sampled": {
+          "byte_length": 12730083,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "e109bb7dad8beabfd7c38b4e850294ac462249c22835f575d8ef2e5ec3a68cc9"
+          }
+        },
+        "provenance": {
+          "byte_length": 219179,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "3476bf9ccccf5749945b5cb7a2ae8dd7a071816543ad76a15012ec22cde2579c"
+          }
+        }
+      },
+      "backend_seconds": 685.6497265831567,
+      "worker_reported_peak_rss_bytes": 14261764096,
+      "mlx_counter_at_end_bytes": 17022794768,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 0,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          11,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "3",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "3",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "27",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 24,
+        "measured": 47
+      },
+      "entry": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "7d3e31da-7dd4-4fc9-ac8b-3ee69cc61277",
+              "revision_id": "inserted-pause",
+              "definition": "cc15b67f-f5a3-4139-a025-b6aa2282021e",
+              "position": {
+                "numerator": "17",
+                "denominator": "2"
+              }
+            },
+            "asset": "4befbb81-2bac-4784-9c8c-1096e833380b",
+            "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742",
+            "picture": {
+              "source_frame": 8,
+              "pts": {
+                "ticks": 8,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 0,
+          "sampled_pts": 0,
+          "mean_absolute_rgb_difference": 2.07799072265625,
+          "gross_cell_fraction": 0.0
+        },
+        "quality": {
+          "after_frame": 0,
+          "mean_luma_shift": -0.9743923611111112,
+          "mean_absolute_luma_change": 1.5863715277777777,
+          "lighting_agreement_fraction": 0.9301215277777778,
+          "textured_blocks": 8,
+          "matched_blocks": 2,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "exit": {
+        "status": "absent"
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_left",
+          "start": 9,
+          "end": 81
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "measured",
+          "measured_tracks": 1,
+          "unavailable_tracks": 1,
+          "leading_unobserved_frames": 24,
+          "maximum_aperture_step": 0.0094574053643426,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected",
+            "insufficient_frames"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 48,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 74,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "case": "72f-from_right",
+      "frames": 72,
+      "generated_frames": 72,
+      "direction": "from_right",
+      "motion": "moderate",
+      "ready": true,
+      "request": "ai-hold-a139a7ec5d154e25ae14e05ab7c1b3fe",
+      "attempt": "64cb206fd51d477f92b2d0559b38bfa2",
+      "timings_ms": {
+        "publication": 222,
+        "qualification": 5402,
+        "worker": 679066,
+        "workspace": 49
+      },
+      "wall_seconds": 685.3444856670685,
+      "conditioning_ms": 22,
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_right",
+            "generated_frame_count": 72,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 72,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "provider": {
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "runtime_id": "ltx-mlx",
+        "runtime_version": "0.15.8+deadpan-extension1",
+        "seed": 42107
+      },
+      "objects": {
+        "native": {
+          "byte_length": 12512800,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "a67f00bdf2062d982d735258d8757c7deef694bd124e690e1126a1c803750dd0"
+          }
+        },
+        "sampled": {
+          "byte_length": 11046548,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "96c2362d8c69d6a4bb96e8d46d0ee161678098e9bde3400dd041566a470a4cc0"
+          }
+        },
+        "provenance": {
+          "byte_length": 127171,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "dcdfa1b73d2a03a7b10402473248551cc9dbb095e691e441edaea156c1837f21"
+          }
+        }
+      },
+      "backend_seconds": 667.3000137913041,
+      "worker_reported_peak_rss_bytes": 14229307392,
+      "mlx_counter_at_end_bytes": 17022794768,
+      "source_latent_preservation": {
+        "exact": true,
+        "context_latent_start": 9,
+        "source_shape": [
+          1,
+          128,
+          2,
+          10,
+          24
+        ],
+        "native_shape": [
+          1,
+          128,
+          11,
+          10,
+          24
+        ]
+      },
+      "timing": {
+        "requested_duration": {
+          "numerator": "3",
+          "denominator": "1"
+        },
+        "generated_duration": {
+          "numerator": "3",
+          "denominator": "1"
+        },
+        "native_movie_duration": {
+          "numerator": "27",
+          "denominator": "8"
+        },
+        "context_duration": {
+          "numerator": "3",
+          "denominator": "8"
+        },
+        "context_anchor_span": {
+          "numerator": "1",
+          "denominator": "3"
+        },
+        "speed_conversion": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "motion_coverage": {
+        "unavailable": 71
+      },
+      "entry": {
+        "status": "absent"
+      },
+      "exit": {
+        "status": "measured",
+        "role": "conditioned",
+        "picture": {
+          "original": {
+            "clock": {
+              "kind": "definition",
+              "project_id": "56d07a61-720b-4c7c-ac08-5510128080dd",
+              "revision_id": "inserted-pause",
+              "definition": "115db568-d51a-4e22-b6b4-661cf02898ad",
+              "position": {
+                "numerator": "145",
+                "denominator": "2"
+              }
+            },
+            "asset": "84458509-05bf-443d-92b9-fbf4816c7c95",
+            "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52",
+            "picture": {
+              "source_frame": 0,
+              "pts": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "stream": {
+                "codec": "h264",
+                "pixel_format": "gbrp",
+                "width": 768,
+                "height": 320,
+                "sample_aspect": [
+                  1,
+                  1
+                ],
+                "rotation_quarter_turns": 0,
+                "decoded_sample_bits": 8,
+                "color": {
+                  "transfer": "srgb",
+                  "primaries": "bt709",
+                  "matrix": "rgb",
+                  "range": "full"
+                }
+              },
+              "model_input": "srgb_codes_unchanged"
+            }
+          }
+        },
+        "object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          },
+          "byte_length": 5574
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 768,
+          "height": 320
+        },
+        "endpoint": {
+          "sampled_frame": 71,
+          "sampled_pts": 2958,
+          "mean_absolute_rgb_difference": 1.6115966796875,
+          "gross_cell_fraction": 0.0
+        },
+        "quality": {
+          "after_frame": 71,
+          "mean_luma_shift": 1.3433159722222223,
+          "mean_absolute_luma_change": 1.38671875,
+          "lighting_agreement_fraction": 0.88671875,
+          "textured_blocks": 8,
+          "matched_blocks": 6,
+          "motion": {
+            "status": "unavailable"
+          }
+        }
+      },
+      "geometry": {
+        "schema_version": 1,
+        "profile": "deadpan-extension-face-geometry-mouth-1",
+        "coverage": {
+          "direction": "from_right",
+          "start": 0,
+          "end": 72
+        },
+        "raster": [
+          768,
+          320
+        ],
+        "presentation": [
+          0,
+          0,
+          768,
+          320
+        ],
+        "anchor_usable": true,
+        "thresholds": {
+          "center_residual": 0.1,
+          "log_size_residual": 0.4,
+          "feature_residual": 0.2,
+          "sustained_frames": 2,
+          "minimum_confidence": 0.7,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01,
+          "association_max_score": 1.25,
+          "association_uniqueness_margin": 0.15,
+          "association_overlap_ambiguity": 0.25
+        },
+        "mouth_thresholds": {
+          "aperture_step": 0.18,
+          "sustained_changes": 2,
+          "minimum_landmark_confidence": 0.7,
+          "minimum_eye_separation_fraction": 0.01
+        },
+        "measured_face_frames": 0,
+        "geometry": {
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "feature_unavailable_tracks": 0,
+          "maximum_center_residual": null,
+          "maximum_log_size_residual": null,
+          "maximum_feature_residual": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        },
+        "mouth": {
+          "basis": "generated_interval_only",
+          "status": "unavailable",
+          "measured_tracks": 0,
+          "unavailable_tracks": 0,
+          "leading_unobserved_frames": 72,
+          "maximum_aperture_step": null,
+          "rejection": null,
+          "unavailable_reasons": [
+            "no_face_detected"
+          ]
+        }
+      },
+      "region_unavailable_reason": "no selected region target",
+      "unchanged_after_ready": true,
+      "system": {
+        "sample_count": 47,
+        "swap_start_bytes": 0.0,
+        "swap_end_bytes": 0.0,
+        "swap_max_bytes": 0.0,
+        "minimum_system_free_percentage": 72,
+        "thermal_reports": [
+          "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        ],
+        "unavailable": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    }
+  ]
+}

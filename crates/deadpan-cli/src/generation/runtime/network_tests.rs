@@ -125,9 +125,17 @@ impl Probe {
 
 #[test]
 fn ai_network_smoke_check_denies_sockets_and_descendants_while_files_work() {
-    let probe = Probe::new();
-    let report = probe.runtime().check(&AtomicBool::new(false)).unwrap();
-    assert_eq!(report, probe.assert_denied());
+    for (pack, operation) in [
+        (super::BRIDGE_PACK, "bridge_hold"),
+        (super::EXTENSION_PACK, "extension_hold"),
+    ] {
+        let probe = Probe::new();
+        let mut runtime = probe.runtime();
+        runtime.model_manifest = deadpan_models::packs::approved_pack(pack).unwrap();
+        let report = runtime.check(&AtomicBool::new(false)).unwrap();
+        assert_eq!(report["operation"], operation);
+        probe.assert_denied();
+    }
 }
 
 const WORKER: &str = r#"
@@ -173,7 +181,16 @@ child = subprocess.run([sys.executable, '-I', '-B', __file__, '--descendant', st
 report = {'parent': observe(config), 'child': json.loads(child.stdout)}
 (Path(config['root']) / 'report.json').write_text(json.dumps(report))
 if args.check:
-    print(json.dumps(report))
+    pack = runtime['model_pack']
+    print(json.dumps({'schema_version': 2, 'runtime_commit': '3392d75934120b7e69eefbe55893f7ef82be92a4',
+        'operation': pack['operations'][0], 'pack_id': pack['pack_id'], 'pack_version': pack['pack_version'],
+        'runtime_id': pack['runtime_id'], 'runtime_version': pack['runtime_versions'][0],
+        'model_manifest_sha256': runtime['model_manifest_sha256'], 'device': 'Device(gpu, 0)',
+        'adapter_sources_sha256': {name: 'a' * 64 for name in ['worker.py', 'worker_protocol.py',
+            'worker_media.py', 'worker_extension_context.py', 'mlx_backend.py', 'runtime_source.py',
+            'ltx-source-manifest.json']},
+        'python': sys.version.split()[0], 'mlx': 'probe', 'verified_assets': len(pack['files']),
+        'safetensors_tensors': 1, 'loaded_ltx_sources': 1, 'seconds': 0}))
 else:
     def exact(length):
         result = bytearray()

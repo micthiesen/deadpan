@@ -16,8 +16,7 @@ import sys
 import time
 
 from worker_media import (encode_rgb, exact_keys, file_digest, sampled_rgb, verify_rgb,
-                          sampled_extension_rgb, extension_latent_counts, extension_timing,
-                          EXTENSION_RUNTIME_GENERATED_FRAMES)
+                          sampled_extension_rgb, extension_latent_counts, extension_timing)
 from runtime_source import loaded_sources, verify_roots, verify_tree
 from worker_protocol import parse_hold_constraints
 
@@ -125,13 +124,16 @@ def _model_manifest(model_pack, model_cache, check_cancel, hash_assets, operatio
     exact_keys(model_pack, ["pack_id", "pack_version", "model_family", "runtime_id",
                             "runtime_versions", "operations", "files"])
     expected = {
-        "bridge_hold": ("ltx-2.3-q4-bridge", ("0.15.8+deadpan5",)),
-        "extension_hold": ("ltx-2.3-q4-extension-development", tuple(EXTENSION_RUNTIME_GENERATED_FRAMES)),
+        "bridge_hold": {"ltx-2.3-q4-bridge": ("0.15.8+deadpan5",)},
+        "extension_hold": {
+            "ltx-2.3-q4-extension-development": ("0.15.8+deadpan-extension-dev1", "0.15.8+deadpan-extension-dev2"),
+            "ltx-2.3-q4-extension": ("0.15.8+deadpan-extension1",),
+        },
     }
     if operation not in expected:
         raise ValueError("unsupported worker operation")
-    pack_id, runtime_versions = expected[operation]
-    if (model_pack["pack_id"] != pack_id or
+    runtime_versions = expected[operation].get(model_pack["pack_id"], ()) if isinstance(model_pack["pack_id"], str) else ()
+    if (not runtime_versions or
             not isinstance(model_pack["pack_version"], str) or
             not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", model_pack["pack_version"]) or
             model_pack["model_family"] != "ltx-2.3" or
@@ -694,20 +696,27 @@ def check_runtime(config):
     source, Metal runs, and all safetensors keep the qualified loader schema.
     No inference; the installer already hashed the files."""
     started = time.monotonic()
-    paths = runtime_paths(config, lambda: None, hash_assets=False)
+    operations = config.get("model_pack", {}).get("operations")
+    if operations not in (["bridge_hold"], ["extension_hold"]):
+        raise ValueError("unsupported smoke-test operation")
+    operation = operations[0]
+    paths = runtime_paths(config, lambda: None, hash_assets=False, operation=operation)
     import mlx.core as mx
     from ltx_core_mlx.text_encoders.gemma.encoders.base_encoder import GemmaLanguageModel  # noqa: F401
-    from ltx_pipelines_mlx.keyframe_interpolation import KeyframeInterpolationPipeline  # noqa: F401
+    if operation == "bridge_hold":
+        from ltx_pipelines_mlx.keyframe_interpolation import KeyframeInterpolationPipeline  # noqa: F401
+    else:
+        from ltx_pipelines_mlx.retake import RetakePipeline  # noqa: F401
     sources = loaded_sources(paths["runtime_source"], paths["source_manifest"])
     values = mx.arange(1024, dtype=mx.float32)
     total = (values * values).sum().item()
-    if int(total) != 357389824:
+    if int(total) != 357389824 or "gpu" not in str(mx.default_device()).lower():
         raise ValueError("Metal arithmetic check failed")
     tensors = sum(schema[2] for schema in TENSOR_SCHEMAS.values())
     pack = paths["model_pack"]
-    return {"schema_version": 1, "runtime_commit": RUNTIME_COMMIT,
+    return {"schema_version": 2, "runtime_commit": RUNTIME_COMMIT, "operation": operation,
             "pack_id": pack["pack_id"], "pack_version": pack["pack_version"],
-            "runtime_id": pack["runtime_id"],
+            "runtime_id": pack["runtime_id"], "runtime_version": pack["runtime_versions"][0],
             "model_manifest_sha256": paths["model_manifest_sha256"],
             "device": str(mx.default_device()),
             "python": sys.version.split()[0], "mlx": mx.__version__,

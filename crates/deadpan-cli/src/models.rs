@@ -485,6 +485,29 @@ fn smoke_test(
     directory: &Path,
     cancelled: &AtomicBool,
 ) -> Result<(), CliError> {
+    smoke_test_with_generation(
+        manifest,
+        directory,
+        cancelled,
+        |manifest, directory, cancelled| {
+            // The bundled (or development) runtime imports its pinned sources,
+            // runs Metal and reads every staged model header; no inference.
+            let runtime =
+                crate::generation::runtime::BridgeRuntime::with_model_manifest(directory, manifest)
+                    .map_err(|error| CliError::Usage(error.to_string()))?;
+            let report = runtime.check(cancelled).map_err(CliError::Usage)?;
+            let _ = emit(&serde_json::json!({ "event": "smoke_test_passed", "report": report }));
+            Ok(())
+        },
+    )
+}
+
+fn smoke_test_with_generation(
+    manifest: &PackManifest,
+    directory: &Path,
+    cancelled: &AtomicBool,
+    generation: impl FnOnce(&PackManifest, &Path, &AtomicBool) -> Result<(), CliError>,
+) -> Result<(), CliError> {
     let silence = AnalysisInput {
         samples: vec![0.0; 16_000],
         origin: 0,
@@ -514,14 +537,8 @@ fn smoke_test(
             Instant::now() + Duration::from_secs(60),
         )?;
     }
-    if manifest.supports(Operation::BridgeHold) {
-        // The bundled (or development) runtime imports its pinned sources,
-        // runs Metal and reads every staged model header; no inference.
-        let runtime =
-            crate::generation::runtime::BridgeRuntime::with_model_manifest(directory, manifest)
-                .map_err(|error| CliError::Usage(error.to_string()))?;
-        let report = runtime.check(cancelled).map_err(CliError::Usage)?;
-        let _ = emit(&serde_json::json!({ "event": "smoke_test_passed", "report": report }));
+    if manifest.supports(Operation::BridgeHold) || manifest.supports(Operation::ExtensionHold) {
+        generation(manifest, directory, cancelled)?;
     }
     Ok(())
 }
@@ -562,4 +579,38 @@ fn installed_model(
         }
     }
     Ok(None)
+}
+
+#[cfg(test)]
+mod generation_smoke_tests {
+    use super::*;
+
+    #[test]
+    fn both_generation_operations_require_their_staged_pack_smoke_to_pass() {
+        for id in ["ltx-2.3-q4-bridge", "ltx-2.3-q4-extension"] {
+            let manifest = deadpan_models::packs::approved_pack(id).unwrap();
+            let directory = Path::new("/staged-models");
+            let cancelled = AtomicBool::new(false);
+            let mut called = false;
+            let result = smoke_test_with_generation(
+                &manifest,
+                directory,
+                &cancelled,
+                |selected, staged, token| {
+                    called = true;
+                    assert_eq!(selected, &manifest);
+                    assert_eq!(staged, directory);
+                    assert!(std::ptr::eq(token, &cancelled));
+                    Err(CliError::Usage("staged operation smoke failed".into()))
+                },
+            );
+            assert!(called, "{id} skipped its runtime smoke test");
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("staged operation smoke failed")
+            );
+        }
+    }
 }

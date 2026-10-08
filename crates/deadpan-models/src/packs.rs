@@ -77,6 +77,7 @@ pub fn approved_packs() -> Vec<PackManifest> {
     [
         include_str!("../../../models/packs/whisper-base-en-2.json"),
         include_str!("../../../models/packs/ltx-2.3-q4-bridge-1.json"),
+        include_str!("../../../models/packs/ltx-2.3-q4-extension-1.json"),
     ]
     .into_iter()
     .map(|text| {

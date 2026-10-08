@@ -1,14 +1,17 @@
-use deadpan_jobs::{GenerationOptions, GenerationTarget, HoldInstructions};
+use deadpan_jobs::{
+    GenerationModePreference, GenerationOptions, GenerationTarget, HoldInstructions,
+};
 
 use super::Entry;
 use crate::navigation::{Action, AiAction};
 
 pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
-    let usage = "Use :generate [1-4] [motion=still|subtle|moderate] [target=ID|none] [text=guidance]. Put text last. Omitted target retains the captured target.";
+    let usage = "Use :generate [1-4] [mode=auto|bridge|extend-left|extend-right] [motion=still|subtle|moderate] [target=ID|none] [text=guidance]. Put text last. Omitted target retains the captured target.";
     let mut rest = argument.unwrap_or("").trim();
     let mut variants = 1;
     let mut controls = GenerationOptions::default();
     let mut count_seen = false;
+    let mut mode_seen = false;
     let mut motion_seen = false;
     let mut target_seen = false;
     let mut explicit = false;
@@ -20,7 +23,20 @@ pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
             break;
         }
         let (word, tail) = rest.split_once(char::is_whitespace).unwrap_or((rest, ""));
-        if let Some(motion) = word.strip_prefix("motion=") {
+        if let Some(mode) = word.strip_prefix("mode=") {
+            if mode_seen {
+                return Err(usage.into());
+            }
+            controls.mode = match mode {
+                "auto" => GenerationModePreference::Automatic,
+                "bridge" => GenerationModePreference::Bridge,
+                "extend-left" => GenerationModePreference::ExtendFromLeft,
+                "extend-right" => GenerationModePreference::ExtendFromRight,
+                _ => return Err(usage.into()),
+            };
+            mode_seen = true;
+            explicit = true;
+        } else if let Some(motion) = word.strip_prefix("motion=") {
             if motion_seen {
                 return Err(usage.into());
             }
@@ -59,7 +75,13 @@ pub(super) fn parse(argument: Option<&str>) -> Result<Entry, String> {
 
 /// A complete, editable command. Omitting text clears old guidance when run.
 pub(crate) fn command(options: &GenerationOptions) -> String {
-    let mut command = format!("generate motion={}", options.motion.name());
+    let mode = match options.mode {
+        GenerationModePreference::Automatic => "auto",
+        GenerationModePreference::Bridge => "bridge",
+        GenerationModePreference::ExtendFromLeft => "extend-left",
+        GenerationModePreference::ExtendFromRight => "extend-right",
+    };
+    let mut command = format!("generate mode={mode} motion={}", options.motion.name());
     match &options.region_target {
         // The controls editor captures the displayed absence explicitly.
         GenerationTarget::Inherit | GenerationTarget::None => command.push_str(" target=none"),
@@ -119,6 +141,11 @@ mod tests {
             "5",
             "motion=fast",
             "motion=still motion=subtle",
+            "mode=",
+            "mode=automatic",
+            "mode=extend",
+            "mode=bridge mode=auto",
+            "mode=auto 2",
             "text=",
             "2 3",
             "motion=still 2",
@@ -143,5 +170,51 @@ mod tests {
                 }
             }
         );
+    }
+
+    #[test]
+    fn every_mode_round_trips_without_consuming_guidance() {
+        for (text, mode) in [
+            ("auto", GenerationModePreference::Automatic),
+            ("bridge", GenerationModePreference::Bridge),
+            ("extend-left", GenerationModePreference::ExtendFromLeft),
+            ("extend-right", GenerationModePreference::ExtendFromRight),
+        ] {
+            let options = GenerationOptions {
+                mode,
+                motion: MotionAmount::Moderate,
+                instructions: Some(
+                    HoldInstructions::new("Keep 手 still. mode=bridge is guidance.").unwrap(),
+                ),
+                region_target: GenerationTarget::None,
+            };
+            assert_eq!(
+                parse(Some(&format!(
+                    "4 target=none motion=moderate mode={text} text=Keep 手 still. mode=bridge is guidance."
+                )))
+                .unwrap(),
+                Entry::Generate {
+                    variants: 4,
+                    options: options.clone(),
+                },
+            );
+            assert_eq!(
+                super::super::parse(&command(&options)).unwrap(),
+                Entry::Generate {
+                    variants: 1,
+                    options,
+                },
+            );
+            assert_eq!(
+                parse(Some(&format!("mode={text}"))).unwrap(),
+                Entry::Generate {
+                    variants: 1,
+                    options: GenerationOptions {
+                        mode,
+                        ..GenerationOptions::default()
+                    },
+                },
+            );
+        }
     }
 }

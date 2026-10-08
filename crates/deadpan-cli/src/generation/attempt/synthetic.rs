@@ -1,8 +1,9 @@
 //! A deterministic stand-in for the model worker, for tests and UI replay.
 //!
 //! It never runs a model. It writes native footage that blends the attempt's
-//! own two conditioning pictures, with a band whose colour follows the
-//! attempt's seed so seeded variants are visibly different, and a worker
+//! own two Bridge conditioning pictures, with a band whose colour follows the
+//! attempt's seed so seeded variants are visibly different. Extension footage
+//! preserves its chronological context and repeats its conditioned seam. A worker
 //! provenance report whose claims name this synthetic origin. Everything else
 //! is the production path: the private workspace and captured inputs, the
 //! store's durable lifecycle through the caller's `records`, host
@@ -20,7 +21,9 @@ use std::process::{Command, Stdio};
 
 use deadpan_core::FrameDuration;
 use deadpan_jobs::VideoSpec;
-use deadpan_models::{BridgeContext, GenerationBinding};
+use deadpan_models::{
+    BridgeContext, ExtensionContext, ExtensionGenerationBinding, GenerationBinding,
+};
 
 use super::*;
 
@@ -123,7 +126,21 @@ fn run_inner(
     if cancelled.load(Ordering::Acquire) {
         return WorkerRun::early(cancel(&mut records), timings);
     }
-    let prepared = match prepare_workspace(allocated, None, cancelled) {
+    let prepared = deadpan_models::packs::approved_pack(allocated.provider().pack_id.as_str())
+        .ok_or_else(|| "Synthetic execution requires an approved operation manifest.".to_owned())
+        .and_then(|manifest| {
+            super::super::runtime::validate_constraints_for_manifest(
+                &manifest,
+                allocated.inputs.constraints(),
+            )?;
+            super::super::runtime::selected_provider_for_manifest(
+                &manifest,
+                &allocated.inputs.plan(),
+                allocated.provider().seed,
+            )
+        })
+        .and_then(|selected| prepare_workspace(allocated, None, selected, cancelled));
+    let prepared = match prepared {
         Ok(prepared) => prepared,
         Err(_) if cancelled.load(Ordering::Acquire) => {
             return WorkerRun::early(cancel(&mut records), timings);
@@ -159,7 +176,7 @@ fn run_inner(
         }
         progress(AttemptProgress::Stage(stage));
         let message = WorkerMessage::Stage {
-            protocol: ProtocolVersion::V2,
+            protocol: allocated.protocol(),
             identity: identity.clone(),
             stage,
         };
@@ -187,10 +204,17 @@ fn run_inner(
             );
         }
     };
-    let completed = WorkerMessage::CompletedBridge {
-        protocol: ProtocolVersion::V2,
-        identity: identity.clone(),
-        candidate: declaration.clone(),
+    let completed = match &allocated.inputs {
+        PreparedInputs::Bridge(_) => WorkerMessage::CompletedBridge {
+            protocol: ProtocolVersion::V2,
+            identity: identity.clone(),
+            candidate: declaration.clone(),
+        },
+        PreparedInputs::Extension(_) => WorkerMessage::CompletedExtension {
+            protocol: ProtocolVersion::V3,
+            identity: identity.clone(),
+            candidate: declaration.clone(),
+        },
     };
     if let Err(error) = records(AttemptRecord::Worker(Box::new(completed))) {
         return finish(
@@ -224,7 +248,7 @@ fn run_inner(
 }
 
 /// Write `outputs/native.mp4` and `outputs/provenance.json` and declare them.
-fn synthesize(
+pub(super) fn synthesize(
     allocated: &Allocated,
     worker: &SyntheticWorker,
     root: &Path,
@@ -232,10 +256,10 @@ fn synthesize(
     mode: SyntheticMode,
 ) -> Result<NativeCandidateManifest, String> {
     let text = |error: &dyn std::fmt::Display| error.to_string();
-    let plan = &allocated.inputs.plan;
+    let plan = allocated.inputs.plan();
     let width = plan.native_dimensions().width();
     let height = plan.native_dimensions().height();
-    let count = plan.native_frame_count();
+    let count = native_frame_count(&plan);
     let rate = plan.native_frame_rate();
     let picture = |bytes: &[u8]| -> Result<image::RgbImage, String> {
         let image = image::load_from_memory(bytes)
@@ -246,8 +270,16 @@ fn synthesize(
         }
         Ok(image)
     };
-    let left = picture(&allocated.inputs.left_png)?;
-    let right = picture(&allocated.inputs.right_png)?;
+    let pictures = match &allocated.inputs {
+        PreparedInputs::Bridge(inputs) => {
+            vec![picture(&inputs.left_png)?, picture(&inputs.right_png)?]
+        }
+        PreparedInputs::Extension(inputs) => inputs
+            .context_pngs
+            .iter()
+            .map(|png| picture(png))
+            .collect::<Result<Vec<_>, _>>()?,
+    };
     let seed = allocated.provider().seed;
     // A band whose colour depends only on the seed.
     let band = [
@@ -298,17 +330,37 @@ fn synthesize(
                 return Err("cancelled".into());
             }
             if !mode.write_override(index, count, &mut frame) {
-                for (offset, (a, b)) in left.as_raw().iter().zip(right.as_raw()).enumerate() {
-                    let mixed = (u64::from(*a) * (last - index.min(last))
-                        + u64::from(*b) * index.min(last)
-                        + last / 2)
-                        / last;
-                    frame[offset] = mixed as u8;
-                }
-                for row in band_rows.clone() {
-                    let start = (row * width * 3) as usize;
-                    for pixel in frame[start..start + (width * 3) as usize].chunks_exact_mut(3) {
-                        pixel.copy_from_slice(&band);
+                match &plan {
+                    GenerationPlan::Bridge(_) => {
+                        let left = &pictures[0];
+                        let right = &pictures[1];
+                        for (offset, (a, b)) in left.as_raw().iter().zip(right.as_raw()).enumerate()
+                        {
+                            let mixed = (u64::from(*a) * (last - index.min(last))
+                                + u64::from(*b) * index.min(last)
+                                + last / 2)
+                                / last;
+                            frame[offset] = mixed as u8;
+                        }
+                        for row in band_rows.clone() {
+                            let start = (row * width * 3) as usize;
+                            for pixel in
+                                frame[start..start + (width * 3) as usize].chunks_exact_mut(3)
+                            {
+                                pixel.copy_from_slice(&band);
+                            }
+                        }
+                    }
+                    GenerationPlan::Extension(plan) => {
+                        let context_index = match plan.direction() {
+                            deadpan_core::ExtensionDirection::FromLeft => {
+                                index.min(u64::from(plan.context_frame_count() - 1))
+                            }
+                            deadpan_core::ExtensionDirection::FromRight => {
+                                index.saturating_sub(u64::from(plan.generated_frame_count()))
+                            }
+                        };
+                        frame.copy_from_slice(pictures[context_index as usize].as_raw());
                     }
                 }
             }
@@ -323,15 +375,9 @@ fn synthesize(
     }
     let footage = std::fs::read(&native).map_err(|error| text(&error))?;
     let native_sha = super::super::conditioning::sha256(&footage)?;
-    let binding =
-        GenerationBinding::from_request(&allocated.host_message).map_err(|error| text(&error))?;
-    let context: BridgeContext =
-        serde_json::from_slice(&allocated.inputs.manifest).map_err(|error| text(&error))?;
     let receipt = super::super::conditioning::sha256(b"deadpan synthetic worker")?;
     let revision = "0".repeat(40);
-    let provenance = serde_json::to_vec(&serde_json::json!({
-        "schema_version": 2,
-        "request_binding": binding,
+    let mut provenance = serde_json::json!({
         "runtime_commit": revision,
         "pack_revision": revision,
         "gemma_revision": revision,
@@ -341,15 +387,63 @@ fn synthesize(
         "prompt_version": "synthetic-1",
         "prompt": format!("Synthetic test footage using {mode:?}; no model ran."),
         "seed": seed,
-        "context": context,
         "configuration": {"backend": "synthetic", "mode": format!("{mode:?}")},
         "model_color_interpretation": "synthetic encoded sRGB",
-        "temporal_interpolation": "synthetic linear blend or explicit test override",
+        "temporal_interpolation": "synthetic blend or seam repetition; no model was loaded",
         "conditioning_preprocessing": "none",
         "native_sha256": native_sha,
         "native_bytes": footage.len(),
-    }))
-    .map_err(|error| text(&error))?;
+    });
+    match &allocated.inputs {
+        PreparedInputs::Bridge(inputs) => {
+            let binding = GenerationBinding::from_request(&allocated.host_message)
+                .map_err(|error| text(&error))?;
+            let context: BridgeContext =
+                serde_json::from_slice(&inputs.manifest).map_err(|error| text(&error))?;
+            provenance["schema_version"] = serde_json::json!(2);
+            provenance["request_binding"] = serde_json::json!(binding);
+            provenance["context"] = serde_json::json!(context);
+        }
+        PreparedInputs::Extension(inputs) => {
+            let binding = ExtensionGenerationBinding::from_request(&allocated.host_message)
+                .map_err(|error| text(&error))?;
+            let context: ExtensionContext =
+                serde_json::from_slice(&inputs.manifest).map_err(|error| text(&error))?;
+            let plan = &inputs.plan;
+            let interval = plan.sampling_map().generated_interval();
+            let manifest =
+                deadpan_models::packs::approved_pack(allocated.provider().pack_id.as_str())
+                    .ok_or("synthetic operation manifest is unavailable")?;
+            let manifest_bytes = serde_json::to_vec(&manifest).map_err(|error| text(&error))?;
+            let extension = serde_json::json!({
+                "schema_version": 3, "operation": "extension", "direction": plan.direction(),
+                "request_binding": binding, "context": context,
+                "generated_interval": [interval.start, interval.end],
+                "pack_id": allocated.provider().pack_id, "pack_version": allocated.provider().pack_version,
+                "runtime_id": allocated.provider().runtime_id, "runtime_version": allocated.provider().runtime_version,
+                "model_manifest_sha256": super::super::conditioning::sha256(&manifest_bytes)?,
+                "timing": {
+                    "requested_duration": plan.requested_duration(),
+                    "generated_duration": plan.generated_duration(),
+                    "native_movie_duration": plan.native_movie_duration(),
+                    "context_duration": plan.context_duration(),
+                    "context_anchor_span": plan.context_anchor_span(),
+                    "speed_conversion": plan.speed(),
+                    "retime_deviation": plan.retime_deviation(),
+                },
+            });
+            provenance
+                .as_object_mut()
+                .expect("synthetic report is an object")
+                .extend(
+                    extension
+                        .as_object()
+                        .expect("extension report is an object")
+                        .clone(),
+                );
+        }
+    }
+    let provenance = serde_json::to_vec(&provenance).map_err(|error| text(&error))?;
     let provenance_path = root.join("outputs/provenance.json");
     write_new(&provenance_path, &provenance).map_err(|error| text(&error))?;
     let provenance_sha = super::super::conditioning::sha256(&provenance)?;

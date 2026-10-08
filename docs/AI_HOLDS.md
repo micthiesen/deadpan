@@ -11,7 +11,8 @@ the saved provider as one undoable command.
 The only provider is the LTX-2.3 q4 MLX route qualified in
 [`tools/model-qualification`](../tools/model-qualification/README.md). A
 packaged `Deadpan.app` carries its private runtime and takes the weights from
-the installed `ltx-2.3-q4-bridge` [model pack](MODEL_PACKS.md); development
+the operation's installed `ltx-2.3-q4-bridge` or `ltx-2.3-q4-extension`
+[model pack](MODEL_PACKS.md); development
 builds may still point at a developer runtime ([Runtime](#runtime)).
 
 ## Library chain
@@ -22,7 +23,7 @@ ends in Ready, Failed or Cancelled.
 
 | Step | Thread | Function |
 | --- | --- | --- |
-| Conditioning | job (read-only store) | `generation::conditioning::prepare_scoped_with_options` captures the exact authoring address; `prepare` supplies empty Repeat ancestry |
+| Operation and conditioning | job (read-only store) | `generation::prepare::with_runtime` resolves actual definition endpoints, admits the selected manifest's plan and controls, then captures the exact authoring address |
 | Allocation | writer | `generation::attempt::allocate_scoped_with_provider` records that address; `allocate_variant` adds an attempt of a current request |
 | Worker and qualification | job, no store | `generation::attempt::run_worker(&Allocated, &BridgeRuntime, progress, records, cancelled) -> WorkerRun` |
 | Durable transitions | writer | `generation::attempt::record(&mut store, &Allocated, &AttemptRecord)` |
@@ -46,20 +47,22 @@ ends in Ready, Failed or Cancelled.
   seed is provenance, not identity; the attempt and its objects identify a
   variant.
 - `run_worker` creates a private temporary directory (`runtime.json` beside
-  `worker/{inputs,outputs}`), writes the two prepared PNGs and the context
-  manifest, pins the workspace and captures the inputs with
-  `capture_bridge_conditioning` before launch. It launches the environment's
+  `worker/{inputs,outputs}`), writes the prepared PNGs and context manifest,
+  then pins the workspace and captures private input snapshots before launch.
+  Bridge retains two boundary pictures. Extension retains chronological context,
+  continuity signatures and any unconditioned opposite seam. It launches the environment's
   Python with `-I`, a cleared environment and the offline variables through the
   shared process supervisor (30-minute deadline, 5 s cancellation grace), and
   applies the job lifecycle. Stage and terminal messages go to the caller as
   `AttemptRecord::Worker`, a host cancellation as `AttemptRecord::CancelRequested`;
   Progress stays in memory and reaches the `progress` callback. A native
   declaration that differs from the plan or provider fails the attempt. After a
-  clean exit it runs `qualify_bridge` with `deadpan-media-worker` and builds the
-  `BundleValidationReceipt` with admission evidence (validator `native-ffv1`,
-  `bridge-8`). An error from `records` cancels the worker and fails the attempt.
+  clean exit it runs the operation's qualifier with `deadpan-media-worker` and
+  builds the `BundleValidationReceipt` with admission evidence. V2 Bridge and
+  V3 Extension cannot complete each other's requests. An error from `records`
+  cancels the worker and fails the attempt.
 - `finish` publishes the native and sampled masters, the provenance envelope
-  and the three retained inputs, then records Ready. A publication failure is
+  and all retained inputs, then records Ready. A publication failure is
   recorded as a host failure. Failures the store has not already recorded become
   `fail_generation_attempt`; cancellation becomes Cancelling then Cancelled.
 - `accept` takes the request's selected Ready bundle, derives fresh asset IDs
@@ -323,18 +326,36 @@ conditioned joins and explicitly unconditioned or absent opposite seams.
 The [one-second measurement](qualification/extension-one-second-2026-10-08.md)
 uses the actual project capture with an independently selected K9/E24 capability,
 then runs the real model, complete host admission and an exact pixel oracle in
-both directions. A separate pack constraint record now describes temporal
-conditioning and exact duration limits; it adds no approved provider.
+both directions. Normal native and headless jobs now dispatch both operations.
+The separate Extension pack declares K9 chronological context, E8 through E72
+generated pictures in steps of eight, 24 fps and a 768×320 raster. The authored
+interval is limited independently to three seconds and 180 project frames.
+The nearest legal generated count wins, with shorter ties; all inserted frames
+still come only from the generated interval.
 
-Native and headless job execution still admit Bridge jobs only. The independently
-approved extension capability, longer duration measurements and native generation
-controls remain unfinished. See
+`:generate [N] mode=auto|bridge|extend-left|extend-right` captures the preference.
+Automatic chooses Bridge with both definition endpoints, Extension from left
+with only the earlier picture, or Extension from right with only the later
+picture. Explicit modes require their own anchors. The inspector distinguishes
+the request's resolved operation and any unconditioned or absent opposite seam.
+The current job retains its requested Auto preference through additional
+variants. Reopened controls show the saved, resolved mode; retries and automatic
+replacements retain that captured operation.
+Missing context and unavailable packs preserve the fallback. Retried automatic
+preparations retain their birth operation. A mode change cannot reuse a request
+from the other operation or silently change its inputs.
+
+The native service and `ai-extension` replay exercise the normal lifecycle with
+synthetic generated media. The [production qualification](qualification/extension-native-2026-10-08.md)
+passes real 0.5/1/2/3-second generation in both directions, exact sampled pixels,
+explicit acceptance, Undo/Redo and verified portable export with model/runtime
+and network access denied. Earlier saved-input evidence remains in
 [durable extension inputs](qualification/extension-inputs-2026-10-07.md).
 
 ## Headless commands
 
 ```sh
-deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--motion still|subtle|moderate] [--instructions TEXT] [--another]
+deadpan-cli generate-hold <project.deadpan> --hold <node-id> [--scope JSON] [--seed N] [--variants 1-4] [--mode auto|bridge|extend-left|extend-right] [--motion still|subtle|moderate] [--instructions TEXT] [--another]
 deadpan-cli accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
 ```
 
@@ -738,12 +759,12 @@ offline_portable`; `cargo xtask gate` enables it for the workspace runs.
 
 ## Runtime
 
-`BridgeRuntime::from_environment` resolves the runtime for the running
+`BridgeRuntime::from_environment_for` resolves the operation's runtime for the running
 executable (`generation::runtime::lookup`):
 
 | Lookup | When | Python, LTX source, worker, ffmpeg/ffprobe | Model data |
 | --- | --- | --- | --- |
-| Bundled | Packaged `Deadpan.app` | `Contents/Resources/ai-runtime/{python/bin/python3.12, ltx-2-mlx, worker/worker.py, bin/ffmpeg, bin/ffprobe}` | The installed `ltx-2.3-q4-bridge` pack in the models root |
+| Bundled | Packaged `Deadpan.app` | `Contents/Resources/ai-runtime/{python/bin/python3.12, ltx-2-mlx, worker/worker.py, bin/ffmpeg, bin/ffprobe}` | The operation's installed Bridge or Extension pack in the models root |
 | PackagedExplicit | Packaged app with `DEADPAN_DEVELOPER_BRIDGE=1` | Explicitly set `DEADPAN_BRIDGE_*` only | `DEADPAN_BRIDGE_MODEL_CACHE` |
 | Development | Cargo builds and developer wrappers | `DEADPAN_BRIDGE_*`, then development defaults (below) | `DEADPAN_BRIDGE_MODEL_CACHE`, else the installed pack, else the qualification cache |
 
@@ -867,10 +888,22 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-Generation at definition edges, multi-play generation/acceptance and calibrated
-join thresholds remain open. A dormant definition can be generated and accepted
-when both local boundary pictures exist; viewer preview requires a visible
-concrete occurrence.
+Calibrated join thresholds and the remaining model/performance work remain open.
+A dormant definition can be generated
+and accepted when its selected operation's local context exists; viewer preview
+requires a visible concrete occurrence.
+
+Generation and acceptance handle Default or one stable Play per request.
+Batching AI work across several selected plays is unavailable; §5.2 and §12.6
+require the Default/This play distinction and explicit acceptance, rather than
+a batch AI command. This limitation is not an additional DP-12 closure gate.
+
+The worker currently loads the model for each attempt. A resident model within
+a measured memory budget and a bounded cache of fixed text embeddings remain
+unimplemented (§13.5). The distilled 2B macOS/MPS comparison, MLX precision
+comparison, cold/warm latency distributions and the interactive workload
+measurements in §13.4 also remain open. The 60-second target is provisional;
+record slower results honestly and do not label this pack Fast.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
 the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.

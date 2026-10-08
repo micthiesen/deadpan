@@ -70,8 +70,12 @@ impl Default for Models {
 
 /// What a pack is used for, in app terms.
 fn purpose(pack: &PackManifest) -> &'static str {
-    if pack.supports(Operation::BridgeHold) {
-        "AI pause pictures (AI PICTURES in the inspector)"
+    if pack.supports(Operation::BridgeHold) && pack.supports(Operation::ExtensionHold) {
+        "Bridge and Extension AI pause pictures (AI PICTURES in the inspector)"
+    } else if pack.supports(Operation::BridgeHold) {
+        "Bridge AI pause pictures, conditioned on both sides"
+    } else if pack.supports(Operation::ExtensionHold) {
+        "Extension AI pause pictures, conditioned from the left or right"
     } else if pack.supports(Operation::Transcribe) {
         "Transcription and pause detection (TRANSCRIPT in the Original rail)"
     } else {
@@ -843,17 +847,19 @@ impl DeadpanApp {
                     .desired_height(4.0)
                     .fill(style::LAVENDER),
             );
-            return ui
-                .add(style::row_action(ui, "Show in Models…", key))
-                .clicked();
+            let button = ui.add(style::row_action(ui, "Show in Models…", key));
+            reveal(&button);
+            return button.clicked();
         }
-        ui.add(style::row_action(ui, label, key)).clicked()
+        let button = ui.add(style::row_action(ui, label, key));
+        reveal(&button);
+        button.clicked()
     }
 }
 
 /// Keep a newly focused control inside its scroll area at once; an animated
 /// reveal can be cancelled by a decaying wheel scroll.
-fn reveal(response: &egui::Response) {
+pub(super) fn reveal(response: &egui::Response) {
     if response.gained_focus() {
         // Centered, so the reason or action below a control shows too.
         response.scroll_to_me_animation(

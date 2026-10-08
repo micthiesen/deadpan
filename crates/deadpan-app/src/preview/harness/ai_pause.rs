@@ -40,14 +40,28 @@ pub(super) fn backend() -> Backend {
     ])))
 }
 
-/// Every start of `ai-variants` produces Ready synthetic footage.
-pub(super) fn variants_backend() -> Backend {
-    Backend::Scripted(Arc::new(ScriptQueue::new([Script {
+/// Ready synthetic footage, with an optional runtime refusal after two variants.
+pub(super) fn variants_backend(refuse_third: bool) -> Backend {
+    let ready = Script {
         unavailable: None,
         steps: 3,
         step_interval: Duration::from_millis(20),
         ending: ScriptEnding::Ready,
-    }])))
+    };
+    let runs = if refuse_third {
+        vec![
+            ready.clone(),
+            ready.clone(),
+            Script {
+                unavailable: Some(UNAVAILABLE.into()),
+                ..ready.clone()
+            },
+            ready,
+        ]
+    } else {
+        vec![ready]
+    };
+    Backend::Scripted(Arc::new(ScriptQueue::new(runs)))
 }
 
 fn widget_text(d: &Driver<'_>) -> String {
@@ -87,13 +101,15 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         hold.is_some()
             && widgets.contains("Generate AI pictures")
             && widgets.contains("AI PICTURES")
+            && widgets.contains("Requested mode: Auto")
+            && widgets.contains(":generate mode=…")
             && widgets.contains(":hold-provider ai"),
         json!({"hold_selected":true,"inspector":"Generate AI pictures  :hold-provider ai"}),
         json!({"hold":hold,"widgets_have_action":widgets.contains("Generate AI pictures")}),
     )?;
     d.capture("Pause selected with its AI pictures action")?;
 
-    d.command("generate motion=moderate text=Keep the eyes open.")?;
+    d.command("generate mode=extend-left motion=moderate text=Keep the eyes open.")?;
     d.wait_for("Unavailable runtime reported", |app| {
         app.ai
             .job()
@@ -105,16 +121,62 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "A missing runtime shows its exact reason without an edit",
         widgets.contains("AI pauses are unavailable on this Mac")
             && widgets.contains("set DEADPAN_BRIDGE_RUNTIME_SOURCE")
+            && widgets.contains("Requested mode: Extend from left")
             && widgets.contains("Requested motion: moderate")
             && widgets.contains("Region target: None")
             && widgets.contains("Guidance: Keep the eyes open.")
+            && d.app().ai.job().is_some_and(|job| {
+                job.options.mode == deadpan_jobs::GenerationModePreference::ExtendFromLeft
+                    && job.request.is_none()
+            })
             && d.revision() == paused,
-        json!({"title":"AI pauses are unavailable on this Mac","reason":UNAVAILABLE,"revision":paused,"motion":"moderate","guidance":"Keep the eyes open."}),
+        json!({"title":"AI pauses are unavailable on this Mac","reason":UNAVAILABLE,"revision":paused,"mode":"extend-left","motion":"moderate","guidance":"Keep the eyes open.","recorded_request":false}),
         json!({"outcome":format!("{:?}", outcome(d)),"revision":d.revision()}),
     )?;
     d.capture("Unavailable model runtime")?;
+    let offer = "Install AI models…  :models";
+    {
+        let root = d.harness.root();
+        let control = root
+            .children_recursive()
+            .find(|node| {
+                let access = node.accesskit_node();
+                access.label().as_deref() == Some(offer)
+                    && !access.is_disabled()
+                    && !access.is_hidden()
+            })
+            .ok_or("The Extension model offer is missing")?;
+        control.focus();
+    }
+    d.step("Extension model offer focused", false)?;
+    for _ in 0..16 {
+        if inspector_control_visible(d, offer) {
+            break;
+        }
+        d.step("Settle model offer focus scroll", false)?;
+    }
+    d.check(
+        "Native focus reveals the Extension model offer and its complete hit target",
+        inspector_control_visible(d, offer),
+        json!({"offer":offer,"fully_visible":true}),
+        json!({"paint":scenarios::text_paint_visibility(d, offer),"rect":d.rect(offer).ok().map(|rect| [rect.min.x,rect.min.y,rect.max.x,rect.max.y])}),
+    )?;
+    d.key(Key::Enter)?;
+    d.step("Extension model offer opened", false)?;
+    d.check(
+        "An unavailable Extension opens its matching model pack without installing",
+        d.app().models.open
+            && d.app().models.focus.as_deref()
+                == Some(deadpan_cli::generation::runtime::EXTENSION_PACK)
+            && d.app().models.manager.job().is_none()
+            && d.revision() == paused,
+        json!({"focus":deadpan_cli::generation::runtime::EXTENSION_PACK,"installing":false,"revision":paused}),
+        json!({"focus":d.app().models.focus,"installing":d.app().models.manager.job().is_some(),"revision":d.revision()}),
+    )?;
+    d.key(Key::Escape)?;
+    d.step("Extension model offer closed", false)?;
 
-    d.command("generate motion=subtle target=none text=Keep the hands still.")?;
+    d.command("generate mode=bridge motion=subtle target=none text=Keep the hands still.")?;
     d.wait_for("Scripted generation reaches its last step", |app| {
         app.ai
             .job()
@@ -134,16 +196,20 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Generating with progress")?;
     d.check(
-        "Motion and guidance are visible and captured by the running job",
-        widgets.contains("Requested motion: subtle")
+        "Mode, motion and guidance are visible and captured by the running job",
+        widgets.contains("Requested mode: Bridge")
+            && widgets.contains("Resolved operation: Bridge")
+            && widgets.contains("Both joins conditioned.")
+            && widgets.contains("Requested motion: subtle")
             && widgets.contains("Region target: None")
             && widgets.contains("Guidance: Keep the hands still.")
             && d.app().ai.job().is_some_and(|job| {
-                job.options.motion == deadpan_jobs::MotionAmount::Subtle
+                job.options.mode == deadpan_jobs::GenerationModePreference::Bridge
+                    && job.options.motion == deadpan_jobs::MotionAmount::Subtle
                     && job.options.instructions.as_ref().map(|text| text.as_str())
                         == Some("Keep the hands still.")
             }),
-        json!({"motion":"subtle","instructions":"Keep the hands still."}),
+        json!({"mode":"bridge","motion":"subtle","instructions":"Keep the hands still."}),
         json!({"job": format!("{:?}", d.app().ai.job())}),
     )?;
     // Editing stays immediate while the job runs.
@@ -204,13 +270,14 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Failed")?;
     d.check(
-        "Keyboard retry retains the current motion and guidance",
+        "Keyboard retry retains the current mode, motion and guidance",
         d.app().ai.job().is_some_and(|job| {
-            job.options.motion == deadpan_jobs::MotionAmount::Subtle
+            job.options.mode == deadpan_jobs::GenerationModePreference::Bridge
+                && job.options.motion == deadpan_jobs::MotionAmount::Subtle
                 && job.options.instructions.as_ref().map(|text| text.as_str())
                     == Some("Keep the hands still.")
         }),
-        json!({"motion":"subtle","instructions":"Keep the hands still."}),
+        json!({"mode":"bridge","motion":"subtle","instructions":"Keep the hands still."}),
         json!({"job": format!("{:?}", d.app().ai.job())}),
     )?;
     Ok(())
@@ -924,7 +991,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     };
     d.step("Focus the chosen variant timing details", false)?;
     for _ in 0..16 {
-        if timing_control_visible(d, &focused_heading) {
+        if inspector_control_visible(d, &focused_heading) {
             break;
         }
         d.step("Settle native timing focus scroll", false)?;
@@ -932,7 +999,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     let heading_paint = scenarios::text_paint_visibility(d, &focused_heading);
     d.check(
         "Native focus reveals the whole chosen timing heading and its hit target",
-        timing_control_visible(d, &focused_heading),
+        inspector_control_visible(d, &focused_heading),
         json!({"heading":"Variant 1 timing","fully_painted":true,"hit_target_visible":true}),
         json!({"paint":heading_paint,"hit_target":d.rect(&focused_heading).ok().map(|rect| [rect.min.x,rect.min.y,rect.max.x,rect.max.y])}),
     )?;
@@ -964,7 +1031,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
             && details.contains("Native movie:")
             && details.contains("Motion speed:")
             && intervals.iter().all(|label| timing_text_visible(d, label))
-            && timing_control_visible(d, &focused_heading)
+            && inspector_control_visible(d, &focused_heading)
             && d.revision() == paused,
         json!({"intervals":["inserted","requested boundary","native boundary","native movie","motion speed"],"fully_painted":true,"unchanged":true}),
         json!({"interval_paint":interval_paint,"heading_paint":scenarios::text_paint_visibility(d, &focused_heading),"revision":d.revision()}),
@@ -1152,6 +1219,31 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Accepted variant 2")?;
 
+    d.command("generate mode=extend-left")?;
+    d.wait_for(
+        "Extension runtime refusal preserves the offered variant",
+        |app| {
+            app.ai.job().is_some_and(|job| {
+                matches!(job.outcome, Some(Outcome::Unavailable(_))) && job.request.is_none()
+            })
+        },
+    )?;
+    d.step("Runtime refusal beside an earlier Ready variant", false)?;
+    let widgets = widget_text(d);
+    d.check(
+        "An unavailable Extension remains visible beside the earlier Ready variant",
+        widgets.contains("AI pauses are unavailable on this Mac")
+            && widgets.contains(UNAVAILABLE)
+            && widgets.contains("Requested mode: Extend from left")
+            && widgets.contains("Install AI models…")
+            && widgets.contains("Variant 1 timing")
+            && d.app().ai.variant_count() == 1
+            && d.app().ai.chosen_variant().is_some_and(|(_, attempt)| attempt == first)
+            && d.revision() == accepted,
+        json!({"outcome":"Unavailable","requested_mode":"extend-left","offered":["variant 1"],"revision":accepted}),
+        json!({"outcome":format!("{:?}", outcome(d)),"variants":d.app().ai.variant_count(),"widgets":widgets,"revision":d.revision()}),
+    )?;
+
     d.command("discard-ai")?;
     d.wait_for("Variant discarded", |app| app.ai.variant_count() == 0)?;
     d.step("Discarded", false)?;
@@ -1213,7 +1305,195 @@ fn timing_text_visible(d: &Driver<'_>, label: &str) -> bool {
             .all(|part| part["fully_visible"] == true && part["elided"] == false)
 }
 
-fn timing_control_visible(d: &Driver<'_>, label: &str) -> bool {
+/// One starting-edge Extension through the V3 worker and production admission.
+pub(super) fn extension(d: &mut Driver<'_>) -> Result<(), String> {
+    crate::project::generation::synthetic_tools().map_err(|reason| {
+        format!("ai-extension requires the synthetic Ready worker's tools: {reason}")
+    })?;
+    d.report.skipped.push(
+        "Extension inference uses the scripted V3 worker. Temporal conditioning, qualification, publication, Ready, preview, acceptance and history are real; real-model inference is qualified separately.".into(),
+    );
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::H])?;
+    d.changed(&before)?;
+    d.settled()?;
+    let paused = d.revision();
+    let hold = d.app().ai_hold().ok_or("The edge pause is not selected")?;
+    let fallback = d.app().workspace.clone().ok_or("No workspace")?;
+    let duration = match &fallback.document.nodes()[&hold].kind {
+        NodeKind::Hold { recipe } => recipe.duration,
+        _ => return Err("The edge pause is not a Hold".into()),
+    };
+    d.check(
+        "The starting-edge pause commits its fallback before generation",
+        d.app().sequence_cursor == 0
+            && matches!(&fallback.document.nodes()[&hold].kind,
+                NodeKind::Hold { recipe } if !matches!(recipe.video, HoldVideo::Generated { .. })),
+        json!({"Edit":0,"provider":"fallback","frames":duration.frames()}),
+        d.snapshot(),
+    )?;
+
+    d.command("generate mode=auto")?;
+    d.wait_for("Automatic edge Extension reaches Ready", |app| {
+        app.ai.job().is_some_and(|job| !job.running())
+    })?;
+    d.step("Extension Ready at the starting edge", false)?;
+    let job = d.app().ai.job().cloned().ok_or("No Extension job")?;
+    let widgets = widget_text(d);
+    d.check(
+        "Auto resolves right-side Extension, reports the absent incoming seam and keeps the fallback",
+        matches!(job.outcome, Some(Outcome::Ready(_)))
+            && job.options.mode == deadpan_jobs::GenerationModePreference::Automatic
+            && job.operation == Some(deadpan_jobs::ConditioningMode::ExtendFromRight)
+            && job.opposite_boundary_present == Some(false)
+            && matches!(&job.plan, Some(deadpan_jobs::GenerationPlan::Extension(plan))
+                if plan.direction() == deadpan_core::ExtensionDirection::FromRight
+                    && plan.project_frames() == duration)
+            && widgets.contains("Requested mode: Auto")
+            && widgets.contains("Resolved operation: Extend from right")
+            && widgets.contains("Outgoing join conditioned; incoming seam absent (no neighbor).")
+            && widgets.contains("Variant 1 timing")
+            && widgets.contains("Ready does not change your edit.")
+            && d.app().ai.variant_count() == 1
+            && d.revision() == paused,
+        json!({"outcome":"Ready","mode":"Auto","operation":"ExtendFromRight","opposite":false,"frames":duration.frames(),"revision":paused}),
+        json!({"job":format!("{job:?}"),"widgets":widgets,"revision":d.revision()}),
+    )?;
+    let request = job.request.ok_or("Ready Extension has no request")?;
+    let attempt = d
+        .app()
+        .ai
+        .chosen_variant()
+        .map(|(_, attempt)| attempt)
+        .ok_or("Ready Extension has no selected variant")?;
+    let receipt = {
+        let store =
+            deadpan_store::ProjectStore::open(&fallback.path, deadpan_store::AccessMode::ReadOnly)
+                .map_err(|error| error.to_string())?;
+        store
+            .generation_attempt(&deadpan_jobs::MessageIdentity::new(
+                request.clone(),
+                attempt.clone(),
+            ))
+            .map_err(|error| error.to_string())?
+            .and_then(|record| record.bundle_receipt)
+            .ok_or("Ready Extension has no durable qualification receipt")?
+    };
+    d.check(
+        "Ready retains the qualified V3 Extension plan and temporal inputs without an opposite picture",
+        receipt.plan().protocol() == deadpan_jobs::ProtocolVersion::V3
+            && receipt.plan().conditioning() == deadpan_jobs::ConditioningMode::ExtendFromRight
+            && receipt.admission().is_some_and(|admission| {
+                admission.inputs().context().is_some_and(|frames| frames.len() == 9)
+                    && admission.inputs().opposite().is_none()
+            }),
+        json!({"protocol":"V3","operation":"ExtendFromRight","context_frames":9,"opposite":null}),
+        json!({"plan":receipt.plan(),"inputs":receipt.admission().map(|admission| admission.inputs())}),
+    )?;
+    d.capture("Automatic Extension Ready with its absent incoming seam")?;
+
+    {
+        let root = d.harness.root();
+        let control = root
+            .children_recursive()
+            .find(|node| {
+                let access = node.accesskit_node();
+                access
+                    .label()
+                    .is_some_and(|label| label.starts_with("Variant 1 timing"))
+                    && !access.is_disabled()
+                    && !access.is_hidden()
+            })
+            .ok_or("Extension timing control is missing")?;
+        control.focus();
+    }
+    d.step("Extension timing focused", false)?;
+    d.key(Key::Enter)?;
+    d.step("Extension timing opened with Enter", false)?;
+    let details = widget_text(d);
+    d.check(
+        "Extension timing separates retained right context from generated pictures",
+        details.contains("Extension from right context: 9 retained pictures.")
+            && details.contains("Requested generated span:")
+            && details.contains("Native generated span:")
+            && details.contains("Conditioning context is excluded;")
+            && !details.contains("Requested boundary span:")
+            && d.revision() == paused,
+        json!({"context":"right, 9 pictures","timing":"generated span","context_inserted":false}),
+        json!({"widgets":details,"revision":d.revision()}),
+    )?;
+
+    d.command("preview-ai")?;
+    d.wait_for("Extension candidate displayed", |app| {
+        app.ai.preview_request() == Some(&request)
+            && app.presentation.displayed_candidate()
+            && !app.presentation.loading()
+            && !app.presentation.needs_render()
+    })?;
+    d.step("Extension preview shown", false)?;
+    d.check(
+        "Extension preview shows the candidate without changing the starting fallback",
+        widget_text(d).contains("AI PREVIEW · NOT SAVED")
+            && d.revision() == paused
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.document.nodes() == fallback.document.nodes()),
+        json!({"preview":"candidate","saved_provider":"fallback","revision":paused}),
+        d.snapshot(),
+    )?;
+    d.capture("Extension preview before explicit acceptance")?;
+
+    d.command("accept-ai")?;
+    d.changed(&paused)?;
+    d.settled()?;
+    let accepted = d.revision();
+    let current = d.app().workspace.clone().ok_or("No accepted workspace")?;
+    d.check(
+        "Explicit acceptance saves the Extension with exact duration and removes the preview",
+        matches!(&current.document.nodes()[&hold].kind,
+            NodeKind::Hold { recipe }
+                if recipe.duration == duration
+                    && matches!(&recipe.video, HoldVideo::Generated { accepted }
+                        if matches!(&accepted.artifact.sampling, deadpan_core::GeneratedSamplingMap::Extension(map)
+                            if map.direction() == deadpan_core::ExtensionDirection::FromRight
+                                && map.output_frame_count() == duration)))
+            && current.plan.duration() == fallback.plan.duration()
+            && current.can_undo
+            && d.app().ai.preview_request().is_none()
+            && widget_text(d).contains("Saved mode: Extend from right")
+            && widget_text(d).contains("Accepted operation: Extend from right")
+            && widget_text(d).contains("Accepted timing"),
+        json!({"provider":"Extension from right","frames":duration.frames(),"preview":null,"undo":true}),
+        d.snapshot(),
+    )?;
+    d.capture("Accepted starting-edge Extension")?;
+
+    super::transcript::focus_your_edit(d)?;
+    d.key(Key::U)?;
+    d.changed(&accepted)?;
+    d.settled()?;
+    select_beat(d, &hold)?;
+    d.wait_for("Undo offers the retained Extension candidate", |app| {
+        app.ai.variant_count() == 1
+    })?;
+    d.check(
+        "Normal Undo restores the exact fallback and reoffers the same retained Extension",
+        d.app().workspace.as_ref().is_some_and(|workspace| {
+            workspace.document.nodes() == fallback.document.nodes()
+                && workspace.plan.duration() == fallback.plan.duration()
+        })
+            && d.app().ai.chosen_variant().is_some_and(|(_, chosen)| chosen == attempt)
+            && d.app().ai.preview_request().is_none(),
+        json!({"provider":"original fallback","offered_attempt":attempt,"frames":duration.frames()}),
+        d.snapshot(),
+    )?;
+    d.capture("Undo restores fallback and retains the Extension candidate")
+}
+
+fn inspector_control_visible(d: &Driver<'_>, label: &str) -> bool {
     let Ok(rect) = d.rect(label) else {
         return false;
     };

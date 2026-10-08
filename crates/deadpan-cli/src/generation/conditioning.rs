@@ -51,6 +51,9 @@ pub use extension::{
     ExtensionInputs, prepare_extension_scoped_with_options, prepare_extension_scoped_with_provider,
 };
 
+mod inputs;
+pub use inputs::PreparedInputs;
+
 /// The conversion applied to every decoded boundary picture: the decoder's
 /// full-range RGB8 (declared matrix and range applied) with BT.709 primaries,
 /// with sRGB codes retained and BT.709 transfer converted to sRGB before fitting.
@@ -125,6 +128,34 @@ pub fn prepare_scoped_with_options(
     options: &GenerationOptions,
     cancelled: &AtomicBool,
 ) -> Result<BridgeInputs, String> {
+    prepare_bridge_scoped(package, revision, target, None, options, cancelled)
+}
+
+/// Capture the exact supplied Bridge plan. The caller independently selects
+/// its provider capability; this function checks the saved Hold and capture
+/// raster before decoding and never substitutes the development envelope.
+pub fn prepare_bridge_scoped_with_plan(
+    package: &Path,
+    revision: &RevisionId,
+    target: &ScopedNodeTarget,
+    plan: &BridgeGenerationPlan,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<BridgeInputs, String> {
+    if plan.native_dimensions() != super::native_dimensions() {
+        return Err("Bridge capture requires the supported 768×320 native raster.".into());
+    }
+    prepare_bridge_scoped(package, revision, target, Some(plan), options, cancelled)
+}
+
+fn prepare_bridge_scoped(
+    package: &Path,
+    revision: &RevisionId,
+    target: &ScopedNodeTarget,
+    selected_plan: Option<&BridgeGenerationPlan>,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<BridgeInputs, String> {
     // Decoding polls `cancelled` itself; check between the uncancellable
     // steps too so a host shutdown is never held by a finished-but-unused step.
     let check = || {
@@ -155,7 +186,7 @@ pub fn prepare_scoped_with_options(
         .scoped_hold_boundaries(target, BoundaryQueryLimits::default())
         .map_err(|error| error.to_string())?;
     let duration = boundaries.duration;
-    if duration.frames() > super::MAX_BRIDGE_PROJECT_FRAMES {
+    if selected_plan.is_none() && duration.frames() > super::MAX_BRIDGE_PROJECT_FRAMES {
         return Err(format!(
             "AI pauses are limited to {} frames for now; this one has {}.",
             super::MAX_BRIDGE_PROJECT_FRAMES,
@@ -170,14 +201,24 @@ pub fn prepare_scoped_with_options(
         "An AI bridge needs a picture after the pause in its authored definition; this Hold ends at the definition edge.",
     )?;
     let rate = document.presentation_basis().frame_rate;
-    let plan = BridgeGenerationPlan::for_conditioning(
-        ConditioningMode::Bridge,
-        FrameDuration::new(duration.frames()).map_err(|error| error.to_string())?,
-        rate,
-        &super::development_capability(),
-        super::native_dimensions(),
-    )
-    .map_err(|error| error.to_string())?;
+    let plan = if let Some(plan) = selected_plan {
+        if plan.project_frames() != duration || plan.project_frame_rate() != rate {
+            return Err(
+                "The selected Bridge plan differs from the saved Hold duration or project rate."
+                    .into(),
+            );
+        }
+        plan.clone()
+    } else {
+        BridgeGenerationPlan::for_conditioning(
+            ConditioningMode::Bridge,
+            FrameDuration::new(duration.frames()).map_err(|error| error.to_string())?,
+            rate,
+            &super::development_capability(),
+            super::native_dimensions(),
+        )
+        .map_err(|error| error.to_string())?
+    };
     let mut constraints = HoldConstraints {
         video: VideoSpec::new(duration, rate, super::NATIVE_WIDTH, super::NATIVE_HEIGHT)
             .map_err(|error| error.to_string())?,
