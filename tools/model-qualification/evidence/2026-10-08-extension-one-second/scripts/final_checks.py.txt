@@ -1,0 +1,22 @@
+from pathlib import Path
+import json, os, subprocess, time
+
+root = Path('/tmp/deadpan-extension-longer-20261008')
+repo = Path('/Users/michael/Code/deadpan')
+env = dict(os.environ, DEADPAN_FFMPEG_PREFIX='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix', PYTHONDONTWRITEBYTECODE='1')
+checks = [
+    ('python-tests', ['python3', '-m', 'unittest', 'discover', '-s', 'tools/model-qualification/tests']),
+    ('gate', ['cargo', 'xtask', 'gate']),
+]
+results = []
+for name, command in checks:
+    start = time.monotonic()
+    with (root / (name + '.log')).open('x') as output:
+        process = subprocess.run(command, cwd=repo, env=env, stdout=output, stderr=subprocess.STDOUT)
+    result = {'name': name, 'command': command, 'exit_code': process.returncode, 'seconds': time.monotonic() - start}
+    results.append(result)
+    (root / 'final-checks-results.json').write_text(json.dumps(results, indent=2) + '\n')
+    print(json.dumps(result), flush=True)
+    if process.returncode:
+        print((root / (name + '.log')).read_text()[-7000:], flush=True)
+        raise SystemExit(process.returncode)

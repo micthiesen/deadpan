@@ -1,0 +1,34 @@
+[
+  {
+    "direction": "from_left",
+    "exact_document_unchanged": true,
+    "revision": "one-second-hold",
+    "hold_provider": {
+      "type": "freeze",
+      "asset": "original",
+      "timestamp": {
+        "ticks": 8,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 24
+        }
+      }
+    }
+  },
+  {
+    "direction": "from_right",
+    "exact_document_unchanged": true,
+    "revision": "one-second-hold",
+    "hold_provider": {
+      "type": "freeze",
+      "asset": "original",
+      "timestamp": {
+        "ticks": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 24
+        }
+      }
+    }
+  }
+]

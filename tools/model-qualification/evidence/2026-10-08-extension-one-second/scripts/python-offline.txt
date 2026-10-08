@@ -1,0 +1,2 @@
+#!/bin/sh
+exec sandbox-exec -p '(version 1)(allow default)(deny network*)' /Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3 "$@"

@@ -1,0 +1,69 @@
+from pathlib import Path
+import hashlib, json, shutil, shlex, subprocess, time
+
+repo = Path('/Users/michael/Code/deadpan')
+root = Path('/tmp/deadpan-extension-longer-20261008')
+old = Path('/tmp/deadpan-resume-20261006/extension-worker')
+def save(path, value):
+    with path.open('x') as output:
+        json.dump(value,output,indent=2)
+        output.write('\n')
+def sha(path):
+    return hashlib.file_digest(path.open('rb'),'sha256').hexdigest()
+
+support = root / 'support'
+support.mkdir()
+names = ['worker.py','worker_protocol.py','worker_media.py','worker_extension_context.py','mlx_backend.py',
+    'runtime_source.py','ltx-source-manifest.json','evidence/2026-09-20-smoke/download-manifest.json']
+for name in names:
+    target = support / name
+    target.parent.mkdir(parents=True,exist_ok=True)
+    shutil.copyfile(repo / 'tools/model-qualification' / name,target)
+save(root / 'adapter-sources.json',{name:sha(support/name) for name in names})
+pack = json.loads((old/'development-manifest.json').read_text())
+pack['runtime_versions'] = ['0.15.8+deadpan-extension-dev2']
+save(root/'development-manifest.json',pack)
+runtime = json.loads((old/'runtime.json').read_text())
+runtime['model_pack']['runtime_versions'] = pack['runtime_versions']
+runtime['model_manifest_sha256'] = sha(root/'development-manifest.json')
+assert all(Path(runtime[key]).exists() for key in ['runtime_source','model_cache','ffmpeg','ffprobe'])
+save(root/'runtime.json',runtime)
+python = Path(runtime['runtime_source'])/'.venv/bin/python3'
+wrapper = root/'python-offline'
+wrapper.write_text('#!/bin/sh\nexec sandbox-exec -p '+shlex.quote('(version 1)(allow default)(deny network*)')+' '+shlex.quote(str(python))+' "$@"\n')
+wrapper.chmod(0o700)
+results=[]
+for project in json.loads((root/'projects.json').read_text()):
+    direction = project['direction']
+    case = root/direction
+    workspace = case/'workspace'
+    command = [str(repo/'target/debug/examples/prepare_extension_context'), '--project',project['package'],
+        '--revision',project['revision'],'--target',str(case/'target.json'),'--plan',str(case/'plan.json'),
+        '--provider',str(case/'selected-provider.json'),'--output',str(workspace)]
+    start=time.monotonic()
+    with (case/'capture.log').open('x') as output:
+        process=subprocess.run(command,cwd=repo,stdout=output,stderr=subprocess.STDOUT)
+    results.append({'direction':direction,'command':command,'exit_code':process.returncode,'seconds':time.monotonic()-start})
+    (root/'capture-results.json').write_text(json.dumps(results,indent=2)+'\n')
+    if process.returncode:
+        print((case/'capture.log').read_text())
+        raise SystemExit(process.returncode)
+    capture=json.loads((workspace/'capture.json').read_text())
+    assert capture['project_id']==project['project_id'] and capture['revision_id']==project['revision']
+    assert capture['plan']==json.loads((case/'plan.json').read_text())
+    assert not capture['opposite_present']
+    (workspace/'outputs').mkdir()
+    request={'operation':'generate_extension','protocol':3,'identity':{'request_id':'one-second-'+direction,'attempt_id':'attempt-1'},
+        'cancellation_token':'cancel-one-second-'+direction,'project_id':project['project_id'],'revision_id':project['revision'],
+        'target':{'hold_id':'extension','request_version':1},'input':{key:capture['input'][key] for key in ['manifest','sha256']},
+        'output_workspace':'outputs','constraints':capture['constraints'],'provider':capture['selected_provider']['selection'],'plan':capture['plan']}
+    save(case/'request.json',request)
+    save(case/'retain-config.json',{'workspace':str(workspace),'request':request,'input_scope':'inputs',
+        'manifest':{'reference':capture['input']['manifest'],'sha256':capture['input']['sha256'],'byte_length':capture['input']['byte_length']},
+        'limits':{'maximum_manifest_bytes':1024**2,'maximum_frame_bytes':16*1024**2,'timeout_ms':30000},'output_directory':str(case/'retained')})
+    save(case/'host.json',{'executable':str(wrapper),'worker_script':str(support/'worker.py'),'runtime_config':str(root/'runtime.json'),
+        'workspace':str(workspace),'report_directory':str(case/'host'),'request':request,'cancel_after_millis':None,'cancel_at_stage':None})
+    print(direction,'captured',capture['context_pngs'],'context pictures',flush=True)
+save(root/'fixture-scope.json',{'scope':'Development-only one-second experiment over production-captured, qualified synthetic Original context. No approved capability, UI or automatic acceptance.',
+    'context_frames':9,'generated_frames':24,'native_frames':33,'output_frames':30,'project_rate':'30/1','native_rate':'24/1',
+    'network':'sandbox-exec deny network*','seed':42107,'steps':30,'dimensions':[768,320]})

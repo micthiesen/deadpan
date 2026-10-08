@@ -111,6 +111,25 @@ fn job_until(service: &ProjectService, predicate: impl Fn(&Job) -> bool) -> Proj
     })
 }
 
+fn job_until_after(
+    service: &ProjectService,
+    update: ProjectUpdate,
+    predicate: impl Fn(&Job) -> bool,
+) -> ProjectUpdate {
+    // A command reply may already contain the coalesced terminal job. There
+    // need not be another update after that reply has been consumed.
+    if update
+        .generation
+        .as_ref()
+        .and_then(|generation| generation.job.as_ref())
+        .is_some_and(&predicate)
+    {
+        update
+    } else {
+        job_until(service, predicate)
+    }
+}
+
 fn refusal(update: &ProjectUpdate) -> Option<String> {
     update.generation.as_ref()?.reply.as_ref()?.1.clone()
 }
@@ -574,7 +593,7 @@ fn cancelling_immediately_never_leaves_a_live_attempt() {
         .submit(ProjectRequest::Generation(start(&fixture, 1)))
         .unwrap();
     wait(&fixture.service, |_| !fixture.service.is_busy());
-    generation(
+    let reply = generation(
         &fixture.service,
         GenerationOperation::Cancel {
             ticket: 2,
@@ -582,7 +601,7 @@ fn cancelling_immediately_never_leaves_a_live_attempt() {
             job: 1,
         },
     );
-    let cancelled = job_until(&fixture.service, |job| !job.running());
+    let cancelled = job_until_after(&fixture.service, reply, |job| !job.running());
     assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
     let job = cancelled.generation.unwrap().job.unwrap();
     if let Some(request) = &job.request {
@@ -594,7 +613,7 @@ fn cancelling_immediately_never_leaves_a_live_attempt() {
     // A concluded job never blocks the next start.
     let restarted = generation(&fixture.service, start(&fixture, 3));
     assert_eq!(refusal(&restarted), None);
-    generation(
+    let reply = generation(
         &fixture.service,
         GenerationOperation::Cancel {
             ticket: 4,
@@ -602,7 +621,10 @@ fn cancelling_immediately_never_leaves_a_live_attempt() {
             job: 3,
         },
     );
-    job_until(&fixture.service, |job| job.ticket == 3 && !job.running());
+    let cancelled = job_until_after(&fixture.service, reply, |job| {
+        job.ticket == 3 && !job.running()
+    });
+    assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
 }
 
 #[test]
@@ -617,13 +639,14 @@ fn cancelling_during_conditioning_shows_cancelling_at_once() {
             job: 1,
         },
     );
-    let job = cancelled.generation.unwrap().job.unwrap();
+    let job = cancelled.generation.as_ref().unwrap().job.as_ref().unwrap();
     assert!(
         job.phase == Phase::Cancelling || !job.running(),
         "{:?}",
         job
     );
-    job_until(&fixture.service, |job| !job.running());
+    let finished = job_until_after(&fixture.service, cancelled, |job| !job.running());
+    assert_eq!(outcome(&finished), Some(Outcome::Cancelled));
 }
 
 #[test]

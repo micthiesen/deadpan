@@ -1,0 +1,311 @@
+{
+  "constraints": {
+    "conditioning": "extend_from_right",
+    "motion": "still",
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "frames": 30,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "context_pngs": 9,
+  "continuity": {
+    "binding": {
+      "canvas": [
+        768,
+        320
+      ],
+      "duration": 30,
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "inputs": {
+        "capture": {
+          "context_frames": 9,
+          "direction": "from_right",
+          "native_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "operation": "extension",
+          "policy": "temporal_context_v1"
+        },
+        "operation": "extension",
+        "opposite": null,
+        "samples": [
+          {
+            "picture": {
+              "frame": 0,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "0"
+            }
+          },
+          {
+            "picture": {
+              "frame": 1,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "4",
+              "numerator": "5"
+            }
+          },
+          {
+            "picture": {
+              "frame": 2,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "2",
+              "numerator": "5"
+            }
+          },
+          {
+            "picture": {
+              "frame": 3,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "4",
+              "numerator": "15"
+            }
+          },
+          {
+            "picture": {
+              "frame": 4,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "5"
+            }
+          },
+          {
+            "picture": {
+              "frame": 5,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "4",
+              "numerator": "25"
+            }
+          },
+          {
+            "picture": {
+              "frame": 6,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "2",
+              "numerator": "15"
+            }
+          },
+          {
+            "picture": {
+              "frame": 7,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "4",
+              "numerator": "35"
+            }
+          },
+          {
+            "picture": {
+              "frame": 8,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "10"
+            }
+          }
+        ],
+        "support": [
+          {
+            "end_exclusive": {
+              "denominator": "1",
+              "numerator": "10"
+            },
+            "first": {
+              "frame": 0,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "last": {
+              "frame": 8,
+              "kind": "original",
+              "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+            },
+            "start": {
+              "denominator": "1",
+              "numerator": "0"
+            }
+          }
+        ],
+        "terminal": {
+          "picture": {
+            "frame": 8,
+            "kind": "original",
+            "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+          },
+          "position": {
+            "denominator": "1",
+            "numerator": "10"
+          }
+        }
+      },
+      "region": null
+    },
+    "capture_policy": "deadpan-extension-context-1",
+    "decoded_pictures": 11,
+    "measurements": [
+      {
+        "qualification": {
+          "checked_pictures": 9,
+          "coverage": {
+            "ends_at_source_end": true,
+            "padding_after": 0,
+            "padding_before": 0,
+            "source_pictures": 9,
+            "starts_at_source_start": true
+          },
+          "measured": {
+            "end": 9,
+            "start": 0
+          },
+          "requested": {
+            "end": 8,
+            "start": 0
+          },
+          "rule": "deadpan-context-shots-1",
+          "signature_version": "deadpan-picture-signature-2",
+          "transition": null
+        },
+        "source": {
+          "frame": 0,
+          "kind": "original",
+          "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+        }
+      },
+      {
+        "qualification": {
+          "checked_pictures": 9,
+          "coverage": {
+            "ends_at_source_end": true,
+            "padding_after": 0,
+            "padding_before": 8,
+            "source_pictures": 9,
+            "starts_at_source_start": true
+          },
+          "measured": {
+            "end": 9,
+            "start": 0
+          },
+          "requested": {
+            "end": 8,
+            "start": 8
+          },
+          "rule": "deadpan-context-shots-1",
+          "signature_version": "deadpan-picture-signature-2",
+          "transition": null
+        },
+        "source": {
+          "frame": 8,
+          "kind": "original",
+          "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+        }
+      }
+    ],
+    "shot_rule": "deadpan-context-shots-1"
+  },
+  "input": {
+    "byte_length": 12563,
+    "manifest": "inputs/context.json",
+    "sha256": "556a2378adff2f31b3c0fba996ec2de30d23a23e977f6e0d3bdfecf50b3d48e2"
+  },
+  "opposite_present": false,
+  "plan": {
+    "native_dimensions": {
+      "height": 320,
+      "width": 768
+    },
+    "operation": "extension",
+    "sampling": {
+      "context_frame_count": 9,
+      "direction": "from_right",
+      "generated_frame_count": 24,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up",
+      "native_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "output_frame_count": 30,
+      "policy": "frame_centers_clamped",
+      "project_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "schema_version": 1
+    },
+    "schema_version": 1
+  },
+  "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+  "revision_id": "one-second-hold",
+  "schema_version": 1,
+  "scope": "development input capture only; selected provider is not approved or installed by this tool",
+  "selected_provider": {
+    "context_frame_count": 9,
+    "generated_frame_counts": {
+      "maximum": 24,
+      "minimum": 24,
+      "offset": 0,
+      "step": 8
+    },
+    "height": {
+      "maximum": 320,
+      "minimum": 320,
+      "multiple": 64
+    },
+    "maximum_output_frames": 30,
+    "native_frame_rate": {
+      "denominator": 1,
+      "numerator": 24
+    },
+    "operation": "extension",
+    "schema_version": 1,
+    "selection": {
+      "pack_id": "ltx-2.3-q4-extension-development",
+      "pack_version": "1",
+      "runtime_id": "ltx-mlx",
+      "runtime_version": "0.15.8+deadpan-extension-dev2",
+      "seed": 42107
+    },
+    "width": {
+      "maximum": 768,
+      "minimum": 768,
+      "multiple": 64
+    }
+  },
+  "target": {
+    "node": "extension",
+    "repeats": []
+  }
+}

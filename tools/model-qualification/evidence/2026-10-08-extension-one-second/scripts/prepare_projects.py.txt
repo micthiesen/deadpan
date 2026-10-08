@@ -1,0 +1,77 @@
+from pathlib import Path
+import hashlib, json, subprocess
+
+repo = Path('/Users/michael/Code/deadpan')
+root = Path('/tmp/deadpan-extension-longer-20261008')
+cli = repo / 'target/debug/deadpan-cli'
+
+def save(path, value):
+    with path.open('x') as output:
+        json.dump(value, output, indent=2)
+        output.write('\n')
+
+def run(case, name, *args):
+    result = subprocess.run([str(cli), *map(str, args)], cwd=repo, capture_output=True, text=True)
+    (case / (name + '.stdout.json')).write_text(result.stdout)
+    (case / (name + '.stderr.log')).write_text(result.stderr)
+    if result.returncode:
+        raise RuntimeError(f'{name}: {result.returncode}: {result.stderr}')
+    return json.loads(result.stdout)
+
+cases = []
+for direction, probe in [('from_left', 'after'), ('from_right', 'before')]:
+    case = root / direction
+    case.mkdir()
+    package = root / (direction.replace('_', '-') + '.deadpan')
+    original = Path('/tmp/deadpan-resume-20261006/extension-probe/run-1') / probe / 'context/video.mp4'
+    if not package.exists():
+        run(case, 'create', 'project', 'create', package, '--fps', '30/1', '--size', '768x320')
+    empty = run(case, 'empty', 'project', 'dump', package, '--json')
+    assert len(empty['nodes']) == 1 and not empty['assets']
+    retained = run(case, 'retained', 'project', 'retain-original', package, original)
+    registration = {
+        'protocol': 1,
+        'registration': {
+            'expected_revision': empty['revision_id'], 'new_revision': 'registered',
+            'original': retained['retained_original']['record']['object']['content'],
+            'new_asset_id': 'original', 'label': 'Synthetic moving-square temporal fixture',
+            'insertion': {'parent': empty['root'], 'index': 0, 'node': 'source', 'label': 'Original', 'purpose': 'primary'},
+        },
+        'streams': {'type': 'video_only'},
+    }
+    save(case / 'registration.json', registration)
+    run(case, 'registered', 'project', 'register-source', package, '--request-json', case / 'registration.json')
+    document = run(case, 'source-document', 'project', 'dump', package, '--json')
+    assert document['presentation_basis']['frame_rate'] == {'numerator':30, 'denominator':1}
+    command = {
+        'protocol':1, 'project_id':document['project_id'], 'expected_revision':'registered', 'new_revision':'one-second-hold',
+        'command': {'command':'insert', 'parent':document['root'], 'index':int(direction == 'from_left'),
+            'subtree': {'root':'extension', 'nodes': {'extension': {'label':'One-second Extension probe',
+                'kind': {'type':'hold', 'recipe': {'duration':30,
+                    'video': {'type':'freeze', 'asset':'original', 'timestamp': {'ticks':8 if direction == 'from_left' else 0, 'time_base':{'numerator':1,'denominator':24}}},
+                    'audio': {'type':'silence'}}}}}, 'overrides':{}, 'gap_overrides':{}}},
+    }
+    save(case / 'insert-hold.json', command)
+    run(case, 'hold-commit', 'command', package, '--json', case / 'insert-hold.json')
+    document = run(case, 'document', 'project', 'dump', package, '--json')
+    target = {'node':'extension', 'repeats':[]}
+    save(case / 'target.json', target)
+    plan = {'schema_version':1, 'operation':'extension', 'sampling': {
+        'schema_version':1, 'direction':direction, 'project_rate':{'numerator':30,'denominator':1},
+        'native_rate':{'numerator':24,'denominator':1}, 'context_frame_count':9, 'generated_frame_count':24,
+        'output_frame_count':30, 'interpolation':'encoded_srgb_rgb8_linear_half_up', 'policy':'frame_centers_clamped'},
+        'native_dimensions':{'width':768,'height':320}}
+    save(case / 'plan.json', plan)
+    provider = {'pack_id':'ltx-2.3-q4-extension-development','pack_version':'1','runtime_id':'ltx-mlx',
+                'runtime_version':'0.15.8+deadpan-extension-dev2','seed':42107}
+    selected = {'schema_version':1,'operation':'extension','selection':provider,
+        'native_frame_rate':{'numerator':24,'denominator':1},'context_frame_count':9,
+        'generated_frame_counts':{'step':8,'offset':0,'minimum':24,'maximum':24},
+        'width':{'minimum':768,'maximum':768,'multiple':64}, 'height':{'minimum':320,'maximum':320,'multiple':64},
+        'maximum_output_frames':30}
+    save(case / 'selected-provider.json', selected)
+    cases.append({'direction':direction,'package':str(package),'revision':document['revision_id'],
+        'project_id':document['project_id'],'target':target,'original':str(original),
+        'original_sha256':hashlib.file_digest(original.open('rb'),'sha256').hexdigest()})
+save(root / 'projects.json', cases)
+print(json.dumps(cases, indent=2))

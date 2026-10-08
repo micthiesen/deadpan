@@ -1,0 +1,69 @@
+{
+  "base_revision": "87cca82f2f023d47a14882fc5c9de4ff1735c6d7",
+  "files": {
+    "crates/deadpan-app/src/project/tests/generation.rs": {
+      "bytes": 116112,
+      "sha256": "5b51e846abcf4a14ab893978ae3e8a6ed7cb830d5ffd973bc62548d34e818e64"
+    },
+    "crates/deadpan-cli/examples/prepare_extension_context.rs": {
+      "bytes": 6912,
+      "sha256": "6b5e7347fa51c58da2440457cd78357437de1e7cbdbc637178a49d266eb69b7b"
+    },
+    "crates/deadpan-cli/src/generation/conditioning.rs": {
+      "bytes": 40883,
+      "sha256": "b846097fa3098694f77b615dfe316adcc577617322a9962f12cb0d2c6803cf32"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension.rs": {
+      "bytes": 18505,
+      "sha256": "e9f028cba003792540030b1cc8f61fa7b9162d9dc3d3699447df042c49fbaa4a"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension_tests.rs": {
+      "bytes": 25875,
+      "sha256": "b98389f8e15c1dfdbca6115657c191513a3d1f5a15be756a11d7ddeeebcccd32"
+    },
+    "crates/deadpan-cli/src/picture/tests/extension/retention.rs": {
+      "bytes": 6596,
+      "sha256": "a4c961fb81fd0707f674845019188ae4f8e36ed57fc6c2f074aaa23ec3556cac"
+    },
+    "crates/deadpan-models/src/packs.rs": {
+      "bytes": 54612,
+      "sha256": "df738ffa3c1f59840319779d4fdb7fd331f0a46421ce0d0fcc263f3e6ae7c325"
+    },
+    "crates/deadpan-models/src/packs/constraints.rs": {
+      "bytes": 7696,
+      "sha256": "af44e7934094bf2ea63a1e5905c34368e18913605c4478d3cb6f5a3fdbe2c765"
+    },
+    "crates/deadpan-models/src/packs/constraints/extension.rs": {
+      "bytes": 6120,
+      "sha256": "973de3a77b91854f40e4b6f7a9de7a1e5cf1b6842adc8d32b3000b0bd5ee3345"
+    },
+    "crates/deadpan-models/src/packs/constraints/extension_tests.rs": {
+      "bytes": 10059,
+      "sha256": "bc87d8415954fdf45d5b6c5706b82797b0f5c6fc12e67eac1050a10e97f13fc0"
+    },
+    "crates/deadpan-models/src/packs/updates.rs": {
+      "bytes": 36314,
+      "sha256": "15ec494530e7a6571e1ac141d382f5a03123611aaca40620a21e245830d5f3a2"
+    },
+    "crates/deadpan-models/src/packs/updates/extension_tests.rs": {
+      "bytes": 2448,
+      "sha256": "1b0ee50332f17b075c75ca4fe9fca96d9b800026c45c837d55a6d33ef9190439"
+    },
+    "tools/model-qualification/mlx_backend.py": {
+      "bytes": 40607,
+      "sha256": "35dce22d03a6ffb12a2c3142c16d22e910670e9fad3ccdb084d86d9f44580b1f"
+    },
+    "tools/model-qualification/tests/test_extension_worker.py": {
+      "bytes": 46080,
+      "sha256": "ea56ea10b7fd10b795a05a564a04ce1ce27cd919e1f8d9b1b3e4f94cd9f2f45e"
+    },
+    "tools/model-qualification/worker.py": {
+      "bytes": 31929,
+      "sha256": "48d1feb2da6d9c668f774a2bbfaeb29cdf150fe29cf1512a5eff5b6c1b925f6c"
+    },
+    "tools/model-qualification/worker_media.py": {
+      "bytes": 15228,
+      "sha256": "dbfa0711e074a614b8ba9c68597c36ba2b2414565bb117dfc506feaa5116866a"
+    }
+  }
+}

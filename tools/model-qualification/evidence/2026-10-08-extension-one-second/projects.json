@@ -1,0 +1,26 @@
+[
+  {
+    "direction": "from_left",
+    "package": "/tmp/deadpan-extension-longer-20261008/from-left.deadpan",
+    "revision": "one-second-hold",
+    "project_id": "6b4768c4-6d9e-41bb-8c7d-ce54ee11af13",
+    "target": {
+      "node": "extension",
+      "repeats": []
+    },
+    "original": "/tmp/deadpan-resume-20261006/extension-probe/run-1/after/context/video.mp4",
+    "original_sha256": "56b3e7c2372c5ae0975d20d68bbf937ef0474a455168780d1cc5542db507ea5f"
+  },
+  {
+    "direction": "from_right",
+    "package": "/tmp/deadpan-extension-longer-20261008/from-right.deadpan",
+    "revision": "one-second-hold",
+    "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+    "target": {
+      "node": "extension",
+      "repeats": []
+    },
+    "original": "/tmp/deadpan-resume-20261006/extension-probe/run-1/before/context/video.mp4",
+    "original_sha256": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45"
+  }
+]

@@ -1,0 +1,336 @@
+{
+  "purpose": "Pinned non-streaming keyframe qualification; not a selected shipping pack",
+  "runtime_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "total_bytes": 36152862913,
+  "assets": [
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "LICENSE",
+      "size": 21399,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",
+      "sha256": "e28ef68d90e17b06308e4c5cba5c9a967b70c3d67f87ddc3dfc46a312cb6a134",
+      "git_blob": "42025e9a12c1da3c5dd5a88bb889c0aa012f3268",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "README.md",
+      "size": 2977,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/README.md",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/README.md",
+      "sha256": "49923121175ee30549d92fac8a340e6777923262e8aa7110291a538cbe79cc20",
+      "git_blob": "5e95c8bcc9769c3531e9e088e9203e1589961269",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "audio_vae.safetensors",
+      "size": 106509048,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/audio_vae.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/audio_vae.safetensors",
+      "sha256": "442119db8eaf976f83a105cc8c5f2c930e0f625062f9776b10adcdb7bc96c416",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "config.json",
+      "size": 951,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/config.json",
+      "sha256": "2dd64d4f8b7a385b0471a23a6e2069e4bc0f9d9903fc289347b2e4cac3c776ec",
+      "git_blob": "9d926f4e17502b5ceacac6e7069231f8d616b14c",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "connector.safetensors",
+      "size": 6344495512,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/connector.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/connector.safetensors",
+      "sha256": "5885c2bd7af4e761b3257cf5b17bc1fdb2d187cea3ca520ea723b6a129b7029f",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "embedded_config.json",
+      "size": 7234,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/embedded_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/embedded_config.json",
+      "sha256": "c09755357e21d2b2eb15ea2b5c3c11f1e6b44c514ebb6d8babeee30e86f7bd14",
+      "git_blob": "20f47c4ac3af471e3623d13fb2cb5b45b97ecfa4",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "ltx-2.3-22b-distilled-lora-384.safetensors",
+      "size": 7605507256,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/ltx-2.3-22b-distilled-lora-384.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/ltx-2.3-22b-distilled-lora-384.safetensors",
+      "sha256": "2943ab994f3c9d88052e5a2a34cca14e4a2dfc36b1d8c407931d52d5c25dd72b",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "quantize_config.json",
+      "size": 100,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/quantize_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/quantize_config.json",
+      "sha256": "473aec38f34570fe7379d337e00fa191240cd9578da17df1f55df247b735012f",
+      "git_blob": "53bf35f5277aa3393248453b8343083a2f86aee5",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "spatial_upscaler_x1_5_v1_0_config.json",
+      "size": 274,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x1_5_v1_0_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x1_5_v1_0_config.json",
+      "sha256": "33c2b52052d36d8d3bbeea4f1a41b2140cc0ad1605faef5ac277cc1a4d73ecb3",
+      "git_blob": "2d0db42eaa4c168007aea3c277dc1a7aa4c02e84",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "spatial_upscaler_x2_v1_1.safetensors",
+      "size": 995745061,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1.safetensors",
+      "sha256": "755f69dcb8a3f9589045925eb4a2237e9969f9c026a016393bc395e65ebd5788",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "spatial_upscaler_x2_v1_1_config.json",
+      "size": 275,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1_config.json",
+      "sha256": "c0646d97bf1bc3fa6e66ec7d17f16ef31b717e64bf86474b7dc3993b6c42346a",
+      "git_blob": "b36a7304dd0e3cbc4afc3bad766ab5a897759238",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "split_model.json",
+      "size": 1835,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/split_model.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/split_model.json",
+      "sha256": "bb72acf615558c11578b677ede6b530481c3e09db0d36515239dd8c95704ea04",
+      "git_blob": "bfbf540062eb52dcddf69b82ed609710e15c4e3e",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "temporal_upscaler_x2_v1_0_config.json",
+      "size": 273,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/temporal_upscaler_x2_v1_0_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/temporal_upscaler_x2_v1_0_config.json",
+      "sha256": "f890af9e95cde921d6e2eb6c334742a81c53c25c3fdc817b4b363622e2c08f3f",
+      "git_blob": "0412cb37d391e613ac44897ce35c562745481ae0",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "transformer-dev.safetensors",
+      "size": 11322002285,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/transformer-dev.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/transformer-dev.safetensors",
+      "sha256": "c9d9def8657cca30ac6736b8b44503cfbc7984a8447dca1c0fc911aa312421fb",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "vae_decoder.safetensors",
+      "size": 814349531,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vae_decoder.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_decoder.safetensors",
+      "sha256": "f404026fe0b59418eaec4a3fcdc474125c798f0b787dc390f6eb4e79934d4160",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "vae_encoder.safetensors",
+      "size": 637885319,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vae_encoder.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_encoder.safetensors",
+      "sha256": "1512f5ef8387901db0baecb328690676e2667ddf2b63e28f8e6645188c1a8c06",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "dgrauet/ltx-2.3-mlx-q4",
+      "revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+      "path": "vocoder.safetensors",
+      "size": 258313851,
+      "url": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/vocoder.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vocoder.safetensors",
+      "sha256": "410cee86c14f76956bf487d153211ef15050fe8bf51f86d47a1d27ca6e3ba287",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "README.md",
+      "size": 945,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/README.md",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/README.md",
+      "sha256": "e6cbf9a42bcd91e2ca8299ba0c509b3b4df5d565b59866ccca79c2f3cbe6a6a0",
+      "git_blob": "c7c3bbce3f2ef2adb55b1d950fcc9d68d8e90542",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "added_tokens.json",
+      "size": 35,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/added_tokens.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/added_tokens.json",
+      "sha256": "50b2f405ba56a26d4913fd772089992252d7f942123cc0a034d96424221ba946",
+      "git_blob": "e17bde03d42feda32d1abfca6d3b598b9a020df7",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "chat_template.json",
+      "size": 1615,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/chat_template.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/chat_template.json",
+      "sha256": "fe16baf728db49457cde32802cd7efc0ac8a7a9877dbe22fe3322b2d9dc6ccd9",
+      "git_blob": "719b0cd0d7a373a400b0c119ee0e051f41ea88d9",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "config.json",
+      "size": 1141,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/config.json",
+      "sha256": "73ed96a3f1d596fcf3c07f17ed7e4358fd99be688c97da45f2464fd48dd069ed",
+      "git_blob": "265a24198dc17dda6aae03afd99ad21d68e9c87a",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "generation_config.json",
+      "size": 192,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/generation_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/generation_config.json",
+      "sha256": "e04ecb65db447404710114fb282baaac482d22a95e2244ecaab428b81672ba78",
+      "git_blob": "f60a6730afb98517298b478873c3e7a250442fcc",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "model-00001-of-00002.safetensors",
+      "size": 5367455313,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00001-of-00002.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00001-of-00002.safetensors",
+      "sha256": "995cbd05b7bfd8f5ab5307b476eb5496b5ec3f5256a9dd26366236ce8816c93f",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "model-00002-of-00002.safetensors",
+      "size": 2661219935,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00002-of-00002.safetensors",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00002-of-00002.safetensors",
+      "sha256": "8b7af7eb5ff32109fc65cbcd0af5b8016ac0de46df17f40705f043f899495333",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "model.safetensors.index.json",
+      "size": 108605,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model.safetensors.index.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model.safetensors.index.json",
+      "sha256": "788cc42a1a92835df62d9a3791f47105f63504c7c404637a73288e9b11bc7b82",
+      "git_blob": "c5eb054c21efb5496f4623aeb619a750c9ed9357",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "preprocessor_config.json",
+      "size": 570,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/preprocessor_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/preprocessor_config.json",
+      "sha256": "f688d6bb20c5017601c4011de7ca656da8485b540b05013efdaf986c0fcc918d",
+      "git_blob": "b1e00fc184f61b698181821169c6374cd5813e5c",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "processor_config.json",
+      "size": 70,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/processor_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/processor_config.json",
+      "sha256": "3ffd5f11778dc73e2b69b3c00535e4121e1badf7018136263cd17b5b34fbaa53",
+      "git_blob": "453c7966d4b5d0b4a317c585989f64c58c2a6bf0",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "special_tokens_map.json",
+      "size": 662,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/special_tokens_map.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/special_tokens_map.json",
+      "sha256": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+      "git_blob": "1a6193244714d3d78be48666cb02cdbfac62ad86",
+      "status": "metadata_verified"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "tokenizer.json",
+      "size": 33384568,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.json",
+      "sha256": "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "tokenizer.model",
+      "size": 4689074,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.model",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.model",
+      "sha256": "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+      "status": "not_downloaded"
+    },
+    {
+      "repository": "mlx-community/gemma-3-12b-it-4bit",
+      "revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+      "path": "tokenizer_config.json",
+      "size": 1157007,
+      "url": "https://huggingface.co/mlx-community/gemma-3-12b-it-4bit/resolve/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer_config.json",
+      "destination": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer_config.json",
+      "sha256": "0d95398b39395e5cfb290683a78f3fb0551223c672d8b033333c1a5307473760",
+      "git_blob": "c4748060f36c42626828bf029e03a47beebbd65e",
+      "status": "metadata_verified"
+    }
+  ]
+}

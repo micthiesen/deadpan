@@ -123,6 +123,9 @@ pub enum Operation {
     SpeechActivity,
     /// Generated pictures between two boundary frames (an AI pause).
     BridgeHold,
+    /// Generated pictures continuing one chronological temporal context, with
+    /// both FromLeft and FromRight supported by the selected runtime.
+    ExtensionHold,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

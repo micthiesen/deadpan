@@ -63,6 +63,16 @@ fn fixture(
 ) -> (ExtensionGenerationPlan, HoldConstraints, PreparedExtension) {
     let duration = FrameDuration::new(3).unwrap();
     let plan = development_plan(direction, duration, rate).unwrap();
+    fixture_for_plan(plan, opposite)
+}
+
+fn fixture_for_plan(
+    plan: ExtensionGenerationPlan,
+    opposite: bool,
+) -> (ExtensionGenerationPlan, HoldConstraints, PreparedExtension) {
+    let direction = plan.direction();
+    let rate = plan.project_frame_rate();
+    let duration = plan.project_frames();
     let step = ExactRatio::new(
         i128::from(rate.numerator()),
         i128::from(rate.denominator()) * 24,
@@ -72,7 +82,7 @@ fn fixture(
     let context = (0..9)
         .map(|index| {
             prepared(
-                ExactRatio::integer(20)
+                ExactRatio::integer(100)
                     .checked_add(step.checked_mul(ExactRatio::integer(index)).unwrap())
                     .unwrap(),
                 100 + index,
@@ -90,12 +100,12 @@ fn fixture(
     let opposite = opposite.then(|| {
         prepared(
             match direction {
-                ExtensionDirection::FromLeft => {
-                    position.checked_add(ExactRatio::integer(4)).unwrap()
-                }
-                ExtensionDirection::FromRight => {
-                    position.checked_sub(ExactRatio::integer(4)).unwrap()
-                }
+                ExtensionDirection::FromLeft => position
+                    .checked_add(ExactRatio::integer(duration.frames() + 1))
+                    .unwrap(),
+                ExtensionDirection::FromRight => position
+                    .checked_sub(ExactRatio::integer(duration.frames() + 1))
+                    .unwrap(),
             },
             120,
             region,
@@ -200,6 +210,23 @@ fn control(cancelled: &AtomicBool) -> CaptureControl<'_> {
     }
 }
 
+fn assemble_development(
+    plan: &ExtensionGenerationPlan,
+    constraints: &HoldConstraints,
+    prepared: PreparedExtension,
+    target: Option<(&TargetId, &AttentionTarget)>,
+    control: &CaptureControl<'_>,
+) -> Result<AssembledExtension, String> {
+    assemble_captured(
+        plan,
+        &development_capability(plan.project_frame_rate())?,
+        constraints,
+        prepared,
+        target,
+        control,
+    )
+}
+
 #[test]
 fn development_envelope_is_exact_at_integer_and_fractional_rates() {
     for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
@@ -272,6 +299,199 @@ fn development_project_rate_matches_worker_envelope_without_rounding() {
     }
 }
 
+fn one_second_capability() -> ExtensionCapability {
+    ExtensionCapability::new(
+        native_rate(),
+        9,
+        FrameCountFormula::new(8, 0, 24, 24).unwrap(),
+        DimensionLimits::new(
+            AxisLimits::new(NATIVE_WIDTH, NATIVE_WIDTH, 64).unwrap(),
+            AxisLimits::new(NATIVE_HEIGHT, NATIVE_HEIGHT, 64).unwrap(),
+        ),
+        FrameDuration::new(30).unwrap(),
+    )
+    .unwrap()
+}
+
+fn selected_provider(capability: ExtensionCapability) -> SelectedExtensionProvider {
+    SelectedExtensionProvider::new(
+        deadpan_jobs::ProviderSelection {
+            pack_id: deadpan_jobs::ProviderPackId::new("development-extension-probe").unwrap(),
+            pack_version: deadpan_jobs::ProviderPackVersion::new("1").unwrap(),
+            runtime_id: deadpan_jobs::RuntimeId::new("development-extension-runtime").unwrap(),
+            runtime_version: deadpan_jobs::RuntimeVersion::new("1").unwrap(),
+            seed: 42,
+        },
+        capability,
+    )
+}
+
+#[test]
+fn selected_one_second_plan_preserves_e24_inputs_and_authored_duration() {
+    let cancelled = AtomicBool::new(false);
+    let capability = one_second_capability();
+    for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
+        let plan = ExtensionGenerationPlan::new(
+            direction,
+            FrameDuration::new(30).unwrap(),
+            FrameRate::new(30, 1).unwrap(),
+            &capability,
+            native_dimensions(),
+        )
+        .unwrap();
+        let selection = CapturePlan::Selected {
+            plan: &plan,
+            capability: &capability,
+        };
+        selection.validate().unwrap();
+        assert_eq!(selection.native_rate(), native_rate());
+        assert_eq!(selection.context_frames(), 9);
+        assert_eq!(
+            selection
+                .resolve(plan.project_frames(), plan.project_frame_rate())
+                .unwrap()
+                .0,
+            plan
+        );
+        let (plan, constraints, prepared) = fixture_for_plan(plan, false);
+        let result = assemble_captured(
+            &plan,
+            &capability,
+            &constraints,
+            prepared,
+            None,
+            &control(&cancelled),
+        )
+        .unwrap();
+        let manifest: ExtensionContext = serde_json::from_slice(&result.manifest).unwrap();
+        assert_eq!(manifest.plan(), &plan);
+        assert_eq!(manifest.plan().generated_frame_count(), 24);
+        assert_eq!(manifest.plan().native_frame_count(), 33);
+        assert_eq!(manifest.plan().project_frames().frames(), 30);
+        assert_eq!(manifest.plan().requested_duration(), ExactRatio::ONE);
+        assert_eq!(manifest.plan().generated_duration(), ExactRatio::ONE);
+        assert_eq!(result.context_pngs.len(), 9);
+        assert!(result.opposite_png.is_none());
+        assert_eq!(manifest.continuity().binding().duration.frames(), 30);
+    }
+}
+
+#[test]
+fn selected_capture_refuses_mismatched_provider_plan_or_operation_before_open() {
+    let rate = FrameRate::new(30, 1).unwrap();
+    // A short Hold is legal under either capability, but fixed E8 and E24
+    // sample different native intervals. Never silently choose another count.
+    let plan = ExtensionGenerationPlan::new(
+        ExtensionDirection::FromLeft,
+        FrameDuration::new(3).unwrap(),
+        rate,
+        &one_second_capability(),
+        native_dimensions(),
+    )
+    .unwrap();
+    let target = ScopedNodeTarget {
+        node: NodeId::new("hold").unwrap(),
+        repeats: Vec::new(),
+    };
+    let cancelled = AtomicBool::new(false);
+    let wrong_provider = selected_provider(development_capability(rate).unwrap());
+    let error = prepare_extension_scoped_with_provider(
+        Path::new("/does-not-exist.deadpan"),
+        &RevisionId::new("revision").unwrap(),
+        &target,
+        &plan,
+        &wrong_provider,
+        &GenerationOptions::default(),
+        &cancelled,
+    )
+    .unwrap_err();
+    assert!(
+        error.contains("does not match the selected capability"),
+        "{error}"
+    );
+    let options = GenerationOptions {
+        mode: ConditioningMode::Bridge.into(),
+        ..GenerationOptions::default()
+    };
+    let error = prepare_extension_scoped_with_provider(
+        Path::new("/does-not-exist.deadpan"),
+        &RevisionId::new("revision").unwrap(),
+        &target,
+        &plan,
+        &selected_provider(one_second_capability()),
+        &options,
+        &cancelled,
+    )
+    .unwrap_err();
+    assert!(error.contains("conditioning"), "{error}");
+}
+
+#[test]
+fn selected_capture_refuses_changed_hold_rate_and_unbounded_or_different_raster() {
+    let capability = one_second_capability();
+    let duration = FrameDuration::new(30).unwrap();
+    let rate = FrameRate::new(30, 1).unwrap();
+    let plan = ExtensionGenerationPlan::new(
+        ExtensionDirection::FromLeft,
+        duration,
+        rate,
+        &capability,
+        native_dimensions(),
+    )
+    .unwrap();
+    let selection = CapturePlan::Selected {
+        plan: &plan,
+        capability: &capability,
+    };
+    for (frames, changed_rate) in [
+        (FrameDuration::new(29).unwrap(), rate),
+        (duration, FrameRate::new(30_000, 1001).unwrap()),
+    ] {
+        assert!(
+            selection
+                .resolve(frames, changed_rate)
+                .unwrap_err()
+                .contains("saved Hold duration or project rate")
+        );
+    }
+    assert!(
+        ExtensionGenerationPlan::new(
+            plan.direction(),
+            FrameDuration::new(31).unwrap(),
+            rate,
+            &capability,
+            native_dimensions()
+        )
+        .is_err()
+    );
+    for (context_count, width) in [(65, NATIVE_WIDTH), (9, 512)] {
+        let capability = ExtensionCapability::new(
+            native_rate(),
+            context_count,
+            FrameCountFormula::new(8, 0, 24, 24).unwrap(),
+            DimensionLimits::new(
+                AxisLimits::new(width, width, 64).unwrap(),
+                AxisLimits::new(NATIVE_HEIGHT, NATIVE_HEIGHT, 64).unwrap(),
+            ),
+            duration,
+        )
+        .unwrap();
+        let plan = ExtensionGenerationPlan::new(
+            plan.direction(),
+            duration,
+            rate,
+            &capability,
+            deadpan_jobs::NativeDimensions::new(width, NATIVE_HEIGHT).unwrap(),
+        )
+        .unwrap();
+        assert!(
+            validate_capture_plan(&plan, &capability)
+                .unwrap_err()
+                .contains("768×320")
+        );
+    }
+}
+
 #[test]
 fn assembly_preserves_chronological_pngs_definition_clocks_geometry_and_absence() {
     let cancelled = AtomicBool::new(false);
@@ -290,7 +510,7 @@ fn assembly_preserves_chronological_pngs_definition_clocks_geometry_and_absence(
                 let presentation = prepared.presentation;
                 let content = prepared.context[0].content_rect.unwrap();
                 let result =
-                    assemble_captured(&plan, &constraints, prepared, None, &control(&cancelled))
+                    assemble_development(&plan, &constraints, prepared, None, &control(&cancelled))
                         .unwrap();
                 let manifest: ExtensionContext = serde_json::from_slice(&result.manifest).unwrap();
                 assert_eq!(manifest.plan(), &plan);
@@ -370,7 +590,7 @@ fn selected_region_uses_direction_anchor_and_preserves_captured_controls() {
         };
         options.apply_to(&mut constraints);
         let before = constraints.clone();
-        let result = assemble_captured(
+        let result = assemble_development(
             &plan,
             &constraints,
             prepared,
@@ -440,7 +660,8 @@ fn assembly_rejects_wrong_scope_order_opposite_clock_and_controls() {
             _ => unreachable!(),
         }
         assert!(
-            assemble_captured(&plan, &constraints, prepared, None, &control(&cancelled)).is_err(),
+            assemble_development(&plan, &constraints, prepared, None, &control(&cancelled))
+                .is_err(),
             "{defect}"
         );
     }
@@ -462,7 +683,7 @@ fn aggregate_png_limit_includes_opposite_and_cancellation_deadline_win_before_op
     prepared.opposite.as_mut().unwrap().png =
         vec![0; usize::try_from(MAXIMUM_EXTENSION_INPUT_BYTES).unwrap() - existing + 1];
     assert!(
-        assemble_captured(&plan, &constraints, prepared, None, &control(&cancelled))
+        assemble_development(&plan, &constraints, prepared, None, &control(&cancelled))
             .err()
             .unwrap()
             .contains("aggregate 16 MiB")

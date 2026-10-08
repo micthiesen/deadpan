@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "operation": "extension",
+  "sampling": {
+    "schema_version": 1,
+    "direction": "from_right",
+    "project_rate": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "native_rate": {
+      "numerator": 24,
+      "denominator": 1
+    },
+    "context_frame_count": 9,
+    "generated_frame_count": 24,
+    "output_frame_count": 30,
+    "interpolation": "encoded_srgb_rgb8_linear_half_up",
+    "policy": "frame_centers_clamped"
+  },
+  "native_dimensions": {
+    "width": 768,
+    "height": 320
+  }
+}

@@ -1,0 +1,59 @@
+"""Independent integer pixel oracle; never imports the production sampler."""
+from fractions import Fraction
+from pathlib import Path
+import hashlib, json, subprocess, sys
+import numpy as np
+
+root = Path(sys.argv[1])
+runtime = json.loads((root / 'runtime.json').read_text())
+ffmpeg = runtime['ffmpeg']
+width, height = 768, 320
+
+def decode(path, count):
+    run = subprocess.run([ffmpeg, '-v', 'error', '-nostdin', '-i', str(path), '-map', '0:v:0',
+        '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], capture_output=True, timeout=60, check=True)
+    assert len(run.stdout) == count * width * height * 3
+    return np.frombuffer(run.stdout, dtype=np.uint8).reshape(count, height, width, 3)
+
+for direction in ['from_left', 'from_right']:
+    case = root / direction
+    plan = json.loads((case / 'plan.json').read_text())['sampling']
+    k, e, n = [plan[key] for key in ('context_frame_count','generated_frame_count','output_frame_count')]
+    host = json.loads((case / 'host/host-report.json').read_text())
+    assert host['clean_exit'] and host['hash_verified_extension_bundle'] and not host['accepted']
+    native = decode(case / 'host/native.snapshot.mp4', k + e)
+    canonical = decode(case / 'media/native.mkv', k + e)
+    sampled = decode(case / 'media/sampled.mkv', n)
+    worker_sampled = decode(case / 'workspace/outputs/candidate.mp4', n)
+    assert np.array_equal(native, canonical)
+    start = k if direction == 'from_left' else 0
+    expected, positions = [], []
+    for j in range(n):
+        position = start + min(max(Fraction((2*j+1)*e-n, 2*n), 0), e-1)
+        lower = position.numerator // position.denominator
+        upper = -(-position.numerator // position.denominator)
+        assert start <= lower <= upper < start + e
+        weight = position - lower
+        a, b = weight.numerator, weight.denominator
+        numerator = (b-a)*native[lower].astype(np.uint32) + a*native[upper].astype(np.uint32)
+        expected.append(((2*numerator+b)//(2*b)).astype(np.uint8))
+        positions.append({'numerator':position.numerator,'denominator':position.denominator,'lower':lower,'upper':upper})
+    expected = np.stack(expected)
+    assert np.array_equal(sampled, expected)
+    assert np.array_equal(worker_sampled, expected)
+    for path in (case / 'workspace/inputs').iterdir():
+        assert path.read_bytes() == (case / 'retained/inputs' / path.name).read_bytes()
+    provenance = json.loads((case / 'host/provenance.snapshot.json').read_text())
+    preservation = provenance['source_latent_preservation']
+    assert preservation == {'exact':True, 'context_latent_start':0 if direction == 'from_left' else 3,
+        'source_shape':[1,128,2,10,24], 'native_shape':[1,128,5,10,24]}
+    report = {'direction':direction,'native_frames':k+e,'generated_frames':e,'output_frames':n,
+        'exact_pixel_comparisons':int(expected.size*2+native.size),'context_fetches':0,
+        'native_matches_canonical':True,'worker_and_host_match_independent_oracle':True,
+        'retained_inputs_unchanged':True,'source_latent_preservation':preservation,'positions':positions,
+        'native_rgb_sha256':hashlib.sha256(native.tobytes()).hexdigest(),
+        'sampled_rgb_sha256':hashlib.sha256(sampled.tobytes()).hexdigest()}
+    with (case / 'oracle.json').open('x') as output:
+        json.dump(report,output,indent=2)
+        output.write('\n')
+    print(json.dumps({key:value for key,value in report.items() if key != 'positions'}),flush=True)

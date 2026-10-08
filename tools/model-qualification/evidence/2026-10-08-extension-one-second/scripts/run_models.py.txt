@@ -1,0 +1,50 @@
+from pathlib import Path
+import hashlib, json, os, subprocess, time
+
+repo = Path('/Users/michael/Code/deadpan')
+root = Path('/tmp/deadpan-extension-longer-20261008')
+env = dict(os.environ, DEADPAN_FFMPEG_PREFIX='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix')
+results=[]
+def save(path,value):
+    with path.open('x') as output:
+        json.dump(value,output,indent=2)
+        output.write('\n')
+def run(name, args):
+    start=time.monotonic()
+    with (root/(name+'.log')).open('x') as output:
+        process=subprocess.run(list(map(str,args)),cwd=repo,env=env,stdout=output,stderr=subprocess.STDOUT)
+    result={'name':name,'command':list(map(str,args)),'exit_code':process.returncode,'seconds':time.monotonic()-start}
+    results.append(result)
+    (root/'run-results.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(result),flush=True)
+    if process.returncode:
+        print((root/(name+'.log')).read_text()[-6000:],flush=True)
+    return process.returncode == 0
+
+binaries=['target/debug/examples/prepare_extension_context','target/debug/examples/qualify_model_worker',
+    'target/debug/examples/retain_extension_conditioning','target/debug/examples/qualify_extension_media',
+    'target/debug/deadpan-media-worker','target/debug/deadpan-track','target/debug/deadpan-cli']
+save(root/'executed-binaries.json',{name:{'bytes':(repo/name).stat().st_size,
+    'sha256':hashlib.file_digest((repo/name).open('rb'),'sha256').hexdigest()} for name in binaries})
+for direction in ['from_left','from_right']:
+    case=root/direction
+    if not run(direction+'-retain',[repo/'target/debug/examples/retain_extension_conditioning',case/'retain-config.json']):
+        continue
+    if not run(direction+'-model',[repo/'target/debug/examples/qualify_model_worker',case/'host.json']):
+        continue
+    host=json.loads((case/'host/host-report.json').read_text())
+    assert host['hash_verified_extension_bundle'] and host['clean_exit'] and not host['accepted']
+    retained=json.loads((case/'retained/retention-report.json').read_text())
+    config={'codec':str(repo/'target/debug/deadpan-media-worker'),'tracker':str(repo/'target/debug/deadpan-track'),
+        'workspace':str(case/'workspace'),'request':json.loads((case/'request.json').read_text()),
+        'candidate':host['extension_bundle'],'selected_provider':json.loads((case/'selected-provider.json').read_text()),
+        'output_directory':str(case/'media'),
+        'limits':{'media':{'max_input_bytes':64*1024**2,'max_output_bytes':128*1024**2,'max_scratch_bytes':64*1024**2,'timeout_ms':120000},
+            'maximum_worker_provenance_bytes':4*1024**2,'maximum_host_provenance_bytes':32*1024**2},
+        'retained_inputs':{'directory':str(case/'retained'),'receipt':retained['conditioning'],'input_scope':'inputs',
+            'limits':{'maximum_manifest_bytes':1024**2,'maximum_frame_bytes':16*1024**2,'timeout_ms':30000}}}
+    save(case/'media-config.json',config)
+    run(direction+'-media',[repo/'target/debug/examples/qualify_extension_media',case/'media-config.json'])
+if all((root/direction/'media/report.json').exists() for direction in ['from_left','from_right']):
+    run('independent-oracle',[root/'python-offline','-B',root/'oracle.py',root])
+raise SystemExit(0 if len(results)==7 and all(result['exit_code']==0 for result in results) else 1)

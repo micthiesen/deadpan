@@ -75,7 +75,15 @@ fn real_extension_evidence_survives_retention_and_matches_the_python_reader() ->
             },
             output_workspace: WorkspaceRef::new("outputs")?,
             constraints: inputs.constraints.clone(),
-            provider: Box::new(crate::generation::development_provider(1)),
+            provider: Box::new(deadpan_jobs::ProviderSelection {
+                pack_id: deadpan_jobs::ProviderPackId::new("ltx-2.3-q4-extension-development")?,
+                pack_version: deadpan_jobs::ProviderPackVersion::new("1")?,
+                runtime_id: deadpan_jobs::RuntimeId::new("ltx-mlx")?,
+                runtime_version: deadpan_jobs::RuntimeVersion::new(
+                    "0.15.8+deadpan-extension-dev1",
+                )?,
+                seed: 1,
+            }),
             plan: Box::new(inputs.plan.clone()),
         };
         fs::write(

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "python-tests",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/model-qualification/tests"
+    ],
+    "exit_code": 0,
+    "seconds": 0.33091537514701486
+  },
+  {
+    "name": "gate",
+    "command": [
+      "cargo",
+      "xtask",
+      "gate"
+    ],
+    "exit_code": 1,
+    "seconds": 901.7401529173367
+  }
+]

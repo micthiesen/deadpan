@@ -41,6 +41,17 @@ contradictory constraints, and unknown fields refuse admission; schema-2/3 devel
 must be regenerated. Installed baseline weights and their receipts need no
 rewrite because their file identities have not changed.
 
+Schema 4 can separately declare `extension_hold` with chronological video
+conditioning and an `extension` constraint record. The operation promises both
+directions; it does not imply two-boundary Bridge conditioning. Its generated
+frame counts exclude context pictures, and its exact maximum authored duration
+is floored onto the selected project grid before applying the output-frame
+limit. Requests outside either bound fail without changing authored time.
+Extension requires Metal and explicit context, raster, rate, motion and prompt
+limits. Older manifests omit this optional record and retain their canonical
+hashes. The approved catalog still has no Extension pack; this schema does not
+enable generation by itself.
+
 Each license layer (specification §14.4) has an `id`, `title`, SPDX identifier
 or `LicenseRef-…`, attribution, HTTPS link, a plain `terms` summary shown before
 installation, redistribution and access statements, `acceptance_required`, and
@@ -147,7 +158,7 @@ compiled approved version.
 
 The AI pause pack has a narrower compatibility contract. A signed update must
 keep the same LTX-2.3 q4 and Gemma components, file inventory, 4-bit
-configuration, tokenizer, runtime `ltx-mlx` at `0.15.8+deadpan2`, and
+configuration, tokenizer, runtime `ltx-mlx` at `0.15.8+deadpan5`, and
 `bridge_hold` operation. Component revision directories and pack version may
 change. Safetensors hashes and the human-readable license/readme contents may
 change, but weight sizes stay fixed; config, quantization, tensor index,
@@ -158,6 +169,11 @@ checks the same manifest on `--check` and inference and records pack/runtime
 identity and verified file hashes in each generation receipt. A staged update
 is selected only after its runtime smoke test succeeds, and rollback leaves
 both versions installed.
+
+Extension updates have a separate compatibility rule: a compiled Extension
+baseline must exist, and runtime, operation, constraints, resource profile and
+the complete model-file inventory must remain identical. A signed update cannot
+add Extension to a Bridge pack or use Bridge's looser weight-update rules.
 
 The worker also reads each safetensors header within a 2 MiB bound and compares
 its complete tensor names, dtypes, shapes, data offsets, loader metadata and

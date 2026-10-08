@@ -1,0 +1,34 @@
+from pathlib import Path
+import copy, json, shutil, subprocess, time
+
+root=Path('/tmp/deadpan-extension-longer-20261008')
+repo=Path('/Users/michael/Code/deadpan')
+case=root/'cancel-inference'
+case.mkdir()
+workspace=case/'workspace'
+workspace.mkdir()
+shutil.copytree(root/'from_left/retained/inputs',workspace/'inputs')
+(workspace/'outputs').mkdir()
+host=json.loads((root/'from_left/host.json').read_text())
+host['workspace']=str(workspace)
+host['report_directory']=str(case/'host')
+host['request']['identity']={'request_id':'one-second-cancel','attempt_id':'attempt-1'}
+host['request']['cancellation_token']='cancel-one-second-entry'
+host['cancel_at_stage']='inference'
+with (case/'host.json').open('x') as output:
+    json.dump(host,output,indent=2)
+    output.write('\n')
+start=time.monotonic()
+command=[str(repo/'target/debug/examples/qualify_model_worker'),str(case/'host.json')]
+with (case/'run.log').open('x') as output:
+    process=subprocess.run(command,cwd=repo,stdout=output,stderr=subprocess.STDOUT)
+report=json.loads((case/'host/host-report.json').read_text())
+result={'command':command,'exit_code':process.returncode,'seconds':time.monotonic()-start,'report':report}
+with (case/'result.json').open('x') as output:
+    json.dump(result,output,indent=2)
+    output.write('\n')
+assert process.returncode==0,report
+assert report['state']=='Cancelled' and not report['accepted'] and not report.get('extension_bundle'),report
+assert report['clean_exit'] and not report['faults'],report
+assert not list((workspace/'outputs').iterdir())
+print(json.dumps(result),flush=True)

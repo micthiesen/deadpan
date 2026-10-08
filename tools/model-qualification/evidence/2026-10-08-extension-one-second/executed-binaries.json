@@ -1,0 +1,30 @@
+{
+  "target/debug/examples/prepare_extension_context": {
+    "bytes": 89685416,
+    "sha256": "5384f2dae2c41196f3ee6423bfa8a7e10c4530c77046bac003db22a4125eb520"
+  },
+  "target/debug/examples/qualify_model_worker": {
+    "bytes": 5203320,
+    "sha256": "9d7ffe29d87db69a543729b64baa105922d905e7aa4087f929da2534bd61757c"
+  },
+  "target/debug/examples/retain_extension_conditioning": {
+    "bytes": 8900400,
+    "sha256": "4387004c683177b4f221de24067bbf9496e3a304021793184a3b704dffe96827"
+  },
+  "target/debug/examples/qualify_extension_media": {
+    "bytes": 19053816,
+    "sha256": "1bca7e0e0839fd7be652b81bc0f3725e6c45002fd3a7f6b0b3648641a35d2b3e"
+  },
+  "target/debug/deadpan-media-worker": {
+    "bytes": 3218904,
+    "sha256": "2cc9c01dc09af3cb17545c803c2cc4f619d26a423fe7d019d0038d9f763b113c"
+  },
+  "target/debug/deadpan-track": {
+    "bytes": 8361760,
+    "sha256": "0f9abb85d69f8b641a9899295a537305087733ebc11607bf1ea613405f0d44cb"
+  },
+  "target/debug/deadpan-cli": {
+    "bytes": 177892000,
+    "sha256": "cf9cc620d4636ab14ab81818670b5f625b63d733ddb7ce632c63335edb9b416e"
+  }
+}

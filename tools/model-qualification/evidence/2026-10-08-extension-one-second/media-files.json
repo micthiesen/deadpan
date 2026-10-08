@@ -1,0 +1,42 @@
+[
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_left/workspace/outputs/native.mp4",
+    "bytes": 4655602,
+    "sha256": "53efd18616096d4fc924cfd9b591ea38d00c276e257ad909b2bbf3be0f013b3b"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_left/workspace/outputs/candidate.mp4",
+    "bytes": 3362484,
+    "sha256": "dec388f1a2be99ec61f1cb49525df96233ea38b9581a080d479e3eff9fd4ab8f"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_left/media/native.mkv",
+    "bytes": 5015531,
+    "sha256": "ac9b84ac3b02607ffa12df1dbdbc56d52b46498184d62e58d2447c54e917da2c"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_left/media/sampled.mkv",
+    "bytes": 4464939,
+    "sha256": "a6c64b870cecde491e80801dea1515af78973025ce98fc94df669aae31c3367a"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_right/workspace/outputs/native.mp4",
+    "bytes": 4961062,
+    "sha256": "95edde3edc973553b57a2d2769c26120394ff961565c32e1c41932f648b663e7"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_right/workspace/outputs/candidate.mp4",
+    "bytes": 3812323,
+    "sha256": "abda89264c41cd46c927ebeb43768cff4047aa2ec41590899b779409cf96ae97"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_right/media/native.mkv",
+    "bytes": 4947440,
+    "sha256": "7fd98f0712449fa90d191368c8d7f3d142f493c769c5ae6373d27ab5a2d414f4"
+  },
+  {
+    "path": "/tmp/deadpan-extension-longer-20261008/from_right/media/sampled.mkv",
+    "bytes": 4346214,
+    "sha256": "89b2f1f9439cf163ae51f42953874306b0aea1fcab462ae770c1423c952a21e3"
+  }
+]

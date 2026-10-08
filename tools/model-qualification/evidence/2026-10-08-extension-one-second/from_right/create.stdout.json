@@ -1,0 +1,24 @@
+{
+  "basis_state": {
+    "geometry_origin": "explicit",
+    "primary": null,
+    "rate_origin": "explicit"
+  },
+  "duration_frames": 0,
+  "mark_count": 0,
+  "node_count": 1,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1,
+      "numerator": 30
+    },
+    "height": 320,
+    "width": 768
+  },
+  "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+  "protocol": 1,
+  "revision_id": "82f12593-2057-4091-88be-3b1bbdaca3b1",
+  "root": "212d27d3-1da4-468c-8f20-c11f0425e202",
+  "valid": true
+}

@@ -47,7 +47,9 @@ mod continuity;
 pub use continuity::{ExtensionContextContinuity, ExtensionContextMeasurement};
 
 mod extension;
-pub use extension::{ExtensionInputs, prepare_extension_scoped_with_options};
+pub use extension::{
+    ExtensionInputs, prepare_extension_scoped_with_options, prepare_extension_scoped_with_provider,
+};
 
 /// The conversion applied to every decoded boundary picture: the decoder's
 /// full-range RGB8 (declared matrix and range applied) with BT.709 primaries,

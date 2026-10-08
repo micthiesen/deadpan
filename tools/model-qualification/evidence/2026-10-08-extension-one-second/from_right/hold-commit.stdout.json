@@ -1,0 +1,72 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "212d27d3-1da4-468c-8f20-c11f0425e202",
+        "extension"
+      ],
+      "description": "Insert beats",
+      "duration_delta": 30,
+      "forward": {
+        "assets": {},
+        "from_revision": "registered",
+        "marks": {},
+        "nodes": {
+          "212d27d3-1da4-468c-8f20-c11f0425e202": {
+            "after": {
+              "kind": {
+                "children": [
+                  "extension",
+                  "source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "extension": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 30,
+                  "video": {
+                    "asset": "original",
+                    "timestamp": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 24,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "One-second Extension probe"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+        "to_revision": "one-second-hold"
+      }
+    },
+    "revision_id": "one-second-hold"
+  },
+  "protocol": 1
+}

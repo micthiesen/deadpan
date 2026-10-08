@@ -235,15 +235,37 @@ generation envelope.
 Use a true single anchor for those checks, with FromRight tracking outward in
 reverse and mouth inspection restricted to chronological generated pictures.
 
-The next useful development measurement is K9/E24, N30 at 30 fps, in both
-directions: one second from 33 native pictures at the existing 768×320/24 fps.
-This is a proposed measurement, not a qualified envelope. The MLX adapter's
-hardcoded total latent count must change from three to five for that case.
-After full host qualification, use an independently approved Extension pack
-capability to drive `generation/conditioning/extension.rs`, then carry explicit
-operation dispatch through CLI `generation/attempt.rs`, runtime resolution and
-the app generation service. Existing approved packs and runtime smoke checks
-are Bridge-specific; copying their constraints does not authorize Extension.
+The [one-second measurement](../qualification/extension-one-second-2026-10-08.md)
+now passes in both directions: K9/E24, N30 at 30 fps, 33 native pictures at
+768×320/24 fps. Development adapter `0.15.8+deadpan-extension-dev2` derives five
+latent frames from its explicit identity while dev1 retains its three-frame
+contract. Production project capture takes the independently selected plan and
+capability, checks the exact saved Hold and retains the same input evidence.
+The actual model, full host qualifier and independent full-pixel oracle pass;
+both projects remain unchanged. See the record for timings, cancellation and
+synthetic-fixture limits.
+The repository gate completed in parts: all 5,412 workspace tests pass, and the
+UI run's single cancellation-test race was corrected and verified across all
+35 generation-service tests in both configurations. Strict lint, formatting,
+117 Python tests and both doctests pass; retained logs include the initial
+failure, skipped tests and inherited-pipe warnings.
+
+Pack schema 4 can separately declare `extension_hold`, chronological video and
+exact authored-duration limits. Its capability floors that ceiling onto the
+project grid; signed updates cannot add Extension to an approved Bridge pack.
+No Extension catalog entry is approved yet. Next carry explicit operation
+dispatch through CLI `generation/attempt.rs`, runtime resolution and the app
+generation service, with a separately qualified Extension runtime/pack and its
+own smoke check. Longer 2/3-second measurements remain. Existing approved packs
+and runtime smoke checks are Bridge-specific; copying their constraints does
+not authorize Extension.
+
+The retained [integration map](../../tools/model-qualification/evidence/2026-10-08-extension-one-second/next-integration.md)
+identifies the exact dispatch boundaries and proposed test scope. The current
+installer skips AI smoke for Extension-only packs, Python smoke imports only
+the Bridge pipeline, and automatic preparation selects Bridge runtime before
+reading its inherited operation. Correct those together with allocation;
+existing store APIs already accept `GenerationPlan` without another schema.
 
 The [mux-duration correction](../qualification/mux-duration-2026-10-08.md)
 handles a retained legal HEVC packet order that made pinned FFmpeg declare an

@@ -1,0 +1,128 @@
+from pathlib import Path
+import gzip, hashlib, json, shutil, subprocess
+
+root = Path('/tmp/deadpan-extension-longer-20261008')
+repo = Path('/Users/michael/Code/deadpan')
+dest = repo / 'tools/model-qualification/evidence/2026-10-08-extension-one-second'
+dest.mkdir(parents=True, exist_ok=True)
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+def save(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + '\n')
+
+def copy(relative, output=None):
+    source = root / relative
+    target = dest / (output or relative)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+
+def compressed(source, target):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open('wb') as stream:
+        with gzip.GzipFile(filename='', mode='wb', fileobj=stream, mtime=0) as zipped:
+            zipped.write(source.read_bytes())
+
+for name in [
+    'adapter-sources.json', 'pack-prechange.json', 'executed-binaries.json',
+    'development-manifest.json', 'runtime.json', 'projects.json',
+    'capture-results.json', 'fixture-scope.json', 'run-results.json',
+    'checks-results.json', 'fallback-check.json',
+]:
+    copy(name)
+
+for name in ['checks.py', 'prepare_projects.py', 'prepare_inputs.py', 'run_models.py',
+             'oracle.py', 'cancel.py', 'final_checks.py', 'check_correction.py', 'collect.py']:
+    copy(name, 'scripts/' + name + '.txt')
+copy('python-offline', 'scripts/python-offline.txt')
+for name in json.loads((root/'adapter-sources.json').read_text()):
+    copy('support/' + name)
+
+capture_paths = ['crates/deadpan-cli/src/generation/conditioning.rs',
+                 'crates/deadpan-cli/src/generation/conditioning/extension.rs']
+patch = subprocess.run(['git', 'diff', '87cca82f', '--', *capture_paths],
+                       cwd=repo, capture_output=True, text=True, check=True).stdout
+example = subprocess.run(['git', 'diff', '--no-index', '--', '/dev/null',
+                         'crates/deadpan-cli/examples/prepare_extension_context.rs'],
+                         cwd=repo, capture_output=True, text=True)
+assert example.returncode == 1
+(dest/'executed-rust-capture.patch').write_text(patch + example.stdout)
+
+for case in json.loads((root/'projects.json').read_text()):
+    original = Path(case['original'])
+    assert digest(original) == case['original_sha256']
+    fixture = dest/'fixtures'/(case['direction'] + '.mp4')
+    fixture.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(original, fixture)
+
+movie_files = []
+for direction in ['from_left', 'from_right']:
+    case = root / direction
+    # Explicit development inputs and outcomes; never copy a project database,
+    # runtime environment, model cache or any unrelated local directory.
+    for path in sorted(case.iterdir()):
+        if path.is_file() and path.suffix == '.json':
+            copy(str(path.relative_to(root)))
+    for name in ['workspace/capture.json', 'workspace/outputs/provenance.json',
+                 'retained/retention-report.json', 'host/events.jsonl',
+                 'host/host-report.json', 'media/report.json', 'media/provenance.json']:
+        copy(direction + '/' + name)
+    for path in sorted((case / 'retained/inputs').iterdir()):
+        assert path.is_file() and path.stat().st_size < 1024**2
+        copy(str(path.relative_to(root)))
+    compressed(case/'host/worker.stderr.log', dest/direction/'host/worker.stderr.log.gz')
+    for name in ['workspace/outputs/native.mp4', 'workspace/outputs/candidate.mp4',
+                 'media/native.mkv', 'media/sampled.mkv']:
+        path = case / name
+        movie_files.append({'path':str(path), 'bytes':path.stat().st_size, 'sha256':digest(path)})
+
+for name in ['host.json', 'result.json', 'host/events.jsonl', 'host/host-report.json']:
+    copy('cancel-inference/' + name)
+compressed(root/'cancel-inference/host/worker.stderr.log', dest/'cancel-inference/host/worker.stderr.log.gz')
+save(dest/'media-files.json', movie_files)
+
+environment = {}
+for command in [['sw_vers'], ['sysctl', '-n', 'machdep.cpu.brand_string'],
+                ['sysctl', '-n', 'hw.memsize'], ['rustc', '--version'], ['python3', '--version']]:
+    result = subprocess.run(command, cwd=repo, capture_output=True, text=True, check=True)
+    environment[' '.join(command)] = result.stdout.strip()
+save(dest/'environment.json', environment)
+
+changed = subprocess.run(['git','diff','--name-only','HEAD'], cwd=repo, capture_output=True,text=True,check=True).stdout.splitlines()
+untracked = subprocess.run(['git','ls-files','--others','--exclude-standard','crates','tools/model-qualification'], cwd=repo,capture_output=True,text=True,check=True).stdout.splitlines()
+sources = {}
+for name in sorted(set(changed + untracked)):
+    if name.endswith(('.rs', '.py')) and '/evidence/' not in name:
+        sources[name] = {'bytes':(repo/name).stat().st_size, 'sha256':digest(repo/name)}
+save(dest/'final-source-hashes.json', {'base_revision':'87cca82f2f023d47a14882fc5c9de4ff1735c6d7', 'files':sources})
+
+# Repeat only this collection after terminal check results exist, never rerun
+# inference just to refresh evidence.
+if (root/'final-checks-results.json').exists():
+    copy('final-checks-results.json')
+if (root/'correction-results.json').exists():
+    copy('correction-results.json')
+if (root/'evidence-review.md').exists():
+    copy('evidence-review.md')
+if (root/'next-integration.md').exists():
+    copy('next-integration.md')
+for path in sorted(root.glob('*.log')):
+    compressed(path, dest/'logs'/(path.name + '.gz'))
+
+save(dest/'results.json', {
+    'scope':'Real one-second Extension in both directions through production capture and complete host qualification; no normal job allocation, acceptance, app or export claim.',
+    'fixture':json.loads((root/'fixture-scope.json').read_text()),
+    'real_commands':json.loads((root/'run-results.json').read_text()),
+    'cancellation':json.loads((root/'cancel-inference/result.json').read_text()),
+    'project_fallbacks':json.loads((root/'fallback-check.json').read_text()),
+    'checks':json.loads((root/'final-checks-results.json').read_text()) if (root/'final-checks-results.json').exists() else [],
+    'correction_checks':json.loads((root/'correction-results.json').read_text()) if (root/'correction-results.json').exists() else [],
+    'gate_correction':'The UI cancellation test allowed a terminal Cancel reply, then unconditionally waited for another update. The test now checks that reply first; both immediate-cancel sites use the same helper and assert Cancelled. No runtime behavior or timeout changed. Independent review confirmed the consumed-update race.',
+    'source_attribution':'Executed Rust helpers were built from base 87cca82f plus capture changes before Extension pack schema edits. Frozen Python hashes are in adapter-sources.json. Final-source-hashes.json describes integrated code tested by the final gate, separately from executed helper hashes.',
+    'unavailable_quality':'Motion unavailable for all 23 pairs in each run; no face detected for geometry/mouth; no selected region; opposite seam absent.',
+    'scratch_root':str(root),
+})
+print('Collected', len(list(dest.rglob('*'))), 'entries in', dest)

@@ -1,0 +1,67 @@
+[
+  {
+    "name": "from_left-retain",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/retain_extension_conditioning",
+      "/tmp/deadpan-extension-longer-20261008/from_left/retain-config.json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.07360049989074469
+  },
+  {
+    "name": "from_left-model",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_model_worker",
+      "/tmp/deadpan-extension-longer-20261008/from_left/host.json"
+    ],
+    "exit_code": 0,
+    "seconds": 229.25810245797038
+  },
+  {
+    "name": "from_left-media",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_extension_media",
+      "/tmp/deadpan-extension-longer-20261008/from_left/media-config.json"
+    ],
+    "exit_code": 0,
+    "seconds": 2.985456082969904
+  },
+  {
+    "name": "from_right-retain",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/retain_extension_conditioning",
+      "/tmp/deadpan-extension-longer-20261008/from_right/retain-config.json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.0684310826472938
+  },
+  {
+    "name": "from_right-model",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_model_worker",
+      "/tmp/deadpan-extension-longer-20261008/from_right/host.json"
+    ],
+    "exit_code": 0,
+    "seconds": 293.1277984166518
+  },
+  {
+    "name": "from_right-media",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_extension_media",
+      "/tmp/deadpan-extension-longer-20261008/from_right/media-config.json"
+    ],
+    "exit_code": 0,
+    "seconds": 2.9046335420571268
+  },
+  {
+    "name": "independent-oracle",
+    "command": [
+      "/tmp/deadpan-extension-longer-20261008/python-offline",
+      "-B",
+      "/tmp/deadpan-extension-longer-20261008/oracle.py",
+      "/tmp/deadpan-extension-longer-20261008"
+    ],
+    "exit_code": 0,
+    "seconds": 0.4979132083244622
+  }
+]

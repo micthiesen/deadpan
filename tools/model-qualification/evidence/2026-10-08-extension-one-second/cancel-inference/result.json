@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/qualify_model_worker",
+    "/tmp/deadpan-extension-longer-20261008/cancel-inference/host.json"
+  ],
+  "exit_code": 0,
+  "seconds": 14.096677208784968,
+  "report": {
+    "accepted": false,
+    "cancellation_sent": true,
+    "clean_exit": true,
+    "discarded_log_bytes": 0,
+    "elapsed_seconds": 14.092855875,
+    "failure": null,
+    "faults": [],
+    "media_validated": false,
+    "state": "Cancelled"
+  }
+}

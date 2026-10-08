@@ -1,0 +1,16 @@
+{
+  "scope": "Development-only one-second experiment over production-captured, qualified synthetic Original context. No approved capability, UI or automatic acceptance.",
+  "context_frames": 9,
+  "generated_frames": 24,
+  "native_frames": 33,
+  "output_frames": 30,
+  "project_rate": "30/1",
+  "native_rate": "24/1",
+  "network": "sandbox-exec deny network*",
+  "seed": 42107,
+  "steps": 30,
+  "dimensions": [
+    768,
+    320
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "direction": "from_left",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/prepare_extension_context",
+      "--project",
+      "/tmp/deadpan-extension-longer-20261008/from-left.deadpan",
+      "--revision",
+      "one-second-hold",
+      "--target",
+      "/tmp/deadpan-extension-longer-20261008/from_left/target.json",
+      "--plan",
+      "/tmp/deadpan-extension-longer-20261008/from_left/plan.json",
+      "--provider",
+      "/tmp/deadpan-extension-longer-20261008/from_left/selected-provider.json",
+      "--output",
+      "/tmp/deadpan-extension-longer-20261008/from_left/workspace"
+    ],
+    "exit_code": 0,
+    "seconds": 0.5300312908366323
+  },
+  {
+    "direction": "from_right",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/prepare_extension_context",
+      "--project",
+      "/tmp/deadpan-extension-longer-20261008/from-right.deadpan",
+      "--revision",
+      "one-second-hold",
+      "--target",
+      "/tmp/deadpan-extension-longer-20261008/from_right/target.json",
+      "--plan",
+      "/tmp/deadpan-extension-longer-20261008/from_right/plan.json",
+      "--provider",
+      "/tmp/deadpan-extension-longer-20261008/from_right/selected-provider.json",
+      "--output",
+      "/tmp/deadpan-extension-longer-20261008/from_right/workspace"
+    ],
+    "exit_code": 0,
+    "seconds": 0.4554640408605337
+  }
+]

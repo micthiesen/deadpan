@@ -1,0 +1,172 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "original",
+    "commit": {
+      "edit": {
+        "changed_ids": [
+          "212d27d3-1da4-468c-8f20-c11f0425e202",
+          "source"
+        ],
+        "description": "Import source media",
+        "duration_delta": 12,
+        "forward": {
+          "assets": {
+            "original": {
+              "after": {
+                "audio": null,
+                "content_hash": "blake3:3be6dd3dc8c979f6aad59ace41ae6eeaf6f1d467b17686749e39413fee51af94",
+                "frame_count": 9,
+                "label": "Synthetic moving-square temporal fixture",
+                "source_qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 9,
+                    "time_base": {
+                      "denominator": 24,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 24,
+                      "numerator": 1
+                    }
+                  }
+                }
+              },
+              "before": null
+            }
+          },
+          "from_revision": "82f12593-2057-4091-88be-3b1bbdaca3b1",
+          "marks": {},
+          "nodes": {
+            "212d27d3-1da4-468c-8f20-c11f0425e202": {
+              "after": {
+                "kind": {
+                  "children": [
+                    "source"
+                  ],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              },
+              "before": {
+                "kind": {
+                  "children": [],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              }
+            },
+            "source": {
+              "after": {
+                "kind": {
+                  "source": {
+                    "audio": null,
+                    "audio_mapping": {
+                      "type": "fit_beat"
+                    },
+                    "audio_offset": 0,
+                    "duration": 12,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "4",
+                        "numerator": "45"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "independent",
+                    "video": {
+                      "asset": "original",
+                      "span": {
+                        "end": {
+                          "ticks": 9,
+                          "time_base": {
+                            "denominator": 24,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 24,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "4",
+                        "numerator": "45"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "Original"
+              },
+              "before": null
+            }
+          },
+          "overrides": {},
+          "presentation": {
+            "after": {
+              "basis": {
+                "color_policy": "sdr_rec709",
+                "frame_rate": {
+                  "denominator": 1,
+                  "numerator": 30
+                },
+                "height": 320,
+                "width": 768
+              },
+              "state": {
+                "geometry_origin": "explicit",
+                "primary": {
+                  "asset": "original",
+                  "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+                },
+                "rate_origin": "explicit"
+              }
+            },
+            "before": {
+              "basis": {
+                "color_policy": "sdr_rec709",
+                "frame_rate": {
+                  "denominator": 1,
+                  "numerator": 30
+                },
+                "height": 320,
+                "width": 768
+              },
+              "state": {
+                "geometry_origin": "explicit",
+                "primary": null,
+                "rate_origin": "explicit"
+              }
+            }
+          },
+          "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+          "to_revision": "registered"
+        }
+      },
+      "revision_id": "registered"
+    },
+    "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+  },
+  "protocol": 1
+}

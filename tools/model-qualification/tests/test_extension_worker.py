@@ -21,16 +21,17 @@ import worker_extension_context as extension_context
 import mlx_backend as backend
 
 
-def request_wire(direction="from_left", count=8, numerator=24, denominator=1):
+def request_wire(direction="from_left", count=8, numerator=24, denominator=1, *,
+                 generated=8, runtime_version="0.15.8+deadpan-extension-dev1"):
     value = json.loads((ROOT / "crates/deadpan-jobs/tests/fixtures/generate_extension_v3.json").read_text())
     value["plan"]["native_dimensions"]["width"] = 768
     sampling = value["plan"]["sampling"]
-    sampling.update(direction=direction, output_frame_count=count,
+    sampling.update(direction=direction, output_frame_count=count, generated_frame_count=generated,
                     project_rate={"numerator": numerator, "denominator": denominator})
     value["constraints"].update(conditioning="extend_" + direction)
     value["constraints"]["video"].update(frames=count, width=768, frame_rate=copy.deepcopy(sampling["project_rate"]))
     value["provider"].update(pack_id="ltx-2.3-q4-extension-development", pack_version="1",
-                             runtime_id="ltx-mlx", runtime_version="0.15.8+deadpan-extension-dev1")
+                             runtime_id="ltx-mlx", runtime_version=runtime_version)
     return value
 
 
@@ -188,22 +189,86 @@ class ExtensionProtocolTests(unittest.TestCase):
 
 
 class ExtensionMediaTests(unittest.TestCase):
+    def validate(self, value):
+        return media.validate_extension_plan(value["plan"], value["constraints"]["video"],
+                                             value["provider"]["runtime_version"])
+
     def test_measured_admission_is_separate_from_generic_wire(self):
         for direction in ("from_left", "from_right"):
             for count, num, den in [(8, 24, 1), (12, 60, 1), (9, 30000, 1001), (1, 3, 1)]:
                 value = request_wire(direction, count, num, den)
-                self.assertEqual(media.validate_extension_plan(value["plan"], value["constraints"]["video"]), (count, 17))
+                self.assertEqual(self.validate(value), (count, 17))
         for count, num, den in [(12, 24, 1), (10, 30000, 1001), (1, 1, 1), (41, 120, 1)]:
             value = request_wire(count=count, numerator=num, denominator=den)
             protocol.parse_host_message(value)
             with self.assertRaisesRegex(ValueError, "duration"):
-                media.validate_extension_plan(value["plan"], value["constraints"]["video"])
+                self.validate(value)
         for field, value in [("context_frame_count", 1), ("generated_frame_count", 16)]:
             request = request_wire()
             request["plan"]["sampling"][field] = value
             protocol.parse_host_message(request)
-            with self.assertRaisesRegex(ValueError, "measured"):
-                media.validate_extension_plan(request["plan"], request["constraints"]["video"])
+            with self.assertRaisesRegex(ValueError, "requires nine context"):
+                self.validate(request)
+
+    def test_one_second_experiment_is_bound_to_its_own_runtime(self):
+        version = "0.15.8+deadpan-extension-dev2"
+        for direction in ("from_left", "from_right"):
+            for count, num, den in [(30, 30, 1), (24, 24, 1), (29, 30000, 1001), (120, 120, 1), (1, 1, 1)]:
+                value = request_wire(direction, count, num, den, generated=24, runtime_version=version)
+                protocol.parse_host_message(value)
+                with self.subTest(direction=direction, count=count, num=num):
+                    self.assertEqual(self.validate(value), (count, 33))
+            for count, num, den in [(31, 30, 1), (30, 30000, 1001), (121, 120, 1), (1, 1, 2)]:
+                value = request_wire(direction, count, num, den, generated=24, runtime_version=version)
+                protocol.parse_host_message(value)
+                with self.subTest(direction=direction, count=count, num=num), self.assertRaisesRegex(ValueError, "duration"):
+                    self.validate(value)
+        for version, generated in [("0.15.8+deadpan-extension-dev1", 24),
+                                   ("0.15.8+deadpan-extension-dev2", 8),
+                                   ("0.15.8+deadpan-extension-dev2", 16),
+                                   ("0.15.8+deadpan-extension-dev2", 32)]:
+            value = request_wire(generated=generated, runtime_version=version)
+            protocol.parse_host_message(value)
+            with self.subTest(version=version, generated=generated), self.assertRaisesRegex(ValueError, "requires nine context"):
+                self.validate(value)
+        for version in ("0.15.8+deadpan5", "0.15.8+deadpan-extension-dev3", "", None, []):
+            value = request_wire()
+            with self.subTest(version=version), self.assertRaisesRegex(ValueError, "runtime identity"):
+                media.validate_extension_plan(value["plan"], value["constraints"]["video"], version)
+
+    def test_latent_counts_come_from_the_admitted_runtime_and_plan(self):
+        for version, generated, expected in [("0.15.8+deadpan-extension-dev1", 8, (2, 1, 3)),
+                                             ("0.15.8+deadpan-extension-dev2", 24, (2, 3, 5))]:
+            for direction in ("from_left", "from_right"):
+                value = request_wire(direction, generated=generated, runtime_version=version)
+                with self.subTest(version=version, direction=direction):
+                    self.assertEqual(media.extension_latent_counts(value["plan"], value["constraints"]["video"], version), expected)
+                wrong = copy.deepcopy(value)
+                wrong["plan"]["sampling"]["context_frame_count"] = 17
+                with self.assertRaisesRegex(ValueError, "requires nine context"):
+                    media.extension_latent_counts(wrong["plan"], wrong["constraints"]["video"], version)
+                wrong = copy.deepcopy(value)
+                wrong["plan"]["sampling"]["generated_frame_count"] = 24 if generated == 8 else 8
+                with self.assertRaisesRegex(ValueError, "requires nine context"):
+                    media.extension_latent_counts(wrong["plan"], wrong["constraints"]["video"], version)
+
+    def test_one_second_samples_use_only_generated_pictures_in_both_directions(self):
+        expected = [0, 7, 15, 23, 31, 39, 47, 55, 63, 71, 79, 87, 95, 103, 111,
+                    119, 127, 135, 143, 151, 159, 167, 175, 183, 191, 199, 207, 215, 223, 230]
+        for direction, start in [("from_left", 9), ("from_right", 0)]:
+            generated = list(range(0, 240, 10))
+            native = [255] * 9 + generated if start else generated + [255] * 9
+            positions = list(media.extension_sample_positions(30, 9, 24, direction))
+            self.assertEqual([media.blend_channel(native[lo], native[hi], num, den)
+                              for lo, hi, num, den in positions], expected)
+            for count in (1, 24, 29, 30, 120, 180):
+                for lo, hi, num, den in media.extension_sample_positions(count, 9, 24, direction):
+                    self.assertTrue(start <= lo <= hi < start + 24)
+            self.assertEqual([lo for lo, hi, num, den in media.extension_sample_positions(24, 9, 24, direction)],
+                             list(range(start, start + 24)))
+            lo, hi, num, den = next(media.extension_sample_positions(1, 9, 24, direction))
+            self.assertEqual((lo, hi, Fraction(num, den)), (start + 11, start + 12, Fraction(1, 2)))
+            self.assertEqual(media.blend_channel(31, 32, num, den), 32)
 
     def test_center_samples_exclude_context_and_round_half_up(self):
         expected = [Fraction(0), Fraction(1, 2), Fraction(7, 6), Fraction(11, 6),
@@ -234,6 +299,16 @@ class ExtensionMediaTests(unittest.TestCase):
         self.assertEqual(parsed["context_anchor_span"], Fraction(8, 24))
         self.assertEqual(parsed["speed_conversion"], 1)
 
+    def test_one_second_clocks_exclude_the_nine_context_pictures(self):
+        for direction in ("from_left", "from_right"):
+            value = request_wire(direction, 30, 30, generated=24, runtime_version="0.15.8+deadpan-extension-dev2")
+            timing = media.extension_timing(value["plan"]["sampling"])
+            parsed = {name: Fraction(int(ratio["numerator"]), int(ratio["denominator"])) for name, ratio in timing.items()}
+            self.assertEqual(parsed, {"requested_duration": Fraction(1), "generated_duration": Fraction(1),
+                                      "native_movie_duration": Fraction(33, 24), "context_duration": Fraction(9, 24),
+                                      "context_anchor_span": Fraction(8, 24), "speed_conversion": Fraction(1),
+                                      "retime_deviation": Fraction(0)})
+
 
 class ExtensionContextTests(unittest.TestCase):
     def validate(self, wire, context):
@@ -253,6 +328,19 @@ class ExtensionContextTests(unittest.TestCase):
                 self.assertEqual(refs, [entry["frame"] for entry in context["context"]])
                 self.assertEqual(len(refs), 9)
                 self.assertNotIn("inputs/context-opposite.png", [ref["reference"] for ref in refs])
+
+    def test_context_admission_checks_the_request_runtime_before_reading_inputs(self):
+        for direction in ("from_left", "from_right"):
+            for version, generated in [("0.15.8+deadpan-extension-dev1", 8),
+                                       ("0.15.8+deadpan-extension-dev2", 24)]:
+                wire = request_wire(direction, generated, 24, generated=generated, runtime_version=version)
+                context = context_for(wire, opposite=False)
+                with self.subTest(direction=direction, version=version):
+                    self.assertEqual(self.validate(wire, context), [entry["frame"] for entry in context["context"]])
+                wire["provider"]["runtime_version"] = ("0.15.8+deadpan-extension-dev2" if generated == 8
+                                                        else "0.15.8+deadpan-extension-dev1")
+                with self.assertRaisesRegex(ValueError, "requires nine context"):
+                    self.validate(wire, context)
 
     def test_changed_definition_order_anchor_geometry_and_budget_fail(self):
         mutations = [
@@ -598,18 +686,48 @@ class ExtensionBackendPreflightTests(unittest.TestCase):
             wire = request_wire()
             mutate(wire)
             with patch.object(builtins, "__import__", side_effect=guarded_import), self.assertRaises(ValueError):
-                backend.generate_extension({"operation": "extension_hold"}, wire, {"plan": wire["plan"]}, [], None, lambda _: None, lambda: None, {})
+                backend.generate_extension({"operation": "extension_hold", "model_pack": {
+                    "runtime_versions": [wire["provider"]["runtime_version"]]}}, wire,
+                    {"plan": wire["plan"]}, [], None, lambda _: None, lambda: None, {})
+
+    def test_selected_runtime_and_request_envelope_must_match_before_loading_mlx(self):
+        actual_import = builtins.__import__
+        def guarded_import(name, *args, **kwargs):
+            self.assertFalse(name == "mlx" or name.startswith("mlx."), "mismatched runtime loaded MLX")
+            return actual_import(name, *args, **kwargs)
+        dev1, dev2 = "0.15.8+deadpan-extension-dev1", "0.15.8+deadpan-extension-dev2"
+        for request_version, selected_versions, generated, error in [
+                (dev1, [dev1], 24, "requires nine context"),
+                (dev2, [dev2], 8, "requires nine context"),
+                (dev1, [dev2], 8, "selected immutable model pack"),
+                (dev2, [dev1], 24, "selected immutable model pack"),
+                (dev2, [dev1, dev2], 24, "selected immutable model pack")]:
+            for direction in ("from_left", "from_right"):
+                wire = request_wire(direction, generated=generated, runtime_version=request_version)
+                paths = {"operation": "extension_hold", "model_pack": {"runtime_versions": selected_versions}}
+                with self.subTest(version=request_version, selected=selected_versions, direction=direction), \
+                        patch.object(builtins, "__import__", side_effect=guarded_import), \
+                        self.assertRaisesRegex(ValueError, error):
+                    backend.generate_extension(paths, wire, {"plan": wire["plan"]}, [], None, lambda _: None, lambda: None, {})
 
     def test_bridge_pack_does_not_implicitly_advertise_extension(self):
         manifest = {"pack_id": "ltx-2.3-q4-bridge", "pack_version": "1", "model_family": "ltx-2.3",
                     "runtime_id": "ltx-mlx", "runtime_versions": ["0.15.8+deadpan5"], "operations": ["bridge_hold"], "files": []}
         with self.assertRaisesRegex(ValueError, "development extension"):
             backend._model_manifest(manifest, Path("/unused"), lambda: None, True, "extension_hold")
-        manifest.update(pack_id="ltx-2.3-q4-extension-development", runtime_versions=["0.15.8+deadpan-extension-dev1"], operations=["extension_hold"])
-        with self.assertRaisesRegex(ValueError, "unsupported bridge pack"):
-            backend._model_manifest(manifest, Path("/unused"), lambda: None, True)
-        with self.assertRaisesRegex(ValueError, "component inventory"):
-            backend._model_manifest(manifest, Path("/unused"), lambda: None, True, "extension_hold")
+        manifest.update(pack_id="ltx-2.3-q4-extension-development", operations=["extension_hold"])
+        for version in ("0.15.8+deadpan-extension-dev1", "0.15.8+deadpan-extension-dev2"):
+            manifest["runtime_versions"] = [version]
+            with self.subTest(version=version):
+                with self.assertRaisesRegex(ValueError, "unsupported bridge pack"):
+                    backend._model_manifest(manifest, Path("/unused"), lambda: None, True)
+                with self.assertRaisesRegex(ValueError, "component inventory"):
+                    backend._model_manifest(manifest, Path("/unused"), lambda: None, True, "extension_hold")
+        for versions in (["0.15.8+deadpan-extension-dev1", "0.15.8+deadpan-extension-dev2"],
+                         ["0.15.8+deadpan-extension-dev3"], ["0.15.8+deadpan5"], []):
+            manifest["runtime_versions"] = versions
+            with self.subTest(versions=versions), self.assertRaisesRegex(ValueError, "development extension"):
+                backend._model_manifest(manifest, Path("/unused"), lambda: None, True, "extension_hold")
 
 
 if __name__ == "__main__":

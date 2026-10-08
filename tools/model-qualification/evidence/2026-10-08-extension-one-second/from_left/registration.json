@@ -1,0 +1,23 @@
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "6fcd37d8-9a14-4b42-b6bb-02404c3e8c6d",
+    "new_revision": "registered",
+    "original": {
+      "algorithm": "blake3",
+      "digest": "bd9962a5638f6804f6817a3ffd4352b4c76cb7c4c06f73befd8e937755f1e7e8"
+    },
+    "new_asset_id": "original",
+    "label": "Synthetic moving-square temporal fixture",
+    "insertion": {
+      "parent": "f97be19b-8ba9-4728-b76f-501d338864eb",
+      "index": 0,
+      "node": "source",
+      "label": "Original",
+      "purpose": "primary"
+    }
+  },
+  "streams": {
+    "type": "video_only"
+  }
+}

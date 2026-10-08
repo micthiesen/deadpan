@@ -1,0 +1,119 @@
+{
+  "schema_version": 47,
+  "project_id": "888fcc4d-2c8a-4a97-865a-f7a67429ed95",
+  "revision_id": "registered",
+  "presentation_basis": {
+    "width": 768,
+    "height": 320,
+    "frame_rate": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": {
+      "asset": "original",
+      "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+    }
+  },
+  "root": "212d27d3-1da4-468c-8f20-c11f0425e202",
+  "nodes": {
+    "212d27d3-1da4-468c-8f20-c11f0425e202": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "source"
+        ]
+      }
+    },
+    "source": {
+      "label": "Original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 12,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "45",
+              "denominator": "4"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "original",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "end": {
+                "ticks": 9,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "45",
+              "denominator": "4"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": null,
+          "audio_mapping": {
+            "type": "fit_beat"
+          },
+          "link": "independent",
+          "audio_offset": 0
+        }
+      }
+    }
+  },
+  "assets": {
+    "original": {
+      "label": "Synthetic moving-square temporal fixture",
+      "content_hash": "blake3:3be6dd3dc8c979f6aad59ace41ae6eeaf6f1d467b17686749e39413fee51af94",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        },
+        "end": {
+          "ticks": 9,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        }
+      },
+      "audio": null,
+      "still_image": false,
+      "frame_count": 9,
+      "source_qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

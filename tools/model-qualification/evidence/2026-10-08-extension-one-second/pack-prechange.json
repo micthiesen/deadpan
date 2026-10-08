@@ -1,0 +1,36 @@
+{
+  "source_revision": "87cca82f2f023d47a14882fc5c9de4ff1735c6d7",
+  "method": "HEAD bytes for paths confirmed clean before pack edits; new paths explicitly absent",
+  "files": [
+    {
+      "path": "crates/deadpan-models/src/packs.rs",
+      "existed": true,
+      "sha256": "26c4793b70a0e5e0596dcdcc256bf36f12d5b568ca12c204a8bc5989ee3d8075"
+    },
+    {
+      "path": "crates/deadpan-models/src/packs/constraints.rs",
+      "existed": true,
+      "sha256": "9db67fb393e3db05fff3179499f5f32fb16157a2a78d867c02278f06544cc84f"
+    },
+    {
+      "path": "crates/deadpan-models/src/packs/constraints/extension.rs",
+      "existed": false,
+      "sha256": null
+    },
+    {
+      "path": "crates/deadpan-models/src/packs/constraints/extension_tests.rs",
+      "existed": false,
+      "sha256": null
+    },
+    {
+      "path": "crates/deadpan-models/src/packs/updates.rs",
+      "existed": true,
+      "sha256": "579df4c90179887c671532970f479232075b786b403f462b7e60e792a33dcb27"
+    },
+    {
+      "path": "crates/deadpan-models/src/packs/updates/extension_tests.rs",
+      "existed": false,
+      "sha256": null
+    }
+  ]
+}

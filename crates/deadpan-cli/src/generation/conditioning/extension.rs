@@ -13,9 +13,9 @@ use deadpan_jobs::{
 };
 use deadpan_models::{
     ExtensionContext, ExtensionContextPicture, ExtensionContinuityEvidence, ExtensionOppositeSeam,
-    ExtensionRegionCapture, MAXIMUM_EXTENSION_INPUT_BYTES,
+    ExtensionRegionCapture, MAXIMUM_EXTENSION_INPUT_BYTES, SelectedExtensionProvider,
 };
-use deadpan_plan::ScopedHoldContextRequest;
+use deadpan_plan::{MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContextRequest};
 
 use super::continuity::{ExtensionContextContinuity, qualify_extension_context};
 use super::*;
@@ -32,7 +32,7 @@ const OPPOSITE: &str = "inputs/opposite.png";
 pub struct ExtensionInputs {
     pub plan: ExtensionGenerationPlan,
     pub constraints: HoldConstraints,
-    /// Chronological inputs, named `inputs/context-000.png` through `008.png`.
+    /// Chronological inputs, named `inputs/context-000.png` and onward.
     pub context_pngs: Vec<Vec<u8>>,
     /// This optional seam is retained for checks, never supplied as conditioning.
     pub opposite_png: Option<Vec<u8>>,
@@ -55,6 +55,125 @@ pub fn prepare_extension_scoped_with_options(
     options: &GenerationOptions,
     cancelled: &AtomicBool,
 ) -> Result<ExtensionInputs, String> {
+    prepare_extension(
+        package,
+        revision,
+        target,
+        CapturePlan::Development(direction),
+        options,
+        cancelled,
+    )
+}
+
+/// Capture an explicit extension plan using a separately selected capability.
+/// This checks the plan before opening the project and checks the exact saved
+/// Hold before decoding. It does not approve a provider, attest installed model
+/// bytes, allocate a job, or widen the ordinary application's capabilities.
+/// The capture raster is currently limited to 768×320, with at most 64 context
+/// pictures, the existing aggregate input limit and one shared deadline.
+pub fn prepare_extension_scoped_with_provider(
+    package: &Path,
+    revision: &RevisionId,
+    target: &ScopedNodeTarget,
+    plan: &ExtensionGenerationPlan,
+    selected: &SelectedExtensionProvider,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<ExtensionInputs, String> {
+    prepare_extension(
+        package,
+        revision,
+        target,
+        CapturePlan::Selected {
+            plan,
+            capability: selected.capability(),
+        },
+        options,
+        cancelled,
+    )
+}
+
+enum CapturePlan<'a> {
+    Development(ExtensionDirection),
+    Selected {
+        plan: &'a ExtensionGenerationPlan,
+        capability: &'a ExtensionCapability,
+    },
+}
+
+impl CapturePlan<'_> {
+    fn direction(&self) -> ExtensionDirection {
+        match self {
+            Self::Development(direction) => *direction,
+            Self::Selected { plan, .. } => plan.direction(),
+        }
+    }
+
+    fn native_rate(&self) -> FrameRate {
+        match self {
+            Self::Development(_) => native_rate(),
+            Self::Selected { plan, .. } => plan.native_frame_rate(),
+        }
+    }
+
+    fn context_frames(&self) -> u32 {
+        match self {
+            Self::Development(_) => CONTEXT_FRAMES,
+            Self::Selected { plan, .. } => plan.context_frame_count(),
+        }
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        if let Self::Selected { plan, capability } = self {
+            validate_capture_plan(plan, capability)?;
+        }
+        Ok(())
+    }
+
+    fn resolve(
+        &self,
+        duration: FrameDuration,
+        rate: FrameRate,
+    ) -> Result<(ExtensionGenerationPlan, ExtensionCapability), String> {
+        match self {
+            Self::Development(direction) => Ok((
+                development_plan(*direction, duration, rate)?,
+                development_capability(rate)?,
+            )),
+            Self::Selected { plan, capability } => {
+                validate_capture_plan(plan, capability)?;
+                if duration != plan.project_frames() || rate != plan.project_frame_rate() {
+                    return Err("The saved Hold duration or project rate differs from the selected extension plan; the authored interval was not changed.".into());
+                }
+                Ok(((*plan).clone(), **capability))
+            }
+        }
+    }
+}
+
+fn validate_capture_plan(
+    plan: &ExtensionGenerationPlan,
+    capability: &ExtensionCapability,
+) -> Result<(), String> {
+    plan.validate_for(capability)
+        .map_err(|error| error.to_string())?;
+    validate_project_rate(plan.project_frame_rate())?;
+    if plan.native_dimensions() != native_dimensions()
+        || plan.context_frame_count() > MAX_HOLD_CONTEXT_FRAMES
+    {
+        return Err("AI extension capture requires a 768×320 raster and at most 64 context pictures; the selected plan was not changed.".into());
+    }
+    Ok(())
+}
+
+fn prepare_extension(
+    package: &Path,
+    revision: &RevisionId,
+    target: &ScopedNodeTarget,
+    selection: CapturePlan<'_>,
+    options: &GenerationOptions,
+    cancelled: &AtomicBool,
+) -> Result<ExtensionInputs, String> {
     let deadline = Instant::now()
         .checked_add(CAPTURE_TIMEOUT)
         .ok_or("The AI extension capture deadline overflowed.")?;
@@ -63,6 +182,11 @@ pub fn prepare_extension_scoped_with_options(
         deadline,
     };
     control.check()?;
+    selection.validate()?;
+    let direction = selection.direction();
+    options
+        .validate_resolved_conditioning(mode(direction))
+        .map_err(|error| error.to_string())?;
     let mut session = ProjectPictureSession::open_revision(package, revision, None, cancelled)
         .map_err(|error| error.to_string())?;
     control.check()?;
@@ -86,17 +210,14 @@ pub fn prepare_extension_scoped_with_options(
             &ScopedHoldContextRequest {
                 target: target.clone(),
                 direction,
-                native_rate: native_rate(),
-                frame_count: CONTEXT_FRAMES,
+                native_rate: selection.native_rate(),
+                frame_count: selection.context_frames(),
             },
             BoundaryQueryLimits::default(),
         )
         .map_err(|error| error.to_string())?;
     control.check()?;
-    let plan = development_plan(direction, context.boundaries.duration, rate)?;
-    options
-        .validate_resolved_conditioning(mode(direction))
-        .map_err(|error| error.to_string())?;
+    let (plan, capability) = selection.resolve(context.boundaries.duration, rate)?;
     let binding = session.context_input_binding(
         &context,
         deadpan_store::generation_inputs::GenerationCaptureSpec::from_plan(
@@ -127,7 +248,7 @@ pub fn prepare_extension_scoped_with_options(
     let region = canvas_region([basis.width, basis.height]);
     let presentation = RasterRect::centered(region.0, region.1, [NATIVE_WIDTH, NATIVE_HEIGHT])
         .map_err(str::to_owned)?;
-    let mut prepared = Vec::with_capacity(CONTEXT_FRAMES as usize);
+    let mut prepared = Vec::with_capacity(context.pictures.len());
     let mut input_bytes = 0_u64;
     for sample in &context.pictures {
         control.check()?;
@@ -165,6 +286,7 @@ pub fn prepare_extension_scoped_with_options(
         .transpose()?;
     let assembled = assemble_captured(
         &plan,
+        &capability,
         &constraints,
         PreparedExtension {
             context: prepared,
@@ -214,7 +336,15 @@ fn development_plan(
     {
         return Err("Development AI extensions require a positive Hold of at most 1/3 second; the authored duration was not changed.".into());
     }
-    let capability = ExtensionCapability::new(
+    let capability = development_capability(rate)?;
+    ExtensionGenerationPlan::new(direction, duration, rate, &capability, native_dimensions())
+        .map_err(|error| error.to_string())
+}
+
+fn development_capability(rate: FrameRate) -> Result<ExtensionCapability, String> {
+    validate_project_rate(rate)?;
+    let maximum = u64::from(rate.numerator()) / (3 * u64::from(rate.denominator()));
+    ExtensionCapability::new(
         native_rate(),
         CONTEXT_FRAMES,
         FrameCountFormula::new(8, 0, GENERATED_FRAMES, GENERATED_FRAMES)
@@ -226,9 +356,7 @@ fn development_plan(
         FrameDuration::new(i64::try_from(maximum).map_err(|error| error.to_string())?)
             .map_err(|error| error.to_string())?,
     )
-    .map_err(|error| error.to_string())?;
-    ExtensionGenerationPlan::new(direction, duration, rate, &capability, native_dimensions())
-        .map_err(|error| error.to_string())
+    .map_err(|error| error.to_string())
 }
 
 fn validate_project_rate(rate: FrameRate) -> Result<(), String> {
@@ -278,18 +406,15 @@ struct AssembledExtension {
 
 fn assemble_captured(
     plan: &ExtensionGenerationPlan,
+    capability: &ExtensionCapability,
     constraints: &HoldConstraints,
     prepared: PreparedExtension,
     target: Option<(&TargetId, &AttentionTarget)>,
     control: &CaptureControl<'_>,
 ) -> Result<AssembledExtension, String> {
     control.check()?;
-    if development_plan(
-        plan.direction(),
-        plan.project_frames(),
-        plan.project_frame_rate(),
-    )? != *plan
-        || prepared.context.len() != CONTEXT_FRAMES as usize
+    validate_capture_plan(plan, capability)?;
+    if prepared.context.len() != plan.context_frame_count() as usize
         || constraints.conditioning != mode(plan.direction())
         || constraints.video.frames() != plan.project_frames()
         || constraints.video.frame_rate() != plan.project_frame_rate()
@@ -297,7 +422,7 @@ fn assemble_captured(
         || constraints.video.height() != NATIVE_HEIGHT
     {
         return Err(
-            "Extension inputs differ from the captured plan or development envelope.".into(),
+            "Extension inputs differ from the captured plan or selected capability.".into(),
         );
     }
     let mut bytes = 0_u64;

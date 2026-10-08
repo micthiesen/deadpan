@@ -135,6 +135,11 @@ impl PackUpdate {
                 "model conditioning, media, precision or hardware requirements changed; update the application runtime first",
             ));
         }
+        if self.pack.supports(Operation::ExtensionHold)
+            || baseline.supports(Operation::ExtensionHold)
+        {
+            validate_extension_update(&self.pack, &baseline)?;
+        }
         if self.pack.supports(Operation::BridgeHold) || baseline.supports(Operation::BridgeHold) {
             validate_bridge_update(&self.pack, &baseline)?;
         }
@@ -161,6 +166,32 @@ impl PackUpdate {
             )
         })
     }
+}
+
+/// Extension data updates have no independently qualified replacement-weight
+/// policy yet. Keep their complete runtime/data contract fixed instead of
+/// inheriting the two-endpoint Bridge worker's update assumptions. This can
+/// admit descriptive metadata/version updates once a compiled baseline exists.
+fn validate_extension_update(
+    pack: &PackManifest,
+    baseline: &PackManifest,
+) -> Result<(), PackError> {
+    if pack.operations != baseline.operations
+        || pack.model_family != baseline.model_family
+        || pack.runtime_id != baseline.runtime_id
+        || pack.runtime_versions != baseline.runtime_versions
+        || pack.languages != baseline.languages
+        || pack.memory_bytes != baseline.memory_bytes
+        || pack.temporary_bytes != baseline.temporary_bytes
+        || pack.constraints != baseline.constraints
+        || pack.files != baseline.files
+    {
+        return Err(refuse(
+            "UpdateIncompatible",
+            "extension runtime, capability or model data changed; this build has no qualified extension data-update policy",
+        ));
+    }
+    Ok(())
 }
 
 /// The pinned AI worker supports one data layout and quantization contract.
@@ -908,3 +939,6 @@ impl PackStore {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod extension_tests;

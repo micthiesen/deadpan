@@ -1,0 +1,55 @@
+[
+  {
+    "name": "capture-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--bin",
+      "deadpan-cli",
+      "--example",
+      "prepare_extension_context"
+    ],
+    "exit_code": 0,
+    "seconds": 6.962011249735951
+  },
+  {
+    "name": "model-tools-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "--example",
+      "qualify_model_worker",
+      "-p",
+      "deadpan-models",
+      "--example",
+      "retain_extension_conditioning",
+      "--example",
+      "qualify_extension_media"
+    ],
+    "exit_code": 0,
+    "seconds": 8.765463165938854
+  },
+  {
+    "name": "capture-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "-E",
+      "test(generation::conditioning::extension) | test(picture::tests::extension)",
+      "--no-fail-fast"
+    ],
+    "exit_code": 100,
+    "seconds": 18.56140945898369
+  }
+]

@@ -1,0 +1,65 @@
+{
+  "operation": "generate_extension",
+  "protocol": 3,
+  "identity": {
+    "request_id": "one-second-from_left",
+    "attempt_id": "attempt-1"
+  },
+  "cancellation_token": "cancel-one-second-from_left",
+  "project_id": "6b4768c4-6d9e-41bb-8c7d-ce54ee11af13",
+  "revision_id": "one-second-hold",
+  "target": {
+    "hold_id": "extension",
+    "request_version": 1
+  },
+  "input": {
+    "manifest": "inputs/context.json",
+    "sha256": "62df79ca1e60ab97c6bc7c14e8ca0edd1a99a1822a8b07324d4af0c9212a88ed"
+  },
+  "output_workspace": "outputs",
+  "constraints": {
+    "conditioning": "extend_from_left",
+    "motion": "still",
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "frames": 30,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "provider": {
+    "pack_id": "ltx-2.3-q4-extension-development",
+    "pack_version": "1",
+    "runtime_id": "ltx-mlx",
+    "runtime_version": "0.15.8+deadpan-extension-dev2",
+    "seed": 42107
+  },
+  "plan": {
+    "native_dimensions": {
+      "height": 320,
+      "width": 768
+    },
+    "operation": "extension",
+    "sampling": {
+      "context_frame_count": 9,
+      "direction": "from_left",
+      "generated_frame_count": 24,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up",
+      "native_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "output_frame_count": 30,
+      "policy": "frame_centers_clamped",
+      "project_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "schema_version": 1
+    },
+    "schema_version": 1
+  }
+}

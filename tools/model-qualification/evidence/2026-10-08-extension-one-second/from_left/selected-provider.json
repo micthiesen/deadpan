@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "operation": "extension",
+  "selection": {
+    "pack_id": "ltx-2.3-q4-extension-development",
+    "pack_version": "1",
+    "runtime_id": "ltx-mlx",
+    "runtime_version": "0.15.8+deadpan-extension-dev2",
+    "seed": 42107
+  },
+  "native_frame_rate": {
+    "numerator": 24,
+    "denominator": 1
+  },
+  "context_frame_count": 9,
+  "generated_frame_counts": {
+    "step": 8,
+    "offset": 0,
+    "minimum": 24,
+    "maximum": 24
+  },
+  "width": {
+    "minimum": 768,
+    "maximum": 768,
+    "multiple": 64
+  },
+  "height": {
+    "minimum": 320,
+    "maximum": 320,
+    "multiple": 64
+  },
+  "maximum_output_frames": 30
+}

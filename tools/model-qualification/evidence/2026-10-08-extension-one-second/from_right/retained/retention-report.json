@@ -1,0 +1,222 @@
+{
+  "conditioning": {
+    "context": [
+      {
+        "declaration": {
+          "byte_length": 5574,
+          "reference": "inputs/context-000.png",
+          "sha256": "97746874e9b54920fbb1f70fc19b3efdc1c132bb11b6ebb5eb3fc2c8247e2c3b"
+        },
+        "object": {
+          "byte_length": 5574,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b7b012ed69ca14b1ba85dcb75c68f754206dd82505b3ac71ee26f546cdc8e6d0"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5569,
+          "reference": "inputs/context-001.png",
+          "sha256": "33b9bee94824a09736b9e0e1c75bf6cd495a25947a8e7bab872b604171d206fb"
+        },
+        "object": {
+          "byte_length": 5569,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "5c99aa671932dcee35dfe122143c3ed86a247cf3eb340d6c63ccbd93bba6d5f1"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5577,
+          "reference": "inputs/context-002.png",
+          "sha256": "43eeacb5f779cce9dfad17ea64fe31cc63468d724919f56678755e259b2529b9"
+        },
+        "object": {
+          "byte_length": 5577,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "7afa9d2193190d7de0c722dbbfa1129c8a179340c9494430c7777d6ca6801635"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5572,
+          "reference": "inputs/context-003.png",
+          "sha256": "2b4ec60e54b522ae4fb9bac57efd89175d29bb36c694c03c5f3fa1c296e22bd6"
+        },
+        "object": {
+          "byte_length": 5572,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "6c48ca35d18920f43b5f918e60ed5df04e7347410778802843e645fccc914188"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5579,
+          "reference": "inputs/context-004.png",
+          "sha256": "66eb87261e085f6033087b5404702d00dc439f7f4ef6430c0fb83270bf943e8d"
+        },
+        "object": {
+          "byte_length": 5579,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "0851f054d7f16c731f384d917e12ccc06d681df4542f01150a06314ab36cb204"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5576,
+          "reference": "inputs/context-005.png",
+          "sha256": "93e1f45d685fcd6f894bdd76caefa9428c9838da24d9f758ba1dc5c20ab745fe"
+        },
+        "object": {
+          "byte_length": 5576,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "aa762fe5700f31033a2383f01b531d69c81dffbe77395555e9cf4d68192b81e0"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5580,
+          "reference": "inputs/context-006.png",
+          "sha256": "5c4e56d813bd8ac8d782e5af096496bca158e975e103879369ad0685a4cb2c12"
+        },
+        "object": {
+          "byte_length": 5580,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "c11be10d014a9e086da621bf1bbf3c93da26be65554152125ed2dcaeb66ef456"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5578,
+          "reference": "inputs/context-007.png",
+          "sha256": "20568c27594c199250b6bd6072c87fcc6c34c55cba30a6e63c5a9576dc136f65"
+        },
+        "object": {
+          "byte_length": 5578,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "53f8554f60010e5afac2b07708f0c89eae7f1e233fa0b803b8b95015bb594c3e"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 5584,
+          "reference": "inputs/context-008.png",
+          "sha256": "07fd4980b9212a5ae9100221e1bcc9298252626833adcac9cc0812a823b5d5d5"
+        },
+        "object": {
+          "byte_length": 5584,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "e10950894c6699e41846bec4bc808639f28b1202f9e718959cb6c95774420b7f"
+          }
+        }
+      }
+    ],
+    "manifest": {
+      "declaration": {
+        "byte_length": 12563,
+        "reference": "inputs/context.json",
+        "sha256": "556a2378adff2f31b3c0fba996ec2de30d23a23e977f6e0d3bdfecf50b3d48e2"
+      },
+      "object": {
+        "byte_length": 12563,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "90258d440035cd30015746e408f5ebd691ebedde2a50e14c695cd748475b55a8"
+        }
+      }
+    },
+    "operation": "extension",
+    "opposite": null,
+    "schema_version": 2,
+    "signatures": {
+      "declaration": {
+        "byte_length": 16716,
+        "reference": "inputs/continuity.bin",
+        "sha256": "5c91b87cef355a37ef6331d63a3be78c18582698bd0f659cb1db920dc83ecc01"
+      },
+      "object": {
+        "byte_length": 16716,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "330b83c9c6c446c5d723b814adf69677766f8df7f47d964531c23084072c5899"
+        }
+      }
+    }
+  },
+  "continuity": [
+    {
+      "qualification": {
+        "checked_pictures": 9,
+        "coverage": {
+          "ends_at_source_end": true,
+          "padding_after": 0,
+          "padding_before": 0,
+          "source_pictures": 9,
+          "starts_at_source_start": true
+        },
+        "measured": {
+          "end": 9,
+          "start": 0
+        },
+        "requested": {
+          "end": 8,
+          "start": 0
+        },
+        "rule": "deadpan-context-shots-1",
+        "signature_version": "deadpan-picture-signature-2",
+        "transition": null
+      },
+      "source": {
+        "frame": 0,
+        "kind": "original",
+        "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+      }
+    },
+    {
+      "qualification": {
+        "checked_pictures": 9,
+        "coverage": {
+          "ends_at_source_end": true,
+          "padding_after": 0,
+          "padding_before": 8,
+          "source_pictures": 9,
+          "starts_at_source_start": true
+        },
+        "measured": {
+          "end": 9,
+          "start": 0
+        },
+        "requested": {
+          "end": 8,
+          "start": 8
+        },
+        "rule": "deadpan-context-shots-1",
+        "signature_version": "deadpan-picture-signature-2",
+        "transition": null
+      },
+      "source": {
+        "frame": 8,
+        "kind": "original",
+        "qualification": "4f1658398ceceec6e8440c769d1cb57275c0b5a5a83110eed293404e51086a52"
+      }
+    }
+  ],
+  "scope": "pre-launch input retention and repeated continuity heuristic; source observations remain host-owned"
+}

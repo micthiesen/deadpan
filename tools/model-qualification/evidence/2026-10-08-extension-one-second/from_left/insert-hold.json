@@ -1,0 +1,41 @@
+{
+  "protocol": 1,
+  "project_id": "6b4768c4-6d9e-41bb-8c7d-ce54ee11af13",
+  "expected_revision": "registered",
+  "new_revision": "one-second-hold",
+  "command": {
+    "command": "insert",
+    "parent": "f97be19b-8ba9-4728-b76f-501d338864eb",
+    "index": 1,
+    "subtree": {
+      "root": "extension",
+      "nodes": {
+        "extension": {
+          "label": "One-second Extension probe",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 30,
+              "video": {
+                "type": "freeze",
+                "asset": "original",
+                "timestamp": {
+                  "ticks": 8,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 24
+                  }
+                }
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

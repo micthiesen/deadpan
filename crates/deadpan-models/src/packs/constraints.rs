@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{Operation, PackError};
 
+mod extension;
+pub use extension::ExtensionConstraints;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Architecture {
@@ -54,6 +57,9 @@ pub enum Conditioning {
     MonoAudio,
     LeftBoundaryImage,
     RightBoundaryImage,
+    /// Chronological same-shot pictures ending or beginning at one anchor.
+    /// An optional opposite seam is inspection evidence, never conditioning.
+    ChronologicalVideo,
     FixedPrompt,
     UserInstructions,
 }
@@ -140,6 +146,9 @@ pub struct PackConstraints {
     pub conditioning: Vec<Conditioning>,
     pub audio: Option<AudioConstraints>,
     pub bridge: Option<BridgeConstraints>,
+    /// Omitted from existing manifests to preserve their signed wire bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extension: Option<ExtensionConstraints>,
 }
 
 fn distinct<T: PartialEq>(values: &[T], maximum: usize) -> bool {
@@ -158,25 +167,30 @@ impl PackConstraints {
             || self.hardware.minimum_macos.minor > 99
             || !distinct(&self.hardware.accelerators, 2)
             || !distinct(&self.weight_precisions, 4)
-            || !distinct(&self.conditioning, 5)
+            || !distinct(&self.conditioning, 6)
         {
             return Err(invalid(
                 "invalid hardware, precision or conditioning constraints",
             ));
         }
         let bridge = operations.contains(&Operation::BridgeHold);
+        let extension = operations.contains(&Operation::ExtensionHold);
         let audio = operations.iter().any(|operation| {
             matches!(operation, Operation::Transcribe | Operation::SpeechActivity)
         });
-        if self.bridge.is_some() != bridge || self.audio.is_some() != audio {
+        if self.bridge.is_some() != bridge
+            || self.extension.is_some() != extension
+            || self.audio.is_some() != audio
+        {
             return Err(invalid("operation and media constraints disagree"));
         }
         for (input, supported) in [
             (Conditioning::MonoAudio, audio),
             (Conditioning::LeftBoundaryImage, bridge),
             (Conditioning::RightBoundaryImage, bridge),
-            (Conditioning::FixedPrompt, bridge),
-            (Conditioning::UserInstructions, bridge),
+            (Conditioning::ChronologicalVideo, extension),
+            (Conditioning::FixedPrompt, bridge || extension),
+            (Conditioning::UserInstructions, bridge || extension),
         ] {
             if self.conditioning.contains(&input) != supported {
                 return Err(invalid("conditioning does not match supported operations"));
@@ -186,6 +200,12 @@ impl PackConstraints {
             bridge.capability()?;
             if !self.hardware.accelerators.contains(&Accelerator::Metal) {
                 return Err(invalid("the bridge runtime requires Metal"));
+            }
+        }
+        if let Some(extension) = &self.extension {
+            extension.validate()?;
+            if !self.hardware.accelerators.contains(&Accelerator::Metal) {
+                return Err(invalid("the extension runtime requires Metal"));
             }
         }
         if let Some(audio) = self.audio
@@ -202,3 +222,6 @@ impl PackConstraints {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(super) mod extension_tests;

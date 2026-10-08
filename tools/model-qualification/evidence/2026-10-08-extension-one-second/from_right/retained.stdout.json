@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "video.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 37484,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "3be6dd3dc8c979f6aad59ace41ae6eeaf6f1d467b17686749e39413fee51af94"
+        }
+      },
+      "sha256": [
+        159,
+        189,
+        138,
+        134,
+        70,
+        63,
+        54,
+        213,
+        65,
+        66,
+        13,
+        127,
+        8,
+        30,
+        160,
+        54,
+        49,
+        71,
+        131,
+        58,
+        8,
+        161,
+        92,
+        229,
+        186,
+        28,
+        44,
+        252,
+        184,
+        44,
+        60,
+        69
+      ],
+      "version": 1
+    }
+  }
+}

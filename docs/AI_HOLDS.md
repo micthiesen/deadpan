@@ -320,9 +320,15 @@ Missing signatures or conditioning images refuse both admission and cold use.
 Offered variants show operation-specific timing, available quality coverage,
 conditioned joins and explicitly unconditioned or absent opposite seams.
 
+The [one-second measurement](qualification/extension-one-second-2026-10-08.md)
+uses the actual project capture with an independently selected K9/E24 capability,
+then runs the real model, complete host admission and an exact pixel oracle in
+both directions. A separate pack constraint record now describes temporal
+conditioning and exact duration limits; it adds no approved provider.
+
 Native and headless job execution still admit Bridge jobs only. The independently
-approved extension capability, broader measured duration envelope and native
-generation controls remain unfinished. See
+approved extension capability, longer duration measurements and native generation
+controls remain unfinished. See
 [durable extension inputs](qualification/extension-inputs-2026-10-07.md).
 
 ## Headless commands

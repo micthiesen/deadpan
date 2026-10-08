@@ -1,0 +1,96 @@
+[
+  {
+    "name": "correction-fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 4.388195542152971
+  },
+  {
+    "name": "correction-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 21.94837333401665
+  },
+  {
+    "name": "correction-ui-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 7.522464124951512
+  },
+  {
+    "name": "correction-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--locked",
+      "-E",
+      "test(project::tests::generation)",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 37.808486208319664
+  },
+  {
+    "name": "correction-ui-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "-E",
+      "test(project::tests::generation)",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 14.166054791770875
+  },
+  {
+    "name": "doctests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--doc",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 5.748575666919351
+  }
+]
