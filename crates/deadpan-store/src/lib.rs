@@ -19,6 +19,7 @@ pub mod generated_media;
 pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
+pub mod generation_inputs;
 pub mod generation_intents;
 pub mod generation_origins;
 pub mod generation_pictures;

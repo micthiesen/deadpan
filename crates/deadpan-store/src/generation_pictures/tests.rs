@@ -6,6 +6,9 @@ use deadpan_core::{
 use rusqlite::params;
 use serde_json::json;
 
+#[path = "tests/support.rs"]
+mod support;
+
 fn clock() -> SourceTimeBase {
     SourceTimeBase::new(1, 100).unwrap()
 }
@@ -367,8 +370,8 @@ fn byte_budget_refuses_before_decoding_and_stops_later_cold_loads() {
     );
     assert_eq!(
         cache.entries.len(),
-        1,
-        "exhausted batches do not accumulate further failures"
+        0,
+        "aggregate exhaustion is separate from per-receipt evidence failures"
     );
 }
 

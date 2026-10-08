@@ -40,10 +40,14 @@ fn insert(
 }
 
 fn commit_insert(store: &mut ProjectStore) -> Result<StoredGenerationPreparation> {
+    commit_insert_at(store, 12)
+}
+
+fn commit_insert_at(store: &mut ProjectStore, at: i64) -> Result<StoredGenerationPreparation> {
     let request = command(
         store,
         "insert-ai",
-        insert(&store.snapshot()?, "ai-hold", 12, 18, "insert-ai")?,
+        insert(&store.snapshot()?, "ai-hold", at, 18, "insert-ai")?,
     )?;
     let outcome = store.commit(&request)?;
     assert_eq!(outcome.generation_preparations.len(), 1);
@@ -130,7 +134,13 @@ fn inserted_ai_pause_undo_redo_has_fresh_intent_and_saved_controls() -> Result {
 fn inserted_ai_pause_fulfilment_binds_controls_and_rejects_stale_claims() -> Result {
     let scratch = tempfile::tempdir()?;
     let mut store = create(&scratch.path().join("claim.deadpan"))?;
-    let original = commit_insert(&mut store)?;
+    // This fixture fulfils a Bridge request and needs both actual endpoints.
+    // Inserting at the definition's end correctly captures a left extension.
+    let original = commit_insert_at(&mut store, 6)?;
+    assert_eq!(
+        original.intent.capture,
+        Some(deadpan_store::generation_inputs::GenerationCaptureSpec::Bridge)
+    );
     let claim = store.claim_generation_preparation(&original.id, &store.head_revision()?)?;
     let (mut input, plan, attempt) = replacement_input(&store, "insert-candidate", 18)?;
     input.hold_id = original.target.node.clone();

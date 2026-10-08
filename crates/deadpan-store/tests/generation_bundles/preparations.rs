@@ -8,6 +8,8 @@ use deadpan_store::generation_preparations::{
     StoredGenerationPreparation,
 };
 
+#[path = "preparations/current_controls.rs"]
+mod current_controls;
 #[path = "preparations/insertion.rs"]
 mod insertion;
 

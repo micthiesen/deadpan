@@ -4,7 +4,7 @@ use deadpan_core::{
     BoundaryQueryLimits, ExactRatio, ExtensionDirection, FrameRate, InstancePath,
     MAX_DOCUMENT_DEPTH, ScopedNodeTarget,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::{
     DefinitionPictureCoverage, DefinitionPictureSample, PictureBudget, ScopedHoldBoundaries,
@@ -46,6 +46,44 @@ pub struct ScopedHoldContext {
     pub lookup: LookupStats,
 }
 
+/// A valid authored target can lose its temporal neighbor through an ordinary
+/// edit. These geometric absences differ from malformed input and query failure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, thiserror::Error)]
+#[serde(rename_all = "snake_case")]
+pub enum HoldContextUnavailable {
+    #[error("the requested extension anchor is absent")]
+    MissingAnchor,
+    #[error("the definition has insufficient temporal context for this extension")]
+    InsufficientContext,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "availability", rename_all = "snake_case")]
+pub enum ScopedHoldContextObservation {
+    Available(Box<ScopedHoldContext>),
+    Unavailable {
+        boundaries: Box<ScopedHoldBoundaries>,
+        reason: HoldContextUnavailable,
+        lookup: LookupStats,
+    },
+}
+
+impl ScopedHoldContextObservation {
+    pub fn lookup(&self) -> LookupStats {
+        match self {
+            Self::Available(context) => context.lookup,
+            Self::Unavailable { lookup, .. } => *lookup,
+        }
+    }
+
+    fn into_available(self) -> Result<ScopedHoldContext, PlanError> {
+        match self {
+            Self::Available(context) => Ok(*context),
+            Self::Unavailable { reason, .. } => Err(PlanError::HoldContextUnavailable(reason)),
+        }
+    }
+}
+
 impl RenderPlan {
     /// Query an effective scoped Hold, including a shared Play or dormant
     /// Default, without choosing a representative rendered occurrence. Context
@@ -55,6 +93,18 @@ impl RenderPlan {
         request: &ScopedHoldContextRequest,
         limits: BoundaryQueryLimits,
     ) -> Result<ScopedHoldContext, PlanError> {
+        self.scoped_hold_context_observation(request, limits)?
+            .into_available()
+    }
+
+    /// Observe a valid effective target, retaining work accounting when an edit
+    /// removes its anchor or leaves too little context within its definition.
+    /// Invalid ownership, malformed evidence and exhausted budgets remain Err.
+    pub fn scoped_hold_context_observation(
+        &self,
+        request: &ScopedHoldContextRequest,
+        limits: BoundaryQueryLimits,
+    ) -> Result<ScopedHoldContextObservation, PlanError> {
         validate_request(request)?;
         let mut budget = PictureBudget::for_context(limits);
         budget.reserve_metadata(std::mem::size_of::<ScopedHoldContext>())?;
@@ -73,6 +123,20 @@ impl RenderPlan {
         requests: &[ScopedHoldContextRequest],
         limits: BoundaryQueryLimits,
     ) -> Result<Vec<ScopedHoldContext>, PlanError> {
+        self.scoped_hold_context_observations_batch(requests, limits)?
+            .into_iter()
+            .map(ScopedHoldContextObservation::into_available)
+            .collect()
+    }
+
+    /// Mixed available/unavailable observations under one shared ledger. A
+    /// geometric absence consumes its actual query work and never poisons other
+    /// independent targets. Every requested target must already be owned.
+    pub fn scoped_hold_context_observations_batch(
+        &self,
+        requests: &[ScopedHoldContextRequest],
+        limits: BoundaryQueryLimits,
+    ) -> Result<Vec<ScopedHoldContextObservation>, PlanError> {
         let index = self
             .definition_index
             .as_ref()
@@ -84,7 +148,11 @@ impl RenderPlan {
             validate_request(request)?;
         }
         let mut budget = PictureBudget::for_context(limits);
-        budget.reserve_metadata(requests.len() * std::mem::size_of::<ScopedHoldContext>())?;
+        budget.reserve_metadata(
+            requests.len()
+                * (std::mem::size_of::<ScopedHoldContext>()
+                    + std::mem::size_of::<ScopedHoldContextObservation>()),
+        )?;
         let mut results = Vec::with_capacity(requests.len());
         for request in requests {
             let before = budget.lookup;
@@ -123,14 +191,18 @@ impl RenderPlan {
         boundaries: ScopedHoldBoundaries,
         before: LookupStats,
         budget: &mut PictureBudget,
-    ) -> Result<ScopedHoldContext, PlanError> {
+    ) -> Result<ScopedHoldContextObservation, PlanError> {
         let anchor = match request.direction {
             ExtensionDirection::FromLeft => boundaries.left.as_ref(),
             ExtensionDirection::FromRight => boundaries.right.as_ref(),
-        }
-        .ok_or(PlanError::InvalidScopedHold(
-            "the requested extension anchor is absent",
-        ))?;
+        };
+        let Some(anchor) = anchor else {
+            return Ok(ScopedHoldContextObservation::Unavailable {
+                boundaries: Box::new(boundaries),
+                reason: HoldContextUnavailable::MissingAnchor,
+                lookup: budget.since(before),
+            });
+        };
         let project_rate = self.metadata.presentation_basis.frame_rate;
         // One native-frame duration expressed in project-frame coordinates.
         let step = ExactRatio::new(
@@ -145,6 +217,22 @@ impl RenderPlan {
             ))?;
         let count = usize::try_from(request.frame_count)
             .map_err(|_| PlanError::PictureQueryLimit("context frames"))?;
+        let extent = step.checked_mul(ExactRatio::integer(i64::from(request.frame_count - 1)))?;
+        let far = match request.direction {
+            ExtensionDirection::FromLeft => anchor.position.checked_sub(extent)?,
+            ExtensionDirection::FromRight => anchor.position.checked_add(extent)?,
+        };
+        if far.compare_integer(0).is_lt()
+            || !far
+                .compare_integer(self.nodes[definition].inspection.duration.frames())
+                .is_lt()
+        {
+            return Ok(ScopedHoldContextObservation::Unavailable {
+                boundaries: Box::new(boundaries),
+                reason: HoldContextUnavailable::InsufficientContext,
+                lookup: budget.since(before),
+            });
+        }
         budget.reserve_metadata(count * std::mem::size_of::<DefinitionPictureSample>())?;
         let mut pictures = Vec::with_capacity(count);
         for frame in 0..request.frame_count {
@@ -172,14 +260,16 @@ impl RenderPlan {
             pictures[count - 1].position,
             budget,
         )?;
-        Ok(ScopedHoldContext {
-            boundaries,
-            direction: request.direction,
-            native_rate: request.native_rate,
-            pictures,
-            coverage,
-            lookup: budget.since(before),
-        })
+        Ok(ScopedHoldContextObservation::Available(Box::new(
+            ScopedHoldContext {
+                boundaries,
+                direction: request.direction,
+                native_rate: request.native_rate,
+                pictures,
+                coverage,
+                lookup: budget.since(before),
+            },
+        )))
     }
 }
 

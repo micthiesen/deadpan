@@ -196,8 +196,10 @@ fn fresh_intent_without_optional_resolver_stays_queued_and_reopens() -> Result {
     assert_eq!(value.claim_sequence, 0);
     assert!(
         matches!(&value.intent.input_binding, IntentInputBinding::Measured { binding }
-        if binding.left == Some(crate::generation_pictures::GenerationPictureIdentity::AuthoredBlack)
-        && binding.right == Some(crate::generation_pictures::GenerationPictureIdentity::AuthoredBlack))
+        if matches!(&binding.inputs, crate::generation_inputs::GenerationInputs::Bridge {
+            left: Some(crate::generation_pictures::GenerationPictureIdentity::AuthoredBlack),
+            right: Some(crate::generation_pictures::GenerationPictureIdentity::AuthoredBlack),
+        }))
     );
     assert_eq!(
         store.generation_intents(None, 1)?[0].birth,
@@ -471,7 +473,8 @@ fn renewed_inserted_intent_keeps_reciprocal_proof_after_successor_cancel() -> Re
         }
     );
     assert!(
-        matches!(&new_birth.receipt.input_binding, IntentInputBinding::Measured { binding } if binding.right.is_none())
+        matches!(&new_birth.receipt.input_binding, IntentInputBinding::Measured { binding }
+            if matches!(&binding.inputs, crate::generation_inputs::GenerationInputs::Bridge { right: None, .. }))
     );
     assert!(store.cancel_generation_intent(&successor, &store.head_revision()?)?);
     store.validate_full()?;

@@ -261,6 +261,7 @@ mod tests {
                 cause: crate::generation_intents::IntentCause::InsertedPause,
                 authorization: crate::generation_intents::IntentAuthorization::AuthoredOrigin,
                 fallback: deadpan_core::HoldFallback::Background,
+                capture: None,
                 input_binding: crate::generation_intents::IntentInputBinding::Unavailable {
                     cause: crate::generation_intents::InputUnavailableCause::MissingQualification,
                     detail: "Synthetic queue capacity fixture.".into(),

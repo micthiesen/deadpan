@@ -17,6 +17,11 @@ use crate::generation_origins::GenerationInputBinding;
 use crate::generation_preparations::{PreparationId, PreparationOrigin};
 use crate::{ProjectStore, StoreError};
 
+mod capture;
+#[cfg(test)]
+mod extension_tests;
+pub(crate) use capture::{capture_heads, capture_inputs};
+
 const MAX_HEAD_BYTES: usize = 64 * 1024 * 1024;
 const MAX_TERMINAL_BYTES: usize = 256 * 1024;
 const MAX_DETAIL_BYTES: usize = 2048;
@@ -86,13 +91,14 @@ pub enum InputUnavailableCause {
     MissingQualification,
     QueryLimit,
     InvalidRetainedEvidence,
+    MissingContext,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum IntentInputBinding {
     Measured {
-        binding: GenerationInputBinding,
+        binding: Box<GenerationInputBinding>,
     },
     Unavailable {
         cause: InputUnavailableCause,
@@ -101,6 +107,16 @@ pub enum IntentInputBinding {
 }
 
 impl IntentInputBinding {
+    fn supports_renewal(&self) -> bool {
+        matches!(
+            self,
+            Self::Measured { .. }
+                | Self::Unavailable {
+                    cause: InputUnavailableCause::MissingContext,
+                    ..
+                }
+        )
+    }
     pub(crate) fn same_authority(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Measured { binding: a }, Self::Measured { binding: b }) => a == b,
@@ -135,6 +151,8 @@ pub struct IntentBirthReceipt {
     pub cause: IntentCause,
     pub authorization: IntentAuthorization,
     pub fallback: HoldFallback,
+    /// Resolved once at birth, even when its temporal context is unavailable.
+    pub capture: Option<crate::generation_inputs::GenerationCaptureSpec>,
     pub input_binding: IntentInputBinding,
 }
 
@@ -151,6 +169,36 @@ pub struct IntentBirth {
 }
 
 impl IntentBirth {
+    fn permits_renewal_to(&self, next: &Self) -> bool {
+        if !self.receipt.input_binding.supports_renewal()
+            || !next.receipt.input_binding.supports_renewal()
+            || next.receipt.capture.is_none()
+        {
+            return false;
+        }
+        if self.receipt.capture != next.receipt.capture
+            && !(self.receipt.capture.is_none()
+                && self.origin.options().is_some_and(|options| {
+                    options.mode == deadpan_jobs::GenerationModePreference::Automatic
+                })
+                && matches!(
+                    self.receipt.input_binding,
+                    IntentInputBinding::Unavailable {
+                        cause: InputUnavailableCause::MissingContext,
+                        ..
+                    }
+                ))
+        {
+            return false;
+        }
+        self.duration != next.duration
+            || self.receipt.capture != next.receipt.capture
+            || !self
+                .receipt
+                .input_binding
+                .same_authority(&next.receipt.input_binding)
+    }
+
     pub(crate) fn validate(&self) -> Result<(), StoreError> {
         if self.receipt.schema_version != 1
             || self.receipt.history_id < 1
@@ -161,6 +209,11 @@ impl IntentBirth {
         crate::generation_scope::target_json(&self.origin_target)?;
         self.receipt.cause.validate()?;
         self.receipt.input_binding.validate(self.duration)?;
+        if let IntentInputBinding::Measured { binding } = &self.receipt.input_binding
+            && self.receipt.capture != Some(binding.capture_spec())
+        {
+            return Err(invalid("birth operation differs from its measured inputs"));
+        }
         Ok(())
     }
 
@@ -471,79 +524,6 @@ pub(crate) fn map(
     check_sizes(connection)
 }
 
-/// Capture a bounded batch once. Operational absence is retained explicitly;
-/// arbitrary diagnostic wording is never an input identity or authorization.
-pub(crate) fn capture_inputs(
-    connection: &Connection,
-    document: &ProjectDocument,
-    targets: &[ScopedNodeTarget],
-) -> Result<Vec<IntentInputBinding>, StoreError> {
-    use deadpan_plan::{Picture, PlanError, RenderPlan};
-    let unavailable = |cause, detail: String| IntentInputBinding::Unavailable {
-        cause,
-        detail: detail.chars().take(512).collect(),
-    };
-    if targets.is_empty() {
-        return Ok(Vec::new());
-    }
-    let plan = RenderPlan::compile(document).map_err(|error| invalid(&error.to_string()))?;
-    let boundaries = match plan.scoped_hold_boundaries_batch(
-        targets,
-        deadpan_core::BoundaryQueryLimits {
-            max_scopes: deadpan_core::MAX_DOCUMENT_NODES * 64,
-            max_comparisons: deadpan_core::MAX_DOCUMENT_NODES * 64,
-        },
-    ) {
-        Ok(value) => value,
-        Err(error) => {
-            let cause = if matches!(error, PlanError::PictureQueryLimit(..)) {
-                InputUnavailableCause::QueryLimit
-            } else {
-                InputUnavailableCause::InvalidRetainedEvidence
-            };
-            return Ok(vec![unavailable(cause, error.to_string()); targets.len()]);
-        }
-    };
-    let pictures = crate::generation_pictures::QualifiedGenerationPictures::new(connection);
-    Ok(boundaries
-        .iter()
-        .map(|boundary| {
-            for sample in boundary.left.iter().chain(&boundary.right) {
-                match &sample.picture {
-                    Picture::Still { .. }
-                    | Picture::Accepted {
-                        generated: None, ..
-                    } => {
-                        return unavailable(
-                            InputUnavailableCause::UnsupportedPicture,
-                            "This boundary has no supported measured generation picture.".into(),
-                        );
-                    }
-                    Picture::Source { asset, .. } | Picture::Freeze { asset, .. }
-                        if document
-                            .assets()
-                            .get(asset)
-                            .is_none_or(|asset| asset.source_qualification.is_none()) =>
-                    {
-                        return unavailable(
-                            InputUnavailableCause::MissingQualification,
-                            "A boundary Original has no retained source qualification.".into(),
-                        );
-                    }
-                    _ => {}
-                }
-            }
-            match GenerationInputBinding::from_boundaries(document, boundary, &pictures) {
-                Ok(binding) => IntentInputBinding::Measured { binding },
-                Err(error) => unavailable(
-                    InputUnavailableCause::InvalidRetainedEvidence,
-                    error.to_string(),
-                ),
-            }
-        })
-        .collect())
-}
-
 /// Charge future scoped-isolation identifier growth once, while preserving
 /// sparse Repeat choices. Work fulfilment's request link has a fixed reserve.
 fn head_charge(head: &IntentHead) -> Result<usize, StoreError> {
@@ -640,18 +620,7 @@ pub(crate) fn activate(
             || original.project_id != birth.project_id
             || original.origin != birth.origin
             || original.receipt.fallback != birth.receipt.fallback
-            || !matches!(
-                original.receipt.input_binding,
-                IntentInputBinding::Measured { .. }
-            )
-            || !matches!(
-                birth.receipt.input_binding,
-                IntentInputBinding::Measured { .. }
-            )
-            || original
-                .receipt
-                .input_binding
-                .same_authority(&birth.receipt.input_binding)
+            || !original.permits_renewal_to(birth)
         {
             return Err(invalid(
                 "renewal differs from its measured current predecessor",
@@ -768,19 +737,10 @@ pub(crate) fn reconcile(
         }
         surviving.push(head);
     }
-    let bindings = capture_inputs(
-        connection,
-        document,
-        &surviving
-            .iter()
-            .map(|head| head.target.clone())
-            .collect::<Vec<_>>(),
-    )?;
+    let bindings = capture_heads(connection, document, &surviving)?;
     for (head, binding) in surviving.into_iter().zip(bindings) {
         let birth = read_birth(connection, &head.activation_id)?;
-        if !birth.matches_hold(document, &head.target)
-            || !birth.receipt.input_binding.same_authority(&binding)
-        {
+        if !birth.matches_hold(document, &head.target) || !binding.matches(&birth.receipt) {
             close(
                 connection,
                 &head,
@@ -951,19 +911,12 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     {
         return Err(invalid("current heads exceed their reserved byte budget"));
     }
-    let bindings = capture_inputs(
-        connection,
-        &document,
-        &current
-            .iter()
-            .map(|head| head.target.clone())
-            .collect::<Vec<_>>(),
-    )?;
+    let bindings = capture_heads(connection, &document, &current)?;
     for (head, binding) in current.into_iter().zip(bindings) {
         let birth = read_birth(connection, &head.activation_id)?;
         if birth.project_id != *document.project_id()
             || !birth.matches_hold(&document, &head.target)
-            || !birth.receipt.input_binding.same_authority(&binding)
+            || !binding.matches(&birth.receipt)
             || read_terminal(connection, &head.activation_id)?.is_some()
             || crate::generation_preparations::intent_request(connection, &head.activation_id)?
                 != head.request_id
@@ -1175,6 +1128,7 @@ impl Replay {
                         || original.origin_target != birth.origin_target
                         || original.duration != birth.duration
                         || original.receipt.fallback != birth.receipt.fallback
+                        || original.receipt.capture != birth.receipt.capture
                         || !original
                             .receipt
                             .input_binding
@@ -1205,18 +1159,7 @@ impl Replay {
                     if previous.target.node != birth.origin_target.node
                         || original.origin != birth.origin
                         || original.receipt.fallback != birth.receipt.fallback
-                        || !matches!(
-                            original.receipt.input_binding,
-                            IntentInputBinding::Measured { .. }
-                        )
-                        || !matches!(
-                            birth.receipt.input_binding,
-                            IntentInputBinding::Measured { .. }
-                        )
-                        || original
-                            .receipt
-                            .input_binding
-                            .same_authority(&birth.receipt.input_binding)
+                        || !original.permits_renewal_to(&birth)
                     {
                         return Err(invalid(
                             "renewal does not preserve its measured predecessor authority",
@@ -1281,14 +1224,7 @@ impl Replay {
             .filter(|head| by_node.contains_key(&head.target.node))
             .cloned()
             .collect();
-        let bindings = capture_inputs(
-            connection,
-            document,
-            &present
-                .iter()
-                .map(|head| head.target.clone())
-                .collect::<Vec<_>>(),
-        )?;
+        let bindings = capture_heads(connection, document, &present)?;
         let bindings: BTreeMap<_, _> = present
             .into_iter()
             .zip(bindings)
@@ -1311,9 +1247,9 @@ impl Replay {
                     let birth = read_birth(connection, &head.activation_id)?;
                     let absent = !by_node.contains_key(&head.target.node);
                     let detached = !birth.matches_hold(document, &head.target)
-                        || bindings.get(&head.activation_id).is_none_or(|binding| {
-                            !birth.receipt.input_binding.same_authority(binding)
-                        });
+                        || bindings
+                            .get(&head.activation_id)
+                            .is_none_or(|binding| !binding.matches(&birth.receipt));
                     if matches!(terminal.reason, IntentTerminalReason::Deleted) != absent
                         || (!absent && !detached)
                     {
@@ -1356,7 +1292,7 @@ impl Replay {
             if !birth.matches_hold(document, &head.target)
                 || bindings
                     .get(&head.activation_id)
-                    .is_none_or(|binding| !birth.receipt.input_binding.same_authority(binding))
+                    .is_none_or(|binding| !binding.matches(&birth.receipt))
             {
                 return Err(invalid(
                     "changed current intent lacks a proven closure or renewal",

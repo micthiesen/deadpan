@@ -11,8 +11,11 @@ use deadpan_core::{
 };
 use rusqlite::Connection;
 
+use crate::boundary_replacements::IntentCaptureSettings;
+use crate::generation_inputs::GenerationInputSettings;
 use crate::generation_intents::{
-    self as intents, IntentAuthorization, IntentCause, IntentHead, IntentInputBinding,
+    self as intents, InputUnavailableCause, IntentAuthorization, IntentBirth, IntentCause,
+    IntentHead, IntentInputBinding,
 };
 use crate::generation_origins::AcceptedOriginReceipt;
 use crate::generation_preparations::{Birth, PreparationControls, PreparationOrigin};
@@ -172,17 +175,15 @@ fn derive(
         }
         Ok(())
     })?;
-    let mut intent_nodes = BTreeSet::new();
+    let mut intent_nodes = BTreeMap::new();
     for head in &mapped {
         if !choices.contains(&head.activation_id)
-            && matches!(
-                intents::read_birth(connection, &head.activation_id)?
-                    .receipt
-                    .input_binding,
-                IntentInputBinding::Measured { .. }
-            )
+            && let Some(settings) = intent_settings(
+                connection,
+                &intents::read_birth(connection, &head.activation_id)?,
+            )?
         {
-            intent_nodes.insert(head.target.node.clone());
+            intent_nodes.insert(head.target.node.clone(), settings);
         }
     }
     let derived = crate::boundary_replacements::derive_with_bindings(
@@ -199,12 +200,20 @@ fn derive(
         .map(|entry| (&entry.target, entry))
         .collect();
     for birth in derived.births {
+        if birth.input_binding.as_ref().is_some_and(|binding| {
+            binding.duration != birth.duration || binding.settings() != birth.settings
+        }) {
+            return Err(invalid(
+                "derived boundary birth differs from its final input settings",
+            ));
+        }
         let replacement = entries_by_target
             .get(&birth.target)
             .ok_or_else(|| invalid("derived boundary birth lacks its exact provider tail"))?;
         births.push(Birth {
             target: birth.target,
-            duration: birth.input_binding.duration,
+            capture: Some(birth.settings.capture),
+            duration: birth.duration,
             fallback: intents::fallback_video(&replacement.accepted.fallback),
             origin: PreparationOrigin::AcceptedBoundary {
                 accepted: Box::new(birth.origin.artifact().clone()),
@@ -222,23 +231,22 @@ fn derive(
     let by_node: BTreeMap<_, _> = derived
         .bindings
         .iter()
-        .map(|(target, binding)| (&target.node, (target, binding)))
+        .map(|(target, binding)| (&target.node, (target, Some(binding))))
+        .chain(
+            derived
+                .unavailable
+                .keys()
+                .map(|target| (&target.node, (target, None))),
+        )
         .collect();
     for head in mapped {
-        if choices.contains(&head.activation_id) || !intent_nodes.contains(&head.target.node) {
+        if choices.contains(&head.activation_id) || !intent_nodes.contains_key(&head.target.node) {
             continue;
         }
         let Some((target, binding)) = by_node.get(&head.target.node) else {
             continue;
         };
         let previous = intents::read_birth(connection, &head.activation_id)?;
-        let IntentInputBinding::Measured { binding: prior } = &previous.receipt.input_binding
-        else {
-            continue;
-        };
-        if prior == *binding {
-            continue;
-        }
         let Some(NodeKind::Hold { recipe }) =
             after.nodes().get(&target.node).map(|node| &node.kind)
         else {
@@ -248,12 +256,41 @@ fn derive(
         if recipe.video != fallback {
             continue;
         }
+        let same_inputs = match (&previous.receipt.input_binding, binding) {
+            (IntentInputBinding::Measured { binding: prior }, Some(current)) => {
+                prior.as_ref() == *current
+            }
+            (
+                IntentInputBinding::Unavailable {
+                    cause: InputUnavailableCause::MissingContext,
+                    ..
+                },
+                None,
+            ) => true,
+            _ => false,
+        };
+        let capture = binding
+            .map(|binding| binding.capture_spec())
+            .or_else(|| {
+                derived
+                    .unavailable
+                    .get(*target)
+                    .map(|settings| settings.capture)
+            })
+            .ok_or_else(|| invalid("resolved intent has no final capture settings"))?;
+        if same_inputs
+            && previous.duration == recipe.duration
+            && previous.receipt.capture == Some(capture)
+        {
+            continue;
+        }
         births.push(Birth {
             target: (*target).clone(),
+            capture: Some(capture),
             origin: previous.origin,
             duration: recipe.duration,
             fallback,
-            cause: if prior.duration != binding.duration {
+            cause: if previous.duration != recipe.duration {
                 IntentCause::DurationChanged
             } else {
                 IntentCause::SourceBoundaryChanged
@@ -268,6 +305,57 @@ fn derive(
         entries: derived.entries,
         births,
     })
+}
+
+fn intent_settings(
+    connection: &Connection,
+    birth: &IntentBirth,
+) -> Result<Option<IntentCaptureSettings>, StoreError> {
+    match &birth.receipt.input_binding {
+        IntentInputBinding::Measured { binding } => Ok(Some(binding.settings().into())),
+        IntentInputBinding::Unavailable {
+            cause: InputUnavailableCause::MissingContext,
+            ..
+        } => {
+            let retained = if birth.origin.options().is_none() {
+                birth
+                    .origin
+                    .accepted_artifact()
+                    .map(|artifact| crate::generation_origins::read(connection, artifact))
+                    .transpose()?
+                    .flatten()
+            } else {
+                None
+            };
+            let options = birth
+                .origin
+                .options()
+                .or_else(|| retained.as_ref().map(|origin| origin.options()))
+                .ok_or_else(|| {
+                    invalid("missing-context intent has no retained generation controls")
+                })?;
+            if matches!(
+                options.region_target,
+                deadpan_jobs::GenerationTarget::Inherit
+            ) {
+                return Err(invalid(
+                    "missing-context intent has unresolved region controls",
+                ));
+            }
+            let region = options.region_target.resolve(None);
+            match birth.receipt.capture {
+                Some(capture) => Ok(Some(GenerationInputSettings { capture, region }.into())),
+                None if options.mode == deadpan_jobs::GenerationModePreference::Automatic => {
+                    Ok(Some(IntentCaptureSettings::Unresolved {
+                        preference: options.mode,
+                        region,
+                    }))
+                }
+                None => Ok(None),
+            }
+        }
+        IntentInputBinding::Unavailable { .. } => Ok(None),
+    }
 }
 
 fn invalid(reason: &str) -> StoreError {

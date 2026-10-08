@@ -1,0 +1,105 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "label": "fmt"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "label": "clippy-final"
+  },
+  {
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--no-fail-fast",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(coverage_preserves_sparse_repeat_play_and_implicit_gap_seams) | test(headless_migration_and_plan_inspection_are_explicit_and_read_only)"
+    ],
+    "exit": 0,
+    "label": "leak-diagnostic"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "exit": 0,
+    "label": "workspace-inventory"
+  },
+  {
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "label": "ui-tests"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "exit": 0,
+    "label": "ui-inventory"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--doc",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "label": "doc-tests"
+  }
+]

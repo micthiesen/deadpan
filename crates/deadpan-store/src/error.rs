@@ -65,6 +65,12 @@ pub enum StoreError {
     GenerationRelevanceRequired,
     #[error("Generation relevance plan is invalid: {0}")]
     GenerationPlan(String),
+    #[error("Generation input query failed: {0}")]
+    GenerationInputQuery(deadpan_plan::PlanError),
+    #[error("Generation input capture exceeded its {0} limit")]
+    GenerationInputLimit(&'static str),
+    #[error("Generation input mode is unavailable: {0}")]
+    GenerationInputMode(deadpan_jobs::GenerationModeError),
     #[error("Generation request versions are exhausted for Hold {0}")]
     GenerationVersionExhausted(String),
     #[error("Generation attempt {attempt} has already been used for request {request}")]
@@ -152,7 +158,7 @@ impl StoreError {
             Self::GenerationRequestReused(_) => "GenerationRequestReused",
             Self::GenerationTarget(_) => "GenerationTargetInvalid",
             Self::GenerationRelevanceRequired => "GenerationRelevanceRequired",
-            Self::GenerationPlan(_) => "GenerationPlanInvalid",
+            Self::GenerationPlan(_) | Self::GenerationInputQuery(_) | Self::GenerationInputLimit(_) | Self::GenerationInputMode(_) => "GenerationPlanInvalid",
             Self::GenerationVersionExhausted(_) => "GenerationVersionExhausted",
             Self::GenerationAttemptReused { .. } => "GenerationAttemptReused",
             Self::GenerationAttemptNotFound { .. } => "GenerationAttemptNotFound",

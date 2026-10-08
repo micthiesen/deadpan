@@ -1,0 +1,11 @@
+{
+  "changed_files": [
+    "crates/deadpan-cli/tests/project_commands.rs",
+    "crates/deadpan-store/tests/delete_range.rs",
+    "crates/deadpan-store/tests/delete_ripple.rs",
+    "crates/deadpan-store/tests/generation.rs",
+    "crates/deadpan-store/tests/generation_bundles/preparations/insertion.rs",
+    "crates/deadpan-store/tests/migration/development_break.rs"
+  ],
+  "test_only": true
+}

@@ -981,7 +981,7 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
             binding.plan.clone(),
         )
         .unwrap();
-    assert_eq!(stored_request.bridge_plan.as_ref(), Some(&binding.plan));
+    assert_eq!(stored_request.bridge_plan(), Some(&binding.plan));
     store
         .begin_generation_attempt(BeginGenerationAttempt {
             identity: binding.identity.clone(),

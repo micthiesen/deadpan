@@ -263,7 +263,7 @@ pub fn current_scoped_bridge_request(
     Ok(store
         .current_generation_requests()?
         .into_iter()
-        .find(|request| &request.target == target && request.bridge_plan.is_some()))
+        .find(|request| &request.target == target && request.bridge_plan().is_some()))
 }
 
 /// Begin another attempt of an existing current `request`: a new seeded
@@ -275,9 +275,10 @@ pub fn allocate_variant(
     request: StoredGenerationRequest,
     inputs: BridgeInputs,
 ) -> Result<Allocated, GenerationError> {
+    require_bridge_request(&request)?;
     if inputs.manifest_sha256 != request.binding.context_sha256
         || inputs.constraints != request.constraints
-        || request.bridge_plan.as_ref() != Some(&inputs.plan)
+        || request.bridge_plan() != Some(&inputs.plan)
     {
         return Err(invalid(
             "the pause's boundary pictures changed since its AI pictures were requested; generate again",
@@ -303,6 +304,7 @@ fn allocated(
     cancellation_token: CancellationToken,
     ordinal: u64,
 ) -> Result<Allocated, GenerationError> {
+    require_bridge_request(&request)?;
     let provider = request.provider.for_attempt(ordinal);
     let host_message = HostMessage::GenerateBridge {
         protocol: ProtocolVersion::V2,
@@ -332,6 +334,17 @@ fn allocated(
         ordinal,
         inputs,
     })
+}
+
+fn require_bridge_request(request: &StoredGenerationRequest) -> Result<(), GenerationError> {
+    if request.bridge_plan().is_none()
+        || request.constraints.conditioning != deadpan_jobs::ConditioningMode::Bridge
+    {
+        return Err(invalid(
+            "This generation path requires a retained Bridge plan; Extension requests cannot run through the Bridge worker.",
+        ));
+    }
+    Ok(())
 }
 
 /// A durable lifecycle transition the caller applies with [`record`].

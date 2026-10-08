@@ -18,20 +18,22 @@ pub(crate) struct ContextPictureReader<'a> {
 }
 
 impl ProjectPictureSession {
-    pub(crate) fn context_picture_identities<'p>(
+    /// Capture the same durable temporal descriptor used by store relevance,
+    /// from this session's already queried immutable context and receipts.
+    pub(crate) fn context_input_binding(
         &self,
-        pictures: impl IntoIterator<Item = &'p Picture>,
-    ) -> Result<Vec<deadpan_store::generation_pictures::GenerationPictureIdentity>, String> {
-        use deadpan_store::generation_pictures::GenerationPictures;
-        let qualified = self.store.generation_pictures();
-        pictures
-            .into_iter()
-            .map(|picture| {
-                qualified
-                    .identity(&self.document, picture)
-                    .map_err(|e| e.to_string())
-            })
-            .collect()
+        context: &deadpan_plan::ScopedHoldContext,
+        capture: deadpan_store::generation_inputs::GenerationCaptureSpec,
+        region: Option<&deadpan_core::TargetId>,
+    ) -> Result<deadpan_store::generation_inputs::GenerationInputBinding, String> {
+        deadpan_store::generation_inputs::GenerationInputBinding::from_context(
+            &self.document,
+            context,
+            capture,
+            &self.store.generation_pictures(),
+        )
+        .and_then(|binding| binding.with_region(&self.document, region))
+        .map_err(|error| error.to_string())
     }
 
     pub(crate) fn context_picture_reader<'a>(

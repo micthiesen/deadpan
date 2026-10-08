@@ -23,6 +23,7 @@ pub(crate) struct Birth {
     pub fallback: HoldVideo,
     pub cause: IntentCause,
     pub authorization: IntentAuthorization,
+    pub capture: Option<crate::generation_inputs::GenerationCaptureSpec>,
 }
 
 fn duration_node(command: &Command) -> Option<&deadpan_core::NodeId> {
@@ -120,6 +121,7 @@ fn leaf_births(
             fallback: recipe.video.clone(),
             cause: IntentCause::InsertedPause,
             authorization: IntentAuthorization::AuthoredOrigin,
+            capture: None,
         }]);
     }
     let Some(edited_node) = duration_node(&request.command) else {
@@ -179,6 +181,7 @@ fn leaf_births(
             fallback: recipe.video.clone(),
             cause: IntentCause::DurationExtension,
             authorization: IntentAuthorization::AuthoredOrigin,
+            capture: None,
         });
     }
     Ok(result)
@@ -287,6 +290,10 @@ pub(crate) fn command_births(
             .iter()
             .find(|request| request.target == birth.target)
         {
+            birth.capture = request
+                .plan
+                .as_ref()
+                .map(crate::generation_inputs::GenerationCaptureSpec::from_plan);
             *controls = PreparationControls::Request {
                 request_id: request.request_id.clone(),
                 options: GenerationOptions::from_constraints(&request.constraints),
@@ -509,6 +516,7 @@ pub(crate) fn history_births(
             authorization: IntentAuthorization::Redo {
                 original_activation: original.activation_id,
             },
+            capture: original.receipt.capture,
         });
     }
     births.sort_by(|a, b| a.target.cmp(&b.target));
@@ -539,17 +547,10 @@ pub(crate) fn insert_births(
     let mut ids = Vec::new();
     let mut displaced = Vec::new();
     let mut total = 0;
-    let bindings = intents::capture_inputs(
-        connection,
-        after,
-        &births
-            .iter()
-            .map(|birth| birth.target.clone())
-            .collect::<Vec<_>>(),
-    )?;
+    let bindings = intents::capture_inputs(connection, after, &births)?;
     let mut intent_displaced = Vec::new();
     let mut capacity = intents::ActivationCapacity::new(connection, after.revision_id())?;
-    for (birth, input_binding) in births.into_iter().zip(bindings) {
+    for (birth, inputs) in births.into_iter().zip(bindings) {
         let fallback = match &birth.fallback {
             HoldVideo::Background => HoldFallback::Background,
             HoldVideo::Freeze { asset, timestamp } => HoldFallback::Freeze {
@@ -564,7 +565,8 @@ pub(crate) fn insert_births(
             cause: birth.cause,
             authorization: birth.authorization,
             fallback,
-            input_binding,
+            capture: inputs.capture,
+            input_binding: inputs.binding,
         };
         let value = StoredGenerationPreparation {
             id: id_for(after.revision_id(), &birth.target)?,

@@ -76,7 +76,8 @@ fn request(origin: &ProjectDocument) -> StoredGenerationRequest {
             region_target: None,
         },
         provider: crate::generation::development_provider(1),
-        bridge_plan: None,
+        plan: None,
+        input_binding: None,
         relevance: Relevance::Current,
     }
 }

@@ -655,3 +655,396 @@ proptest! {
         assert_exact_work_limits(&plan, start, end, &actual);
     }
 }
+
+fn vfr_picture(point: ExactRatio, endpoints: EndpointPolicy) -> Picture {
+    Picture::Source {
+        asset: asset_id("video"),
+        point: SourcePoint {
+            ticks: point,
+            time_base: clock(),
+        },
+        span: span(0, 24),
+        selection: ExactSourceSpan::from(span(0, 24)),
+        endpoints,
+    }
+}
+
+#[test]
+fn measured_span_ordinals_preserve_vfr_forward_exclusion_reverse_and_zero_slope() {
+    let measured = index("video", clock(), &[0, 3, 11, 20], 24);
+    for (start, rate, distance, first, last) in [
+        (q(0, 1), q(1, 1), q(11, 1), 0, 1),
+        (q(3, 1), q(1, 1), q(8, 1), 1, 1),
+        (q(3, 1), q(1, 1), q(8001, 1000), 1, 2),
+        (q(20, 1), q(-1, 1), q(9, 1), 3, 2),
+        (q(19, 1), q(-1, 1), q(8, 1), 2, 2),
+        (q(11, 1), q(-1, 1), q(8, 1), 2, 1),
+        (q(11, 1), q(0, 1), q(40, 1), 2, 2),
+        (q(20, 1), q(1, 1), q(0, 1), 3, 3),
+        (q(0, 1), q(1, 1), q(24, 1), 0, 3),
+    ] {
+        let actual = PictureClockSlope::SourceTicks(rate)
+            .source_ordinals(
+                &vfr_picture(start, EndpointPolicy::Reject),
+                distance,
+                &measured,
+            )
+            .unwrap();
+        assert_eq!(
+            actual,
+            (SourceFrameId(first), SourceFrameId(last)),
+            "start={start:?}, rate={rate:?}, distance={distance:?}"
+        );
+    }
+    let freeze = Picture::Freeze {
+        asset: asset_id("video"),
+        point: SourcePoint {
+            ticks: q(9, 1),
+            time_base: clock(),
+        },
+    };
+    assert_eq!(
+        PictureClockSlope::Constant
+            .source_ordinals(&freeze, q(100, 1), &measured)
+            .unwrap(),
+        (SourceFrameId(1), SourceFrameId(1))
+    );
+    assert!(
+        PictureClockSlope::SourceTicks(q(0, 1))
+            .source_ordinals(&freeze, q(1, 1), &measured)
+            .is_err()
+    );
+}
+
+#[test]
+fn measured_span_support_holds_only_selected_picture_intervals() {
+    let measured = index("video", clock(), &[0, 3, 11, 20], 24);
+    for (start, slope, expected) in [(q(-10, 1), q(50, 1), (1, 2)), (q(40, 1), q(-50, 1), (2, 1))] {
+        let mut picture = vfr_picture(start, EndpointPolicy::HoldAdjacent);
+        let Picture::Source { selection, .. } = &mut picture else {
+            unreachable!()
+        };
+        *selection = ExactSourceSpan::from(span(3, 20));
+        assert_eq!(
+            PictureClockSlope::SourceTicks(slope)
+                .source_ordinals(&picture, q(1, 1), &measured)
+                .unwrap(),
+            (SourceFrameId(expected.0), SourceFrameId(expected.1))
+        );
+    }
+    for (selection, expected) in [(span(0, 11), 1), (span(0, 12), 2)] {
+        let mut picture = vfr_picture(q(0, 1), EndpointPolicy::HoldAdjacent);
+        let Picture::Source {
+            selection: selected,
+            ..
+        } = &mut picture
+        else {
+            unreachable!()
+        };
+        *selected = selection.into();
+        assert_eq!(
+            PictureClockSlope::SourceTicks(q(1, 1))
+                .source_ordinals(&picture, q(20, 1), &measured)
+                .unwrap()
+                .1,
+            SourceFrameId(expected)
+        );
+    }
+    let reject = vfr_picture(q(3, 1), EndpointPolicy::Reject);
+    for (slope, distance) in [
+        (q(1, 1), q(22, 1)),
+        (q(-1, 1), q(4, 1)),
+        (q(1, 1), q(-1, 1)),
+    ] {
+        assert!(
+            PictureClockSlope::SourceTicks(slope)
+                .source_ordinals(&reject, distance, &measured)
+                .is_err()
+        );
+    }
+    assert!(
+        PictureClockSlope::AcceptedFrames(q(1, 1))
+            .source_ordinals(&reject, q(1, 1), &measured)
+            .is_err()
+    );
+    let wrong_asset = index("other", clock(), &[0, 3, 11, 20], 24);
+    assert!(matches!(
+        PictureClockSlope::Constant.source_ordinals(&reject, q(0, 1), &wrong_asset),
+        Err(PlanError::IndexAssetMismatch { .. })
+    ));
+    let wrong_clock = index(
+        "video",
+        SourceTimeBase::new(1, 100).unwrap(),
+        &[0, 3, 11, 20],
+        24,
+    );
+    assert!(matches!(
+        PictureClockSlope::Constant.source_ordinals(&reject, q(0, 1), &wrong_clock),
+        Err(PlanError::IndexClockMismatch { .. })
+    ));
+}
+
+#[test]
+fn measured_span_wrapper_keeps_the_closed_terminal_distinct() {
+    let plan =
+        RenderPlan::compile(&document(&["source"], vec![("source", source(24, 0, 24))])).unwrap();
+    let actual = coverage(&plan, "root", q(0, 1), q(20, 1));
+    let measured = index("video", clock(), &[0, 3, 11, 20], 24);
+    assert_eq!(actual.spans.len(), 1);
+    assert_eq!(
+        actual.spans[0].source_ordinals(&measured).unwrap(),
+        (SourceFrameId(0), SourceFrameId(2))
+    );
+    let terminal = deadpan_plan::DefinitionPictureSpan::observation(
+        actual.terminal,
+        q(20, 1),
+        PictureClockSlope::Constant,
+    );
+    assert_eq!(
+        terminal.source_ordinals(&measured).unwrap(),
+        (SourceFrameId(3), SourceFrameId(3))
+    );
+}
+
+#[test]
+fn accepted_support_uses_exact_output_extent_and_rejects_noncanonical_descriptors() {
+    let picture = Picture::Accepted {
+        asset: asset_id("video"),
+        generated: None,
+        time_base: clock(),
+        position: q(1, 2),
+        frame: SourceFrameId(0),
+    };
+    let moving = PictureClockSlope::AcceptedFrames(q(3, 2));
+    assert_eq!(
+        moving
+            .accepted_ordinals(&picture, q(11, 3), duration(6))
+            .unwrap(),
+        (SourceFrameId(0), SourceFrameId(5))
+    );
+    assert!(
+        moving
+            .accepted_ordinals(&picture, q(11001, 3000), duration(6))
+            .is_err()
+    );
+    assert_eq!(
+        moving
+            .accepted_ordinals(&picture, ExactRatio::ZERO, duration(6))
+            .unwrap(),
+        (SourceFrameId(0), SourceFrameId(0))
+    );
+    assert_eq!(
+        PictureClockSlope::Constant
+            .accepted_ordinals(&picture, q(100, 1), duration(6))
+            .unwrap(),
+        (SourceFrameId(0), SourceFrameId(0))
+    );
+    assert!(
+        PictureClockSlope::AcceptedFrames(q(-1, 1))
+            .accepted_ordinals(&picture, q(1, 1), duration(6))
+            .is_err()
+    );
+    assert!(
+        PictureClockSlope::SourceTicks(q(1, 1))
+            .accepted_ordinals(&picture, q(1, 1), duration(6))
+            .is_err()
+    );
+    assert!(
+        moving
+            .accepted_ordinals(&picture, q(-1, 1), duration(6))
+            .is_err()
+    );
+    assert!(
+        moving
+            .accepted_ordinals(&picture, q(0, 1), FrameDuration::ZERO)
+            .is_err()
+    );
+    let mut wrong = picture.clone();
+    let Picture::Accepted { frame, .. } = &mut wrong else {
+        unreachable!()
+    };
+    *frame = SourceFrameId(1);
+    assert!(
+        moving
+            .accepted_ordinals(&wrong, q(1, 1), duration(6))
+            .is_err()
+    );
+    let measured = index("video", clock(), &[0, 3, 11, 20, 21, 22], 24);
+    assert_eq!(
+        moving
+            .source_ordinals(&picture, q(11, 3), &measured)
+            .unwrap(),
+        moving
+            .accepted_ordinals(&picture, q(11, 3), duration(6))
+            .unwrap()
+    );
+}
+
+#[test]
+fn accepted_index_support_requires_the_retained_sampled_count() {
+    let (artifact, _) = generated_fixture("coverage-", ['a', 'b', 'c']);
+    let picture = Picture::Accepted {
+        asset: artifact.sampled_asset.clone(),
+        generated: Some(std::sync::Arc::new(artifact)),
+        time_base: clock(),
+        position: q(29, 1),
+        frame: SourceFrameId(29),
+    };
+    let measured = |frames| {
+        let pts: Vec<_> = (0..frames).map(|ordinal| ordinal * 1001).collect();
+        index("coverage-sampled", clock(), &pts, frames * 1001)
+    };
+    let constant = PictureClockSlope::Constant;
+    assert_eq!(
+        constant
+            .source_ordinals(&picture, q(1, 1), &measured(30))
+            .unwrap(),
+        (SourceFrameId(29), SourceFrameId(29))
+    );
+    assert!(
+        constant
+            .source_ordinals(&picture, q(1, 1), &measured(25))
+            .is_err()
+    );
+    // An extra measured picture also disagrees, even though the requested
+    // ordinal itself exists. The sampled master is exactly thirty pictures.
+    assert!(
+        constant
+            .source_ordinals(&picture, q(1, 1), &measured(31))
+            .is_err()
+    );
+}
+
+fn generated_coverage(freeze: bool) -> (ProjectDocument, RenderPlan, DefinitionPictureCoverage) {
+    let mut pause = hold(30);
+    if freeze {
+        let NodeKind::Hold { recipe } = &mut pause.kind else {
+            unreachable!()
+        };
+        recipe.video = HoldVideo::Freeze {
+            asset: asset_id("video"),
+            timestamp: span(1001, 2002).start(),
+        };
+    }
+    pause.cutaways.push(Cutaway {
+        range: range(5, 6),
+        asset: asset_id("video"),
+        selection: span(20020, 21021).into(),
+        fit: CutawayFit::Hold,
+        removed: false,
+    });
+    let before = document(&["pause"], vec![("pause", pause)]);
+    let (artifact, assets) = generated_fixture("fallback-", ['a', 'b', 'c']);
+    let command = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: revision("accepted"),
+        command: Command::AcceptGeneratedHold {
+            node: id("pause"),
+            artifact,
+            assets,
+        },
+    };
+    let accepted = deadpan_core::apply(&before, &command)
+        .unwrap()
+        .forward
+        .apply(&before)
+        .unwrap();
+    let plan = RenderPlan::compile(&accepted).unwrap();
+    let spans = coverage(&plan, "root", q(0, 1), q(10, 1));
+    (accepted, plan, spans)
+}
+
+#[test]
+fn whole_span_fallback_preserves_interval_and_refuses_a_generated_holds_cutaway() {
+    for freeze in [false, true] {
+        let (_, plan, coverage) = generated_coverage(freeze);
+        assert_eq!(coverage.spans.len(), 3);
+        for index in [0, 2] {
+            let span = &coverage.spans[index];
+            let fallback = plan.definition_hold_fallback_span(span).unwrap().unwrap();
+            assert_eq!(fallback.start.position, span.start.position);
+            assert_eq!(fallback.end_exclusive, span.end_exclusive);
+            assert_eq!(fallback.clock, PictureClockSlope::Constant);
+            assert_eq!(
+                fallback.start.picture,
+                if freeze {
+                    Picture::Freeze {
+                        asset: asset_id("video"),
+                        point: SourcePoint {
+                            ticks: q(1001, 1),
+                            time_base: clock(),
+                        },
+                    }
+                } else {
+                    Picture::Background
+                }
+            );
+            assert!(
+                plan.definition_hold_fallback_span(&fallback).is_err(),
+                "substitution grants no new canonical provider proof"
+            );
+        }
+        assert_eq!(
+            plan.definition_hold_fallback_span(&coverage.spans[1])
+                .unwrap(),
+            None
+        );
+    }
+}
+
+#[test]
+fn whole_span_fallback_rejects_changed_public_fields_and_another_compiled_plan() {
+    let (document, plan, coverage) = generated_coverage(false);
+    let original = &coverage.spans[0];
+    let mutations: [fn(&mut deadpan_plan::DefinitionPictureSpan); 12] = [
+        |span| span.end_exclusive = q(6, 1), // crosses the hidden cutaway
+        |span| span.end_exclusive = q(4, 1), // even a forged subinterval
+        |span| span.clock = PictureClockSlope::Constant,
+        |span| span.start.position = q(1, 1),
+        |span| span.start.local_position = q(1, 1),
+        |span| span.start.definition = id("pause"),
+        |span| span.start.instance.node = id("other"),
+        |span| span.start.revision_id = revision("later"),
+        |span| span.start.project_id = ProjectId::new("other").unwrap(),
+        |span| span.start.picture = Picture::Background,
+        |span| span.start.framing.clear(),
+        |span| span.start.lookup.visited_nodes += 1,
+    ];
+    assert!(!original.start.framing.is_empty());
+    for mutate in mutations {
+        let mut forged = original.clone();
+        mutate(&mut forged);
+        assert!(plan.definition_hold_fallback_span(&forged).is_err());
+    }
+    let separately_compiled = RenderPlan::compile(&document).unwrap();
+    assert!(
+        separately_compiled
+            .definition_hold_fallback_span(original)
+            .is_err()
+    );
+    let mut transplanted = original.clone();
+    transplanted.start = separately_compiled
+        .definition_picture_coverage(&id("root"), q(0, 1), q(10, 1), ample())
+        .unwrap()
+        .spans[0]
+        .start
+        .clone();
+    assert!(plan.definition_hold_fallback_span(&transplanted).is_err());
+    assert!(
+        separately_compiled
+            .definition_hold_fallback_span(&transplanted)
+            .is_err()
+    );
+    let raw = deadpan_plan::DefinitionPictureSpan::observation(
+        original.start.clone(),
+        original.end_exclusive,
+        original.clock,
+    );
+    assert!(plan.definition_hold_fallback_span(&raw).is_err());
+    assert_eq!(
+        serde_json::to_value(original).unwrap(),
+        serde_json::to_value(raw).unwrap(),
+        "private capability is absent from inspection JSON"
+    );
+}

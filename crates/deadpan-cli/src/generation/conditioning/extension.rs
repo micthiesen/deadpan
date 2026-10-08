@@ -92,9 +92,20 @@ pub fn prepare_extension_scoped_with_options(
         .map_err(|error| error.to_string())?;
     control.check()?;
     let plan = development_plan(direction, context.boundaries.duration, rate)?;
+    options
+        .validate_resolved_conditioning(mode(direction))
+        .map_err(|error| error.to_string())?;
+    let binding = session.context_input_binding(
+        &context,
+        deadpan_store::generation_inputs::GenerationCaptureSpec::from_plan(
+            &deadpan_jobs::GenerationPlan::Extension(plan.clone()),
+        ),
+        target_id.as_ref(),
+    )?;
     // Structural lookup alone does not establish continuous same-shot context.
     // The qualifier consumes the same immutable session, samples and deadline.
-    let continuity = qualify_extension_context(&mut session, &context, cancelled, deadline)?;
+    let continuity =
+        qualify_extension_context(&mut session, &context, binding, cancelled, deadline)?;
     control.check()?;
     let mut constraints = HoldConstraints {
         video: VideoSpec::new(

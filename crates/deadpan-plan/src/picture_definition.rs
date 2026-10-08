@@ -15,7 +15,8 @@ use crate::{Picture, PictureCaption, PictureFraming, PlanError};
 #[path = "picture_context.rs"]
 mod context;
 pub use context::{
-    MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext, ScopedHoldContextRequest,
+    HoldContextUnavailable, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext,
+    ScopedHoldContextObservation, ScopedHoldContextRequest,
 };
 #[path = "picture_coverage.rs"]
 mod coverage;

@@ -88,20 +88,22 @@ impl Replay {
         target: &ScopedNodeTarget,
     ) -> Result<bool, StoreError> {
         use rusqlite::OptionalExtension;
-        let scope: Option<String> = connection
+        let request: Option<(String, i64)> = connection
             .query_row(
-                "SELECT scope_id FROM generation_requests WHERE request_id=?1",
+                "SELECT scope_id,request_version FROM generation_requests WHERE request_id=?1",
                 [request.as_str()],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?;
-        let Some(scope) = scope else {
+        let Some((scope, version)) = request else {
             return Ok(false);
         };
         Ok(self
             .addresses
             .get(&parse_id(scope)?)
-            .is_some_and(|address| &address.target == target))
+            .is_some_and(|address| {
+                version > 0 && version <= address.version && &address.target == target
+            }))
     }
 
     pub(crate) fn new(
@@ -254,4 +256,83 @@ fn address_budget(
         .ok_or_else(|| {
             integrity("historical generation scope addresses exceed the replay byte budget")
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use deadpan_core::NodeId;
+    use deadpan_jobs::RequestId;
+
+    #[test]
+    fn future_request_on_existing_scope_cannot_authorize_earlier_history() {
+        // The database contains all retained requests, including ones the
+        // chronological replay has not reached yet. Its address map is the
+        // authority for which request versions have actually arrived.
+        let connection = Connection::open_in_memory().unwrap();
+        connection.execute_batch(
+            "CREATE TABLE generation_requests(request_id TEXT,scope_id TEXT,request_version INTEGER);
+             INSERT INTO generation_requests VALUES
+             ('earlier','scope',1),('future','scope',2),('zero','scope',0),
+             ('negative','scope',-1),('other-scope','unseen',1);",
+        ).unwrap();
+        let target = ScopedNodeTarget {
+            node: NodeId::new("hold").unwrap(),
+            repeats: Vec::new(),
+        };
+        let scope = GenerationScopeId::from_first_request(RequestId::new("scope").unwrap());
+        let mut replay = Replay {
+            addresses: BTreeMap::from([(
+                scope.clone(),
+                Address {
+                    target: target.clone(),
+                    version: 1,
+                },
+            )]),
+            address_bytes: 0,
+            enabled: true,
+        };
+        let earlier = RequestId::new("earlier").unwrap();
+        let future = RequestId::new("future").unwrap();
+        assert!(
+            replay
+                .request_has_target(&connection, &earlier, &target)
+                .unwrap()
+        );
+        assert!(
+            !replay
+                .request_has_target(&connection, &future, &target)
+                .unwrap()
+        );
+        for id in ["zero", "negative", "other-scope", "missing"] {
+            assert!(
+                !replay
+                    .request_has_target(&connection, &RequestId::new(id).unwrap(), &target)
+                    .unwrap(),
+                "{id}"
+            );
+        }
+        let other = ScopedNodeTarget {
+            node: NodeId::new("other-hold").unwrap(),
+            repeats: Vec::new(),
+        };
+        assert!(
+            !replay
+                .request_has_target(&connection, &earlier, &other)
+                .unwrap()
+        );
+
+        replay.addresses.get_mut(&scope).unwrap().version = 2;
+        assert!(
+            replay
+                .request_has_target(&connection, &future, &target)
+                .unwrap()
+        );
+        assert!(
+            replay
+                .request_has_target(&connection, &earlier, &target)
+                .unwrap(),
+            "Redo may retain a proved older request after a later request has arrived"
+        );
+    }
 }

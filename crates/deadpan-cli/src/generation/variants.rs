@@ -66,7 +66,7 @@ pub fn offered(
 ) -> Result<BTreeMap<ScopedNodeTarget, OfferedRequest>, StoreError> {
     let mut found = BTreeMap::new();
     for request in store.current_generation_requests()? {
-        if request.bridge_plan.is_none() {
+        if request.bridge_plan().is_none() {
             continue;
         }
         if request.target.validate(document).is_err() {

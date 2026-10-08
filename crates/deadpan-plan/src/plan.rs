@@ -18,8 +18,9 @@ use crate::{Picture, PictureFraming, PictureSample, PlanError};
 mod picture_definition;
 pub use picture_definition::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
-    MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES,
-    PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextRequest,
+    HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
+    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext,
+    ScopedHoldContextObservation, ScopedHoldContextRequest,
 };
 use picture_definition::{PictureBudget, PictureContinuity, PictureWalk};
 #[path = "picture_definition_index.rs"]

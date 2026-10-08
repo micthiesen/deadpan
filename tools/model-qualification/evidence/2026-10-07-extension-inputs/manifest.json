@@ -1,0 +1,114 @@
+{
+  "README.md": {
+    "bytes": 3263,
+    "sha256": "ebbee0796a4c01fd6b63ff23bb66d8d3f7fa0436e040a0d89997c40a0c65c992"
+  },
+  "continuation.json": {
+    "bytes": 1819,
+    "sha256": "0754e18700bf91fc152245e6648dfd549eab03a7c2025da81592cf870dd15eac"
+  },
+  "environment.json": {
+    "bytes": 446,
+    "sha256": "8ddce23b85d198183993250e1f8d32202b9fa99ba43589bf99a73fc7f42100ae"
+  },
+  "extension-inputs-auto-diagnostic.log.gz": {
+    "bytes": 6973,
+    "sha256": "9261955e1cdc0d8c9c09b9b071845608f390bdd4bc76872700391a62525f408a"
+  },
+  "extension-inputs-clippy-final.log.gz": {
+    "bytes": 302,
+    "sha256": "a3f0f26e9ed5963d5e0754cec82fae8185aa737227cf08206a98e30987b7c550"
+  },
+  "extension-inputs-continuation.log.gz": {
+    "bytes": 138,
+    "sha256": "818257809946d876984a51924f51f4fd02012d3fb361b2a55411136293a18e1d"
+  },
+  "extension-inputs-corrected.log.gz": {
+    "bytes": 13411,
+    "sha256": "6475c30f2195f9aa619cfa51d3972a66f9ac66ff6a08d80f6a435e3446b9303c"
+  },
+  "extension-inputs-doc-tests.log.gz": {
+    "bytes": 421,
+    "sha256": "c1eecf64105e5b60043660c1cb5af772786d9f641d8b9256a2cbd0673a1e856b"
+  },
+  "extension-inputs-fifth.log.gz": {
+    "bytes": 7046,
+    "sha256": "d6b636c3f1195254d136b0054bd9504d0f3d2736fd819444b30e06f7a49711ba"
+  },
+  "extension-inputs-first.log.gz": {
+    "bytes": 787,
+    "sha256": "8d825577866024f52d641b8d66801d2d4c537e1a64f3bd6c24479392c58afa88"
+  },
+  "extension-inputs-fmt.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "extension-inputs-focused.log.gz": {
+    "bytes": 21776,
+    "sha256": "dc988d259c14540059b9a3f1690afae8236f5b6ebb2e395ff1b2a488c21b6461"
+  },
+  "extension-inputs-fourth.log.gz": {
+    "bytes": 412,
+    "sha256": "96c2576ed576938929583410d03e41864baf914a03ef0f5faf76db2e33578cfa"
+  },
+  "extension-inputs-gate-corrected.log.gz": {
+    "bytes": 165639,
+    "sha256": "a9277bec868fd1120f4daf7da1b175f2851f002f3a9d1ed528d2808a202f27ed"
+  },
+  "extension-inputs-gate-fixture-corrections.log.gz": {
+    "bytes": 5616,
+    "sha256": "22c61143ac7b13a37873e1c574a3ab38d9927c5bc3c828da64d8a8fb3d41307b"
+  },
+  "extension-inputs-gate.log.gz": {
+    "bytes": 3824,
+    "sha256": "3f1d8d49d51e84c5e7b52daf22a4e4bb23042a1f1b1880bb1842577f32cc6832"
+  },
+  "extension-inputs-generation.log.gz": {
+    "bytes": 13907,
+    "sha256": "50a4dc223a4e34fe4a7855ec4932a184986843b0737cb8605df22a40ceff013a"
+  },
+  "extension-inputs-leak-diagnostic.log.gz": {
+    "bytes": 377,
+    "sha256": "8f822509ce85209ec6e82aa4169c19fd1e542e2e04ee4982b95120ffc764f553"
+  },
+  "extension-inputs-second.log.gz": {
+    "bytes": 1162,
+    "sha256": "1e32f0cb01dc8fad4796b7b6c312763a7206b5bd749007bb56ffc2b3954cbcff"
+  },
+  "extension-inputs-third.log.gz": {
+    "bytes": 523,
+    "sha256": "b0763913ff218b1b0d0b4f6bb3c851c27e762dc401d4f134a04ffb561973a63f"
+  },
+  "extension-inputs-ui-inventory.log.gz": {
+    "bytes": 20974,
+    "sha256": "fe3438b2e1c945f46a0df88ed2f0a287162c618364d708ae2dc39a99c00a5c37"
+  },
+  "extension-inputs-ui-tests.log.gz": {
+    "bytes": 35236,
+    "sha256": "0d945841f8c65dbedc61db3224e4572880a2d3123e7a6076bd82a9c95d727225"
+  },
+  "extension-inputs-workspace-inventory.log.gz": {
+    "bytes": 34099,
+    "sha256": "7cfea0ba7f29923f17c709225481cf55d0f39d31e5784784e74bf9397eded21e"
+  },
+  "post-gate-binaries.json": {
+    "bytes": 46937,
+    "sha256": "edb2b52dce8f88de92e41a2139d6fdbeefdf1182448b12cca0d3bc7766776692"
+  },
+  "post-gate-source-changes.json": {
+    "bytes": 394,
+    "sha256": "66170bbee39eb9ff6816243798c6035b65cfe52d64b311542eacb435b62b28e6"
+  },
+  "results.json": {
+    "bytes": 6378,
+    "sha256": "002b081f428e3097a407e0e802bccc298692cbed74a4a177691c480979cda0e4"
+  },
+  "source-before-fixture-corrections.json": {
+    "bytes": 11406,
+    "sha256": "d26f24ef00f80e4477f4122cc12e4baa9b9f14d39300536e2a41eeb9e877d698"
+  },
+  "source.json": {
+    "bytes": 12270,
+    "sha256": "4bbe3faa0861a54b92eb8728cbe4b09fade553372451dd49b3f831817a193d18"
+  }
+}

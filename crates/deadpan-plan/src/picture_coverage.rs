@@ -2,9 +2,13 @@
 
 use deadpan_core::{BoundaryQueryLimits, Cutaway, CutawayFit, ExactRatio, FrameRate, NodeId};
 use serde::Serialize;
+use std::sync::Arc;
 
 use super::{DefinitionPictureSample, PictureBudget};
 use crate::{LookupStats, PlanError, RenderPlan};
+
+#[path = "picture_coverage_selection.rs"]
+mod selection;
 
 /// Aggregate limit shared by every context in a batch, not a per-sample limit.
 pub const MAX_DEFINITION_PICTURE_SPANS: usize = 512;
@@ -32,6 +36,35 @@ pub struct DefinitionPictureSpan {
     pub start: DefinitionPictureSample,
     pub end_exclusive: ExactRatio,
     pub clock: PictureClockSlope,
+    #[serde(skip)]
+    witness: Option<Arc<DefinitionSpanWitness>>,
+}
+
+/// The retained snapshot is charged under the same aggregate metadata ledger
+/// as ordinary samples. It proves the whole original interval without another
+/// canonical walk for each dependency in a replacement closure.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DefinitionSpanWitness {
+    start: DefinitionPictureSample,
+    end_exclusive: ExactRatio,
+    clock: PictureClockSlope,
+}
+
+impl DefinitionPictureSpan {
+    /// An inspected descriptor or zero-length terminal, without canonical span
+    /// authority. Ordinal observation is available; provider substitution is not.
+    pub fn observation(
+        start: DefinitionPictureSample,
+        end_exclusive: ExactRatio,
+        clock: PictureClockSlope,
+    ) -> Self {
+        Self {
+            start,
+            end_exclusive,
+            clock,
+            witness: None,
+        }
+    }
 }
 
 /// Complete coverage of a closed definition interval: consecutive half-open
@@ -45,6 +78,42 @@ pub struct DefinitionPictureCoverage {
 }
 
 impl RenderPlan {
+    /// Substitute the saved deterministic provider for one complete canonical
+    /// Generated Hold interval. The exact start, endpoint and affine clock must
+    /// still match this plan's issued coverage. Cutaways, implicit gaps and other
+    /// providers return None. Public observations grant no substitution proof.
+    pub fn definition_hold_fallback_span(
+        &self,
+        span: &DefinitionPictureSpan,
+    ) -> Result<Option<DefinitionPictureSpan>, PlanError> {
+        let witness = span.witness.as_ref().ok_or(PlanError::InvalidPlan(
+            "picture span has no canonical interval evidence",
+        ))?;
+        if span.start != witness.start
+            || span.end_exclusive != witness.end_exclusive
+            || span.clock != witness.clock
+        {
+            return Err(PlanError::InvalidPlan(
+                "picture span differs from its canonical interval evidence",
+            ));
+        }
+        // Value equality does not grant an Arc identity. Validate the private
+        // original too, so an equal sample from another compilation cannot
+        // transplant its start onto this interval's retained evidence.
+        self.definition_hold_fallback_picture(&witness.start)?;
+        let Some(picture) = self.definition_hold_fallback_picture(&span.start)? else {
+            return Ok(None);
+        };
+        let mut start = span.start.clone();
+        start.picture = picture;
+        start.hold_provider = None;
+        Ok(Some(DefinitionPictureSpan::observation(
+            start,
+            span.end_exclusive,
+            PictureClockSlope::Constant,
+        )))
+    }
+
     /// Enumerate only the requested definition interval, including dormant
     /// definitions, without expanding outer Repeat occurrences. Both endpoints
     /// must be valid picture coordinates, strictly before the definition end.
@@ -110,12 +179,22 @@ impl RenderPlan {
                 return Err(PlanError::InvalidPlan("picture coverage did not advance"));
             }
             position = continuity.end;
+            budget.reserve_metadata(
+                std::mem::size_of::<DefinitionSpanWitness>() + 2 * std::mem::size_of::<usize>(),
+            )?;
+            budget.retain_sample(&sample)?;
+            let witness = Arc::new(DefinitionSpanWitness {
+                start: sample.clone(),
+                end_exclusive: position,
+                clock: continuity.clock,
+            });
             // Exact reservation avoids uncharged geometric Vec spare capacity.
             spans.reserve_exact(1);
             spans.push(DefinitionPictureSpan {
                 start: sample,
                 end_exclusive: position,
                 clock: continuity.clock,
+                witness: Some(witness),
             });
         }
         Ok(DefinitionPictureCoverage {

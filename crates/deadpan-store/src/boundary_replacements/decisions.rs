@@ -1,4 +1,4 @@
-//! Pure final-provider decisions for at most two boundary mismatch terms per Hold.
+//! Pure final-provider decisions for bounded, variable-degree mismatch equations.
 //!
 //! Constants propagate before one fixed residual SCC partition. Components are
 //! evaluated after their dependencies. A cycle first tries all retained, then
@@ -8,11 +8,14 @@
 use std::ops::Range;
 
 const MAX_NODES: usize = deadpan_core::MAX_DOCUMENT_NODES;
+/// Aggregate input terms, including constants and duplicates. This is not a
+/// per-Hold degree limit: temporal support can cross more providers than K+2.
+const MAX_TERMS: usize = 8 * MAX_NODES;
 const DEFAULT_WORK: usize = 64 * MAX_NODES;
 const UNASSIGNED: usize = usize::MAX;
 
 /// Whether an endpoint differs from the accepted Hold's required input.
-/// Same fills an unused equation slot; a missing picture is still compared by
+/// Same can fill an unused equation slot; a missing picture is still compared by
 /// the caller as an actual endpoint identity, never assumed to be Same.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum MismatchTerm {
@@ -47,6 +50,7 @@ impl MismatchTerm {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct DecisionLimits {
     pub(super) max_nodes: usize,
+    pub(super) max_terms: usize,
     pub(super) max_work: usize,
 }
 
@@ -54,6 +58,7 @@ impl Default for DecisionLimits {
     fn default() -> Self {
         Self {
             max_nodes: MAX_NODES,
+            max_terms: MAX_TERMS,
             max_work: DEFAULT_WORK,
         }
     }
@@ -85,7 +90,7 @@ pub(super) struct Decisions {
     /// Node and term/edge visits across validation, folding, reverse indexing,
     /// propagation, SCC traversal, evaluation, and final verification. Fixed
     /// size vector initialization and map-free O(1) bookkeeping are bounded by
-    /// max_nodes and the two-terms-per-node contract, not charged separately.
+    /// max_nodes/max_terms and covered by the corresponding node/term visits.
     pub(super) work: usize,
 }
 
@@ -93,6 +98,8 @@ pub(super) struct Decisions {
 pub(super) enum DecisionError {
     #[error("boundary decision graph has {nodes} nodes; maximum is {maximum}")]
     NodeLimit { nodes: usize, maximum: usize },
+    #[error("boundary decision graph exceeds its {maximum}-term limit")]
+    TermLimit { maximum: usize },
     #[error("boundary decision graph exceeded its {maximum}-visit work limit")]
     WorkLimit { maximum: usize },
     #[error("boundary equation {node} names absent dependency {dependency}")]
@@ -118,14 +125,15 @@ impl Budget {
     }
 }
 
-/// OR both endpoint terms. Input indices name automatically eligible, currently
-/// accepted Holds. Already selected fallbacks are constants in their consumers;
+/// OR every mismatch term; an empty equation is false. Input indices name
+/// automatically eligible, currently accepted Holds. Already selected fallbacks
+/// are constants in their consumers;
 /// renewing live intent at them is a separate host decision, never a variable
 /// that can restore an old accepted provider here. Invalid dependencies are
 /// rejected even in a constant-true OR.
 /// The function returns no partial decisions when any bound or invariant fails.
-pub(super) fn decide(
-    equations: &[[MismatchTerm; 2]],
+pub(super) fn decide<E: AsRef<[MismatchTerm]>>(
+    equations: &[E],
     limits: DecisionLimits,
 ) -> Result<Decisions, DecisionError> {
     let count = equations.len();
@@ -145,9 +153,19 @@ pub(super) fn decide(
         maximum: limits.max_work,
         used: 0,
     };
-    let mut folded = Vec::with_capacity(count);
+    // Capture each borrowed slice once and check the aggregate bound before
+    // allocating term/edge storage. Every dependency is validated, even after a
+    // true constant or a complementary pair has made its equation true.
+    let mut inputs = Vec::with_capacity(count);
+    let mut term_count = 0_usize;
     for (node, equation) in equations.iter().enumerate() {
         budget.visit()?;
+        let equation = equation.as_ref();
+        let maximum = limits.max_terms.min(MAX_TERMS);
+        term_count = term_count
+            .checked_add(equation.len())
+            .filter(|total| *total <= maximum)
+            .ok_or(DecisionError::TermLimit { maximum })?;
         for term in equation {
             budget.visit()?;
             if let Some(dependency) = term.dependency()
@@ -156,8 +174,9 @@ pub(super) fn decide(
                 return Err(DecisionError::InvalidDependency { node, dependency });
             }
         }
-        folded.push(fold(*equation));
+        inputs.push(equation);
     }
+    let mut folded = FlatEquations::new(&inputs, term_count, &mut budget)?;
     let reverse = ReverseEdges::new(&folded, &mut budget)?;
     let mut values = propagate(&mut folded, &reverse, &mut budget)?;
     let components = components(&folded, &values, &mut budget)?;
@@ -171,7 +190,7 @@ pub(super) fn decide(
             for &node in &components.members[range.clone()] {
                 budget.visit()?;
                 let output = evaluate(
-                    &folded[node],
+                    folded.equation(node),
                     |dependency| {
                         if components.by_node[dependency] == component {
                             Ok(candidate)
@@ -199,7 +218,7 @@ pub(super) fn decide(
     let mut nodes = Vec::with_capacity(count);
     let mut cyclic_groups: Vec<Vec<usize>> = Vec::new();
     let mut group_for_component = vec![None; components.ranges.len()];
-    for (node, equation) in equations.iter().enumerate() {
+    for (node, equation) in inputs.iter().enumerate() {
         budget.visit()?;
         let replace = values[node].ok_or(DecisionError::InvalidGraph("unassigned final node"))?;
         let mismatch = evaluate(
@@ -237,34 +256,77 @@ pub(super) fn decide(
     })
 }
 
-fn fold(mut terms: [MismatchTerm; 2]) -> [MismatchTerm; 2] {
-    use MismatchTerm::{Different, IfReplaced, IfRetained, Same};
-    if terms.contains(&Different)
-        || matches!(terms, [IfReplaced(a), IfRetained(b)] | [IfRetained(a), IfReplaced(b)] if a == b)
-    {
-        return [Different, Same];
-    }
-    if terms[0] == Same {
-        terms.swap(0, 1);
-    }
-    if terms[0] == terms[1] {
-        terms[1] = Same;
-    }
-    terms
+/// Compact residual equations. Generation-stamped polarity entries deduplicate
+/// dependencies and detect x OR !x in constant time per input term, without a
+/// hash table, per-equation sort, or repeatedly clearing a node-sized table.
+struct FlatEquations {
+    terms: Vec<MismatchTerm>,
+    ranges: Vec<Range<usize>>,
+    constants: Vec<Option<bool>>,
 }
 
-fn constant(terms: &[MismatchTerm; 2]) -> Option<bool> {
-    if terms.contains(&MismatchTerm::Different) {
-        Some(true)
-    } else if *terms == [MismatchTerm::Same; 2] {
-        Some(false)
-    } else {
-        None
+impl FlatEquations {
+    fn new(
+        inputs: &[&[MismatchTerm]],
+        term_count: usize,
+        budget: &mut Budget,
+    ) -> Result<Self, DecisionError> {
+        let mut terms = Vec::with_capacity(term_count);
+        let mut ranges = Vec::with_capacity(inputs.len());
+        let mut constants = Vec::with_capacity(inputs.len());
+        let mut seen = vec![(UNASSIGNED, 0_u8); inputs.len()];
+        for (node, input) in inputs.iter().enumerate() {
+            budget.visit()?;
+            let start = terms.len();
+            let mut different = false;
+            for &term in *input {
+                budget.visit()?;
+                let (dependency, polarity) = match term {
+                    MismatchTerm::Same => continue,
+                    MismatchTerm::Different => {
+                        different = true;
+                        continue;
+                    }
+                    MismatchTerm::IfReplaced(index) => (index, 1),
+                    MismatchTerm::IfRetained(index) => (index, 2),
+                };
+                let (generation, seen_polarities) = &mut seen[dependency];
+                if *generation != node {
+                    *generation = node;
+                    *seen_polarities = 0;
+                }
+                if *seen_polarities & polarity == 0 {
+                    *seen_polarities |= polarity;
+                    different |= *seen_polarities == 3;
+                    terms.push(term);
+                }
+            }
+            if different {
+                terms.truncate(start);
+            }
+            constants.push(if different {
+                Some(true)
+            } else if terms.len() == start {
+                Some(false)
+            } else {
+                None
+            });
+            ranges.push(start..terms.len());
+        }
+        Ok(Self {
+            terms,
+            ranges,
+            constants,
+        })
+    }
+
+    fn equation(&self, node: usize) -> &[MismatchTerm] {
+        &self.terms[self.ranges[node].clone()]
     }
 }
 
 fn evaluate(
-    terms: &[MismatchTerm; 2],
+    terms: &[MismatchTerm],
     mut value: impl FnMut(usize) -> Result<bool, DecisionError>,
     budget: &mut Budget,
 ) -> Result<bool, DecisionError> {
@@ -281,22 +343,20 @@ fn evaluate(
     Ok(mismatch)
 }
 
-/// Compressed reverse adjacency; two slots per equation bound all edges.
+/// Compressed reverse adjacency. Slots index the bounded flat term array.
 struct ReverseEdges {
     offsets: Vec<usize>,
     edges: Vec<(usize, usize)>,
 }
 
 impl ReverseEdges {
-    fn new(equations: &[[MismatchTerm; 2]], budget: &mut Budget) -> Result<Self, DecisionError> {
-        let count = equations.len();
+    fn new(equations: &FlatEquations, budget: &mut Budget) -> Result<Self, DecisionError> {
+        let count = equations.ranges.len();
         let mut offsets = vec![0; count + 1];
-        for equation in equations {
-            for term in equation {
-                budget.visit()?;
-                if let Some(dependency) = term.dependency() {
-                    offsets[dependency + 1] += 1;
-                }
+        for term in &equations.terms {
+            budget.visit()?;
+            if let Some(dependency) = term.dependency() {
+                offsets[dependency + 1] += 1;
             }
         }
         for index in 1..=count {
@@ -306,10 +366,11 @@ impl ReverseEdges {
         }
         let mut next = offsets[..count].to_vec();
         let mut edges = vec![(0, 0); offsets[count]];
-        for (node, equation) in equations.iter().enumerate() {
-            for (slot, term) in equation.iter().enumerate() {
+        for (node, range) in equations.ranges.iter().enumerate() {
+            budget.visit()?;
+            for slot in range.clone() {
                 budget.visit()?;
-                if let Some(dependency) = term.dependency() {
+                if let Some(dependency) = equations.terms[slot].dependency() {
                     edges[next[dependency]] = (node, slot);
                     next[dependency] += 1;
                 }
@@ -320,15 +381,17 @@ impl ReverseEdges {
 }
 
 fn propagate(
-    equations: &mut [[MismatchTerm; 2]],
+    equations: &mut FlatEquations,
     reverse: &ReverseEdges,
     budget: &mut Budget,
 ) -> Result<Vec<Option<bool>>, DecisionError> {
-    let mut values = vec![None; equations.len()];
+    let mut values = vec![None; equations.ranges.len()];
+    let mut remaining = Vec::with_capacity(equations.ranges.len());
     let mut queue = Vec::new();
-    for (node, equation) in equations.iter().enumerate() {
+    for (node, range) in equations.ranges.iter().enumerate() {
         budget.visit()?;
-        if let Some(value) = constant(equation) {
+        remaining.push(range.len());
+        if let Some(value) = equations.constants[node] {
             values[node] = Some(value);
             queue.push(node);
         }
@@ -347,7 +410,7 @@ fn propagate(
             if values[node].is_some() {
                 continue;
             }
-            let mismatch = match equations[node][slot] {
+            let mismatch = match equations.terms[slot] {
                 MismatchTerm::IfReplaced(_) => value,
                 MismatchTerm::IfRetained(_) => !value,
                 _ => {
@@ -356,13 +419,16 @@ fn propagate(
                     ));
                 }
             };
-            equations[node][slot] = if mismatch {
+            equations.terms[slot] = if mismatch {
                 MismatchTerm::Different
             } else {
                 MismatchTerm::Same
             };
-            if let Some(value) = constant(&equations[node]) {
-                values[node] = Some(value);
+            remaining[node] = remaining[node]
+                .checked_sub(1)
+                .ok_or(DecisionError::InvalidGraph("constant edge count underflow"))?;
+            if mismatch || remaining[node] == 0 {
+                values[node] = Some(mismatch);
                 queue.push(node);
             }
         }
@@ -379,11 +445,11 @@ struct Components {
 /// Iterative Tarjan traversal. Edges point from consumer to dependency, giving
 /// dependency-first component completion without another condensation sort.
 fn components(
-    equations: &[[MismatchTerm; 2]],
+    equations: &FlatEquations,
     values: &[Option<bool>],
     budget: &mut Budget,
 ) -> Result<Components, DecisionError> {
-    let count = equations.len();
+    let count = equations.ranges.len();
     let mut indices = vec![UNASSIGNED; count];
     let mut low = vec![UNASSIGNED; count];
     let mut active = vec![false; count];
@@ -408,12 +474,12 @@ fn components(
         frames.push((start, 0));
         while let Some(&(node, slot)) = frames.last() {
             budget.visit()?;
-            if slot < 2 {
+            if slot < equations.ranges[node].len() {
                 frames
                     .last_mut()
                     .ok_or(DecisionError::InvalidGraph("DFS frame is absent"))?
                     .1 += 1;
-                let Some(dependency) = equations[node][slot].dependency() else {
+                let Some(dependency) = equations.equation(node)[slot].dependency() else {
                     continue;
                 };
                 if values[dependency].is_some() {
@@ -477,10 +543,27 @@ mod tests {
         assert_eq!(MismatchTerm::from_matches(7, true, false), Replaced(7));
         assert_eq!(MismatchTerm::from_matches(7, false, true), Retained(7));
         assert_eq!(MismatchTerm::from_matches(7, false, false), Different);
-        assert_eq!(fold([Replaced(1), Replaced(1)]), [Replaced(1), Same]);
-        assert_eq!(fold([Retained(1), Replaced(1)]), [Different, Same]);
-        assert_eq!(fold([Same, Retained(1)]), [Retained(1), Same]);
-        assert_eq!(fold([Different, Retained(1)]), [Different, Same]);
+        let input = [
+            [Replaced(1), Replaced(1)],
+            [Retained(1), Replaced(1)],
+            [Same, Retained(1)],
+            [Different, Retained(1)],
+        ];
+        let borrowed: Vec<&[_]> = input.iter().map(|terms| terms.as_slice()).collect();
+        let flat = FlatEquations::new(
+            &borrowed,
+            8,
+            &mut Budget {
+                maximum: 12,
+                used: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(flat.equation(0), [Replaced(1)]);
+        assert!(flat.equation(1).is_empty());
+        assert_eq!(flat.equation(2), [Retained(1)]);
+        assert!(flat.equation(3).is_empty());
+        assert_eq!(flat.constants, [None, Some(true), None, Some(true)]);
         let result = run(&[[Replaced(0), Retained(0)], [Retained(0), Retained(0)]]);
         assert_eq!(replaced(&result), [true, false]);
         assert!(result.cyclic_groups.is_empty());
@@ -670,10 +753,11 @@ mod tests {
             Err(DecisionError::WorkLimit { .. })
         ));
         assert_eq!(
-            decide(
+            decide::<[MismatchTerm; 2]>(
                 &[],
                 DecisionLimits {
                     max_nodes: 0,
+                    max_terms: 0,
                     max_work: 0
                 }
             )
@@ -725,6 +809,7 @@ mod tests {
                 &over,
                 DecisionLimits {
                     max_nodes: usize::MAX,
+                    max_terms: usize::MAX,
                     max_work: usize::MAX
                 }
             ),
@@ -732,3 +817,7 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+#[path = "decisions/variable_tests.rs"]
+mod variable_tests;

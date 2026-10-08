@@ -280,6 +280,7 @@ fn selected_region_uses_direction_anchor_and_preserves_captured_controls() {
         let (plan, mut constraints, prepared) =
             fixture(direction, FrameRate::new(30, 1).unwrap(), true);
         let options = GenerationOptions {
+            mode: mode(direction).into(),
             motion: MotionAmount::Subtle,
             instructions: Some(HoldInstructions::new("Keep the hand still.").unwrap()),
             region_target: GenerationTarget::Saved(target_id.clone()),

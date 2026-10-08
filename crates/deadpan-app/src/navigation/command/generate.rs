@@ -80,6 +80,7 @@ mod tests {
     #[test]
     fn controls_preserve_plain_text_and_round_trip_prefills() {
         let options = GenerationOptions {
+            mode: deadpan_jobs::GenerationModePreference::Automatic,
             motion: MotionAmount::Subtle,
             instructions: Some(
                 HoldInstructions::new("Keep eyes open, 目線 unchanged. motion=still is text")
@@ -99,6 +100,7 @@ mod tests {
             Entry::Generate {
                 variants: 3,
                 options: GenerationOptions {
+                    mode: deadpan_jobs::GenerationModePreference::Automatic,
                     motion: MotionAmount::Subtle,
                     instructions: Some(HoldInstructions::new("Keep hands still.").unwrap()),
                     region_target: GenerationTarget::Inherit,

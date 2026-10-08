@@ -129,6 +129,9 @@ pub fn run_generate(arguments: &[&str]) -> Result<(), CliError> {
             .as_ref()
             .and_then(|request| request.constraints.region_target.as_ref()),
     );
+    options
+        .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
+        .map_err(|error| GenerationError::Invalid(error.to_string()))?;
     let started = Instant::now();
     let conditioning_target = existing
         .as_ref()
@@ -278,7 +281,7 @@ pub(super) fn run_one(
         "hold_id": allocated.request.binding.hold_id,
         "request_version": allocated.request.binding.request_version,
         "context_sha256": allocated.request.binding.context_sha256,
-        "plan": allocated.request.bridge_plan,
+        "plan": allocated.request.bridge_plan(),
         "state": format!("{:?}", finished.state),
         "failure": finished.failure.as_ref().map(failure_text),
         "record_error": record_error,

@@ -11,28 +11,14 @@ use deadpan_analysis::{
     CONTEXT_SHOT_RULE, ContextShotQualification, MAX_CONTEXT_SHOT_SIGNATURES, PictureSignature,
     context_seam_change, context_shot_window, qualify_context,
 };
-use deadpan_core::{EndpointPolicy, ExtensionDirection, SourceFrameIndex};
-use deadpan_plan::{DefinitionPictureSpan, Picture, PictureClockSlope, ScopedHoldContext};
+use deadpan_plan::{DefinitionPictureSpan, PictureClockSlope, ScopedHoldContext};
+use deadpan_store::generation_inputs::{GenerationInputBinding, GenerationInputs};
 use deadpan_store::generation_pictures::GenerationPictureIdentity;
 use serde::Serialize;
 
 use super::*;
 
 const CAPTURE_POLICY: &str = "deadpan-extension-context-1";
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct ExtensionContextInputIdentity {
-    pub relative_position: ExactRatio,
-    pub picture: GenerationPictureIdentity,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct ExtensionContextSupport {
-    pub relative_start: ExactRatio,
-    pub relative_end_exclusive: ExactRatio,
-    pub first: GenerationPictureIdentity,
-    pub last: GenerationPictureIdentity,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ExtensionContextMeasurement {
@@ -47,9 +33,7 @@ pub struct ExtensionContextMeasurement {
 pub struct ExtensionContextContinuity {
     pub capture_policy: &'static str,
     pub shot_rule: &'static str,
-    pub inputs: Vec<ExtensionContextInputIdentity>,
-    pub opposite: Option<ExtensionContextInputIdentity>,
-    pub support: Vec<ExtensionContextSupport>,
+    pub binding: GenerationInputBinding,
     pub decoded_pictures: usize,
     pub measurements: Vec<ExtensionContextMeasurement>,
 }
@@ -57,70 +41,45 @@ pub struct ExtensionContextContinuity {
 pub(super) fn qualify_extension_context(
     session: &mut ProjectPictureSession,
     context: &ScopedHoldContext,
+    binding: GenerationInputBinding,
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<ExtensionContextContinuity, String> {
-    let anchor = match context.direction {
-        ExtensionDirection::FromLeft => context.pictures.last(),
-        ExtensionDirection::FromRight => context.pictures.first(),
+    let GenerationInputs::Extension {
+        support,
+        terminal: terminal_identity,
+        ..
+    } = &binding.inputs
+    else {
+        return Err("Temporal qualification requires an extension input binding.".into());
+    };
+    if support.len() != context.coverage.spans.len() {
+        return Err("Temporal support differs from its captured input binding.".into());
     }
-    .ok_or("Extension context is empty.")?
-    .position;
-    let opposite = match context.direction {
-        ExtensionDirection::FromLeft => context.boundaries.right.as_ref(),
-        ExtensionDirection::FromRight => context.boundaries.left.as_ref(),
-    };
-    let identities = session.context_picture_identities(
-        context
-            .pictures
-            .iter()
-            .chain(opposite)
-            .map(|sample| &sample.picture),
-    )?;
-    let mut identities = identities.into_iter();
-    let inputs = context
-        .pictures
-        .iter()
-        .map(|sample| {
-            Ok(ExtensionContextInputIdentity {
-                relative_position: sample
-                    .position
-                    .checked_sub(anchor)
-                    .map_err(|e| e.to_string())?,
-                picture: identities.next().ok_or("Context identity is missing.")?,
-            })
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    let opposite = opposite
-        .map(|sample| {
-            Ok::<_, String>(ExtensionContextInputIdentity {
-                relative_position: sample
-                    .position
-                    .checked_sub(anchor)
-                    .map_err(|e| e.to_string())?,
-                picture: identities.next().ok_or("Opposite identity is missing.")?,
-            })
-        })
-        .transpose()?;
-    let terminal = DefinitionPictureSpan {
-        start: context.coverage.terminal.clone(),
-        end_exclusive: context.coverage.terminal.position,
-        clock: PictureClockSlope::Constant,
-    };
+    let terminal = DefinitionPictureSpan::observation(
+        context.coverage.terminal.clone(),
+        context.coverage.terminal.position,
+        PictureClockSlope::Constant,
+    );
     let spans = context
         .coverage
         .spans
         .iter()
         .chain(std::iter::once(&terminal));
-    let bases =
-        session.context_picture_identities(spans.clone().map(|span| &span.start.picture))?;
+    let bases = support
+        .iter()
+        .map(|span| (&span.first, &span.last))
+        .chain(std::iter::once((
+            &terminal_identity.picture,
+            &terminal_identity.picture,
+        )));
     let mut cache: Vec<(GenerationPictureIdentity, PictureSignature)> = Vec::new();
     let mut reads_left = MAX_CONTEXT_SHOT_SIGNATURES;
-    let mut support = Vec::new();
     let mut previous: Option<(GenerationPictureIdentity, PictureSignature)> = None;
     let mut measurements = Vec::new();
-    for (span, base) in spans.zip(bases) {
+    for (span, (expected_first, expected_last)) in spans.zip(bases) {
         check(cancelled, deadline)?;
+        let base = expected_first.clone();
         let (first, last, first_signature, last_signature) = match base {
             GenerationPictureIdentity::AuthoredBlack => {
                 let signature = PictureSignature::from_rgba(&vec![0; 32 * 18 * 4], 32, 18, 128)
@@ -137,12 +96,13 @@ pub(super) fn qualify_extension_context(
                     deadline,
                     reads_left.max(1),
                 )?;
-                let distance = span
-                    .end_exclusive
-                    .checked_sub(span.start.position)
+                let (first, last) = span
+                    .source_ordinals(reader.index())
                     .map_err(|e| e.to_string())?;
-                let (first, last) =
-                    selected_ordinals(&span.start.picture, span.clock, distance, reader.index())?;
+                let first =
+                    usize::try_from(first.0).map_err(|_| "Context first ordinal overflowed.")?;
+                let last =
+                    usize::try_from(last.0).map_err(|_| "Context last ordinal overflowed.")?;
                 let count = reader.index().frames().len();
                 let requested = first.min(last)..=first.max(last);
                 // Even a one-picture structural fragment needs padded blend
@@ -194,6 +154,9 @@ pub(super) fn qualify_extension_context(
                 )
             }
         };
+        if &first != expected_first || &last != expected_last {
+            return Err("Decoded temporal support differs from its retained input binding.".into());
+        }
         if let Some((before, signature)) = &previous {
             check_seam_identity(before, &first)?;
             if context_seam_change(signature, &first_signature).is_some() {
@@ -201,27 +164,12 @@ pub(super) fn qualify_extension_context(
             }
         }
         previous = Some((last.clone(), last_signature));
-        support.push(ExtensionContextSupport {
-            relative_start: span
-                .start
-                .position
-                .checked_sub(anchor)
-                .map_err(|e| e.to_string())?,
-            relative_end_exclusive: span
-                .end_exclusive
-                .checked_sub(anchor)
-                .map_err(|e| e.to_string())?,
-            first,
-            last,
-        });
     }
     check(cancelled, deadline)?;
     Ok(ExtensionContextContinuity {
         capture_policy: CAPTURE_POLICY,
         shot_rule: CONTEXT_SHOT_RULE,
-        inputs,
-        opposite,
-        support,
+        binding,
         decoded_pictures: MAX_CONTEXT_SHOT_SIGNATURES - reads_left,
         measurements,
     })
@@ -297,98 +245,14 @@ fn check_seam_identity(
     }
 }
 
-/// All measured ordinals touched by a canonical affine span. Its final point
-/// is excluded for forward motion and included by the following span/terminal.
-/// Reverse motion approaches the final timestamp from above instead.
-fn selected_ordinals(
-    picture: &Picture,
-    clock: PictureClockSlope,
-    distance: ExactRatio,
-    index: &SourceFrameIndex,
-) -> Result<(usize, usize), String> {
-    let first = picture
-        .select_source_frame(index)
-        .map_err(|e| e.to_string())?
-        .identity
-        .0;
-    if distance.compare_integer(0).is_lt() {
-        return Err("Context span runs backwards in its definition.".into());
-    }
-    let last = match (picture, clock) {
-        (_, PictureClockSlope::Constant) => first,
-        (
-            Picture::Source {
-                point,
-                selection,
-                endpoints,
-                ..
-            },
-            PictureClockSlope::SourceTicks(slope),
-        ) => {
-            let end = point
-                .ticks
-                .checked_add(distance.checked_mul(slope).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            if *endpoints == EndpointPolicy::Reject
-                && (end.compare(selection.start().ticks).is_lt()
-                    || end.compare(selection.end().ticks).is_gt())
-            {
-                return Err("Context span exceeds its exact source selection.".into());
-            }
-            let mut endpoint = picture.clone();
-            let Picture::Source {
-                point, endpoints, ..
-            } = &mut endpoint
-            else {
-                unreachable!()
-            };
-            point.ticks = end;
-            *endpoints = EndpointPolicy::HoldAdjacent;
-            let selected = endpoint
-                .select_source_frame(index)
-                .map_err(|e| e.to_string())?;
-            if slope.compare_integer(0).is_gt()
-                && distance.compare_integer(0).is_gt()
-                && end.compare_integer(selected.pts).is_eq()
-                && selected.identity.0 > first
-            {
-                selected.identity.0 - 1
-            } else {
-                selected.identity.0
-            }
-        }
-        (Picture::Accepted { position, .. }, PictureClockSlope::AcceptedFrames(slope)) => {
-            let end = position
-                .checked_add(distance.checked_mul(slope).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            let final_frame =
-                if slope.compare_integer(0).is_gt() && distance.compare_integer(0).is_gt() {
-                    end.ceil()
-                        .map_err(|e| e.to_string())?
-                        .checked_sub(1)
-                        .ok_or("Context accepted endpoint overflowed.")?
-                } else {
-                    end.floor()
-                };
-            u64::try_from(final_frame).map_err(|_| "Context accepted frame is out of range.")?
-        }
-        _ => return Err("Context span clock disagrees with its provider.".into()),
-    };
-    let first = usize::try_from(first).map_err(|_| "Context first ordinal overflowed.")?;
-    let last = usize::try_from(last).map_err(|_| "Context last ordinal overflowed.")?;
-    if first >= index.frames().len() || last >= index.frames().len() {
-        return Err("Context span exceeds its measured picture index.".into());
-    }
-    Ok((first, last))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use deadpan_core::{
-        AssetId, ExactSourceSpan, IndexedSourceFrame, SourcePoint, SourceSpan, SourceTimeBase,
-        SourceTimestamp, TerminalProvenance,
+        AssetId, EndpointPolicy, ExactSourceSpan, IndexedSourceFrame, SourceFrameIndex,
+        SourcePoint, SourceSpan, SourceTimeBase, SourceTimestamp, TerminalProvenance,
     };
+    use deadpan_plan::Picture;
 
     #[test]
     fn measured_vfr_support_respects_direction_exact_endpoints_and_clamps() {
@@ -428,6 +292,13 @@ mod tests {
             selection: ExactSourceSpan::from(span),
             endpoints: EndpointPolicy::Reject,
         };
+        // Exercise the same shared plan query as the decoder-backed qualifier.
+        let selected_ordinals =
+            |picture: &Picture, clock: PictureClockSlope, distance, index: &SourceFrameIndex| {
+                clock
+                    .source_ordinals(picture, distance, index)
+                    .map(|(first, last)| (first.0, last.0))
+            };
         for (start, delta, expected) in [
             (20, 15, (1, 1)),
             (20, 16, (1, 2)),

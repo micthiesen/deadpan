@@ -8,6 +8,12 @@ use deadpan_core::{
 use deadpan_jobs::GenerationOptions;
 use deadpan_models::{BoundaryClock, BoundaryPicture, ExtensionContext, ExtensionOppositeSeam};
 use deadpan_plan::ScopedHoldContextRequest;
+use deadpan_store::generation::{
+    ContextObservation, GenerationContextResolver, StoredGenerationRequest,
+};
+use deadpan_store::generation_inputs::{
+    GenerationCaptureSpec, GenerationInputBinding, GenerationInputs, InputCaptureBudget,
+};
 
 use super::*;
 use crate::generation::conditioning::{ExtensionInputs, prepare_extension_scoped_with_options};
@@ -74,6 +80,263 @@ fn manifest(inputs: &ExtensionInputs) -> Result<ExtensionContext> {
     Ok(serde_json::from_slice(&inputs.manifest)?)
 }
 
+/// Context-only request fixture. This does not claim provider admission, a
+/// queued worker or Ready media; all pictures/binding come from real capture.
+fn context_request(
+    origin: &ProjectDocument,
+    inputs: &ExtensionInputs,
+) -> Result<StoredGenerationRequest> {
+    let request_id = deadpan_jobs::RequestId::new("extension-context")?;
+    Ok(StoredGenerationRequest {
+        scope_id: deadpan_store::generation::GenerationScopeId::from_first_request(
+            request_id.clone(),
+        ),
+        request_id,
+        origin_revision: origin.revision_id().clone(),
+        origin_target: target(Vec::new()),
+        target: target(Vec::new()),
+        binding: deadpan_jobs::TargetBinding {
+            project_id: origin.project_id().clone(),
+            hold_id: node("extension"),
+            request_version: deadpan_jobs::RequestVersion::new(1)?,
+            context_sha256: inputs.manifest_sha256.clone(),
+        },
+        constraints: inputs.constraints.clone(),
+        provider: crate::generation::development_provider(1),
+        plan: Some(deadpan_jobs::GenerationPlan::Extension(inputs.plan.clone())),
+        input_binding: Some(inputs.continuity.binding.clone()),
+        relevance: deadpan_jobs::Relevance::Current,
+    })
+}
+
+fn assert_request_relevance(
+    fixture: &Fixture,
+    origin: &ProjectDocument,
+    request: &StoredGenerationRequest,
+    relevant: bool,
+) -> Result {
+    let after = fixture.store.snapshot()?;
+    let resolver = crate::generation_context::BoundaryContextResolver::default();
+    let pictures = fixture.store.generation_pictures();
+    let expected = if relevant {
+        ContextObservation::Resolved(request.binding.context_sha256.clone())
+    } else {
+        ContextObservation::Unresolved
+    };
+    assert_eq!(
+        resolver.observe_with_pictures(origin, &after, request, &pictures),
+        expected
+    );
+    let prepared = resolver.prepare_transition(&after).unwrap();
+    assert_eq!(
+        prepared.observe_with_pictures(origin, &after, request, &pictures),
+        expected
+    );
+    assert_eq!(
+        resolver.observe(origin, &after, request),
+        ContextObservation::Unresolved,
+        "extension relevance cannot use the legacy unmeasured Bridge path"
+    );
+    if let Some(binding) = &request.input_binding {
+        let NodeKind::Hold { recipe } = &origin.nodes()[&request.origin_target.node].kind else {
+            panic!("Hold")
+        };
+        let HoldVideo::Freeze { asset, timestamp } = &recipe.video else {
+            panic!("fixture freeze")
+        };
+        let mut preparation = deadpan_store::generation_preparations::StoredGenerationPreparation {
+            id: deadpan_store::generation_preparations::PreparationId::new(
+                "context-only-preparation",
+            )?,
+            project_id: origin.project_id().clone(),
+            origin_revision: origin.revision_id().clone(),
+            origin_target: request.origin_target.clone(),
+            current_revision: after.revision_id().clone(),
+            target: request.target.clone(),
+            duration: recipe.duration,
+            origin: deadpan_store::generation_preparations::PreparationOrigin::InsertedPause {
+                options: GenerationOptions::from_constraints(&request.constraints),
+            },
+            intent: deadpan_store::generation_intents::IntentBirthReceipt {
+                schema_version: 1,
+                history_id: 1,
+                cause: deadpan_store::generation_intents::IntentCause::InsertedPause,
+                authorization:
+                    deadpan_store::generation_intents::IntentAuthorization::AuthoredOrigin,
+                fallback: deadpan_core::HoldFallback::Freeze {
+                    asset: asset.clone(),
+                    timestamp: *timestamp,
+                },
+                capture: Some(binding.capture_spec()),
+                input_binding: deadpan_store::generation_intents::IntentInputBinding::Measured {
+                    binding: Box::new(binding.clone()),
+                },
+            },
+            state: deadpan_store::generation_preparations::PreparationState::Queued,
+            claim_sequence: 0,
+            reason: None,
+            request_id: None,
+        };
+        assert_eq!(
+            resolver.preparation_is_relevant_with_pictures(origin, &after, &preparation, &pictures),
+            relevant
+        );
+        assert_eq!(
+            prepared.preparation_is_relevant_with_pictures(origin, &after, &preparation, &pictures),
+            relevant
+        );
+        assert!(
+            !resolver.preparation_is_relevant(origin, &after, &preparation),
+            "temporal preparation inputs also require measured metadata"
+        );
+        preparation.intent.input_binding =
+            deadpan_store::generation_intents::IntentInputBinding::Unavailable {
+                cause:
+                    deadpan_store::generation_intents::InputUnavailableCause::MissingQualification,
+                detail: "Context-only refusal witness.".into(),
+            };
+        assert!(
+            !resolver.preparation_is_relevant_with_pictures(
+                origin,
+                &after,
+                &preparation,
+                &pictures
+            ),
+            "unavailable preparation evidence cannot invent temporal context"
+        );
+    }
+    Ok(())
+}
+
+fn current_binding(
+    fixture: &Fixture,
+    request: &StoredGenerationRequest,
+) -> Result<GenerationInputBinding> {
+    let document = fixture.store.snapshot()?;
+    Ok(GenerationInputBinding::capture_with_plan(
+        &document,
+        &RenderPlan::compile(&document)?,
+        &request.target,
+        GenerationCaptureSpec::from_plan(request.plan.as_ref().unwrap()),
+        request.constraints.region_target.as_ref(),
+        &fixture.store.generation_pictures(),
+        &mut InputCaptureBudget::default(),
+    )?)
+}
+
+#[test]
+fn extension_relevance_keeps_editorial_edits_but_binds_saved_region_and_origin_descriptor() -> Result
+{
+    let mut fixture = Fixture::source("cfr-bframes.mp4")?;
+    edge_hold(&mut fixture, ExtensionDirection::FromLeft)?;
+    let region_id = deadpan_core::TargetId::new("subject")?;
+    let region = deadpan_core::AttentionTarget {
+        label: "Subject".into(),
+        asset: asset(),
+        span: fixture.store.snapshot()?.assets()[&asset()].video.unwrap(),
+        region: deadpan_core::TargetRegion {
+            center: [500_000, 500_000],
+            size: [200_000, 200_000],
+        },
+        samples: vec![],
+        corrections: vec![],
+        provenance: None,
+    };
+    fixture.edit(
+        "saved-region",
+        Command::SetTarget {
+            id: region_id.clone(),
+            target: region.clone(),
+        },
+    )?;
+    let origin = fixture.store.snapshot()?;
+    let options = GenerationOptions {
+        region_target: deadpan_jobs::GenerationTarget::Saved(region_id.clone()),
+        ..Default::default()
+    };
+    let inputs = prepare_extension_scoped_with_options(
+        &fixture.path,
+        origin.revision_id(),
+        &target(Vec::new()),
+        ExtensionDirection::FromLeft,
+        &options,
+        &active(),
+    )?;
+    assert_eq!(
+        inputs
+            .continuity
+            .binding
+            .region
+            .as_ref()
+            .unwrap()
+            .record
+            .as_ref(),
+        Some(&region)
+    );
+    let request = context_request(&origin, &inputs)?;
+    assert_request_relevance(&fixture, &origin, &request, true)?;
+    let gain = deadpan_core::AudioTreatments::from_clip_gain(deadpan_core::ClipGain::new(
+        deadpan_core::GainDb::new(-6000)?,
+        false,
+        vec![],
+        vec![],
+    )?);
+    for (name, command) in [
+        (
+            "group-context",
+            Command::Group {
+                parent: node("root"),
+                start: 0,
+                end: 2,
+                id: node("local"),
+                label: "Local".into(),
+            },
+        ),
+        (
+            "gain-context",
+            Command::SetAudioTreatments {
+                node: node("local"),
+                treatments: gain,
+            },
+        ),
+        (
+            "frame-context",
+            Command::SetFraming {
+                node: node("source"),
+                framing: Some(Framing::static_pose(FramingPose {
+                    scale: ExactRatio::integer(2),
+                    ..Default::default()
+                })?),
+            },
+        ),
+    ] {
+        fixture.edit(name, command)?;
+        assert_eq!(
+            current_binding(&fixture, &request)?,
+            inputs.continuity.binding
+        );
+        assert_request_relevance(&fixture, &origin, &request, true)?;
+    }
+    let mut wrong_origin = request.clone();
+    wrong_origin.input_binding.as_mut().unwrap().canvas[0] += 1;
+    assert_request_relevance(&fixture, &origin, &wrong_origin, false)?;
+    wrong_origin.input_binding = None;
+    assert_request_relevance(&fixture, &origin, &wrong_origin, false)?;
+    wrong_origin.plan = None;
+    assert_request_relevance(&fixture, &origin, &wrong_origin, false)?;
+    let mut corrected = region;
+    corrected.region.center[0] += 50_000;
+    fixture.edit(
+        "correct-region",
+        Command::SetTarget {
+            id: region_id,
+            target: corrected,
+        },
+    )?;
+    assert_request_relevance(&fixture, &origin, &request, false)?;
+    Ok(())
+}
+
 fn assert_unchanged(fixture: &Fixture, before: &ProjectDocument, history: (bool, bool)) -> Result {
     assert_eq!(fixture.store.snapshot()?, *before);
     assert_eq!(fixture.store.head_revision()?, *before.revision_id());
@@ -117,9 +380,18 @@ fn extension_capture_at_both_definition_edges_retains_fractional_clocks_measured
             inputs.continuity.capture_policy,
             "deadpan-extension-context-1"
         );
-        assert_eq!(inputs.continuity.inputs.len(), 9);
-        assert!(inputs.continuity.opposite.is_none());
-        assert!(!inputs.continuity.support.is_empty());
+        let deadpan_store::generation_inputs::GenerationInputs::Extension {
+            samples,
+            opposite,
+            support,
+            ..
+        } = &inputs.continuity.binding.inputs
+        else {
+            panic!("extension descriptor")
+        };
+        assert_eq!(samples.len(), 9);
+        assert!(opposite.is_none());
+        assert!(!support.is_empty());
         assert!(inputs.continuity.decoded_pictures > 0);
         let anchor = match direction {
             ExtensionDirection::FromLeft => ExactRatio::new(239, 2)?,
@@ -259,8 +531,7 @@ fn extension_outer_repeat_and_retime_do_not_change_definition_context_or_borrow_
                 result.opposite_png.is_none(),
                 "outer adjacent plays cannot supply an opposite seam"
             );
-            assert_eq!(result.continuity.inputs, baseline.continuity.inputs);
-            assert_eq!(result.continuity.support, baseline.continuity.support);
+            assert_eq!(result.continuity.binding, baseline.continuity.binding);
             let context = manifest(&result)?;
             for picture in context.context() {
                 assert!(
@@ -352,13 +623,13 @@ fn extension_interior_capture_retains_the_existing_opposite_as_unconditioned() -
             9,
             "opposite is not an extra conditioning frame"
         );
+        let deadpan_store::generation_inputs::GenerationInputs::Extension { opposite, .. } =
+            &inputs.continuity.binding.inputs
+        else {
+            panic!("expected extension binding")
+        };
         assert_eq!(
-            inputs
-                .continuity
-                .opposite
-                .as_ref()
-                .ok_or("opposite identity")?
-                .relative_position,
+            opposite.as_ref().ok_or("opposite identity")?.position,
             ExactRatio::integer(if direction == ExtensionDirection::FromLeft {
                 4
             } else {
@@ -400,6 +671,10 @@ fn sparse_source_ids(fixture: &Fixture) -> Result<Vec<SourceFrameId>> {
 fn extension_rejects_one_frame_cutaway_hidden_between_context_samples_without_mutation() -> Result {
     let mut fixture = Fixture::source("cfr-bframes.mp4")?;
     edge_hold(&mut fixture, ExtensionDirection::FromLeft)?;
+    let origin = fixture.store.snapshot()?;
+    let captured = capture(&fixture, &target(Vec::new()), ExtensionDirection::FromLeft)?;
+    let request = context_request(&origin, &captured)?;
+    assert_request_relevance(&fixture, &origin, &request, true)?;
     let baseline = sparse_source_ids(&fixture)?;
     let index = fixture
         .store
@@ -432,6 +707,29 @@ fn extension_rejects_one_frame_cutaway_hidden_between_context_samples_without_mu
         baseline,
         "all nine conditioned pictures miss the cutaway"
     );
+    let binding = current_binding(&fixture, &request)?;
+    let (
+        GenerationInputs::Extension {
+            samples: before_samples,
+            ..
+        },
+        GenerationInputs::Extension {
+            samples: after_samples,
+            ..
+        },
+    ) = (&captured.continuity.binding.inputs, &binding.inputs)
+    else {
+        panic!("extension inputs")
+    };
+    assert_eq!(
+        before_samples, after_samples,
+        "sample-only relevance would miss this edit"
+    );
+    assert_ne!(
+        binding, captured.continuity.binding,
+        "full structural support must retain the hidden cutaway"
+    );
+    assert_request_relevance(&fixture, &origin, &request, false)?;
     let before = fixture.store.snapshot()?;
     let history = fixture.store.history_availability()?;
     let error = capture(&fixture, &target(Vec::new()), ExtensionDirection::FromLeft)

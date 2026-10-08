@@ -91,7 +91,8 @@ fn request(
             region_target: region,
         },
         provider: crate::generation::development_provider(1),
-        bridge_plan: None,
+        plan: None,
+        input_binding: None,
         relevance: Relevance::Current,
     }
 }
@@ -182,7 +183,13 @@ fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGene
                 .unwrap(),
                 content_aspect: None,
             }),
-            controls: PreparationControls::AcceptedArtifact,
+            controls: PreparationControls::Request {
+                request_id: RequestId::new("legacy-bridge-request").unwrap(),
+                options: deadpan_jobs::GenerationOptions {
+                    mode: deadpan_jobs::GenerationModePreference::Bridge,
+                    ..Default::default()
+                },
+            },
         },
         intent: deadpan_store::generation_intents::IntentBirthReceipt {
             schema_version: 1,
@@ -190,6 +197,7 @@ fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGene
             cause: deadpan_store::generation_intents::IntentCause::DurationExtension,
             authorization: deadpan_store::generation_intents::IntentAuthorization::AuthoredOrigin,
             fallback: deadpan_core::HoldFallback::Background,
+            capture: Some(deadpan_store::generation_inputs::GenerationCaptureSpec::Bridge),
             input_binding: deadpan_store::generation_intents::IntentInputBinding::Unavailable {
                 cause:
                     deadpan_store::generation_intents::InputUnavailableCause::MissingQualification,
@@ -223,7 +231,10 @@ fn inserted_preparation_has_saved_controls_without_a_package_or_model() {
     preparation.target = isolated
         .map_target(&document, &preparation.origin_target)
         .unwrap();
-    assert!(resolver.preparation_is_relevant(&document, &isolated.document, &preparation));
+    assert!(
+        !resolver.preparation_is_relevant(&document, &isolated.document, &preparation),
+        "unavailable Automatic inputs cannot be inferred as Bridge or Extension"
+    );
     cancelled.store(true, std::sync::atomic::Ordering::Release);
     assert!(
         crate::generation::preparations::resolve_options(

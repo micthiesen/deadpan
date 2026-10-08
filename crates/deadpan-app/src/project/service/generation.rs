@@ -679,6 +679,9 @@ impl Service {
             .and_then(|options| options.region_target.resolve(None));
         let mut options = options.or(previous).unwrap_or_default();
         options.resolve_target(previous_target.as_ref());
+        options
+            .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
+            .map_err(display)?;
         if let deadpan_jobs::GenerationTarget::Saved(target) = &options.region_target
             && !workspace.document.targets().contains_key(target)
         {
@@ -739,7 +742,7 @@ impl Service {
         let (input_revision, input_target) = current
             .as_ref()
             .filter(|request| {
-                GenerationOptions::from_constraints(&request.constraints) == options
+                options_match_resolved(&options, &request.constraints)
                     && deadpan_cli::generation::same_provider_identity(&request.provider, &provider)
             })
             .map(|request| {
@@ -1133,7 +1136,7 @@ impl Service {
             Ok(requests) => Arc::new(
                 requests
                     .into_iter()
-                    .filter(|request| request.bridge_plan.is_some())
+                    .filter(|request| request.bridge_plan().is_some())
                     .map(|request| {
                         (
                             request.target,
@@ -1400,7 +1403,7 @@ impl Service {
                 .filter(|request| {
                     request.binding.context_sha256 == inputs.manifest_sha256
                         && request.constraints == inputs.constraints
-                        && request.bridge_plan.as_ref() == Some(&inputs.plan)
+                        && request.bridge_plan() == Some(&inputs.plan)
                         && deadpan_cli::generation::same_provider_identity(
                             &request.provider,
                             &provider,
@@ -1448,7 +1451,7 @@ impl Service {
     fn dispatch_attempt(&mut self, allocated: Allocated) {
         if let Some(job) = &mut self.generation.job {
             job.request = Some(allocated.request.request_id.clone());
-            job.plan = allocated.request.bridge_plan.clone();
+            job.plan = allocated.request.bridge_plan().cloned();
             job.phase = Phase::Preparing;
         }
         // A new request supersedes the Hold's earlier candidate; a new
@@ -1898,9 +1901,8 @@ fn expected_accepted_provider(
     }
     let receipt = &acceptance.expected_receipt;
     let plan = request
-        .bridge_plan
-        .as_ref()
-        .ok_or("The AI acceptance has no retained sampling plan.")?;
+        .bridge_plan()
+        .ok_or("This AI acceptance path requires a retained Bridge sampling plan.")?;
     Ok(AcceptedGeneration {
         artifact: GeneratedArtifact {
             sampled_asset: acceptance.sampled_asset.clone(),
@@ -2169,6 +2171,21 @@ fn progress_phase(progress: AttemptProgress) -> Phase {
     }
 }
 
+/// Automatic is a captured preference, while a request stores its resolved
+/// mode. Reuse requires compatible mode and exact equality of every control.
+fn options_match_resolved(
+    options: &GenerationOptions,
+    constraints: &deadpan_jobs::HoldConstraints,
+) -> bool {
+    let resolved = GenerationOptions::from_constraints(constraints);
+    options
+        .validate_resolved_conditioning(constraints.conditioning)
+        .is_ok()
+        && options.motion == resolved.motion
+        && options.instructions == resolved.instructions
+        && options.region_target == resolved.region_target
+}
+
 fn job_thread(
     mut worker: Worker,
     input: JobInput,
@@ -2206,13 +2223,18 @@ fn job_thread(
             }
         }
     }
-    let prepared = conditioning::prepare_scoped_with_options(
-        &package, &revision, &target, &options, &cancelled,
-    )
-    .map(|mut inputs| {
-        options.apply_to(&mut inputs.constraints);
-        inputs
-    });
+    let prepared = options
+        .validate_resolved_conditioning(deadpan_jobs::ConditioningMode::Bridge)
+        .map_err(display)
+        .and_then(|()| {
+            conditioning::prepare_scoped_with_options(
+                &package, &revision, &target, &options, &cancelled,
+            )
+        })
+        .map(|mut inputs| {
+            options.apply_to(&mut inputs.constraints);
+            inputs
+        });
     let ready = prepared.is_ok();
     if send(&events, Event::Prepared(prepared.map(Box::new))).is_err() || !ready {
         return;

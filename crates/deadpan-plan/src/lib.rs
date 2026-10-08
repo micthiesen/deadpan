@@ -67,8 +67,9 @@ pub use plan::{
 };
 pub use plan::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
-    MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES,
-    PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextRequest,
+    HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
+    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext,
+    ScopedHoldContextObservation, ScopedHoldContextRequest,
 };
 
 use deadpan_core::{
@@ -106,6 +107,8 @@ pub enum PlanError {
     },
     #[error("invalid scoped Hold: {0}")]
     InvalidScopedHold(&'static str),
+    #[error("{0}")]
+    HoldContextUnavailable(HoldContextUnavailable),
     #[error("picture query exceeded its {0} budget")]
     PictureQueryLimit(&'static str),
     #[error("picture has no source video frame to select")]

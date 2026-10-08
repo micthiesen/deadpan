@@ -1,7 +1,8 @@
 use super::definition::target;
 use super::*;
 use deadpan_plan::{
-    MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext, ScopedHoldContextRequest,
+    HoldContextUnavailable, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext,
+    ScopedHoldContextObservation, ScopedHoldContextRequest,
 };
 
 fn ample() -> BoundaryQueryLimits {
@@ -114,8 +115,8 @@ fn definition_edges_are_absent_and_short_context_is_never_padded() {
         let plan = RenderPlan::compile(&doc).unwrap();
         assert!(matches!(
             plan.scoped_hold_context(&request(direction), ample()),
-            Err(PlanError::InvalidScopedHold(
-                "the requested extension anchor is absent"
+            Err(PlanError::HoldContextUnavailable(
+                HoldContextUnavailable::MissingAnchor
             ))
         ));
     }
@@ -136,9 +137,12 @@ fn definition_edges_are_absent_and_short_context_is_never_padded() {
     for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
         let mut query = request(direction);
         query.target = target("pause", &[("outer", Some(500_000))]);
-        assert!(
-            matches!(plan.scoped_hold_context(&query, ample()), Err(PlanError::DefinitionPictureOutOfRange { definition, .. }) if definition == id("local"))
-        );
+        assert!(matches!(
+            plan.scoped_hold_context(&query, ample()),
+            Err(PlanError::HoldContextUnavailable(
+                HoldContextUnavailable::InsufficientContext
+            ))
+        ));
         query.frame_count = 1;
         assert_eq!(
             plan.scoped_hold_context(&query, ample())
@@ -226,8 +230,8 @@ fn dormant_defaults_and_owned_play_context_keep_their_distinct_scope() {
     query.target = target("owned-0", &[("outer", Some(0))]);
     assert!(matches!(
         plan.scoped_hold_context_batch(&[query], ample()),
-        Err(PlanError::InvalidScopedHold(
-            "the requested extension anchor is absent"
+        Err(PlanError::HoldContextUnavailable(
+            deadpan_plan::HoldContextUnavailable::MissingAnchor
         ))
     ));
 }
@@ -474,4 +478,167 @@ fn deeply_nested_temporal_context_has_an_aggregate_metadata_limit() {
             "{result:?}"
         );
     }
+}
+
+#[test]
+fn unavailable_contexts_preserve_work_and_do_not_invalidate_independent_batch_entries() {
+    let document = document(
+        &["good-repeat", "short-repeat", "absent-repeat"],
+        vec![
+            ("good-repeat", repeat("good", 1, 0, "good")),
+            ("short-repeat", repeat("short", 1, 0, "short")),
+            ("absent-repeat", repeat("absent", 1, 0, "absent")),
+            (
+                "good",
+                BeatNode::sequence("Good", vec![id("long-source"), id("good-hold")]),
+            ),
+            (
+                "short",
+                BeatNode::sequence("Short", vec![id("short-source"), id("short-hold")]),
+            ),
+            (
+                "absent",
+                BeatNode::sequence("Absent", vec![id("absent-hold")]),
+            ),
+            ("long-source", source(20, 0, 20020)),
+            ("short-source", source(2, 0, 2002)),
+            ("good-hold", hold(3)),
+            ("short-hold", hold(3)),
+            ("absent-hold", hold(3)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let query = |node, owner| ScopedHoldContextRequest {
+        target: target(node, &[(owner, None)]),
+        ..request(ExtensionDirection::FromLeft)
+    };
+    let requests = [
+        query("short-hold", "short-repeat"),
+        query("good-hold", "good-repeat"),
+        query("absent-hold", "absent-repeat"),
+    ];
+    let actual = plan
+        .scoped_hold_context_observations_batch(&requests, ample())
+        .unwrap();
+    assert!(
+        matches!(&actual[1], ScopedHoldContextObservation::Available(context) if context.pictures.len() == 9)
+    );
+    for (index, reason) in [
+        (0, HoldContextUnavailable::InsufficientContext),
+        (2, HoldContextUnavailable::MissingAnchor),
+    ] {
+        let ScopedHoldContextObservation::Unavailable {
+            boundaries,
+            reason: actual_reason,
+            lookup,
+        } = &actual[index]
+        else {
+            panic!("expected known geometric absence")
+        };
+        assert_eq!(*actual_reason, reason);
+        assert_eq!(boundaries.target, requests[index].target);
+        assert_eq!(boundaries.project_id, *document.project_id());
+        assert_eq!(boundaries.revision_id, *document.revision_id());
+        assert_eq!(boundaries.duration, duration(3));
+        assert_eq!(
+            *lookup, boundaries.lookup,
+            "extent preflight performs no partial sample walk"
+        );
+        assert!(lookup.visited_nodes > 0);
+        let single = plan
+            .scoped_hold_context_observation(&requests[index], ample())
+            .unwrap();
+        assert!(
+            matches!(single, ScopedHoldContextObservation::Unavailable { reason: single_reason, .. } if single_reason == reason)
+        );
+        assert!(
+            matches!(plan.scoped_hold_context(&requests[index], ample()), Err(PlanError::HoldContextUnavailable(single_reason)) if single_reason == reason)
+        );
+    }
+    let exact = BoundaryQueryLimits {
+        max_scopes: actual
+            .iter()
+            .map(|entry| entry.lookup().visited_nodes)
+            .sum(),
+        max_comparisons: actual
+            .iter()
+            .map(|entry| {
+                entry.lookup().sequence_comparisons + entry.lookup().iteration_run_comparisons
+            })
+            .sum(),
+    };
+    assert_eq!(
+        plan.scoped_hold_context_observations_batch(&requests, exact)
+            .unwrap(),
+        actual
+    );
+    let reverse = [
+        requests[2].clone(),
+        requests[1].clone(),
+        requests[0].clone(),
+    ];
+    assert_eq!(
+        plan.scoped_hold_context_observations_batch(&reverse, exact)
+            .unwrap(),
+        actual.iter().rev().cloned().collect::<Vec<_>>()
+    );
+    for reduced in [
+        BoundaryQueryLimits {
+            max_scopes: exact.max_scopes - 1,
+            ..exact
+        },
+        BoundaryQueryLimits {
+            max_comparisons: exact.max_comparisons - 1,
+            ..exact
+        },
+    ] {
+        assert!(matches!(
+            plan.scoped_hold_context_observations_batch(&requests, reduced),
+            Err(PlanError::PictureQueryLimit(_))
+        ));
+    }
+    assert!(matches!(
+        plan.scoped_hold_context_batch(&requests, exact),
+        Err(PlanError::HoldContextUnavailable(
+            HoldContextUnavailable::InsufficientContext
+        ))
+    ));
+}
+
+#[test]
+fn typed_context_absence_never_conceals_malformed_scope_or_budget_failure() {
+    let plan = RenderPlan::compile(&ordinary()).unwrap();
+    let valid = request(ExtensionDirection::FromLeft);
+    for node in ["missing", "left"] {
+        let invalid = ScopedHoldContextRequest {
+            target: target(node, &[]),
+            ..valid.clone()
+        };
+        assert!(matches!(
+            plan.scoped_hold_context_observation(&invalid, ample()),
+            Err(PlanError::InvalidScopedHold(_))
+        ));
+        assert!(matches!(
+            plan.scoped_hold_context_observations_batch(&[invalid], ample()),
+            Err(PlanError::InvalidScopedHold(_))
+        ));
+    }
+    assert!(matches!(
+        plan.scoped_hold_context_observation(
+            &valid,
+            BoundaryQueryLimits {
+                max_scopes: 0,
+                max_comparisons: 0
+            }
+        ),
+        Err(PlanError::PictureQueryLimit(_))
+    ));
+    let invalid = ScopedHoldContextRequest {
+        frame_count: 0,
+        ..valid
+    };
+    assert!(matches!(
+        plan.scoped_hold_context_observation(&invalid, ample()),
+        Err(PlanError::PictureQueryLimit("context frames"))
+    ));
 }

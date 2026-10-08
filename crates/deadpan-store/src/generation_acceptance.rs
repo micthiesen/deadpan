@@ -199,10 +199,11 @@ fn prepare_acceptance(
     let evidence = receipt
         .admission()
         .ok_or_else(|| invalid("legacy bundle lacks measured spans and retained input evidence"))?;
-    let plan = request
-        .bridge_plan
-        .as_ref()
-        .ok_or_else(|| invalid("legacy request has no bridge plan"))?;
+    let plan = request.bridge_plan().ok_or_else(|| {
+        invalid(
+            "acceptance requires a retained Bridge plan; extension output admission is unavailable",
+        )
+    })?;
     let Some(NodeKind::Hold { recipe }) = current
         .nodes()
         .get(&request.target.node)

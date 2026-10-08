@@ -227,7 +227,8 @@ fn a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
             region_target: Some(target_id),
         },
         provider: crate::generation::development_provider(1),
-        bridge_plan: None,
+        plan: None,
+        input_binding: None,
         relevance: Relevance::Current,
     };
     let resolver = BoundaryContextResolver::default();

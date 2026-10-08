@@ -175,6 +175,7 @@ fn controls_survive_a_runtime_failure_before_the_request_is_recorded() {
         },
     ]))));
     let controls = deadpan_jobs::GenerationOptions {
+        mode: deadpan_jobs::GenerationModePreference::Automatic,
         motion: deadpan_jobs::MotionAmount::Moderate,
         instructions: Some(deadpan_jobs::HoldInstructions::new("Keep the eyes open.").unwrap()),
         region_target: deadpan_jobs::GenerationTarget::None,
@@ -197,7 +198,10 @@ fn controls_survive_a_runtime_failure_before_the_request_is_recorded() {
         .unwrap();
     assert_eq!(
         deadpan_jobs::GenerationOptions::from_constraints(&request.constraints),
-        controls
+        deadpan_jobs::GenerationOptions {
+            mode: deadpan_jobs::GenerationModePreference::Bridge,
+            ..controls.clone()
+        }
     );
     assert_eq!(job.options, controls);
 }
@@ -250,6 +254,59 @@ fn a_running_job_reports_progress_and_cancels_to_a_recorded_cancellation() {
 }
 
 #[test]
+fn bridge_service_refuses_explicit_extension_before_worker_or_request_admission() {
+    let fixture = project_with_pause(scripted(waiting(1)));
+    let before = fixture.workspace.document.clone();
+    for (ticket, mode) in [
+        (1, deadpan_jobs::GenerationModePreference::ExtendFromLeft),
+        (2, deadpan_jobs::GenerationModePreference::ExtendFromRight),
+    ] {
+        let mut operation = start(&fixture, ticket);
+        if let GenerationOperation::Start { options, .. } = &mut operation {
+            *options = Some(deadpan_jobs::GenerationOptions {
+                mode,
+                ..Default::default()
+            });
+        }
+        let rejected = generation(&fixture.service, operation);
+        assert!(refusal(&rejected).is_some_and(|message| {
+            message.contains("disagrees with resolved conditioning Bridge")
+        }));
+        assert_eq!(
+            rejected.workspace.as_ref().unwrap().document.as_ref(),
+            before.as_ref()
+        );
+        assert!(
+            reader(&fixture.workspace)
+                .current_generation_requests()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            rejected
+                .generation
+                .as_ref()
+                .is_none_or(|generation| generation.job.is_none())
+        );
+    }
+    // Refusal did not consume the scripted worker or strand a running job.
+    let started = generation(&fixture.service, start(&fixture, 3));
+    assert_eq!(refusal(&started), None);
+    let running = job_until(&fixture.service, |job| job.request.is_some());
+    assert!(running.generation.unwrap().job.unwrap().request.is_some());
+    generation(
+        &fixture.service,
+        GenerationOperation::Cancel {
+            ticket: 4,
+            session: fixture.workspace.session,
+            job: 3,
+        },
+    );
+    let cancelled = job_until(&fixture.service, |job| !job.running());
+    assert_eq!(outcome(&cancelled), Some(Outcome::Cancelled));
+}
+
+#[test]
 fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_request() {
     use deadpan_jobs::{GenerationOptions, HoldInstructions, MotionAmount};
     let mut fixture = project_with_pause(scripted(Script {
@@ -257,9 +314,14 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
         ..waiting(1)
     }));
     let choices = GenerationOptions {
+        mode: deadpan_jobs::GenerationModePreference::Automatic,
         motion: MotionAmount::Subtle,
         instructions: Some(HoldInstructions::new("Keep the hands still.").unwrap()),
         region_target: deadpan_jobs::GenerationTarget::None,
+    };
+    let resolved_choices = GenerationOptions {
+        mode: deadpan_jobs::GenerationModePreference::Bridge,
+        ..choices.clone()
     };
     let original = fixture.workspace.document.clone();
     let run = |fixture: &Fixture, ticket, options| {
@@ -295,10 +357,10 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
         )
     };
     let (first, actual) = run(&fixture, 1, Some(choices.clone()));
-    assert_eq!(actual, choices);
+    assert_eq!(actual, resolved_choices);
     let (retry, actual) = run(&fixture, 2, None);
     assert_eq!(first, retry);
-    assert_eq!(actual, choices);
+    assert_eq!(actual, resolved_choices);
     assert_eq!(attempt_states(&fixture.workspace, &first).len(), 2);
 
     let path = fixture.workspace.path.clone();
@@ -311,7 +373,7 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
             .unwrap()
             .options
             .get(&ordinary(&fixture.hold)),
-        Some(&choices)
+        Some(&resolved_choices)
     );
     fixture.workspace = reopened.workspace.unwrap();
     let (changed, actual) = run(&fixture, 3, Some(GenerationOptions::default()));
@@ -319,6 +381,7 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
     assert_eq!(
         actual,
         GenerationOptions {
+            mode: deadpan_jobs::GenerationModePreference::Bridge,
             region_target: deadpan_jobs::GenerationTarget::None,
             ..GenerationOptions::default()
         }
@@ -328,6 +391,7 @@ fn generation_controls_survive_retries_and_reopen_and_changes_start_a_new_reques
     assert_eq!(
         actual,
         GenerationOptions {
+            mode: deadpan_jobs::GenerationModePreference::Bridge,
             region_target: deadpan_jobs::GenerationTarget::None,
             ..GenerationOptions::default()
         }
@@ -411,8 +475,14 @@ fn region_choice_is_retained_when_omitted_and_explicit_none_stays_empty() {
             .unwrap();
         assert_eq!(
             GenerationOptions::from_constraints(&request.constraints),
-            job.options
+            GenerationOptions {
+                mode: deadpan_jobs::GenerationModePreference::Bridge,
+                ..job.options.clone()
+            }
         );
+        job.options
+            .validate_resolved_conditioning(request.constraints.conditioning)
+            .unwrap();
         request
     };
     let first = run(
@@ -2562,6 +2632,7 @@ fn scoped_requests_and_options_are_independent_for_default_and_this_play() {
         let mut operation = scoped_start(&fixture, target, ticket, 1);
         if let GenerationOperation::Start { options, .. } = &mut operation {
             *options = Some(GenerationOptions {
+                mode: deadpan_jobs::GenerationModePreference::Automatic,
                 motion,
                 instructions: None,
                 region_target: GenerationTarget::None,

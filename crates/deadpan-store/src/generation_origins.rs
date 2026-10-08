@@ -8,120 +8,33 @@
 //! against both the retained worker evidence and an authored acceptance command.
 
 use deadpan_core::{
-    BoundaryQueryLimits, Command, FrameDuration, FrameRate, GeneratedArtifact, NodeKind,
-    ProjectDocument, ProjectId, RevisionId, ScopedNodeEdit, ScopedNodeTarget,
+    Command, GeneratedArtifact, ProjectDocument, ProjectId, RevisionId, ScopedNodeEdit,
+    ScopedNodeTarget,
 };
 use deadpan_jobs::{
-    BridgeGenerationPlan, CandidateDeclaration, GenerationOptions, HoldConstraints,
-    MessageIdentity, NativeCandidateManifest, ProviderSelection, RequestId, RequestVersion,
-    Sha256 as ContentSha256,
+    CandidateDeclaration, GenerationOptions, GenerationPlan, HoldConstraints, MessageIdentity,
+    NativeCandidateManifest, ProviderSelection, RequestId, RequestVersion, Sha256 as ContentSha256,
 };
-use deadpan_plan::{RenderPlan, ScopedHoldBoundaries};
+use deadpan_plan::RenderPlan;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::generation::{GenerationScopeId, StoredGenerationRequest};
 use crate::generation_attempts::{BundleValidationReceipt, CandidateAvailability};
-use crate::generation_pictures::{
-    GenerationPictureIdentity, GenerationPictures, QualifiedGenerationPictures,
-};
+use crate::generation_inputs::{GenerationCaptureSpec, InputCaptureBudget};
+use crate::generation_pictures::QualifiedGenerationPictures;
 use crate::{ProjectStore, StoreError};
 
 // A maximum-depth scope is allowed, but source indexes and sidecars never
-// belong in this row. Requests and attempt evidence have their own 16 KiB cap.
-const MAX_ROW_BYTES: usize = 256 * 1024;
+// belong in this row. The request input descriptor has a separate 512 KiB cap;
+// its other fields and attempt evidence retain their smaller bounds.
+pub(crate) const MAX_ROW_BYTES: usize =
+    crate::generation_inputs::MAX_INPUT_BINDING_BYTES + 256 * 1024;
 const MAX_EVIDENCE_BYTES: usize = 16 * 1024;
 const RECEIPT_VERSION: u32 = 1;
 
-/// Inputs that affect the generated pictures before outer presentation owners.
-/// Missing definition endpoints differ from authored black pictures. Unavailable
-/// measured evidence is an error; callers retaining a failed intent must record
-/// that failure separately rather than manufacture an identity.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct GenerationInputBinding {
-    pub duration: FrameDuration,
-    pub frame_rate: FrameRate,
-    pub canvas: [u32; 2],
-    pub left: Option<GenerationPictureIdentity>,
-    pub right: Option<GenerationPictureIdentity>,
-}
-
-impl GenerationInputBinding {
-    pub fn capture(
-        document: &ProjectDocument,
-        target: &ScopedNodeTarget,
-        pictures: &dyn GenerationPictures,
-    ) -> Result<Self, StoreError> {
-        let plan = RenderPlan::compile(document).map_err(plan_error)?;
-        // A single query may cross a wide Sequence. Its explicit budget is
-        // bounded by the admitted document, not the small interactive default.
-        let boundaries = plan
-            .scoped_hold_boundaries(
-                target,
-                BoundaryQueryLimits {
-                    max_scopes: deadpan_core::MAX_DOCUMENT_NODES,
-                    max_comparisons: deadpan_core::MAX_DOCUMENT_NODES * 4,
-                },
-            )
-            .map_err(plan_error)?;
-        Self::from_boundaries(document, &boundaries, pictures)
-    }
-
-    /// Reuse canonical batch queries and their compiled plan. This checks the
-    /// branding, but does not turn caller-created samples into admission proof:
-    /// receipt insertion and full validation independently recapture them.
-    pub fn from_boundaries(
-        document: &ProjectDocument,
-        boundaries: &ScopedHoldBoundaries,
-        pictures: &dyn GenerationPictures,
-    ) -> Result<Self, StoreError> {
-        let Some(NodeKind::Hold { recipe }) = document
-            .nodes()
-            .get(&boundaries.target.node)
-            .map(|node| &node.kind)
-        else {
-            return Err(invalid("input binding target is not an authored Hold"));
-        };
-        if &boundaries.project_id != document.project_id()
-            || &boundaries.revision_id != document.revision_id()
-            || boundaries.duration != recipe.duration
-            || boundaries.duration == FrameDuration::ZERO
-            || boundaries
-                .left
-                .iter()
-                .chain(&boundaries.right)
-                .any(|sample| {
-                    sample.project_id != boundaries.project_id
-                        || sample.revision_id != boundaries.revision_id
-                        || sample.definition != boundaries.definition
-                })
-        {
-            return Err(invalid(
-                "input binding boundaries belong to another Hold revision",
-            ));
-        }
-        Ok(Self {
-            duration: boundaries.duration,
-            frame_rate: document.presentation_basis().frame_rate,
-            canvas: [
-                document.presentation_basis().width,
-                document.presentation_basis().height,
-            ],
-            left: boundaries
-                .left
-                .as_ref()
-                .map(|sample| pictures.identity(document, &sample.picture))
-                .transpose()?,
-            right: boundaries
-                .right
-                .as_ref()
-                .map(|sample| pictures.identity(document, &sample.picture))
-                .transpose()?,
-        })
-    }
-}
+pub use crate::generation_inputs::GenerationInputBinding;
 
 /// Immutable request fields, excluding its later relevance and mapped address.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -136,7 +49,8 @@ struct RequestOrigin {
     context_sha256: ContentSha256,
     constraints: HoldConstraints,
     provider: ProviderSelection,
-    bridge_plan: BridgeGenerationPlan,
+    plan: GenerationPlan,
+    input_binding: GenerationInputBinding,
 }
 
 impl RequestOrigin {
@@ -146,6 +60,11 @@ impl RequestOrigin {
                 "accepted request Hold differs from its origin target",
             ));
         }
+        let Some(plan @ GenerationPlan::Bridge(_)) = &request.plan else {
+            return Err(invalid(
+                "accepted origin requires a retained Bridge plan; extension output admission is unavailable",
+            ));
+        };
         Ok(Self {
             request_id: request.request_id.clone(),
             project_id: request.binding.project_id.clone(),
@@ -156,10 +75,11 @@ impl RequestOrigin {
             context_sha256: request.binding.context_sha256.clone(),
             constraints: request.constraints.clone(),
             provider: request.provider.clone(),
-            bridge_plan: request
-                .bridge_plan
+            plan: plan.clone(),
+            input_binding: request
+                .input_binding
                 .clone()
-                .ok_or_else(|| invalid("accepted origin needs a retained bridge plan"))?,
+                .ok_or_else(|| invalid("accepted origin needs retained request inputs"))?,
         })
     }
 }
@@ -172,7 +92,6 @@ pub struct AcceptedOriginReceipt {
     identity: MessageIdentity,
     origin: RequestOrigin,
     options: GenerationOptions,
-    input_binding: GenerationInputBinding,
     accepted_revision: RevisionId,
 }
 
@@ -196,7 +115,7 @@ impl AcceptedOriginReceipt {
         &self.options
     }
     pub fn input_binding(&self) -> &GenerationInputBinding {
-        &self.input_binding
+        &self.origin.input_binding
     }
     pub fn accepted_revision(&self) -> &RevisionId {
         &self.accepted_revision
@@ -282,22 +201,17 @@ fn capture_origin_inputs(
     }
     let document =
         crate::validation::read_revision(connection, origin.origin_revision.as_str())?.document;
-    let input_binding = GenerationInputBinding::capture(
-        &document,
-        &origin.origin_target,
-        &QualifiedGenerationPictures::new(connection),
-    )?;
+    let input_binding = recapture_inputs(connection, &document, &origin)?;
     let value = AcceptedOriginReceipt {
         version: RECEIPT_VERSION,
         artifact: artifact.clone(),
         identity: identity.clone(),
         options: GenerationOptions::from_constraints(&origin.constraints),
         origin,
-        input_binding,
         accepted_revision: accepted_revision.clone(),
     };
     canonical(&value)?;
-    validate_input_contract(&value, &document, &value.input_binding)?;
+    validate_input_contract(&value, &document, &input_binding)?;
     Ok(value)
 }
 
@@ -450,66 +364,12 @@ fn read_request_origin(
     connection: &Connection,
     id: &RequestId,
 ) -> Result<RequestOrigin, StoreError> {
-    let mut statement = connection.prepare("SELECT
-        CASE WHEN typeof(project_id)='text' AND length(CAST(project_id AS BLOB)) BETWEEN 1 AND ?2 THEN project_id END,
-        CASE WHEN typeof(scope_id)='text' AND length(CAST(scope_id AS BLOB)) BETWEEN 1 AND ?2 THEN scope_id END,
-        CASE WHEN typeof(origin_revision)='text' AND length(CAST(origin_revision AS BLOB)) BETWEEN 1 AND ?2 THEN origin_revision END,
-        CASE WHEN typeof(origin_target)='text' AND length(CAST(origin_target AS BLOB)) BETWEEN 1 AND ?3 THEN origin_target END,
-        CASE WHEN typeof(request_version)='integer' AND request_version>0 THEN request_version END,
-        CASE WHEN typeof(context_sha256)='text' AND length(CAST(context_sha256 AS BLOB))=64 THEN context_sha256 END,
-        CASE WHEN typeof(constraints)='text' AND length(CAST(constraints AS BLOB)) BETWEEN 1 AND ?4 THEN constraints END,
-        CASE WHEN typeof(provider)='text' AND length(CAST(provider AS BLOB)) BETWEEN 1 AND ?4 THEN provider END,
-        CASE WHEN typeof(bridge_plan)='text' AND length(CAST(bridge_plan AS BLOB)) BETWEEN 1 AND ?4 THEN bridge_plan END,
-        CASE WHEN typeof(hold_id)='text' AND length(CAST(hold_id AS BLOB)) BETWEEN 1 AND ?2 THEN hold_id END,
-        typeof(relevance)='text' AND relevance IN ('current','stale','detached')
-        FROM generation_requests WHERE request_id=?1")?;
-    let mut rows = statement.query(params![
-        id.as_str(),
-        deadpan_core::MAX_IDENTITY_BYTES as i64,
-        crate::generation_scope::MAX_TARGET_BYTES as i64,
-        MAX_EVIDENCE_BYTES as i64
-    ])?;
-    let row = rows
-        .next()?
+    // Reuse the bounded, operation-tagged reader. It checks SQL types/lengths,
+    // paired plan/input presence and the capture operation before allocating
+    // immutable origin metadata. Mutable relevance/target are excluded below.
+    let request = crate::generation::read_stored_request(connection, id)?
         .ok_or_else(|| invalid("accepted origin request is missing"))?;
-    let field = |index: usize| -> Result<String, StoreError> {
-        row.get::<_, Option<String>>(index)?.ok_or_else(|| {
-            invalid("accepted origin request field is missing, mistyped or oversized")
-        })
-    };
-    let origin_target = crate::generation_scope::parse_target(&field(3)?)?;
-    if origin_target.node.as_str() != field(9)? {
-        return Err(invalid(
-            "accepted origin request Hold differs from its target",
-        ));
-    }
-    if !row.get::<_, bool>(10)? {
-        return Err(invalid("accepted origin request relevance is invalid"));
-    }
-    let version: Option<i64> = row.get(4)?;
-    let request_version = RequestVersion::new(
-        version
-            .and_then(|value| u64::try_from(value).ok())
-            .ok_or_else(|| invalid("accepted origin request version is invalid"))?,
-    )
-    .map_err(|_| invalid("accepted origin request version is invalid"))?;
-    let value = RequestOrigin {
-        request_id: id.clone(),
-        project_id: ProjectId::new(field(0)?)?,
-        scope_id: crate::generation_scope::parse_id(field(1)?)?,
-        origin_revision: RevisionId::new(field(2)?)?,
-        origin_target,
-        request_version,
-        context_sha256: ContentSha256::new(field(5)?)
-            .map_err(|_| invalid("accepted origin context hash is invalid"))?,
-        constraints: serde_json::from_str(&field(6)?)?,
-        provider: serde_json::from_str(&field(7)?)?,
-        bridge_plan: serde_json::from_str(&field(8)?)?,
-    };
-    if rows.next()?.is_some() {
-        return Err(invalid("duplicate accepted origin request"));
-    }
-    Ok(value)
+    RequestOrigin::from_request(&request)
 }
 
 #[derive(Clone, Copy)]
@@ -605,13 +465,31 @@ fn validate_proof(
     let document =
         crate::validation::read_revision(connection, value.origin.origin_revision.as_str())?
             .document;
-    let binding = GenerationInputBinding::capture(
-        &document,
-        &value.origin.origin_target,
-        &QualifiedGenerationPictures::new(connection),
-    )?;
+    let binding = recapture_inputs(connection, &document, &value.origin)?;
     validate_input_contract(value, &document, &binding)?;
     validate_admission(connection, value, usage)
+}
+
+fn recapture_inputs(
+    connection: &Connection,
+    document: &ProjectDocument,
+    origin: &RequestOrigin,
+) -> Result<GenerationInputBinding, StoreError> {
+    if !matches!(origin.plan, GenerationPlan::Bridge(_)) {
+        return Err(invalid(
+            "extension accepted origins require qualified output admission",
+        ));
+    }
+    let plan = RenderPlan::compile(document).map_err(plan_error)?;
+    GenerationInputBinding::capture_with_plan(
+        document,
+        &plan,
+        &origin.origin_target,
+        GenerationCaptureSpec::from_plan(&origin.plan),
+        origin.constraints.region_target.as_ref(),
+        &QualifiedGenerationPictures::new(connection),
+        &mut InputCaptureBudget::default(),
+    )
 }
 
 fn validate_input_contract(
@@ -620,7 +498,11 @@ fn validate_input_contract(
     binding: &GenerationInputBinding,
 ) -> Result<(), StoreError> {
     if value.origin.project_id != *document.project_id()
-        || &value.input_binding != binding
+        || &value.origin.input_binding != binding
+        || binding
+            .region
+            .as_ref()
+            .is_some_and(|region| region.record.is_none())
         || value.accepted_revision == value.origin.origin_revision
         || binding.duration != value.origin.constraints.video.frames()
         || binding.frame_rate != value.origin.constraints.video.frame_rate()
@@ -650,7 +532,7 @@ fn validate_bundle(
         || &value.artifact.native_object != bundle.native_object()
         || &value.artifact.provenance != bundle.provenance_object()
         || value.artifact.sampling != bundle.plan().sampling_map().map_err(plan_error)?
-        || &value.origin.bridge_plan != bundle.plan()
+        || value.origin.plan != GenerationPlan::Bridge(bundle.plan().clone())
         || bundle.admission().is_none_or(|admission| {
             admission.inputs().context_sha256() != &value.origin.context_sha256
         })

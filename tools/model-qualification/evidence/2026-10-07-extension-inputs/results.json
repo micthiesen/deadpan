@@ -1,0 +1,231 @@
+{
+  "extension-inputs-auto-diagnostic.log": {
+    "cargo_results": {
+      "failed": 1,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error: test failed, to rerun pass `-p deadpan-store --lib`",
+      "error: 1 target failed:"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-clippy-final.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-continuation.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-corrected.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 203
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-doc-tests.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 2
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-fifth.log": {
+    "cargo_results": {
+      "failed": 1,
+      "ignored": 0,
+      "passed": 10
+    },
+    "errors": [
+      "error: test failed, to rerun pass `-p deadpan-store --lib`",
+      "error: 1 target failed:"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-first.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error[E0609]: no field `left` on type `&generation_inputs::GenerationInputBinding`",
+      "error[E0609]: no field `right` on type `&generation_inputs::GenerationInputBinding`",
+      "error[E0609]: no field `right` on type `&generation_inputs::GenerationInputBinding`",
+      "error: could not compile `deadpan-store` (lib test) due to 3 previous errors"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-fmt.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-focused.log": {
+    "cargo_results": {
+      "failed": 2,
+      "ignored": 1,
+      "passed": 485
+    },
+    "errors": [
+      "error: test failed, to rerun pass `-p deadpan-plan --test picture_plan`",
+      "error: test failed, to rerun pass `-p deadpan-store --lib`",
+      "error: 2 targets failed:"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-fourth.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error[E0063]: missing fields `gap_overrides` and `overrides` in initializer of `deadpan_core::Subtree`",
+      "error: could not compile `deadpan-store` (lib test) due to 1 previous error"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-gate-corrected.log": {
+    "cargo_results": {
+      "failed": 6,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error: test run failed",
+      "xtask: cargo nextest run --workspace --features deadpan-cli/synthetic-worker --locked --no-fail-fast exited with exit status: 100"
+    ],
+    "nextest_summary": [
+      "Summary [ 434.437s] 5251 tests run: 5245 passed (14 slow, 1 leaky), 6 failed, 10 skipped"
+    ]
+  },
+  "extension-inputs-gate-fixture-corrections.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": [
+      "Summary [ 141.565s] 147 tests run: 147 passed (1 slow, 1 leaky), 0 skipped"
+    ]
+  },
+  "extension-inputs-gate.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error: unneeded `return` statement",
+      "error: large size difference between variants",
+      "error: could not compile `deadpan-store` (lib) due to 2 previous errors",
+      "error: could not compile `deadpan-store` (lib test) due to 2 previous errors",
+      "xtask: cargo clippy --workspace --all-targets --features deadpan-cli/synthetic-worker --locked -- -D warnings exited with exit status: 101"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-generation.log": {
+    "cargo_results": {
+      "failed": 4,
+      "ignored": 1,
+      "passed": 216
+    },
+    "errors": [
+      "error: test failed, to rerun pass `-p deadpan-jobs --lib`",
+      "error: test failed, to rerun pass `-p deadpan-store --lib`",
+      "error: 2 targets failed:"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-leak-diagnostic.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": [
+      "Summary [   0.339s] 2 tests run: 2 passed, 5259 skipped"
+    ]
+  },
+  "extension-inputs-second.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error[E0615]: attempted to take value of method `bridge_plan` on type `&deadpan_store::generation::StoredGenerationRequest`",
+      "error[E0560]: struct `deadpan_store::generation::StoredGenerationRequest` has no field named `bridge_plan`",
+      "error: could not compile `deadpan-store` (test \"generation_bundles\") due to 2 previous errors",
+      "error[E0609]: no field `opposite` on type `ExtensionContextContinuity`",
+      "error[E0382]: use of moved value: `region`",
+      "error: could not compile `deadpan-cli` (lib test) due to 2 previous errors"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-third.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [
+      "error[E0615]: attempted to take value of method `bridge_plan` on type `StoredGenerationRequest`",
+      "error: could not compile `deadpan-media-worker` (test \"bundle_qualification\") due to 1 previous error"
+    ],
+    "nextest_summary": []
+  },
+  "extension-inputs-ui-inventory.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-inputs-ui-tests.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": [
+      "Summary [ 234.291s] 1071 tests run: 1071 passed (8 slow), 2 skipped"
+    ]
+  },
+  "extension-inputs-workspace-inventory.log": {
+    "cargo_results": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 0
+    },
+    "errors": [],
+    "nextest_summary": []
+  }
+}

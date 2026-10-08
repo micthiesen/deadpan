@@ -11,11 +11,15 @@ use deadpan_core::{
     ScopedNodeTarget,
 };
 use deadpan_jobs::{
-    BridgeGenerationPlan, ConditioningMode, HoldConstraints, ProviderSelection, Relevance,
-    RequestId, RequestVersion, Sha256, TargetBinding,
+    BridgeGenerationPlan, GenerationPlan, HoldConstraints, ProviderSelection, Relevance, RequestId,
+    RequestVersion, Sha256, TargetBinding,
 };
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
+use crate::generation_inputs::{
+    GenerationCaptureSpec, GenerationInputBinding, InputCaptureBudget, MAX_INPUT_BINDING_BYTES,
+};
+use crate::generation_pictures::QualifiedGenerationPictures;
 pub use crate::generation_scope::GenerationScopeId;
 use crate::{ProjectStore, StoreError, read_snapshot, validation};
 
@@ -34,9 +38,11 @@ CREATE TABLE generation_requests (
     context_sha256 TEXT NOT NULL,
     constraints TEXT NOT NULL CHECK (json_valid(constraints)),
     provider TEXT NOT NULL CHECK (json_valid(provider)),
-    bridge_plan TEXT CHECK (bridge_plan IS NULL OR json_valid(bridge_plan)),
+    plan TEXT CHECK (plan IS NULL OR json_valid(plan)),
+    input_binding TEXT CHECK (input_binding IS NULL OR json_valid(input_binding)),
     relevance TEXT NOT NULL CHECK (relevance IN ('current','stale','detached')),
-    UNIQUE (scope_id, request_version)
+    UNIQUE (scope_id, request_version),
+    CHECK ((plan IS NULL) = (input_binding IS NULL))
 ) STRICT;
 CREATE UNIQUE INDEX one_current_generation_per_scope
     ON generation_requests(scope_id) WHERE relevance='current';
@@ -65,8 +71,20 @@ pub struct StoredGenerationRequest {
     pub target: ScopedNodeTarget,
     pub constraints: HoldConstraints,
     pub provider: ProviderSelection,
-    pub bridge_plan: Option<BridgeGenerationPlan>,
+    pub plan: Option<GenerationPlan>,
+    /// Independently captured immutable origin inputs. Legacy V1 has neither
+    /// an operation plan nor this qualified structural descriptor.
+    pub input_binding: Option<GenerationInputBinding>,
     pub relevance: Relevance,
+}
+
+impl StoredGenerationRequest {
+    pub fn bridge_plan(&self) -> Option<&BridgeGenerationPlan> {
+        match &self.plan {
+            Some(GenerationPlan::Bridge(plan)) => Some(plan),
+            Some(GenerationPlan::Extension(_)) | None => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -111,10 +129,13 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             typeof(context_sha256)!='text' OR length(CAST(context_sha256 AS BLOB))!=64 OR
             typeof(constraints)!='text' OR length(CAST(constraints AS BLOB))>?2 OR
             typeof(provider)!='text' OR length(CAST(provider AS BLOB))>?2 OR
-            (bridge_plan IS NOT NULL AND
-             (typeof(bridge_plan)!='text' OR length(CAST(bridge_plan AS BLOB))>?2)) OR
+            (plan IS NOT NULL AND
+             (typeof(plan)!='text' OR length(CAST(plan AS BLOB))>?2)) OR
+            (input_binding IS NOT NULL AND
+             (typeof(input_binding)!='text' OR length(CAST(input_binding AS BLOB))>?4)) OR
+            ((plan IS NULL) != (input_binding IS NULL)) OR
             typeof(relevance)!='text' OR length(CAST(relevance AS BLOB)) NOT BETWEEN 5 AND 8",
-        params![MAX_IDENTITY_BYTES as i64, MAX_REQUEST_JSON_BYTES as i64, crate::generation_scope::MAX_TARGET_BYTES as i64],
+        params![MAX_IDENTITY_BYTES as i64, MAX_REQUEST_JSON_BYTES as i64, crate::generation_scope::MAX_TARGET_BYTES as i64, MAX_INPUT_BINDING_BYTES as i64],
         |row| row.get(0),
     )?;
     if invalid_requests != 0 {
@@ -165,8 +186,8 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
             }
             prior_current_scope = Some(request.scope_id.clone());
         }
-        if let Some(plan) = request.bridge_plan.as_ref() {
-            validate_bridge_plan_binding(&request.constraints, plan)?;
+        if let Some(plan) = request.plan.as_ref() {
+            validate_plan_binding(&request.constraints, plan)?;
         }
         let origin =
             validation::read_revision(connection, request.origin_revision.as_str())?.document;
@@ -179,6 +200,20 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
             return Err(integrity(
                 "generation request is incompatible with its origin revision",
             ));
+        }
+        if let Some(plan) = &request.plan {
+            let captured = capture_request_inputs(
+                connection,
+                &origin,
+                &request.origin_target,
+                &request.constraints,
+                plan,
+            )?;
+            if request.input_binding.as_ref() != Some(&captured) {
+                return Err(integrity(
+                    "generation input binding differs from its immutable origin",
+                ));
+            }
         }
         let high_water = crate::generation_scope::read(connection, &request.scope_id)?.high_water;
         let request_version = request_version_i64(request.binding.request_version)?;
@@ -266,7 +301,7 @@ impl ProjectStore {
         input: GenerationRequestInput,
         plan: BridgeGenerationPlan,
     ) -> Result<StoredGenerationRequest, StoreError> {
-        self.allocate_generation_request_with_plan(input, Some(plan), None)
+        self.allocate_generation_request_with_plan(input, Some(GenerationPlan::Bridge(plan)), None)
     }
 
     /// Capture an explicit Default or Play address without isolating it or
@@ -278,13 +313,24 @@ impl ProjectStore {
         target: ScopedNodeTarget,
         plan: BridgeGenerationPlan,
     ) -> Result<StoredGenerationRequest, StoreError> {
+        self.record_scoped_generation_request(input, target, GenerationPlan::Bridge(plan))
+    }
+
+    /// Records a resolved operation and independently derives its complete
+    /// input binding from retained measured metadata at the origin revision.
+    pub fn record_scoped_generation_request(
+        &mut self,
+        input: GenerationRequestInput,
+        target: ScopedNodeTarget,
+        plan: GenerationPlan,
+    ) -> Result<StoredGenerationRequest, StoreError> {
         self.allocate_generation_request_with_plan(input, Some(plan), Some(target))
     }
 
     fn allocate_generation_request_with_plan(
         &mut self,
         input: GenerationRequestInput,
-        bridge_plan: Option<BridgeGenerationPlan>,
+        plan: Option<GenerationPlan>,
         target: Option<ScopedNodeTarget>,
     ) -> Result<StoredGenerationRequest, StoreError> {
         self.require_writer()?;
@@ -292,7 +338,7 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         crate::generation_preparations::verify(&transaction)?;
-        let result = allocate_request(&transaction, input, bridge_plan, target, true)?;
+        let result = allocate_request(&transaction, input, plan, target, true)?;
         crate::audit::refresh_generation_scopes(&transaction)?;
         transaction.commit()?;
         Ok(result)
@@ -331,7 +377,7 @@ pub(crate) fn read_stored_request(
 pub(crate) fn allocate_request(
     connection: &Connection,
     input: GenerationRequestInput,
-    bridge_plan: Option<BridgeGenerationPlan>,
+    plan: Option<GenerationPlan>,
     target: Option<ScopedNodeTarget>,
     supersede: bool,
 ) -> Result<StoredGenerationRequest, StoreError> {
@@ -349,8 +395,8 @@ pub(crate) fn allocate_request(
         ));
     }
     target.validate(&document)?;
-    if let Some(plan) = bridge_plan.as_ref() {
-        validate_bridge_plan_binding(&input.constraints, plan)?;
+    if let Some(plan) = plan.as_ref() {
+        validate_plan_binding(&input.constraints, plan)?;
         if !explicit_scope {
             crate::generation_acceptance::require_single_generation_occurrence(
                 &document,
@@ -358,6 +404,17 @@ pub(crate) fn allocate_request(
             )?;
         }
     }
+
+    let input_binding = plan
+        .as_ref()
+        .map(|plan| {
+            capture_request_inputs(connection, &document, &target, &input.constraints, plan)
+        })
+        .transpose()?;
+    let input_binding_json = input_binding
+        .as_ref()
+        .map(bounded_input_binding_json)
+        .transpose()?;
 
     let exists: Option<i64> = connection
         .query_row(
@@ -388,15 +445,15 @@ pub(crate) fn allocate_request(
 
     let constraints = bounded_json(&input.constraints, "generation constraints")?;
     let provider = bounded_json(&input.provider, "generation provider")?;
-    let bridge_plan_json = bridge_plan
+    let plan_json = plan
         .as_ref()
-        .map(|plan| bounded_json(plan, "bridge generation plan"))
+        .map(|plan| bounded_json(plan, "generation plan"))
         .transpose()?;
     connection.execute(
         "INSERT INTO generation_requests(
             request_id,project_id,hold_id,request_version,origin_revision,
-            context_sha256,constraints,provider,bridge_plan,relevance,scope_id,origin_target
-         ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'current',?10,?11)",
+            context_sha256,constraints,provider,plan,relevance,scope_id,origin_target,input_binding
+         ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'current',?10,?11,?12)",
         params![
             input.request_id.as_str(),
             document.project_id().as_str(),
@@ -406,9 +463,10 @@ pub(crate) fn allocate_request(
             input.context_sha256.as_str(),
             constraints,
             provider,
-            bridge_plan_json,
+            plan_json,
             scope_id.as_str(),
             crate::generation_scope::target_json(&target)?,
+            input_binding_json,
         ],
     )?;
     crate::generation_scope::check_stored_sizes(connection)?;
@@ -426,7 +484,8 @@ pub(crate) fn allocate_request(
         },
         constraints: input.constraints,
         provider: input.provider,
-        bridge_plan,
+        plan,
+        input_binding,
         relevance: Relevance::Current,
     })
 }
@@ -723,13 +782,16 @@ const BOUNDED_REQUEST_SELECT: &str = "SELECT
          AND length(CAST(constraints AS BLOB))<=16384 THEN constraints END,
     CASE WHEN typeof(provider)='text'
          AND length(CAST(provider AS BLOB))<=16384 THEN provider END,
-    CASE WHEN bridge_plan IS NULL THEN NULL
-         WHEN typeof(bridge_plan)='text' AND length(CAST(bridge_plan AS BLOB))<=16384
-         THEN bridge_plan
+    CASE WHEN plan IS NULL THEN NULL
+         WHEN typeof(plan)='text' AND length(CAST(plan AS BLOB))<=16384
+         THEN plan
          ELSE '__invalid__' END,
     CASE WHEN relevance IN ('current','stale','detached') THEN relevance END,
     CASE WHEN typeof(scope_id)='text' AND length(CAST(scope_id AS BLOB)) BETWEEN 1 AND ?1 THEN scope_id END,
-    CASE WHEN typeof(origin_target)='text' AND length(CAST(origin_target AS BLOB)) BETWEEN 1 AND 131072 THEN origin_target END
+    CASE WHEN typeof(origin_target)='text' AND length(CAST(origin_target AS BLOB)) BETWEEN 1 AND 131072 THEN origin_target END,
+    CASE WHEN input_binding IS NULL THEN NULL
+         WHEN typeof(input_binding)='text' AND length(CAST(input_binding AS BLOB))<=524288
+         THEN input_binding ELSE '__invalid__' END
  FROM generation_requests";
 
 fn parse_request_row(
@@ -744,10 +806,11 @@ fn parse_request_row(
     let context_sha256: Option<String> = row.get(5)?;
     let constraints: Option<String> = row.get(6)?;
     let provider: Option<String> = row.get(7)?;
-    let bridge_plan: Option<String> = row.get(8)?;
+    let plan: Option<String> = row.get(8)?;
     let relevance: Option<String> = row.get(9)?;
     let scope_id: Option<String> = row.get(10)?;
     let origin_target: Option<String> = row.get(11)?;
+    let input_binding: Option<String> = row.get(12)?;
     (|| {
         let request_id = RequestId::new(required(request_id, "request ID")?)
             .map_err(|_| integrity("invalid generation request ID"))?;
@@ -767,9 +830,27 @@ fn parse_request_row(
             "generation constraints",
         )?;
         let provider = strict_json(&required(provider, "provider")?, "generation provider")?;
-        let bridge_plan = bridge_plan
-            .map(|value| strict_json(&value, "bridge generation plan"))
+        let plan: Option<GenerationPlan> = plan
+            .map(|value| strict_json(&value, "generation plan"))
             .transpose()?;
+        let input_binding: Option<GenerationInputBinding> = input_binding
+            .map(|value| strict_json(&value, "generation input binding"))
+            .transpose()?;
+        if plan.is_some() != input_binding.is_some() {
+            return Err(integrity(
+                "generation plan and input binding presence disagree",
+            ));
+        }
+        if let Some(plan) = &plan {
+            validate_plan_binding(&constraints, plan)?;
+            if input_binding.as_ref().is_none_or(|binding| {
+                binding.capture_spec() != GenerationCaptureSpec::from_plan(plan)
+            }) {
+                return Err(integrity(
+                    "generation plan and input capture operation disagree",
+                ));
+            }
+        }
         let relevance = match required(relevance, "relevance")?.as_str() {
             "current" => Relevance::Current,
             "stale" => Relevance::Stale,
@@ -794,7 +875,8 @@ fn parse_request_row(
             },
             constraints,
             provider,
-            bridge_plan,
+            plan,
+            input_binding,
             relevance,
         })
     })()
@@ -838,20 +920,20 @@ fn plan_error(message: &str) -> StoreError {
     StoreError::GenerationPlan(message.into())
 }
 
-fn validate_bridge_plan_binding(
+fn validate_plan_binding(
     constraints: &HoldConstraints,
-    plan: &BridgeGenerationPlan,
+    plan: &GenerationPlan,
 ) -> Result<(), StoreError> {
-    if constraints.conditioning != ConditioningMode::Bridge {
+    if constraints.conditioning != plan.conditioning() {
         return Err(plan_error(
-            "a bridge generation plan requires bridge conditioning",
+            "generation plan operation differs from requested conditioning",
         ));
     }
     if plan.project_frames() != constraints.video.frames()
         || plan.project_frame_rate() != constraints.video.frame_rate()
     {
         return Err(plan_error(
-            "bridge generation plan does not match the requested project video",
+            "generation plan does not match the requested project video",
         ));
     }
     let dimensions = plan.native_dimensions();
@@ -859,8 +941,49 @@ fn validate_bridge_plan_binding(
         || dimensions.height() != constraints.video.height()
     {
         return Err(plan_error(
-            "bridge generation plan dimensions do not match the requested video",
+            "generation plan dimensions do not match the requested video",
         ));
     }
     Ok(())
 }
+
+fn capture_request_inputs(
+    connection: &Connection,
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    constraints: &HoldConstraints,
+    generation_plan: &GenerationPlan,
+) -> Result<GenerationInputBinding, StoreError> {
+    if constraints
+        .region_target
+        .as_ref()
+        .is_some_and(|id| !document.targets().contains_key(id))
+    {
+        return Err(plan_error("generation region target is absent"));
+    }
+    let plan = deadpan_plan::RenderPlan::compile(document)
+        .map_err(|error| plan_error(&error.to_string()))?;
+    GenerationInputBinding::capture_with_plan(
+        document,
+        &plan,
+        target,
+        GenerationCaptureSpec::from_plan(generation_plan),
+        constraints.region_target.as_ref(),
+        &QualifiedGenerationPictures::new(connection),
+        &mut InputCaptureBudget::default(),
+    )
+}
+
+fn bounded_input_binding_json(binding: &GenerationInputBinding) -> Result<String, StoreError> {
+    let json = serde_json::to_string(binding)?;
+    if json.len() > MAX_INPUT_BINDING_BYTES {
+        return Err(plan_error(
+            "generation input binding exceeds the persistence limit",
+        ));
+    }
+    Ok(json)
+}
+
+#[cfg(test)]
+#[path = "generation/operation_tests.rs"]
+mod operation_tests;

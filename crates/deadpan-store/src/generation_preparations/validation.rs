@@ -126,6 +126,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
             value.request_id.as_ref(),
             value.duration,
             &value.origin,
+            &value.intent,
         )?;
     }
     Ok(())
@@ -181,6 +182,7 @@ fn validate_fulfilment(
     request: Option<&RequestId>,
     duration: FrameDuration,
     origin: &PreparationOrigin,
+    intent: &crate::generation_intents::IntentBirthReceipt,
 ) -> Result<(), StoreError> {
     if let Some(request) = request {
         let constraints: HoldConstraints =
@@ -192,10 +194,25 @@ fn validate_fulfilment(
         }
         if origin
             .options()
-            .is_some_and(|options| options != &GenerationOptions::from_constraints(&constraints))
+            .is_some_and(|options| !controls_match(options, &constraints))
         {
             return Err(invalid(
                 "fulfilled preparation controls differ from its origin",
+            ));
+        }
+        let stored = crate::generation::read_stored_request(connection, request)?
+            .ok_or_else(|| invalid("fulfilled preparation request is missing"))?;
+        if stored
+            .plan
+            .as_ref()
+            .map(crate::generation_inputs::GenerationCaptureSpec::from_plan)
+            != intent.capture
+            || !matches!(&intent.input_binding,
+                crate::generation_intents::IntentInputBinding::Measured { binding }
+                    if stored.input_binding.as_ref() == Some(binding.as_ref()))
+        {
+            return Err(invalid(
+                "fulfilled preparation request differs from its immutable operation or measured inputs",
             ));
         }
         let attempts: bool = connection.query_row(
@@ -233,7 +250,7 @@ impl Replay {
         connection: &Connection,
         document: &ProjectDocument,
         history: i64,
-        births: Vec<transitions::Birth>,
+        mut births: Vec<transitions::Birth>,
         scopes: &crate::generation_scope::Replay,
     ) -> Result<(), StoreError> {
         let count: i64 = connection.query_row(
@@ -248,14 +265,42 @@ impl Replay {
                 "replacement preparation birth is missing or unexpected",
             ));
         }
-        let bindings = crate::generation_intents::capture_inputs(
-            connection,
-            document,
-            &births
-                .iter()
-                .map(|birth| birth.target.clone())
-                .collect::<Vec<_>>(),
-        )?;
+        // Pure command replay knows which accepted artifact was lengthened;
+        // the immutable row retains the exact request controls captured then.
+        // Prove those controls and their historical scope before using them.
+        for birth in &mut births {
+            let id = transitions::id_for(document.revision_id(), &birth.target)?;
+            let immutable = read_intent_birth(connection, &id)?
+                .ok_or_else(|| invalid("immutable intent birth is absent"))?;
+            if !immutable.origin.same_birth(&birth.origin) {
+                return Err(invalid(
+                    "immutable generation controls differ from their command origin",
+                ));
+            }
+            validate_origin(connection, &immutable.origin)?;
+            if let PreparationOrigin::AcceptedExtension {
+                controls: PreparationControls::Request { request_id, .. },
+                ..
+            } = &immutable.origin
+            {
+                if !scopes.request_has_target(connection, request_id, &birth.target)? {
+                    return Err(invalid(
+                        "preparation controls came from another authoring scope",
+                    ));
+                }
+                if birth.capture.is_none() {
+                    let request =
+                        crate::generation::read_stored_request(connection, request_id)?
+                            .ok_or_else(|| invalid("preparation source request is missing"))?;
+                    birth.capture = request
+                        .plan
+                        .as_ref()
+                        .map(crate::generation_inputs::GenerationCaptureSpec::from_plan);
+                }
+            }
+            birth.origin = immutable.origin;
+        }
+        let bindings = crate::generation_intents::capture_inputs(connection, document, &births)?;
         for (birth, binding) in births.into_iter().zip(bindings) {
             let expected_fallback = match &birth.fallback {
                 deadpan_core::HoldVideo::Background => deadpan_core::HoldFallback::Background,
@@ -278,7 +323,7 @@ impl Replay {
                 || immutable.receipt.cause != birth.cause
                 || immutable.receipt.authorization != birth.authorization
                 || immutable.receipt.fallback != expected_fallback
-                || !immutable.receipt.input_binding.same_authority(&binding)
+                || !binding.matches(&immutable.receipt)
             {
                 return Err(invalid(
                     "immutable intent receipt differs from its command and measured inputs",
@@ -318,6 +363,7 @@ impl Replay {
                     value.request_id.as_ref(),
                     birth.duration,
                     &value.origin,
+                    &value.intent,
                 )?;
                 self.retired = self
                     .retired

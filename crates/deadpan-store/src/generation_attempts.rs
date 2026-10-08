@@ -9,14 +9,14 @@
 //! still requires a current-relevance check and an authored acceptance
 //! transaction; Ready alone never changes the document.
 
-use deadpan_core::{FrameDuration, GeneratedObjectRef, NodeId, ProjectId, SourceSpan};
+use deadpan_core::{FrameDuration, GeneratedObjectRef, SourceSpan};
 use deadpan_jobs::{
     AttemptId, BridgeGenerationPlan, CancellationAcknowledgement, CancellationToken,
-    CandidateDeclaration, CandidateManifest, Diagnostic, FailureCode, HoldConstraints, HostFailure,
-    HostFailureCode, JobFailure, JobLifecycle, JobState, LifecycleCheckpoint, MAX_DIAGNOSTIC_BYTES,
-    MAX_PROTOCOL_ID_BYTES, MessageIdentity, NativeCandidateManifest, ProtocolVersion,
-    ProviderSelection, Relevance, RequestId, RequestVersion, Sha256, TargetBinding, VideoSpec,
-    WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage,
+    CandidateDeclaration, CandidateManifest, Diagnostic, FailureCode, GenerationPlan,
+    HoldConstraints, HostFailure, HostFailureCode, JobFailure, JobLifecycle, JobState,
+    LifecycleCheckpoint, MAX_DIAGNOSTIC_BYTES, MAX_PROTOCOL_ID_BYTES, MessageIdentity,
+    NativeCandidateManifest, ProtocolVersion, ProviderSelection, Relevance, RequestId, Sha256,
+    TargetBinding, VideoSpec, WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage,
 };
 use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
 use serde::{Deserialize, Deserializer, Serialize, de::Error as _};
@@ -865,7 +865,7 @@ impl ProjectStore {
         &mut self,
         message: &WorkerMessage,
     ) -> Result<AttemptMutationOutcome, StoreError> {
-        if message.protocol() == ProtocolVersion::V3 {
+        if matches!(message, WorkerMessage::CompletedExtension { .. }) {
             return Err(attempt_error(
                 "extension worker admission is not implemented",
             ));
@@ -878,6 +878,11 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut stored = read_attempt(&transaction, message.identity())?;
+        if message.protocol() != stored.checkpoint.protocol {
+            return Err(attempt_error(
+                "worker message operation protocol differs from its request",
+            ));
+        }
         if duplicate_worker_terminal(&stored, message) {
             return Ok(AttemptMutationOutcome::Duplicate);
         }
@@ -1014,9 +1019,9 @@ impl ProjectStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut stored = read_attempt(&transaction, identity)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan.is_some() {
+        if request.plan.is_some() {
             return Err(attempt_error(
-                "legacy candidate readiness cannot be used for a bridge request",
+                "legacy candidate readiness requires a V1 request",
             ));
         }
         if stored.checkpoint.state == JobState::Ready {
@@ -1096,7 +1101,7 @@ impl ProjectStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut stored = read_attempt(&transaction, identity)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan.is_none() {
+        if request.bridge_plan().is_none() {
             return Err(attempt_error(
                 "bridge bundle readiness requires a V2 generation request",
             ));
@@ -1170,10 +1175,8 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan.is_some() {
-            return Err(attempt_error(
-                "legacy selection cannot be used for a bridge request",
-            ));
+        if request.plan.is_some() {
+            return Err(attempt_error("legacy selection requires a V1 request"));
         }
         if request.relevance != Relevance::Current {
             return Err(attempt_error(
@@ -1224,7 +1227,7 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan.is_none() {
+        if request.bridge_plan().is_none() {
             return Err(attempt_error(
                 "bridge bundle selection requires a V2 generation request",
             ));
@@ -1298,7 +1301,7 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan.is_none() {
+        if request.bridge_plan().is_none() {
             return Err(attempt_error(
                 "bridge variant discard requires a V2 generation request",
             ));
@@ -1515,7 +1518,7 @@ impl ProjectStore {
     ) -> Result<Option<SelectedGenerationCandidate>, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         let request = read_request(&transaction, request_id)?;
-        if request.bridge_plan.is_some() {
+        if request.plan.is_some() {
             return Ok(None);
         }
         if request.relevance != Relevance::Current {
@@ -1557,7 +1560,7 @@ impl ProjectStore {
     ) -> Result<Option<SelectedGenerationBundle>, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         let request = read_request(&transaction, request_id)?;
-        if request.bridge_plan.is_none() || request.relevance != Relevance::Current {
+        if request.bridge_plan().is_none() || request.relevance != Relevance::Current {
             return Ok(None);
         }
         let selected: Option<String> = transaction
@@ -1613,6 +1616,14 @@ pub(crate) fn evict_bundle(
     reason: crate::generation_retention::VariantEviction,
     now: std::time::SystemTime,
 ) -> Result<AttemptMutationOutcome, StoreError> {
+    if read_request(transaction, &identity.request_id)?
+        .bridge_plan()
+        .is_none()
+    {
+        return Err(attempt_error(
+            "bundle eviction requires a V2 bridge request",
+        ));
+    }
     let stored = read_attempt(transaction, identity)?;
     let Some(mut receipt) = stored.bundle_receipt else {
         return Err(attempt_error(
@@ -1692,8 +1703,23 @@ pub(crate) struct RequestMetadata {
     pub(crate) binding: TargetBinding,
     pub(crate) constraints: HoldConstraints,
     pub(crate) provider: ProviderSelection,
-    pub(crate) bridge_plan: Option<BridgeGenerationPlan>,
+    pub(crate) plan: Option<GenerationPlan>,
     pub(crate) relevance: Relevance,
+}
+
+impl RequestMetadata {
+    pub(crate) fn bridge_plan(&self) -> Option<&BridgeGenerationPlan> {
+        match &self.plan {
+            Some(GenerationPlan::Bridge(plan)) => Some(plan),
+            Some(GenerationPlan::Extension(_)) | None => None,
+        }
+    }
+
+    fn protocol(&self) -> ProtocolVersion {
+        self.plan
+            .as_ref()
+            .map_or(ProtocolVersion::V1, GenerationPlan::protocol)
+    }
 }
 
 #[derive(Debug)]
@@ -1705,82 +1731,17 @@ pub(crate) fn read_request(
     connection: &Connection,
     request_id: &RequestId,
 ) -> Result<RequestMetadata, StoreError> {
-    let row = connection
-        .query_row(
-            "SELECT project_id,hold_id,request_version,context_sha256,constraints,provider,bridge_plan,relevance
-             FROM generation_requests WHERE request_id=?1",
-            [request_id.as_str()],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, i64>(2)?,
-                    row.get::<_, String>(3)?,
-                    row.get::<_, String>(4)?,
-                    row.get::<_, String>(5)?,
-                    row.get::<_, Option<String>>(6)?,
-                    row.get::<_, String>(7)?,
-                ))
-            },
-        )
-        .optional()?;
-    let Some((project, hold, version, context, constraints, provider, bridge_plan, relevance)) =
-        row
-    else {
-        return Err(attempt_error("generation request does not exist"));
-    };
-    if constraints.len() > MAX_ATTEMPT_JSON_BYTES
-        || provider.len() > MAX_ATTEMPT_JSON_BYTES
-        || bridge_plan
-            .as_ref()
-            .is_some_and(|value| value.len() > MAX_ATTEMPT_JSON_BYTES)
-    {
-        return Err(integrity(
-            "stored generation request exceeds attempt parsing bounds",
-        ));
-    }
-    let constraints: HoldConstraints = serde_json::from_str(&constraints)
-        .map_err(|_| integrity("invalid generation constraints"))?;
-    let provider: ProviderSelection =
-        serde_json::from_str(&provider).map_err(|_| integrity("invalid generation provider"))?;
-    let bridge_plan = bridge_plan
-        .map(|value| {
-            serde_json::from_str(&value).map_err(|_| integrity("invalid bridge generation plan"))
-        })
-        .transpose()?;
-    let target_json: Option<String> = connection.query_row(
-        "SELECT CASE WHEN typeof(s.current_target)='text'
-             AND length(CAST(s.current_target AS BLOB)) BETWEEN 1 AND ?2
-             THEN s.current_target END
-         FROM generation_requests r JOIN generation_scopes s ON s.scope_id=r.scope_id
-         WHERE r.request_id=?1",
-        params![
-            request_id.as_str(),
-            crate::generation_scope::MAX_TARGET_BYTES as i64
-        ],
-        |row| row.get(0),
-    )?;
-    let target = crate::generation_scope::parse_target(
-        &target_json.ok_or_else(|| integrity("invalid generation scope target"))?,
-    )?;
+    // Use the request reader's SQL type/length guards, including the separately
+    // bounded input descriptor, before SQLite values enter host allocations.
+    let request = crate::generation::read_stored_request(connection, request_id)?
+        .ok_or_else(|| attempt_error("generation request does not exist"))?;
     Ok(RequestMetadata {
-        target,
-        binding: TargetBinding {
-            project_id: ProjectId::new(project)
-                .map_err(|_| integrity("invalid generation project ID"))?,
-            hold_id: NodeId::new(hold).map_err(|_| integrity("invalid generation Hold ID"))?,
-            request_version: RequestVersion::new(
-                u64::try_from(version)
-                    .map_err(|_| integrity("invalid generation request version"))?,
-            )
-            .map_err(|_| integrity("invalid generation request version"))?,
-            context_sha256: Sha256::new(context)
-                .map_err(|_| integrity("invalid generation context hash"))?,
-        },
-        constraints,
-        provider,
-        bridge_plan,
-        relevance: parse_relevance(&relevance)?,
+        target: request.target,
+        binding: request.binding,
+        constraints: request.constraints,
+        provider: request.provider,
+        plan: request.plan,
+        relevance: request.relevance,
     })
 }
 
@@ -1892,7 +1853,11 @@ fn parse_attempt_row(
     let worker_candidate_json: Option<String> = row.get(8)?;
     let declared_candidate = worker_candidate_json
         .map(|json| -> Result<CandidateDeclaration, StoreError> {
-            if request.bridge_plan.is_some() {
+            if request.protocol() == ProtocolVersion::V3 {
+                Err(integrity(
+                    "extension completion persistence is not qualified",
+                ))
+            } else if request.bridge_plan().is_some() {
                 let candidate: NativeCandidateManifest = serde_json::from_str(&json)
                     .map_err(|_| integrity("invalid native bridge candidate manifest"))?;
                 Ok(CandidateDeclaration::NativeBridgeV2(candidate))
@@ -1928,11 +1893,12 @@ fn parse_attempt_row(
         Some(_) => return Err(integrity("invalid cancellation response")),
     };
     let identity = MessageIdentity::new(request_id.clone(), attempt_id);
-    let protocol = if request.bridge_plan.is_some() {
-        ProtocolVersion::V2
-    } else {
-        ProtocolVersion::V1
-    };
+    let protocol = request.protocol();
+    if protocol == ProtocolVersion::V3 && matches!(state, JobState::Validating | JobState::Ready) {
+        return Err(integrity(
+            "extension attempt cannot be Validating or Ready before qualification",
+        ));
+    }
     let completion = matches!(state, JobState::Validating | JobState::Ready)
         .then(|| declared_candidate.clone())
         .flatten();
@@ -2188,6 +2154,11 @@ fn validate_receipt(
     candidate: Option<&CandidateDeclaration>,
     receipt: &CandidateValidationReceipt,
 ) -> Result<(), StoreError> {
+    if request.plan.is_some() {
+        return Err(attempt_error(
+            "legacy candidate receipt requires a V1 request",
+        ));
+    }
     let Some(CandidateDeclaration::SampledV1(candidate)) = candidate else {
         return Err(attempt_error(
             "legacy candidate receipt has no V1 worker declaration",
@@ -2218,8 +2189,8 @@ pub(crate) fn validate_bundle_receipt(
     let Some(CandidateDeclaration::NativeBridgeV2(candidate)) = candidate else {
         return Err(attempt_error("bundle receipt has no V2 worker declaration"));
     };
-    let Some(plan) = request.bridge_plan.as_ref() else {
-        return Err(attempt_error("bundle receipt belongs to a legacy request"));
+    let Some(plan) = request.bridge_plan() else {
+        return Err(attempt_error("bundle receipt requires a V2 bridge request"));
     };
     if receipt.plan() != plan
         || receipt.provider() != &request.provider.for_attempt(ordinal)
@@ -2320,15 +2291,6 @@ fn bounded_json(value: &impl serde::Serialize, label: &str) -> Result<String, St
         )));
     }
     Ok(json)
-}
-
-fn parse_relevance(value: &str) -> Result<Relevance, StoreError> {
-    match value {
-        "current" => Ok(Relevance::Current),
-        "stale" => Ok(Relevance::Stale),
-        "detached" => Ok(Relevance::Detached),
-        _ => Err(integrity("invalid generation relevance")),
-    }
 }
 
 fn state_text(state: JobState) -> &'static str {

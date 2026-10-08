@@ -3,7 +3,7 @@
 //! current claim to a normal request and its first attempt in one transaction.
 
 use deadpan_core::{FrameDuration, GeneratedArtifact, ProjectId, RevisionId, ScopedNodeTarget};
-use deadpan_jobs::{BridgeGenerationPlan, GenerationOptions, RequestId};
+use deadpan_jobs::{GenerationOptions, GenerationPlan, RequestId};
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ pub(crate) use validation::{Replay, digest, validate_store};
 pub const MAX_PREPARATIONS: usize = 4096;
 pub const MAX_PREPARATION_PAGE: usize = 256;
 const MAX_TERMINAL_PREPARATIONS: usize = 256;
-const MAX_ROW_BYTES: usize = 512 * 1024;
+const MAX_ROW_BYTES: usize = crate::generation_inputs::MAX_INPUT_BINDING_BYTES + 512 * 1024;
 const MAX_TOTAL_BYTES: usize = 32 * 1024 * 1024;
 const MAX_REASON_BYTES: usize = 2048;
 
@@ -112,6 +112,7 @@ impl PreparationOrigin {
     pub fn inserted_pause() -> Self {
         Self::InsertedPause {
             options: GenerationOptions {
+                mode: deadpan_jobs::GenerationModePreference::Automatic,
                 motion: deadpan_jobs::MotionAmount::Still,
                 instructions: None,
                 region_target: deadpan_jobs::GenerationTarget::None,
@@ -591,10 +592,11 @@ impl ProjectStore {
         &mut self,
         claim: &PreparationClaim,
         input: GenerationRequestInput,
-        plan: BridgeGenerationPlan,
+        plan: impl Into<GenerationPlan>,
         attempt: BeginGenerationAttempt,
     ) -> Result<(StoredGenerationRequest, StoredGenerationAttempt), StoreError> {
         self.require_writer()?;
+        let plan = plan.into();
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
@@ -611,10 +613,19 @@ impl ProjectStore {
             return Err(invalid("prepared request differs from its captured intent"));
         }
         if let Some(options) = value.origin.options()
-            && &GenerationOptions::from_constraints(&input.constraints) != options
+            && !controls_match(options, &input.constraints)
         {
             return Err(invalid(
                 "prepared request changed its captured generation controls",
+            ));
+        }
+        if value.intent.capture
+            != Some(crate::generation_inputs::GenerationCaptureSpec::from_plan(
+                &plan,
+            ))
+        {
+            return Err(invalid(
+                "prepared request changed its resolved operation or temporal capture policy",
             ));
         }
         let request = crate::generation::allocate_request(
@@ -624,6 +635,14 @@ impl ProjectStore {
             Some(value.target.clone()),
             false,
         )?;
+        if !matches!(&value.intent.input_binding,
+            crate::generation_intents::IntentInputBinding::Measured { binding }
+                if request.input_binding.as_ref() == Some(binding.as_ref()))
+        {
+            return Err(invalid(
+                "prepared request differs from its immutable measured inputs",
+            ));
+        }
         let attempt = crate::generation_attempts::begin_attempt(&transaction, attempt)?;
         crate::generation_intents::link_request(
             &transaction,
@@ -640,6 +659,22 @@ impl ProjectStore {
         transaction.commit()?;
         Ok((request, attempt))
     }
+}
+
+fn controls_match(
+    options: &GenerationOptions,
+    constraints: &deadpan_jobs::HoldConstraints,
+) -> bool {
+    if options
+        .mode
+        .validate_resolved(constraints.conditioning)
+        .is_err()
+    {
+        return false;
+    }
+    let mut resolved = options.clone();
+    resolved.mode = constraints.conditioning.into();
+    resolved == GenerationOptions::from_constraints(constraints)
 }
 
 pub(crate) fn supersede(

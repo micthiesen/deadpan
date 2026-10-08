@@ -235,7 +235,7 @@ fn native_candidate_for(
     request: &StoredGenerationRequest,
     ordinal: u64,
 ) -> NativeCandidateManifest {
-    let plan = request.bridge_plan.as_ref().unwrap();
+    let plan = request.bridge_plan().unwrap();
     NativeCandidateManifest {
         native: WorkspaceArtifact::new(
             WorkspaceRef::new("outputs/native.mp4").unwrap(),
@@ -790,7 +790,8 @@ fn object_alias_requires_an_identical_video_contract() -> Result {
         },
         constraints: constraints(),
         provider: provider(1),
-        bridge_plan: Some(plan()),
+        plan: Some(plan().into()),
+        input_binding: None,
         relevance: deadpan_jobs::Relevance::Current,
     });
     let shared = object(NATIVE_BYTES);
@@ -840,7 +841,7 @@ fn malformed_nonnull_plan_is_never_projected_as_a_legacy_request() -> Result {
     let request = allocate_bridge(&mut store, "request", 1)?;
     let connection = Connection::open(package.join("project.sqlite"))?;
     connection.execute(
-        "UPDATE generation_requests SET bridge_plan=42 WHERE request_id=?1",
+        "UPDATE generation_requests SET plan=42 WHERE request_id=?1",
         [request.request_id.as_str()],
     )?;
     assert!(matches!(

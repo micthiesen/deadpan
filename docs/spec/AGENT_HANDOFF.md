@@ -168,9 +168,21 @@ worker qualification. The subsequent
 uses actual qualified project pictures and a conservative bounded shot guard.
 Canonical affine coverage catches tiny cutaways and source jumps between sparse
 model inputs, and singleton spans cannot bypass fade checks. Relative measured
-input/support reports are observations, not persistent request authority yet.
-Temporal relevance, quality admission, acceptance, UI and longer-duration work
-remain. The contract review is retained in the foundation evidence.
+input/support reports now feed the shared
+[durable input binding](../qualification/extension-inputs-2026-10-07.md).
+Schema 73 independently captures Bridge/Extension operations and full temporal
+support at allocation and history validation. Automatic intent retains its
+resolved direction through missing/restored context; all-support replacement
+decisions, request relevance and accepted Bridge origins share that identity.
+Protocol 3 stages, failure, cancellation and restart persist, but extension
+completion, Ready and acceptance remain refused. Output quality admission,
+accepted-media sum types, UI and longer-duration work remain. The contract
+review is retained in the foundation evidence.
+The schema-73 gate completed in parts with coverage of all 5,251 workspace tests,
+1,071 UI tests, both doctests and strict lint. Only six test files changed after
+the full workspace run; all 147 affected-target tests pass. Exact failures,
+pipe-closure diagnostics and final executable hashes are retained in the
+qualification evidence. Approved model capabilities remain Bridge-only.
 
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate is about 88%.

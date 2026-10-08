@@ -10,6 +10,9 @@ use rusqlite::params;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
+mod auto_restore;
+mod temporal;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -151,8 +154,8 @@ fn binding(
         duration: frames(12),
         frame_rate: rate(),
         canvas: [640, 480],
-        left,
-        right,
+        inputs: crate::generation_inputs::GenerationInputs::Bridge { left, right },
+        region: None,
     }
 }
 fn generated(
@@ -210,7 +213,7 @@ fn save_origin(
         conditioning: ConditioningMode::Bridge,
         motion: MotionAmount::Still,
         instructions: None,
-        region_target: None,
+        region_target: input.region.as_ref().map(|region| region.id.clone()),
     };
     let bridge = BridgeGenerationPlan::new(
         frames(12),
@@ -240,8 +243,8 @@ fn save_origin(
             "scope_id": crate::generation::GenerationScopeId::from_first_request(request.clone()),
             "origin_revision": revision("origin"), "origin_target": target(name),
             "request_version": RequestVersion::new(1).unwrap(), "context_sha256": ContentSha256::new("a".repeat(64)).unwrap(),
-            "constraints": constraints, "provider": provider, "bridge_plan": bridge},
-        "options": GenerationOptions::from_constraints(&constraints), "input_binding": input,
+            "constraints": constraints, "provider": provider, "plan": deadpan_jobs::GenerationPlan::Bridge(bridge), "input_binding": input},
+        "options": GenerationOptions::from_constraints(&constraints),
         "accepted_revision": revision("accepted"),
     })).unwrap();
     let json = serde_json::to_string(&receipt).unwrap();
@@ -279,10 +282,34 @@ fn derive(
         connection,
         &ValidatedDocument::new(Arc::new(document)).unwrap(),
         &exclusions,
-        &intents,
+        &intents
+            .into_iter()
+            .map(|node| {
+                (
+                    node,
+                    GenerationInputSettings {
+                        capture: GenerationCaptureSpec::Bridge,
+                        region: None,
+                    }
+                    .into(),
+                )
+            })
+            .collect(),
         None,
     )
     .unwrap()
+}
+fn bridge_left(binding: &GenerationInputBinding) -> Option<GenerationPictureIdentity> {
+    let crate::generation_inputs::GenerationInputs::Bridge { left, .. } = &binding.inputs else {
+        panic!("expected bridge input");
+    };
+    left.clone()
+}
+fn bridge_right(binding: &GenerationInputBinding) -> Option<GenerationPictureIdentity> {
+    let crate::generation_inputs::GenerationInputs::Bridge { right, .. } = &binding.inputs else {
+        panic!("expected bridge input");
+    };
+    right.clone()
 }
 fn apply(document: &ProjectDocument, command: Command, next: &str) -> ProjectDocument {
     let request = CommandRequest {
@@ -323,14 +350,14 @@ fn final_fallback_can_preserve_neighbor_that_an_independent_first_pass_would_rep
         result.entries[0].accepted.as_ref(),
         accepted(&document, "a")
     );
-    assert_eq!(result.bindings[&target("b")].left, black());
+    assert_eq!(bridge_left(&result.bindings[&target("b")]), black());
     assert_eq!(
-        result.bindings[&target("a")].right,
+        bridge_right(&result.bindings[&target("a")]),
         generated(&document, "b", 0)
     );
     assert_eq!(
         result.births[0].input_binding,
-        result.bindings[&target("a")]
+        Some(result.bindings[&target("a")].clone())
     );
     assert_eq!(result.births[0].target, target("a"));
     assert_eq!(
@@ -360,9 +387,13 @@ fn final_provider_changes_propagate_and_births_bind_the_complete_final_assignmen
     let result = derive(&connection, document, BTreeSet::new(), BTreeSet::new());
     assert_eq!(result.entries.len(), 2);
     assert!(
-        result.births.iter().all(
-            |birth| birth.input_binding.left == black() && birth.input_binding.right == black()
-        )
+        result
+            .births
+            .iter()
+            .all(
+                |birth| bridge_left(birth.input_binding.as_ref().unwrap()) == black()
+                    && bridge_right(birth.input_binding.as_ref().unwrap()) == black()
+            )
     );
     assert!(
         result
@@ -416,7 +447,7 @@ fn missing_or_corrupt_origin_refuses_without_any_store_write() {
         &connection,
         &validated,
         &BTreeSet::new(),
-        &BTreeSet::new(),
+        &BTreeMap::new(),
         None,
     )
     .unwrap_err();
@@ -435,7 +466,7 @@ fn missing_or_corrupt_origin_refuses_without_any_store_write() {
             &connection,
             &validated,
             &BTreeSet::new(),
-            &BTreeSet::new(),
+            &BTreeMap::new(),
             None
         )
         .is_err()
@@ -510,8 +541,8 @@ fn shortening_zoom_caption_and_whole_group_moves_preserve_raw_conditioning() {
     let result = derive(&connection, changed, BTreeSet::new(), BTreeSet::new());
     assert!(result.entries.is_empty());
     assert_eq!(result.bindings[&target("a")].duration, frames(3));
-    assert_eq!(result.bindings[&target("a")].left, black());
-    assert_eq!(result.bindings[&target("a")].right, black());
+    assert_eq!(bridge_left(&result.bindings[&target("a")]), black());
+    assert_eq!(bridge_right(&result.bindings[&target("a")]), black());
 }
 
 #[test]
@@ -543,7 +574,7 @@ fn nested_retime_uses_the_sampled_master_ordinal_and_saved_content_aspect() {
     );
     assert!(result.entries.is_empty());
     assert_eq!(
-        result.bindings[&target("b")].left,
+        bridge_left(&result.bindings[&target("b")]),
         generated(&document, "a", 9)
     );
 }
@@ -571,7 +602,7 @@ fn removed_cutaway_over_generated_provider_does_not_create_a_false_dependency() 
     let result = derive(&connection, changed, BTreeSet::new(), BTreeSet::new());
     assert_eq!(result.entries.len(), 1);
     assert_eq!(result.entries[0].target, target("a"));
-    assert_eq!(result.bindings[&target("b")].left, black());
+    assert_eq!(bridge_left(&result.bindings[&target("b")]), black());
 }
 
 #[test]
@@ -598,7 +629,7 @@ fn only_requested_live_intent_nodes_are_measured_and_their_final_inputs_are_retu
         BTreeSet::from([id("pending"), id("deleted")]),
     );
     assert_eq!(result.bindings.len(), 2);
-    assert_eq!(result.bindings[&target("pending")].left, black());
+    assert_eq!(bridge_left(&result.bindings[&target("pending")]), black());
     assert!(!result.bindings.contains_key(&target("unrelated")));
 }
 
@@ -718,7 +749,7 @@ fn fresh_acceptance_can_itself_revert_when_a_neighbor_loses_its_accepted_provide
         &connection,
         &ValidatedDocument::new(Arc::new(document)).unwrap(),
         &BTreeSet::new(),
-        &BTreeSet::new(),
+        &BTreeMap::new(),
         Some(&ephemeral),
     )
     .unwrap();
@@ -738,9 +769,13 @@ fn fresh_acceptance_can_itself_revert_when_a_neighbor_loses_its_accepted_provide
             .all(|birth| matches!(birth.cause, IntentCause::CyclicBoundaryDependencies { .. }))
     );
     assert!(
-        result.births.iter().all(
-            |birth| birth.input_binding.left == black() && birth.input_binding.right == black()
-        )
+        result
+            .births
+            .iter()
+            .all(
+                |birth| bridge_left(birth.input_binding.as_ref().unwrap()) == black()
+                    && bridge_right(birth.input_binding.as_ref().unwrap()) == black()
+            )
     );
     assert_eq!(connection.total_changes(), before);
 }

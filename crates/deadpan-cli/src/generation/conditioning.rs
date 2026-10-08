@@ -44,10 +44,7 @@ use crate::picture::{PreparedPicture, ProjectPictureSession};
 
 #[path = "conditioning/continuity.rs"]
 mod continuity;
-pub use continuity::{
-    ExtensionContextContinuity, ExtensionContextInputIdentity, ExtensionContextMeasurement,
-    ExtensionContextSupport,
-};
+pub use continuity::{ExtensionContextContinuity, ExtensionContextMeasurement};
 
 mod extension;
 pub use extension::{ExtensionInputs, prepare_extension_scoped_with_options};

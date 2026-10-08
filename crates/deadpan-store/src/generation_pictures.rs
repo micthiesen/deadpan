@@ -10,8 +10,11 @@ use std::{cell::RefCell, collections::BTreeMap};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use deadpan_core::AssetRecord;
-use deadpan_core::{GeneratedObjectRef, ProjectDocument, SourceFrameId, SourceQualificationId};
-use deadpan_plan::Picture;
+use deadpan_core::{
+    AssetId, GeneratedObjectRef, ProjectDocument, SourceFrameId, SourceFrameIndex,
+    SourceQualificationId,
+};
+use deadpan_plan::{DefinitionPictureSpan, Picture, PictureClockSlope};
 use rusqlite::Connection;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use rusqlite::OptionalExtension;
@@ -39,6 +42,16 @@ pub enum GenerationPictureIdentity {
     AuthoredBlack,
 }
 
+/// The first and last measured pictures touched by one affine provider span,
+/// in playback order. This is immutable input identity, not a decoded-media or
+/// continuity qualification. Relative coordinates and policy belong to callers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GenerationPictureSupport {
+    pub first: GenerationPictureIdentity,
+    pub last: GenerationPictureIdentity,
+}
+
 /// Transition-local access to measured identities. Implementations must never
 /// substitute an inferred frame rate or decode media on the writer's behalf.
 pub trait GenerationPictures {
@@ -47,6 +60,18 @@ pub trait GenerationPictures {
         document: &ProjectDocument,
         picture: &Picture,
     ) -> Result<GenerationPictureIdentity, StoreError>;
+
+    /// Providers which only support bridge endpoint observation must refuse
+    /// temporal support explicitly rather than pretend endpoints cover it.
+    fn support(
+        &self,
+        _document: &ProjectDocument,
+        _span: &DefinitionPictureSpan,
+    ) -> Result<GenerationPictureSupport, StoreError> {
+        Err(invalid(
+            "measured generation picture support is unavailable",
+        ))
+    }
 }
 
 /// Receipt indexes and asset contracts are loaded once per qualification for
@@ -120,7 +145,7 @@ impl ReceiptCache {
     ) -> Result<&CachedReceipt, StoreError> {
         if !self.entries.contains_key(id) {
             if let Some(reason) = self.exhausted {
-                return Err(invalid(reason));
+                return Err(StoreError::GenerationInputLimit(reason));
             }
             if self.entries.len() == MAX_RECEIPTS {
                 return self.exhaust("conditioning receipt count exceeds the aggregate bound");
@@ -132,6 +157,9 @@ impl ReceiptCache {
                 return self.exhaust("conditioning indexes exceed the aggregate frame bound");
             }
             let result = self.load(connection, id).map_err(|error| error.to_string());
+            if let Some(reason) = self.exhausted {
+                return Err(StoreError::GenerationInputLimit(reason));
+            }
             self.entries.insert(id.clone(), result);
         }
         self.entries[id].as_ref().map_err(|reason| invalid(reason))
@@ -139,7 +167,7 @@ impl ReceiptCache {
 
     fn exhaust<T>(&mut self, reason: &'static str) -> Result<T, StoreError> {
         self.exhausted = Some(reason);
-        Err(invalid(reason))
+        Err(StoreError::GenerationInputLimit(reason))
     }
 
     fn load(
@@ -209,6 +237,47 @@ impl<'a> QualifiedGenerationPictures<'a> {
             receipts: RefCell::new(ReceiptCache::default()),
         }
     }
+
+    fn with_original_index<T>(
+        &self,
+        document: &ProjectDocument,
+        asset: &AssetId,
+        observe: impl FnOnce(&SourceQualificationId, &SourceFrameIndex) -> Result<T, StoreError>,
+    ) -> Result<T, StoreError> {
+        let record = document
+            .assets()
+            .get(asset)
+            .ok_or_else(|| invalid("conditioning asset is absent"))?;
+        let qualification = record
+            .source_qualification
+            .as_ref()
+            .ok_or_else(|| invalid("conditioning source has no measured qualification"))?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        {
+            let mut receipts = self.receipts.borrow_mut();
+            let cached = receipts.get(self.connection, qualification)?;
+            if !cached.matches(record) {
+                return Err(invalid(
+                    "conditioning asset disagrees with its source qualification",
+                ));
+            }
+            let index = cached
+                .receipt
+                .snapshot()
+                .video()
+                .ok_or_else(|| invalid("conditioning source has no selected picture stream"))?
+                .index()
+                .index();
+            observe(qualification, index)
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        {
+            let _ = (qualification, self.connection, observe);
+            Err(invalid(
+                "measured generation pictures are unavailable on this platform",
+            ))
+        }
+    }
 }
 
 impl ProjectStore {
@@ -248,48 +317,105 @@ impl GenerationPictures for QualifiedGenerationPictures<'_> {
                     content_aspect: normalized_aspect(artifact.content_aspect)?,
                 })
             }
-            Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
-                let record = document
-                    .assets()
-                    .get(asset)
-                    .ok_or_else(|| invalid("conditioning asset is absent"))?;
-                let qualification = record
-                    .source_qualification
-                    .as_ref()
-                    .ok_or_else(|| invalid("conditioning source has no measured qualification"))?;
-                #[cfg(any(target_os = "macos", target_os = "linux"))]
-                {
-                    let mut receipts = self.receipts.borrow_mut();
-                    let cached = receipts.get(self.connection, qualification)?;
-                    if !cached.matches(record) {
-                        return Err(invalid(
-                            "conditioning asset disagrees with its source qualification",
-                        ));
-                    }
-                    let index = cached
-                        .receipt
-                        .snapshot()
-                        .video()
-                        .ok_or_else(|| {
-                            invalid("conditioning source has no selected picture stream")
-                        })?
-                        .index()
-                        .index();
+            Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => self
+                .with_original_index(document, asset, |qualification, index| {
                     original_identity(qualification, index, picture)
-                }
-                #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-                {
-                    let _ = (qualification, self.connection);
-                    Err(invalid(
-                        "measured generation pictures are unavailable on this platform",
-                    ))
-                }
-            }
+                }),
             Picture::Still { .. }
             | Picture::Accepted {
                 generated: None, ..
             } => Err(invalid(
                 "conditioning picture lacks retained qualified video evidence",
+            )),
+        }
+    }
+
+    fn support(
+        &self,
+        document: &ProjectDocument,
+        span: &DefinitionPictureSpan,
+    ) -> Result<GenerationPictureSupport, StoreError> {
+        if &span.start.project_id != document.project_id()
+            || &span.start.revision_id != document.revision_id()
+            || span.start.position.compare_integer(0).is_lt()
+            || span.end_exclusive.compare(span.start.position).is_lt()
+        {
+            return Err(invalid(
+                "conditioning span belongs to another revision or has invalid coordinates",
+            ));
+        }
+        match &span.start.picture {
+            Picture::Blank | Picture::Background if span.clock == PictureClockSlope::Constant => {
+                Ok(GenerationPictureSupport {
+                    first: GenerationPictureIdentity::AuthoredBlack,
+                    last: GenerationPictureIdentity::AuthoredBlack,
+                })
+            }
+            Picture::Accepted {
+                asset,
+                generated: Some(artifact),
+                time_base,
+                ..
+            } => {
+                let record = document
+                    .assets()
+                    .get(asset)
+                    .ok_or_else(|| invalid("generated conditioning asset is absent"))?;
+                let frames = artifact.sampling.output_frame_count();
+                if asset != &artifact.sampled_asset
+                    || record.frame_count != Some(frames)
+                    || record.content_hash != artifact.sampled_object.content().to_string()
+                    || record.audio.is_some()
+                    || record.still_image
+                    || record
+                        .video
+                        .is_none_or(|video| video.start().time_base != *time_base)
+                    || artifact.sampling.project_rate() != document.presentation_basis().frame_rate
+                {
+                    return Err(invalid(
+                        "generated conditioning support disagrees with its sampled master",
+                    ));
+                }
+                let aspect = normalized_aspect(artifact.content_aspect)?;
+                let (first, last) = span.accepted_ordinals(frames).map_err(|error| {
+                    invalid(&format!(
+                        "generated conditioning support cannot be resolved: {error}"
+                    ))
+                })?;
+                let identity = |frame| GenerationPictureIdentity::Generated {
+                    sampled_object: artifact.sampled_object.clone(),
+                    frame,
+                    content_aspect: aspect,
+                };
+                Ok(GenerationPictureSupport {
+                    first: identity(first),
+                    last: identity(last),
+                })
+            }
+            Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => self
+                .with_original_index(document, asset, |qualification, index| {
+                    let picture = rebound_original(&span.start.picture, index)?;
+                    let distance = span
+                        .end_exclusive
+                        .checked_sub(span.start.position)
+                        .map_err(|error| invalid(&error.to_string()))?;
+                    let (first, last) = span
+                        .clock
+                        .source_ordinals(&picture, distance, index)
+                        .map_err(|error| {
+                            invalid(&format!("conditioning support cannot be resolved: {error}"))
+                        })?;
+                    let identity = |frame| GenerationPictureIdentity::Original {
+                        qualification: qualification.clone(),
+                        frame,
+                    };
+                    Ok(GenerationPictureSupport {
+                        first: identity(first),
+                        last: identity(last),
+                    })
+                }),
+            _ => Err(invalid(
+                "conditioning support lacks retained qualified video evidence or a compatible clock",
             )),
         }
     }
@@ -311,22 +437,12 @@ fn normalized_aspect(aspect: Option<[u32; 2]>) -> Result<Option<[u32; 2]>, Store
     Ok(Some([width / a, height / a]))
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn original_identity(
     qualification: &SourceQualificationId,
     index: &deadpan_core::SourceFrameIndex,
     picture: &Picture,
 ) -> Result<GenerationPictureIdentity, StoreError> {
-    // Rebind the cheap picture descriptor to the receipt's canonical alias;
-    // cloning a potentially large measured index for each authored alias would
-    // make an otherwise small structural edit scale with source duration.
-    let mut picture = picture.clone();
-    match &mut picture {
-        Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
-            *asset = index.asset().clone();
-        }
-        _ => return Err(invalid("expected an Original conditioning picture")),
-    }
+    let picture = rebound_original(picture, index)?;
     let frame = picture
         .select_source_frame(index)
         .map_err(|error| invalid(&format!("conditioning frame cannot be resolved: {error}")))?;
@@ -334,6 +450,19 @@ fn original_identity(
         qualification: qualification.clone(),
         frame: frame.identity,
     })
+}
+
+fn rebound_original(picture: &Picture, index: &SourceFrameIndex) -> Result<Picture, StoreError> {
+    // Rebind only the cheap descriptor. Never clone a large measured index or
+    // a span's retained framing/Repeat ancestry to observe an authored alias.
+    let mut picture = picture.clone();
+    match &mut picture {
+        Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
+            *asset = index.asset().clone()
+        }
+        _ => return Err(invalid("expected an Original conditioning picture")),
+    }
+    Ok(picture)
 }
 
 fn invalid(reason: &str) -> StoreError {

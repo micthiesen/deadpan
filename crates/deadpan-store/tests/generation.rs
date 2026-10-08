@@ -282,7 +282,7 @@ fn allocation_rejects_read_only_stale_invalid_and_exhausted_inputs() -> Result {
     connection.execute(
         "INSERT INTO generation_requests
          SELECT 'allocated-maximum',project_id,hold_id,scope_id,origin_target,?1,origin_revision,context_sha256,
-                constraints,provider,NULL,'stale'
+                constraints,provider,NULL,NULL,'stale'
          FROM generation_requests WHERE request_id='current'",
         [i64::MAX],
     )?;
@@ -616,7 +616,8 @@ fn validation_does_not_depend_on_generation_uniqueness_indexes() -> Result {
                  context_sha256 TEXT,
                  constraints TEXT,
                  provider TEXT,
-                 bridge_plan TEXT,
+                 plan TEXT,
+                 input_binding TEXT,
                  relevance TEXT
              ) STRICT;
              INSERT INTO generation_requests SELECT * FROM prior_generation_requests;",
@@ -624,7 +625,7 @@ fn validation_does_not_depend_on_generation_uniqueness_indexes() -> Result {
         connection.execute(
             "INSERT INTO generation_requests
             SELECT 'request-2',project_id,hold_id,scope_id,origin_target,?1,origin_revision,context_sha256,
-                    constraints,provider,NULL,?2
+                    constraints,provider,NULL,NULL,?2
              FROM prior_generation_requests WHERE request_id='request-1'",
             params![duplicate_version, second_relevance],
         )?;
@@ -669,7 +670,8 @@ fn validation_streams_duplicate_request_ids_without_a_primary_key() -> Result {
              context_sha256 TEXT,
              constraints TEXT,
              provider TEXT,
-             bridge_plan TEXT,
+             plan TEXT,
+             input_binding TEXT,
              relevance TEXT
          ) STRICT;
          INSERT INTO generation_requests SELECT * FROM prior_generation_requests;

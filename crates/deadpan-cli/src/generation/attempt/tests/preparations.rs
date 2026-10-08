@@ -36,6 +36,7 @@ fn replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
     let mut store = project(directory.path());
     store.set_generation_context_resolver(std::sync::Arc::new(BoundaryContextResolver::default()));
     let options = deadpan_jobs::GenerationOptions {
+        mode: deadpan_jobs::GenerationModePreference::Bridge,
         motion: MotionAmount::Subtle,
         instructions: Some(deadpan_jobs::HoldInstructions::new("Keep the hands still.").unwrap()),
         region_target: deadpan_jobs::GenerationTarget::None,

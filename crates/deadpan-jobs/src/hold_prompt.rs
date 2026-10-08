@@ -4,7 +4,10 @@
 use deadpan_core::TargetId;
 use serde::{Deserialize, Serialize};
 
-use crate::{HoldConstraints, MotionAmount, ValueError};
+use crate::{
+    ConditioningMode, GenerationModeError, GenerationModePreference, HoldConstraints, MotionAmount,
+    ValueError,
+};
 
 pub const MAX_HOLD_INSTRUCTION_BYTES: usize = 512;
 
@@ -107,6 +110,8 @@ impl GenerationTarget {
 #[serde(deny_unknown_fields)]
 pub struct GenerationOptions {
     #[serde(default)]
+    pub mode: GenerationModePreference,
+    #[serde(default)]
     pub motion: MotionAmount,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<HoldInstructions>,
@@ -117,6 +122,7 @@ pub struct GenerationOptions {
 impl GenerationOptions {
     pub fn from_constraints(constraints: &HoldConstraints) -> Self {
         Self {
+            mode: constraints.conditioning.into(),
             motion: constraints.motion,
             instructions: constraints.instructions.clone(),
             region_target: constraints
@@ -126,13 +132,21 @@ impl GenerationOptions {
         }
     }
 
-    /// Set the controls on prepared worker input without changing its timing.
+    /// Set controls on prepared worker input without changing its timing or
+    /// resolved conditioning. Resolve/validate the captured mode separately.
     pub fn apply_to(&self, constraints: &mut HoldConstraints) {
         constraints.motion = self.motion;
         constraints.instructions.clone_from(&self.instructions);
         constraints.region_target = self
             .region_target
             .resolve(constraints.region_target.as_ref());
+    }
+
+    pub fn validate_resolved_conditioning(
+        &self,
+        conditioning: ConditioningMode,
+    ) -> Result<(), GenerationModeError> {
+        self.mode.validate_resolved(conditioning)
     }
 
     /// Resolve omission once, before asynchronous conditioning begins.
@@ -215,5 +229,109 @@ mod tests {
         cleared.resolve_target(Some(&later));
         assert_eq!(cleared.region_target, GenerationTarget::None);
         assert!(GenerationTarget::parse("").is_err());
+    }
+
+    #[test]
+    fn resolved_constraints_capture_explicit_mode_and_apply_keeps_the_resolution() {
+        let target = TargetId::new("subject").unwrap();
+        for conditioning in [
+            ConditioningMode::Bridge,
+            ConditioningMode::ExtendFromLeft,
+            ConditioningMode::ExtendFromRight,
+        ] {
+            let mut constraints = HoldConstraints {
+                video: crate::VideoSpec::new(
+                    deadpan_core::FrameDuration::new(8).unwrap(),
+                    deadpan_core::FrameRate::new(30, 1).unwrap(),
+                    768,
+                    320,
+                )
+                .unwrap(),
+                conditioning,
+                motion: MotionAmount::Moderate,
+                instructions: Some(HoldInstructions::new("Keep the face still.").unwrap()),
+                region_target: Some(target.clone()),
+            };
+            let captured = GenerationOptions::from_constraints(&constraints);
+            assert_eq!(captured.mode, GenerationModePreference::from(conditioning));
+            captured
+                .validate_resolved_conditioning(conditioning)
+                .unwrap();
+            assert_eq!(
+                serde_json::from_value::<GenerationOptions>(
+                    serde_json::to_value(&captured).unwrap()
+                )
+                .unwrap(),
+                captured
+            );
+            let before = constraints.clone();
+            captured.apply_to(&mut constraints);
+            assert_eq!(constraints, before);
+
+            let automatic = GenerationOptions {
+                motion: MotionAmount::Subtle,
+                instructions: Some(HoldInstructions::new("Keep the hands still.").unwrap()),
+                ..GenerationOptions::default()
+            };
+            automatic
+                .validate_resolved_conditioning(conditioning)
+                .unwrap();
+            automatic.apply_to(&mut constraints);
+            assert_eq!(constraints.conditioning, conditioning);
+            assert_eq!(constraints.video, before.video);
+            assert_eq!(
+                constraints.region_target,
+                Some(target.clone()),
+                "omitted target keeps captured selection"
+            );
+            assert_eq!(constraints.motion, MotionAmount::Subtle);
+            assert_eq!(constraints.instructions, automatic.instructions);
+
+            let wrong_mode = match conditioning {
+                ConditioningMode::Bridge | ConditioningMode::ExtendFromRight => {
+                    GenerationModePreference::ExtendFromLeft
+                }
+                ConditioningMode::ExtendFromLeft => GenerationModePreference::ExtendFromRight,
+            };
+            let mismatch = GenerationOptions {
+                mode: wrong_mode,
+                ..automatic
+            };
+            assert!(
+                mismatch
+                    .validate_resolved_conditioning(conditioning)
+                    .is_err()
+            );
+            mismatch.apply_to(&mut constraints);
+            assert_eq!(
+                constraints.conditioning, conditioning,
+                "applying user controls cannot silently replace the captured operation"
+            );
+        }
+    }
+
+    #[test]
+    fn options_default_to_automatic_but_reject_unknown_or_nonstring_modes() {
+        assert_eq!(
+            GenerationOptions::default().mode,
+            GenerationModePreference::Automatic
+        );
+        assert_eq!(
+            serde_json::from_str::<GenerationOptions>("{}")
+                .unwrap()
+                .mode,
+            GenerationModePreference::Automatic
+        );
+        for input in [
+            r#"{"mode":"unknown"}"#,
+            r#"{"mode":null}"#,
+            r#"{"mode":{"bridge":null}}"#,
+            r#"{"mode":"bridge","extra":true}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<GenerationOptions>(input).is_err(),
+                "{input}"
+            );
+        }
     }
 }

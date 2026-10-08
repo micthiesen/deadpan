@@ -11,6 +11,7 @@ fn accepted(scripts: impl IntoIterator<Item = Script>) -> Fixture {
     let mut operation = start(&fixture, 1);
     if let GenerationOperation::Start { options, .. } = &mut operation {
         *options = Some(deadpan_jobs::GenerationOptions {
+            mode: deadpan_jobs::GenerationModePreference::Automatic,
             motion: deadpan_jobs::MotionAmount::Still,
             instructions: Some(
                 deadpan_jobs::HoldInstructions::new("Keep the subject still.").unwrap(),

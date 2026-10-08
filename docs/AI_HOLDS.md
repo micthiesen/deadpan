@@ -281,8 +281,21 @@ operation. The intent table is bounded separately at 100,000 current heads and
 64 MiB of reserved records. Capacity notices identify closed automatic requests
 separately from displaced pending preparations and preserve the saved edit.
 
-This is store schema 72. See the [boundary qualification
-record](qualification/ai-boundaries-2026-10-07.md) for verification and limits.
+The [boundary qualification record](qualification/ai-boundaries-2026-10-07.md)
+records the original schema-72 implementation and measured limits.
+
+### Saved extension operations
+
+Schema 73 also saves an operation-specific temporal input binding. Extension
+identity includes all model samples, the complete intervening structural support,
+the unconditioned opposite seam and the selected region. Current requests,
+automatic intent and history use the same independently recaptured descriptor.
+Missing context preserves the chosen direction; restoring it can create fresh
+work without changing the saved controls. Shared resource limits fail atomically.
+
+This is persistence groundwork. Native and headless execution still admit Bridge
+jobs only; extension Ready and acceptance remain closed until output qualification
+is implemented. See [durable extension inputs](qualification/extension-inputs-2026-10-07.md).
 
 ## Headless commands
 

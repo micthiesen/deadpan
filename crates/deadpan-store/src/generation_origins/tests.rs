@@ -2,15 +2,19 @@ use super::*;
 use std::collections::BTreeMap;
 
 use crate::generation_attempts::{BundleAdmissionEvidence, BundleInputObjects, ValidatorIdentity};
+use crate::generation_inputs::GenerationInputs;
+use crate::generation_pictures::{GenerationPictureIdentity, GenerationPictures};
 use deadpan_core::{
-    AssetId, AssetRecord, BeatNode, ColorPolicy, CommandRequest, GeneratedContentId,
-    GeneratedObjectRef, HoldAudio, HoldRecipe, HoldVideo, NodeId, OccurrenceIdentities,
-    PresentationBasis, SourceSpan, SourceTimeBase, SourceTimestamp, Subtree,
+    AssetId, AssetRecord, BeatNode, BoundaryQueryLimits, ColorPolicy, CommandRequest,
+    FrameDuration, FrameRate, GeneratedContentId, GeneratedObjectRef, HoldAudio, HoldRecipe,
+    HoldVideo, NodeId, NodeKind, OccurrenceIdentities, PresentationBasis, SourceSpan,
+    SourceTimeBase, SourceTimestamp, Subtree,
 };
 use deadpan_jobs::{
-    AttemptId, AxisLimits, BridgeCapability, ConditioningMode, DimensionLimits, FrameCountFormula,
-    MotionAmount, NativeDimensions, ProviderPackId, ProviderPackVersion, Relevance, RuntimeId,
-    RuntimeVersion, TargetBinding, VideoSpec, WorkspaceArtifact, WorkspaceRef,
+    AttemptId, AxisLimits, BridgeCapability, BridgeGenerationPlan, ConditioningMode,
+    DimensionLimits, FrameCountFormula, MotionAmount, NativeDimensions, ProviderPackId,
+    ProviderPackVersion, Relevance, RuntimeId, RuntimeVersion, TargetBinding, VideoSpec,
+    WorkspaceArtifact, WorkspaceRef,
 };
 
 fn id(value: &str) -> NodeId {
@@ -190,7 +194,15 @@ impl Fixture {
             target: target(),
             constraints: constraints.clone(),
             provider: provider.clone(),
-            bridge_plan: Some(bridge.clone()),
+            plan: Some(GenerationPlan::Bridge(bridge.clone())),
+            input_binding: Some(
+                GenerationInputBinding::capture(
+                    &original,
+                    &target(),
+                    &QualifiedGenerationPictures::new(&connection),
+                )
+                .unwrap(),
+            ),
             relevance: Relevance::Current,
         };
         let target_json = serde_json::to_string(&target()).unwrap();
@@ -201,11 +213,12 @@ impl Fixture {
             )
             .unwrap();
         connection.execute("INSERT INTO generation_requests(request_id,project_id,hold_id,scope_id,origin_target,
-            request_version,origin_revision,context_sha256,constraints,provider,bridge_plan,relevance)
-            VALUES(?1,'origins','hold',?1,?2,1,?3,?4,?5,?6,?7,'current')",
+            request_version,origin_revision,context_sha256,constraints,provider,plan,input_binding,relevance)
+            VALUES(?1,'origins','hold',?1,?2,1,?3,?4,?5,?6,?7,?8,'current')",
             params![request_id.as_str(), target_json, origin_revision.as_str(), sha('a').as_str(),
                 serde_json::to_string(&constraints).unwrap(), serde_json::to_string(&provider).unwrap(),
-                serde_json::to_string(&bridge).unwrap()]).unwrap();
+                serde_json::to_string(stored.plan.as_ref().unwrap()).unwrap(),
+                serde_json::to_string(stored.input_binding.as_ref().unwrap()).unwrap()]).unwrap();
         let identity = MessageIdentity::new(request_id, AttemptId::new("attempt").unwrap());
         let native_video = VideoSpec::new(
             frames(i64::from(bridge.native_frame_count())),
@@ -410,9 +423,20 @@ fn input_binding_distinguishes_definition_edges_from_explicit_black_and_brands_r
     let pictures = QualifiedGenerationPictures::new(&connection);
     let absent = GenerationInputBinding::capture(&document(false), &target(), &pictures).unwrap();
     let black = GenerationInputBinding::capture(&document(true), &target(), &pictures).unwrap();
-    assert_eq!((absent.left, absent.right), (None, None));
-    assert_eq!(black.left, Some(GenerationPictureIdentity::AuthoredBlack));
-    assert_eq!(black.right, Some(GenerationPictureIdentity::AuthoredBlack));
+    assert_eq!(
+        absent.inputs,
+        GenerationInputs::Bridge {
+            left: None,
+            right: None
+        }
+    );
+    assert_eq!(
+        black.inputs,
+        GenerationInputs::Bridge {
+            left: Some(GenerationPictureIdentity::AuthoredBlack),
+            right: Some(GenerationPictureIdentity::AuthoredBlack)
+        }
+    );
     let original = document(true);
     let plan = RenderPlan::compile(&original).unwrap();
     let boundaries = plan
@@ -615,8 +639,11 @@ fn precommit_origin_proves_inputs_and_ready_bundle_without_granting_authored_acc
     )
     .unwrap();
     assert_eq!(
-        prepared.input_binding().left,
-        Some(GenerationPictureIdentity::AuthoredBlack)
+        prepared.input_binding().inputs,
+        GenerationInputs::Bridge {
+            left: Some(GenerationPictureIdentity::AuthoredBlack),
+            right: Some(GenerationPictureIdentity::AuthoredBlack)
+        }
     );
     assert!(
         insert(&fixture.connection, &prepared)
@@ -868,7 +895,10 @@ fn full_validation_rejects_rehashed_input_or_option_forgery() {
     let fixture = Fixture::new(false);
     let original = fixture.save();
     let mut forged = original.clone();
-    forged.input_binding.left = None;
+    let GenerationInputs::Bridge { left, .. } = &mut forged.origin.input_binding.inputs else {
+        unreachable!()
+    };
+    *left = None;
     fixture.rewrite_with_checksum(&forged);
     assert!(
         read(&fixture.connection, &fixture.artifact)
@@ -879,7 +909,7 @@ fn full_validation_rejects_rehashed_input_or_option_forgery() {
         validate_store(&fixture.connection, 0)
             .unwrap_err()
             .to_string()
-            .contains("inputs")
+            .contains("retained request")
     );
     forged = original;
     forged.options.instructions = None;
@@ -1044,4 +1074,172 @@ fn bounded_canonical_reader_rejects_tampering_before_accepting_a_digest() {
             .contains("oversized")
     );
     assert!(check_stored_sizes(&fixture.connection).is_err());
+}
+
+#[test]
+fn origin_recaptures_inputs_even_when_request_and_rehashed_receipt_agree_on_a_forgery() {
+    let fixture = Fixture::new(false);
+    let mut forged = fixture.save();
+    let original_digest = digest(&fixture.connection).unwrap();
+    let GenerationInputs::Bridge { left, .. } = &mut forged.origin.input_binding.inputs else {
+        unreachable!()
+    };
+    *left = None;
+    fixture
+        .connection
+        .execute(
+            "UPDATE generation_requests SET input_binding=?1",
+            [serde_json::to_string(&forged.origin.input_binding).unwrap()],
+        )
+        .unwrap();
+    fixture.rewrite_with_checksum(&forged);
+    assert_ne!(digest(&fixture.connection).unwrap(), original_digest);
+    assert!(
+        validate_store(&fixture.connection, 0)
+            .unwrap_err()
+            .to_string()
+            .contains("inputs")
+    );
+    let mut claimed = fixture.request.clone();
+    claimed.input_binding = Some(forged.origin.input_binding);
+    assert!(
+        prepare_acceptance_origin(
+            &fixture.connection,
+            &claimed,
+            &fixture.identity,
+            &fixture.artifact,
+            &revision("accepted")
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("inputs")
+    );
+}
+
+#[test]
+fn removed_selected_region_is_retained_structurally_but_cannot_authorize_an_origin() {
+    let mut fixture = Fixture::new(false);
+    let region = deadpan_core::TargetId::new("removed-region").unwrap();
+    fixture.request.constraints.region_target = Some(region.clone());
+    let document = crate::validation::read_revision(
+        &fixture.connection,
+        fixture.request.origin_revision.as_str(),
+    )
+    .unwrap()
+    .document;
+    let binding = fixture
+        .request
+        .input_binding
+        .take()
+        .unwrap()
+        .with_region(&document, Some(&region))
+        .unwrap();
+    assert_eq!(binding.region.as_ref().unwrap().record, None);
+    fixture
+        .connection
+        .execute(
+            "UPDATE generation_requests SET constraints=?1,input_binding=?2",
+            params![
+                serde_json::to_string(&fixture.request.constraints).unwrap(),
+                serde_json::to_string(&binding).unwrap()
+            ],
+        )
+        .unwrap();
+    fixture.request.input_binding = Some(binding);
+    assert!(
+        prepare_acceptance_origin(
+            &fixture.connection,
+            &fixture.request,
+            &fixture.identity,
+            &fixture.artifact,
+            &revision("accepted")
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("inputs")
+    );
+}
+
+#[test]
+fn origin_requires_a_tagged_bridge_plan_paired_with_bounded_request_inputs() {
+    let fixture = Fixture::new(false);
+    assert!(
+        fixture
+            .connection
+            .execute("UPDATE generation_requests SET input_binding=NULL", [])
+            .is_err()
+    );
+    let bridge = fixture.request.bridge_plan().unwrap();
+    fixture
+        .connection
+        .execute(
+            "UPDATE generation_requests SET plan=?1",
+            [serde_json::to_string(bridge).unwrap()],
+        )
+        .unwrap();
+    assert!(
+        read_request_origin(&fixture.connection, &fixture.request.request_id).is_err(),
+        "an untagged bridge cannot be reinterpreted as the operation wrapper"
+    );
+    fixture
+        .connection
+        .execute(
+            "UPDATE generation_requests SET plan=?1,input_binding=?2",
+            params![
+                serde_json::to_string(fixture.request.plan.as_ref().unwrap()).unwrap(),
+                format!(
+                    "\"{}\"",
+                    "x".repeat(crate::generation_inputs::MAX_INPUT_BINDING_BYTES)
+                )
+            ],
+        )
+        .unwrap();
+    assert!(read_request_origin(&fixture.connection, &fixture.request.request_id).is_err());
+    fixture
+        .connection
+        .execute(
+            "UPDATE generation_requests SET plan=NULL,input_binding=NULL",
+            [],
+        )
+        .unwrap();
+    assert!(
+        read_request_origin(&fixture.connection, &fixture.request.request_id)
+            .unwrap_err()
+            .to_string()
+            .contains("retained Bridge")
+    );
+}
+
+#[test]
+fn extension_request_never_enters_bridge_accepted_origin_admission() {
+    use deadpan_core::ExtensionDirection;
+    use deadpan_jobs::{ExtensionCapability, ExtensionGenerationPlan};
+    let fixture = Fixture::new(false);
+    let mut request = fixture.request.clone();
+    let dimensions = DimensionLimits::new(
+        AxisLimits::new(512, 512, 1).unwrap(),
+        AxisLimits::new(320, 320, 1).unwrap(),
+    );
+    let capability = ExtensionCapability::new(
+        FrameRate::new(24, 1).unwrap(),
+        9,
+        FrameCountFormula::new(8, 0, 8, 16).unwrap(),
+        dimensions,
+        frames(100),
+    )
+    .unwrap();
+    request.plan = Some(GenerationPlan::Extension(
+        ExtensionGenerationPlan::new(
+            ExtensionDirection::FromLeft,
+            frames(12),
+            rate(),
+            &capability,
+            NativeDimensions::new(512, 320).unwrap(),
+        )
+        .unwrap(),
+    ));
+    let error = RequestOrigin::from_request(&request)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("extension output admission is unavailable"));
 }
