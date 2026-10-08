@@ -1,0 +1,57 @@
+{
+  "corrected_gate": {
+    "exit_code": 0,
+    "command": "cargo xtask gate",
+    "format": "passed",
+    "workspace_clippy": "passed",
+    "ui_clippy": "passed",
+    "workspace": {
+      "passed": 5179,
+      "skipped": 10
+    },
+    "ui_harness": {
+      "passed": 1070,
+      "skipped": 2
+    },
+    "doctests_passed": 2
+  },
+  "focused_cli": {
+    "passed": 13
+  },
+  "new_plan_tests": {
+    "tests": 14,
+    "generated_property_cases": 128
+  },
+  "new_analysis_guard_tests": 12,
+  "fixture_exact_rgb_channels": 829440,
+  "ignored_tests_from_inventories": {
+    "extension-context-workspace-inventory.json": [
+      "deadpan-app::bin/deadpan-app::project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+      "deadpan-app::bin/deadpan-app::worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded",
+      "deadpan-cli::encoded_render::admission::hardware_tests::measure_hdr_probe_content_on_this_host",
+      "deadpan-cli::encoded_render::admission::hardware_tests::measure_hdr_probe_declared_light",
+      "deadpan-cli::encoded_render::verification::inspect::hdr_tests::hdr_light_measurement",
+      "deadpan-cli::preview_export::every_recipe_export_matches_its_committed_preview",
+      "deadpan-cli::preview_export_hdr::hdr_public_render_matches_its_committed_preview",
+      "deadpan-cli::preview_export_hdr::hdr_worker_exports_match_their_committed_previews",
+      "deadpan-cli::proxy_resume::measure_range_overhead_and_resume",
+      "deadpan-models::packs::interrupted_download_tests::the_system_trust_store_resumes_from_hugging_face"
+    ],
+    "extension-context-ui-inventory.json": [
+      "deadpan-app::bin/deadpan-app::project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+      "deadpan-app::bin/deadpan-app::worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded"
+    ]
+  },
+  "failures": [
+    "Initial compile failed checked ceil arithmetic.",
+    "First CLI run: 9 passed, 1 fixture audio-mapping failure.",
+    "Second CLI run: 12 passed, 1 fixture colour-admission failure.",
+    "First full gate stopped at Clippy manual_div_ceil in test code."
+  ],
+  "not_qualified": [
+    "V3 durable request/Ready/acceptance integration",
+    "generated-neighbor project capture",
+    "complete cross-provider gradual checks",
+    "new real inference, packaged export or native UI behavior"
+  ]
+}

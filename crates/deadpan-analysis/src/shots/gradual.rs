@@ -70,7 +70,7 @@ pub enum TransitionKind {
 
 /// A gradual transition proposal: the blended pictures and the one picture
 /// that begins the next shot.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct GradualTransition {
     pub kind: TransitionKind,
     /// Half-open blended pictures.
@@ -85,7 +85,7 @@ struct Candidate {
     across: u8,
 }
 
-pub(super) fn transitions(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<GradualTransition> {
+fn candidates(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<Candidate> {
     let pictures = measures.len();
     let across = |center: usize, span: usize| -> Option<u8> {
         let half = HALF_SPANS[span];
@@ -137,6 +137,10 @@ pub(super) fn transitions(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<Gr
         }
     }
     candidates.sort_by_key(|candidate| (candidate.span, candidate.residual, candidate.center));
+    candidates
+}
+
+pub(super) fn transitions(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<GradualTransition> {
     // Accepted windows and described ranges, each keyed by first picture;
     // neither ever overlaps another of its kind.
     let mut windows: BTreeMap<usize, usize> = BTreeMap::new();
@@ -147,7 +151,7 @@ pub(super) fn transitions(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<Gr
             .next_back()
             .is_some_and(|(_, taken_end)| *taken_end > start)
     };
-    for candidate in candidates {
+    for candidate in candidates(measures, cuts) {
         let half = HALF_SPANS[candidate.span];
         let (start, end) = (candidate.center - half, candidate.center + half + 1);
         if overlaps(&windows, start, end) {
@@ -175,6 +179,26 @@ pub(super) fn transitions(measures: &[PictureMeasure], cuts: &[usize]) -> Vec<Gr
         accepted.insert(transition.range.start, transition);
     }
     accepted.into_values().collect()
+}
+
+/// The context guard examines every qualifying blend independently. Navigation
+/// suppression must not hide a transition merely because a nearby candidate
+/// was selected first. The caller has its own bounded measurement window.
+pub(super) fn context_transitions(measures: &[PictureMeasure]) -> Vec<GradualTransition> {
+    candidates(measures, &[])
+        .into_iter()
+        .filter_map(|candidate| {
+            let length = estimate_length(measures, &candidate);
+            if candidate
+                .span
+                .checked_sub(2)
+                .is_some_and(|smaller| length < 2 * HALF_SPANS[smaller])
+            {
+                return None;
+            }
+            Some(describe(measures, &candidate, length))
+        })
+        .collect()
 }
 
 /// Blended pictures implied by the change across the windows at the

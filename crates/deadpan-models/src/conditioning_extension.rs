@@ -348,6 +348,18 @@ fn validate_picture(
     native: [u32; 2],
 ) -> Result<(), QualificationError> {
     picture.validate_shape().map_err(extension_error)?;
+    // Extension schema 1 has no historical approximate-colour inputs. The
+    // bridge reader retains those for old accepted masters, but new extension
+    // evidence must declare the conversion this host actually applies.
+    if let Some(decoded) = picture.decoded()
+        && crate::model_input_conversion(&decoded.stream)
+            .map_err(|error| extension_error(&error.to_string()))?
+            != decoded.model_input
+    {
+        return Err(extension_error(
+            "extension input colour conversion is not canonical",
+        ));
+    }
     let (boundaries, geometry) = anchor_geometry(picture, content, presentation);
     geometry
         .validate(native, &boundaries)

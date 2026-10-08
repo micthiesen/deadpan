@@ -6,7 +6,9 @@ use deadpan_core::{
 };
 use serde::Serialize;
 
-use super::{DefinitionPictureSample, PictureBudget, ScopedHoldBoundaries};
+use super::{
+    DefinitionPictureCoverage, DefinitionPictureSample, PictureBudget, ScopedHoldBoundaries,
+};
 use crate::{LookupStats, PlanError, RenderPlan};
 
 /// Bounds for retained query results, independent of traversal work limits.
@@ -36,6 +38,9 @@ pub struct ScopedHoldContext {
     pub direction: ExtensionDirection,
     pub native_rate: FrameRate,
     pub pictures: Vec<DefinitionPictureSample>,
+    /// Every provider-contiguous affine interval between the first and last
+    /// context coordinates, including transitions that fall between samples.
+    pub coverage: DefinitionPictureCoverage,
     /// Total ancestry, boundary and context work for this request. Summing a
     /// batch's results gives its work against the single aggregate budget.
     pub lookup: LookupStats,
@@ -161,24 +166,32 @@ impl RenderPlan {
             };
             pictures.push(self.sample_definition_picture(definition, position, true, budget)?);
         }
+        let coverage = self.definition_picture_coverage_with_budget(
+            definition,
+            pictures[0].position,
+            pictures[count - 1].position,
+            budget,
+        )?;
         Ok(ScopedHoldContext {
             boundaries,
             direction: request.direction,
             native_rate: request.native_rate,
             pictures,
+            coverage,
             lookup: budget.since(before),
         })
     }
 }
 
 impl PictureBudget {
-    fn for_context(limits: BoundaryQueryLimits) -> Self {
+    pub(super) fn for_context(limits: BoundaryQueryLimits) -> Self {
         let mut budget = Self::new(limits);
         budget.retained_metadata_left = Some(MAX_CONTEXT_METADATA_BYTES);
+        budget.retained_spans_left = Some(super::MAX_DEFINITION_PICTURE_SPANS);
         budget
     }
 
-    fn reserve_metadata(&mut self, bytes: usize) -> Result<(), PlanError> {
+    pub(super) fn reserve_metadata(&mut self, bytes: usize) -> Result<(), PlanError> {
         if let Some(left) = &mut self.retained_metadata_left {
             *left = left
                 .checked_sub(bytes)

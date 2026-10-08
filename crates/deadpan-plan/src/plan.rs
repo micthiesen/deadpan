@@ -17,10 +17,11 @@ use crate::{Picture, PictureFraming, PictureSample, PlanError};
 #[path = "picture_definition.rs"]
 mod picture_definition;
 pub use picture_definition::{
-    DefinitionPictureSample, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldBoundaries,
-    ScopedHoldContext, ScopedHoldContextRequest,
+    DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
+    MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES,
+    PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextRequest,
 };
-use picture_definition::{PictureBudget, PictureWalk};
+use picture_definition::{PictureBudget, PictureContinuity, PictureWalk};
 #[path = "picture_definition_index.rs"]
 mod picture_definition_index;
 use picture_definition_index::DefinitionIndex;
@@ -432,6 +433,32 @@ enum CompiledHold {
 }
 
 impl CompiledHold {
+    fn picture_continuity(
+        &self,
+        local: ExactRatio,
+        continuity: &mut PictureContinuity,
+    ) -> Result<(), PlanError> {
+        match self {
+            Self::Background | Self::Freeze { .. } => Ok(()),
+            Self::Accepted { .. } => {
+                continuity.accepted();
+                Ok(())
+            }
+            Self::Original {
+                span,
+                ticks_per_frame,
+                reverse,
+                ..
+            } => continuity.original_hold(
+                local,
+                ExactRatio::integer(span.start().ticks),
+                ExactRatio::integer(span.end().ticks),
+                *ticks_per_frame,
+                *reverse,
+            ),
+        }
+    }
+
     fn compile(recipe: &HoldRecipe, document: &ProjectDocument) -> Result<Self, PlanError> {
         Ok(match &recipe.video {
             HoldVideo::Background => Self::Background,
@@ -1104,6 +1131,7 @@ impl RenderPlan {
             position,
             cutaways,
             &mut PictureBudget::unlimited(),
+            None,
         )?;
         Ok(PictureSample {
             project_id: self.metadata.project_id.clone(),
@@ -1127,7 +1155,18 @@ impl RenderPlan {
         cutaways: bool,
         budget: &mut PictureBudget,
     ) -> Result<DefinitionPictureSample, PlanError> {
-        let sample = self.walk_picture_at(definition, position, cutaways, budget)?;
+        self.sample_definition_picture_with_continuity(definition, position, cutaways, budget, None)
+    }
+
+    fn sample_definition_picture_with_continuity(
+        &self,
+        definition: usize,
+        position: ExactRatio,
+        cutaways: bool,
+        budget: &mut PictureBudget,
+        continuity: Option<&mut PictureContinuity>,
+    ) -> Result<DefinitionPictureSample, PlanError> {
+        let sample = self.walk_picture_at(definition, position, cutaways, budget, continuity)?;
         let hold_provider = self.definition_hold_witness(definition, position, &sample);
         let sample = DefinitionPictureSample {
             project_id: self.metadata.project_id.clone(),
@@ -1154,6 +1193,7 @@ impl RenderPlan {
         position: ExactRatio,
         cutaways: bool,
         budget: &mut PictureBudget,
+        mut continuity: Option<&mut PictureContinuity>,
     ) -> Result<PictureWalk, PlanError> {
         if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
@@ -1190,6 +1230,12 @@ impl RenderPlan {
                     "local picture coordinate exceeds node duration",
                 ));
             }
+            if let Some(continuity) = continuity.as_deref_mut() {
+                continuity.limit(
+                    local,
+                    ExactRatio::integer(node.inspection.duration.frames()),
+                )?;
+            }
             if let Some(deadpan_core::Framing {
                 value: deadpan_core::FramingValue::Follow { target, scale, .. },
                 ..
@@ -1222,26 +1268,47 @@ impl RenderPlan {
             );
             // A cutaway replaces this beat's provider picture inside its range;
             // this beat's framing and its ancestors' still apply.
-            if let Some((cutaway, context)) =
-                node.cutaways
-                    .iter()
-                    .filter(|_| cutaways)
-                    .find(|(cutaway, _)| {
-                        !local.compare_integer(cutaway.range.start().0).is_lt()
-                            && local.compare_integer(cutaway.range.end().0).is_lt()
-                    })
-                && (cutaway.removed
-                    || cutaway
-                        .picture_point(local, self.metadata.presentation_basis.frame_rate)?
-                        .is_some())
-            {
+            let mut visible_cutaway = None;
+            if cutaways {
+                for (cutaway, context) in &node.cutaways {
+                    if continuity.is_some() {
+                        budget.sequence_comparison()?;
+                    }
+                    if local.compare_integer(cutaway.range.start().0).is_lt() {
+                        if let Some(continuity) = continuity.as_deref_mut() {
+                            continuity
+                                .limit(local, ExactRatio::integer(cutaway.range.start().0))?;
+                        }
+                        break;
+                    }
+                    if !local.compare_integer(cutaway.range.end().0).is_lt() {
+                        continue;
+                    }
+                    let point = if cutaway.removed {
+                        None
+                    } else {
+                        cutaway.picture_point(local, self.metadata.presentation_basis.frame_rate)?
+                    };
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        let visible = continuity.cutaway(
+                            cutaway,
+                            local,
+                            self.metadata.presentation_basis.frame_rate,
+                        )?;
+                        debug_assert_eq!(visible, cutaway.removed || point.is_some());
+                    }
+                    if cutaway.removed || point.is_some() {
+                        visible_cutaway = Some((cutaway, context, point));
+                    }
+                    break;
+                }
+            }
+            if let Some((cutaway, context, point)) = visible_cutaway {
                 if cutaway.removed {
                     // A video-only delete exposes the project background.
                     break (Picture::Background, None, None);
                 }
-                let point = cutaway
-                    .picture_point(local, self.metadata.presentation_basis.frame_rate)?
-                    .ok_or(PlanError::InvalidPlan("cutaway picture"))?;
+                let point = point.ok_or(PlanError::InvalidPlan("cutaway picture"))?;
                 break (
                     Picture::Source {
                         asset: cutaway.asset.clone(),
@@ -1267,6 +1334,9 @@ impl RenderPlan {
                         SourceVideo::Stream { asset, span } => {
                             let scale = ExactRatio::integer(span.end().ticks - span.start().ticks)
                                 .checked_div(*duration)?;
+                            if let Some(continuity) = continuity.as_deref_mut() {
+                                continuity.source(scale)?;
+                            }
                             let (selected_start, selected_end) = selection.ok_or(
                                 PlanError::InvalidPlan("source picture has no selected interval"),
                             )?;
@@ -1304,7 +1374,12 @@ impl RenderPlan {
                     video,
                     picture_context,
                     ..
-                } => break (video.picture(local)?, picture_context.clone(), None),
+                } => {
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        video.picture_continuity(local, continuity)?;
+                    }
+                    break (video.picture(local)?, picture_context.clone(), None);
+                }
                 CompiledKind::Sequence { entries } => {
                     let index = upper_bound(
                         entries.len(),
@@ -1314,6 +1389,9 @@ impl RenderPlan {
                     let entry = entries
                         .get(index)
                         .ok_or(PlanError::InvalidPlan("sequence prefix index has no child"))?;
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        continuity.limit(local, ExactRatio::integer(entry.end))?;
+                    }
                     local = local.checked_sub(ExactRatio::integer(entry.start))?;
                     current = entry.child;
                 }
@@ -1323,6 +1401,9 @@ impl RenderPlan {
                     scale,
                     ..
                 } => {
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        continuity.retime(*scale)?;
+                    }
                     local = start.checked_add(local.checked_mul(*scale)?)?;
                     current = *child;
                 }
@@ -1343,6 +1424,21 @@ impl RenderPlan {
                             }
                         })?;
                     budget.repeat_comparisons(location.comparisons)?;
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        let end = location
+                            .play
+                            .start
+                            .checked_add(location.play.duration.frames())
+                            .and_then(|end| {
+                                if location.in_gap {
+                                    end.checked_add(location.play.gap_after.frames())
+                                } else {
+                                    Some(end)
+                                }
+                            })
+                            .ok_or(TimeError::Overflow)?;
+                        continuity.limit(local, ExactRatio::integer(end))?;
+                    }
                     local = location.position;
                     play = Some(location.play.index);
                     // A play and the gap following it share that play's
@@ -1376,6 +1472,9 @@ impl RenderPlan {
                         let gap = gap
                             .as_ref()
                             .ok_or(PlanError::InvalidPlan("repeat gap recipe is missing"))?;
+                        if let Some(continuity) = continuity.as_deref_mut() {
+                            gap.picture_continuity(local, continuity)?;
+                        }
                         break (
                             gap.picture(local)?,
                             gap_picture_context.clone(),

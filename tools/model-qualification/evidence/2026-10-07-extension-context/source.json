@@ -1,0 +1,102 @@
+{
+  "base_revision": "a1ac85e45138d2f04259131bdfb2b54457239b82",
+  "description": "Uncommitted implementation above this base; exact changed source/fixture hashes below. No Rust changes after the final gate.",
+  "files": {
+    "crates/deadpan-analysis/src/shots.rs": {
+      "bytes": 22066,
+      "sha256": "29034806fadd126dacc6fde729fb4464fedbf939fcf1209c266beacd7e57cb83"
+    },
+    "crates/deadpan-analysis/src/shots/context.rs": {
+      "bytes": 7342,
+      "sha256": "a9bf69477b44a828870dd183d7889c0de640793d062f4bef8acda1fbebd015be"
+    },
+    "crates/deadpan-analysis/src/shots/context/tests.rs": {
+      "bytes": 8910,
+      "sha256": "ac301c90d9bc96c52cd036c7fa0622f6877202bc1d50ff6077601ed6b97cff30"
+    },
+    "crates/deadpan-analysis/src/shots/gradual.rs": {
+      "bytes": 11287,
+      "sha256": "fd4a330e35e3e39e0b1f516a1a433f277cebbe30c5a23921daff1b4c1436932c"
+    },
+    "crates/deadpan-cli/src/generation/conditioning.rs": {
+      "bytes": 40903,
+      "sha256": "776c645ff7a95c368f4555b5481bf0c5f7597a1903c421444a0b46844996b6c0"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/continuity.rs": {
+      "bytes": 18036,
+      "sha256": "fe8a70aaf750dcab742a18a3f4206d1b9d24ee79cd6b210b7f7b836459a81050"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension.rs": {
+      "bytes": 13663,
+      "sha256": "7cfcdb7af4ca19038af983385b8ed44b8609fe03fb0e2d2ace3d7e510d87def8"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension_tests.rs": {
+      "bytes": 15330,
+      "sha256": "79ed324871cffdc85626f644f5794c3554b0a0235bb29f68979f59dbbddccbeb"
+    },
+    "crates/deadpan-cli/src/picture.rs": {
+      "bytes": 27276,
+      "sha256": "561cd13ffe38d1cdb0aacb9595f1ca8500fdf422aa197e97c2e7203c460da79e"
+    },
+    "crates/deadpan-cli/src/picture/context.rs": {
+      "bytes": 4507,
+      "sha256": "d7403c3eb5cf1f24bd740743ef6aac2e1ac5731e8bd734f1884d69b880c892da"
+    },
+    "crates/deadpan-cli/src/picture/tests.rs": {
+      "bytes": 31984,
+      "sha256": "6ce333d5b8f911434dab05a1ec554bc82456b0201f5133e4f40424dc012c1e70"
+    },
+    "crates/deadpan-cli/src/picture/tests/extension.rs": {
+      "bytes": 27675,
+      "sha256": "6f43202b5aab6679a62eeca5621eb0a265ccfc5d7e8e490df67d03e7be1ab182"
+    },
+    "crates/deadpan-cli/tests/fixtures/README.md": {
+      "bytes": 1064,
+      "sha256": "aa9da5f9ddd375255cb7f65d0a5911ac43ae8cda3a572bdf9b5514ac67db05af"
+    },
+    "crates/deadpan-cli/tests/fixtures/extension-fade.mp4": {
+      "bytes": 43897,
+      "sha256": "e12e0d32a7f52e290b162e496bbabcc6f648a97d4f46b25b031991ce5909aa7f"
+    },
+    "crates/deadpan-cli/tests/fixtures/generate_extension_fade.py": {
+      "bytes": 2185,
+      "sha256": "331d3af6d43f15ee0e8e120339c1dd7afed2fa2d7c5f3a242e1d4400af53af0c"
+    },
+    "crates/deadpan-models/src/conditioning_extension.rs": {
+      "bytes": 27740,
+      "sha256": "a82dd4dae96dbc0e27128d3eaeebc333b1a0b00efa88b8ca240c1379169c6b9c"
+    },
+    "crates/deadpan-models/src/conditioning_extension_tests.rs": {
+      "bytes": 27361,
+      "sha256": "5d5e694040b63f785bbd2bd689597a9ac1a78128fb2c07afec5ba640ba6d09bb"
+    },
+    "crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6129,
+      "sha256": "57103e06408efff2e69ae2e1d143cae72485c252b6cfedcb4090bb2dd313f15e"
+    },
+    "crates/deadpan-plan/src/picture_context.rs": {
+      "bytes": 13386,
+      "sha256": "3708340abe2be21d787b0a62a5ac465a928dc303509a45fcdda111699fe6bdd9"
+    },
+    "crates/deadpan-plan/src/picture_coverage.rs": {
+      "bytes": 10182,
+      "sha256": "04c0dcd21ded7d6695e9b1237025b61a230d2c88bbfb09e57c408f699d29f054"
+    },
+    "crates/deadpan-plan/src/picture_definition.rs": {
+      "bytes": 21379,
+      "sha256": "0e9565352744233d89eb4b31026822492e67bfdbc432e597e536fd1e1832b39c"
+    },
+    "crates/deadpan-plan/src/plan.rs": {
+      "bytes": 61980,
+      "sha256": "2d2f1d3123f15079c7237fdf988e30035cbc6ed814f24bedec0f9d8acbde94bf"
+    },
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 82039,
+      "sha256": "824247942dcbb9ab8e99477ff26f18dcd810e97a3825265e0ad0b52dc7bbbcff"
+    },
+    "crates/deadpan-plan/tests/picture_plan/coverage.rs": {
+      "bytes": 23921,
+      "sha256": "b8171990fe5851559a2a370d167ecc31494bdc99b93347b8b1d4dbe6e71aceaf"
+    }
+  }
+}

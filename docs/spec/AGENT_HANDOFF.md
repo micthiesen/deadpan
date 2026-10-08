@@ -163,8 +163,14 @@ Retake directions. Nine input pictures plus eight generated pictures at 24 fps
 produce exact N-frame sampled movies; the development envelope is at most 1/3
 second, with no approved extension capability advertised. Real runs, native
 conversion, full-pixel oracles and cancellation pass. Read that record for the
-remaining production capture, same-shot/relevance, quality, acceptance, UI and
-longer-duration work. The contract review is retained in the foundation evidence.
+worker qualification. The subsequent
+[project-context capture](../qualification/extension-context-2026-10-07.md)
+uses actual qualified project pictures and a conservative bounded shot guard.
+Canonical affine coverage catches tiny cutaways and source jumps between sparse
+model inputs, and singleton spans cannot bypass fade checks. Relative measured
+input/support reports are observations, not persistent request authority yet.
+Temporal relevance, quality admission, acceptance, UI and longer-duration work
+remain. The contract review is retained in the foundation evidence.
 
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate is about 88%.

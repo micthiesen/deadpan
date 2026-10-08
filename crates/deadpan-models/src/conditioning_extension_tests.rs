@@ -479,6 +479,17 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
             model_input: ModelInputConversion::SrgbCodesUnchanged,
         },
     };
+    let mut approximate = value.clone();
+    let BoundaryPicture::Original { picture, .. } = &mut approximate.context[8].picture else {
+        unreachable!()
+    };
+    picture.stream.color.transfer = crate::BridgeTransfer::Bt709;
+    picture.model_input = ModelInputConversion::Rec709CodesAsSrgb;
+    assert!(approximate.validate_shape().is_err());
+    if let BoundaryPicture::Original { picture, .. } = &mut approximate.context[8].picture {
+        picture.model_input = ModelInputConversion::Rec709ToSrgb;
+    }
+    assert!(approximate.validate_shape().is_ok());
     let target = AttentionTarget {
         label: "Hand".into(),
         asset: AssetId::new("original").unwrap(),

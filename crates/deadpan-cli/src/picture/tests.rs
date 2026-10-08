@@ -17,6 +17,8 @@ use deadpan_store::source_registration::{SourceInsertionRequest, SourceRegistrat
 
 use super::*;
 
+mod extension;
+
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn active() -> AtomicBool {
@@ -69,10 +71,15 @@ struct Fixture {
 
 impl Fixture {
     fn source(name: &str) -> Result<Self> {
+        Self::source_from(&fixture_path(name), name)
+    }
+
+    fn source_from(input: &Path, name: &str) -> Result<Self> {
         let scratch = tempfile::tempdir()?;
         let path = scratch.path().join("picture.deadpan");
-        let source_path = scratch.path().join(name);
-        fs::copy(fixture_path(name), &source_path)?;
+        let basename = Path::new(name).file_name().ok_or("fixture basename")?;
+        let source_path = scratch.path().join(basename);
+        fs::copy(input, &source_path)?;
         let mut store = ProjectStore::create(&path, &initial(ColorPolicy::SdrRec709))?;
         let original = store
             .retain_original(

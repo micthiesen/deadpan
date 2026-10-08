@@ -42,8 +42,12 @@ PNG declaration and fitted content rectangle. The opposite seam is explicitly
 absent or present and unconditioned; its retained image never reaches the model.
 A selected region has one captured anchor. Inputs have a 16 MiB aggregate bound,
 64-picture maximum and 1 MiB manifest limit; the runtime admits exactly nine.
-Rust capture uses one deadline and immutable snapshots. Structural consistency
-and byte retention do not establish same-shot or source-identity qualification.
+Rust retention uses one deadline and immutable snapshots. Structural consistency
+and byte retention alone do not establish same-shot or source-identity qualification.
+The CLI library's `prepare_extension_scoped_with_options` now captures actual
+qualified project pictures with exact affine coverage and a bounded conservative
+transition guard. It retains relative measured inputs and full coverage reports;
+see [project capture](../../docs/qualification/extension-context-2026-10-07.md).
 
 The worker calls pinned `RetakePipeline.extend` on host-prepared RGB tensors,
 passing generated **latent** frames (`E/8`). It verifies unchanged source
@@ -71,8 +75,8 @@ The first captures inputs before launch. The supervisor owns termination and
 emits `extension_bundle` only after clean teardown and hashed snapshots. The
 last independently canonicalizes the complete native movie and generated-only
 sampled master through the native media worker. These tools do not authorize
-Ready or acceptance: production context capture, visual quality checks,
-durable temporal-input relevance, UI integration and a larger measured duration
+Ready or acceptance: visual quality checks, durable temporal-input relevance,
+accepted artifact integration, UI integration and a larger measured duration
 envelope remain required.
 
 ## Build and run the bridge harness

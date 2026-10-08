@@ -42,9 +42,15 @@
 
 use thiserror::Error;
 
+mod context;
 mod gradual;
 mod measurer;
 
+pub use context::{
+    CONTEXT_SHOT_PADDING, CONTEXT_SHOT_RULE, ContextSeamChange, ContextShotCoverage,
+    ContextShotQualification, ContextShotTransition, MAX_CONTEXT_SHOT_SIGNATURES,
+    context_seam_change, context_shot_window, qualify_context,
+};
 pub use gradual::{GradualTransition, TransitionKind};
 pub use measurer::{REPLAY_PICTURES, ShotMeasurer, ShotProgress, ShotProgressTail};
 

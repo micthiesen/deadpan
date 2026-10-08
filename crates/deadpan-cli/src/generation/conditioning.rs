@@ -42,6 +42,16 @@ use sha2::Digest;
 
 use crate::picture::{PreparedPicture, ProjectPictureSession};
 
+#[path = "conditioning/continuity.rs"]
+mod continuity;
+pub use continuity::{
+    ExtensionContextContinuity, ExtensionContextInputIdentity, ExtensionContextMeasurement,
+    ExtensionContextSupport,
+};
+
+mod extension;
+pub use extension::{ExtensionInputs, prepare_extension_scoped_with_options};
+
 /// The conversion applied to every decoded boundary picture: the decoder's
 /// full-range RGB8 (declared matrix and range applied) with BT.709 primaries,
 /// with sRGB codes retained and BT.709 transfer converted to sRGB before fitting.
@@ -506,6 +516,22 @@ fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     }
     let codes = super::color::srgb_codes(metadata.color)?;
     let (width, height) = (metadata.width, metadata.height);
+    // Bound display-aspect expansion before allocating another raster. Coded
+    // dimensions alone do not bound a hostile but positive sample aspect.
+    let aspect = metadata.sample_aspect_ratio;
+    let denominator = u64::from(aspect.denominator());
+    let display = u64::from(width)
+        .checked_mul(u64::from(aspect.numerator()))
+        .and_then(|value| value.checked_add(denominator / 2))
+        .ok_or("conditioning display width overflowed")?
+        / denominator;
+    let display =
+        u32::try_from(display.max(1)).map_err(|_| "conditioning display width overflowed")?;
+    if display > deadpan_render::MAX_DIMENSION
+        || u64::from(display) * u64::from(height) > deadpan_render::MAX_PIXELS
+    {
+        return Err("conditioning display aspect exceeds the bounded picture raster".into());
+    }
     let stride = metadata.row_stride_bytes as usize;
     let mut pixels = Vec::with_capacity(width as usize * height as usize * 4);
     for row in frame.bytes().chunks_exact(stride).take(height as usize) {
@@ -520,11 +546,9 @@ fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     }
     let image = RgbaImage::from_raw(width, height, pixels).ok_or("decoded frame layout")?;
     // Non-square pixels stretch horizontally to their display width.
-    let sar = metadata.sample_aspect_ratio.as_f64();
-    if (sar - 1.0).abs() < f64::EPSILON {
+    if display == width {
         return Ok(image);
     }
-    let display = ((f64::from(width) * sar).round() as u32).max(1);
     Ok(imageops::resize(
         &image,
         display,
@@ -1001,5 +1025,20 @@ mod tests {
         assert!(contain(Some(&RgbaImage::new(0, 2)), (768, 320)).is_err());
         assert!(contain(None, (769, 320)).is_err());
         assert!(contain(None, (768, 0)).is_err());
+    }
+
+    #[test]
+    fn conditioning_refuses_extreme_sample_aspect_before_display_allocation() {
+        let source = frame(&RgbImage::from_pixel(720, 480, Rgb([200, 100, 50])));
+        let mut metadata = *source.metadata();
+        for (numerator, denominator) in [(65_535, 1), (u32::MAX, 1)] {
+            metadata.sample_aspect_ratio =
+                deadpan_render::SampleAspectRatio::new(numerator, denominator).unwrap();
+            let hostile = Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap();
+            assert!(rgba(&hostile).unwrap_err().contains("display"));
+        }
+        metadata.sample_aspect_ratio = deadpan_render::SampleAspectRatio::new(8, 9).unwrap();
+        let narrow = Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap();
+        assert_eq!(rgba(&narrow).unwrap().dimensions(), (640, 480));
     }
 }

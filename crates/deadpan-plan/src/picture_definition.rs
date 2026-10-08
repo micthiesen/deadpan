@@ -17,6 +17,13 @@ mod context;
 pub use context::{
     MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext, ScopedHoldContextRequest,
 };
+#[path = "picture_coverage.rs"]
+mod coverage;
+pub(super) use coverage::PictureContinuity;
+pub use coverage::{
+    DefinitionPictureCoverage, DefinitionPictureSpan, MAX_DEFINITION_PICTURE_SPANS,
+    PictureClockSlope,
+};
 
 /// A picture in `definition`'s complete intrinsic output, before outer Repeat,
 /// Retime, framing or cutaway owners. `position` is exact local time, not a root
@@ -460,6 +467,7 @@ pub(super) struct PictureBudget {
     /// Enabled only for retained temporal-context queries. Ordinary preview
     /// samples have no accumulated result collection.
     retained_metadata_left: Option<usize>,
+    retained_spans_left: Option<usize>,
 }
 
 impl PictureBudget {
@@ -468,6 +476,7 @@ impl PictureBudget {
             limits,
             lookup: LookupStats::default(),
             retained_metadata_left: None,
+            retained_spans_left: None,
         }
     }
 

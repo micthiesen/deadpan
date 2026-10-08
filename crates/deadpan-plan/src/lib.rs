@@ -66,8 +66,9 @@ pub use plan::{
     AudioSourceVoiceRecipe,
 };
 pub use plan::{
-    DefinitionPictureSample, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldBoundaries,
-    ScopedHoldContext, ScopedHoldContextRequest,
+    DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
+    MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES,
+    PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextRequest,
 };
 
 use deadpan_core::{

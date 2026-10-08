@@ -30,6 +30,7 @@ pub use shared::{
 mod generated;
 pub use generated::{open_candidate_master, open_generated_picture};
 mod color;
+mod context;
 pub use color::{
     AssetColor, AssetTransfer, ColorDecisionPipeline, DEFAULT_HDR_PEAK_NITS,
     MIN_TRUSTED_CONTENT_LIGHT_NITS, OutputColorDecision, OutputColorReason, asset_color,

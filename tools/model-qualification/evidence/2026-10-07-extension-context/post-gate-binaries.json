@@ -1,0 +1,44 @@
+{
+  "scope": "Hashes from post-gate nextest inventories of the unchanged source. Listing rebuilt some unchanged dependencies and executables after the doctest feature graph; these are not asserted to be pre-run hashes of the full gate binaries. Inventory logs are retained.",
+  "inventories": {
+    "extension-context-workspace-inventory.json": {
+      "deadpan-analysis": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_analysis-9cff949b63b8fc31",
+        "bytes": 13335920,
+        "sha256": "6c24f1f88975d7d6defad8d817b1d725b72a9b04c1a93773cdcbe93ca4d3e9ba"
+      },
+      "deadpan-app::bin/deadpan-app": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-843c3848cab8d8fe",
+        "bytes": 197278208,
+        "sha256": "5724af575c883c0706c7b91958863d2eebb6b0838a80b307e33e865d11dd7809"
+      },
+      "deadpan-cli": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-3fd8a8076d1433c2",
+        "bytes": 171241728,
+        "sha256": "93311e9b9a3dcffbb4895d4cac09012c63dd4bf319d275b1c8d81a1bd63bca6d"
+      },
+      "deadpan-models": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_models-4d3a47d78b652be3",
+        "bytes": 33170960,
+        "sha256": "cb94200d755f82a4819e0c464097a2e5aa4272655f6d5aa27fd67d3a7cf74b11"
+      },
+      "deadpan-plan": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_plan-2a56d4096c43e3b2",
+        "bytes": 37143184,
+        "sha256": "e49db6c9093ea59585c93149868ff1a4340a586ee8b71b7240b296e83fda31ed"
+      },
+      "deadpan-plan::picture_plan": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/picture_plan-fac03d8ceb382608",
+        "bytes": 40324272,
+        "sha256": "669ab9a38c7a5f7fdebd0c84f3d1114f52fbed3de222eeeee1fcecfc053d7277"
+      }
+    },
+    "extension-context-ui-inventory.json": {
+      "deadpan-app::bin/deadpan-app": {
+        "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-93deadb1a61f931f",
+        "bytes": 199250400,
+        "sha256": "2f7b794532a3ef9548df2632924785a124f18b983fc0afa23d7cfd0536178707"
+      }
+    }
+  }
+}
