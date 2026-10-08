@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T19:06:46Z",
+  "updated_at": "2026-10-08T20:15:30Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing AI extension validation and saved acceptance.",
+  "focus": "Qualifying longer AI extensions and connecting them to the app.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and replacements work. Extension quality checks work; saved acceptance and app controls remain."
+      "note": "AI pauses and replacements work. Saved extensions can be accepted and reopened; normal extension generation and app controls remain."
     },
     {
       "id": "import",
@@ -229,6 +229,14 @@
       "revision": "7406195e",
       "retrospective": false,
       "summary": "Verified face, mouth and selected-region checks for AI video extension in both directions, plus the full test gate and packaged app. Saved acceptance and app controls remain."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 88,
+      "complete_sections": 4,
+      "revision": "7a2980fc",
+      "retrospective": false,
+      "summary": "Verified saved AI extension candidates, explicit acceptance, undo/redo and model-free reopening. Normal generation and app controls remain."
     }
   ]
 }
