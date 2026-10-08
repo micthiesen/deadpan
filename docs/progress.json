@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T01:38:17Z",
+  "updated_at": "2026-10-08T02:27:02Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Connecting verified edge generation to project capture, acceptance and native controls.",
+  "focus": "Connecting video extension to saved jobs, acceptance and native controls.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and automatic replacements work. Edge generation is verified in the worker; app integration remains."
+      "note": "AI pauses and automatic replacements work. Edge generation and project context checks are verified; extension acceptance and app controls remain."
     },
     {
       "id": "import",
@@ -189,6 +189,14 @@
       "revision": "620a35a1",
       "retrospective": false,
       "summary": "Verified real AI video extension in both directions, exact output timing and cancellation. Project and app integration remain."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 88,
+      "complete_sections": 4,
+      "revision": "086aa581",
+      "retrospective": false,
+      "summary": "Verified project footage for AI extensions, including cuts and fades hidden between model inputs. Saved jobs, acceptance and native controls remain."
     }
   ]
 }
