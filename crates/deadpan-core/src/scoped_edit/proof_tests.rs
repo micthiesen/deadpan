@@ -606,7 +606,8 @@ fn generated() -> (GeneratedArtifact, BTreeMap<AssetId, AssetRecord>) {
             frames(4),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: Some([640, 480]),
     };
     let time_base = SourceTimeBase::new(1, 1000).unwrap();

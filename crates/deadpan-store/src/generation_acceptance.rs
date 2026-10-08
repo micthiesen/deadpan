@@ -199,11 +199,10 @@ fn prepare_acceptance(
     let evidence = receipt
         .admission()
         .ok_or_else(|| invalid("legacy bundle lacks measured spans and retained input evidence"))?;
-    let plan = request.bridge_plan().ok_or_else(|| {
-        invalid(
-            "acceptance requires a retained Bridge plan; extension output admission is unavailable",
-        )
-    })?;
+    let plan = request
+        .plan
+        .as_ref()
+        .ok_or_else(|| invalid("acceptance requires a retained native plan"))?;
     let Some(NodeKind::Hold { recipe }) = current
         .nodes()
         .get(&request.target.node)
@@ -247,7 +246,7 @@ fn prepare_acceptance(
         native_asset: input.native_asset.clone(),
         native_object: receipt.native_object().clone(),
         provenance: receipt.provenance_object().clone(),
-        sampling: plan
+        sampling: receipt
             .sampling_map()
             .map_err(|_| invalid("invalid retained sampling map"))?,
         // Relevance binds the canvas: an accepted request's context, which

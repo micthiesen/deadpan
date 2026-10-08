@@ -843,12 +843,8 @@ fn parse_request_row(
         }
         if let Some(plan) = &plan {
             validate_plan_binding(&constraints, plan)?;
-            if input_binding.as_ref().is_none_or(|binding| {
-                binding.capture_spec() != GenerationCaptureSpec::from_plan(plan)
-            }) {
-                return Err(integrity(
-                    "generation plan and input capture operation disagree",
-                ));
+            if let Some(binding) = &input_binding {
+                validate_capture_binding(plan, binding)?;
             }
         }
         let relevance = match required(relevance, "relevance")?.as_str() {
@@ -920,7 +916,29 @@ fn plan_error(message: &str) -> StoreError {
     StoreError::GenerationPlan(message.into())
 }
 
-fn validate_plan_binding(
+pub(crate) fn validate_capture_binding(
+    plan: &GenerationPlan,
+    binding: &GenerationInputBinding,
+) -> Result<(), StoreError> {
+    if !matches!(
+        (plan, &binding.inputs),
+        (
+            GenerationPlan::Bridge(_),
+            crate::generation_inputs::GenerationInputs::Bridge { .. }
+        ) | (
+            GenerationPlan::Extension(_),
+            crate::generation_inputs::GenerationInputs::Extension { .. }
+        )
+    ) || binding.capture_spec() != GenerationCaptureSpec::from_plan(plan)
+    {
+        return Err(integrity(
+            "generation plan and input capture operation disagree",
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_plan_binding(
     constraints: &HoldConstraints,
     plan: &GenerationPlan,
 ) -> Result<(), StoreError> {

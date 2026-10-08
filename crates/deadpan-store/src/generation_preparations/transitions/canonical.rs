@@ -415,7 +415,8 @@ mod tests {
                 FrameDuration::new(4).unwrap(),
                 BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
             )
-            .unwrap(),
+            .unwrap()
+            .into(),
             content_aspect: Some([512, 320]),
         };
         let time_base = SourceTimeBase::new(1, 1000).unwrap();

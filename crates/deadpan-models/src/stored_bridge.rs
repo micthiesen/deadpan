@@ -1,6 +1,8 @@
 //! Revalidate retained bridge evidence independently of a worker or model pack.
 
-use deadpan_core::{GeneratedArtifact, GeneratedObjectRef, ProjectId, SourceSpan};
+use deadpan_core::{
+    GeneratedArtifact, GeneratedObjectRef, GeneratedSamplingMap, ProjectId, SourceSpan,
+};
 use deadpan_jobs::{ConditioningMode, NativeCandidateManifest, WorkspaceArtifact};
 use deadpan_media::protocol::{ConversionReport, VideoContract};
 use serde::Deserialize;
@@ -133,11 +135,16 @@ impl StoredBridgeProvenance {
     ) -> Result<AcceptedBridgeEvidence, QualificationError> {
         let envelope = &self.envelope;
         let sampling = envelope.binding.plan.sampling_map().map_err(invalid)?;
+        let GeneratedSamplingMap::Bridge(artifact_sampling) = &artifact.sampling else {
+            return Err(invalid(
+                "retained bridge cannot admit an extension artifact",
+            ));
+        };
         if &envelope.binding.project_id != project
             || self.object != artifact.provenance
             || envelope.native != artifact.native_object
             || envelope.sampled != artifact.sampled_object
-            || sampling != artifact.sampling
+            || &sampling != artifact_sampling
         {
             return Err(invalid(
                 "retained bridge differs from the authored artifact/project",
@@ -351,6 +358,10 @@ pub struct AcceptedBridgeEvidence {
 }
 
 impl AcceptedBridgeEvidence {
+    pub(crate) fn conditioning(&self) -> &ConditioningReceipt {
+        &self.provenance.envelope.conditioning
+    }
+
     /// The controls that produced this accepted artifact, recovered from its
     /// verified immutable binding. They remain available after copying the
     /// Hold or retiring its operational request and need no installed model.

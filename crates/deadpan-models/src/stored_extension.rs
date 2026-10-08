@@ -1,6 +1,8 @@
 //! Revalidate complete extension evidence without an installed model or worker.
 
-use deadpan_core::{GeneratedObjectRef, SourceSpan};
+use deadpan_core::{
+    GeneratedArtifact, GeneratedObjectRef, GeneratedSamplingMap, ProjectId, SourceSpan,
+};
 use deadpan_jobs::NativeCandidateManifest;
 use deadpan_media::protocol::{ConversionReport, VideoContract};
 use serde::{Deserialize, Serialize};
@@ -63,6 +65,41 @@ impl StoredExtensionProvenance {
 
     pub fn context_object(&self) -> &GeneratedObjectRef {
         self.envelope.conditioning.manifest().object()
+    }
+
+    /// Captured request facts for comparing this envelope with an independent
+    /// stored request before validating its retained context and reports.
+    pub fn binding(&self) -> &ExtensionGenerationBinding {
+        &self.envelope.binding
+    }
+
+    /// Admit the saved evidence for an accepted artifact in this project.
+    /// The original revision, Hold and full sampling plan remain immutable
+    /// provenance. The current Hold can be copied or shortened independently.
+    /// Media/input bytes still need independent snapshot and decoder admission.
+    pub fn validate_artifact(
+        self,
+        artifact: &GeneratedArtifact,
+        project: &ProjectId,
+        context_bytes: &[u8],
+    ) -> Result<AcceptedExtensionEvidence, QualificationError> {
+        let GeneratedSamplingMap::Extension(sampling) = &artifact.sampling else {
+            return Err(invalid("retained extension cannot admit a bridge artifact"));
+        };
+        let envelope = &self.envelope;
+        if &envelope.binding.project_id != project
+            || self.object != artifact.provenance
+            || envelope.native != artifact.native_object
+            || envelope.sampled != artifact.sampled_object
+            || envelope.binding.plan.sampling_map() != sampling
+        {
+            return Err(invalid(
+                "retained extension differs from the authored artifact/project",
+            ));
+        }
+        let binding = envelope.binding.clone();
+        let evidence = self.validate_for(&binding, context_bytes)?;
+        Ok(AcceptedExtensionEvidence { evidence })
     }
 
     /// Verify exact saved inputs and recompute rejection policy. This does not
@@ -211,6 +248,57 @@ impl ValidatedExtensionEvidence {
     }
     pub fn provenance_object(&self) -> &GeneratedObjectRef {
         &self.provenance.object
+    }
+}
+
+/// Opaque evidence bound to the accepted Extension artifact and project.
+/// This does not prove that separately stored media/input bytes remain intact.
+pub struct AcceptedExtensionEvidence {
+    evidence: ValidatedExtensionEvidence,
+}
+
+impl AcceptedExtensionEvidence {
+    pub fn generation_options(&self) -> deadpan_jobs::GenerationOptions {
+        deadpan_jobs::GenerationOptions::from_constraints(&self.evidence.binding().constraints)
+    }
+    pub fn binding(&self) -> &ExtensionGenerationBinding {
+        self.evidence.binding()
+    }
+    pub fn context(&self) -> &ExtensionContext {
+        self.evidence.context()
+    }
+    pub fn conditioning(&self) -> &ExtensionConditioningReceipt {
+        self.evidence.conditioning()
+    }
+    pub fn pixels(&self) -> &ExtensionPixelReport {
+        self.evidence.pixels()
+    }
+    pub fn geometry(&self) -> &ExtensionGeometryChecks {
+        self.evidence.geometry()
+    }
+    pub fn native_contract(&self) -> VideoContract {
+        self.evidence.native_contract()
+    }
+    pub fn sampled_contract(&self) -> VideoContract {
+        self.evidence.sampled_contract()
+    }
+    pub fn native_span(&self) -> SourceSpan {
+        self.evidence.native_span()
+    }
+    pub fn sampled_span(&self) -> SourceSpan {
+        self.evidence.sampled_span()
+    }
+    pub fn native_object(&self) -> &GeneratedObjectRef {
+        self.evidence.native_object()
+    }
+    pub fn sampled_object(&self) -> &GeneratedObjectRef {
+        self.evidence.sampled_object()
+    }
+    pub fn provenance_object(&self) -> &GeneratedObjectRef {
+        self.evidence.provenance_object()
+    }
+    pub fn context_object(&self) -> &GeneratedObjectRef {
+        self.evidence.conditioning().manifest().object()
     }
 }
 

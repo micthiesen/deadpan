@@ -59,7 +59,8 @@ fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation(
             FrameDuration::new(30).unwrap(),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: None,
     });
     let initial = ProjectDocument::new(

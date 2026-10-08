@@ -1,0 +1,78 @@
+{
+  "binaries.json": {
+    "bytes": 294,
+    "sha256": "4b7a7c66bd0a272a3770e993fcc46a43b48997eaa509f62d19b144a45c640085"
+  },
+  "check-final-retry.log.gz": {
+    "bytes": 197,
+    "sha256": "ffc38834be15f5acd95db6cea9952d7afa284b21ccb593246ba19a67e87be981"
+  },
+  "check-final.log.gz": {
+    "bytes": 1199,
+    "sha256": "c7893544711952d98018501e60de08aecf5dc7340d77d31f2e0efa5ccbf572e6"
+  },
+  "check-ui.log.gz": {
+    "bytes": 627,
+    "sha256": "249c26a773ffbd83ac440c0fbe2e4e157ddb28225b3830fcfd9fcf76e0e003d9"
+  },
+  "check.log.gz": {
+    "bytes": 217,
+    "sha256": "be3c3930db1b37f268fc5656e167fefd8738ec6d598c6abb8b27be61c5ac0f13"
+  },
+  "core-plan-retry.log.gz": {
+    "bytes": 3705,
+    "sha256": "28a488f2def8d60a2989a5c4d428f80f2fe8c7eb774b70e67366e6ff75ccec42"
+  },
+  "core-plan.log.gz": {
+    "bytes": 2191,
+    "sha256": "047b4c4888c68ff40ea8426eeecaeae497410a02c0c15919b4e0b43084bddd20"
+  },
+  "doc-tests.log.gz": {
+    "bytes": 481,
+    "sha256": "60c1dc451d6d58f2436e97b5575c53ab566af4733f4986f46c39db82e07a7f27"
+  },
+  "doctor-regression.log.gz": {
+    "bytes": 2463,
+    "sha256": "92ba064ac44c4a65e48ca3fb2e6b3a021dc5793eb66d7a223245fc501eae7602"
+  },
+  "environment.json": {
+    "bytes": 338,
+    "sha256": "4ea1110faab03a51fe1a5539d78f62da9202b5d500f0d1147da1c19bfbbe98cc"
+  },
+  "format.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "gate.log.gz": {
+    "bytes": 169207,
+    "sha256": "09795c7ad2743b385b4064fa91a5d615a06cc96eb418150306b0732a0b522f60"
+  },
+  "models-store.log.gz": {
+    "bytes": 27640,
+    "sha256": "9987b25cb3f954229812dbcbbdf278736e2869cfd0e1b62445825873d2c7cb92"
+  },
+  "models.log.gz": {
+    "bytes": 957,
+    "sha256": "5465b19236f195021e7019bfa30b5383bf524f9c1f923c1612d47a1402af9348"
+  },
+  "real-media.log.gz": {
+    "bytes": 1487,
+    "sha256": "b28c9d0435b5502e31ed07d4a251dbfc2b5a45c970d923931bda014067b68ce3"
+  },
+  "results.json": {
+    "bytes": 7287,
+    "sha256": "135e9f870f524ec6f8341c2eca685e4a3bd9ac3de6851a06cc2ef6a7765eee89"
+  },
+  "source.json": {
+    "bytes": 9709,
+    "sha256": "006fb35fef6c30fd35c5fc2bc6033198aae27c46f5584ddaa2712954b781ef27"
+  },
+  "store-regressions.log.gz": {
+    "bytes": 1914,
+    "sha256": "35cd070f11605d39de39635ea965807d35ec8d886140e36fb305fe163905971e"
+  },
+  "ui-tests.log.gz": {
+    "bytes": 35406,
+    "sha256": "da966293e831cab5272fce2075495750fdec2912fd6e5601d22978ee23926f25"
+  }
+}

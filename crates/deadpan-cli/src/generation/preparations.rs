@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use deadpan_core::GeneratedObjectRef;
 use deadpan_jobs::GenerationOptions;
-use deadpan_models::StoredBridgeProvenance;
+use deadpan_models::StoredGeneratedProvenance;
 use deadpan_store::generated_media::{GeneratedReadHandle, GeneratedReadLimits};
 use deadpan_store::generation_preparations::{
     PreparationControls, PreparationOrigin, StoredGenerationPreparation,
@@ -65,8 +65,8 @@ pub fn resolve_options(
                 deadline,
                 cancelled,
             )?;
-            let stored = StoredBridgeProvenance::from_bytes(&bytes, &artifact.provenance)
-                .map_err(invalid)?;
+            let stored =
+                StoredGeneratedProvenance::from_bytes(&bytes, artifact).map_err(invalid)?;
             let context = metadata(
                 &handle,
                 stored.context_object(),

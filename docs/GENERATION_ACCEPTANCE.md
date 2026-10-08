@@ -21,11 +21,13 @@ it clears a matching selection and is not reversible.
 
 ## Evidence and transaction
 
-`BundleAdmissionEvidence`, introduced in store schema 9, accompanies modern bundle receipts. It
-contains measured native/sample `SourceSpan` values and `BundleInputObjects` for
-the retained context manifest and two prepared frames, bound to the request's
-context SHA-256. Checked constructors and deserialization reject incompatible
-aliases. Legacy receipt JSON stays unchanged and gains no invented evidence.
+`BundleAdmissionEvidence` contains measured native/sample `SourceSpan` values
+and operation-tagged `BundleInputObjects`, bound to the request's context
+SHA-256. Bridge retains the manifest and two prepared frames. Extension retains
+the manifest, 1–64 chronological context pictures, required continuity
+signatures and an explicitly present or absent opposite picture. Checked
+constructors reject cross-operation inputs and incompatible aliases. Repeated
+context pictures may share an object only with the same exact length.
 
 Host qualification derives the source spans from conversion report 2: the first
 decoded output timestamp through the last timestamp plus its actual decoded
@@ -36,12 +38,14 @@ as rounded `25/24` seconds. Envelope 3 retains both reports, spans and input rec
 
 The caller supplies expected revision, new revision, attempt identity, exact
 expected receipt and fresh asset IDs. It cannot supply asset metadata or a new
-sampling map. Before opening the SQLite transaction, acceptance rehashes all six
+sampling map. Before opening the SQLite transaction, acceptance rehashes every retained
 objects through verified snapshots. Inside the transaction it checks:
 
 - The authored head, selected attempt and complete receipt still match.
 - The request is current and the selected attempt is Ready and Present.
-- The Hold duration, project rate and context match the persisted bridge plan.
+- The Hold duration, project rate and context match the persisted operation plan.
+- Worker protocol, declaration, controls and input capture agree on Bridge or
+  Extension and its direction; no parser fallback changes that operation.
 - The request's current authoring address resolves every explicit Repeat
   Default or stable Play choice and the Hold's full intrinsic duration.
 - Complete before/after context reconciliation preserves the accepted request,
@@ -95,7 +99,7 @@ immutable origin, preparing one render plan for the exact borrowed prospective
 document. The plan cannot leak across failed transactions that reuse a revision
 ID. Ordinary store writes use the same resolver preparation contract.
 
-Store schema 72 deliberately refuses earlier unused development packages under
+Store schema 74 deliberately refuses earlier unused development packages under
 the session's breaking-format authorization. Historical generated provenance
 remains readable under its declared contract; it gains no invented evidence.
 
@@ -105,8 +109,11 @@ Store tests cover stale selection/revision/receipt/context, missing and corrupt
 dependencies, aliases, rollback, read-only preview, history branches, scoped
 isolation, dormant Defaults, mapped request addresses and unsupported old
 development formats. Native integration
-tests exercise actual media qualification, acceptance and six-object readback
-after removing worker files and relocating the package.
+tests exercise actual media qualification, acceptance and complete dependency
+readback after removing worker files and relocating the package. The
+[Extension integration](qualification/extension-saved-2026-10-08.md) also covers
+both directions, one-frame output at definition edges, missing signatures or
+PNGs, exact sampled pixels and model-free undo/redo and reopening.
 
 `deadpan-models/examples/qualify_generated_acceptance.rs` runs the same path against
 a captured real model result in a fresh synthetic Hold project, then relocates,

@@ -48,7 +48,8 @@ fn fixture() -> (ProjectDocument, AcceptedGeneration) {
                 FrameDuration::new(4).unwrap(),
                 BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
             )
-            .unwrap(),
+            .unwrap()
+            .into(),
             content_aspect: Some([640, 480]),
         },
         fallback: HoldFallback::Background,
@@ -162,7 +163,8 @@ fn accepted_identity_checks_every_object_sampling_and_canvas() {
         FrameDuration::new(3).unwrap(),
         BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
     )
-    .unwrap();
+    .unwrap()
+    .into();
     assert!(FinalProvider::resolve(&document, &target("mapped"), &wrong).is_err());
 }
 

@@ -8,7 +8,7 @@ use deadpan_core::{AssetId, GeneratedArtifact, GeneratedObjectRef, ProjectDocume
 use deadpan_media::protocol::VideoContract;
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
-use deadpan_models::StoredBridgeProvenance;
+use deadpan_models::StoredGeneratedProvenance;
 use deadpan_source::{ColorMatrix, ColorPrimaries, ColorRange, ColorTransfer};
 use deadpan_store::generated_media::{GeneratedReadHandle, GeneratedReadLimits};
 
@@ -20,8 +20,8 @@ const MAX_PROVENANCE_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_CONTEXT_BYTES: u64 = 1024 * 1024;
 const MAX_CONDITIONING_BYTES: u64 = 64 * 1024 * 1024;
 
-/// Admit the sampled master of an already accepted Generated Hold. All six
-/// retained objects are required on a cold read. No worker path, mutable
+/// Admit the sampled master of an already accepted Generated Hold. Every
+/// retained object is required on a cold read. No worker path, mutable
 /// candidate selection, request relevance or installed model is consulted.
 /// The caller must release its previous decoder before calling this and keep
 /// the resulting decoder keyed by the complete artifact, both asset records,
@@ -70,14 +70,11 @@ pub fn open_generated_picture(
         Ok::<_, ProjectPictureError>(bytes)
     };
     let provenance = bytes(&artifact.provenance, MAX_PROVENANCE_BYTES)?;
-    let stored = StoredBridgeProvenance::from_bytes(&provenance, &artifact.provenance)?;
+    let stored = StoredGeneratedProvenance::from_bytes(&provenance, artifact)?;
     let context = bytes(stored.context_object(), MAX_CONTEXT_BYTES)?;
     let evidence = stored.validate_for(artifact, document.project_id(), &context)?;
     remaining()?;
-    for (object, sha256) in [
-        (evidence.left_object(), evidence.left_sha256()),
-        (evidence.right_object(), evidence.right_sha256()),
-    ] {
+    for (object, sha256) in evidence.conditioning_inputs() {
         let snapshot = read(object, MAX_CONDITIONING_BYTES)?;
         let actual: String = snapshot
             .sha256()
@@ -134,7 +131,7 @@ pub fn open_generated_picture(
 /// store's verified snapshot (its BLAKE3 identity), then decoded and checked
 /// against the receipt's raster, frame count and canonical FFV1 sRGB
 /// interpretation. This admits no authored use: preview and acceptance still
-/// verify all six retained objects through the store.
+/// verify every retained object through the store.
 pub fn open_candidate_master(
     handle: &GeneratedReadHandle,
     sampled: &GeneratedObjectRef,

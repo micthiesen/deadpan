@@ -297,7 +297,7 @@ work without changing the saved controls. Shared resource limits fail atomically
 qualification can read a captured descriptor without depending on the store.
 The store's `GenerationInputCapture` owns capture and resource limits; reading
 or constructing a descriptor never grants request or acceptance authority.
-The schema-73 representation is unchanged.
+Schema 74 adds saved Extension candidates and operation-tagged accepted sampling.
 
 Extension conditioning schema 2 now retains that descriptor and a bounded
 signature sidecar. The host recomputes input continuity from private snapshots;
@@ -313,12 +313,16 @@ and mouth motion over generated pictures chronologically. Lost tracking cannot
 erase measured rejection. [Complete host qualification](qualification/extension-bundles-2026-10-08.md)
 now binds those reports to the exact request, independently selected provider,
 retained inputs, converted media and strict worker provenance, and verifies the
-saved envelope without rerunning the model. Store promotion and accepted media
-integration still precede extension Ready.
+saved envelope without rerunning the model. [Saved acceptance](qualification/extension-saved-2026-10-08.md)
+now publishes the complete bundle, records Ready without changing the edit,
+explicitly accepts it and reopens its sampled pictures without a model.
+Missing signatures or conditioning images refuse both admission and cold use.
+Offered variants show operation-specific timing, available quality coverage,
+conditioned joins and explicitly unconditioned or absent opposite seams.
 
-Native and headless job execution still admit Bridge jobs only. Extension
-completion/Ready and acceptance remain closed until the qualified bundle is
-connected to storage and the accepted-media representation. See
+Native and headless job execution still admit Bridge jobs only. The independently
+approved extension capability, broader measured duration envelope and native
+generation controls remain unfinished. See
 [durable extension inputs](qualification/extension-inputs-2026-10-07.md).
 
 ## Headless commands

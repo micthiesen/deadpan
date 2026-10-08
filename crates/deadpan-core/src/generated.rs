@@ -9,6 +9,8 @@ use crate::{AssetId, ExactRatio, FrameDuration, FrameRate};
 
 mod extension;
 pub use extension::*;
+mod sampling;
+pub use sampling::GeneratedSamplingMap;
 
 const ALGORITHM: &str = "blake3";
 const DIGEST_HEX_BYTES: usize = 64;
@@ -335,9 +337,9 @@ pub struct GeneratedArtifact {
     pub native_asset: AssetId,
     pub native_object: GeneratedObjectRef,
     pub provenance: GeneratedObjectRef,
-    pub sampling: BridgeSamplingMap,
-    /// The canvas (width, height) whose aspect the bridge was conditioned
-    /// for: its boundary pictures were fitted whole into that aspect's region
+    pub sampling: GeneratedSamplingMap,
+    /// The canvas (width, height) whose aspect the generation was conditioned
+    /// for: its conditioning pictures were fitted whole into that aspect's region
     /// of the native raster, and presentation crops the generated pictures
     /// back to it. Absent for artifacts conditioned without that policy,
     /// which present uncropped.

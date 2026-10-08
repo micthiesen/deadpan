@@ -87,7 +87,8 @@ fn fixture() -> Result<(
             duration(25),
             duration(30),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
-        )?,
+        )?
+        .into(),
         content_aspect: None,
     };
     let clock = SourceTimeBase::new(1, 1000)?;

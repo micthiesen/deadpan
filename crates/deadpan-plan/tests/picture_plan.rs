@@ -14,6 +14,8 @@ mod definition;
 mod definition_batch;
 #[path = "picture_plan/follow.rs"]
 mod follow;
+#[path = "picture_plan/generated_extension.rs"]
+mod generated_extension;
 #[path = "picture_plan/retained_framing.rs"]
 mod retained_framing;
 
@@ -1317,7 +1319,8 @@ fn generated_fixture(
             duration(30),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: None,
     };
     let record = |object: &GeneratedObjectRef, frames: i64| AssetRecord {

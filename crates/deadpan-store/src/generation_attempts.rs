@@ -3,18 +3,18 @@
 //! Attempt state is operational metadata, separate from authored revisions and
 //! request relevance. Progress remains live in memory. A legacy Ready receipt
 //! records what the host says it validated and still requires the candidate
-//! cache artifact to be reopened and verified. A V2 Ready receipt is recorded
+//! cache artifact to be reopened and verified. A native Ready receipt is recorded
 //! only after this store has verified the masters and provenance, plus all
 //! retained inputs when admission evidence exists. Either kind
 //! still requires a current-relevance check and an authored acceptance
 //! transaction; Ready alone never changes the document.
 
-use deadpan_core::{FrameDuration, GeneratedObjectRef, SourceSpan};
+use deadpan_core::{FrameDuration, GeneratedObjectRef, GeneratedSamplingMap, SourceSpan};
 use deadpan_jobs::{
     AttemptId, BridgeGenerationPlan, CancellationAcknowledgement, CancellationToken,
-    CandidateDeclaration, CandidateManifest, Diagnostic, FailureCode, GenerationPlan,
-    HoldConstraints, HostFailure, HostFailureCode, JobFailure, JobLifecycle, JobState,
-    LifecycleCheckpoint, MAX_DIAGNOSTIC_BYTES, MAX_PROTOCOL_ID_BYTES, MessageIdentity,
+    CandidateDeclaration, CandidateManifest, Diagnostic, ExtensionGenerationPlan, FailureCode,
+    GenerationPlan, HoldConstraints, HostFailure, HostFailureCode, JobFailure, JobLifecycle,
+    JobState, LifecycleCheckpoint, MAX_DIAGNOSTIC_BYTES, MAX_PROTOCOL_ID_BYTES, MessageIdentity,
     NativeCandidateManifest, ProtocolVersion, ProviderSelection, Relevance, RequestId, Sha256,
     TargetBinding, VideoSpec, WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage,
 };
@@ -25,9 +25,14 @@ use thiserror::Error;
 use crate::{ProjectStore, StoreError};
 
 const MAX_ATTEMPT_JSON_BYTES: usize = 16 * 1024;
+pub(crate) const MAX_BUNDLE_JSON_BYTES: usize = 32 * 1024;
 const MAX_MANAGED_REF_BYTES: usize = 1_024;
 const MAX_ATTEMPT_PAGE: usize = 256;
 const MAX_SQL_COUNTER: i64 = i64::MAX;
+
+mod inputs;
+mod verification;
+pub use inputs::BundleInputObjects;
 
 const NONTERMINAL_STATES: &str =
     "'queued','preflight','loading','running','validating','cancelling'";
@@ -104,7 +109,7 @@ pub enum AttemptValueError {
     InvalidValidatorIdentity,
     #[error("candidate byte length must be positive and fit SQLite")]
     InvalidByteLength,
-    #[error("bundle metadata does not match its native bridge declaration")]
+    #[error("bundle metadata does not match its native declaration")]
     BundleMetadataMismatch,
 }
 
@@ -204,7 +209,7 @@ pub struct CandidateValidationReceipt {
     availability: CandidateAvailability,
 }
 
-/// Host-owned qualification evidence for a V2 bridge result. The worker's
+/// Host-owned qualification evidence for a native generated result. The worker's
 /// native/provenance declaration is retained in the attempt separately; this
 /// receipt records the immutable generated objects after canonicalization.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -214,7 +219,7 @@ pub struct BundleValidationReceipt {
     provenance_object: GeneratedObjectRef,
     native_video: VideoSpec,
     sampled_video: VideoSpec,
-    plan: BridgeGenerationPlan,
+    plan: GenerationPlan,
     provider: ProviderSelection,
     native_sha256: Sha256,
     native_byte_length: u64,
@@ -224,74 +229,6 @@ pub struct BundleValidationReceipt {
     availability: CandidateAvailability,
     #[serde(skip_serializing_if = "Option::is_none")]
     admission: Option<BundleAdmissionEvidence>,
-}
-
-/// Retained pre-launch conditioning dependencies. These identities describe
-/// immutable prepared bytes; their source-clock and color meaning is host-owned.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(try_from = "BundleInputObjectsWire")]
-pub struct BundleInputObjects {
-    context_sha256: Sha256,
-    manifest: GeneratedObjectRef,
-    left: GeneratedObjectRef,
-    right: GeneratedObjectRef,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct BundleInputObjectsWire {
-    context_sha256: Sha256,
-    manifest: GeneratedObjectRef,
-    left: GeneratedObjectRef,
-    right: GeneratedObjectRef,
-}
-
-impl TryFrom<BundleInputObjectsWire> for BundleInputObjects {
-    type Error = AttemptValueError;
-
-    fn try_from(value: BundleInputObjectsWire) -> Result<Self, Self::Error> {
-        Self::new(
-            value.context_sha256,
-            value.manifest,
-            value.left,
-            value.right,
-        )
-    }
-}
-
-impl BundleInputObjects {
-    pub fn new(
-        context_sha256: Sha256,
-        manifest: GeneratedObjectRef,
-        left: GeneratedObjectRef,
-        right: GeneratedObjectRef,
-    ) -> Result<Self, AttemptValueError> {
-        if manifest.content() == left.content()
-            || manifest.content() == right.content()
-            || (left.content() == right.content() && left != right)
-        {
-            return Err(AttemptValueError::BundleMetadataMismatch);
-        }
-        Ok(Self {
-            context_sha256,
-            manifest,
-            left,
-            right,
-        })
-    }
-
-    pub fn context_sha256(&self) -> &Sha256 {
-        &self.context_sha256
-    }
-    pub fn manifest(&self) -> &GeneratedObjectRef {
-        &self.manifest
-    }
-    pub fn left(&self) -> &GeneratedObjectRef {
-        &self.left
-    }
-    pub fn right(&self) -> &GeneratedObjectRef {
-        &self.right
-    }
 }
 
 /// Media bounds measured by the host decoder, plus complete retained inputs.
@@ -352,7 +289,7 @@ struct BundleValidationReceiptWire {
     provenance_object: GeneratedObjectRef,
     native_video: VideoSpec,
     sampled_video: VideoSpec,
-    plan: BridgeGenerationPlan,
+    plan: GenerationPlan,
     provider: ProviderSelection,
     native_sha256: Sha256,
     native_byte_length: u64,
@@ -401,9 +338,55 @@ impl BundleValidationReceipt {
         plan: BridgeGenerationPlan,
         validator: ValidatorIdentity,
     ) -> Result<Self, AttemptValueError> {
+        Self::from_plan(
+            declaration,
+            native_object,
+            sampled_object,
+            provenance_object,
+            sampled_video,
+            GenerationPlan::Bridge(plan),
+            validator,
+            None,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_extension(
+        declaration: &NativeCandidateManifest,
+        native_object: GeneratedObjectRef,
+        sampled_object: GeneratedObjectRef,
+        provenance_object: GeneratedObjectRef,
+        sampled_video: VideoSpec,
+        plan: ExtensionGenerationPlan,
+        validator: ValidatorIdentity,
+        admission: BundleAdmissionEvidence,
+    ) -> Result<Self, AttemptValueError> {
+        Self::from_plan(
+            declaration,
+            native_object,
+            sampled_object,
+            provenance_object,
+            sampled_video,
+            GenerationPlan::Extension(plan),
+            validator,
+            Some(admission),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn from_plan(
+        declaration: &NativeCandidateManifest,
+        native_object: GeneratedObjectRef,
+        sampled_object: GeneratedObjectRef,
+        provenance_object: GeneratedObjectRef,
+        sampled_video: VideoSpec,
+        plan: GenerationPlan,
+        validator: ValidatorIdentity,
+        admission: Option<BundleAdmissionEvidence>,
+    ) -> Result<Self, AttemptValueError> {
         let dimensions = plan.native_dimensions();
         let native_video = VideoSpec::new(
-            FrameDuration::new(i64::from(plan.native_frame_count()))
+            FrameDuration::new(i64::from(native_frame_count(&plan)))
                 .map_err(|_| AttemptValueError::BundleMetadataMismatch)?,
             plan.native_frame_rate(),
             dimensions.width(),
@@ -424,7 +407,7 @@ impl BundleValidationReceipt {
             provenance_byte_length: declaration.provenance.byte_length(),
             validator,
             availability: CandidateAvailability::Present,
-            admission: None,
+            admission,
         };
         if declaration.video != receipt.native_video {
             return Err(AttemptValueError::BundleMetadataMismatch);
@@ -435,7 +418,7 @@ impl BundleValidationReceipt {
 
     fn validate_shape(&self) -> Result<(), AttemptValueError> {
         let dimensions = self.plan.native_dimensions();
-        let expected_native_frames = FrameDuration::new(i64::from(self.plan.native_frame_count()))
+        let expected_native_frames = FrameDuration::new(i64::from(native_frame_count(&self.plan)))
             .map_err(|_| AttemptValueError::BundleMetadataMismatch)?;
         if self.native_video.frames() != expected_native_frames
             || self.native_video.frame_rate() != self.plan.native_frame_rate()
@@ -455,17 +438,28 @@ impl BundleValidationReceipt {
         {
             return Err(AttemptValueError::BundleMetadataMismatch);
         }
+        match (&self.plan, &self.admission) {
+            (GenerationPlan::Bridge(_), Some(admission))
+                if admission.inputs.context().is_some() =>
+            {
+                return Err(AttemptValueError::BundleMetadataMismatch);
+            }
+            (GenerationPlan::Extension(plan), Some(admission))
+                if admission.inputs.context().is_some_and(|context| {
+                    context.len() == plan.context_frame_count() as usize
+                }) => {}
+            (GenerationPlan::Extension(_), _) => {
+                return Err(AttemptValueError::BundleMetadataMismatch);
+            }
+            _ => {}
+        }
         if let Some(admission) = &self.admission {
             if self.native_object == self.sampled_object
                 && admission.native_span != admission.sampled_span
             {
                 return Err(AttemptValueError::BundleMetadataMismatch);
             }
-            for input in [
-                &admission.inputs.manifest,
-                &admission.inputs.left,
-                &admission.inputs.right,
-            ] {
+            for input in admission.inputs.objects() {
                 if [
                     &self.native_object,
                     &self.sampled_object,
@@ -509,8 +503,29 @@ impl BundleValidationReceipt {
     pub fn sampled_video(&self) -> &VideoSpec {
         &self.sampled_video
     }
-    pub fn plan(&self) -> &BridgeGenerationPlan {
+    pub fn plan(&self) -> &GenerationPlan {
         &self.plan
+    }
+    pub fn bridge_plan(&self) -> Option<&BridgeGenerationPlan> {
+        match &self.plan {
+            GenerationPlan::Bridge(plan) => Some(plan),
+            _ => None,
+        }
+    }
+    pub fn extension_plan(&self) -> Option<&ExtensionGenerationPlan> {
+        match &self.plan {
+            GenerationPlan::Extension(plan) => Some(plan),
+            _ => None,
+        }
+    }
+    pub fn sampling_map(&self) -> Result<GeneratedSamplingMap, AttemptValueError> {
+        match &self.plan {
+            GenerationPlan::Bridge(plan) => plan
+                .sampling_map()
+                .map(Into::into)
+                .map_err(|_| AttemptValueError::BundleMetadataMismatch),
+            GenerationPlan::Extension(plan) => Ok(plan.sampling_map().clone().into()),
+        }
     }
     pub fn provider(&self) -> &ProviderSelection {
         &self.provider
@@ -532,6 +547,13 @@ impl BundleValidationReceipt {
     }
     pub const fn availability(&self) -> CandidateAvailability {
         self.availability
+    }
+}
+
+fn native_frame_count(plan: &GenerationPlan) -> u32 {
+    match plan {
+        GenerationPlan::Bridge(plan) => plan.native_frame_count(),
+        GenerationPlan::Extension(plan) => plan.native_frame_count(),
     }
 }
 
@@ -681,7 +703,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             typeof(attempt_id)!='text' OR length(CAST(attempt_id AS BLOB)) NOT BETWEEN 1 AND ?1 OR
             typeof(bundle)!='text' OR length(CAST(bundle AS BLOB))>?2 OR
             typeof(availability)!='text' OR availability NOT IN ('present','evicted')",
-        params![MAX_PROTOCOL_ID_BYTES as i64, MAX_ATTEMPT_JSON_BYTES as i64],
+        params![MAX_PROTOCOL_ID_BYTES as i64, MAX_BUNDLE_JSON_BYTES as i64],
         |row| row.get(0),
     )?;
     let invalid_heads: i64 = connection.query_row(
@@ -824,30 +846,6 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
 }
 
 impl ProjectStore {
-    pub(crate) fn verify_bundle_objects(
-        &self,
-        receipt: &BundleValidationReceipt,
-        limits: crate::generated_media::GeneratedMediaLimits,
-    ) -> Result<(), StoreError> {
-        for object in [
-            receipt.native_object(),
-            receipt.sampled_object(),
-            receipt.provenance_object(),
-        ] {
-            drop(self.snapshot_generated_object(object, limits)?);
-        }
-        if let Some(evidence) = receipt.admission() {
-            for object in [
-                evidence.inputs().manifest(),
-                evidence.inputs().left(),
-                evidence.inputs().right(),
-            ] {
-                drop(self.snapshot_generated_object(object, limits)?);
-            }
-        }
-        Ok(())
-    }
-
     pub fn begin_generation_attempt(
         &mut self,
         input: BeginGenerationAttempt,
@@ -865,11 +863,6 @@ impl ProjectStore {
         &mut self,
         message: &WorkerMessage,
     ) -> Result<AttemptMutationOutcome, StoreError> {
-        if matches!(message, WorkerMessage::CompletedExtension { .. }) {
-            return Err(attempt_error(
-                "extension worker admission is not implemented",
-            ));
-        }
         if matches!(message, WorkerMessage::Progress { .. }) {
             return Err(StoreError::GenerationProgressNotPersistent);
         }
@@ -920,6 +913,10 @@ impl ProjectStore {
                 WorkerMessage::CompletedBridge { candidate, .. } => {
                     stored.declared_candidate =
                         Some(CandidateDeclaration::NativeBridgeV2(candidate.clone()));
+                }
+                WorkerMessage::CompletedExtension { candidate, .. } => {
+                    stored.declared_candidate =
+                        Some(CandidateDeclaration::NativeExtensionV3(candidate.clone()));
                 }
                 _ => {}
             }
@@ -1079,9 +1076,9 @@ impl ProjectStore {
         Ok(AttemptMutationOutcome::Applied)
     }
 
-    /// Records a host-qualified V2 bridge bundle. The caller supplies independent
-    /// media/provenance qualification. This method verifies all three published
-    /// objects before its transaction, then rechecks request/declaration bindings.
+    /// Records a host-qualified native bundle. The caller supplies independent
+    /// media/provenance qualification. This method verifies every published
+    /// object before its transaction, then rechecks request/declaration bindings.
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     pub fn record_generation_bundle_ready(
         &mut self,
@@ -1101,15 +1098,10 @@ impl ProjectStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut stored = read_attempt(&transaction, identity)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan().is_none() {
-            return Err(attempt_error(
-                "bridge bundle readiness requires a V2 generation request",
-            ));
-        }
-        let expected = CandidateDeclaration::NativeBridgeV2(declaration.clone());
+        let expected = native_declaration(&request, declaration.clone())?;
         if stored.declared_candidate.as_ref() != Some(&expected) {
             return Err(attempt_error(
-                "bridge declaration does not match the validating attempt",
+                "native declaration does not match the validating attempt",
             ));
         }
         if receipt.availability != CandidateAvailability::Present {
@@ -1126,15 +1118,24 @@ impl ProjectStore {
         }
         if stored.checkpoint.state != JobState::Validating {
             return Err(attempt_error(
-                "bridge bundle readiness requires a validating attempt",
+                "bundle readiness requires a validating attempt",
             ));
         }
         let mut lifecycle =
             JobLifecycle::from_checkpoint(stored.checkpoint.clone(), request.relevance)
                 .map_err(lifecycle_error)?;
-        lifecycle
-            .host_bundle_validation_succeeded(identity, declaration)
-            .map_err(lifecycle_error)?;
+        match request.protocol() {
+            ProtocolVersion::V2 => {
+                lifecycle.host_bundle_validation_succeeded(identity, declaration)
+            }
+            ProtocolVersion::V3 => {
+                lifecycle.host_extension_validation_succeeded(identity, declaration)
+            }
+            ProtocolVersion::V1 => {
+                return Err(attempt_error("bundle readiness requires a native request"));
+            }
+        }
+        .map_err(lifecycle_error)?;
         insert_bundle_receipt(&transaction, identity, &receipt)?;
         crate::generation_retention::record_ready(
             &transaction,
@@ -1152,7 +1153,7 @@ impl ProjectStore {
         )?;
         if !is_latest {
             return Err(attempt_error(
-                "only the latest attempt may become the selected bridge bundle",
+                "only the latest attempt may become the selected bundle",
             ));
         }
         if request.relevance == Relevance::Current {
@@ -1186,7 +1187,7 @@ impl ProjectStore {
         let stored = read_attempt(&transaction, identity)?;
         if stored.bundle_receipt.is_some() {
             return Err(attempt_error(
-                "legacy selection cannot be used for a bridge bundle",
+                "legacy selection cannot be used for a native bundle",
             ));
         }
         if stored.checkpoint.state != JobState::Ready
@@ -1210,13 +1211,13 @@ impl ProjectStore {
         Ok(AttemptMutationOutcome::Applied)
     }
 
-    /// Selects a retained, host-validated V2 bundle for comparison. This is
+    /// Selects a retained, host-validated native bundle for comparison. This is
     /// the person's explicit choice: it also marks the variant picked, which
     /// protects it from retention expiry until another variant of the
     /// request is picked or it is discarded.
     ///
     /// This changes operational metadata only. Callers must still verify the
-    /// three generated objects and perform a separate authored acceptance
+    /// complete retained object set and perform a separate authored acceptance
     /// transaction before the bundle can affect the document.
     pub fn select_generation_bundle_variant(
         &mut self,
@@ -1227,20 +1228,20 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan().is_none() {
+        if request.plan.is_none() {
             return Err(attempt_error(
-                "bridge bundle selection requires a V2 generation request",
+                "bundle selection requires a native generation request",
             ));
         }
         if request.relevance != Relevance::Current {
             return Err(attempt_error(
-                "stale or detached requests cannot select a bridge bundle",
+                "stale or detached requests cannot select a native bundle",
             ));
         }
         let stored = read_attempt(&transaction, identity)?;
         if stored.receipt.is_some() {
             return Err(attempt_error(
-                "bridge bundle selection cannot use a legacy candidate",
+                "native bundle selection cannot use a legacy candidate",
             ));
         }
         if stored.checkpoint.state != JobState::Ready
@@ -1250,7 +1251,7 @@ impl ProjectStore {
                 .is_none_or(|receipt| receipt.availability != CandidateAvailability::Present)
         {
             return Err(attempt_error(
-                "selected attempt is not a present Ready bridge bundle",
+                "selected attempt is not a present Ready native bundle",
             ));
         }
         // An explicit choice protects the variant from retention expiry
@@ -1287,7 +1288,7 @@ impl ProjectStore {
         Ok(outcome)
     }
 
-    /// A user's durable discard of one Ready bridge variant, in one
+    /// A user's durable discard of one Ready native variant, in one
     /// transaction: the bundle becomes unavailable (its objects are kept),
     /// and only if it was the request's selection does the newest other
     /// present Ready variant of a current request become selected. Any other
@@ -1301,9 +1302,9 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let request = read_request(&transaction, &identity.request_id)?;
-        if request.bridge_plan().is_none() {
+        if request.plan.is_none() {
             return Err(attempt_error(
-                "bridge variant discard requires a V2 generation request",
+                "variant discard requires a native generation request",
             ));
         }
         let selected_before = selected_attempt(&transaction, &identity.request_id)?;
@@ -1560,7 +1561,7 @@ impl ProjectStore {
     ) -> Result<Option<SelectedGenerationBundle>, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         let request = read_request(&transaction, request_id)?;
-        if request.bridge_plan().is_none() || request.relevance != Relevance::Current {
+        if request.plan.is_none() || request.relevance != Relevance::Current {
             return Ok(None);
         }
         let selected: Option<String> = transaction
@@ -1580,13 +1581,13 @@ impl ProjectStore {
         );
         let attempt = read_attempt(&transaction, &identity)?;
         let Some(receipt) = attempt.bundle_receipt else {
-            return Err(integrity("selected bridge attempt has no bundle receipt"));
+            return Err(integrity("selected native attempt has no bundle receipt"));
         };
         if attempt.checkpoint.state != JobState::Ready
             || receipt.availability != CandidateAvailability::Present
         {
             return Err(integrity(
-                "selected bridge attempt is not an available Ready bundle",
+                "selected native attempt is not an available Ready bundle",
             ));
         }
         transaction.commit()?;
@@ -1617,11 +1618,11 @@ pub(crate) fn evict_bundle(
     now: std::time::SystemTime,
 ) -> Result<AttemptMutationOutcome, StoreError> {
     if read_request(transaction, &identity.request_id)?
-        .bridge_plan()
+        .plan
         .is_none()
     {
         return Err(attempt_error(
-            "bundle eviction requires a V2 bridge request",
+            "bundle eviction requires a native generation request",
         ));
     }
     let stored = read_attempt(transaction, identity)?;
@@ -1635,7 +1636,7 @@ pub(crate) fn evict_bundle(
     }
     receipt.availability = CandidateAvailability::Evicted;
     let bundle = serde_json::to_string(&receipt)?;
-    if bundle.len() > MAX_ATTEMPT_JSON_BYTES {
+    if bundle.len() > MAX_BUNDLE_JSON_BYTES {
         return Err(attempt_error(
             "bundle validation receipt exceeds the persistence limit",
         ));
@@ -1704,17 +1705,11 @@ pub(crate) struct RequestMetadata {
     pub(crate) constraints: HoldConstraints,
     pub(crate) provider: ProviderSelection,
     pub(crate) plan: Option<GenerationPlan>,
+    pub(crate) input_binding: Option<crate::generation_inputs::GenerationInputBinding>,
     pub(crate) relevance: Relevance,
 }
 
 impl RequestMetadata {
-    pub(crate) fn bridge_plan(&self) -> Option<&BridgeGenerationPlan> {
-        match &self.plan {
-            Some(GenerationPlan::Bridge(plan)) => Some(plan),
-            Some(GenerationPlan::Extension(_)) | None => None,
-        }
-    }
-
     fn protocol(&self) -> ProtocolVersion {
         self.plan
             .as_ref()
@@ -1741,6 +1736,7 @@ pub(crate) fn read_request(
         constraints: request.constraints,
         provider: request.provider,
         plan: request.plan,
+        input_binding: request.input_binding,
         relevance: request.relevance,
     })
 }
@@ -1853,14 +1849,10 @@ fn parse_attempt_row(
     let worker_candidate_json: Option<String> = row.get(8)?;
     let declared_candidate = worker_candidate_json
         .map(|json| -> Result<CandidateDeclaration, StoreError> {
-            if request.protocol() == ProtocolVersion::V3 {
-                Err(integrity(
-                    "extension completion persistence is not qualified",
-                ))
-            } else if request.bridge_plan().is_some() {
+            if request.plan.is_some() {
                 let candidate: NativeCandidateManifest = serde_json::from_str(&json)
-                    .map_err(|_| integrity("invalid native bridge candidate manifest"))?;
-                Ok(CandidateDeclaration::NativeBridgeV2(candidate))
+                    .map_err(|_| integrity("invalid native candidate manifest"))?;
+                native_declaration(request, candidate)
             } else {
                 let candidate: CandidateManifest = serde_json::from_str(&json)
                     .map_err(|_| integrity("invalid worker candidate manifest"))?;
@@ -1894,11 +1886,6 @@ fn parse_attempt_row(
     };
     let identity = MessageIdentity::new(request_id.clone(), attempt_id);
     let protocol = request.protocol();
-    if protocol == ProtocolVersion::V3 && matches!(state, JobState::Validating | JobState::Ready) {
-        return Err(integrity(
-            "extension attempt cannot be Validating or Ready before qualification",
-        ));
-    }
     let completion = matches!(state, JobState::Validating | JobState::Ready)
         .then(|| declared_candidate.clone())
         .flatten();
@@ -1989,9 +1976,9 @@ fn serialize_candidate_declaration(
         CandidateDeclaration::NativeBridgeV2(candidate) => {
             bounded_json(candidate, "native bridge candidate")
         }
-        CandidateDeclaration::NativeExtensionV3(_) => Err(attempt_error(
-            "extension candidate persistence is not implemented",
-        )),
+        CandidateDeclaration::NativeExtensionV3(candidate) => {
+            bounded_json(candidate, "native extension candidate")
+        }
     }
 }
 
@@ -2037,7 +2024,7 @@ fn insert_bundle_receipt(
     receipt: &BundleValidationReceipt,
 ) -> Result<(), StoreError> {
     let bundle = serde_json::to_string(receipt)?;
-    if bundle.len() > MAX_ATTEMPT_JSON_BYTES {
+    if bundle.len() > MAX_BUNDLE_JSON_BYTES {
         return Err(attempt_error(
             "bundle validation receipt exceeds the persistence limit",
         ));
@@ -2123,20 +2110,17 @@ fn read_bundle_receipt(
 ) -> Result<Option<BundleValidationReceipt>, StoreError> {
     let row = connection
         .query_row(
-            "SELECT bundle,availability FROM generation_bundle_receipts
+            "SELECT CASE WHEN typeof(bundle)='text' AND length(CAST(bundle AS BLOB)) BETWEEN 1 AND ?3 THEN bundle END,availability FROM generation_bundle_receipts
              WHERE request_id=?1 AND attempt_id=?2",
-            params![identity.request_id.as_str(), identity.attempt_id.as_str()],
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            params![identity.request_id.as_str(), identity.attempt_id.as_str(), MAX_BUNDLE_JSON_BYTES as i64],
+            |row| Ok((row.get::<_, Option<String>>(0)?, row.get::<_, String>(1)?)),
         )
         .optional()?;
     let Some((bundle, availability)) = row else {
         return Ok(None);
     };
-    if bundle.len() > MAX_ATTEMPT_JSON_BYTES {
-        return Err(integrity(
-            "stored bundle validation receipt exceeds its bounds",
-        ));
-    }
+    let bundle =
+        bundle.ok_or_else(|| integrity("stored bundle validation receipt exceeds its bounds"))?;
     let mut receipt: BundleValidationReceipt = serde_json::from_str(&bundle)
         .map_err(|_| integrity("invalid bundle validation receipt"))?;
     let expected = parse_availability(&availability)?;
@@ -2186,12 +2170,25 @@ pub(crate) fn validate_bundle_receipt(
     candidate: Option<&CandidateDeclaration>,
     receipt: &BundleValidationReceipt,
 ) -> Result<(), StoreError> {
-    let Some(CandidateDeclaration::NativeBridgeV2(candidate)) = candidate else {
-        return Err(attempt_error("bundle receipt has no V2 worker declaration"));
+    let candidate = match (&request.plan, candidate) {
+        (
+            Some(GenerationPlan::Bridge(_)),
+            Some(CandidateDeclaration::NativeBridgeV2(candidate)),
+        )
+        | (
+            Some(GenerationPlan::Extension(_)),
+            Some(CandidateDeclaration::NativeExtensionV3(candidate)),
+        ) => candidate,
+        _ => {
+            return Err(attempt_error(
+                "bundle receipt operation differs from its worker declaration",
+            ));
+        }
     };
-    let Some(plan) = request.bridge_plan() else {
-        return Err(attempt_error("bundle receipt requires a V2 bridge request"));
-    };
+    let plan = request
+        .plan
+        .as_ref()
+        .ok_or_else(|| attempt_error("bundle receipt requires a native request"))?;
     if receipt.plan() != plan
         || receipt.provider() != &request.provider.for_attempt(ordinal)
         || candidate.provider != request.provider.for_attempt(ordinal)
@@ -2202,8 +2199,8 @@ pub(crate) fn validate_bundle_receipt(
         || receipt.provenance_byte_length() != candidate.provenance.byte_length()
         || receipt.sampled_video() != &request.constraints.video
         || receipt.native_video().frames()
-            != FrameDuration::new(i64::from(plan.native_frame_count()))
-                .map_err(|_| attempt_error("invalid bridge native frame count"))?
+            != FrameDuration::new(i64::from(native_frame_count(plan)))
+                .map_err(|_| attempt_error("invalid native frame count"))?
         || receipt.native_video().frame_rate() != plan.native_frame_rate()
         || receipt.native_video().width() != plan.native_dimensions().width()
         || receipt.native_video().height() != plan.native_dimensions().height()
@@ -2217,7 +2214,47 @@ pub(crate) fn validate_bundle_receipt(
             "bundle receipt does not exactly match the request, plan, or worker declaration",
         ));
     }
+    if let GenerationPlan::Extension(_) = plan {
+        let Some(crate::generation_inputs::GenerationInputBinding {
+            inputs:
+                crate::generation_inputs::GenerationInputs::Extension {
+                    opposite, samples, ..
+                },
+            ..
+        }) = &request.input_binding
+        else {
+            return Err(attempt_error(
+                "extension receipt lacks retained request inputs",
+            ));
+        };
+        let inputs = receipt
+            .admission()
+            .ok_or_else(|| attempt_error("extension receipt lacks admission evidence"))?
+            .inputs();
+        if inputs.opposite().is_some() != opposite.is_some()
+            || inputs
+                .context()
+                .is_none_or(|context| context.len() != samples.len())
+        {
+            return Err(attempt_error(
+                "extension receipt differs from captured context or opposite seam",
+            ));
+        }
+    }
     Ok(())
+}
+
+fn native_declaration(
+    request: &RequestMetadata,
+    candidate: NativeCandidateManifest,
+) -> Result<CandidateDeclaration, StoreError> {
+    match request.protocol() {
+        ProtocolVersion::V2 => Ok(CandidateDeclaration::NativeBridgeV2(candidate)),
+        ProtocolVersion::V3 => Ok(CandidateDeclaration::NativeExtensionV3(candidate)),
+        ProtocolVersion::V1 => Err(attempt_error(
+            "native bundle requires a native generation request",
+        )),
+    }
 }
 
 fn parse_availability(value: &str) -> Result<CandidateAvailability, StoreError> {
@@ -2244,6 +2281,13 @@ fn duplicate_worker_terminal(attempt: &StoredGenerationAttempt, message: &Worker
             ) && attempt.declared_candidate.as_ref()
                 == Some(&CandidateDeclaration::NativeBridgeV2(candidate.clone()))
         }
+        WorkerMessage::CompletedExtension { candidate, .. } => {
+            matches!(
+                attempt.checkpoint.state,
+                JobState::Validating | JobState::Ready
+            ) && attempt.declared_candidate.as_ref()
+                == Some(&CandidateDeclaration::NativeExtensionV3(candidate.clone()))
+        }
         WorkerMessage::Failed { failure, .. } => {
             attempt.checkpoint.state == JobState::Failed
                 && attempt.checkpoint.failure == Some(JobFailure::Worker(failure.clone()))
@@ -2255,9 +2299,7 @@ fn duplicate_worker_terminal(attempt: &StoredGenerationAttempt, message: &Worker
             ) && attempt.checkpoint.cancellation_acknowledgement
                 == Some(CancellationAcknowledgement::Cancelled)
         }
-        WorkerMessage::Stage { .. }
-        | WorkerMessage::Progress { .. }
-        | WorkerMessage::CompletedExtension { .. } => false,
+        WorkerMessage::Stage { .. } | WorkerMessage::Progress { .. } => false,
     }
 }
 

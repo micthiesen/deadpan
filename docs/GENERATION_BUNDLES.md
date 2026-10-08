@@ -1,6 +1,6 @@
 # Native generation candidate bundles
 
-[`deadpan-models`](../crates/deadpan-models/) qualifies a native bridge candidate
+[`deadpan-models`](../crates/deadpan-models/) qualifies a native Bridge or Extension candidate
 against its original host request. The worker declares native footage and
 provenance. The host derives both canonical masters from the same immutable
 native snapshot, using the persisted exact generation plan. Neither completion,
@@ -32,10 +32,20 @@ saved observation without rerunning the model or Vision. Later consumers must
 still verify every referenced media/input object and decode media against its
 contract.
 
-This completes host candidate qualification only. Store completion/Ready,
-accepted sampling and media representations, project publication and native
-controls remain separate unfinished work. Approved provider packs still do not
-advertise extension support. See the [qualification record](qualification/extension-bundles-2026-10-08.md).
+Qualified extension bundles can now be published, recorded Ready, selected and
+explicitly accepted through the store. The receipt retains chronological
+conditioning PNGs, the optional opposite PNG and required continuity signatures.
+Every dependency must be present and verified before Ready and acceptance.
+`GeneratedSamplingMap` retains an explicit Bridge or Extension operation, and
+the common cold picture reader checks that operation's complete provenance and
+retained objects before opening its sampled master. Reopening, copying and
+undo/redo need no model or worker directory.
+
+Normal app/headless worker allocation still runs Bridge jobs. Approved provider
+packs do not advertise extension support; the larger measured duration envelope
+and native generation controls remain open. See the
+[qualification record](qualification/extension-bundles-2026-10-08.md) and
+[saved acceptance record](qualification/extension-saved-2026-10-08.md).
 
 ## Wire and storage contracts
 
@@ -46,19 +56,21 @@ geometry/rate/count, and the exact provider selection. A protocol-1 sampled
 candidate cannot satisfy a protocol-2 attempt. Cancellation retains the attempt's
 protocol and requires confirmed process teardown before becoming terminal.
 
-Database schema 9 retains immutable request plans and separate bundle receipts,
-adding optional measured source spans and retained input identities for admission.
-A missing plan means a legacy protocol-1 request. Migration never invents a plan
-or upgrades a legacy receipt into admission evidence. Schemas 1 through
-8 migrate on a consistent copy, validate complete history and operational rows,
-retain a pre-migration backup, then promote through SQLite's backup transaction.
+Database schema 74 retains operation-tagged plans, input receipts and accepted
+sampling maps. Document schema 47 carries the matching sampling vocabulary.
+Older unused development packages are refused without modification under the
+owner's format-change authorization. Historical migration tests remain evidence
+for those earlier formats; current admission does not invent missing plans.
 
 `record_bridge_generation_request` checks the plan against the request's project
 duration, rate, native grid, and conditioning. Its typed completion is retained
 through validation, cancellation, restart recovery, retry, and stale relevance.
 `record_generation_bundle_ready` checks the native, sampled and provenance objects'
 actual length and BLAKE3 digest before opening the SQLite transaction. Receipts with
-admission evidence also require the context manifest and both prepared inputs.
+admission evidence also require the context manifest and every prepared input.
+Extension receipts require admission evidence and the exact context count and
+opposite-seam presence captured by the request. Their protocol-3 completion
+cannot satisfy a Bridge attempt or receipt, and vice versa.
 Legacy three-object receipts remain inspectable but cannot be accepted. It atomically stores
 the receipt, terminal state, and eligible latest selection. Legacy and modern
 selection APIs reject cross-kind use. Selection remains metadata; consumers must

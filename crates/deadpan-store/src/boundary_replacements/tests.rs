@@ -80,7 +80,8 @@ fn artifact(name: &str, ordinal: usize) -> GeneratedArtifact {
             frames(12),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: Some([640, 480]),
     }
 }

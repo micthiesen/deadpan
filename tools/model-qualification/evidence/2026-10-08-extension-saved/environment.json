@@ -1,0 +1,8 @@
+{
+  "captured_at": "2026-10-08T20:14:44.183550+00:00",
+  "hardware": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
+}

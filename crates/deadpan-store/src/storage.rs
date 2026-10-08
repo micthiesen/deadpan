@@ -985,7 +985,7 @@ fn scan_database(
         let class = class_of(table);
         scan_table(&transaction, table, |text| references.media(text, class))?;
     }
-    // Bundle receipts: a live receipt pins all six of its objects.
+    // A live bundle receipt pins every output and conditioning object it names.
     if tables
         .iter()
         .any(|table| table == "generation_bundle_receipts")

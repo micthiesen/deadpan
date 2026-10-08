@@ -23,7 +23,14 @@ pub use extension_qualification::{
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stored_extension;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub use stored_extension::{StoredExtensionProvenance, ValidatedExtensionEvidence};
+pub use stored_extension::{
+    AcceptedExtensionEvidence, StoredExtensionProvenance, ValidatedExtensionEvidence,
+};
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod stored_generated;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use stored_generated::{AcceptedGenerationEvidence, StoredGeneratedProvenance};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod quality;

@@ -25,7 +25,9 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use deadpan_core::{BoundaryQueryLimits, ExactRatio, NodeId, RevisionId, ScopedNodeTarget};
+use deadpan_core::{
+    BoundaryQueryLimits, ExactRatio, ExtensionDirection, NodeId, RevisionId, ScopedNodeTarget,
+};
 use deadpan_render::{Rgba8Frame, Rotation, SampleDepth};
 use deadpan_store::generated_media::GeneratedReadHandle;
 use deadpan_store::generation_attempts::BundleValidationReceipt;
@@ -80,15 +82,33 @@ pub struct JoinMeasure {
     pub class: JoinClass,
 }
 
-/// Both joins of one Ready variant.
+/// An absent neighbor is distinct from a measured join against authored black.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(tag = "status", content = "measure", rename_all = "snake_case")]
+pub enum JoinObservation {
+    Absent,
+    Conditioned(JoinMeasure),
+    Unconditioned(JoinMeasure),
+}
+
+impl JoinObservation {
+    pub fn measure(&self) -> Option<&JoinMeasure> {
+        match self {
+            Self::Absent => None,
+            Self::Conditioned(measure) | Self::Unconditioned(measure) => Some(measure),
+        }
+    }
+}
+
+/// Available joins of one Ready variant, with conditioning roles explicit.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct JoinReport {
     /// The committed picture before the pause against the sampled master's
     /// first frame.
-    pub entry: JoinMeasure,
+    pub entry: JoinObservation,
     /// The sampled master's last frame against the committed picture after
     /// the pause.
-    pub exit: JoinMeasure,
+    pub exit: JoinObservation,
     /// The compared region `[width, height]`: the canvas aspect inside the
     /// native raster, which is also the size of a presented generated frame.
     pub region: [u32; 2],
@@ -98,7 +118,7 @@ pub struct JoinReport {
 pub enum JoinError {
     #[error("Measuring the AI pause joins was cancelled.")]
     Cancelled,
-    #[error("the AI pause has no pictures on both sides in its authored definition")]
+    #[error("the AI pause lacks a required conditioning neighbor in its authored definition")]
     NoBoundaries,
     #[error("join pictures disagree with the variant's receipt: {0}")]
     Shape(&'static str),
@@ -183,16 +203,10 @@ pub fn measure_scoped_request_joins(
         .plan()
         .scoped_hold_boundaries(target, BoundaryQueryLimits::default())
         .map_err(ProjectPictureError::from)?;
-    let left_position = boundaries
-        .left
-        .as_ref()
-        .ok_or(JoinError::NoBoundaries)?
-        .position;
-    let right_position = boundaries
-        .right
-        .as_ref()
-        .ok_or(JoinError::NoBoundaries)?
-        .position;
+    let left_position = boundaries.left.as_ref().map(|boundary| boundary.position);
+    let right_position = boundaries.right.as_ref().map(|boundary| boundary.position);
+    let direction = receipt.extension_plan().map(|plan| plan.direction());
+    require_conditioning(direction, left_position.is_some(), right_position.is_some())?;
     if boundaries.duration.frames() != i64::from(frames) {
         return Err(JoinError::Shape(
             "Hold duration differs from the sampled master",
@@ -209,8 +223,8 @@ pub fn measure_scoped_request_joins(
             PreparedPicture::Background => None,
         })
     };
-    let left = boundary(left_position)?;
-    let right = boundary(right_position)?;
+    let left = left_position.map(&mut boundary).transpose()?;
+    let right = right_position.map(&mut boundary).transpose()?;
     drop(session);
     check(cancelled)?;
 
@@ -239,7 +253,14 @@ pub fn measure_scoped_request_joins(
     generated
         .check_live(cancelled)
         .map_err(ProjectPictureError::from)?;
-    measure_pictures(left.as_ref(), first, last, right.as_ref(), canvas)
+    measure_available_pictures(
+        left.as_ref().map(|picture| picture.as_ref()),
+        first,
+        last,
+        right.as_ref().map(|picture| picture.as_ref()),
+        canvas,
+        direction,
+    )
 }
 
 /// Measure joins from already decoded pictures: the committed boundary
@@ -253,6 +274,36 @@ pub fn measure_pictures(
     right: Option<&Rgba8Frame>,
     canvas: [u32; 2],
 ) -> Result<JoinReport, JoinError> {
+    measure_available_pictures(Some(left), first, last, Some(right), canvas, None)
+}
+
+fn require_conditioning(
+    direction: Option<ExtensionDirection>,
+    left: bool,
+    right: bool,
+) -> Result<(), JoinError> {
+    let present = match direction {
+        None => left && right,
+        Some(ExtensionDirection::FromLeft) => left,
+        Some(ExtensionDirection::FromRight) => right,
+    };
+    if present {
+        Ok(())
+    } else {
+        Err(JoinError::NoBoundaries)
+    }
+}
+
+// Outer None means no neighbor; Some(None) means an authored black picture.
+fn measure_available_pictures(
+    left: Option<Option<&Rgba8Frame>>,
+    first: Rgba8Frame,
+    last: Rgba8Frame,
+    right: Option<Option<&Rgba8Frame>>,
+    canvas: [u32; 2],
+    direction: Option<ExtensionDirection>,
+) -> Result<JoinReport, JoinError> {
+    require_conditioning(direction, left.is_some(), right.is_some())?;
     let native = [first.metadata().width, first.metadata().height];
     if [last.metadata().width, last.metadata().height] != native {
         return Err(JoinError::Shape("sampled frames differ in size"));
@@ -270,11 +321,29 @@ pub fn measure_pictures(
     };
     let first = presented(first)?;
     let last = presented(last)?;
-    let left = boundary_in_region(left, native, region)?;
-    let right = boundary_in_region(right, native, region)?;
+    let measure = |boundary, generated: &RgbPicture, conditioned| {
+        let Some(picture) = boundary else {
+            return Ok(JoinObservation::Absent);
+        };
+        let comparison = boundary_in_region(picture, native, region)?;
+        let result = compare(&comparison, generated, region)?;
+        Ok::<_, JoinError>(if conditioned {
+            JoinObservation::Conditioned(result)
+        } else {
+            JoinObservation::Unconditioned(result)
+        })
+    };
     Ok(JoinReport {
-        entry: compare(&left, &first, region)?,
-        exit: compare(&last, &right, region)?,
+        entry: measure(
+            left,
+            &first,
+            direction != Some(ExtensionDirection::FromRight),
+        )?,
+        exit: measure(
+            right,
+            &last,
+            direction != Some(ExtensionDirection::FromLeft),
+        )?,
         region,
     })
 }
@@ -522,6 +591,63 @@ mod tests {
     }
 
     #[test]
+    fn extension_joins_distinguish_absent_opposite_from_authored_black() {
+        for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
+            let generated = || frame(&solid(8, 4, [10, 10, 10]));
+            for opposite in [None, Some(None)] {
+                let (left, right) = match direction {
+                    ExtensionDirection::FromLeft => (Some(None), opposite),
+                    ExtensionDirection::FromRight => (opposite, Some(None)),
+                };
+                let report = measure_available_pictures(
+                    left,
+                    generated(),
+                    generated(),
+                    right,
+                    [8, 4],
+                    Some(direction),
+                )
+                .unwrap();
+                let (conditioned, other) = match direction {
+                    ExtensionDirection::FromLeft => (report.entry, report.exit),
+                    ExtensionDirection::FromRight => (report.exit, report.entry),
+                };
+                assert!(matches!(conditioned, JoinObservation::Conditioned(_)));
+                assert_eq!(conditioned.measure().unwrap().mean_abs_diff, 10.0);
+                if opposite.is_some() {
+                    assert!(matches!(other, JoinObservation::Unconditioned(_)));
+                    assert_eq!(other.measure().unwrap().mean_abs_diff, 10.0);
+                } else {
+                    assert_eq!(other, JoinObservation::Absent);
+                    assert_eq!(
+                        serde_json::to_value(other).unwrap(),
+                        serde_json::json!({"status":"absent"})
+                    );
+                }
+            }
+            let (left, right) = match direction {
+                ExtensionDirection::FromLeft => (None, Some(None)),
+                ExtensionDirection::FromRight => (Some(None), None),
+            };
+            assert!(matches!(
+                measure_available_pictures(
+                    left,
+                    generated(),
+                    generated(),
+                    right,
+                    [8, 4],
+                    Some(direction)
+                ),
+                Err(JoinError::NoBoundaries)
+            ));
+            assert!(matches!(
+                measure_available_pictures(left, generated(), generated(), right, [8, 4], None),
+                Err(JoinError::NoBoundaries)
+            ));
+        }
+    }
+
+    #[test]
     fn bt709_boundaries_and_srgb_masters_compare_in_the_same_transfer() {
         let source = frame(&solid(4, 4, [20, 64, 128]));
         let mut metadata = *source.metadata();
@@ -530,14 +656,14 @@ mod tests {
         let master = || frame(&solid(4, 4, [36, 79, 140]));
         let report =
             measure_pictures(Some(&source), master(), master(), Some(&source), [4, 4]).unwrap();
-        assert_eq!(report.entry.mean_abs_diff, 0.0);
-        assert_eq!(report.exit.mean_abs_diff, 0.0);
+        assert_eq!(report.entry.measure().unwrap().mean_abs_diff, 0.0);
+        assert_eq!(report.exit.measure().unwrap().mean_abs_diff, 0.0);
         // Passing through the old codes is an observable colour error.
         let wrong = || frame(&solid(4, 4, [20, 64, 128]));
         let report =
             measure_pictures(Some(&source), wrong(), wrong(), Some(&source), [4, 4]).unwrap();
-        assert_eq!(report.entry.class, JoinClass::Noticeable);
-        assert_eq!(report.entry.max_abs_diff, 16);
+        assert_eq!(report.entry.measure().unwrap().class, JoinClass::Noticeable);
+        assert_eq!(report.entry.measure().unwrap().max_abs_diff, 16);
         let mut metadata = *source.metadata();
         metadata.color.primaries = deadpan_render::Primaries::Rec2020;
         assert!(rgb(&Rgba8Frame::new(metadata, source.bytes().to_vec()).unwrap()).is_err());
@@ -590,8 +716,16 @@ mod tests {
         )
         .unwrap();
         assert_eq!(smooth.region, region);
-        assert_eq!(smooth.entry.class, JoinClass::Smooth, "{smooth:?}");
-        assert_eq!(smooth.exit.class, JoinClass::Smooth, "{smooth:?}");
+        assert_eq!(
+            smooth.entry.measure().unwrap().class,
+            JoinClass::Smooth,
+            "{smooth:?}"
+        );
+        assert_eq!(
+            smooth.exit.measure().unwrap().class,
+            JoinClass::Smooth,
+            "{smooth:?}"
+        );
         let jump = measure_pictures(
             Some(&left),
             letterboxed([55, 155, 205], [0, 0, 0]),
@@ -600,8 +734,16 @@ mod tests {
             canvas,
         )
         .unwrap();
-        assert_eq!(jump.entry.class, JoinClass::Jump, "{jump:?}");
-        assert_eq!(jump.exit.class, JoinClass::Jump, "{jump:?}");
+        assert_eq!(
+            jump.entry.measure().unwrap().class,
+            JoinClass::Jump,
+            "{jump:?}"
+        );
+        assert_eq!(
+            jump.exit.measure().unwrap().class,
+            JoinClass::Jump,
+            "{jump:?}"
+        );
         // Authored black meets black.
         let black = measure_pictures(
             None,
@@ -611,8 +753,8 @@ mod tests {
             canvas,
         )
         .unwrap();
-        assert_eq!(black.entry.mean_abs_diff, 0.0);
-        assert_eq!(black.exit.mean_abs_diff, 0.0);
+        assert_eq!(black.entry.measure().unwrap().mean_abs_diff, 0.0);
+        assert_eq!(black.exit.measure().unwrap().mean_abs_diff, 0.0);
     }
 
     #[test]

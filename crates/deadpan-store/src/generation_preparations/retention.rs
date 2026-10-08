@@ -250,7 +250,8 @@ mod tests {
                         FrameDuration::new(12).unwrap(),
                         BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
                     )
-                    .unwrap(),
+                    .unwrap()
+                    .into(),
                     content_aspect: None,
                 }),
                 controls: PreparationControls::AcceptedArtifact,

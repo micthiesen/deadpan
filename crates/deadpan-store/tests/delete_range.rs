@@ -180,7 +180,7 @@ fn range_delete_previews_once_and_replays_mixed_history_after_reopen() -> Result
     assert_eq!(reader.snapshot()?, redone);
     reader.validate()?;
     let database = Connection::open(path.join("project.sqlite"))?;
-    assert_eq!(DATABASE_SCHEMA_VERSION, 73);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 74);
     assert_eq!(
         database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
         DATABASE_SCHEMA_VERSION

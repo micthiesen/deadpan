@@ -4,7 +4,9 @@
 //! pause's own sound, then accept or durably discard it. Ready never edits;
 //! Accept is one undoable edit.
 
+mod quality;
 mod timing;
+use quality::{VariantFacts, conditioning_colour, quality_status};
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -74,7 +76,7 @@ struct JoinsState {
     cancelled: Arc<std::sync::atomic::AtomicBool>,
 }
 
-use deadpan_cli::generation::joins::{JoinClass, JoinReport};
+use deadpan_cli::generation::joins::{JoinClass, JoinObservation, JoinReport};
 
 /// Compact quality text fits in the chosen variant card; detail remains
 /// available to accessibility and the row tooltip.
@@ -109,225 +111,6 @@ struct Reading {
     colour: Option<String>,
     /// Explicit status for the host's bounded motion/lighting screen.
     quality: QualityReading,
-}
-
-/// Read a variant's retained conditioning manifest and describe how its
-/// colour reached the model (BT.709 read as sRGB is an approximation).
-fn conditioning_colour(
-    handle: &deadpan_store::generated_media::GeneratedReadHandle,
-    receipt: &deadpan_store::generation_attempts::BundleValidationReceipt,
-    cancelled: &std::sync::atomic::AtomicBool,
-) -> Option<String> {
-    use std::io::Read;
-    const MAX_MANIFEST_BYTES: u64 = 1 << 20;
-    let reference = receipt.admission()?.inputs().manifest();
-    if reference.byte_length() > MAX_MANIFEST_BYTES {
-        return None;
-    }
-    let limits = deadpan_store::generated_media::GeneratedReadLimits::new(
-        MAX_MANIFEST_BYTES,
-        Duration::from_secs(15),
-    )
-    .ok()?;
-    let mut snapshot = handle.snapshot(reference, limits, cancelled).ok()?;
-    let mut bytes = Vec::new();
-    snapshot
-        .by_ref()
-        .take(MAX_MANIFEST_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .ok()?;
-    deadpan_cli::generation::conditioning::ConditioningColour::from_manifest(&bytes)
-        .map(|colour| colour.describe())
-}
-
-/// Read only the bounded host provenance needed to summarize its quality
-/// screen. This is metadata for the inspector, not media admission.
-fn quality_status(
-    handle: &deadpan_store::generated_media::GeneratedReadHandle,
-    receipt: &deadpan_store::generation_attempts::BundleValidationReceipt,
-    cancelled: &std::sync::atomic::AtomicBool,
-) -> QualityReading {
-    use std::io::Read;
-    const MAX_PROVENANCE_BYTES: u64 = 32 * 1024 * 1024;
-    const READ_TIMEOUT: Duration = Duration::from_secs(15);
-
-    let reference = receipt.provenance_object();
-    if reference.byte_length() > MAX_PROVENANCE_BYTES {
-        return QualityReading::unavailable(
-            "Motion/lighting report unavailable: retained provenance exceeds the 32 MiB read limit.",
-        );
-    }
-    let limits = match deadpan_store::generated_media::GeneratedReadLimits::new(
-        MAX_PROVENANCE_BYTES,
-        READ_TIMEOUT,
-    ) {
-        Ok(limits) => limits,
-        Err(_) => {
-            return QualityReading::unavailable(
-                "Motion/lighting report unavailable: could not set read limits.",
-            );
-        }
-    };
-    let mut snapshot = match handle.snapshot(reference, limits, cancelled) {
-        Ok(snapshot) => snapshot,
-        Err(_) => {
-            return QualityReading::unavailable(
-                "Motion/lighting report unavailable: retained provenance could not be read.",
-            );
-        }
-    };
-    let Ok(capacity) = usize::try_from(reference.byte_length()) else {
-        return QualityReading::unavailable(
-            "Motion/lighting report unavailable: retained provenance size is unsupported.",
-        );
-    };
-    let mut bytes = Vec::new();
-    if bytes.try_reserve_exact(capacity).is_err() {
-        return QualityReading::unavailable(
-            "Motion/lighting report unavailable: could not allocate the bounded read buffer.",
-        );
-    }
-    if snapshot
-        .by_ref()
-        .take(MAX_PROVENANCE_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .is_err()
-    {
-        return QualityReading::unavailable(
-            "Motion/lighting report unavailable: reading retained provenance failed.",
-        );
-    }
-    if u64::try_from(bytes.len()).ok() != Some(reference.byte_length()) {
-        return QualityReading::unavailable(
-            "Motion/lighting report unavailable: retained provenance length changed.",
-        );
-    }
-    let provenance = match deadpan_models::StoredBridgeProvenance::from_bytes(&bytes, reference) {
-        Ok(provenance) => provenance,
-        Err(_) => {
-            return QualityReading::unavailable(
-                "Motion/lighting report unavailable: retained provenance is invalid.",
-            );
-        }
-    };
-    let Some(report) = provenance.quality() else {
-        return QualityReading::unavailable(
-            "Older candidate: motion/lighting, endpoint, face, mouth and selected-region checks unavailable.",
-        );
-    };
-    let unavailable = report.unavailable_motion_pairs();
-    let total = report.transitions().len();
-    let measurable = total.saturating_sub(unavailable);
-    let mut detail: String = if unavailable == 0 {
-        "Motion/lighting sampled; audition before accepting. Motion uses bounded block matching and may cover only part of each frame.".into()
-    } else {
-        format!(
-            "Motion/lighting sampled; audition before accepting. Motion unavailable in {unavailable} of {total} frame pairs. Motion uses bounded block matching and may cover only part of each frame."
-        )
-    };
-    detail.push_str(if provenance.endpoints().is_some() {
-        " Both edit joins checked for gross discontinuity."
-    } else {
-        " Endpoint checks unavailable for this older candidate."
-    });
-    if let Some(geometry) = provenance.geometry() {
-        let assessment = geometry.assessment();
-        let faces = &assessment.geometry;
-        let mouth = &assessment.mouth;
-        if faces.measured_tracks == 0 {
-            detail.push_str(
-                " Face geometry unavailable: no reliable track connects both input pictures.",
-            );
-        } else {
-            detail.push_str(&format!(" Face geometry: {} measured tracks, {} unavailable; eye/nose landmarks unavailable on {} tracks.", faces.measured_tracks, faces.unavailable_tracks, faces.feature_unavailable_tracks));
-        }
-        if mouth.measured_tracks == 0 {
-            detail.push_str(" Mouth motion unavailable: no reliable eye and lip track.");
-        } else {
-            detail.push_str(&format!(
-                " Mouth motion: {} measured continuous segments, {} unavailable.",
-                mouth.measured_tracks, mouth.unavailable_tracks
-            ));
-        }
-    } else {
-        detail.push_str(" Face and mouth checks unavailable for this older candidate.");
-    }
-    if let Some(region) = provenance.region() {
-        match region.assessment() {
-            Some(assessment) => {
-                detail.push_str(&format!(
-                    " Selected-region coverage: {} measured of {} native frames; {} unavailable.",
-                    assessment.measured_frames,
-                    assessment.native_frames,
-                    assessment.unavailable_frames
-                ));
-                if assessment.measured_frames == 0 {
-                    detail.push_str(
-                        " Selected-region drift unavailable: no reliable continuous track.",
-                    );
-                }
-                detail.push_str(&format!(
-                    " Region endpoints: entry {}, exit {}.",
-                    if assessment.left_boundary.measured {
-                        "measured"
-                    } else {
-                        "unavailable"
-                    },
-                    if assessment.right_boundary.measured {
-                        "measured"
-                    } else {
-                        "unavailable"
-                    }
-                ));
-                if let (Some(center), Some(size)) = (
-                    assessment.maximum_center_residual,
-                    assessment.maximum_log_size_residual,
-                ) {
-                    detail.push_str(&format!(" Maximum center deviation {:.1}% of the picture diagonal; maximum size/aspect ratio {:.2}×.", center * 100.0, size.exp()));
-                }
-                if !assessment.unavailable_reasons.is_empty() {
-                    let reasons = assessment
-                        .unavailable_reasons
-                        .iter()
-                        .map(|reason| {
-                            use deadpan_analysis::generated_region::RegionUnavailableReason;
-                            match reason {
-                                RegionUnavailableReason::Missing => "missing observation",
-                                RegionUnavailableReason::InvalidGeometry => {
-                                    "invalid measured rectangle"
-                                }
-                                RegionUnavailableReason::LowConfidence => "low tracking confidence",
-                                RegionUnavailableReason::LostTrack => "tracking lost",
-                                RegionUnavailableReason::Unsupported => {
-                                    "unsupported tracking input"
-                                }
-                                RegionUnavailableReason::OutsidePresentation => {
-                                    "subject outside the picture"
-                                }
-                                RegionUnavailableReason::BoundarySeedMismatch => {
-                                    "endpoint differs from the saved target"
-                                }
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    detail.push_str(&format!(" Region coverage limits: {reasons}."));
-                }
-            }
-            None => detail.push_str(&format!(
-                " Selected-region check unavailable: {}.",
-                region
-                    .unavailable_reason()
-                    .unwrap_or("no reliable authored region")
-            )),
-        }
-    } else {
-        detail.push_str(" Selected-region check unavailable for this older candidate.");
-    }
-    QualityReading {
-        compact: format!("Motion coverage {measurable}/{total}"),
-        detail,
-    }
 }
 
 /// Ends a measurement whatever happens to its thread, including a panic, so
@@ -421,6 +204,15 @@ impl Joins {
         let package = workspace.path.clone();
         let origin = candidate.origin.clone();
         let target = candidate.origin_target.clone();
+        let facts = VariantFacts {
+            project: workspace.document.project_id().clone(),
+            identity: deadpan_jobs::MessageIdentity::new(
+                candidate.request.clone(),
+                variant.attempt.clone(),
+            ),
+            origin: origin.clone(),
+            hold: target.node.clone(),
+        };
         let receipt = Arc::clone(&variant.receipt);
         let spawned = std::thread::Builder::new()
             .name("deadpan-ai-joins".into())
@@ -430,7 +222,7 @@ impl Joins {
                 )
                 .map_err(|error| error.to_string());
                 let colour = conditioning_colour(&handle, &receipt, &cancelled);
-                let quality = quality_status(&handle, &receipt, &cancelled);
+                let quality = quality_status(&handle, &receipt, &facts, &cancelled);
                 guard.finish(Reading {
                     joins,
                     colour,
@@ -470,10 +262,36 @@ fn joins_label(reading: Option<&Reading>) -> String {
         None => "joins …".into(),
         Some(Ok(report)) => format!(
             "joins {} / {}",
-            join_word(report.entry.class),
-            join_word(report.exit.class)
+            join_summary(&report.entry),
+            join_summary(&report.exit)
         ),
         Some(Err(_)) => "joins unknown".into(),
+    }
+}
+
+fn join_summary(join: &JoinObservation) -> String {
+    match join {
+        JoinObservation::Absent => "no neighbor".into(),
+        JoinObservation::Conditioned(measure) => join_word(measure.class).into(),
+        JoinObservation::Unconditioned(measure) => {
+            format!("{} (unconditioned)", join_word(measure.class))
+        }
+    }
+}
+
+fn join_detail(name: &str, join: &JoinObservation) -> String {
+    match join {
+        JoinObservation::Absent => format!("{name}: no neighbor"),
+        JoinObservation::Conditioned(measure) => format!(
+            "{name}: {:.1} ({}, conditioned)",
+            measure.mean_abs_diff,
+            join_word(measure.class)
+        ),
+        JoinObservation::Unconditioned(measure) => format!(
+            "{name}: {:.1} ({}, unconditioned opposite)",
+            measure.mean_abs_diff,
+            join_word(measure.class)
+        ),
     }
 }
 
@@ -2341,11 +2159,9 @@ impl DeadpanApp {
                 index + 1,
                 match reading.as_ref().map(|reading| &reading.joins) {
                     Some(Ok(report)) => format!(
-                        " Picture change at its joins with the original (advisory, mean difference out of 255): entry {:.1} ({}), exit {:.1} ({}). A reading only; listen and look before accepting.",
-                        report.entry.mean_abs_diff,
-                        join_word(report.entry.class),
-                        report.exit.mean_abs_diff,
-                        join_word(report.exit.class)
+                        " Picture change at its available joins (advisory, mean difference out of 255): {}, {}. A reading only; listen and look before accepting.",
+                        join_detail("entry", &report.entry),
+                        join_detail("exit", &report.exit)
                     ),
                     Some(Err(error)) => format!(" Its joins could not be measured: {error}"),
                     None => String::new(),
@@ -2363,7 +2179,7 @@ impl DeadpanApp {
                         timing::show(
                             ui,
                             &format!("Variant {}", index + 1),
-                            timing::Report::planned(variant.receipt.plan()),
+                            timing::Report::candidate(variant.receipt.plan()),
                         )
                     },
                 )
@@ -2919,6 +2735,35 @@ fn preview_label(provider: FinalProvider, before: bool, number: Option<(usize, u
 #[cfg(test)]
 mod final_provider_feedback_tests {
     use super::*;
+
+    #[test]
+    fn advisory_join_text_distinguishes_conditioned_unconditioned_and_absent_sides() {
+        let measure = deadpan_cli::generation::joins::JoinMeasure {
+            mean_abs_diff: 2.0,
+            max_abs_diff: 4,
+            class: JoinClass::Smooth,
+        };
+        assert_eq!(join_summary(&JoinObservation::Absent), "no neighbor");
+        assert_eq!(
+            join_summary(&JoinObservation::Conditioned(measure)),
+            "smooth"
+        );
+        assert_eq!(
+            join_summary(&JoinObservation::Unconditioned(measure)),
+            "smooth (unconditioned)"
+        );
+        assert_eq!(
+            join_detail("exit", &JoinObservation::Absent),
+            "exit: no neighbor"
+        );
+        assert!(
+            join_detail("entry", &JoinObservation::Conditioned(measure)).contains("conditioned")
+        );
+        assert!(
+            join_detail("exit", &JoinObservation::Unconditioned(measure))
+                .contains("unconditioned opposite")
+        );
+    }
 
     #[test]
     fn final_fallback_is_named_during_preview_and_both_comparison_sides() {

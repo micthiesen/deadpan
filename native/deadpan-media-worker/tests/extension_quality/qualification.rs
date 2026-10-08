@@ -21,7 +21,7 @@ use sha2::Digest;
 
 use super::*;
 
-struct Prepared {
+pub(super) struct Prepared {
     directory: tempfile::TempDir,
     request: HostMessage,
     conditioning: RetainedExtensionConditioning,
@@ -52,7 +52,7 @@ impl Prepared {
         Self::new(directory, request, conditioning, native)
     }
 
-    fn new(
+    pub(super) fn new(
         directory: tempfile::TempDir,
         request: HostMessage,
         conditioning: RetainedExtensionConditioning,
@@ -119,7 +119,7 @@ impl Prepared {
         declaration.provenance = artifact("outputs/provenance.json", bytes);
     }
 
-    fn qualify(
+    pub(super) fn qualify(
         self,
         codec: &Path,
         tracker: &Path,
@@ -201,7 +201,7 @@ fn synthetic_worker(
     })
 }
 
-fn limits() -> QualificationLimits {
+pub(super) fn limits() -> QualificationLimits {
     QualificationLimits {
         media: ConversionLimits {
             max_input_bytes: 16 * 1024 * 1024,
@@ -214,11 +214,11 @@ fn limits() -> QualificationLimits {
     }
 }
 
-fn codec() -> &'static Path {
+pub(super) fn codec() -> &'static Path {
     Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker"))
 }
 
-fn tracker() -> PathBuf {
+pub(super) fn tracker() -> PathBuf {
     let path = codec().with_file_name("deadpan-track");
     assert!(
         path.is_file(),

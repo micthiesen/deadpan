@@ -1136,7 +1136,7 @@ impl Service {
             Ok(requests) => Arc::new(
                 requests
                     .into_iter()
-                    .filter(|request| request.bridge_plan().is_some())
+                    .filter(|request| request.plan.is_some())
                     .map(|request| {
                         (
                             request.target,
@@ -1900,9 +1900,9 @@ fn expected_accepted_provider(
         return Err("The AI acceptance refers to a different request.".into());
     }
     let receipt = &acceptance.expected_receipt;
-    let plan = request
-        .bridge_plan()
-        .ok_or("This AI acceptance path requires a retained Bridge sampling plan.")?;
+    if request.plan.as_ref() != Some(receipt.plan()) {
+        return Err("The AI acceptance receipt differs from the retained sampling plan.".into());
+    }
     Ok(AcceptedGeneration {
         artifact: GeneratedArtifact {
             sampled_asset: acceptance.sampled_asset.clone(),
@@ -1910,7 +1910,7 @@ fn expected_accepted_provider(
             native_asset: acceptance.native_asset.clone(),
             native_object: receipt.native_object().clone(),
             provenance: receipt.provenance_object().clone(),
-            sampling: plan.sampling_map().map_err(display)?,
+            sampling: receipt.sampling_map().map_err(display)?,
             content_aspect: Some([
                 before.presentation_basis().width,
                 before.presentation_basis().height,

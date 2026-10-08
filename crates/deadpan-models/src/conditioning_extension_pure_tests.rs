@@ -10,6 +10,10 @@ use serde_json::json;
 use super::*;
 use crate::{ExtensionGenerationBinding, ExtensionGeometryChecks, ExtensionPixelReport};
 
+// Share the metadata-only context and report builders with saved admission tests.
+#[path = "stored_extension_acceptance_tests.rs"]
+mod stored;
+
 fn object(tag: u8, length: u64) -> GeneratedObjectRef {
     GeneratedObjectRef::new(
         GeneratedContentId::new(format!("{tag:02x}").repeat(32)).unwrap(),

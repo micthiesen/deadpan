@@ -330,7 +330,7 @@ impl Fixture {
                 native_asset: AssetId::new("native").unwrap(),
                 native_object: native,
                 provenance: object(&bytes),
-                sampling: binding.plan.sampling_map().unwrap(),
+                sampling: binding.plan.sampling_map().unwrap().into(),
                 content_aspect: None,
             },
             project: binding.project_id,
@@ -1037,7 +1037,8 @@ fn stored_artifact_project_and_sampling_substitutions_fail() {
                     FrameDuration::new(29).unwrap(),
                     artifact.sampling.interpolation(),
                 )
-                .unwrap();
+                .unwrap()
+                .into();
             }
             _ => unreachable!(),
         }
@@ -1048,6 +1049,60 @@ fn stored_artifact_project_and_sampling_substitutions_fail() {
             "{slot}"
         );
     }
+}
+
+#[test]
+fn common_saved_reader_preserves_bridge_inputs_and_rejects_extension_dispatch() {
+    let fixture = Fixture::definition_checked();
+    let (bytes, artifact) = fixture.wire();
+    let stored = crate::StoredGeneratedProvenance::from_bytes(&bytes, &artifact).unwrap();
+    assert_eq!(stored.context_object(), &object(&fixture.context));
+    let evidence = stored
+        .validate_for(&artifact, &fixture.project, &fixture.context)
+        .unwrap();
+    let crate::AcceptedGenerationEvidence::Bridge(bridge) = &evidence else {
+        panic!("bridge envelope dispatched as extension");
+    };
+    assert_eq!(evidence.native_contract(), bridge.native_contract());
+    assert_eq!(evidence.sampled_contract(), bridge.sampled_contract());
+    assert_eq!(evidence.generation_options(), bridge.generation_options());
+    let inputs: Vec<_> = evidence.conditioning_inputs().collect();
+    let receipt = bridge.conditioning();
+    let expected: Vec<_> = [receipt.manifest(), receipt.left(), receipt.right()]
+        .into_iter()
+        .map(|input| (input.object(), input.declaration().sha256().as_str()))
+        .collect();
+    assert_eq!(inputs, expected);
+
+    let mut extension = artifact.clone();
+    extension.sampling = deadpan_core::ExtensionSamplingMap::new(
+        deadpan_core::ExtensionDirection::FromLeft,
+        artifact.sampling.project_rate(),
+        artifact.sampling.native_rate(),
+        FrameDuration::new(9).unwrap(),
+        FrameDuration::new(16).unwrap(),
+        artifact.sampling.output_frame_count(),
+        artifact.sampling.interpolation(),
+    )
+    .unwrap()
+    .into();
+    assert_eq!(
+        extension.sampling.native_frame_count(),
+        artifact.sampling.native_frame_count()
+    );
+    assert!(crate::StoredGeneratedProvenance::from_bytes(&bytes, &extension).is_err());
+    assert!(
+        StoredBridgeProvenance::from_bytes(&bytes, &artifact.provenance)
+            .unwrap()
+            .validate_for(&extension, &fixture.project, &fixture.context)
+            .is_err()
+    );
+    assert!(
+        crate::StoredGeneratedProvenance::from_bytes(&bytes, &artifact)
+            .unwrap()
+            .validate_for(&extension, &fixture.project, &fixture.context)
+            .is_err()
+    );
 }
 
 #[test]

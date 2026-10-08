@@ -468,7 +468,8 @@ fn generated(aspect: Option<[u32; 2]>, frame: u64) -> Picture {
             FrameDuration::new(6).unwrap(),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: aspect,
     };
     Picture::Accepted {

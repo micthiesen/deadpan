@@ -667,8 +667,8 @@ fn check_accepted(
         )?;
         Ok(joins::decode_png(&bytes, (768, NATIVE_HEIGHT))?)
     };
-    let left_png = read_png(admission.inputs().left())?;
-    let right_png = read_png(admission.inputs().right())?;
+    let left_png = read_png(admission.inputs().left().expect("Bridge left input"))?;
+    let right_png = read_png(admission.inputs().right().expect("Bridge right input"))?;
     assert_eq!(without_band(&rgb(&native.raw[0])), without_band(&left_png));
     assert_eq!(
         without_band(&rgb(native.raw.last().ok_or("native frames")?)),
@@ -720,6 +720,7 @@ fn check_accepted(
         "the report measures these pictures"
     );
     for measure in [report.entry, report.exit] {
+        let measure = measure.measure().expect("Bridge join is measured");
         assert!(measure.mean_abs_diff > 0.0 && measure.mean_abs_diff < 255.0);
         assert_eq!(measure.class, JoinClass::of(measure.mean_abs_diff));
     }
@@ -749,8 +750,16 @@ fn check_accepted(
         "{revision} known smooth: {}",
         serde_json::to_string(&smooth)?
     );
-    assert_eq!(smooth.entry.class, JoinClass::Smooth, "{smooth:?}");
-    assert_eq!(smooth.exit.class, JoinClass::Smooth, "{smooth:?}");
+    assert_eq!(
+        smooth.entry.measure().unwrap().class,
+        JoinClass::Smooth,
+        "{smooth:?}"
+    );
+    assert_eq!(
+        smooth.exit.measure().unwrap().class,
+        JoinClass::Smooth,
+        "{smooth:?}"
+    );
     let jump = joins::measure_pictures(
         Some(&before),
         as_frame(&left_png, true)?,
@@ -758,8 +767,16 @@ fn check_accepted(
         Some(&after),
         canvas,
     )?;
-    assert_eq!(jump.entry.class, JoinClass::Jump, "{jump:?}");
-    assert_eq!(jump.exit.class, JoinClass::Jump, "{jump:?}");
+    assert_eq!(
+        jump.entry.measure().unwrap().class,
+        JoinClass::Jump,
+        "{jump:?}"
+    );
+    assert_eq!(
+        jump.exit.measure().unwrap().class,
+        JoinClass::Jump,
+        "{jump:?}"
+    );
 
     // Hard cuts at exact frames through the committed picture reader.
     let mut frames = vec![F - 1];

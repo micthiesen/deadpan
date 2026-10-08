@@ -60,11 +60,26 @@ impl RequestOrigin {
                 "accepted request Hold differs from its origin target",
             ));
         }
-        let Some(plan @ GenerationPlan::Bridge(_)) = &request.plan else {
+        let Some(plan) = &request.plan else {
             return Err(invalid(
-                "accepted origin requires a retained Bridge plan; extension output admission is unavailable",
+                "accepted origin requires a retained native generation plan",
             ));
         };
+        crate::generation::validate_plan_binding(&request.constraints, plan)?;
+        let binding = request
+            .input_binding
+            .as_ref()
+            .ok_or_else(|| invalid("accepted origin needs retained request inputs"))?;
+        crate::generation::validate_capture_binding(plan, binding)?;
+        if binding.duration != request.constraints.video.frames()
+            || binding.frame_rate != request.constraints.video.frame_rate()
+            || binding.region.as_ref().map(|region| &region.id)
+                != request.constraints.region_target.as_ref()
+        {
+            return Err(invalid(
+                "accepted origin plan, controls and input capture differ",
+            ));
+        }
         Ok(Self {
             request_id: request.request_id.clone(),
             project_id: request.binding.project_id.clone(),
@@ -76,10 +91,7 @@ impl RequestOrigin {
             constraints: request.constraints.clone(),
             provider: request.provider.clone(),
             plan: plan.clone(),
-            input_binding: request
-                .input_binding
-                .clone()
-                .ok_or_else(|| invalid("accepted origin needs retained request inputs"))?,
+            input_binding: binding.clone(),
         })
     }
 }
@@ -403,7 +415,7 @@ fn read_bundle_evidence(
     let row: Option<EvidenceRow> = connection.query_row(
         "SELECT CASE WHEN typeof(a.ordinal)='integer' AND a.ordinal>0 THEN a.ordinal END,
             CASE WHEN typeof(a.worker_candidate)='text' AND length(CAST(a.worker_candidate AS BLOB)) BETWEEN 1 AND ?3 THEN a.worker_candidate END,
-            CASE WHEN typeof(b.bundle)='text' AND length(CAST(b.bundle AS BLOB)) BETWEEN 1 AND ?3 THEN b.bundle END,
+            CASE WHEN typeof(b.bundle)='text' AND length(CAST(b.bundle AS BLOB)) BETWEEN 1 AND ?4 THEN b.bundle END,
             CASE WHEN b.availability='present' AND r.eviction IS NULL THEN 1
                  WHEN b.availability='evicted' AND r.eviction IN ('discarded','expired') THEN 0 END,
             a.state='ready',
@@ -412,7 +424,7 @@ fn read_bundle_evidence(
         JOIN generation_bundle_receipts b USING(request_id,attempt_id)
         JOIN generation_variant_retention r USING(request_id,attempt_id)
         WHERE a.request_id=?1 AND a.attempt_id=?2",
-        params![identity.request_id.as_str(), identity.attempt_id.as_str(), MAX_EVIDENCE_BYTES as i64],
+        params![identity.request_id.as_str(), identity.attempt_id.as_str(), MAX_EVIDENCE_BYTES as i64, crate::generation_attempts::MAX_BUNDLE_JSON_BYTES as i64],
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)),
     ).optional()?;
     let Some((Some(ordinal), Some(candidate), Some(bundle), Some(present), true, Some(accepted))) =
@@ -475,11 +487,6 @@ fn recapture_inputs(
     document: &ProjectDocument,
     origin: &RequestOrigin,
 ) -> Result<GenerationInputBinding, StoreError> {
-    if !matches!(origin.plan, GenerationPlan::Bridge(_)) {
-        return Err(invalid(
-            "extension accepted origins require qualified output admission",
-        ));
-    }
     let plan = RenderPlan::compile(document).map_err(plan_error)?;
     crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
@@ -522,17 +529,21 @@ fn validate_bundle(
 ) -> Result<BundleValidationReceipt, StoreError> {
     let (ordinal, candidate, bundle) = read_bundle_evidence(connection, &value.identity, usage)?;
     let request = crate::generation_attempts::read_request(connection, &value.identity.request_id)?;
+    let declaration = match bundle.plan() {
+        GenerationPlan::Bridge(_) => CandidateDeclaration::NativeBridgeV2(candidate),
+        GenerationPlan::Extension(_) => CandidateDeclaration::NativeExtensionV3(candidate),
+    };
     crate::generation_attempts::validate_bundle_receipt(
         &request,
         ordinal,
-        Some(&CandidateDeclaration::NativeBridgeV2(candidate)),
+        Some(&declaration),
         &bundle,
     )?;
     if &value.artifact.sampled_object != bundle.sampled_object()
         || &value.artifact.native_object != bundle.native_object()
         || &value.artifact.provenance != bundle.provenance_object()
-        || value.artifact.sampling != bundle.plan().sampling_map().map_err(plan_error)?
-        || value.origin.plan != GenerationPlan::Bridge(bundle.plan().clone())
+        || value.artifact.sampling != bundle.sampling_map().map_err(plan_error)?
+        || &value.origin.plan != bundle.plan()
         || bundle.admission().is_none_or(|admission| {
             admission.inputs().context_sha256() != &value.origin.context_sha256
         })

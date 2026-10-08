@@ -1,11 +1,12 @@
 # Authored generated Hold foundation
 
-Core schema 6 retains the schema-5 generated Hold intent and exact retained sampling metadata.
+Core schema 47 retains generated Hold intent and exact operation-tagged sampling metadata.
 It does not establish that a candidate has passed media validation or been auditioned
 in the application. Generic project creation and command ingress
 reject new generated artifacts with `GeneratedAcceptanceUnavailable`. The dedicated
 [store acceptance API](GENERATION_ACCEPTANCE.md) binds a selected Ready receipt,
-verified dependencies and an undoable edit. The native application remains a shell.
+verified dependencies and an undoable edit. The native application uses the same
+accepted picture path for preview and rendering.
 
 ## Authored representation
 
@@ -22,6 +23,13 @@ count N, native sequence count M, and the explicit encoded-sRGB RGB8 linear half
 interpolation policy. For output frame j, the exact native position is
 `(j+1)*(M-1)/(N+1)`. The compact formula is the sampling map; seeking does not allocate
 N entries. Both conditioning boundary frames are excluded from output sample positions.
+
+`GeneratedSamplingMap` explicitly wraps either that Bridge map or an
+`ExtensionSamplingMap`. Extension retains its direction, context count K,
+generated count E and output count N. Only generated-frame centers are sampled
+into the authored interval, with clamping at its edges; context remains in the
+native K+E-frame movie as evidence. A reader never tries another operation when
+the declared one fails validation.
 
 Document validation requires the map's project rate to match the document, a
 positive Hold duration no greater than N, exact N/M asset frame counts, matching
@@ -42,7 +50,10 @@ fallback. Both commands support occurrence isolation and exact inverse patches.
 Neither changes Hold audio or downstream source coordinates.
 
 Shortening a generated Hold retains the original artifact and sampling map. Its
-visible interval is the sampled master's prefix `[0, duration)`. Re-extending up to
+visible interval is the sampled master's prefix `[0, duration)` in either
+extension direction, so shortening FromRight removes the tail nearest its
+conditioning side. The remaining seam may require a new editorial choice;
+shortening never retimes or silently switches to a suffix. Re-extending up to
 N reuses those retained frames. Extending beyond N restores the captured fallback
 in the same duration edit. The store atomically records a replacement preparation
 with the accepted artifact, original generation controls and exact authoring
@@ -66,7 +77,7 @@ authored or retained history reference needs them; see [Storage](STORAGE.md).
 
 ## Storage and migration
 
-Database schema 72 stores core document schema 46, qualified bundle receipts,
+Database schema 74 stores core document schema 47, qualified bundle receipts,
 immutable accepted-origin receipts and durable automatic-intent history. Older
 unused development packages are refused before admission without modification,
 under the owner's breaking-format authorization for this session. Accepted

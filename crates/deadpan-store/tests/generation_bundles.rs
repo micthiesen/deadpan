@@ -41,6 +41,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 mod boundaries;
 #[path = "generation_bundles/edited_slice.rs"]
 mod edited_slice;
+#[path = "generation_bundles/extension.rs"]
+mod extension;
 #[path = "generation_bundles/generated_admission.rs"]
 mod generated_admission;
 #[path = "generation_bundles/move_range.rs"]

@@ -180,7 +180,8 @@ fn preparation(origin: &ProjectDocument, target: ScopedNodeTarget) -> StoredGene
                     FrameDuration::new(4).unwrap(),
                     BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
                 )
-                .unwrap(),
+                .unwrap()
+                .into(),
                 content_aspect: None,
             }),
             controls: PreparationControls::Request {

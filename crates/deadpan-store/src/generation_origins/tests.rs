@@ -279,7 +279,7 @@ impl Fixture {
             native_asset: AssetId::new("native").unwrap(),
             native_object: object('1'),
             provenance: object('3'),
-            sampling: bridge.sampling_map().unwrap(),
+            sampling: bridge.sampling_map().unwrap().into(),
             content_aspect: Some([512, 320]),
         };
         let asset = |object: GeneratedObjectRef, video: &VideoSpec| AssetRecord {
@@ -1233,12 +1233,12 @@ fn origin_requires_a_tagged_bridge_plan_paired_with_bounded_request_inputs() {
         read_request_origin(&fixture.connection, &fixture.request.request_id)
             .unwrap_err()
             .to_string()
-            .contains("retained Bridge")
+            .contains("retained native generation plan")
     );
 }
 
 #[test]
-fn extension_request_never_enters_bridge_accepted_origin_admission() {
+fn extension_request_rejects_bridge_controls_and_input_capture_at_origin_admission() {
     use deadpan_core::ExtensionDirection;
     use deadpan_jobs::{ExtensionCapability, ExtensionGenerationPlan};
     let fixture = Fixture::new(false);
@@ -1268,5 +1268,10 @@ fn extension_request_never_enters_bridge_accepted_origin_admission() {
     let error = RequestOrigin::from_request(&request)
         .unwrap_err()
         .to_string();
-    assert!(error.contains("extension output admission is unavailable"));
+    assert!(error.contains("operation differs from requested conditioning"));
+    request.constraints.conditioning = deadpan_jobs::ConditioningMode::ExtendFromLeft;
+    let error = RequestOrigin::from_request(&request)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("plan and input capture operation disagree"));
 }

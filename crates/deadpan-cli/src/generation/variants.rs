@@ -2,7 +2,7 @@
 //!
 //! [`offered`] is the one definition of "offered" that the native inspector
 //! and the headless commands share: Ready, still present, not the pause's
-//! accepted pictures, of a current bridge request whose Hold still exists.
+//! accepted pictures, of a current generation request whose Hold still exists.
 //! [`apply`] makes the native `:pick-ai`/`:next-ai`, `:discard-ai` and
 //! `:keep-ai` changes through the same store calls. These are durable
 //! operational metadata, not edits: the pause and its history are unchanged
@@ -66,7 +66,7 @@ pub fn offered(
 ) -> Result<BTreeMap<ScopedNodeTarget, OfferedRequest>, StoreError> {
     let mut found = BTreeMap::new();
     for request in store.current_generation_requests()? {
-        if request.bridge_plan().is_none() {
+        if request.plan.is_none() {
             continue;
         }
         if request.target.validate(document).is_err() {

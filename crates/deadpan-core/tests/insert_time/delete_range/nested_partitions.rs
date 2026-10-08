@@ -417,7 +417,8 @@ fn nested_generated_provider_still_requires_a_whole_owned_cut() {
             duration(12),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: None,
     };
     let mut wire = json!(original);

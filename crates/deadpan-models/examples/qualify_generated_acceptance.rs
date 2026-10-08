@@ -328,8 +328,14 @@ mod supported {
             ("sampled.mkv", receipt.sampled_object()),
             ("provenance.json", receipt.provenance_object()),
             ("context.json", input_objects.manifest()),
-            ("left.png", input_objects.left()),
-            ("right.png", input_objects.right()),
+            (
+                "left.png",
+                input_objects.left().ok_or("missing bridge left input")?,
+            ),
+            (
+                "right.png",
+                input_objects.right().ok_or("missing bridge right input")?,
+            ),
         ] {
             let mut snapshot = store.snapshot_generated_object(object, budget)?;
             let mut output = OpenOptions::new()

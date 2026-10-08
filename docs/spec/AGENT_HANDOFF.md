@@ -223,11 +223,27 @@ both canonical movies and all required rejection reports under one deadline.
 The host envelope is revalidated against exact retained manifest bytes before
 returning a private qualified bundle. Stored readers recompute policy without
 the model or Vision, while media consumers still must verify/decode object bytes.
-The next product boundary is the accepted-extension representation, store
-completion/promotion and native controls. Approved extension capability remains
-closed pending the larger measured generation envelope.
+[Saved extension acceptance](../qualification/extension-saved-2026-10-08.md)
+now carries operation-tagged sampling and every retained input through Ready,
+explicit acceptance, immutable origins, undo/redo and cold picture admission.
+Store schema 74 and document schema 47 refuse older unused development formats.
+Extension timing and quality summaries preserve the single-anchor semantics;
+advisory joins distinguish an absent opposite neighbor from authored black.
+Normal worker allocation and native generation controls still need integration.
+Approved extension capability remains closed pending the larger measured
+generation envelope.
 Use a true single anchor for those checks, with FromRight tracking outward in
 reverse and mouth inspection restricted to chronological generated pictures.
+
+The next useful development measurement is K9/E24, N30 at 30 fps, in both
+directions: one second from 33 native pictures at the existing 768×320/24 fps.
+This is a proposed measurement, not a qualified envelope. The MLX adapter's
+hardcoded total latent count must change from three to five for that case.
+After full host qualification, use an independently approved Extension pack
+capability to drive `generation/conditioning/extension.rs`, then carry explicit
+operation dispatch through CLI `generation/attempt.rs`, runtime resolution and
+the app generation service. Existing approved packs and runtime smoke checks
+are Bridge-specific; copying their constraints does not authorize Extension.
 
 The [mux-duration correction](../qualification/mux-duration-2026-10-08.md)
 handles a retained legal HEVC packet order that made pinned FFmpeg declare an

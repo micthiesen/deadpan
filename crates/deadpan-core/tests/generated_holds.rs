@@ -3,6 +3,9 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use serde_json::json;
 
+#[path = "generated_holds/extension.rs"]
+mod extension;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -72,7 +75,8 @@ fn generated_fixture() -> (GeneratedArtifact, BTreeMap<AssetId, AssetRecord>) {
             duration(30),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: None,
     };
     let assets = BTreeMap::from([
@@ -386,7 +390,8 @@ fn acceptance_rejects_missing_unrelated_or_incompatible_assets_and_legacy_provid
         duration(30),
         BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
     )
-    .unwrap();
+    .unwrap()
+    .into();
     assert!(
         apply(
             &document,

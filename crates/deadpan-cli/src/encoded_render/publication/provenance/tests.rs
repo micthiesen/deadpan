@@ -2,9 +2,10 @@ use std::time::Duration;
 
 use deadpan_core::{
     AcceptedGeneration, BeatNode, BridgeInterpolation, BridgeSamplingMap, ColorPolicy, Command,
-    CommandRequest, FrameDuration, FrameRate, GeneratedContentId, GeneratedObjectRef, HoldAudio,
-    HoldFallback, HoldRecipe, HoldVideo, IterationOrder, NodeId, NodeKind, PitchPolicy,
-    PlayOverride, PresentationBasis, RetimePurpose, SourceSpan, SourceTimeBase, SourceTimestamp,
+    CommandRequest, ExtensionDirection, ExtensionSamplingMap, FrameDuration, FrameRate,
+    GeneratedContentId, GeneratedObjectRef, HoldAudio, HoldFallback, HoldRecipe, HoldVideo,
+    IterationOrder, NodeId, NodeKind, PitchPolicy, PlayOverride, PresentationBasis, RetimePurpose,
+    SourceSpan, SourceTimeBase, SourceTimestamp,
 };
 
 use super::*;
@@ -87,7 +88,8 @@ fn artifact(
             duration(30),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
-        .unwrap(),
+        .unwrap()
+        .into(),
         content_aspect: None,
     };
     let record = |reference: &GeneratedObjectRef, frames: i64| AssetRecord {
@@ -287,6 +289,55 @@ fn full_artifact_identity_controls_coalescing_and_blank_seams_remain_separate() 
             .collect::<Vec<_>>(),
         vec![range(0, 3), range(3, 5), range(6, 8)]
     );
+}
+
+#[test]
+fn mixed_generation_operations_keep_distinct_export_provenance() {
+    let (bridge, assets) = artifact("shared", ['1', '2', '3']);
+    let mut extension = bridge.clone();
+    extension.sampling = ExtensionSamplingMap::new(
+        ExtensionDirection::FromRight,
+        bridge.sampling.project_rate(),
+        bridge.sampling.native_rate(),
+        duration(9),
+        duration(16),
+        duration(30),
+        bridge.sampling.interpolation(),
+    )
+    .unwrap()
+    .into();
+    let doc = document(
+        &["bridge", "extension", "copy"],
+        vec![
+            ("bridge", BeatNode::hold("Bridge", generated(&bridge, 3))),
+            (
+                "extension",
+                BeatNode::hold("Extension", generated(&extension, 2)),
+            ),
+            (
+                "copy",
+                BeatNode::hold("Extension copy", generated(&extension, 1)),
+            ),
+        ],
+        assets,
+    );
+    let (artifacts, intervals) = generated_intervals(
+        &RenderPlan::compile(&doc).unwrap(),
+        range(0, 6),
+        10,
+        10,
+        &AtomicBool::new(false),
+        deadline(),
+    )
+    .unwrap();
+    assert_eq!(artifacts, vec![bridge, extension]);
+    assert_eq!(intervals.len(), 2);
+    assert_eq!(intervals[0].project_range, range(0, 3));
+    assert_eq!(intervals[1].project_range, range(3, 6));
+    let wire = serde_json::to_value(&artifacts).unwrap();
+    assert_eq!(wire[0]["sampling"]["operation"], "bridge");
+    assert_eq!(wire[1]["sampling"]["operation"], "extension");
+    assert_eq!(wire[1]["sampling"]["sampling"]["direction"], "from_right");
 }
 
 #[test]

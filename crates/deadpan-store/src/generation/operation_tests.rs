@@ -322,7 +322,7 @@ fn begin(
 }
 
 #[test]
-fn extension_attempts_persist_stages_failure_cancellation_and_restart_without_ready() -> Result {
+fn extension_attempts_persist_completion_cancellation_and_interrupted_validation() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = scratch.path().join("lifecycle.deadpan");
     let mut store = ProjectStore::create(&path, &document()?)?;
@@ -352,15 +352,34 @@ fn extension_attempts_persist_stages_failure_cancellation_and_restart_without_re
         }),
         Err(StoreError::GenerationProgressNotPersistent)
     ));
-    // This is an unqualified declaration used solely to prove refusal. No
-    // candidate files, validation receipt or Ready state are manufactured.
+    // A worker declaration enters Validating; it cannot establish Ready.
     let mut declaration: serde_json::Value = serde_json::from_str(include_str!(
         "../../../deadpan-jobs/tests/fixtures/completed_extension_v3.json"
     ))?;
     declaration["identity"] = serde_json::to_value(&identity)?;
-    let completed: WorkerMessage = serde_json::from_value(declaration)?;
-    assert!(store.record_generation_worker_message(&completed).is_err());
-    assert_eq!(store.generation_attempt(&identity)?.unwrap(), running);
+    let completed: WorkerMessage = serde_json::from_value(declaration.clone())?;
+    assert_eq!(
+        store.record_generation_worker_message(&completed)?,
+        AttemptMutationOutcome::Applied
+    );
+    assert_eq!(
+        store
+            .generation_attempt(&identity)?
+            .unwrap()
+            .checkpoint
+            .state,
+        JobState::Validating
+    );
+    assert_eq!(
+        store.record_generation_worker_message(&completed)?,
+        AttemptMutationOutcome::Duplicate
+    );
+    let reader = ProjectStore::open(&path, crate::AccessMode::ReadOnly)?;
+    assert_eq!(
+        reader.generation_attempt(&identity)?,
+        store.generation_attempt(&identity)?
+    );
+    drop(reader);
     assert!(
         store
             .selected_generation_candidate(&request.request_id)?
@@ -372,11 +391,10 @@ fn extension_attempts_persist_stages_failure_cancellation_and_restart_without_re
             .is_none()
     );
     store.request_generation_attempt_cancel(&identity, &cancellation)?;
-    assert!(store.record_generation_worker_message(&completed).is_err());
-    store.record_generation_worker_message(&WorkerMessage::Cancelled {
-        protocol: ProtocolVersion::V3,
-        identity: identity.clone(),
-    })?;
+    assert_eq!(
+        store.record_generation_worker_message(&completed)?,
+        AttemptMutationOutcome::CompletionDiscardedDuringCancellation
+    );
     store.finish_generation_attempt_cancelled(&identity, &cancellation)?;
     assert_eq!(
         store
@@ -420,6 +438,18 @@ fn extension_attempts_persist_stages_failure_cancellation_and_restart_without_re
             .is_err()
     );
     let (interrupted, _) = begin(&mut store, &request, "third")?;
+    store.record_generation_worker_message(&WorkerMessage::Stage {
+        protocol: ProtocolVersion::V3,
+        identity: interrupted.clone(),
+        stage: WorkerStage::Preflight,
+    })?;
+    store.record_generation_worker_message(&WorkerMessage::Stage {
+        protocol: ProtocolVersion::V3,
+        identity: interrupted.clone(),
+        stage: WorkerStage::Inference,
+    })?;
+    declaration["identity"] = serde_json::to_value(&interrupted)?;
+    store.record_generation_worker_message(&serde_json::from_value(declaration)?)?;
     drop(store);
     let store = ProjectStore::open(&path, crate::AccessMode::ReadWrite)?;
     let recovered = store.generation_attempt(&interrupted)?.unwrap();
@@ -431,5 +461,53 @@ fn extension_attempts_persist_stages_failure_cancellation_and_restart_without_re
     assert!(
         recovered.receipt.is_none() && recovered.bundle_receipt.is_none() && !recovered.selected
     );
+    Ok(())
+}
+
+#[test]
+fn request_reader_rejects_input_variant_even_when_its_embedded_capture_tag_matches() -> Result {
+    for disguised_extension in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let mut store =
+            ProjectStore::create(&scratch.path().join("operation-tags.deadpan"), &document()?)?;
+        let plan = extension(false);
+        let request = store.record_scoped_generation_request(
+            input(&store, "request", &plan),
+            target(),
+            plan,
+        )?;
+        let mut binding = request.input_binding.unwrap();
+        let mut constraints = request.constraints;
+        let plan = if disguised_extension {
+            let GenerationInputs::Extension { capture, .. } = &mut binding.inputs else {
+                unreachable!()
+            };
+            *capture = GenerationCaptureSpec::Bridge;
+            constraints.conditioning = deadpan_jobs::ConditioningMode::Bridge;
+            GenerationPlan::Bridge(bridge())
+        } else {
+            binding.inputs = GenerationInputs::Bridge {
+                left: None,
+                right: None,
+            };
+            extension(false)
+        };
+        store.connection.execute(
+            "UPDATE generation_requests SET plan=?1,constraints=?2,input_binding=?3",
+            params![
+                serde_json::to_string(&plan)?,
+                serde_json::to_string(&constraints)?,
+                serde_json::to_string(&binding)?
+            ],
+        )?;
+        let error = store
+            .generation_request(&request.request_id)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("plan and input capture operation disagree"),
+            "{error}"
+        );
+    }
     Ok(())
 }
