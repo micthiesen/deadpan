@@ -1,0 +1,78 @@
+{
+  "README.md": {
+    "bytes": 2137,
+    "sha256": "9463504db7b456930e6b99e1e6fc659bbe60d43bf2a292641377c72044ecf209"
+  },
+  "environment.json": {
+    "bytes": 446,
+    "sha256": "8ddce23b85d198183993250e1f8d32202b9fa99ba43589bf99a73fc7f42100ae"
+  },
+  "extension-pixels-check.log.gz": {
+    "bytes": 578,
+    "sha256": "4766047a55a553a721c5fe72a3906243dd7651851f61ca09cb938dd999c11be8"
+  },
+  "extension-pixels-corrected.log.gz": {
+    "bytes": 1859,
+    "sha256": "fd715e099c5d10cc0aac888e7b9a1a3b56c5db95896779f1f92dde7cc7c672f7"
+  },
+  "extension-pixels-doctests.log.gz": {
+    "bytes": 483,
+    "sha256": "447edb3a4e416469ac629d4da1412be80e6bf662fd274d09689842bc80b474ec"
+  },
+  "extension-pixels-final-format.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "extension-pixels-final-lint.log.gz": {
+    "bytes": 673,
+    "sha256": "271041905f5cb7f7782aac585a26b276302c3e4b36a5a5e4d66915b0469dca71"
+  },
+  "extension-pixels-final-tests.log.gz": {
+    "bytes": 6676,
+    "sha256": "1627b05e1dc42fef3e1a8f7a91d2e224c4e2deafe6446b1a7556a9a53c41f918"
+  },
+  "extension-pixels-focused.log.gz": {
+    "bytes": 1977,
+    "sha256": "23a8bdcd9ca48dcd0e8c8fae7ca93cb63fd673a847a89a373bb7f2d0e6d30905"
+  },
+  "extension-pixels-gate.log.gz": {
+    "bytes": 166174,
+    "sha256": "38985929a654c7a852b8599a2eca9a6da2d1968c9f02e03823a42d1bd9ea3a44"
+  },
+  "extension-pixels-isolated-diagnostics.log.gz": {
+    "bytes": 1048,
+    "sha256": "b1d6062a1c16ed525de134d3fd987e2dc91079ae2c28eeae2e3093ad2c9dbdd0"
+  },
+  "extension-pixels-raster-check.log.gz": {
+    "bytes": 563,
+    "sha256": "06f1c995a59a8ed68738e8ffc7fe0ccb91a66b62f0e4d629a397690758cfefa3"
+  },
+  "extension-pixels-ui-tests.log.gz": {
+    "bytes": 35214,
+    "sha256": "f86608237f21c2e821efe8aeaab4076aaff3ddf6e511ab2e6174f1ca0bc5f5e2"
+  },
+  "mux-duration-check.log.gz": {
+    "bytes": 253,
+    "sha256": "e6516c3b96618203916864a1fed5352cde995a9c4550617935081209d7a611d6"
+  },
+  "mux-extension-focused.log.gz": {
+    "bytes": 4462,
+    "sha256": "ee19cf1339fdfbf8994f6aa12d30ac146185c5d901ee143e10e20c48db7cb57c"
+  },
+  "mux-extension-gate.log.gz": {
+    "bytes": 200548,
+    "sha256": "b58cbc67cb582329602c3b755797b41f405235c9e28a41013d11e022677e2e08"
+  },
+  "results.json": {
+    "bytes": 9819,
+    "sha256": "bf74bbb32a5557b233e67247ac574253479c79c33d9f9c963bcdb535bfedc2e5"
+  },
+  "source-before-diagnostic.json": {
+    "bytes": 2738,
+    "sha256": "dc10c0c1f07458bd5bbd436fd1601d3b831d439d234eed393df36186feca7fe1"
+  },
+  "source.json": {
+    "bytes": 4828,
+    "sha256": "50fb78230b614c06ab18c8c020804dc1575df588676194e317c09c02746744f3"
+  }
+}

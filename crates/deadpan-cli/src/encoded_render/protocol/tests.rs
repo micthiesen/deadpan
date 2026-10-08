@@ -110,6 +110,7 @@ fn report(contract: &EncodedRenderContract, limits: EncodeLimits) -> EncodeRepor
         output_bytes: 4_096,
         packet_bytes: 2_048,
         video_duration_from_contract_packets: native.video_frames(),
+        video_media_duration_correction: None,
         faststart_read_opens: 1,
         faststart_read_closes: 1,
         video_eof: true,
@@ -731,6 +732,22 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
             "accepted {path}"
         );
     }
+}
+
+#[test]
+fn completion_rejects_media_duration_correction_for_an_incompatible_clock() {
+    let mut manifest = manifest();
+    manifest.report.video_media_duration_correction =
+        Some(deadpan_encode::VideoMediaDurationCorrection {
+            previous_ticks: 2_002,
+            corrected_ticks: 1_001,
+            first_cts: 2_002,
+            minimum_cts: 1_001,
+        });
+    // Arithmetic agrees, but the captured encoder has no B frames.
+    assert!(manifest.validate().is_err());
+    let message = serde_json::to_value(completed(manifest)).unwrap();
+    assert!(EncodedProtocol::read_response(&mut Cursor::new(wire(&message))).is_err());
 }
 
 #[test]

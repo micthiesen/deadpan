@@ -10,6 +10,7 @@ description = "Bounded descriptor-only native H.264 and AAC encoding for Deadpan
 
 [dependencies]
 deadpan-core.workspace = true
+deadpan-source.workspace = true
 thiserror.workspace = true
 serde.workspace = true
 rustix.workspace = true

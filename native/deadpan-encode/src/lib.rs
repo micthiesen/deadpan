@@ -14,10 +14,12 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
+mod mux_duration;
 mod policy;
 pub mod probe;
 mod progress;
 pub mod runtime;
+pub use mux_duration::VideoMediaDurationCorrection;
 pub use policy::*;
 pub use progress::NextInput;
 
@@ -97,9 +99,10 @@ impl EncodeError {
                     EncodeFailureKind::Capacity
                 }
                 "output_io" | "output_seek" => EncodeFailureKind::Io,
-                "encoder_unsupported" | "incomplete_output" | "invalid_packet" => {
-                    EncodeFailureKind::Evidence
-                }
+                "encoder_unsupported"
+                | "incomplete_output"
+                | "invalid_packet"
+                | "mux_duration_evidence" => EncodeFailureKind::Evidence,
                 _ => EncodeFailureKind::Native,
             },
         }
@@ -176,6 +179,10 @@ pub struct EncodeReport {
     /// Encoder packets with absent duration, filled from the exact authored
     /// frame contract. PTS/DTS are retained; nonzero conflicting duration fails.
     pub video_duration_from_contract_packets: u64,
+    /// A proven pinned-mux header correction on the private completed file.
+    /// Packet timestamps, sample tables and edit lists remain untouched.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_media_duration_correction: Option<VideoMediaDurationCorrection>,
     pub faststart_read_opens: u32,
     pub faststart_read_closes: u32,
     pub video_eof: bool,
@@ -357,7 +364,7 @@ impl<'a> EncoderSession<'a> {
         let control = &self.control;
         let contract = &self.contract;
         let limits = self.limits;
-        let (report, video) = self.progress.finish(contract, || {
+        let (mut report, video) = self.progress.finish(contract, || {
             let pq = contract.video_format() == VideoFormat::HevcMain10Rec2100Pq;
             match light {
                 Some(_) if !pq => {
@@ -386,6 +393,8 @@ impl<'a> EncoderSession<'a> {
                 "finished descriptor length differs from native report",
             ));
         }
+        report.video_media_duration_correction =
+            mux_duration::finalize(&mut file, &self.contract, &self.control)?;
         file.seek(SeekFrom::Start(0))?;
         self.control.check()?;
         Ok(EncodedOutput {

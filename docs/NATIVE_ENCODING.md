@@ -39,6 +39,17 @@ conflicting nonzero durations, and records the assignment count. It retains
 encoder PTS/DTS, including negative priming/reordering coordinates. It never
 shifts PCM or drops packets to conceal encoder delay.
 
+After the native writer closes, a bounded descriptor-only finalizer checks the
+video media-duration header. Pinned FFmpeg 8.0.3 can overstate it for certain
+legal B-frame orders. A correction requires complete packet-table proof of the
+authored CFR interval and the exact first-CTS/minimum-CTS overestimate. Only the
+video `mdhd` duration field changes, with synchronization and readback; PTS/DTS,
+sample tables, edits and AAC remain intact. The optional
+`EncodeReport.video_media_duration_correction` records the measured old/new
+ticks and composition offsets. Inconsistent evidence fails. The independent
+finished-file verifier retains every strict clock check. See the
+[retained-file regression](qualification/mux-duration-2026-10-08.md).
+
 `EncodeError::kind()` classifies exact native error codes separately from their
 diagnostics. A missing named video encoder is distinct from missing AAC and
 generic codec-open failures. A video packet with PTS before DTS fails with
@@ -95,8 +106,9 @@ those NAL types, so a verified output proves it is plain HLG.
 `EncoderSession::video_codec()` and `EncodedOutput::video_codec()` return a
 separate `VideoCodecInfo` (encoder, profile, pixel format, libavutil color enums,
 stream tag and metadata attachment flags), admitted against the contract. It
-is separate from `EncoderInfo`/`EncodeReport`, whose fields and serialization are
-unchanged; HDR `EncoderInfo.video_profile` is 2 (HEVC Main10) instead of 100.
+is separate from `EncoderInfo`/`EncodeReport`; HDR `EncoderInfo.video_profile`
+is 2 (HEVC Main10) instead of 100. The optional media-duration correction is
+omitted when no correction was needed, preserving those report bytes.
 The base C structs keep ABI version 1. HDR uses additive entry points
 (`dp_encode_open_hdr`, `dp_encode_finish_hdr`, `dp_encode_query_video`) with
 extension structs versioned by `DP_ENCODE_HDR_ABI_VERSION` 1.

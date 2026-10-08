@@ -1,5 +1,6 @@
 //! Developer verification of a completed, reaped extension worker's media.
-//! Does not admit a Ready candidate, validate visual quality, or edit a project.
+//! Includes pixel rejection checks against previously retained inputs. It does
+//! not qualify face/region/mouth geometry, admit Ready or edit a project.
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -7,14 +8,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::io::{Read, Write};
     use std::path::{Path, PathBuf};
     use std::sync::atomic::AtomicBool;
+    use std::time::{Duration, Instant};
 
-    use deadpan_jobs::artifact::{ArtifactLimits, ArtifactWorkspace};
+    use deadpan_jobs::artifact::{ArtifactLimits, ArtifactWorkspace, SnapshotInterruption};
     use deadpan_jobs::{HostMessage, NativeCandidateManifest};
     use deadpan_media::protocol::{
         ConversionLimits, EXTENSION_PROTOCOL_VERSION, ExtensionConversionRequest,
         ExtensionOperation, VideoContract,
     };
     use deadpan_media::{InputIdentity, canonicalize_extension};
+    use deadpan_models::{
+        ConditioningLimits, ExtensionConditioningReceipt, capture_extension_conditioning,
+        inspect_extension_pixels,
+    };
     use serde::Deserialize;
     use serde_json::json;
 
@@ -27,6 +33,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         candidate: NativeCandidateManifest,
         output_directory: PathBuf,
         limits: ConversionLimits,
+        retained_inputs: RetainedInputs,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct RetainedInputs {
+        directory: PathBuf,
+        /// The host's pre-launch receipt, not a receipt supplied by the worker.
+        receipt: ExtensionConditioningReceipt,
+        input_scope: deadpan_jobs::WorkspaceRef,
+        limits: ConditioningLimits,
     }
 
     fn write_object(path: &Path, source: &mut impl Read, length: u64) -> std::io::Result<()> {
@@ -49,14 +66,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("configuration exceeds 1 MiB".into());
     }
     let config: Configuration = serde_json::from_slice(&bytes)?;
-    if [&config.codec, &config.workspace, &config.output_directory]
-        .iter()
-        .any(|path| !path.is_absolute())
+    if [
+        &config.codec,
+        &config.workspace,
+        &config.output_directory,
+        &config.retained_inputs.directory,
+    ]
+    .iter()
+    .any(|path| !path.is_absolute())
     {
         return Err("host paths must be absolute".into());
     }
     config.request.validate()?;
     config.candidate.validate()?;
+    config.limits.validate()?;
+    let started = Instant::now();
+    let deadline = started + Duration::from_millis(config.limits.timeout_ms);
+    let remaining_ms = || -> Result<u64, Box<dyn std::error::Error>> {
+        let remaining = u64::try_from(
+            deadline
+                .saturating_duration_since(Instant::now())
+                .as_millis(),
+        )?;
+        if remaining == 0 {
+            return Err("extension inspection exceeded its shared deadline".into());
+        }
+        Ok(remaining)
+    };
+    let cancelled = AtomicBool::new(false);
+    let retained_workspace = ArtifactWorkspace::open(&config.retained_inputs.directory)?;
+    let mut conditioning = capture_extension_conditioning(
+        &retained_workspace,
+        &config.request,
+        config.retained_inputs.receipt.manifest().declaration(),
+        &config.retained_inputs.input_scope,
+        ConditioningLimits {
+            timeout_ms: remaining_ms()?.min(config.retained_inputs.limits.timeout_ms),
+            ..config.retained_inputs.limits
+        },
+        &cancelled,
+    )?;
+    if conditioning.receipt() != &config.retained_inputs.receipt {
+        return Err("retained inputs differ from the host's pre-launch receipt".into());
+    }
     let HostMessage::GenerateExtension {
         plan,
         provider,
@@ -78,10 +130,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("candidate differs from captured request".into());
     }
     let workspace = ArtifactWorkspace::open(&config.workspace)?;
-    let mut input = workspace.snapshot(
+    let mut input = workspace.snapshot_with_control(
         output_workspace,
         &config.candidate.native,
         ArtifactLimits::new(config.limits.max_input_bytes)?,
+        || {
+            if Instant::now() >= deadline {
+                Err(SnapshotInterruption::Deadline)
+            } else {
+                Ok(())
+            }
+        },
     )?;
     let mut digest = [0_u8; 32];
     for (index, byte) in digest.iter_mut().enumerate() {
@@ -90,7 +149,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             16,
         )?;
     }
-    let started = std::time::Instant::now();
     let canonical = canonicalize_extension(
         &config.codec,
         &mut input,
@@ -107,15 +165,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             sampling: plan.sampling_map().clone(),
             input_byte_length: config.candidate.native.byte_length(),
-            limits: config.limits,
+            limits: ConversionLimits {
+                timeout_ms: remaining_ms()?,
+                ..config.limits
+            },
         },
-        &AtomicBool::new(false),
+        &cancelled,
+    )?;
+    let pixels = inspect_extension_pixels(
+        &canonical,
+        &mut conditioning,
+        &config.request,
+        deadline,
+        &cancelled,
     )?;
     let report = json!({
-        "scope": "decoded native and generated-only sampled media; no quality/provenance admission, Ready state or acceptance",
+        "scope": "decoded native and generated-only sampled media with motion, lighting and real-join pixel rejection; face/mouth/region checks, provenance admission, Ready and acceptance remain open",
         "native": {"object": canonical.native().object(), "report": canonical.native().report()},
         "sampled": {"object": canonical.sampled().object(), "report": canonical.sampled().report()},
         "sampling": canonical.sampling(),
+        "pixels": pixels,
         "elapsed_seconds": started.elapsed().as_secs_f64(),
     });
     fs::create_dir(&config.output_directory)?;

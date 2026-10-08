@@ -536,6 +536,7 @@ impl Encoder {
                 output_bytes: report.output_bytes,
                 packet_bytes: report.packet_bytes,
                 video_duration_from_contract_packets: report.video_duration_from_contract_packets,
+                video_media_duration_correction: None,
                 faststart_read_opens: report.faststart_read_opens,
                 faststart_read_closes: report.faststart_read_closes,
                 video_eof: true,

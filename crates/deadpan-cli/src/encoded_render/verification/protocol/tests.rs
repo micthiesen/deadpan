@@ -94,6 +94,7 @@ fn manifest() -> EncodedManifest {
         output_bytes: 4_096,
         packet_bytes: 2_048,
         video_duration_from_contract_packets: native.video_frames(),
+        video_media_duration_correction: None,
         faststart_read_opens: 1,
         faststart_read_closes: 1,
         video_eof: true,

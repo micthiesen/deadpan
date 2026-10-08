@@ -1,0 +1,105 @@
+{
+  "contract": {
+    "picture": {
+      "project_id": "hdr-verification-test",
+      "revision_id": "hdr-verification-revision",
+      "range": {
+        "start": 0,
+        "end": 46
+      },
+      "canvas": [
+        640,
+        360
+      ],
+      "raster": [
+        640,
+        360
+      ],
+      "frame_rate": {
+        "numerator": 30,
+        "denominator": 1
+      },
+      "color_policy": "hdr_rec2020_pq",
+      "time_base": {
+        "numerator": 1,
+        "denominator": 30
+      },
+      "frame_count": 46,
+      "terminal_pts": 46,
+      "project_audio_start": 0,
+      "project_audio_end": 73600,
+      "relative_aspect_error": {
+        "numerator": "0",
+        "denominator": "1"
+      },
+      "mastering_display": {
+        "primaries": [
+          [
+            35400,
+            14600
+          ],
+          [
+            8500,
+            39850
+          ],
+          [
+            6550,
+            2300
+          ]
+        ],
+        "white_point": [
+          15635,
+          16450
+        ],
+        "max_luminance": 10000000,
+        "min_luminance": 50
+      }
+    },
+    "choice": {
+      "mode": "hardware",
+      "b_frames": "target_two"
+    }
+  },
+  "document_sha256": "97a70655a2eb92f402b453cfad421cee8cd3106d1a8297a68c46b5f97a019acd",
+  "movie": {
+    "reference": "output/movie.mp4",
+    "sha256": "01656517ca86729b2b444ef6acdfbd6002acfff429c816d30b6c206a82cc0c97",
+    "byte_length": 25879
+  },
+  "report": {
+    "info": {
+      "abi_version": 1,
+      "avcodec_version": 4066151,
+      "avformat_version": 4064103,
+      "avutil_version": 3934311,
+      "movie_timescale": 48000,
+      "video_time_base_num": 1,
+      "video_time_base_den": 30,
+      "audio_time_base_num": 1,
+      "audio_time_base_den": 48000,
+      "audio_frame_size": 1024,
+      "video_profile": 2,
+      "video_has_b_frames": 2,
+      "video_max_b_frames": 2,
+      "video_gop_size": 15,
+      "audio_profile": 1,
+      "audio_initial_padding": 1024,
+      "audio_trailing_padding": 0,
+      "requested_mode": "hardware",
+      "video_bitrate": 1875000,
+      "audio_bitrate": 384000,
+      "maximum_moov_bytes": 257048576
+    },
+    "video_frames": 46,
+    "audio_samples": 73600,
+    "video_packets": 46,
+    "audio_packets": 73,
+    "output_bytes": 25879,
+    "packet_bytes": 22666,
+    "video_duration_from_contract_packets": 46,
+    "faststart_read_opens": 1,
+    "faststart_read_closes": 1,
+    "video_eof": true,
+    "audio_eof": true
+  }
+}

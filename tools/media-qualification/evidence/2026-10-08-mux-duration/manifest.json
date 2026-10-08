@@ -1,0 +1,62 @@
+{
+  "README.md": {
+    "bytes": 1115,
+    "sha256": "38013dfffb422ea4e4c39612dd31715b6eb5f84ca7079da9bd0b303ae3f5c303"
+  },
+  "build-provenance.json": {
+    "bytes": 2348,
+    "sha256": "19737f1af019bd49fef1d999e303f22c8071fee7d1de9ef056110fd9520f5a41"
+  },
+  "bundle-binaries.json": {
+    "bytes": 733,
+    "sha256": "486937a412a6ebd994bbb2dd1ee3e61319ef92e9ee38c63281de243e22985dbe"
+  },
+  "bundle-release.json": {
+    "bytes": 243,
+    "sha256": "cd1d8b3fa622ebeb19e9ba390358a386f885625a1f9ca74d5cfd03305e3f1ef7"
+  },
+  "bundle-results.json": {
+    "bytes": 484,
+    "sha256": "8a9ba5586c446d54b8427ad9c0e1c0e06393b8dc62de886f30d79c2f34d37b8e"
+  },
+  "encoded-manifest.json": {
+    "bytes": 2464,
+    "sha256": "4eed05adef8120d683459bd4a210016b66b388e8f10ac20d979de89430ee34ed"
+  },
+  "environment.json": {
+    "bytes": 446,
+    "sha256": "8ddce23b85d198183993250e1f8d32202b9fa99ba43589bf99a73fc7f42100ae"
+  },
+  "movie.mp4": {
+    "bytes": 25879,
+    "sha256": "01656517ca86729b2b444ef6acdfbd6002acfff429c816d30b6c206a82cc0c97"
+  },
+  "mux-duration-bundle-verify.log.gz": {
+    "bytes": 2822,
+    "sha256": "1f0ed4b30ba33fb272e2fad65d260a8d2035bfe90bd229a66aca91271f86c7c9"
+  },
+  "mux-duration-bundle.log.gz": {
+    "bytes": 3307,
+    "sha256": "b4e3bd97ae8cd67859588b8c32bd7c933c36e941d22b6c485f0585c1c0d30190"
+  },
+  "mux-duration-check.log.gz": {
+    "bytes": 253,
+    "sha256": "e6516c3b96618203916864a1fed5352cde995a9c4550617935081209d7a611d6"
+  },
+  "mux-extension-focused.log.gz": {
+    "bytes": 4462,
+    "sha256": "ee19cf1339fdfbf8994f6aa12d30ac146185c5d901ee143e10e20c48db7cb57c"
+  },
+  "mux-extension-gate.log.gz": {
+    "bytes": 200548,
+    "sha256": "b58cbc67cb582329602c3b755797b41f405235c9e28a41013d11e022677e2e08"
+  },
+  "results.json": {
+    "bytes": 804,
+    "sha256": "ae882856eb6ca80aa55055f327d7d98dee1c89c4548e9169f468a633d548cc71"
+  },
+  "source.json": {
+    "bytes": 4828,
+    "sha256": "50fb78230b614c06ab18c8c020804dc1575df588676194e317c09c02746744f3"
+  }
+}

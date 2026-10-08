@@ -26,7 +26,7 @@ pub struct EndpointThresholds {
 }
 
 impl EndpointThresholds {
-    fn policy() -> Self {
+    pub(crate) fn policy() -> Self {
         Self {
             gross_mean_difference: 64.0,
             gross_cell_difference: 64.0,

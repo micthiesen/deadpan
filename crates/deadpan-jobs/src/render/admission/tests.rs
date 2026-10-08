@@ -35,6 +35,53 @@ fn selected_mut(value: &mut RenderEncodingDecision) -> &mut RenderProbeReport {
 }
 
 #[test]
+fn media_duration_correction_requires_exact_bounded_reordering_evidence() {
+    let correction = RenderVideoMediaDurationCorrection {
+        previous_ticks: 47_047,
+        corrected_ticks: 46_046,
+        first_cts: 2_002,
+        minimum_cts: 1_001,
+    };
+    assert!(correction.valid(46, 1_001, 2));
+    assert!(!correction.valid(46, 1_001, 0));
+    assert!(!correction.valid(46, 0, 2));
+    assert!(!correction.valid(47, 1_001, 2));
+    assert!(!correction.valid(u64::MAX, 1_001, 2));
+    let wire = serde_json::to_value(&correction).unwrap();
+    for (field, value) in [
+        ("previous_ticks", 46_046),
+        ("previous_ticks", u64::MAX),
+        ("corrected_ticks", 46),
+        ("first_cts", 2_003),
+        ("first_cts", 65_065),
+        ("minimum_cts", 2_002),
+        ("minimum_cts", 1_002),
+        ("minimum_cts", u64::MAX),
+    ] {
+        let mut changed = wire.clone();
+        changed[field] = value.into();
+        let decoded: RenderVideoMediaDurationCorrection = serde_json::from_value(changed).unwrap();
+        assert!(!decoded.valid(46, 1_001, 2), "{field}={value}");
+    }
+    let mut with_extra = wire;
+    with_extra["arbitrary"] = true.into();
+    assert!(serde_json::from_value::<RenderVideoMediaDurationCorrection>(with_extra).is_err());
+
+    let mut measured = fixture();
+    // The measured decision selected a path with B frames disabled, so even
+    // arithmetically coherent correction evidence cannot be attached to it.
+    selected_mut(&mut measured)
+        .manifest
+        .report
+        .video_media_duration_correction = Some(correction);
+    assert!(
+        measured
+            .validate_for(&intent(&measured), &measured.encoding_attempt_id)
+            .is_err()
+    );
+}
+
+#[test]
 fn measured_decision_preserves_full_success_rejection_and_output_evidence() {
     let value = fixture();
     value

@@ -700,6 +700,17 @@ impl RetainedExtensionConditioning {
     pub fn opposite(&self) -> Option<&ConditioningObject> {
         self.opposite.as_ref()
     }
+    pub(crate) fn anchor_mut(&mut self) -> &mut ConditioningObject {
+        // Shape validation requires exactly the plan's chronological context.
+        let index = match self.context.plan().sampling_map().direction() {
+            ExtensionDirection::FromLeft => self.context_frames.len() - 1,
+            ExtensionDirection::FromRight => 0,
+        };
+        &mut self.context_frames[index]
+    }
+    pub(crate) fn opposite_mut(&mut self) -> Option<&mut ConditioningObject> {
+        self.opposite.as_mut()
+    }
     pub fn signatures(&self) -> &ConditioningObject {
         &self.signatures
     }

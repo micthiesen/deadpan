@@ -220,6 +220,11 @@ impl EncodedManifest {
 }
 
 fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(), String> {
+    if let Some(correction) = &report.video_media_duration_correction {
+        correction
+            .validate(contract)
+            .map_err(|error| error.to_string())?;
+    }
     let expected_audio_packets = contract
         .audio_samples()
         .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))

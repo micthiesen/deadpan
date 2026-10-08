@@ -199,6 +199,26 @@ Independent review is clear after parsing/target fixes. The full repository gate
 passes (5,274 workspace tests, 1,071 UI-harness tests and two doctests), as do
 111 Python worker tests and the isolated runtime module inventory check.
 
+[Extension pixel checks](../qualification/extension-pixels-2026-10-08.md) now
+use `N/(project_fps*E)` spacing over the generated interval and one-frame spacing
+at the actual sampled joins. `inspect_extension_pixels` takes private canonical
+media and pre-launch retained inputs; reports bind exact objects, inputs and
+policy. FromRight swaps the conditioned join; absent and unconditioned opposite
+seams remain explicit. Real decoder/converter fixtures cover hidden flashes,
+worker-input tampering and the single sampled middle. The development media
+example requires the saved input receipt and reports these checks. Ready remains
+closed pending directional face/mouth/region checks and full provenance admission.
+Use a true single anchor for those checks, with FromRight tracking outward in
+reverse and mouth inspection restricted to chronological generated pictures.
+
+The [mux-duration correction](../qualification/mux-duration-2026-10-08.md)
+handles a retained legal HEVC packet order that made pinned FFmpeg declare an
+extra media tick. The safe encoder finalizer uses the existing source packet
+inspector, proves the exact overestimate and changes only video `mdhd`.
+`video_media_duration_correction` is optional encode/probe evidence, validated
+against the captured clock. No packet timestamps or export tolerances changed;
+the pinned FFmpeg build stays unmodified.
+
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate is about 88%.
 

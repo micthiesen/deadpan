@@ -1,0 +1,26 @@
+[
+  {
+    "name": "mux-duration-bundle",
+    "argv": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-resume-20261006/mux-duration-bundle"
+    ],
+    "exit_code": 0,
+    "seconds": 218.874
+  },
+  {
+    "name": "mux-duration-bundle-verify",
+    "argv": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-resume-20261006/mux-duration-bundle/Deadpan.app",
+      "--keep"
+    ],
+    "exit_code": 0,
+    "seconds": 27.608
+  }
+]

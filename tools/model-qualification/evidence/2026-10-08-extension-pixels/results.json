@@ -1,0 +1,179 @@
+{
+  "extension-pixels-check.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "extension-pixels-corrected.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": [
+      "Summary [   0.618s] 33 tests run: 33 passed, 163 skipped"
+    ]
+  },
+  "extension-pixels-doctests.log": {
+    "cargo_results": [
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s"
+    ],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "extension-pixels-final-format.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "extension-pixels-final-lint.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "extension-pixels-final-tests.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [
+      "LEAK [   0.244s] ( 14/195) deadpan-media-worker::canonicalize_real_media identity_length_and_contract_budgets_fail_before_or_at_the_worker_boundary"
+    ],
+    "nextest_summary": [
+      "Summary [  19.999s] 195 tests run: 195 passed (1 leaky), 1 skipped"
+    ]
+  },
+  "extension-pixels-focused.log": {
+    "cargo_results": [],
+    "errors": [
+      "error: test run failed"
+    ],
+    "leaks": [],
+    "nextest_summary": [
+      "Summary [   0.047s] 27 tests run: 25 passed, 2 failed, 122 skipped"
+    ]
+  },
+  "extension-pixels-gate.log": {
+    "cargo_results": [],
+    "errors": [
+      "error: test run failed",
+      "xtask: cargo nextest run --workspace --features deadpan-cli/synthetic-worker --locked --no-fail-fast exited with exit status: 100"
+    ],
+    "leaks": [
+      "LEAK [   0.265s] (4807/5296) deadpan-store validation::tests::stored_identity_metadata_is_bounded_before_text_extraction"
+    ],
+    "nextest_summary": [
+      "Summary [ 430.757s] 5296 tests run: 5295 passed (14 slow, 1 leaky), 1 failed, 10 skipped"
+    ]
+  },
+  "extension-pixels-isolated-diagnostics.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": [
+      "Summary [   9.684s] 2 tests run: 2 passed, 1296 skipped"
+    ]
+  },
+  "extension-pixels-raster-check.log": {
+    "cargo_results": [],
+    "errors": [
+      "error[E0609]: no field `video_media_duration_correction` on type `&EncodeReport`",
+      "error: could not compile `deadpan-cli` (lib) due to 1 previous error",
+      "error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-models --package deadpan-media-worker --locked` exited with code 101"
+    ],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "extension-pixels-ui-tests.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": [
+      "Summary [ 235.062s] 1071 tests run: 1071 passed (8 slow), 2 skipped"
+    ]
+  },
+  "focused_commands": {
+    "corrected": "cargo nextest run -p deadpan-models -p deadpan-media-worker --locked --no-fail-fast -E 'test(extension_motion) | test(extension_endpoints) | test(endpoints) | test(quality::tests) | binary(extension_quality)'",
+    "final": "cargo nextest run -p deadpan-encode -p deadpan-cli -p deadpan-jobs -p deadpan-models -p deadpan-media-worker --features deadpan-cli/synthetic-worker --locked --no-fail-fast -E 'package(deadpan-encode) | test(extension_) | test(media_duration) | test(retained_reordered) | test(hdr_pq_and_hlg_main10_files_pass_complete_inspection) | test(identity_length_and_contract_budgets_fail_before_or_at_the_worker_boundary)'",
+    "initial": "cargo nextest run -p deadpan-models --locked -E 'test(extension_motion) | test(extension_endpoints) | test(endpoints) | test(quality::tests)'"
+  },
+  "gate": "cargo xtask gate, with the pinned DEADPAN_FFMPEG_PREFIX; terminal results in retained logs",
+  "mux-duration-check.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": []
+  },
+  "mux-extension-focused.log": {
+    "cargo_results": [],
+    "errors": [],
+    "leaks": [],
+    "nextest_summary": [
+      "Summary [  10.667s] 119 tests run: 119 passed, 960 skipped"
+    ]
+  },
+  "mux-extension-gate.log": {
+    "cargo_results": [
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s"
+    ],
+    "errors": [],
+    "leaks": [
+      "LEAK [   0.851s] ( 794/1071) deadpan-app::bin/deadpan-app project::tests::macros::nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labels"
+    ],
+    "nextest_summary": [
+      "Summary [ 431.341s] 5307 tests run: 5307 passed (14 slow), 10 skipped",
+      "Summary [ 232.584s] 1071 tests run: 1071 passed (8 slow, 1 leaky), 2 skipped"
+    ]
+  },
+  "review": {
+    "fixed": [
+      "Developer example validates ConversionLimits before Instant arithmetic.",
+      "Public retained validation binds native and sampled raster contracts, not only sampling.",
+      "Sampled endpoint diagnostics name their actual clock."
+    ],
+    "method": "Reciprocal independent read-only review of disjoint production modules and root integration; new reviewer allocation hit the session thread limit.",
+    "mux_duration_review": "Separate reviewer checked descriptor bounds, complete packet timing proof, pinned mux arithmetic, exact header-only writes, report admission and v0/v1 regressions; no remaining findings.",
+    "remaining_findings": []
+  },
+  "transitional_compile_failure": "extension-pixels-raster-check ran while the new report field was being integrated. CLI compiled against the prior EncodeReport shape; final focused and gate commands cover the completed source."
+}

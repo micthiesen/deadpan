@@ -304,6 +304,12 @@ signature sidecar. The host recomputes input continuity from private snapshots;
 the Python reader verifies the same descriptor and byte declarations before
 inference. See [retained extension evidence](qualification/extension-evidence-2026-10-08.md).
 
+[Extension pixel checks](qualification/extension-pixels-2026-10-08.md) inspect
+every generated-native pair on the extension clock and both actual sampled
+joins against those retained inputs. Present opposite seams stay explicitly
+unconditioned. Directional face/mouth/region checks and complete provenance
+admission still precede extension Ready.
+
 This is persistence groundwork. Native and headless execution still admit Bridge
 jobs only; extension Ready and acceptance remain closed until output qualification
 is implemented. See [durable extension inputs](qualification/extension-inputs-2026-10-07.md).

@@ -28,7 +28,7 @@ pub struct QualityThresholds {
 }
 
 impl QualityThresholds {
-    fn for_motion(motion: MotionAmount) -> Self {
+    pub(crate) fn for_motion(motion: MotionAmount) -> Self {
         Self {
             maximum_motion_per_second: match motion {
                 MotionAmount::Still => 0.5,
@@ -56,7 +56,8 @@ pub enum MotionObservation {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FrameObservation {
-    /// Zero-based native index of the later of two adjacent pictures.
+    /// Zero-based picture coordinate in the enclosing report's clock. Native
+    /// reports name the later picture; sampled-join reports name the endpoint.
     pub after_frame: u32,
     pub mean_luma_shift: f64,
     pub mean_absolute_luma_change: f64,
@@ -67,7 +68,7 @@ pub struct FrameObservation {
 }
 
 impl FrameObservation {
-    fn new(after_frame: u32, change: FrameChange) -> Self {
+    pub(crate) fn new(after_frame: u32, change: FrameChange) -> Self {
         Self {
             after_frame,
             mean_luma_shift: change.mean_luma_shift,
@@ -88,7 +89,7 @@ impl FrameObservation {
         }
     }
 
-    fn validate(&self) -> bool {
+    pub(crate) fn validate(&self) -> bool {
         if !(-255.0..=255.0).contains(&self.mean_luma_shift)
             || !(0.0..=255.0).contains(&self.mean_absolute_luma_change)
             || self.mean_absolute_luma_change + 1e-10 < self.mean_luma_shift.abs()
@@ -196,34 +197,77 @@ impl BridgeQualityReport {
 
     fn admit(&self) -> Result<(), QualificationError> {
         for pair in &self.transitions {
-            if pair.mean_luma_shift.abs() >= self.thresholds.abrupt_luma_shift
-                && pair.lighting_agreement_fraction >= self.thresholds.minimum_lighting_agreement
-            {
-                return Err(invalid(format!(
-                    "{PROFILE}: abrupt lighting at native frame {}: luma shift {:.3}, agreement {:.3}; limits {:.3}/{:.3}",
-                    pair.after_frame,
-                    pair.mean_luma_shift,
-                    pair.lighting_agreement_fraction,
-                    self.thresholds.abrupt_luma_shift,
-                    self.thresholds.minimum_lighting_agreement,
-                )));
-            }
-            if let MotionObservation::Measured { p95, .. } = pair.motion {
-                let speed = p95 / self.pair_seconds();
-                if speed > self.thresholds.maximum_motion_per_second {
-                    return Err(invalid(format!(
-                        "{PROFILE}: excessive motion at native frame {}: p95 {:.6}/s, {} of {BLOCKS} blocks; limit {:.6}/s for {}",
-                        pair.after_frame,
-                        speed,
-                        pair.matched_blocks,
-                        self.thresholds.maximum_motion_per_second,
-                        self.motion.name(),
-                    )));
-                }
-            }
+            admit_observation(
+                pair,
+                self.thresholds,
+                self.pair_seconds(),
+                self.motion,
+                PROFILE,
+                ObservationClock::Native,
+            )?;
         }
         Ok(())
     }
+}
+
+/// Shared rejection policy. Callers separately prove exact pair coverage and
+/// clock identity; this helper never infers those from measurements.
+#[derive(Clone, Copy)]
+pub(crate) enum ObservationClock {
+    Native,
+    Sampled,
+}
+
+impl ObservationClock {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Native => "native",
+            Self::Sampled => "sampled",
+        }
+    }
+}
+
+pub(crate) fn admit_observation(
+    pair: &FrameObservation,
+    thresholds: QualityThresholds,
+    pair_seconds: f64,
+    motion: MotionAmount,
+    profile: &str,
+    clock: ObservationClock,
+) -> Result<(), QualificationError> {
+    if !pair.validate() || !pair_seconds.is_finite() || pair_seconds <= 0.0 {
+        return Err(invalid(
+            "invalid motion/lighting observation or pair spacing",
+        ));
+    }
+    if pair.mean_luma_shift.abs() >= thresholds.abrupt_luma_shift
+        && pair.lighting_agreement_fraction >= thresholds.minimum_lighting_agreement
+    {
+        return Err(invalid(format!(
+            "{profile}: abrupt lighting at {} frame {}: luma shift {:.3}, agreement {:.3}; limits {:.3}/{:.3}",
+            clock.name(),
+            pair.after_frame,
+            pair.mean_luma_shift,
+            pair.lighting_agreement_fraction,
+            thresholds.abrupt_luma_shift,
+            thresholds.minimum_lighting_agreement,
+        )));
+    }
+    if let MotionObservation::Measured { p95, .. } = pair.motion {
+        let speed = p95 / pair_seconds;
+        if speed > thresholds.maximum_motion_per_second {
+            return Err(invalid(format!(
+                "{profile}: excessive motion at {} frame {}: p95 {:.6}/s, {} of {BLOCKS} blocks; limit {:.6}/s for {}",
+                clock.name(),
+                pair.after_frame,
+                speed,
+                pair.matched_blocks,
+                thresholds.maximum_motion_per_second,
+                motion.name(),
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn native_contract(plan: &BridgeGenerationPlan) -> VideoContract {

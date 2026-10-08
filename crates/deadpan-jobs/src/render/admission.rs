@@ -123,10 +123,40 @@ pub struct RenderEncodeReport {
     /// Encoder packets with absent duration, filled from the exact authored
     /// frame contract. PTS/DTS are retained; nonzero conflicting duration fails.
     pub video_duration_from_contract_packets: u64,
+    /// A narrowly proven video media-header correction. Packet timing and
+    /// independent emitted-file verification remain authoritative.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_media_duration_correction: Option<RenderVideoMediaDurationCorrection>,
     pub faststart_read_opens: u32,
     pub faststart_read_closes: u32,
     pub video_eof: bool,
     pub audio_eof: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenderVideoMediaDurationCorrection {
+    pub previous_ticks: u64,
+    pub corrected_ticks: u64,
+    pub first_cts: u64,
+    pub minimum_cts: u64,
+}
+
+impl RenderVideoMediaDurationCorrection {
+    // Matches the native encoder's evidence arithmetic. This does not prove
+    // any bytes or permit a caller to repair an arbitrary input movie.
+    fn valid(&self, frames: u64, step: u32, b_frames: u32) -> bool {
+        let step = u64::from(step);
+        step != 0
+            && b_frames != 0
+            && frames.checked_mul(step) == Some(self.corrected_ticks)
+            && self.previous_ticks > self.corrected_ticks
+            && self.first_cts > self.minimum_cts
+            && self.first_cts <= u64::from(b_frames.min(64)) * step
+            && self.first_cts.is_multiple_of(step)
+            && self.minimum_cts.is_multiple_of(step)
+            && self.previous_ticks - self.corrected_ticks == self.first_cts - self.minimum_cts
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1156,6 +1186,15 @@ fn validate_encode_report(
     mode: RenderEncoder,
     color: ColorPolicy,
 ) -> Result<(), RenderError> {
+    ensure(
+        report
+            .video_media_duration_correction
+            .as_ref()
+            .is_none_or(|correction| {
+                correction.valid(config.video_frames, config.frame_rate[1], settings.b_frames)
+            }),
+        "probe video media-duration correction differs from its exact clock",
+    )?;
     let packets = report
         .video_packets
         .checked_add(report.audio_packets)

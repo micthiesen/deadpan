@@ -1,0 +1,22 @@
+{
+  "Contents/MacOS/deadpan-app": {
+    "bytes": 56193744,
+    "sha256": "a20c2b9eb33c7923f2a8acacb06f856c7be247495e1668df87b6d306ebaffb3a"
+  },
+  "Contents/MacOS/deadpan-cli": {
+    "bytes": 40954464,
+    "sha256": "2d90d28535f81bcf9bbb0ff37dd1009bbca5ded23e588b3882996d3bf749d6e8"
+  },
+  "Contents/MacOS/deadpan-media-worker": {
+    "bytes": 1016608,
+    "sha256": "97620e2e5cb595d34978ac2c4c05cac1c311be0c4d8e3d3321268a1abaab5596"
+  },
+  "Contents/MacOS/deadpan-track": {
+    "bytes": 1384096,
+    "sha256": "15397590a391866193708530627706595dd03ab96fca8f1f068cc57d432e1034"
+  },
+  "Contents/MacOS/deadpan-transcribe": {
+    "bytes": 2590352,
+    "sha256": "da55cb89317c79e6424434a4e7693e09470e8d12dd00b1ec780b85366cdd7217"
+  }
+}

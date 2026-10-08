@@ -1037,6 +1037,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "deadpan-core",
+ "deadpan-source",
  "rustix 1.1.5",
  "serde",
  "serde_json",

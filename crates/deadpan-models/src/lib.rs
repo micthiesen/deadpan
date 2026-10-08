@@ -13,12 +13,27 @@ pub use qualification::*;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod quality;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod quality_input;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use quality::{BridgeQualityReport, FrameObservation, MotionObservation, QualityThresholds};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod endpoints;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use endpoints::{BridgeEndpointReport, EndpointObservation, EndpointThresholds};
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_motion;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_motion::ExtensionMotionReport;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_endpoints;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_endpoints::{ExtensionEndpointJoin, ExtensionEndpointReport, ExtensionJoinRole};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_pixels;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_pixels::{ExtensionPixelReport, inspect_extension_pixels};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod geometry;

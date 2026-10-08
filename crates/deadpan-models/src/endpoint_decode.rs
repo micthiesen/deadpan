@@ -1,7 +1,8 @@
 //! Inspect exact sampled endpoints and retained PNGs through private inputs.
 
-use std::io::{Read, Seek};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
+#[cfg(test)]
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use deadpan_analysis::endpoint_quality::{PixelChannels, RgbView, compare};
@@ -14,9 +15,11 @@ use super::{
     BridgeEndpointReport, EndpointObservation, EndpointThresholds, MAX_SAMPLED_FRAMES, PROFILE,
     invalid, sampled_contract,
 };
-use crate::{ConditioningObject, QualificationError, RetainedConditioning};
+#[cfg(test)]
+use crate::quality_input::decode_png;
+use crate::quality_input::{Control, read_png};
+use crate::{QualificationError, RetainedConditioning};
 
-const MAX_PNG_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_PIXELS: u64 = 4096 * 4096;
 
 pub(crate) fn measure(
@@ -144,80 +147,6 @@ pub(crate) fn measure(
     report.validate(plan, sampled.object(), conditioning.receipt())?;
     report.validate_context(conditioning.context())?;
     Ok(report)
-}
-
-struct Control<'a> {
-    deadline: Instant,
-    cancelled: &'a AtomicBool,
-}
-
-impl Control<'_> {
-    fn remaining(&self) -> Result<Duration, QualificationError> {
-        if self.cancelled.load(Ordering::Acquire) {
-            return Err(QualificationError::Cancelled);
-        }
-        let remaining = self.deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            Err(QualificationError::Deadline)
-        } else {
-            Ok(remaining)
-        }
-    }
-}
-
-fn read_png(
-    object: &mut ConditioningObject,
-    width: u32,
-    height: u32,
-    control: &Control<'_>,
-) -> Result<image::RgbImage, QualificationError> {
-    control.remaining()?;
-    let length = object.object().byte_length();
-    if length == 0 || length > MAX_PNG_BYTES {
-        return Err(invalid("conditioning PNG exceeds the bounded read limit"));
-    }
-    object.rewind()?;
-    let result = (|| {
-        let mut bytes = Vec::new();
-        bytes
-            .try_reserve_exact(usize::try_from(length).map_err(invalid)?)
-            .map_err(invalid)?;
-        let mut chunk = [0; 64 * 1024];
-        loop {
-            control.remaining()?;
-            let count = object.read(&mut chunk)?;
-            if count == 0 {
-                break;
-            }
-            if bytes
-                .len()
-                .checked_add(count)
-                .is_none_or(|total| total as u64 > length)
-            {
-                return Err(invalid("retained conditioning PNG grew during reading"));
-            }
-            bytes.extend_from_slice(&chunk[..count]);
-        }
-        if bytes.len() as u64 != length {
-            return Err(invalid("retained conditioning PNG length differs"));
-        }
-        decode_png(&bytes, width, height, control)
-    })();
-    // Publication consumes the same object later. Restore it even on failure.
-    object.rewind()?;
-    result
-}
-
-fn decode_png(
-    bytes: &[u8],
-    width: u32,
-    height: u32,
-    control: &Control<'_>,
-) -> Result<image::RgbImage, QualificationError> {
-    control.remaining()?;
-    let result = deadpan_media::conditioning_png::decode_rgb8(bytes, width, height);
-    control.remaining()?;
-    result.map_err(invalid)
 }
 
 #[cfg(test)]

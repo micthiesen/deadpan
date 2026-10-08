@@ -464,6 +464,54 @@ fn hardware(b_frames: BFramePolicy) -> EncoderChoice {
     }
 }
 
+#[test]
+fn retained_reordered_hdr_requires_exact_media_duration_then_passes_full_inspection() {
+    // Retained from a real VideoToolbox PQ TargetTwo failure on 2026-10-08.
+    // Packet order starts PTS/DTS (0,-2), (2,-1), (1,0), (3,1). Pinned movenc
+    // inferred a nonexistent start at -1 and wrote mdhd=47, although all 46
+    // decoded pictures and the edit-relative packet clock are exact.
+    const MOVIE: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/media-qualification/evidence/2026-10-08-mux-duration/movie.mp4"
+    ));
+    const MANIFEST: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/media-qualification/evidence/2026-10-08-mux-duration/encoded-manifest.json"
+    ));
+    let manifest: EncodedManifest = serde_json::from_slice(MANIFEST).unwrap();
+    assert_eq!(digest(MOVIE), *manifest.movie.sha256());
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("movie.mp4");
+    std::fs::write(&path, MOVIE).unwrap();
+    let encoded = Encoded {
+        _directory: directory,
+        path,
+        manifest,
+        host_light: None,
+        host_nits: [0.0; 2],
+    };
+    let error = inspect(&encoded).unwrap_err();
+    assert!(
+        error.contains("video sample description or media clock differs"),
+        "{error}"
+    );
+    let corrected = patched(&encoded, |bytes| {
+        // The hash above binds these fixture-specific offsets. The native
+        // finalizer separately proves and locates this field using the tables.
+        assert_eq!(
+            &bytes[288..300],
+            &[0, 0, 0, 32, b'm', b'd', b'h', b'd', 0, 0, 0, 0]
+        );
+        assert_eq!(&bytes[312..316], &47_u32.to_be_bytes());
+        bytes[312..316].copy_from_slice(&46_u32.to_be_bytes());
+    });
+    let report = inspect(&corrected).unwrap();
+    report.validate(VerificationLimits::default()).unwrap();
+    assert_eq!(report.video_frames, 46);
+    assert_eq!(report.fresh_gop_frames, 46);
+    assert!(report.maximum_b_run > 0);
+}
+
 const RASTER: [u32; 2] = [640, 360];
 
 #[test]

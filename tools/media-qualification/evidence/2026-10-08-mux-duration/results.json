@@ -1,0 +1,29 @@
+{
+  "fixture": {
+    "changed_byte_indices": [
+      315
+    ],
+    "first_cts": 2,
+    "mdhd_corrected_ticks": 46,
+    "mdhd_original_ticks": 47,
+    "minimum_cts_at_nonpositive_dts": 1,
+    "samples": 46,
+    "stts_ticks": 46,
+    "video_timescale": 30
+  },
+  "focused_tests": {
+    "filtered": 960,
+    "passed": 119
+  },
+  "gate": {
+    "doctests": 2,
+    "format": "passed",
+    "strict_workspace_and_ui_clippy": "passed",
+    "ui": 1071,
+    "ui_pipe_warning": "nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labels; assertion passed, cause unestablished",
+    "ui_skipped": 2,
+    "workspace": 5307,
+    "workspace_skipped": 10
+  },
+  "review": "Independent review of packet/header proof, descriptor limits, report admission, v0/v1 regressions: no remaining findings."
+}
