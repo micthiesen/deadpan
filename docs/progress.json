@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T20:56:27Z",
+  "updated_at": "2026-10-08T23:18:46Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Connecting verified AI extensions to Generate, model installation and native controls.",
+  "focus": "Verifying 10,000 fractional-rate edits and completing read-only recovery behavior.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and replacements work. One-second extensions pass real generation and validation; normal extension generation and app controls remain."
+      "note": "AI pauses, replacements and extensions work through normal app controls. Real generation, acceptance and offline export pass; keeping models loaded and performance comparisons remain."
     },
     {
       "id": "import",
@@ -245,6 +245,14 @@
       "revision": "eccd0d48",
       "retrospective": false,
       "summary": "Verified one-second AI extensions in both directions, exact output sampling, full media checks and cancellation. App integration remains."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 89,
+      "complete_sections": 4,
+      "revision": "a3886ef8",
+      "retrospective": false,
+      "summary": "Integrated AI extensions and native controls; eight real cases pass acceptance, history and offline export. Added disk-full import checks and fixed read-only Render replies."
     }
   ]
 }
