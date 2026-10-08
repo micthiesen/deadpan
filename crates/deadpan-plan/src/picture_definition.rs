@@ -12,6 +12,12 @@ use serde::Serialize;
 use super::{CompiledKind, LookupStats, RenderPlan};
 use crate::{Picture, PictureCaption, PictureFraming, PlanError};
 
+#[path = "picture_context.rs"]
+mod context;
+pub use context::{
+    MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldContext, ScopedHoldContextRequest,
+};
+
 /// A picture in `definition`'s complete intrinsic output, before outer Repeat,
 /// Retime, framing or cutaway owners. `position` is exact local time, not a root
 /// project frame. The definition and revision brand every relative path here.
@@ -286,6 +292,14 @@ impl RenderPlan {
         target: &ScopedNodeTarget,
         limits: BoundaryQueryLimits,
     ) -> Result<ScopedHoldBoundaries, PlanError> {
+        self.scoped_hold_boundaries_with_budget(target, &mut PictureBudget::new(limits))
+    }
+
+    fn scoped_hold_boundaries_with_budget(
+        &self,
+        target: &ScopedNodeTarget,
+        budget: &mut PictureBudget,
+    ) -> Result<ScopedHoldBoundaries, PlanError> {
         if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
         }
@@ -305,7 +319,7 @@ impl RenderPlan {
                 "the target is not an authored Hold",
             ));
         }
-        let mut budget = PictureBudget::new(limits);
+        let before = budget.lookup;
         let mut current = hold;
         let mut definition = hold;
         let mut start = 0_i64;
@@ -387,14 +401,7 @@ impl RenderPlan {
                 "the target has extra Repeat ancestors",
             ));
         }
-        self.hold_boundaries_in(
-            target,
-            hold,
-            definition,
-            start,
-            LookupStats::default(),
-            &mut budget,
-        )
+        self.hold_boundaries_in(target, hold, definition, start, before, budget)
     }
 
     fn hold_boundaries_in(
@@ -431,7 +438,7 @@ impl RenderPlan {
         } else {
             None
         };
-        Ok(ScopedHoldBoundaries {
+        let result = ScopedHoldBoundaries {
             project_id: self.metadata.project_id.clone(),
             revision_id: self.metadata.revision_id.clone(),
             target: target.clone(),
@@ -441,13 +448,18 @@ impl RenderPlan {
             left,
             right,
             lookup: budget.since(before),
-        })
+        };
+        budget.retain_boundaries(&result)?;
+        Ok(result)
     }
 }
 
 pub(super) struct PictureBudget {
     limits: BoundaryQueryLimits,
     pub(super) lookup: LookupStats,
+    /// Enabled only for retained temporal-context queries. Ordinary preview
+    /// samples have no accumulated result collection.
+    retained_metadata_left: Option<usize>,
 }
 
 impl PictureBudget {
@@ -455,6 +467,7 @@ impl PictureBudget {
         Self {
             limits,
             lookup: LookupStats::default(),
+            retained_metadata_left: None,
         }
     }
 

@@ -1,0 +1,146 @@
+[
+  {
+    "path": "extension-foundation-chaos/jobs-extension-plans.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-chaos/jobs-extension-plans.log",
+    "bytes": 4130,
+    "sha256": "f20220610ab79edb0ec97ec0633c951c6f6ccae989a1027bf70365ad9bb44b82"
+  },
+  {
+    "path": "extension-foundation-chaos/media-json.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-chaos/media-json.log",
+    "bytes": 10294,
+    "sha256": "392e875c3244ee821c6431e9d6ce9d6dd7cd3d82590b9df61c9301561f61c061"
+  },
+  {
+    "path": "extension-foundation-chaos/report.jsonl.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-chaos/report.jsonl",
+    "bytes": 13873,
+    "sha256": "97614d9f4683a83a8aaf8d63c382a6716829b6f4fe316ff593c76504ae234349"
+  },
+  {
+    "path": "extension-foundation-chaos/summary.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-chaos/summary.json",
+    "bytes": 17320,
+    "sha256": "94f91324ce4fb83cadf9ba00c48fa04563e63194bb77f8ab536a4b5b9def3abe"
+  },
+  {
+    "path": "extension-foundation-checks-2/clippy-ui.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/clippy-ui.log",
+    "bytes": 1269,
+    "sha256": "4857d37caf649ed97615f6d951b0c49fb0e6da942c3ebea948086c6130dbfd40"
+  },
+  {
+    "path": "extension-foundation-checks-2/clippy.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/clippy.log",
+    "bytes": 1548,
+    "sha256": "8534a7effba8667913937eec43a46044d38e459ca06a4158bbf3c87f1e97ef71"
+  },
+  {
+    "path": "extension-foundation-checks-2/diff.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/diff.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "extension-foundation-checks-2/docs.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/docs.log",
+    "bytes": 881,
+    "sha256": "eea6ae00369af02d832284e68936caa0da35b381bf7f4d2355a849652b676765"
+  },
+  {
+    "path": "extension-foundation-checks-2/fmt.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "extension-foundation-checks-2/results.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/results.json",
+    "bytes": 1391,
+    "sha256": "0b8962ae408a76c3b5da954c5ff98b5d0a7f527f572b1ab30d85c705db5210b9"
+  },
+  {
+    "path": "extension-foundation-checks-2/tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks-2/tests.log",
+    "bytes": 236621,
+    "sha256": "fa3347ec4c6efba5e8b1e512dd6d901f6d85b6a6436d86463c2ea5d1c2959469"
+  },
+  {
+    "path": "extension-foundation-checks/fmt.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks/fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "extension-foundation-checks/results.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks/results.json",
+    "bytes": 467,
+    "sha256": "85da47418b139cb653cd4e341ce999221676ae8b73295b9897caacb1fdd7cf54"
+  },
+  {
+    "path": "extension-foundation-checks/tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-checks/tests.log",
+    "bytes": 3189,
+    "sha256": "a70747acab2dfe1b775af5d509d4721d50db6f6bbff4b2004a073c7e5926222b"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/chaos.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/chaos.log",
+    "bytes": 989,
+    "sha256": "8b73e1b1dad07402721c09cdd0de6ceb59a36527c0902b715a869512e2f1a443"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/clippy.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/clippy.log",
+    "bytes": 951,
+    "sha256": "6c853d3b2f25641c0682d3a6f6c3225479a1ff9a12596f0a3c8e60a26e6d0c41"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/diff.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/diff.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/fmt.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/results.json.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/results.json",
+    "bytes": 1166,
+    "sha256": "db15cb17bbce650199b54035cc9e4bb6767a3d1c41ecdc592010fb1b7441c577"
+  },
+  {
+    "path": "extension-foundation-fuzz-checks/tests.log.gz",
+    "source": "/tmp/deadpan-resume-20261006/extension-foundation-fuzz-checks/tests.log",
+    "bytes": 1554,
+    "sha256": "8e2063b2da19e47f71f29c27883917fcddae339cb57ed391d67ffc9ef96c4e92"
+  },
+  {
+    "path": "scripts/one-sided-contract-review.md.txt",
+    "source": "/tmp/deadpan-resume-20261006/one-sided-contract-review.md",
+    "bytes": 24467,
+    "sha256": "4d0bdbbe76c03e1a839361fd50d8b68a2056676651b1b212f6005e163f2cadb8"
+  },
+  {
+    "path": "scripts/verify-extension-foundation-2.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/verify-extension-foundation-2.py",
+    "bytes": 1732,
+    "sha256": "17eb4a625e23c2479a15f82f5e9c6abc23510b1798b35fa5afe722eb473c8368"
+  },
+  {
+    "path": "scripts/verify-extension-foundation.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/verify-extension-foundation.py",
+    "bytes": 1730,
+    "sha256": "2989385f32eb229524564f9ea563c57c7841026d05e70a03b90a0377cc32cd09"
+  },
+  {
+    "path": "scripts/verify-extension-fuzz.py.txt",
+    "source": "/tmp/deadpan-resume-20261006/verify-extension-fuzz.py",
+    "bytes": 1508,
+    "sha256": "e1484f61c2aeda78f6967fe3e7b86b5a27b0e37ee17a9af309c2221bdaf8567b"
+  }
+]

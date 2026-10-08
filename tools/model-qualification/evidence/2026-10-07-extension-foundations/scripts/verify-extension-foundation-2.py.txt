@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""Verify exact extension foundations without advertising a model capability."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+repo = Path('/Users/michael/Code/deadpan')
+root = Path('/tmp/deadpan-resume-20261006/extension-foundation-checks-2')
+root.mkdir(exist_ok=False)
+environment = os.environ.copy()
+environment['DEADPAN_FFMPEG_PREFIX'] = '/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix'
+steps = [
+    ('fmt', ['cargo', 'fmt', '--all']),
+    ('tests', ['cargo', 'nextest', 'run', '--locked', '-p', 'deadpan-core', '-p', 'deadpan-jobs', '-p', 'deadpan-plan', '-p', 'deadpan-media', '-p', 'deadpan-media-worker']),
+    ('clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('clippy-ui', ['cargo', 'clippy', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('docs', ['cargo', 'test', '--doc', '--locked', '-p', 'deadpan-core', '-p', 'deadpan-jobs', '-p', 'deadpan-plan', '-p', 'deadpan-media']),
+    ('diff', ['git', 'diff', '--check']),
+]
+results = []
+for name, command in steps:
+    started = time.monotonic()
+    with (root / f'{name}.log').open('wb') as log:
+        process = subprocess.run(command, cwd=repo, env=environment, stdout=log, stderr=subprocess.STDOUT)
+    results.append({'name':name, 'command':command, 'exit':process.returncode, 'seconds':round(time.monotonic()-started,3)})
+    (root/'results.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(results[-1]),flush=True)
+    if process.returncode:
+        print((root/f'{name}.log').read_text()[-16000:],flush=True)
+        raise SystemExit(process.returncode)

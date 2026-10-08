@@ -65,7 +65,10 @@ pub use plan::{
     AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity,
     AudioSourceVoiceRecipe,
 };
-pub use plan::{DefinitionPictureSample, ScopedHoldBoundaries};
+pub use plan::{
+    DefinitionPictureSample, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldBoundaries,
+    ScopedHoldContext, ScopedHoldContextRequest,
+};
 
 use deadpan_core::{
     AssetId, DocumentError, ExactRatio, FrameDuration, NodeId, ProjectFrame, SourceFrameId,

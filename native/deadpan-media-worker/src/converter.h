@@ -4,6 +4,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef enum {
+    DEADPAN_SAMPLING_COPY = 0,
+    DEADPAN_SAMPLING_BRIDGE_INTERIOR = 1,
+    DEADPAN_SAMPLING_EXTENSION_FROM_LEFT = 2,
+    DEADPAN_SAMPLING_EXTENSION_FROM_RIGHT = 3
+} DeadpanSamplingKind;
+
 typedef struct {
     uint32_t width;
     uint32_t height;
@@ -18,7 +25,10 @@ typedef struct {
     uint32_t output_frames;
     uint32_t output_rate_num;
     uint32_t output_rate_den;
-    uint32_t sample_bridge;
+    /* Integer ABI field: validate before interpreting as DeadpanSamplingKind. */
+    uint32_t sampling_kind;
+    uint32_t generated_start;
+    uint32_t generated_frames;
 } DeadpanConversionRequest;
 
 typedef struct {

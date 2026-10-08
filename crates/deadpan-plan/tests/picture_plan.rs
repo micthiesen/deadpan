@@ -4,6 +4,8 @@ use deadpan_core::*;
 use deadpan_plan::{Picture, PlanError, RenderPlan};
 use proptest::prelude::*;
 
+#[path = "picture_plan/context.rs"]
+mod context;
 #[path = "picture_plan/definition.rs"]
 mod definition;
 #[path = "picture_plan/definition_batch.rs"]

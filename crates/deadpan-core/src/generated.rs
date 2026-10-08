@@ -7,6 +7,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
 use crate::{AssetId, ExactRatio, FrameDuration, FrameRate};
 
+mod extension;
+pub use extension::*;
+
 const ALGORITHM: &str = "blake3";
 const DIGEST_HEX_BYTES: usize = 64;
 const SAMPLING_SCHEMA_VERSION: u32 = 1;

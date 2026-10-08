@@ -33,7 +33,9 @@ mod ffi {
         pub output_frames: u32,
         pub output_rate_num: u32,
         pub output_rate_den: u32,
-        pub sample_bridge: u32,
+        pub sampling_kind: u32,
+        pub generated_start: u32,
+        pub generated_frames: u32,
     }
 
     #[repr(C)]
@@ -374,6 +376,31 @@ fn convert(request: &WorkerRequest) -> WorkerReply {
         Err(error) => return failure("invalid_request", error.to_string()),
     };
     let limits = request.limits();
+    let (sampling_kind, generated_start, generated_frames) = match request {
+        WorkerRequest::Convert(_) => (0, 0, 0),
+        WorkerRequest::Bridge(_) => (1, 0, 0),
+        WorkerRequest::Extension(extension) => {
+            let interval = extension.sampling.generated_interval();
+            let start = match u32::try_from(interval.start) {
+                Ok(start) => start,
+                Err(_) => {
+                    return failure("invalid_request", "extension interval is not representable");
+                }
+            };
+            let frames = match u32::try_from(extension.sampling.generated_frame_count().frames()) {
+                Ok(frames) => frames,
+                Err(_) => {
+                    return failure(
+                        "invalid_request",
+                        "extension frame count is not representable",
+                    );
+                }
+            };
+            // The typed map guarantees a nonempty context: a generated interval
+            // at zero is FromRight; FromLeft starts after all context handles.
+            (if start == 0 { 3 } else { 2 }, start, frames)
+        }
+    };
     let native_request = ffi::Request {
         width: native.width,
         height: native.height,
@@ -388,7 +415,9 @@ fn convert(request: &WorkerRequest) -> WorkerReply {
         output_frames: output.frames,
         output_rate_num: output.rate_num,
         output_rate_den: output.rate_den,
-        sample_bridge: u32::from(matches!(request, WorkerRequest::Bridge(_))),
+        sampling_kind,
+        generated_start,
+        generated_frames,
     };
     let mut native_report = ffi::Report::default();
     let mut native_error = ffi::Error::default();
@@ -673,9 +702,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn native_boundary_rejects_inconsistent_bridge_configuration() {
-        let request = ffi::Request {
+    fn native_request() -> ffi::Request {
+        ffi::Request {
             width: 1,
             height: 1,
             frames: 2,
@@ -689,16 +717,68 @@ mod tests {
             output_frames: 1,
             output_rate_num: 24,
             output_rate_den: 1,
-            sample_bridge: 2,
-        };
+            sampling_kind: 0,
+            generated_start: 0,
+            generated_frames: 0,
+        }
+    }
+
+    fn rejects_native_request(request: &ffi::Request, message: &str) {
+        // The production executable handles one conversion; its C state is
+        // process-global. Unit probes must not race each other's diagnostics.
+        static NATIVE_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let _guard = NATIVE_TEST_LOCK.lock().unwrap();
         let mut report = ffi::Report::default();
         let mut error = ffi::Error::default();
 
         assert_ne!(
-            ffi::convert(-1, -1, -1, &request, &mut report, &mut error),
+            ffi::convert(-1, -1, -1, request, &mut report, &mut error),
             0
         );
         assert_eq!(bounded_c_string(&error.code), "invalid_request");
-        assert!(bounded_c_string(&error.message).contains("bridge sampling"));
+        assert!(bounded_c_string(&error.message).contains(message));
+    }
+
+    #[test]
+    fn native_boundary_rejects_inconsistent_sampling_configuration() {
+        let mut request = native_request();
+        request.sampling_kind = 4;
+        rejects_native_request(&request, "sampling configuration");
+        request.sampling_kind = 1;
+        request.frames = 1;
+        rejects_native_request(&request, "sampling configuration");
+        request.frames = 2;
+        request.generated_frames = 8;
+        rejects_native_request(&request, "non-extension");
+    }
+
+    #[test]
+    fn native_boundary_rejects_extension_intervals_and_count_overflow_before_io() {
+        for kind in [2, 3] {
+            let mut request = native_request();
+            request.frames = 17;
+            request.output_frames = 12;
+            request.sampling_kind = kind;
+            request.generated_start = if kind == 2 { 9 } else { 0 };
+            for generated in [0, 17, u32::MAX] {
+                request.generated_frames = generated;
+                rejects_native_request(&request, "extension counts");
+            }
+            request.generated_frames = 8;
+            request.generated_start = if kind == 2 { 8 } else { 1 };
+            rejects_native_request(&request, "extension interval");
+            request.generated_start = u32::MAX;
+            rejects_native_request(&request, "extension interval");
+            request.generated_start = if kind == 2 { 9 } else { 0 };
+            if kind == 2 {
+                request.frames = 18;
+                rejects_native_request(&request, "extension interval");
+            }
+            request.frames = u32::MAX;
+            rejects_native_request(&request, "outside worker bounds");
+            request.frames = 17;
+            request.output_frames = 10_001;
+            rejects_native_request(&request, "outside worker bounds");
+        }
     }
 }

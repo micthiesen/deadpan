@@ -22,6 +22,7 @@ tempfile.workspace = true
 cc.workspace = true
 
 [dev-dependencies]
+deadpan-native-process.workspace = true
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 deadpan-chaos.workspace = true
 rustix.workspace = true

@@ -1111,6 +1111,7 @@ dependencies = [
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-models",
+ "deadpan-native-process",
  "deadpan-source",
  "deadpan-store",
  "image",

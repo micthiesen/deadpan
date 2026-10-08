@@ -4,13 +4,18 @@
 //! using numeric fields. The contract deliberately supports only the qualified
 //! full-range RGB8 / sRGB / BT.709 generated-video route.
 
-use deadpan_core::{BridgeSamplingMap, SourceSpan, SourceTimeBase, SourceTimestamp};
+use deadpan_core::{
+    BridgeSamplingMap, ExtensionSamplingMap, SourceSpan, SourceTimeBase, SourceTimestamp,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 /// Adds host-authoritative interior sampling; version-1 conversion is unchanged.
 pub const BRIDGE_PROTOCOL_VERSION: u32 = 2;
+/// Generated-only extension sampling. The existing conversion and bridge
+/// request grammars retain their original versions and meanings.
+pub const EXTENSION_PROTOCOL_VERSION: u32 = 3;
 /// Adds the measured duration of the final decoded output frame to reports.
 pub const REPORT_PROTOCOL_VERSION: u32 = 2;
 pub const MAX_REPLY_BYTES: usize = 8192;
@@ -191,11 +196,68 @@ impl BridgeConversionRequest {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExtensionOperation {
+    SampleExtension,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExtensionConversionRequest {
+    pub protocol: u32,
+    pub operation: ExtensionOperation,
+    /// Complete native movie, including the decoder's context handles.
+    pub native: VideoContract,
+    pub sampling: ExtensionSamplingMap,
+    pub input_byte_length: u64,
+    pub limits: ConversionLimits,
+}
+
+impl ExtensionConversionRequest {
+    pub fn output_video(&self) -> Result<VideoContract, ContractError> {
+        let video = VideoContract {
+            width: self.native.width,
+            height: self.native.height,
+            frames: u32::try_from(self.sampling.output_frame_count().frames())
+                .map_err(|_| ContractError("output frame count is not representable"))?,
+            rate_num: self.sampling.project_rate().numerator(),
+            rate_den: self.sampling.project_rate().denominator(),
+        };
+        video.validate()?;
+        Ok(video)
+    }
+
+    pub fn validate(&self) -> Result<(), ContractError> {
+        if self.protocol != EXTENSION_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported extension protocol version"));
+        }
+        self.native.validate()?;
+        self.output_video()?;
+        if self.sampling.native_frame_count().frames() != i64::from(self.native.frames)
+            || self.sampling.native_rate().numerator() != self.native.rate_num
+            || self.sampling.native_rate().denominator() != self.native.rate_den
+        {
+            return Err(ContractError("sampling map does not match native video"));
+        }
+        // Only the complete native movie occupies scratch. Sampled frames are
+        // computed individually and may never fetch the context interval.
+        ConversionRequest {
+            protocol: PROTOCOL_VERSION,
+            video: self.native,
+            input_byte_length: self.input_byte_length,
+            limits: self.limits,
+        }
+        .validate()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum WorkerRequest {
     Convert(ConversionRequest),
     Bridge(BridgeConversionRequest),
+    Extension(ExtensionConversionRequest),
 }
 
 impl WorkerRequest {
@@ -203,6 +265,7 @@ impl WorkerRequest {
         match self {
             Self::Convert(request) => request.validate(),
             Self::Bridge(request) => request.validate(),
+            Self::Extension(request) => request.validate(),
         }
     }
 
@@ -210,6 +273,7 @@ impl WorkerRequest {
         match self {
             Self::Convert(request) => request.video,
             Self::Bridge(request) => request.native,
+            Self::Extension(request) => request.native,
         }
     }
 
@@ -217,6 +281,7 @@ impl WorkerRequest {
         match self {
             Self::Convert(request) => Ok(request.video),
             Self::Bridge(request) => request.output_video(),
+            Self::Extension(request) => request.output_video(),
         }
     }
 
@@ -224,6 +289,7 @@ impl WorkerRequest {
         match self {
             Self::Convert(request) => request.input_byte_length,
             Self::Bridge(request) => request.input_byte_length,
+            Self::Extension(request) => request.input_byte_length,
         }
     }
 
@@ -231,6 +297,7 @@ impl WorkerRequest {
         match self {
             Self::Convert(request) => request.limits,
             Self::Bridge(request) => request.limits,
+            Self::Extension(request) => request.limits,
         }
     }
 }
@@ -460,6 +527,10 @@ pub enum RemuxReply {
     Success { report: RemuxReport },
     Failure { code: String, message: String },
 }
+
+#[cfg(test)]
+#[path = "protocol/extension_tests.rs"]
+mod extension_tests;
 
 #[cfg(test)]
 mod tests {
@@ -747,6 +818,20 @@ mod tests {
         };
         let seeds = vec![
             prefixed(0, serde_json::to_vec(&worker_request).unwrap()),
+            prefixed(
+                0,
+                serde_json::to_vec(&WorkerRequest::Extension(extension_tests::extension(
+                    deadpan_core::ExtensionDirection::FromLeft,
+                )))
+                .unwrap(),
+            ),
+            prefixed(
+                0,
+                serde_json::to_vec(&WorkerRequest::Extension(extension_tests::extension(
+                    deadpan_core::ExtensionDirection::FromRight,
+                )))
+                .unwrap(),
+            ),
             prefixed(
                 0,
                 serde_json::to_vec(&WorkerRequest::Bridge(bridge())).unwrap(),

@@ -10,6 +10,7 @@
 mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod artifact;
+pub mod extension_plan;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod faces;
 pub mod generation_plan;
@@ -28,6 +29,7 @@ pub mod tracking;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod transcription;
 
+pub use extension_plan::*;
 pub use generation_plan::*;
 pub use hold_prompt::*;
 pub use lifecycle::*;

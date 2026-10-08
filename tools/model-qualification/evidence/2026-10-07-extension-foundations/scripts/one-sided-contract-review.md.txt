@@ -1,0 +1,396 @@
+# One-sided AI extension: contract review and implementation plan
+
+Reviewed 2026-10-07 against the current shared checkout. This is a design and
+read-only source review. No repository changes, compilation, model runs or
+verification executions were performed for this review.
+
+## Recommendation
+
+Implement directional video-context extension through the pinned
+`RetakePipeline.extend`, with a separate typed plan and persisted sampling
+variant. Keep the existing bridge semantics and retained bridge readers intact.
+Automatic mode selects an extension only at an actual definition edge with one
+available side. An explicitly requested bridge continues to fail if either
+endpoint is absent. Preserve immediate deterministic fallback and explicit
+acceptance through the current preparation/intent lifecycle.
+
+The scratch probe establishes feasibility and decoded interval alignment for
+both directions at K=9 context pictures and E=8 generated pictures. It does not
+qualify arbitrary lengths or production admission. Two corrections to the prior
+design are necessary before implementation:
+
+1. Its noninteger extension formulas can interpolate a context handle into the
+   candidate. Use an explicitly generated-only sampling policy below.
+2. Temporal context is an actual model input. The new L/R-only relevance and
+   automatic replacement contracts must include its complete bounded identity
+   sequence. Endpoint equality alone is insufficient.
+
+## Exact evidence inspected
+
+The prior recommendation is
+`/tmp/deadpan-resume-20261006/one-sided-extension-design.md`.
+There is no separate `summary.json` under `extension-probe`. The summary is
+`extension-probe/README.md`, sections **Measured append result** and
+**Measured prepend result**. Primary records are:
+
+- `extension-probe/run-1/experiment.json`
+- `extension-probe/run-1/after/report.json` and `alignment.json`
+- `extension-probe/run-1/before/report.json` and `alignment.json`
+- Each direction's `context`, `baseline`, `native`, and `proposed-extension`
+  `movie-verification.json`.
+
+All these paths are below `/tmp/deadpan-resume-20261006`.
+
+### Observed facts
+
+Both reports say `experiment_passed_not_production_qualified`, using probe hash
+`bfa0e5125afa1d20d1919ad33cdc656c45756ec77c33bf6d96aca487d83be400`
+and runtime commit `3392d75934120b7e69eefbe55893f7ef82be92a4`.
+The fixed run used 768x320, exact 24/1 fps, nine context frames, eight extension
+frames, 17 total native frames, 30 dev steps, and seed 42107.
+
+| Fact | Append (`after`) | Prepend (`before`) |
+| --- | --- | --- |
+| Exact source latent preservation | Yes, maximum error 0 | Yes, maximum error 0 |
+| Source latent start | 0 | 1 |
+| Decoded context start preferred by both references | 0 | 8 |
+| Proposed generated interval | `[9,17)` | `[0,8)` |
+| Best baseline MAE | 1.028102 | 0.843410 |
+| Margin over next baseline offset | 11.722253 | 10.580048 |
+| Elapsed seconds | 164.938356 | 232.503550 |
+| Peak process RSS bytes | 14,513,963,008 | 14,511,439,872 |
+| MLX peak bytes | 17,022,795,792 | 17,022,795,792 |
+
+The retained verification records report exact decoded bytes, counts, frame
+PTS/durations, SDR color and no audio stream for the four movies per direction.
+The native movie has 17/24 seconds of storage duration; the selected generated
+interval has 8/24 seconds. Joint-model audio latents were computed and discarded.
+
+These are functional observations from one synthetic moving square and one
+seed, with replay work running concurrently. They establish neither a quiet
+performance comparison between directions nor a supported maximum. Reconstructed
+source handles differ from the isolated VAE baseline despite identical source
+latents. Never substitute those handles for authored Original footage. No
+timeline, speech preservation, candidate acceptance, realistic identity quality,
+fractional-rate sampling or model-free reopening was tested by this probe.
+
+## Normative interpretation and routine decisions
+
+`docs/spec/DEADPAN_SPEC.md` §12.2 requires exactly N authored frames, unchanged
+Original pictures and speech outside that interval, immediate L freeze (R at
+the beginning), and separate picture acceptance. Its explicit one-sided case is
+L plus lead-in context, primarily at a shot/sequence end. An existing opposite
+seam must be disclosed as unconditioned. §12.4 gives an equation specifically
+for a two-endpoint bridge; it does not prescribe an extension equation.
+§12.7 requires retained sampling on shortening and regeneration after model-input
+changes, while gain, editorial zoom/captions and moves that preserve inputs do
+not regenerate.
+
+Decisions for this implementation:
+
+- Support symmetric prepend using `ExtendFromRight`. This is a sensible product
+  decision, already represented by `ConditioningMode` and now supported by the
+  probe; the spec does not separately spell out its reverse equation.
+- Use the exact authored definition from `scoped_hold_boundaries`. A boundary
+  absent there stays absent even when another outer Repeat play has a neighbor.
+  Do not manufacture a source successor or condition on a representative play.
+- `Automatic` chooses Bridge for two endpoints, ExtendFromLeft for L only, and
+  ExtendFromRight for R only. With neither, retain the fallback and report that
+  no conditioning side is available. A stored freeze recipe is not proof of
+  available temporal context outside the definition.
+- Add an explicit mode preference to captured generation controls for interior
+  one-sided requests. Persist both the preference and the resolved request mode.
+  An explicit Bridge or extension direction is never silently changed. Resolve
+  Automatic before worker allocation, display the result, and retain it in the
+  request/plan/provenance. Retries and variants use those captured facts.
+- Start the adapter with K=9 at 24 fps, the context length actually exercised.
+  A shorter same-shot span is an explicit unsupported preparation, leaving the
+  authored fallback. Do not pad missing context, force the convenience loader's
+  minimum, or advertise one-frame context without separate evidence.
+- Keep 768x320 and the measured dev settings for initial integration. Qualify a
+  finite longer-output envelope before advertising it. The bridge's maximum97
+  native frames is not evidence that extension at that size is qualified.
+
+## Exact timing and sampling contract
+
+### Types and invariants
+
+Retain `BridgeGenerationPlan` and `BridgeSamplingMap` as their existing strict
+contracts. Add `ExtensionGenerationPlan`, `ExtensionSamplingMap`, and a small
+`GenerationPlan`/`GeneratedSamplingMap` sum type at shared consumers.
+This avoids teaching a type named Bridge that its endpoints may be absent.
+
+An extension map must contain, or uniquely derive from versioned required fields:
+
+- Direction: `FromLeft` / `FromRight`, corresponding to strict adapter
+  `after` / `before`, respectively.
+- Original requested N and exact project rate P; native rate R.
+- Context count K, generated count E, total native count M=K+E.
+- The generated half-open native ordinal interval `[S,S+E)`:
+  S=K for FromLeft; S=0 for FromRight.
+- Context interval `[0,K)` or `[E,E+K)` and anchor at K-1 or E.
+- Explicit `FrameCentersClamped` temporal sampling and existing encoded-sRGB
+  RGB8 linear interpolation with half-up rounding.
+
+Validate N>0; legal K=1+8k under the advertised context capability (initially9);
+E>0 and divisible by8 for this runtime; checked M=K+E; legal raster/rates;
+the two intervals exactly partition M; and every interpolation fetch falls
+inside `[S,S+E)`. Store pixel-frame and latent-frame counts as different typed
+values: E pixel frames means E/8 new video latents. Never pass E directly as
+the upstream `extend_frames` argument, whose unit is latent frames.
+
+Plan E near `N*R/P` using exact rational arithmetic, legal multiples of8, a
+documented deterministic tie rule (prefer the shorter duration), and the
+qualified combined-count bound. N=1 still has a positive legal internal count
+and reports a large conversion; it must not become a zero-frame request. A
+request beyond the advertised envelope fails before loading. No count rounding
+changes the committed N or any Original clock.
+
+### Correct the prior sampling proposal
+
+The prior append proposal `K-1+(j+1)*E/N` gives 8⅔ for K=9,E=8,N=12,j=0.
+Linear interpolation fetches native frame8, which is the context anchor.
+The prior prepend proposal `j*E/N` gives 7⅓ at j=11 and fetches frame8, the
+first source handle. The N=E=8 probe cannot distinguish these cases.
+
+Use this generated-only center mapping for j in `[0,N)`:
+
+```text
+x(j) = S + clamp(((2*j+1)*E - N)/(2*N), 0, E-1)
+lo = floor(x); hi = ceil(x); alpha = x-lo
+pixel = round_half_up((1-alpha)*native[lo] + alpha*native[hi])
+```
+
+Compute it with checked integers/rationals, not floating point. Clamping is
+part of the persisted policy and holds the generated interval's edge samples;
+it does not synthesize missing source context. At N=E this is exactly S+j in
+both directions. At N=1 it selects the generated interval's center. At arbitrary
+N neither fetch can enter the context interval. This is a proposed deterministic
+adapter choice, not a formula measured by the model probe or quoted from the
+spec. Do not reuse the bridge `(j+1)/(N+1)` phase for it.
+
+### Duration reporting
+
+Use separate facts:
+
+- inserted interval: `N/P`;
+- generated native interval: `E/R`;
+- complete retained native movie: `(K+E)/R`;
+- conditioning anchor span: `(K-1)/R`, where useful;
+- nominal generated-interval speed conversion: `(E/R)/(N/P)`.
+
+Preserve the existing exact 5% disclosure threshold and always offer exact
+details. A retained 17-frame movie is not a 17-frame generated pause. The
+bridge-specific `N+1` and `M-1` labels in `preview/ai_pause/timing.rs` must
+dispatch by map variant. After shortening to N', show N'/P while still deriving
+the original speed from the persisted N, E, and rates. The renderer uses the
+existing prefix of the already sampled movie, with no reinterpolation. Extending
+back within that same N reuses it; context handles are never extra usable output.
+
+## Conditioning and durable relevance
+
+### Capture nine real pictures at the native time spacing
+
+Use the existing immutable `ProjectPictureSession`, definition-branded plan
+samples and measured picture identities. Capture before editorial composition,
+with the same explicit SDR conversion and aspect fitting as the bridge.
+
+For a left anchor at exact definition coordinate l, sample context coordinates
+`l - (K-1-i)*P/R`, i=0..K-1. For a right anchor r, use `r + i*P/R`.
+The anchor is exactly the existing L or R sample. Nine consecutive project
+frames at30 fps played at24 fps would alter the conditioning motion; do not use
+that shortcut. Retain the requested rational coordinates and measured ordinal/
+PTS actually selected by the canonical picture walker. Repeated source ordinals
+caused by legitimate rate conversion or authored freezes differ from padding a
+span that does not exist.
+
+Stop at the definition edge and a detected shot boundary. Use structural
+continuity plus the existing shot detection machinery on the bounded candidate
+span; bind its capture-policy version. A discontinuous Source mapping or missing
+measured qualification cannot be treated as continuous lead-in. Do not load
+whole-source frames or run inference on the writer/UI thread.
+
+Initial bounded representation: ordered K=9 context pictures and, for explicit
+interior extensions, one optional opposite-seam reference. Each entry names
+the exact clock, picture identity, input object, color and fitted content rect.
+Keep the manifest <=1MiB and impose a separate aggregate input-byte cap, proposed
+16MiB for this fixed raster/count, checked before snapshots/decodes allocate.
+The nine raw RGB images total6,635,520 bytes. Reuse the existing shared deadline
+and cancellation. A 64MiB per-picture cap alone is not an aggregate bound.
+
+### Absence, conditioning and seam coverage are different states
+
+The opposite side is one of `Absent`, `PresentUnconditioned(reference)`, or, for
+a bridge, `PresentConditioned(reference)`. An absent edge is not authored black.
+The unconditioned reference is retained for join validation and relevance, but
+is never supplied to the extension model as a second endpoint.
+
+Current `GenerationInputBinding` in `generation_origins.rs` records only duration,
+rate, canvas, L and R. `generation_context.rs` hashes the same pair, plus an
+optional region target. Extend these through one shared, versioned context
+descriptor which includes direction, policy, ordered relative capture times and
+all measured picture identities. Keep absolute request-origin clocks in immutable
+provenance; compare relative input descriptors for relevance so moving a whole
+unchanged group does not regenerate. Preserve exact isolation mapping of the
+current target, original receipt, controls, request version and activation ID.
+
+`IntentInputBinding`, accepted-origin replay, preparation validation, renewal,
+and current-request observation must all rederive that same descriptor. A slip,
+cutaway or source edit earlier in the context must invalidate even when L/R
+themselves are unchanged. No installed model or decoded pixels are required
+to compare retained measured identities on the writer.
+
+### Automatic replacement closure must cover temporal dependencies
+
+`boundary_replacements/decisions.rs` currently assumes at most two mismatch terms
+per Hold. Context can touch several accepted Generated Holds whose fallback
+selection changes the final model input. Checking only current context before
+the automatic provider tail would admit a stale candidate.
+
+Preferred complete seam: generalize the pure equation to a bounded OR slice,
+with at most K+2 terms for the fixed context plus immediate seams, explicit
+aggregate edge/work/metadata limits, and the existing single SCC partition and
+conservative-cycle policy. Reuse plan-branded terminal Hold witnesses to choose
+accepted versus fallback identities for every context sample. Do not recompile
+the whole plan per endpoint or expand Repeat occurrences. Query context through
+a batch with shared budget; repeated independent `definition_picture` limits
+must not reset the aggregate work bound.
+
+An explicitly declared first adapter restricted to continuous Original-only
+context could avoid dynamic context terms, but that is a capability restriction
+and an explicit UnsupportedPicture outcome. It cannot be described as general
+extension of accepted neighboring Holds. Prefer the bounded multi-term graph
+for the complete implementation, preserving currently supported picture kinds.
+
+## Worker, admission and retained media
+
+- Use low-level `RetakePipeline.extend` with host-owned validated context RGB
+  tensors and exact legal counts. Keep chronological context in both directions.
+  Avoid `extend_from_video`: its pathname probing and frame rounding bypass
+  retained host evidence. Strictly reject an unknown direction before imports.
+- Decode the complete combined result before selecting generated output. Retain
+  that complete native master and an exactly N-frame sampled master. Neither
+  accepted master replaces the surrounding Original. Do not omit joint audio
+  latents merely because generated audio is discarded; omit audio decoding only
+  where the pinned runtime explicitly supports it.
+- Add a distinct protocol extension operation (for example `GenerateExtension`
+  beside existing `GenerateBridge`), typed plan/context binding and declared
+  capability. Reuse process ownership, offline loading, pin checks, progress,
+  cooperative cancellation and real cleanup receipts.
+- Extend `deadpan-media` conversion protocol and the Rust/C adapter together.
+  `converter.c::output_rgb_from_scratch` independently hardcodes bridge phase;
+  changing only the Rust map is insufficient. Keep bounded native scratch and
+  one-output-frame-at-a-time interpolation, exact output PTS, full decoded-byte
+  verification, color checks and audio removal. Use a checked sampling-kind
+  enum and interval fields at FFI, never reinterpret the boolean `sample_bridge`.
+- Make retained conditioning objects a bounded operation-specific collection.
+  `BundleInputObjects`, `ConditioningReceipt`, `GenerationBinding`, provenance
+  capture, retention/storage references and portable copy currently assume two
+  frame objects. Missing context objects must fail both initial admission and
+  model-free reopening, and cleanup must preserve every accepted dependency.
+- Endpoint reports measure the real L-to-first and last-to-R joins that exist.
+  An absent join has explicit absent coverage, not a success measurement. An
+  existing opposite join is measured and labeled unconditioned.
+- Motion/lighting and mouth checks inspect the generated interval continuously.
+  Context motion must not be retimed or counted as generated action. Replace
+  `quality.rs`'s unconditional `(N+1)/(M-1)` seconds-per-pair with the operation's
+  clock. Prefer sampled-output checks for the exact authored pictures, plus
+  native checks within the generated interval; retain exact report coverage.
+- Geometry/selected-region checks need a versioned single-anchor policy in
+  `deadpan-analysis`/models. A missing second face cannot silently disable drift
+  checks. Unavailable measurements remain truthful, and a later unavailable
+  measurement never erases an earlier rejection.
+
+## Accepted artifact and backward-reading rules
+
+Keep old bridge meanings immutable. Existing `BridgeSamplingMap` schema1 and
+Bridge plan/context/provenance profiles continue through their exact readers;
+none may be relabeled extension based on optional missing fields. A new reader
+should decode the sum type using explicit schema/operation discriminants. If
+legacy maps are wrapped in a new Rust enum, serialize its Bridge variant in the
+same legacy grammar so existing canonical hashes are not accidentally changed.
+Unknown variants, inconsistent intervals and missing mandatory context fail.
+
+`StoredBridgeProvenance::validate_for` deliberately ignores the artifact's current
+Hold identity/revision/duration while binding the immutable project, native and
+sampled objects, original plan and provenance. Preserve that rule for extensions:
+copy, shortening, history navigation and reopening without a model must work.
+Validate against the immutable original request and accepted-origin receipt,
+not today's controls or a recomputed map from the shortened Hold.
+
+Keep bridge `StoredBridgeProvenance` profile8 and context schema5 validation in
+their branch. Add a versioned extension envelope/reader behind a small shared
+accepted-evidence API. Do not broaden old profile readers to accept incomplete
+one-sided reports, or require today's provider installation to re-admit accepted
+bytes. Existing strict distinctions between absent legacy evidence and a present
+JSON null must survive.
+
+A development database schema bump and explicit refusal of obsolete packages
+are authorized; no migration is required. That permission does not justify
+rewriting immutable provenance objects, losing accepted object reachability, or
+making current-format accepted output depend on a model. Retained bridge-reader
+coverage is still required because new builds continue producing/reading bridges.
+
+## Minimal implementation seams and ownership order
+
+| Slice | Minimal modules | Deliverable |
+| --- | --- | --- |
+| Pure contract first | core `generated.rs`; jobs `generation_plan.rs`, `protocol.rs`, `hold_prompt.rs` | Extension plan/map, shared discriminated interfaces, exact sampling oracle, captured mode |
+| Independent media implementation | media `protocol.rs`, `conversion.rs`; native media worker `main.rs`, `converter.h`, `converter.c` | Exact generated-interval canonicalization and independent real-media verification |
+| Context and relevance | plan `picture_definition.rs`; CLI `generation/conditioning.rs`, `generation_context.rs`; models conditioning/color/geometry/region modules | Bounded native-spaced context with immutable identities, all same-shot/edge refusal cases |
+| Store proof and lifecycle | store `generation.rs`, `generation_attempts.rs`, `generation_acceptance.rs`, `generation_origins.rs`, `generation_intents.rs`, preparations; `boundary_replacements.rs` and decisions; storage-reference consumers | Full input retention, chronological replay/renewal and final-context dependency closure |
+| Runtime and qualification | `worker.py`, `worker_protocol.py`, `mlx_backend.py`; models `qualification.rs`, stored provenance, quality/endpoints/geometry/region; analysis geometry policy | Real low-level extension, required output checks, operation-specific evidence |
+| Provider and native UX | models packs constraints/updates/approved manifest and runtime pins; CLI generation attempt/joins; app generation service and `preview/ai_pause`/timing | Honest advertised capability, mode/seam disclosure, exact timing and ordinary preview/accept/revert |
+
+Keep app controllers as consumers of shared typed facts. Do not add a second
+UI-only generation queue or let the worker choose timeline/provider edits.
+The existing current-intent and explicit acceptance lifecycle should carry the
+new contract with unchanged authorization rules.
+
+## Proof obligations and release order
+
+1. **Pure arithmetic before inference:** table/property tests for both directions,
+   N=1, N=E, N<E, N>E, fractional rates, tie rounding, interval maximums and
+   overflow. Assert every lo/hi in the generated interval and separate retained
+   bridge golden-wire/sampling tests. Use K=9,E=8,N=12 as the handle-leak regression.
+2. **Independent converter oracle:** synthetic native ordinal/color ramps with
+   adversarially distinct context pixels; verify every sampled byte and every
+   timestamp for up/down conversion and half-up ties. The expected oracle must
+   not call the production sampler. Confirm unchanged bridge output hashes.
+3. **Context identity:** at 30 and 30000/1001 fps, native-spaced nine-frame
+   coordinates. Include leading/trailing,
+   nested/dormant/default/shared/owned scopes, descendant Retime, cuts, short
+   shots, absent/black distinction, repeated measured ordinals and total limits.
+4. **Durable proof:** a non-anchor context edit invalidates; unchanged group move,
+   gain/zoom/caption does not. Exercise variants, late claim, repeated renewals,
+   cancellation, Undo/Redo, receipt tampering, compaction, cleanup and portable
+   copy. Add a context dependent on three Generated Holds to catch the old
+   two-term graph limit, including a conservative cycle and target-order change.
+5. **Real runtime:** reuse the measured K9/E8 cases through the production worker,
+   then qualify additional legal E values and the chosen maximum combined count.
+   Independently inspect alignment and native/sample streams for both directions;
+   measure quiet resource usage and cancellation under existing owned supervision.
+6. **Actual timeline and packaging:** original frame/PCM equality outside the
+   documented edge fades, exact inserted silence/time, final fallback before
+   acceptance, explicit acceptance/Undo, shortened retained map, reopen/export
+   without model/runtime. Validate real context object retention and all quality
+   reports. Exercise native keyboard mode/preview labels and stale completions.
+7. **Capability last:** publish the matching pack/runtime schema and pins only
+   for the measured envelope. Keep human perceptual identity/listening work on
+   the established owner-verification list; it does not replace local tests.
+
+## Actual blockers versus decisions already available
+
+There is no unresolved feasibility blocker for implementing either direction:
+both low-level paths ran. No new model download or user product decision is
+needed. The coding block can start with the typed contracts and deterministic
+media/context tests now.
+
+Before release qualification, the remaining genuine obligations are production
+admission/lifecycle integration, conversion tests beyond E=N, actual same-shot
+capture and short-context failures, direction-aware quality coverage, and a
+measured finite duration/resource envelope. The old two-endpoint assumptions
+are implementation dependencies, not reasons to silently downgrade the feature.
+One-frame context support is unproven and can remain explicitly unsupported by
+this provider. The 9+8 probe is sufficient to start; it is insufficient to mark
+the entire one-sided extension requirement complete.

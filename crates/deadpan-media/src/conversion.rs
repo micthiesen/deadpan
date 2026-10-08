@@ -19,8 +19,10 @@ use crate::protocol::{
 use crate::source_index::SourceContentIdentity;
 use crate::source_input::{SourceInputError, VerifiedSourceInput};
 
+mod extension;
 mod proxy;
 mod remux;
+pub use extension::{CanonicalExtension, canonicalize_extension, sample_extension};
 pub use proxy::{
     PROXY_STALL_TIMEOUT, ProxyEncodeOptions, WORKER_TERMINATED, assemble_proxy, encode_proxy,
     encode_proxy_retrying, retryable,

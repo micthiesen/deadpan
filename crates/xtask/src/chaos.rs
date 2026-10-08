@@ -77,6 +77,13 @@ const ENTRIES: &[Entry] = &[
         targets: 1,
     },
     Entry {
+        name: "jobs-extension-plans",
+        package: "deadpan-jobs",
+        test: Some("extension_adversarial"),
+        filter: "adversarial",
+        targets: 1,
+    },
+    Entry {
         name: "cli-boundaries",
         package: "deadpan-cli",
         test: None,

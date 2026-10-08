@@ -203,13 +203,30 @@ static int validate_request(const DeadpanConversionRequest *request) {
         !valid_rate(request->output_rate_num, request->output_rate_den)) {
         return fail("invalid_request", "video contract is outside worker bounds");
     }
-    if (request->sample_bridge > 1 ||
-        (!request->sample_bridge &&
+    if (request->sampling_kind > DEADPAN_SAMPLING_EXTENSION_FROM_RIGHT ||
+        (request->sampling_kind == DEADPAN_SAMPLING_COPY &&
          (request->frames != request->output_frames ||
           request->rate_num != request->output_rate_num ||
           request->rate_den != request->output_rate_den)) ||
-        (request->sample_bridge && request->frames < 2)) {
-        return fail("invalid_request", "bridge sampling configuration is inconsistent");
+        (request->sampling_kind == DEADPAN_SAMPLING_BRIDGE_INTERIOR && request->frames < 2)) {
+        return fail("invalid_request", "sampling configuration is inconsistent");
+    }
+    if (request->sampling_kind >= DEADPAN_SAMPLING_EXTENSION_FROM_LEFT) {
+        uint32_t generated = request->generated_frames;
+        /* Positive context and generated intervals exactly partition the
+           native movie. Provider-specific block counts belong to the planner.
+           Check before any unsigned subtraction. */
+        if (generated == 0 || generated >= request->frames) {
+            return fail("invalid_request", "extension counts are inconsistent");
+        }
+        uint32_t context = request->frames - generated;
+        uint32_t expected_start =
+            request->sampling_kind == DEADPAN_SAMPLING_EXTENSION_FROM_LEFT ? context : 0;
+        if (request->generated_start != expected_start) {
+            return fail("invalid_request", "extension interval is inconsistent");
+        }
+    } else if (request->generated_start != 0 || request->generated_frames != 0) {
+        return fail("invalid_request", "non-extension request contains an extension interval");
     }
     if (request->input_byte_length == 0 || request->max_input_bytes == 0 ||
         request->max_output_bytes == 0 || request->max_scratch_bytes == 0 ||
@@ -775,24 +792,46 @@ static int output_rgb_from_scratch(int scratch_fd, uint32_t output_index,
                                    const DeadpanConversionRequest *request,
                                    uint64_t frame_bytes, uint8_t *output,
                                    uint8_t *left, uint8_t *right) {
-    if (!request->sample_bridge) {
+    if (output_index >= request->output_frames) {
+        return fail("invalid_request", "sample ordinal is outside output sequence");
+    }
+    if (request->sampling_kind == DEADPAN_SAMPLING_COPY) {
         uint64_t offset;
         return checked_mul_u64(output_index, frame_bytes, &offset) &&
                exact_read_at(scratch_fd, output, frame_bytes, offset);
     }
-    uint64_t denominator = (uint64_t)request->output_frames + 1;
-    uint64_t numerator = ((uint64_t)output_index + 1) *
-                         ((uint64_t)request->frames - 1);
+    uint64_t denominator;
+    uint64_t numerator;
+    uint64_t interval_start = 0;
+    uint64_t interval_end = request->frames;
+    if (request->sampling_kind == DEADPAN_SAMPLING_BRIDGE_INTERIOR) {
+        denominator = (uint64_t)request->output_frames + 1;
+        numerator = ((uint64_t)output_index + 1) * ((uint64_t)request->frames - 1);
+    } else {
+        /* Native validation bounds every count to 10000. These products fit
+           u64 independently of Rust's map implementation. Clamp before adding
+           S so neither interpolation fetch can reach a context handle. */
+        denominator = 2ULL * request->output_frames;
+        uint64_t center = (2ULL * output_index + 1) * request->generated_frames;
+        uint64_t maximum = ((uint64_t)request->generated_frames - 1) * denominator;
+        numerator = center > request->output_frames ? center - request->output_frames : 0;
+        if (numerator > maximum) {
+            numerator = maximum;
+        }
+        interval_start = request->generated_start;
+        interval_end = interval_start + request->generated_frames;
+        numerator += interval_start * denominator;
+    }
     uint64_t lower = numerator / denominator;
     uint64_t remainder = numerator % denominator;
     uint64_t upper = lower + (remainder != 0);
     uint64_t left_offset;
     uint64_t right_offset;
-    if (left == NULL || right == NULL || lower >= request->frames ||
-        upper >= request->frames ||
+    if (left == NULL || right == NULL || lower < interval_start || lower >= interval_end ||
+        upper >= interval_end || interval_end > request->frames ||
         !checked_mul_u64(lower, frame_bytes, &left_offset) ||
         !exact_read_at(scratch_fd, left, frame_bytes, left_offset)) {
-        return fail("invalid_request", "bridge sample coordinate is outside native scratch");
+        return fail("invalid_request", "sample coordinate is outside its native interval");
     }
     if (remainder == 0) {
         memcpy(output, left, (size_t)frame_bytes);
@@ -924,7 +963,7 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     rgb = av_frame_alloc();
     bgr0 = av_frame_alloc();
     packed = av_malloc((size_t)frame_bytes);
-    if (request->sample_bridge) {
+    if (request->sampling_kind != DEADPAN_SAMPLING_COPY) {
         sample_left = av_malloc((size_t)frame_bytes);
         sample_right = av_malloc((size_t)frame_bytes);
     }
@@ -932,8 +971,8 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
         fail("resource_exhausted", "allocate bounded FFV1 conversion buffers");
         goto cleanup;
     }
-    if (request->sample_bridge && (sample_left == NULL || sample_right == NULL)) {
-        fail("resource_exhausted", "allocate bounded bridge sampling buffers");
+    if (request->sampling_kind != DEADPAN_SAMPLING_COPY && (sample_left == NULL || sample_right == NULL)) {
+        fail("resource_exhausted", "allocate bounded sampling buffers");
         goto cleanup;
     }
     rgb->format = AV_PIX_FMT_RGB24;
@@ -1173,7 +1212,7 @@ static int verify_output(int output_fd, int scratch_fd,
     rgb = av_frame_alloc();
     expected = av_malloc((size_t)frame_bytes);
     actual = av_malloc((size_t)frame_bytes);
-    if (request->sample_bridge) {
+    if (request->sampling_kind != DEADPAN_SAMPLING_COPY) {
         sample_left = av_malloc((size_t)frame_bytes);
         sample_right = av_malloc((size_t)frame_bytes);
     }
@@ -1181,7 +1220,7 @@ static int verify_output(int output_fd, int scratch_fd,
         fail("resource_exhausted", "allocate bounded FFV1 verification buffers");
         goto cleanup;
     }
-    if (request->sample_bridge && (sample_left == NULL || sample_right == NULL)) {
+    if (request->sampling_kind != DEADPAN_SAMPLING_COPY && (sample_left == NULL || sample_right == NULL)) {
         fail("resource_exhausted", "allocate bounded bridge verification buffers");
         goto cleanup;
     }
@@ -1399,7 +1438,7 @@ int deadpan_convert(int input_fd, int output_fd, int scratch_fd,
     }
     digest_hex(decoded.input_sha, report->input_rgb_sha256);
     digest_hex(output_sha, report->output_rgb_sha256);
-    if (!request->sample_bridge &&
+    if (request->sampling_kind == DEADPAN_SAMPLING_COPY &&
         strcmp(report->input_rgb_sha256, report->output_rgb_sha256) != 0) {
         fail("verification_failed", "decoded FFV1 RGB digest differs from input RGB digest");
         goto cleanup;

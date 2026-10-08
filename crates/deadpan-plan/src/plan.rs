@@ -16,7 +16,10 @@ use crate::{Picture, PictureFraming, PictureSample, PlanError};
 
 #[path = "picture_definition.rs"]
 mod picture_definition;
-pub use picture_definition::{DefinitionPictureSample, ScopedHoldBoundaries};
+pub use picture_definition::{
+    DefinitionPictureSample, MAX_HOLD_CONTEXT_BATCH, MAX_HOLD_CONTEXT_FRAMES, ScopedHoldBoundaries,
+    ScopedHoldContext, ScopedHoldContextRequest,
+};
 use picture_definition::{PictureBudget, PictureWalk};
 #[path = "picture_definition_index.rs"]
 mod picture_definition_index;
@@ -1126,7 +1129,7 @@ impl RenderPlan {
     ) -> Result<DefinitionPictureSample, PlanError> {
         let sample = self.walk_picture_at(definition, position, cutaways, budget)?;
         let hold_provider = self.definition_hold_witness(definition, position, &sample);
-        Ok(DefinitionPictureSample {
+        let sample = DefinitionPictureSample {
             project_id: self.metadata.project_id.clone(),
             revision_id: self.metadata.revision_id.clone(),
             definition: self.nodes[definition].inspection.id.clone(),
@@ -1140,7 +1143,9 @@ impl RenderPlan {
             captions: sample.captions,
             lookup: sample.lookup,
             hold_provider,
-        })
+        };
+        budget.retain_sample(&sample)?;
+        Ok(sample)
     }
 
     fn walk_picture_at(
