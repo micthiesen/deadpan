@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T22:41:36Z",
+  "updated_at": "2026-10-08T00:50:02Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implementing AI replacements when source boundaries change, followed by generation at video edges.",
+  "focus": "Implementing AI generation at video edges with exact sampling and retained context.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "Counted AI pauses, provider controls and timing are verified. Source-boundary replacements and generation at video edges remain."
+      "note": "AI pauses, provider controls and replacements after source edits are verified. Generation at video edges remains."
     },
     {
       "id": "import",
@@ -173,6 +173,14 @@
       "revision": "fa7e3d63",
       "retrospective": false,
       "summary": "Verified counted AI pause creation, provider and revert controls, exact timing, real-model generation, packaged export and native responsiveness."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 88,
+      "complete_sections": 4,
+      "revision": "6c69e5d3",
+      "retrospective": false,
+      "summary": "Verified automatic AI replacements after source edits, atomic Undo/Redo, real-model generation, packaged export and native responsiveness."
     }
   ]
 }
