@@ -1,0 +1,10 @@
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"preflight"},"seconds":0.057074875}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"runtime_loading"},"seconds":12.471938208}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"model_loading"},"seconds":12.977208375}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"conditioning"},"seconds":12.97726475}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"inference"},"seconds":13.789590125}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"decoding"},"seconds":178.79056525}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"encoding"},"seconds":179.607012958}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3,"stage":"worker_validation"},"seconds":179.707187958}
+{"message":{"candidate":{"native":{"byte_length":2574054,"reference":"outputs/native.mp4","sha256":"717fc5480773764b05a58d6619e642a79e9587f5fa368cd707a0970973128f25"},"provenance":{"byte_length":51772,"reference":"outputs/provenance.json","sha256":"e9e3cb85f2af8493b58487b67d08ffebe07f60c6c2ae971133cf8e233468aff1"},"provider":{"pack_id":"ltx-2.3-q4-extension-development","pack_version":"1","runtime_id":"ltx-mlx","runtime_version":"0.15.8+deadpan-extension-dev1","seed":42107},"video":{"frame_rate":{"denominator":1,"numerator":24},"frames":17,"height":320,"width":768}},"event":"completed_extension","identity":{"attempt_id":"attempt-1","request_id":"extension-from_right"},"protocol":3},"seconds":179.950686292}
+{"cancellation_escalated":false,"exit":"exit status: 0","seconds":179.950753833}

@@ -1,0 +1,7 @@
+
+running 1 test
+deadpan-chaos {"accepted":37454,"classes":{"accepted":37454,"empty stream":991,"missing initial request":1,"worker declared # payload bytes; maximum is #":1611,"worker frame ended after # of # header bytes":693,"worker frame ended after # of # payload bytes":5983,"worker message violates the protocol contract":755,"worker payload is malformed":117821,"worker response identity differs from this attempt":148,"worker response protocol differs from this attempt":2614},"corpus":631,"distinct_classes":10,"elapsed_s":15.000848,"executions":168071,"failures":[],"max_alloc_bytes":null,"max_case_ms":11.964875,"mode":"campaign","rejected":130617,"seed":"0x017d972b38b5d981","target":"jobs-generation-protocol"}
+test adversarial_generation_frames ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 15.00s
+

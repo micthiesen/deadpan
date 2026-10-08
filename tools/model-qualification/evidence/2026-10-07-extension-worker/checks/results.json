@@ -1,0 +1,29 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.11
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "-p",
+      "deadpan-models",
+      "-p",
+      "deadpan-store"
+    ],
+    "exit": 101,
+    "seconds": 14.587
+  }
+]

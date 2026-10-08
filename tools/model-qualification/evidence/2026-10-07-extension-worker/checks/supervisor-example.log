@@ -1,0 +1,11 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.42s
+     Running unittests examples/qualify_model_worker.rs (target/debug/examples/qualify_model_worker-466103515b560652)
+
+running 3 tests
+test supported::tests::clean_exit_without_candidate_is_not_success ... ok
+test supported::tests::reaping_finishes_cancel_when_completion_was_suppressed ... ok
+test supported::tests::supervisor_faults_fail_and_keep_the_first_terminal_reason ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

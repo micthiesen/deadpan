@@ -1,0 +1,23 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+root=Path('/tmp/deadpan-resume-20261006/extension-worker/checks')
+root.mkdir()
+env=os.environ.copy()
+env['DEADPAN_FFMPEG_PREFIX']='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix'
+steps=[('protocol-tests',['cargo','test','--locked','-p','deadpan-jobs','--test','protocol','--test','lifecycle','--test','supervisor']),
+       ('supervisor-example',['cargo','test','--locked','-p','deadpan-jobs','--example','qualify_model_worker'])]
+results=[]
+for name,args in steps:
+    start=time.monotonic()
+    with (root/(name+'.log')).open('wb') as f:
+        result=subprocess.run(args,cwd='/Users/michael/Code/deadpan',env=env,stdout=f,stderr=subprocess.STDOUT)
+    results.append(dict(name=name,command=args,exit=result.returncode,seconds=round(time.monotonic()-start,3)))
+    (root/'protocol-results.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(results[-1]),flush=True)
+    if result.returncode:
+        print((root/(name+'.log')).read_text()[-15000:],flush=True)
+        raise SystemExit(result.returncode)

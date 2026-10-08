@@ -1,0 +1,22 @@
+{
+  "host/native.snapshot.mp4": {
+    "bytes": 2574054,
+    "sha256": "717fc5480773764b05a58d6619e642a79e9587f5fa368cd707a0970973128f25"
+  },
+  "media/sampled.mkv": {
+    "bytes": 1315646,
+    "sha256": "e828dd2827bb48a11f8b573992ef18fe90a59e31cc2fa4456630a3ac588761ac"
+  },
+  "media/native.mkv": {
+    "bytes": 2644695,
+    "sha256": "8c1fc7d5505e6014b965ab7659dab2c8c3a1e751f90ab88b978826a380ea5f12"
+  },
+  "workspace/outputs/candidate.mp4": {
+    "bytes": 1135348,
+    "sha256": "cbae7008a93fc6a8e8eaf69387d02e3277080327d7a475c11ed0b2de8fb9bc8c"
+  },
+  "workspace/outputs/native.mp4": {
+    "bytes": 2574054,
+    "sha256": "717fc5480773764b05a58d6619e642a79e9587f5fa368cd707a0970973128f25"
+  }
+}

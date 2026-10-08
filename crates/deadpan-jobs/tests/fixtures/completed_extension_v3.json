@@ -1,0 +1,13 @@
+{
+  "event": "completed_extension", "protocol": 3,
+  "identity": {"request_id": "job-17", "attempt_id": "attempt-2"},
+  "candidate": {
+    "native": {"reference": "outputs/native.mp4", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "byte_length": 101},
+    "provenance": {"reference": "outputs/provenance.json", "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "byte_length": 202},
+    "video": {"frames": 17, "frame_rate": {"numerator": 24, "denominator": 1}, "width": 512, "height": 320},
+    "provider": {
+      "pack_id": "qualified-local-pack", "pack_version": "2026.09",
+      "runtime_id": "mlx", "runtime_version": "1.2.3+deadpan", "seed": 38117
+    }
+  }
+}

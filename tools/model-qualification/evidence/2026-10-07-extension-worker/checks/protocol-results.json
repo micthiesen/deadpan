@@ -1,0 +1,20 @@
+[
+  {
+    "name": "protocol-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "--test",
+      "protocol",
+      "--test",
+      "lifecycle",
+      "--test",
+      "supervisor"
+    ],
+    "exit": 101,
+    "seconds": 2.858
+  }
+]

@@ -1,0 +1,103 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.236
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "conditioning::extension"
+    ],
+    "exit": 0,
+    "seconds": 1.337
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 21.663
+  },
+  {
+    "name": "clippy-ui",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 16.921
+  },
+  {
+    "name": "examples",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--example",
+      "retain_extension_conditioning",
+      "--example",
+      "qualify_extension_media",
+      "-p",
+      "deadpan-jobs",
+      "--example",
+      "qualify_model_worker"
+    ],
+    "exit": 0,
+    "seconds": 1.58
+  },
+  {
+    "name": "docs",
+    "command": [
+      "cargo",
+      "test",
+      "--doc",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "-p",
+      "deadpan-models"
+    ],
+    "exit": 0,
+    "seconds": 0.707
+  },
+  {
+    "name": "diff",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 0.031
+  }
+]

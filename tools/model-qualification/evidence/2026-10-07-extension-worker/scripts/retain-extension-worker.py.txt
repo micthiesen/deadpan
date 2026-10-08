@@ -1,0 +1,64 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+
+repo=Path('/Users/michael/Code/deadpan')
+run=Path('/tmp/deadpan-resume-20261006/extension-worker')
+evidence=repo/'tools/model-qualification/evidence/2026-10-07-extension-worker'
+evidence.mkdir()
+
+def command(*args):
+    return subprocess.check_output(args,cwd=repo,text=True).strip()
+
+def digest(path):
+    return hashlib.file_digest(path.open('rb'),'sha256').hexdigest()
+
+def copy(source,target):
+    target=evidence/target
+    target.parent.mkdir(parents=True,exist_ok=True)
+    shutil.copyfile(source,target)
+
+for name in ['checks','checks-2','checks-3','checks-final']:
+    for path in (run/name).rglob('*'):
+        if path.is_file():
+            copy(path,Path(name)/path.relative_to(run/name))
+for path in run.iterdir():
+    if path.is_file() and path.suffix in ['.json','.log']:
+        copy(path,path.name)
+for direction in ['from_left','from_right','cancel-inference']:
+    for path in (run/direction).rglob('*'):
+        if not path.is_file():
+            continue
+        relative=path.relative_to(run/direction)
+        if ('workspace' in relative.parts or 'media' in relative.parts) and path.suffix!='.json':
+            continue
+        if path.suffix not in ['.json','.jsonl','.log','.png']:
+            continue
+        copy(path,Path(direction)/relative)
+    # Media remains in local scratch; retain complete file identities.
+    media={str(path.relative_to(run/direction)):dict(bytes=path.stat().st_size,sha256=digest(path))
+           for path in (run/direction).rglob('*') if path.is_file() and path.suffix in ['.mp4','.mkv']}
+    (evidence/direction/'retained-media.json').write_text(json.dumps(media,indent=2)+'\n')
+for name in ['prepare-extension-worker.py','run-extension-worker.py','run-extension-worker-retry.py',
+             'verify-extension-worker-output.py','check-extension-protocol.py','check-extension-worker.py',
+             'check-extension-worker-2.py','check-extension-worker-3.py','check-extension-worker-fuzz.py',
+             'retain-extension-worker.py']:
+    copy(run.parent/name,Path('scripts')/(name+'.txt'))
+paths=set(command('git','diff','--name-only').splitlines())
+paths.update(command('git','ls-files','--others','--exclude-standard').splitlines())
+sources={name:digest(repo/name) for name in sorted(paths) if Path(name).suffix in ['.rs','.py']
+         and not name.startswith('tools/model-qualification/evidence/')}
+for name in ['crates/deadpan-jobs/tests/fixtures/generate_extension_v3.json',
+             'crates/deadpan-jobs/tests/fixtures/completed_extension_v3.json']:
+    sources[name]=digest(repo/name)
+data=dict(base_revision=command('git','rev-parse','HEAD'),source_sha256=sources,
+    hardware=command('sysctl','-n','machdep.cpu.brand_string'),memory_bytes=command('sysctl','-n','hw.memsize'),
+    operating_system=command('sw_vers'),rust=command('rustc','--version'),
+    scope='Development extension worker, input retention and media sampling; no app, Ready, quality admission or release capability claim')
+(evidence/'source.json').write_text(json.dumps(data,indent=2)+'\n')
+manifest={str(path.relative_to(evidence)):dict(bytes=path.stat().st_size,sha256=digest(path))
+          for path in sorted(evidence.rglob('*')) if path.is_file()}
+(evidence/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps(dict(files=len(manifest),bytes=sum(x['bytes'] for x in manifest.values()),directory=str(evidence))))

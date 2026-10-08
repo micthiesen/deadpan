@@ -1,0 +1,46 @@
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error: unnecessary `>= y + 1` or `x - 1 >=`
+   --> crates/deadpan-models/src/conditioning_extension.rs:391:12
+    |
+391 |         if seen.len() >= MAXIMUM_EXTENSION_CONTEXT_FRAMES + 1 {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: change it to: `seen.len() > MAXIMUM_EXTENSION_CONTEXT_FRAMES`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#int_plus_one
+    = note: `-D clippy::int-plus-one` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::int_plus_one)]`
+
+    Checking deadpan-transcribe v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-transcribe)
+    Checking deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+error: large size difference between variants
+  --> crates/deadpan-models/src/conditioning_extension.rs:36:1
+   |
+36 | /  pub enum ExtensionOppositeSeam {
+37 | |      Absent,
+   | |      ------ the second-largest variant carries no data at all
+38 | |/     PresentUnconditioned {
+39 | ||         picture: BoundaryPicture,
+40 | ||         frame: WorkspaceArtifact,
+41 | ||         #[serde(deserialize_with = "required_option")]
+42 | ||         content: Option<RasterRect>,
+43 | ||     },
+   | ||_____- the largest variant contains at least 380 bytes
+44 | |  }
+   | |__^ the entire enum is at least 384 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+   = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+39 -         picture: BoundaryPicture,
+39 +         picture: Box<BoundaryPicture>,
+   |
+
+error: could not compile `deadpan-models` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

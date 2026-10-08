@@ -1,0 +1,59 @@
+"""Independent full-pixel oracle over real model output, using retained files."""
+import hashlib
+import json
+import subprocess
+from fractions import Fraction
+from pathlib import Path
+import sys
+import numpy as np
+
+root = Path(sys.argv[1])
+ffmpeg = json.loads((root / 'runtime.json').read_text())['ffmpeg']
+width, height = 768, 320
+
+def decode(path, count):
+    result = subprocess.run([ffmpeg, '-v', 'error', '-nostdin', '-i', str(path), '-map', '0:v:0', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=True)
+    if len(result.stdout) != count*width*height*3:
+        raise AssertionError('decoded frame count differs')
+    return np.frombuffer(result.stdout, dtype=np.uint8).reshape(count, height, width, 3)
+
+for direction in ['from_left', 'from_right']:
+    case = root / direction
+    request = json.loads((case / 'request.json').read_text())
+    host = json.loads((case / 'host/host-report.json').read_text())
+    assert host['clean_exit'] and host['hash_verified_extension_bundle']
+    assert host['state'] == 'Validating' and not host['accepted'] and not host['media_validated']
+    native = decode(case / 'host/native.snapshot.mp4', 17)
+    canonical_native = decode(case / 'media/native.mkv', 17)
+    sampled = decode(case / 'media/sampled.mkv', 9)
+    worker_sampled = decode(case / 'workspace/outputs/candidate.mp4', 9)
+    assert np.array_equal(native, canonical_native)
+    positions = []
+    expected = []
+    start = 9 if direction == 'from_left' else 0
+    for j in range(9):
+        position = start + min(max(Fraction((2*j+1)*8 - 9, 18), 0), 7)
+        lo = position.numerator // position.denominator
+        hi = -(-position.numerator // position.denominator)
+        weight = position-lo
+        assert start <= lo <= hi < start+8
+        numerator, denominator = weight.numerator, weight.denominator
+        # Independent integer nearest/half-up reference; no production sampler call.
+        pixels = ((2*((denominator-numerator)*native[lo].astype(np.uint32) + numerator*native[hi].astype(np.uint32)) + denominator)//(2*denominator)).astype(np.uint8)
+        expected.append(pixels)
+        positions.append(dict(numerator=position.numerator,denominator=position.denominator,lower=lo,upper=hi))
+    expected = np.stack(expected)
+    assert np.array_equal(sampled, expected)
+    assert np.array_equal(worker_sampled, expected)
+    retained = case/'retained/inputs'
+    for source in (case/'workspace/inputs').iterdir():
+        assert source.read_bytes() == (retained/source.name).read_bytes()
+    report = dict(direction=direction, frames=9, exact_pixel_comparisons=int(expected.size*2+native.size),
+        native_matches_canonical=True, worker_and_host_match_independent_oracle=True, context_fetches=0,
+        positions=positions, native_rgb_sha256=hashlib.sha256(native.tobytes()).hexdigest(),
+        sampled_rgb_sha256=hashlib.sha256(sampled.tobytes()).hexdigest(), retained_inputs_unchanged=True)
+    with (case/'oracle.json').open('x') as f:
+        json.dump(report,f,indent=2)
+        f.write('\n')
+    print(json.dumps(report),flush=True)

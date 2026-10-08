@@ -11,6 +11,9 @@ use deadpan_jobs::{
     WorkerStage, WorkspaceArtifact, WorkspaceRef,
 };
 
+#[path = "protocol/extension.rs"]
+mod extension;
+
 fn sha(character: char) -> Sha256 {
     Sha256::new(character.to_string().repeat(64)).unwrap()
 }
@@ -251,7 +254,7 @@ fn rejects_malformed_unknown_and_wrong_protocol_payloads() {
     for json in [
         "not json",
         r#"{"operation":"cancel","protocol":1,"identity":{"request_id":"job","attempt_id":"attempt"},"cancellation_token":"token","extra":true}"#,
-        r#"{"operation":"cancel","protocol":3,"identity":{"request_id":"job","attempt_id":"attempt"},"cancellation_token":"token"}"#,
+        r#"{"operation":"cancel","protocol":4,"identity":{"request_id":"job","attempt_id":"attempt"},"cancellation_token":"token"}"#,
     ] {
         assert!(matches!(
             deadpan_jobs::read_host_message(&mut Cursor::new(framed(json))),
@@ -367,7 +370,7 @@ fn bridge_v2_round_trips_strict_plan_and_native_declaration() {
         Some(completed)
     );
     assert_eq!(BRIDGE_PROTOCOL_VERSION, 2);
-    assert!(serde_json::from_str::<ProtocolVersion>("3").is_err());
+    assert!(serde_json::from_str::<ProtocolVersion>("4").is_err());
 }
 
 #[test]
@@ -468,6 +471,7 @@ fn adversarial_generation_frames() {
     let hosts = [
         serde_json::to_value(request()).unwrap(),
         serde_json::to_value(bridge_request()).unwrap(),
+        serde_json::from_str(include_str!("fixtures/generate_extension_v3.json")).unwrap(),
     ];
     let workers = [
         serde_json::to_value(WorkerMessage::Completed {
@@ -489,6 +493,7 @@ fn adversarial_generation_frames() {
             progress: StageProgress::new(7, 23).unwrap(),
         })
         .unwrap(),
+        serde_json::from_str(include_str!("fixtures/completed_extension_v3.json")).unwrap(),
     ];
     let mut seeds = vec![frames(0, &hosts), frames(1, &workers)];
     seeds.extend(
@@ -526,6 +531,12 @@ fn adversarial_generation_frames() {
     )
     .expect("valid generation request/response must reach classification");
     assert_eq!(calls, 1);
+    exercise(
+        &frames(2, &[hosts[2].clone(), workers[3].clone()]),
+        &mut calls,
+    )
+    .expect("valid extension request/response must reach classification");
+    assert_eq!(calls, 2);
     let report = fuzz(Target::frames("jobs-generation-protocol"), seeds, |input| {
         exercise(input, &mut 0)
     });

@@ -1,0 +1,21 @@
+{
+  "scope": "Real supervised extension inference over retained synthetic temporal inputs. No production project capture, same-shot admission, visual quality admission, Ready state or acceptance.",
+  "dimensions": [
+    768,
+    320
+  ],
+  "context_frames": 9,
+  "generated_frames": 8,
+  "native_frames": 17,
+  "output_frames": 9,
+  "project_rate": {
+    "numerator": 30000,
+    "denominator": 1001
+  },
+  "native_rate": {
+    "numerator": 24,
+    "denominator": 1
+  },
+  "network": "sandbox-exec deny network*",
+  "source_fixture": "/tmp/deadpan-resume-20261006/extension-probe/run-1"
+}

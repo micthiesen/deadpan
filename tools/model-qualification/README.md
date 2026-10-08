@@ -12,9 +12,9 @@ model header without inference. The probes below remain developer harnesses.
 
 ## Supervised bridge probe
 
-`worker.py` accepts one protocol-2 `generate_bridge` request. The legacy
-protocol-1 parser remains available for compatibility tests, but this
-development worker emits only a `completed_bridge` event. Its strict manifest
+The bridge path accepts one protocol-2 `generate_bridge` request and emits a
+`completed_bridge` event. The legacy protocol-1 parser remains available for
+compatibility tests. Its strict manifest
 declares the native media and provenance JSON; the sampled media remains a
 developer output and is never declared as an accepted candidate. `worker_protocol.py`
 checks the Rust wire contract without importing MLX. `mlx_backend.py` binds the
@@ -23,11 +23,59 @@ cancellation between denoising steps, and serializes native and sampled RGB
 sequences. `worker_media.py` verifies the legal model grid, exact interior sample
 positions, full decoded RGB, frame timestamps/durations, and explicit color tags.
 
-The current adapter deliberately supports only two-endpoint bridges, Still
-motion, 768×320, native 24 fps and `8*k+1` native frames in [9, 97]. These are
+The bridge adapter supports captured motion/instruction/target controls,
+768×320, native 24 fps and `8*k+1` native frames in [9, 97]. These are
 qualification bounds, not timeline UI limits or full provider capabilities.
-It uses the existing developer GPL FFmpeg with lossless RGB intermediates.
-Neither this codec choice nor the runtime is selected for distribution.
+The developer harness uses the explicitly selected FFmpeg with lossless RGB
+intermediates. Packaged applications use their qualified bundled helpers.
+
+## Supervised extension probe
+
+Protocol 3 uses `generate_extension` and `completed_extension`, with a separate
+strict plan, context and development pack identity. It currently admits nine
+chronological context pictures and eight generated pictures at 768×320/24 fps.
+The authored interval must be positive and at most 1/3 second. This finite
+development envelope does not advertise a production provider capability.
+
+`ExtensionContext` retains each picture's definition clock, measured identity,
+PNG declaration and fitted content rectangle. The opposite seam is explicitly
+absent or present and unconditioned; its retained image never reaches the model.
+A selected region has one captured anchor. Inputs have a 16 MiB aggregate bound,
+64-picture maximum and 1 MiB manifest limit; the runtime admits exactly nine.
+Rust capture uses one deadline and immutable snapshots. Structural consistency
+and byte retention do not establish same-shot or source-identity qualification.
+
+The worker calls pinned `RetakePipeline.extend` on host-prepared RGB tensors,
+passing generated **latent** frames (`E/8`). It verifies unchanged source
+latents, decodes all 17 native pictures and samples only the eight-picture
+generated interval into exactly N authored frames. Frame-center sampling clamps
+both fetches inside that interval. Joint audio latents are computed and discarded.
+Complete native and sampled movies receive independent decoded RGB and timing
+verification; worker provenance uses its own schema 3 and exact duration fields.
+
+The development configuration uses pack `ltx-2.3-q4-extension-development`,
+version `1`, runtime `ltx-mlx`/`0.15.8+deadpan-extension-dev1` and operation
+`extension_hold`. Model files retain the approved weights' exact hashes and
+tensor schemas. Approved installable manifests are unchanged.
+
+Build the examples below, then run these in order with absolute configuration
+paths and fresh output directories:
+
+```sh
+target/debug/examples/retain_extension_conditioning /absolute/run/capture.json
+target/debug/examples/qualify_model_worker /absolute/run/host.json
+target/debug/examples/qualify_extension_media /absolute/run/media-config.json
+```
+
+The first captures inputs before launch. The supervisor owns termination and
+emits `extension_bundle` only after clean teardown and hashed snapshots. The
+last independently canonicalizes the complete native movie and generated-only
+sampled master through the native media worker. These tools do not authorize
+Ready or acceptance: production context capture, visual quality checks,
+durable temporal-input relevance, UI integration and a larger measured duration
+envelope remain required.
+
+## Build and run the bridge harness
 
 Build the Rust developer examples from the repository:
 

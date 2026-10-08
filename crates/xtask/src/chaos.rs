@@ -109,7 +109,8 @@ const ENTRIES: &[Entry] = &[
         package: "deadpan-models",
         test: None,
         filter: "adversarial",
-        targets: 1,
+        // Pack archive/manifest and Bridge/Extension conditioning manifests.
+        targets: 4,
     },
     Entry {
         name: "analysis-json",

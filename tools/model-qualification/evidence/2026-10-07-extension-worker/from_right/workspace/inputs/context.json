@@ -1,0 +1,572 @@
+{
+  "schema_version": 1,
+  "operation": "extension",
+  "model_color_space": {
+    "transfer": "srgb",
+    "primaries": "bt709",
+    "matrix": "rgb",
+    "range": "full"
+  },
+  "plan": {
+    "schema_version": 1,
+    "operation": "extension",
+    "sampling": {
+      "schema_version": 1,
+      "direction": "from_right",
+      "project_rate": {
+        "numerator": 30000,
+        "denominator": 1001
+      },
+      "native_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "context_frame_count": 9,
+      "generated_frame_count": 8,
+      "output_frame_count": 9,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up",
+      "policy": "frame_centers_clamped"
+    },
+    "native_dimensions": {
+      "width": 768,
+      "height": 320
+    }
+  },
+  "input_color_interpretation": "Synthetic moving-square fixture, measured lossless RGB context at 24 fps; manually authored definition clock for worker qualification only",
+  "context": [
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "20",
+              "denominator": "1"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 0,
+            "pts": {
+              "ticks": 0,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/000.png",
+        "sha256": "f63b8b0023b07bf5522c4288a49b6f55440cf2362c5b93e4c212de2c1f331e50",
+        "byte_length": 1867
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "21270",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 1,
+            "pts": {
+              "ticks": 1,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/001.png",
+        "sha256": "591daa2c7a91cf675d74ae5a02938760877e8bfa7cfc008ed31c4b1b6931525b",
+        "byte_length": 1861
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "22520",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 2,
+            "pts": {
+              "ticks": 2,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/002.png",
+        "sha256": "ea86e1bed9df4f2bbda727a202b28d3c5fbffa2ceda3464c78d75751c3700a1f",
+        "byte_length": 1871
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "23770",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 3,
+            "pts": {
+              "ticks": 3,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/003.png",
+        "sha256": "d8fe0a577b66160c3117fe5dc431c1a06a9e3c11ec1474c9ab580a753123f713",
+        "byte_length": 1872
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "25020",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 4,
+            "pts": {
+              "ticks": 4,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/004.png",
+        "sha256": "2f5b75920ec025644e7eaece8f48321c2ec1895db10daaee9a75879f1b712a21",
+        "byte_length": 1871
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "26270",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 5,
+            "pts": {
+              "ticks": 5,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/005.png",
+        "sha256": "3a7f842a9a7573aa53cdb8552cc39208262d884c5cf6d1199cddc95b0487f859",
+        "byte_length": 1872
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "27520",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 6,
+            "pts": {
+              "ticks": 6,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/006.png",
+        "sha256": "67d71a9be3474e2eedb82678950c7b46ee0c728a4afe03acbbcd1703919addd5",
+        "byte_length": 1873
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "4110",
+              "denominator": "143"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 7,
+            "pts": {
+              "ticks": 7,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/007.png",
+        "sha256": "0f4c77b4f51f771d2cb59a1bfe64fd553f60947e690e516986873a82cc692871",
+        "byte_length": 1873
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    },
+    {
+      "picture": {
+        "original": {
+          "clock": {
+            "kind": "definition",
+            "project_id": "synthetic-extension-project",
+            "revision_id": "synthetic-revision-1",
+            "definition": "synthetic-root",
+            "position": {
+              "numerator": "30020",
+              "denominator": "1001"
+            }
+          },
+          "asset": "synthetic-context-movie",
+          "qualification": "9fbd8a86463f36d541420d7f081ea0363147833a08a15ce5ba1c2cfcb82c3c45",
+          "picture": {
+            "source_frame": 8,
+            "pts": {
+              "ticks": 8,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            },
+            "stream": {
+              "codec": "h264",
+              "pixel_format": "gbrp",
+              "width": 768,
+              "height": 320,
+              "sample_aspect": [
+                1,
+                1
+              ],
+              "rotation_quarter_turns": 0,
+              "decoded_sample_bits": 8,
+              "color": {
+                "transfer": "srgb",
+                "primaries": "bt709",
+                "matrix": "rgb",
+                "range": "full"
+              }
+            },
+            "model_input": "srgb_codes_unchanged"
+          }
+        }
+      },
+      "frame": {
+        "reference": "inputs/008.png",
+        "sha256": "3fab0bc23a562eddf5d9e68969f7759ff0c2a2e89853ecb1e3a914083ae703a2",
+        "byte_length": 1878
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 320
+      }
+    }
+  ],
+  "presentation": {
+    "x": 0,
+    "y": 0,
+    "width": 768,
+    "height": 320
+  },
+  "opposite": {
+    "status": "absent"
+  },
+  "region": {
+    "selection": "none"
+  }
+}

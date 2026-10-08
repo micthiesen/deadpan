@@ -1,0 +1,18 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.38s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_models-13701061054cbdee)
+
+running 9 tests
+test conditioning::extension::tests::selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed ... ok
+test conditioning::extension::tests::both_directions_retain_exact_native_spacing_and_optional_opposite_seams ... ok
+test conditioning::extension::tests::context_rejects_clock_order_origin_geometry_and_wire_contradictions ... ok
+test conditioning::extension::tests::selected_anchor_unavailability_is_preserved_and_binds_request_target ... ok
+test conditioning::extension::tests::strict_capture_rejects_duplicate_json_keys_and_receipt_alias_tampering ... ok
+test conditioning::extension::tests::aggregate_bounds_aliases_cancellation_and_corrupt_files_fail ... ok
+test conditioning::extension::tests::capture_rejects_changed_origin_plan_protocol_direction_and_scope ... ok
+test conditioning::extension::tests::immutable_snapshots_and_blake3_receipts_cover_every_input_in_both_directions ... ok
+test conditioning::extension::tests::adversarial_extension_conditioning_and_receipts ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 110 filtered out; finished in 0.33s
+

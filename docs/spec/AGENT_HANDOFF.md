@@ -152,18 +152,22 @@ Thirteen focused verifier tests and nine optimized SDR/HDR integration tests
 pass. Exact failures, coverage limits, hashes and performance outliers remain
 in the qualification record; DP-18/DP-24 remain open.
 
-DP-12 still needs source-boundary replacement and one-sided extension.
-Read-only design notes are in `/tmp/deadpan-resume-20261006/` as
-`boundary-replacement-design.md` and `one-sided-extension-design.md`. Read
-`boundary-replacement-design-review.md` before implementation: it requires
-exclusive Play ownership, durable intent through Ready, consistent measured
-endpoint relevance, bounded shared indexes and order-independent final fallback
-selection. The
-bounded real-runtime `extension-probe` experiments establish both directional
-frame mappings on one synthetic input; they do not establish app integration
-or production quality.
+DP-12 remains Partial for one-sided extension. Source-boundary replacement is
+now implemented and verified in [its qualification record](../qualification/ai-boundaries-2026-10-07.md),
+including dependent/cyclic fallback decisions and durable intent through Ready.
+The [extension foundations](../qualification/extension-foundations-2026-10-07.md)
+provide exact generated-only sampling, bounded definition-clock context and
+native media conversion. The [supervised extension worker](../qualification/extension-worker-2026-10-07.md)
+adds distinct V3 messages, immutable temporal input receipts and both real
+Retake directions. Nine input pictures plus eight generated pictures at 24 fps
+produce exact N-frame sampled movies; the development envelope is at most 1/3
+second, with no approved extension capability advertised. Real runs, native
+conversion, full-pixel oracles and cancellation pass. Read that record for the
+remaining production capture, same-shot/relevance, quality, acceptance, UI and
+longer-duration work. The contract review is retained in the foundation evidence.
+
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
-meaningful verified milestones under spec §29.2; the estimate is about 87%.
+meaningful verified milestones under spec §29.2; the estimate is about 88%.
 
 [Native installation evidence](../qualification/native-install-2026-10-06.md)
 now includes online downloads/imports and local archive installation, real AI

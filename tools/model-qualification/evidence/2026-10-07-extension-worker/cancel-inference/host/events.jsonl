@@ -1,0 +1,7 @@
+{"message":{"event":"stage","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3,"stage":"preflight"},"seconds":0.042091625}
+{"message":{"event":"stage","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3,"stage":"runtime_loading"},"seconds":12.107674042}
+{"message":{"event":"stage","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3,"stage":"model_loading"},"seconds":12.620104584}
+{"message":{"event":"stage","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3,"stage":"conditioning"},"seconds":12.620158584}
+{"message":{"event":"stage","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3,"stage":"inference"},"seconds":13.424494709}
+{"message":{"event":"cancelled","identity":{"attempt_id":"cancel-attempt","request_id":"extension-from_left"},"protocol":3},"seconds":14.552873042}
+{"cancellation_escalated":false,"exit":"exit status: 0","seconds":14.681770792}

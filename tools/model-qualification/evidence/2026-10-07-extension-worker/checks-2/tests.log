@@ -1,0 +1,852 @@
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.91s
+────────────
+ Nextest run ID 5565b0bd-1f96-4e95-8aa6-fc3c324f7762 with nextest profile: default
+    Starting 843 tests across 49 binaries (1 test skipped)
+        PASS [   0.008s] (  1/843) deadpan-jobs artifact::tests::contained_metadata_classifies_device_and_owner_changes
+        PASS [   0.010s] (  2/843) deadpan-jobs faces::tests::completions_must_name_the_attempt_and_picture_with_ordered_bounded_faces
+        PASS [   0.010s] (  3/843) deadpan-jobs artifact::tests::growth_after_open_stops_at_the_declared_length
+        PASS [   0.010s] (  4/843) deadpan-jobs extension_plan::tests::extension_plan_revalidates_capability_and_cannot_silently_change_operation
+        PASS [   0.010s] (  5/843) deadpan-jobs extension_plan::tests::extension_plan_wire_is_strict_versioned_and_revalidated_without_a_model
+        PASS [   0.010s] (  6/843) deadpan-jobs artifact::tests::mutation_after_open_is_rejected_deterministically
+        PASS [   0.011s] (  7/843) deadpan-jobs extension_plan::tests::extension_plan_sampling_never_fetches_context_in_both_directions
+        PASS [   0.011s] (  8/843) deadpan-jobs faces::tests::the_face_order_is_left_then_top_then_size
+        PASS [   0.011s] (  9/843) deadpan-jobs extension_plan::tests::extension_capability_uses_legal_counts_inside_unaligned_bounds
+        PASS [   0.011s] ( 10/843) deadpan-jobs extension_plan::tests::extension_capability_enforces_duration_before_rounding_but_accepts_its_exact_limit
+        PASS [   0.011s] ( 11/843) deadpan-jobs faces::tests::requests_bound_source_stream_and_timeout
+        PASS [   0.011s] ( 12/843) deadpan-jobs extension_plan::tests::extension_plan_reports_inserted_generated_context_and_movie_intervals_separately
+        PASS [   0.012s] ( 13/843) deadpan-jobs extension_plan::tests::extension_plan_fractional_rates_choose_and_report_exactly
+        PASS [   0.012s] ( 14/843) deadpan-jobs extension_plan::tests::extension_plan_rounds_generated_count_with_shorter_ties_and_keeps_requested_time
+        PASS [   0.013s] ( 15/843) deadpan-jobs extension_plan::tests::extension_provider_rules_are_stricter_than_core_operation_facts
+        PASS [   0.014s] ( 16/843) deadpan-jobs extension_plan::tests::extension_plan_maximum_counts_and_extreme_rates_are_bounded_without_allocation
+        PASS [   0.008s] ( 17/843) deadpan-jobs hold_prompt::tests::instructions_are_bounded_utf8_text_and_never_control_characters
+        PASS [   0.007s] ( 18/843) deadpan-jobs hold_prompt::tests::resolving_omission_captures_presence_or_absence_once
+        PASS [   0.008s] ( 19/843) deadpan-jobs landmarks::tests::authored_region_seeds_require_both_boundaries_and_canonical_orientation
+        PASS [   0.009s] ( 20/843) deadpan-jobs landmarks::tests::inputs_outputs_and_deadlines_cannot_escape_their_bounds
+        PASS [   0.009s] ( 21/843) deadpan-jobs landmarks::tests::observations_bind_complete_native_pts_and_exact_optional_seeds
+        PASS [   0.009s] ( 22/843) deadpan-jobs landmarks::tests::completion_is_bound_to_attempt_exact_artifact_counts_and_pinned_runtime
+        PASS [   0.008s] ( 23/843) deadpan-jobs process::tests::cancellation_eof_is_recorded_only_when_the_reader_observes_it
+        PASS [   0.009s] ( 24/843) deadpan-jobs landmarks::tests::region_runtime_is_pinned_and_present_exactly_when_requested
+        PASS [   0.020s] ( 25/843) deadpan-jobs artifact::tests::cancellation_and_deadline_abort_between_copy_chunks
+        PASS [   0.010s] ( 26/843) deadpan-jobs landmarks::tests::optional_boundaries_change_the_exact_analysed_count
+        PASS [   0.010s] ( 27/843) deadpan-jobs landmarks::tests::request_requires_a_complete_bounded_ordered_sequence
+        PASS [   0.010s] ( 28/843) deadpan-jobs landmarks::tests::strict_wire_rejects_unknown_fields_and_other_worker_modes
+        PASS [   0.012s] ( 29/843) deadpan-jobs process::tests::failed_explicit_wait_never_retries_pid_operations
+        PASS [   0.013s] ( 30/843) deadpan-jobs process::tests::explicit_cleanup_reaps_and_joins_before_issuing_receipt
+        PASS [   0.012s] ( 31/843) deadpan-jobs process::tests::failed_membership_remains_unconfirmed_after_successful_leader_fallback
+        PASS [   0.011s] ( 32/843) deadpan-jobs process::tests::failed_reap_prevents_a_second_pid_wait
+        PASS [   0.007s] ( 33/843) deadpan-jobs render::admission::tests::frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text
+        PASS [   0.012s] ( 34/843) deadpan-jobs process::tests::joined_pump_panic_is_distinct_from_successful_pump_completion
+        PASS [   0.008s] ( 35/843) deadpan-jobs render::admission::tests::decision_binding_rejects_a_different_owner_document_or_committed_interval
+        PASS [   0.007s] ( 36/843) deadpan-jobs render::admission::tests::hdr_settings_are_the_frozen_sdr_controls_with_scaled_bitrate
+        PASS [   0.009s] ( 37/843) deadpan-jobs render::admission::tests::aborted_final_runtime_change_remains_evidence_without_allowing_fallback
+        PASS [   0.011s] ( 38/843) deadpan-jobs process::tests::poll_samples_a_live_worker_footprint_and_releases_it_after_exit
+        PASS [   0.009s] ( 39/843) deadpan-jobs render::admission::tests::cancellation_without_runtime_preserves_absence_and_no_selected_evidence
+        PASS [   0.012s] ( 40/843) deadpan-jobs process::tests::setup_failure_keeps_primary_and_unconfirmed_group_cleanup
+        PASS [   0.009s] ( 41/843) deadpan-jobs render::admission::tests::measured_decision_preserves_full_success_rejection_and_output_evidence
+        PASS [   0.009s] ( 42/843) deadpan-jobs render::admission::tests::pinned_controls_recipe_and_project_origin_reject_silent_retiming
+        PASS [   0.009s] ( 43/843) deadpan-jobs render::admission::tests::sdr_decision_bytes_and_probe_recipe_are_unchanged_by_hdr_support
+        PASS [   0.013s] ( 44/843) deadpan-jobs render::admission::tests::hdr_decisions_validate_and_round_trip_for_pq_and_hlg
+        PASS [   0.007s] ( 45/843) deadpan-jobs render::publication::tests::strict_intent_names_and_versions
+        PASS [   0.007s] ( 46/843) deadpan-jobs render::tests::automatic_grammar_rejects_mixed_versions_loose_controls_and_null_fields
+        PASS [   0.007s] ( 47/843) deadpan-jobs render::tests::lifecycle_requires_checkpoint_and_confirmed_teardown
+        PASS [   0.007s] ( 48/843) deadpan-jobs render::tests::strict_intent_rejects_new_policy_and_foreign_fields
+        PASS [   0.008s] ( 49/843) deadpan-jobs render::tests::engineering_wire_is_unchanged_and_frozen_parser_never_admits_automatic
+        PASS [   0.026s] ( 50/843) deadpan-jobs process::tests::cancellation_escalation_preserves_independent_read_faults
+        PASS [   0.008s] ( 51/843) deadpan-jobs render::tests::document_identity_preserves_exact_serialization_and_controls
+        PASS [   0.010s] ( 52/843) deadpan-jobs render::admission::tests::selected_decision_requires_the_ordered_typed_failure_and_runtime_binding
+        PASS [   0.013s] ( 53/843) deadpan-jobs render::admission::tests::saved_success_rejects_changed_controls_hashes_clocks_and_measured_events
+        PASS [   0.018s] ( 54/843) deadpan-jobs render::admission::tests::hdr_decision_rejects_mismatched_algorithm_color_metadata_and_evidence
+        PASS [   0.007s] ( 55/843) deadpan-jobs tracking::tests::completions_must_match_the_attempt_scope_and_picture_counts
+        PASS [   0.007s] ( 56/843) deadpan-jobs tracking::tests::requests_bound_source_range_stride_scope_and_timeout
+        PASS [   0.007s] ( 57/843) deadpan-jobs transcription::tests::requests_bound_paths_audio_scope_budget_and_timeout
+        PASS [   0.006s] ( 58/843) deadpan-jobs transcription::tests::responses_bind_identity_scope_budget_and_the_verified_model
+        PASS [   0.017s] ( 59/843) deadpan-jobs render::admission::tests::strict_decision_grammar_rejects_null_unknown_and_missing_fields
+        PASS [   0.009s] ( 60/843) deadpan-jobs transcription::tests::each_attempt_accepts_only_its_own_completion_kind
+        PASS [   0.008s] ( 61/843) deadpan-jobs transcription::tests::languages_are_auto_or_two_lowercase_letters
+        PASS [   0.009s] ( 62/843) deadpan-jobs transcription::tests::framed_messages_round_trip_and_reject_unknown_fields
+        PASS [   0.011s] ( 63/843) deadpan-jobs render::tests::verification_evidence_is_bounded_and_versioned
+        PASS [   0.008s] ( 64/843) deadpan-jobs transcription::tests::speech_detection_messages_round_trip
+        PASS [   0.008s] ( 65/843) deadpan-jobs transcription::tests::speech_detection_requests_bound_their_probability_budget
+        PASS [   0.026s] ( 66/843) deadpan-jobs process::tests::setup_failures_report_cleanup_for_every_partial_initialization
+        PASS [   0.007s] ( 67/843) deadpan-jobs::artifact controlled_snapshot_reports_typed_interruption_before_filesystem_access
+        PASS [   0.008s] ( 68/843) deadpan-jobs::artifact directories_fifos_and_sockets_are_rejected_without_blocking
+        PASS [   0.008s] ( 69/843) deadpan-jobs::artifact final_and_intermediate_symlinks_are_rejected
+        PASS [   0.008s] ( 70/843) deadpan-jobs::artifact hardlinks_inside_or_outside_the_workspace_are_rejected
+        PASS [   0.008s] ( 71/843) deadpan-jobs::artifact hash_length_and_budget_failures_are_distinct
+        PASS [   0.008s] ( 72/843) deadpan-jobs::artifact retained_workspace_descriptor_ignores_later_root_path_replacement
+        PASS [   0.008s] ( 73/843) deadpan-jobs::artifact sha256_matches_the_standard_abc_known_answer
+        PASS [   0.009s] ( 74/843) deadpan-jobs::artifact output_scope_is_component_aware_and_strict
+        PASS [   0.008s] ( 75/843) deadpan-jobs::generation_plan formula_and_dimension_limits_reject_invalid_bounds
+        PASS [   0.008s] ( 76/843) deadpan-jobs::generation_plan huge_requests_fail_boundedly_without_sample_allocation
+        PASS [   0.008s] ( 77/843) deadpan-jobs::generation_plan fractional_rates_choose_nearest_legal_count_and_report_exact_timing
+        PASS [   0.008s] ( 78/843) deadpan-jobs::generation_plan deserialized_plan_can_be_checked_against_selected_capability
+        PASS [   0.008s] ( 79/843) deadpan-jobs::generation_plan legal_rounding_uses_distance_and_breaks_exact_ties_upward
+        PASS [   0.009s] ( 80/843) deadpan-jobs::artifact valid_artifact_is_frozen_and_later_source_changes_do_not_reach_snapshot
+        PASS [   0.008s] ( 81/843) deadpan-jobs::generation_plan one_frame_maps_to_strict_native_midpoint
+        PASS [   0.008s] ( 82/843) deadpan-jobs::generation_plan rejects_unsupported_bridge_dimensions_and_out_of_capability_duration
+        PASS [   0.007s] ( 83/843) deadpan-jobs::generation_plan samples_are_lazy_exact_and_exclude_both_conditioning_endpoints
+        PASS [   0.006s] ( 84/843) deadpan-jobs::generation_plan sampling_map_preserves_exact_plan_contract
+        PASS [   0.007s] ( 85/843) deadpan-jobs::lifecycle buffered_stage_and_progress_are_ignored_during_cancellation
+        PASS [   0.007s] ( 86/843) deadpan-jobs::generation_plan serialization_is_strict_and_revalidates_derived_fields
+        PASS [   0.006s] ( 87/843) deadpan-jobs::lifecycle durable_checkpoint_rejects_impossible_state_payload_combinations
+        PASS [   0.007s] ( 88/843) deadpan-jobs::lifecycle completion_during_cancellation_waits_for_host_reap_without_candidate
+        PASS [   0.007s] ( 89/843) deadpan-jobs::lifecycle extension::extension_late_completion_stays_discarded_through_checkpoint_and_reap
+        PASS [   0.007s] ( 90/843) deadpan-jobs::lifecycle context_hash_changes_stale_a_job_but_unrelated_revision_is_not_a_binding
+        PASS [   0.007s] ( 91/843) deadpan-jobs::lifecycle completion_requires_explicit_host_validation_before_ready
+        PASS [   0.007s] ( 92/843) deadpan-jobs::lifecycle extension::extension_lifecycle_rejects_crossed_completion_versions_and_attempts
+        PASS [   0.008s] ( 93/843) deadpan-jobs::lifecycle extension::extension_completion_requires_exact_extension_validation_and_round_trips_checkpoint
+        PASS [   0.006s] ( 94/843) deadpan-jobs::lifecycle host_can_finalize_killed_worker_or_record_process_failure
+        PASS [   0.007s] ( 95/843) deadpan-jobs::lifecycle host_failure_and_cancellation_remain_available_during_validation
+        PASS [   0.008s] ( 96/843) deadpan-jobs::lifecycle lifecycle_rejects_message_and_checkpoint_protocol_crossovers
+        PASS [   0.006s] ( 97/843) deadpan-jobs::lifecycle native_bridge_completion_requires_exact_bundle_validation
+        PASS [   0.006s] ( 98/843) deadpan-jobs::lifecycle progress_is_monotonic_within_the_announced_stage
+        PASS [   0.006s] ( 99/843) deadpan-jobs::lifecycle rejects_wrong_identity_regressions_and_post_terminal_messages
+        PASS [   0.007s] (100/843) deadpan-jobs::lifecycle stale_or_detached_binding_never_silently_revives_or_authorizes_edit
+        PASS [   0.007s] (101/843) deadpan-jobs::lifecycle v2_late_completion_during_cancellation_is_discarded_until_reap
+        PASS [   0.006s] (102/843) deadpan-jobs::protocol attempt_providers_are_seeded_variants_below_the_worker_seed_limit
+        PASS [   0.007s] (103/843) deadpan-jobs::lifecycle worker_messages_after_completion_cannot_bypass_host_validation
+        PASS [   0.007s] (104/843) deadpan-jobs::lifecycle worker_cancellation_acknowledgement_is_durable_but_not_reaped
+        PASS [   0.008s] (105/843) deadpan-jobs::protocol bridge_v2_round_trips_strict_plan_and_native_declaration
+        PASS [   0.008s] (106/843) deadpan-jobs::protocol distinguishes_truncated_header_and_body
+        PASS [   0.008s] (107/843) deadpan-jobs::protocol extension::extension_v3_rejects_crossed_versions_operations_and_constraints
+        PASS [   0.008s] (108/843) deadpan-jobs::protocol extension::extension_v3_stage_progress_failure_and_cancel_keep_version_and_identity
+        PASS [   0.008s] (109/843) deadpan-jobs::protocol extension::extension_v3_shared_fixtures_round_trip_fragmented_wire_and_both_directions
+        PASS [   0.006s] (110/843) deadpan-jobs::protocol native_manifest_rejects_duplicate_references_and_unknown_fields
+        PASS [   0.007s] (111/843) deadpan-jobs::protocol extension::extension_v3_wire_revalidates_plan_unknown_fields_and_native_references
+        PASS [   0.073s] (112/843) deadpan-jobs faces::tests::adversarial_face_frames
+        PASS [   0.006s] (113/843) deadpan-jobs::protocol rejects_malformed_unknown_and_wrong_protocol_payloads
+        PASS [   0.007s] (114/843) deadpan-jobs::protocol progress_is_stage_local_exact_units
+        PASS [   0.008s] (115/843) deadpan-jobs::protocol legacy_v1_wire_shape_is_unchanged
+        PASS [   0.007s] (116/843) deadpan-jobs::protocol rejects_protocol_operation_crossovers_and_plan_mismatch
+        PASS [   0.007s] (117/843) deadpan-jobs::protocol rejects_oversized_length_before_body_allocation_or_read
+        PASS [   0.007s] (118/843) deadpan-jobs::protocol request_round_trip_preserves_exact_typed_contract
+        PASS [   0.007s] (119/843) deadpan-jobs::protocol round_trips_fragmented_frames_and_clean_eof
+        PASS [   0.007s] (120/843) deadpan-jobs::protocol validates_paths_ids_hashes_dimensions_and_progress_during_deserialization
+        PASS [   0.071s] (121/843) deadpan-jobs tracking::tests::adversarial_tracking_frames
+        PASS [   0.079s] (122/843) deadpan-jobs transcription::tests::adversarial_transcription_frames
+        PASS [   0.110s] (123/843) deadpan-jobs::protocol adversarial_generation_frames
+        PASS [   0.137s] (124/843) deadpan-jobs::supervisor independent_protocol::adapter_rejects_invalid_initial_operations_before_launch
+        PASS [   0.165s] (125/843) deadpan-jobs::supervisor independent_protocol::different_protocol_cancel_uses_its_own_identity_and_terminal_variant
+        PASS [   0.162s] (126/843) deadpan-jobs::supervisor late_poll_observes_exit_before_applying_a_timeout
+        PASS [   0.173s] (127/843) deadpan-jobs::supervisor orphaned_descendant_cannot_keep_worker_pipes_open
+        PASS [   0.198s] (128/843) deadpan-jobs::supervisor extension::extension_supervisor_delivers_distinct_bundle_after_clean_exit_then_snapshots_exact_bytes
+        PASS [   0.158s] (129/843) deadpan-jobs::supervisor response_protocol_must_match_initial_request
+        PASS [   0.006s] (130/843) deadpan-jobs::example/qualify_model_worker supported::tests::clean_exit_without_candidate_is_not_success
+        PASS [   0.007s] (131/843) deadpan-jobs::example/qualify_model_worker supported::tests::reaping_finishes_cancel_when_completion_was_suppressed
+        PASS [   0.206s] (132/843) deadpan-jobs::supervisor independent_protocol::different_protocol_retains_fragmented_progress_and_holds_success_until_clean_exit
+        PASS [   0.008s] (133/843) deadpan-jobs::example/qualify_model_worker supported::tests::supervisor_faults_fail_and_keep_the_first_terminal_reason
+        PASS [   0.212s] (134/843) deadpan-jobs::supervisor independent_protocol::different_protocol_checks_identity_terminal_order_and_failed_exit
+        PASS [   0.010s] (135/843) deadpan-models bounded_json::tests::escaped_json_stops_at_budget_without_partial_chunk
+        PASS [   0.012s] (136/843) deadpan-models bridge_color::tests::boundary_shape_rejects_contradictions_and_unknown_fields
+        PASS [   0.222s] (137/843) deadpan-jobs::supervisor cooperative_cancel_preserves_identity_and_does_not_escalate
+        PASS [   0.010s] (138/843) deadpan-models bridge_color::tests::only_sdr_bt709_primaries_with_srgb_or_bt709_transfer_condition
+        PASS [   0.227s] (139/843) deadpan-jobs::supervisor dropping_a_flooding_worker_releases_pipe_backpressure
+        PASS [   0.012s] (140/843) deadpan-models conditioning::extension::tests::both_directions_retain_exact_native_spacing_and_optional_opposite_seams
+        PASS [   0.017s] (141/843) deadpan-models conditioning::extension::tests::aggregate_bounds_aliases_cancellation_and_corrupt_files_fail
+        PASS [   0.201s] (142/843) deadpan-jobs::supervisor private_environment_and_fragmented_messages_finish_before_exit
+        PASS [   0.016s] (143/843) deadpan-models conditioning::extension::tests::context_rejects_clock_order_origin_geometry_and_wire_contradictions
+        PASS [   0.019s] (144/843) deadpan-models conditioning::extension::tests::capture_rejects_changed_origin_plan_protocol_direction_and_scope
+        PASS [   0.011s] (145/843) deadpan-models conditioning::extension::tests::selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed
+        PASS [   0.016s] (146/843) deadpan-models conditioning::extension::tests::selected_anchor_unavailability_is_preserved_and_binds_request_target
+        PASS [   0.011s] (147/843) deadpan-models conditioning::geometry::tests::content_presence_distinguishes_decoded_black_pixels_from_authored_black
+        PASS [   0.016s] (148/843) deadpan-models conditioning::extension::tests::strict_capture_rejects_duplicate_json_keys_and_receipt_alias_tampering
+        PASS [   0.011s] (149/843) deadpan-models conditioning::geometry::tests::geometry_requires_every_key_and_strict_integer_rectangles
+        PASS [   0.011s] (150/843) deadpan-models conditioning::geometry::tests::odd_placement_uses_native_floor_centering_and_content_is_contained
+        PASS [   0.013s] (151/843) deadpan-models conditioning::geometry::tests::rectangles_reject_empty_overflow_and_out_of_bounds_before_arithmetic
+        PASS [   0.013s] (152/843) deadpan-models conditioning::region::tests::foreign_asset_span_and_non_original_have_no_subject_seed
+        PASS [   0.014s] (153/843) deadpan-models conditioning::region::tests::captured_seed_rejects_changed_pts_confidence_and_region
+        PASS [   0.017s] (154/843) deadpan-models conditioning::region::tests::no_target_is_distinct_from_selected_but_unavailable
+        PASS [   0.018s] (155/843) deadpan-models conditioning::region::tests::record_fingerprint_changes_even_if_only_later_tracking_changes
+        PASS [   0.022s] (156/843) deadpan-models conditioning::region::tests::off_source_boxes_are_unavailable_without_clipping
+        PASS [   0.048s] (157/843) deadpan-models conditioning::extension::tests::immutable_snapshots_and_blake3_receipts_cover_every_input_in_both_directions
+        PASS [   0.181s] (158/843) deadpan-jobs::supervisor stderr_is_drained_but_retained_tail_is_bounded
+        PASS [   0.014s] (159/843) deadpan-models conditioning::region::tests::region_uses_exact_decoded_pts_and_actual_odd_fitted_content
+        PASS [   0.015s] (160/843) deadpan-models conditioning::tests::cancellation_limits_and_duplicate_json_are_rejected
+        PASS [   0.015s] (161/843) deadpan-models conditioning::region::tests::tiny_authored_or_fitted_regions_remain_explicitly_unavailable
+        PASS [   0.017s] (162/843) deadpan-models conditioning::tests::capture_freezes_exact_bytes_and_receipt_bindings
+        PASS [   0.014s] (163/843) deadpan-models conditioning::tests::declaration_hash_length_and_manifest_alias_mismatches_fail
+        PASS [   0.015s] (164/843) deadpan-models conditioning::tests::context_and_receipt_checked_deserialization_rejects_forgery
+        PASS [   0.014s] (165/843) deadpan-models conditioning::tests::definition_clocks_are_exact_bound_and_distinct_from_project_frames
+        PASS [   0.013s] (166/843) deadpan-models conditioning::tests::identical_left_and_right_declarations_deduplicate_content_identity
+        PASS [   0.128s] (167/843) deadpan-jobs::supervisor workspace_symlinks_relative_executables_and_unbounded_deadlines_are_rejected
+        PASS [   0.015s] (168/843) deadpan-models conditioning::tests::strict_manifest_binding_plan_and_scope_fail_before_retention
+        PASS [   0.011s] (169/843) deadpan-models endpoints::decode::tests::endpoint_decode_obeys_cancellation_and_shared_deadline
+        PASS [   0.012s] (170/843) deadpan-models conditioning::tests::version_four_grammar_is_strict_deterministic_and_bounded
+        PASS [   0.011s] (171/843) deadpan-models endpoints::decode::tests::endpoint_png_decoder_requires_exact_rgb8_and_raster
+        PASS [   0.017s] (172/843) deadpan-models conditioning::tests::symlink_hardlink_and_outside_frame_are_rejected
+        PASS [   0.011s] (173/843) deadpan-models endpoints::tests::either_join_rejects_at_exact_gross_threshold_but_local_changes_do_not
+        PASS [   0.011s] (174/843) deadpan-models endpoints::tests::endpoint_reports_bind_objects_geometry_clock_and_policy
+        PASS [   0.011s] (175/843) deadpan-models endpoints::tests::exact_sampled_endpoints_include_single_frame_and_fractional_clocks
+        PASS [   0.011s] (176/843) deadpan-models landmark_inspection::tests::inspection_deadline_and_frame_budget_precede_worker_launch
+        PASS [   0.010s] (177/843) deadpan-models packs::constraints::tests::declared_bridge_drives_the_qualified_count_and_raster_contract
+        PASS [   0.011s] (178/843) deadpan-models packs::constraints::tests::bridge_prompt_capabilities_are_required_manifest_fields
+        PASS [   0.011s] (179/843) deadpan-models landmark_inspection::tests::worker_input_copy_checks_both_identities_and_restores_publication_reader
+        PASS [   0.134s] (180/843) deadpan-jobs::supervisor wrong_attempt_and_messages_after_completion_are_rejected
+        PASS [   0.014s] (181/843) deadpan-models packs::constraints::tests::invalid_formulas_dimensions_and_incomplete_conditioning_fail_validation
+        PASS [   0.010s] (182/843) deadpan-models packs::constraints::tests::speech_constraints_keep_the_real_pcm_worker_bounds
+        PASS [   0.012s] (183/843) deadpan-models packs::constraints::tests::missing_constraints_and_unknown_nested_fields_cannot_be_admitted
+        PASS [   0.320s] (184/843) deadpan-jobs::supervisor extension::extension_supervisor_rejects_crossed_versions_wrong_attempts_and_failed_teardown
+        PASS [   0.521s] (185/843) deadpan-jobs process::tests::unresolved_held_pump_does_not_block_failure_delivery_during_drop
+        PASS [   0.468s] (186/843) deadpan-jobs::supervisor escalated_cancellation_does_not_report_the_frame_its_kill_truncated
+        PASS [   0.173s] (187/843) deadpan-models packs::tests::a_license_requiring_acceptance_refuses_before_any_byte
+        PASS [   0.010s] (188/843) deadpan-models packs::tests::archive_numbers_accept_octal_and_base_256
+        PASS [   0.192s] (189/843) deadpan-models packs::tests::a_tampered_receipt_or_truncated_file_is_not_installed
+        PASS [   0.010s] (190/843) deadpan-models packs::tests::content_ranges_parse_their_first_byte_and_space_is_measurable
+        PASS [   0.563s] (191/843) deadpan-jobs::extension_adversarial adversarial_extension_plans_preserve_generated_only_samples
+        PASS [   0.444s] (192/843) deadpan-jobs::supervisor unresponsive_worker_is_killed_after_grace_and_deadline
+        PASS [   0.318s] (193/843) deadpan-models packs::tests::a_new_version_copies_identical_files_from_an_installed_one
+        PASS [   0.134s] (194/843) deadpan-models packs::tests::corrupt_space_starved_and_cancelled_installs_never_activate
+        PASS [   0.103s] (195/843) deadpan-models packs::tests::install_verifies_stages_and_activates_one_complete_version
+        PASS [   0.011s] (196/843) deadpan-models packs::tests::manifests_require_https_approved_hosts_safe_names_and_hashes
+        PASS [   0.474s] (197/843) deadpan-models conditioning::tests::adversarial_conditioning_manifests
+        PASS [   0.431s] (198/843) deadpan-models packs::interrupted_download_tests::the_production_trust_store_rejects_the_test_ca_and_plain_http
+        PASS [   0.012s] (199/843) deadpan-models packs::tests::the_approved_bridge_pack_matches_the_qualified_receipt
+        PASS [   0.010s] (200/843) deadpan-models packs::tests::the_approved_whisper_pack_is_valid_and_pinned
+        PASS [   0.127s] (201/843) deadpan-models packs::tests::interrupted_downloads_resume_and_range_ignoring_servers_restart
+        PASS [   0.160s] (202/843) deadpan-models packs::tests::installed_update_revalidation_checks_bytes_without_removing_damaged_files
+        PASS [   0.054s] (203/843) deadpan-models packs::tests::pack_state_reports_partial_bytes_and_discard_clears_them
+        PASS [   0.027s] (204/843) deadpan-models packs::updates::tests::a_valid_signature_cannot_expand_the_shipped_runtime_constraints
+        PASS [   0.425s] (205/843) deadpan-models packs::tests::adversarial_pack_manifests
+        PASS [   0.174s] (206/843) deadpan-models packs::tests::offline_folders_install_verified_copies_and_refuse_tampering
+        PASS [   0.136s] (207/843) deadpan-models packs::tests::unexpected_resume_offsets_keep_the_partial_and_installs_are_exclusive
+        PASS [   0.126s] (208/843) deadpan-models packs::updates::tests::a_damaged_selected_version_falls_back_to_the_compiled_pack
+        PASS [   0.018s] (209/843) deadpan-models packs::updates::tests::new_or_changed_licenses_need_explicit_acceptance
+        PASS [   0.029s] (210/843) deadpan-models packs::updates::tests::shared_pointer_directories_are_refused
+        PASS [   0.067s] (211/843) deadpan-models packs::updates::tests::pointer_directory_sync_failure_reports_the_committed_selection
+        PASS [   0.481s] (212/843) deadpan-models packs::tests::cancelling_a_stalled_download_returns_promptly_and_keeps_its_bytes
+        PASS [   0.030s] (213/843) deadpan-models packs::updates::tests::untrusted_tampered_and_incompatible_updates_are_refused
+        PASS [   0.012s] (214/843) deadpan-models qualification::stored_bridge_tests::accepted_controls_require_matching_host_and_worker_bindings
+        PASS [   0.012s] (215/843) deadpan-models qualification::stored_bridge_tests::measured_contexts_admit_and_a_foreign_model_space_is_refused
+        PASS [   0.016s] (216/843) deadpan-models qualification::stored_bridge_tests::legacy_profiles_cannot_claim_a_selected_region_without_evidence
+        PASS [   0.026s] (217/843) deadpan-models qualification::stored_bridge_tests::definition_clocks_cannot_be_downgraded_to_older_host_profiles
+        PASS [   0.025s] (218/843) deadpan-models qualification::stored_bridge_tests::retained_context_and_worker_bytes_require_both_hashes_and_strict_bindings
+        PASS [   0.012s] (219/843) deadpan-models qualification::stored_bridge_tests::schema6_with_actual_context3_remains_readable_without_region_capture
+        PASS [   0.044s] (220/843) deadpan-models qualification::stored_bridge_tests::schema6_requires_bound_recomputed_landmark_evidence_and_keeps_old_profiles
+        PASS [   0.017s] (221/843) deadpan-models qualification::stored_bridge_tests::schema8_admits_exact_definition_clocks_and_retained_project_clocks
+        PASS [   0.154s] (222/843) deadpan-models packs::updates::tests::torn_retained_files_are_replaced_and_notes_explain_fallbacks
+        PASS [   0.042s] (223/843) deadpan-models qualification::stored_bridge_tests::schema7_requires_region_evidence_and_explicit_capture_binding
+        PASS [   0.189s] (224/843) deadpan-models packs::updates::tests::downgrades_replays_and_conflicts_are_refused
+        PASS [   0.784s] (225/843) deadpan-models packs::interrupted_download_tests::a_server_ignoring_the_range_restarts_the_file_and_still_verifies
+        PASS [   0.018s] (226/843) deadpan-models qualification::stored_bridge_tests::schema8_rejects_definition_clocks_bound_to_another_immutable_origin
+        PASS [   0.012s] (227/843) deadpan-models qualification::stored_bridge_tests::stored_artifact_project_and_sampling_substitutions_fail
+        PASS [   0.302s] (228/843) deadpan-models packs::updates::tests::a_signed_update_installs_side_by_side_activates_and_rolls_back
+        PASS [   0.012s] (229/843) deadpan-models qualification::stored_bridge_tests::stored_production_envelope_preserves_measured_clocks_and_historical_identity
+        PASS [   0.008s] (230/843) deadpan-models quality::tests::edited_thresholds_or_inconsistent_coverage_cannot_admit_retained_report
+        PASS [   0.031s] (231/843) deadpan-models qualification::stored_bridge_tests::schema_four_requires_a_strict_quality_report_matching_the_request
+        PASS [   0.014s] (232/843) deadpan-models quality::tests::lighting_flash_return_is_rejected_even_when_endpoints_match
+        PASS [   0.014s] (233/843) deadpan-models quality::tests::incomplete_extra_and_nonfinite_measurements_fail_closed
+        PASS [   0.010s] (234/843) deadpan-models quality::tests::lighting_requires_coherent_shift_and_includes_the_limit
+        PASS [   0.036s] (235/843) deadpan-models qualification::stored_bridge_tests::stored_schema5_requires_endpoint_evidence_bound_to_retained_geometry
+        PASS [   0.010s] (236/843) deadpan-models quality::tests::motion_uses_authored_time_and_selected_motion_limit
+        PASS [   0.014s] (237/843) deadpan-models quality::tests::textureless_pairs_remain_explicitly_unavailable
+        PASS [   0.008s] (238/843) deadpan-models region::tests::context_comparison_binds_the_selected_target_even_for_identical_boxes
+        PASS [   0.011s] (239/843) deadpan-models region::tests::altered_raw_policy_runtime_and_object_bindings_are_rejected
+        PASS [   0.009s] (240/843) deadpan-models region::tests::fresh_measurement_requires_explicit_capture_even_when_old_context_is_readable
+        PASS [   0.050s] (241/843) deadpan-models qualification::stored_bridge_tests::stored_semantic_substitutions_fail_after_rehashing_the_envelope
+        PASS [   0.009s] (242/843) deadpan-models region::tests::no_selected_subject_is_explicit_unavailable_evidence
+        PASS [   0.010s] (243/843) deadpan-models region::tests::lost_worker_track_retains_partial_coverage_without_restart
+        PASS [   0.010s] (244/843) deadpan-models region::tests::measured_subject_retains_exact_native_coverage_and_pinned_runtime
+        PASS [   0.009s] (245/843) deadpan-models region::tests::observation_and_runtime_presence_must_match_the_explicit_capture
+        PASS [   0.008s] (246/843) deadpan-models region::tests::sustained_region_drift_is_rejected_before_a_report_can_be_admitted
+        PASS [   0.009s] (247/843) deadpan-models region::tests::selected_but_lost_authored_subject_keeps_its_identity_and_reason
+        PASS [   0.009s] (248/843) deadpan-models strict_json::tests::duplicate_keys_trailing_data_nonfinite_and_excess_depth_fail
+        PASS [   0.009s] (249/843) deadpan-models region::tests::unavailable_reason_and_wire_shape_cannot_be_relabelled
+        PASS [   0.009s] (250/843) deadpan-models updates::tests::compiled_keys_parse
+        PASS [   0.011s] (251/843) deadpan-models updates::tests::versions_compare_numerically
+        PASS [   0.011s] (252/843) deadpan-models updates::tests::signatures_bind_kind_key_and_payload
+        PASS [   0.010s] (253/843) deadpan-store audit::tests::validator_identity_covers_the_store_dependency_graph
+        PASS [   0.011s] (254/843) deadpan-store backups::tests::budgets_drop_the_oldest_but_never_the_newest
+        PASS [   0.009s] (255/843) deadpan-store backups::tests::rotation_keeps_recent_hourly_daily_weekly_and_safety_backups
+        PASS [   0.009s] (256/843) deadpan-store backups::tests::stamps_round_trip_and_names_parse
+        PASS [   0.010s] (257/843) deadpan-store boundary_replacements::decisions::tests::cycle_can_choose_an_exact_all_fallback_fixed_point
+        PASS [   0.009s] (258/843) deadpan-store boundary_replacements::decisions::tests::downstream_dag_uses_final_conservative_values_exactly
+        PASS [   0.009s] (259/843) deadpan-store boundary_replacements::decisions::tests::endpoint_truth_tables_and_local_constant_folding
+        PASS [   0.009s] (260/843) deadpan-store boundary_replacements::decisions::tests::forced_a_fallback_preserves_b_that_matches_only_that_fallback
+        PASS [   0.009s] (261/843) deadpan-store boundary_replacements::decisions::tests::mixed_solution_even_cycle_uses_an_explicit_conservative_group
+        PASS [   0.009s] (262/843) deadpan-store boundary_replacements::decisions::tests::malformed_indices_and_exact_work_limits_fail_without_partial_results
+        PASS [   0.009s] (263/843) deadpan-store boundary_replacements::decisions::tests::odd_negation_cycle_uses_the_same_truthful_conservative_policy
+        PASS [   0.192s] (264/843) deadpan-models qualification::stored_bridge_tests::retained_nested_resource_bounds_are_enforced_before_admission
+        PASS [   0.010s] (265/843) deadpan-store boundary_replacements::decisions::tests::node_and_endpoint_permutations_do_not_choose_provider_outcomes
+        PASS [   0.009s] (266/843) deadpan-store boundary_replacements::decisions::tests::residual_partition_stays_fixed_after_external_values_are_known
+        PASS [   0.009s] (267/843) deadpan-store boundary_replacements::decisions::tests::unchanged_positive_cycles_and_their_dependents_stay_accepted
+        PASS [   0.016s] (268/843) deadpan-store boundary_replacements::tests::conservative_cycle_is_named_once_by_the_same_canonical_group_identity
+        PASS [   0.678s] (269/843) deadpan-models packs::tests::exported_archives_import_and_hostile_archives_are_refused
+        PASS [   0.017s] (270/843) deadpan-store boundary_replacements::tests::derived_entries_apply_in_one_reversible_core_envelope_without_touching_valid_neighbor
+        PASS [   0.014s] (271/843) deadpan-store boundary_replacements::tests::equal_aspect_ratios_match_but_a_changed_generated_crop_replaces_the_consumer
+        PASS [   0.013s] (272/843) deadpan-store boundary_replacements::tests::exact_artifact_receipts_are_cached_and_byte_admission_precedes_database_reads
+        PASS [   0.013s] (273/843) deadpan-store boundary_replacements::tests::exact_explicit_exclusion_is_a_constant_and_needs_no_origin_receipt
+        PASS [   0.013s] (274/843) deadpan-store boundary_replacements::tests::final_fallback_can_preserve_neighbor_that_an_independent_first_pass_would_replace
+        PASS [   0.013s] (275/843) deadpan-store boundary_replacements::tests::final_provider_changes_propagate_and_births_bind_the_complete_final_assignment
+        PASS [   0.012s] (276/843) deadpan-store boundary_replacements::tests::fresh_acceptance_can_itself_revert_when_a_neighbor_loses_its_accepted_provider
+        PASS [   0.013s] (277/843) deadpan-store boundary_replacements::tests::missing_or_corrupt_origin_refuses_without_any_store_write
+        PASS [   0.012s] (278/843) deadpan-store boundary_replacements::tests::nested_retime_uses_the_sampled_master_ordinal_and_saved_content_aspect
+        PASS [   0.011s] (279/843) deadpan-store boundary_replacements::tests::only_requested_live_intent_nodes_are_measured_and_their_final_inputs_are_returned
+        PASS [   0.014s] (280/843) deadpan-store boundary_replacements::tests::removed_cutaway_over_generated_provider_does_not_create_a_false_dependency
+        PASS [   0.013s] (281/843) deadpan-store boundary_replacements::tests::repeated_defaults_and_owned_branches_get_one_canonical_binding_without_occurrence_expansion
+        PASS [   0.011s] (282/843) deadpan-store boundary_replacements::tests::shortening_zoom_caption_and_whole_group_moves_preserve_raw_conditioning
+        PASS [   0.080s] (283/843) deadpan-store boundary_replacements::decisions::tests::one_hundred_thousand_node_chains_use_bounded_linear_iterative_work
+        PASS [   1.076s] (284/843) deadpan-models packs::interrupted_download_tests::cancellation_keeps_partial_bytes_and_the_next_attempt_resumes
+        PASS [   1.305s] (285/843) deadpan-jobs::supervisor successful_worker_cleans_up_many_forking_descendants_before_delivering_candidate
+        PASS [   0.349s] (286/843) deadpan-models qualification::stored_bridge_tests::stored_wire_rejects_hash_length_duplicate_unknown_legacy_and_oversize
+        PASS [   1.207s] (287/843) deadpan-models packs::interrupted_download_tests::a_corrupt_resumed_byte_fails_verification_and_discards_the_part
+        PASS [   1.664s] (288/843) deadpan-models packs::interrupted_download_tests::resumes_only_while_the_entity_tag_matches
+        PASS [   0.820s] (289/843) deadpan-store checkpoint::tests::setup_failures_remove_only_owned_staging_entries
+        PASS [   0.876s] (290/843) deadpan-store checkpoint::tests::setup_rollback_preserves_replacements_and_unknown_contents
+        PASS [   0.011s] (291/843) deadpan-store generation_acceptance::gap_occurrence_tests::dormant_gap_is_not_an_effective_generation_target
+        PASS [   2.197s] (292/843) deadpan-jobs::supervisor escaped_descendant_cannot_hang_pipe_cleanup
+        PASS [   1.012s] (293/843) deadpan-store compound::tests::future_checkpoint_dependency_is_rejected_before_history_can_launder_it
+        PASS [   2.271s] (294/843) deadpan-jobs::supervisor invalid_protocol_missing_completion_and_bad_exit_never_pass
+        PASS [   1.114s] (295/843) deadpan-store checkpoint::tests::failed_directory_sync_preserves_published_file_and_captured_receipt
+        PASS [   0.202s] (296/843) deadpan-store generation_intents::tests::capacity_index_is_bounded_and_ordered_for_one_hundred_thousand_heads
+        PASS [   1.200s] (297/843) deadpan-store compound::tests::late_failure_rolls_back_checkpoints_registers_timeline_and_redo
+        PASS [   1.379s] (298/843) deadpan-store compound::tests::compound_macro_inputs_are_frozen_and_invalid_programs_fail_historical_reopen
+        PASS [   1.129s] (299/843) deadpan-store compound::tests::register_only_compound_preserves_history_and_rejects_stale_or_forged_inputs
+        PASS [   0.009s] (300/843) deadpan-store generation_intents::tests::head_charge_reserves_identity_and_fulfilment_growth
+        PASS [   1.657s] (301/843) deadpan-store backups::tests::raw_before_migration_backup_does_not_prune_existing_backups
+        PASS [   1.688s] (302/843) deadpan-store compound::tests::range_repeat_and_count_setter_share_one_history_entry_without_register_writes
+        PASS [   1.395s] (303/843) deadpan-store generation_intents::tests::accepted_close_preserves_request_relevance_and_fulfilled_receipt
+        PASS [   0.010s] (304/843) deadpan-store generation_intents::tests::unavailable_diagnostics_are_not_identity_but_typed_causes_are
+        PASS [   1.291s] (305/843) deadpan-store generation_intents::tests::failed_renewal_admission_rolls_back_document_old_head_and_terminal
+        PASS [   1.356s] (306/843) deadpan-store generation_intents::tests::compound_wrap_then_scoped_revert_closes_intent_even_when_fallback_is_identical
+        PASS [   0.015s] (307/843) deadpan-store generation_origins::tests::bounded_canonical_reader_rejects_tampering_before_accepting_a_digest
+        PASS [   0.014s] (308/843) deadpan-store generation_origins::tests::complete_artifact_key_and_insert_conflict_do_not_merge_different_evidence
+        PASS [   2.227s] (309/843) deadpan-store compound::tests::planned_macro_multi_cut_has_one_undo_and_final_copy_survives_reopen_and_body_replacement
+        PASS [   1.309s] (310/843) deadpan-store generation_intents::tests::fresh_intent_without_optional_resolver_stays_queued_and_reopens
+        PASS [   0.018s] (311/843) deadpan-store generation_origins::tests::copied_acceptance_retains_initial_receipt_and_cannot_become_its_admission_witness
+        PASS [   0.019s] (312/843) deadpan-store generation_origins::tests::discarding_an_accepted_offer_preserves_history_but_cannot_grant_first_admission
+        PASS [   0.022s] (313/843) deadpan-store generation_origins::tests::deleting_origin_or_accepted_retention_and_mutating_dependencies_are_detected
+        PASS [   0.016s] (314/843) deadpan-store generation_origins::tests::full_validation_rejects_rehashed_input_or_option_forgery
+        PASS [   0.025s] (315/843) deadpan-store generation_origins::tests::exact_origin_round_trips_for_direct_and_scoped_acceptance_and_survives_staleness
+        PASS [   0.011s] (316/843) deadpan-store generation_origins::tests::input_binding_distinguishes_definition_edges_from_explicit_black_and_brands_revision
+        PASS [   0.034s] (317/843) deadpan-store generation_origins::tests::first_admission_binds_both_asset_spans_to_measured_bundle_evidence
+        PASS [   0.015s] (318/843) deadpan-store generation_origins::tests::insertion_rejects_wrong_artifact_alias_object_canvas_and_acceptance_command
+        PASS [   0.015s] (319/843) deadpan-store generation_origins::tests::matching_audit_prefix_skips_origin_document_and_index_reconstruction
+        PASS [   0.011s] (320/843) deadpan-store generation_origins::tests::missing_measured_input_evidence_is_not_replaced_by_a_guessed_frame
+        PASS [   0.014s] (321/843) deadpan-store generation_origins::tests::precommit_origin_proves_inputs_and_ready_bundle_without_granting_authored_acceptance
+        PASS [   0.017s] (322/843) deadpan-store generation_origins::tests::receipt_proves_base_acceptance_when_its_final_boundary_tail_restores_fallback
+        PASS [   0.066s] (323/843) deadpan-store generation_pictures::tests::byte_budget_refuses_before_decoding_and_stops_later_cold_loads
+        PASS [   1.187s] (324/843) deadpan-store generation_intents::tests::full_replay_rejects_fabricated_capacity_instead_of_user_cancellation
+        PASS [   0.012s] (325/843) deadpan-store generation_pictures::tests::generated_identity_uses_sampled_ordinal_and_normalized_saved_crop
+        PASS [   1.440s] (326/843) deadpan-store generation_intents::tests::fulfilled_head_survives_unrelated_edit_and_provider_choice_revokes_it
+        PASS [   0.010s] (327/843) deadpan-store generation_pictures::tests::measured_selection_policy_is_applied_before_identity_comparison
+        PASS [   0.010s] (328/843) deadpan-store generation_pictures::tests::measured_vfr_identity_ignores_remote_span_changes_and_source_aliases
+        PASS [   0.012s] (329/843) deadpan-store generation_pictures::tests::source_identity_refuses_missing_terminal_support_or_wrong_clock
+        PASS [   0.014s] (330/843) deadpan-store generation_pictures::tests::missing_receipts_count_toward_attempt_bound_and_never_repeat_queries
+        PASS [   0.106s] (331/843) deadpan-store generation_pictures::tests::failed_receipt_is_not_loaded_again_until_a_new_batch
+        PASS [   0.010s] (332/843) deadpan-store generation_preparations::transitions::canonical::tests::index_budget_is_checked_before_scanning_and_missing_targets_do_not_allocate
+        PASS [   0.013s] (333/843) deadpan-store generation_preparations::transitions::canonical::tests::nested_shared_play_extension_follows_only_the_selected_isolation
+        PASS [   0.032s] (334/843) deadpan-store generation_preparations::retention::tests::terminal_compaction_preserves_immutable_birth_controls_without_lifetime_queue_cost
+        PASS [   0.144s] (335/843) deadpan-store generation_pictures::tests::frame_budget_halts_new_loads_but_preserves_already_cached_receipts
+        PASS [   0.011s] (336/843) deadpan-store generation_preparations::transitions::tests::canonical_hold_index_matches_owned_plan_addresses_without_expanding_shared_plays
+        PASS [   0.010s] (337/843) deadpan-store generation_retention::tests::times_before_1970_clamp_for_records_and_stay_negative_for_checks
+        PASS [   1.282s] (338/843) deadpan-store generation_intents::tests::operational_failure_keeps_intent_but_explicit_cancel_is_one_shot_and_cas_bound
+        PASS [   3.674s] (339/843) deadpan-models packs::interrupted_download_tests::dropped_connections_resume_from_the_partial_file_until_verified
+        PASS [   0.147s] (340/843) deadpan-store generation_pictures::tests::repeated_aliases_share_one_admitted_receipt_and_one_asset_contract
+        PASS [   0.105s] (341/843) deadpan-store object_storage::tests::a_reader_that_lost_the_race_to_removal_reports_a_missing_object
+        PASS [   0.129s] (342/843) deadpan-store object_storage::tests::a_deduplicated_write_restarts_the_cleanup_grace_period
+        PASS [   0.064s] (343/843) deadpan-store object_storage::tests::an_existing_corrupt_object_is_never_overwritten
+        PASS [   0.088s] (344/843) deadpan-store object_storage::tests::bounds_mismatches_and_source_errors_remove_only_pending_files
+        PASS [   1.382s] (345/843) deadpan-store generation_intents::tests::renewed_inserted_intent_keeps_reciprocal_proof_after_successor_cancel
+        PASS [   0.081s] (346/843) deadpan-store object_storage::tests::clone_validation_failure_removes_only_its_observed_pending_entry
+        PASS [   0.060s] (347/843) deadpan-store object_storage::tests::controlled_publication_cancels_and_cleans_its_pending_object
+        PASS [   0.084s] (348/843) deadpan-store object_storage::tests::copy_fallback_never_overwrites_a_competing_object
+        PASS [   1.706s] (349/843) deadpan-store generation_intents::tests::fulfilled_retirement_keeps_full_birth_and_current_head_then_cancels_explicitly
+        PASS [   0.055s] (350/843) deadpan-store object_storage::tests::device_owner_and_type_checks_are_independent_of_schema_constraints
+        PASS [   0.070s] (351/843) deadpan-store object_storage::tests::copy_fallback_rejects_a_source_changed_after_clone_attempt
+        PASS [   0.034s] (352/843) deadpan-store object_storage::tests::extended_attributes_keep_file_state_while_modification_time_changes_it
+        PASS [   0.129s] (353/843) deadpan-store object_storage::tests::generated_snapshot_rejects_an_expired_copy_deadline
+        PASS [   1.316s] (354/843) deadpan-store generation_intents::tests::retired_birth_receipt_tampering_is_rejected_by_full_history
+        PASS [   0.160s] (355/843) deadpan-store object_storage::tests::hardlinks_writable_files_and_mutation_are_rejected
+        PASS [   0.039s] (356/843) deadpan-store object_storage::tests::identifiers_and_references_have_a_strict_wire_shape
+        PASS [   0.039s] (357/843) deadpan-store object_storage::tests::missing_and_symbolic_directories_fail_only_media_operations
+        PASS [   0.196s] (358/843) deadpan-store object_storage::tests::generated_snapshot_observes_revocation_and_cancellation_after_open
+        PASS [   0.172s] (359/843) deadpan-store object_storage::tests::held_descriptors_defeat_directory_swaps_and_final_symlinks
+        PASS [   0.011s] (360/843) deadpan-store object_storage::tests::object_control_distinguishes_session_close_from_user_cancellation
+        PASS [   0.030s] (361/843) deadpan-store object_storage::tests::namespace_authority_is_checked_at_each_media_operation
+        PASS [   0.087s] (362/843) deadpan-store object_storage::tests::no_replace_race_verifies_and_durably_accepts_the_winner
+        PASS [   0.101s] (363/843) deadpan-store object_storage::tests::publication_rejects_namespace_replacement_during_durability
+        PASS [   0.136s] (364/843) deadpan-store object_storage::tests::promotion_is_read_only_deduplicated_and_snapshot_is_immutable
+        PASS [   0.155s] (365/843) deadpan-store object_storage::tests::publication_durability_failure_is_not_hidden_by_close_or_cancel
+        PASS [   0.196s] (366/843) deadpan-store object_storage::tests::publication_finishes_durability_before_close_or_cancel_stops_verification
+        PASS [   0.074s] (367/843) deadpan-store object_storage::tests::replaced_pending_entry_is_not_published_or_deleted
+        PASS [   0.087s] (368/843) deadpan-store object_storage::tests::retry_after_post_publish_failure_finishes_existing_object_durability
+        PASS [   0.154s] (369/843) deadpan-store object_storage::tests::readers_hold_a_shared_lock_that_defeats_removal
+        PASS [   0.035s] (370/843) deadpan-store original_media::tests::file_provider_attributes_change_ctime_without_counting_as_source_changes
+        PASS [   1.178s] (371/843) deadpan-store generation_intents::tests::wrapping_current_fallback_renews_only_its_exact_retained_hold
+        PASS [   0.023s] (372/843) deadpan-store original_media::tests::final_link_confirmation_rejects_same_inode_changes_after_hashing
+        PASS [   0.096s] (373/843) deadpan-store object_storage::tests::shared_original_storage_clones_or_copies_without_moving_the_source_cursor
+        PASS [   0.091s] (374/843) deadpan-store object_storage::tests::unsupported_clone_uses_verified_copy_without_moving_the_source_cursor
+        PASS [   1.287s] (375/843) deadpan-store generation_intents::tests::undo_and_repeated_redo_allocate_fresh_authorizations_without_resurrection
+        PASS [   0.172s] (376/843) deadpan-store publication_durability::tests::barrier_failure_at_every_step_denies_acknowledgement
+        PASS [   0.152s] (377/843) deadpan-store publication_durability::tests::replacement_database_wal_and_package_fail_closed
+        PASS [   1.209s] (378/843) deadpan-store migration::tests::gaps_open_writers_and_newer_packages_refuse_without_writing
+        PASS [   1.476s] (379/843) deadpan-store generation_preparations::transitions::canonical::tests::wide_nested_index_shares_ancestry_and_only_allocates_requested_targets
+        PASS [   3.620s] (380/843) deadpan-store compound::tests::repeat_cut_paste_has_one_undo_and_reopened_checkpoint_survives_branch_and_bank_gc
+        PASS [   0.926s] (381/843) deadpan-store publication::tests::changed_package_database_revokes_all_previously_issued_permits
+        PASS [   1.045s] (382/843) deadpan-store publication::tests::writers_request_full_sqlite_durability
+        PASS [   1.101s] (383/843) deadpan-store publication::tests::last_sequence_is_reserved_for_a_terminal_result
+        PASS [   1.113s] (384/843) deadpan-store publication::tests::altered_unrelated_history_is_found_by_full_audit_without_loading_it_for_selected_reads
+        PASS [   1.030s] (385/843) deadpan-store registers::tests::canonical_but_forged_edited_payload_does_not_supply_its_own_provenance
+        PASS [   2.125s] (386/843) deadpan-store migration::tests::synthetic_release_step_backs_up_validates_and_promotes
+        PASS [   1.025s] (387/843) deadpan-store registers::tests::children::all_empty_forest_cut_keeps_exact_zero_time_payload_and_neighbor_clocks
+        PASS [   5.561s] (388/843) deadpan-models packs::updates::tests::concurrent_updates_and_rollbacks_never_select_a_replayed_serial
+        PASS [   1.145s] (389/843) deadpan-store registers::tests::children::forest_cut_refuses_same_time_different_identity_then_reopens_through_undo_redo
+        PASS [   0.881s] (390/843) deadpan-store registers::tests::exhausted_version_rejects_cut_before_commit
+        PASS [   0.843s] (391/843) deadpan-store registers::tests::failed_cut_mismatch_and_post_bank_write_failure_preserve_everything
+        PASS [   2.898s] (392/843) deadpan-store migration::tests::failed_steps_and_rejected_copies_leave_the_database_unchanged
+        PASS [   0.790s] (393/843) deadpan-store registers::tests::macro_preview::preview_and_save_reject_the_same_stale_context_names_and_exhausted_version_without_writes
+        PASS [   0.913s] (394/843) deadpan-store registers::tests::macro_and_copy_replace_named_type_both_ways_and_macro_never_changes_unnamed
+        PASS [   3.118s] (395/843) deadpan-store generation_preparations::retention::tests::capacity_retires_waiting_work_before_claimed_and_emits_bounded_truthful_notice
+        PASS [   0.881s] (396/843) deadpan-store registers::tests::macro_preview::readonly_macro_preview_matches_save_without_changing_default_history_or_redo
+        PASS [   0.754s] (397/843) deadpan-store registers::tests::macro_save_stale_workspace_bank_or_unnamed_target_changes_nothing
+        PASS [   0.804s] (398/843) deadpan-store registers::tests::selected_range_cut_matches_exact_parent_and_interval
+        PASS [   1.200s] (399/843) deadpan-store registers::tests::macro_save_reopens_and_checkpoints_exact_body_without_copy_alias_or_history_changes
+        PASS [   1.125s] (400/843) deadpan-store registers::tests::malformed_row_types_and_excess_slot_counts_fail_before_loading_values
+        PASS [   0.010s] (401/843) deadpan-store render_jobs::admission::color_tests::output_keeps_the_basis_transfer_or_falls_back_to_sdr_never_upgrades
+        PASS [   0.011s] (402/843) deadpan-store render_jobs::admission::color_tests::stored_decisions_must_match_the_receipt_derived_branch
+        PASS [   2.385s] (403/843) deadpan-store registers::tests::duplicate_names_and_content_ids_fail_before_loading_a_bank
+        PASS [   0.045s] (404/843) deadpan-store render_jobs::audit_tests::render_audit_reads_each_job_and_revision_once_as_decision_history_grows
+        PASS [   1.806s] (405/843) deadpan-store registers::tests::macro_preview::readonly_snapshot_pairs_document_and_bank_during_atomic_compound_writes
+        PASS [   0.160s] (406/843) deadpan-store render_media::tests::cancellation_and_absolute_deadline_cannot_return_prepared_bytes
+        PASS [   1.283s] (407/843) deadpan-store registers::tests::named_copy_reopens_with_shared_default_and_preserves_timeline_redo
+        PASS [   1.268s] (408/843) deadpan-store registers::tests::names_are_closed_and_all_slots_deduplicate_one_payload
+        PASS [   0.023s] (409/843) deadpan-store render_media::tests::read_only_open_never_creates_render_namespace
+        PASS [   0.080s] (410/843) deadpan-store render_media::tests::manifest_failure_preserves_movie_already_published
+        PASS [   0.010s] (411/843) deadpan-store render_media::tests::references_are_strict_bounded_claims
+        PASS [   0.057s] (412/843) deadpan-store render_media::tests::namespace_replacement_and_lock_replacement_are_detected
+        PASS [   0.077s] (413/843) deadpan-store render_media::tests::pending_and_orphan_bytes_and_entry_count_consume_namespace_capacity
+        PASS [   0.061s] (414/843) deadpan-store render_media::tests::revoked_worker_lock_serializes_replacement_session_until_guard_drops
+        PASS [   0.090s] (415/843) deadpan-store render_media::tests::symlinks_hardlinks_and_unsafe_namespace_entries_are_rejected
+        PASS [   0.199s] (416/843) deadpan-store render_media::tests::retention_deduplicates_at_exact_namespace_budget_and_snapshots_independently
+        PASS [   0.010s] (417/843) deadpan-store single_source::tests::historical_baseline_may_omit_only_the_editorial_window
+        PASS [   0.024s] (418/843) deadpan-store source_registration::sound_clocks_tests::unchanged_beat_sound_clock_transitions_recheck_exact_receipt_and_original
+        PASS [   0.220s] (419/843) deadpan-store render_media::tests::snapshot_rehashes_both_objects_and_checks_declared_sha256
+        PASS [   0.172s] (420/843) deadpan-store render_media::tests::token_rejects_another_session_even_with_identical_package_and_bytes
+        PASS [   0.009s] (421/843) deadpan-store storage::tests::only_complete_64_digit_lowercase_runs_are_digests
+        PASS [   0.118s] (422/843) deadpan-store render_media::tests::wrong_hash_truncation_extra_bytes_and_combined_budget_publish_nothing
+        PASS [   0.009s] (423/843) deadpan-store storage::tests::tables_map_to_reference_classes
+        PASS [   0.009s] (424/843) deadpan-store storage::tests::typed_references_carry_lengths_and_content_identities
+        PASS [   0.010s] (425/843) deadpan-store storage::tests::render_candidates_are_released_only_by_publication_or_terminal_failure
+        PASS [   0.012s] (426/843) deadpan-store validation::tests::stored_json_is_bounded_in_bytes_before_deserialization
+        PASS [   0.052s] (427/843) deadpan-store validation::tests::stored_identity_metadata_is_bounded_before_text_extraction
+        PASS [   0.837s] (428/843) deadpan-store registers::tests::stale_wrong_project_missing_capture_and_unavailable_original_preserve_bank
+        PASS [   1.414s] (429/843) deadpan-store registers::tests::sql_enforces_macro_and_copy_provenance_and_raw_macro_types_are_checked
+        PASS [   7.845s] (430/843) deadpan-store compound::tests::hostile_checkpoint_mutations_fail_open_and_checkpoint_validation
+        PASS [   0.806s] (431/843) deadpan-store tests::sqlite_full_error_keeps_last_committed_revision
+        PASS [   0.855s] (432/843) deadpan-store tests::duplicated_handle_does_not_extend_writer_ownership
+        PASS [   1.727s] (433/843) deadpan-store registers::tests::whole_child_cut_is_atomic_and_undo_keeps_copy_including_empty_children
+        PASS [   1.530s] (434/843) deadpan-store::adversarial adversarial_register_slot_tampers_are_detected
+        PASS [   1.043s] (435/843) deadpan-store::analysis_corrections corrections_apply_undo_redo_and_reopen_without_touching_history
+        PASS [   1.092s] (436/843) deadpan-store::analysis_corrections damaged_corrections_fail_validation_and_can_be_discarded
+        PASS [   4.643s] (437/843) deadpan-store registers::tests::forged_macro_program_rejects_even_with_valid_canonical_hash_and_no_provenance
+        PASS [   1.112s] (438/843) deadpan-store::backups a_backup_is_a_verified_standalone_copy_of_the_committed_state
+        PASS [   2.532s] (439/843) deadpan-store render_jobs::audit_tests::render_audit_reuses_engineering_jobs_across_historical_checkpoint_retries
+        PASS [  10.457s] (440/843) deadpan-models packs::disk_full_tests::a_volume_that_fills_during_a_download_fails_truthfully_and_resumes
+        PASS [   1.415s] (441/843) deadpan-store::backups a_database_that_no_longer_opens_is_replaced_by_a_verified_backup
+        PASS [   1.025s] (442/843) deadpan-store::backups a_newer_package_with_a_live_wal_is_viewed_at_its_latest_commit_without_writing_it
+        PASS [   1.161s] (443/843) deadpan-store::backups a_newer_document_this_build_cannot_read_is_refused_with_an_explanation
+        PASS [   6.585s] (444/843) deadpan-store publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen
+        PASS [   5.836s] (445/843) deadpan-store registers::tests::corrupt_hash_provenance_name_or_orphaned_content_is_rejected_on_reopen
+        PASS [   0.934s] (446/843) deadpan-store::backups cancellation_publishes_nothing
+        PASS [   1.173s] (447/843) deadpan-store::backups a_newer_schema_opens_read_only_for_viewing_and_is_never_written
+        PASS [   3.410s] (448/843) deadpan-store::analysis_corrections a_new_change_clears_redo_and_undo_is_bounded
+        PASS [   0.012s] (449/843) deadpan-store::chaos_kills a_kill_at_any_report_byte_preserves_only_complete_acknowledgements
+        PASS [   0.844s] (450/843) deadpan-store::bookmarks records_without_a_bookmark_and_managed_copies_have_no_candidate
+        PASS [   1.967s] (451/843) deadpan-store::backups restore_carries_ai_request_identities_and_hold_versions_forward
+        PASS [   2.398s] (452/843) deadpan-store::backups backups_run_beside_a_committing_writer_and_capture_a_saved_revision
+        PASS [   2.054s] (453/843) deadpan-store::backups restore_refuses_damaged_and_foreign_backups_without_changing_the_project
+        PASS [   1.820s] (454/843) deadpan-store::backups restore_revokes_handles_and_never_frees_issued_identities
+        PASS [  11.319s] (455/843) deadpan-store compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes
+        PASS [   0.641s] (456/843) deadpan-store::delete_range invalid_range_split_ids_and_timing_fail_without_partial_history
+        PASS [   2.280s] (457/843) deadpan-store::backups rotation_bounds_the_folder_and_keeps_the_newest_and_safety_backups
+        PASS [   2.610s] (458/843) deadpan-store::backups restore_replaces_the_database_and_is_itself_reversible
+        PASS [   3.198s] (459/843) deadpan-store::backups cleanup_fails_closed_on_unreadable_backups_and_waits_for_copies
+        PASS [   0.046s] (460/843) deadpan-store::edited_slice child_capture::range_compat::literal_range_command_shapes_match_on_test_only_current_header_documents
+        PASS [   1.060s] (461/843) deadpan-store::delete_ripple current_history_replays_old_delete_and_ripple_delete_with_exact_undo_redo
+        PASS [   1.080s] (462/843) deadpan-store::delete_range range_delete_previews_once_and_replays_mixed_history_after_reopen
+        PASS [   0.682s] (463/843) deadpan-store::edited_slice child_capture::historical_recapture_rejects_forged_same_time_child_parent_bounds_and_contents_without_writes
+        PASS [   3.292s] (464/843) deadpan-store::bookmarks a_moved_and_renamed_linked_file_is_found_and_relinked_after_verification
+        PASS [   3.290s] (465/843) deadpan-store::bookmarks a_moved_file_whose_bytes_changed_is_never_relinked
+        PASS [   0.583s] (466/843) deadpan-store::edited_slice invalid_slice_identity_and_clock_pools_leave_all_authored_rows_unchanged
+        PASS [   0.699s] (467/843) deadpan-store::edited_slice child_capture::whole_positive_child_excludes_same_time_empty_neighbors_and_previews_do_not_author
+        PASS [   1.521s] (468/843) deadpan-store::edited_slice captured_slice_survives_source_deletion_and_independent_pastes_reopen_undo_redo
+        PASS [  14.572s] (469/843) deadpan-models packs::tests::adversarial_pack_archives
+        PASS [   0.727s] (470/843) deadpan-store::edited_slice placement::invalid_split_and_import_pools_leave_placement_history_unchanged
+        PASS [   8.983s] (471/843) deadpan-store registers::tests::macro_provenance_unnamed_or_row_corruption_fails_read_checkpoint_and_reopen
+        PASS [   2.146s] (472/843) deadpan-store::edited_slice child_capture::historical_empty_child_paste_is_one_structural_revision_with_exact_slot_and_undo_redo
+        PASS [   1.856s] (473/843) deadpan-store::edited_slice child_capture::retained_asset::zero_paste_preserves_routed_root_bus_and_restores_only_mark_owned_historical_media
+        PASS [   0.844s] (474/843) deadpan-store::edited_slice preview::all_placement_factories_seal_the_exact_preview_and_base_without_writes
+        LEAK [   1.072s] (475/843) deadpan-store::edited_slice move_range::stale_source_stale_destination_and_bad_split_pool_cannot_write_history
+        PASS [   0.771s] (476/843) deadpan-store::edited_slice preview::factories_reject_non_slice_forged_capture_reused_ids_and_read_only_owner
+        PASS [   1.383s] (477/843) deadpan-store::edited_slice placement::interior_slice_paste_is_one_durable_edit_after_source_deletion
+        PASS [   0.009s] (478/843) deadpan-store::failpoints child_entry
+        PASS [   1.346s] (479/843) deadpan-store::edited_slice placement::slice_replacement_splits_both_endpoints_in_one_durable_edit
+        PASS [   0.863s] (480/843) deadpan-store::edited_slice preview::move_preview_seals_only_a_current_validated_command_and_leaves_history_unchanged
+        PASS [   0.795s] (481/843) deadpan-store::edited_slice preview::standalone_view_preserves_only_owned_content_without_history_and_revokes_on_close
+        PASS [   4.465s] (482/843) deadpan-store::chaos_kills random_process_kills_during_a_migration_leave_the_old_or_the_new_database
+        PASS [   0.866s] (483/843) deadpan-store::generated_admission generic_commands_cannot_bypass_dedicated_candidate_admission
+        PASS [   0.010s] (484/843) deadpan-store::generated_media references_keep_the_hash_algorithm_and_reject_forged_wire_values
+        PASS [   3.418s] (485/843) deadpan-store::edited_slice child_capture::range_compat::literal_core_34_and_database_43_are_rejected_without_rewriting_authored_rows
+        PASS [   0.858s] (486/843) deadpan-store::generated_media metadata_only_packages_still_open_but_missing_media_never_looks_available
+        PASS [  11.101s] (487/843) deadpan-store registers::tests::macro_preview::snapshot_and_macro_preview_reject_an_over_capacity_bank_before_deserialization_or_writes
+        PASS [   0.818s] (488/843) deadpan-store::generated_media publication_is_durable_idempotent_and_separate_from_authored_history
+        PASS [   1.382s] (489/843) deadpan-store::generated_media package_path_replacement_cannot_redirect_publication
+        PASS [   0.922s] (490/843) deadpan-store::generated_media returned_snapshot_survives_later_mutation_and_corrupt_object_is_not_replaced
+        PASS [   2.243s] (491/843) deadpan-store::failpoints a_crash_right_after_publishing_a_backup_leaves_a_verified_backup
+        PASS [   0.861s] (492/843) deadpan-store::generated_media unsafe_generated_directory_and_hard_links_are_rejected
+        PASS [   5.396s] (493/843) deadpan-store::chaos_kills random_process_kills_during_restores_leave_one_whole_state
+        PASS [   0.914s] (494/843) deadpan-store::generated_media shared_directory_permissions_restrict_media_operations_without_blocking_inspection
+        PASS [   2.747s] (495/843) deadpan-store::failpoints a_crash_inside_the_restore_copy_leaves_the_project_unchanged
+        PASS [   2.890s] (496/843) deadpan-store::failpoints a_crash_between_folding_the_wal_and_promoting_keeps_the_old_database
+        PASS [   0.999s] (497/843) deadpan-store::generated_media worker_snapshot_can_be_published_after_the_worker_workspace_is_removed
+        PASS [   2.856s] (498/843) deadpan-store::failpoints a_crash_right_after_promoting_keeps_the_new_database
+        PASS [   1.039s] (499/843) deadpan-store::generated_read_handle cloned_handles_read_on_workers_without_retaining_the_writer_lock
+        PASS [   3.005s] (500/843) deadpan-store::failpoints a_crash_right_after_the_restore_copy_leaves_the_restored_project
+        PASS [   0.757s] (501/843) deadpan-store::generated_read_handle read_only_store_revokes_its_own_handles_independently_of_the_writer
+        PASS [   1.017s] (502/843) deadpan-store::generated_read_handle immutable_handle_snapshot_survives_corruption_but_cold_read_rejects_it
+        PASS [   0.888s] (503/843) deadpan-store::generated_read_handle read_budgets_and_cancellation_reject_work_before_unbounded_copying
+        PASS [   1.128s] (504/843) deadpan-store::generation allocation_is_typed_monotonic_persistent_and_preview_is_pure
+        PASS [   5.049s] (505/843) deadpan-store::edited_slice move_range::move_dry_run_atomic_failure_commit_and_fresh_history_survive_reopen
+        PASS [   1.233s] (506/843) deadpan-store::generation allocation_rejects_read_only_stale_invalid_and_exhausted_inputs
+        PASS [   0.867s] (507/843) deadpan-store::generation incomplete_duplicate_and_wrong_binding_plans_are_atomic
+        PASS [   1.480s] (508/843) deadpan-store::generated_read_handle read_handle_pins_the_package_namespace_across_path_replacement
+        PASS [   0.957s] (509/843) deadpan-store::generation deletion_detaches_permanently_even_when_undo_restores_the_hold
+        PASS [   1.106s] (510/843) deadpan-store::generation an_installed_resolver_reconciles_ordinary_writes_and_history
+        PASS [   0.949s] (511/843) deadpan-store::generation relevance_and_revision_changes_roll_back_together
+        PASS [   0.998s] (512/843) deadpan-store::generation relevant_edits_isolate_holds_and_undo_redo_never_revive_requests
+        PASS [   0.836s] (513/843) deadpan-store::generation scopes::wrong_target_observation_rolls_back_isolation_and_all_scope_addresses
+        PASS [   1.100s] (514/843) deadpan-store::generation scopes::sibling_isolation_maps_only_its_play_and_new_requests_follow_undo_redo
+        PASS [   4.048s] (515/843) deadpan-store::failpoints crashes_while_replacing_a_damaged_database_fail_loudly_and_a_rerun_completes
+        PASS [   0.886s] (516/843) deadpan-store::generation validation_rechecks_the_request_against_its_origin_revision
+        PASS [   0.987s] (517/843) deadpan-store::generation validation_rejects_an_obsolete_version_forged_back_to_current
+        PASS [   1.588s] (518/843) deadpan-store::generation scopes::valid_sibling_target_forgery_fails_receipt_and_full_validation
+        PASS [   0.990s] (519/843) deadpan-store::generation validation_streams_duplicate_request_ids_without_a_primary_key
+        PASS [   1.031s] (520/843) deadpan-store::generation_attempts exact_duplicates_are_idempotent_and_progress_is_not_persisted
+        PASS [   0.868s] (521/843) deadpan-store::generation_attempts receipt_mismatch_and_late_selection_roll_back_atomically
+        PASS [   1.278s] (522/843) deadpan-store::generation_attempts copied_project_never_infers_live_process_ownership
+        PASS [   0.014s] (523/843) deadpan-store::generation_bundles admission_wire_rejects_alias_conflicts_and_unchecked_spans
+        PASS [   1.331s] (524/843) deadpan-store::generation_attempts an_unreadable_dismissal_record_hides_nothing_and_is_rewritten
+        PASS [   1.777s] (525/843) deadpan-store::generation stored_generation_json_is_bounded_and_strictly_revalidated
+        PASS [   1.116s] (526/843) deadpan-store::generation_attempts recovery_of_multiple_attempts_rolls_back_if_one_sequence_is_exhausted
+        PASS [   0.940s] (527/843) deadpan-store::generation_attempts relevance_is_independent_and_stale_requests_cannot_select
+        PASS [   1.934s] (528/843) deadpan-store::generation validation_does_not_depend_on_generation_uniqueness_indexes
+        PASS [   1.188s] (529/843) deadpan-store::generation_attempts retries_retain_variants_and_selection_is_explicit
+        PASS [   1.856s] (530/843) deadpan-store::generation_attempts interrupted_attempts_are_offered_until_retried_or_dismissed
+        PASS [   9.289s] (531/843) deadpan-store::chaos_kills random_process_kills_during_commits_attempts_backups_and_checkpoints_never_corrupt_the_project
+        PASS [   3.365s] (532/843) deadpan-store::generation scopes::forged_isolation_events_never_supply_address_authority
+        PASS [   1.821s] (533/843) deadpan-store::generation_bundles acceptance_rollback_read_only_and_legacy_receipt_are_safe
+        PASS [   1.888s] (534/843) deadpan-store::generation_bundles boundaries::caller_cannot_add_an_unneeded_provider_tail_to_a_valid_shortening
+        PASS [   1.883s] (535/843) deadpan-store::generation_bundles cancelled_and_stale_bridge_completions_never_select
+        PASS [   2.381s] (536/843) deadpan-store::generation_bundles boundaries::boundary_edit_and_replacement_are_one_transaction_with_fresh_redo_and_cancellation
+        PASS [   0.009s] (537/843) deadpan-store::generation_bundles object_alias_requires_an_identical_video_contract
+        PASS [   2.761s] (538/843) deadpan-store::generation_bundles acceptance_rechecks_selection_receipt_revision_and_complete_relevance
+        PASS [   2.902s] (539/843) deadpan-store::generation_attempts writable_reopen_interrupts_every_nonterminal_state_but_read_only_does_not
+        PASS [   2.859s] (540/843) deadpan-store::generation_bundles admission_requires_all_six_immutable_objects_and_matching_context
+        PASS [   1.213s] (541/843) deadpan-store::generation_bundles malformed_nonnull_plan_is_never_projected_as_a_legacy_request
+        PASS [   2.605s] (542/843) deadpan-store::generation_bundles discarding_a_variant_is_one_transaction_that_keeps_another_selection
+        PASS [   2.655s] (543/843) deadpan-store::generation_bundles edited_slice::historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted
+        PASS [   1.869s] (544/843) deadpan-store::generation_bundles identical_masters_can_share_one_fresh_asset_identity
+        PASS [   1.596s] (545/843) deadpan-store::generation_bundles modern_ready_requires_objects_and_eviction_survives_reopen
+        PASS [   2.726s] (546/843) deadpan-store::generation_bundles generated_admission::existing_authored_artifact_resizes_reverts_and_navigates_durable_history
+        PASS [   2.896s] (547/843) deadpan-store::generation_bundles explicit_acceptance_derives_assets_and_survives_history_without_worker
+        PASS [   1.489s] (548/843) deadpan-store::generation_bundles persisted_bundle_json_cannot_bypass_constructor_invariants
+        PASS [   1.831s] (549/843) deadpan-store::generation_bundles preparations::compound_explicit_fallback_supersedes_birth_even_if_its_pixels_are_equal
+        PASS [   2.292s] (550/843) deadpan-store::generation_bundles move_range::moved_accepted_generated_hold_keeps_artifact_and_never_revives_old_request
+        PASS [   4.515s] (551/843) deadpan-store::generation_bundles boundaries::compound_replacement_preserves_leaf_checkpoints_and_compares_only_final_boundaries
+        PASS [   2.079s] (552/843) deadpan-store::generation_bundles preparations::compound_multiple_resizes_prepare_only_the_final_duration
+        PASS [   1.272s] (553/843) deadpan-store::generation_bundles preparations::insertion::compound_ai_insertions_do_not_fan_out_to_isolated_or_copied_holds
+        PASS [   2.007s] (554/843) deadpan-store::generation_bundles preparations::compound_other_hold_duration_does_not_turn_provider_change_into_replacement
+        PASS [   1.206s] (555/843) deadpan-store::generation_bundles preparations::insertion::compound_ai_pause_failure_rolls_back_document_history_and_queue
+        PASS [   1.334s] (556/843) deadpan-store::generation_bundles preparations::insertion::compound_ai_pause_keeps_exact_identity_final_duration_and_repeat_ancestry
+        PASS [   5.434s] (557/843) deadpan-store::generation_attempts validation_rejects_indexless_live_duplicates_and_orphan_receipts
+        PASS [   2.039s] (558/843) deadpan-store::generation_bundles preparations::extension_commits_exact_fallback_and_retains_controls_before_any_worker
+        PASS [   1.960s] (559/843) deadpan-store::generation_bundles preparations::failed_attempt_insert_rolls_back_request_clock_and_preparation_fulfilment
+        PASS [   4.907s] (560/843) deadpan-store::generation_bundles edited_slice::interior_and_replacement_keep_artifacts_and_replace_changed_conditioning
+        PASS [   1.232s] (561/843) deadpan-store::generation_bundles preparations::insertion::inserted_ai_pause_fulfilment_binds_controls_and_rejects_stale_claims
+        PASS [   1.203s] (562/843) deadpan-store::generation_bundles preparations::insertion::inserted_ai_pause_undo_redo_has_fresh_intent_and_saved_controls
+        PASS [   1.385s] (563/843) deadpan-store::generation_bundles preparations::insertion::inserted_ai_pause_is_durable_and_usable_without_a_model
+        PASS [   2.339s] (564/843) deadpan-store::generation_bundles preparations::insertion::explicit_same_fallback_supersedes_inserted_ai_intent_in_and_after_compounds
+        PASS [   1.290s] (565/843) deadpan-store::generation_bundles protocol_kinds_cannot_cross_attempt_or_readiness_boundaries
+        PASS [   1.691s] (566/843) deadpan-store::generation_bundles preparations::selected_play_extension_keeps_default_and_other_plays_generated
+        PASS [   2.419s] (567/843) deadpan-store::generation_bundles preparations::insertion::inserted_ai_origin_controls_and_presence_cannot_be_laundered_by_an_edit
+        PASS [   2.029s] (568/843) deadpan-store::generation_bundles preparations::unavailable_retry_restart_and_manual_supersession_preserve_timing
+        PASS [   1.920s] (569/843) deadpan-store::generation_bundles preparations::undo_cancels_claim_and_redo_creates_new_intent_with_original_controls
+        PASS [   1.895s] (570/843) deadpan-store::generation_bundles preparations::unrelated_edit_requeues_claim_and_old_fulfilment_cannot_allocate
+        PASS [   1.832s] (571/843) deadpan-store::generation_bundles retention::acceptance_requires_the_retention_record
+        PASS [   2.619s] (572/843) deadpan-store::generation_bundles retention::automatic_expiry_defers_on_clock_anomalies_and_explicit_cleanup_confirms
+        PASS [   2.604s] (573/843) deadpan-store::generation_bundles retention::explicit_cleanup_expires_after_a_suspected_clock_jump
+        PASS [   3.419s] (574/843) deadpan-store::generation_bundles retention::accepted_variants_never_expire_and_their_media_stays
+        PASS [   3.907s] (575/843) deadpan-store::generation_bundles retention::a_read_only_plan_is_rechecked_on_the_writer
+        PASS [   2.998s] (576/843) deadpan-store::generation_bundles retention::an_explicit_pick_survives_a_later_variant_taking_the_selection
+        PASS [   2.313s] (577/843) deadpan-store::generation_bundles retry_supersedes_modern_selection_and_corrupt_objects_cannot_be_ready
+        PASS [  21.921s] (578/843) deadpan-store::adversarial adversarial_corrupted_database_files_fail_cleanly
+        PASS [   3.358s] (579/843) deadpan-store::generation_bundles retention::kept_and_selected_variants_never_expire_and_keep_survives_reopen
+        PASS [   2.978s] (580/843) deadpan-store::generation_bundles scoped_acceptance_isolates_one_play_and_keeps_default_request_current
+        PASS [   3.236s] (581/843) deadpan-store::generation_bundles retention::variant_retention_survives_reopening
+        PASS [   1.230s] (582/843) deadpan-store::generation_bundles storage::confirmed_removal_touches_only_the_previewed_files
+        PASS [   1.142s] (583/843) deadpan-store::generation_bundles storage::orphaned_originals_and_unfinished_writes_are_removed_but_recorded_originals_stay
+        PASS [   3.610s] (584/843) deadpan-store::generation_bundles seeded_variants_share_one_request_and_discard_is_durable
+        PASS [   2.050s] (585/843) deadpan-store::generation_bundles storage::a_missing_linked_original_refuses_the_copy_and_leaves_nothing
+        PASS [   2.048s] (586/843) deadpan-store::generation_bundles storage::checkpoints_pin_what_they_name_and_unreadable_ones_block_cleanup
+        PASS [   2.071s] (587/843) deadpan-store::generation_bundles storage::history_receipts_and_registers_pin_objects_and_only_discards_are_removable
+        PASS [   1.029s] (588/843) deadpan-store::host_owner legacy_readable_lock_is_hardened_only_after_it_is_acquired
+        PASS [   1.114s] (589/843) deadpan-store::host_owner explicit_registration_is_private_bounded_and_removed_before_unlock
+        PASS [   1.652s] (590/843) deadpan-store::generation_bundles storage::stale_unaccepted_variants_become_removable_but_accepted_ones_stay
+        PASS [   2.522s] (591/843) deadpan-store::generation_bundles storage::cleanup_is_explicit_skips_readers_and_keeps_history_usable
+        PASS [   4.412s] (592/843) deadpan-store::generation_bundles stale_and_detached_bundles_never_revive_through_undo
+        PASS [   2.067s] (593/843) deadpan-store::host_owner capabilities_identify_one_store_and_are_revoked_before_reopen
+        PASS [   1.542s] (594/843) deadpan-store::host_owner moved_package_fails_closed_even_before_lazy_owner_activation
+        PASS [   1.271s] (595/843) deadpan-store::host_owner next_owner_can_replace_a_private_record_left_by_an_interrupted_host
+        PASS [   1.207s] (596/843) deadpan-store::host_owner read_only_store_cannot_obtain_or_use_writer_capabilities
+        PASS [   7.527s] (597/843) deadpan-store::generation_bundles preparations::tampered_preparation_birth_controls_or_address_cannot_be_laundered_by_an_edit
+        PASS [   1.210s] (598/843) deadpan-store::host_owner replaced_lock_cannot_let_old_cleanup_erase_a_successor_registration
+        PASS [   1.126s] (599/843) deadpan-store::host_owner shared_writable_or_symlinked_package_is_not_discovery_authority
+        PASS [   0.699s] (600/843) deadpan-store::migration automatic_render::authentic_schema41_refusal_preserves_every_cell_with_wal_reader
+        PASS [   1.136s] (601/843) deadpan-store::migration automatic_render::authentic_old_database_rejects_injected_register_tables_without_losing_cells
+        PASS [   2.146s] (602/843) deadpan-store::host_owner replaced_or_modified_registration_revokes_dispatch_and_survives_old_cleanup
+        PASS [   3.993s] (603/843) deadpan-store::generation_bundles storage::portable_copy_owns_linked_originals_and_only_referenced_media
+        PASS [   1.885s] (604/843) deadpan-store::migration audio_gap_bindings::reanchors_and_phase_terms_survive_current_history_and_pending_redo
+        PASS [   1.698s] (605/843) deadpan-store::migration audio_reanchors::selected_audio_phase_terms_survive_current_history_and_pending_redo
+        PASS [   0.949s] (606/843) deadpan-store::migration automatic_render::schema40_and41_refuse_automatic_intent_before_parsing_it
+        PASS [   0.605s] (607/843) deadpan-store::migration automatic_render::schema41_refusal_preserves_nested_publication_intent
+        PASS [   2.581s] (608/843) deadpan-store::migration audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen
+        PASS [   2.472s] (609/843) deadpan-store::migration audio_reanchors::modern_reanchor_intent_survives_durable_history_undo_redo_and_reopen
+        PASS [   0.785s] (610/843) deadpan-store::migration development_break::current_schema72_migration_is_read_only_and_needs_no_backup_or_writer
+        PASS [   5.184s] (611/843) deadpan-store::generation_bundles storage::portable_copy_detects_media_removed_after_its_database_snapshot
+        PASS [   0.304s] (612/843) deadpan-store::migration publication::authentic_schema40_is_refused_without_rewriting_cells_or_creating_backups
+        PASS [   1.154s] (613/843) deadpan-store::migration framing::current_history_keeps_insert_time_redo_and_persists_framing
+        PASS [   2.778s] (614/843) deadpan-store::migration automatic_render::old_databases_reject_even_empty_decision_table_collisions
+        PASS [   1.981s] (615/843) deadpan-store::migration automatic_render::schema41_rejects_oversized_and_new_null_evidence_without_rewriting_cells
+        PASS [   0.417s] (616/843) deadpan-store::migration publication::schema40_refusal_does_not_inspect_or_modify_publication_vocabulary
+        PASS [   0.197s] (617/843) deadpan-store::migration render_jobs::schema39_refusal_does_not_inspect_or_modify_render_vocabulary
+        PASS [   1.691s] (618/843) deadpan-store::migration current_authoring::current_mapping_and_edge_edits_preserve_independent_audio_and_operational_state
+        PASS [   0.938s] (619/843) deadpan-store::migration insert_time::atomic_insert_time_history_survives_reopen_undo_redo_and_rejected_requests
+        PASS [   0.654s] (620/843) deadpan-store::migration render_jobs::authentic_schema39_is_refused_without_rewriting_cells_or_creating_backups
+        PASS [   1.371s] (621/843) deadpan-store::migration gain::authored_gain_is_durable_reversible_and_revision_guarded_from_current_snapshot
+        PASS [   1.385s] (622/843) deadpan-store::migration picture_context::captured_picture_context_survives_current_history_and_pending_redo
+        PASS [   2.396s] (623/843) deadpan-store::migration development_break::obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal
+        PASS [   0.909s] (624/843) deadpan-store::occurrence_edits insufficient_identity_pools_and_stale_requests_leave_no_partial_clones_or_history
+        PASS [   1.265s] (625/843) deadpan-store::occurrence_edits occurrence_isolation_and_mark_clones_are_one_durable_reversible_edit
+        PASS [   5.330s] (626/843) deadpan-store::host_owner unsafe_lock_entries_fail_without_following_or_waiting_on_them
+        PASS [   1.563s] (627/843) deadpan-store::migration retime::retime_wrap_update_and_navigation_are_durable_atomic_edits
+        PASS [   1.562s] (628/843) deadpan-store::migration source_selection::selected_audio_preserves_captured_views_current_history_and_pending_redo
+        PASS [   1.574s] (629/843) deadpan-store::migration sound_routes::sound_ripple_history_is_atomic_durable_and_rechecks_unchanged_recipe_receipts
+        PASS [   1.065s] (630/843) deadpan-store::original_media failed_database_commit_keeps_verified_object_and_retry_reuses_it
+        PASS [   1.049s] (631/843) deadpan-store::original_media linked_original_relink_checks_content_and_monotonic_location_version
+        PASS [   1.454s] (632/843) deadpan-store::occurrence_edits occurrence_retime_isolation_and_policy_update_survive_durable_navigation
+        PASS [   1.093s] (633/843) deadpan-store::original_media managed_original_preserves_all_container_bytes_deduplicates_and_survives_relocation
+        PASS [   1.066s] (634/843) deadpan-store::original_media readonly_cancelled_oversized_and_special_inputs_do_not_create_records
+        PASS [   6.144s] (635/843) deadpan-store::host_owner unsafe_discovery_entries_are_rejected_without_modifying_them
+        PASS [  11.830s] (636/843) deadpan-store::generation_bundles retention::an_automatic_pass_expires_at_most_its_cap
+        PASS [   0.895s] (637/843) deadpan-store::original_media same_filename_is_not_identity_and_inventory_pages_without_duplicates
+        PASS [   0.749s] (638/843) deadpan-store::original_preparation cancellation_preserves_publication_without_registering_it
+        PASS [   0.750s] (639/843) deadpan-store::original_preparation delayed_linked_retention_cannot_replace_a_newer_location
+        PASS [   0.948s] (640/843) deadpan-store::original_media tampered_record_and_managed_bytes_fail_verification
+        PASS [   0.780s] (641/843) deadpan-store::original_preparation database_rollback_keeps_published_bytes_and_the_prepared_token_can_retry
+        PASS [   0.755s] (642/843) deadpan-store::original_preparation prepared_retention_merges_current_locations_and_deduplicates
+        PASS [   1.309s] (643/843) deadpan-store::original_preparation handles_and_tokens_are_writer_session_bound_and_do_not_keep_the_lock
+        PASS [   0.840s] (644/843) deadpan-store::original_preparation worker_prepares_without_borrowing_or_blocking_the_writer
+        PASS [   0.872s] (645/843) deadpan-store::original_provenance provenance_rejects_unretained_originals_and_unsafe_text
+        PASS [   0.909s] (646/843) deadpan-store::original_provenance provenance_saves_reopens_and_never_touches_history
+        PASS [   0.877s] (647/843) deadpan-store::persistence crash_during_transaction
+        PASS [   0.857s] (648/843) deadpan-store::persistence editing_after_undo_keeps_old_revisions_and_starts_a_new_branch
+        PASS [   0.981s] (649/843) deadpan-store::original_provenance a_schema61_package_is_refused_unchanged
+        PASS [   1.396s] (650/843) deadpan-store::original_preparation prepared_snapshots_keep_private_bytes_after_source_change_and_session_close
+        PASS [   1.076s] (651/843) deadpan-store::persistence backup_contains_committed_wal_and_is_independently_readable
+        PASS [   0.706s] (652/843) deadpan-store::persistence failed_history_write_rolls_back_both_revision_and_current_state
+        PASS [   0.741s] (653/843) deadpan-store::persistence history_previews_share_validation_and_never_change_state
+        PASS [   0.495s] (654/843) deadpan-store::persistence one_writer_readers_and_reopen_preserve_the_document
+        PASS [   0.782s] (655/843) deadpan-store::persistence imported_audio_lineage_allocations_stay_reserved_after_owners_are_removed
+        PASS [  16.575s] (656/843) deadpan-store::generation_bundles preparations::explicit_fallback_cancels_pending_preparation_in_plain_compound_and_scoped_commands
+        PASS [   0.795s] (657/843) deadpan-store::persistence imported_initial_allocations_stay_reserved_after_their_plays_are_removed
+        PASS [   0.721s] (658/843) deadpan-store::persistence newer_schema_is_refused_without_rewriting_database
+        PASS [   0.890s] (659/843) deadpan-store::persistence logical_mark_fragments_survive_partial_loss_reopen_and_durable_history
+        PASS [   1.709s] (660/843) deadpan-store::persistence explicit_history_inverses_are_checked_against_the_forward_patch
+        PASS [   1.097s] (661/843) deadpan-store::persistence marks_and_loss_states_commit_atomically_and_survive_history_reopen
+        PASS [   0.703s] (662/843) deadpan-store::persistence preview_rejects_reused_revisions_exactly_as_commit
+        PASS [   0.670s] (663/843) deadpan-store::persistence storage_symlinks_are_rejected
+        PASS [   0.664s] (664/843) deadpan-store::prepared_checkpoint bounds_and_deadline_stop_backup_without_publication
+        PASS [   0.881s] (665/843) deadpan-store::persistence transparent_partition_intent_is_durable_atomic_and_undoable
+        PASS [   0.689s] (666/843) deadpan-store::prepared_checkpoint cancellation_before_and_during_backup_leaves_no_checkpoint
+        PASS [   0.922s] (667/843) deadpan-store::persistence undo_and_redo_survive_restart_without_reusing_revision_identity
+        PASS [   1.132s] (668/843) deadpan-store::persistence semantic_validation_preserves_valid_branches_and_nested_navigation
+        PASS [   3.542s] (669/843) deadpan-store::original_preparation final_admission_rejects_unsafe_namespaces_and_objects
+        PASS [   1.433s] (670/843) deadpan-store::persistence play_overrides_retire_with_identity_and_survive_durable_undo_redo
+        PASS [   0.992s] (671/843) deadpan-store::prepared_checkpoint cancellation_after_preparation_denies_publication
+        PASS [   1.011s] (672/843) deadpan-store::prepared_checkpoint changed_prepared_database_is_never_published
+        PASS [   0.999s] (673/843) deadpan-store::prepared_checkpoint closed_owner_revokes_both_unstarted_and_prepared_workers
+        PASS [   2.449s] (674/843) deadpan-store::persistence imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed
+        PASS [   0.678s] (675/843) deadpan-store::prepared_checkpoint readonly_store_and_symlink_snapshot_directory_are_rejected
+        PASS [   0.928s] (676/843) deadpan-store::prepared_checkpoint database_replacement_before_or_after_admission_is_rejected
+        PASS [   0.735s] (677/843) deadpan-store::prepared_relink cancelled_and_failed_transactions_preserve_inventory_and_managed_ownership
+        PASS [   0.724s] (678/843) deadpan-store::prepared_relink delayed_relink_cannot_replace_a_newer_location_or_bookmark
+        PASS [   0.947s] (679/843) deadpan-store::prepared_checkpoint replacing_snapshot_directory_cannot_redirect_publication_or_cleanup
+        PASS [   4.087s] (680/843) deadpan-store::original_preparation prepared_retention_rejects_missing_replaced_and_in_place_modified_originals
+        PASS [   1.081s] (681/843) deadpan-store::prepared_checkpoint worker_pins_actual_revision_while_writer_keeps_editing
+        PASS [   0.672s] (682/843) deadpan-store::prepared_relink preparation_checks_version_identity_limits_and_cancellation_without_changes
+        PASS [   0.683s] (683/843) deadpan-store::prepared_relink preparation_is_connection_free_and_commit_preserves_later_authored_edits
+        PASS [   0.629s] (684/843) deadpan-store::prepared_relink serialized_record_does_not_grant_authority_over_current_inventory
+        PASS [   1.454s] (685/843) deadpan-store::prepared_checkpoint foreign_writer_cannot_publish_even_when_project_ids_match
+        PASS [   1.057s] (686/843) deadpan-store::prepared_relink prepared_relink_is_bound_to_a_live_writable_owner_without_retaining_its_lock
+        PASS [   1.093s] (687/843) deadpan-store::prepared_source_registration cancelled_prepared_insertion_leaves_no_receipt_or_edit_and_allows_retry
+        PASS [   1.024s] (688/843) deadpan-store::prepared_source_registration changed_managed_original_invalidates_prepared_token_without_history_changes
+        PASS [   1.076s] (689/843) deadpan-store::prepared_source_registration moment::failed_paste_transaction_keeps_revision_history_and_receipt_unchanged
+        PASS [   1.122s] (690/843) deadpan-store::prepared_source_registration moment::interior::interior_rejection_and_cursor_failure_never_publish_a_preliminary_split
+        PASS [   1.435s] (691/843) deadpan-store::prepared_source_registration linked_relocation_requires_fresh_inventory_proof_even_when_old_path_is_unchanged
+        PASS [   1.097s] (692/843) deadpan-store::prepared_source_registration moment::paste_rechecks_original_and_live_writer_session
+        PASS [   1.253s] (693/843) deadpan-store::prepared_source_registration moment::interior::interior_preview_and_commit_share_one_exact_transaction_and_durable_undo
+        PASS [   1.113s] (694/843) deadpan-store::prepared_source_registration moment::paste_reconciles_complete_generation_relevance_in_its_single_transaction
+        PASS [   1.509s] (695/843) deadpan-store::prepared_source_registration moment::paste_rejects_stale_wrong_asset_and_invalid_selection_without_writes
+        PASS [   1.930s] (696/843) deadpan-store::prepared_source_registration moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen
+        PASS [   1.214s] (697/843) deadpan-store::prepared_source_registration moment::paste_uses_exact_measured_selection_and_one_durable_undo_entry
+        PASS [   2.820s] (698/843) deadpan-store::prepared_relink final_commit_rejects_missing_replaced_modified_and_unsafe_replacements
+        PASS [   1.269s] (699/843) deadpan-store::prepared_source_registration moment::replacement::replacement_admits_measured_source_and_persists_one_exact_undo_redo
+        PASS [   1.150s] (700/843) deadpan-store::prepared_source_registration moment::replacement::stale_invalid_and_failed_replacement_never_saves_splits_or_removal
+        PASS [   9.812s] (701/843) deadpan-store::migration development_break::schemas1_through71_fail_before_reading_document_or_acquiring_writer
+        PASS [   1.032s] (702/843) deadpan-store::prepared_source_registration preparation_can_run_on_worker_while_writer_edits_and_does_not_author_state
+        PASS [   1.103s] (703/843) deadpan-store::prepared_source_registration prepared_duplicate_reuses_receipt_but_corrupted_existing_payload_is_rejected
+        PASS [   1.096s] (704/843) deadpan-store::prepared_source_registration prepared_insertion_rolls_back_on_history_failure_and_retries_same_token
+        PASS [   1.159s] (705/843) deadpan-store::prepared_source_registration prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_failure
+        PASS [   1.432s] (706/843) deadpan-store::prepared_source_registration prepared_commit_rejects_read_only_wrong_project_and_reopened_sessions
+        PASS [   2.133s] (707/843) deadpan-store::prepared_source_registration moment::paste_requires_existing_unchanged_receipt_and_never_repairs_evidence
+        PASS [   0.724s] (708/843) deadpan-store::presentation_basis failed_insertion_rolls_back_basis_origin_receipt_and_history_together
+        PASS [   0.898s] (709/843) deadpan-store::presentation_basis audio_locks_time_and_explicit_geometry_changes_no_frame_sample_or_mark_coordinate
+        PASS [   1.047s] (710/843) deadpan-store::prepared_source_registration preview_is_read_only_and_prepared_token_is_bound_to_issuing_writer
+        PASS [   1.137s] (711/843) deadpan-store::prepared_source_registration stale_target_is_rejected_then_same_token_registers_against_current_revision
+        PASS [   0.720s] (712/843) deadpan-store::recovery a_clean_close_is_not_reported_as_a_crash
+        PASS [   0.736s] (713/843) deadpan-store::presentation_basis self_consistent_history_cannot_claim_geometry_different_from_source_evidence
+        PASS [   0.807s] (714/843) deadpan-store::presentation_basis secondary_picture_cannot_choose_basis_and_generic_commands_cannot_claim_qualified_adoption
+        PASS [   1.420s] (715/843) deadpan-store::presentation_basis inserted_primary_not_registration_order_selects_basis_and_undo_restores_provisional
+        PASS [   0.695s] (716/843) deadpan-store::recovery a_moved_linked_original_is_missing_until_relinked_to_the_same_content
+        PASS [   0.788s] (717/843) deadpan-store::recovery a_missing_managed_copy_is_reported_and_restored_only_from_identical_bytes
+        PASS [   0.752s] (718/843) deadpan-store::render_jobs admission::current_contract_cannot_substitute_another_document_canvas
+        PASS [   1.167s] (719/843) deadpan-store::recovery a_killed_writer_is_detected_and_its_committed_edits_and_jobs_are_recovered
+        PASS [   1.038s] (720/843) deadpan-store::recovery copied_and_damaged_markers_are_handled_without_false_crashes
+        PASS [   0.860s] (721/843) deadpan-store::render_jobs admission::failed_qualification_and_cancellation_keep_typed_decisions_after_cleanup
+        PASS [   0.841s] (722/843) deadpan-store::render_jobs admission::oversized_decision_is_rejected_before_recovery_changes_an_active_attempt
+        PASS [   2.285s] (723/843) deadpan-store::prepared_source_registration prepared_primary_uses_current_timing_after_automatic_basis_becomes_explicit
+        PASS [   1.002s] (724/843) deadpan-store::render_jobs admission::checkpoint_retries_and_publication_keep_original_encoding_decision
+        PASS [   1.578s] (725/843) deadpan-store::recovery a_damaged_managed_copy_is_quarantined_and_restored_from_identical_bytes
+        PASS [   2.117s] (726/843) deadpan-store::presentation_basis imported_initial_snapshot_cannot_claim_false_default_canvas_or_timed_rate
+        PASS [   0.697s] (727/843) deadpan-store::render_jobs admission::selected_decision_rejects_stale_identity_and_foreign_immutable_binding
+        PASS [   0.902s] (728/843) deadpan-store::render_jobs admission::selected_decision_and_encoding_commit_atomically_and_preserve_authored_state
+        PASS [   0.908s] (729/843) deadpan-store::render_jobs admission::targeted_reads_skip_unrelated_bad_decisions_but_full_audit_rejects_them
+        PASS [   0.805s] (730/843) deadpan-store::render_jobs invalid_immutable_binding_and_paging_are_rejected
+        PASS [   1.215s] (731/843) deadpan-store::render_jobs admission::reopen_preserves_decision_and_new_encoding_retry_requires_fresh_admission
+        PASS [   0.950s] (732/843) deadpan-store::render_jobs cancelling_failure_retains_cancellation_request_and_candidate
+        PASS [   0.979s] (733/843) deadpan-store::render_jobs captured_history_and_operational_writes_preserve_redo
+        PASS [   1.179s] (734/843) deadpan-store::render_jobs durable_checkpoint_survives_interruption_and_explicit_verification_retry
+        PASS [   3.476s] (735/843) deadpan-store::prepared_source_registration prepared_token_rejects_delete_same_bytes_and_in_place_rewrite
+        PASS [   1.139s] (736/843) deadpan-store::render_jobs malformed_checkpoint_or_oversized_report_cannot_become_verified
+        PASS [   1.171s] (737/843) deadpan-store::render_jobs publication::bounds_reused_operation_and_tokens_fail_without_mutating_record
+        PASS [   1.252s] (738/843) deadpan-store::render_jobs publication::cancellation_revokes_permit_but_racing_movie_commit_remains_recordable
+        PASS [   0.750s] (739/843) deadpan-store::render_jobs render_workflow_admission_survives_unconfirmed_lease_destruction
+        PASS [   1.198s] (740/843) deadpan-store::render_jobs publication::definite_cancel_before_commit_cannot_be_adopted_as_published
+        PASS [   1.234s] (741/843) deadpan-store::render_jobs publication::stages_require_exact_live_sequence_and_matching_movie
+        PASS [   1.158s] (742/843) deadpan-store::render_jobs stale_tokens_sequences_and_fresh_id_rules_fail_atomically
+        PASS [   1.236s] (743/843) deadpan-store::render_jobs targeted_json_bounds_reject_before_deserializing_the_row
+        PASS [   1.675s] (744/843) deadpan-store::render_jobs readonly_open_never_recovers_and_writer_preserves_cancel_intent
+        PASS [   1.090s] (745/843) deadpan-store::render_jobs transition_counter_exhaustion_rolls_back_and_reserves_terminal_recovery
+        PASS [   1.311s] (746/843) deadpan-store::render_jobs targeted_operations_skip_unrelated_report_but_full_audit_rejects_it
+        PASS [   1.966s] (747/843) deadpan-store::render_jobs publication::reconciliation_preserves_positive_commit_through_unavailable_report_and_reopen
+        PASS [   1.617s] (748/843) deadpan-store::render_jobs render_workflow_owner_requires_the_same_writable_open
+        PASS [   1.263s] (749/843) deadpan-store::revision_storage a_tampered_navigation_patch_is_rejected
+        PASS [   1.080s] (750/843) deadpan-store::revision_storage an_older_package_with_whole_state_binding_history_is_refused_unchanged
+        PASS [   1.002s] (751/843) deadpan-store::shot_analysis checkpoints_append_tails_and_keep_one_scan
+        PASS [   3.837s] (752/843) deadpan-store::render_jobs checkpoint_requires_live_session_exact_transition_and_unchanged_objects
+        PASS [   1.076s] (753/843) deadpan-store::shot_analysis a_schema60_package_is_refused_unchanged
+        PASS [   1.415s] (754/843) deadpan-store::revision_storage pause_history_records_only_changed_timing_state
+        PASS [   1.021s] (755/843) deadpan-store::shot_analysis shots_save_replace_and_reopen_without_touching_history
+        PASS [   1.231s] (756/843) deadpan-store::shot_analysis shot_keys_are_validated_and_the_count_is_bounded
+        PASS [   1.451s] (757/843) deadpan-store::shot_analysis scan_progress_is_saved_outside_history_and_removed_by_the_analysis
+        PASS [   1.700s] (758/843) deadpan-store::revision_storage receipts_replace_replay_and_commits_extend_them
+        PASS [   4.691s] (759/843) deadpan-store::render_jobs missing_indexes_malformed_states_and_reports_block_recovery
+        PASS [   1.118s] (760/843) deadpan-store::shot_analysis tampered_stored_shots_fail_on_read
+        PASS [   1.139s] (761/843) deadpan-store::single_source changed_original_cannot_initialize_from_a_retained_prepared_snapshot
+        PASS [  11.357s] (762/843) deadpan-store::persistence semantic_validation_rejects_forged_history_and_state
+        PASS [   1.239s] (763/843) deadpan-store::single_source failing_baseline_publication_rolls_back_source_history_and_can_retry
+        PASS [   1.343s] (764/843) deadpan-store::single_source a_valid_generic_reimport_branch_cannot_be_forged_into_single_source_history
+        PASS [   1.310s] (765/843) deadpan-store::single_source full_original_is_atomic_and_undo_floor_survives_branch_and_reopen
+        PASS [  19.399s] (766/843) deadpan-store::long_project_stress adversarial_long_project_stays_within_time_and_memory_budgets
+        PASS [   1.815s] (767/843) deadpan-store::single_source generic_projects_keep_source_import_undo_and_creation_collisions_are_specific
+        PASS [   1.184s] (768/843) deadpan-store::single_source shot_scan_progress_is_kept_only_for_the_ready_original
+        PASS [   1.081s] (769/843) deadpan-store::source_origin rebased_source_offsets_and_frozen_layout_survive_durable_undo_redo
+        PASS [   2.441s] (770/843) deadpan-store::single_source initialization_rejects_generic_edits_audio_stale_cancelled_and_closed_preparation
+        PASS [   1.592s] (771/843) deadpan-store::source_effects retained_framing_and_translated_gain_survive_edit_history_and_restart
+        PASS [   2.039s] (772/843) deadpan-store::source_registration actual_source_registration_deduplicates_then_inserts_and_survives_undo_relocation
+        PASS [   1.950s] (773/843) deadpan-store::source_registration combined_trim::combined_refusals_preserve_nonempty_redo_and_every_authored_admission_row
+        PASS [   2.522s] (774/843) deadpan-store::single_source second_picture_is_rejected_after_delete_but_original_reuse_and_sounds_work
+        PASS [   7.078s] (775/843) deadpan-store::render_jobs publication::readonly_preserves_active_phase_reopen_interrupts_without_touching_destination
+        PASS [   1.839s] (776/843) deadpan-store::source_registration combined_trim::overwrite_admits_and_removes_the_fully_consumed_right_source
+        PASS [   1.964s] (777/843) deadpan-store::source_registration combined_trim::zero_preview_requires_empty_resources_and_never_reserves_a_revision
+        PASS [   2.209s] (778/843) deadpan-store::source_registration combined_trim::every_used_source_requires_its_receipt_and_original_even_when_overwrite_retires_it
+        PASS [  50.036s] (779/843) deadpan-store registers::tests::aggregate_bytes_are_bounded_before_json_allocation
+        PASS [   1.785s] (780/843) deadpan-store::source_registration edited_slice::historical_slice_restores_only_source_metadata_admitted_by_its_stored_revision
+        PASS [   1.082s] (781/843) deadpan-store::source_registration failed_transaction_retains_original_but_rolls_back_receipt_asset_history_and_cursor
+        PASS [   1.080s] (782/843) deadpan-store::source_registration generic_asset_and_initial_snapshot_cannot_bypass_source_admission
+        PASS [   0.755s] (783/843) deadpan-store::source_registration hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy
+        PASS [   2.425s] (784/843) deadpan-store::source_registration edited_slice::interior_and_replacement_restore_only_the_verified_historical_source
+        PASS [   1.135s] (785/843) deadpan-store::source_registration hold_audio::hold_audio_rejects_outside_and_fractional_source_sample_spans_without_history
+        PASS [   3.866s] (786/843) deadpan-store::source_registration combined_trim::combined_trim_qualifies_two_originals_and_replays_one_durable_transaction
+        PASS [   1.366s] (787/843) deadpan-store::source_registration hold_audio::hold_audio_policy_history_is_atomic_durable_and_timing_neutral
+        PASS [   0.911s] (788/843) deadpan-store::source_registration output_color_reads_every_registered_receipt_even_when_unused
+        PASS [   1.653s] (789/843) deadpan-store::source_registration hold_audio::direct_occurrence_and_scoped_policy_commands_recheck_receipt_and_original_binding
+        PASS [   1.097s] (790/843) deadpan-store::source_registration hold_audio::pauses_inserted_with_reversed_audio_need_admitted_source_samples
+        PASS [   5.362s] (791/843) deadpan-store::single_source initialized_projects_reopen_from_their_receipt_and_detect_qualification_tampering
+        PASS [   1.558s] (792/843) deadpan-store::source_registration registers::compound_original_paste_checks_exact_ordinals_and_retains_intermediate_yank
+        PASS [   1.862s] (793/843) deadpan-store::source_registration missing_bytes_identity_mismatch_cancelled_stale_and_read_only_requests_preserve_history
+        PASS [   1.263s] (794/843) deadpan-store::source_registration registers::original_register_keeps_qualified_identity_across_undo_reopen_and_checkpoint
+        PASS [   3.421s] (795/843) deadpan-store::source_registration equivalence::qualified_commits_equal_complete_validation_replay_and_storage
+        PASS [   1.500s] (796/843) deadpan-store::source_registration registers::typed_selectors_capture_qualified_source_and_staged_range_with_one_history_entry
+        PASS [   1.500s] (797/843) deadpan-store::source_registration registers::qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo
+        PASS [   2.018s] (798/843) deadpan-store::source_registration registers::counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen
+        PASS [  48.862s] (799/843) deadpan-store::adversarial adversarial_tampered_rows_fail_validation
+        PASS [   1.610s] (800/843) deadpan-store::source_registration roll::roll_failure_after_history_write_restores_both_sources_and_existing_redo
+        PASS [   1.863s] (801/843) deadpan-store::source_registration roll::roll_qualifies_two_originals_clamps_once_and_replays_one_durable_edit
+        PASS [   1.612s] (802/843) deadpan-store::source_registration roll::roll_rejects_wrong_resources_reused_revisions_and_a_stale_captured_pair
+        PASS [   1.179s] (803/843) deadpan-store::source_registration slip::linked_slip_commits_one_exact_edit_and_survives_fresh_history_and_reopen
+        PASS [   2.162s] (804/843) deadpan-store::source_registration reused_asset_alias_retains_both_branch_receipts_and_revision_specific_indexes
+        PASS [   2.035s] (805/843) deadpan-store::source_registration roll::roll_rechecks_each_receipt_and_original_with_the_other_side_valid
+        PASS [   1.580s] (806/843) deadpan-store::source_registration roll::zero_roll_preview_checks_metadata_and_never_reserves_identity_or_history
+        PASS [   1.225s] (807/843) deadpan-store::source_registration slip::slip_rechecks_receipts_assets_and_ownership_even_for_zero_preview
+        PASS [   1.140s] (808/843) deadpan-store::source_registration slip::slip_revision_guards_cover_preview_noop_and_late_commit
+        PASS [   1.120s] (809/843) deadpan-store::source_registration slip::slip_rolls_back_the_complete_write_and_does_not_require_current_media_bytes
+        PASS [   1.134s] (810/843) deadpan-store::source_registration slip::zero_slip_preview_keeps_its_handle_reason_without_reserving_history
+        PASS [  10.288s] (811/843) deadpan-store::revision_storage a_receipt_never_hides_a_modified_row
+        PASS [   1.352s] (812/843) deadpan-store::source_registration sounds::beat_sounds::copied_beat_sound_checks_missing_and_changed_receipts_in_each_compound_leaf
+        PASS [   1.448s] (813/843) deadpan-store::source_registration sounds::beat_sounds::beat_object_cuts_keep_their_attachment_choice_in_durable_registers
+        PASS [   1.476s] (814/843) deadpan-store::source_registration sounds::beat_sounds::beat_sound_save_copy_rename_and_history_preserve_owner_local_ids
+        PASS [   1.374s] (815/843) deadpan-store::source_registration sounds::beat_sounds::historical_copy_restores_admitted_beat_sound_media_after_registration_undo
+        PASS [   1.314s] (816/843) deadpan-store::source_registration sounds::qualified_sound_edits_are_atomic_durable_and_keep_picture_time
+        PASS [   1.410s] (817/843) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::retained_sound_clock_register_rechecks_receipt_and_original_without_losing_copy
+        PASS [   1.378s] (818/843) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::sound_clock_transports_are_atomic_durable_and_reversible_with_fresh_revisions
+        PASS [   1.200s] (819/843) deadpan-store::source_registration sounds::sound_command_rechecks_receipt_inside_its_revision_transaction
+        PASS [   1.860s] (820/843) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::repeats::repeated_sound_clocks_and_isolation_survive_register_reopen_undo_and_redo
+        PASS [   1.800s] (821/843) deadpan-store::source_registration sounds::move_range::moves_preserve_qualified_root_sound_recipes_routes_and_hold_grants
+        PASS [   1.666s] (822/843) deadpan-store::source_registration sounds::sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen
+        PASS [   1.029s] (823/843) deadpan-store::speech_activity a_schema59_package_is_refused_unchanged
+        PASS [   1.577s] (824/843) deadpan-store::source_registration trim::trim_preview_checks_noop_metadata_and_commits_one_receipt_bound_edit
+        PASS [   2.083s] (825/843) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::retained_beat_sound_clocks_survive_register_reopen_recapture_and_multiple_pastes
+        PASS [   0.891s] (826/843) deadpan-store::speech_activity activity_saves_replaces_and_reopens_without_touching_history
+        PASS [   8.790s] (827/843) deadpan-store::single_source malformed_or_displaced_profile_is_rejected_on_reopen
+        PASS [   1.257s] (828/843) deadpan-store::speech_activity activity_keys_are_validated_and_the_count_is_bounded
+        PASS [   0.986s] (829/843) deadpan-store::speech_activity tampered_stored_activity_fails_on_read
+        PASS [   1.568s] (830/843) deadpan-store::source_registration trim::trimmed_edge_hard_policy_survives_reopen_and_two_durable_history_steps
+        PASS [   0.778s] (831/843) deadpan-store::transcripts tampered_stored_transcripts_fail_on_read_and_validation
+        PASS [   0.707s] (832/843) deadpan-store::transcripts transcripts_save_replace_and_reopen_without_touching_history
+        PASS [   1.053s] (833/843) deadpan-store::transcripts keys_are_validated_and_the_count_is_bounded
+        PASS [  11.605s] (834/843) deadpan-store::revision_storage random_commits_equal_full_validation_and_storage_rebuilds
+        PASS [   2.182s] (835/843) deadpan-store::source_registration tampered_qualification_payload_and_missing_receipt_fail_reopen
+        PASS [   2.441s] (836/843) deadpan-store::storage_failures a_full_disk_refuses_original_retention_without_a_partial_object
+        PASS [   1.802s] (837/843) deadpan-store::storage_failures a_full_disk_refuses_the_commit_and_the_same_edit_saves_once_space_returns
+        PASS [  16.213s] (838/843) deadpan-store::revision_storage keyframes_bound_every_chain_and_rebuild_every_revision
+        PASS [   1.625s] (839/843) deadpan-store::storage_failures a_read_only_volume_refuses_writing_without_changing_the_project
+        PASS [   0.071s] (840/843) deadpan-store::storage_failures permission_denied_refuses_writing_without_changing_the_project
+        PASS [   2.348s] (841/843) deadpan-store::storage_failures_media a_full_disk_refuses_generated_promotion_without_a_visible_object
+        PASS [   2.568s] (842/843) deadpan-store::storage_failures_media a_full_disk_refuses_render_candidate_retention_without_a_visible_object
+        SLOW [> 60.000s] (───────) deadpan-store::generation_bundles preparations::compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls
+        SLOW [>120.000s] (───────) deadpan-store::generation_bundles preparations::compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls
+        PASS [ 138.550s] (843/843) deadpan-store::generation_bundles preparations::compacted_terminal_preparation_still_proves_birth_and_supplies_redo_controls
+────────────
+     Summary [ 161.922s] 843 tests run: 843 passed (1 slow, 1 leaky), 1 skipped

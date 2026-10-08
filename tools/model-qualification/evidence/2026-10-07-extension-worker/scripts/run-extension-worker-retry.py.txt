@@ -1,0 +1,41 @@
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import time
+
+repo=Path('/Users/michael/Code/deadpan')
+root=Path('/tmp/deadpan-resume-20261006/extension-worker')
+results=[]
+
+def run(name, args):
+    start=time.monotonic()
+    with (root/(name+'.log')).open('xb') as f:
+        result=subprocess.run([str(x) for x in args],cwd=repo,stdout=f,stderr=subprocess.STDOUT)
+    results.append(dict(name=name,command=[str(x) for x in args],exit=result.returncode,seconds=round(time.monotonic()-start,3)))
+    (root/'run-results.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(results[-1]),flush=True)
+    if result.returncode:
+        print((root/(name+'.log')).read_text()[-16000:],flush=True)
+        raise SystemExit(result.returncode)
+
+binaries=['qualify_model_worker','retain_extension_conditioning','qualify_extension_media']
+hashes={name:hashlib.file_digest((repo/'target/debug/examples'/name).open('rb'),'sha256').hexdigest() for name in binaries}
+hashes['deadpan-media-worker']=hashlib.file_digest((repo/'target/debug/deadpan-media-worker').open('rb'),'sha256').hexdigest()
+(root/'executed-binaries.json').write_text(json.dumps(hashes,indent=2)+'\n')
+for direction in ['from_left','from_right']:
+    case=root/direction
+    if not (case/'retained').exists():
+        run(direction+'-retain',[repo/'target/debug/examples/retain_extension_conditioning',case/'capture.json'])
+    run(direction+'-model',[repo/'target/debug/examples/qualify_model_worker',case/'host.json'])
+    host=json.loads((case/'host/host-report.json').read_text())
+    assert host['hash_verified_extension_bundle'] and host['clean_exit'] and not host['accepted']
+    config=dict(codec=str(repo/'target/debug/deadpan-media-worker'),workspace=str(case/'workspace'),
+        request=json.loads((case/'request.json').read_text()),candidate=host['extension_bundle'],
+        output_directory=str(case/'media'),limits=dict(max_input_bytes=64*1024**2,max_output_bytes=128*1024**2,
+            max_scratch_bytes=32*1024**2,timeout_ms=60000))
+    with (case/'media-config.json').open('x') as f:
+        json.dump(config,f,indent=2)
+        f.write('\n')
+    run(direction+'-media',[repo/'target/debug/examples/qualify_extension_media',case/'media-config.json'])
+run('independent-oracle',[root/'python-offline','-B','/tmp/deadpan-resume-20261006/verify-extension-worker-output.py',root])

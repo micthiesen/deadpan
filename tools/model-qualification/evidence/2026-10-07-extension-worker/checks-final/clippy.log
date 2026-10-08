@@ -1,0 +1,14 @@
+    Checking objc2 v0.6.4
+    Checking hashbrown v0.17.1
+    Checking smallvec v1.16.1
+    Checking uuid v1.26.1
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking hashlink v0.12.2
+    Checking objc2-foundation v0.3.2
+    Checking rusqlite v0.40.2
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.11s

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.13
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "-p",
+      "deadpan-models",
+      "-p",
+      "deadpan-store"
+    ],
+    "exit": 0,
+    "seconds": 165.114
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 101,
+    "seconds": 9.586
+  }
+]

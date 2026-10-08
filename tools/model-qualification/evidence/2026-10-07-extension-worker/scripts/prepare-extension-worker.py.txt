@@ -1,0 +1,101 @@
+import hashlib
+import json
+from fractions import Fraction
+from pathlib import Path
+import shutil
+
+REPO = Path('/Users/michael/Code/deadpan')
+ROOT = Path('/tmp/deadpan-resume-20261006/extension-worker')
+PROBE = Path('/tmp/deadpan-resume-20261006/extension-probe')
+RUNTIME = Path('/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4')
+MODELS = Path('/private/tmp/deadpan-resume-20261006/scoped-home/Library/Application Support/Deadpan/Models/ltx-2.3-q4-bridge/1')
+
+def save(path, value):
+    with path.open('x') as f:
+        json.dump(value, f, indent=2)
+        f.write('\n')
+
+def sha(path):
+    return hashlib.file_digest(path.open('rb'), 'sha256').hexdigest()
+
+def ratio(value):
+    return dict(numerator=str(value.numerator), denominator=str(value.denominator))
+
+ROOT.mkdir()
+support = ROOT / 'support'
+support.mkdir()
+hashes = {}
+for name in ['worker.py', 'worker_protocol.py', 'worker_media.py', 'mlx_backend.py',
+             'runtime_source.py', 'ltx-source-manifest.json',
+             'evidence/2026-09-20-smoke/download-manifest.json']:
+    source = REPO / 'tools/model-qualification' / name
+    target = support / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    hashes[name] = sha(source)
+save(ROOT / 'adapter-sources.json', hashes)
+pack = json.loads((PROBE / 'approved-pack.json').read_text())
+pack.update(pack_id='ltx-2.3-q4-extension-development', runtime_versions=['0.15.8+deadpan-extension-dev1'], operations=['extension_hold'])
+# Development experiment identity; this is not an approved installable manifest.
+save(ROOT / 'development-manifest.json', pack)
+model_pack = {key: pack[key] for key in ('pack_id', 'pack_version', 'model_family', 'runtime_id', 'runtime_versions', 'operations')}
+model_pack['files'] = [{key: entry[key] for key in ('name', 'sha256', 'bytes')} for entry in pack['files']]
+save(ROOT / 'runtime.json', dict(runtime_source=str(RUNTIME), model_cache=str(MODELS),
+    ffmpeg=str(Path('/opt/homebrew/bin/ffmpeg').resolve()), ffprobe=str(Path('/opt/homebrew/bin/ffprobe').resolve()),
+    model_pack=model_pack, model_manifest_sha256=sha(ROOT / 'development-manifest.json')))
+wrapper = ROOT / 'python-offline'
+wrapper.write_text('#!/bin/sh\nexec sandbox-exec -p \'(version 1)(allow default)(deny network*)\' '+str(RUNTIME / '.venv/bin/python3')+' "$@"\n')
+wrapper.chmod(0o700)
+color = dict(transfer='srgb', primaries='bt709', matrix='rgb', range='full')
+rect = dict(x=0, y=0, width=768, height=320)
+P = dict(numerator=30000, denominator=1001)
+R = dict(numerator=24, denominator=1)
+step = Fraction(30000, 1001 * 24)
+for direction, probe_name in [('from_left', 'after'), ('from_right', 'before')]:
+    case = ROOT / direction
+    case.mkdir()
+    workspace = case / 'workspace'
+    (workspace / 'inputs').mkdir(parents=True)
+    (workspace / 'outputs').mkdir()
+    request = json.loads((REPO / 'crates/deadpan-jobs/tests/fixtures/generate_extension_v3.json').read_text())
+    request['identity'] = dict(request_id='extension-'+direction, attempt_id='attempt-1')
+    request['project_id'] = 'synthetic-extension-project'
+    request['revision_id'] = 'synthetic-revision-1'
+    request['target'] = dict(hold_id='synthetic-hold', request_version=1)
+    request['constraints'] = dict(conditioning='extend_'+direction, motion='still',
+        video=dict(frames=9, frame_rate=P, width=768, height=320))
+    request['provider'] = dict(pack_id=pack['pack_id'], pack_version=pack['pack_version'],
+        runtime_id=pack['runtime_id'], runtime_version=pack['runtime_versions'][0], seed=42107)
+    sampling = request['plan']['sampling']
+    sampling.update(direction=direction, output_frame_count=9, project_rate=P, native_rate=R)
+    request['plan']['native_dimensions'] = dict(width=768, height=320)
+    entries = []
+    for index in range(9):
+        source = PROBE / 'run-1' / probe_name / 'context' / f'{index:03}.png'
+        target = workspace / 'inputs' / source.name
+        shutil.copyfile(source, target)
+        clock = dict(kind='definition', project_id=request['project_id'], revision_id=request['revision_id'],
+            definition='synthetic-root', position=ratio(Fraction(20) + index*step))
+        picture = dict(original=dict(clock=clock, asset='synthetic-context-movie', qualification=sha(PROBE / 'run-1' / probe_name / 'context/video.mp4'),
+            picture=dict(source_frame=index, pts=dict(ticks=index, time_base=dict(numerator=1, denominator=24)),
+            stream=dict(codec='h264', pixel_format='gbrp', width=768, height=320, sample_aspect=[1,1],
+            rotation_quarter_turns=0, decoded_sample_bits=8, color=color), model_input='srgb_codes_unchanged')))
+        entries.append(dict(picture=picture, frame=dict(reference='inputs/'+source.name, sha256=sha(target), byte_length=target.stat().st_size), content=rect))
+    context = dict(schema_version=1, operation='extension', model_color_space=color, plan=request['plan'],
+        input_color_interpretation='Synthetic moving-square fixture, measured lossless RGB context at 24 fps; manually authored definition clock for worker qualification only',
+        context=entries, presentation=rect, opposite=dict(status='absent'), region=dict(selection='none'))
+    manifest = workspace / 'inputs/context.json'
+    save(manifest, context)
+    request['input'] = dict(manifest='inputs/context.json', sha256=sha(manifest))
+    save(case / 'request.json', request)
+    save(case / 'capture.json', dict(workspace=str(workspace), request=request, input_scope='inputs',
+        manifest=dict(reference='inputs/context.json', sha256=sha(manifest), byte_length=manifest.stat().st_size),
+        limits=dict(maximum_manifest_bytes=1024*1024, maximum_frame_bytes=16*1024*1024, timeout_ms=30000),
+        output_directory=str(case/'retained')))
+    save(case / 'host.json', dict(executable=str(wrapper), worker_script=str(support/'worker.py'),
+        runtime_config=str(ROOT/'runtime.json'), workspace=str(workspace), report_directory=str(case/'host'),
+        request=request, cancel_after_millis=None, cancel_at_stage=None))
+save(ROOT / 'fixture-scope.json', dict(scope='Real supervised extension inference over retained synthetic temporal inputs. No production project capture, same-shot admission, visual quality admission, Ready state or acceptance.',
+    dimensions=[768,320], context_frames=9, generated_frames=8, native_frames=17, output_frames=9,
+    project_rate=P, native_rate=R, network='sandbox-exec deny network*', source_fixture=str(PROBE/'run-1')))
+print(ROOT)

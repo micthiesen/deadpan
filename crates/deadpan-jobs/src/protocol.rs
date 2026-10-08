@@ -1,14 +1,16 @@
 use std::fmt;
 use std::io::{self, Read, Write};
 
-use deadpan_core::{FrameDuration, FrameRate, NodeId, ProjectId, RevisionId};
+use deadpan_core::{ExtensionDirection, FrameDuration, FrameRate, NodeId, ProjectId, RevisionId};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 
+use crate::extension_plan::ExtensionGenerationPlan;
 use crate::generation_plan::BridgeGenerationPlan;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const BRIDGE_PROTOCOL_VERSION: u32 = 2;
+pub const EXTENSION_PROTOCOL_VERSION: u32 = 3;
 pub const MAX_FRAME_BYTES: usize = 256 * 1024;
 pub const MAX_PROTOCOL_ID_BYTES: usize = 128;
 pub const MAX_WORKSPACE_REF_BYTES: usize = 1_024;
@@ -20,6 +22,7 @@ pub const MAX_VIDEO_DIMENSION: u32 = 32_768;
 pub enum ProtocolVersion {
     V1,
     V2,
+    V3,
 }
 
 impl TryFrom<u32> for ProtocolVersion {
@@ -29,6 +32,7 @@ impl TryFrom<u32> for ProtocolVersion {
         match value {
             PROTOCOL_VERSION => Ok(Self::V1),
             BRIDGE_PROTOCOL_VERSION => Ok(Self::V2),
+            EXTENSION_PROTOCOL_VERSION => Ok(Self::V3),
             value => Err(ValueError::UnsupportedProtocol(value)),
         }
     }
@@ -39,6 +43,7 @@ impl From<ProtocolVersion> for u32 {
         match value {
             ProtocolVersion::V1 => PROTOCOL_VERSION,
             ProtocolVersion::V2 => BRIDGE_PROTOCOL_VERSION,
+            ProtocolVersion::V3 => EXTENSION_PROTOCOL_VERSION,
         }
     }
 }
@@ -478,7 +483,7 @@ pub struct CandidateManifest {
     pub provider: ProviderSelection,
 }
 
-/// Worker-declared native bridge sequence and provenance. Both artifacts remain
+/// Worker-declared native sequence and provenance. Both artifacts remain
 /// untrusted until the host snapshots, hashes, decodes, and validates them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(try_from = "NativeCandidateManifestWire")]
@@ -550,6 +555,19 @@ pub enum HostMessage {
         provider: Box<ProviderSelection>,
         plan: Box<BridgeGenerationPlan>,
     },
+    GenerateExtension {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        cancellation_token: CancellationToken,
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        target: HoldTarget,
+        input: ContextArtifact,
+        output_workspace: WorkspaceRef,
+        constraints: HoldConstraints,
+        provider: Box<ProviderSelection>,
+        plan: Box<ExtensionGenerationPlan>,
+    },
     Cancel {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -562,6 +580,7 @@ impl HostMessage {
         match self {
             Self::GenerateHold { identity, .. }
             | Self::GenerateBridge { identity, .. }
+            | Self::GenerateExtension { identity, .. }
             | Self::Cancel { identity, .. } => identity,
         }
     }
@@ -570,6 +589,7 @@ impl HostMessage {
         match self {
             Self::GenerateHold { protocol, .. }
             | Self::GenerateBridge { protocol, .. }
+            | Self::GenerateExtension { protocol, .. }
             | Self::Cancel { protocol, .. } => *protocol,
         }
     }
@@ -600,6 +620,30 @@ impl HostMessage {
                     || sampling.output_frame_count() != plan.project_frames()
                 {
                     return Err(ValueError::BridgePlanMismatch);
+                }
+                Ok(())
+            }
+            Self::GenerateExtension {
+                protocol,
+                constraints,
+                plan,
+                ..
+            } => {
+                if *protocol != ProtocolVersion::V3 {
+                    return Err(ValueError::ProtocolOperationMismatch);
+                }
+                let conditioning = match plan.direction() {
+                    ExtensionDirection::FromLeft => ConditioningMode::ExtendFromLeft,
+                    ExtensionDirection::FromRight => ConditioningMode::ExtendFromRight,
+                };
+                let dimensions = plan.native_dimensions();
+                if constraints.conditioning != conditioning
+                    || constraints.video.frames() != plan.project_frames()
+                    || constraints.video.frame_rate() != plan.project_frame_rate()
+                    || constraints.video.width() != dimensions.width()
+                    || constraints.video.height() != dimensions.height()
+                {
+                    return Err(ValueError::ExtensionPlanMismatch);
                 }
                 Ok(())
             }
@@ -704,6 +748,11 @@ pub enum WorkerMessage {
         identity: MessageIdentity,
         candidate: NativeCandidateManifest,
     },
+    CompletedExtension {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        candidate: NativeCandidateManifest,
+    },
     Failed {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -722,6 +771,7 @@ impl WorkerMessage {
             | Self::Progress { identity, .. }
             | Self::Completed { identity, .. }
             | Self::CompletedBridge { identity, .. }
+            | Self::CompletedExtension { identity, .. }
             | Self::Failed { identity, .. }
             | Self::Cancelled { identity, .. } => identity,
         }
@@ -733,6 +783,7 @@ impl WorkerMessage {
             | Self::Progress { protocol, .. }
             | Self::Completed { protocol, .. }
             | Self::CompletedBridge { protocol, .. }
+            | Self::CompletedExtension { protocol, .. }
             | Self::Failed { protocol, .. }
             | Self::Cancelled { protocol, .. } => *protocol,
         }
@@ -749,6 +800,16 @@ impl WorkerMessage {
                 ..
             } => {
                 if *protocol != ProtocolVersion::V2 {
+                    return Err(ValueError::ProtocolOperationMismatch);
+                }
+                candidate.validate()
+            }
+            Self::CompletedExtension {
+                protocol,
+                candidate,
+                ..
+            } => {
+                if *protocol != ProtocolVersion::V3 {
                     return Err(ValueError::ProtocolOperationMismatch);
                 }
                 candidate.validate()
@@ -927,6 +988,8 @@ pub enum ValueError {
     InvalidBridgePlan,
     #[error("bridge generation plan does not match the requested Hold constraints")]
     BridgePlanMismatch,
+    #[error("extension generation plan does not match the requested Hold constraints")]
+    ExtensionPlanMismatch,
     #[error("progress {completed}/{total} requires a positive total and completed <= total")]
     InvalidProgress { completed: u64, total: u64 },
 }

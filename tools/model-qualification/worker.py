@@ -25,10 +25,11 @@ ADAPTER_SOURCES = {name: hashlib.sha256((Path(__file__).resolve().parent / name)
                    for name in ["worker.py", "worker_protocol.py", "worker_media.py", "mlx_backend.py",
                                 "runtime_source.py", "ltx-source-manifest.json"]}
 
-from worker_media import exact_keys, integer, validate_plan
+from worker_media import exact_keys, integer, validate_plan, validate_extension_plan, ratio, rate
 from worker_protocol import (
     FrameRate,
     GenerateBridgeRequest,
+    GenerateExtensionRequest,
     NativeCandidateManifest,
     VideoSpec,
     WorkerProtocol,
@@ -302,6 +303,102 @@ def validate_bridge_context(context, request, video):
     return result
 
 
+def validate_extension_context(context, request, video):
+    """Validate chronological context and the separately retained opposite seam.
+
+    Return only the K inference input references. An opposite PNG may be read
+    and verified by the worker, but is never sent to RetakePipeline.extend.
+    """
+    if not isinstance(request, GenerateExtensionRequest):
+        raise ValueError("extension requires protocol-3 generate_extension")
+    exact_keys(context, ["schema_version", "operation", "model_color_space", "plan",
+                         "input_color_interpretation", "context", "presentation", "opposite", "region"])
+    if (type(context["schema_version"]) is not int or context["schema_version"] != 1
+            or context["operation"] != "extension" or context["plan"] != request.plan
+            or context["model_color_space"] != MODEL_COLOR_SPACE
+            or not valid_input_color_interpretation(context["input_color_interpretation"])):
+        raise ValueError("unsupported extension context, plan or model color")
+    validate_extension_plan(request.plan, video)
+    sampling, dimensions = request.plan["sampling"], request.plan["native_dimensions"]
+    entries = context["context"]
+    if (not isinstance(entries, list) or not 1 <= len(entries) <= 64
+            or len(entries) != sampling["context_frame_count"]):
+        raise ValueError("extension context count differs from its plan")
+    budget = 0
+
+    def picture(entry):
+        nonlocal budget
+        exact_keys(entry, ["picture", "frame", "content"])
+        frame = entry["frame"]
+        exact_keys(frame, ["reference", "sha256", "byte_length"])
+        WorkspaceArtifact(**frame)
+        budget += frame["byte_length"]
+        if budget > 16 * 1024 * 1024:
+            raise ValueError("extension input PNGs exceed their aggregate budget")
+        fake = {"schema_version": 5, "geometry": {
+            "presentation": context["presentation"],
+            "left_content": entry["content"], "right_content": entry["content"]},
+            "boundaries": {"left": entry["picture"], "right": entry["picture"]}}
+        validate_context_geometry(fake, dimensions["width"], dimensions["height"])
+        clock = next(iter(entry["picture"].values()))["clock"]
+        exact_keys(clock, ["kind", "project_id", "revision_id", "definition", "position"])
+        if clock["kind"] != "definition":
+            raise ValueError("extension requires definition picture clocks")
+        for name in ("project_id", "revision_id", "definition"):
+            _core_identifier(clock[name], name)
+        if (clock["project_id"], clock["revision_id"]) != (request.project_id, request.revision_id):
+            raise ValueError("extension picture differs from the worker origin")
+        position = ratio(clock["position"])
+        if position < 0:
+            raise ValueError("extension context precedes its definition")
+        for text in clock["position"].values():
+            if len(text) > 40 or re.fullmatch(r"[+-]?[0-9]+", text) is None or not -(1 << 127) <= int(text) < (1 << 127):
+                raise ValueError("extension definition coordinate exceeds exact clock bounds")
+        return clock["definition"], position
+
+    clocks = [picture(entry) for entry in entries]
+    spacing = rate(sampling["project_rate"]) / rate(sampling["native_rate"])
+    if any(definition != clocks[0][0] or position != clocks[0][1] + index * spacing
+           for index, (definition, position) in enumerate(clocks)):
+        raise ValueError("extension pictures must be chronological at exact native spacing in one definition")
+    from_left = sampling["direction"] == "from_left"
+    anchor = entries[-1] if from_left else entries[0]
+    anchor_clock = clocks[-1] if from_left else clocks[0]
+    opposite = context["opposite"]
+    if not isinstance(opposite, dict):
+        raise ValueError("missing extension opposite seam disclosure")
+    if opposite.get("status") == "absent":
+        exact_keys(opposite, ["status"])
+    elif opposite.get("status") == "present_unconditioned":
+        exact_keys(opposite, ["status", "picture", "frame", "content"])
+        definition, position = picture({key: opposite[key] for key in ("picture", "frame", "content")})
+        distance = (sampling["output_frame_count"] + 1) * (1 if from_left else -1)
+        if definition != anchor_clock[0] or position != anchor_clock[1] + distance:
+            raise ValueError("opposite seam does not enclose the extension in its definition")
+    else:
+        raise ValueError("unsupported opposite seam disclosure")
+    region = context["region"]
+    if not isinstance(region, dict):
+        raise ValueError("invalid extension region capture")
+    if region.get("selection") == "none":
+        exact_keys(region, ["selection"])
+        captured_target = None
+    elif region.get("selection") == "selected":
+        exact_keys(region, ["selection", "target", "label", "target_sha256", "anchor"])
+        captured_target = region["target"]
+        synthetic = {"region": {key: region[key] for key in ("selection", "target", "label", "target_sha256")},
+                     "boundaries": {"left": anchor["picture"], "right": anchor["picture"]},
+                     "geometry": {"left_content": anchor["content"], "right_content": anchor["content"]},
+                     "plan": {"native": dimensions}}
+        synthetic["region"].update(left=region["anchor"], right=region["anchor"])
+        validate_context_region(synthetic)
+    else:
+        raise ValueError("unsupported extension region selection")
+    if captured_target != request.constraints.region_target:
+        raise ValueError("extension region target differs from captured context")
+    return [entry["frame"] for entry in entries]
+
+
 def contained_read(root, reference, maximum):
     parts = reference.split("/")
     if (not reference or reference.startswith("/") or "\\" in reference or "\0" in reference
@@ -423,33 +520,41 @@ def run():
 
     try:
         stage("preflight")
-        if not isinstance(request, GenerateBridgeRequest):
-            raise ValueError("development worker requires protocol-2 generate_bridge")
+        if not isinstance(request, (GenerateBridgeRequest, GenerateExtensionRequest)):
+            raise ValueError("development worker requires generate_bridge or generate_extension")
+        extension = isinstance(request, GenerateExtensionRequest)
         if sys.platform != "darwin":
             raise ValueError("the qualified MLX route requires Apple Silicon macOS")
         for key in ["HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "PYTHONNOUSERSITE"]:
             if os.environ.get(key) != "1":
                 raise ValueError("missing isolated offline runtime environment")
         wire = request.to_wire()
-        if request.constraints.conditioning != "bridge" or request.provider.seed >= 2**32:
+        if (not extension and request.constraints.conditioning != "bridge") or request.provider.seed >= 2**32:
             raise ValueError("unsupported hold constraints or seed")
         root = os.open(".", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
-            raw = contained_read(root, request.input.manifest, 256 * 1024)
+            raw = contained_read(root, request.input.manifest, (1024 if extension else 256) * 1024)
             if hashlib.sha256(raw).hexdigest() != request.input.sha256:
                 raise ValueError("context manifest hash mismatch")
             context = strict_json(raw)
-            validate_context_shape(context)
-            validate_bridge_context(context, request, wire["constraints"]["video"])
+            if extension:
+                references = validate_extension_context(context, request, wire["constraints"]["video"])
+            else:
+                validate_context_shape(context)
+                validate_bridge_context(context, request, wire["constraints"]["video"])
+                references = [context["left"], context["right"]]
             inputs = []
-            for name in ["left", "right"]:
-                reference = context[name]
+            opposite = context["opposite"] if extension else {"status": "absent"}
+            all_references = references + ([opposite["frame"]] if opposite["status"] == "present_unconditioned" else [])
+            for index, reference in enumerate(all_references):
+                check_cancel()
                 exact_keys(reference, ["reference", "sha256", "byte_length"])
                 data = contained_read(root, reference["reference"], 16 * 1024 * 1024)
                 if (type(reference["byte_length"]) is not int or len(data) != reference["byte_length"]
                         or hashlib.sha256(data).hexdigest() != reference["sha256"]):
                     raise ValueError("conditioning input hash or length mismatch")
-                inputs.append(data)
+                if index < len(references):
+                    inputs.append(data)
         finally:
             os.close(root)
         # This adapter supports only the host's new, fixed outputs directory.
@@ -464,7 +569,8 @@ def run():
         if len(runtime_bytes) > 64 * 1024:
             raise ValueError("runtime configuration exceeds its budget")
         from mlx_backend import generate, runtime_paths
-        paths = runtime_paths(strict_json(runtime_bytes), check_cancel, provider=request.provider)
+        paths = runtime_paths(strict_json(runtime_bytes), check_cancel, provider=request.provider,
+                              operation="extension_hold" if extension else "bridge_hold")
         native, provenance, _report = generate(
             paths, wire, context, inputs, output, stage, check_cancel, ADAPTER_SOURCES
         )
@@ -475,7 +581,12 @@ def run():
         provenance_artifact = finished_artifact(
             output, provenance, "outputs/provenance.json", 4 * 1024**2, check_cancel
         )
-        native_plan = request.plan["native"]
+        if extension:
+            sampling = request.plan["sampling"]
+            native_plan = {"frame_count": sampling["context_frame_count"] + sampling["generated_frame_count"],
+                           "frame_rate": sampling["native_rate"], **request.plan["native_dimensions"]}
+        else:
+            native_plan = request.plan["native"]
         native_video = VideoSpec(
             native_plan["frame_count"],
             FrameRate(
@@ -486,7 +597,8 @@ def run():
             native_plan["height"],
         )
         finished.set()
-        protocol.emit_completed_bridge(
+        emit_completed = protocol.emit_completed_extension if extension else protocol.emit_completed_bridge
+        emit_completed(
             NativeCandidateManifest(
                 native_artifact,
                 provenance_artifact,

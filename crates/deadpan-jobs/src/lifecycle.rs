@@ -86,6 +86,7 @@ pub enum WorkerEventOutcome {
 pub enum CandidateDeclaration {
     SampledV1(CandidateManifest),
     NativeBridgeV2(NativeCandidateManifest),
+    NativeExtensionV3(NativeCandidateManifest),
 }
 
 /// A terminal worker response received after cancellation was requested.
@@ -204,6 +205,14 @@ impl JobLifecycle {
     pub fn candidate_bundle(&self) -> Option<&NativeCandidateManifest> {
         match self.completion.as_ref() {
             Some(CandidateDeclaration::NativeBridgeV2(candidate)) => Some(candidate),
+            _ => None,
+        }
+    }
+
+    /// A V3 extension declaration; never returned by the bridge accessor.
+    pub fn extension_candidate_bundle(&self) -> Option<&NativeCandidateManifest> {
+        match self.completion.as_ref() {
+            Some(CandidateDeclaration::NativeExtensionV3(candidate)) => Some(candidate),
             _ => None,
         }
     }
@@ -328,6 +337,9 @@ impl JobLifecycle {
             WorkerMessage::CompletedBridge { candidate, .. } => {
                 self.apply_completion(CandidateDeclaration::NativeBridgeV2(candidate.clone()))
             }
+            WorkerMessage::CompletedExtension { candidate, .. } => {
+                self.apply_completion(CandidateDeclaration::NativeExtensionV3(candidate.clone()))
+            }
             WorkerMessage::Failed { failure, .. } => {
                 if self.state == JobState::Cancelling && self.cancellation_acknowledgement.is_some()
                 {
@@ -431,6 +443,19 @@ impl JobLifecycle {
         self.host_completion_validation_succeeded(
             identity,
             &CandidateDeclaration::NativeBridgeV2(candidate.clone()),
+        )
+    }
+
+    /// Records independent host validation of an extension declaration. The
+    /// caller must validate its extension plan/context/media before this step.
+    pub fn host_extension_validation_succeeded(
+        &mut self,
+        identity: &MessageIdentity,
+        candidate: &NativeCandidateManifest,
+    ) -> Result<(), LifecycleError> {
+        self.host_completion_validation_succeeded(
+            identity,
+            &CandidateDeclaration::NativeExtensionV3(candidate.clone()),
         )
     }
 
@@ -654,7 +679,8 @@ pub enum LifecycleError {
 fn validate_checkpoint(checkpoint: &LifecycleCheckpoint) -> Result<(), LifecycleError> {
     let valid_completion = |completion: &CandidateDeclaration| match completion {
         CandidateDeclaration::SampledV1(_) => true,
-        CandidateDeclaration::NativeBridgeV2(candidate) => candidate.validate().is_ok(),
+        CandidateDeclaration::NativeBridgeV2(candidate)
+        | CandidateDeclaration::NativeExtensionV3(candidate) => candidate.validate().is_ok(),
     };
     if checkpoint
         .completion
@@ -686,6 +712,10 @@ fn validate_checkpoint(checkpoint: &LifecycleCheckpoint) -> Result<(), Lifecycle
             (checkpoint.protocol, completion),
             (ProtocolVersion::V1, CandidateDeclaration::SampledV1(_))
                 | (ProtocolVersion::V2, CandidateDeclaration::NativeBridgeV2(_))
+                | (
+                    ProtocolVersion::V3,
+                    CandidateDeclaration::NativeExtensionV3(_)
+                )
         )
     }) {
         return Err(LifecycleError::InvalidCheckpoint(
@@ -701,6 +731,10 @@ fn validate_checkpoint(checkpoint: &LifecycleCheckpoint) -> Result<(), Lifecycle
                 (checkpoint.protocol, completion.as_ref()),
                 (ProtocolVersion::V1, CandidateDeclaration::SampledV1(_))
                     | (ProtocolVersion::V2, CandidateDeclaration::NativeBridgeV2(_))
+                    | (
+                        ProtocolVersion::V3,
+                        CandidateDeclaration::NativeExtensionV3(_)
+                    )
             ),
         })
     {

@@ -8,6 +8,9 @@ use deadpan_jobs::{
     WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage, WorkspaceArtifact, WorkspaceRef,
 };
 
+#[path = "lifecycle/extension.rs"]
+mod extension;
+
 fn sha(character: char) -> Sha256 {
     Sha256::new(character.to_string().repeat(64)).unwrap()
 }

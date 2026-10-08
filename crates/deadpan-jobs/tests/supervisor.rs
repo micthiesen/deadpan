@@ -12,6 +12,9 @@ use deadpan_core::{FrameDuration, FrameRate, NodeId, ProjectId, RevisionId};
 use deadpan_jobs::supervisor::{ProcessEvent, ProcessLimits, ProcessSpec, WorkerProcess};
 use deadpan_jobs::*;
 
+#[path = "supervisor/extension.rs"]
+mod extension;
+
 fn identity() -> MessageIdentity {
     MessageIdentity::new(
         RequestId::new("job").unwrap(),
@@ -181,7 +184,7 @@ fn finish(process: &mut WorkerProcess) -> Vec<ProcessEvent> {
         let batch = process.poll(Instant::now()).unwrap();
         assert!(batch.len() <= 19, "poll must have a bounded event batch");
         if batch.iter().any(|event| matches!(event,
-            ProcessEvent::Message(message) if matches!(message.as_ref(), WorkerMessage::Completed { .. } | WorkerMessage::CompletedBridge { .. }))) {
+            ProcessEvent::Message(message) if matches!(message.as_ref(), WorkerMessage::Completed { .. } | WorkerMessage::CompletedBridge { .. } | WorkerMessage::CompletedExtension { .. }))) {
             assert!(matches!(batch.last(), Some(ProcessEvent::Exited { status, cancellation_escalated: false }) if status.success()),
                 "candidate escaped before clean process/pipe teardown");
         }
@@ -277,6 +280,7 @@ fn cooperative_cancel_preserves_identity_and_does_not_escalate() {
     for (request, protocol) in [
         (request(), ProtocolVersion::V1),
         (bridge_request(), ProtocolVersion::V2),
+        (extension::extension_request(), ProtocolVersion::V3),
     ] {
         let workspace = tempfile::tempdir().unwrap();
         responses(

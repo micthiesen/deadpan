@@ -1,0 +1,18 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running `target/debug/xtask chaos --only jobs-generation,model-packs --minutes 0.5 --seed 20261008 --output /tmp/deadpan-resume-20261006/extension-worker/checks-final/chaos`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.40s
+chaos: jobs-generation for 15 s per target
+chaos: model-packs for 4 s per target
+chaos: jobs-generation-protocol       168071 executions 10 classes  max    12.0 ms  0 failure(s)
+chaos: models-pack-manifest           73692 executions 8636 classes  max     5.2 ms  0 failure(s)
+chaos: models-pack-archive            2888 executions 15 classes  max    20.2 ms  0 failure(s)
+chaos: models-extension-conditioning  6826 executions 21 classes  max   138.6 ms  0 failure(s)
+chaos: models-conditioning-manifest   14029 executions 519 classes  max   806.5 ms  0 failure(s)
+chaos: 265506 executions; summary in /private/tmp/deadpan-resume-20261006/extension-worker/checks-final/chaos/summary.json

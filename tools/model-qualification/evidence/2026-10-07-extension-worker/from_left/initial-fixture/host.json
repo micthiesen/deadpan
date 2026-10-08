@@ -1,0 +1,74 @@
+{
+  "executable": "/tmp/deadpan-resume-20261006/extension-worker/python-offline",
+  "worker_script": "/tmp/deadpan-resume-20261006/extension-worker/support/worker.py",
+  "runtime_config": "/tmp/deadpan-resume-20261006/extension-worker/runtime.json",
+  "workspace": "/tmp/deadpan-resume-20261006/extension-worker/from_left/workspace",
+  "report_directory": "/tmp/deadpan-resume-20261006/extension-worker/from_left/host",
+  "request": {
+    "operation": "generate_extension",
+    "protocol": 3,
+    "identity": {
+      "request_id": "extension-from_left",
+      "attempt_id": "attempt-1"
+    },
+    "cancellation_token": "cancel-17-attempt-2",
+    "project_id": "synthetic-extension-project",
+    "revision_id": "synthetic-revision-1",
+    "target": {
+      "hold_id": "synthetic-hold",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "67dec826b1357e47697974164864c7a9b55046b84246e9e944ec3b1c3fa14592"
+    },
+    "output_workspace": "outputs",
+    "constraints": {
+      "conditioning": "extend_from_left",
+      "motion": "still",
+      "video": {
+        "frames": 9,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "width": 768,
+        "height": 320
+      }
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-extension-development",
+      "pack_version": "1",
+      "runtime_id": "ltx-mlx",
+      "runtime_version": "0.15.8+deadpan-extension-dev1",
+      "seed": 42107
+    },
+    "plan": {
+      "schema_version": 1,
+      "operation": "extension",
+      "sampling": {
+        "schema_version": 1,
+        "direction": "from_left",
+        "project_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "native_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "context_frame_count": 9,
+        "generated_frame_count": 8,
+        "output_frame_count": 9,
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "policy": "frame_centers_clamped"
+      },
+      "native_dimensions": {
+        "width": 768,
+        "height": 320
+      }
+    }
+  },
+  "cancel_after_millis": null,
+  "cancel_at_stage": null
+}

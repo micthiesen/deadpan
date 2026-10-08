@@ -97,6 +97,87 @@ def sample_positions(count, model_count):
         yield lower, lower + (remainder != 0), remainder, count + 1
 
 
+def validate_extension_plan(plan, video):
+    """The measured development envelope, separate from the generic wire map.
+
+    Both directions were exercised at K=9/E=8 and 768x320/24fps. Longer native
+    generation remains refused until real-runtime qualification widens this.
+    """
+    from worker_protocol import _parse_extension_plan
+    _parse_extension_plan(plan)
+    sampling, dimensions = plan["sampling"], plan["native_dimensions"]
+    count = integer(sampling["output_frame_count"], 1, 180)
+    project_rate, native_rate = rate(sampling["project_rate"]), rate(sampling["native_rate"])
+    if (sampling["context_frame_count"], sampling["generated_frame_count"]) != (9, 8):
+        raise ValueError("extension requires the measured nine-context/eight-generated-frame envelope")
+    if (dimensions["width"], dimensions["height"]) != (768, 320) or native_rate != 24:
+        raise ValueError("unsupported extension model raster or native rate")
+    if not 1 <= project_rate <= 120 or Fraction(count) / project_rate > Fraction(8, 24):
+        raise ValueError("extension requested duration is outside the measured envelope")
+    exact_keys(video, ["frames", "frame_rate", "width", "height"])
+    integer(video["frames"], 1, 180)
+    integer(video["width"], 1, 32768)
+    integer(video["height"], 1, 32768)
+    rate(video["frame_rate"])
+    if video != {"frames": count, "frame_rate": sampling["project_rate"], **dimensions}:
+        raise ValueError("extension plan does not match the authored request")
+    return count, 17
+
+
+def extension_sample_positions(count, context_count, generated_count, direction):
+    """Exact center phase; every lower/upper fetch lies in generated output."""
+    integer(count, 1, 180)
+    integer(context_count, 1, 97)
+    integer(generated_count, 1, 97)
+    if context_count + generated_count > 97 or direction not in ("from_left", "from_right"):
+        raise ValueError("invalid extension native interval or direction")
+    start = context_count if direction == "from_left" else 0
+    for index in range(count):
+        relative = Fraction((2 * index + 1) * generated_count - count, 2 * count)
+        position = start + min(max(relative, Fraction(0)), Fraction(generated_count - 1))
+        lower, remainder = divmod(position.numerator, position.denominator)
+        upper = lower + (remainder != 0)
+        if not start <= lower <= upper < start + generated_count:
+            raise ValueError("extension sampling reached a context handle")
+        yield lower, upper, remainder, position.denominator
+
+
+def sampled_extension_rgb(frames, sampling, check_cancel):
+    import numpy as np
+    context, generated = sampling["context_frame_count"], sampling["generated_frame_count"]
+    if len(frames) != context + generated:
+        raise ValueError("extension native movie count differs from its sampling map")
+    for lower, upper, numerator, denominator in extension_sample_positions(
+            sampling["output_frame_count"], context, generated, sampling["direction"]):
+        check_cancel()
+        if numerator == 0:
+            yield frames[lower].tobytes()
+        else:
+            values = blend_channel(frames[lower].astype(np.uint32),
+                                   frames[upper].astype(np.uint32), numerator, denominator)
+            yield values.astype(np.uint8).tobytes()
+
+
+def extension_timing(sampling):
+    """Exact operation clocks for provenance; complete native time includes context."""
+    project_rate, native_rate = rate(sampling["project_rate"]), rate(sampling["native_rate"])
+    context, generated, output = (sampling[name] for name in
+                                  ("context_frame_count", "generated_frame_count", "output_frame_count"))
+    requested = Fraction(output) / project_rate
+    native_generated = Fraction(generated) / native_rate
+    values = {
+        "requested_duration": requested,
+        "generated_duration": native_generated,
+        "native_movie_duration": Fraction(context + generated) / native_rate,
+        "context_duration": Fraction(context) / native_rate,
+        "context_anchor_span": Fraction(context - 1) / native_rate,
+        "speed_conversion": native_generated / requested,
+        "retime_deviation": native_generated - requested,
+    }
+    return {name: {"numerator": str(value.numerator), "denominator": str(value.denominator)}
+            for name, value in values.items()}
+
+
 def blend_channel(left, right, numerator, denominator):
     """Half-up quantization after exact linear interpolation in encoded sRGB."""
     return (left * (denominator - numerator) + right * numerator + denominator // 2) // denominator

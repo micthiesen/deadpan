@@ -1,0 +1,46 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-jobs/tests/supervisor/extension.rs:32:121
+   |
+32 | ...eference().clone(), Sha256::new(format!("{:x}", Hash::digest(native))).unwrap(), native.len() as u64).unwrap();
+   |                                             ----   ^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                                             |
+   |                                             required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Access
+             AtFlags
+             CloneFlags
+             CopyfileFlags
+             DupFlags
+             FallocateFlags
+           and 43 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/supervisor-058101750b373b66.long-type-5751459607677658066.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-jobs/tests/supervisor/extension.rs:33:129
+   |
+33 | ...erence().clone(), Sha256::new(format!("{:x}", Hash::digest(provenance))).unwrap(), provenance.len() as u64).unwrap();
+   |                                           ----   ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                                           |
+   |                                           required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Access
+             AtFlags
+             CloneFlags
+             CopyfileFlags
+             DupFlags
+             FallocateFlags
+           and 43 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/supervisor-058101750b373b66.long-type-5751459607677658066.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-jobs` (test "supervisor") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

@@ -45,6 +45,12 @@ impl WorkerProtocol for GenerationProtocol {
                 identity,
                 cancellation_token,
                 ..
+            }
+            | HostMessage::GenerateExtension {
+                protocol,
+                identity,
+                cancellation_token,
+                ..
             } => Ok(Self {
                 identity: identity.clone(),
                 protocol: *protocol,
@@ -73,6 +79,7 @@ impl WorkerProtocol for GenerationProtocol {
     }
 
     fn classify(&self, response: &Self::Response) -> Result<ResponseKind, String> {
+        response.validate().map_err(|error| error.to_string())?;
         if response.protocol() != self.protocol {
             return Err("worker response protocol differs from this attempt".into());
         }
@@ -80,9 +87,9 @@ impl WorkerProtocol for GenerationProtocol {
             return Err("worker response identity differs from this attempt".into());
         }
         Ok(match response {
-            WorkerMessage::Completed { .. } | WorkerMessage::CompletedBridge { .. } => {
-                ResponseKind::Completed
-            }
+            WorkerMessage::Completed { .. }
+            | WorkerMessage::CompletedBridge { .. }
+            | WorkerMessage::CompletedExtension { .. } => ResponseKind::Completed,
             WorkerMessage::Failed { .. } | WorkerMessage::Cancelled { .. } => {
                 ResponseKind::Terminal
             }

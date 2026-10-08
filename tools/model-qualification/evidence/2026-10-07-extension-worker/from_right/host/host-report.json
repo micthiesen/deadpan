@@ -1,0 +1,40 @@
+{
+  "accepted": false,
+  "cancellation_sent": false,
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 179.966040375,
+  "extension_bundle": {
+    "native": {
+      "byte_length": 2574054,
+      "reference": "outputs/native.mp4",
+      "sha256": "717fc5480773764b05a58d6619e642a79e9587f5fa368cd707a0970973128f25"
+    },
+    "provenance": {
+      "byte_length": 51772,
+      "reference": "outputs/provenance.json",
+      "sha256": "e9e3cb85f2af8493b58487b67d08ffebe07f60c6c2ae971133cf8e233468aff1"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-extension-development",
+      "pack_version": "1",
+      "runtime_id": "ltx-mlx",
+      "runtime_version": "0.15.8+deadpan-extension-dev1",
+      "seed": 42107
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": 17,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "failure": null,
+  "faults": [],
+  "hash_verified_extension_bundle": true,
+  "media_validated": false,
+  "state": "Validating"
+}

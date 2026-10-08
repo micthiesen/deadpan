@@ -1,0 +1,67 @@
+{
+  "direction": "from_left",
+  "frames": 9,
+  "exact_pixel_comparisons": 25804800,
+  "native_matches_canonical": true,
+  "worker_and_host_match_independent_oracle": true,
+  "context_fetches": 0,
+  "positions": [
+    {
+      "numerator": 9,
+      "denominator": 1,
+      "lower": 9,
+      "upper": 9
+    },
+    {
+      "numerator": 59,
+      "denominator": 6,
+      "lower": 9,
+      "upper": 10
+    },
+    {
+      "numerator": 193,
+      "denominator": 18,
+      "lower": 10,
+      "upper": 11
+    },
+    {
+      "numerator": 209,
+      "denominator": 18,
+      "lower": 11,
+      "upper": 12
+    },
+    {
+      "numerator": 25,
+      "denominator": 2,
+      "lower": 12,
+      "upper": 13
+    },
+    {
+      "numerator": 241,
+      "denominator": 18,
+      "lower": 13,
+      "upper": 14
+    },
+    {
+      "numerator": 257,
+      "denominator": 18,
+      "lower": 14,
+      "upper": 15
+    },
+    {
+      "numerator": 91,
+      "denominator": 6,
+      "lower": 15,
+      "upper": 16
+    },
+    {
+      "numerator": 16,
+      "denominator": 1,
+      "lower": 16,
+      "upper": 16
+    }
+  ],
+  "native_rgb_sha256": "321b79e02769c23b428b2489aecd58f1e5d1a18b48cdbcadd5efbd610405e090",
+  "sampled_rgb_sha256": "e2072a82e6f575ffa53d89a1e1ccf1ebfa5c6fbe3291f7795e5a511d8987f774",
+  "retained_inputs_unchanged": true
+}

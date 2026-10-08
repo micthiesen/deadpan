@@ -57,7 +57,7 @@ the production readers' own limits.
 | Recipe files and saved recipe labels | `core-gag-recipe` | `GagRecipe` deserialization, label parser and expansion at three project rates |
 | Personal keymap configuration | `app-keymap-config` | `Bindings::from_json_reporting`, real trie compilation and routing; the feature-gated app library uses the production modules |
 | Signed update envelopes and payloads | `cli-update-manifests` | `SignedManifest::parse`/`verify`, `DownloaderManifest::parse`, `PackUpdate::parse` |
-| Model-pack and conditioning manifests | `models-pack-manifest`, `models-conditioning-manifest` | `PackManifest::validate`, `BridgeContext` and `ConditioningColour::from_manifest` |
+| Model-pack and conditioning manifests | `models-pack-manifest`, `models-conditioning-manifest`, `models-extension-conditioning` | `PackManifest::validate`, `BridgeContext`, `ExtensionContext`, retained extension receipts and `ConditioningColour::from_manifest` |
 | Framed job and host worker messages | `jobs-{generation,tracking,faces,transcription}-protocol`, `cli-{render,encoded,verification,admission-probe}-protocol` | Production readers and writers in both directions, plus request-bound response classification |
 | Transcript JSON and recognizer output | `analysis-transcript` | `Transcript` deserialization and `Transcript::from_segments` |
 | Retained measured media indexes | `media-source-index`, `media-audio-index` | Production snapshot JSON readers and exact round trips |
@@ -144,13 +144,14 @@ with the target name), `DEADPAN_CHAOS_ITERATIONS`, `DEADPAN_CHAOS_OUT`.
 | (deterministic) | Deep chains (100,000 levels), cycles, shared and self parents, dangling children, 200,000 siblings | Generated | Refused or valid, within 20 s, no stack exhaustion |
 | `store-database-bytes` | Arbitrary byte damage to a package's SQLite file | A package with inserts, a Repeat, a deletion, undo/redo and a register | Open plus full validation fails cleanly or every revision and register is unchanged |
 | `store-row-tamper` | One cell rewritten, nulled, retyped, byte-flipped or deleted in any nonempty table | Scripted cell edits | As above, including the register slot table and bank version |
-| `jobs-generation-protocol`, `jobs-tracking-protocol`, `jobs-faces-protocol`, `jobs-transcription-protocol` | Framed worker protocols, both directions | Valid requests, cancellations and responses | Responses classified against the attempt they claim |
+| `jobs-generation-protocol`, `jobs-tracking-protocol`, `jobs-faces-protocol`, `jobs-transcription-protocol` | Framed worker protocols, both directions | Valid requests, cancellations and responses, including distinct V3 extensions | Responses classified against the attempt they claim |
 | `jobs-extension-plan` | Exact extension plan and generated-only sampling map | Both directions of the K9/E8/N12 real-media conversion case | Strict round trip; bounded first/middle/last sampling stays inside generated frames; terminal output ordinal rejects |
 | `cli-render-protocol`, `cli-encoded-protocol`, `cli-verification-protocol`, `cli-admission-probe-protocol` | Render, encoded render, verification and encoder-probe worker protocols | As above | As above |
 | `cli-live-endpoint` | Bytes sent to a real bound live-project socket endpoint | Authenticated requests with representative operations | Dispatch only with the owner secret; responses never contain it; dispatched payloads pass the semantic decoder |
 | `cli-ytdlp-metadata` | `--dump-single-json` output and format selection | Representative metadata | Accepted metadata names the requested video |
 | `models-pack-archive` | Offline pack tar import | Exported and system-tar archives plus traversal, absolute, link, pax and GNU long-name members | Imports exactly the manifest bytes; nothing written outside the store; no link staged |
 | `models-pack-manifest` | Pack manifest JSON | Approved manifests | |
+| `models-extension-conditioning` | Extension contexts and retained receipts | Both directions, optional opposite seam and retained frame objects | Strict bounded clocks, geometry and object identity survive round trip; registered in `model-packs` |
 | `analysis-transcript`, `analysis-tracker-artifact` | Recognizer segments, stored transcripts and tracker artifacts | Unit-test outputs | Transcripts revalidate and round-trip |
 
 ## Long-project stress

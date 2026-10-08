@@ -1,0 +1,31 @@
+{
+  "operation": "generate_extension",
+  "protocol": 3,
+  "identity": {"request_id": "job-17", "attempt_id": "attempt-2"},
+  "cancellation_token": "cancel-17-attempt-2",
+  "project_id": "project-1",
+  "revision_id": "revision-9",
+  "target": {"hold_id": "hold-4", "request_version": 3},
+  "input": {"manifest": "inputs/context.json", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  "output_workspace": "outputs",
+  "constraints": {
+    "video": {"frames": 12, "frame_rate": {"numerator": 24, "denominator": 1}, "width": 512, "height": 320},
+    "conditioning": "extend_from_left",
+    "motion": "subtle"
+  },
+  "provider": {
+    "pack_id": "qualified-local-pack", "pack_version": "2026.09",
+    "runtime_id": "mlx", "runtime_version": "1.2.3+deadpan", "seed": 38117
+  },
+  "plan": {
+    "schema_version": 1, "operation": "extension",
+    "sampling": {
+      "schema_version": 1, "direction": "from_left",
+      "project_rate": {"numerator": 24, "denominator": 1},
+      "native_rate": {"numerator": 24, "denominator": 1},
+      "context_frame_count": 9, "generated_frame_count": 8, "output_frame_count": 12,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up", "policy": "frame_centers_clamped"
+    },
+    "native_dimensions": {"width": 512, "height": 320}
+  }
+}

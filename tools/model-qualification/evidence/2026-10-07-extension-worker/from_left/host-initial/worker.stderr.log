@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-resume-20261006/extension-worker/support/worker.py", line 572, in run
+    paths = runtime_paths(strict_json(runtime_bytes), check_cancel, provider=request.provider,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/deadpan-resume-20261006/extension-worker/support/mlx_backend.py", line 285, in runtime_paths
+    model, gemma, verified_assets = _model_manifest(
+                                    ^^^^^^^^^^^^^^^^
+  File "/private/tmp/deadpan-resume-20261006/extension-worker/support/mlx_backend.py", line 143, in _model_manifest
+    baseline = json.loads((EVIDENCE / "download-manifest.json").read_text())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/michael/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/michael/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/deadpan-resume-20261006/extension-worker/support/evidence/2026-09-20-smoke/download-manifest.json'

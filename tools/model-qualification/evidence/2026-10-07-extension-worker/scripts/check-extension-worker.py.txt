@@ -1,0 +1,28 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+root=Path('/tmp/deadpan-resume-20261006/extension-worker/checks')
+env=os.environ.copy()
+env['DEADPAN_FFMPEG_PREFIX']='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix'
+steps=[
+ ('fmt',['cargo','fmt','--all']),
+ ('tests',['cargo','nextest','run','--locked','-p','deadpan-jobs','-p','deadpan-models','-p','deadpan-store']),
+ ('clippy',['cargo','clippy','--workspace','--all-targets','--locked','--','-D','warnings']),
+ ('clippy-ui',['cargo','clippy','-p','deadpan-app','--features','ui-harness','--all-targets','--locked','--','-D','warnings']),
+ ('examples',['cargo','build','--locked','-p','deadpan-models','--example','retain_extension_conditioning','--example','qualify_extension_media','-p','deadpan-jobs','--example','qualify_model_worker']),
+ ('docs',['cargo','test','--doc','--locked','-p','deadpan-jobs','-p','deadpan-models']),
+ ('diff',['git','diff','--check'])]
+results=[]
+for name,args in steps:
+    start=time.monotonic()
+    with (root/(name+'.log')).open('wb') as f:
+        result=subprocess.run(args,cwd='/Users/michael/Code/deadpan',env=env,stdout=f,stderr=subprocess.STDOUT)
+    results.append(dict(name=name,command=args,exit=result.returncode,seconds=round(time.monotonic()-start,3)))
+    (root/'results.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(results[-1]),flush=True)
+    if result.returncode:
+        print((root/(name+'.log')).read_text()[-15000:],flush=True)
+        raise SystemExit(result.returncode)

@@ -120,6 +120,17 @@ mod supported {
             constraints,
             provider,
             ..
+        }
+        | HostMessage::GenerateExtension {
+            identity,
+            cancellation_token,
+            project_id,
+            target,
+            input,
+            output_workspace,
+            constraints,
+            provider,
+            ..
         }) = &config.request
         else {
             return Err("initial request must generate a Hold".into());
@@ -229,6 +240,30 @@ mod supported {
                                 );
                             }
                         }
+                        if let WorkerMessage::CompletedExtension { candidate, .. } =
+                            message.as_ref()
+                        {
+                            let matches = if let HostMessage::GenerateExtension { plan, .. } =
+                                &config.request
+                            {
+                                let dimensions = plan.native_dimensions();
+                                candidate.video.frames().frames()
+                                    == i64::from(plan.native_frame_count())
+                                    && candidate.video.frame_rate() == plan.native_frame_rate()
+                                    && candidate.video.width() == dimensions.width()
+                                    && candidate.video.height() == dimensions.height()
+                                    && &candidate.provider == provider.as_ref()
+                            } else {
+                                false
+                            };
+                            if !matches {
+                                fail(
+                                    &mut lifecycle,
+                                    HostFailureCode::OutputValidationFailed,
+                                    "native extension candidate differs from original request plan/provider",
+                                );
+                            }
+                        }
                         if !cancellation_sent
                             && !lifecycle.state().is_terminal()
                             && let WorkerMessage::Stage { stage, .. } = message.as_ref()
@@ -294,7 +329,10 @@ mod supported {
                     std::io::copy(&mut snapshot, &mut output)?;
                     output.sync_all()?;
                     Ok(json!({"candidate": candidate, "hash_verified_snapshot": true}))
-                } else if let Some(bundle) = lifecycle.candidate_bundle() {
+                } else if let Some(bundle) = lifecycle
+                    .candidate_bundle()
+                    .or_else(|| lifecycle.extension_candidate_bundle())
+                {
                     for (declared, name, budget) in [
                         (&bundle.native, "native.snapshot.mp4", 512 * 1024 * 1024),
                         (
@@ -312,7 +350,13 @@ mod supported {
                         std::io::copy(&mut snapshot, &mut output)?;
                         output.sync_all()?;
                     }
-                    Ok(json!({"bundle": bundle, "hash_verified_bundle": true}))
+                    if lifecycle.extension_candidate_bundle().is_some() {
+                        Ok(
+                            json!({"extension_bundle": bundle, "hash_verified_extension_bundle": true}),
+                        )
+                    } else {
+                        Ok(json!({"bundle": bundle, "hash_verified_bundle": true}))
+                    }
                 } else {
                     Err("missing candidate".into())
                 }
@@ -335,6 +379,7 @@ mod supported {
         result["failure"] = json!(lifecycle.failure().map(|value| format!("{value:?}")));
         let successful = result["hash_verified_snapshot"] == true
             || result["hash_verified_bundle"] == true
+            || result["hash_verified_extension_bundle"] == true
             || (cancellation_sent
                 && clean_exit
                 && faults.is_empty()

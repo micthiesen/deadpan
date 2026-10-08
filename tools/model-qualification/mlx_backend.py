@@ -15,7 +15,8 @@ import stat
 import sys
 import time
 
-from worker_media import encode_rgb, exact_keys, file_digest, sampled_rgb, verify_rgb
+from worker_media import (encode_rgb, exact_keys, file_digest, sampled_rgb, verify_rgb,
+                          sampled_extension_rgb, validate_extension_plan, extension_timing)
 from runtime_source import loaded_sources, verify_roots, verify_tree
 from worker_protocol import parse_hold_constraints
 
@@ -119,17 +120,25 @@ def _tensor_schema(stream, size, expected, label):
     return expected_count
 
 
-def _model_manifest(model_pack, model_cache, check_cancel, hash_assets):
+def _model_manifest(model_pack, model_cache, check_cancel, hash_assets, operation="bridge_hold"):
     exact_keys(model_pack, ["pack_id", "pack_version", "model_family", "runtime_id",
                             "runtime_versions", "operations", "files"])
-    if (model_pack["pack_id"] != "ltx-2.3-q4-bridge" or
+    expected = {
+        "bridge_hold": ("ltx-2.3-q4-bridge", "0.15.8+deadpan5"),
+        "extension_hold": ("ltx-2.3-q4-extension-development", "0.15.8+deadpan-extension-dev1"),
+    }
+    if operation not in expected:
+        raise ValueError("unsupported worker operation")
+    pack_id, runtime_version = expected[operation]
+    if (model_pack["pack_id"] != pack_id or
             not isinstance(model_pack["pack_version"], str) or
             not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", model_pack["pack_version"]) or
             model_pack["model_family"] != "ltx-2.3" or
             model_pack["runtime_id"] != "ltx-mlx" or
-            model_pack["runtime_versions"] != ["0.15.8+deadpan5"] or
-            model_pack["operations"] != ["bridge_hold"]):
-        raise ValueError("unsupported bridge pack or runtime compatibility")
+            model_pack["runtime_versions"] != [runtime_version] or
+            model_pack["operations"] != [operation]):
+        raise ValueError("unsupported bridge pack or runtime compatibility" if operation == "bridge_hold"
+                         else "unsupported development extension pack or runtime compatibility")
 
     baseline = json.loads((EVIDENCE / "download-manifest.json").read_text())
     expected = {}
@@ -251,7 +260,7 @@ def _model_manifest(model_pack, model_cache, check_cancel, hash_assets):
     return model_root, gemma_root, verified_assets
 
 
-def runtime_paths(config, check_cancel, hash_assets=True, provider=None):
+def runtime_paths(config, check_cancel, hash_assets=True, provider=None, operation="bridge_hold"):
     exact_keys(config, ["runtime_source", "model_cache", "ffmpeg", "ffprobe", "model_pack",
                         "model_manifest_sha256"])
     paths = {key: Path(config[key]) for key in ["runtime_source", "model_cache", "ffmpeg", "ffprobe"]}
@@ -274,17 +283,21 @@ def runtime_paths(config, check_cancel, hash_assets=True, provider=None):
             provider.runtime_version not in pack.get("runtime_versions", [])):
         raise ValueError("request provider differs from the selected immutable model pack")
     model, gemma, verified_assets = _model_manifest(
-        pack, paths["model_cache"], check_cancel, hash_assets
+        pack, paths["model_cache"], check_cancel, hash_assets, operation
     )
     paths["model_pack"] = pack
     paths["model_manifest_sha256"] = config["model_manifest_sha256"]
     paths["model"] = model
     paths["gemma"] = gemma
     paths["verified_assets"] = verified_assets
+    paths["operation"] = operation
     return paths
 
 
 def generate(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources):
+    if request.get("operation") == "generate_extension":
+        return generate_extension(paths, request, context, input_bytes, output,
+                                  stage, check_cancel, adapter_sources)
     started = time.monotonic()
     # Reject malformed guidance before importing any model implementation.
     prompt = hold_prompt(request["constraints"])
@@ -456,6 +469,219 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
         json.dump(report, stream, indent=2)
         stream.write("\n")
     return output / "native.mp4", provenance_path, report
+
+
+def generate_extension(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources):
+    """Measured low-level Retake extension with host-owned chronological RGB.
+
+    The convenience video loader is deliberately absent: it probes paths and
+    rounds frame counts. Joint audio latents are generated but never decoded
+    or retained as authored sound.
+    """
+    from worker_protocol import GenerateExtensionRequest, parse_host_message
+    parsed = parse_host_message(request)
+    if not isinstance(parsed, GenerateExtensionRequest) or paths.get("operation") != "extension_hold":
+        raise ValueError("extension requires its explicit development operation")
+    if context.get("plan") != request["plan"]:
+        raise ValueError("extension context differs from the requested plan")
+    count, native_count = validate_extension_plan(request["plan"], request["constraints"]["video"])
+    prompt = hold_prompt(request["constraints"])
+    sampling, dimensions = request["plan"]["sampling"], request["plan"]["native_dimensions"]
+    direction = {"from_left": "after", "from_right": "before"}[sampling["direction"]]
+    context_count, generated_count = sampling["context_frame_count"], sampling["generated_frame_count"]
+    width, height = dimensions["width"], dimensions["height"]
+    if len(input_bytes) != context_count or sum(map(len, input_bytes)) > 16 * 1024**2:
+        raise ValueError("extension conditioning input count or byte budget differs from its plan")
+    started = time.monotonic()
+    check_cancel()
+    stage("runtime_loading")
+    import mlx.core as mx
+    import mlx_lm
+    import numpy as np
+    from PIL import Image
+    from ltx_pipelines_mlx.retake import RetakePipeline
+    from ltx_core_mlx.text_encoders.gemma.encoders.base_encoder import GemmaLanguageModel
+    from ltx_core_mlx.model.video_vae.video_vae import _compute_decode_tiling, decode_cache_limit
+    from ltx_core_mlx.utils.positions import compute_audio_token_count
+    from ltx_core_mlx.utils.memory import aggressive_cleanup
+    import ltx_pipelines_mlx.retake as imported_pipeline
+    expected_module = paths["runtime_source"] / "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/retake.py"
+    if Path(imported_pipeline.__file__).resolve() != expected_module.resolve():
+        raise ValueError("Python imported an unexpected extension pipeline")
+    loaded_sources(paths["runtime_source"], paths["source_manifest"])
+    pack = paths["model_pack"]
+    start = context_count if direction == "after" else 0
+    report = {
+        "schema_version": 3, "operation": "extension", "direction": sampling["direction"],
+        "runtime_commit": RUNTIME_COMMIT, "adapter_sources_sha256": adapter_sources,
+        "pack_id": pack["pack_id"], "pack_version": pack["pack_version"],
+        "runtime_id": pack["runtime_id"], "runtime_version": request["provider"]["runtime_version"],
+        "model_manifest_sha256": paths["model_manifest_sha256"],
+        "pack_revision": paths["model"].name, "gemma_revision": paths["gemma"].name,
+        "verified_assets": paths["verified_assets"],
+        "request_binding": {key: request[key] for key in ["identity", "project_id", "revision_id", "target", "input", "constraints", "provider", "plan"]},
+        "prompt_version": PROMPT_VERSION, "prompt": prompt, "prompt_token_limit": PROMPT_TOKEN_LIMIT,
+        "seed": request["provider"]["seed"], "context": context,
+        "generated_interval": [start, start + generated_count],
+        "timing": extension_timing(sampling),
+        "model_color_interpretation": "full-range SDR sRGB RGB, BT.709 primaries",
+        "temporal_interpolation": "frame centers clamped to generated interval; linear in encoded sRGB, half-up RGB8 quantization",
+        "conditioning_preprocessing": "host-prepared chronological RGB PNGs normalized to [-1,1] and encoded once by pinned video VAE; no convenience-loader probing, frame rounding or bridge keyframe preprocessing",
+        "configuration": {"num_steps": 30, "cfg_scale": 3.0, "stg_scale": 1.0,
+                          "low_memory": True, "low_ram_streaming": False,
+                          "joint_audio_latents": True, "audio_decoding": False,
+                          "source_audio": "zero latents; no Original speech", "extend_latent_frames": generated_count // 8},
+        "device_info": mx.device_info(),
+    }
+
+    def load_local(self, model_path=None):
+        check_cancel()
+        path = model_path or self._model_path
+        if Path(path).resolve() != paths["gemma"].resolve():
+            raise ValueError("unexpected extension text encoder location")
+        self._model, self._tokenizer = mlx_lm.load(path, tokenizer_config={"trust_remote_code": False, "local_files_only": True})
+
+    def tokenize(self, text, max_length=PROMPT_TOKEN_LIMIT):
+        check_cancel()
+        if self._tokenizer is None:
+            raise ValueError("Gemma tokenizer is not loaded")
+        tokens, mask, length = prompt_tokens(self._tokenizer, text, max_length)
+        if text == prompt:
+            report["prompt_tokens"] = length
+        return mx.array([tokens]), mx.array([mask])
+
+    GemmaLanguageModel.load, GemmaLanguageModel.tokenize = load_local, tokenize
+    pictures = []
+    for data in input_bytes:
+        check_cancel()
+        with Image.open(io.BytesIO(data)) as image:
+            if image.format != "PNG" or image.mode != "RGB" or image.size != (width, height):
+                raise ValueError("extension conditioning must be exact model-grid RGB PNGs")
+            image.load()
+            pictures.append(np.array(image, copy=True))
+    mx.set_memory_limit(64 * 1024**3)
+    mx.set_cache_limit(8 * 1024**3)
+    mx.reset_peak_memory()
+
+    class ExtensionPipeline(RetakePipeline):
+        def _stepwise_hook(self, latent_frames, latent_height, latent_width, *, stage=None):
+            del stage
+            if (latent_frames, latent_height, latent_width) != (3, height // 32, width // 32):
+                raise ValueError("extension denoising tensor exceeds its measured envelope")
+            emit_stage("inference")
+
+            def on_step(index, total, video_x0, sigma):
+                del video_x0, sigma
+                check_cancel()
+                print(f"extension denoise completed={index + 1} total={total}", file=sys.stderr, flush=True)
+            return on_step
+
+    emit_stage = stage
+    stage("model_loading")
+    pipe = ExtensionPipeline(model_dir=str(paths["model"]), gemma_model_id=str(paths["gemma"]),
+                             low_memory=True, low_ram_streaming=False,
+                             dev_transformer="transformer-dev.safetensors")
+    # This property suppresses convenience audio decoding only. Low-level
+    # extend still computes the joint audio branch, as recorded above.
+    pipe.generate_audio = False
+    pipe.verbose = True
+    stage("conditioning")
+    rgb = np.stack(pictures)
+    tensor = mx.array(rgb.astype(np.float32) / 127.5 - 1).transpose(3, 0, 1, 2)[None]
+
+    def encode(encoder):
+        check_cancel()
+        value = encoder.encode(tensor)
+        mx.eval(value)
+        mx.synchronize()
+        check_cancel()
+        return value
+
+    latent = pipe.image_conditioner(encode, free_after=True)
+    if tuple(latent.shape) != (1, 128, 2, height // 32, width // 32):
+        raise ValueError("extension context VAE emitted an unexpected latent shape")
+    source_latent = np.array(latent.astype(mx.float32), copy=True)
+    if not np.isfinite(source_latent).all():
+        raise ValueError("extension context latent is non-finite")
+    report["source_latent_sha256"] = hashlib.sha256(source_latent.tobytes()).hexdigest()
+    report["source_latent_dtype"] = str(latent.dtype)
+    del tensor, rgb, pictures
+    audio_count = compute_audio_token_count(context_count, frame_rate=24)
+    if audio_count != 9:
+        raise ValueError("extension source audio token count differs from the measured runtime")
+    source_audio = mx.zeros((1, 8, audio_count, 16), dtype=mx.bfloat16)
+    stage("inference")
+    generated, generated_audio = pipe.extend(
+        prompt=prompt, source_video_latent=latent, source_audio_latent=source_audio,
+        extend_frames=generated_count // 8, direction=direction, height=height, width=width,
+        num_frames=context_count, frame_rate=24, seed=request["provider"]["seed"],
+        num_steps=30, cfg_scale=3.0, stg_scale=1.0)
+    mx.eval(generated, generated_audio)
+    mx.synchronize()
+    check_cancel()
+    if tuple(generated.shape) != (1, 128, 3, height // 32, width // 32):
+        raise ValueError("extension returned an unexpected native latent shape")
+    if not mx.all(mx.isfinite(generated_audio)).item():
+        raise ValueError("extension joint audio latent is non-finite")
+    report["generated_audio_discarded_shape"] = list(generated_audio.shape)
+    native_latent = np.array(generated.astype(mx.float32), copy=True)
+    context_start = 0 if direction == "after" else generated_count // 8
+    if (not np.isfinite(native_latent).all()
+            or not np.array_equal(native_latent[:, :, context_start:context_start + 2], source_latent)):
+        raise ValueError("extension altered source context latents or produced non-finite output")
+    report["source_latent_preservation"] = {"exact": True, "context_latent_start": context_start,
+                                            "source_shape": list(source_latent.shape), "native_shape": list(native_latent.shape)}
+    del generated_audio, source_audio, latent, native_latent, source_latent
+    pipe.dit = None
+    aggressive_cleanup()
+    stage("decoding")
+    decoder = pipe.video_decoder_block.load()
+    tiling = _compute_decode_tiling(generated.shape, frame_rate=24)
+    native_frames = []
+    with decode_cache_limit():
+        for chunk in decoder.tiled_decode(generated, tiling):
+            check_cancel()
+            if (tuple(chunk.shape[:2]) != (1, 3) or tuple(chunk.shape[3:]) != (height, width)
+                    or not mx.all(mx.isfinite(chunk)).item()):
+                raise ValueError("extension VAE produced invalid RGB geometry or values")
+            for index in range(chunk.shape[2]):
+                check_cancel()
+                if len(native_frames) >= native_count:
+                    raise ValueError("extension VAE emitted too many native frames")
+                frame = ((mx.clip(chunk[0, :, index], -1, 1) + 1) * 127.5).astype(mx.uint8)
+                frame = mx.contiguous(frame.transpose(1, 2, 0))
+                mx.eval(frame)
+                native_frames.append(np.array(frame, copy=True))
+    pipe.video_decoder_block.free()
+    if len(native_frames) != native_count:
+        raise ValueError("extension VAE emitted an unexpected native duration")
+    stage("encoding")
+    native_path, candidate_path = output / "native.mp4", output / "candidate.mp4"
+    report["native_rgb"] = encode_rgb(paths["ffmpeg"], native_path,
+        (frame.tobytes() for frame in native_frames), width, height, sampling["native_rate"], check_cancel)
+    report["candidate_rgb"] = encode_rgb(paths["ffmpeg"], candidate_path,
+        sampled_extension_rgb(native_frames, sampling, check_cancel), width, height,
+        sampling["project_rate"], check_cancel)
+    if report["candidate_rgb"]["frames"] != count:
+        raise ValueError("extension sampled output count differs from the authored interval")
+    stage("worker_validation")
+    for name, path, frame_rate in [("native", native_path, sampling["native_rate"]),
+                                   ("candidate", candidate_path, sampling["project_rate"])]:
+        report[f"{name}_probe"] = verify_rgb(paths["ffmpeg"], paths["ffprobe"], path,
+            report[f"{name}_rgb"], width, height, frame_rate, check_cancel)
+        report[f"{name}_sha256"], report[f"{name}_bytes"] = file_digest(path), path.stat().st_size
+    check_cancel()
+    mx.synchronize()
+    report["loaded_ltx_sources_sha256"] = loaded_sources(paths["runtime_source"], paths["source_manifest"])
+    report.update(backend_seconds=time.monotonic() - started,
+                  process_peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+                  mlx_counter_at_end_bytes=mx.get_peak_memory(),
+                  status="worker_validated_not_host_validated_or_accepted")
+    provenance_path = output / "provenance.json"
+    with provenance_path.open("x") as stream:
+        json.dump(report, stream, indent=2)
+        stream.write("\n")
+    return native_path, provenance_path, report
 
 
 def check_runtime(config):

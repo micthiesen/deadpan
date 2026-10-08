@@ -1,0 +1,89 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.527
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib",
+      "conditioning::extension"
+    ],
+    "exit": 0,
+    "seconds": 3.752
+  },
+  {
+    "name": "protocol-fuzz",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "--test",
+      "protocol",
+      "adversarial_generation_frames"
+    ],
+    "exit": 0,
+    "seconds": 0.606
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "-p",
+      "deadpan-jobs",
+      "-p",
+      "xtask",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 8.162
+  },
+  {
+    "name": "chaos",
+    "command": [
+      "cargo",
+      "xtask",
+      "chaos",
+      "--only",
+      "jobs-generation,model-packs",
+      "--minutes",
+      "0.5",
+      "--seed",
+      "20261008",
+      "--output",
+      "/tmp/deadpan-resume-20261006/extension-worker/checks-final/chaos"
+    ],
+    "exit": 0,
+    "seconds": 24.735
+  },
+  {
+    "name": "diff",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 0.016
+  }
+]

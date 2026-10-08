@@ -1,0 +1,12 @@
+{
+  "accepted": false,
+  "cancellation_sent": false,
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 0.111609042,
+  "failure": "Worker(WorkerFailure { code: BackendFailure, detail: Diagnostic(\"[Errno 2] No such file or directory: '/private/tmp/deadpan-resume-20261006/extension-worker/support/evidence/2026-09-20-smoke/download-manifest.json'\") })",
+  "faults": [],
+  "media_validated": false,
+  "state": "Failed"
+}
+worker did not produce a clean hashed candidate or cooperative cancellation

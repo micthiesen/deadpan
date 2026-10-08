@@ -1,0 +1,85 @@
+{
+  "elapsed_seconds": 0.618076166,
+  "native": {
+    "object": {
+      "byte_length": 2760051,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "e1b3f1c3166155e1e6e3a6ab4c36f4f0f7c3ff2f34db4f95810af0b71a8cac49"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "321b79e02769c23b428b2489aecd58f1e5d1a18b48cdbcadd5efbd610405e090",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_duration": 41,
+      "last_output_pts": 667,
+      "output_bytes": 2760051,
+      "output_rgb_sha256": "321b79e02769c23b428b2489aecd58f1e5d1a18b48cdbcadd5efbd610405e090",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 2,
+      "slice_crc": true,
+      "video": {
+        "frames": 17,
+        "height": 320,
+        "rate_den": 1,
+        "rate_num": 24,
+        "width": 768
+      }
+    }
+  },
+  "sampled": {
+    "object": {
+      "byte_length": 1456174,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "7f805d129a5cee72480a8a4411ec8595cdf518687d9e87e5c612d6cecdac0fcb"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "321b79e02769c23b428b2489aecd58f1e5d1a18b48cdbcadd5efbd610405e090",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_duration": 33,
+      "last_output_pts": 267,
+      "output_bytes": 1456174,
+      "output_rgb_sha256": "e2072a82e6f575ffa53d89a1e1ccf1ebfa5c6fbe3291f7795e5a511d8987f774",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 2,
+      "slice_crc": true,
+      "video": {
+        "frames": 9,
+        "height": 320,
+        "rate_den": 1001,
+        "rate_num": 30000,
+        "width": 768
+      }
+    }
+  },
+  "sampling": {
+    "context_frame_count": 9,
+    "direction": "from_left",
+    "generated_frame_count": 8,
+    "interpolation": "encoded_srgb_rgb8_linear_half_up",
+    "native_rate": {
+      "denominator": 1,
+      "numerator": 24
+    },
+    "output_frame_count": 9,
+    "policy": "frame_centers_clamped",
+    "project_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "schema_version": 1
+  },
+  "scope": "decoded native and generated-only sampled media; no quality/provenance admission, Ready state or acceptance"
+}

@@ -1,0 +1,150 @@
+{
+  "conditioning": {
+    "context": [
+      {
+        "declaration": {
+          "byte_length": 1859,
+          "reference": "inputs/000.png",
+          "sha256": "7ab1981f01963737ef192efec31def9d1d6d13944552e497de916e238ae4b454"
+        },
+        "object": {
+          "byte_length": 1859,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "e0b9ec3f4af6dd3999fd72488b7543474f38809c01150a127c3bd268ad7fccd4"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1863,
+          "reference": "inputs/001.png",
+          "sha256": "9c0bdbab7878c3fb9855a2b0daf621ebaa76610618097b06ee4c06e61231d7c8"
+        },
+        "object": {
+          "byte_length": 1863,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "206696d418ab8188e5d2e40449a65e60321bf736f3fb8fab8e8935eb8f6ddce7"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1861,
+          "reference": "inputs/002.png",
+          "sha256": "cbab1da18d3253276b31215bbd470b4c8965fded6d83c26a506a868aefb14343"
+        },
+        "object": {
+          "byte_length": 1861,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "0c9a6b659d4a65632d074df159388c484b8a6c91a9c055543e194f66ed437b65"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1865,
+          "reference": "inputs/003.png",
+          "sha256": "a5035d5bf75580dee21d51a3d252ec937238aba716d0608a7648a536dc39e018"
+        },
+        "object": {
+          "byte_length": 1865,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "9ead526c6a01184914a730cd69a6657ee147e4761ba1670695ec33d2d448a273"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1871,
+          "reference": "inputs/004.png",
+          "sha256": "9fc84da593b56272d6600c714c1cc2ddef9074861c704ef59d119e3e5f227f78"
+        },
+        "object": {
+          "byte_length": 1871,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "4900539a6923e10624ddd7ed7145a312e442a21949a8345b38ca1ca34892bcde"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1865,
+          "reference": "inputs/005.png",
+          "sha256": "17f26bc055f7a8e998e4f8156a0fc758f0194c797691b546e575b54e1db28b5e"
+        },
+        "object": {
+          "byte_length": 1865,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "106611c87c267083391b8844d2a42bcb576de9a19838281471e071e9107ce5e9"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1876,
+          "reference": "inputs/006.png",
+          "sha256": "cb402538715b59224cd53b3dba17792b0ec95c80c2c58999157dab2c696597ad"
+        },
+        "object": {
+          "byte_length": 1876,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "c81bc9bd07cc3d84f2ae7c531d9fe416c4b8a377c3dc4c46140c529b18787589"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1874,
+          "reference": "inputs/007.png",
+          "sha256": "3a39a05a3f756e5e7b2f4b4ef814072714fdb684702e580787499a287e2b6790"
+        },
+        "object": {
+          "byte_length": 1874,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "1419842c14230ead0a2600ad423d659383d974fb8e122f9f173df43faa118965"
+          }
+        }
+      },
+      {
+        "declaration": {
+          "byte_length": 1867,
+          "reference": "inputs/008.png",
+          "sha256": "f63b8b0023b07bf5522c4288a49b6f55440cf2362c5b93e4c212de2c1f331e50"
+        },
+        "object": {
+          "byte_length": 1867,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "d3389bf2f72108a8a48cd6d51aa3ef41032fd06b760031940519682e83dacdd4"
+          }
+        }
+      }
+    ],
+    "manifest": {
+      "declaration": {
+        "byte_length": 15816,
+        "reference": "inputs/context.json",
+        "sha256": "e0d9fa3ea9b82ec69515ed7a5310e4c14a4d0be021ab6477930165dc831698ff"
+      },
+      "object": {
+        "byte_length": 15816,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "78c290df6313a2c59f7544b402b9102b56286b6f8e05a32a4e6298c863ae4eb3"
+        }
+      }
+    },
+    "operation": "extension",
+    "opposite": null,
+    "schema_version": 1
+  },
+  "scope": "pre-launch input byte retention; no decoded image or source-clock qualification"
+}

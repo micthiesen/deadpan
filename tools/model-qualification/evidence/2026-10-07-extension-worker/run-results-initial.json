@@ -1,0 +1,11 @@
+[
+  {
+    "name": "from_left-retain",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/retain_extension_conditioning",
+      "/tmp/deadpan-resume-20261006/extension-worker/from_left/capture.json"
+    ],
+    "exit": 1,
+    "seconds": 0.007
+  }
+]

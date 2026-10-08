@@ -29,6 +29,9 @@ pub use geometry::{ConditioningGeometry, RasterRect};
 #[path = "conditioning_region.rs"]
 mod region;
 pub use region::{CapturedRegionBoundary, RegionCapture, RegionCaptureUnavailable};
+#[path = "conditioning_extension.rs"]
+mod extension;
+pub use extension::*;
 
 const MAXIMUM_MANIFEST_BYTES: u64 = 1024 * 1024;
 const MAXIMUM_FRAME_BYTES: u64 = 64 * 1024 * 1024;

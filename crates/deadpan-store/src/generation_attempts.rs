@@ -865,6 +865,11 @@ impl ProjectStore {
         &mut self,
         message: &WorkerMessage,
     ) -> Result<AttemptMutationOutcome, StoreError> {
+        if message.protocol() == ProtocolVersion::V3 {
+            return Err(attempt_error(
+                "extension worker admission is not implemented",
+            ));
+        }
         if matches!(message, WorkerMessage::Progress { .. }) {
             return Err(StoreError::GenerationProgressNotPersistent);
         }
@@ -2018,6 +2023,9 @@ fn serialize_candidate_declaration(
         CandidateDeclaration::NativeBridgeV2(candidate) => {
             bounded_json(candidate, "native bridge candidate")
         }
+        CandidateDeclaration::NativeExtensionV3(_) => Err(attempt_error(
+            "extension candidate persistence is not implemented",
+        )),
     }
 }
 
@@ -2276,7 +2284,9 @@ fn duplicate_worker_terminal(attempt: &StoredGenerationAttempt, message: &Worker
             ) && attempt.checkpoint.cancellation_acknowledgement
                 == Some(CancellationAcknowledgement::Cancelled)
         }
-        WorkerMessage::Stage { .. } | WorkerMessage::Progress { .. } => false,
+        WorkerMessage::Stage { .. }
+        | WorkerMessage::Progress { .. }
+        | WorkerMessage::CompletedExtension { .. } => false,
     }
 }
 
