@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T16:20:51Z",
+  "updated_at": "2026-10-08T17:14:50Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Qualifying AI extension outputs and connecting acceptance to saved projects.",
   "features": [
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and replacements work. Extension inputs now survive edits and history; output checks, acceptance and app controls remain."
+      "note": "AI pauses and replacements work. Saved extension inputs are retained and rechecked; output checks, acceptance and app controls remain."
     },
     {
       "id": "import",
@@ -205,6 +205,14 @@
       "revision": "d5927b76",
       "retrospective": false,
       "summary": "Verified saved AI extension inputs, stale-result checks and automatic replacement history. Output qualification, acceptance and app controls remain."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 88,
+      "complete_sections": 4,
+      "revision": "c3f3c0a0",
+      "retrospective": false,
+      "summary": "Verified immutable AI extension inputs and repeated continuity checks, including matching Rust and Python readers. Output checks, acceptance and app controls remain."
     }
   ]
 }
