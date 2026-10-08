@@ -148,6 +148,7 @@ moves within a volume, changed content and records without a bookmark
 | Render candidate retention on a full disk | `DiskFull`; nothing in `Media/RenderCandidates`; the same retention succeeds once space returns | `storage_failures_media.rs` |
 | Seek proxy build on a full cache volume | The worker's own movie write (classified by the worker itself as `disk_full` from ENOSPC/EDQUOT) and the sidecar write at publication both fail as disk-full, an environmental condition never remembered as the Original's failure; no entry and no staging left; the same build publishes once space returns; a published proxy stays readable on a full volume | `deadpan-cli` `proxy_disk_full.rs` (cache on a 16 MB image, real worker) |
 | Model pack volume fills during a download | The write fails with `No space left on device` (CLI code `DiskFull`); no finished file, receipt or active version; the kept `.part` is an exact prefix; while full the preflight refuses with `ModelPackSpace`; the install resumes from the kept bytes once space returns | `deadpan-models` `packs::disk_full_tests` (320 MB image filled by another writer mid-download) |
+| Model pack volume fills during offline folder or archive import | Real ENOSPC after preflight preserves the previously verified installed version and receipt. The failed replacement has no finished payload, receipt or installed directory; retry stages and verifies fully after space returns. | `deadpan-cli` `model_pack_import_disk_full.rs` (320 MB APFS image, source on another volume) |
 | Render publication to a full destination | `destination_full`; no movie at the destination; the verified candidate publishes once space returns | `encoded_verification` `publication` |
 
 A WAL database needs writable shared memory even to read, so a project on a
@@ -227,12 +228,21 @@ missing) and `recovery` unit tests (3: message classification, formats, the
 per-instance journal),
 and `encoded_verification` `a_full_destination_volume_publishes_nothing_and_keeps_the_candidate`.
 
+On 2026-10-08 both offline-import disk-image cases passed under nextest and
+ordinary `cargo test`; strict target Clippy also passed. The volume is filled
+with real writes after the first file is copied and read for verification.
+Small random byte fixtures exercise the normal CLI installer and PackStore,
+without loading a model. Their previous version has a verified receipt but no
+approved catalog selection; the tests prove that selection remains absent,
+not replacement of an active production model. Nextest's disk-image group and
+a process-local test mutex serialize the cases. The initial compile failure
+used unsupported digest hex formatting; explicit byte formatting corrected it.
+Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
+
 ## Remaining work
 
 - Moved files on unmounted or other volumes, and iCloud-evicted media
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
-- Offline model pack imports (from a folder or archive) have no disk-image
-  test.
 - Store errors wrapped in other error types keep SQLite's raw wording; the
   alert still recognizes SQLite's disk-full and read-only messages but not
   other raw I/O wording. Render workflow journal failures are classified only
