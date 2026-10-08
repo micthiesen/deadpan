@@ -17,9 +17,7 @@ use deadpan_plan::{DefinitionPictureSample, RenderPlan};
 use deadpan_store::generation::{
     ContextObservation, GenerationContextResolver, StoredGenerationRequest,
 };
-use deadpan_store::generation_inputs::{
-    GenerationCaptureSpec, GenerationInputBinding, InputCaptureBudget,
-};
+use deadpan_store::generation_inputs::{GenerationCaptureSpec, InputCaptureBudget};
 use deadpan_store::generation_intents::IntentInputBinding;
 use deadpan_store::generation_pictures::GenerationPictures;
 use deadpan_store::generation_preparations::StoredGenerationPreparation;
@@ -343,7 +341,7 @@ fn preparation_with_plan(
             return false;
         };
         let region = binding.region.as_ref().map(|region| &region.id);
-        let before = GenerationInputBinding::capture_with_plan(
+        let before = deadpan_store::generation_inputs::GenerationInputCapture::capture_with_plan(
             origin,
             &origin_plan,
             &preparation.origin_target,
@@ -353,7 +351,7 @@ fn preparation_with_plan(
             capture.budget,
         )
         .ok();
-        let after = GenerationInputBinding::capture_with_plan(
+        let after = deadpan_store::generation_inputs::GenerationInputCapture::capture_with_plan(
             after,
             after_plan,
             &preparation.target,
@@ -423,7 +421,7 @@ fn observe_with_plan(
         let Some(after_plan) = after_plan else {
             return ContextObservation::Unresolved;
         };
-        let before = GenerationInputBinding::capture_with_plan(
+        let before = deadpan_store::generation_inputs::GenerationInputCapture::capture_with_plan(
             origin,
             &origin_plan,
             &request.origin_target,
@@ -433,7 +431,7 @@ fn observe_with_plan(
             capture.budget,
         )
         .ok();
-        let after = GenerationInputBinding::capture_with_plan(
+        let after = deadpan_store::generation_inputs::GenerationInputCapture::capture_with_plan(
             after,
             after_plan,
             &request.target,

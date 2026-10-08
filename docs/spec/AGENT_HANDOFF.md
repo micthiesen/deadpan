@@ -184,6 +184,13 @@ the full workspace run; all 147 affected-target tests pass. Exact failures,
 pipe-closure diagnostics and final executable hashes are retained in the
 qualification evidence. Approved model capabilities remain Bridge-only.
 
+Shared generation-input wire types now live in `deadpan-jobs::generation_inputs`,
+with store re-exports. `GenerationInputCapture` owns store capture and limits.
+The representation and schema are unchanged. Extension manifests still need
+the saved descriptor and retained, recomputable continuity evidence before
+output admission can consume them. The move passed independent review, strict
+workspace Clippy, formatting and all 309 affected jobs/store/CLI tests.
+
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate is about 88%.
 

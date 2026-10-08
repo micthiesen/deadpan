@@ -1,7 +1,7 @@
 use super::*;
 use deadpan_core::{
-    AssetId, EndpointPolicy, ExactRatio, IndexedSourceFrame, SourceFrameIndex, SourcePoint,
-    SourceSpan, SourceTimeBase, SourceTimestamp, TerminalProvenance,
+    AssetId, EndpointPolicy, ExactRatio, GeneratedObjectRef, IndexedSourceFrame, SourceFrameId,
+    SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase, SourceTimestamp, TerminalProvenance,
 };
 use rusqlite::params;
 use serde_json::json;

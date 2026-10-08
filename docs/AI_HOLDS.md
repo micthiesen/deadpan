@@ -293,6 +293,12 @@ automatic intent and history use the same independently recaptured descriptor.
 Missing context preserves the chosen direction; restoring it can create fresh
 work without changing the saved controls. Shared resource limits fail atomically.
 
+`deadpan-jobs::generation_inputs` owns the shared wire types, so model
+qualification can read a captured descriptor without depending on the store.
+The store's `GenerationInputCapture` owns capture and resource limits; reading
+or constructing a descriptor never grants request or acceptance authority.
+The schema-73 representation is unchanged.
+
 This is persistence groundwork. Native and headless execution still admit Bridge
 jobs only; extension Ready and acceptance remain closed until output qualification
 is implemented. See [durable extension inputs](qualification/extension-inputs-2026-10-07.md).

@@ -16,7 +16,7 @@ fn capture(
     name: &str,
     capture: GenerationCaptureSpec,
 ) -> GenerationInputBinding {
-    GenerationInputBinding::capture_with_plan(
+    crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         &RenderPlan::compile(document).unwrap(),
         &target(name),
@@ -524,9 +524,12 @@ fn removing_a_selected_region_restores_fallback_and_retains_the_missing_selectio
         "region",
     );
     let connection = connection();
-    let required = capture(&connection, &document, "a", GenerationCaptureSpec::Bridge)
-        .with_region(&document, Some(&region))
-        .unwrap();
+    let required = crate::generation_inputs::GenerationInputCapture::with_region(
+        capture(&connection, &document, "a", GenerationCaptureSpec::Bridge),
+        &document,
+        Some(&region),
+    )
+    .unwrap();
     save_origin(&connection, &document, "a", required);
     let removed = apply(
         &document,

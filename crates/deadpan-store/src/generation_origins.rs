@@ -481,7 +481,7 @@ fn recapture_inputs(
         ));
     }
     let plan = RenderPlan::compile(document).map_err(plan_error)?;
-    GenerationInputBinding::capture_with_plan(
+    crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         &plan,
         &origin.origin_target,

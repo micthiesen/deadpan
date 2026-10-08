@@ -225,7 +225,7 @@ fn derive_with_pictures(
             if boundary.left.is_none() && boundary.right.is_none() {
                 continue;
             }
-            let capture = GenerationCaptureSpec::for_preference(
+            let capture = crate::generation_inputs::GenerationInputCapture::for_preference(
                 preference,
                 boundary.left.is_some(),
                 boundary.right.is_some(),

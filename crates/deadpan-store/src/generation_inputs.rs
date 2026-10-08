@@ -7,80 +7,37 @@
 use std::io;
 
 use deadpan_core::{
-    AttentionTarget, BoundaryQueryLimits, ExactRatio, ExtensionDirection, FrameDuration, FrameRate,
-    NodeKind, ProjectDocument, ScopedNodeTarget, TargetId,
+    BoundaryQueryLimits, ExtensionDirection, FrameDuration, FrameRate, NodeKind, ProjectDocument,
+    ScopedNodeTarget, TargetId,
 };
 use deadpan_plan::{RenderPlan, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextRequest};
-use serde::{Deserialize, Serialize};
 
 use crate::StoreError;
-use crate::generation_pictures::{GenerationPictureIdentity, GenerationPictures};
+use crate::generation_pictures::GenerationPictures;
 
-pub const MAX_INPUT_BINDING_BYTES: usize = 512 * 1024;
+use deadpan_jobs::generation_inputs::GenerationInputBinding as InputBinding;
+pub use deadpan_jobs::generation_inputs::{
+    ExtensionCapturePolicy, GenerationCaptureSpec, GenerationInputBinding, GenerationInputSettings,
+    GenerationInputSupport, GenerationInputs, GenerationPictureIdentity, GenerationRegionIdentity,
+    MAX_INPUT_BINDING_BYTES, RelativeGenerationPicture,
+};
+
 pub const MAX_INPUT_CAPTURE_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 const MAX_CAPTURE_WORK: usize = 64 * deadpan_core::MAX_DOCUMENT_NODES;
 const MAX_CAPTURE_SPANS: usize = 8 * deadpan_core::MAX_DOCUMENT_NODES;
 
-/// The operation resolved before asynchronous preparation. A policy change
-/// requires a new capture; it cannot relabel earlier measurements.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
-pub enum GenerationCaptureSpec {
-    Bridge,
-    Extension {
-        direction: ExtensionDirection,
-        native_rate: FrameRate,
-        context_frames: u32,
-        policy: ExtensionCapturePolicy,
-    },
-}
+/// Stateless store-side capture engine. The returned binding is a shared wire
+/// type, so model providers can consume it without depending on the store.
+pub struct GenerationInputCapture;
 
-impl<'de> Deserialize<'de> for GenerationCaptureSpec {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        // Serde's internally tagged unit variant ignores extra fields even
-        // with deny_unknown_fields. A zero-field struct variant is strict.
-        #[derive(Deserialize)]
-        #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
-        enum Wire {
-            Bridge {},
-            Extension {
-                direction: ExtensionDirection,
-                native_rate: FrameRate,
-                context_frames: u32,
-                policy: ExtensionCapturePolicy,
-            },
-        }
-        Ok(match Wire::deserialize(deserializer)? {
-            Wire::Bridge {} => Self::Bridge,
-            Wire::Extension {
-                direction,
-                native_rate,
-                context_frames,
-                policy,
-            } => Self::Extension {
-                direction,
-                native_rate,
-                context_frames,
-                policy,
-            },
-        })
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ExtensionCapturePolicy {
-    TemporalContextV1,
-}
-
-impl GenerationCaptureSpec {
+impl GenerationInputCapture {
     /// The implemented temporal capture contract, independent of installation
     /// or provider admission. Selecting it does not promise runnable inference.
     pub fn for_preference(
         preference: deadpan_jobs::GenerationModePreference,
         left_present: bool,
         right_present: bool,
-    ) -> Result<Self, StoreError> {
+    ) -> Result<GenerationCaptureSpec, StoreError> {
         use deadpan_jobs::{ConditioningMode, ConditioningSupport, GenerationModePreference};
         // An explicit operation stays captured even while its anchor is absent.
         // Provider admission separately checks whether it can run now.
@@ -101,9 +58,9 @@ impl GenerationCaptureSpec {
                 .map_err(StoreError::GenerationInputMode)?,
         };
         Ok(match mode {
-            ConditioningMode::Bridge => Self::Bridge,
+            ConditioningMode::Bridge => GenerationCaptureSpec::Bridge,
             ConditioningMode::ExtendFromLeft | ConditioningMode::ExtendFromRight => {
-                Self::Extension {
+                GenerationCaptureSpec::Extension {
                     direction: if mode == ConditioningMode::ExtendFromLeft {
                         ExtensionDirection::FromLeft
                     } else {
@@ -117,99 +74,14 @@ impl GenerationCaptureSpec {
         })
     }
 
-    pub fn conditioning(self) -> deadpan_jobs::ConditioningMode {
-        match self {
-            Self::Bridge => deadpan_jobs::ConditioningMode::Bridge,
-            Self::Extension {
-                direction: ExtensionDirection::FromLeft,
-                ..
-            } => deadpan_jobs::ConditioningMode::ExtendFromLeft,
-            Self::Extension {
-                direction: ExtensionDirection::FromRight,
-                ..
-            } => deadpan_jobs::ConditioningMode::ExtendFromRight,
-        }
-    }
-
-    pub fn from_plan(plan: &deadpan_jobs::GenerationPlan) -> Self {
-        match plan {
-            deadpan_jobs::GenerationPlan::Bridge(_) => Self::Bridge,
-            deadpan_jobs::GenerationPlan::Extension(plan) => Self::Extension {
-                direction: plan.direction(),
-                native_rate: plan.native_frame_rate(),
-                context_frames: plan.context_frame_count(),
-                policy: ExtensionCapturePolicy::TemporalContextV1,
-            },
-        }
-    }
-
-    fn validate(self) -> Result<(), StoreError> {
-        if let Self::Extension { context_frames, .. } = self
+    fn validate(capture: GenerationCaptureSpec) -> Result<(), StoreError> {
+        if let GenerationCaptureSpec::Extension { context_frames, .. } = capture
             && !(1..=deadpan_plan::MAX_HOLD_CONTEXT_FRAMES).contains(&context_frames)
         {
             return Err(invalid("extension context count exceeds the capture bound"));
         }
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct RelativeGenerationPicture {
-    pub position: ExactRatio,
-    pub picture: GenerationPictureIdentity,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct GenerationInputSupport {
-    pub start: ExactRatio,
-    pub end_exclusive: ExactRatio,
-    pub first: GenerationPictureIdentity,
-    pub last: GenerationPictureIdentity,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
-pub enum GenerationInputs {
-    Bridge {
-        left: Option<GenerationPictureIdentity>,
-        right: Option<GenerationPictureIdentity>,
-    },
-    Extension {
-        capture: GenerationCaptureSpec,
-        samples: Vec<RelativeGenerationPicture>,
-        /// Explicitly unconditioned, even when a picture is present.
-        opposite: Option<RelativeGenerationPicture>,
-        support: Vec<GenerationInputSupport>,
-        /// The closed endpoint is separate from half-open affine spans.
-        terminal: RelativeGenerationPicture,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct GenerationRegionIdentity {
-    pub id: TargetId,
-    /// None retains the identity of a selected target removed by a later edit.
-    pub record: Option<AttentionTarget>,
-}
-
-/// Immutable operation and region selection used when recapturing inputs.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GenerationInputSettings {
-    pub capture: GenerationCaptureSpec,
-    pub region: Option<TargetId>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct GenerationInputBinding {
-    pub duration: FrameDuration,
-    pub frame_rate: FrameRate,
-    pub canvas: [u32; 2],
-    pub inputs: GenerationInputs,
-    pub region: Option<GenerationRegionIdentity>,
 }
 
 /// One ledger for a transition, including failed queries. Bounds do not reset
@@ -262,7 +134,7 @@ impl InputCaptureBudget {
             }
         };
         self.query(boundaries.lookup)?;
-        GenerationCaptureSpec::for_preference(
+        GenerationInputCapture::for_preference(
             preference,
             boundaries.left.is_some(),
             boundaries.right.is_some(),
@@ -296,12 +168,12 @@ impl InputCaptureBudget {
     }
 }
 
-impl GenerationInputBinding {
+impl GenerationInputCapture {
     pub fn capture(
         document: &ProjectDocument,
         target: &ScopedNodeTarget,
         pictures: &dyn GenerationPictures,
-    ) -> Result<Self, StoreError> {
+    ) -> Result<InputBinding, StoreError> {
         let plan = RenderPlan::compile(document).map_err(plan_error)?;
         Self::capture_with_plan(
             document,
@@ -322,8 +194,8 @@ impl GenerationInputBinding {
         region: Option<&TargetId>,
         pictures: &dyn GenerationPictures,
         budget: &mut InputCaptureBudget,
-    ) -> Result<Self, StoreError> {
-        capture.validate()?;
+    ) -> Result<InputBinding, StoreError> {
+        Self::validate(capture)?;
         let result = (|| match capture {
             GenerationCaptureSpec::Bridge => {
                 let boundary = plan
@@ -365,7 +237,7 @@ impl GenerationInputBinding {
                 Self::from_context(document, &context, capture, pictures)
             }
         })();
-        let result = match result.and_then(|binding| binding.with_region(document, region)) {
+        let result = match result.and_then(|binding| Self::with_region(binding, document, region)) {
             Ok(result) => result,
             Err(error) => {
                 // A failed canonical query has no partial work receipt. The
@@ -403,11 +275,11 @@ impl GenerationInputBinding {
     }
 
     pub fn with_region(
-        mut self,
+        mut binding: InputBinding,
         document: &ProjectDocument,
         region: Option<&TargetId>,
-    ) -> Result<Self, StoreError> {
-        self.region = region
+    ) -> Result<InputBinding, StoreError> {
+        binding.region = region
             .map(|id| {
                 let record = document.targets().get(id);
                 let mut count = ByteCount {
@@ -423,8 +295,8 @@ impl GenerationInputBinding {
             })
             .transpose()?;
         let mut budget = InputCaptureBudget::default();
-        budget.charge(&self)?;
-        Ok(self)
+        budget.charge(&binding)?;
+        Ok(binding)
     }
 
     /// Samples are observations only. Durable admission independently captures
@@ -433,7 +305,7 @@ impl GenerationInputBinding {
         document: &ProjectDocument,
         boundaries: &ScopedHoldBoundaries,
         pictures: &dyn GenerationPictures,
-    ) -> Result<Self, StoreError> {
+    ) -> Result<InputBinding, StoreError> {
         validate_boundary(document, boundaries)?;
         Ok(Self::base(
             document,
@@ -458,8 +330,8 @@ impl GenerationInputBinding {
         context: &ScopedHoldContext,
         capture: GenerationCaptureSpec,
         pictures: &dyn GenerationPictures,
-    ) -> Result<Self, StoreError> {
-        capture.validate()?;
+    ) -> Result<InputBinding, StoreError> {
+        Self::validate(capture)?;
         validate_boundary(document, &context.boundaries)?;
         let GenerationCaptureSpec::Extension {
             direction,
@@ -540,26 +412,12 @@ impl GenerationInputBinding {
         ))
     }
 
-    pub fn capture_spec(&self) -> GenerationCaptureSpec {
-        match &self.inputs {
-            GenerationInputs::Bridge { .. } => GenerationCaptureSpec::Bridge,
-            GenerationInputs::Extension { capture, .. } => *capture,
-        }
-    }
-
-    pub fn settings(&self) -> GenerationInputSettings {
-        GenerationInputSettings {
-            capture: self.capture_spec(),
-            region: self.region.as_ref().map(|region| region.id.clone()),
-        }
-    }
-
     pub(crate) fn base(
         document: &ProjectDocument,
         duration: FrameDuration,
         inputs: GenerationInputs,
-    ) -> Self {
-        Self {
+    ) -> InputBinding {
+        InputBinding {
             duration,
             frame_rate: document.presentation_basis().frame_rate,
             canvas: [

@@ -213,15 +213,17 @@ fn current_binding(
     request: &StoredGenerationRequest,
 ) -> Result<GenerationInputBinding> {
     let document = fixture.store.snapshot()?;
-    Ok(GenerationInputBinding::capture_with_plan(
-        &document,
-        &RenderPlan::compile(&document)?,
-        &request.target,
-        GenerationCaptureSpec::from_plan(request.plan.as_ref().unwrap()),
-        request.constraints.region_target.as_ref(),
-        &fixture.store.generation_pictures(),
-        &mut InputCaptureBudget::default(),
-    )?)
+    Ok(
+        deadpan_store::generation_inputs::GenerationInputCapture::capture_with_plan(
+            &document,
+            &RenderPlan::compile(&document)?,
+            &request.target,
+            GenerationCaptureSpec::from_plan(request.plan.as_ref().unwrap()),
+            request.constraints.region_target.as_ref(),
+            &fixture.store.generation_pictures(),
+            &mut InputCaptureBudget::default(),
+        )?,
+    )
 }
 
 #[test]

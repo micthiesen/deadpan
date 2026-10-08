@@ -196,7 +196,7 @@ impl Fixture {
             provider: provider.clone(),
             plan: Some(GenerationPlan::Bridge(bridge.clone())),
             input_binding: Some(
-                GenerationInputBinding::capture(
+                crate::generation_inputs::GenerationInputCapture::capture(
                     &original,
                     &target(),
                     &QualifiedGenerationPictures::new(&connection),
@@ -421,8 +421,18 @@ impl Fixture {
 fn input_binding_distinguishes_definition_edges_from_explicit_black_and_brands_revision() {
     let connection = Connection::open_in_memory().unwrap();
     let pictures = QualifiedGenerationPictures::new(&connection);
-    let absent = GenerationInputBinding::capture(&document(false), &target(), &pictures).unwrap();
-    let black = GenerationInputBinding::capture(&document(true), &target(), &pictures).unwrap();
+    let absent = crate::generation_inputs::GenerationInputCapture::capture(
+        &document(false),
+        &target(),
+        &pictures,
+    )
+    .unwrap();
+    let black = crate::generation_inputs::GenerationInputCapture::capture(
+        &document(true),
+        &target(),
+        &pictures,
+    )
+    .unwrap();
     assert_eq!(
         absent.inputs,
         GenerationInputs::Bridge {
@@ -450,7 +460,14 @@ fn input_binding_distinguishes_definition_edges_from_explicit_black_and_brands_r
         },
         "later",
     );
-    assert!(GenerationInputBinding::from_boundaries(&changed, &boundaries, &pictures).is_err());
+    assert!(
+        crate::generation_inputs::GenerationInputCapture::from_boundaries(
+            &changed,
+            &boundaries,
+            &pictures
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -467,10 +484,21 @@ fn missing_measured_input_evidence_is_not_replaced_by_a_guessed_frame() {
             ))
         }
     }
-    let error =
-        GenerationInputBinding::capture(&document(true), &target(), &Unavailable).unwrap_err();
+    let error = crate::generation_inputs::GenerationInputCapture::capture(
+        &document(true),
+        &target(),
+        &Unavailable,
+    )
+    .unwrap_err();
     assert!(error.to_string().contains("qualification unavailable"));
-    assert!(GenerationInputBinding::capture(&document(false), &target(), &Unavailable).is_ok());
+    assert!(
+        crate::generation_inputs::GenerationInputCapture::capture(
+            &document(false),
+            &target(),
+            &Unavailable
+        )
+        .is_ok()
+    );
 
     let asset_id = AssetId::new("unqualified-source").unwrap();
     let source_span = span(frames(12), rate());
@@ -502,7 +530,7 @@ fn missing_measured_input_evidence_is_not_replaced_by_a_guessed_frame() {
         "source-neighbor",
     );
     let connection = Connection::open_in_memory().unwrap();
-    let error = GenerationInputBinding::capture(
+    let error = crate::generation_inputs::GenerationInputCapture::capture(
         &original,
         &target(),
         &QualifiedGenerationPictures::new(&connection),
@@ -1127,13 +1155,12 @@ fn removed_selected_region_is_retained_structurally_but_cannot_authorize_an_orig
     )
     .unwrap()
     .document;
-    let binding = fixture
-        .request
-        .input_binding
-        .take()
-        .unwrap()
-        .with_region(&document, Some(&region))
-        .unwrap();
+    let binding = crate::generation_inputs::GenerationInputCapture::with_region(
+        fixture.request.input_binding.take().unwrap(),
+        &document,
+        Some(&region),
+    )
+    .unwrap();
     assert_eq!(binding.region.as_ref().unwrap().record, None);
     fixture
         .connection

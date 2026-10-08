@@ -963,7 +963,7 @@ fn capture_request_inputs(
     }
     let plan = deadpan_plan::RenderPlan::compile(document)
         .map_err(|error| plan_error(&error.to_string()))?;
-    GenerationInputBinding::capture_with_plan(
+    crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         &plan,
         target,

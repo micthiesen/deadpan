@@ -26,13 +26,19 @@ impl ProjectPictureSession {
         capture: deadpan_store::generation_inputs::GenerationCaptureSpec,
         region: Option<&deadpan_core::TargetId>,
     ) -> Result<deadpan_store::generation_inputs::GenerationInputBinding, String> {
-        deadpan_store::generation_inputs::GenerationInputBinding::from_context(
+        deadpan_store::generation_inputs::GenerationInputCapture::from_context(
             &self.document,
             context,
             capture,
             &self.store.generation_pictures(),
         )
-        .and_then(|binding| binding.with_region(&self.document, region))
+        .and_then(|binding| {
+            deadpan_store::generation_inputs::GenerationInputCapture::with_region(
+                binding,
+                &self.document,
+                region,
+            )
+        })
         .map_err(|error| error.to_string())
     }
 

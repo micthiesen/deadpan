@@ -7,7 +7,6 @@ use deadpan_core::{
 };
 use deadpan_store::generation::GenerationContextResolver;
 use deadpan_store::generation_intents::{IntentAuthorization, IntentCause};
-use deadpan_store::generation_origins::GenerationInputBinding;
 use deadpan_store::generation_pictures::GenerationPictures;
 use deadpan_store::generation_preparations::{PreparationState, StoredGenerationPreparation};
 
@@ -28,8 +27,16 @@ impl GenerationContextResolver for Measured {
         request: &StoredGenerationRequest,
         pictures: &dyn GenerationPictures,
     ) -> ContextObservation {
-        let old = GenerationInputBinding::capture(origin, &request.origin_target, pictures);
-        let new = GenerationInputBinding::capture(after, &request.target, pictures);
+        let old = deadpan_store::generation_inputs::GenerationInputCapture::capture(
+            origin,
+            &request.origin_target,
+            pictures,
+        );
+        let new = deadpan_store::generation_inputs::GenerationInputCapture::capture(
+            after,
+            &request.target,
+            pictures,
+        );
         if matches!((old, new), (Ok(old), Ok(new)) if old == new) {
             ContextObservation::Resolved(request.binding.context_sha256.clone())
         } else {
@@ -43,8 +50,8 @@ impl GenerationContextResolver for Measured {
         preparation: &StoredGenerationPreparation,
         pictures: &dyn GenerationPictures,
     ) -> bool {
-        matches!((GenerationInputBinding::capture(origin, &preparation.origin_target, pictures),
-            GenerationInputBinding::capture(after, &preparation.target, pictures)),
+        matches!((deadpan_store::generation_inputs::GenerationInputCapture::capture(origin, &preparation.origin_target, pictures),
+            deadpan_store::generation_inputs::GenerationInputCapture::capture(after, &preparation.target, pictures)),
             (Ok(old), Ok(new)) if old == new)
     }
 }

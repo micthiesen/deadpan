@@ -10,10 +10,7 @@ use std::{cell::RefCell, collections::BTreeMap};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use deadpan_core::AssetRecord;
-use deadpan_core::{
-    AssetId, GeneratedObjectRef, ProjectDocument, SourceFrameId, SourceFrameIndex,
-    SourceQualificationId,
-};
+use deadpan_core::{AssetId, ProjectDocument, SourceFrameIndex, SourceQualificationId};
 use deadpan_plan::{DefinitionPictureSpan, Picture, PictureClockSlope};
 use rusqlite::Connection;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -21,26 +18,7 @@ use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 
 use crate::{ProjectStore, StoreError};
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-pub enum GenerationPictureIdentity {
-    Original {
-        qualification: SourceQualificationId,
-        frame: SourceFrameId,
-    },
-    Generated {
-        sampled_object: GeneratedObjectRef,
-        frame: SourceFrameId,
-        /// Reduced positive ratio used by the conditioning decoder's centered
-        /// fill_canvas_aspect crop. None preserves the complete decoded raster.
-        /// Raster dimensions are unavailable here: different ratios which round
-        /// to the same pixel crop may conservatively compare unequal. Never
-        /// infer those dimensions or treat None as an assumed native aspect.
-        content_aspect: Option<[u32; 2]>,
-    },
-    AuthoredBlack,
-}
+pub use deadpan_jobs::generation_inputs::GenerationPictureIdentity;
 
 /// The first and last measured pictures touched by one affine provider span,
 /// in playback order. This is immutable input identity, not a decoded-media or

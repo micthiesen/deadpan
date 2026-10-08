@@ -22,8 +22,13 @@ impl Observation {
         by_node: &BTreeMap<NodeId, usize>,
         pictures: &dyn GenerationPictures,
     ) -> Result<Self, StoreError> {
-        let binding = GenerationInputBinding::from_boundaries(document, boundary, pictures)?
-            .with_region(document, settings.region.as_ref())?;
+        let binding = crate::generation_inputs::GenerationInputCapture::with_region(
+            crate::generation_inputs::GenerationInputCapture::from_boundaries(
+                document, boundary, pictures,
+            )?,
+            document,
+            settings.region.as_ref(),
+        )?;
         let alternatives = boundary
             .left
             .iter()
@@ -44,9 +49,16 @@ impl Observation {
         by_node: &BTreeMap<NodeId, usize>,
         pictures: &dyn GenerationPictures,
     ) -> Result<Self, StoreError> {
-        let binding =
-            GenerationInputBinding::from_context(document, context, settings.capture, pictures)?
-                .with_region(document, settings.region.as_ref())?;
+        let binding = crate::generation_inputs::GenerationInputCapture::with_region(
+            crate::generation_inputs::GenerationInputCapture::from_context(
+                document,
+                context,
+                settings.capture,
+                pictures,
+            )?,
+            document,
+            settings.region.as_ref(),
+        )?;
         let mut alternatives =
             Vec::with_capacity(context.pictures.len() + 2 * context.coverage.spans.len() + 2);
         for sample in &context.pictures {

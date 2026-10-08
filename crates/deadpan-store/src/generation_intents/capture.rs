@@ -142,7 +142,7 @@ fn capture_one(
             "immutable generation intent has unresolved region controls",
         ));
     }
-    match GenerationInputBinding::capture_with_plan(
+    match crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         plan,
         target,
@@ -329,11 +329,14 @@ mod tests {
             GenerationModePreference::ExtendFromLeft,
             GenerationModePreference::ExtendFromRight,
         ] {
-            let capture = GenerationCaptureSpec::for_preference(preference, false, false).unwrap();
+            let capture = crate::generation_inputs::GenerationInputCapture::for_preference(
+                preference, false, false,
+            )
+            .unwrap();
             assert!(preference.validate_resolved(capture.conditioning()).is_ok());
         }
         assert!(matches!(
-            GenerationCaptureSpec::for_preference(
+            crate::generation_inputs::GenerationInputCapture::for_preference(
                 GenerationModePreference::Automatic,
                 false,
                 false

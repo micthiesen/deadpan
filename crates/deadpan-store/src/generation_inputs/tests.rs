@@ -2,13 +2,13 @@ use super::*;
 use std::collections::BTreeMap;
 
 use deadpan_core::{
-    AssetId, AssetRecord, AudioSample, AudioTreatments, BeatNode, ClipGain, ColorPolicy, Cutaway,
-    CutawayFit, ExactSourceSpan, FrameRange, Framing, FramingPose, GainDb, HoldAudio, HoldRecipe,
-    HoldVideo, IndexedSourceFrame, LinkRelation, NodeId, PitchPolicy, PresentationBasis,
-    ProjectFrame, ProjectId, RetimePurpose, RevisionId, SourceAudioMapping, SourceFrameId,
-    SourceFrameIndex, SourceNode, SourceQualificationId, SourceSpan, SourceTimeBase,
-    SourceTimestamp, SourceVideo, SourceVideoMapping, TargetCorrection, TargetRegion,
-    TerminalProvenance,
+    AssetId, AssetRecord, AttentionTarget, AudioSample, AudioTreatments, BeatNode, ClipGain,
+    ColorPolicy, Cutaway, CutawayFit, ExactRatio, ExactSourceSpan, FrameRange, Framing,
+    FramingPose, GainDb, HoldAudio, HoldRecipe, HoldVideo, IndexedSourceFrame, LinkRelation,
+    NodeId, PitchPolicy, PresentationBasis, ProjectFrame, ProjectId, RetimePurpose, RevisionId,
+    SourceAudioMapping, SourceFrameId, SourceFrameIndex, SourceNode, SourceQualificationId,
+    SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo, SourceVideoMapping, TargetCorrection,
+    TargetRegion, TerminalProvenance,
 };
 use deadpan_plan::{DefinitionPictureSpan, Picture};
 use serde_json::json;
@@ -236,7 +236,7 @@ fn context(document: &ProjectDocument, direction: ExtensionDirection) -> ScopedH
         .unwrap()
 }
 fn capture(document: &ProjectDocument, direction: ExtensionDirection) -> GenerationInputBinding {
-    GenerationInputBinding::capture_with_plan(
+    crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         &RenderPlan::compile(document).unwrap(),
         &target(),
@@ -280,7 +280,7 @@ fn both_extension_directions_capture_exact_relative_native_spacing_and_opposite(
         assert_eq!(captured.capture_spec(), capture_spec(direction));
         assert_eq!(
             captured,
-            GenerationInputBinding::from_context(
+            crate::generation_inputs::GenerationInputCapture::from_context(
                 &document,
                 &context(&document, direction),
                 capture_spec(direction),
@@ -477,8 +477,12 @@ fn absent_edges_are_distinct_from_authored_black_and_single_context_has_no_fake_
         &["black", "pause"],
         vec![("black", hold(12)), ("pause", hold(2))],
     );
-    let absent = GenerationInputBinding::capture(&alone, &target(), &pictures).unwrap();
-    let present = GenerationInputBinding::capture(&black, &target(), &pictures).unwrap();
+    let absent =
+        crate::generation_inputs::GenerationInputCapture::capture(&alone, &target(), &pictures)
+            .unwrap();
+    let present =
+        crate::generation_inputs::GenerationInputCapture::capture(&black, &target(), &pictures)
+            .unwrap();
     assert_eq!(
         absent.inputs,
         GenerationInputs::Bridge {
@@ -500,7 +504,12 @@ fn absent_edges_are_distinct_from_authored_black_and_single_context_has_no_fake_
         .scoped_hold_boundaries(&target(), BoundaryQueryLimits::default())
         .unwrap();
     assert_eq!(
-        GenerationInputBinding::from_boundaries(&black, &boundaries, &pictures).unwrap(),
+        crate::generation_inputs::GenerationInputCapture::from_boundaries(
+            &black,
+            &boundaries,
+            &pictures
+        )
+        .unwrap(),
         present
     );
     let capture = GenerationCaptureSpec::Extension {
@@ -509,7 +518,7 @@ fn absent_edges_are_distinct_from_authored_black_and_single_context_has_no_fake_
         context_frames: 1,
         policy: ExtensionCapturePolicy::TemporalContextV1,
     };
-    let one = GenerationInputBinding::capture_with_plan(
+    let one = crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         &black,
         &plan,
         &target(),
@@ -540,7 +549,7 @@ fn absent_edges_are_distinct_from_authored_black_and_single_context_has_no_fake_
     assert!(support.is_empty());
     assert!(opposite.is_none());
     assert!(
-        GenerationInputBinding::capture_with_plan(
+        crate::generation_inputs::GenerationInputCapture::capture_with_plan(
             &alone,
             &RenderPlan::compile(&alone).unwrap(),
             &target(),
@@ -581,16 +590,22 @@ fn region_corrections_are_bound_even_when_raw_context_is_unchanged() {
             },
         }]);
     });
-    let before = capture(&with_region, ExtensionDirection::FromLeft)
-        .with_region(&with_region, Some(&region_id))
-        .unwrap();
-    let after = capture(&corrected, ExtensionDirection::FromLeft)
-        .with_region(&corrected, Some(&region_id))
-        .unwrap();
+    let before = crate::generation_inputs::GenerationInputCapture::with_region(
+        capture(&with_region, ExtensionDirection::FromLeft),
+        &with_region,
+        Some(&region_id),
+    )
+    .unwrap();
+    let after = crate::generation_inputs::GenerationInputCapture::with_region(
+        capture(&corrected, ExtensionDirection::FromLeft),
+        &corrected,
+        Some(&region_id),
+    )
+    .unwrap();
     assert_eq!(before.inputs, after.inputs);
     assert_ne!(before.region, after.region);
     assert_eq!(after.region.as_ref().unwrap().id, region_id);
-    let direct = GenerationInputBinding::capture_with_plan(
+    let direct = crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         &corrected,
         &RenderPlan::compile(&corrected).unwrap(),
         &target(),
@@ -601,13 +616,20 @@ fn region_corrections_are_bound_even_when_raw_context_is_unchanged() {
     )
     .unwrap();
     assert_eq!(direct, after);
-    let missing = after
-        .clone()
-        .with_region(&corrected, Some(&TargetId::new("absent").unwrap()))
-        .unwrap();
+    let missing = crate::generation_inputs::GenerationInputCapture::with_region(
+        after.clone(),
+        &corrected,
+        Some(&TargetId::new("absent").unwrap()),
+    )
+    .unwrap();
     assert!(missing.region.as_ref().unwrap().record.is_none());
     assert_ne!(missing.region, None);
-    assert_eq!(after.with_region(&corrected, None).unwrap().region, None);
+    assert_eq!(
+        crate::generation_inputs::GenerationInputCapture::with_region(after, &corrected, None)
+            .unwrap()
+            .region,
+        None
+    );
 }
 
 fn attempt(
@@ -615,7 +637,7 @@ fn attempt(
     capture: GenerationCaptureSpec,
     budget: &mut InputCaptureBudget,
 ) -> Result<GenerationInputBinding, StoreError> {
-    GenerationInputBinding::capture_with_plan(
+    crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         document,
         &RenderPlan::compile(document).unwrap(),
         &target(),
@@ -713,7 +735,7 @@ fn unavailable_support_retains_charged_work_and_wrong_context_branding_refuses_e
     let plan = RenderPlan::compile(&document).unwrap();
     let capture = capture_spec(ExtensionDirection::FromLeft);
     let mut budget = InputCaptureBudget::default();
-    let error = GenerationInputBinding::capture_with_plan(
+    let error = crate::generation_inputs::GenerationInputCapture::capture_with_plan(
         &document,
         &plan,
         &target(),
@@ -728,7 +750,7 @@ fn unavailable_support_retains_charged_work_and_wrong_context_branding_refuses_e
     assert!(attempt(&document, GenerationCaptureSpec::Bridge, &mut budget).is_ok());
     let context = context(&document, ExtensionDirection::FromLeft);
     assert!(
-        GenerationInputBinding::from_context(
+        crate::generation_inputs::GenerationInputCapture::from_context(
             &document,
             &context,
             GenerationCaptureSpec::Bridge,
@@ -737,7 +759,7 @@ fn unavailable_support_retains_charged_work_and_wrong_context_branding_refuses_e
         .is_err()
     );
     assert!(
-        GenerationInputBinding::from_context(
+        crate::generation_inputs::GenerationInputCapture::from_context(
             &document,
             &context,
             capture_spec(ExtensionDirection::FromRight),
@@ -747,14 +769,24 @@ fn unavailable_support_retains_charged_work_and_wrong_context_branding_refuses_e
     );
     let later = edit(&document, "later", |_| {});
     assert!(
-        GenerationInputBinding::from_context(&later, &context, capture, &MeasuredPictures::new())
-            .is_err()
+        crate::generation_inputs::GenerationInputCapture::from_context(
+            &later,
+            &context,
+            capture,
+            &MeasuredPictures::new()
+        )
+        .is_err()
     );
     let mut wrong = context;
     wrong.pictures[0].definition = id("other");
     assert!(
-        GenerationInputBinding::from_context(&document, &wrong, capture, &MeasuredPictures::new())
-            .is_err()
+        crate::generation_inputs::GenerationInputCapture::from_context(
+            &document,
+            &wrong,
+            capture,
+            &MeasuredPictures::new()
+        )
+        .is_err()
     );
 }
 
