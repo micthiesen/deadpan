@@ -2,7 +2,11 @@ use deadpan_core::{
     AssetId, ProjectId, SourceQualificationId, SourceSpan, SourceTimeBase, SourceTimestamp,
     TargetRegion,
 };
-use deadpan_jobs::{GenerationTarget, HoldInstructions};
+use deadpan_jobs::{
+    GenerationCaptureSpec, GenerationInputBinding, GenerationInputSupport, GenerationInputs,
+    GenerationPictureIdentity, GenerationPlan, GenerationRegionIdentity, GenerationTarget,
+    HoldInstructions, RelativeGenerationPicture,
+};
 use deadpan_models::CapturedRegionBoundary;
 
 use super::*;
@@ -104,6 +108,7 @@ fn fixture(
         instructions: None,
         region_target: None,
     };
+    let continuity = fixture_continuity(&plan, &context, opposite.as_ref(), None);
     (
         plan,
         constraints,
@@ -112,8 +117,80 @@ fn fixture(
             opposite,
             presentation: RasterRect::centered(region.0, region.1, [NATIVE_WIDTH, NATIVE_HEIGHT])
                 .unwrap(),
+            continuity,
         },
     )
+}
+
+fn fixture_continuity(
+    plan: &ExtensionGenerationPlan,
+    context: &[PreparedBoundary],
+    opposite: Option<&PreparedBoundary>,
+    target: Option<(&TargetId, &AttentionTarget)>,
+) -> ExtensionContinuityEvidence {
+    let anchor = match plan.direction() {
+        ExtensionDirection::FromLeft => context.last().unwrap(),
+        ExtensionDirection::FromRight => &context[0],
+    };
+    let BoundaryClock::Definition {
+        position: anchor_position,
+        ..
+    } = anchor.picture.clock()
+    else {
+        unreachable!()
+    };
+    let identity = |ordinal| GenerationPictureIdentity::Original {
+        qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        frame: SourceFrameId(ordinal),
+    };
+    let sample = |frame: &PreparedBoundary| {
+        let BoundaryPicture::Original {
+            clock: BoundaryClock::Definition { position, .. },
+            picture,
+            ..
+        } = &frame.picture
+        else {
+            unreachable!()
+        };
+        RelativeGenerationPicture {
+            position: position.checked_sub(*anchor_position).unwrap(),
+            picture: identity(picture.source_frame.0),
+        }
+    };
+    let samples = context.iter().map(sample).collect::<Vec<_>>();
+    let binding = GenerationInputBinding {
+        duration: plan.project_frames(),
+        frame_rate: plan.project_frame_rate(),
+        canvas: [1080, 1920],
+        inputs: GenerationInputs::Extension {
+            capture: GenerationCaptureSpec::from_plan(&GenerationPlan::Extension(plan.clone())),
+            support: vec![GenerationInputSupport {
+                start: samples[0].position,
+                end_exclusive: samples[8].position,
+                first: identity(100),
+                last: identity(107),
+            }],
+            terminal: samples[8].clone(),
+            samples,
+            opposite: opposite.map(sample),
+        },
+        region: target.map(|(id, record)| GenerationRegionIdentity {
+            id: id.clone(),
+            record: Some(record.clone()),
+        }),
+    };
+    // Synthetic measurement bytes for assembly tests. Decoder-backed capture
+    // tests separately bind actual source pictures to the retained signatures.
+    let signature =
+        deadpan_analysis::PictureSignature::from_rgba(&[0; 32 * 18 * 4], 32, 18, 128).unwrap();
+    let bytes = deadpan_analysis::encode_context_signatures(&vec![signature; 121]).unwrap();
+    ExtensionContinuityEvidence::new(
+        binding,
+        (0..121).map(identity).collect(),
+        vec![Some(121), Some(121)],
+        artifact("inputs/continuity.bin", &bytes).unwrap(),
+    )
+    .unwrap()
 }
 
 fn control(cancelled: &AtomicBool) -> CaptureControl<'_> {
@@ -277,8 +354,14 @@ fn selected_region_uses_direction_anchor_and_preserves_captured_controls() {
         provenance: None,
     };
     for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
-        let (plan, mut constraints, prepared) =
+        let (plan, mut constraints, mut prepared) =
             fixture(direction, FrameRate::new(30, 1).unwrap(), true);
+        prepared.continuity = fixture_continuity(
+            &plan,
+            &prepared.context,
+            prepared.opposite.as_ref(),
+            Some((&target_id, &target)),
+        );
         let options = GenerationOptions {
             mode: mode(direction).into(),
             motion: MotionAmount::Subtle,

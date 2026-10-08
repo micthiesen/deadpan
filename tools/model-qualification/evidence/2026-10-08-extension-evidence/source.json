@@ -1,0 +1,82 @@
+{
+  "base_revision": "f82881b456af97db3a40afb2ba6c0b9fe04c3c59",
+  "description": "Exact changed Rust and Python source above this base, after the final regression fix. No archived-source comparison was performed.",
+  "files": {
+    "crates/deadpan-analysis/src/shots.rs": {
+      "bytes": 22283,
+      "sha256": "2da35c002f6a89543b4890f449bcbc69ef7866e599dc6ac330096d2be7c15648"
+    },
+    "crates/deadpan-analysis/src/shots/signatures.rs": {
+      "bytes": 9296,
+      "sha256": "ca1518e222a5cd2dfe0e66a522cfb92815415c099c1a818507f2550aecd647c8"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/continuity.rs": {
+      "bytes": 14389,
+      "sha256": "421425174d7fb30aea50d145ba1963abba7e113f82c0ebd0041697d88982e8c2"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension.rs": {
+      "bytes": 14378,
+      "sha256": "c390b23c5f4eb882f4dfa3b8f38f873f740881cd476a18034e008210c8b9a56c"
+    },
+    "crates/deadpan-cli/src/generation/conditioning/extension_tests.rs": {
+      "bytes": 18517,
+      "sha256": "0f774d40e1393678f96fa2636a132735cc6d51b75315b6f76bbc32a361b2c2a5"
+    },
+    "crates/deadpan-cli/src/picture/tests/extension.rs": {
+      "bytes": 38651,
+      "sha256": "0c734f4be55d1b6a8721580cb5f006c9945873d09a48961f61e2ddead69c1d30"
+    },
+    "crates/deadpan-cli/src/picture/tests/extension/retention.rs": {
+      "bytes": 6182,
+      "sha256": "0e2e9aec4b4081a35d158d281053421781ead3f7afce2947139c5de5bd2f0633"
+    },
+    "crates/deadpan-core/src/target.rs": {
+      "bytes": 17247,
+      "sha256": "d9ed2358c1fe43d5ed69d578280632fd049c17f8ee4be9682945f9d64ee9be07"
+    },
+    "crates/deadpan-jobs/src/generation_inputs.rs": {
+      "bytes": 10410,
+      "sha256": "eac0bbdf015fb33e5ad6c66a8b265859ba9bd09b5971db926238db99f5ee3f61"
+    },
+    "crates/deadpan-models/examples/retain_extension_conditioning.rs": {
+      "bytes": 3569,
+      "sha256": "e8acdf456f24eb99f9c7c2e4d8f22bf1ea2c18ba83cb86174e2ddfd84361371d"
+    },
+    "crates/deadpan-models/src/conditioning_extension.rs": {
+      "bytes": 33215,
+      "sha256": "6aac200896640886b56915aa1ed2cba55f7e8601b97f645fa65d7a2630a70d1d"
+    },
+    "crates/deadpan-models/src/conditioning_extension/binding.rs": {
+      "bytes": 12200,
+      "sha256": "99fd3820efbca9655d956cd6ce38c751279d300239a53b27a1adb548d53a4d02"
+    },
+    "crates/deadpan-models/src/conditioning_extension/binding/tests.rs": {
+      "bytes": 20829,
+      "sha256": "63c7623abec02bd47d52c3a90572f4f6367e167a66668d34b7fe33940a466a48"
+    },
+    "crates/deadpan-models/src/conditioning_extension/continuity.rs": {
+      "bytes": 14340,
+      "sha256": "0d2923b13735b1e281927593be0fb96bd0b9ce412c9c4cac0c89eb09249d0019"
+    },
+    "crates/deadpan-models/src/conditioning_extension_tests.rs": {
+      "bytes": 45436,
+      "sha256": "49e43dd672d35f5041a23b3328a4bc2910830525f9d2911d46d173f16b516467"
+    },
+    "tools/ai-runtime/build.py": {
+      "bytes": 26157,
+      "sha256": "e19d5009f5ea2a28dd3578d5ace3ead660be0b8588da6d9cfb5f5adb9421a9e4"
+    },
+    "tools/model-qualification/tests/test_extension_worker.py": {
+      "bytes": 37318,
+      "sha256": "4cbf39081f52e14be5ccdbd3b52d2d85735cabaf41d6656d15ce5218d25230d7"
+    },
+    "tools/model-qualification/worker.py": {
+      "bytes": 31895,
+      "sha256": "68ebf21d2e9284f50ab840fe0fc437491241cea15eba4f88539bb0c315e9297e"
+    },
+    "tools/model-qualification/worker_extension_context.py": {
+      "bytes": 19639,
+      "sha256": "91c72d27b9f8e01728679e6b718521f68644108b0a8749ff9b971f1c4f6ca21e"
+    }
+  }
+}

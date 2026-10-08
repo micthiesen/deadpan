@@ -1,0 +1,13 @@
+{
+  "copied_modules": 7,
+  "isolated_worker_import": "passed",
+  "source_sha256": {
+    "ltx-source-manifest.json": "abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092",
+    "mlx_backend.py": "7a1679b1df1f5f4b38e04d5867a2f14e4372e235156444997a3f9cb44ea58f89",
+    "runtime_source.py": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad",
+    "worker.py": "68ebf21d2e9284f50ab840fe0fc437491241cea15eba4f88539bb0c315e9297e",
+    "worker_extension_context.py": "91c72d27b9f8e01728679e6b718521f68644108b0a8749ff9b971f1c4f6ca21e",
+    "worker_media.py": "9355181a75138204e4018d75f15c7e67693661ad43caad46e4dcdc05e7ce6c67",
+    "worker_protocol.py": "9b228cc785fb96f1343ec726ec03080fc4b78034423a35b5030ff367f16a1294"
+  }
+}

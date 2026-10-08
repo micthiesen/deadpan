@@ -12,8 +12,8 @@ use deadpan_jobs::{
     AxisLimits, DimensionLimits, ExtensionCapability, ExtensionGenerationPlan, FrameCountFormula,
 };
 use deadpan_models::{
-    ExtensionContext, ExtensionContextPicture, ExtensionOppositeSeam, ExtensionRegionCapture,
-    MAXIMUM_EXTENSION_INPUT_BYTES,
+    ExtensionContext, ExtensionContextPicture, ExtensionContinuityEvidence, ExtensionOppositeSeam,
+    ExtensionRegionCapture, MAXIMUM_EXTENSION_INPUT_BYTES,
 };
 use deadpan_plan::ScopedHoldContextRequest;
 
@@ -39,6 +39,8 @@ pub struct ExtensionInputs {
     pub manifest: Vec<u8>,
     pub manifest_sha256: Sha256,
     pub continuity: ExtensionContextContinuity,
+    /// The bounded binary artifact declared by manifest.continuity.signatures.
+    pub continuity_signatures: Vec<u8>,
 }
 
 /// Capture native-spaced context inside the Hold's exact authored definition.
@@ -168,6 +170,7 @@ pub fn prepare_extension_scoped_with_options(
             context: prepared,
             opposite,
             presentation,
+            continuity: continuity.evidence,
         },
         captured_region,
         &control,
@@ -180,7 +183,8 @@ pub fn prepare_extension_scoped_with_options(
         opposite_png: assembled.opposite_png,
         manifest: assembled.manifest,
         manifest_sha256: assembled.manifest_sha256,
-        continuity,
+        continuity: continuity.report,
+        continuity_signatures: continuity.signatures,
     })
 }
 
@@ -262,6 +266,7 @@ struct PreparedExtension {
     context: Vec<PreparedBoundary>,
     opposite: Option<PreparedBoundary>,
     presentation: RasterRect,
+    continuity: ExtensionContinuityEvidence,
 }
 
 struct AssembledExtension {
@@ -348,8 +353,8 @@ fn assemble_captured(
         prepared.presentation,
         opposite,
         INPUT_COLOR_INTERPRETATION,
-        MODEL_COLOR_SPACE,
         region,
+        prepared.continuity,
     )
     .map_err(|error| error.to_string())?;
     control.check()?;
@@ -367,7 +372,7 @@ fn assemble_captured(
     })
 }
 
-fn artifact(reference: &str, bytes: &[u8]) -> Result<WorkspaceArtifact, String> {
+pub(super) fn artifact(reference: &str, bytes: &[u8]) -> Result<WorkspaceArtifact, String> {
     WorkspaceArtifact::new(
         WorkspaceRef::new(reference).map_err(|error| error.to_string())?,
         sha256(bytes)?,

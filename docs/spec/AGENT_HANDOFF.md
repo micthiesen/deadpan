@@ -186,10 +186,18 @@ qualification evidence. Approved model capabilities remain Bridge-only.
 
 Shared generation-input wire types now live in `deadpan-jobs::generation_inputs`,
 with store re-exports. `GenerationInputCapture` owns store capture and limits.
-The representation and schema are unchanged. Extension manifests still need
-the saved descriptor and retained, recomputable continuity evidence before
-output admission can consume them. The move passed independent review, strict
-workspace Clippy, formatting and all 309 affected jobs/store/CLI tests.
+The representation and database schema are unchanged. The move passed independent
+review, strict workspace Clippy, formatting and all 309 affected jobs/store/CLI tests.
+
+[Extension context schema 2](../qualification/extension-evidence-2026-10-08.md)
+now binds that descriptor and immutable picture signatures. Host retention
+repeats the continuity rule; the strict Python reader verifies coverage and
+binary declarations without passing them to inference. Output quality admission
+and accepted-media integration are the next open boundaries. No approved
+extension capability or V3 Ready/acceptance path is enabled.
+Independent review is clear after parsing/target fixes. The full repository gate
+passes (5,274 workspace tests, 1,071 UI-harness tests and two doctests), as do
+111 Python worker tests and the isolated runtime module inventory check.
 
 Check the [progress dashboard](../PROGRESS.md) at goal start and update it after
 meaningful verified milestones under spec §29.2; the estimate is about 88%.

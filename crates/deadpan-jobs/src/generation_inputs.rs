@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 pub const MAX_INPUT_BINDING_BYTES: usize = 512 * 1024;
 
 /// One measured picture identity used by generation and continuity inputs.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum GenerationPictureIdentity {
     Original {
@@ -32,6 +32,47 @@ pub enum GenerationPictureIdentity {
         content_aspect: Option<[u32; 2]>,
     },
     AuthoredBlack,
+}
+
+impl<'de> Deserialize<'de> for GenerationPictureIdentity {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        // A unit variant would silently discard unknown fields under Serde's
+        // internally tagged representation. Retained observations must be strict.
+        #[derive(Deserialize)]
+        #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            Original {
+                qualification: SourceQualificationId,
+                frame: SourceFrameId,
+            },
+            Generated {
+                sampled_object: GeneratedObjectRef,
+                frame: SourceFrameId,
+                #[serde(deserialize_with = "required_option")]
+                content_aspect: Option<[u32; 2]>,
+            },
+            AuthoredBlack {},
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::Original {
+                qualification,
+                frame,
+            } => Self::Original {
+                qualification,
+                frame,
+            },
+            Wire::Generated {
+                sampled_object,
+                frame,
+                content_aspect,
+            } => Self::Generated {
+                sampled_object,
+                frame,
+                content_aspect,
+            },
+            Wire::AuthoredBlack {} => Self::AuthoredBlack,
+        })
+    }
 }
 
 /// The operation resolved before asynchronous preparation. A policy change
@@ -134,13 +175,16 @@ pub struct GenerationInputSupport {
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 pub enum GenerationInputs {
     Bridge {
+        #[serde(deserialize_with = "required_option")]
         left: Option<GenerationPictureIdentity>,
+        #[serde(deserialize_with = "required_option")]
         right: Option<GenerationPictureIdentity>,
     },
     Extension {
         capture: GenerationCaptureSpec,
         samples: Vec<RelativeGenerationPicture>,
         /// Explicitly unconditioned, even when a picture is present.
+        #[serde(deserialize_with = "required_option")]
         opposite: Option<RelativeGenerationPicture>,
         support: Vec<GenerationInputSupport>,
         /// The closed endpoint is separate from half-open affine spans.
@@ -153,6 +197,7 @@ pub enum GenerationInputs {
 pub struct GenerationRegionIdentity {
     pub id: TargetId,
     /// None retains the identity of a selected target removed by a later edit.
+    #[serde(deserialize_with = "required_option")]
     pub record: Option<AttentionTarget>,
 }
 
@@ -170,7 +215,14 @@ pub struct GenerationInputBinding {
     pub frame_rate: FrameRate,
     pub canvas: [u32; 2],
     pub inputs: GenerationInputs,
+    #[serde(deserialize_with = "required_option")]
     pub region: Option<GenerationRegionIdentity>,
+}
+
+fn required_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
+    deserializer: D,
+) -> Result<Option<T>, D::Error> {
+    Option::<T>::deserialize(deserializer)
 }
 
 impl GenerationInputBinding {
@@ -186,5 +238,44 @@ impl GenerationInputBinding {
             capture: self.capture_spec(),
             region: self.region.as_ref().map(|region| region.id.clone()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn authored_black_identity_refuses_hidden_fields() {
+        assert_eq!(
+            serde_json::from_str::<GenerationPictureIdentity>(r#"{"kind":"authored_black"}"#)
+                .unwrap(),
+            GenerationPictureIdentity::AuthoredBlack
+        );
+        for field in ["frame", "qualification", "content_aspect", "extra"] {
+            let wire = serde_json::json!({"kind":"authored_black",field:null});
+            assert!(
+                serde_json::from_value::<GenerationPictureIdentity>(wire).is_err(),
+                "{field}"
+            );
+        }
+    }
+
+    #[test]
+    fn optional_input_observations_require_explicit_null() {
+        let bridge = serde_json::json!({"duration":3,"frame_rate":{"numerator":24,"denominator":1},"canvas":[768,320],"inputs":{"operation":"bridge","left":null,"right":null},"region":null});
+        assert!(serde_json::from_value::<GenerationInputBinding>(bridge.clone()).is_ok());
+        let mut absent = bridge.clone();
+        absent.as_object_mut().unwrap().remove("region");
+        assert!(serde_json::from_value::<GenerationInputBinding>(absent).is_err());
+        for field in ["left", "right"] {
+            let mut absent = bridge.clone();
+            absent["inputs"].as_object_mut().unwrap().remove(field);
+            assert!(serde_json::from_value::<GenerationInputBinding>(absent).is_err());
+        }
+        let mut generated = serde_json::json!({"kind":"generated","sampled_object":{"content":{"algorithm":"blake3","digest":"a".repeat(64)},"byte_length":12},"frame":0,"content_aspect":null});
+        assert!(serde_json::from_value::<GenerationPictureIdentity>(generated.clone()).is_ok());
+        generated.as_object_mut().unwrap().remove("content_aspect");
+        assert!(serde_json::from_value::<GenerationPictureIdentity>(generated).is_err());
     }
 }

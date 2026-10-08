@@ -41,7 +41,7 @@ WORKSPACE = ROOT.parent.parent
 QUALIFICATION = WORKSPACE / "tools/model-qualification"
 USER_AGENT = "OpenAI File Downloader, XaiImageApiFetch/1.0"
 WORKER_FILES = ["worker.py", "worker_protocol.py", "worker_media.py", "mlx_backend.py",
-                "runtime_source.py", "ltx-source-manifest.json"]
+                "worker_extension_context.py", "runtime_source.py", "ltx-source-manifest.json"]
 RECEIPT = "evidence/2026-09-20-smoke/download-manifest.json"
 # Standard-library parts no worker uses; removing them drops unsigned Tcl/Tk
 # libraries and the package installer from the shipped runtime.

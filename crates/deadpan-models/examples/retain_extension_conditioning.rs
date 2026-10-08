@@ -48,13 +48,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &AtomicBool::new(false),
     )?;
     let report = serde_json::json!({
-        "scope": "pre-launch input byte retention; no decoded image or source-clock qualification",
+        "scope": "pre-launch input retention and repeated continuity heuristic; source observations remain host-owned",
         "conditioning": retained.receipt(),
+        "continuity": retained.measurements(),
     });
     fs::create_dir(&config.output_directory)?;
-    let (manifest, frames, opposite) = retained.into_parts();
+    let (manifest, frames, opposite, signatures) = retained.into_parts();
     let mut written = std::collections::BTreeSet::new();
-    for mut object in std::iter::once(manifest).chain(frames).chain(opposite) {
+    for mut object in std::iter::once(manifest)
+        .chain(frames)
+        .chain(opposite)
+        .chain(std::iter::once(signatures))
+    {
         if !written.insert(object.declaration().reference().clone()) {
             continue;
         }

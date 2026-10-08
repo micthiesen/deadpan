@@ -1,0 +1,70 @@
+{
+  "extension-evidence-clippy.log": {
+    "cargo_results": [],
+    "errors": [],
+    "nextest_summary": []
+  },
+  "extension-evidence-focused.log": {
+    "cargo_results": [],
+    "errors": [],
+    "nextest_summary": [
+      "Summary [  10.801s] 97 tests run: 97 passed, 995 skipped"
+    ]
+  },
+  "extension-evidence-gate.log": {
+    "cargo_results": [
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s"
+    ],
+    "errors": [],
+    "nextest_summary": [
+      "Summary [ 438.646s] 5274 tests run: 5274 passed (14 slow), 10 skipped",
+      "Summary [ 232.140s] 1071 tests run: 1071 passed (8 slow), 2 skipped"
+    ]
+  },
+  "gate": {
+    "command": "env DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix cargo xtask gate",
+    "doctests_passed": 2,
+    "exit_code": 0,
+    "formatting": "passed",
+    "ui_tests_passed": 1071,
+    "ui_tests_skipped": 2,
+    "workspace_and_ui_clippy": "passed",
+    "workspace_tests_passed": 5274,
+    "workspace_tests_skipped": 10
+  },
+  "independent_review": {
+    "fixed": [
+      "Identical PNG aliases at different clocks",
+      "Omitted nullable wire fields",
+      "Malformed target records hidden by unavailable anchors"
+    ],
+    "result": "No findings after fixes in the narrow follow-up review."
+  },
+  "python_tests": {
+    "command": "python3 -m unittest discover -s tools/model-qualification/tests",
+    "evidence": "Worker agent tool result; no raw log retained. Not repeated solely to create a log.",
+    "exit_code": 0,
+    "passed": 111,
+    "seconds": 0.188
+  }
+}

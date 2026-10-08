@@ -8,9 +8,11 @@
 use std::time::Instant;
 
 use deadpan_analysis::{
-    CONTEXT_SHOT_RULE, ContextShotQualification, MAX_CONTEXT_SHOT_SIGNATURES, PictureSignature,
-    context_seam_change, context_shot_window, qualify_context,
+    CONTEXT_SHOT_RULE, MAX_CONTEXT_SHOT_SIGNATURES, PictureSignature, context_seam_change,
+    context_shot_window, encode_context_signatures, qualify_context,
 };
+pub use deadpan_models::ExtensionContextMeasurement;
+use deadpan_models::ExtensionContinuityEvidence;
 use deadpan_plan::{DefinitionPictureSpan, PictureClockSlope, ScopedHoldContext};
 use deadpan_store::generation_inputs::{GenerationInputBinding, GenerationInputs};
 use deadpan_store::generation_pictures::GenerationPictureIdentity;
@@ -20,15 +22,8 @@ use super::*;
 
 const CAPTURE_POLICY: &str = "deadpan-extension-context-1";
 
-#[derive(Debug, Clone, Serialize)]
-pub struct ExtensionContextMeasurement {
-    /// The provider and first covered ordinal, including its immutable receipt.
-    pub source: GenerationPictureIdentity,
-    pub qualification: ContextShotQualification,
-}
-
-/// Host observations for this immutable capture, separate from the worker's
-/// manifest. No absolute revision or editorial framing enters input identity.
+/// Host observations for this immutable capture. The manifest retains their
+/// descriptor and signatures so the policy can be repeated independently.
 #[derive(Debug, Clone, Serialize)]
 pub struct ExtensionContextContinuity {
     pub capture_policy: &'static str,
@@ -38,13 +33,19 @@ pub struct ExtensionContextContinuity {
     pub measurements: Vec<ExtensionContextMeasurement>,
 }
 
+pub(super) struct CapturedExtensionContinuity {
+    pub report: ExtensionContextContinuity,
+    pub evidence: ExtensionContinuityEvidence,
+    pub signatures: Vec<u8>,
+}
+
 pub(super) fn qualify_extension_context(
     session: &mut ProjectPictureSession,
     context: &ScopedHoldContext,
     binding: GenerationInputBinding,
     cancelled: &AtomicBool,
     deadline: Instant,
-) -> Result<ExtensionContextContinuity, String> {
+) -> Result<CapturedExtensionContinuity, String> {
     let GenerationInputs::Extension {
         support,
         terminal: terminal_identity,
@@ -77,11 +78,13 @@ pub(super) fn qualify_extension_context(
     let mut reads_left = MAX_CONTEXT_SHOT_SIGNATURES;
     let mut previous: Option<(GenerationPictureIdentity, PictureSignature)> = None;
     let mut measurements = Vec::new();
+    let mut source_picture_counts = Vec::new();
     for (span, (expected_first, expected_last)) in spans.zip(bases) {
         check(cancelled, deadline)?;
         let base = expected_first.clone();
         let (first, last, first_signature, last_signature) = match base {
             GenerationPictureIdentity::AuthoredBlack => {
+                source_picture_counts.push(None);
                 let signature = PictureSignature::from_rgba(&vec![0; 32 * 18 * 4], 32, 18, 128)
                     .map_err(|e| e.to_string())?;
                 (base.clone(), base, signature.clone(), signature)
@@ -104,6 +107,7 @@ pub(super) fn qualify_extension_context(
                 let last =
                     usize::try_from(last.0).map_err(|_| "Context last ordinal overflowed.")?;
                 let count = reader.index().frames().len();
+                source_picture_counts.push(Some(count));
                 let requested = first.min(last)..=first.max(last);
                 // Even a one-picture structural fragment needs padded blend
                 // detection. Splitting a fade into tiny beats must not make
@@ -166,12 +170,36 @@ pub(super) fn qualify_extension_context(
         previous = Some((last.clone(), last_signature));
     }
     check(cancelled, deadline)?;
-    Ok(ExtensionContextContinuity {
-        capture_policy: CAPTURE_POLICY,
-        shot_rule: CONTEXT_SHOT_RULE,
-        binding,
-        decoded_pictures: MAX_CONTEXT_SHOT_SIGNATURES - reads_left,
-        measurements,
+    let signatures = encode_context_signatures(
+        &cache
+            .iter()
+            .map(|(_, signature)| signature.clone())
+            .collect::<Vec<_>>(),
+    )
+    .map_err(|error| error.to_string())?;
+    let evidence = ExtensionContinuityEvidence::new(
+        binding.clone(),
+        cache.into_iter().map(|(identity, _)| identity).collect(),
+        source_picture_counts,
+        super::extension::artifact("inputs/continuity.bin", &signatures)?,
+    )
+    .map_err(|error| error.to_string())?;
+    let recomputed = evidence
+        .qualify_signatures(&signatures, cancelled, deadline)
+        .map_err(|error| error.to_string())?;
+    if recomputed != measurements {
+        return Err("Retained continuity evidence differs from the live measurements.".into());
+    }
+    Ok(CapturedExtensionContinuity {
+        evidence,
+        signatures,
+        report: ExtensionContextContinuity {
+            capture_policy: CAPTURE_POLICY,
+            shot_rule: CONTEXT_SHOT_RULE,
+            binding,
+            decoded_pictures: MAX_CONTEXT_SHOT_SIGNATURES - reads_left,
+            measurements,
+        },
     })
 }
 

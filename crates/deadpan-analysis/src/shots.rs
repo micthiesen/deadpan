@@ -45,6 +45,7 @@ use thiserror::Error;
 mod context;
 mod gradual;
 mod measurer;
+mod signatures;
 
 pub use context::{
     CONTEXT_SHOT_PADDING, CONTEXT_SHOT_RULE, ContextSeamChange, ContextShotCoverage,
@@ -53,6 +54,10 @@ pub use context::{
 };
 pub use gradual::{GradualTransition, TransitionKind};
 pub use measurer::{REPLAY_PICTURES, ShotMeasurer, ShotProgress, ShotProgressTail};
+pub use signatures::{
+    CONTEXT_SIGNATURE_ENCODING, CONTEXT_SIGNATURE_HEADER_BYTES, MAX_CONTEXT_SIGNATURE_BYTES,
+    PICTURE_SIGNATURE_BYTES, decode_context_signatures, encode_context_signatures,
+};
 
 /// The versioned boundary rule implemented by [`ShotAnalysis::boundaries`].
 pub const SHOT_RULE: &str = "deadpan-shots-2";

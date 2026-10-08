@@ -186,13 +186,26 @@ pub struct EvaluatedTargetRegion {
 }
 
 impl AttentionTarget {
+    /// Validate the retained record without a document's asset catalog. This
+    /// checks labels, regions, sample ordering/confidence and provenance only;
+    /// document admission additionally proves the registered video and range.
+    pub fn validate_shape(&self) -> Result<(), DocumentError> {
+        self.validate_label()?;
+        self.validate_observations()
+    }
+
+    fn validate_label(&self) -> Result<(), DocumentError> {
+        if self.label.trim().is_empty() || self.label.len() > 128 {
+            return Err(invalid("a target label is 1–128 bytes"));
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate(
         &self,
         assets: &std::collections::BTreeMap<AssetId, crate::AssetRecord>,
     ) -> Result<(), DocumentError> {
-        if self.label.trim().is_empty() || self.label.len() > 128 {
-            return Err(invalid("a target label is 1–128 bytes"));
-        }
+        self.validate_label()?;
         let video = assets
             .get(&self.asset)
             .filter(|asset| !asset.still_image)
@@ -213,6 +226,11 @@ impl AttentionTarget {
                 "a target's span lies inside its asset's video",
             ));
         }
+        self.validate_observations()
+    }
+
+    fn validate_observations(&self) -> Result<(), DocumentError> {
+        let (start, end) = (self.span.start(), self.span.end());
         self.region.validate()?;
         if let Some(provenance) = &self.provenance {
             provenance.validate()?;

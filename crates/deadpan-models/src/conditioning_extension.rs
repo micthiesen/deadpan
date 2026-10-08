@@ -1,7 +1,8 @@
 //! Immutable, native-spaced conditioning for one-sided generation.
 //!
-//! This contract proves internal clock/geometry consistency and retained bytes.
-//! It does not decode PNGs, qualify same-shot coverage, or admit model output.
+//! This contract checks internal clocks, captured identity and geometry, retains
+//! every input, and repeats the bounded continuity heuristic from signatures.
+//! It does not decode PNGs, prove host source measurements, or admit model output.
 
 use deadpan_core::{AttentionTarget, ExtensionDirection, TargetId};
 use deadpan_jobs::{ExtensionGenerationPlan, Sha256};
@@ -9,7 +10,15 @@ use deadpan_jobs::{ExtensionGenerationPlan, Sha256};
 use super::*;
 use crate::BoundaryPicture;
 
-pub const EXTENSION_CONTEXT_SCHEMA_VERSION: u32 = 1;
+#[path = "conditioning_extension/binding.rs"]
+mod binding;
+#[path = "conditioning_extension/continuity.rs"]
+mod continuity;
+pub use continuity::{
+    EXTENSION_CAPTURE_POLICY, ExtensionContextMeasurement, ExtensionContinuityEvidence,
+};
+
+pub const EXTENSION_CONTEXT_SCHEMA_VERSION: u32 = 2;
 pub const MAXIMUM_EXTENSION_CONTEXT_FRAMES: usize = 64;
 pub const MAXIMUM_EXTENSION_INPUT_BYTES: u64 = 16 * 1024 * 1024;
 
@@ -31,20 +40,47 @@ pub struct ExtensionContextPicture {
 }
 
 /// An existing opposite seam is retained for validation, never conditioned.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ExtensionOppositeSeam {
     Absent,
     PresentUnconditioned {
         picture: Box<BoundaryPicture>,
         frame: WorkspaceArtifact,
-        #[serde(deserialize_with = "required_option")]
         content: Option<RasterRect>,
     },
 }
 
+impl<'de> Deserialize<'de> for ExtensionOppositeSeam {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            Absent {},
+            PresentUnconditioned {
+                picture: Box<BoundaryPicture>,
+                frame: WorkspaceArtifact,
+                #[serde(deserialize_with = "required_option")]
+                content: Option<RasterRect>,
+            },
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::Absent {} => Self::Absent,
+            Wire::PresentUnconditioned {
+                picture,
+                frame,
+                content,
+            } => Self::PresentUnconditioned {
+                picture,
+                frame,
+                content,
+            },
+        })
+    }
+}
+
 /// A selected target remains explicit even when its anchor cannot be measured.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "selection", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ExtensionRegionCapture {
     None,
@@ -54,6 +90,36 @@ pub enum ExtensionRegionCapture {
         target_sha256: Sha256,
         anchor: Box<CapturedRegionBoundary>,
     },
+}
+
+impl<'de> Deserialize<'de> for ExtensionRegionCapture {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(tag = "selection", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            None {},
+            Selected {
+                target: TargetId,
+                label: String,
+                target_sha256: Sha256,
+                anchor: Box<CapturedRegionBoundary>,
+            },
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::None {} => Self::None,
+            Wire::Selected {
+                target,
+                label,
+                target_sha256,
+                anchor,
+            } => Self::Selected {
+                target,
+                label,
+                target_sha256,
+                anchor,
+            },
+        })
+    }
 }
 
 impl ExtensionRegionCapture {
@@ -132,6 +198,7 @@ pub struct ExtensionContext {
     presentation: RasterRect,
     opposite: ExtensionOppositeSeam,
     region: ExtensionRegionCapture,
+    continuity: ExtensionContinuityEvidence,
 }
 
 #[derive(Deserialize)]
@@ -147,6 +214,7 @@ struct ExtensionContextWire {
     presentation: RasterRect,
     opposite: ExtensionOppositeSeam,
     region: ExtensionRegionCapture,
+    continuity: ExtensionContinuityEvidence,
 }
 
 impl ExtensionContext {
@@ -156,19 +224,20 @@ impl ExtensionContext {
         presentation: RasterRect,
         opposite: ExtensionOppositeSeam,
         input_color_interpretation: impl Into<String>,
-        model_color_space: BridgeColor,
         region: ExtensionRegionCapture,
+        continuity: ExtensionContinuityEvidence,
     ) -> Result<Self, QualificationError> {
         let value = Self {
             schema_version: EXTENSION_CONTEXT_SCHEMA_VERSION,
             operation: ExtensionOperation::Extension,
-            model_color_space,
+            model_color_space: CANONICAL_BRIDGE_COLOR,
             plan,
             input_color_interpretation: input_color_interpretation.into(),
             context,
             presentation,
             opposite,
             region,
+            continuity,
         };
         value.validate_shape()?;
         Ok(value)
@@ -191,6 +260,9 @@ impl ExtensionContext {
     }
     pub fn region(&self) -> &ExtensionRegionCapture {
         &self.region
+    }
+    pub fn continuity(&self) -> &ExtensionContinuityEvidence {
+        &self.continuity
     }
     pub fn input_color_interpretation(&self) -> &str {
         &self.input_color_interpretation
@@ -289,7 +361,17 @@ impl ExtensionContext {
         }
         self.region
             .validate(self.anchor(), self.presentation, native)?;
+        self.continuity.validate_shape()?;
+        binding::validate(
+            self.continuity.binding(),
+            &self.plan,
+            &self.context,
+            self.presentation,
+            &self.opposite,
+            &self.region,
+        )?;
         validate_declarations(self.declarations(), None)?;
+        validate_signature_declaration(self.continuity.signatures(), self.declarations(), None)?;
         Ok(())
     }
 
@@ -307,7 +389,9 @@ impl ExtensionContext {
 impl TryFrom<ExtensionContextWire> for ExtensionContext {
     type Error = QualificationError;
     fn try_from(wire: ExtensionContextWire) -> Result<Self, Self::Error> {
-        if wire.schema_version != EXTENSION_CONTEXT_SCHEMA_VERSION {
+        if wire.schema_version != EXTENSION_CONTEXT_SCHEMA_VERSION
+            || wire.model_color_space != CANONICAL_BRIDGE_COLOR
+        {
             return Err(extension_error("unsupported extension context schema"));
         }
         let ExtensionOperation::Extension = wire.operation;
@@ -317,8 +401,8 @@ impl TryFrom<ExtensionContextWire> for ExtensionContext {
             wire.presentation,
             wire.opposite,
             wire.input_color_interpretation,
-            wire.model_color_space,
             wire.region,
+            wire.continuity,
         )
     }
 }
@@ -348,7 +432,7 @@ fn validate_picture(
     native: [u32; 2],
 ) -> Result<(), QualificationError> {
     picture.validate_shape().map_err(extension_error)?;
-    // Extension schema 1 has no historical approximate-colour inputs. The
+    // Extension manifests have no historical approximate-colour inputs. The
     // bridge reader retains those for old accepted masters, but new extension
     // evidence must declare the conversion this host actually applies.
     if let Some(decoded) = picture.decoded()
@@ -421,6 +505,26 @@ fn validate_declarations<'a>(
     Ok(())
 }
 
+fn validate_signature_declaration<'a>(
+    signatures: &WorkspaceArtifact,
+    frames: impl Iterator<Item = &'a WorkspaceArtifact>,
+    manifest: Option<&WorkspaceArtifact>,
+) -> Result<(), QualificationError> {
+    if !(deadpan_analysis::CONTEXT_SIGNATURE_HEADER_BYTES as u64
+        ..=deadpan_analysis::MAX_CONTEXT_SIGNATURE_BYTES as u64)
+        .contains(&signatures.byte_length())
+        || manifest.is_some_and(|manifest| manifest.reference() == signatures.reference())
+        || frames
+            .into_iter()
+            .any(|frame| frame.reference() == signatures.reference())
+    {
+        return Err(extension_error(
+            "signature artifact exceeds its bound or aliases another input",
+        ));
+    }
+    Ok(())
+}
+
 fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -475,6 +579,7 @@ pub struct ExtensionConditioningReceipt {
     manifest: ConditioningArtifactReceipt,
     context: Vec<ConditioningArtifactReceipt>,
     opposite: Option<ConditioningArtifactReceipt>,
+    signatures: ConditioningArtifactReceipt,
 }
 
 #[derive(Deserialize)]
@@ -487,6 +592,7 @@ struct ExtensionConditioningReceiptWire {
     context: Vec<ConditioningArtifactReceipt>,
     #[serde(deserialize_with = "required_option")]
     opposite: Option<ConditioningArtifactReceipt>,
+    signatures: ConditioningArtifactReceipt,
 }
 
 impl ExtensionConditioningReceipt {
@@ -494,13 +600,15 @@ impl ExtensionConditioningReceipt {
         manifest: ConditioningArtifactReceipt,
         context: Vec<ConditioningArtifactReceipt>,
         opposite: Option<ConditioningArtifactReceipt>,
+        signatures: ConditioningArtifactReceipt,
     ) -> Result<Self, QualificationError> {
         let receipt = Self {
-            schema_version: 1,
+            schema_version: 2,
             operation: ExtensionOperation::Extension,
             manifest,
             context,
             opposite,
+            signatures,
         };
         receipt.validate_shape()?;
         Ok(receipt)
@@ -518,9 +626,12 @@ impl ExtensionConditioningReceipt {
     pub fn opposite(&self) -> Option<&ConditioningArtifactReceipt> {
         self.opposite.as_ref()
     }
+    pub fn signatures(&self) -> &ConditioningArtifactReceipt {
+        &self.signatures
+    }
 
     fn validate_shape(&self) -> Result<(), QualificationError> {
-        if self.schema_version != 1
+        if self.schema_version != 2
             || self.context.is_empty()
             || self.context.len() > MAXIMUM_EXTENSION_CONTEXT_FRAMES
             || self.manifest.declaration.byte_length() > MAXIMUM_MANIFEST_BYTES
@@ -528,6 +639,11 @@ impl ExtensionConditioningReceipt {
             return Err(extension_error("invalid extension conditioning receipt"));
         }
         validate_declarations(
+            self.frames().map(ConditioningArtifactReceipt::declaration),
+            Some(self.manifest.declaration()),
+        )?;
+        validate_signature_declaration(
+            self.signatures.declaration(),
             self.frames().map(ConditioningArtifactReceipt::declaration),
             Some(self.manifest.declaration()),
         )?;
@@ -553,13 +669,13 @@ impl ExtensionConditioningReceipt {
 impl TryFrom<ExtensionConditioningReceiptWire> for ExtensionConditioningReceipt {
     type Error = QualificationError;
     fn try_from(wire: ExtensionConditioningReceiptWire) -> Result<Self, Self::Error> {
-        if wire.schema_version != 1 {
+        if wire.schema_version != 2 {
             return Err(extension_error(
                 "unsupported extension conditioning receipt schema",
             ));
         }
         let ExtensionOperation::Extension = wire.operation;
-        Self::new(wire.manifest, wire.context, wire.opposite)
+        Self::new(wire.manifest, wire.context, wire.opposite, wire.signatures)
     }
 }
 
@@ -568,6 +684,8 @@ pub struct RetainedExtensionConditioning {
     manifest: ConditioningObject,
     context_frames: Vec<ConditioningObject>,
     opposite: Option<ConditioningObject>,
+    signatures: ConditioningObject,
+    measurements: Vec<ExtensionContextMeasurement>,
     context: ExtensionContext,
     receipt: ExtensionConditioningReceipt,
 }
@@ -581,6 +699,12 @@ impl RetainedExtensionConditioning {
     }
     pub fn opposite(&self) -> Option<&ConditioningObject> {
         self.opposite.as_ref()
+    }
+    pub fn signatures(&self) -> &ConditioningObject {
+        &self.signatures
+    }
+    pub fn measurements(&self) -> &[ExtensionContextMeasurement] {
+        &self.measurements
     }
     pub fn context(&self) -> &ExtensionContext {
         &self.context
@@ -596,6 +720,8 @@ impl RetainedExtensionConditioning {
         if self.context_frames.len() != self.context.context.len()
             || self.receipt.context.len() != self.context_frames.len()
             || !receipt_matches(&self.receipt.manifest, &self.manifest)
+            || self.context.continuity.signatures() != self.signatures.declaration()
+            || !receipt_matches(&self.receipt.signatures, &self.signatures)
         {
             return Err(extension_error(
                 "retained context count or manifest differs from its receipt",
@@ -634,21 +760,28 @@ impl RetainedExtensionConditioning {
         Ok(())
     }
 
-    /// Manifest, chronological context inputs, then optional unconditioned seam.
+    /// Manifest, chronological inputs, optional unconditioned seam, signatures.
     pub fn into_parts(
         self,
     ) -> (
         ConditioningObject,
         Vec<ConditioningObject>,
         Option<ConditioningObject>,
+        ConditioningObject,
     ) {
-        (self.manifest, self.context_frames, self.opposite)
+        (
+            self.manifest,
+            self.context_frames,
+            self.opposite,
+            self.signatures,
+        )
     }
 }
 
 /// Capture a strict extension manifest and every declared input under one
 /// deadline. Run off the database writer, before exposing the pinned workspace
-/// to the worker. This proves byte identity, not PNG or same-shot qualification.
+/// to the worker. Repeat the continuity heuristic from the retained signatures;
+/// PNG decoding and source-index authenticity remain the capture host's work.
 pub fn capture_extension_conditioning(
     workspace: &ArtifactWorkspace,
     request: &HostMessage,
@@ -725,6 +858,24 @@ pub fn capture_extension_conditioning(
         ExtensionOppositeSeam::Absent => None,
         ExtensionOppositeSeam::PresentUnconditioned { frame, .. } => Some(retain_frame(frame)?),
     };
+    let snapshot = workspace
+        .snapshot_with_control(
+            input_scope,
+            context.continuity.signatures(),
+            ArtifactLimits::new(
+                limits
+                    .maximum_frame_bytes
+                    .min(deadpan_analysis::MAX_CONTEXT_SIGNATURE_BYTES as u64),
+            )?,
+            || snapshot_control(cancelled, deadline),
+        )
+        .map_err(map_snapshot_error)?;
+    let (signatures, bytes) = retain_object(snapshot, true, cancelled, deadline)?;
+    let measurements = context.continuity.qualify_signatures(
+        &bytes.expect("signature collection requested"),
+        cancelled,
+        deadline,
+    )?;
     let receipt = ExtensionConditioningReceipt::new(
         object_receipt(&manifest)?,
         context_frames
@@ -732,11 +883,14 @@ pub fn capture_extension_conditioning(
             .map(object_receipt)
             .collect::<Result<Vec<_>, _>>()?,
         opposite.as_ref().map(object_receipt).transpose()?,
+        object_receipt(&signatures)?,
     )?;
     let retained = RetainedExtensionConditioning {
         manifest,
         context_frames,
         opposite,
+        signatures,
+        measurements,
         context,
         receipt,
     };
@@ -776,7 +930,12 @@ fn validate_request(
             "context differs from extension request plan, region or manifest",
         ));
     }
-    validate_declarations(context.declarations(), Some(manifest))
+    validate_declarations(context.declarations(), Some(manifest))?;
+    validate_signature_declaration(
+        context.continuity.signatures(),
+        context.declarations(),
+        Some(manifest),
+    )
 }
 
 fn object_receipt(

@@ -18,6 +18,9 @@ use deadpan_store::generation_inputs::{
 use super::*;
 use crate::generation::conditioning::{ExtensionInputs, prepare_extension_scoped_with_options};
 
+#[path = "extension/retention.rs"]
+mod retention;
+
 fn target(repeats: Vec<RepeatEditStep>) -> ScopedNodeTarget {
     ScopedNodeTarget {
         node: node("extension"),

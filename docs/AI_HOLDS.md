@@ -299,6 +299,11 @@ The store's `GenerationInputCapture` owns capture and resource limits; reading
 or constructing a descriptor never grants request or acceptance authority.
 The schema-73 representation is unchanged.
 
+Extension conditioning schema 2 now retains that descriptor and a bounded
+signature sidecar. The host recomputes input continuity from private snapshots;
+the Python reader verifies the same descriptor and byte declarations before
+inference. See [retained extension evidence](qualification/extension-evidence-2026-10-08.md).
+
 This is persistence groundwork. Native and headless execution still admit Bridge
 jobs only; extension Ready and acceptance remain closed until output qualification
 is implemented. See [durable extension inputs](qualification/extension-inputs-2026-10-07.md).

@@ -22,10 +22,11 @@ import traceback
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 ADAPTER_SOURCES = {name: hashlib.sha256((Path(__file__).resolve().parent / name).read_bytes()).hexdigest()
-                   for name in ["worker.py", "worker_protocol.py", "worker_media.py", "mlx_backend.py",
+                   for name in ["worker.py", "worker_protocol.py", "worker_media.py", "worker_extension_context.py", "mlx_backend.py",
                                 "runtime_source.py", "ltx-source-manifest.json"]}
 
 from worker_media import exact_keys, integer, validate_plan, validate_extension_plan, ratio, rate
+from worker_extension_context import MAX_SIGNATURE_BYTES, validate_continuity, validate_signature_bytes
 from worker_protocol import (
     FrameRate,
     GenerateBridgeRequest,
@@ -312,8 +313,8 @@ def validate_extension_context(context, request, video):
     if not isinstance(request, GenerateExtensionRequest):
         raise ValueError("extension requires protocol-3 generate_extension")
     exact_keys(context, ["schema_version", "operation", "model_color_space", "plan",
-                         "input_color_interpretation", "context", "presentation", "opposite", "region"])
-    if (type(context["schema_version"]) is not int or context["schema_version"] != 1
+                         "input_color_interpretation", "context", "presentation", "opposite", "region", "continuity"])
+    if (type(context["schema_version"]) is not int or context["schema_version"] != 2
             or context["operation"] != "extension" or context["plan"] != request.plan
             or context["model_color_space"] != MODEL_COLOR_SPACE
             or not valid_input_color_interpretation(context["input_color_interpretation"])):
@@ -396,7 +397,29 @@ def validate_extension_context(context, request, video):
         raise ValueError("unsupported extension region selection")
     if captured_target != request.constraints.region_target:
         raise ValueError("extension region target differs from captured context")
+    validate_continuity(context, request.input.manifest)
     return [entry["frame"] for entry in entries]
+
+
+def read_extension_inputs(root, context, request, video, check_cancel):
+    """Verify every retained input, returning only chronological model PNGs."""
+    references = validate_extension_context(context, request, video)
+    check_cancel()
+    evidence = context["continuity"]
+    signatures = contained_read(root, evidence["signatures"]["reference"], MAX_SIGNATURE_BYTES)
+    validate_signature_bytes(evidence, signatures)
+    opposite = context["opposite"]
+    all_references = references + ([opposite["frame"]] if opposite["status"] == "present_unconditioned" else [])
+    inputs = []
+    for index, reference in enumerate(all_references):
+        check_cancel()
+        data = contained_read(root, reference["reference"], 16 * 1024 * 1024)
+        if len(data) != reference["byte_length"] or hashlib.sha256(data).hexdigest() != reference["sha256"]:
+            raise ValueError("conditioning input hash or length mismatch")
+        if index < len(references):
+            inputs.append(data)
+    check_cancel()
+    return inputs
 
 
 def contained_read(root, reference, maximum):
@@ -538,22 +561,19 @@ def run():
                 raise ValueError("context manifest hash mismatch")
             context = strict_json(raw)
             if extension:
-                references = validate_extension_context(context, request, wire["constraints"]["video"])
+                inputs = read_extension_inputs(root, context, request, wire["constraints"]["video"], check_cancel)
             else:
                 validate_context_shape(context)
                 validate_bridge_context(context, request, wire["constraints"]["video"])
                 references = [context["left"], context["right"]]
-            inputs = []
-            opposite = context["opposite"] if extension else {"status": "absent"}
-            all_references = references + ([opposite["frame"]] if opposite["status"] == "present_unconditioned" else [])
-            for index, reference in enumerate(all_references):
-                check_cancel()
-                exact_keys(reference, ["reference", "sha256", "byte_length"])
-                data = contained_read(root, reference["reference"], 16 * 1024 * 1024)
-                if (type(reference["byte_length"]) is not int or len(data) != reference["byte_length"]
-                        or hashlib.sha256(data).hexdigest() != reference["sha256"]):
-                    raise ValueError("conditioning input hash or length mismatch")
-                if index < len(references):
+                inputs = []
+                for reference in references:
+                    check_cancel()
+                    exact_keys(reference, ["reference", "sha256", "byte_length"])
+                    data = contained_read(root, reference["reference"], 16 * 1024 * 1024)
+                    if (type(reference["byte_length"]) is not int or len(data) != reference["byte_length"]
+                            or hashlib.sha256(data).hexdigest() != reference["sha256"]):
+                        raise ValueError("conditioning input hash or length mismatch")
                     inputs.append(data)
         finally:
             os.close(root)
