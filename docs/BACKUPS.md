@@ -271,6 +271,14 @@ this build understands the document. Render needs a writer (render jobs are
 stored), so exporting a newer package is not available; copy it with a newer
 build or use that build.
 
+Refused Render and saved-render-history requests return their captured ticket,
+project context and query through the normal response channel, so the native
+controls leave their pending state. They never start a workflow or commit a
+preview. The 2026-10-08 regression covers repeated Render, preview commit,
+stale Cancel and both history queries, and compares database bytes after close.
+All 16 focused render/history tests and strict app Clippy pass. This refusal
+handling does not implement export from newer packages.
+
 A package an interrupted rollback-journal write left behind (a hot journal,
 only possible during a release migration's switch out of WAL mode) is rolled
 back by the next writable open under the package lock; a read-only open says

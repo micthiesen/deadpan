@@ -39,13 +39,32 @@ impl Service {
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
         if let Some(refusal) = self.read_only_refusal(&request) {
-            // Ticketed backup requests are answered on their own channel too.
-            if let ProjectRequest::Backup(
-                super::super::backups::Request::Now { ticket, .. }
-                | super::super::backups::Request::Restore { ticket, .. },
-            ) = &request
-            {
-                self.answer_backup(*ticket, Err(refusal.clone()));
+            // Ticketed requests must complete their own response channel so
+            // the UI can clear the matching pending operation.
+            match &request {
+                ProjectRequest::Backup(
+                    super::super::backups::Request::Now { ticket, .. }
+                    | super::super::backups::Request::Restore { ticket, .. },
+                ) => self.answer_backup(*ticket, Err(refusal.clone())),
+                ProjectRequest::Render(request) => {
+                    self.render_update
+                        .get_or_insert_with(Default::default)
+                        .command = Some(ProjectRenderCommandOutcome {
+                        ticket: request.ticket,
+                        context: request.context.clone(),
+                        committed_revision: None,
+                        result: Err(native_error("RenderReadOnly", &refusal)),
+                    });
+                }
+                ProjectRequest::RenderHistory(request) => {
+                    self.render_history = Some(super::super::render_history::Update {
+                        ticket: request.ticket,
+                        context: request.context.clone(),
+                        query: request.query.clone(),
+                        result: Err(native_error("RenderHistoryReadOnly", &refusal)),
+                    });
+                }
+                _ => {}
             }
             self.error = Some(refusal);
             self.message = None;

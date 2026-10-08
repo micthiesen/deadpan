@@ -178,6 +178,109 @@ fn commit_and_start(
 }
 
 #[test]
+fn read_only_render_refusals_complete_each_captured_request_without_writes() {
+    use crate::project::render_history::{Query, Request};
+
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("future-render.deadpan");
+    drop(seed_holds(&path, &["a"]));
+    let database = path.join("project.sqlite");
+    {
+        let connection = rusqlite::Connection::open(&database).unwrap();
+        connection
+            .execute_batch("CREATE TABLE future_feature(id INTEGER PRIMARY KEY) STRICT;")
+            .unwrap();
+        connection
+            .pragma_update(
+                None,
+                "user_version",
+                deadpan_store::DATABASE_SCHEMA_VERSION + 1,
+            )
+            .unwrap();
+        connection
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()))
+            .unwrap();
+    }
+    let before = std::fs::read(&database).unwrap();
+    let harness = Harness::new();
+    let opened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    assert!(opened.error.is_none(), "{:?}", opened.error);
+    let workspace = opened.workspace.unwrap();
+    assert!(workspace.read_only.is_some());
+
+    let mut stale_cancel_context = context(&workspace);
+    stale_cancel_context.session += 1;
+    stale_cancel_context.project = ProjectId::new("previous-project").unwrap();
+    for render in [
+        start(&workspace, scratch.path(), "read-only", 1),
+        commit_and_start(
+            &workspace,
+            scratch.path(),
+            "read-only-preview",
+            2,
+            preview_gain(-3000),
+        ),
+        ProjectRenderRequest {
+            ticket: 3,
+            context: stale_cancel_context.clone(),
+            operation: ProjectRenderOperation::Cancel(identity("read-only")),
+        },
+        start(&workspace, scratch.path(), "read-only-again", 4),
+    ] {
+        let ticket = render.ticket;
+        let captured = render.context.clone();
+        let update = command(&harness.service, ProjectRequest::Render(render));
+        let refusal = outcome(&update);
+        assert_eq!(refusal.ticket, ticket);
+        assert_eq!(refusal.context, captured);
+        assert!(refusal.committed_revision.is_none());
+        let error = refusal.result.as_ref().unwrap_err();
+        assert_eq!(error.code, "RenderReadOnly");
+        assert_eq!(Some(error.message.as_str()), update.error.as_deref());
+        assert!(error.message.contains("newer Deadpan"));
+        assert!(update.render.as_ref().unwrap().workflow.is_none());
+        assert!(update.committed.is_none());
+        assert_eq!(*update.workspace.unwrap().document, *workspace.document);
+    }
+
+    for (ticket, captured, query) in [
+        (5, context(&workspace), Query::Jobs { after: None }),
+        (
+            6,
+            stale_cancel_context,
+            Query::Attempts {
+                job: identity("read-only").job_id,
+                after_ordinal: 2,
+            },
+        ),
+    ] {
+        let update = command(
+            &harness.service,
+            ProjectRequest::RenderHistory(Request {
+                ticket,
+                context: captured.clone(),
+                query: query.clone(),
+            }),
+        );
+        let refusal = update.render_history.unwrap();
+        assert_eq!(refusal.ticket, ticket);
+        assert_eq!(refusal.context, captured);
+        assert_eq!(refusal.query, query);
+        let error = refusal.result.unwrap_err();
+        assert_eq!(error.code, "RenderHistoryReadOnly");
+        assert_eq!(Some(error.message.as_str()), update.error.as_deref());
+    }
+
+    command(&harness.service, ProjectRequest::Close);
+    assert_eq!(std::fs::read(&database).unwrap(), before);
+    let wal = path.join("project.sqlite-wal");
+    assert!(!wal.exists() || std::fs::read(wal).unwrap().is_empty());
+    for suffix in ["read-only", "read-only-preview", "read-only-again"] {
+        assert!(!publication(scratch.path(), suffix).destination.exists());
+    }
+}
+
+#[test]
 fn preview_commit_renders_its_exact_receipt_and_busy_render_does_not_commit() {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::new();
