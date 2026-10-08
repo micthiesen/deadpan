@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T20:15:30Z",
+  "updated_at": "2026-10-08T20:56:27Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Qualifying longer AI extensions and connecting them to the app.",
+  "focus": "Connecting verified AI extensions to Generate, model installation and native controls.",
   "features": [
     {
       "id": "editing",
@@ -62,7 +62,7 @@
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses and replacements work. Saved extensions can be accepted and reopened; normal extension generation and app controls remain."
+      "note": "AI pauses and replacements work. One-second extensions pass real generation and validation; normal extension generation and app controls remain."
     },
     {
       "id": "import",
@@ -237,6 +237,14 @@
       "revision": "7a2980fc",
       "retrospective": false,
       "summary": "Verified saved AI extension candidates, explicit acceptance, undo/redo and model-free reopening. Normal generation and app controls remain."
+    },
+    {
+      "date": "2026-10-08",
+      "percent": 88,
+      "complete_sections": 4,
+      "revision": "eccd0d48",
+      "retrospective": false,
+      "summary": "Verified one-second AI extensions in both directions, exact output sampling, full media checks and cancellation. App integration remains."
     }
   ]
 }
