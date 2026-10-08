@@ -158,6 +158,47 @@ impl ExtensionRegionCapture {
         }
     }
 
+    /// The one selected subject in the actual anchor PNG. An unavailable
+    /// authored target is never replaced with the crop or the opposite seam.
+    pub fn seed(
+        &self,
+        anchor: &ExtensionContextPicture,
+        presentation: RasterRect,
+        native: [u32; 2],
+    ) -> Result<Option<deadpan_analysis::NormalizedRect>, QualificationError> {
+        self.validate(anchor, presentation, native)?;
+        let Self::Selected {
+            anchor: selected, ..
+        } = self
+        else {
+            return Ok(None);
+        };
+        let CapturedRegionBoundary::Available { region, .. } = selected.as_ref() else {
+            return Ok(None);
+        };
+        super::region::map_region(
+            *region,
+            anchor
+                .content
+                .ok_or_else(|| extension_error("region anchor has no fitted content"))?,
+            native,
+        )
+        .map(Some)
+        .map_err(|error| extension_error(&error))
+    }
+
+    pub fn unavailable_reason(&self) -> Option<String> {
+        match self {
+            Self::None => Some("no selected region target".into()),
+            Self::Selected { anchor, .. } => match anchor.as_ref() {
+                CapturedRegionBoundary::Available { .. } => None,
+                CapturedRegionBoundary::Unavailable { reason } => {
+                    Some(format!("anchor: {}", reason.description()))
+                }
+            },
+        }
+    }
+
     fn validate(
         &self,
         anchor: &ExtensionContextPicture,

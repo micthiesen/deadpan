@@ -1,0 +1,30 @@
+{
+  "target/debug/deadpan-track": {
+    "bytes": 8354608,
+    "sha256": "2701ebe33b8272ea3eb97a85ee19752fd74bec3478cc8ba141e7925e978ea132"
+  },
+  "target/debug/deadpan-media-worker": {
+    "bytes": 3213016,
+    "sha256": "f0d95396675d891ebe3d6a0b8d05b2d3b518f3d083dc9ab745834a7d717cd30d"
+  },
+  "/tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app/Contents/MacOS/deadpan-app": {
+    "bytes": 56195328,
+    "sha256": "8b5b0a77859c8aea51f840b20ca57ef73321155b4136595099f0254000cb9cca"
+  },
+  "/tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app/Contents/MacOS/deadpan-cli": {
+    "bytes": 40956032,
+    "sha256": "fd121440ac77bfff25710a9c3e9097a2407a01007952200aed4bb22d9be20e17"
+  },
+  "/tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app/Contents/MacOS/deadpan-media-worker": {
+    "bytes": 1016608,
+    "sha256": "97620e2e5cb595d34978ac2c4c05cac1c311be0c4d8e3d3321268a1abaab5596"
+  },
+  "/tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app/Contents/MacOS/deadpan-track": {
+    "bytes": 1482880,
+    "sha256": "9505fe356ee2abe01d1974a9c7b29c63e5a2114deaa11088e80b4da767ef469c"
+  },
+  "/tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app/Contents/MacOS/deadpan-transcribe": {
+    "bytes": 2590352,
+    "sha256": "6d186b1af8c3c91fb73642f22ff45be73ee7a66f54b271936bdd2a06c4e45182"
+  }
+}

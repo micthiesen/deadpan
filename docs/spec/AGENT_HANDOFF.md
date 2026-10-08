@@ -207,7 +207,18 @@ policy. FromRight swaps the conditioned join; absent and unconditioned opposite
 seams remain explicit. Real decoder/converter fixtures cover hidden flashes,
 worker-input tampering and the single sampled middle. The development media
 example requires the saved input receipt and reports these checks. Ready remains
-closed pending directional face/mouth/region checks and full provenance admission.
+closed pending full provenance admission and accepted-extension integration.
+
+[Directional extension geometry](../qualification/extension-geometry-2026-10-08.md)
+now uses one retained anchor and generated-only coverage. The real Vision worker
+proves the complete native index and walks selected-region tracking outward,
+including bounded reverse seeks for FromRight. Face drift retains qualified
+prefix rejection after later loss; mouth checks stay chronological. Host reports
+bind the private movie, retained context/receipt and captured selected target,
+and recompute the unchanged numeric policies. The developer media qualifier
+requires `tracker` and runs pixel plus geometry checks under one deadline.
+The next product boundary is complete worker/host provenance admission, followed
+by the accepted-extension representation, store promotion and native controls.
 Use a true single anchor for those checks, with FromRight tracking outward in
 reverse and mouth inspection restricted to chronological generated pictures.
 

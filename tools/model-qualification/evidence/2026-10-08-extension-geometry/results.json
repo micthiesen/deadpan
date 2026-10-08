@@ -1,0 +1,77 @@
+{
+  "scope": "Single-anchor extension face, mouth and selected-region checks; no extension Ready or acceptance authority.",
+  "checks": {
+    "focused_all_target_check": {
+      "exit_code": 0,
+      "log": "check.log.gz"
+    },
+    "worker_build": {
+      "exit_code": 0,
+      "log": "build-workers.log.gz"
+    },
+    "focused_nextest": {
+      "exit_code": 0,
+      "passed": 173,
+      "filtered": 377,
+      "log": "focused.log.gz"
+    },
+    "focused_strict_clippy": {
+      "exit_code": 0,
+      "log": "clippy.log.gz"
+    },
+    "final_host_geometry_nextest": {
+      "exit_code": 0,
+      "passed": 4,
+      "filtered": 7,
+      "log": "selected-target.log.gz"
+    },
+    "repository_gate": {
+      "command": "cargo xtask gate",
+      "exit_code": 0,
+      "workspace_passed": 5348,
+      "workspace_skipped": 10,
+      "ui_passed": 1071,
+      "ui_skipped": 2,
+      "doc_tests_passed": 2,
+      "includes": [
+        "locked dependencies",
+        "formatting",
+        "strict workspace and UI Clippy"
+      ],
+      "log": "gate.log.gz"
+    },
+    "bundle": {
+      "command": "cargo xtask bundle --output /tmp/deadpan-extension-geometry-20261008/bundle",
+      "exit_code": 0,
+      "log": "bundle.log.gz"
+    },
+    "bundle_verify": {
+      "command": "cargo xtask bundle-verify /tmp/deadpan-extension-geometry-20261008/bundle/Deadpan.app --keep",
+      "exit_code": 0,
+      "log": "bundle-verify.log.gz"
+    }
+  },
+  "warnings": {
+    "kind": "Nextest pipe-closure warnings; assertions passed; cause unproven",
+    "tests": [
+      "deadpan-store::generation_bundles::scoped_acceptance_isolates_one_play_and_keeps_default_request_current",
+      "deadpan-app::navigation::keymap_config::tests::all_reviewed_physical_reservations_outrank_different_logical_symbols"
+    ]
+  },
+  "review": {
+    "independent_lenses": [
+      "face and mouth policy",
+      "selected-region policy",
+      "shared coverage",
+      "native worker and protocol",
+      "host binding"
+    ],
+    "closed_gap": "Added real project-selected target tests through production preparation and the supervised Vision helper, for both directions and explicit unavailability.",
+    "remaining_findings": []
+  },
+  "limits": [
+    "No model inference or extension acceptance exercised by this increment.",
+    "Synthetic drawn faces and moving textured regions prove extraction, ordering, coverage and policy behavior; real-person quality and threshold calibration remain owner verification.",
+    "Packaging verification on this Mac does not establish clean-machine acceptance."
+  ]
+}

@@ -1,6 +1,6 @@
 //! Developer verification of a completed, reaped extension worker's media.
-//! Includes pixel rejection checks against previously retained inputs. It does
-//! not qualify face/region/mouth geometry, admit Ready or edit a project.
+//! Includes pixel, face, mouth and region checks against retained inputs.
+//! It does not admit Ready or edit a project.
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use deadpan_media::{InputIdentity, canonicalize_extension};
     use deadpan_models::{
         ConditioningLimits, ExtensionConditioningReceipt, capture_extension_conditioning,
-        inspect_extension_pixels,
+        inspect_extension_geometry, inspect_extension_pixels,
     };
     use serde::Deserialize;
     use serde_json::json;
@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[serde(deny_unknown_fields)]
     struct Configuration {
         codec: PathBuf,
+        tracker: PathBuf,
         workspace: PathBuf,
         request: HostMessage,
         candidate: NativeCandidateManifest,
@@ -68,6 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: Configuration = serde_json::from_slice(&bytes)?;
     if [
         &config.codec,
+        &config.tracker,
         &config.workspace,
         &config.output_directory,
         &config.retained_inputs.directory,
@@ -179,16 +181,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         deadline,
         &cancelled,
     )?;
+    let (mut native, mut sampled, sampling) = canonical.into_parts();
+    let geometry = inspect_extension_geometry(
+        &config.tracker,
+        &mut native,
+        &mut conditioning,
+        &config.request,
+        deadline,
+        &cancelled,
+    )?;
     let report = json!({
-        "scope": "decoded native and generated-only sampled media with motion, lighting and real-join pixel rejection; face/mouth/region checks, provenance admission, Ready and acceptance remain open",
-        "native": {"object": canonical.native().object(), "report": canonical.native().report()},
-        "sampled": {"object": canonical.sampled().object(), "report": canonical.sampled().report()},
-        "sampling": canonical.sampling(),
+        "scope": "decoded native and generated-only sampled media with motion, lighting, real-join, single-anchor face/region and chronological mouth rejection; provenance admission, Ready and acceptance remain open",
+        "native": {"object": native.object(), "report": native.report()},
+        "sampled": {"object": sampled.object(), "report": sampled.report()},
+        "sampling": sampling,
         "pixels": pixels,
+        "geometry": geometry,
         "elapsed_seconds": started.elapsed().as_secs_f64(),
     });
     fs::create_dir(&config.output_directory)?;
-    let (mut native, mut sampled, _) = canonical.into_parts();
     let native_length = native.object().byte_length();
     let sampled_length = sampled.object().byte_length();
     write_object(

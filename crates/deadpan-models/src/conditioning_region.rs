@@ -54,7 +54,7 @@ pub enum RegionCaptureUnavailable {
 }
 
 impl RegionCaptureUnavailable {
-    fn description(self) -> &'static str {
+    pub(super) fn description(self) -> &'static str {
         match self {
             Self::NotOriginal => "boundary is not an Original picture",
             Self::DifferentAsset => "target belongs to a different Original",
@@ -288,7 +288,7 @@ fn inside(region: TargetRegion) -> bool {
         })
 }
 
-fn map_region(
+pub(super) fn map_region(
     region: TargetRegion,
     content: RasterRect,
     native: [u32; 2],

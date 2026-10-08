@@ -26,6 +26,10 @@ use sha2::Digest;
 
 use crate::{QualificationError, RetainedConditioning};
 
+mod extension;
+pub(super) use extension::expected_pts as extension_picture_pts;
+pub(super) use extension::inspect as inspect_extension;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InspectionTimings {
@@ -119,48 +123,14 @@ pub(super) fn inspect(
         timeout_millis: u64::try_from(remaining.as_millis()).map_err(invalid)?,
     };
     request.validate().map_err(invalid)?;
-    let mut process = SupervisedProcess::<LandmarkProtocol>::spawn(
-        ProcessSpec {
-            executable: executable.to_path_buf(),
-            arguments: vec![landmarks::WORKER_ARGUMENT.into()],
-            environment: Default::default(),
-            workspace: directory.path().to_path_buf(),
-            limits: ProcessLimits {
-                maximum_duration: remaining,
-                cancellation_grace: Duration::from_secs(2).min(remaining),
-                exit_grace: Duration::from_secs(5).min(remaining),
-            },
-        },
+    let (snapshot, completion) = execute_inspection(
+        executable,
+        directory.path(),
+        &pinned,
         request,
-    )
-    .map_err(invalid)?;
-    let result = supervise(&mut process, &control);
-    // Teardown has its own real monotonic bound, even after cancellation or
-    // the qualification deadline. Never admit output before confirmed cleanup.
-    let stopped = process
-        .finish_owned_work(Instant::now() + Duration::from_secs(5))
-        .map_err(|error| invalid(format!("worker cleanup is unconfirmed: {error}")))?;
-    if stopped.pump_panicked() {
-        return Err(invalid(
-            "worker I/O pump panicked; observations cannot be admitted",
-        ));
-    }
-    let completion = result?;
-    if !stopped.status().success() {
-        return Err(invalid(format!(
-            "worker completion has failed exit status {}",
-            stopped.status()
-        )));
-    }
-    control.check()?;
-    let snapshot = pinned
-        .snapshot_with_control(
-            &output_scope,
-            &completion.artifact,
-            ArtifactLimits::new(landmarks::MAX_OBSERVATION_BYTES)?,
-            || control.snapshot_check(),
-        )
-        .map_err(super::qualification::snapshot_error)?;
+        &output_scope,
+        &control,
+    )?;
     let batch: InspectionObservations = serde_json::from_reader(snapshot)?;
     control.check()?;
     batch
@@ -182,6 +152,62 @@ pub(super) fn inspect(
         region_runtime: completion.region_runtime,
         timings: completion.timings,
     })
+}
+
+/// Shared checked launch, teardown and private output snapshot for both
+/// inspection operations. No observations escape a live worker workspace.
+fn execute_inspection(
+    executable: &Path,
+    directory: &Path,
+    pinned: &ArtifactWorkspace,
+    request: HostMessage,
+    output_scope: &WorkspaceRef,
+    control: &Control<'_>,
+) -> Result<(deadpan_jobs::artifact::HashedArtifactSnapshot, Completion), QualificationError> {
+    let remaining = control.remaining()?.min(Duration::from_secs(3600));
+    let mut process = SupervisedProcess::<LandmarkProtocol>::spawn(
+        ProcessSpec {
+            executable: executable.to_path_buf(),
+            arguments: vec![landmarks::WORKER_ARGUMENT.into()],
+            environment: Default::default(),
+            workspace: directory.to_path_buf(),
+            limits: ProcessLimits {
+                maximum_duration: remaining,
+                cancellation_grace: Duration::from_secs(2).min(remaining),
+                exit_grace: Duration::from_secs(5).min(remaining),
+            },
+        },
+        request,
+    )
+    .map_err(invalid)?;
+    let result = supervise(&mut process, control);
+    // Teardown has its own real monotonic bound, even after cancellation or
+    // the qualification deadline. Never admit output before confirmed cleanup.
+    let stopped = process
+        .finish_owned_work(Instant::now() + Duration::from_secs(5))
+        .map_err(|error| invalid(format!("worker cleanup is unconfirmed: {error}")))?;
+    if stopped.pump_panicked() {
+        return Err(invalid(
+            "worker I/O pump panicked; observations cannot be admitted",
+        ));
+    }
+    let completion = result?;
+    if !stopped.status().success() {
+        return Err(invalid(format!(
+            "worker completion has failed exit status {}",
+            stopped.status()
+        )));
+    }
+    control.check()?;
+    let snapshot = pinned
+        .snapshot_with_control(
+            output_scope,
+            &completion.artifact,
+            ArtifactLimits::new(landmarks::MAX_OBSERVATION_BYTES)?,
+            || control.snapshot_check(),
+        )
+        .map_err(super::qualification::snapshot_error)?;
+    Ok((snapshot, completion))
 }
 
 struct Completion {

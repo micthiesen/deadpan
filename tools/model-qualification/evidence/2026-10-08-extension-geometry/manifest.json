@@ -1,0 +1,50 @@
+{
+  "binaries.json": {
+    "bytes": 1324,
+    "sha256": "a1d71d918d810771e40f147f2d72b4b9cf3822d3ed57bf43f7e77f4114165670"
+  },
+  "build-workers.log.gz": {
+    "bytes": 383,
+    "sha256": "4cf9ceb7b57ea8b1c6ed1bf3c30e3f1794415096d2989f8a5e8b1502e0331a84"
+  },
+  "bundle-verify.log.gz": {
+    "bytes": 2822,
+    "sha256": "838e4d2b353cce8d08894e689685afdc26a7ee66e465fed5cb0fad32b17a0c68"
+  },
+  "bundle.log.gz": {
+    "bytes": 3306,
+    "sha256": "f38063f7041df17fc659cd175b45748714855b7944855ca33b4353a20d885d01"
+  },
+  "check.log.gz": {
+    "bytes": 835,
+    "sha256": "9c82208f359039aee92943697501ba631dc98fc4ebfddbbc56f5d031a6008d4a"
+  },
+  "clippy.log.gz": {
+    "bytes": 290,
+    "sha256": "7856ac48993f0d681ffb7ccd0f2ba5ca4e70bba6ac5818b6408446f986c093dc"
+  },
+  "environment.json": {
+    "bytes": 338,
+    "sha256": "3fa89a52e75ec475e945a00d830ef061402245a646684ef8cb0cefc1d123f334"
+  },
+  "focused.log.gz": {
+    "bytes": 6232,
+    "sha256": "ed9914bc06adfc14873fffa9cbdf72021cddce5146e7e0566c8a1ce762079dcf"
+  },
+  "gate.log.gz": {
+    "bytes": 202058,
+    "sha256": "c7856f68ff3ebe8a8e9bd3679eb9b5b0340fe9da7ab5e657cc6f52f66c5af3a8"
+  },
+  "results.json": {
+    "bytes": 2570,
+    "sha256": "596e7f11c200ff3b7187baa5a6107fa25ccb0f41b0b6d65a38d369981d1124b5"
+  },
+  "selected-target.log.gz": {
+    "bytes": 657,
+    "sha256": "2efff4a1b790b649d6cc5158503e8d800d1412d11b0cdd403f71300ff46783c4"
+  },
+  "source.json": {
+    "bytes": 4411,
+    "sha256": "cfb1c381731f287a9340de7e62a980e5aaf45f5d8d79b59d20302a6f03bb3e63"
+  }
+}

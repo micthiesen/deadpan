@@ -669,6 +669,16 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
         }),
     );
     value.validate_shape().unwrap();
+    let seed = value
+        .region
+        .seed(value.anchor(), value.presentation, [768, 320])
+        .unwrap()
+        .unwrap();
+    assert!((seed.x() - 0.4).abs() < 1e-12);
+    assert!((seed.y() - 0.35).abs() < 1e-12);
+    assert!((seed.width() - 0.2).abs() < 1e-12);
+    assert!((seed.height() - 0.3).abs() < 1e-12);
+    assert!(value.region.unavailable_reason().is_none());
     let ExtensionRegionCapture::Selected { anchor, .. } = &mut value.region else {
         unreachable!()
     };
@@ -680,6 +690,12 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
     assert!(
         value.validate_shape().is_err(),
         "region cannot drift to another decoded source PTS"
+    );
+    assert!(
+        value
+            .region
+            .seed(value.anchor(), value.presentation, [768, 320])
+            .is_err()
     );
 }
 

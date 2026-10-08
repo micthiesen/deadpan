@@ -8,7 +8,11 @@
 
 use std::io::{Read, Write};
 
+use deadpan_analysis::NormalizedRect;
+use deadpan_analysis::generated_extension::ExtensionCoverage;
 use deadpan_analysis::generated_geometry::RawLandmarkBatch;
+use deadpan_analysis::generated_geometry::extension::RawExtensionLandmarkBatch;
+use deadpan_analysis::generated_region::extension::RawExtensionRegionBatch;
 use deadpan_analysis::generated_region::{RawRegionBatch, RegionSeeds};
 use serde::{Deserialize, Serialize};
 
@@ -19,11 +23,13 @@ use crate::protocol::{
 };
 pub use crate::tracking::ExpectedStream;
 
-pub const VERSION: u32 = 2;
+pub const VERSION: u32 = 3;
 pub const OBSERVATIONS_SCHEMA_VERSION: u32 = 2;
+pub const EXTENSION_OBSERVATIONS_SCHEMA_VERSION: u32 = 1;
 pub const WORKER_ARGUMENT: &str = "inspect-landmarks";
 pub const OUTPUT_FILE: &str = "landmarks.json";
 pub const MAX_FRAMES: usize = 1_025;
+pub const MAX_EXTENSION_NATIVE_FRAMES: usize = 4_096;
 pub const MAX_DIMENSION: u32 = 4_096;
 pub const MAX_PIXELS: u64 = 4_096 * 4_096;
 pub const MAX_SOURCE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
@@ -74,6 +80,55 @@ impl InspectionObservations {
             _ => Err("region observations differ from the captured seeds".into()),
         }
     }
+}
+
+/// Extension observations retain one actual conditioning anchor and only the
+/// generated interval. An opposite seam is never supplied to this worker.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InspectionExtensionObservations {
+    pub schema_version: u32,
+    pub landmarks: RawExtensionLandmarkBatch,
+    #[serde(deserialize_with = "required_option")]
+    pub region: Option<RawExtensionRegionBatch>,
+}
+
+impl InspectionExtensionObservations {
+    pub fn validate(
+        &self,
+        expected_pts: &[i64],
+        coverage: &ExtensionCoverage,
+        requested_seed: Option<&NormalizedRect>,
+    ) -> Result<(), String> {
+        coverage
+            .validate(expected_pts)
+            .map_err(|error| error.to_string())?;
+        if self.schema_version != EXTENSION_OBSERVATIONS_SCHEMA_VERSION
+            || &self.landmarks.coverage != coverage
+        {
+            return Err("extension observations differ from the captured coverage".into());
+        }
+        self.landmarks
+            .validate(expected_pts)
+            .map_err(|error| error.to_string())?;
+        match (&self.region, requested_seed) {
+            (Some(region), Some(seed)) if &region.seed == seed && &region.coverage == coverage => {
+                region
+                    .validate(expected_pts)
+                    .map_err(|error| error.to_string())
+            }
+            (None, None) => Ok(()),
+            _ => Err(
+                "extension region observations differ from the captured seed or coverage".into(),
+            ),
+        }
+    }
+}
+
+fn required_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
+    deserializer: D,
+) -> Result<Option<T>, D::Error> {
+    Option::<T>::deserialize(deserializer)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -140,6 +195,23 @@ pub enum HostMessage {
         boundaries: Option<Box<BoundaryInputs>>,
         /// Explicit authored subject boxes in the retained boundary PNGs.
         region_seeds: Option<Box<RegionSeeds>>,
+        output_scope: WorkspaceRef,
+        maximum_output_bytes: u64,
+        timeout_millis: u64,
+    },
+    InspectExtensionLandmarks {
+        protocol: u32,
+        request: RequestId,
+        attempt: AttemptId,
+        cancellation_token: CancellationToken,
+        source: WorkspaceArtifact,
+        stream: ExpectedStream,
+        /// Complete canonical source index, including unanalysed context.
+        picture_pts: Vec<i64>,
+        anchor: WorkspaceArtifact,
+        coverage: ExtensionCoverage,
+        #[serde(deserialize_with = "required_option")]
+        region_seed: Option<NormalizedRect>,
         output_scope: WorkspaceRef,
         maximum_output_bytes: u64,
         timeout_millis: u64,
@@ -225,6 +297,57 @@ impl HostMessage {
                 }
                 Ok(())
             }
+            Self::InspectExtensionLandmarks {
+                protocol,
+                source,
+                stream,
+                picture_pts,
+                anchor,
+                coverage,
+                region_seed,
+                output_scope,
+                maximum_output_bytes,
+                timeout_millis,
+                ..
+            } => {
+                version(*protocol)?;
+                validate_input(source, MAX_SOURCE_BYTES)?;
+                validate_input(anchor, MAX_PNG_BYTES)?;
+                stream.validate()?;
+                if stream.width > MAX_DIMENSION
+                    || stream.height > MAX_DIMENSION
+                    || u64::from(stream.width) * u64::from(stream.height) > MAX_PIXELS
+                    || stream.rotation_quarter_turns != 0
+                    || stream.time_base_num != 1
+                    || stream.time_base_den != 1000
+                {
+                    return Err(
+                        "extension landmark source requires a bounded canonical raster and clock"
+                            .into(),
+                    );
+                }
+                coverage
+                    .validate(picture_pts)
+                    .map_err(|error| error.to_string())?;
+                if picture_pts.len() > MAX_EXTENSION_NATIVE_FRAMES
+                    || anchor.reference() == source.reference()
+                {
+                    return Err("extension input count or anchor alias is invalid".into());
+                }
+                if let Some(seed) = region_seed {
+                    NormalizedRect::new(seed.x(), seed.y(), seed.width(), seed.height())
+                        .map_err(|error| error.to_string())?;
+                }
+                if output_scope.as_str() == "input" || output_scope.as_str().contains('/') {
+                    return Err("landmark output scope must be one directory beside input".into());
+                }
+                if !(1..=MAX_OBSERVATION_BYTES).contains(maximum_output_bytes)
+                    || !(1..=MAX_TIMEOUT_MILLIS).contains(timeout_millis)
+                {
+                    return Err("extension output or deadline exceeds its bound".into());
+                }
+                Ok(())
+            }
             Self::Cancel { protocol, .. } => version(*protocol),
         }
     }
@@ -248,7 +371,8 @@ pub enum WorkerMessage {
         region_runtime: Option<RegionRuntimeReport>,
         /// Native pictures decoded, excluding boundary PNGs.
         decoded: u32,
-        /// Native pictures plus two when boundary PNGs were requested.
+        /// Bridge: native pictures plus optional two PNGs. Extension: generated
+        /// pictures plus its one retained anchor, excluding native context.
         analysed: u32,
         decode_millis: u64,
         vision_millis: u64,
@@ -311,8 +435,8 @@ impl WorkerMessage {
                 if let Some(runtime) = region_runtime {
                     runtime.validate()?;
                 }
-                if !(2..=MAX_FRAMES as u32).contains(decoded)
-                    || (*analysed != *decoded && *analysed != decoded + 2)
+                if !(2..=MAX_EXTENSION_NATIVE_FRAMES as u32).contains(decoded)
+                    || !(2..=MAX_FRAMES as u32 + 2).contains(analysed)
                     || observations.byte_length() == 0
                     || observations.byte_length() > MAX_OBSERVATION_BYTES
                     || *decode_millis > *elapsed_millis
@@ -355,6 +479,29 @@ impl WorkerProtocol for LandmarkProtocol {
 
     fn from_request(message: &HostMessage) -> Result<Self, SupervisorError> {
         message.validate().map_err(SupervisorError::Request)?;
+        if let HostMessage::InspectExtensionLandmarks {
+            request,
+            attempt,
+            cancellation_token,
+            output_scope,
+            maximum_output_bytes,
+            picture_pts,
+            coverage,
+            region_seed,
+            ..
+        } = message
+        {
+            return Ok(Self {
+                request: request.clone(),
+                attempt: attempt.clone(),
+                token: cancellation_token.clone(),
+                output_reference: format!("{}/{OUTPUT_FILE}", output_scope.as_str()),
+                maximum_output_bytes: *maximum_output_bytes,
+                decoded: picture_pts.len() as u32,
+                analysed: coverage.end - coverage.start + 1,
+                region_requested: region_seed.is_some(),
+            });
+        }
         let HostMessage::InspectLandmarks {
             request,
             attempt,

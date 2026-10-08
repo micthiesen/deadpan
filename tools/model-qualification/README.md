@@ -75,15 +75,18 @@ The first captures inputs before launch. The supervisor owns termination and
 emits `extension_bundle` only after clean teardown and hashed snapshots. The
 last independently canonicalizes the complete native movie and generated-only
 sampled master through the native media worker, then checks generated motion,
-lighting and the actual sampled joins against the retained PNGs. Its
+lighting and the actual sampled joins against the retained PNGs, then inspects
+single-anchor face/region geometry and chronological generated-only mouth motion.
+The media configuration also requires `tracker`, the absolute path to the built
+`deadpan-track` helper. Its
 `retained_inputs` configuration contains `directory` (the first tool's private
 output), `receipt` (the first tool's `conditioning` report field), `input_scope`
 and `limits` (the same conditioning limits used during capture). It refuses
 inputs that differ from that host-owned pre-launch receipt. Retention rechecks,
-native conversion and pixel checks share the media configuration's deadline.
+native conversion, pixel checks and supervised Vision inspection share the media
+configuration's deadline.
 
-These tools do not authorize Ready or acceptance. Directional face/region and
-mouth checks, complete provenance admission, accepted artifact integration,
+These tools do not authorize Ready or acceptance. Complete provenance admission, accepted artifact integration,
 UI integration and a larger measured duration envelope remain required.
 
 ## Build and run the bridge harness

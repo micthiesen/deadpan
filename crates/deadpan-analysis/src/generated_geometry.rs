@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::NormalizedRect;
 
+pub mod extension;
+
 pub const RAW_LANDMARK_SCHEMA_VERSION: u32 = 1;
 pub const PROFILE: &str = "deadpan-generated-face-geometry-mouth-1";
 pub const MAX_NATIVE_FRAMES: usize = 1025;
@@ -420,6 +422,7 @@ pub struct MouthAssessment {
 #[serde(rename_all = "snake_case")]
 pub enum MouthBasis {
     NativeFramesOnly,
+    GeneratedIntervalOnly,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -1201,6 +1204,15 @@ fn analyze_mouth(
     presentation: [u32; 4],
     thresholds: MouthThresholds,
 ) -> MouthAssessment {
+    analyze_mouth_frames(&batch.frames, raster, presentation, thresholds)
+}
+
+fn analyze_mouth_frames(
+    frames: &[FrameObservation],
+    raster: [u32; 2],
+    presentation: [u32; 4],
+    thresholds: MouthThresholds,
+) -> MouthAssessment {
     let mut report = MouthAssessment {
         basis: MouthBasis::NativeFramesOnly,
         status: CheckStatus::Unavailable,
@@ -1211,14 +1223,13 @@ fn analyze_mouth(
         rejection: None,
         unavailable_reasons: Vec::new(),
     };
-    let sets: Vec<EligibleFaceSet<'_>> = batch
-        .frames
+    let sets: Vec<EligibleFaceSet<'_>> = frames
         .iter()
         .map(|frame| EligibleFaceSet::new(&frame.observation, raster, presentation))
         .collect();
     let first = sets.iter().position(|set| !set.faces.is_empty());
     let Some(first) = first else {
-        report.leading_unobserved_frames = batch.frames.len() as u32;
+        report.leading_unobserved_frames = frames.len() as u32;
         let reason = sets
             .iter()
             .find_map(|set| {

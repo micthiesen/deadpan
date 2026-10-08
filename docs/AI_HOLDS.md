@@ -307,8 +307,10 @@ inference. See [retained extension evidence](qualification/extension-evidence-20
 [Extension pixel checks](qualification/extension-pixels-2026-10-08.md) inspect
 every generated-native pair on the extension clock and both actual sampled
 joins against those retained inputs. Present opposite seams stay explicitly
-unconditioned. Directional face/mouth/region checks and complete provenance
-admission still precede extension Ready.
+unconditioned. [Directional geometry checks](qualification/extension-geometry-2026-10-08.md)
+now inspect faces and the selected region outward from the one retained anchor,
+and mouth motion over generated pictures chronologically. Lost tracking cannot
+erase measured rejection. Full provenance admission still precedes extension Ready.
 
 This is persistence groundwork. Native and headless execution still admit Bridge
 jobs only; extension Ready and acceptance remain closed until output qualification

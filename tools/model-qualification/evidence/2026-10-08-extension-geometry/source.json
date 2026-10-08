@@ -1,0 +1,105 @@
+{
+  "base_revision": "371eca2c5a44f2d0c80e576270ed6f284a35e3e4",
+  "files": {
+    "crates/deadpan-analysis/src/generated_extension.rs": {
+      "bytes": 5587,
+      "sha256": "bcd845e1b47be21253dcae653b2f6b7c94bb623ed3470e452f0343ccb5b8f786"
+    },
+    "crates/deadpan-analysis/src/generated_geometry.rs": {
+      "bytes": 54035,
+      "sha256": "423579df667b81c90395238924bd77cf484fd211a8511a708a3698ee6eee8035"
+    },
+    "crates/deadpan-analysis/src/generated_geometry/extension.rs": {
+      "bytes": 16183,
+      "sha256": "f3548a9e740ff4a68926a87c8b238eb43eab413c052447b0066e6e4945fb85a1"
+    },
+    "crates/deadpan-analysis/src/generated_geometry/extension/tests.rs": {
+      "bytes": 13177,
+      "sha256": "72de1c786756717f3973b7f3062a2240f13dee966419fd67798d1119637ab5dc"
+    },
+    "crates/deadpan-analysis/src/generated_region.rs": {
+      "bytes": 19803,
+      "sha256": "9307f2c62ebd76e8f1d3d4ea60b6fd9b0e4a8d227ce4bc51c464bcaf5ddae6b3"
+    },
+    "crates/deadpan-analysis/src/generated_region/extension.rs": {
+      "bytes": 11911,
+      "sha256": "11be2bf83af49b5bdd4a257e8e82b77020cc462ac567bca89ccbf64939e33d59"
+    },
+    "crates/deadpan-analysis/src/generated_region/extension/tests.rs": {
+      "bytes": 20686,
+      "sha256": "9866542285176ffd6e0f07083407106b04ecb3aba53d32d9aae6db4e0a59d6c2"
+    },
+    "crates/deadpan-analysis/src/lib.rs": {
+      "bytes": 877,
+      "sha256": "327c1be516addaef97b59655c66f923436f9efbb32d9f8ac73f9d623ea6a04d1"
+    },
+    "crates/deadpan-jobs/src/landmarks.rs": {
+      "bytes": 22360,
+      "sha256": "97dab0850db3a70bf92d260182339a95c0ccccf793bcb34a542843738fdac1e7"
+    },
+    "crates/deadpan-jobs/src/landmarks/tests.rs": {
+      "bytes": 20924,
+      "sha256": "ac9131884ce2001b6f2671fe73e8e76d3a68e7ef6011e8c0f01f88f3e82f103a"
+    },
+    "crates/deadpan-models/examples/qualify_extension_media.rs": {
+      "bytes": 8336,
+      "sha256": "af9884e80cdfa8b5a91520bb9738098dcff3e82d8abcc3cba0842e3086a133fb"
+    },
+    "crates/deadpan-models/src/conditioning_extension.rs": {
+      "bytes": 35180,
+      "sha256": "6832cbc319377293d6e328274d9329326c2ebfc55ed8cf863a82a5f50a27e601"
+    },
+    "crates/deadpan-models/src/conditioning_extension_tests.rs": {
+      "bytes": 45962,
+      "sha256": "5b137081033bf6f896ee763e9f55ed332082bf0a9ba2e75191b136631ae0acfd"
+    },
+    "crates/deadpan-models/src/conditioning_region.rs": {
+      "bytes": 10833,
+      "sha256": "43ca7032b9439405fbf587817871ef488c32fd4a4f1baae64726ada7c0e962a8"
+    },
+    "crates/deadpan-models/src/extension_geometry.rs": {
+      "bytes": 10069,
+      "sha256": "fc830bc2c26e0a0e40333e6671c1d4ce9472543d9a88ef0e35bb2910ead414e3"
+    },
+    "crates/deadpan-models/src/landmark_inspection.rs": {
+      "bytes": 14500,
+      "sha256": "5e4b898a24f1921ac7647f36f6aaf532ed8c3f4541bd0698065854329b2712e7"
+    },
+    "crates/deadpan-models/src/landmark_inspection/extension.rs": {
+      "bytes": 4379,
+      "sha256": "bde2dc8494574b46eb55bfa00ae21a6903242e6702a676d704a502d2ff4c501a"
+    },
+    "crates/deadpan-models/src/lib.rs": {
+      "bytes": 3032,
+      "sha256": "7f09d65ffe05cff2ad2890c613cb85d401c0d61105d1c826f41aafb9a9a814d0"
+    },
+    "native/deadpan-media-worker/tests/extension_quality.rs": {
+      "bytes": 15565,
+      "sha256": "fd1e60b28bbaea20e8f02c542f6e5729b520b171e14e8f43be9e87f82ca0fbf3"
+    },
+    "native/deadpan-media-worker/tests/extension_quality/fixture.rs": {
+      "bytes": 16743,
+      "sha256": "1251aa282621be8aaf2a75327588531e89306bc7395566811b5a128dea4222e8"
+    },
+    "native/deadpan-media-worker/tests/extension_quality/geometry.rs": {
+      "bytes": 10936,
+      "sha256": "f186174df5eb54d0d5f06fd9bde2d4eef468e20eebb65b457a3eaba6c3ac29c6"
+    },
+    "native/deadpan-media-worker/tests/extension_quality/geometry/selected.rs": {
+      "bytes": 16792,
+      "sha256": "11782a1b53118593e0fabd5d095faeb6b87cb686ef10fedeb43e796fa5d91564"
+    },
+    "native/deadpan-track/src/landmarks.rs": {
+      "bytes": 21940,
+      "sha256": "f46efbb2a00707e0b555aae5b872425b33960ecdb512e529ea919ab7bc5d050a"
+    },
+    "native/deadpan-track/src/landmarks/extension.rs": {
+      "bytes": 10202,
+      "sha256": "2d85b589471824fe1f2871fe91a82d9a8a77a1b34793b10939072aecab97d3ec"
+    },
+    "native/deadpan-track/tests/extension_landmarks.rs": {
+      "bytes": 15865,
+      "sha256": "0362729f8da326cd8c64dbb32f66f6912622279c05e774978ae0699f3f8409f3"
+    }
+  }
+}

@@ -14,6 +14,9 @@ use deadpan_models::{
 
 #[path = "extension_quality/fixture.rs"]
 mod fixture;
+#[cfg(target_os = "macos")]
+#[path = "extension_quality/geometry.rs"]
+mod geometry;
 use fixture::{
     CONTEXT, Fixture, GENERATED, HEIGHT, WIDTH, convert, plan, plan_with_dimensions,
     retained_inputs,

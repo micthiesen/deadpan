@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::NormalizedRect;
 
+pub mod extension;
+
 pub const RAW_REGION_SCHEMA_VERSION: u32 = 1;
 pub const PROFILE: &str = "deadpan-generated-region-1";
 pub const MAX_NATIVE_FRAMES: usize = 1025;

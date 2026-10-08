@@ -36,6 +36,11 @@ mod extension_pixels;
 pub use extension_pixels::{ExtensionPixelReport, inspect_extension_pixels};
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod extension_geometry;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use extension_geometry::{ExtensionGeometryChecks, inspect_extension_geometry};
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod geometry;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod landmark_inspection;

@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use deadpan_analysis::NormalizedRect;
+use deadpan_analysis::generated_extension::ExtensionCoverage;
 use deadpan_analysis::generated_geometry::{
     BoundaryObservations, FaceObservationSet, FrameObservation, RawLandmarkBatch,
 };
@@ -19,12 +20,16 @@ use deadpan_jobs::landmarks::{
     REGION_REQUEST_REVISION, REGION_TRACKING_LEVEL, REQUEST_REVISION, RegionRuntimeReport,
     RuntimeReport, VERSION, WorkerMessage, read_host, write_worker,
 };
-use deadpan_jobs::protocol::{AttemptId, Diagnostic, RequestId, WorkspaceArtifact, WorkspaceRef};
+use deadpan_jobs::protocol::{
+    AttemptId, CancellationToken, Diagnostic, RequestId, WorkspaceArtifact, WorkspaceRef,
+};
 use deadpan_source::{DecodeLimits, SourceDecoder};
 
 use super::{
     Interrupted, check_stream, decode_control, open_source, truncate, verify_source, write_output,
 };
+
+mod extension;
 
 struct Job {
     request: RequestId,
@@ -45,33 +50,98 @@ struct Request {
     picture_pts: Vec<i64>,
     boundaries: Option<Box<BoundaryInputs>>,
     region_seeds: Option<Box<RegionSeeds>>,
+    extension: Option<ExtensionRequest>,
     output_scope: WorkspaceRef,
     maximum_output_bytes: u64,
     deadline: Instant,
 }
 
+struct ExtensionRequest {
+    anchor: WorkspaceArtifact,
+    coverage: ExtensionCoverage,
+    region_seed: Option<NormalizedRect>,
+}
+
+impl Request {
+    fn from_message(message: HostMessage) -> Option<(Job, CancellationToken, Self)> {
+        match message {
+            HostMessage::InspectLandmarks {
+                request,
+                attempt,
+                cancellation_token,
+                source,
+                stream,
+                picture_pts,
+                boundaries,
+                region_seeds,
+                output_scope,
+                maximum_output_bytes,
+                timeout_millis,
+                ..
+            } => Some((
+                Job { request, attempt },
+                cancellation_token,
+                Self {
+                    source,
+                    stream,
+                    picture_pts,
+                    boundaries,
+                    region_seeds,
+                    extension: None,
+                    output_scope,
+                    maximum_output_bytes,
+                    deadline: Instant::now().checked_add(Duration::from_millis(timeout_millis))?,
+                },
+            )),
+            HostMessage::InspectExtensionLandmarks {
+                request,
+                attempt,
+                cancellation_token,
+                source,
+                stream,
+                picture_pts,
+                anchor,
+                coverage,
+                region_seed,
+                output_scope,
+                maximum_output_bytes,
+                timeout_millis,
+                ..
+            } => Some((
+                Job { request, attempt },
+                cancellation_token,
+                Self {
+                    source,
+                    stream,
+                    picture_pts,
+                    boundaries: None,
+                    region_seeds: None,
+                    extension: Some(ExtensionRequest {
+                        anchor,
+                        coverage,
+                        region_seed,
+                    }),
+                    output_scope,
+                    maximum_output_bytes,
+                    deadline: Instant::now().checked_add(Duration::from_millis(timeout_millis))?,
+                },
+            )),
+            HostMessage::Cancel { .. } => None,
+        }
+    }
+}
+
 pub(super) fn main() -> ExitCode {
     let mut input = io::stdin();
-    let Ok(Some(HostMessage::InspectLandmarks {
-        request,
-        attempt,
-        cancellation_token,
-        source,
-        stream,
-        picture_pts,
-        boundaries,
-        region_seeds,
-        output_scope,
-        maximum_output_bytes,
-        timeout_millis,
-        ..
-    })) = read_host(&mut input)
-    else {
+    let Ok(Some(message)) = read_host(&mut input) else {
+        return ExitCode::from(2);
+    };
+    let Some((job, cancellation_token, request)) = Request::from_message(message) else {
         return ExitCode::from(2);
     };
     let cancelled: &'static AtomicBool = Box::leak(Box::new(AtomicBool::new(false)));
-    let cancel_request = request.clone();
-    let cancel_attempt = attempt.clone();
+    let cancel_request = job.request.clone();
+    let cancel_attempt = job.attempt.clone();
     // EOF or malformed control means the host is gone. Only the exact
     // captured cancellation identity can request cooperative cancellation.
     std::thread::spawn(move || {
@@ -89,26 +159,17 @@ pub(super) fn main() -> ExitCode {
                     break;
                 }
                 HostMessage::Cancel { .. } => continue,
-                HostMessage::InspectLandmarks { .. } => break,
+                HostMessage::InspectLandmarks { .. }
+                | HostMessage::InspectExtensionLandmarks { .. } => break,
             }
         }
         cancelled.store(true, Ordering::Release);
     });
-    let job = Job { request, attempt };
-    let Some(deadline) = Instant::now().checked_add(Duration::from_millis(timeout_millis)) else {
-        return ExitCode::from(2);
+    let outcome = match &request.extension {
+        Some(extension) => extension::inspect(&job, &request, extension, cancelled),
+        None => inspect(&job, &request, cancelled),
     };
-    let request = Request {
-        source,
-        stream,
-        picture_pts,
-        boundaries,
-        region_seeds,
-        output_scope,
-        maximum_output_bytes,
-        deadline,
-    };
-    let message = match inspect(&job, &request, cancelled) {
+    let message = match outcome {
         Ok(message) => message,
         Err(Interrupted::Cancelled) => cancelled_message(&job),
         Err(Interrupted::Failed(_)) if cancelled.load(Ordering::Acquire) => cancelled_message(&job),

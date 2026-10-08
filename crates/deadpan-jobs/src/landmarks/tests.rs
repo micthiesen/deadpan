@@ -383,3 +383,244 @@ fn observations_bind_complete_native_pts_and_exact_optional_seeds() {
     batch.schema_version = 1;
     assert!(batch.validate(&[0, 42], None).is_err());
 }
+
+fn extension_request(direction: deadpan_core::ExtensionDirection) -> HostMessage {
+    let HostMessage::InspectLandmarks {
+        request,
+        attempt,
+        cancellation_token,
+        source,
+        stream,
+        picture_pts,
+        output_scope,
+        maximum_output_bytes,
+        timeout_millis,
+        ..
+    } = request()
+    else {
+        unreachable!()
+    };
+    HostMessage::InspectExtensionLandmarks {
+        protocol: VERSION,
+        request,
+        attempt,
+        cancellation_token,
+        source,
+        stream,
+        picture_pts,
+        anchor: artifact("input/anchor.png", 800),
+        coverage: match direction {
+            deadpan_core::ExtensionDirection::FromLeft => ExtensionCoverage {
+                direction,
+                start: 1,
+                end: 4,
+            },
+            deadpan_core::ExtensionDirection::FromRight => ExtensionCoverage {
+                direction,
+                start: 0,
+                end: 3,
+            },
+        },
+        region_seed: None,
+        output_scope,
+        maximum_output_bytes,
+        timeout_millis,
+    }
+}
+
+#[test]
+fn extension_requests_bound_native_index_generated_coverage_anchor_and_canonical_clock() {
+    use deadpan_core::ExtensionDirection::{FromLeft, FromRight};
+    for direction in [FromLeft, FromRight] {
+        let value = extension_request(direction);
+        value.validate().unwrap();
+        let mut bytes = Vec::new();
+        LandmarkProtocol::write_request(&mut bytes, &value).unwrap();
+        assert_eq!(
+            read_host(&mut bytes.as_slice()).unwrap(),
+            Some(value.clone())
+        );
+        for (path, replacement) in [
+            (
+                "anchor",
+                serde_json::to_value(artifact("input/source.mkv", 16000)).unwrap(),
+            ),
+            ("picture_pts", serde_json::json!([0, 42, 42, 125])),
+            (
+                "coverage",
+                serde_json::json!({"direction":"from_left","start":0,"end":4}),
+            ),
+            ("maximum_output_bytes", serde_json::json!(0)),
+            ("timeout_millis", serde_json::json!(0)),
+        ] {
+            let mut wire = serde_json::to_value(&value).unwrap();
+            wire[path] = replacement;
+            let changed: HostMessage = serde_json::from_value(wire).unwrap();
+            assert!(changed.validate().is_err(), "{path}");
+        }
+        for (field, value) in [
+            ("rotation_quarter_turns", 1),
+            ("time_base_den", 24),
+            ("width", MAX_DIMENSION + 1),
+        ] {
+            let mut wire = serde_json::to_value(extension_request(direction)).unwrap();
+            wire["stream"][field] = value.into();
+            assert!(
+                serde_json::from_value::<HostMessage>(wire)
+                    .unwrap()
+                    .validate()
+                    .is_err(),
+                "{field}"
+            );
+        }
+        let mut wire = serde_json::to_value(&value).unwrap();
+        wire.as_object_mut().unwrap().remove("region_seed");
+        assert!(serde_json::from_value::<HostMessage>(wire).is_err());
+        for field in ["boundaries", "region_seeds", "opposite"] {
+            let mut wire = serde_json::to_value(&value).unwrap();
+            wire[field] = serde_json::Value::Null;
+            assert!(
+                serde_json::from_value::<HostMessage>(wire).is_err(),
+                "{field}"
+            );
+        }
+    }
+    let mut maximum = extension_request(FromLeft);
+    if let HostMessage::InspectExtensionLandmarks {
+        picture_pts,
+        coverage,
+        ..
+    } = &mut maximum
+    {
+        *picture_pts = (0..MAX_EXTENSION_NATIVE_FRAMES as i64).collect();
+        coverage.start = MAX_EXTENSION_NATIVE_FRAMES as u32 - MAX_FRAMES as u32;
+        coverage.end = MAX_EXTENSION_NATIVE_FRAMES as u32;
+    }
+    maximum.validate().unwrap();
+    if let HostMessage::InspectExtensionLandmarks { coverage, .. } = &mut maximum {
+        coverage.start -= 1;
+    }
+    assert!(maximum.validate().is_err());
+}
+
+#[test]
+fn extension_completion_counts_are_captured_independently_of_generic_reply_bounds() {
+    let mut request = extension_request(deadpan_core::ExtensionDirection::FromRight);
+    let mut completion = completed();
+    if let WorkerMessage::Completed { analysed, .. } = &mut completion {
+        *analysed = 4;
+    }
+    let protocol = LandmarkProtocol::from_request(&request).unwrap();
+    assert_eq!(
+        protocol.classify(&completion).unwrap(),
+        ResponseKind::Completed
+    );
+    for (decoded, analysed) in [
+        (3, 4),
+        (4, 6),
+        (4, 3),
+        (MAX_EXTENSION_NATIVE_FRAMES as u32, 4),
+    ] {
+        let mut wrong = completion.clone();
+        if let WorkerMessage::Completed {
+            decoded: d,
+            analysed: a,
+            ..
+        } = &mut wrong
+        {
+            *d = decoded;
+            *a = analysed;
+        }
+        wrong.validate().unwrap();
+        assert!(protocol.classify(&wrong).is_err());
+    }
+    if let HostMessage::InspectExtensionLandmarks { region_seed, .. } = &mut request {
+        *region_seed = Some(seeds().left);
+    }
+    let seeded = LandmarkProtocol::from_request(&request).unwrap();
+    assert!(seeded.classify(&completion).is_err());
+    if let WorkerMessage::Completed {
+        region_runtime: runtime,
+        ..
+    } = &mut completion
+    {
+        *runtime = Some(region_runtime());
+    }
+    assert_eq!(
+        seeded.classify(&completion).unwrap(),
+        ResponseKind::Completed
+    );
+    assert!(protocol.classify(&completion).is_err());
+}
+
+#[test]
+fn extension_observations_bind_anchor_coverage_complete_pts_and_optional_seed() {
+    use deadpan_analysis::generated_geometry::{FaceObservationSet, FrameObservation};
+    use deadpan_analysis::generated_region::{RawRegionFrame, RegionObservation};
+    let coverage = ExtensionCoverage {
+        direction: deadpan_core::ExtensionDirection::FromRight,
+        start: 0,
+        end: 3,
+    };
+    let pts = [0, 42, 83, 125];
+    let empty = FaceObservationSet::Detected { faces: vec![] };
+    let seed = seeds().left;
+    let tracked = RegionObservation::Tracked {
+        region: seed,
+        confidence: 0.9,
+    };
+    let mut batch = InspectionExtensionObservations {
+        schema_version: EXTENSION_OBSERVATIONS_SCHEMA_VERSION,
+        landmarks: RawExtensionLandmarkBatch {
+            schema_version: 1,
+            coverage,
+            anchor: empty.clone(),
+            frames: (0..3)
+                .map(|ordinal| FrameObservation {
+                    ordinal,
+                    pts: pts[ordinal as usize],
+                    observation: empty.clone(),
+                })
+                .collect(),
+        },
+        region: Some(RawExtensionRegionBatch {
+            schema_version: 1,
+            coverage,
+            seed,
+            anchor: tracked,
+            frames: (0..3)
+                .map(|ordinal| RawRegionFrame {
+                    ordinal,
+                    pts: pts[ordinal as usize],
+                    observation: tracked,
+                })
+                .collect(),
+        }),
+    };
+    batch.validate(&pts, &coverage, Some(&seed)).unwrap();
+    assert!(
+        batch
+            .validate(&[0, 43, 83, 125], &coverage, Some(&seed))
+            .is_err()
+    );
+    assert!(batch.validate(&pts, &coverage, None).is_err());
+    assert!(
+        batch
+            .validate(&pts, &coverage, Some(&seeds().right))
+            .is_err()
+    );
+    let changed = ExtensionCoverage { end: 2, ..coverage };
+    assert!(batch.validate(&pts, &changed, Some(&seed)).is_err());
+    for field in ["anchor", "coverage"] {
+        let mut wire = serde_json::to_value(&batch).unwrap();
+        wire["landmarks"].as_object_mut().unwrap().remove(field);
+        assert!(serde_json::from_value::<InspectionExtensionObservations>(wire).is_err());
+    }
+    batch.landmarks.frames.reverse();
+    assert!(batch.validate(&pts, &coverage, Some(&seed)).is_err());
+    batch.landmarks.frames.reverse();
+    batch.region.as_mut().unwrap().frames.pop();
+    assert!(batch.validate(&pts, &coverage, Some(&seed)).is_err());
+    batch.region = None;
+    batch.validate(&pts, &coverage, None).unwrap();
+}

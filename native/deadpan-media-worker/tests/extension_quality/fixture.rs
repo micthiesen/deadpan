@@ -326,6 +326,20 @@ pub fn convert(native: &[u8], plan: &ExtensionGenerationPlan) -> CanonicalExtens
 /// The fixture encoder retains sole ownership of its unreaped process leader
 /// until checked group teardown, including diagnostic overflow and timeout.
 fn encode(directory: &Path, bytes: &[u8]) -> Vec<u8> {
+    encode_rgb(directory, bytes, WIDTH, HEIGHT, CONTEXT + GENERATED)
+}
+
+pub(super) fn encode_rgb(
+    directory: &Path,
+    bytes: &[u8],
+    width: u32,
+    height: u32,
+    frames: u32,
+) -> Vec<u8> {
+    assert_eq!(
+        bytes.len(),
+        (u64::from(width) * u64::from(height) * u64::from(frames) * 3) as usize
+    );
     let raw = directory.join("native.rgb");
     let movie = directory.join("native.mp4");
     fs::write(&raw, bytes).unwrap();
@@ -351,15 +365,13 @@ fn encode(directory: &Path, bytes: &[u8]) -> Vec<u8> {
                 "-pix_fmt",
                 "rgb24",
                 "-video_size",
-                "192x108",
-                "-framerate",
-                "24",
-                "-i",
             ])
+            .arg(format!("{width}x{height}"))
+            .args(["-framerate", "24", "-i"])
             .arg(&raw)
+            .arg("-frames:v")
+            .arg(frames.to_string())
             .args([
-                "-frames:v",
-                "17",
                 "-vf",
                 "setparams=range=full:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr",
                 "-c:v",
