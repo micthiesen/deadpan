@@ -921,6 +921,7 @@ dependencies = [
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-jobs",
+ "deadpan-lifecycle",
  "deadpan-media",
  "deadpan-models",
  "deadpan-native-process",
@@ -1078,6 +1079,16 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deadpan-lifecycle"
+version = "0.1.0"
+dependencies = [
+ "block2 0.6.2",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]

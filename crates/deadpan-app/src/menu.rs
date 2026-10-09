@@ -29,10 +29,9 @@ pub enum MenuCommand {
     Storage,
     Jobs,
     PortableCopy,
-    Quit,
 }
 
-const COMMANDS: [(&str, MenuCommand); 17] = [
+const COMMANDS: [(&str, MenuCommand); 16] = [
     ("deadpan.file.new", MenuCommand::New),
     ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
@@ -49,7 +48,6 @@ const COMMANDS: [(&str, MenuCommand); 17] = [
     ("deadpan.app.storage", MenuCommand::Storage),
     ("deadpan.app.jobs", MenuCommand::Jobs),
     ("deadpan.file.portable-copy", MenuCommand::PortableCopy),
-    ("deadpan.app.quit", MenuCommand::Quit),
 ];
 
 fn command(id: &MenuId) -> Option<MenuCommand> {
@@ -104,7 +102,6 @@ impl MenuState {
             | MenuCommand::Jobs => self.ready,
             MenuCommand::ViewEdit => self.ready && self.project,
             MenuCommand::Keys => self.help_allowed,
-            MenuCommand::Quit => true,
         }
     }
 }
@@ -166,9 +163,10 @@ impl MenuBar {
         // Background jobs of this project and app-wide ones.
         let jobs = item("deadpan.app.jobs", "Jobs…", None);
         let portable = item("deadpan.file.portable-copy", "Save Portable Copy…", None);
-        // Quit asks the window to close so unfinished project work completes
-        // through the app's ordinary close path.
-        let quit = item("deadpan.app.quit", "Quit Deadpan", command_key(Code::KeyQ));
+        // AppKit's terminate: reaches the same native confirmation as Dock
+        // Quit, outside the editor's mutable update callback. Its existing
+        // willTerminate handler then drains the app through on_exit.
+        let quit = PredefinedMenuItem::quit(Some("Quit Deadpan"));
 
         let app = Submenu::with_items(
             "Deadpan",
@@ -256,7 +254,6 @@ impl MenuBar {
                 (MenuCommand::Storage, storage),
                 (MenuCommand::Jobs, jobs),
                 (MenuCommand::PortableCopy, portable),
-                (MenuCommand::Quit, quit),
             ],
             import,
             state: None,
@@ -324,10 +321,7 @@ mod tests {
             ..state()
         };
         for (_, command) in COMMANDS {
-            assert_eq!(
-                busy.enabled(command),
-                matches!(command, MenuCommand::Keys | MenuCommand::Quit)
-            );
+            assert_eq!(busy.enabled(command), matches!(command, MenuCommand::Keys));
         }
         let gain = MenuState {
             ready: false,
@@ -335,7 +329,6 @@ mod tests {
             ..state()
         };
         assert!(!gain.enabled(MenuCommand::Keys));
-        assert!(gain.enabled(MenuCommand::Quit));
         let empty = MenuState {
             project: false,
             ..state()

@@ -187,19 +187,39 @@ See [storage-error qualification](qualification/storage-errors-2026-10-08.md).
 
 ## Closing with unsaved previews
 
-A window close, including ⌘Q from Deadpan's menu, with an open Camera, Gain,
+A window close with an open Camera, Gain,
 Room tone, Trim, Slip or Place slice draft, a typed command, an unfinished key
 sequence, a macro being recorded, a typed YouTube address or a running YouTube
 import shows **Close with unsaved previews?** listing them. **Keep editing**
 is focused (Escape); **Discard previews and close** closes. Saved edits need
 no prompt.
 
-A system Quit from the Dock or logout reaches the app as
-`applicationWillTerminate:`, which winit 0.30 cannot veto, so it closes without
-the prompt and discards open previews. Exit still waits up to three seconds
-for the project service to release the writer; only then does the journal
-record a clean exit, otherwise the next launch offers the project again and
-the writer marker reports an unclean close.
+Application Quit, including ⌘Q, now uses AppKit's `terminate:`. The narrow
+`deadpan-lifecycle` adapter adds `applicationShouldTerminate:` to the checked
+winit 0.30.13 delegate. Dock Quit and system termination use that delegate
+too. The adapter preserves the delegate, its ivars and its existing
+`applicationWillTerminate:` callback. An unexpected host or competing
+handler fails installation explicitly.
+
+When previews exist, a native **Quit with unsaved previews?** alert lists
+the same names as window close. Return defaults to **Keep editing**; Escape
+keeps them too. Tab and Shift-Tab visit the buttons even with macOS keyboard
+navigation disabled; Enter or Space activates the focused choice. A local
+event monitor handles only those keys in that exact alert, is removed before
+returning, and leaves Command/Control/Option combinations to the system.
+Repeated termination while asking, changed captures and missing adapter
+state cannot authorize discard. The editor publishes the complete preview
+list after each frame; the native callback never borrows the editor.
+
+The alert runs in AppKit's modal loop. Returning `NSTerminateLater` and
+waiting for egui input would be wrong because the pinned winit queues its
+handlers until the default run-loop mode resumes. After confirmation the
+existing shutdown callback cancels and drains workers. It waits up to three
+additional seconds for the project service to release the writer; only
+then does the journal record a clean exit. Otherwise the next launch offers
+the project again and the writer marker reports an unclean close. A window
+close retains its asynchronous service-drain path. See the
+[native Quit qualification](qualification/native-quit-2026-10-09.md).
 
 ## Replays
 
@@ -265,7 +285,10 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)
   is verified on detached private APFS volumes, including wrong-byte refusal
   and identical decoded pictures after relinking.
-- The Dock/system Quit path cannot show the close prompt (see above).
+- Dock-menu operation and physical logout remain owner checks. The native
+  AppKit Quit handler, release cancellation/discard and shutdown during real
+  encoding pass ([record](qualification/native-quit-2026-10-09.md)); exact
+  owner steps are in [To verify](REQUIREMENTS.md#to-verify-owner).
 - Physical power-loss behavior (owner: To verify). Process kills during
   commits, AI attempt states, backups, checkpoints, restores and migrations
   and proxy publication are covered ([process kills](BACKUPS.md#process-kills)).

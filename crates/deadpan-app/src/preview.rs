@@ -166,6 +166,8 @@ pub struct DeadpanApp {
     /// The native menu bar, present only for native launches.
     #[cfg(target_os = "macos")]
     menu: Option<crate::menu::MenuBar>,
+    #[cfg(target_os = "macos")]
+    quit_guard: Option<deadpan_lifecycle::QuitGuard>,
     target: Option<RegisteredTarget>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
@@ -367,6 +369,8 @@ impl DeadpanApp {
             )),
             #[cfg(target_os = "macos")]
             menu: None,
+            #[cfg(target_os = "macos")]
+            quit_guard: None,
             target: None,
             workspace: None,
             import: None,
@@ -3178,11 +3182,24 @@ impl DeadpanApp {
     /// tests keep the in-window File menu.
     #[cfg(target_os = "macos")]
     pub fn install_menu(&mut self, context: &egui::Context) -> Result<(), String> {
+        self.quit_guard = Some(deadpan_lifecycle::QuitGuard::install()?);
+        self.refresh_quit_previews();
         let repaint = context.clone();
         self.menu = Some(crate::menu::MenuBar::install(move || {
             repaint.request_repaint();
         })?);
         Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn refresh_quit_previews(&self) {
+        if let Some(guard) = &self.quit_guard {
+            if self.close_pending {
+                guard.update(&[]);
+            } else {
+                guard.update(&self.unsaved_previews());
+            }
+        }
     }
 
     /// Dispatch chosen menu commands that are currently allowed, then refresh
@@ -3217,7 +3234,6 @@ impl DeadpanApp {
                 MenuCommand::Storage => self.open_storage(context),
                 MenuCommand::Jobs => self.open_jobs(context),
                 MenuCommand::PortableCopy => self.start_portable_copy(context),
-                MenuCommand::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
             }
         }
         let state = self.menu_state(context);
@@ -5060,6 +5076,8 @@ impl eframe::App for DeadpanApp {
                 );
                 ui.disable();
             } else {
+                #[cfg(target_os = "macos")]
+                self.refresh_quit_previews();
                 context.send_viewport_cmd(egui::ViewportCommand::Close);
                 return;
             }
@@ -5280,6 +5298,8 @@ impl eframe::App for DeadpanApp {
                 || self.slip.is_some()
                 || self.trim.is_some(),
         );
+        #[cfg(target_os = "macos")]
+        self.refresh_quit_previews();
     }
     fn on_exit(&mut self) {
         self.invalidate_trim_media(true);

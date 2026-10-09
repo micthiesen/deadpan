@@ -48,6 +48,7 @@ tempfile = { workspace = true, optional = true }
 rusqlite = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
+deadpan-lifecycle.workspace = true
 # Validate system font faces with the same parser already used by epaint.
 skrifa = { version = "=0.44.0", default-features = false, features = ["std"] }
 rfd = { version = "=0.17.2", default-features = false }

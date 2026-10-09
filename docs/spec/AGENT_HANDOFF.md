@@ -17,9 +17,12 @@ typed confirmation. See its [qualification](../qualification/damaged-recovery-20
 Wrapped store I/O now keeps its typed classification through CLI, generation
 and Render errors. Storage alerts retain their affected session; a failed
 Open of another package leaves the current project saved. See
-[qualification](../qualification/storage-errors-2026-10-08.md). DP-01 remains
-partial while the [system Quit limitation](../RECOVERY.md#closing-with-unsaved-previews)
-and final recovery acceptance are addressed.
+[qualification](../qualification/storage-errors-2026-10-08.md).
+Native AppKit Quit now confirms unsaved previews while retaining the pinned
+winit delegate and shutdown callback. Release native cancellation/discard,
+keyboard focus and real encoder shutdown pass; Dock UI and physical logout
+remain owner checks ([qualification](../qualification/native-quit-2026-10-09.md)).
+DP-01 remains partial pending final recovery acceptance.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening
