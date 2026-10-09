@@ -21,6 +21,7 @@ the native app; headless commands keep their documented contracts.
 | Missing media placeholder and relink (20.3, 26.3) | **New** native flow | Degraded open with a report, `:relink`, managed restore and linked relink verified against content identity. |
 | Open newer unsupported schema read-only with an explanation (20.4) | **Implemented** | Writers refuse a newer schema as `SchemaNewer`; read-only opens view it without writing (header **Read-only**, edits refused with the reason); `project view`. Older development schemas still refuse. See [newer packages](BACKUPS.md#packages-a-newer-deadpan-saved). |
 | Rotating consistent backups, including before migration (20.4) | **Implemented** | Verified backups every 15 minutes while editing, on close, on request, before every restore and before a release migration, rotated hourly/daily/weekly within a budget; restore from the Storage panel (`:backups`) and `project restore`. See [backups](BACKUPS.md). |
+| Native restore when the database cannot open (20.4) | Implemented | Failed Open offers listed backups; inspection and separate confirmed replacement retain damaged files and open a new session. An unreadable manifest requires a typed project identity. Changed files or sessions refuse. See [damaged recovery](BACKUPS.md#a-database-that-no-longer-opens) and its [qualification](qualification/damaged-recovery-2026-10-08.md). |
 | Release migration policy (Gate F/G) | Policy and hook | [Release migration policy](BACKUPS.md#release-migration-policy): back up, migrate a copy, validate, promote atomically; exercised by a synthetic step and process kills. The production chain upgrades schema 66 to 67; [development formats](DEVELOPMENT_FORMATS.md) still refuse schemas 1-65. |
 
 ## Detecting an unclean exit
@@ -201,6 +202,11 @@ production router, service and Metal picture path:
   focused button, reopens the report with `:recovery` and dismisses it.
 - `relink`: deletes the managed Original copy, reopens to the degraded report,
   refuses a different file and restores the identical one with `:relink`.
+- `damaged-recovery`: corrupts a closed disposable database, opens the native
+  recovery offer, checks and restores a backup with keyboard controls, and
+  repeats with an unreadable manifest requiring typed identity. It checks
+  IME protection, retained files, exact revision, visible controls and focus
+  return. Only the native package picker is scripted.
 - `storage-failure`: refuses one split as a full disk would (the only injected
   failure; real ENOSPC is qualified by the tests above), checks the message,
   alert and **Not saved** header through navigation, saves and clears it,
@@ -246,8 +252,6 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)
   is verified on detached private APFS volumes, including wrong-byte refusal
   and identical decoded pictures after relinking.
-- Native backup selection when a damaged database cannot open. The current
-  recovery entry point is `project restore --damaged` ([backups](BACKUPS.md#a-database-that-no-longer-opens)).
 - Store errors wrapped in other error types keep SQLite's raw wording; the
   alert still recognizes SQLite's disk-full and read-only messages but not
   other raw I/O wording. Render workflow journal failures are classified only

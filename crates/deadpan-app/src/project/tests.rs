@@ -12,6 +12,7 @@ use super::*;
 
 mod backups;
 mod corrections;
+mod damaged;
 mod delete;
 mod delete_range;
 mod edited_slice;

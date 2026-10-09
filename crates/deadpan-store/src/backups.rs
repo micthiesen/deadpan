@@ -45,6 +45,9 @@ use serde::Serialize;
 
 use crate::{ProjectStore, StoreError, schema, validation};
 
+mod damaged;
+pub use damaged::{DamagedRecovery, inspect_damaged_database, restore_damaged_database};
+
 /// The package folder holding backups.
 pub const DIRECTORY: &str = "Backups";
 const LOCK: &str = ".backups.lock";
@@ -257,6 +260,14 @@ pub enum BackupError {
         #[source]
         source: Box<StoreError>,
     },
+    #[error(
+        "Recovery stopped while moving the damaged database: {source}. Previous files are retained in {quarantine} and the project folder. Check the backup again before retrying"
+    )]
+    DamagedRecoveryInterrupted {
+        quarantine: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
     #[error(transparent)]
     Store(#[from] StoreError),
     #[error(transparent)]
@@ -278,6 +289,7 @@ impl BackupError {
             Self::Busy => "ProjectBusy",
             Self::Space { .. } => "DiskFull",
             Self::RestoredButUnverified { .. } => "BackupRestoredUnverified",
+            Self::DamagedRecoveryInterrupted { .. } => "DamagedRecoveryInterrupted",
             Self::Store(error) => error.code(),
             Self::Database(rusqlite::Error::SqliteFailure(error, _)) => match error.code {
                 rusqlite::ErrorCode::DiskFull => "DiskFull",
@@ -791,6 +803,9 @@ pub struct DamagedReplacement {
     pub restored: BackupPreview,
     /// Where the damaged database and its WAL files were kept, untouched.
     pub quarantine: PathBuf,
+    /// The replacement is visible, but a final directory sync failed. Do not
+    /// report it as an unapplied restore or claim crash durability.
+    pub warnings: Vec<String>,
 }
 
 /// Replace a database that no longer opens with a verified backup, without
@@ -813,8 +828,20 @@ pub fn replace_damaged_database(
     id: &str,
     force_project: Option<&ProjectId>,
 ) -> Result<DamagedReplacement, BackupError> {
+    replace_damaged_database_captured(package, id, force_project, None)
+}
+
+fn replace_damaged_database_captured(
+    package: &Path,
+    id: &str,
+    force_project: Option<&ProjectId>,
+    captured: Option<&DamagedRecovery>,
+) -> Result<DamagedReplacement, BackupError> {
     let package = package.canonicalize()?;
     let _writer = crate::acquire_lock(&package)?;
+    // A read-only backup can outlive its writer. Do not let that old copy
+    // publish after replacement and appear to be the recovered state.
+    let _active_backups = exclude_backups(&package, Duration::from_secs(30))?;
     let folder = directory(&package);
     let lock = lock_file(&folder)?;
     lock.lock_shared()?;
@@ -822,18 +849,15 @@ pub fn replace_damaged_database(
         .into_iter()
         .find(|backup| backup.id == id)
         .ok_or_else(|| BackupError::NotFound(id.to_owned()))?;
+    if let Some(captured) = captured {
+        captured.check(&package, &info)?;
+    }
     let backup = open_backup(&info.path)?;
     let verified = verify_connection(&backup)?;
     drop(backup);
-    #[derive(serde::Deserialize)]
-    struct Manifest {
-        project_id: String,
-    }
-    let manifest = fs::read(package.join("manifest.json"))
-        .ok()
-        .and_then(|bytes| serde_json::from_slice::<Manifest>(&bytes).ok());
+    let manifest = damaged::manifest_project(&package);
     match (manifest, force_project) {
-        (Some(manifest), _) if manifest.project_id != verified.project.as_str() => {
+        (Some(project), _) if project != verified.project => {
             return Err(BackupError::OtherProject);
         }
         (Some(_), _) => {}
@@ -857,30 +881,50 @@ pub fn replace_damaged_database(
             "the copy differs from the backup".into(),
         ));
     }
+    if let Some(captured) = captured {
+        captured.check(&package, &info)?;
+    }
     drop(lock);
     let quarantine = package.join(format!(
         ".damaged-project-{}",
         uuid::Uuid::new_v4().simple()
     ));
     fs::create_dir(&quarantine)?;
-    for name in ["project.sqlite", "project.sqlite-wal", "project.sqlite-shm"] {
-        let path = package.join(name);
-        if fs::symlink_metadata(&path).is_ok() {
-            fs::rename(&path, quarantine.join(name))?;
-            if name == "project.sqlite" {
-                crate::failpoint("damaged-after-main-moved");
+    let preserve_and_install = || -> std::io::Result<()> {
+        for name in damaged::DATABASE_FILES {
+            let path = package.join(name);
+            match fs::symlink_metadata(&path) {
+                Ok(_) => {
+                    fs::rename(&path, quarantine.join(name))?;
+                    if name == "project.sqlite" {
+                        crate::failpoint("damaged-after-main-moved");
+                    }
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error),
             }
         }
-    }
-    File::open(&package)?.sync_all()?;
-    crate::failpoint("damaged-after-quarantine");
+        File::open(&quarantine)?.sync_all()?;
+        File::open(&package)?.sync_all()?;
+        crate::failpoint("damaged-after-quarantine");
+        fs::rename(&staged.path, package.join("project.sqlite"))
+    };
+    preserve_and_install().map_err(|source| BackupError::DamagedRecoveryInterrupted {
+        quarantine: quarantine.clone(),
+        source,
+    })?;
     let mut staged = staged;
-    fs::rename(&staged.path, package.join("project.sqlite"))?;
     staged.published = true;
-    File::open(&package)?.sync_all()?;
+    let warnings = File::open(&package)
+        .and_then(|folder| folder.sync_all())
+        .err()
+        .map(|error| format!("The backup was installed, but syncing the project folder failed: {error}. The replacement may not survive a power failure."))
+        .into_iter()
+        .collect();
     Ok(DamagedReplacement {
         restored,
         quarantine,
+        warnings,
     })
 }
 

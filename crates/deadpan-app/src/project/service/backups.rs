@@ -654,7 +654,12 @@ impl Service {
     /// The session is about to close or be replaced: back up saved edits the
     /// latest backup does not hold, on a detached thread.
     pub(super) fn backup_before_session_change(&mut self) {
-        let Some((session, path, version)) = self.backup_target() else {
+        let target = self.backup_target();
+        // Closing the writer must also release its idle read connection. A
+        // retained monitor pins the old WAL after Close and can survive a
+        // subsequent damaged-database replacement at the same path.
+        self.backups.monitor = None;
+        let Some((session, path, version)) = target else {
             return;
         };
         if self.backup_covered(session, version) {

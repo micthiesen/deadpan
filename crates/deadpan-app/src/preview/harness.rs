@@ -20,6 +20,7 @@ mod captions;
 mod corrections;
 mod creative_dot;
 mod cutaway;
+mod damaged;
 mod delete_range;
 mod diagnostics;
 mod edit_latency;

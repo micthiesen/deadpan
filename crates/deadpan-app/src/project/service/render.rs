@@ -41,6 +41,10 @@ impl Service {
         if self.refuse_read_only(&request) {
             return true;
         }
+        if let ProjectRequest::Damaged(request) = request {
+            self.damaged_command(request);
+            return true;
+        }
         if let ProjectRequest::Backup(request) = request {
             self.backup_command(request);
             return true;

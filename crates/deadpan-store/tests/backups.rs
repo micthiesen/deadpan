@@ -464,6 +464,91 @@ fn a_newer_document_this_build_cannot_read_is_refused_with_an_explanation() -> R
 use std::os::unix::fs::PermissionsExt;
 
 #[test]
+fn inspected_damaged_recovery_keeps_every_old_database_sidecar() -> Result {
+    let (_scratch, path, mut store) = project("captured-damage")?;
+    let saved = insert(&mut store, "saved")?;
+    let chosen = backup(&path, BackupReason::Manual)?;
+    drop(store);
+    fs::write(path.join("project.sqlite"), b"damaged database")?;
+    fs::write(
+        path.join("project.sqlite-journal"),
+        b"retained rollback journal",
+    )?;
+    let captured = backups::inspect_damaged_database(&path, &chosen.backup.id)?;
+    assert_eq!(captured.preview.revision_id, saved);
+    assert!(!captured.requires_project_confirmation);
+    let replaced = backups::restore_damaged_database(&captured, None)?;
+    assert_eq!(
+        fs::read(replaced.quarantine.join("project.sqlite"))?,
+        b"damaged database"
+    );
+    assert_eq!(
+        fs::read(replaced.quarantine.join("project.sqlite-journal"))?,
+        b"retained rollback journal"
+    );
+    assert!(!path.join("project.sqlite-journal").exists());
+    let reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(reopened.head_revision()?, saved);
+    reopened.validate_full()?;
+    Ok(())
+}
+
+#[test]
+fn inspected_recovery_refuses_changed_project_backup_and_readable_database() -> Result {
+    let (_scratch, path, store) = project("recovery-changed")?;
+    let chosen = backup(&path, BackupReason::Manual)?;
+    drop(store);
+    assert!(backups::inspect_damaged_database(&path, &chosen.backup.id).is_err());
+    fs::write(path.join("project.sqlite"), b"broken")?;
+    let captured = backups::inspect_damaged_database(&path, &chosen.backup.id)?;
+    fs::write(path.join("project.sqlite"), b"different broken database")?;
+    assert!(
+        backups::restore_damaged_database(&captured, None)
+            .unwrap_err()
+            .to_string()
+            .contains("changed after inspection")
+    );
+    assert_eq!(
+        fs::read(path.join("project.sqlite"))?,
+        b"different broken database"
+    );
+    let captured = backups::inspect_damaged_database(&path, &chosen.backup.id)?;
+    // Even replacing a backup with identical bytes invalidates that inspection.
+    let bytes = fs::read(&chosen.backup.path)?;
+    let other = chosen.backup.path.with_extension("replacement");
+    fs::write(&other, bytes)?;
+    fs::rename(&other, &chosen.backup.path)?;
+    assert!(
+        backups::restore_damaged_database(&captured, None)
+            .unwrap_err()
+            .to_string()
+            .contains("changed after inspection")
+    );
+    assert_eq!(
+        fs::read(path.join("project.sqlite"))?,
+        b"different broken database"
+    );
+    Ok(())
+}
+
+#[test]
+fn inspected_recovery_requires_explicit_project_identity_for_an_unreadable_manifest() -> Result {
+    let (_scratch, path, store) = project("recovery-identity")?;
+    let chosen = backup(&path, BackupReason::Manual)?;
+    drop(store);
+    fs::write(path.join("project.sqlite"), b"broken")?;
+    fs::write(path.join("manifest.json"), b"unreadable manifest")?;
+    let captured = backups::inspect_damaged_database(&path, &chosen.backup.id)?;
+    assert!(captured.requires_project_confirmation);
+    assert!(backups::restore_damaged_database(&captured, None).is_err());
+    assert!(backups::restore_damaged_database(&captured, Some(&ProjectId::new("wrong")?)).is_err());
+    assert_eq!(fs::read(path.join("project.sqlite"))?, b"broken");
+    backups::restore_damaged_database(&captured, Some(&ProjectId::new("recovery-identity")?))?;
+    ProjectStore::open(&path, AccessMode::ReadWrite)?.validate_full()?;
+    Ok(())
+}
+
+#[test]
 fn a_database_that_no_longer_opens_is_replaced_by_a_verified_backup() -> Result {
     let (_scratch, path, mut store) = project("damaged")?;
     let saved = insert(&mut store, "r1")?;

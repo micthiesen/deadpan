@@ -13,6 +13,7 @@ impl Service {
         if matches!(
             request,
             ProjectRequest::Open(_)
+                | ProjectRequest::Damaged(_)
                 | ProjectRequest::Close
                 | ProjectRequest::CreateFromSource { .. }
                 | ProjectRequest::CancelImport
@@ -239,7 +240,8 @@ impl Service {
             | ProjectRequest::PrepareTrim(_)
             | ProjectRequest::AbandonSplice(_)
             | ProjectRequest::AbandonSlip(_)
-            | ProjectRequest::AbandonTrim(_) => unreachable!("read-only operation was admitted"),
+            | ProjectRequest::AbandonTrim(_)
+            | ProjectRequest::Damaged(_) => unreachable!("read-only operation was admitted"),
             #[cfg(test)]
             ProjectRequest::Create(_) => {}
         }

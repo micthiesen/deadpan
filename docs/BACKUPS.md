@@ -190,19 +190,44 @@ a reopen; the error names the `before-restore` backup.
 
 Restoring through the writer needs a database that opens. For one that does
 not, `project restore <p> <id> --damaged` (`replace_damaged_database`) takes
-the package's writer lock and the backups lock without reading the damaged
+the package's writer lock, waits for active backup copies to finish, and
+takes the backups lock without reading the damaged
 database, verifies the backup, and requires it to belong to the project that
 `manifest.json` names (when the manifest is unreadable,
 `--force-project <id>` must name the backup's project). It copies the backup
 to a hidden file in the package and verifies that copy again, moves
-`project.sqlite` and then its WAL files together into a new
+`project.sqlite` and then its WAL, SHM and rollback-journal files into a new
 `.damaged-project-<uuid>/` folder, and renames the copy into place. Nothing
 is deleted, and a failed copy leaves no temporary file. A crash after the
 first move leaves no `project.sqlite`, so opening fails loudly rather than
 reading a main file without its WAL; running the command again moves any WAL
 still beside it into its own quarantine before installing. Identities the
 damaged database issued cannot be carried forward (it cannot be read).
-Open the project normally afterwards. The app does not offer this yet.
+Open the project normally afterwards. A failure during the moves identifies
+the quarantine and leaves the backup available for a fresh inspection and
+retry. A failed final directory sync returns an installed replacement with
+a warning about uncertain crash durability, rather than an unapplied error.
+
+The native app offers **Recover a project from backup** after a failed Open
+when the package has listed backups. The current workspace stays open until
+the recovered project can be installed. Tab/Shift-Tab select controls and
+Enter activates them. **Check selected backup** fully verifies the chosen
+backup off the UI thread and shows its revision, beat count, duration and
+edit count. **Restore checked backup** is a separate explicit action. An
+unreadable manifest requires typing the displayed project ID exactly; the
+app never infers that confirmation from the selected backup. IME confirmation
+cannot activate restoration or close the dialog.
+
+Inspection captures the package identity and main database, sidecars,
+manifest and selected backup file identities, sizes and nanosecond change
+times. Restoration rechecks them under the writer/backup locks and refuses
+changes. Another Open or an edit in the current session also invalidates
+the pending recovery. A package that now opens must use ordinary restore,
+which first saves a safety backup. Closing a session releases its idle
+backup monitor as well as the writer. After replacement, the dialog names
+the retained quarantine even if opening the recovered project fails; it
+does not offer another restore as though nothing happened. See the
+[native recovery qualification](qualification/damaged-recovery-2026-10-08.md).
 
 The app refuses a restore while
 an import, relink, render, AI pause or tracking job runs, then opens the

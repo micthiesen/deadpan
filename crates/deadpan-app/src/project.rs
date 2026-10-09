@@ -20,6 +20,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 use crate::library::ProjectLibrary;
 
 pub mod backups;
+pub mod damaged;
 pub mod gain;
 pub mod generation;
 pub mod macros;
@@ -405,6 +406,7 @@ pub(crate) struct ContinuationKey {
     captured_original: Option<slice::CopyId>,
     cut_slice: Option<slice::CopyId>,
     take: Option<(u64, u64)>,
+    damaged: Option<(u64, Option<u64>)>,
 }
 
 impl ContinuationKey {
@@ -420,6 +422,7 @@ impl ContinuationKey {
             || fresh(&self.captured_original, &delivered.captured_original)
             || fresh(&self.cut_slice, &delivered.cut_slice)
             || fresh(&self.take, &delivered.take)
+            || fresh(&self.damaged, &delivered.damaged)
     }
 }
 
@@ -431,6 +434,12 @@ impl ProjectUpdate {
                 .takes
                 .as_ref()
                 .map(|update| (update.session, update.ticket)),
+            damaged: self.damaged.as_ref().map(|update| {
+                (
+                    update.offer.id,
+                    update.reply.as_ref().map(|reply| reply.ticket),
+                )
+            }),
             macros: self.macros.as_ref().map(|update| update.id.clone()),
             captured_slice: self.captured_slice.as_ref().map(|update| update.id.clone()),
             captured_original: self
@@ -497,6 +506,7 @@ pub struct ProjectUpdate {
     pub render_history: Option<render_history::Update>,
     pub takes: Option<takes::Update>,
     pub take_catalog: Option<deadpan_store::takes::TakeCatalog>,
+    pub damaged: Option<damaged::Update>,
     /// Background transcript saves report here, never through the editor's
     /// command error, which the next dispatch clears.
     pub transcript_save: Option<TranscriptSave>,
@@ -975,6 +985,7 @@ pub enum ProjectRequest {
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
     Takes(takes::Request),
+    Damaged(damaged::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
         path: PathBuf,

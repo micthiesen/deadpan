@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T05:23:26Z",
+  "updated_at": "2026-10-09T06:12:49Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing native damaged-project recovery and remaining source-format requirements.",
+  "focus": "Completing storage-failure classification and remaining source-format requirements.",
   "features": [
     {
       "id": "editing",
@@ -25,7 +25,7 @@
       "requirements": [
         "DP-01"
       ],
-      "note": "Named takes, durable history, offline relinking and process-kill recovery work. Native recovery of an unreadable database and wrapped I/O error handling remain."
+      "note": "Named takes, native damaged-database recovery, durable history, offline relinking and process-kill recovery work. Wrapped I/O error handling remains."
     },
     {
       "id": "picture",

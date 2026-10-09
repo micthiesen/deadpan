@@ -10,8 +10,11 @@ restore proofs; core format remains 47. Catalog changes preserve the current
 edit and Redo, and opening a take is one reversible edit, including accepted
 providers without restarting old AI work. The
 [qualification](../qualification/named-takes-2026-10-08.md) records completed
-checks and pending verification. DP-01 remains partial: native backup recovery
-when a database cannot open and wrapped raw I/O failure classification remain.
+checks. Native failed-Open backup recovery now verifies and restores an
+unreadable database through separate keyboard actions, retains its old files
+and refuses changed captures; unreadable manifest identity needs explicit
+typed confirmation. See its [qualification](../qualification/damaged-recovery-2026-10-08.md).
+DP-01 remains partial: wrapped raw I/O failure classification remains.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

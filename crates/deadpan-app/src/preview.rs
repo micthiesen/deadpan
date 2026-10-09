@@ -27,6 +27,7 @@ mod accessibility;
 mod ai_pause;
 mod backups;
 mod camera;
+mod damaged;
 mod takes;
 #[cfg(test)]
 pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
@@ -282,6 +283,7 @@ pub struct DeadpanApp {
     /// `:storage`: project and cache usage, cleanup and portable copies.
     storage: storage::State,
     takes: takes::State,
+    damaged: damaged::State,
     /// `:jobs`: background jobs, queued state, cancel and interrupted AI.
     jobs: jobs::State,
     /// The user's gag presets, shared by every project.
@@ -465,6 +467,7 @@ impl DeadpanApp {
             diagnostics: diagnostics::State::default(),
             storage: storage::State::default(),
             takes: takes::State::default(),
+            damaged: damaged::State::default(),
             jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             bundled_sounds: crate::keymap_file::application_support_directory()
@@ -897,6 +900,7 @@ impl DeadpanApp {
             self.render_job = update.render;
             self.receive_render_history(update.render_history);
             self.receive_takes(update.takes, update.take_catalog, update.error.as_deref());
+            self.receive_damaged(update.damaged);
             self.receive_recovery(
                 update.opened.take(),
                 update.storage.take(),
@@ -2337,6 +2341,9 @@ impl DeadpanApp {
         }
         // A recovery or close question owns input above every draft, so its
         // Escape can never cancel the draft it is asking about.
+        if self.damaged_keyboard(context) {
+            return None;
+        }
         if self.recovery_keyboard(context) {
             return None;
         }
@@ -5095,7 +5102,7 @@ impl eframe::App for DeadpanApp {
             self.selected_source.clone(),
             self.selected_sound.clone(),
         );
-        if self.render.blocking() || self.marks.open || self.takes.open {
+        if self.render.blocking() || self.marks.open || self.takes.open || self.damaged.open() {
             ui.disable();
             ui.set_opacity(1.0);
         }
@@ -5163,6 +5170,7 @@ impl eframe::App for DeadpanApp {
         }
         // Drawn even over Trim, whose close question it may be asking.
         self.recovery_windows(&context);
+        self.damaged_window(&context);
         if input_scope
             != (
                 self.pane,

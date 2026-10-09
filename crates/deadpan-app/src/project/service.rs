@@ -30,6 +30,7 @@ type Result<T> = std::result::Result<T, String>;
 
 mod backups;
 mod cut_slice;
+mod damaged;
 mod delete_range;
 pub(super) mod edit_slice;
 mod gain;
@@ -130,6 +131,7 @@ struct Service {
     render_history: Option<super::render_history::Update>,
     takes: Option<super::takes::Update>,
     take_catalog: Option<deadpan_store::takes::TakeCatalog>,
+    damaged: damaged::State,
     pending_session_change: Option<render::PendingSessionChange>,
     host: Option<headless::Host>,
     /// Owners a restore replaced, kept only to write their admitted replies.
@@ -225,6 +227,7 @@ pub(super) fn run(
         render_history: None,
         takes: None,
         take_catalog: None,
+        damaged: damaged::State::default(),
         pending_session_change: None,
         host: None,
         retired_hosts: Vec::new(),
@@ -444,6 +447,7 @@ impl Service {
             render_history: self.render_history.clone(),
             takes: self.takes.clone(),
             take_catalog: self.take_catalog.clone(),
+            damaged: self.damaged.update.clone(),
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
             shot_save: self.shot_save.clone(),
@@ -631,6 +635,9 @@ impl Service {
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
             ProjectRequest::Takes(_) => unreachable!("takes use independent feedback"),
+            ProjectRequest::Damaged(_) => {
+                unreachable!("damaged recovery uses independent feedback")
+            }
             ProjectRequest::Backup(request) => {
                 // Normally answered before dispatch; kept for direct callers.
                 self.backup_command(request);
@@ -1481,7 +1488,24 @@ impl Service {
         Ok(())
     }
 
-    fn prepare_open(&self, path: PathBuf, create: bool) -> Result<Option<render::PreparedOpen>> {
+    fn prepare_open(
+        &mut self,
+        path: PathBuf,
+        create: bool,
+    ) -> Result<Option<render::PreparedOpen>> {
+        self.damaged.clear();
+        let result = self.prepare_open_inner(path.clone(), create);
+        if !create && let Err(error) = &result {
+            self.offer_damaged_open(&path, error);
+        }
+        result
+    }
+
+    fn prepare_open_inner(
+        &self,
+        path: PathBuf,
+        create: bool,
+    ) -> Result<Option<render::PreparedOpen>> {
         if !create
             && let Some(current) = &self.workspace
             && path.canonicalize().ok().as_ref() == Some(&current.path)
