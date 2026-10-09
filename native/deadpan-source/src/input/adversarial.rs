@@ -72,7 +72,7 @@ fn limits() -> InputLimits {
 
 #[test]
 fn video_container_admission_survives_mutation() {
-    let seeds = fixtures(&["mp4", "mkv", "webm"]);
+    let seeds = fixtures(&["mp4", "mov", "mkv", "webm"]);
     assert!(seeds.len() >= 10, "fixture seeds missing");
     let report = fuzz(
         Target::bytes("source-container-video").iterations(1500),

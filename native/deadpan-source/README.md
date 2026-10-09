@@ -72,7 +72,7 @@ I/O and around native work. These are cooperative deadlines: an individual
 FFmpeg codec operation is not preempted. This adapter does not establish an OS
 process memory/CPU limit and must stay off UI/audio callback threads.
 
-MP4/MOV admits one qualified H.264, HEVC or VP9 video stream and up to 32
+MP4/MOV admits one qualified H.264, HEVC, VP9 or ProRes 422 video stream and up to 32
 ignored AAC streams. Finite Matroska admits one FFV1 or SDR VP9 video track;
 WebM admits one SDR VP9 video track. Both admit up to 32 qualified Opus tracks,
 including audio-only files through the separate audio decoder.
@@ -81,14 +81,23 @@ retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
 `AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
-codec allowlist contains only `h264,ffv1,hevc,vp9`; pinned FFmpeg propagates that allowlist
+codec allowlist contains only `h264,ffv1,hevc,vp9,prores`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC/Opus before opening their decoders.
 Audio-bearing fixtures therefore emit expected audio-not-on-whitelist diagnostics.
-The measured fixtures are H.264/HEVC/VP9 in MP4, FFV1/VP9 in Matroska and
+The measured fixtures are H.264/HEVC/VP9 in MP4, ProRes 422 in QuickTime, FFV1/VP9 in Matroska and
 VP9 with mono/stereo Opus in WebM; this is not
 qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. The picture decoder never decodes audio
 or uses VideoToolbox acceleration.
+
+ProRes 422 Proxy/LT/Standard/HQ has a packet guard before FFmpeg submission:
+exact frame/picture/slice lengths, bounded stable raster, explicit SDR color,
+no alpha, consistent field order and container rate/aspect hints. Ten-bit 422
+uses the existing direct RGBA64 converter; progressive and both interlaced
+orders retain exact source time. Closed QuickTime AAC wrappers preserve audio.
+The fixtures include Apple's VideoToolbox HQ output, its bounded redundant
+ImageDescription, and its initially unspecified frame-rate hint. See
+[ProRes qualification](../../docs/qualification/prores-sources-2026-10-09.md).
 
 VP9 MP4 profile 0/eight-bit and profile 2/ten-bit 4:2:0 preserve explicit SDR
 color, left/top-left chroma siting and exact sample clocks. Bounded `vpcC`
@@ -112,8 +121,8 @@ H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit
 `next_rgba16` and ten-bit `next_yuv420p10` outputs are described in
 [source admission](../../docs/SOURCE_ADMISSION.md#hdr-sources) and tested by
 `tests/hdr_decode.rs`. SDR also admits HEVC Main/Main10 eight/ten-bit and
-H.264 High10 ten-bit 4:2:0 with RGBA64 picture output, tested by
-`tests/sdr_hevc.rs`. Other admitted SDR inputs use eight-bit three-component
+H.264 High10 ten-bit 4:2:0 and ProRes ten-bit 4:2:2 with RGBA64 picture output,
+tested by `tests/sdr_hevc.rs` and `tests/prores.rs`. Other admitted SDR inputs use eight-bit three-component
 pixels with explicit
 range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,

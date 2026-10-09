@@ -526,6 +526,40 @@ fn webm_originals_render_the_measured_clock_and_sample_aspect() -> Result {
 }
 
 #[test]
+fn prores_originals_render_ten_bit_422_vfr_aspect_and_both_field_orders() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("ProRes Render evidence: {}", root.display());
+    for name in [
+        "proxy",
+        "lt",
+        "standard",
+        "hq",
+        "anamorphic",
+        "vfr",
+        "tff",
+        "bff",
+        "apple-hq",
+    ] {
+        let fixture = recipes::prores_original(&root.join(name), name)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(report["output_color"]["output"], "sdr_rec709");
+        assert_eq!(report["output_color"]["hdr_sources"], false);
+        assert_eq!(report["movie"]["audio"]["presented_end"], 19219);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 fn opus_webm_originals_render_with_exact_source_samples_and_verified_encoded_audio() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("Opus Render evidence: {}", root.display());

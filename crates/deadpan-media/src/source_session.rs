@@ -1175,11 +1175,16 @@ impl SourceSession {
         &mut self,
         deadline: &Deadline<'_>,
     ) -> Result<DecodedRgbaFrame, SourceSessionError> {
-        Ok(if self.decoder.info().pixel_format == "yuv420p10le" {
-            self.decoder.copy_current_rgba16(control(deadline)?)?
-        } else {
-            self.decoder.copy_current_rgba(control(deadline)?)?
-        })
+        Ok(
+            if matches!(
+                self.decoder.info().pixel_format.as_str(),
+                "yuv420p10le" | "yuv422p10le"
+            ) {
+                self.decoder.copy_current_rgba16(control(deadline)?)?
+            } else {
+                self.decoder.copy_current_rgba(control(deadline)?)?
+            },
+        )
     }
 }
 

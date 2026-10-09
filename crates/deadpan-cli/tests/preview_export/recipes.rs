@@ -205,6 +205,39 @@ pub fn sdr_codec_original(directory: &Path, name: &'static str) -> Result<Fixtur
     sdr_source_original(directory, name, 12)
 }
 
+pub fn prores_original(directory: &Path, name: &'static str) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(format!("prores-{name}.mov"));
+    let project = Project::create_from(directory, name, &media)?;
+    let document = project.document()?;
+    let rate = document.presentation_basis().frame_rate;
+    let interlaced = matches!(name, "tff" | "bff");
+    let ordinals: Vec<u64> = (0..if interlaced { 24 } else { 12 })
+        .filter(|n| name != "vfr" || ![4, 7].contains(n))
+        .collect();
+    let source_rate = if interlaced { 60000 } else { 30000 };
+    let expected = (0..u64::try_from(document.duration()?.frames())?)
+        .map(|frame| {
+            let center = u128::from(2 * frame + 1) * u128::from(rate.denominator()) * source_rate;
+            let ordinal = ordinals
+                .iter()
+                .rposition(|ordinal| {
+                    u128::from(*ordinal) * 1001 * 2 * u128::from(rate.numerator()) <= center
+                })
+                .unwrap_or(0) as u64;
+            (
+                frame,
+                Expected::Original {
+                    source_ordinal: ordinal,
+                },
+            )
+        })
+        .collect();
+    project.finish(vec!["ProRes 422 Original"], expected,
+        vec!["Ten-bit 422, container PTS and SAR, progressive or measured BWDIF fields, unchanged AAC".into()])
+}
+
 pub fn sdr_source_original(directory: &Path, name: &'static str, frames: u64) -> Result<Fixture> {
     let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/fixtures")

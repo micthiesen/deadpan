@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[ProRes 422 import](qualification/prores-sources-2026-10-09.md) now implements
+Proxy/LT/Standard/HQ, ten-bit SDR pictures, VFR, anamorphic pixels and both
+field orders through the shared picture and audio paths. Bounded QuickTime
+metadata and every packet are checked, including real Apple-encoded headers.
+The full gate, 157 native sanitizer tests and all ten release imports/exports
+pass: 144 pictures and ten zero-offset audio windows. The fresh-home bundle
+imports all ten and verifies 48 pictures/three zero-offset windows; relocation,
+runtime and tamper checks pass. Broader ProRes profiles/containers, AV1 and the
+operation matrix remain open; DP-02 and DP-16 stay partial.
+
 [Wider PCM/WAVE sound import](qualification/pcm-sources-2026-10-09.md) adds
 unsigned8, signed24/32 and float32 alongside signed16. Exact format/alignment,
 speaker declarations and optional fact counts are checked before decoding;

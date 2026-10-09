@@ -46,7 +46,7 @@ typedef struct { uint32_t magic; int pic_struct; } H264PictureTiming;
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS (DEADPAN_SOURCE_MAX_AUDIO_STREAMS + 1)
 #define DEMUXERS "mov,matroska,webm"
-#define CODECS "h264,ffv1,hevc,vp9"
+#define CODECS "h264,ffv1,hevc,vp9,prores"
 // hvcC parameter sets retained for exact in-band comparison.
 #define MAX_PARAMETER_SETS 64
 
@@ -68,6 +68,8 @@ struct DeadpanSource {
     // Length-prefixed NAL width for H.264 (avcC) or HEVC (hvcC); hevc selects
     // the HEVC packet grammar. hdr is set once the first picture is admitted.
     int pending_first_frame, nal_length_bytes, hevc, hdr;
+    int prores_header_seen;
+    uint8_t prores_interpretation[4];
     // Offsets/lengths of VPS/SPS/PPS units inside the immutable hvcC extradata.
     int parameter_sets;
     struct { int type, offset, length; } parameter_set[MAX_PARAMETER_SETS];
@@ -106,7 +108,7 @@ static void adopt_async(DeadpanSource *s) {
     const char *code = NULL, *message = NULL;
     switch (atomic_load(&s->async_failure)) {
         case ASYNC_GEOMETRY: code = "resource_limit"; message = "decoder geometry exceeds max_dimension or max_pixels"; break;
-        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit or ten-bit 4:2:0 decode is qualified"; break;
+        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit, qualified ten-bit 4:2:0 or ProRes 422 decode is qualified"; break;
         case ASYNC_FORMAT: code = "unsupported_pixel_format"; message = "no bounded software picture format"; break;
         default: return;
     }
@@ -242,7 +244,7 @@ static int runtime(DeadpanSource *s) {
 }
 static int allowed_codec(enum AVCodecID id) {
     switch (id) {
-        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: case AV_CODEC_ID_HEVC: case AV_CODEC_ID_VP9: return 1;
+        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: case AV_CODEC_ID_HEVC: case AV_CODEC_ID_VP9: case AV_CODEC_ID_PRORES: return 1;
         default: return 0;
     }
 }
@@ -291,11 +293,12 @@ static int color(DeadpanSource *s, enum AVCodecID codec, int format, int range, 
             return fail(s, "unsupported_codec", "HDR source requires HEVC Main10 or H264 High10");
         return 1;
     }
-    int ten_bit = format == AV_PIX_FMT_YUV420P10LE &&
-        (codec == AV_CODEC_ID_HEVC || codec == AV_CODEC_ID_H264 || codec == AV_CODEC_ID_VP9);
+    int ten_bit = (format == AV_PIX_FMT_YUV420P10LE &&
+        (codec == AV_CODEC_ID_HEVC || codec == AV_CODEC_ID_H264 || codec == AV_CODEC_ID_VP9)) ||
+        (format == AV_PIX_FMT_YUV422P10LE && codec == AV_CODEC_ID_PRORES);
     for (int i = 0; i < desc->nb_components; i++)
         if (desc->comp[i].depth != (ten_bit ? 10 : 8))
-            return fail(s, "unsupported_depth", "SDR requires eight-bit pixels or ten-bit H264/HEVC/VP9 4:2:0");
+            return fail(s, "unsupported_depth", "SDR requires eight-bit pixels, ten-bit H264/HEVC/VP9 4:2:0 or ProRes 422");
     if (range != AVCOL_RANGE_MPEG && range != AVCOL_RANGE_JPEG)
         return fail(s, "missing_interpretation", "source color range needs an explicit interpretation");
     if (transfer != AVCOL_TRC_BT709 && transfer != AVCOL_TRC_IEC61966_2_1 && transfer != AVCOL_TRC_LINEAR)
@@ -429,6 +432,7 @@ static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVP
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
         // First-picture admission checks the codec and SDR/HDR interpretation.
         if (formats[i] == AV_PIX_FMT_YUV420P10LE) return formats[i];
+        if (formats[i] == AV_PIX_FMT_YUV422P10LE && context->codec_id == AV_CODEC_ID_PRORES) return formats[i];
         for (unsigned int component = 0; component < pixel->nb_components; component++) {
             if (pixel->comp[component].depth != 8) {
                 async_fail(s, ASYNC_DEPTH);
@@ -464,6 +468,7 @@ static uint32_t bits(Bits *b, int count) {
     return value;
 }
 #include "vp9.h"
+#include "prores.h"
 static uint32_t ue(Bits *b) {
     int zeros = 0;
     while (!b->failed && !bit(b)) if (++zeros > 31) { b->failed = 1; return 0; }
@@ -768,6 +773,13 @@ static int allocate_decoder(DeadpanSource *s) {
         if (stream->sample_aspect_ratio.num)
             s->decoder->sample_aspect_ratio = stream->sample_aspect_ratio;
     }
+    if (stream->codecpar->codec_id == AV_CODEC_ID_PRORES) {
+        // ProRes 422's co-sited horizontal samples. Its frame header carries
+        // no alternate chroma-location signal; FFmpeg leaves this unspecified.
+        s->decoder->chroma_sample_location = AVCHROMA_LOC_LEFT;
+        if (stream->sample_aspect_ratio.num)
+            s->decoder->sample_aspect_ratio = stream->sample_aspect_ratio;
+    }
     // FFmpeg's frame and slice threading are deterministic: pictures match a
     // single-threaded decode bit for bit. Threads join in avcodec_free_context.
     s->decoder->thread_count = (int)s->limits.threads;
@@ -862,8 +874,12 @@ static int open_impl(DeadpanSource *s) {
     if (stream->time_base.num <= 0 || stream->time_base.den <= 0) return fail(s, "invalid_time_base", "source stream has no positive time base");
     const AVCodec *codec = avcodec_find_decoder(p->codec_id);
     if (!codec) return fail(s, "unsupported_codec", "required source software decoder is unavailable");
-    if ((p->extradata_size <= 0 && p->codec_id != AV_CODEC_ID_VP9) || p->extradata_size > 65536)
+    if ((p->extradata_size <= 0 && p->codec_id != AV_CODEC_ID_VP9 && p->codec_id != AV_CODEC_ID_PRORES) || p->extradata_size > 65536)
         return fail(s, "resource_limit", "source codec configuration is absent or exceeds its bound");
+    // Rust admission validates the optional glbl ImageDescription against the
+    // outer sample entry. proresdec ignores it; frame packets remain authoritative.
+    if (p->codec_id == AV_CODEC_ID_PRORES && !prores_tag(p->codec_tag))
+        return fail(s, "unsupported_codec", "ProRes requires a 422 Proxy/LT/Standard/HQ sample entry");
     if (p->codec_id == AV_CODEC_ID_VP9) {
         const uint32_t *v = s->limits.vp9;
         if (!((v[0] == 0 && v[1] == 8) || (v[0] == 2 && v[1] == 10)) || v[2] > 1 || v[3] > 1 ||
@@ -1428,6 +1444,7 @@ static int packet_budget(DeadpanSource *s) {
             return fail(s, "stream_changed", "packet changes admitted codec configuration");
     }
     if (s->packet->stream_index == s->stream && s->limits.vp9[1] && vp9_packet(s) < 0) return -1;
+    if (s->packet->stream_index == s->stream && s->decoder->codec_id == AV_CODEC_ID_PRORES && prores_packet(s) < 0) return -1;
     if (s->packet->stream_index == s->stream && s->nal_length_bytes) {
         size_t position = 0;
         uint32_t count = 0;

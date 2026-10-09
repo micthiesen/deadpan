@@ -258,6 +258,13 @@ fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
         ("vp9-sdr-8-full.mp4", 8),
         ("vp9-sdr-10-limited.mp4", 16),
         ("vp9-sdr-10-full.mp4", 16),
+        ("prores-proxy.mov", 16),
+        ("prores-lt.mov", 16),
+        ("prores-standard.mov", 16),
+        ("prores-hq.mov", 16),
+        ("prores-anamorphic.mov", 16),
+        ("prores-apple-hq.mov", 16),
+        ("prores-edges.mov", 16),
     ] {
         let (mut video, audio) = av(name);
         let qualified = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio))
@@ -290,6 +297,22 @@ fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
             .unwrap();
         assert_eq!(frame.sample_bits, bits, "{name}");
         assert_eq!(frame.metadata.pts, 2002);
+        if name.starts_with("prores-") {
+            for (field, value) in [("pixel_format", "yuv420p10le"), ("codec", "hevc")] {
+                let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
+                forged["video"]["interpretation"][field] = json!(value);
+                assert!(
+                    SourceQualificationSnapshot::from_json(&serde_json::to_vec(&forged).unwrap())
+                        .is_err()
+                );
+            }
+            let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
+            forged["video"]["interpretation"]["color"]["range"] = json!("full");
+            assert!(
+                SourceQualificationSnapshot::from_json(&serde_json::to_vec(&forged).unwrap())
+                    .is_err()
+            );
+        }
         if bits == 16 {
             let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
             forged["video"]["interpretation"]["codec"] = json!("ffv1");
@@ -314,6 +337,18 @@ fn field_receipts_keep_progressive_cadence_audio_and_temporal_seek_anchors() {
         ),
         (
             "fields-bff.mp4",
+            FrameRate::new(60000, 1001).unwrap(),
+            19219,
+            24,
+        ),
+        (
+            "prores-tff.mov",
+            FrameRate::new(60000, 1001).unwrap(),
+            19219,
+            24,
+        ),
+        (
+            "prores-bff.mov",
             FrameRate::new(60000, 1001).unwrap(),
             19219,
             24,
@@ -373,7 +408,12 @@ fn field_receipts_keep_progressive_cadence_audio_and_temporal_seek_anchors() {
                     .rgba,
             );
             // First field of a GOP can be filtered only with the preceding GOP.
-            let expected_anchor = if id < 6 { 0 } else { (id / 6 - 1) * 6 };
+            let gop_fields = if name.starts_with("prores-") { 2 } else { 6 };
+            let expected_anchor = if id < gop_fields {
+                0
+            } else {
+                (id / gop_fields - 1) * gop_fields
+            };
             assert_eq!(
                 video.index().index().frames()[id as usize].seek_from,
                 Some(SourceFrameId(expected_anchor))

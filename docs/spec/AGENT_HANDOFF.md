@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[ProRes 422](../qualification/prores-sources-2026-10-09.md) has implemented
+Proxy/LT/Standard/HQ QuickTime admission, bounded per-packet checks, ten-bit
+RGBA64, exact VFR/SAR and both BWDIF field orders, plus QuickTime AAC wrappers.
+Real Apple-encoded HQ is a retained regression fixture. Full gate, 157 native
+sanitizer tests and ten release imports/exports pass (144 pictures, ten
+zero-offset audio windows). The fresh-home bundle imports all ten and verifies
+48 pictures/three zero-offset windows; relocation, runtime and tamper checks
+pass. This does not close DP-02, DP-16 or the broader source-format matrix.
+
 [Wider PCM/WAVE sounds](../qualification/pcm-sources-2026-10-09.md) preserve
 unsigned8, signed16/24/32 and float32 samples through the normal catalog and
 shared audio paths. Plain fmt16/18 and exact extensible fmt40 retain rate and

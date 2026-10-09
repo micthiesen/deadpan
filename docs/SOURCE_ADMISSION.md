@@ -22,7 +22,7 @@ and MP3 in other containers remain unqualified. See
 [MP3 evidence and sample semantics](qualification/mp3-sources-2026-10-09.md).
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
-requires exactly one `avc1` H.264, `hvc1` HEVC or `vp09` VP9 track
+requires exactly one `avc1` H.264, `hvc1` HEVC, `vp09` VP9 or ProRes 422 track
 and allows at most 32 AAC audio tracks.
 Audio selection uses the same all-track checks before opening its selected AAC
 decoder. Declared packet sizes, sample/chunk/time table expansion, external data
@@ -30,6 +30,34 @@ references, nested metadata and codec descriptors are checked before demuxing.
 The limits include 16 MiB of headers/read work, one million aggregate table rows
 and samples, 100,000 atoms, depth 16, and 64 KiB codec configuration records.
 Profile 244 AVC configuration is admitted for the existing lossless RGB fixtures.
+
+QuickTime `qt  ` movies use the same closed tables and self-contained data
+references. Empty `wide` atoms and one URL data handler are admitted. Optional
+track apertures (`tapt`) must describe the complete encoded raster and its
+declared sample aspect exactly; cropped or contradictory aperture modes fail.
+Version-one AAC descriptions use exact packet units and one bounded `wave`
+wrapper (`frma`, `mp4a`, `esds`, empty terminator), with optional matching mono
+or stereo `chan` declarations. Version-two audio and QuickTime PCM remain
+unqualified. The audio decoder retains the original AAC samples and priming.
+
+ProRes 422 Proxy/LT/Standard/HQ use `apco`/`apcs`/`apcn`/`apch`, limited-range
+ten-bit `yuv422p10le`, explicit SDR color and co-sited horizontal chroma. The
+shared picture reader keeps RGBA64 precision. Progressive pictures and both
+field orders use the ordinary measured PTS and BWDIF path. Optional `nclc` or
+limited-range `nclx` color must agree with each frame. Apple's measured `glbl`
+ImageDescription is admitted only in its exact bounded form, with matching
+codec, raster, color and field order. It never supplies an external reference.
+
+Before submitting a ProRes packet to FFmpeg, a nonallocating guard checks the
+complete `icpf` frame length, version, dimensions, chroma, alpha, field order,
+color, rate/aspect hints, quantization matrices, picture and slice envelopes,
+plane lengths and zero stuffing. Each hint must agree with the container; an
+unspecified hint can become explicit without changing that interpretation.
+Changing actual geometry, field order or color fails. Reserved frame-header
+values are closed except for the observed Apple `0x30` upper alpha-byte nibble,
+whose actual alpha nibble is zero. Corrupt/concealed decoded pictures fail too.
+4444/XQ, alpha, RAW, HDR/log, odd-height interlaced pictures, MXF and other
+metadata forms remain unqualified. See [ProRes evidence](qualification/prores-sources-2026-10-09.md).
 
 VP9 uses the [VP Codec MP4 binding](https://www.webmproject.org/vp9/mp4/):
 exactly one version-1 `vpcC`, profile 0/eight-bit or profile 2/ten-bit 4:2:0,

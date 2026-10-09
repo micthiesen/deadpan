@@ -815,7 +815,7 @@ fn mp4_layout(r: &mut Reader<'_>) -> Result<Mp4Layout> {
                     require(
                         matches!(
                             &brand,
-                            b"isom" | b"iso2" | b"mp41" | b"mp42" | b"avc1" | b"M4A "
+                            b"isom" | b"iso2" | b"mp41" | b"mp42" | b"avc1" | b"M4A " | b"qt  "
                         ),
                         "unqualified MP4 brand",
                     )?;
@@ -837,9 +837,9 @@ fn mp4_layout(r: &mut Reader<'_>) -> Result<Mp4Layout> {
                 )?;
                 media = Some(atom.body);
             }
-            b"free" => require(
+            b"free" | b"wide" => require(
                 atom.body.len() == 0,
-                "only empty MP4 free boxes are admitted",
+                "only empty MP4 free or QuickTime wide boxes are admitted",
             )?,
             _ => {
                 return Err(invalid(
@@ -914,6 +914,7 @@ fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
     let mut track = Track::default();
     let mut cursor = span.start;
     let mut media = false;
+    let mut apertures = None;
     while cursor < span.end {
         let atom = r.atom(&mut cursor, span.end, 2)?;
         match &atom.tag {
@@ -942,6 +943,23 @@ fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
                 media = true;
                 media_box(r, atom.body, &mut track)?;
             }
+            b"tapt" => {
+                require(apertures.is_none(), "duplicate QuickTime track apertures")?;
+                let mut position = atom.body.start;
+                let mut values = [[0; 2]; 3];
+                for (index, tag) in [b"clef", b"prof", b"enof"].iter().enumerate() {
+                    let child = r.atom(&mut position, atom.body.end, 3)?;
+                    require(child.tag == **tag, "unqualified QuickTime track aperture")?;
+                    r.fixed(child.body, 12)?;
+                    r.full(child.body, &[0], 0)?;
+                    values[index] = [r.u32(child.body.start + 4)?, r.u32(child.body.start + 8)?];
+                }
+                require(
+                    position == atom.body.end,
+                    "extended QuickTime track apertures",
+                )?;
+                apertures = Some(values);
+            }
             _ => return Err(invalid("unqualified track metadata")),
         }
     }
@@ -949,6 +967,21 @@ fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
         track.id.is_some() && media,
         "track lacks identity or media header",
     )?;
+    if let Some([clean, production, encoded]) = apertures {
+        let [width, height] = track
+            .dimensions
+            .ok_or_else(|| invalid("track aperture needs video"))?;
+        let [num, den] = track.pixel_aspect_ratio.unwrap_or([1, 1]);
+        require(
+            track.clean_aperture.is_none()
+                && encoded == [width << 16, height << 16]
+                && clean == production
+                && clean[1] == height << 16
+                && u64::from(clean[0]) * u64::from(den)
+                    == (u64::from(width) << 16) * u64::from(num),
+            "QuickTime track apertures differ from the full raster and sample aspect",
+        )?;
+    }
     Ok(track)
 }
 
@@ -1051,10 +1084,20 @@ fn information_box(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<
     let mut cursor = span.start;
     let mut kind = None;
     let mut data_ref = false;
+    let mut data_handler = false;
     let mut samples = false;
     while cursor < span.end {
         let atom = r.atom(&mut cursor, span.end, 4)?;
         match &atom.tag {
+            b"hdlr" => {
+                require(!data_handler, "duplicate data handler")?;
+                data_handler = true;
+                require(
+                    handler(r, atom.body)? == *b"url "
+                        && r.bytes::<4>(atom.body.start + 4)? == *b"dhlr",
+                    "only a self-contained QuickTime URL data handler is admitted",
+                )?;
+            }
             b"smhd" | b"vmhd" => {
                 require(kind.is_none(), "duplicate media information header")?;
                 let audio = atom.tag == *b"smhd";
@@ -1295,8 +1338,8 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         cursor == span.end,
         "sample description count or size disagrees with box",
     )?;
-    let (kind, fixed) = match &entry.tag {
-        b"avc1" | b"hvc1" | b"vp09" => (Kind::Video, 78),
+    let (kind, mut fixed) = match &entry.tag {
+        b"avc1" | b"hvc1" | b"vp09" | b"apco" | b"apcs" | b"apcn" | b"apch" => (Kind::Video, 78),
         b"mp4a" => (Kind::Audio, 28),
         // hev1 permits parameter sets that exist only in-band and may change
         // between pictures; only hvc1's complete hvcC arrays are admitted.
@@ -1310,22 +1353,39 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         _ => {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_codec".into(),
-                message: "only avc1, hvc1, vp09 and mp4a MP4 sample descriptions are admitted"
+                message: "only avc1, hvc1, vp09, ProRes 422 Proxy/LT/Standard/HQ and mp4a sample descriptions are admitted"
                     .into(),
             });
         }
     };
     let hevc = entry.tag == *b"hvc1";
+    let prores = matches!(&entry.tag, b"apco" | b"apcs" | b"apcn" | b"apch");
     require(entry.body.len() >= fixed, "truncated sample description")?;
     require(
         r.bytes::<6>(entry.body.start)? == [0; 6] && r.bytes::<2>(entry.body.start + 6)? == [0, 1],
         "sample description is not self-contained",
     )?;
     if kind == Kind::Audio {
+        let version = u16::from_be_bytes(r.bytes(entry.body.start + 8)?);
         require(
-            r.bytes::<8>(entry.body.start + 8)? == [0; 8],
-            "versioned QuickTime audio descriptions are unqualified",
+            version <= 1 && r.bytes::<6>(entry.body.start + 10)? == [0; 6],
+            "unqualified QuickTime audio description version or vendor",
         )?;
+        if version == 1 {
+            fixed = 44;
+            require(
+                entry.body.len() >= fixed,
+                "truncated QuickTime AAC description",
+            )?;
+            require(
+                r.bytes::<4>(entry.body.start + 20)? == [0xff, 0xfe, 0, 0]
+                    && r.u32(entry.body.start + 28)? == 1024
+                    && r.u32(entry.body.start + 32)? == 0
+                    && r.u32(entry.body.start + 36)? == 0
+                    && r.u32(entry.body.start + 40)? == 2,
+                "unqualified QuickTime AAC packet units",
+            )?;
+        }
         let channels = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 16)?));
         let rate = r.u32(entry.body.start + 24)?;
         track.audio_channels = Some(channels);
@@ -1360,14 +1420,30 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
     }
     let children = entry.body.suffix(fixed)?;
     let mut cursor = children.start;
-    let mut config = false;
+    // ProRes carries its configuration in every bounded picture packet.
+    let mut config = prores;
     let mut color = false;
+    let mut speakers = false;
     let mut bitrate = false;
     let mut aspect = false;
     let mut field = false;
+    let mut field_description = None;
+    let mut global_description = None;
     while cursor < children.end {
         let atom = r.atom(&mut cursor, children.end, 7)?;
         match &atom.tag {
+            b"glbl" if prores => {
+                require(
+                    global_description.is_none(),
+                    "duplicate ProRes global description",
+                )?;
+                global_description = Some(prores_global(
+                    r,
+                    atom.body,
+                    entry.tag,
+                    track.dimensions.expect("video raster"),
+                )?);
+            }
             b"vpcC" if entry.tag == *b"vp09" => {
                 require(!config, "duplicate video configuration")?;
                 config = true;
@@ -1404,6 +1480,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                     matches!(r.bytes::<2>(atom.body.start)?, [1, 0] | [2, 1 | 6 | 9 | 14]),
                     "unrecognized field description",
                 )?;
+                field_description = Some(r.bytes::<2>(atom.body.start)?);
                 require(
                     entry.tag != *b"vp09" || r.bytes::<2>(atom.body.start)? == [1, 0],
                     "VP9 requires progressive pictures",
@@ -1426,15 +1503,46 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                 config = true;
                 esds(r, atom.body)?;
             }
+            b"wave" if kind == Kind::Audio && fixed == 44 => {
+                require(!config, "duplicate audio configuration")?;
+                config = true;
+                quicktime_aac_wave(r, atom.body)?;
+            }
+            b"chan" if kind == Kind::Audio && fixed == 44 => {
+                require(!speakers, "duplicate QuickTime speaker declaration")?;
+                speakers = true;
+                r.fixed(atom.body, 16)?;
+                r.full(atom.body, &[0], 0)?;
+                let layout = r.u32(atom.body.start + 4)?;
+                require(
+                    matches!(layout, 0x0064_0001 | 0x0065_0002)
+                        && Some(layout & 0xffff) == track.audio_channels
+                        && r.u32(atom.body.start + 8)? == 0
+                        && r.u32(atom.body.start + 12)? == 0,
+                    "only matching mono or stereo QuickTime AAC speaker tags are admitted",
+                )?;
+            }
             b"colr" if kind == Kind::Video => {
                 require(!color, "duplicate color description")?;
                 color = true;
-                r.fixed(atom.body, 11)?;
+                let color_type = r.bytes::<4>(atom.body.start)?;
+                let range_byte = if color_type == *b"nclc" && prores {
+                    r.fixed(atom.body, 10)?;
+                    // ProRes's YCbCr code values have the video-range scaling
+                    // in RDD 36 §7.5.1; nclc does not contain a range flag.
+                    0
+                } else {
+                    r.fixed(atom.body, 11)?;
+                    require(
+                        color_type == *b"nclx",
+                        "only bounded nclx or ProRes nclc color metadata is admitted",
+                    )?;
+                    r.bytes::<1>(atom.body.start + 10)?[0]
+                };
                 require(
-                    r.bytes::<4>(atom.body.start)? == *b"nclx",
-                    "only bounded nclx color metadata is admitted",
+                    !prores || range_byte == 0,
+                    "ProRes requires limited-range color metadata",
                 )?;
-                let range_byte = r.bytes::<1>(atom.body.start + 10)?[0];
                 track.color = Some(Mp4ColorDescription {
                     primaries: u16::from_be_bytes(r.bytes(atom.body.start + 4)?),
                     transfer: u16::from_be_bytes(r.bytes(atom.body.start + 6)?),
@@ -1487,7 +1595,103 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
             "VP9 colr and vpcC color declarations disagree",
         )?;
     }
+    if let Some((global_color, global_field)) = global_description {
+        require(
+            Some(global_color) == track.color && Some(global_field) == field_description,
+            "ProRes global color or field description differs from its sample entry",
+        )?;
+    }
     Ok(kind)
+}
+
+fn prores_global(
+    r: &mut Reader<'_>,
+    span: Span,
+    tag: [u8; 4],
+    dimensions: [u32; 2],
+) -> Result<(Mp4ColorDescription, [u8; 2])> {
+    // Apple's VideoToolbox encoder returns a bounded QuickTime ImageDescription
+    // as codec extradata: fixed fields, nclc, fiel, and a four-byte terminator.
+    // FFmpeg does not parse this copy. Refuse contradictory embedded metadata.
+    r.fixed(span, 118)?;
+    require(
+        r.u32(span.start)? == 118
+            && r.bytes::<4>(span.start + 4)? == tag
+            && r.bytes::<6>(span.start + 8)? == [0; 6]
+            && matches!(r.bytes::<2>(span.start + 14)?, [0xff, 0xff] | [0, 0])
+            && [
+                u32::from(u16::from_be_bytes(r.bytes(span.start + 32)?)),
+                u32::from(u16::from_be_bytes(r.bytes(span.start + 34)?)),
+            ] == dimensions
+            && r.bytes::<2>(span.start + 48)? == [0, 1]
+            && r.bytes::<2>(span.start + 82)? == [0, 24]
+            && r.bytes::<2>(span.start + 84)? == [0xff, 0xff],
+        "unqualified ProRes global image description",
+    )?;
+    let mut cursor = span.start + 86;
+    let color = r.atom(&mut cursor, span.end, 8)?;
+    require(
+        color.tag == *b"colr",
+        "ProRes global description lacks color",
+    )?;
+    r.fixed(color.body, 10)?;
+    require(
+        r.bytes::<4>(color.body.start)? == *b"nclc",
+        "ProRes global color is not nclc",
+    )?;
+    let color = Mp4ColorDescription {
+        primaries: u16::from_be_bytes(r.bytes(color.body.start + 4)?),
+        transfer: u16::from_be_bytes(r.bytes(color.body.start + 6)?),
+        matrix: u16::from_be_bytes(r.bytes(color.body.start + 8)?),
+        full_range: false,
+        range_byte: 0,
+    };
+    let field = r.atom(&mut cursor, span.end, 8)?;
+    require(
+        field.tag == *b"fiel",
+        "ProRes global description lacks field order",
+    )?;
+    r.fixed(field.body, 2)?;
+    let field = r.bytes::<2>(field.body.start)?;
+    require(
+        cursor + 4 == span.end && r.u32(cursor)? == 0,
+        "unqualified ProRes global description suffix",
+    )?;
+    Ok((color, field))
+}
+
+fn quicktime_aac_wave(r: &mut Reader<'_>, span: Span) -> Result<()> {
+    // The version-one QuickTime AAC wrapper, not an embedded WAVE file.
+    // No decompressor, external reference or arbitrary nested atom is read.
+    let mut cursor = span.start;
+    let original = r.atom(&mut cursor, span.end, 8)?;
+    require(
+        original.tag == *b"frma",
+        "QuickTime AAC lacks original format",
+    )?;
+    r.fixed(original.body, 4)?;
+    require(
+        r.bytes::<4>(original.body.start)? == *b"mp4a",
+        "QuickTime AAC original format differs",
+    )?;
+    let marker = r.atom(&mut cursor, span.end, 8)?;
+    require(marker.tag == *b"mp4a", "QuickTime AAC lacks format marker")?;
+    r.fixed(marker.body, 4)?;
+    require(
+        r.u32(marker.body.start)? == 0,
+        "unqualified QuickTime AAC marker",
+    )?;
+    let config = r.atom(&mut cursor, span.end, 8)?;
+    require(
+        config.tag == *b"esds",
+        "QuickTime AAC lacks codec configuration",
+    )?;
+    esds(r, config.body)?;
+    let end = r.atom(&mut cursor, span.end, 8)?;
+    require(
+        end.tag == [0; 4] && end.body.len() == 0 && cursor == span.end,
+        "QuickTime AAC wrapper needs one empty terminator",
+    )
 }
 
 fn vpcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4Vp9Configuration> {

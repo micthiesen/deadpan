@@ -467,6 +467,9 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
     } else {
         (info.pixel_format != "yuv420p10le"
             || matches!(info.codec.as_str(), "hevc" | "h264" | "vp9"))
+            && (info.pixel_format != "yuv422p10le" || info.codec == "prores")
+            && (info.codec != "prores"
+                || (info.pixel_format == "yuv422p10le" && color.range == ColorRange::Limited))
             && (info.codec != "hevc"
                 || matches!(
                     info.pixel_format.as_str(),
@@ -501,7 +504,10 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
-        || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc" | "vp9")
+        || !matches!(
+            info.codec.as_str(),
+            "h264" | "ffv1" | "hevc" | "vp9" | "prores"
+        )
         || info
             .nominal_frame_duration_ns
             .is_some_and(|ns| ns == 0 || info.codec != "vp9")
@@ -526,6 +532,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
                 | "yuvj440p"
                 | "yuvj444p"
                 | "yuv420p10le"
+                | "yuv422p10le"
         ) {
             return Err(SourceQualificationError::Metadata(
                 "unqualified deinterlace pixel format",
@@ -562,7 +569,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
     let rgb = match info.pixel_format.as_str() {
         "gbrp" | "rgb24" | "bgr24" | "rgb0" | "bgr0" | "0rgb" | "0bgr" => true,
         // Codec/depth and HDR constraints are checked by validate_hdr.
-        "yuv420p10le" => false,
+        "yuv420p10le" | "yuv422p10le" => false,
         "yuv410p" | "yuv411p" | "yuv420p" | "yuv422p" | "yuv440p" | "yuv444p" | "yuvj411p"
         | "yuvj420p" | "yuvj422p" | "yuvj440p" | "yuvj444p" | "nv12" | "nv21" | "nv16" | "nv24"
         | "nv42" | "yuyv422" | "uyvy422" | "yvyu422" | "uyyvyy411" => false,
