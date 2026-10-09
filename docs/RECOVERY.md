@@ -305,10 +305,10 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 
 ## Remaining work
 
-- Native creation and incomplete-project retry now offer explicit linked
-  Originals, with captured ownership and verified bookmark relinking
-  ([qualification](qualification/linked-original-2026-10-09.md)). Final
-  project/recovery acceptance remains to reconcile against §20.
+Local project/recovery acceptance is complete under specification 29.1. The
+[DP-01 audit](qualification/project-acceptance-2026-10-09.md) maps all §20
+obligations to implementation and evidence. These owner checks remain:
+
 - Actual File Provider eviction remains an owner check
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)

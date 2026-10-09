@@ -30,8 +30,11 @@ Native `:new-linked` and incomplete-project `:original-linked` now capture
 explicit external Original ownership; normal New stays managed. Headless
 `create-original --linked` has the same full-source baseline. Native bookmark
 relocation and portable export with the external path unavailable pass
-([qualification](../qualification/linked-original-2026-10-09.md)). DP-01 remains
-partial pending final project/recovery acceptance.
+([qualification](../qualification/linked-original-2026-10-09.md)). The
+[final audit](../qualification/project-acceptance-2026-10-09.md) closes DP-01
+under §29.1. Physical power loss, File Provider eviction, Dock Quit and logout
+retain their exact owner checks. The full product goal remains active; continue
+DP-02's source-policy and VFR/creative-operation playback/export matrix.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

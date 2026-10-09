@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T07:58:29Z",
+  "updated_at": "2026-10-09T08:36:13Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Verifying linked-Original creation and reconciling final project/recovery acceptance.",
+  "focus": "Completing exact source policies and the VFR/creative-operation playback and export matrix.",
   "features": [
     {
       "id": "editing",
@@ -21,11 +21,11 @@
     {
       "id": "projects",
       "name": "Projects and recovery",
-      "status": "mostly",
+      "status": "done",
       "requirements": [
         "DP-01"
       ],
-      "note": "Recovery, named takes, durable history, native Quit, concurrent inspection and linked-Original creation work. Final acceptance remains."
+      "note": "Projects and recovery are complete under the local verification scope: durable history, named takes, linked Originals, native Quit and concurrent inspection are verified."
     },
     {
       "id": "picture",
@@ -261,6 +261,14 @@
       "revision": "b17f1bff",
       "retrospective": false,
       "summary": "Fixed quiet AAC openings; verified 10,000 fractional-rate edits, 44 recipe exports, four HDR renders, native AAC timing and relocated packaging."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "0ebda1e9",
+      "retrospective": false,
+      "summary": "Closed DP-01: verified linked Originals, native recovery, durable history, concurrent inspection and reliable import completion."
     }
   ]
 }

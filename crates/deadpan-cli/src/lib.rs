@@ -166,10 +166,9 @@ const HELP: &str = "Deadpan headless commands:
   keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]
   dismiss-attempt <project.deadpan> --request <request-id> --attempt <attempt-id>
 
-Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
+Generic project creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
-Rendering uses automatic SDR policy, emits bounded JSON lines, and requires a closed project on qualified macOS/APFS. SIGINT/SIGTERM requests cancellation and drain.
-Open-project Render routing, the native recovery browser, full mastering and HDR output remain unavailable.
+Rendering uses automatic project policy and emits bounded JSON lines on qualified macOS/APFS. An open app owns Render through its authenticated endpoint; otherwise the CLI owns it. SIGINT/SIGTERM requests cancellation and drain.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
 While Deadpan.app has the project open, writes (command, macro, sound, corrections, undo/redo, register-source, insert-original, the AI hold commands, storage cleanup and restore) run through its live endpoint and refresh the app.
 create-original and create-from-url make a new one-Original project with its full-source baseline.
