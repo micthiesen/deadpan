@@ -51,13 +51,38 @@ retained pixel hashes:
 | Hardware-encoded H.264, software decode | 120 | `[0, 120120)` | 1/30000 s | 0.016 |
 | Retained generated FFV1 master | 25 | `[0, 1041)` | 1/1000 s | 0.717 |
 
-The VFR source still has the previously observed final duration of 1001 ticks,
-despite the fixture's authored 3003 ticks. The adapter records the actual file;
-it does not claim to recover those missing 2002 ticks. Missing final duration
-fails instead of inventing a nominal-rate endpoint. The generated master is the
-actual output retained by [durable acceptance qualification](acceptance-2026-09-21.md);
+The VFR source file encodes a final duration of 1001 ticks, despite the producer's
+authored 3003 ticks. A byte-level follow-up on 2026-10-08 confirmed that its video
+`stts`, `mdhd`, `tkhd` and edit list agree on an endpoint of 238238 video ticks
+(1/30000 s each). The longer movie duration comes from audio. This is a fixture
+encode/mux limitation; these bytes provide no evidence that decoding lost the
+duration. The adapter records the
+encoded endpoint. Missing final duration fails instead of inventing a nominal-rate
+endpoint. The generated master is the actual output retained by
+[durable acceptance qualification](acceptance-2026-09-21.md);
 no inference was repeated. Audio-bearing MP4 probes log expected AAC-not-on-
 whitelist warnings because this boundary intentionally does not decode audio.
+
+The follow-up added a distinct `vfr-long-terminal.mp4` fixture and focused native
+decoder and `SourceSession` regressions for the two encoded endpoints. Its
+[reproducible byte-level generator](../../native/deadpan-source/tests/generate_vfr_terminal_fixture.py)
+requires the original fixture's SHA-256 and exact box/field anchors. It changes
+only the final video sample duration to 3003 ticks and the three corresponding
+video duration fields to an endpoint of 240240 ticks. Every picture PTS, compressed
+byte, audio byte and the original fixture remain unchanged. The generator's
+`--check` mode verifies checked-in bytes without invoking a media process. These
+new assertions do not change the historical measurements in the table above.
+
+Both focused regressions and strict target Clippy passed on 2026-10-08 with
+the pinned FFmpeg 8.0.3 prefix. The native decoder reports the two final
+durations as 1001 and 3003 ticks; `SourceSession` retains the corresponding
+half-open endpoints 238238 and 240240. Initial test assertions incorrectly
+required FFmpeg's optional container-duration field to be present; this path
+reports it as unavailable. The fixture generator independently verifies the
+container header, while these tests use measured video timing. Commands,
+source/fixture hashes and executed test-binary hashes are retained in the
+[follow-up evidence](../../tools/media-qualification/evidence/2026-10-08-vfr-terminal/results.json).
+This does not retest the separate `software-vfr-no-b` encoder qualification.
 
 ## Shared GPU baseline
 

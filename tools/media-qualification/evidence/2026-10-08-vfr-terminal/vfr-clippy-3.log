@@ -1,0 +1,11 @@
+    Checking bytemuck v1.25.2
+    Checking errno v0.3.14
+    Checking num-traits v0.2.19
+    Checking rustix v1.1.5
+    Checking moxcms v0.8.1
+    Checking tempfile v3.27.0
+    Checking deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking image v0.25.10
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.76s

@@ -564,6 +564,80 @@ fn source_fixture(name: &str) -> Vec<u8> {
     .unwrap()
 }
 
+#[test]
+fn vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint() {
+    use deadpan_core::{EndpointPolicy, ExactRatio, SourcePoint};
+
+    let cancelled = AtomicBool::new(false);
+    let mut retained_last_hash = None;
+    for (name, duration, terminal) in [
+        ("vfr.mp4", 1001, 238_238),
+        ("vfr-long-terminal.mp4", 3003, 240_240),
+    ] {
+        let mut session = open(&source_fixture(name), SourceSessionLimits::default());
+        let index = session.index().index();
+        assert_eq!(index.frames().len(), 120, "{name}");
+        assert_eq!(index.terminal_end(), terminal, "{name}");
+        assert_eq!(
+            index.terminal_provenance(),
+            TerminalProvenance::DecodedFrameDuration
+        );
+        assert_eq!(index.frames()[119].reported_duration, Some(duration));
+        assert_eq!(
+            index.interval(SourceFrameId(119)).unwrap(),
+            (237_237, terminal)
+        );
+        let point = |ticks| SourcePoint {
+            ticks: ExactRatio::integer(ticks),
+            time_base: index.time_base(),
+        };
+        assert_eq!(
+            index
+                .select(point(terminal - 1), EndpointPolicy::Reject)
+                .unwrap()
+                .identity,
+            SourceFrameId(119)
+        );
+        assert!(
+            index
+                .select(point(terminal), EndpointPolicy::Reject)
+                .is_err(),
+            "{name}: half-open endpoint"
+        );
+        assert!(
+            index
+                .select(point(240_240), EndpointPolicy::Reject)
+                .is_err(),
+            "{name}: the audio endpoint is outside the half-open video span"
+        );
+        let saved = session.index().to_json().unwrap();
+        assert_eq!(
+            SourceIndexSnapshot::from_json(&saved).unwrap(),
+            *session.index()
+        );
+
+        for frame in [119, 0, 119] {
+            let picture = session
+                .frame(SourceFrameId(frame), Duration::from_secs(10), &cancelled)
+                .unwrap();
+            if frame == 119 {
+                assert_eq!(picture.metadata.pts, 237_237);
+                assert_eq!(
+                    picture.metadata.reported_duration,
+                    Some(duration),
+                    "{name} seek"
+                );
+                let hash = blake3::hash(&picture.rgba);
+                if let Some(expected) = retained_last_hash {
+                    assert_eq!(hash, expected, "timing patch must retain picture bytes");
+                } else {
+                    retained_last_hash = Some(hash);
+                }
+            }
+        }
+    }
+}
+
 /// Forward continuation past skipped pictures, incremental repositioning with
 /// yields, finishing a reposition through a later request and seeking before
 /// an unfinished target all return exactly the pictures of a sequential

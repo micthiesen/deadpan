@@ -179,6 +179,71 @@ fn original_bframe_pts_vfr_and_offset_survive_persistent_reverse_seeks() {
 }
 
 #[test]
+fn vfr_terminal_duration_follows_video_timing_without_extending_to_audio() {
+    let mut retained_last_hash = None;
+    let mut retained_audio = None;
+    for (name, final_duration, terminal) in [
+        ("vfr.mp4", 1001, 238_238),
+        ("vfr-long-terminal.mp4", 3003, 240_240),
+    ] {
+        let mut decoder = open(name);
+        assert_eq!(decoder.info().stream_duration, Some(terminal), "{name}");
+        // The fixture's movie header ends with the audio, as independently
+        // checked by its byte-level generator. FFmpeg need not expose a
+        // container duration here; only video timing determines this endpoint.
+        if let Some(audio) = &retained_audio {
+            assert_eq!(&decoder.info().audio_streams, audio);
+        } else {
+            retained_audio = Some(decoder.info().audio_streams.clone());
+        }
+        let mut pts = 0;
+        for ordinal in 0..120 {
+            let frame = decoder.next_metadata(control()).unwrap().unwrap();
+            let duration = if ordinal == 119 {
+                final_duration
+            } else {
+                1001 * (1 + ordinal % 3)
+            };
+            assert_eq!(frame.pts, pts, "{name} frame {ordinal}");
+            assert_eq!(
+                frame.reported_duration,
+                Some(duration),
+                "{name} frame {ordinal}"
+            );
+            pts += duration;
+        }
+        assert_eq!(pts, terminal, "{name}");
+        let last = decoder.copy_current_rgba(control()).unwrap();
+        assert_eq!(authored_identity(&last.rgba), 119);
+        let hash = blake3::hash(&last.rgba);
+        if let Some(expected) = retained_last_hash {
+            assert_eq!(hash, expected, "timing patch must retain picture bytes");
+        } else {
+            retained_last_hash = Some(hash);
+        }
+        assert!(decoder.next_metadata(control()).unwrap().is_none());
+        decoder.seek(0, control()).unwrap();
+        assert_eq!(decoder.next_metadata(control()).unwrap().unwrap().pts, 0);
+        decoder.seek(237_237, control()).unwrap();
+        let mut reached = false;
+        for _ in 0..120 {
+            let frame = decoder.next_metadata(control()).unwrap().unwrap();
+            assert!(frame.pts <= 237_237);
+            if frame.pts == 237_237 {
+                assert_eq!(frame.reported_duration, Some(final_duration), "{name} seek");
+                assert_eq!(
+                    blake3::hash(&decoder.copy_current_rgba(control()).unwrap().rgba),
+                    hash
+                );
+                reached = true;
+                break;
+            }
+        }
+        assert!(reached, "{name}: bounded seek must reach the final picture");
+    }
+}
+
+#[test]
 fn full_range_rgb_is_exact_and_pixels_outlive_session_reuse() {
     let mut decoder = SourceDecoder::open(
         File::open(rgb_fixture("rgb30_30000_1001.mp4")).unwrap(),

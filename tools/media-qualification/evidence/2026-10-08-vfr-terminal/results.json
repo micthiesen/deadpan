@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-08",
+  "base_revision": "8d0faeb0c2e66fc2f0bbf243c4cd066898bd3ad1",
+  "source_state": "base plus the hashed fixture/test changes; production decoder/index unchanged",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix",
+  "runs": [
+    {
+      "name": "vfr-native-3",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-source",
+        "--test",
+        "persistent_decode",
+        "vfr_terminal_duration_follows_video_timing_without_extending_to_audio"
+      ],
+      "exit_code": 0,
+      "seconds": 0.09784645773470402
+    },
+    {
+      "name": "vfr-session-3",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-media",
+        "--test",
+        "source_session",
+        "vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint"
+      ],
+      "exit_code": 0,
+      "seconds": 0.40792587492614985
+    },
+    {
+      "name": "vfr-clippy-3",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-source",
+        "--test",
+        "persistent_decode",
+        "-p",
+        "deadpan-media",
+        "--test",
+        "source_session",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.8045607921667397
+    }
+  ],
+  "hashes": [
+    {
+      "path": "native/deadpan-source/tests/generate_vfr_terminal_fixture.py",
+      "bytes": 7389,
+      "sha256": "599094677a295c2a88e48965162ade934ed1592fa45de6c376a5e9a1fe191d0f"
+    },
+    {
+      "path": "native/deadpan-source/tests/fixtures/vfr.mp4",
+      "bytes": 43455,
+      "sha256": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884"
+    },
+    {
+      "path": "native/deadpan-source/tests/fixtures/vfr-long-terminal.mp4",
+      "bytes": 43455,
+      "sha256": "e92b382d5d9aacde3193651dc0c6d3afa3adfa7f3174fcfd1ccff438938aa597"
+    },
+    {
+      "path": "native/deadpan-source/tests/fixtures/manifest.json",
+      "bytes": 8446,
+      "sha256": "4b195877038f28d985798e62bd093d9e2ecfb2cf4b9eedbd865ad9abf754766b"
+    },
+    {
+      "path": "native/deadpan-source/tests/persistent_decode.rs",
+      "bytes": 21927,
+      "sha256": "802f634a7b566029b9bbd56d85b3ff976bf3771771a635097c0d18df9db9a737"
+    },
+    {
+      "path": "native/deadpan-source/src/decoder.c",
+      "bytes": 87704,
+      "sha256": "5e4eda0fd262b1205f7e993b4981c8dd80c2ee96711598b861c5b0fb64d7d692"
+    },
+    {
+      "path": "native/deadpan-source/src/lib.rs",
+      "bytes": 62281,
+      "sha256": "574e9f504247f3732eb2a872ebb7c4f027aaf0a6e363ebfead0d1b382b5da7b1"
+    },
+    {
+      "path": "crates/deadpan-media/src/source_session.rs",
+      "bytes": 46645,
+      "sha256": "ca41c477a3fff0b0d57e3427401c228b898dc74e589ce3ef2ec143b83d3f36d5"
+    },
+    {
+      "path": "crates/deadpan-media/tests/source_session.rs",
+      "bytes": 26518,
+      "sha256": "f2d208b70c6e93f3c1b8e687137d2450a0bae57088ca403f5d9d4d0b561019b9"
+    },
+    {
+      "path": "target/debug/deps/persistent_decode-d896fa2072286a0a",
+      "bytes": 2715536,
+      "sha256": "fe971c1a005c99cd3637e7fde6d92aaf7de07439e31621852314aba19577602e"
+    },
+    {
+      "path": "target/debug/deps/source_session-395582b0c395f599",
+      "bytes": 27962288,
+      "sha256": "15b2586f0b387d7a2236ecb38c985565c424f37d6e224039e4241de630377fbb"
+    }
+  ],
+  "initial_failures": "Both initial test assertions expected an optional container-duration value; FFmpeg reports None on this path. Removed that unsupported assumption; encoded container metadata remains independently validated by the byte-level fixture generator.",
+  "scope": "Actual native decoding and SourceSession indexing of legacy and long-terminal VFR files; all120 PTS/durations, final pixels, half-open endpoints and snapshot round trip. No production decoder/index change or new encoder qualification."
+}

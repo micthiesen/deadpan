@@ -1,0 +1,24 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running tests/source_session.rs (target/debug/deps/source_session-395582b0c395f599)
+
+running 1 test
+test vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint ... FAILED
+
+failures:
+
+---- vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint stdout ----
+
+thread 'vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint' (98094413) panicked at crates/deadpan-media/tests/source_session.rs:578:9:
+assertion `left == right` failed
+  left: None
+ right: Some(8008000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p deadpan-media --test source_session`

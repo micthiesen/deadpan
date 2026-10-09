@@ -1,0 +1,29 @@
+   Compiling libc v0.2.189
+   Compiling rustix v1.1.5
+   Compiling errno v0.3.14
+   Compiling getrandom v0.4.3
+   Compiling tempfile v3.27.0
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.36s
+     Running tests/persistent_decode.rs (target/debug/deps/persistent_decode-d896fa2072286a0a)
+
+running 1 test
+test vfr_terminal_duration_follows_video_timing_without_extending_to_audio ... FAILED
+
+failures:
+
+---- vfr_terminal_duration_follows_video_timing_without_extending_to_audio stdout ----
+
+thread 'vfr_terminal_duration_follows_video_timing_without_extending_to_audio' (98087273) panicked at native/deadpan-source/tests/persistent_decode.rs:193:9:
+assertion `left == right` failed
+  left: None
+ right: Some(8008000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    vfr_terminal_duration_follows_video_timing_without_extending_to_audio
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p deadpan-source --test persistent_decode`

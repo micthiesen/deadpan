@@ -1,0 +1,9 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+     Running tests/source_session.rs (target/debug/deps/source_session-395582b0c395f599)
+
+running 1 test
+test vfr_final_interval_retains_encoded_duration_without_using_the_audio_endpoint ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.02s
+
