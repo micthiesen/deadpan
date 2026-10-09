@@ -261,6 +261,7 @@ struct FullVolume {
 #[cfg(target_os = "macos")]
 impl FullVolume {
     fn new() -> Self {
+        use std::os::unix::fs::MetadataExt;
         use std::process::Command;
         let scratch = tempfile::tempdir().unwrap();
         let image = scratch.path().join("volume.dmg");
@@ -290,38 +291,64 @@ impl FullVolume {
         assert!(attached.status.success(), "{attached:?}");
         let mount = mount.canonicalize().unwrap();
         let filler = mount.join("filler");
-        let mut file = File::create(&filler).unwrap();
-        // APFS can release space shortly after a write fails; keep filling
-        // until a new 4 KiB file is refused.
-        let mut full = false;
-        // APFS can keep releasing space under load; give it time to settle.
-        for round in 0..64 {
-            if round > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(50));
-            }
-            for chunk in [1 << 20, 64 << 10, 4 << 10, 512] {
-                let bytes = vec![0x5a_u8; chunk];
-                while file
-                    .write_all(&bytes)
-                    .and_then(|()| file.sync_data())
-                    .is_ok()
-                {}
-            }
-            let probe = mount.join("probe");
-            let refused = File::create(&probe)
-                .and_then(|mut probe| probe.write_all(&[0; 4096]).and_then(|()| probe.sync_all()));
-            let _ = fs::remove_file(&probe);
-            if matches!(&refused, Err(error) if error.kind() == std::io::ErrorKind::StorageFull) {
-                full = true;
-                break;
-            }
-        }
-        assert!(full, "the volume never stayed full");
-        Self {
+        // Own detachment before any setup assertion can unwind.
+        let volume = Self {
             mount,
             filler,
             _scratch: scratch,
+        };
+        assert_ne!(
+            fs::metadata(&volume.mount).unwrap().dev(),
+            fs::metadata(volume._scratch.path()).unwrap().dev(),
+            "filling must stay inside the private disk image"
+        );
+        fs::create_dir(&volume.filler).unwrap();
+        // APFS can release space shortly after a write fails; keep filling
+        // until a new 4 KiB file is refused. Keep successful probes: deleting
+        // one each round can free the very space the next probe consumes.
+        let mut full = false;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        for round in 0..200 {
+            if std::time::Instant::now() >= deadline {
+                break;
+            }
+            if round > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            // A fresh file can consume free extents even when extending the
+            // previous file needs more APFS metadata than remains available.
+            let mut file = match File::create(volume.filler.join(format!("fill-{round}"))) {
+                Ok(file) => file,
+                Err(error) if error.kind() == std::io::ErrorKind::StorageFull => {
+                    full = true;
+                    break;
+                }
+                Err(error) => panic!("create disk-image filler: {error}"),
+            };
+            for chunk in [1 << 20, 64 << 10, 4 << 10, 512] {
+                let bytes = vec![0x5a_u8; chunk];
+                while std::time::Instant::now() < deadline {
+                    match file.write_all(&bytes).and_then(|()| file.sync_data()) {
+                        Ok(()) => {}
+                        Err(error) if error.kind() == std::io::ErrorKind::StorageFull => break,
+                        Err(error) => panic!("fill disk image: {error}"),
+                    }
+                }
+            }
+            let probe = volume.filler.join(format!("probe-{round}"));
+            let refused = File::create(&probe)
+                .and_then(|mut probe| probe.write_all(&[0; 4096]).and_then(|()| probe.sync_all()));
+            match refused {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::StorageFull => {
+                    full = true;
+                    break;
+                }
+                Err(error) => panic!("probe full disk image: {error}"),
+            }
         }
+        assert!(full, "the volume never stayed full");
+        volume
     }
 }
 
@@ -356,7 +383,7 @@ fn a_full_destination_volume_publishes_nothing_and_keeps_the_candidate() {
     assert_eq!(failure.error.code, "destination_full", "{}", failure.error);
     assert_retained(&mut failure.candidate, &fixture);
     fixture.assert_project_unchanged();
-    fs::remove_file(&volume.filler).unwrap();
+    fs::remove_dir_all(&volume.filler).unwrap();
     let retry = publish(
         failure.candidate,
         &fixture.package,
