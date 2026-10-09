@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T12:54:01Z",
+  "updated_at": "2026-10-09T13:03:16Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Finishing remaining source-format and color policies, then the source/creative-operation playback and export matrix.",
   "features": [
@@ -285,6 +285,14 @@
       "revision": "d395821b",
       "retrospective": false,
       "summary": "Interlaced Originals retain motion at exact field cadence. Workspace 5,555 tests, final focused checks, sanitizers, strict Clippy, release exports and packaged import/render pass. Telecine and the broader source/operation matrix remain; DP-02 stays partial."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "a6b0acd1",
+      "retrospective": false,
+      "summary": "Explicit H.264 telecine preserves two/three-field timing across threads and seeks. Workspace 5,560 tests, 124 sanitized source tests, strict Clippy, 155-picture release exports and packaged import/render/verification pass. Broader source-format and operation coverage remains; DP-02 stays partial."
     }
   ]
 }
