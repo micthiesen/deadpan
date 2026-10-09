@@ -128,6 +128,9 @@ are retained. No archived source was built into the current Cargo target.
 
 ## Final verification
 
+Implementation source: `f7b3ada440ffdcb2d351d3653050f30a3215dff1`. The retained source/binary map is
+`/tmp/deadpan-opus-20261009/identity.json`.
+
 Apple M5 Max, macOS 26.5.2 (25F84), Rust 1.97.1. Detailed commands, reports and
 failures live in `/tmp/deadpan-opus-20261009`; the pinned dependency build report
 is `ffmpeg-qualified-build.json`.
