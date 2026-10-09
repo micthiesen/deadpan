@@ -346,6 +346,14 @@ impl Service {
             }
         }
         use deadpan_cli::live_project::ShortOperation as Short;
+        if matches!(command, Short::Take { .. })
+            && self.shared.preview_active.load(Ordering::Acquire)
+        {
+            return Err(LiveError::new(
+                "TakePreviewActive",
+                "Finish or cancel the unsaved preview before changing takes.",
+            ));
+        }
         match command {
             Short::RestoreBackup {
                 id,
@@ -492,6 +500,25 @@ impl Service {
         use deadpan_cli::generation::variants::VariantAction;
         use deadpan_cli::live_project::ShortOperation as Short;
         let message = match command {
+            Short::Take { .. } => {
+                if output["outcome"]["changed"] == true && output["outcome"]["commit"].is_null() {
+                    self.storage_watch.record_take_save();
+                }
+                match serde_json::from_value(output["outcome"]["catalog"].clone()) {
+                    Ok(catalog) => self.take_catalog = Some(catalog),
+                    Err(error) => {
+                        self.error = Some(format!(
+                            "Take saved, but its catalog reply could not be read: {error}"
+                        ))
+                    }
+                }
+                // Restore publishes the catalog together with its refreshed
+                // workspace, or with the retained post-commit refresh failure.
+                if !output["outcome"]["commit"].is_null() {
+                    return;
+                }
+                "Updated named takes from the command line."
+            }
             Short::GenerationVariant {
                 request,
                 attempt,

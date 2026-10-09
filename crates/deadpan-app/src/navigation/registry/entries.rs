@@ -1512,6 +1512,20 @@ pub static SPECS: &[Spec] = &[
         help: "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.",
     },
     Spec {
+        id: "takes",
+        name: "Named takes",
+        section: Section::Project,
+        keys: &[],
+        commands: &[verb("takes", ":takes")],
+        contexts: C::EDITOR,
+        replay: Replay::Ignored,
+        headless: eq(
+            "project takes <p>; project take <p> --json <request>",
+            PROJECT,
+        ),
+        help: "Save named versions of the current committed edit. Open, update, rename or delete a take. Opening is one undoable edit; label changes preserve the current edit. Tab moves between controls; Escape returns to editing.",
+    },
+    Spec {
         id: "renders",
         name: "Saved renders",
         section: Section::Project,

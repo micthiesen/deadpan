@@ -27,6 +27,7 @@ mod accessibility;
 mod ai_pause;
 mod backups;
 mod camera;
+mod takes;
 #[cfg(test)]
 pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
 mod camera_fields;
@@ -280,6 +281,7 @@ pub struct DeadpanApp {
     diagnostics: diagnostics::State,
     /// `:storage`: project and cache usage, cleanup and portable copies.
     storage: storage::State,
+    takes: takes::State,
     /// `:jobs`: background jobs, queued state, cancel and interrupted AI.
     jobs: jobs::State,
     /// The user's gag presets, shared by every project.
@@ -462,6 +464,7 @@ impl DeadpanApp {
             models: model_packs::Models::default(),
             diagnostics: diagnostics::State::default(),
             storage: storage::State::default(),
+            takes: takes::State::default(),
             jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             bundled_sounds: crate::keymap_file::application_support_directory()
@@ -893,6 +896,7 @@ impl DeadpanApp {
             }
             self.render_job = update.render;
             self.receive_render_history(update.render_history);
+            self.receive_takes(update.takes, update.take_catalog, update.error.as_deref());
             self.receive_recovery(
                 update.opened.take(),
                 update.storage.take(),
@@ -2355,6 +2359,9 @@ impl DeadpanApp {
         if self.jobs_keyboard(context) {
             return None;
         }
+        if self.takes_keyboard(context) {
+            return None;
+        }
         if self.render_keyboard(context) {
             return None;
         }
@@ -3088,6 +3095,7 @@ impl DeadpanApp {
                 self.help_open = true;
             }
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
+            Ok(navigation::command::Entry::Takes) => self.takes.requested = true,
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
             Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
             Ok(navigation::command::Entry::Storage) => self.open_storage(context),
@@ -3226,6 +3234,7 @@ impl DeadpanApp {
                 && self.slip.is_none()
                 && self.trim.is_none()
                 && !self.render.blocking()
+                && !self.takes.open
                 && !self.marks.open
                 && !self.models.open
                 && !self.diagnostics.open
@@ -3256,7 +3265,7 @@ impl DeadpanApp {
                 .is_some_and(|workspace| workspace.can_redo),
             single_original_ready: matches!(profile, Some(SingleSourceState::Ready { .. })),
             awaiting_original: matches!(profile, Some(SingleSourceState::AwaitingSource { .. })),
-            help_allowed: self.gain.is_none() && !self.render.blocking(),
+            help_allowed: self.gain.is_none() && !self.render.blocking() && !self.takes.open,
         }
     }
 
@@ -5086,7 +5095,7 @@ impl eframe::App for DeadpanApp {
             self.selected_source.clone(),
             self.selected_sound.clone(),
         );
-        if self.render.blocking() || self.marks.open {
+        if self.render.blocking() || self.marks.open || self.takes.open {
             ui.disable();
             ui.set_opacity(1.0);
         }
@@ -5144,6 +5153,7 @@ impl eframe::App for DeadpanApp {
                 self.corrections_sheet(&context);
             }
             self.render_windows(&context);
+            self.takes_window(&context);
             self.marks_window(&context);
             self.models_window(&context);
             self.diagnostics_window(&context);
@@ -5221,6 +5231,7 @@ impl eframe::App for DeadpanApp {
                     self.begin_render(&context);
                 }
                 self.dispatch_render_history(&context);
+                self.dispatch_takes(&context);
             }
             self.dispatch_ai_audition();
             self.schedule_playback_picture();

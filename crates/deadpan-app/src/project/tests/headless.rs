@@ -3,6 +3,7 @@
 mod macros;
 mod operations;
 mod preparation;
+mod takes;
 
 use super::*;
 use deadpan_cli::host::Client;

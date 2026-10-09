@@ -51,6 +51,7 @@ mod shots;
 mod slip;
 mod splice;
 mod storage;
+mod takes;
 mod targets;
 mod transcripts;
 mod trim;
@@ -127,6 +128,8 @@ struct Service {
     render_registration: Option<crate::jobs::JobHandle>,
     render_update: Option<super::ProjectRenderUpdate>,
     render_history: Option<super::render_history::Update>,
+    takes: Option<super::takes::Update>,
+    take_catalog: Option<deadpan_store::takes::TakeCatalog>,
     pending_session_change: Option<render::PendingSessionChange>,
     host: Option<headless::Host>,
     /// Owners a restore replaced, kept only to write their admitted replies.
@@ -220,6 +223,8 @@ pub(super) fn run(
         render_registration: None,
         render_update: None,
         render_history: None,
+        takes: None,
+        take_catalog: None,
         pending_session_change: None,
         host: None,
         retired_hosts: Vec::new(),
@@ -437,6 +442,8 @@ impl Service {
             marks: self.marks.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
+            takes: self.takes.clone(),
+            take_catalog: self.take_catalog.clone(),
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
             shot_save: self.shot_save.clone(),
@@ -494,6 +501,10 @@ impl Service {
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
         let request = match request {
+            ProjectRequest::Takes(request) => {
+                self.takes_command(request);
+                return Ok(());
+            }
             ProjectRequest::Marks(request) => {
                 self.marks_command(request);
                 return Ok(());
@@ -619,6 +630,7 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
+            ProjectRequest::Takes(_) => unreachable!("takes use independent feedback"),
             ProjectRequest::Backup(request) => {
                 // Normally answered before dispatch; kept for direct callers.
                 self.backup_command(request);

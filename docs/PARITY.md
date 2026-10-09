@@ -9,6 +9,9 @@ routers and their `ProjectRequest` dispatch, and checked against
 subcommand, a `command` request kind (any [`Command`](../crates/deadpan-core/src/command.rs)
 variant in snake_case), a semantic instruction run with `macro` `apply`, or a
 live endpoint operation from [open projects](LIVE_PROJECT.md).
+The internal `RestoreSnapshot` command requires a retained store proof;
+callers restore an observed take through `project take`, not by supplying an
+arbitrary document to `command`.
 
 Status meanings:
 
@@ -48,6 +51,7 @@ or exists.
 | `ProjectRequest::SoundEdit` | `sound <p> --json <request> [--dry-run]` derives the native event (`place`, `move`, `nudge`, `set`, `cut`, `allowance`, `delete`) and commits it as `set_sound`, `set_sound_allowance` or `delete_sound`; `command` takes complete events. R, D. |
 | Operational project state (AI variants, corrections, storage, backups) | Live short operations `GenerationVariant`, `DismissInterruptedAttempt`, `Corrections`, `CleanStorage`, `ConfirmVariantClock`, `RestoreBackup`, through the same `execute_short` the closed commands use. Refreshes the app's inspector, transcript or retention status. |
 | Undo / Redo | `project undo|redo <p> --expected <rev> [--dry-run]`. R, D. |
+| `:takes`: list, save, update, rename, delete, open | `project takes <p>`; `project take <p> --json <request> [--dry-run]`. R (edit revision, catalog version and selected snapshot), D. Shared store catalog transactions; opening is one reversible edit. |
 | Open project (writer held by the app) | Every write in this inventory routes to the app's authenticated endpoint (`Execute`, `Prepare`, `Render`, `Generate`) after a writer-lock conflict. Read-only reports and dry runs open their own reader. |
 
 ## Navigation, view and audition

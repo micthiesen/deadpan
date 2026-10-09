@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-198 actions, 121 command verbs.
+199 actions, 122 command verbs.
 
 ## Start & View
 
@@ -206,6 +206,7 @@ Headless status links to [PARITY](PARITY.md).
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
 | **Render** (`render`)<br>Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing. | `⌘E` (native) | `:render` | Every editor context | not recorded | [Equivalent](PARITY.md#render-and-export): `render <p> --output <dir> [--expected <rev>]` |
+| **Named takes** (`takes`)<br>Save named versions of the current committed edit. Open, update, rename or delete a take. Opening is one undoable edit; label changes preserve the current edit. Tab moves between controls; Escape returns to editing. | - | `:takes` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project takes <p>; project take <p> --json <request>` |
 | **Saved renders** (`renders`)<br>Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing. | - | `:renders` | Every editor context | not recorded | [Equivalent](PARITY.md#render-and-export): `render status <p>` |
 | **Relink the Original** (`relink`)<br>Locate a missing Original by choosing its file. Only identical content is accepted. | - | `:relink` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project relink-original … --expected-version <N>` |
 | **Recovery report** (`recovery`)<br>Show what opening this project recovered. | - | `:recovery` | Every editor context | not recorded | [GUI-only](PARITY.md#project-and-files): `session report; project validate, originals, render status read the same facts` |

@@ -63,6 +63,7 @@ mod splice;
 mod split_edits;
 mod storage;
 mod structure_copies;
+mod takes;
 mod targets;
 mod telemetry;
 mod transcript;

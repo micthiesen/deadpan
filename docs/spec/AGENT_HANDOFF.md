@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Named takes](../TAKES.md) implement §20.2's saved versions through `:takes`
+and the authenticated CLI. Schema 75 stores a versioned catalog and immutable
+restore proofs; core format remains 47. Catalog changes preserve the current
+edit and Redo, and opening a take is one reversible edit, including accepted
+providers without restarting old AI work. The
+[qualification](../qualification/named-takes-2026-10-08.md) records completed
+checks and pending verification. DP-01 remains partial: native backup recovery
+when a database cannot open and wrapped raw I/O failure classification remain.
+
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening
 tolerances. Native ABI and finished-file policy 2 retain two priming packets

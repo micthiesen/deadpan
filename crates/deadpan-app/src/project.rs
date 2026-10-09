@@ -36,6 +36,7 @@ pub mod slice;
 pub mod slip;
 pub mod sound;
 pub mod splice;
+pub mod takes;
 pub mod targets;
 #[cfg(test)]
 mod tests;
@@ -403,6 +404,7 @@ pub(crate) struct ContinuationKey {
     captured_slice: Option<slice::CopyId>,
     captured_original: Option<slice::CopyId>,
     cut_slice: Option<slice::CopyId>,
+    take: Option<(u64, u64)>,
 }
 
 impl ContinuationKey {
@@ -417,6 +419,7 @@ impl ContinuationKey {
             || fresh(&self.captured_slice, &delivered.captured_slice)
             || fresh(&self.captured_original, &delivered.captured_original)
             || fresh(&self.cut_slice, &delivered.cut_slice)
+            || fresh(&self.take, &delivered.take)
     }
 }
 
@@ -424,6 +427,10 @@ impl ProjectUpdate {
     pub(crate) fn continuation_key(&self) -> ContinuationKey {
         ContinuationKey {
             committed: self.committed.as_ref().map(|edit| edit.revision.clone()),
+            take: self
+                .takes
+                .as_ref()
+                .map(|update| (update.session, update.ticket)),
             macros: self.macros.as_ref().map(|update| update.id.clone()),
             captured_slice: self.captured_slice.as_ref().map(|update| update.id.clone()),
             captured_original: self
@@ -488,6 +495,8 @@ pub struct ProjectUpdate {
     /// Bounded history replies retain their exact query and session independently
     /// of authored commits and live render progress.
     pub render_history: Option<render_history::Update>,
+    pub takes: Option<takes::Update>,
+    pub take_catalog: Option<deadpan_store::takes::TakeCatalog>,
     /// Background transcript saves report here, never through the editor's
     /// command error, which the next dispatch clears.
     pub transcript_save: Option<TranscriptSave>,
@@ -965,6 +974,7 @@ pub enum ProjectRequest {
     Target(targets::Operation),
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
+    Takes(takes::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
         path: PathBuf,

@@ -16,6 +16,10 @@ impl Service {
                 | ProjectRequest::Close
                 | ProjectRequest::CreateFromSource { .. }
                 | ProjectRequest::CancelImport
+                | ProjectRequest::Takes(project::takes::Request {
+                    operation: project::takes::Operation::List,
+                    ..
+                })
                 | ProjectRequest::Backup(
                     project::backups::Request::LoadSettings { .. }
                         | project::backups::Request::SaveSettings { .. }
@@ -62,6 +66,13 @@ impl Service {
                         code: "RenderReadOnly",
                         message: reason.clone(),
                     }),
+                });
+            }
+            ProjectRequest::Takes(request) => {
+                self.takes = Some(project::takes::Update {
+                    ticket: request.ticket,
+                    session: request.session,
+                    result: Err(reason.clone()),
                 });
             }
             ProjectRequest::RenderHistory(request) => {

@@ -350,6 +350,45 @@ fn a_full_disk_never_reports_saved_and_its_alert_clears_after_a_real_save() {
     assert_eq!(still.storage.unwrap().code, "DiskFull");
     let workspace = still.workspace.unwrap();
     std::fs::remove_file(&filler).unwrap();
+    // A take catalog save must clear the failure even though it creates no edit
+    // revision. Merely browsing that catalog must leave the alert in place.
+    let listed = command(
+        &service,
+        ProjectRequest::Takes(crate::project::takes::Request {
+            ticket: 1,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            operation: crate::project::takes::Operation::List,
+        }),
+    );
+    assert_eq!(listed.storage.unwrap().code, "DiskFull");
+    let catalog = listed.takes.unwrap().result.unwrap().catalog;
+    let take_saved = command(
+        &service,
+        ProjectRequest::Takes(crate::project::takes::Request {
+            ticket: 2,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            operation: crate::project::takes::Operation::Apply(deadpan_store::takes::Request {
+                project_id: catalog.project_id,
+                expected_revision: catalog.revision_id,
+                expected_version: catalog.version,
+                action: deadpan_store::takes::Action::Create {
+                    id: deadpan_store::takes::TakeId::new("recovered-take").unwrap(),
+                    name: deadpan_store::takes::TakeName::new("Recovered edit").unwrap(),
+                },
+            }),
+        }),
+    );
+    assert!(take_saved.takes.as_ref().unwrap().result.is_ok());
+    assert!(
+        take_saved.storage.is_none(),
+        "a real take save clears the alert"
+    );
+    assert_eq!(
+        take_saved.workspace.unwrap().document.revision_id(),
+        workspace.document.revision_id()
+    );
     let saved = command(
         &service,
         edit_request(

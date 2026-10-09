@@ -65,6 +65,7 @@ pub enum Entry {
     Sequence,
     Help,
     Renders,
+    Takes,
     /// `:relink`: locate a missing Original by choosing its file.
     Relink,
     /// `:recovery`: show what opening this project recovered.
@@ -764,15 +765,16 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "open" => Action::Open,
         "import" => Action::Import,
         "render" => Action::Render,
-        "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "backups" | "portable-copy" | "jobs"
+        "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
+        | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
+        | "correct" | "storage" | "backups" | "portable-copy" | "jobs"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
                 "sequence" => Entry::Sequence,
                 "renders" => Entry::Renders,
+                "takes" => Entry::Takes,
                 "relink" => Entry::Relink,
                 "recovery" => Entry::Recovery,
                 "models" => Entry::Models,
@@ -788,9 +790,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 _ => Entry::Help,
             });
         }
-        "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics" | "correct"
-        | "storage" | "backups" | "portable-copy" | "jobs" => {
+        "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
+        | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
+        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1646,6 +1648,7 @@ mod tests {
             ("import", Entry::Action(Action::Import)),
             (":render", Entry::Action(Action::Render)),
             (":renders", Entry::Renders),
+            (":takes", Entry::Takes),
             (":relink", Entry::Relink),
             ("recovery", Entry::Recovery),
             (":models", Entry::Models),

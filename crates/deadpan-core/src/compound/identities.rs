@@ -80,6 +80,8 @@ impl Ledger {
 }
 fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mut Vec<&'a MarkId>) {
     match command {
+        // AtomicCommand refuses restores; they allocate no new authored IDs.
+        Command::RestoreSnapshot { .. } => {}
         Command::RepeatSelection { identities, .. } => {
             nodes.push(&identities.repeat);
             nodes.extend(identities.group.iter().chain(&identities.split.nodes));

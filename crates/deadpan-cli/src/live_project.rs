@@ -106,6 +106,13 @@ pub enum ShortOperation {
         new_revision: RevisionId,
         dry_run: bool,
     },
+    /// Named snapshots of committed edits, observed at one catalog version.
+    #[serde(deserialize_with = "deserialize_empty")]
+    TakeCatalog,
+    Take {
+        request: Box<deadpan_store::takes::Request>,
+        dry_run: bool,
+    },
     AdoptPrimaryGeometry {
         adoption: PrimaryGeometryAdoption,
         dry_run: bool,
@@ -179,6 +186,8 @@ impl ShortOperation {
             || matches!(
                 self,
                 Self::Edit { dry_run: true, .. }
+                    | Self::TakeCatalog
+                    | Self::Take { dry_run: true, .. }
                     | Self::GenerationPreparations { .. }
                     | Self::GenerationPreparation { .. }
                     | Self::History { dry_run: true, .. }
@@ -554,6 +563,36 @@ pub fn execute_short(
             (
                 serde_json::json!({"protocol":1,"committed":!dry_run,"outcome":outcome}),
                 revision,
+            )
+        }
+        ShortOperation::TakeCatalog => (
+            serde_json::json!({"protocol":1,"takes":store.take_catalog().map_err(LiveError::store)?}),
+            None,
+        ),
+        ShortOperation::Take { request, dry_run } => {
+            if &request.project_id != project {
+                return Err(LiveError::new(
+                    "HostProjectChanged",
+                    "Take request and host project identities differ",
+                ));
+            }
+            let outcome = if *dry_run {
+                store.preview_take(request)
+            } else {
+                store.apply_take(request)
+            }
+            .map_err(LiveError::store)?;
+            let committed = if *dry_run {
+                None
+            } else {
+                outcome
+                    .commit
+                    .as_ref()
+                    .map(|commit| commit.revision_id.clone())
+            };
+            (
+                serde_json::json!({"protocol":1,"committed":!dry_run,"outcome":outcome}),
+                committed,
             )
         }
         ShortOperation::AdoptPrimaryGeometry { adoption, dry_run } => {

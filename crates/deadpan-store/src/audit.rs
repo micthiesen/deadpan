@@ -68,6 +68,7 @@ pub(crate) struct RevisionRows {
     pub history: Option<HistoryRow>,
     pub steps: Vec<(i64, String, Option<String>)>,
     pub scope_event: Option<crate::generation_scope::Event>,
+    pub take_snapshot: Option<String>,
 }
 
 pub(crate) struct HistoryRow {
@@ -111,6 +112,10 @@ pub(crate) fn link(previous: &Chain, rows: &RevisionRows) -> Chain {
     integer(&mut hasher, rows.depth);
     integer(&mut hasher, rows.json_bound);
     optional(&mut hasher, rows.patch.as_deref().map(str::as_bytes));
+    optional(
+        &mut hasher,
+        rows.take_snapshot.as_deref().map(str::as_bytes),
+    );
     match &rows.history {
         None => hasher.update([0]),
         Some(history) => {
@@ -237,6 +242,7 @@ pub(crate) fn read_rows(connection: &Connection, id: &str) -> Result<RevisionRow
         history,
         steps,
         scope_event: crate::generation_scope::read_event(connection, id)?,
+        take_snapshot: crate::takes::restore_proof(connection, id)?,
     })
 }
 

@@ -59,6 +59,8 @@ pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod takes;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod tracking;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod transcription;
@@ -89,6 +91,8 @@ const HELP: &str = "Deadpan headless commands:
   project dump <project.deadpan> --json
   project undo <project.deadpan> --expected <revision> [--dry-run]
   project redo <project.deadpan> --expected <revision> [--dry-run]
+  project takes <project.deadpan>
+  project take <project.deadpan> --json <request.json> [--dry-run]
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
   project view <project.deadpan>
@@ -591,6 +595,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["project", "copy-portable", rest @ ..] => storage::run_copy(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "backups", rest @ ..] => backups::run_list(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "takes", rest @ ..] => takes::run_list(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "take", rest @ ..] => takes::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "backup", rest @ ..] => backups::run_create(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

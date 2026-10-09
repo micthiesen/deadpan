@@ -599,3 +599,60 @@ fn shot_scan_progress_is_kept_only_for_the_ready_original() -> Result {
     assert!(store.shot_scan_progress(&key, 30)?.is_some());
     Ok(())
 }
+
+#[test]
+fn takes_cannot_save_before_original_or_restore_before_protected_baseline() -> Result {
+    use deadpan_store::takes::{Action, Request, TakeId, TakeName};
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = create(scratch.path())?;
+    let take_request = |store: &ProjectStore, action: Action| -> Result<Request> {
+        let catalog = store.take_catalog()?;
+        Ok(Request {
+            project_id: catalog.project_id,
+            expected_revision: catalog.revision_id,
+            expected_version: catalog.version,
+            action,
+        })
+    };
+    let before = take_request(
+        &store,
+        Action::Create {
+            id: TakeId::new("empty")?,
+            name: TakeName::new("Empty")?,
+        },
+    )?;
+    assert!(store.preview_take(&before).is_err());
+    assert!(store.apply_take(&before).is_err());
+    let prepared = prepare(&mut store, "offset-bframes.mp4", true)?;
+    store.initialize_prepared_source(&initialization(), &prepared, &active())?;
+    store.apply_take(&take_request(
+        &store,
+        Action::Create {
+            id: TakeId::new("baseline")?,
+            name: TakeName::new("Original baseline")?,
+        },
+    )?)?;
+    let profile = store.single_source_state()?;
+    store.apply_take(&take_request(
+        &store,
+        Action::Restore {
+            id: TakeId::new("baseline")?,
+            expected_snapshot: revision("baseline"),
+            new_revision: revision("restored-baseline"),
+        },
+    )?)?;
+    assert_eq!(store.single_source_state()?, profile);
+    store.validate_full()?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    database.execute(
+        "UPDATE takes SET snapshot_revision='initial' WHERE id='baseline'",
+        [],
+    )?;
+    let error = store.take_catalog().unwrap_err().to_string();
+    assert!(
+        error.contains("precedes the protected Original baseline"),
+        "{error}"
+    );
+    assert!(store.validate_full().is_err());
+    Ok(())
+}

@@ -25,6 +25,11 @@ pub const MAX_COMPOUND_DOCUMENT_BYTES: usize = 512 * 1024 * 1024;
 pub struct AtomicCommand(Box<Command>);
 impl AtomicCommand {
     pub fn new(command: Command) -> Result<Self, EditError> {
+        if matches!(command, Command::RestoreSnapshot { .. }) {
+            return Err(invalid(
+                "snapshot restores are forbidden in Compound leaves",
+            ));
+        }
         if matches!(command, Command::Compound { .. }) {
             return Err(invalid("nested compound commands are forbidden"));
         }

@@ -1286,7 +1286,11 @@ cargo run --locked -p deadpan-cli -- project checkpoint /tmp/example.deadpan
 Undo/redo require the current revision and commit a new, never-reused revision
 identity. Undo restores authored content; it cannot revive a stale command's
 authorization. Editing after undo clears the redo path while retaining older
-immutable revisions and their history. Named branch selection is not implemented.
+immutable revisions and their history. [Named takes](TAKES.md) retain committed
+snapshots: `project takes PATH` lists the versioned catalog, and
+`project take PATH --json REQUEST [--dry-run]` saves, updates, renames, deletes
+or restores an observed take. Restoring is one reversible edit; metadata changes
+preserve the edit head and redo path.
 
 Both history commands accept `--dry-run`. They return `committed: false` with the
 proposed `outcome`, using the same navigation and patch validation as the write.
@@ -1323,10 +1327,11 @@ and copies at most 32 pages per step, with a default 1 GiB/five-minute limit. Th
 owner publishes the finished file after rechecking its session and namespace.
 The internal receipt records the revision actually captured by the backup,
 which may differ from the admission or current revision; ordinary stdout keeps
-the existing `database_checkpoint` path field. Full recovery UI and portable
-project-copy workflow remain open.
+the existing `database_checkpoint` path field. See [backups and recovery](BACKUPS.md)
+and the implemented [portable project-copy workflow](STORAGE.md).
 Unsupported database schema versions are refused without rewriting them;
-future-schema read-only inspection still needs a compatibility implementation.
+newer schemas open in an explained read-only view when their current document
+is readable by this build.
 
 Open-owner preparation commands emit one final JSON result. SIGINT and SIGTERM
 request cancellation of the captured operation, followed by observation until
@@ -1347,8 +1352,7 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schema 68 is current. Schemas 66 and 67 return `MigrationRequired` and
-`project migrate` upgrades it (backup, copy, validate, promote). Earlier
+Database schema 75 is current. Earlier unused development
 schemas return `SchemaUnsupported` before writer locks, backups, recovery,
 authored JSON parsing or database writes, and their packages remain intact
 ([development formats](DEVELOPMENT_FORMATS.md)).

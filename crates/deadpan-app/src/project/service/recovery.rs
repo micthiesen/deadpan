@@ -17,9 +17,18 @@ use crate::recovery::{StorageAlert, storage_code};
 pub(super) struct StorageWatch {
     seen: Vec<String>,
     saves: Option<SaveMarks>,
+    take_saved: bool,
 }
 
 type SaveMarks = (Option<usize>, [Option<u64>; 4], Option<Option<u64>>);
+
+impl StorageWatch {
+    /// A changed take catalog is a durable save without a document revision.
+    /// Reads, dry runs and no-ops must never acknowledge a storage failure.
+    pub(super) fn record_take_save(&mut self) {
+        self.take_saved = true;
+    }
+}
 
 pub(super) struct Relinking {
     id: u64,
@@ -161,7 +170,7 @@ impl Service {
 
     /// The one choke point: before publishing, any newly appearing storage
     /// failure raises the alert, and a successful save that creates no
-    /// revision (an annotation, register or relink save) clears it.
+    /// revision (an annotation, register, take or relink save) clears it.
     pub(super) fn observe_storage(&mut self) {
         let failures: Vec<String> = self
             .failure_messages()
@@ -189,15 +198,17 @@ impl Service {
             )
             .then(|| self.relink.as_ref().map(|status| status.ticket)),
         );
-        let saved_without_revision = self.storage_watch.saves.as_ref().is_some_and(|before| {
-            before.0 != saves.0
-                || before
-                    .1
-                    .iter()
-                    .zip(saves.1.iter())
-                    .any(|(before, now)| now.is_some() && before != now)
-                || (saves.2.is_some() && before.2 != saves.2)
-        });
+        let saved_take = std::mem::take(&mut self.storage_watch.take_saved);
+        let saved_without_revision = saved_take
+            || self.storage_watch.saves.as_ref().is_some_and(|before| {
+                before.0 != saves.0
+                    || before
+                        .1
+                        .iter()
+                        .zip(saves.1.iter())
+                        .any(|(before, now)| now.is_some() && before != now)
+                    || (saves.2.is_some() && before.2 != saves.2)
+            });
         if saved_without_revision && failures.iter().all(|f| self.storage_watch.seen.contains(f)) {
             self.storage = None;
         }

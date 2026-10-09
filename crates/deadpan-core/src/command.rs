@@ -58,6 +58,12 @@ macro_rules! define_commands {
     };
 }
 define_commands! {
+    /// Restore an exact immutable authored snapshot. The store separately proves
+    /// that this snapshot is an earlier committed revision of this project.
+    RestoreSnapshot {
+        #[serde(deserialize_with = "crate::document::deserialize_snapshot")]
+        snapshot: Box<ProjectDocument>,
+    },
     /// Replay the unchanged base command, then restore exact accepted providers.
     WithBoundaryReplacements {
         edit: crate::BoundaryReplacementEdit,
@@ -1089,6 +1095,28 @@ fn apply_with_durations_captured(
         &request.expected_revision,
         &request.new_revision,
     )?;
+    if let Command::RestoreSnapshot { snapshot } = &request.command {
+        if snapshot.project_id() != document.project_id()
+            || snapshot.root() != document.root()
+            || snapshot.schema_version() != document.schema_version()
+        {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "restored snapshot must retain the project, root and document format",
+            ));
+        }
+        let mut result = (**snapshot).clone();
+        result.revision_id = request.new_revision.clone();
+        // Do not run ordinary edit transforms: every authored clock, provider,
+        // mark and sound already belongs to this exact saved composition.
+        let (edit, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((edit, result, validation));
+    }
     if let Command::WithBoundaryReplacements { edit } = &request.command {
         let base = CommandRequest {
             project_id: request.project_id.clone(),
@@ -1846,6 +1874,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::RestoreSnapshot { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "snapshot restores require the complete replay entrypoint",
+            ));
+        }
         Command::WithBoundaryReplacements { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -3253,6 +3287,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::RestoreSnapshot { .. } => "Restore named take",
         Command::WithBoundaryReplacements { edit } => description(edit.command()),
         Command::Compound { .. } => "Apply resolved transaction",
         Command::SetSound { .. } => "Set sound event",

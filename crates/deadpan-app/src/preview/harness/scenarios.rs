@@ -56,6 +56,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "diagnostics" => super::diagnostics::run(d),
         "storage" => super::storage::run(d),
         "backups" => super::backups::run(d),
+        "takes" => super::takes::run(d),
         "jobs" => super::jobs::run(d),
         "full-session" => super::full_session::run(d),
         "layouts" => super::layouts::run(d),
@@ -1523,11 +1524,11 @@ fn help_search(d: &mut Driver<'_>) -> Result<(), String> {
         d.step(&format!("Help verb search transition {frame}"), true)?;
     }
     let hold = text_paint_visibility(d, "Insert a pause");
-    let usage = text_paint_visibility(d, ",h · :hold 0.5s [video=black]");
+    let usage = text_paint_visibility(d, ",h · :hold 0.5s [video=freeze|black|ai] [audio=silence]");
     d.check(
         "Searching :hold shows the pause action with its key and usage",
         hold.iter().any(|part| part["fully_visible"] == true) && !usage.is_empty(),
-        json!("Insert a pause, ,h · :hold 0.5s [video=black]"),
+        json!("Insert a pause, ,h · :hold 0.5s [video=freeze|black|ai] [audio=silence]"),
         json!({"name":hold,"keys":usage}),
     )?;
     d.capture("Help search for :hold")?;

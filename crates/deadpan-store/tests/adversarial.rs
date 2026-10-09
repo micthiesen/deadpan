@@ -34,7 +34,7 @@ fn request(
     .unwrap()
 }
 
-/// Everything a validated package exposes: every revision and the registers.
+/// Everything a validated package exposes: revisions, registers and takes.
 #[derive(PartialEq)]
 struct Expected {
     revisions: Vec<(RevisionId, ProjectDocument)>,
@@ -45,6 +45,7 @@ struct Expected {
         deadpan_core::RegisterName,
         std::sync::Arc<deadpan_core::RegisterValue>,
     >,
+    takes: Vec<deadpan_store::takes::Take>,
 }
 
 fn observe(store: &ProjectStore, package: &Path) -> Result<Expected, deadpan_store::StoreError> {
@@ -74,6 +75,7 @@ fn observe(store: &ProjectStore, package: &Path) -> Result<Expected, deadpan_sto
         revisions,
         head: store.snapshot()?,
         registers: store.registers()?.entries,
+        takes: store.take_catalog()?.entries,
     })
 }
 
@@ -149,6 +151,18 @@ fn template(directory: &Path) -> (PathBuf, Expected) {
             },
         )
         .unwrap();
+    let catalog = store.take_catalog().unwrap();
+    store
+        .apply_take(&deadpan_store::takes::Request {
+            project_id: catalog.project_id,
+            expected_revision: catalog.revision_id,
+            expected_version: catalog.version,
+            action: deadpan_store::takes::Action::Create {
+                id: deadpan_store::takes::TakeId::new("saved-take").unwrap(),
+                name: deadpan_store::takes::TakeName::new("Saved edit").unwrap(),
+            },
+        })
+        .unwrap();
     drop(store);
     // Fold the WAL so the template is one self-contained database file.
     Connection::open(path.join("project.sqlite"))
@@ -212,6 +226,9 @@ fn judge(package: &Path, expected: &Expected) -> Outcome {
                         return Err(
                             "tampered package validated with a different register bank".into()
                         );
+                    }
+                    if observed.takes != expected.takes {
+                        return Err("tampered package validated with different saved takes".into());
                     }
                     Verdict::Accepted
                 }
@@ -410,10 +427,12 @@ fn adversarial_tampered_rows_fail_validation() {
 fn adversarial_register_slot_tampers_are_detected() {
     let scratch = tempfile::tempdir().unwrap();
     let (template, _) = template(scratch.path());
-    for (index, script) in [
-        [0x03_u8, 0x01, 0x03, 0x7b, 0x7d].as_slice(), // register_state.version := 125
-        &[0xa4, 0x87, 0x5d, 0xfe],                    // delete registers row 'a'
-        &[0x2c, 0x5a, 0xdf, 0xff],                    // rename registers 'a' to 'x'
+    // Pin the minimized cases' actual operations. Their original byte selectors
+    // depended on the count and ordering of every nonempty database table.
+    for (index, statement) in [
+        "UPDATE register_state SET version=125 WHERE singleton=1", // 03 01 03 7b 7d
+        "DELETE FROM registers WHERE name='a'",                    // a4 87 5d fe
+        "UPDATE registers SET name='x' WHERE name='a'",            // 2c 5a df ff
     ]
     .into_iter()
     .enumerate()
@@ -422,7 +441,7 @@ fn adversarial_register_slot_tampers_are_detected() {
         copy_package(&template, &package);
         let connection = Connection::open(package.join("project.sqlite")).unwrap();
         let _ = connection.execute_batch("PRAGMA foreign_keys=OFF;");
-        tamper(&connection, script).unwrap();
+        assert_eq!(connection.execute(statement, []).unwrap(), 1);
         drop(connection);
         let error = match ProjectStore::open(&package, AccessMode::ReadOnly) {
             Ok(store) => store.validate_full().expect_err("tamper validated"),

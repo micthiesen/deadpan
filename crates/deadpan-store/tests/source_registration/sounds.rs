@@ -303,3 +303,65 @@ fn sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen() -> 
     ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
     Ok(())
 }
+
+#[test]
+fn takes_restore_root_sound_and_qualified_asset_absent_from_current_head() -> Result {
+    use deadpan_store::takes::{Action, Request, TakeId, TakeName};
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let input = request(&store, &original, "import", "camera", Some("clip"))?;
+    store.register_source(&input, &decoded, None, limits(), &active())?;
+    let imported = store.snapshot()?;
+    store.commit(&edit(
+        &imported,
+        "sound-take",
+        Command::SetSound {
+            id: SoundId::new("overlay")?,
+            event: sound(&imported)?,
+        },
+    ))?;
+    let saved = store.snapshot()?;
+    let request = |store: &ProjectStore, action: Action| -> Result<Request> {
+        let catalog = store.take_catalog()?;
+        Ok(Request {
+            project_id: catalog.project_id,
+            expected_revision: catalog.revision_id,
+            expected_version: catalog.version,
+            action,
+        })
+    };
+    store.apply_take(&request(
+        &store,
+        Action::Create {
+            id: TakeId::new("sound")?,
+            name: TakeName::new("Measured sound")?,
+        },
+    )?)?;
+    store.undo(saved.revision_id(), revision("undo-sound-take"))?;
+    store.undo(&revision("undo-sound-take"), revision("undo-import-take"))?;
+    assert!(store.snapshot()?.assets().is_empty());
+    assert!(store.snapshot()?.sounds().is_empty());
+    let restore = request(
+        &store,
+        Action::Restore {
+            id: TakeId::new("sound")?,
+            expected_snapshot: saved.revision_id().clone(),
+            new_revision: revision("restore-sound"),
+        },
+    )?;
+    let preview = store.preview_take(&restore)?;
+    assert!(store.snapshot()?.assets().is_empty());
+    assert_eq!(
+        store.apply_take(&restore)?.commit.unwrap().edit,
+        preview.commit.unwrap().edit
+    );
+    let mut expected = serde_json::to_value(&saved)?;
+    expected["revision_id"] = serde_json::to_value(revision("restore-sound"))?;
+    assert_eq!(serde_json::to_value(store.snapshot()?)?, expected);
+    store.validate_full()?;
+    drop(store);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate_full()?;
+    Ok(())
+}

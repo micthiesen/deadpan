@@ -1233,12 +1233,16 @@ pub(crate) fn validate_sound_sources(
         .map(|(_, event)| &event.source.asset)
         .collect::<std::collections::BTreeSet<_>>();
     for asset in assets {
-        let record = current
+        let record = next
             .assets()
             .get(asset)
-            .ok_or_else(|| invalid("sound asset is absent from the selected revision"))?;
-        if next.assets().get(asset) != Some(record) {
-            return Err(invalid("sound edit changes its admitted asset contract"));
+            .ok_or_else(|| invalid("sound asset is absent from the proposed revision"))?;
+        if current.assets().get(asset) != Some(record)
+            && !captured.is_some_and(|document| document.assets().get(asset) == Some(record))
+        {
+            return Err(invalid(
+                "sound asset is not admitted in the selected or captured revision",
+            ));
         }
         let id = record
             .source_qualification

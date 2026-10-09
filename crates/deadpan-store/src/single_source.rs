@@ -156,7 +156,9 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
     Ok(())
 }
 
-fn read(connection: &Connection) -> Result<Option<(SingleSourceState, Option<i64>)>, StoreError> {
+pub(crate) fn read(
+    connection: &Connection,
+) -> Result<Option<(SingleSourceState, Option<i64>)>, StoreError> {
     check_stored_sizes(connection)?;
     let workflow: String =
         connection.query_row("SELECT workflow FROM state WHERE singleton=1", [], |row| {

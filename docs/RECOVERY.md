@@ -241,8 +241,13 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 
 ## Remaining work
 
-- Moved files on unmounted or other volumes, and iCloud-evicted media
+- Actual File Provider eviction remains an owner check
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
+  [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)
+  is verified on detached private APFS volumes, including wrong-byte refusal
+  and identical decoded pictures after relinking.
+- Native backup selection when a damaged database cannot open. The current
+  recovery entry point is `project restore --damaged` ([backups](BACKUPS.md#a-database-that-no-longer-opens)).
 - Store errors wrapped in other error types keep SQLite's raw wording; the
   alert still recognizes SQLite's disk-full and read-only messages but not
   other raw I/O wording. Render workflow journal failures are classified only
@@ -250,6 +255,8 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 - The Dock/system Quit path cannot show the close prompt (see above).
 - Physical power-loss behavior (owner: To verify). Process kills during
   commits, AI attempt states, backups, checkpoints, restores and migrations
-  and proxy publication are covered ([process kills](BACKUPS.md#process-kills));
-  kills during renders are not part of that suite.
+  and proxy publication are covered ([process kills](BACKUPS.md#process-kills)).
+  [Render-host kill tests](qualification/render-host-crash-2026-10-08.md)
+  additionally cover real encoding and verification, worker exit, interrupted
+  attempt recovery and checkpoint-only retry.
 - Physical-input, VoiceOver and IME acceptance of these dialogs.

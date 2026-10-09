@@ -460,3 +460,63 @@ fn compound_ai_insertions_do_not_fan_out_to_isolated_or_copied_holds() -> Result
     store.validate_full()?;
     Ok(())
 }
+
+#[test]
+fn takes_restoring_ai_snapshot_does_not_revive_its_cancelled_automatic_intent() -> Result {
+    use deadpan_store::takes::{Action, Request, TakeId, TakeName};
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("takes-intent.deadpan");
+    let mut store = create(&package)?;
+    let prepared = commit_insert(&mut store)?;
+    let saved = store.snapshot()?;
+    let take_request = |store: &ProjectStore, action: Action| -> Result<Request> {
+        let catalog = store.take_catalog()?;
+        Ok(Request {
+            project_id: catalog.project_id,
+            expected_revision: catalog.revision_id,
+            expected_version: catalog.version,
+            action,
+        })
+    };
+    store.apply_take(&take_request(
+        &store,
+        Action::Create {
+            id: TakeId::new("ai")?,
+            name: TakeName::new("AI fallback")?,
+        },
+    )?)?;
+    let claim = store.claim_generation_preparation(&prepared.id, &store.head_revision()?)?;
+    let restore = take_request(
+        &store,
+        Action::Restore {
+            id: TakeId::new("ai")?,
+            expected_snapshot: saved.revision_id().clone(),
+            new_revision: RevisionId::new("restored-take")?,
+        },
+    )?;
+    let outcome = store.apply_take(&restore)?;
+    assert!(outcome.commit.unwrap().generation_preparations.is_empty());
+    assert_eq!(store.snapshot()?.nodes(), saved.nodes());
+    assert!(!store.generation_preparation_claim_is_current(&claim)?);
+    assert_eq!(
+        store.generation_preparation(&prepared.id)?.unwrap().state,
+        PreparationState::Cancelled
+    );
+    assert!(
+        store
+            .undo(&store.head_revision()?, RevisionId::new("undo-take")?)?
+            .generation_preparations
+            .is_empty()
+    );
+    assert!(
+        store
+            .redo(&store.head_revision()?, RevisionId::new("redo-take")?)?
+            .generation_preparations
+            .is_empty()
+    );
+    assert!(!store.generation_preparation_claim_is_current(&claim)?);
+    store.validate_full()?;
+    drop(store);
+    ProjectStore::open(&package, AccessMode::ReadOnly)?.validate_full()?;
+    Ok(())
+}

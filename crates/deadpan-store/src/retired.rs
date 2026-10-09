@@ -126,6 +126,7 @@ pub(crate) fn carry_forward(live: &Connection, copy: &mut Connection) -> Result<
             high.execute(params!["original_version", content, value])?;
         }
     }
+    crate::takes::carry_forward(live, &transaction)?;
     transaction.commit()?;
     Ok(())
 }

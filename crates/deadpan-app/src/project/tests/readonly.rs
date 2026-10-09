@@ -214,6 +214,42 @@ fn readonly_pending_channels_preserve_captured_identities_and_all_package_bytes(
         .find(|source| source.video_index.is_some())
         .unwrap();
 
+    let take = crate::project::takes::Request {
+        ticket: 91,
+        session: workspace.session + 17,
+        revision: workspace.document.revision_id().clone(),
+        operation: crate::project::takes::Operation::Apply(deadpan_store::takes::Request {
+            project_id: workspace.document.project_id().clone(),
+            expected_revision: workspace.document.revision_id().clone(),
+            expected_version: 0,
+            action: deadpan_store::takes::Action::Create {
+                id: deadpan_store::takes::TakeId::new("readonly-take").unwrap(),
+                name: deadpan_store::takes::TakeName::new("Cannot save").unwrap(),
+            },
+        }),
+    };
+    let update = refused(service, &workspace, ProjectRequest::Takes(take.clone()));
+    let reply = update.takes.unwrap();
+    assert_eq!((reply.ticket, reply.session), (take.ticket, take.session));
+    assert!(reply.result.unwrap_err().contains("newer Deadpan"));
+    let update = command(
+        service,
+        ProjectRequest::Takes(crate::project::takes::Request {
+            ticket: 92,
+            session: workspace.session,
+            revision: workspace.document.revision_id().clone(),
+            operation: crate::project::takes::Operation::List,
+        }),
+    );
+    assert!(
+        update
+            .takes
+            .unwrap()
+            .result
+            .unwrap_err()
+            .contains("newer format")
+    );
+
     for operation in [
         marks::Operation::Set {
             letter: 'b',

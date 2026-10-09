@@ -53,6 +53,10 @@ impl Service {
             self.capture_edit_slice_command(request);
             return true;
         }
+        if let ProjectRequest::Takes(request) = request {
+            self.takes_command(request);
+            return true;
+        }
         if let ProjectRequest::RenderHistory(request) = request {
             self.render_history_command(request);
             return true;

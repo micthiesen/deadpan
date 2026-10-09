@@ -621,6 +621,12 @@ pub(crate) fn validate_ordinary_history(
     if extras {
         return Err(invalid("ordinary edit owns compound step reservations"));
     }
+    if matches!(request.command, Command::RestoreSnapshot { .. }) {
+        return crate::takes::validate_restore(connection, current, next, request, admitted);
+    }
+    if crate::takes::restore_proof(connection, request.new_revision.as_str())?.is_some() {
+        return Err(invalid("ordinary edit owns a snapshot restore proof"));
+    }
     let captured = if let Some(slice) = slice(&request.command) {
         let captured = read_capture_before(connection, slice.revision_id(), Some(admitted))?;
         slice.validate_capture(&captured)?;

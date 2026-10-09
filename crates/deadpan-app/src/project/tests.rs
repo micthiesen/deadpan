@@ -40,6 +40,7 @@ mod slip;
 mod sound;
 mod speech_activity;
 mod splice;
+mod takes;
 mod targets;
 mod trim;
 

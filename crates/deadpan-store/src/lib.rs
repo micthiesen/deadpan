@@ -68,6 +68,7 @@ pub use analysis_corrections::{
     StoredCorrections, UnreadableCorrection,
 };
 mod speech_activity;
+pub mod takes;
 pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
 mod transcripts;
 pub use transcripts::{MAX_TRANSCRIPT_JSON_BYTES, MAX_TRANSCRIPTS, TranscriptKey};
@@ -850,6 +851,7 @@ impl ProjectStore {
         compound::check_stored_sizes(&checkpoint)?;
         validation::validate_history(&checkpoint, validation::HistoryMode::Full)?;
         registers::validate_store(&checkpoint)?;
+        takes::validate_store(&checkpoint)?;
         drop(checkpoint);
         temporary.as_file().sync_all()?;
         let (_, path) = temporary.keep().map_err(|error| error.error)?;
@@ -913,6 +915,7 @@ fn validate_database(
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
     compound::check_stored_sizes(&transaction)?;
     registers::check_stored_sizes(&transaction)?;
+    takes::check_stored_sizes(&transaction)?;
     generation::check_stored_sizes(&transaction)?;
     generation_preparations::check_stored_sizes(&transaction)?;
     generation_intents::check_sizes(&transaction)?;
@@ -962,6 +965,7 @@ fn validate_database(
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     single_source::validate_store(&transaction, audit.verified)?;
     registers::validate_store(&transaction)?;
+    takes::validate_store(&transaction)?;
     Ok(audit)
 }
 
@@ -1246,6 +1250,14 @@ fn prepare_base_command(
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
+    if matches!(
+        &request.command,
+        deadpan_core::Command::RestoreSnapshot { .. }
+    ) {
+        return Err(StoreError::Takes(
+            "use the revision-bound named take entrypoint to restore".into(),
+        ));
+    }
     if matches!(&request.command, deadpan_core::Command::Compound { .. }) {
         // Serialized commands cannot carry qualified import/acceptance capabilities.
         if generated.is_some() || source.is_some() || geometry.is_some() {

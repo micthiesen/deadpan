@@ -158,6 +158,14 @@ fn derive(
     heads: &[IntentHead],
     pending: Option<&AcceptedOriginReceipt>,
 ) -> Result<Derived, StoreError> {
+    if matches!(request.command, Command::RestoreSnapshot { .. }) {
+        // A take explicitly chooses its complete saved composition. Reconcile
+        // operational work without rewriting providers or renewing AI intents.
+        return Ok(Derived {
+            entries: Vec::new(),
+            births: Vec::new(),
+        });
+    }
     let accepted = after.nodes().values().any(|node| {
         matches!(&node.kind, NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))
     });

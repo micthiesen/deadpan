@@ -53,6 +53,8 @@ mod preparations;
 mod retention;
 #[path = "generation_bundles/storage.rs"]
 mod storage;
+#[path = "generation_bundles/takes.rs"]
+mod takes;
 
 const NATIVE_BYTES: &[u8] = b"canonical native fixture";
 const SAMPLED_BYTES: &[u8] = b"canonical sampled fixture";

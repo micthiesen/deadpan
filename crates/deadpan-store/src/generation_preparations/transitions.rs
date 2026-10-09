@@ -44,6 +44,7 @@ fn changes_provider(
     document: &ProjectDocument,
 ) -> bool {
     match command.base_command() {
+        Command::RestoreSnapshot { .. } => true,
         Command::SetHoldProvider { node, .. }
         | Command::AcceptGeneratedHold { node, .. }
         | Command::RevertGeneratedHold { node } => node == &target.node,
@@ -305,6 +306,7 @@ pub(crate) fn command_births(
 
 fn has_provider(command: &Command) -> bool {
     match command.base_command() {
+        Command::RestoreSnapshot { .. } => true,
         Command::SetHoldProvider { .. }
         | Command::AcceptGeneratedHold { .. }
         | Command::RevertGeneratedHold { .. } => true,

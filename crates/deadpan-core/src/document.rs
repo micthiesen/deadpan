@@ -624,6 +624,28 @@ impl TryFrom<DocumentWire> for ProjectDocument {
     }
 }
 
+/// Immutable snapshots embedded in bounded command history use the same
+/// strict document grammar and complete validation as standalone documents.
+pub(crate) fn deserialize_snapshot<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Box<ProjectDocument>, D::Error> {
+    // The outer command reader has already bounded this value and refused
+    // duplicate keys. Internally tagged serde enums buffer their fields,
+    // while AudioBindingState's bounded RawValue parser requires JSON text.
+    // Reconstitute only this bounded snapshot before using its strict reader.
+    let value = serde_json::Value::deserialize(deserializer)?;
+    let json = serde_json::to_string(&value).map_err(serde::de::Error::custom)?;
+    if json.len() > crate::MAX_DOCUMENT_JSON_BYTES {
+        return Err(serde::de::Error::custom(
+            "restored snapshot exceeds document byte limit",
+        ));
+    }
+    let wire = serde_json::from_str::<DocumentWire>(&json).map_err(serde::de::Error::custom)?;
+    ProjectDocument::try_from(wire)
+        .map(Box::new)
+        .map_err(serde::de::Error::custom)
+}
+
 impl ProjectDocument {
     /// Unvalidated; every caller validates before exposing the document.
     fn from_wire(value: DocumentWire) -> Self {

@@ -33,6 +33,9 @@ impl BoundaryReplacementEdit {
         command: Command,
         replacements: Vec<BoundaryReplacement>,
     ) -> Result<Self, EditError> {
+        if matches!(command, Command::RestoreSnapshot { .. }) {
+            return Err(invalid("snapshot restores cannot replace saved providers"));
+        }
         if matches!(command, Command::WithBoundaryReplacements { .. }) {
             return Err(invalid("boundary replacement envelopes cannot be nested"));
         }
