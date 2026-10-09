@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T20:09:29Z",
+  "updated_at": "2026-10-09T23:11:03Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implementing AV1 and remaining source-format, metadata and operation coverage.",
+  "focus": "Qualifying higher-quality YouTube acquisition and remaining source/operation coverage.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. Qualified ProRes 422 joins VP9 and HEVC/High10; WAV, MP3 and Opus sounds preserve exact samples. AV1, broader containers/metadata and source-color policies remain."
+      "note": "Local and YouTube Originals work. AV1 Main, SDR/HDR VP9, ProRes 422 and HEVC/High10 imports are qualified. WAV, MP3 and mono/stereo Opus in MP4/WebM/Matroska preserve exact samples. Higher-quality YouTube assembly, broader metadata and source-color policies remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "WAV, MP3 and Opus sounds and ProRes 422 Originals pass release and packaged exports with exact timing. SDR/HDR, fractional-rate editing and qualified HEVC/High10/VP9 paths are verified. Full effects and format/operation coverage remain."
+      "note": "Qualified AV1, HDR VP9, ProRes and WAV/MP3/Opus inputs pass release and packaged exports with exact timing. SDR/HDR and fractional-rate editing are verified. Full effects and remaining source/operation coverage remain."
     },
     {
       "id": "ui",
@@ -349,6 +349,30 @@
       "revision": "a43f839e01c3b315c0e5cdf99a27f65fec70e9ca",
       "retrospective": false,
       "summary": "ProRes 422 Proxy/LT/Standard/HQ preserves ten-bit pictures, VFR, anamorphic display and both field orders. All 5,575 workspace, 1,097 UI and 157 sanitized source tests pass; ten release imports/exports verify 144 pictures and ten zero-offset audio windows, and packaged checks verify 48 pictures/three windows. Broader formats and operations remain."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "7270be5d",
+      "retrospective": false,
+      "summary": "AV1 Main preserves SDR/HDR, grain, super-resolution and measured VFR through pinned dav1d. Release checks import 29 inputs and verify 444 pictures/16 zero-offset audio windows; packaged checks verify 120 pictures/five windows. Regression and sanitizer evidence retained."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "7551b5d1",
+      "retrospective": false,
+      "summary": "HDR VP9 imports preserve PQ/HLG and static metadata in MP4/WebM/Matroska. Fifteen release imports verify 180 pictures/nine zero-offset audio windows; packaged checks verify 84 pictures/four windows. Small HEVC output raster limits corrected and verified."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "5f6a8c58",
+      "retrospective": false,
+      "summary": "MP4 Opus preserves exact pre-skip, terminal trim, gain and offsets. Eleven release imports/exports verify 1,104 pictures/27 zero-offset audio windows; packaged checks verify 504 pictures/twelve windows. 170 sanitized source tests pass; the gate completes in parts with a retained proxy failure and passing isolated follow-up."
     }
   ]
 }
