@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T14:17:37Z",
+  "updated_at": "2026-10-09T15:25:27Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Finishing remaining source-format and color policies, then the source/creative-operation playback and export matrix.",
+  "focus": "Finishing remaining source formats and color policies, then the source/creative-operation playback and export matrix.",
   "features": [
     {
       "id": "editing",
@@ -301,6 +301,14 @@
       "revision": "61cc5a96",
       "retrospective": false,
       "summary": "SDR HEVC/High10 retain full/limited range and ten-bit precision. HEVC seeks discard stale output; proxy checks read sixteen-bit channels correctly. Workspace 5,567 tests, final media/proxy checks, sanitizers, strict lint, 72-picture/132-neighbor release exports and packaged verification pass. Broader formats and operation coverage remain; DP-02 stays partial."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "f0ffda502b05d7937955b33c0ff7836c8e2eae85",
+      "retrospective": false,
+      "summary": "SDR VP9 MP4 preserves eight/ten-bit color, altref and repeated-frame timing. Workspace 5,576 tests, 134 sanitized source tests, strict lint, 112-picture release verification and fresh-home packaged runs pass. WebM/Opus, HDR VP9, AV1 and the broader format/operation matrix remain; DP-02 stays partial."
     }
   ]
 }
