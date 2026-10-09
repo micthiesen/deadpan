@@ -78,7 +78,7 @@ fn report(contract: &EncodedRenderContract, limits: EncodeLimits) -> EncodeRepor
     let policy = native.policy();
     EncodeReport {
         info: EncoderInfo {
-            abi_version: 1,
+            abi_version: 2,
             avcodec_version: 4_066_151,
             avformat_version: 4_064_103,
             avutil_version: 3_934_311,
@@ -106,7 +106,7 @@ fn report(contract: &EncodedRenderContract, limits: EncodeLimits) -> EncodeRepor
         audio_packets: native
             .audio_samples()
             .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
-            + 1,
+            + u64::from(AUDIO_PRIMING_SAMPLES / AUDIO_FRAME_SAMPLES),
         output_bytes: 4_096,
         packet_bytes: 2_048,
         video_duration_from_contract_packets: native.video_frames(),
@@ -694,6 +694,7 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
         ("/audio_samples", json!(1602)),
         ("/video_packets", json!(0)),
         ("/audio_packets", json!(2)),
+        ("/audio_packets", json!(3)),
         ("/output_bytes", json!(0)),
         ("/packet_bytes", json!(0)),
         ("/packet_bytes", json!(4097)),
@@ -702,7 +703,7 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
         ("/faststart_read_closes", json!(2)),
         ("/video_eof", json!(false)),
         ("/audio_eof", json!(false)),
-        ("/info/abi_version", json!(2)),
+        ("/info/abi_version", json!(1)),
         ("/info/avcodec_version", json!(0)),
         ("/info/avformat_version", json!(0)),
         ("/info/avutil_version", json!(u32::MAX)),
@@ -719,6 +720,8 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
         ("/info/video_max_b_frames", json!(2)),
         ("/info/video_gop_size", json!(30)),
         ("/info/audio_initial_padding", json!(-1)),
+        ("/info/audio_initial_padding", json!(0)),
+        ("/info/audio_initial_padding", json!(2_048)),
         ("/info/audio_trailing_padding", json!(8193)),
         ("/info/requested_mode", json!("software")),
         ("/info/video_bitrate", json!(1)),
@@ -732,6 +735,26 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
             "accepted {path}"
         );
     }
+}
+
+#[test]
+fn historical_codec_only_priming_cannot_enter_current_worker_admission() {
+    let mut old = manifest();
+    old.report.info.abi_version = 1;
+    old.report.audio_packets -= 1;
+    old.validate_retained().unwrap();
+    assert!(old.validate().is_err());
+    assert!(old.validate_for(limits()).is_err());
+    assert!(
+        EncodedProtocol::from_request(&request())
+            .unwrap()
+            .classify(&completed(old.clone()))
+            .is_err()
+    );
+    old.report.info.abi_version = 2;
+    assert!(old.validate_retained().is_err());
+    old.report.info.abi_version = 3;
+    assert!(old.validate_retained().is_err());
 }
 
 #[test]

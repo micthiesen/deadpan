@@ -480,6 +480,7 @@ static int open_codec(dp_encode_session *s, int audio) {
         if (codec->sample_rate != 48000 || codec->sample_fmt != AV_SAMPLE_FMT_FLTP ||
             codec->ch_layout.order != AV_CHANNEL_ORDER_NATIVE || codec->ch_layout.u.mask != AV_CH_LAYOUT_STEREO ||
             codec->ch_layout.nb_channels != 2 || codec->frame_size != (int)DP_ENCODE_AUDIO_BLOCK ||
+            codec->initial_padding != (int)DP_ENCODE_AUDIO_BLOCK ||
             av_cmp_q(codec->time_base, (AVRational){1, 48000}) != 0) {
             fail(s, "encoder_unsupported", "AAC encoder changed the exact PCM contract"); goto done;
         }
@@ -903,6 +904,23 @@ int dp_encode_push_audio(dp_encode_session *s, uint64_t first_sample, const floa
         if (!isfinite(left[sample]) || !isfinite(right[sample])) {
             fail(s, "invalid_pcm", "PCM input contains NaN or infinity"); goto done;
         }
+    /* The pinned AAC encoder's initial analysis window distorts a quiet
+     * opening when it starts directly on authored PCM. Supply exactly one
+     * silent analysis block before time zero. Its negative timestamps, plus
+     * the codec's own delay, remain in the muxed packets and the MP4 media
+     * edit. No authored sample is shifted, trimmed, faded or rescaled.
+     * audio_frames counts codec inputs; audio_samples counts authored PCM. */
+    if (s->audio_samples == 0) {
+        s->sound->nb_samples = DP_ENCODE_AUDIO_BLOCK;
+        int preroll_code = av_frame_make_writable(s->sound);
+        if (preroll_code < 0) { ff_failure(s, "make AAC preroll writable", preroll_code); goto done; }
+        memset(s->sound->extended_data[0], 0, DP_ENCODE_AUDIO_BLOCK * sizeof(float));
+        memset(s->sound->extended_data[1], 0, DP_ENCODE_AUDIO_BLOCK * sizeof(float));
+        s->sound->pts = -(int64_t)DP_ENCODE_AUDIO_BLOCK;
+        s->sound->duration = DP_ENCODE_AUDIO_BLOCK;
+        if (!send_frame(s, 1, s->sound)) goto done;
+        s->audio_frames++;
+    }
     s->sound->nb_samples = DP_ENCODE_AUDIO_BLOCK;
     int code = av_frame_make_writable(s->sound);
     if (code < 0) { ff_failure(s, "make PCM buffer writable", code); goto done; }

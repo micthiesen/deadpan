@@ -75,6 +75,13 @@ private protocol and decision, without changing historical `EncodedManifest`
 bytes or checkpoint interpretation. Probe protocol 2 and report schema 2 are
 separate from this project-encode protocol.
 
+The current native ABI and finished-file verification policy are version 2
+for [AAC preroll](NATIVE_ENCODING.md#exact-input-and-policy). SDR/HDR video
+policy constructors are unchanged. Retained ABI-1 manifests and decisions can
+still be read as historical data, but cannot grant fresh encoding or current
+finished-file verification authority. A prior-ABI candidate needs a fresh
+render to meet the current output contract.
+
 The raw worker retains its 512 MiB/100,000-frame qualification limits. Encoded
 requests reconstruct the native contract and enforce native frame, sample,
 packet, geometry, duration and byte limits. Serializing/deserializing an encoder

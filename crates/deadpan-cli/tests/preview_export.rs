@@ -357,8 +357,8 @@ fn black_pause_export_matches_preview_and_later_edits_are_reported() -> Result {
     assert!(passed, "{}", report["failures"]);
     assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
     check_provenance(&fixture, &report)?;
-    assert_eq!(report["movie"]["audio_edits"]["media_time"], 1024);
-    assert_eq!(report["movie"]["audio"]["first_pts"], -1024);
+    assert_eq!(report["movie"]["audio_edits"]["media_time"], 2048);
+    assert_eq!(report["movie"]["audio"]["first_pts"], -2048);
     assert_eq!(report["movie"]["color"]["problems"], json!([]));
     assert!(report["summary"]["signal_windows"].as_u64() > Some(0));
     assert_eq!(report["summary"]["nonzero_offsets"], 0);
@@ -412,7 +412,7 @@ fn black_pause_export_matches_preview_and_later_edits_are_reported() -> Result {
     let faults = root.join("faults");
     std::fs::create_dir_all(&faults)?;
     let flags_of = |report: &Value| -> String { report["failures"].to_string() };
-    // Audio 1,024 samples late: the edit no longer skips the AAC priming. The
+    // Audio 2,048 samples late: the edit no longer skips AAC priming and preroll. The
     // priming cross-check agrees with the altered edit (it is self-referential);
     // the content alignment must catch the shift.
     let late = faults.join("audio-late.mp4");
@@ -432,7 +432,7 @@ fn black_pause_export_matches_preview_and_later_edits_are_reported() -> Result {
         flags_of(&report)
     );
     assert_eq!(report["audio"][0]["offset_status"], "offset");
-    assert_eq!(report["audio"][0]["measured_offset_samples"], 1024);
+    assert_eq!(report["audio"][0]["measured_offset_samples"], 2048);
     // Pictures one frame early, as a dropped leading frame would appear: the
     // decoder discards the picture before the edit, every later picture lands
     // on the previous ordinal and the last ordinal is missing.

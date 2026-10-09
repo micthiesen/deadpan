@@ -14,6 +14,8 @@ publish.workspace = true
 synthetic-worker = []
 # Deterministic real-worker crash qualification. Absent from normal binaries.
 qualification-render-host-crash = []
+# Ten thousand durable edits and full media verification, run explicitly in release.
+qualification-fractional-edits = []
 # Real private APFS image detach and cross-volume relink qualification.
 qualification-relink-volumes = []
 
@@ -68,6 +70,10 @@ required-features = ["synthetic-worker"]
 [[example]]
 name = "qualify_render_host_crash"
 required-features = ["qualification-render-host-crash"]
+
+[[test]]
+name = "fractional_edits"
+required-features = ["qualification-fractional-edits"]
 
 [[test]]
 name = "relink_cross_volume"

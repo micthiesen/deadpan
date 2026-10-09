@@ -11,6 +11,45 @@ fn fixture() -> RenderEncodingDecision {
     RenderEncodingDecision::from_json(MEASURED).unwrap()
 }
 
+#[test]
+fn stored_aac_preroll_evidence_requires_one_coherent_version() {
+    // Adapt the retained decision solely to test the new structural contract.
+    // This is not a claim that its older movie has ABI-2 AAC packets.
+    let mut value = fixture();
+    let report = selected_mut(&mut value);
+    report.manifest.report.info.abi_version = 2;
+    report.manifest.report.audio_packets += 1;
+    report.verification.policy_version = 2;
+    report.verification.audio_packets += 1;
+    report.verification.audio_edit_media_time = 2048;
+    report.verification.manual_first_sample = -2048;
+    report.verification.manual_physical_samples += 1024;
+    value
+        .validate_for(&intent(&value), &value.encoding_attempt_id)
+        .unwrap();
+    for field in 0..7 {
+        let mut changed = value.clone();
+        let report = selected_mut(&mut changed);
+        match field {
+            0 => report.manifest.report.info.abi_version = 1,
+            1 => report.verification.policy_version = 1,
+            2 => report.verification.audio_edit_media_time = 1024,
+            3 => report.verification.manual_first_sample = -1024,
+            4 => report.manifest.report.info.abi_version = 3,
+            5 => report.manifest.report.info.audio_initial_padding = 2048,
+            _ => report.manifest.report.info.maximum_moov_bytes -= 128,
+        }
+        assert!(
+            changed
+                .validate_for(&intent(&changed), &changed.encoding_attempt_id)
+                .is_err()
+        );
+    }
+    fixture()
+        .validate_for(&intent(&fixture()), &fixture().encoding_attempt_id)
+        .unwrap();
+}
+
 fn intent(value: &RenderEncodingDecision) -> RenderIntent {
     RenderIntent {
         schema_version: 2,

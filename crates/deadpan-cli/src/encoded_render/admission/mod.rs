@@ -221,6 +221,14 @@ pub struct ProbeReport {
 
 impl ProbeReport {
     pub fn validate(&self, limits: EncodeLimits) -> Result<(), String> {
+        self.validate_policy(limits, false)
+    }
+
+    pub(super) fn validate_retained(&self, limits: EncodeLimits) -> Result<(), String> {
+        self.validate_policy(limits, true)
+    }
+
+    fn validate_policy(&self, limits: EncodeLimits, retained: bool) -> Result<(), String> {
         self.runtime.validate()?;
         if self.schema_version != 2
             || self.manifest.contract != self.spec.contract()?
@@ -228,11 +236,18 @@ impl ProbeReport {
         {
             return Err("probe report changed its deterministic input".into());
         }
-        self.manifest.validate_for(limits)?;
-        self.verification.validate(VerificationLimits {
+        let verification_limits = VerificationLimits {
             maximum_bytes: limits.maximum_output_bytes,
             maximum_packets: limits.maximum_packets.min(1_000_000),
-        })?;
+        };
+        if retained {
+            self.manifest.validate_retained_for(limits)?;
+            self.verification
+                .validate_retained(verification_limits, self.manifest.report.info.abi_version)?;
+        } else {
+            self.manifest.validate_for(limits)?;
+            self.verification.validate(verification_limits)?;
+        }
         if self.verification.contract != self.manifest.contract
             || self.verification.document_sha256 != self.manifest.document_sha256
             || self.verification.movie_sha256 != *self.manifest.movie.sha256()

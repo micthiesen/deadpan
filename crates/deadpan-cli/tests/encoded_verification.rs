@@ -257,11 +257,11 @@ fn actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes(
         assert_eq!(report.audio_samples, samples);
         assert_eq!(report.document_sha256, captured_hash);
         assert_eq!(report.movie_sha256, *fixture.manifest.movie.sha256());
-        assert_eq!(report.manual_first_sample, -1024);
+        assert_eq!(report.manual_first_sample, -2048);
         assert_eq!(report.ordinary_first_sample, 0);
         assert_eq!(
             report.manual_physical_samples,
-            report.ordinary_physical_samples + 1024
+            report.ordinary_physical_samples + 2048
         );
         if name == "software-two" {
             assert!(report.maximum_b_run > 0 && report.maximum_b_run <= 2);

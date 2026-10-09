@@ -4,6 +4,10 @@ use crate::EncodeError;
 
 pub const AUDIO_SAMPLE_RATE: u32 = 48_000;
 pub const AUDIO_FRAME_SAMPLES: u32 = 1_024;
+/// Silent encoder input before authored sample zero; never part of the mix.
+pub const AUDIO_PREROLL_SAMPLES: u32 = AUDIO_FRAME_SAMPLES;
+/// Codec delay plus explicit preroll, retained in the MP4 media edit.
+pub const AUDIO_PRIMING_SAMPLES: u32 = AUDIO_FRAME_SAMPLES + AUDIO_PREROLL_SAMPLES;
 pub const MAX_DIMENSION: u32 = 8_192;
 pub const MAX_PIXELS: u64 = 33_554_432;
 pub const MAX_VIDEO_FRAMES: u64 = 1_000_000;

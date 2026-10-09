@@ -26,6 +26,18 @@ except for the exact short final block. Invalid clocks, missing or duplicate
 inputs, malformed planes, nonfinite PCM and native failures poison the session.
 No later finish can turn that session into a successful output.
 
+Encoder ABI 2 adds exactly one silent 1024-sample AAC input at PTS -1024,
+before authored sample zero. The pinned codec's own 1024-sample delay puts
+the first packet at -2048. Both priming packets remain in the file; its
+normal-rate audio media edit starts at 2048 and presents exactly the authored
+sample count. This avoids the measured startup-window distortion of quiet
+onsets without modifying any authored PCM. `audio_initial_padding` still
+reports the codec's actual 1024-sample delay. Complete packet count is
+`ceil(authored_samples / 1024) + 2`. Finished-file verification policy 2 checks
+both manual priming frames, ordinary decode from zero, equal presented PCM,
+and the exact emitted edit and terminal duration. Historical stored decisions
+retain their ABI-1 evidence; new native admission requires ABI 2.
+
 The engineering policy derives video bitrate from specification 22.4's pixel
 classes and frame-rate band, interpolating by actual pixel count. It requests
 High profile, progressive square pixels, left-sited limited Rec.709 I420, a GOP
@@ -109,7 +121,7 @@ stream tag and metadata attachment flags), admitted against the contract. It
 is separate from `EncoderInfo`/`EncodeReport`; HDR `EncoderInfo.video_profile`
 is 2 (HEVC Main10) instead of 100. The optional media-duration correction is
 omitted when no correction was needed, preserving those report bytes.
-The base C structs keep ABI version 1. HDR uses additive entry points
+The base C structs use ABI version 2 for the AAC preroll contract. HDR uses additive entry points
 (`dp_encode_open_hdr`, `dp_encode_finish_hdr`, `dp_encode_query_video`) with
 extension structs versioned by `DP_ENCODE_HDR_ABI_VERSION` 1.
 

@@ -5,7 +5,8 @@ use deadpan_core::{
     RevisionId,
 };
 use deadpan_encode::{
-    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeReport, EncoderInfo, EncoderMode,
+    AUDIO_FRAME_SAMPLES, AUDIO_PRIMING_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeReport,
+    EncoderInfo, EncoderMode,
 };
 use deadpan_jobs::{
     AttemptId, MAX_FRAME_BYTES, RequestId, Sha256, WorkspaceArtifact, WorkspaceRef,
@@ -65,7 +66,7 @@ fn manifest() -> EncodedManifest {
     let policy = native.policy();
     let report = EncodeReport {
         info: EncoderInfo {
-            abi_version: 1,
+            abi_version: 2,
             avcodec_version: 4_066_151,
             avformat_version: 4_064_103,
             avutil_version: 3_934_311,
@@ -90,7 +91,10 @@ fn manifest() -> EncodedManifest {
         video_frames: native.video_frames(),
         audio_samples: native.audio_samples(),
         video_packets: native.video_frames(),
-        audio_packets: native.audio_samples().div_ceil(1_024) + 1,
+        audio_packets: native
+            .audio_samples()
+            .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+            + u64::from(AUDIO_PRIMING_SAMPLES / AUDIO_FRAME_SAMPLES),
         output_bytes: 4_096,
         packet_bytes: 2_048,
         video_duration_from_contract_packets: native.video_frames(),
@@ -117,7 +121,7 @@ fn report() -> VerificationReport {
     let manifest = manifest();
     let native = manifest.contract.native_contract().unwrap();
     VerificationReport {
-        policy_version: 1,
+        policy_version: 2,
         contract: manifest.contract.clone(),
         document_sha256: manifest.document_sha256.clone(),
         movie_sha256: manifest.movie.sha256().clone(),
@@ -132,9 +136,9 @@ fn report() -> VerificationReport {
         runtime_versions: [4_066_151, 4_064_103, 3_934_311],
         movie_timescale: native.policy().movie_timescale,
         video_edit_media_time: 0,
-        audio_edit_media_time: 1_024,
-        manual_first_sample: -1_024,
-        manual_physical_samples: 3_072,
+        audio_edit_media_time: i64::from(AUDIO_PRIMING_SAMPLES),
+        manual_first_sample: -i64::from(AUDIO_PRIMING_SAMPLES),
+        manual_physical_samples: 4_096,
         ordinary_first_sample: 0,
         ordinary_physical_samples: 2_048,
         content_light: None,
@@ -149,7 +153,7 @@ fn request() -> HostMessage {
         manifest: Box::new(manifest()),
         limits: VerificationLimits {
             maximum_bytes: 4_096,
-            maximum_packets: 4,
+            maximum_packets: 5,
         },
         timeout_millis: 30_000,
     }
@@ -310,7 +314,7 @@ fn request_rejects_invalid_scalars_and_insufficient_host_budgets() {
             json!(64_u64 * 1024 * 1024 * 1024 + 1),
         ),
         ("/limits/maximum_packets", json!(0)),
-        ("/limits/maximum_packets", json!(3)),
+        ("/limits/maximum_packets", json!(4)),
         ("/limits/maximum_packets", json!(1_000_001)),
     ] {
         let mut invalid = original.clone();
@@ -433,7 +437,7 @@ fn every_response_binds_the_complete_attempt_identity() {
 fn progress_totals_are_bound_to_each_captured_stage() {
     let protocol = VerificationProtocol::from_request(&request()).unwrap();
     for (stage, expected) in [
-        (VerificationStage::Packets, 4),
+        (VerificationStage::Packets, 5),
         (VerificationStage::Pictures, 1),
         (VerificationStage::ManualAudio, 1_601),
         (VerificationStage::OrdinaryAudio, 1_601),
@@ -485,13 +489,13 @@ fn completion_cannot_change_the_committed_contract_or_private_bytes() {
         value.audio_samples, 1_601,
         "retain absolute project sample phase"
     );
-    assert_eq!(value.manual_physical_samples, 3_072);
+    assert_eq!(value.manual_physical_samples, 4_096);
     assert_eq!(value.ordinary_physical_samples, 2_048);
     assert!(
         value
             .validate(VerificationLimits {
                 maximum_bytes: 4_095,
-                maximum_packets: 4
+                maximum_packets: 5
             })
             .is_err()
     );
@@ -499,7 +503,7 @@ fn completion_cannot_change_the_committed_contract_or_private_bytes() {
         value
             .validate(VerificationLimits {
                 maximum_bytes: 4_096,
-                maximum_packets: 3
+                maximum_packets: 4
             })
             .is_err()
     );
@@ -510,11 +514,13 @@ fn report_rejects_inconsistent_clocks_runtime_and_physical_sample_claims() {
     let original = serde_json::to_value(completed(report())).unwrap();
     for (path, value) in [
         ("/policy_version", json!(0)),
+        ("/policy_version", json!(1)),
         ("/movie_bytes", json!(0)),
         ("/video_frames", json!(2)),
         ("/audio_samples", json!(1_602)),
         ("/video_packets", json!(0)),
         ("/audio_packets", json!(2)),
+        ("/audio_packets", json!(3)),
         ("/audio_packets", json!(u64::MAX)),
         ("/gops", json!(0)),
         ("/gops", json!(2)),
@@ -525,10 +531,13 @@ fn report_rejects_inconsistent_clocks_runtime_and_physical_sample_claims() {
         ("/video_edit_media_time", json!(1)),
         ("/video_edit_media_time", json!(i64::MAX)),
         ("/audio_edit_media_time", json!(0)),
+        ("/audio_edit_media_time", json!(1_024)),
         ("/audio_edit_media_time", json!(1_025)),
         ("/manual_first_sample", json!(0)),
+        ("/manual_first_sample", json!(-1_024)),
         ("/ordinary_first_sample", json!(1)),
         ("/manual_physical_samples", json!(2_048)),
+        ("/manual_physical_samples", json!(3_072)),
         ("/ordinary_physical_samples", json!(1_600)),
         ("/ordinary_physical_samples", json!(1_601)),
         ("/ordinary_physical_samples", json!(2_047)),
@@ -595,7 +604,10 @@ fn long_exports_require_enough_gops_and_actual_requested_reordering() {
     value.video_packets = frames;
     value.fresh_gop_frames = frames;
     value.audio_samples = native.audio_samples();
-    value.audio_packets = native.audio_samples().div_ceil(1_024) + 1;
+    value.audio_packets = native
+        .audio_samples()
+        .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+        + u64::from(AUDIO_PRIMING_SAMPLES / AUDIO_FRAME_SAMPLES);
     value.manual_physical_samples = value.audio_packets * 1_024;
     value.ordinary_physical_samples = native.audio_samples().div_ceil(1_024) * 1_024;
     value.maximum_b_run = 1;

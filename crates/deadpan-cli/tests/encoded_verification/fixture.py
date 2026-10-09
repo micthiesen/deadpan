@@ -107,7 +107,7 @@ frames = encoded["video_frames"]
 samples = encoded["audio_samples"]
 total_packets = encoded["video_packets"] + encoded["audio_packets"]
 report = {
-    "policy_version": 1,
+    "policy_version": 2,
     "contract": copy.deepcopy(manifest["contract"]),
     "document_sha256": manifest["document_sha256"],
     "movie_sha256": manifest["movie"]["sha256"],
@@ -117,8 +117,8 @@ report = {
     "gops": 1, "fresh_gop_frames": frames, "maximum_b_run": 0,
     "runtime_versions": [4066151, 4064103, 3934311],
     "movie_timescale": encoded["info"]["movie_timescale"],
-    "video_edit_media_time": 0, "audio_edit_media_time": 1024,
-    "manual_first_sample": -1024,
+    "video_edit_media_time": 0, "audio_edit_media_time": 2048,
+    "manual_first_sample": -2048,
     "manual_physical_samples": encoded["audio_packets"] * 1024,
     "ordinary_first_sample": 0,
     "ordinary_physical_samples": ((samples + 1023) // 1024) * 1024,

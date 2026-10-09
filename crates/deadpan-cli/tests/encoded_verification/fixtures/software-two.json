@@ -40,18 +40,18 @@
   },
   "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
   "movie": {
-    "byte_length": 33144,
+    "byte_length": 16376,
     "reference": "output/movie.mp4",
-    "sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e"
+    "sha256": "24f4aa1c0a67f00e30aaa557a51a89c89c26ffdd5bae40ba4d4b25fbf65d49ec"
   },
   "report": {
     "audio_eof": true,
-    "audio_packets": 69,
+    "audio_packets": 70,
     "audio_samples": 68869,
     "faststart_read_closes": 1,
     "faststart_read_opens": 1,
     "info": {
-      "abi_version": 1,
+      "abi_version": 2,
       "audio_bitrate": 384000,
       "audio_frame_size": 1024,
       "audio_initial_padding": 1024,
@@ -73,8 +73,8 @@
       "video_time_base_den": 30000,
       "video_time_base_num": 1
     },
-    "output_bytes": 33144,
-    "packet_bytes": 30176,
+    "output_bytes": 16376,
+    "packet_bytes": 13384,
     "video_duration_from_contract_packets": 43,
     "video_eof": true,
     "video_frames": 43,

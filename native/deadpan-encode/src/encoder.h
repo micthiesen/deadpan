@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define DP_ENCODE_ABI_VERSION 1U
+#define DP_ENCODE_ABI_VERSION 2U
 #define DP_ENCODE_MAX_DIMENSION 8192U
 #define DP_ENCODE_MAX_PIXELS 33554432ULL
 #define DP_ENCODE_MAX_FRAMES 1000000ULL
@@ -15,7 +15,7 @@
 #define DP_ENCODE_MAX_TIMEOUT_MILLIS 86400000ULL
 #define DP_ENCODE_AUDIO_BLOCK 1024U
 /* Version of the additive HDR extension structs below. The base ABI structs
- * (config/info/report) and entry points keep DP_ENCODE_ABI_VERSION 1. */
+ * (config/info/report) and entry points use DP_ENCODE_ABI_VERSION. */
 #define DP_ENCODE_HDR_ABI_VERSION 1U
 #define DP_ENCODE_TRANSFER_PQ 1U
 #define DP_ENCODE_TRANSFER_HLG 2U

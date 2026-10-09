@@ -1,27 +1,146 @@
 {
-  "source_report": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json",
-  "source_report_sha256": "f2dfc29d1114d0960a826762b302d109f2f5556f7efebb37574113c58396a0e2",
+  "date": "2026-10-08",
+  "native_abi": 2,
+  "scope": "Synthetic native adapter qualification movies. Project contract and document hash are retained transport-test labels, not claims that these movies depict the background projects.",
+  "producer": {
+    "source_commit": "63d81ca4713fc486ced8a408ea471773f959a576",
+    "dirty_source_sha256": {
+      "Cargo.lock": "a887658dd1384871c441e375124a5a328b6853e48077e5e6032e54449013fd2e",
+      "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "native/deadpan-encode/Cargo.toml": "785649d71408b73a413a6f4ed3bd4c449ad5fdd0a37e603698b230594798d95e",
+      "native/deadpan-encode/build.rs": "6fdee33578239a09f7a95858f5eb162cf7691617cfb3161e9c78487fc24d7f07",
+      "native/deadpan-encode/examples/qualify.rs": "6531ae16507973943e21156c8ae581acaa48cca6ab1d76c83924c93aeb8c3762",
+      "native/deadpan-encode/examples/qualify_hdr.rs": "1b86d966b0a8fc64a77befda24c594f334a6037abdf55a5fb4f49cf8d63f86c9",
+      "native/deadpan-encode/src/encoder.c": "30c7d73720b4e239d185c9c3a92291c36639dd7dd1875f1d7bd488d9814a38dc",
+      "native/deadpan-encode/src/encoder.h": "f53512655cef5b090d77cbba531925031199e39c1c20d5d41518a7cd94e21872",
+      "native/deadpan-encode/src/ffi.rs": "e3874c702d43dae51bb25bdd8541538f4cc674b391895a7d7d4a136de8f1247d",
+      "native/deadpan-encode/src/lib.rs": "3aa887d5e22e82061875d886c0f324284d822e356afb39104358476ff03e3353",
+      "native/deadpan-encode/src/mux_duration.rs": "baeaf813014151d85740b8165e0cc2ed8b4e66f5ac804f58a9ddc8995409d405",
+      "native/deadpan-encode/src/mux_duration_tests.rs": "a62a5216171e9034f63ae6b08a9ea573ad7150d696d493262db718fe099fcf82",
+      "native/deadpan-encode/src/policy.rs": "dfe43baa657fa299f3b5220c15bf8ab828cfa82c8c673985ea838b9eedef15c8",
+      "native/deadpan-encode/src/probe.rs": "c16375ef482a30214b58a917b5a8dc0a41a5f9a8902addbc37a8754b41615225",
+      "native/deadpan-encode/src/progress.rs": "789f04e6e5022d8024fc1650854b4000b661aaeeaa183ac98631199c4ee43997",
+      "native/deadpan-encode/src/runtime.c": "f2c25064008b9bce431c693b8308f2f72bd587612a61afb604aeb7b868dce79f",
+      "native/deadpan-encode/src/runtime.h": "0cb1b1201dfa83545fe6851af7b3d22c4c77834ff1bc2a534838a34dc0edf47b",
+      "native/deadpan-encode/src/runtime.rs": "63ac4c64cb0fdeafc841805771323a917a15db38ff17d678de25e708e00d8fc7",
+      "native/deadpan-encode/src/runtime_ffi.rs": "af24017444ad0f0702cdb10f00b99186f1769fa147d39f70311c75371af502cc",
+      "native/deadpan-encode/tests/aac_opening.rs": "434fd660b70eacbf0150c0e78351331b9ee53eee56703764c1e85e8b22487f75",
+      "native/deadpan-encode/tests/failures.rs": "f1e2f2be6c3613cddf3e581b23a9e75d302b8b1e3d7f431e8f46612aa0479b1c",
+      "native/deadpan-encode/tests/hdr_encode.rs": "c7fb0e1b045060e811df76e23561e4edfb3362ac2128c821e0d80fcaee88aada",
+      "native/deadpan-encode/tests/hdr_policy.rs": "9a6ef5ebe56f335bd768a3193a3fb09edca0e8724d606fa13602e981c125c232",
+      "native/deadpan-encode/tests/hdr_probe.rs": "d701664bce5cf18230d33fdeca765c297e1d55873e242651499e7b81ee32f3c2",
+      "native/deadpan-encode/tests/policy.rs": "97f517c9f9f2a7b96ac9ecb66d5a09c4392035a0528a1f114645829ae5a46e49",
+      "native/deadpan-encode/tests/probe.rs": "c0592fe4b207d791a6fd9c8f1a41234c011aae3d9d25410f365666d8df19344e",
+      "native/deadpan-encode/tests/runtime.rs": "414b81ffd2e43aa5302aab3509da74cce1b256350506fa26ef84d8c87dee68c1",
+      "native/deadpan-encode/tests/sdr_bitstream_identity.rs": "5c0a03727763ea1f4a7536f14cf37f638e33c2aaf00692846d4cb12c9f8b55a5"
+    },
+    "binary": "/Users/michael/Code/deadpan/target/debug/examples/qualify",
+    "binary_sha256": "9d376015c8ecb01fff1acd541991fb7f450f732cc7a13802a57e11b75e621a2a",
+    "build": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--example",
+      "qualify"
+    ],
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
+  },
+  "previous_abi1_archive_commit": "63d81ca4713fc486ced8a408ea471773f959a576",
+  "previous_abi1_provenance": {
+    "source_report": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json",
+    "source_report_sha256": "f2dfc29d1114d0960a826762b302d109f2f5556f7efebb37574113c58396a0e2",
+    "files": [
+      {
+        "name": "nonzero",
+        "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-nonzero.mp4",
+        "bytes": 2959,
+        "sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf",
+        "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+      },
+      {
+        "name": "software-two",
+        "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-software-two.mp4",
+        "bytes": 33144,
+        "sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+        "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+      },
+      {
+        "name": "marker",
+        "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-marker.mp4",
+        "bytes": 28768,
+        "sha256": "4658f6dd1a701d2ee7fb54630fe9ecbd41708881e7d4f21b865ad7ca1ddd8c86",
+        "original_document_sha256": "c56064b1e285fab150de4b5ed9913b4040bb05f49a64f3dfcadd346c39933144"
+      }
+    ]
+  },
   "files": [
     {
       "name": "nonzero",
-      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-nonzero.mp4",
-      "bytes": 2959,
-      "sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf",
-      "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+      "command": [
+        "qualify",
+        "/tmp/deadpan-aac-opening-regression-20261008/verification-fixtures/nonzero.mp4",
+        "hardware",
+        "none",
+        "30000",
+        "1001",
+        "1",
+        "1",
+        "impulses"
+      ],
+      "bytes": 3952,
+      "sha256": "d96c4316ce39cb02d0334c422e3899b69f101c233fd25d017b5e987b09ae2bab",
+      "manifest_sha256": "8e5622b3781b9382fcb388f0273bf935024d13a5a972f606b04387004f7a0843",
+      "qualification_report_sha256": "2db22535ee8bb3fef6536470aae6a4ff200d9b468f7a8f255b01911b14a610b6",
+      "previous_abi1": {
+        "movie_sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf",
+        "manifest_sha256": "0167d0f1a3586206fb1d88f61d06da40e91c7b6fd59e3ade7ab35dd703e2224c"
+      }
     },
     {
       "name": "software-two",
-      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-software-two.mp4",
-      "bytes": 33144,
-      "sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
-      "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+      "command": [
+        "qualify",
+        "/tmp/deadpan-aac-opening-regression-20261008/verification-fixtures/software-two.mp4",
+        "software",
+        "two",
+        "30000",
+        "1001",
+        "43",
+        "20",
+        "impulses"
+      ],
+      "bytes": 16376,
+      "sha256": "24f4aa1c0a67f00e30aaa557a51a89c89c26ffdd5bae40ba4d4b25fbf65d49ec",
+      "manifest_sha256": "f573d53b88d02a9c82b3e23c22e9c19e0ae5affa0bd1713e1b1514dd8e7c83c4",
+      "qualification_report_sha256": "a9d53dbb78c7ffc89be3dbef6320388bed026581bc4744ce5ca1288b56a8db4c",
+      "previous_abi1": {
+        "movie_sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+        "manifest_sha256": "172cfc8bc24a7c2c47e82371648b34c05870cc74e3e9d9e41d8eedc96545085f"
+      }
     },
     {
       "name": "marker",
-      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-marker.mp4",
-      "bytes": 28768,
-      "sha256": "4658f6dd1a701d2ee7fb54630fe9ecbd41708881e7d4f21b865ad7ca1ddd8c86",
-      "original_document_sha256": "c56064b1e285fab150de4b5ed9913b4040bb05f49a64f3dfcadd346c39933144"
+      "command": [
+        "qualify",
+        "/tmp/deadpan-aac-opening-regression-20261008/verification-fixtures/marker.mp4",
+        "hardware",
+        "none",
+        "60",
+        "1",
+        "120",
+        "0",
+        "impulses"
+      ],
+      "bytes": 20233,
+      "sha256": "27150b80303fbf93c051516691c94a213aa89897e7093ec933bd6232301a2e9b",
+      "manifest_sha256": "83389d9c6007595fe3210049d291b97aeb6a6f0ba8cf2454befd17acd88a97e6",
+      "qualification_report_sha256": "c89d44cf3748be6f37accc6a479f0135d95836b725bdc6d3e0abf6d2ca287075",
+      "previous_abi1": {
+        "movie_sha256": "4658f6dd1a701d2ee7fb54630fe9ecbd41708881e7d4f21b865ad7ca1ddd8c86",
+        "manifest_sha256": "74db9eedab9753a2c54f813d680cfc6ce8f261c5fb7ea0552d9381fe9f591af3"
+      }
     }
   ]
 }

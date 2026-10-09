@@ -417,7 +417,7 @@ fn sdr_sessions_keep_h264_declarations_and_reject_content_light() {
             (video.color_primaries, video.color_trc, video.colorspace),
             (1, 1, 1)
         );
-        assert_eq!(session.info().abi_version, 1);
+        assert_eq!(session.info().abi_version, 2);
         assert_eq!(session.info().video_profile, 100);
         let mut picture = vec![0; usize::try_from(probe.config().picture_bytes).unwrap()];
         let mut left = [0.0; 1024];

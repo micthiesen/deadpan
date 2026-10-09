@@ -39,7 +39,8 @@ report is evidence claimed by a producer, not a constructor for verified bytes.
   track, fast-start ordering, identity transforms, the captured raster, square
   pixels and explicit limited Rec.709 color. Movie and track durations use exact
   rational clocks. Each track has one normal-rate edit explaining only video
-  reordering or the measured 1,024-sample AAC priming delay.
+  reordering or 2,048 samples of AAC priming: the measured 1,024-sample codec
+  delay plus one 1,024-sample silent encoder preroll block.
 - Every packet is traversed under source admission limits. Video decode clocks
   are contiguous; unique presentation timestamps cover every captured CFR
   ordinal. AAC packet clocks retain priming and the exact authored terminal
@@ -162,7 +163,8 @@ statistics).
 MaxCLL/MaxFALL and the decoded bounds in 1/1000 cd/m²) is present exactly
 for PQ. It is skipped from serialization otherwise, so SDR and HLG report
 bytes are unchanged. `VerificationReport::validate` re-applies the bound
-check. `policy_version` stays 1. The bound is sanity evidence about the
+check. Current `policy_version` is 2 for the AAC preroll contract; the HDR
+light bound itself is unchanged. The bound is sanity evidence about the
 emitted pictures, not CTA-861.3 verification or a display or mastering
 qualification. The jobs mirror (`RenderContentLightEvidence`) rechecks only
 the PQ range and the declared MaxFALL <= MaxCLL.

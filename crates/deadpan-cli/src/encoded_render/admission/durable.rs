@@ -150,7 +150,7 @@ pub(crate) fn binding_for_decision(
         runtime: observation(&selected.runtime)?,
     };
     report
-        .validate(AdmissionLimits::default().encode)
+        .validate_retained(AdmissionLimits::default().encode)
         .map_err(invalid)?;
     if report.spec.color_policy != contract.color_policy() {
         return Err(invalid(
@@ -269,7 +269,10 @@ mod tests {
             content: observation(&selected.content).unwrap(),
             runtime: observation(&selected.runtime).unwrap(),
         };
-        report.validate(AdmissionLimits::default().encode).unwrap();
+        assert!(report.validate(AdmissionLimits::default().encode).is_err());
+        report
+            .validate_retained(AdmissionLimits::default().encode)
+            .unwrap();
         assert_eq!(
             observation::<_, RenderProbeManifest>(&report.manifest).unwrap(),
             selected.manifest

@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use deadpan_encode::{EncodeContract, HdrTransfer};
+use deadpan_encode::{AUDIO_FRAME_SAMPLES, AUDIO_PRIMING_SAMPLES, EncodeContract, HdrTransfer};
 use deadpan_source::{
     DecodeControl, DecodeLimits, Mp4Inspection, Mp4PacketReader, Mp4TrackInspection, Mp4TrackKind,
 };
@@ -121,7 +121,7 @@ pub(crate) fn inspect(
     )?;
     check_control(cancelled, deadline)?;
     let report = VerificationReport {
-        policy_version: 1,
+        policy_version: 2,
         contract: manifest.contract.clone(),
         document_sha256: manifest.document_sha256.clone(),
         movie_sha256: manifest.movie.sha256().clone(),
@@ -209,7 +209,7 @@ fn container<'a>(
     }
     let audio_media = native
         .audio_samples()
-        .checked_add(1024)
+        .checked_add(u64::from(AUDIO_PRIMING_SAMPLES))
         .ok_or("audio duration overflow")?;
     require(
         video.sample_dimensions == Some(native.raster())
@@ -231,10 +231,14 @@ fn container<'a>(
             && sound.media_timescale == 48_000
             && sound.media_duration == Some(audio_media)
             && sound.timing_duration == audio_media
-            && sound.edits[0].media_time == 1024
+            && sound.edits[0].media_time == i64::from(AUDIO_PRIMING_SAMPLES)
             && sound.sample_audio_channels == Some(2)
             && sound.sample_audio_rate == Some(48_000)
-            && u64::from(sound.sample_count) == native.audio_samples().div_ceil(1024) + 1,
+            && u64::from(sound.sample_count)
+                == native
+                    .audio_samples()
+                    .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+                    + u64::from(AUDIO_PRIMING_SAMPLES / AUDIO_FRAME_SAMPLES),
         "audio sample tables do not retain exact AAC priming and authored endpoint",
     )?;
     let reorder = u64::try_from(video.edits[0].media_time).map_err(|_| "negative reorder edit")?;
@@ -390,7 +394,8 @@ fn packet_scan(
             keys[index] = packet.table_sync;
             counts[0] += 1;
         } else if packet.track_index == sound.index {
-            let expected = i128::from(counts[1]) * 1024 - 1024;
+            let expected = i128::from(counts[1]) * i128::from(AUDIO_FRAME_SAMPLES)
+                - i128::from(AUDIO_PRIMING_SAMPLES);
             let remaining = i128::from(native.audio_samples()) - expected;
             require(
                 packet.track_id == sound.id
@@ -398,7 +403,8 @@ fn packet_scan(
                     && i128::from(timing.pts) == expected
                     && timing.dts == timing.pts
                     && remaining > 0
-                    && i128::from(packet.duration) == remaining.min(1024)
+                    && i128::from(packet.duration)
+                        == remaining.min(i128::from(AUDIO_FRAME_SAMPLES))
                     && packet.h264.is_none()
                     && packet.hevc.is_none(),
                 "AAC packet clock or exact final duration differs",

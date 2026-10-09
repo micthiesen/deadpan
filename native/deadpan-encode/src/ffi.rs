@@ -302,7 +302,7 @@ impl Encoder {
         let [width, height] = contract.raster();
         let [fps_num, fps_den] = contract.frame_rate();
         let config = Config {
-            abi_version: 1,
+            abi_version: 2,
             width,
             height,
             fps_num,
@@ -506,7 +506,7 @@ impl Encoder {
                 != contract
                     .audio_samples()
                     .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
-                    + 1
+                    + 2
             || report
                 .video_packets
                 .checked_add(report.audio_packets)
@@ -568,7 +568,7 @@ fn mode(mode: EncoderMode) -> u32 {
 }
 impl Info {
     fn admit(self, contract: &EncodeContract) -> Result<EncoderInfo, EncodeError> {
-        if self.abi_version != 1
+        if self.abi_version != 2
             || self.avcodec_version == 0
             || self.avformat_version == 0
             || self.avutil_version == 0

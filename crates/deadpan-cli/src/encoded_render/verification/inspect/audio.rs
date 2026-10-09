@@ -1,3 +1,4 @@
+use deadpan_encode::{AUDIO_FRAME_SAMPLES, AUDIO_PRIMING_SAMPLES};
 use deadpan_source::{
     Mp4TrackInspection,
     audio::{
@@ -27,7 +28,7 @@ pub(super) fn inspect(
         max_input_bytes: context.limits.max_input_bytes,
         max_frames: u64::from(track.sample_count) + 1,
         max_packets: context.limits.max_packets,
-        max_decoded_samples: u64::from(track.sample_count) * 1024,
+        max_decoded_samples: u64::from(track.sample_count) * u64::from(AUDIO_FRAME_SAMPLES),
         // FFmpeg's AAC decoder allocates a 2048-sample internal frame before
         // returning the 1024-sample LC block checked below.
         max_samples_per_frame: 2048,
@@ -61,7 +62,7 @@ pub(super) fn inspect(
         "AAC stream interpretation or presented range differs",
     )?;
     let first = if mode == AudioDecodeMode::Manual {
-        -1024
+        -i64::from(AUDIO_PRIMING_SAMPLES)
     } else {
         0
     };
@@ -86,11 +87,12 @@ pub(super) fn inspect(
         require(
             remainder > 0
                 && metadata.pts == expected
-                && metadata.nb_samples == 1024
+                && metadata.nb_samples == AUDIO_FRAME_SAMPLES
                 && metadata.sample_rate == 48_000
                 && metadata.channel_layout == stereo
                 && metadata.sample_format == AudioSampleFormat::Float32Planar
-                && metadata.reported_duration == Some(remainder.min(1024))
+                && metadata.reported_duration
+                    == Some(remainder.min(i64::from(AUDIO_FRAME_SAMPLES)))
                 && metadata.decode_timestamp.is_none_or(|dts| dts == expected),
             "decoded AAC clock, sample count or duration differs",
         )?;
@@ -107,16 +109,24 @@ pub(super) fn inspect(
                     .any(|name| name == "mp4"),
             "decoded audio is not the qualified AAC-LC MP4 path",
         )?;
-        if mode == AudioDecodeMode::Manual && expected == -1024 {
+        if mode == AudioDecodeMode::Manual && expected == first {
             require(
                 metadata.discard
                     && metadata.skip_samples.is_some_and(|skip| {
-                        skip.leading == 1024
+                        skip.leading == AUDIO_PRIMING_SAMPLES
                             && skip.trailing == 0
                             && skip.leading_reason == 0
                             && skip.trailing_reason == 0
                     }),
                 "AAC opening decode does not explain the measured priming edit",
+            )?;
+        } else if mode == AudioDecodeMode::Manual && expected < 0 {
+            // The first returned frame declares the complete edit. FFmpeg
+            // retains the second physical preroll frame as discarded without
+            // repeating that declaration; both must precede authored zero.
+            require(
+                metadata.discard && metadata.skip_samples.is_none(),
+                "AAC preroll decode does not retain the measured discarded block",
             )?;
         } else {
             require(
@@ -136,7 +146,9 @@ pub(super) fn inspect(
                 && frame.samples.iter().all(|sample| sample.is_finite()),
             "AAC output changed metadata, length or finite PCM",
         )?;
-        let end = expected.checked_add(1024).ok_or("audio clock overflow")?;
+        let end = expected
+            .checked_add(i64::from(AUDIO_FRAME_SAMPLES))
+            .ok_or("audio clock overflow")?;
         let low = expected.max(0);
         let high = end.min(authored);
         if high > low {
@@ -159,15 +171,22 @@ pub(super) fn inspect(
                 next_progress = completed.saturating_add(progress_step);
             }
         }
-        physical += 1024;
+        physical += u64::from(AUDIO_FRAME_SAMPLES);
         expected = end;
         require(
-            physical <= u64::from(track.sample_count) * 1024,
+            physical <= u64::from(track.sample_count) * u64::from(AUDIO_FRAME_SAMPLES),
             "AAC physical decode exceeds packet budget",
         )?;
     }
-    let expected_physical =
-        (native.audio_samples().div_ceil(1024) + u64::from(mode == AudioDecodeMode::Manual)) * 1024;
+    let expected_physical = native
+        .audio_samples()
+        .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+        * u64::from(AUDIO_FRAME_SAMPLES)
+        + if mode == AudioDecodeMode::Manual {
+            u64::from(AUDIO_PRIMING_SAMPLES)
+        } else {
+            0
+        };
     require(
         physical == expected_physical && presented == authored,
         "AAC decode omits the authored range or codec drain",

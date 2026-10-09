@@ -1,6 +1,6 @@
-//! The HDR additions must not change SDR v1 encoding. These hashes were
-//! captured from the pre-HDR source (`af4677a3`) with this same test file in a
-//! separate Cargo target; the encoder's output must stay byte-identical.
+//! Pin repeatable SDR software output, including the ABI-2 AAC preroll.
+//! The earlier pre-HDR identity is retained below as historical evidence;
+//! the intentional AAC startup correction changes the emitted MP4 bytes.
 
 use std::fs::OpenOptions;
 use std::io::Read;
@@ -70,15 +70,16 @@ fn encode(mode: EncoderMode) -> String {
     format!("{}:{hash:016x}", bytes.len())
 }
 
-/// Pre-HDR (`af4677a3`) OS software H.264 output of this exact fixture on the
-/// measured M5 Max (macOS 26.5.2). Hardware H.264 differs by one SEI byte
+/// ABI-2 OS software H.264/AAC output of this exact fixture on the measured
+/// M5 Max (macOS 26.5.2). Pre-HDR (`af4677a3`) was 12919:185b6115290d95f6.
+/// Hardware H.264 differs by one SEI byte
 /// between identical runs (measured at file offset 3520), so it cannot be
 /// pinned; software is repeatable. Another OS build may legitimately change
 /// the encoder's bytes; the repeatability assertion still runs everywhere.
-const PRE_HDR_SOFTWARE: &str = "12919:185b6115290d95f6";
+const PREROLL_SOFTWARE: &str = "12385:52c7852828da596a";
 
 #[test]
-fn sdr_v1_software_output_is_byte_identical_to_the_pre_hdr_encoder() {
+fn sdr_software_output_with_aac_preroll_is_repeatable() {
     let first = encode(EncoderMode::Software);
     assert_eq!(
         first,
@@ -86,6 +87,6 @@ fn sdr_v1_software_output_is_byte_identical_to_the_pre_hdr_encoder() {
         "software SDR output is not repeatable"
     );
     if std::env::var_os("DEADPAN_SKIP_PINNED_SDR_IDENTITY").is_none() {
-        assert_eq!(first, PRE_HDR_SOFTWARE);
+        assert_eq!(first, PREROLL_SOFTWARE);
     }
 }

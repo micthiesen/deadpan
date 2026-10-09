@@ -8,9 +8,9 @@ use std::io::{Read, Write};
 
 use deadpan_core::ColorPolicy;
 use deadpan_encode::{
-    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeContract, EncodeLimits,
-    EncodeReport, EncoderMode, HdrSignal, HdrTransfer, MAX_AUDIO_SAMPLES, MAX_OUTPUT_BYTES,
-    MAX_PACKET_BYTES, MAX_PACKETS, MAX_VIDEO_FRAMES, MasteringDisplay,
+    AUDIO_FRAME_SAMPLES, AUDIO_PRIMING_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeContract,
+    EncodeLimits, EncodeReport, EncoderMode, HdrSignal, HdrTransfer, MAX_AUDIO_SAMPLES,
+    MAX_OUTPUT_BYTES, MAX_PACKET_BYTES, MAX_PACKETS, MAX_VIDEO_FRAMES, MasteringDisplay,
 };
 use deadpan_jobs::{
     CancellationToken, Diagnostic, Sha256, WorkspaceArtifact, WorkspaceRef,
@@ -181,6 +181,19 @@ impl EncodedManifest {
     /// Admit bounded, internally consistent claims. This does not decode or
     /// verify the movie, its hash, emitted codec properties or audible timing.
     pub fn validate(&self) -> Result<(), String> {
+        self.validate_abi(2)
+    }
+
+    /// Validate historical data without granting current encoding or finished-
+    /// file verification authority. ABI 1 used codec delay without input preroll.
+    pub(super) fn validate_retained(&self) -> Result<(), String> {
+        match self.report.info.abi_version {
+            version @ (1 | 2) => self.validate_abi(version),
+            _ => Err("unsupported retained encoder ABI".into()),
+        }
+    }
+
+    fn validate_abi(&self, abi_version: u32) -> Result<(), String> {
         let native = self.contract.native_contract()?;
         if self.movie.reference().as_str() != MOVIE_REF {
             return Err("encoded movie must be exactly output/movie.mp4".into());
@@ -188,7 +201,7 @@ impl EncodedManifest {
         if self.movie.byte_length() != self.report.output_bytes {
             return Err("encoded movie length differs from its native report".into());
         }
-        validate_report(&native, &self.report)
+        validate_report(&native, &self.report, abi_version)
     }
 
     /// Bind the native allocation and count claims to the host's exact budgets.
@@ -196,6 +209,15 @@ impl EncodedManifest {
     /// and the later independent verifier remain responsible for actual bytes.
     pub fn validate_for(&self, limits: EncodeLimits) -> Result<(), String> {
         self.validate()?;
+        self.validate_limits(limits)
+    }
+
+    pub(super) fn validate_retained_for(&self, limits: EncodeLimits) -> Result<(), String> {
+        self.validate_retained()?;
+        self.validate_limits(limits)
+    }
+
+    fn validate_limits(&self, limits: EncodeLimits) -> Result<(), String> {
         let native = self.contract.native_contract()?;
         limits
             .validate_for(&native)
@@ -219,7 +241,11 @@ impl EncodedManifest {
     }
 }
 
-fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(), String> {
+fn validate_report(
+    contract: &EncodeContract,
+    report: &EncodeReport,
+    abi_version: u32,
+) -> Result<(), String> {
     if let Some(correction) = &report.video_media_duration_correction {
         correction
             .validate(contract)
@@ -228,7 +254,11 @@ fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(
     let expected_audio_packets = contract
         .audio_samples()
         .div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
-        + 1;
+        + if abi_version == 1 {
+            1
+        } else {
+            u64::from(AUDIO_PRIMING_SAMPLES / AUDIO_FRAME_SAMPLES)
+        };
     let packets = report
         .video_packets
         .checked_add(report.audio_packets)
@@ -265,7 +295,7 @@ fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(
         .checked_sub(MOOV_FIXED_BYTES)
         .filter(|bytes| bytes.is_multiple_of(MOOV_BYTES_PER_PACKET))
         .map(|bytes| bytes / MOOV_BYTES_PER_PACKET);
-    if info.abi_version != 1
+    if info.abi_version != abi_version
         || [
             info.avcodec_version,
             info.avformat_version,
@@ -291,7 +321,7 @@ fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(
         || has_b.is_none_or(|value| value > policy.b_frames)
         || max_b != Some(policy.b_frames)
         || gop != Some(policy.gop_frames)
-        || !(0..=8_192).contains(&info.audio_initial_padding)
+        || i64::from(info.audio_initial_padding) != i64::from(AUDIO_FRAME_SAMPLES)
         || !(0..=8_192).contains(&info.audio_trailing_padding)
         || info.video_bitrate != policy.video_bitrate
         || info.audio_bitrate != policy.audio_bitrate

@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
+fixes quiet opening distortion without changing authored PCM or widening
+tolerances. Native ABI and finished-file policy 2 retain two priming packets
+and an exact 2,048-sample edit. Historical ABI-1 decisions remain readable but
+cannot authorize a fresh candidate. The 10,000-command fractional-edit run
+passes every shared PCM sample and all 10,100 exported pictures/34 audio
+windows. Its six-node fixture establishes repeated-edit timing, not wide-tree
+performance. DP-02 remains partial; follow the current tracker.
+
 Build on `ae79d614` and the [current release audit](../RELEASE_AUDIT.md).
 `ib`/`ab` now resolve through the native and semantic grammars. First-play
 attachment handling is atomic for marks, captions and cutaways. Descendant

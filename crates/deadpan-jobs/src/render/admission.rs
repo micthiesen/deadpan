@@ -1203,7 +1203,8 @@ fn validate_encode_report(
         report.video_frames == config.video_frames
             && report.audio_samples == config.audio_samples
             && report.video_packets == config.video_frames
-            && report.audio_packets == config.audio_samples.div_ceil(1024) + 1
+            && report.audio_packets
+                == config.audio_samples.div_ceil(1024) + u64::from(report.info.abi_version)
             && packets <= MAX_PROBE_PACKETS
             && (1..=MAX_PROBE_BYTES).contains(&report.output_bytes)
             && report.packet_bytes >= packets
@@ -1223,7 +1224,9 @@ fn validate_encode_report(
         .filter(|bytes| bytes.is_multiple_of(128))
         .map(|bytes| bytes / 128);
     ensure(
-        info.abi_version == 1
+        // Stored decisions retain their original encoding evidence. Current
+        // live admission additionally checks the current native ABI.
+        matches!(info.abi_version, 1 | 2)
             && [
                 info.avcodec_version,
                 info.avformat_version,
@@ -1249,11 +1252,11 @@ fn validate_encode_report(
             && u32::try_from(info.video_has_b_frames).is_ok_and(|value| value <= settings.b_frames)
             && u32::try_from(info.video_max_b_frames).ok() == Some(settings.b_frames)
             && u32::try_from(info.video_gop_size).ok() == Some(settings.gop_frames)
-            && (0..=8192).contains(&info.audio_initial_padding)
+            && info.audio_initial_padding == 1024
             && (0..=8192).contains(&info.audio_trailing_padding)
             && info.video_bitrate == settings.video_bitrate
             && info.audio_bitrate == settings.audio_bitrate
-            && moov_packets.is_some_and(|value| value <= MAX_PROBE_PACKETS && value > packets),
+            && moov_packets == Some(MAX_PROBE_PACKETS),
         "probe queried codec, clock or policy differs",
     )
 }
@@ -1266,7 +1269,7 @@ fn validate_verification(
 ) -> Result<(), RenderError> {
     let ticks = i64::from(config.frame_rate[1]);
     ensure(
-        report.policy_version == 1
+        report.policy_version == encoded.info.abi_version
             && report.video_frames == config.video_frames
             && report.audio_samples == config.audio_samples
             && report.video_packets == encoded.video_packets
@@ -1283,8 +1286,8 @@ fn validate_verification(
             && report.video_edit_media_time >= 0
             && report.video_edit_media_time % ticks == 0
             && report.video_edit_media_time <= i64::from(settings.b_frames) * ticks
-            && report.audio_edit_media_time == 1024
-            && report.manual_first_sample == -1024
+            && report.audio_edit_media_time == i64::from(encoded.info.abi_version) * 1024
+            && report.manual_first_sample == -i64::from(encoded.info.abi_version) * 1024
             && report.ordinary_first_sample == 0
             && report.manual_physical_samples == report.audio_packets * 1024
             && report.ordinary_physical_samples == config.audio_samples.div_ceil(1024) * 1024

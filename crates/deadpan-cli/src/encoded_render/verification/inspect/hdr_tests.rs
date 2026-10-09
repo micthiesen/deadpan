@@ -465,7 +465,7 @@ fn hardware(b_frames: BFramePolicy) -> EncoderChoice {
 }
 
 #[test]
-fn retained_reordered_hdr_requires_exact_media_duration_then_passes_full_inspection() {
+fn retained_reordered_hdr_preserves_video_regression_but_refuses_retired_aac() {
     // Retained from a real VideoToolbox PQ TargetTwo failure on 2026-10-08.
     // Packet order starts PTS/DTS (0,-2), (2,-1), (1,0), (3,1). Pinned movenc
     // inferred a nonexistent start at -1 and wrote mdhd=47, although all 46
@@ -491,9 +491,21 @@ fn retained_reordered_hdr_requires_exact_media_duration_then_passes_full_inspect
         host_nits: [0.0; 2],
     };
     let error = inspect(&encoded).unwrap_err();
+    assert!(error.contains("encoded counts"), "{error}");
+    let file = File::open(&encoded.path).unwrap();
+    let reader = Mp4PacketReader::open(
+        file,
+        deadpan_source::DecodeLimits::default(),
+        DecodeControl {
+            cancelled: &NOT_CANCELLED,
+            timeout: Duration::from_secs(60),
+        },
+    )
+    .unwrap();
     assert!(
-        error.contains("video sample description or media clock differs"),
-        "{error}"
+        container(reader.inspection(), &encoded.manifest)
+            .unwrap_err()
+            .contains("video sample description or media clock differs")
     );
     let corrected = patched(&encoded, |bytes| {
         // The hash above binds these fixture-specific offsets. The native
@@ -505,10 +517,55 @@ fn retained_reordered_hdr_requires_exact_media_duration_then_passes_full_inspect
         assert_eq!(&bytes[312..316], &47_u32.to_be_bytes());
         bytes[312..316].copy_from_slice(&46_u32.to_be_bytes());
     });
-    let report = inspect(&corrected).unwrap();
-    report.validate(VerificationLimits::default()).unwrap();
-    assert_eq!(report.video_frames, 46);
-    assert_eq!(report.fresh_gop_frames, 46);
+    // Keep the measured ABI-1 bytes unchanged. Correcting video bookkeeping
+    // does not upgrade their audio to the current AAC contract.
+    assert!(inspect(&corrected).unwrap_err().contains("encoded counts"));
+    let file = File::open(&corrected.path).unwrap();
+    let context = Context {
+        file: &file,
+        manifest: &corrected.manifest,
+        limits: deadpan_source::DecodeLimits::default(),
+        cancelled: &NOT_CANCELLED,
+        deadline: Instant::now() + Duration::from_secs(60),
+    };
+    let mut reader = Mp4PacketReader::open(
+        context.file().unwrap(),
+        context.limits,
+        context.control().unwrap(),
+    )
+    .unwrap();
+    let movie = reader.inspection().clone();
+    assert!(
+        container(&movie, &corrected.manifest)
+            .unwrap_err()
+            .contains("audio sample tables do not retain exact AAC priming")
+    );
+    let video = movie
+        .tracks
+        .iter()
+        .find(|track| track.kind == deadpan_source::Mp4TrackKind::Video)
+        .unwrap();
+    let mut keys = [false; 46];
+    let mut seen = [false; 46];
+    let mut reorder = 0;
+    while let Some(packet) = reader.next_packet(context.control().unwrap()).unwrap() {
+        if packet.track_index == video.index {
+            let timing = packet.presentation.unwrap();
+            let ordinal = usize::try_from(timing.pts).unwrap();
+            assert!(!seen[ordinal]);
+            seen[ordinal] = true;
+            keys[ordinal] = packet.table_sync;
+            reorder = reorder.max(
+                packet
+                    .sample_index
+                    .saturating_sub(u32::try_from(ordinal).unwrap()),
+            );
+        }
+    }
+    assert!(seen.into_iter().all(|value| value));
+    let report =
+        super::pictures::inspect(&context, video, &keys, Some(reorder), &mut |_| Ok(())).unwrap();
+    assert_eq!(report.fresh_frames, 46);
     assert!(report.maximum_b_run > 0);
 }
 
@@ -772,6 +829,26 @@ fn report_content_light_is_required_for_pq_only_and_rechecked() {
     light.declared_max_cll = 10;
     light.declared_max_fall = 10;
     assert!(far.validate(limits).is_err());
+    // Synthetic historical claims retain the complete PQ validation; their
+    // earlier AAC clock cannot bypass the decoded-light tolerance check.
+    let mut historical = report.clone();
+    historical.policy_version = 1;
+    historical.audio_packets -= 1;
+    historical.audio_edit_media_time = 1_024;
+    historical.manual_first_sample = -1_024;
+    historical.manual_physical_samples -= 1_024;
+    historical.validate_retained(limits, 1).unwrap();
+    assert!(historical.validate(limits).is_err());
+    assert!(historical.validate_retained(limits, 2).is_err());
+    historical.content_light = far.content_light;
+    assert!(
+        historical
+            .validate_retained(limits, 1)
+            .unwrap_err()
+            .contains("clli")
+    );
+    historical.content_light = None;
+    assert!(historical.validate_retained(limits, 1).is_err());
     let hlg = inspect_hlg(&encode(
         HdrTransfer::Hlg,
         RASTER,

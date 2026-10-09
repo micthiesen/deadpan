@@ -102,7 +102,7 @@ example in-band Dolby Vision NAL units) is unusable input
   applies the same edit, so a wrong edit moves both. The content alignment
   below is the real timing guarantee (a movie whose edit no longer skips the
   priming passes the priming cross-check and fails alignment with a measured
-  1,024-sample lag). Decoded frames that do not continue the previous frame are
+  2,048-sample lag with encoder ABI 2). Decoded frames that do not continue the previous frame are
   reported as `audio.gaps`; window samples the file does not present are
   counted as `uncovered_samples` and fail `decoded_audio_gap`. The presented
   end must equal the edit's declared duration and the committed sample count.
@@ -259,7 +259,7 @@ them with public `render` and verify them with `verify-export`:
   checks four negatives: a same-duration 1.35x reframe and -12 dB trim
   committed afterwards (`gross_structural_mismatch`, `audio_level`, offset still
   0); an altered copy whose audio edit no longer skips priming (measured
-  offset +1,024, priming cross-check still agrees); an altered copy whose video
+  offset +2,048 with encoder ABI 2, priming cross-check still agrees); an altered copy whose video
   edit starts one frame late (a leading picture discarded, every later picture
   on the previous ordinal, the last ordinal missing); and the original movie
   against the shorter pre-pause revision (range, frame count and audio edit
@@ -297,9 +297,11 @@ them with public `render` and verify them with `verify-export`:
   (about 213 s on an M5 Max, of which the two large fixtures take about 82 s
   of render and verification). It needs a development `ffmpeg` with
   `libx264` (`DEADPAN_BRIDGE_FFMPEG`, else `/opt/homebrew/bin/ffmpeg`) and a
-  `deadpan-media-worker` beside the tested `deadpan-cli`
-  (`cargo build --release --locked -p deadpan-media-worker`, or
-  `DEADPAN_MEDIA_WORKER`). A fixture whose tool or feature is missing is
+  current `deadpan-media-worker` and `deadpan-track` executables beside the
+  tested `deadpan-cli` (`cargo build --release --locked -p deadpan-media-worker
+  -p deadpan-track`, or `DEADPAN_MEDIA_WORKER` with its sibling tracker).
+  Rebuild both after worker-protocol changes; a present stale helper is not
+  sufficient. A fixture whose tool or feature is missing is
   reported `SKIPPED` on stderr and as a `skipped` row in the results file,
   never silently dropped; record results only from a run with none skipped.
   `DEADPAN_PREVIEW_EXPORT_RESULTS=<new.json>` records the table, and

@@ -174,10 +174,10 @@ denominator = rate["denominator"]
 choice = request["contract"]["choice"]
 b_frames = 0 if choice["b_frames"] == "none" else 2
 video_packets = video_frames
-audio_packets = (audio_samples + 1023) // 1024 + 1
+audio_packets = (audio_samples + 1023) // 1024 + 2
 report = {
     "info": {
-        "abi_version": 1, "avcodec_version": 4066151, "avformat_version": 4064103,
+        "abi_version": 2, "avcodec_version": 4066151, "avformat_version": 4064103,
         "avutil_version": 3934311, "movie_timescale": math.lcm(numerator, 48000),
         "video_time_base_num": 1, "video_time_base_den": numerator,
         "audio_time_base_num": 1, "audio_time_base_den": 48000,
@@ -241,7 +241,7 @@ elif mode.startswith("report:"):
 elif mode.startswith("info:"):
     field = mode.split(":", 1)[1]
     replacements = {
-        "abi_version": 2, "avcodec_version": 0, "movie_timescale": 30000,
+        "abi_version": 1, "avcodec_version": 0, "movie_timescale": 30000,
         "video_time_base_num": 2, "video_time_base_den": 30,
         "audio_time_base_num": 2, "audio_time_base_den": 44100,
         "audio_frame_size": 512, "video_profile": 77, "audio_profile": 0,

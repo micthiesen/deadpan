@@ -558,7 +558,9 @@ impl RetainedRenderManifest {
                 )
             }
         };
-        encoded.validate().map_err(EncodedRenderError::Protocol)?;
+        encoded
+            .validate_retained()
+            .map_err(EncodedRenderError::Protocol)?;
         if recorded_intent != intent
             || recorded_attempt != encoding_attempt
             || encoded.document_sha256 != intent.document_sha256

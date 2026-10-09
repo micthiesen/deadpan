@@ -95,7 +95,9 @@ fn fixture() -> Result<Fixture> {
     decision.validate_for(&intent, &decision.encoding_attempt_id)?;
     encoded.document_sha256 = intent.document_sha256.clone();
     encoded.contract = EncodedRenderContract::from_contract(&contract, encoded.contract.choice);
-    encoded.validate().map_err(EncodedRenderError::Protocol)?;
+    encoded
+        .validate_retained()
+        .map_err(EncodedRenderError::Protocol)?;
     drop(store);
     Ok(Fixture {
         _scratch: scratch,

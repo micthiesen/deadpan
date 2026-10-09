@@ -5,6 +5,7 @@
 
 use std::{io, sync::atomic::AtomicBool, time::Instant};
 
+use deadpan_encode::{AUDIO_FRAME_SAMPLES, AUDIO_PRIMING_SAMPLES};
 use deadpan_jobs::{CancellationToken, Sha256};
 use serde::{Deserialize, Serialize};
 
@@ -197,20 +198,48 @@ impl ContentLightEvidence {
 
 impl VerificationReport {
     pub fn validate(&self, limits: VerificationLimits) -> Result<(), String> {
+        self.validate_policy(limits, 2)
+    }
+
+    /// Historical observations retain their matching encoder ABI and complete
+    /// picture, audio and HDR checks, without granting live verifier authority.
+    pub(super) fn validate_retained(
+        &self,
+        limits: VerificationLimits,
+        encoder_abi: u32,
+    ) -> Result<(), String> {
+        match encoder_abi {
+            version @ (1 | 2) => self.validate_policy(limits, version),
+            _ => Err("unsupported retained verification policy".into()),
+        }
+    }
+
+    fn validate_policy(
+        &self,
+        limits: VerificationLimits,
+        policy_version: u32,
+    ) -> Result<(), String> {
         limits.validate()?;
+        let priming = if policy_version == 1 {
+            AUDIO_FRAME_SAMPLES
+        } else {
+            AUDIO_PRIMING_SAMPLES
+        };
         let native = self.contract.native_contract()?;
         let packets = self
             .video_packets
             .checked_add(self.audio_packets)
             .ok_or("verification packet count overflow")?;
-        if self.policy_version != 1
+        if self.policy_version != policy_version
             || self.movie_bytes == 0
             || self.movie_bytes > limits.maximum_bytes
             || self.video_frames != native.video_frames()
             || self.audio_samples != native.audio_samples()
             || self.video_packets != self.video_frames
             || packets > limits.maximum_packets
-            || self.audio_packets != self.audio_samples.div_ceil(1024) + 1
+            || self.audio_packets
+                != self.audio_samples.div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+                    + u64::from(priming / AUDIO_FRAME_SAMPLES)
             || self.gops == 0
             || self.gops > self.video_frames
             || self.gops
@@ -221,11 +250,13 @@ impl VerificationReport {
             || self.runtime_versions != [4_066_151, 4_064_103, 3_934_311]
             || self.movie_timescale != native.policy().movie_timescale
             || self.video_edit_media_time < 0
-            || self.audio_edit_media_time != 1024
-            || self.manual_first_sample != -1024
+            || self.audio_edit_media_time != i64::from(priming)
+            || self.manual_first_sample != -i64::from(priming)
             || self.ordinary_first_sample != 0
-            || self.manual_physical_samples != self.audio_packets * 1024
-            || self.ordinary_physical_samples != self.audio_samples.div_ceil(1024) * 1024
+            || self.manual_physical_samples != self.audio_packets * u64::from(AUDIO_FRAME_SAMPLES)
+            || self.ordinary_physical_samples
+                != self.audio_samples.div_ceil(u64::from(AUDIO_FRAME_SAMPLES))
+                    * u64::from(AUDIO_FRAME_SAMPLES)
         {
             return Err("verification report contradicts the exact output policy".into());
         }
