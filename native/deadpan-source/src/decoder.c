@@ -763,6 +763,10 @@ static int allocate_decoder(DeadpanSource *s) {
     if (result < 0) return fferror(s, "copy source codec parameters", result);
     if (stream->codecpar->codec_id == AV_CODEC_ID_VP9) {
         s->decoder->chroma_sample_location = s->limits.vp9[2] ? AVCHROMA_LOC_TOPLEFT : AVCHROMA_LOC_LEFT;
+        // Matroska DisplayWidth/Height are a stream SAR, not codecpar SAR.
+        // VP9 has no pixel-aspect signal; its render_size is checked separately.
+        if (stream->sample_aspect_ratio.num)
+            s->decoder->sample_aspect_ratio = stream->sample_aspect_ratio;
     }
     // FFmpeg's frame and slice threading are deterministic: pictures match a
     // single-threaded decode bit for bit. Threads join in avcodec_free_context.
@@ -866,7 +870,7 @@ static int open_impl(DeadpanSource *s) {
             p->extradata_size || (unsigned)p->color_primaries != v[4] ||
             (unsigned)p->color_trc != v[5] || (unsigned)p->color_space != v[6] ||
             p->color_range != (v[3] ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG))
-            return fail(s, "unsupported_codec", "VP9 requires matching admitted vpcC configuration");
+            return fail(s, "unsupported_codec", "VP9 requires matching admitted container configuration");
     }
     if (p->codec_id == AV_CODEC_ID_H264) {
         if (p->extradata_size < 7 || p->extradata[0] != 1)

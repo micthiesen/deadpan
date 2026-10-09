@@ -4,13 +4,22 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Video-only VP9 WebM/Matroska](qualification/webm-vp9-sources-2026-10-09.md)
+now preserves explicit eight/ten-bit SDR color, anamorphic display, measured
+millisecond timestamps and VFR intervals through native decoding and public
+Render. Checked nominal cadence retains fractional project rates. Ten inputs
+verify 166 exported pictures, including thirty project frames from twelve VFR
+pictures. Opus/audio-bearing WebM, quantized-CFR proxies, missing-color
+interpretations and the remaining format matrix stay open; DP-02 and DP-16
+remain partial. The qualification records final checks and known limitations.
+
 [SDR VP9 in MP4](qualification/vp9-sources-2026-10-09.md) now retains
 eight/ten-bit full/limited-range pictures, explicit chroma siting and exact
 clocks. Hidden altref pictures and repeated existing frames preserve the
 authored timeline. Native pixel/seek tests, source receipts, real proxies and
 debug/release public Render pass, including 112 VP9 pictures and four zero-offset
 signal windows. Final gate results are recorded in the qualification. DP-02
-and DP-16 remain partial for WebM/Opus, VP9 HDR, AV1, other required codecs
+and DP-16 remain partial for audio-bearing WebM/Opus, VP9 HDR, AV1, other required codecs
 and the full source/operation matrix.
 
 [SDR HEVC and H.264 High10](qualification/sdr-source-codecs-2026-10-09.md)

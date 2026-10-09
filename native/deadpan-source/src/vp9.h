@@ -1,5 +1,5 @@
 /* Bounded VP9 uncompressed headers, before FFmpeg's superframe splitter.
-   The admitted MP4 binding has exactly one displayed picture per sample,
+   The admitted container bindings have exactly one displayed picture per packet,
    preceded by at most seven hidden reference pictures. All references keep
    the immutable sample-entry raster. FFmpeg ignores VP9 render_size, so do
    not silently admit a different display transform. No compressed data is
@@ -10,7 +10,7 @@ static int vp9_color(DeadpanSource *s, Bits *b, unsigned profile) {
     unsigned matrix = matrices[bits(b, 3)];
     unsigned full = bit(b);
     if (depth != s->limits.vp9[1] || matrix != s->limits.vp9[6] || full != s->limits.vp9[3])
-        return fail(s, "stream_changed", "VP9 bitstream and vpcC depth, matrix or range disagree");
+        return fail(s, "stream_changed", "VP9 bitstream and container depth, matrix or range disagree");
     return 1;
 }
 static int vp9_frame(DeadpanSource *s, const uint8_t *data, size_t length, int *shown) {
@@ -100,7 +100,7 @@ static int vp9_packet(DeadpanSource *s) {
         int shown = 0;
         if (vp9_frame(s, data + position, size, &shown) < 0) return -1;
         if (shown != (frame + 1 == frames))
-            return fail(s, "unsupported_timing", "VP9 MP4 sample needs exactly one final displayed picture");
+            return fail(s, "unsupported_timing", "VP9 packet needs exactly one final displayed picture");
         position += size;
     }
     if (position != payload) return fail(s, "invalid_input", "VP9 superframe has trailing payload");

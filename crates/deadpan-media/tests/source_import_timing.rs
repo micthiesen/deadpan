@@ -467,6 +467,7 @@ fn indexed_audio(start: i64, sample_rate: u32, counts: &[u32]) -> AudioIndexSnap
 
 fn info(time_base: SourceTimeBase) -> SourceStreamInfo {
     SourceStreamInfo {
+        nominal_frame_duration_ns: None,
         bwdif_fields: false,
         clean_aperture: None,
         width: 1920,
@@ -717,6 +718,68 @@ fn cadence_requires_repeated_integral_evidence_and_bounds_histogram_growth() {
         derive_presentation_basis(&absent, &info(clock)),
         Err(ImportTimingError::UnmeasuredVideoEnd)
     ));
+}
+
+#[test]
+fn declared_quantized_cadence_preserves_fractional_rates_without_rewriting_pts() {
+    let clock = SourceTimeBase::new(1, 1000).unwrap();
+    for (n, d, output_n, output_d) in [
+        (30000, 1001, 30000, 1001),
+        (24, 1, 24, 1),
+        (24000, 1001, 24000, 1001),
+        (120000, 1001, 60000, 1001),
+    ] {
+        let points: Vec<i64> = (0..=900).map(|i| (i * 1000 * d + n / 2) / n).collect();
+        let intervals: Vec<_> = points.windows(2).map(|p| p[1] - p[0]).collect();
+        let video = indexed_video(-7000, &intervals, clock);
+        let mut metadata = info(clock);
+        metadata.nominal_frame_duration_ns = Some((1_000_000_000 * d / n) as u64);
+        let candidate = derive_presentation_basis(&video, &metadata).unwrap();
+        assert_eq!(
+            candidate.basis.frame_rate,
+            FrameRate::new(output_n, output_d).unwrap()
+        );
+        assert_eq!(
+            candidate.cadence.confidence,
+            CadenceConfidence::DeclaredQuantizedCfr
+        );
+        assert_eq!(
+            candidate.cadence.observed_rate,
+            FrameRate::new(n as u32, d as u32).unwrap()
+        );
+        assert_eq!(video.index().terminal_end(), -7000 + points[900]);
+        metadata.nominal_frame_duration_ns = Some(33_333_333);
+        assert!(
+            derive_presentation_basis(&video, &metadata).is_err(),
+            "contradictory 30 fps at {n}/{d}"
+        );
+    }
+}
+
+#[test]
+fn repeated_vfr_intervals_can_share_a_grid_shorter_than_the_mode() {
+    let clock = SourceTimeBase::new(1, 1000).unwrap();
+    let video = indexed_video(4000, &[60, 40, 60, 40, 60, 40], clock);
+    let mut metadata = info(clock);
+    metadata.nominal_frame_duration_ns = Some(33_366_666);
+    let candidate = derive_presentation_basis(&video, &metadata).unwrap();
+    assert_eq!(candidate.basis.frame_rate, FrameRate::new(50, 1).unwrap());
+    assert_eq!(
+        candidate.cadence.confidence,
+        CadenceConfidence::RepeatedIntegralGridVfr
+    );
+    assert_eq!(candidate.cadence.selected_interval_ticks, 20);
+    assert_eq!(video.index().terminal_end(), 4300);
+    let coarse = SourceTimeBase::new(1, 1).unwrap();
+    let video = indexed_video(0, &[1], coarse);
+    let mut metadata = info(coarse);
+    metadata.nominal_frame_duration_ns = Some(33_366_666);
+    let candidate = derive_presentation_basis(&video, &metadata).unwrap();
+    assert_eq!(candidate.basis.frame_rate, FrameRate::new(1, 1).unwrap());
+    assert_eq!(
+        candidate.cadence.confidence,
+        CadenceConfidence::SingleDecodedFrame
+    );
 }
 
 #[test]

@@ -38,7 +38,7 @@ fn hosts() -> Vec<Host> {
         .filter(|path| {
             matches!(
                 path.extension().and_then(|e| e.to_str()),
-                Some("mp4" | "mkv")
+                Some("mp4" | "mkv" | "webm")
             )
         })
         .collect();

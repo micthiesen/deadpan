@@ -141,6 +141,69 @@ fn telecine_receipts_preserve_field_cadence_terminal_time_and_original_audio() {
 }
 
 #[test]
+fn webm_receipts_preserve_measured_millisecond_and_vfr_endpoints() {
+    for (name, end, count) in [
+        ("vp9-sdr-8-limited.webm", 400, 12),
+        ("vp9-sdr-8-full.webm", 400, 12),
+        ("vp9-sdr-10-limited.webm", 400, 12),
+        ("vp9-sdr-10-full.webm", 400, 12),
+        ("vp9-sdr-8-limited.mkv", 400, 12),
+        ("vp9-anamorphic.webm", 400, 12),
+        ("vp9-altref.webm", 2002, 60),
+        ("vp9-existing-8.webm", 66, 2),
+        ("vp9-existing-10.webm", 66, 2),
+        ("vp9-vfr.webm", 600, 12),
+    ] {
+        let mut video = video(input("deadpan-source/tests/fixtures", name), "webm");
+        let captured = DecodedSourceQualification::from_sessions(Some(&video), None).unwrap();
+        let bytes = captured.snapshot().to_json().unwrap();
+        let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+        assert_eq!(&restored, captured.snapshot());
+        let basis = restored.basis_candidate().unwrap().unwrap().basis;
+        assert_eq!(
+            basis.frame_rate,
+            if name == "vp9-vfr.webm" {
+                FrameRate::new(50, 1).unwrap()
+            } else {
+                FrameRate::new(30000, 1001).unwrap()
+            },
+            "{name}"
+        );
+        assert_eq!(
+            basis.width,
+            if name == "vp9-anamorphic.webm" {
+                128
+            } else {
+                96
+            }
+        );
+        let rate = FrameRate::new(30000, 1001).unwrap();
+        let timing = restored.derive_timing(rate).unwrap();
+        assert!(timing.audio.is_none());
+        assert_eq!(
+            timing.video.unwrap().duration_frames,
+            ExactRatio::new(end * 30, 1001).unwrap(),
+            "{name}"
+        );
+        for ordinal in (0..count).rev() {
+            let picture = video
+                .frame(
+                    deadpan_core::SourceFrameId(ordinal),
+                    Duration::from_secs(5),
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            let pts = if name == "vp9-vfr.webm" {
+                ordinal * 50 + ordinal % 2 * 10
+            } else {
+                (ordinal * 1001 + 15) / 30
+            };
+            assert_eq!(picture.metadata.pts, pts as i64, "{name}");
+        }
+    }
+}
+
+#[test]
 fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
     use deadpan_core::SourceFrameId;
     for (name, bits) in [

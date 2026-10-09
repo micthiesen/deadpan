@@ -32,10 +32,11 @@ its own PTS. A different VP9 render size or raster, interlaced declaration,
 contradictory metadata, unsupported profile or malformed index fails explicitly.
 See [VP9 qualification](qualification/vp9-sources-2026-10-09.md).
 
-This MP4 path does not complete WebM/Opus, AV1, VP9 HDR or the full §16.3
+This MP4 path does not complete audio-bearing WebM/Opus, AV1, VP9 HDR or the full §16.3
 matrix. Those remain implementation and qualification work.
 
-Video Matroska admission requires one `V_FFV1` track, finite Segment and Cluster
+Video Matroska admission requires one `V_FFV1` or SDR `V_VP9` track; WebM
+admits `V_VP9`. Both currently require video-only files, finite Segment and Cluster
 lengths, and a closed element grammar. Every cluster and packet declaration is
 checked, including metadata following picture payloads. SeekHead and Cue targets
 must resolve to actual structural boundaries, not matching bytes inside a packet.
@@ -46,6 +47,16 @@ compression, encryption, attachments, chapters, unknown elements and multiple
 tracks remain rejected. SimpleTags must be flat, with at most 1,024 in the file;
 this bounds FFmpeg's language-dependent metadata expansion and dictionary work.
 The audio adapter still rejects Matroska.
+
+VP9 Matroska/WebM uses explicit SDR range, matrix, transfer, primaries and
+left/top-left chroma siting, plus its first bounded keyframe header. Profiles
+0/2 and eight/ten-bit 4:2:0 must agree with container dimensions and color.
+Every subsequent packet uses the same native VP9 guard as MP4. Alpha, stereo,
+cropping, nonzero codec delay/preroll and VP9 CodecPrivate extensions remain
+unqualified. Display dimensions supply SAR to both metadata and the decoder.
+The nominal `DefaultDuration` is retained separately for checked cadence
+selection; source timestamps remain in their measured container clock.
+See [WebM qualification](qualification/webm-vp9-sources-2026-10-09.md).
 
 PCM16 RIFF/WAVE admits one plain `fmt16` or one closed extensible `fmt40` before
 its aligned nonempty data chunk. The extensible form requires tag `0xfffe`,

@@ -72,8 +72,10 @@ I/O and around native work. These are cooperative deadlines: an individual
 FFmpeg codec operation is not preempted. This adapter does not establish an OS
 process memory/CPU limit and must stay off UI/audio callback threads.
 
-The initial admitted containers are MP4/MOV and Matroska/WebM, with one H.264 or
-FFV1 video stream and up to 32 ignored audio streams. The bounded audio inventory
+MP4/MOV admits one qualified H.264, HEVC or VP9 video stream and up to 32
+ignored AAC streams. Finite Matroska admits one FFV1 or SDR VP9 video track;
+WebM admits one SDR VP9 video track. Both currently reject audio-bearing files.
+The bounded audio inventory
 retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
@@ -81,7 +83,8 @@ audio, establish exact sample bounds or claim an audio stream is ready for use.
 codec allowlist contains only `h264,ffv1,hevc,vp9`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC before opening its decoder.
 Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
-The measured fixtures are H.264/HEVC/VP9 in MP4 and FFV1 in Matroska; this is not
+The measured fixtures are H.264/HEVC/VP9 in MP4, FFV1/VP9 in Matroska and
+video-only VP9 in WebM; this is not
 qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. No audio decode or VideoToolbox
 acceleration is implemented here.
@@ -93,6 +96,11 @@ transforms and contradictory configuration before decode. Hidden altref
 pictures and `show_existing_frame` use their normal presentation semantics.
 See [qualification](../../docs/qualification/vp9-sources-2026-10-09.md) for
 real color, thread, seek, proxy and emitted-file evidence and remaining formats.
+
+The [WebM/Matroska VP9 path](../../docs/qualification/webm-vp9-sources-2026-10-09.md)
+retains explicit color, container SAR, millisecond PTS and a separately reported
+nominal nanosecond frame duration. Admission requires a leading key and uses
+the same per-packet bounds as MP4. Opus and audio-bearing WebM remain open.
 
 The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
 H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit

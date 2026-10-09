@@ -254,6 +254,7 @@ fn sdr_codecs_proxies_compare_actual_channel_depths() -> Result {
         "vp9-sdr-8-full.mp4",
         "vp9-sdr-10-limited.mp4",
         "vp9-sdr-10-full.mp4",
+        "vp9-vfr.webm",
     ] {
         let original = original(name)?;
         let scratch = tempfile::tempdir()?;
@@ -261,8 +262,14 @@ fn sdr_codecs_proxies_compare_actual_channel_depths() -> Result {
         sidecar.validate_for(&identity(&original), original.index.index(), &original.info)?;
         assert_eq!(sidecar.index.index().frames().len(), 12);
         for (ordinal, frame) in sidecar.index.index().frames().iter().enumerate() {
-            assert_eq!(frame.pts, ordinal as i64 * 2002, "{name}");
-            assert_eq!(frame.reported_duration, Some(2002), "{name}");
+            let n = ordinal as i64;
+            let (pts, duration) = if name == "vp9-vfr.webm" {
+                (n * 50 + n % 2 * 10, if n % 2 == 0 { 60 } else { 40 })
+            } else {
+                (n * 2002, 2002)
+            };
+            assert_eq!(frame.pts, pts, "{name}");
+            assert_eq!(frame.reported_duration, Some(duration), "{name}");
         }
         assert!(
             sidecar.fidelity.mean() <= 3.0,
@@ -276,6 +283,22 @@ fn sdr_codecs_proxies_compare_actual_channel_depths() -> Result {
             std::io::copy(&mut &file, &mut copy)?;
             std::fs::write(directory.join(format!("{name}.json")), sidecar.to_json()?)?;
         }
+    }
+    Ok(())
+}
+
+#[test]
+fn quantized_webm_durations_keep_the_existing_proxy_ineligibility_gate() -> Result {
+    for name in [
+        "vp9-sdr-8-limited.webm",
+        "vp9-sdr-10-full.webm",
+        "vp9-anamorphic.webm",
+    ] {
+        let original = original(name)?;
+        assert!(matches!(
+            deadpan_media::proxy::expressible(original.index.index()),
+            Err(deadpan_media::proxy::ProxyIneligible::IrregularDurations)
+        ));
     }
     Ok(())
 }

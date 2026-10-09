@@ -2,6 +2,7 @@
 //! Payloads are skipped, but every element and every deferred seek target is checked.
 
 use crate::{DecodeControl, SourceDecodeError, input::InputLimits};
+mod vp9;
 use std::{
     collections::BTreeSet, fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant,
 };
@@ -253,6 +254,11 @@ struct Cue {
 struct Admission<'a> {
     reader: Reader<'a>,
     track: Option<u64>,
+    webm: bool,
+    is_vp9: bool,
+    video: vp9::Video,
+    vp9: Option<crate::Mp4Vp9Configuration>,
+    default_duration: Option<u64>,
     simple_tags: u32,
     seeks: BTreeSet<(u64, u32)>,
     cues: BTreeSet<Cue>,
@@ -279,10 +285,14 @@ impl Admission<'_> {
                     (1..=8).contains(&self.reader.uint(e.body)?),
                     "unsupported EBML size length",
                 )?,
-                0x4282 => require(
-                    self.reader.blob(e.body, STRING_BYTES)? == b"matroska",
-                    "only Matroska DocType is admitted",
-                )?,
+                0x4282 => {
+                    let value = self.reader.blob(e.body, STRING_BYTES)?;
+                    require(
+                        value == b"matroska" || value == b"webm",
+                        "only Matroska or WebM DocType is admitted",
+                    )?;
+                    self.webm = value == b"webm";
+                }
                 0x4287 => require(
                     (1..=4).contains(&self.reader.uint(e.body)?),
                     "unsupported Matroska document version",
@@ -337,7 +347,7 @@ impl Admission<'_> {
                 0x2eb524 => self.reader.fixed(e.body, 4)?,
                 0x9a | 0x9d | 0x54b0 | 0x54ba | 0x54b2 | 0x54b3 | 0x53b8 | 0x53c0 | 0x54aa
                 | 0x54bb | 0x54cc | 0x54dd => {
-                    self.reader.uint(e.body)?;
+                    self.video.fields.insert(e.id, self.reader.uint(e.body)?);
                 }
                 _ => return Err(error("invalid_input", "unqualified Matroska Video field")),
             }
@@ -348,6 +358,8 @@ impl Admission<'_> {
                 "Matroska video dimensions are required",
             ));
         };
+        self.video.width = width;
+        self.video.height = height;
         limit(
             width > 0
                 && height > 0
@@ -373,7 +385,7 @@ impl Admission<'_> {
             match e.id {
                 0x55d1..=0x55da if mastering => self.reader.float(e.body)?,
                 0x55b1..=0x55bd if !mastering => {
-                    self.reader.uint(e.body)?;
+                    self.video.fields.insert(e.id, self.reader.uint(e.body)?);
                 }
                 0x55d0 if !mastering => self.colour(e.body, true)?,
                 _ => return Err(error("invalid_input", "unqualified Matroska Colour field")),
@@ -393,7 +405,10 @@ impl Admission<'_> {
             require(e.id == 0xae, "unqualified Matroska Tracks field")?;
             tracks += 1;
             limit(tracks <= 33, "Matroska track count exceeds hard limit")?;
-            require(tracks == 1, "only one Matroska video track is admitted")?;
+            require(
+                tracks == 1,
+                "Matroska/WebM currently admits only one video track and no audio",
+            )?;
             self.track(e.body)?;
         }
         require(tracks == 1, "one Matroska video track is required")
@@ -401,6 +416,8 @@ impl Admission<'_> {
     fn track(&mut self, span: Span) -> Result<()> {
         let mut cursor = span.start;
         let mut seen = BTreeSet::new();
+        let mut codec = Vec::new();
+        let mut private = None;
         while cursor < span.end {
             let e = self.reader.element(&mut cursor, span.end, 3, true)?;
             if self.reader.padding(e, &mut seen)? {
@@ -420,18 +437,9 @@ impl Admission<'_> {
                     self.reader.uint(e.body)? == 1,
                     "only Matroska video tracks are admitted",
                 )?,
-                0x86 => require(
-                    self.reader.blob(e.body, STRING_BYTES)? == b"V_FFV1",
-                    "only FFV1 Matroska video is admitted",
-                )?,
+                0x86 => codec = self.reader.blob(e.body, STRING_BYTES)?,
                 0x63a2 => {
-                    let bytes = self.reader.blob(e.body, CODEC_BYTES)?;
-                    crate::video_codec::validate_ffv1(
-                        &bytes,
-                        self.reader.limits.max_pixels,
-                        self.reader.limits.max_dimension,
-                    )?;
-                    self.reader.check()?;
+                    private = Some(self.reader.blob(e.body, CODEC_BYTES)?);
                 }
                 0xe0 => self.video(e.body)?,
                 0x9c | 0x55ee => require(
@@ -439,9 +447,17 @@ impl Admission<'_> {
                     "Matroska lacing and additional payloads are not admitted",
                 )?,
                 0x536e | 0x22b59c | 0x258688 => self.reader.string(e.body)?,
-                0x73c5 | 0x23e383 | 0xb9 | 0x88 | 0x55aa | 0x55ab | 0x55ac | 0x55ad | 0x55ae
-                | 0x55af | 0x56aa | 0x56bb => {
+                0x73c5 | 0xb9 | 0x88 | 0x55aa | 0x55ab | 0x55ac | 0x55ad | 0x55ae | 0x55af => {
                     self.reader.uint(e.body)?;
+                }
+                0x56aa | 0x56bb => require(
+                    self.reader.uint(e.body)? == 0,
+                    "Matroska video codec delay and preroll are not qualified",
+                )?,
+                0x23e383 => {
+                    let value = self.reader.uint(e.body)?;
+                    require(value > 0, "Matroska DefaultDuration must be positive")?;
+                    self.default_duration = Some(value);
                 }
                 _ => {
                     return Err(error(
@@ -452,11 +468,34 @@ impl Admission<'_> {
             }
         }
         require(
-            [0xd7, 0x83, 0x86, 0x63a2, 0xe0]
-                .iter()
-                .all(|id| seen.contains(id)),
+            [0xd7, 0x83, 0x86, 0xe0].iter().all(|id| seen.contains(id)),
             "Matroska video track lacks required fields",
-        )
+        )?;
+        match codec.as_slice() {
+            b"V_FFV1" if !self.webm => {
+                crate::video_codec::validate_ffv1(
+                    private
+                        .as_deref()
+                        .ok_or_else(|| error("invalid_input", "FFV1 needs CodecPrivate"))?,
+                    self.reader.limits.max_pixels,
+                    self.reader.limits.max_dimension,
+                )?;
+            }
+            b"V_VP9" => {
+                require(
+                    private.is_none(),
+                    "VP9 CodecPrivate extensions are not qualified",
+                )?;
+                self.is_vp9 = true;
+            }
+            _ => {
+                return Err(error(
+                    "unsupported_codec",
+                    "only FFV1 Matroska or VP9 Matroska/WebM video is admitted",
+                ));
+            }
+        }
+        self.reader.check()
     }
     fn tags(&mut self, span: Span, kind: u32, depth: u32) -> Result<()> {
         let mut cursor = span.start;
@@ -646,6 +685,17 @@ impl Admission<'_> {
         require(flags & 0x06 == 0, "Matroska laced blocks are not admitted")?;
         let allowed = if e.id == SIMPLE_BLOCK { 0x89 } else { 0x08 };
         require(flags & !allowed == 0, "unsupported Matroska Block flags")?;
+        if self.is_vp9 && self.vp9.is_none() {
+            let start = e.body.start + track_bytes + 3;
+            let prefix = self.reader.blob(
+                Span {
+                    start,
+                    end: e.body.end.min(start + 16),
+                },
+                16,
+            )?;
+            self.vp9 = Some(self.video.configuration(&prefix)?);
+        }
         self.reader.charge(track_bytes + 3)
     }
     fn block_group(&mut self, span: Span) -> Result<()> {
@@ -795,11 +845,11 @@ impl Admission<'_> {
     }
 }
 
-pub(crate) fn validate(
+pub(crate) fn validate_video(
     file: &File,
     limits: InputLimits,
     control: DecodeControl<'_>,
-) -> Result<u64> {
+) -> Result<crate::input::Admission> {
     let started = Instant::now();
     let metadata = file.metadata()?;
     require(
@@ -827,6 +877,11 @@ pub(crate) fn validate(
             packets: 0,
         },
         track: None,
+        webm: false,
+        is_vp9: false,
+        video: vp9::Video::default(),
+        vp9: None,
+        default_duration: None,
         simple_tags: 0,
         seeks: BTreeSet::new(),
         cues: BTreeSet::new(),
@@ -845,7 +900,21 @@ pub(crate) fn validate(
     )?;
     admission.segment(segment.body)?;
     admission.reader.check()?;
-    Ok(admission.reader.read_bytes)
+    Ok(crate::input::Admission {
+        io_bytes: admission.reader.read_bytes,
+        audio: None,
+        aperture: None,
+        vp9: admission.vp9,
+        nominal_frame_duration_ns: admission
+            .is_vp9
+            .then_some(admission.default_duration)
+            .flatten(),
+    })
+}
+
+#[cfg(test)]
+fn validate(file: &File, limits: InputLimits, control: DecodeControl<'_>) -> Result<u64> {
+    Ok(validate_video(file, limits, control)?.io_bytes)
 }
 
 #[cfg(test)]

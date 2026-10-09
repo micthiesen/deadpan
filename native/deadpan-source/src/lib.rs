@@ -265,6 +265,9 @@ pub struct SourceStreamInfo {
     pub color: ColorMetadata,
     pub codec: String,
     pub pixel_format: String,
+    /// Admitted Matroska VP9 DefaultDuration in nanoseconds, a nominal cadence
+    /// hint only. It never supplies or replaces measured picture timestamps.
+    pub nominal_frame_duration_ns: Option<u64>,
     /// Original stream ticks. These are observations, not trusted frame endpoints.
     pub stream_start: Option<i64>,
     pub stream_duration: Option<i64>,
@@ -614,6 +617,7 @@ impl SourceDecoder {
             admitted.vp9,
         )?;
         let coded = [info.width, info.height];
+        info.nominal_frame_duration_ns = admitted.nominal_frame_duration_ns;
         if let Some(aperture) = aperture {
             if aperture.coded != coded {
                 return Err(SourceDecodeError::Native {
@@ -1475,6 +1479,7 @@ mod ffi {
                 color,
                 codec: string(&info.codec),
                 pixel_format: string(&info.pixel_format),
+                nominal_frame_duration_ns: None,
                 stream_start: timestamp(info.stream_start),
                 stream_duration: duration(info.stream_duration),
                 container_start: timestamp(info.container_start),

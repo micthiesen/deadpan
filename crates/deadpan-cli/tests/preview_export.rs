@@ -485,6 +485,47 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
 }
 
 #[test]
+fn webm_originals_render_the_measured_clock_and_sample_aspect() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("WebM Render evidence: {}", root.display());
+    for (name, count) in [
+        ("vp9-sdr-8-limited.webm", 12),
+        ("vp9-sdr-8-full.webm", 12),
+        ("vp9-sdr-10-limited.webm", 12),
+        ("vp9-sdr-10-full.webm", 12),
+        ("vp9-sdr-8-limited.mkv", 12),
+        ("vp9-anamorphic.webm", 12),
+        ("vp9-altref.webm", 60),
+        ("vp9-existing-8.webm", 2),
+        ("vp9-existing-10.webm", 2),
+        ("vp9-vfr.webm", 12),
+    ] {
+        let fixture = recipes::webm_original(&root.join(name), name, count)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(report["output_color"]["output"], "sdr_rec709");
+        assert_eq!(
+            report["frame_rate"],
+            if name == "vp9-vfr.webm" {
+                json!([50, 1])
+            } else {
+                json!([30000, 1001])
+            }
+        );
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 fn vp9_reference_pictures_render_without_adding_or_losing_timeline_frames() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("VP9 reference Render evidence: {}", root.display());

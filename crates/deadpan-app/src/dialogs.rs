@@ -231,13 +231,13 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
         DialogKind::CreateProject | DialogKind::InitializeSource => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Choose the Original video")
-                .add_filter("Qualified video containers", &["mp4", "m4v", "mkv"])
+                .add_filter("Qualified video containers", &["mp4", "m4v", "mkv", "webm"])
                 .pick_file(),
         ),
         DialogKind::CreateLinkedProject | DialogKind::InitializeLinkedSource => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Link the Original video at its current location")
-                .add_filter("Qualified video containers", &["mp4", "m4v", "mkv"])
+                .add_filter("Qualified video containers", &["mp4", "m4v", "mkv", "webm"])
                 .pick_file(),
         ),
         DialogKind::OpenProject => Box::pin(

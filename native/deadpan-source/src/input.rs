@@ -475,9 +475,10 @@ pub(crate) fn validate_audio(
 
 pub(crate) struct Admission {
     pub(crate) io_bytes: u64,
-    audio: Option<u32>,
+    pub(crate) audio: Option<u32>,
     pub(crate) aperture: Option<CleanAperture>,
     pub(crate) vp9: Option<Mp4Vp9Configuration>,
+    pub(crate) nominal_frame_duration_ns: Option<u64>,
 }
 
 fn validate_selection(
@@ -535,7 +536,7 @@ fn validate_selection(
                 code: "deadline_exceeded".into(),
                 message: "Matroska detection exhausted the admission deadline".into(),
             })?;
-        let charged = crate::matroska_input::validate(
+        let mut admitted = crate::matroska_input::validate_video(
             file,
             InputLimits {
                 max_io_bytes_per_call: remaining_io,
@@ -543,12 +544,8 @@ fn validate_selection(
             },
             DecodeControl { timeout, ..control },
         )?;
-        return Ok(Admission {
-            io_bytes: reader.read_bytes + charged,
-            audio: None,
-            aperture: None,
-            vp9: None,
-        });
+        admitted.io_bytes += reader.read_bytes;
+        return Ok(admitted);
     }
     let (audio, aperture, vp9) = if magic == *b"RIFF" {
         let selected_stream = match policy {
@@ -569,6 +566,7 @@ fn validate_selection(
     };
     reader.check()?;
     Ok(Admission {
+        nominal_frame_duration_ns: None,
         io_bytes: reader.read_bytes,
         audio,
         aperture,

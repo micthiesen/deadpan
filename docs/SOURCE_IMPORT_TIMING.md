@@ -55,10 +55,21 @@ knowledge cannot supply a missing trim decision.
 
 Cadence uses adjacent measured presentation intervals. Exact CFR is retained.
 A VFR candidate requires a repeated modal interval with at least 25% support
-and intervals that are integral multiples from one through eight of that mode.
-Ties choose the shorter interval. At most 256 distinct intervals are admitted.
+and intervals that are integral multiples from one through eight of that mode
+or their exact greatest-common-divisor grid. Ties choose the shorter interval.
+At most 256 distinct intervals are admitted.
 A single frame uses its measured positive terminal duration. Other ambiguous
 cadences return an error requiring a later host policy, never an invented rate.
+
+VP9 Matroska/WebM retains its admitted `DefaultDuration` as a separate nominal
+nanosecond observation. A standard rational cadence is selected from that hint
+only within one nanosecond of its encoded duration and when every measured PTS
+and the decoded terminal endpoint fit the regular grid within one source tick.
+This preserves 30000/1001 across a millisecond container clock. A contradictory
+hint falls back to measured interval analysis; it never rewrites PTS, intervals
+or terminal duration. A clock coarser than half a nominal frame cannot establish
+the declared grid. Evidence distinguishes `DeclaredQuantizedCfr` and
+`RepeatedIntegralGridVfr` from exact CFR and the earlier modal VFR policy.
 
 Rates above 60 fps choose the highest common rate that divides the observed
 cadence exactly, otherwise its smallest integral divisor reaching at most 60.

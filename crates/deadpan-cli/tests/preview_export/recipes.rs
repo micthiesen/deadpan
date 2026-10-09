@@ -233,6 +233,39 @@ fn sound_media() -> PathBuf {
         .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav")
 }
 
+pub fn webm_original(directory: &Path, name: &'static str, pictures: u64) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(name);
+    let project = Project::create_from(directory, name, &media)?;
+    let document = project.document()?;
+    let rate = document.presentation_basis().frame_rate;
+    let expectations = (0..u64::try_from(document.duration()?.frames())?)
+        .map(|frame| {
+            // Spec §3: a project-frame center selects the containing source PTS
+            // interval. These PTS come from the fixture recipe, never its index.
+            let center = u128::from(2 * frame + 1) * u128::from(rate.denominator()) * 1000;
+            let denominator = 2 * u128::from(rate.numerator());
+            let source_ordinal = (0..pictures)
+                .rfind(|ordinal| {
+                    let pts = if name == "vp9-vfr.webm" {
+                        ordinal * 50 + ordinal % 2 * 10
+                    } else {
+                        (ordinal * 1001 + 15) / 30
+                    };
+                    u128::from(pts) * denominator <= center
+                })
+                .unwrap_or(0);
+            (frame, Expected::Original { source_ordinal })
+        })
+        .collect();
+    project.finish(
+        vec!["VP9 WebM/Matroska Original"],
+        expectations,
+        vec!["Explicit SDR color, measured millisecond PTS, exact frame-center sampling".into()],
+    )
+}
+
 fn node(value: &str) -> Result<NodeId> {
     Ok(NodeId::new(value)?)
 }

@@ -496,6 +496,12 @@ pub enum CadenceConfidence {
     /// Repeated modal interval with at least 25% support; every observed
     /// interval is an integer multiple from one through eight of that mode.
     RepeatedIntegralVfr,
+    /// A declared Matroska cadence whose complete measured PTS sequence and
+    /// terminal endpoint stay within one original tick of that regular grid.
+    DeclaredQuantizedCfr,
+    /// Repeated intervals share a bounded exact grid, even when the most
+    /// frequent interval is not itself the grid's shortest unit.
+    RepeatedIntegralGridVfr,
     /// One frame: only its positive decoded terminal duration supplies cadence.
     SingleDecodedFrame,
 }
@@ -565,7 +571,7 @@ pub fn derive_presentation_basis(
     info: &SourceStreamInfo,
 ) -> Result<BasisCandidate, ImportTimingError> {
     let geometry = derive_presentation_geometry(snapshot, info)?;
-    let (frame_rate, cadence) = derive_cadence(snapshot)?;
+    let (frame_rate, cadence) = derive_cadence(snapshot, info.nominal_frame_duration_ns)?;
     Ok(BasisCandidate {
         basis: PresentationBasis {
             width: geometry.width,
@@ -602,6 +608,7 @@ pub fn audio_only_basis() -> PresentationBasis {
 
 fn derive_cadence(
     snapshot: &SourceIndexSnapshot,
+    nominal_duration_ns: Option<u64>,
 ) -> Result<(FrameRate, CadenceEvidence), ImportTimingError> {
     let index = snapshot.index();
     let mut counts = BTreeMap::<i64, u64>::new();
@@ -635,26 +642,46 @@ fn derive_cadence(
         .find(|(_, count)| **count == mode_count)
         .ok_or(ImportTimingError::AmbiguousCadence)?;
     let total = counts.values().sum::<u64>();
-    let confidence = if single {
+    let quantized = nominal_duration_ns.and_then(|ns| quantized_cadence(snapshot, ns));
+    let mut selected_interval = mode;
+    let confidence = if quantized.is_some() {
+        CadenceConfidence::DeclaredQuantizedCfr
+    } else if single {
         CadenceConfidence::SingleDecodedFrame
     } else if counts.len() == 1 {
         CadenceConfidence::ExactCfr
     } else {
-        if mode_count < 2
-            || mode_count * 4 < total
-            || counts
+        if mode_count < 2 || mode_count * 4 < total {
+            return Err(ImportTimingError::AmbiguousCadence);
+        }
+        if counts.keys().any(|interval| interval % mode != 0) {
+            selected_interval = counts
                 .keys()
-                .any(|interval| interval % mode != 0 || interval / mode > 8)
+                .copied()
+                .reduce(gcd)
+                .ok_or(ImportTimingError::AmbiguousCadence)?;
+        }
+        if counts
+            .keys()
+            .any(|interval| interval / selected_interval > 8)
         {
             return Err(ImportTimingError::AmbiguousCadence);
         }
-        CadenceConfidence::RepeatedIntegralVfr
+        if selected_interval == mode {
+            CadenceConfidence::RepeatedIntegralVfr
+        } else {
+            CadenceConfidence::RepeatedIntegralGridVfr
+        }
     };
     let interval_seconds = seconds(SourceTimestamp {
-        ticks: mode,
+        ticks: selected_interval,
         time_base: index.time_base(),
     })?;
-    let observed = ExactRatio::ONE.checked_div(interval_seconds)?;
+    let observed = if let Some((n, d)) = quantized {
+        ExactRatio::new(n, d)?
+    } else {
+        ExactRatio::ONE.checked_div(interval_seconds)?
+    };
     let observed_rate = to_frame_rate(observed)?;
     let (rate, divisor) = cap_rate(observed)?;
     Ok((
@@ -668,11 +695,71 @@ fn derive_cadence(
                 .values()
                 .filter(|count| **count == mode_count)
                 .count(),
-            selected_interval_ticks: mode,
+            selected_interval_ticks: selected_interval,
             observed_rate,
             presentation_divisor: divisor,
         },
     ))
+}
+
+fn gcd(mut a: i64, mut b: i64) -> i64 {
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
+
+fn quantized_cadence(snapshot: &SourceIndexSnapshot, nominal_ns: u64) -> Option<(i128, i128)> {
+    // Matroska stores an integer nanosecond DefaultDuration. Match only a
+    // standard cadence within that one-nanosecond representation error. A
+    // declared cadence alone never overrides contradictory measured timing.
+    let rate = [
+        (24, 1),
+        (24000, 1001),
+        (25, 1),
+        (30, 1),
+        (30000, 1001),
+        (48, 1),
+        (48000, 1001),
+        (50, 1),
+        (60, 1),
+        (60000, 1001),
+        (72, 1),
+        (90, 1),
+        (96, 1),
+        (96000, 1001),
+        (100, 1),
+        (120, 1),
+        (120000, 1001),
+        (144, 1),
+        (240, 1),
+        (240000, 1001),
+    ]
+    .into_iter()
+    .find(|&(n, d)| (i128::from(nominal_ns) * n - 1_000_000_000 * d).abs() < n)?;
+    let index = snapshot.index();
+    let frames = index.frames();
+    let first = i128::from(frames.first()?.pts);
+    let time_base = index.time_base();
+    let numerator = i128::from(time_base.numerator()) * rate.0;
+    let denominator = i128::from(time_base.denominator()) * rate.1;
+    // A clock coarser than half a nominal frame cannot establish this grid.
+    if numerator * 2 >= denominator {
+        return None;
+    }
+    // All factors are bounded by the native/index contracts; i128 contains
+    // even an i64 timestamp difference times a u32 clock and a 240000 rate.
+    let matches = |ordinal: usize, pts: i128| {
+        ((pts - first) * numerator - ordinal as i128 * denominator).abs() <= numerator
+    };
+    let last = frames.last()?;
+    let end = i128::from(last.pts) + i128::from(last.reported_duration?);
+    (frames
+        .iter()
+        .enumerate()
+        .all(|(i, frame)| matches(i, i128::from(frame.pts)))
+        && matches(frames.len(), end))
+    .then_some(rate)
 }
 
 fn to_frame_rate(rate: ExactRatio) -> Result<FrameRate, ImportTimingError> {

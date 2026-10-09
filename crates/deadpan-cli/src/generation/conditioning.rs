@@ -730,6 +730,7 @@ mod tests {
 
     fn info(color: deadpan_source::ColorMetadata) -> SourceStreamInfo {
         SourceStreamInfo {
+            nominal_frame_duration_ns: None,
             bwdif_fields: false,
             clean_aperture: None,
             width: 4,
