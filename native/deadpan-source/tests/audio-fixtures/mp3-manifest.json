@@ -1,0 +1,1868 @@
+{
+  "producer": "Reproducible synthetic MP3 signals, independent development decoder PCM, and framing evidence.",
+  "license": "Repository-authored synthetic signals and cover picture",
+  "ffmpeg": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "lame": "LAME 64bits version 4.0 (https://lame.sourceforge.io)",
+  "files": [
+    {
+      "name": "mp3-stereo-cbr.mp3",
+      "bytes": 5760,
+      "sha256": "1985cdc5fd0f2c54138ecd433b50823b141f15fe8ba0db4096126a8723a7c69f",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-cbr.f32le",
+      "bytes": 65576,
+      "sha256": "cb732ed870a65238507afc0d32b462a6e127b4810ec56c64d86d267d10345285",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-mono-vbr.mp3",
+      "bytes": 5923,
+      "sha256": "248bf585c3e7bc1b27d6da931b3f72147bc51bf174117ea0a542b189679dec01",
+      "sample_rate": 44100,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "182",
+        "pkt_size": "731",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2949120,
+        "pts_time": "0.208980",
+        "pkt_dts": 2949120,
+        "pkt_dts_time": "0.208980",
+        "best_effort_timestamp": 2949120,
+        "best_effort_timestamp_time": "0.208980",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "5819",
+        "pkt_size": "104",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "a0bf440e72d357d7c37babc9f3d5e48dbfa9ac239207cbe7f6ba7a18fb8db147"
+    },
+    {
+      "name": "mp3-mono-vbr.f32le",
+      "bytes": 32788,
+      "sha256": "74b1708200653bb5256836eaa467fa12b7e59fc9d786a66186693eb8beb293c0",
+      "sample_rate": 44100,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "182",
+        "pkt_size": "731",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2949120,
+        "pts_time": "0.208980",
+        "pkt_dts": 2949120,
+        "pkt_dts_time": "0.208980",
+        "best_effort_timestamp": 2949120,
+        "best_effort_timestamp_time": "0.208980",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "5819",
+        "pkt_size": "104",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "a0bf440e72d357d7c37babc9f3d5e48dbfa9ac239207cbe7f6ba7a18fb8db147"
+    },
+    {
+      "name": "mp3-stereo-32000.mp3",
+      "bytes": 11592,
+      "sha256": "5d26f08506a68e0420ef1eb0eadf0477cc178d8ccfdac6358e5b0fff9c5103ee",
+      "sample_rate": 32000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "216",
+        "pkt_size": "1440",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 4064256,
+        "pts_time": "0.288000",
+        "pkt_dts": 4064256,
+        "pkt_dts_time": "0.288000",
+        "best_effort_timestamp": 4064256,
+        "best_effort_timestamp_time": "0.288000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "11448",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "b4d75692a908c4a63897eb700ef83ebbd5f464e5268768f8da43bd434a5eb533"
+    },
+    {
+      "name": "mp3-stereo-32000.f32le",
+      "bytes": 65576,
+      "sha256": "eadad9b8962cfca4e346d33e3a8f907b7e605ace3587c36bb0a6d87516b25f21",
+      "sample_rate": 32000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "216",
+        "pkt_size": "1440",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 4064256,
+        "pts_time": "0.288000",
+        "pkt_dts": 4064256,
+        "pkt_dts_time": "0.288000",
+        "best_effort_timestamp": 4064256,
+        "best_effort_timestamp_time": "0.288000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "11448",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "b4d75692a908c4a63897eb700ef83ebbd5f464e5268768f8da43bd434a5eb533"
+    },
+    {
+      "name": "mp3-mono-mpeg2.mp3",
+      "bytes": 3456,
+      "sha256": "ccc42dce134e701cb0be1c16319c844f2a686bf137e7e4ab662e2dac02cd01ee",
+      "sample_rate": 24000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 5419008,
+        "pts_time": "0.384000",
+        "pkt_dts": 5419008,
+        "pkt_dts_time": "0.384000",
+        "best_effort_timestamp": 5419008,
+        "best_effort_timestamp_time": "0.384000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "3264",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "ede5fd10b34493166b891916a62f3d088994722546dd27dac3c068b6c99aaab3"
+    },
+    {
+      "name": "mp3-mono-mpeg2.f32le",
+      "bytes": 32788,
+      "sha256": "dcf2191ed792a398925929c0b2916143b55620d342f13d36aa723eaab4e5fbb9",
+      "sample_rate": 24000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 5419008,
+        "pts_time": "0.384000",
+        "pkt_dts": 5419008,
+        "pkt_dts_time": "0.384000",
+        "best_effort_timestamp": 5419008,
+        "best_effort_timestamp_time": "0.384000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "3264",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "ede5fd10b34493166b891916a62f3d088994722546dd27dac3c068b6c99aaab3"
+    },
+    {
+      "name": "mp3-stereo-22050.mp3",
+      "bytes": 8508,
+      "sha256": "4a3119369ec69817a26a2c38a0b6518ca511e4f37eed3d3687ddca6714bb1938",
+      "sample_rate": 22050,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "182",
+        "pkt_size": "470",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 5898240,
+        "pts_time": "0.417959",
+        "pkt_dts": 5898240,
+        "pkt_dts_time": "0.417959",
+        "best_effort_timestamp": 5898240,
+        "best_effort_timestamp_time": "0.417959",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "8482",
+        "pkt_size": "26",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "2c14ed7e9cb50ec00451620e3275375f015febe7d99c4fd1fc71f6ba9dd40786"
+    },
+    {
+      "name": "mp3-stereo-22050.f32le",
+      "bytes": 65576,
+      "sha256": "77590e17550b8225e1adfce970683371cb4df1251e927725f97bb69237e88c8d",
+      "sample_rate": 22050,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "182",
+        "pkt_size": "470",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 5898240,
+        "pts_time": "0.417959",
+        "pkt_dts": 5898240,
+        "pkt_dts_time": "0.417959",
+        "best_effort_timestamp": 5898240,
+        "best_effort_timestamp_time": "0.417959",
+        "duration": 368640,
+        "duration_time": "0.026122",
+        "pkt_pos": "8482",
+        "pkt_size": "26",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "2c14ed7e9cb50ec00451620e3275375f015febe7d99c4fd1fc71f6ba9dd40786"
+    },
+    {
+      "name": "mp3-mono-16000.mp3",
+      "bytes": 2628,
+      "sha256": "39ac5884785bacbf7f8926b2040279af271e6b558e0b27e168eb6d117bfed904",
+      "sample_rate": 16000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "180",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 8128512,
+        "pts_time": "0.576000",
+        "pkt_dts": 8128512,
+        "pkt_dts_time": "0.576000",
+        "best_effort_timestamp": 8128512,
+        "best_effort_timestamp_time": "0.576000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "2484",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "74fea3c3f6d36b1ffb8165bc8b03a620e72606573ffd609b56be515f909efbd8"
+    },
+    {
+      "name": "mp3-mono-16000.f32le",
+      "bytes": 32788,
+      "sha256": "96e04a3781fdd3fbc8b9841aa8c787348dabf1055325da473a1a77521a9c9c73",
+      "sample_rate": 16000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "180",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 8128512,
+        "pts_time": "0.576000",
+        "pkt_dts": 8128512,
+        "pkt_dts_time": "0.576000",
+        "best_effort_timestamp": 8128512,
+        "best_effort_timestamp_time": "0.576000",
+        "duration": 508032,
+        "duration_time": "0.036000",
+        "pkt_pos": "2484",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "74fea3c3f6d36b1ffb8165bc8b03a620e72606573ffd609b56be515f909efbd8"
+    },
+    {
+      "name": "mp3-stereo-12000.mp3",
+      "bytes": 3456,
+      "sha256": "60cb07c8ef9c0e5bcff1330e4e737155c8cbfa27068d7d93f675a3e9f100210c",
+      "sample_rate": 12000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 677376,
+        "duration_time": "0.048000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 10838016,
+        "pts_time": "0.768000",
+        "pkt_dts": 10838016,
+        "pkt_dts_time": "0.768000",
+        "best_effort_timestamp": 10838016,
+        "best_effort_timestamp_time": "0.768000",
+        "duration": 677376,
+        "duration_time": "0.048000",
+        "pkt_pos": "3264",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "b6a0b0ee7dc06ecc517a324c99da33ba502450d6c1d6d6e79cabf4976ac26618"
+    },
+    {
+      "name": "mp3-stereo-12000.f32le",
+      "bytes": 65576,
+      "sha256": "37a9a1bcf6566e5c3e9319bc5c72bed8bfd6c747043ee6ba3b45c2bc006975a8",
+      "sample_rate": 12000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 677376,
+        "duration_time": "0.048000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 10838016,
+        "pts_time": "0.768000",
+        "pkt_dts": 10838016,
+        "pkt_dts_time": "0.768000",
+        "best_effort_timestamp": 10838016,
+        "best_effort_timestamp_time": "0.768000",
+        "duration": 677376,
+        "duration_time": "0.048000",
+        "pkt_pos": "3264",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "b6a0b0ee7dc06ecc517a324c99da33ba502450d6c1d6d6e79cabf4976ac26618"
+    },
+    {
+      "name": "mp3-mono-11025.mp3",
+      "bytes": 2872,
+      "sha256": "d10bca00787ebec8a1acad7199e3bfb6d02a62051d22d7ba9010784468ff68da",
+      "sample_rate": 11025,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 737280,
+        "duration_time": "0.052245",
+        "pkt_pos": "208",
+        "pkt_size": "156",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 11796480,
+        "pts_time": "0.835918",
+        "pkt_dts": 11796480,
+        "pkt_dts_time": "0.835918",
+        "best_effort_timestamp": 11796480,
+        "best_effort_timestamp_time": "0.835918",
+        "duration": 737280,
+        "duration_time": "0.052245",
+        "pkt_pos": "2716",
+        "pkt_size": "156",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "afa04e1d2bda43c87328525bcd0f72e951358e1ac09303f602e59d599d61a101"
+    },
+    {
+      "name": "mp3-mono-11025.f32le",
+      "bytes": 32788,
+      "sha256": "6eb80f7fb48fdc4eb0e3ff205685f40c6189e667aaea4cc8b7f0a647da36e3f0",
+      "sample_rate": 11025,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 737280,
+        "duration_time": "0.052245",
+        "pkt_pos": "208",
+        "pkt_size": "156",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 11796480,
+        "pts_time": "0.835918",
+        "pkt_dts": 11796480,
+        "pkt_dts_time": "0.835918",
+        "best_effort_timestamp": 11796480,
+        "best_effort_timestamp_time": "0.835918",
+        "duration": 737280,
+        "duration_time": "0.052245",
+        "pkt_pos": "2716",
+        "pkt_size": "156",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "afa04e1d2bda43c87328525bcd0f72e951358e1ac09303f602e59d599d61a101"
+    },
+    {
+      "name": "mp3-mono-mpeg25.mp3",
+      "bytes": 2664,
+      "sha256": "9043384011f193e1aeb06b4c2d9b95dcdc5fa2779f54e970af0e0f572db0406a",
+      "sample_rate": 8000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 1016064,
+        "duration_time": "0.072000",
+        "pkt_pos": "216",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 16257024,
+        "pts_time": "1.152000",
+        "pkt_dts": 16257024,
+        "pkt_dts_time": "1.152000",
+        "best_effort_timestamp": 16257024,
+        "best_effort_timestamp_time": "1.152000",
+        "duration": 1016064,
+        "duration_time": "0.072000",
+        "pkt_pos": "2520",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "5ca9e06a57bde15e75ed8c012d9706df6351aa1f365c22632f9c7f9fd370b1b0"
+    },
+    {
+      "name": "mp3-mono-mpeg25.f32le",
+      "bytes": 32788,
+      "sha256": "9328fb277c140d2cc963c98f080e8731699927e55453042c0bee5c2e9e8a1cc8",
+      "sample_rate": 8000,
+      "channels": 1,
+      "available_samples": 8197,
+      "physical_frames": 17,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 1016064,
+        "duration_time": "0.072000",
+        "pkt_pos": "216",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 16257024,
+        "pts_time": "1.152000",
+        "pkt_dts": 16257024,
+        "pkt_dts_time": "1.152000",
+        "best_effort_timestamp": 16257024,
+        "best_effort_timestamp_time": "1.152000",
+        "duration": 1016064,
+        "duration_time": "0.072000",
+        "pkt_pos": "2520",
+        "pkt_size": "144",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "5ca9e06a57bde15e75ed8c012d9706df6351aa1f365c22632f9c7f9fd370b1b0"
+    },
+    {
+      "name": "mp3-stereo-untagged.mp3",
+      "bytes": 5184,
+      "sha256": "c32ff2d1451f730647d358e97c106337c96163e128febc097c0baf5a2e69aa16",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 10368,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "0",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "4608",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-untagged.f32le",
+      "bytes": 82944,
+      "sha256": "8064e9653942dd5e5fe6ce6a929ce0963f61856be238b019f933582d81b46d46",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 10368,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "0",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "4608",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-mono-short.mp3",
+      "bytes": 768,
+      "sha256": "fc9f7dce6b937a48078ecd1a8b117f13c7a1e3f78e68120cd0d234b517be67bb",
+      "sample_rate": 24000,
+      "channels": 1,
+      "available_samples": 97,
+      "physical_frames": 3,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 677376,
+        "pts_time": "0.048000",
+        "pkt_dts": 677376,
+        "pkt_dts_time": "0.048000",
+        "best_effort_timestamp": 677376,
+        "best_effort_timestamp_time": "0.048000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "a1e161603266da4d37eea11c8278bb1f64f2d033d5b7dca1dcaf15d60b8e6ecc"
+    },
+    {
+      "name": "mp3-mono-short.f32le",
+      "bytes": 388,
+      "sha256": "5e7d5fc7589e0e2af732420015f10fb9687d6def1a67824fb369b73d8e778072",
+      "sample_rate": 24000,
+      "channels": 1,
+      "available_samples": 97,
+      "physical_frames": 3,
+      "samples_per_frame": 576,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "192",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 677376,
+        "pts_time": "0.048000",
+        "pkt_dts": 677376,
+        "pkt_dts_time": "0.048000",
+        "best_effort_timestamp": 677376,
+        "best_effort_timestamp_time": "0.048000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "192",
+        "sample_fmt": "fltp",
+        "nb_samples": 576,
+        "channels": 1,
+        "channel_layout": "mono",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "a1e161603266da4d37eea11c8278bb1f64f2d033d5b7dca1dcaf15d60b8e6ecc"
+    },
+    {
+      "name": "mp3-stereo-crc.mp3",
+      "bytes": 5760,
+      "sha256": "cb7a3a3b051c6596ebd1aeeb7ef77e95776797d4ebbe66b95e27243a4089a46f",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "AVReplayGain"
+          },
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "AVReplayGain"
+          },
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-crc.f32le",
+      "bytes": 65576,
+      "sha256": "03ae838c05f9354de283bb0fc5e33afdb424611760a824b37deb6b070de41079",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "AVReplayGain"
+          },
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "AVReplayGain"
+          },
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-id3v3.mp3",
+      "bytes": 6028,
+      "sha256": "7f646d568fabe3fef915f070aed4882b32eff66f2fa0e9a8a6c13d31b85d82c5",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "716",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5324",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-id3v3.f32le",
+      "bytes": 65576,
+      "sha256": "cb732ed870a65238507afc0d32b462a6e127b4810ec56c64d86d267d10345285",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "716",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5324",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-id3v4.mp3",
+      "bytes": 6028,
+      "sha256": "f01e621829e18ce070fcd23f07b8d35f81bf47c726c1e8c9a6d6850076b84a21",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "716",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5324",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-id3v4.f32le",
+      "bytes": 65576,
+      "sha256": "cb732ed870a65238507afc0d32b462a6e127b4810ec56c64d86d267d10345285",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 8197,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "716",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5324",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-spanning.mp3",
+      "bytes": 5760,
+      "sha256": "f76fdf01dac07ea923969889272ce671bb826801361cf196e6f928fcea9615d7",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 4868,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-spanning.f32le",
+      "bytes": 38944,
+      "sha256": "f04c1f844572a0aba51f42517f4128cb74d79ed0a87bd1036af069ed3e5780b6",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 4868,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "side_data_list": [
+          {
+            "side_data_type": "Skip samples"
+          }
+        ]
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-unknown.mp3",
+      "bytes": 5760,
+      "sha256": "d63d473ad3c535544189e8ecbdcd91ca2383b9748eb385c05f5abbe640f52d41",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 10368,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    },
+    {
+      "name": "mp3-stereo-unknown.f32le",
+      "bytes": 82944,
+      "sha256": "8064e9653942dd5e5fe6ce6a929ce0963f61856be238b019f933582d81b46d46",
+      "sample_rate": 48000,
+      "channels": 2,
+      "available_samples": 10368,
+      "physical_frames": 9,
+      "samples_per_frame": 1152,
+      "first_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 0,
+        "pts_time": "0.000000",
+        "pkt_dts": 0,
+        "pkt_dts_time": "0.000000",
+        "best_effort_timestamp": 0,
+        "best_effort_timestamp_time": "0.000000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "576",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "last_frame": {
+        "media_type": "audio",
+        "stream_index": 0,
+        "key_frame": 1,
+        "pts": 2709504,
+        "pts_time": "0.192000",
+        "pkt_dts": 2709504,
+        "pkt_dts_time": "0.192000",
+        "best_effort_timestamp": 2709504,
+        "best_effort_timestamp_time": "0.192000",
+        "duration": 338688,
+        "duration_time": "0.024000",
+        "pkt_pos": "5184",
+        "pkt_size": "576",
+        "sample_fmt": "fltp",
+        "nb_samples": 1152,
+        "channels": 2,
+        "channel_layout": "stereo"
+      },
+      "source_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+    }
+  ]
+}

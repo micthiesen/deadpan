@@ -42,6 +42,7 @@ pub mod fuzzing {
     }
 }
 mod inspection;
+mod mp3;
 use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
@@ -467,16 +468,14 @@ pub(crate) fn validate_audio(
     selected: Option<u32>,
     limits: InputLimits,
     control: DecodeControl<'_>,
-) -> Result<(u32, u64, Option<crate::audio::MatroskaOpusClock>)> {
+) -> Result<Admission> {
     let policy = selected.map_or(Selection::FirstAudio, Selection::Audio);
     let admitted = validate_selection(file, policy, limits, control)?;
-    Ok((
-        admitted.audio.ok_or_else(selection)?,
-        admitted.io_bytes,
-        admitted.matroska_opus,
-    ))
+    admitted.audio.ok_or_else(selection)?;
+    Ok(admitted)
 }
 
+#[derive(Debug)]
 pub(crate) struct Admission {
     pub(crate) io_bytes: u64,
     pub(crate) audio: Option<u32>,
@@ -484,6 +483,7 @@ pub(crate) struct Admission {
     pub(crate) vp9: Option<Mp4Vp9Configuration>,
     pub(crate) nominal_frame_duration_ns: Option<u64>,
     pub(crate) matroska_opus: Option<crate::audio::MatroskaOpusClock>,
+    pub(crate) mp3: Option<crate::audio::Mp3Framing>,
 }
 
 fn validate_selection(
@@ -520,6 +520,21 @@ fn validate_selection(
         limits,
     };
     let magic = reader.bytes::<4>(0)?;
+    if magic[..3] == *b"ID3" || (magic[0] == 0xff && magic[1] & 0xe0 == 0xe0) {
+        if !matches!(policy, Selection::FirstAudio | Selection::Audio(0)) {
+            return Err(selection());
+        }
+        let framing = mp3::admit(&mut reader)?;
+        return Ok(Admission {
+            io_bytes: reader.read_bytes,
+            audio: Some(0),
+            aperture: None,
+            vp9: None,
+            nominal_frame_duration_ns: None,
+            matroska_opus: None,
+            mp3: Some(framing),
+        });
+    }
     if magic == [0x1a, 0x45, 0xdf, 0xa3] {
         let remaining_io = limits
             .max_io_bytes_per_call
@@ -561,12 +576,13 @@ fn validate_selection(
         return Err(SourceDecodeError::Native {
             code: "unsupported_container".into(),
             message:
-                "only strict MP4, qualified finite Matroska/WebM, and PCM16 RIFF/WAVE are admitted"
+                "only strict MP4, qualified finite Matroska/WebM, raw MP3, and PCM16 RIFF/WAVE are admitted"
                     .into(),
         });
     };
     reader.check()?;
     Ok(Admission {
+        mp3: None,
         matroska_opus: None,
         nominal_frame_duration_ns: None,
         io_bytes: reader.read_bytes,
@@ -2307,12 +2323,11 @@ mod tests {
         for (videos, audio, expected) in [(0, 2, 0), (1, 2, 1), (2, 1, 2)] {
             let input = file(&with_tracks(videos, audio));
             let limits = AudioDecodeLimits::default();
-            let (selected, first_bytes, _) =
-                super::validate_audio(&input, None, limits.into(), control()).unwrap();
-            let (exact, exact_bytes, _) =
+            let first = super::validate_audio(&input, None, limits.into(), control()).unwrap();
+            let exact =
                 super::validate_audio(&input, Some(expected), limits.into(), control()).unwrap();
-            assert_eq!((selected, exact), (expected, expected));
-            assert_eq!(first_bytes, exact_bytes);
+            assert_eq!((first.audio, exact.audio), (Some(expected), Some(expected)));
+            assert_eq!(first.io_bytes, exact.io_bytes);
         }
         let error = super::validate_audio(
             &file(&with_tracks(1, 0)),

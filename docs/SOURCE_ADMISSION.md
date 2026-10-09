@@ -8,6 +8,19 @@ Authored import remains separate work.
 
 ## Admitted containers
 
+Raw MP3 admits MPEG-1/2/2.5 Layer III at all nine defined rates, with stable mono
+or stereo channels and CBR or VBR packet sizes. Sparse bounded reads walk every
+frame before demuxing; no resynchronization or skipped junk is admitted. Xing/Info
+frame and byte counts must match the actual inventory. LAME/Lavf/Lavc trims require
+their qualified tag checksum, including FFmpeg's fixed-190-byte producer variant.
+Unmarked samples remain audible. CRC-protected audio is checked by the decoder.
+One optional ID3v2.3/2.4 tag is bounded to 1 MiB and 1,024 frames: untransformed
+text/comment fields up to 64 KiB and at most one bounded inline PNG/JPEG picture,
+discarded without image decoding. ID3v1 is also admitted. Free format, emphasis,
+VBRI, ID3 transformations/chapters/private payloads, APE tags, raw Layer I/II,
+and MP3 in other containers remain unqualified. See
+[MP3 evidence and sample semantics](qualification/mp3-sources-2026-10-09.md).
+
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
 requires exactly one `avc1` H.264, `hvc1` HEVC or `vp09` VP9 track
 and allows at most 32 AAC audio tracks.

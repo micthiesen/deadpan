@@ -38,6 +38,7 @@ fn retain_receipt(connection: &Connection, seed: u8) -> SourceQualificationRecei
         content,
         AudioStreamDescriptor {
             matroska_opus: None,
+            mp3: None,
             stream_index: 0,
             codec: "pcm_s16le".into(),
             time_base,

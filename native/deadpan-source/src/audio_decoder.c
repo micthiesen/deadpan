@@ -28,8 +28,8 @@
 #define IO_BUFFER_BYTES 32768
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS 33
-#define DEMUXERS "mov,wav,matroska,webm"
-#define CODECS "aac,pcm_s16le,libopus"
+#define DEMUXERS "mov,wav,matroska,webm,mp3"
+#define CODECS "aac,pcm_s16le,libopus,mp3float"
 #define DECODE_MANUAL 0
 #define DECODE_ORDINARY 1
 struct DeadpanAudio {
@@ -45,7 +45,7 @@ struct DeadpanAudio {
     AVCodecContext *decoder;
     AVPacket *packet;
     AVFrame *frame;
-    int stream, draining, ended, poisoned, current_valid;
+    int stream, draining, ended, poisoned, current_valid, packet_pending;
     unsigned int stream_count;
     uint64_t frames, packets, samples, io_bytes, deadline;
     DeadpanCancelled cancelled;
@@ -166,7 +166,7 @@ static int runtime(DeadpanAudio *s) {
     return 1;
 }
 static int allowed_codec(enum AVCodecID id) {
-    return id == AV_CODEC_ID_AAC || id == AV_CODEC_ID_PCM_S16LE || id == AV_CODEC_ID_OPUS;
+    return id == AV_CODEC_ID_AAC || id == AV_CODEC_ID_PCM_S16LE || id == AV_CODEC_ID_OPUS || id == AV_CODEC_ID_MP3;
 }
 static int layout(DeadpanAudio *s, const AVChannelLayout *value, DeadpanAudioLayout *out) {
     if (!av_channel_layout_check(value) || value->nb_channels <= 0 ||
@@ -246,6 +246,30 @@ static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
     }
     return avcodec_default_get_buffer2(context, frame, flags);
 }
+// Reads one packet, preserving all side data and counting it exactly once.
+static int read_packet(DeadpanAudio *s) {
+    if (s->packets >= s->limits.max_packets)
+        return fail(s, "resource_limit", "audio packet count exceeds configured bound");
+    int result = av_read_frame(s->format, s->packet);
+    if (check(s) < 0) { av_packet_unref(s->packet); return -1; }
+    if (result == AVERROR_EOF) return 0;
+    if (result < 0) return fferror(s, "read audio packet", result);
+    s->packets++;
+    if (s->packet->flags & AV_PKT_FLAG_CORRUPT) { av_packet_unref(s->packet); return fail(s, "corrupt_packet", "demuxer reported a corrupt audio-container packet"); }
+    if (s->packet->size < 0 || (uint32_t)s->packet->size > s->limits.max_packet_bytes) {
+        av_packet_unref(s->packet); return fail(s, "resource_limit", "demuxed packet exceeds configured byte bound");
+    }
+    uint64_t packet_bytes = (uint64_t)s->packet->size;
+    for (int i = 0; i < s->packet->side_data_elems; i++) {
+        size_t bytes = s->packet->side_data[i].size;
+        if (bytes > s->limits.max_packet_bytes - packet_bytes) {
+            av_packet_unref(s->packet);
+            return fail(s, "resource_limit", "packet payload and side data exceed configured byte bound");
+        }
+        packet_bytes += bytes;
+    }
+    return 1;
+}
 static int open_impl(DeadpanAudio *s) {
     if (s->mode != DECODE_MANUAL && s->mode != DECODE_ORDINARY)
         return fail(s, "invalid_configuration", "audio decode mode is outside its closed vocabulary");
@@ -294,9 +318,26 @@ static int open_impl(DeadpanAudio *s) {
     if (result >= 0) result = avformat_open_input(&s->format, NULL, NULL, &options);
     av_dict_free(&options);
     if (result < 0) return fferror(s, "open audio descriptor", result);
-    // The admitted containers carry the selected stream contract in their header.
-    // Do not run find_stream_info: it can decode other streams or consume skip
-    // evidence before this explicitly controlled decoder is opened.
+    s->packet = av_packet_alloc();
+    if (!s->packet) return fail(s, "resource_exhausted", "allocate audio packet");
+    // Raw MP3 obtains its rate and channels from the bounded bitstream parser.
+    // Retain that first packet, including manual skip evidence, for next_impl.
+    // Never run find_stream_info, which can decode other streams or consume it.
+    if (!strcmp(s->format->iformat->name, "mp3")) {
+        if (s->stream != 0 || s->format->nb_streams == 0 || s->format->nb_streams > 2 ||
+            s->format->streams[0]->codecpar->codec_id != AV_CODEC_ID_MP3)
+            return fail(s, "unsupported_streams", "invalid raw MP3 stream inventory");
+        for (unsigned int i = 1; i < s->format->nb_streams; i++)
+            s->format->streams[i]->discard = AVDISCARD_ALL;
+        for (uint32_t i = 0; i < s->limits.max_packets_per_frame; i++) {
+            result = read_packet(s);
+            if (result < 0) return -1;
+            if (!result) return fail(s, "invalid_input", "MP3 has no parsed audio packet");
+            if (s->packet->stream_index == s->stream) { s->packet_pending = 1; break; }
+            av_packet_unref(s->packet);
+        }
+        if (!s->packet_pending) return fail(s, "resource_limit", "MP3 opening packet budget exhausted");
+    }
     if (check(s) < 0 || table(s, 1) < 0) return -1;
     AVStream *stream = s->format->streams[s->stream];
     AVCodecParameters *p = stream->codecpar;
@@ -319,16 +360,18 @@ static int open_impl(DeadpanAudio *s) {
     // The native FFmpeg Opus implementation did not match the qualified SILK
     // and hybrid reference signals. Select the pinned libopus wrapper explicitly;
     // never fall back to whichever decoder happens to register first.
-    const AVCodec *codec = avcodec_find_decoder_by_name(p->codec_id == AV_CODEC_ID_OPUS ? "libopus" : s->info.codec);
+    const AVCodec *codec = avcodec_find_decoder_by_name(p->codec_id == AV_CODEC_ID_OPUS ? "libopus" :
+        p->codec_id == AV_CODEC_ID_MP3 ? "mp3float" : s->info.codec);
     if (!codec || codec->id != p->codec_id) return fail(s, "unsupported_codec", "qualified software audio decoder is unavailable");
     s->decoder = avcodec_alloc_context3(codec);
-    s->packet = av_packet_alloc(); s->frame = av_frame_alloc();
+    s->frame = av_frame_alloc();
     if (!s->decoder || !s->packet || !s->frame) return fail(s, "resource_exhausted", "allocate audio decoder context");
     if ((result = avcodec_parameters_to_context(s->decoder, p)) < 0) return fferror(s, "copy audio codec parameters", result);
     s->decoder->thread_count = 1;
     s->decoder->thread_type = 0;
     s->decoder->max_samples = (int64_t)s->limits.max_samples_per_frame * s->limits.max_channels;
     s->decoder->err_recognition = AV_EF_EXPLODE | AV_EF_CAREFUL;
+    if (p->codec_id == AV_CODEC_ID_MP3) s->decoder->err_recognition |= AV_EF_CRCCHECK;
     s->decoder->pkt_timebase = stream->time_base;
     if (p->codec_id == AV_CODEC_ID_OPUS) s->decoder->request_sample_fmt = AV_SAMPLE_FMT_FLT;
     if (s->mode == DECODE_MANUAL) s->decoder->flags2 |= AV_CODEC_FLAG2_SKIP_MANUAL;
@@ -403,7 +446,7 @@ static int validate_frame(DeadpanAudio *s) {
     if (layout(s, &f->ch_layout, &channels) < 0) return -1;
     if (f->sample_rate != s->info.sample_rate || !same_layout(&channels, &s->info.channel_layout))
         return fail(s, "stream_changed", "decoded audio rate or layout differs from selected stream contract");
-    if ((s->decoder->codec_id == AV_CODEC_ID_AAC && f->format != AV_SAMPLE_FMT_FLTP) ||
+    if (((s->decoder->codec_id == AV_CODEC_ID_AAC || s->decoder->codec_id == AV_CODEC_ID_MP3) && f->format != AV_SAMPLE_FMT_FLTP) ||
         (s->decoder->codec_id == AV_CODEC_ID_OPUS && f->format != AV_SAMPLE_FMT_FLT) ||
         (s->decoder->codec_id == AV_CODEC_ID_PCM_S16LE && f->format != AV_SAMPLE_FMT_S16))
         return fail(s, "unsupported_sample_format", "decoded audio sample representation is unqualified");
@@ -443,30 +486,17 @@ static int next_impl(DeadpanAudio *s, DeadpanAudioFrame *out) {
         if (s->draining) return fail(s, "decode_protocol", "audio decoder requested packets after draining");
         for (;;) {
             if (check(s) < 0) return -1;
-            if (packets >= s->limits.max_packets_per_frame || s->packets >= s->limits.max_packets)
+            if (packets >= s->limits.max_packets_per_frame)
                 return fail(s, "resource_limit", "audio packet count exceeds configured bound");
-            result = av_read_frame(s->format, s->packet);
-            if (check(s) < 0) { av_packet_unref(s->packet); return -1; }
-            if (result == AVERROR_EOF) {
+            result = s->packet_pending ? 1 : read_packet(s);
+            s->packet_pending = 0;
+            if (result < 0) return -1;
+            if (!result) {
                 result = avcodec_send_packet(s->decoder, NULL);
                 if (result < 0) return fferror(s, "drain audio decoder", result);
                 s->draining = 1; break;
             }
-            if (result < 0) return fferror(s, "read audio packet", result);
-            packets++; s->packets++;
-            if (s->packet->flags & AV_PKT_FLAG_CORRUPT) { av_packet_unref(s->packet); return fail(s, "corrupt_packet", "demuxer reported a corrupt audio-container packet"); }
-            if (s->packet->size < 0 || (uint32_t)s->packet->size > s->limits.max_packet_bytes) {
-                av_packet_unref(s->packet); return fail(s, "resource_limit", "demuxed packet exceeds configured byte bound");
-            }
-            uint64_t packet_bytes = (uint64_t)s->packet->size;
-            for (int i = 0; i < s->packet->side_data_elems; i++) {
-                size_t bytes = s->packet->side_data[i].size;
-                if (bytes > s->limits.max_packet_bytes - packet_bytes) {
-                    av_packet_unref(s->packet);
-                    return fail(s, "resource_limit", "packet payload and side data exceed configured byte bound");
-                }
-                packet_bytes += bytes;
-            }
+            packets++;
             if (s->packet->stream_index == s->stream) {
                 if (table(s, 0) < 0) { av_packet_unref(s->packet); return -1; }
                 result = avcodec_send_packet(s->decoder, s->packet);

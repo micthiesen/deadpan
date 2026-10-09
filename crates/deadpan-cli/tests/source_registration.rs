@@ -775,3 +775,5 @@ mod trim;
 mod beat_sounds;
 #[path = "source_registration/combined_trim.rs"]
 mod combined_trim;
+#[path = "source_registration/mp3.rs"]
+mod mp3;

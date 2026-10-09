@@ -5,7 +5,9 @@ use deadpan_core::SourceTimeBase;
 use serde::{Deserialize, Serialize};
 
 use crate::source_index::{MAX_SOURCE_INDEX_JSON_BYTES, SourceContentIdentity};
+mod mp3;
 mod opus;
+pub use mp3::Mp3Framing;
 pub use opus::MatroskaOpusClock;
 
 pub const AUDIO_INDEX_VERSION: u32 = 1;
@@ -114,6 +116,8 @@ pub struct AudioStreamDescriptor {
     pub seek_preroll: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub matroska_opus: Option<MatroskaOpusClock>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mp3: Option<Mp3Framing>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -220,13 +224,17 @@ impl AudioIndexSnapshot {
         stream.channel_layout.validate()?;
         if stream.stream_index >= 33
             || !(1..=384_000).contains(&stream.sample_rate)
-            || !matches!(stream.codec.as_str(), "aac" | "pcm_s16le" | "opus")
+            || !matches!(stream.codec.as_str(), "aac" | "pcm_s16le" | "opus" | "mp3")
             || (stream.codec == "opus") != stream.matroska_opus.is_some()
+            || (stream.codec == "mp3") != stream.mp3.is_some()
         {
             return Err(AudioIndexError::Metadata("stream contract").into());
         }
         if observations.is_empty() || observations.len() > MAX_AUDIO_INDEX_FRAMES {
             return Err(AudioIndexError::Limit.into());
+        }
+        if let Some(framing) = stream.mp3 {
+            framing.validate(&stream, observations.len())?;
         }
         let mut frames = Vec::new();
         frames
@@ -246,7 +254,7 @@ impl AudioIndexSnapshot {
                 || observation.sample_count > 65_536
                 || !matches!(
                     (stream.codec.as_str(), observation.sample_format.as_str()),
-                    ("pcm_s16le", "s16") | ("aac", "fltp") | ("opus", "flt")
+                    ("pcm_s16le", "s16") | ("aac" | "mp3", "fltp") | ("opus", "flt")
                 )
             {
                 return Err(AudioIndexError::Metadata("frame samples or format").into());
@@ -279,7 +287,10 @@ impl AudioIndexSnapshot {
             }
             let skip = observation.skip_samples;
             let mut leading = i64::from(skip.map_or(0, |skip| skip.leading));
-            let trailing = i64::from(skip.map_or(0, |skip| skip.trailing));
+            let mut trailing = i64::from(skip.map_or(0, |skip| skip.trailing));
+            if let Some(framing) = stream.mp3 {
+                (leading, trailing) = framing.trim(observation, ordinal, decoded_samples)?;
+            }
             if opus.is_some() {
                 if observation.discard
                     || leading
@@ -430,6 +441,7 @@ mod tests {
             SourceContentIdentity::new([3; 32], 100).unwrap(),
             AudioStreamDescriptor {
                 matroska_opus: None,
+                mp3: None,
                 stream_index: 32,
                 codec: "aac".into(),
                 time_base: SourceTimeBase::new(1, 48000).unwrap(),

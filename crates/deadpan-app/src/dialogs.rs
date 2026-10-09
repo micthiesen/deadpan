@@ -295,7 +295,7 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
                 .set_title("Add a sound (audio stream only)")
                 .add_filter(
                     "Qualified audio containers",
-                    &["wav", "mp4", "m4a", "m4v", "webm", "mkv", "mka"],
+                    &["wav", "mp4", "m4a", "m4v", "webm", "mkv", "mka", "mp3"],
                 )
                 .pick_file(),
         ),

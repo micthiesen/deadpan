@@ -13,7 +13,7 @@ sample format/count, discard flag and manual skip side data. It returns owned
 interleaved f32 samples without resampling, downmixing, additional gain, clipping or automatic
 padding removal. PCM16 conversion is exactly `sample / 32768`.
 
-The tested subset is AAC-LC in MP4, mono/stereo Opus in finite WebM/Matroska,
+The tested subset is AAC-LC in MP4, mono/stereo raw MP3, mono/stereo Opus in finite WebM/Matroska,
 and signed 16-bit little-endian PCM in WAV. Opus applies its declared header gain.
 The opening guard admits a strict nonfragmented MP4 grammar and PCM16 RIFF/WAV
 with either a plain format header or the closed extensible format described in
@@ -31,9 +31,10 @@ Declared packet sizes and table counts are checked before FFmpeg can allocate
 from them. The guard uses positional reads with aggregate header, atom, depth,
 sample and table budgets across all tracks. WAV packet sizes are capped before
 demuxing; payload and side-data sizes are rechecked before codec submission.
-The guard has an eight-page, 32 KiB read cache, a 16 MiB aggregate header/read
-limit, one million samples and table rows across all tracks, 100000 atoms, 33
-tracks and 16 levels of nesting. Header reads and FFmpeg opening share the same
+The MP4 guard has an eight-page, 32 KiB read cache, a 16 MiB aggregate header/read
+limit, one million compressed samples and table rows across all tracks, 100000
+atoms, 33 tracks and 16 levels of nesting. Matroska and raw MP3 use sparse reads
+under the same 16 MiB header-work ceiling. Header reads and FFmpeg opening share the same
 per-call byte allowance and deadline. Interleaved sample tables use the bounded
 cache so ordinary index traversal does not repeatedly reread every table page.
 The guard preserves original bytes and timing metadata, and relies on the same
@@ -59,6 +60,24 @@ duration/skip evidence are explicit failures. Within each frame, explicit skip
 and discard metadata and the measured frame duration determine available
 coverage. Excluded spans remain unavailable. Sample-range reads return an error
 for padding, gaps or out-of-range requests; they never substitute silence.
+
+## MP3 framing and sample clocks
+
+Raw MPEG-1/2/2.5 Layer III uses pinned FFmpeg's `mp3float` decoder at its original
+rate, with explicit mono or stereo speakers. Its first parsed packet supplies
+the stream parameters and remains pending for ordinary decoding; opening never
+uses `find_stream_info` or consumes that packet's skip metadata. Physical PTS
+and durations use exact `1/14112000` ticks, divisible by all nine MP3 rates.
+
+The `mp3` receipt retains the complete admitted frame inventory, samples per
+frame, rate, channels and explicit leading/trailing trim. Every decoded frame,
+duration and skip record must agree. LAME/Lavf/Lavc delay and padding are read
+from the encoder tag, checked against its checksum and physical frame/byte
+counts, and reconciled with FFmpeg's 529-sample synthesis delay. Leading and
+trailing trims may each span multiple frames. Untagged audio retains every
+physical decoded sample; no guessed priming removal or event alignment runs.
+The measured samples, never declared duration, define the endpoint.
+See [MP3 qualification](qualification/mp3-sources-2026-10-09.md).
 
 ## Opus container and sample clocks
 

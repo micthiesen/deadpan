@@ -105,7 +105,7 @@ fn video_container_admission_survives_mutation() {
 
 #[test]
 fn audio_container_admission_survives_mutation() {
-    let seeds = fixtures(&["mp4", "wav", "webm", "mkv"]);
+    let seeds = fixtures(&["mp4", "wav", "webm", "mkv", "mp3"]);
     let report = fuzz(
         Target::bytes("source-container-audio").iterations(800),
         seeds,

@@ -1,10 +1,10 @@
 # Persistent source decoder
 
 The separate `audio` module decodes an explicitly selected AAC-LC, mono/stereo
-Opus or signed16 little-endian PCM stream at its original rate and channel layout. It retains raw
+Opus, MP3 or signed16 little-endian PCM stream at its original rate and channel layout. It retains raw
 PTS/DTS, duration, sample count/format, discard and manual skip evidence, and
 returns owned interleaved f32 without resampling, mixing or additional gain.
-AAC/MP4, Opus/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation
+AAC/MP4, raw MP3, Opus/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation
 sizes and table expansion before FFmpeg opens the audio container. Other audio
 container grammars, custom layouts and unsupported representations fail.
 See [source audio](../../docs/SOURCE_AUDIO.md) for host indexing, private PCM

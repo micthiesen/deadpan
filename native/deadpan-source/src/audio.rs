@@ -13,7 +13,7 @@
 //! A zero skip record, absent skip record, codec padding observation, or container
 //! duration is not by itself proof that every decoded sample is presentation data.
 //!
-//! Repository fixtures qualify AAC-LC/MP4, mono/stereo Opus/WebM/Matroska,
+//! Repository fixtures qualify AAC-LC/MP4, raw MP3, mono/stereo Opus/WebM/Matroska,
 //! and signed16 little-endian PCM/WAVE. Opus honors its declared header gain.
 //! A strict container guard rejects unsafe size/table declarations before
 //! FFmpeg allocation. Other container grammars require separate qualification.
@@ -141,6 +141,18 @@ pub struct AudioStreamInfo {
     /// Checked Matroska declarations before FFmpeg rounds CodecDelay to ticks.
     /// Raw frame PTS and skip observations remain unchanged.
     pub matroska_opus: Option<MatroskaOpusClock>,
+    /// Complete raw Layer III frame inventory and explicit encoder trim.
+    pub mp3: Option<Mp3Framing>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mp3Framing {
+    pub sample_rate: u32,
+    pub channels: u32,
+    pub samples_per_frame: u32,
+    pub frame_count: u64,
+    pub leading_skip: u32,
+    pub trailing_skip: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -360,8 +372,11 @@ impl AudioDecoder {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let (selected_stream, preflight_io_bytes, matroska_opus) =
-            input::validate_audio(&file, selected_stream, limits.into(), control)?;
+        let admission = input::validate_audio(&file, selected_stream, limits.into(), control)?;
+        let selected_stream = admission
+            .audio
+            .expect("audio admission has a selected stream");
+        let matroska_opus = admission.matroska_opus;
         let timeout = control
             .timeout
             .checked_sub(started.elapsed())
@@ -375,10 +390,24 @@ impl AudioDecoder {
             selected_stream,
             mode,
             limits,
-            preflight_io_bytes,
+            admission.io_bytes,
             DecodeControl { timeout, ..control },
         )?;
         info.matroska_opus = matroska_opus;
+        info.mp3 = admission.mp3;
+        if (info.codec == "mp3") != info.mp3.is_some()
+            || info.mp3.is_some_and(|framing| {
+                info.sample_rate != framing.sample_rate
+                    || info.channel_layout.channels() != framing.channels
+                    || info.time_base_num != 1
+                    || info.time_base_den != 14_112_000
+            })
+        {
+            return Err(SourceDecodeError::Native {
+                code: "invalid_report".into(),
+                message: "MP3 decoder disagrees with admitted frame inventory".into(),
+            });
+        }
         if (info.codec == "opus") != matroska_opus.is_some()
             || matroska_opus.is_some_and(|clock| {
                 info.sample_rate != 48_000
@@ -429,6 +458,18 @@ impl AudioDecoder {
         if let Some(frame) = current {
             self.decoded_frames += 1;
             self.decoded_samples += u64::from(frame.nb_samples);
+        }
+        if self.mode == AudioDecodeMode::Manual
+            && self.info.mp3.is_some_and(|framing| {
+                self.decoded_frames > framing.frame_count
+                    || current.is_some_and(|frame| frame.nb_samples != framing.samples_per_frame)
+                    || (current.is_none() && self.decoded_frames != framing.frame_count)
+            })
+        {
+            return Err(SourceDecodeError::Native {
+                code: "invalid_decode".into(),
+                message: "MP3 decode did not preserve every admitted frame and sample".into(),
+            });
         }
         if self.mode == AudioDecodeMode::Manual
             && self.info.matroska_opus.is_some_and(|clock| {
@@ -772,10 +813,11 @@ mod ffi {
                 _not_sync: PhantomData,
             };
             let codec = string(&info.codec);
-            if !matches!(codec.as_str(), "aac" | "pcm_s16le" | "opus") {
+            if !matches!(codec.as_str(), "aac" | "pcm_s16le" | "opus" | "mp3") {
                 return Err(invalid_report());
             }
             let value = AudioStreamInfo {
+                mp3: None,
                 matroska_opus: None,
                 stream_index: nonnegative(info.stream_index)?,
                 codec,
@@ -797,6 +839,8 @@ mod ffi {
             if evidence.decoder_name
                 != if value.codec == "opus" {
                     "libopus"
+                } else if value.codec == "mp3" {
+                    "mp3float"
                 } else {
                     &value.codec
                 }
@@ -878,9 +922,12 @@ mod ffi {
             if self.mode != mode_id(mode)
                 || !matches!(
                     container_format.as_str(),
-                    "mov,mp4,m4a,3gp,3g2,mj2" | "wav" | "matroska,webm"
+                    "mov,mp4,m4a,3gp,3g2,mj2" | "wav" | "matroska,webm" | "mp3"
                 )
-                || !matches!(decoder_name.as_str(), "aac" | "pcm_s16le" | "libopus")
+                || !matches!(
+                    decoder_name.as_str(),
+                    "aac" | "pcm_s16le" | "libopus" | "mp3float"
+                )
                 || (decoder_name == "aac"
                     && (!matches!(self.container_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)
                         || !matches!(self.decoder_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)))

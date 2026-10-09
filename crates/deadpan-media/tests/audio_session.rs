@@ -605,3 +605,90 @@ fn limits_identity_and_cancellation_never_publish_partial_audio() {
         );
     }
 }
+
+#[test]
+fn mp3_catalog_pcm_preserves_exact_trim_and_refuses_forged_clock_or_skip_receipts() {
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&fixture("audio-fixtures", "mp3-manifest.json")).unwrap();
+    for row in manifest["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["name"].as_str().unwrap().ends_with(".mp3"))
+    {
+        let name = row["name"].as_str().unwrap();
+        let bytes = fixture("audio-fixtures", name);
+        let session = AudioSession::open_first_input(
+            verified_input(&bytes),
+            AudioSessionLimits::default(),
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let index = session.index();
+        let framing = index.stream().mp3.unwrap();
+        let available = row["available_samples"].as_u64().unwrap();
+        let start = i64::from(framing.leading_skip);
+        assert_eq!(index.valid_samples(), available, "{name}");
+        assert_eq!(
+            index.decoded_samples(),
+            framing.frame_count * u64::from(framing.samples_per_frame)
+        );
+        assert_eq!(
+            AudioIndexSnapshot::from_json(&index.to_json().unwrap()).unwrap(),
+            *index
+        );
+        let actual = session
+            .read_samples(
+                SourceAudioSample(start),
+                available as u32,
+                Duration::from_secs(2),
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .samples;
+        let reference = fixture("audio-fixtures", &name.replace(".mp3", ".f32le"));
+        assert_eq!(actual.len() * 4, reference.len());
+        for (a, b) in actual.iter().zip(reference.chunks_exact(4)) {
+            assert!(
+                (a - f32::from_le_bytes(b.try_into().unwrap())).abs() < 0.00001,
+                "{name}"
+            );
+        }
+        for boundary in [start - 1, start + available as i64] {
+            assert!(
+                session
+                    .read_samples(
+                        SourceAudioSample(boundary),
+                        1,
+                        Duration::from_secs(2),
+                        &AtomicBool::new(false)
+                    )
+                    .is_err(),
+                "{name}: {boundary}"
+            );
+        }
+        // Parsed JSON has to re-establish the same clock and trim contract.
+        for mutation in 0..10 {
+            let mut wire = serde_json::to_value(index).unwrap();
+            match mutation {
+                0 => wire["stream"]["mp3"] = serde_json::Value::Null,
+                1 => wire["stream"]["mp3"]["frame_count"] = (framing.frame_count + 1).into(),
+                2 => wire["stream"]["mp3"]["leading_skip"] = (framing.leading_skip + 1).into(),
+                3 => wire["stream"]["mp3"]["trailing_skip"] = (framing.trailing_skip + 1).into(),
+                4 => wire["observations"][1]["pts"] = (index.observations()[1].pts + 1).into(),
+                5 => wire["observations"][0]["discard"] = true.into(),
+                6 => {
+                    wire["observations"][0]["sample_count"] = (framing.samples_per_frame - 1).into()
+                }
+                7 => wire["observations"][0]["reported_duration"] = 1.into(),
+                8 => wire["stream"]["stream_index"] = 1.into(),
+                9 => wire["stream"]["stream_start"] = serde_json::Value::Null,
+                _ => unreachable!(),
+            }
+            assert!(
+                AudioIndexSnapshot::from_json(&serde_json::to_vec(&wire).unwrap()).is_err(),
+                "{name} mutation {mutation}"
+            );
+        }
+    }
+}

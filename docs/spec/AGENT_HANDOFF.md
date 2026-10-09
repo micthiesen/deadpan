@@ -4,6 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[MP3 sounds](../qualification/mp3-sources-2026-10-09.md) now use the normal catalog,
+placement, history and Render path. Raw MPEG-1/2/2.5 preserves all nine rates and
+exact encoder trim, including skips across frames. Untagged/unknown-encoder
+samples remain audible. The first parsed packet stays pending for decoding.
+All 16 fixtures, the full gate and native sanitizers pass; release exports verify
+720 pictures/24 zero-offset audio windows, and the packaged app verifies 360/12.
+Read the qualification for grammar limits and the retained nextest stdio warning.
+Other required codecs and the full source/operation matrix remain open; DP-02
+and DP-16 are partial.
+
 [Opus source audio](../qualification/opus-sources-2026-10-09.md) adds mono/stereo
 WebM/Matroska sounds and audio-bearing Originals. Use the new pinned FFmpeg
 prefix with static libopus 1.6.1; FFmpeg's native Opus decoder failed SILK/hybrid

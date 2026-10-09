@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[MP3 sound import](qualification/mp3-sources-2026-10-09.md) adds raw mono/stereo
+MPEG-1/2/2.5 at all nine rates, with exact declared trim across frames, bounded
+metadata and CRC checks. Untagged samples remain intact. Six release exports
+verify 720 pictures and 24 zero-offset audio windows; the isolated-home packaged
+app registers all 16 fixtures and verifies 360 pictures and 12 windows.
+The full gate and native sanitizers pass; the qualification retains the one
+nextest stdio warning and its focused follow-up. VBRI, broader metadata/container
+grammars, other required codecs and the operation matrix remain open. DP-02
+and DP-16 stay partial.
+
 [Opus source audio](qualification/opus-sources-2026-10-09.md) adds mono/stereo
 WebM/Matroska sounds and audio-bearing Originals, with CELT, SILK and hybrid
 decoding through pinned libopus 1.6.1. Exact pre-skip and terminal trim define

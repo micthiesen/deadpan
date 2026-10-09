@@ -547,6 +547,12 @@ The existing source/media sanitizer command above includes this path. These
 headless checks establish no listening, device output, resampling or complete
 import behavior. See [source audio](SOURCE_AUDIO.md).
 
+Raw MP3 adds the native `mp3` tests, the media `audio_session` MP3 case and the
+CLI `source_registration` MP3 case. Regenerate/compare the committed synthetic
+signals with `python3 native/deadpan-source/tests/generate_mp3_fixtures.py --check`
+(development FFmpeg/libmp3lame and LAME; no end-user encoding dependency).
+The audio container mutation campaign automatically includes these `.mp3` seeds.
+
 ## Audio preparation checks
 
 Structural audio queries are covered by `cargo test --locked -p deadpan-plan
