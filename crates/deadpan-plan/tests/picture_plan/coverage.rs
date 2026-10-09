@@ -12,6 +12,64 @@ fn q(n: i64, d: i64) -> ExactRatio {
     ExactRatio::new(i128::from(n), i128::from(d)).unwrap()
 }
 
+#[test]
+fn explicit_fractional_hold_origins_preserve_leading_and_trailing_endpoint_holds() {
+    for (reverse, origin, points) in [
+        (
+            true,
+            q(9009, 2),
+            [3003, 3003, 2002, 1001, 1001, 1001, 1001, 1001],
+        ),
+        (
+            false,
+            q(-1001, 2),
+            [1001, 1001, 2002, 3003, 3003, 3003, 3003, 3003],
+        ),
+    ] {
+        let video = if reverse {
+            HoldVideo::Reverse {
+                asset: asset_id("video"),
+                span: span(1001, 3003),
+                origin: Some(origin),
+            }
+        } else {
+            HoldVideo::Play {
+                asset: asset_id("video"),
+                span: span(1001, 3003),
+                origin: Some(origin),
+            }
+        };
+        let saved = document(
+            &["hold"],
+            vec![(
+                "hold",
+                node(NodeKind::Hold {
+                    recipe: HoldRecipe {
+                        duration: duration(8),
+                        video,
+                        picture_context: None,
+                        audio: HoldAudio::Silence,
+                    },
+                }),
+            )],
+        );
+        let reopened = ProjectDocument::from_json(&saved.to_json().unwrap()).unwrap();
+        let plan = RenderPlan::compile(&reopened).unwrap();
+        for (frame, expected) in points.into_iter().enumerate() {
+            let sample = plan
+                .picture(ProjectFrame(i64::try_from(frame).unwrap()))
+                .unwrap();
+            let Picture::Source { point, .. } = sample.picture else {
+                panic!("Original picture")
+            };
+            assert_eq!(point.ticks, q(expected, 1));
+        }
+        let actual = coverage(&plan, "root", q(1, 4), q(31, 4));
+        assert_eq!(actual.spans.len(), 3);
+        assert_oracle(&plan, &actual);
+    }
+}
+
 fn coverage(
     plan: &RenderPlan,
     definition: &str,
@@ -160,11 +218,13 @@ fn coverage_proves_reverse_and_forward_hold_clamp_tails() {
             HoldVideo::Reverse {
                 asset: asset_id("video"),
                 span: span(1001, 3003),
+                origin: None,
             }
         } else {
             HoldVideo::Play {
                 asset: asset_id("video"),
                 span: span(1001, 3003),
+                origin: None,
             }
         };
         let plan = RenderPlan::compile(&document(
@@ -629,8 +689,8 @@ proptest! {
         let video = match provider {
             0 => HoldVideo::Background,
             1 => HoldVideo::Freeze { asset: asset_id("video"), timestamp: span(5005, 6006).start() },
-            2 => HoldVideo::Play { asset: asset_id("video"), span: span(5005, 5005 + selected_frames * 1001) },
-            3 => HoldVideo::Reverse { asset: asset_id("video"), span: span(5005, 5005 + selected_frames * 1001) },
+            2 => HoldVideo::Play { asset: asset_id("video"), span: span(5005, 5005 + selected_frames * 1001), origin: None },
+            3 => HoldVideo::Reverse { asset: asset_id("video"), span: span(5005, 5005 + selected_frames * 1001), origin: None },
             _ => HoldVideo::Accepted { asset: asset_id("video"), frames: range(10, 10 + hold_frames) },
         };
         let child_frames = source_frames + hold_frames;

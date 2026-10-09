@@ -1,6 +1,6 @@
 # Supported development project formats
 
-The current package uses SQLite schema 75 and core document schema 47. Schema
+The current package uses SQLite schema 76 and core document schema 48. Schema
 64 stores revision documents only at [keyframes](TIMING_STORAGE.md#revision-storage-database-schema-64),
 records each revision's patch-chain depth and JSON size bound, and adds the
 [verified history receipt](TIMING_STORAGE.md#verified-history-receipts).
@@ -22,20 +22,23 @@ Schema 72 retains source-boundary replacement intent, schema 73 retains complete
 extension inputs, and schema 74 retains accepted Extension evidence under core
 schema 47. Schema 75 adds the [named take catalog and immutable restore
 proofs](TAKES.md), with `RestoreSnapshot` in the closed command vocabulary.
+Schema 76 uses core 48's exact source-clock origins for forward and reversed
+Holds, preserving VFR passage phase independently of decoded-picture intervals
+([qualification](qualification/vfr-recipes-2026-10-09.md)).
 
 Under the 2026-09-30 development-format authorization, this build refuses
-schemas 1 through 74 as `UnsupportedSchema` without changes. The retained
-66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 75.
+schemas 1 through 75 as `UnsupportedSchema` without changes. The retained
+66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 76.
 The [release migration runner](BACKUPS.md#release-migration-policy) remains
 implemented and tested; this development build does not invent missing steps.
-A schema *above* 75 is refused by writers as `NewerSchema` and opens read-only
+A schema *above* 76 is refused by writers as `NewerSchema` and opens read-only
 for viewing.
 
 History patches now record retained audio timing as granular
 `AudioBindingPatch` entries rather than two complete binding states, and new
 timing tables are sliced to the aliases their placements name. Both are
 breaking changes to the history and document representation of new edits.
-Stored literal fixtures that embedded complete binding states were converted. It refuses schemas 1 through 74 with the
+Stored literal fixtures that embedded complete binding states were converted. It refuses schemas 1 through 75 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
@@ -84,13 +87,14 @@ cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Core schema 47 retains scoped historical aliases in chronological sample clocks
-for beat-owned sounds, addressed by owner and local sound ID. Database 75 stores
-these documents and their reversible patches. Prior unused packages have no
+for beat-owned sounds, addressed by owner and local sound ID. Core 48 retains
+these clocks and adds Hold picture origins. Database 76 stores these documents
+and their reversible patches. Prior unused packages have no
 supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 75 performs read-only validation and reports
+Calling `project migrate` on schema 76 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
 native writer. On an older package it returns `SchemaUnsupported` before
 creating a backup or obtaining a writer. An open native endpoint only

@@ -288,6 +288,17 @@ them with public `render` and verify them with `verify-export`:
   verifies as SDR). `DEADPAN_PREVIEW_EXPORT_HDR_RESULTS=<new.json>` records the
   HDR table. `deadpan_cli::export_verification::reference_pictures` renders
   single references for such checks.
+- [VFR fixtures](../crates/deadpan-cli/tests/preview_export/vfr.rs) build eleven
+  projects from both retained variable-duration Originals: complete A/V
+  endpoints, freeze, Repeat gaps, nested Retime/Repeat, Preserve and Tape speeds,
+  reverse, ping-pong, cutaway bounce and bleep. An independent authored PTS table
+  and manually flattened recipe clocks check every plan position and exported
+  reference provenance. The optimized matrix runs with
+  `cargo test --release --locked -p deadpan-cli --test preview_export vfr_recipe_exports`;
+  `DEADPAN_PREVIEW_EXPORT_KEEP=1` retains packages, movies, per-fixture reports
+  and `results.json`. The plan matrix also runs in the default gate. All eleven
+  exports, 867 pictures and 28 audio windows pass in the
+  [2026-10-09 qualification](qualification/vfr-recipes-2026-10-09.md).
 - `every_recipe_export_matches_its_committed_preview` exports every recipe
   fixture (44: 38 on `cfr-bframes.mp4`, four accepted Generated Holds and two
   larger generated Originals, below).

@@ -1354,7 +1354,7 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schema 75 is current. Earlier unused development
+Database schema 76 is current. Earlier unused development
 schemas return `SchemaUnsupported` before writer locks, backups, recovery,
 authored JSON parsing or database writes, and their packages remain intact
 ([development formats](DEVELOPMENT_FORMATS.md)).

@@ -407,6 +407,7 @@ fn a_reversed_hold_plays_its_span_backwards_then_holds_the_first_picture() {
             video: HoldVideo::Reverse {
                 asset: asset_id("video"),
                 span: span(2002, 6006),
+                origin: None,
             },
             picture_context: None,
             audio: HoldAudio::Silence,
@@ -449,6 +450,7 @@ fn a_bleep_pause_plays_its_span_forward_then_holds_the_last_picture() {
             video: HoldVideo::Play {
                 asset: asset_id("video"),
                 span: span(2002, 6006),
+                origin: None,
             },
             picture_context: None,
             audio: HoldAudio::Silence,

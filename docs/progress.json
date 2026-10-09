@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T08:56:00Z",
+  "updated_at": "2026-10-09T09:22:13Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Completing exact source policies and the VFR/creative-operation playback and export matrix.",
   "features": [
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "SDR/HDR export and 10,000 fractional-rate edits are verified. Quiet AAC openings preserve exact timing; full effects and format coverage remain."
+      "note": "SDR/HDR export, 10,000 fractional-rate edits and eleven VFR recipes are verified. Reverse and bleep preserve exact source phase; full effects and format coverage remain."
     },
     {
       "id": "ui",

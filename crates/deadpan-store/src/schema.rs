@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 75;
+pub const VERSION: u32 = 76;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,6 +18,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
+    // Schema 76 uses core 48's exact clock origins for reversed/played Holds.
     // Schema 75 adds revision-bound named takes and immutable restore proofs.
     // Schema 74 retains operation-specific native bundles and accepted sampling maps.
     // Schema 73 uses explicit generation operations and measured temporal input bindings.

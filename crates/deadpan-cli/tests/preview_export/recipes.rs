@@ -35,6 +35,9 @@ use serde_json::{Value, json};
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "vfr.rs"]
+pub mod vfr;
+
 #[cfg(feature = "synthetic-worker")]
 #[path = "generated.rs"]
 pub mod generated;
@@ -110,7 +113,13 @@ pub fn cli_path() -> &'static str {
 }
 
 pub fn cli(arguments: &[&str]) -> Result<Output> {
-    Ok(Process::new(cli_path()).args(arguments).output()?)
+    let mut command = Process::new(cli_path());
+    command
+        .args(arguments)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    Ok(deadpan_native_process::spawn(&mut command)?.wait_with_output()?)
 }
 
 pub fn success(arguments: &[&str]) -> Result<Value> {

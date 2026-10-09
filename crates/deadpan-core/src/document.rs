@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 47;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 48;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -266,20 +266,27 @@ pub enum HoldVideo {
     Generated {
         accepted: Box<AcceptedGeneration>,
     },
-    /// Plays an Original picture span backwards at its natural rate, starting
-    /// from the span's end. Local frame `k` shows the picture at
-    /// `span.end - (k + 1/2)` project frames; past the span's start the first
-    /// picture holds. No new media exists: the span is the measured Original.
+    /// Plays an Original picture span backwards at its natural rate from the
+    /// exact origin (the span's end when omitted). Adjacent endpoint pictures
+    /// hold outside the span. No new media exists: the span is the measured Original.
     Reverse {
         asset: AssetId,
         span: SourceSpan,
+        /// Exact source ticks at local boundary zero. Defaults to span.end;
+        /// a captured passage retains its project-clock phase independently of
+        /// the containing decoded-picture intervals.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        origin: Option<crate::ExactRatio>,
     },
-    /// Plays an Original picture span forward at its natural rate from its
-    /// start, holding its last picture past its end: the picture of a bleep,
-    /// whose own sound is replaced.
+    /// Plays an Original picture span forward at its natural rate from the
+    /// exact origin (the span's start when omitted), holding adjacent endpoint
+    /// pictures outside the span: the picture of a bleep, whose sound is replaced.
     Play {
         asset: AssetId,
         span: SourceSpan,
+        /// Exact source ticks at local boundary zero; defaults to span.start.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        origin: Option<crate::ExactRatio>,
     },
 }
 
@@ -451,10 +458,6 @@ impl RetimePurpose {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-#[expect(
-    clippy::large_enum_variant,
-    reason = "Keep exact Source recipes inline instead of adding an allocation per video beat"
-)]
 pub enum NodeKind {
     Source {
         source: SourceNode,
@@ -1721,8 +1724,31 @@ impl ProjectDocument {
             HoldVideo::Generated { accepted } => {
                 self.validate_generated(recipe.duration, accepted)?;
             }
-            HoldVideo::Reverse { asset, span } | HoldVideo::Play { asset, span } => {
-                self.validate_video_span(asset, *span)?
+            HoldVideo::Reverse {
+                asset,
+                span,
+                origin,
+            }
+            | HoldVideo::Play {
+                asset,
+                span,
+                origin,
+            } => {
+                self.validate_video_span(asset, *span)?;
+                if let Some(origin) = origin {
+                    let base = span.start().time_base;
+                    let rate = self.presentation_basis.frame_rate;
+                    let delta = crate::ExactRatio::new(
+                        i128::from(rate.denominator()) * i128::from(base.denominator()),
+                        i128::from(rate.numerator()) * i128::from(base.numerator()),
+                    )?
+                    .checked_mul(crate::ExactRatio::integer(recipe.duration.frames()))?;
+                    if matches!(recipe.video, HoldVideo::Reverse { .. }) {
+                        origin.checked_sub(delta)?;
+                    } else {
+                        origin.checked_add(delta)?;
+                    }
+                }
             }
         }
         match &recipe.audio {

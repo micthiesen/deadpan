@@ -15,7 +15,7 @@ projects keep all their media, edits and history.
 ## Authoritative profile and baseline
 
 The optional strict SQLite single-source profile and workflow discriminator
-were introduced in database schema 17. Current schema 75 preserves the profile;
+were introduced in database schema 17. Current schema 76 preserves the profile;
 generic projects stay generic.
 See [development formats](DEVELOPMENT_FORMATS.md) for current admission.
 No JSON sidecar or global catalog becomes the authority for an Original's identity.

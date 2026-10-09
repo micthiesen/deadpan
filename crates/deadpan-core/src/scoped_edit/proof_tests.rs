@@ -309,8 +309,13 @@ fn holds_without_generated_fallback() -> Vec<ProjectDocument> {
         HoldVideo::Reverse {
             asset: asset.clone(),
             span,
+            origin: None,
         },
-        HoldVideo::Play { asset, span },
+        HoldVideo::Play {
+            asset,
+            span,
+            origin: None,
+        },
     ]
     .into_iter()
     .map(|video| {

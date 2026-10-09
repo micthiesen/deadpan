@@ -737,6 +737,57 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
 }
 
 #[test]
+fn original_hold_clock_overflow_is_refused_before_editing() {
+    let (document, asset) = with_asset();
+    let before = document.to_json().unwrap();
+    for reverse in [false, true] {
+        let origin =
+            Some(ExactRatio::new(if reverse { -i128::MAX } else { i128::MAX }, 1).unwrap());
+        let video = if reverse {
+            HoldVideo::Reverse {
+                asset: asset.clone(),
+                span: span(0, 1000),
+                origin,
+            }
+        } else {
+            HoldVideo::Play {
+                asset: asset.clone(),
+                span: span(0, 1000),
+                origin,
+            }
+        };
+        let command = Command::Insert {
+            parent: id("root"),
+            index: 0,
+            subtree: Subtree {
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+                root: id("hold"),
+                nodes: BTreeMap::from([(
+                    id("hold"),
+                    BeatNode::hold(
+                        "Clock",
+                        HoldRecipe {
+                            picture_context: None,
+                            duration: duration(12),
+                            video,
+                            audio: HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+            },
+        };
+        assert_eq!(
+            apply(&document, &request(&document, command, "overflow"))
+                .unwrap_err()
+                .code,
+            EditErrorCode::TimingOverflow
+        );
+        assert_eq!(document.to_json().unwrap(), before);
+    }
+}
+
+#[test]
 fn hold_provider_changes_are_explicit_and_duration_checked() {
     let (document, asset) = with_asset();
     let (document, _) = edited(

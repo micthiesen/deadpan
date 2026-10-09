@@ -4,9 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+Current formats are core 48 / SQLite 76. The
+[eleven-case VFR matrix](../qualification/vfr-recipes-2026-10-09.md) found and
+fixed source-phase rounding in reverse and bleep Holds. Providers now retain
+exact source-clock origins separately from containing decoded-picture spans;
+ping-pong omits one project-frame sample rather than a complete long VFR picture.
+All 867 exported pictures and 28 audio windows pass, with zero offset in all
+17 signal windows. This qualifies a concrete VFR recipe subset; fractional
+apertures and the complete source/operation matrix remain open under DP-02.
+Obsolete development schemas through 75 are refused without writes under the
+existing format-break authorization.
+All 5531 runnable workspace tests (including 1096 UI-harness app tests), both
+strict lint configurations, both doc tests and the 50-check `hold-effects`
+replay pass. The initial stale `doctor` schema assertions and obsolete lint
+expectation were corrected; retained reports explain the replay warnings.
+
 [Named takes](../TAKES.md) implement §20.2's saved versions through `:takes`
-and the authenticated CLI. Schema 75 stores a versioned catalog and immutable
-restore proofs; core format remains 47. Catalog changes preserve the current
+and the authenticated CLI. Schema 75 introduced a versioned catalog and immutable
+restore proofs under core format 47. Catalog changes preserve the current
 edit and Redo, and opening a take is one reversible edit, including accepted
 providers without restarting old AI work. The
 [qualification](../qualification/named-takes-2026-10-08.md) records completed
@@ -41,7 +56,7 @@ SDR/HDR pixel comparisons, threaded seeking and real Render. The complete
 115-test native gate and all 120 exported pictures/four audio windows pass
 ([qualification](../qualification/clean-aperture-2026-10-09.md)). Fractional
 aperture sampling and the broader VFR/creative-operation matrix remain open;
-DP-02 is still partial. No format/schema change was required.
+DP-02 is still partial. That aperture change required no format/schema change.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

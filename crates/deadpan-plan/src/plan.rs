@@ -430,6 +430,7 @@ enum CompiledHold {
         span: SourceSpan,
         ticks_per_frame: ExactRatio,
         reverse: bool,
+        origin: ExactRatio,
     },
 }
 
@@ -449,11 +450,13 @@ impl CompiledHold {
                 span,
                 ticks_per_frame,
                 reverse,
+                origin,
                 ..
             } => continuity.original_hold(
                 local,
                 ExactRatio::integer(span.start().ticks),
                 ExactRatio::integer(span.end().ticks),
+                *origin,
                 *ticks_per_frame,
                 *reverse,
             ),
@@ -500,11 +503,28 @@ impl CompiledHold {
                 // Resizing selects its prefix, without resampling that map.
                 frames: FrameRange::new(ProjectFrame(0), ProjectFrame(recipe.duration.frames()))?,
             },
-            HoldVideo::Reverse { asset, span } | HoldVideo::Play { asset, span } => {
+            HoldVideo::Reverse {
+                asset,
+                span,
+                origin,
+            }
+            | HoldVideo::Play {
+                asset,
+                span,
+                origin,
+            } => {
                 let base = span.start().time_base;
                 let rate = document.presentation_basis().frame_rate;
+                let reverse = matches!(recipe.video, HoldVideo::Reverse { .. });
                 Self::Original {
-                    reverse: matches!(recipe.video, HoldVideo::Reverse { .. }),
+                    reverse,
+                    origin: origin.unwrap_or_else(|| {
+                        ExactRatio::integer(if reverse {
+                            span.end().ticks
+                        } else {
+                            span.start().ticks
+                        })
+                    }),
                     asset: asset.clone(),
                     context: document
                         .assets()
@@ -562,6 +582,7 @@ impl CompiledHold {
                 span,
                 ticks_per_frame,
                 reverse,
+                origin,
             } => {
                 let time_base = span.start().time_base;
                 let start = ExactRatio::integer(span.start().ticks);
@@ -570,20 +591,17 @@ impl CompiledHold {
                 // Local positions are picture centers. Past the span's other
                 // end the first (reversed) or last (forward) selected picture
                 // holds under the adjacent-hold endpoint policy.
-                let point = if *reverse {
-                    let point = end.checked_sub(elapsed)?;
-                    if point.compare(start).is_lt() {
-                        start
-                    } else {
-                        point
-                    }
+                let requested = if *reverse {
+                    origin.checked_sub(elapsed)?
                 } else {
-                    let point = start.checked_add(elapsed)?;
-                    if point.compare(end).is_lt() {
-                        point
-                    } else {
-                        end
-                    }
+                    origin.checked_add(elapsed)?
+                };
+                let point = if requested.compare(start).is_lt() {
+                    start
+                } else if requested.compare(end).is_gt() {
+                    end
+                } else {
+                    requested
                 };
                 Picture::Source {
                     asset: asset.clone(),

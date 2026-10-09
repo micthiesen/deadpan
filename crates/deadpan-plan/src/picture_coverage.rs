@@ -325,12 +325,22 @@ impl PictureContinuity {
         local: ExactRatio,
         start: ExactRatio,
         end: ExactRatio,
+        origin: ExactRatio,
         ticks_per_frame: ExactRatio,
         reverse: bool,
     ) -> Result<(), PlanError> {
-        let duration = end.checked_sub(start)?.checked_div(ticks_per_frame)?;
-        if local.compare(duration).is_lt() {
-            self.limit(local, duration)?;
+        let (enter, leave) = if reverse {
+            (origin.checked_sub(end)?, origin.checked_sub(start)?)
+        } else {
+            (start.checked_sub(origin)?, end.checked_sub(origin)?)
+        };
+        let enter = enter.checked_div(ticks_per_frame)?;
+        let leave = leave.checked_div(ticks_per_frame)?;
+        if local.compare(enter).is_lt() {
+            self.limit(local, enter)?;
+            self.source(ExactRatio::ZERO)
+        } else if local.compare(leave).is_lt() {
+            self.limit(local, leave)?;
             self.source(if reverse {
                 ExactRatio::ZERO.checked_sub(ticks_per_frame)?
             } else {

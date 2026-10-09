@@ -173,13 +173,16 @@ pub fn reverse_provider(
     bounce: bool,
     index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
-    let (asset, span, picture_context) =
-        passage(document, plan, at, frames, bounce, "Reverse", index)?;
+    let passage = passage(document, plan, at, frames, bounce, "Reverse", index)?;
     let first = ProjectFrame(at.0 - frames.frames());
     let heard_end = ProjectFrame(at.0 - i64::from(bounce));
     Ok(PauseProvider {
-        video: HoldVideo::Reverse { asset, span },
-        picture_context,
+        video: HoldVideo::Reverse {
+            asset: passage.asset,
+            span: passage.span,
+            origin: Some(passage.end),
+        },
+        picture_context: passage.picture_context,
         audio: match heard_source(plan, first, heard_end)? {
             Some(source) => HoldAudio::Reverse { source },
             None => HoldAudio::Silence,
@@ -199,11 +202,14 @@ pub fn bleep_provider(
     level: deadpan_core::GainDb,
     index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
-    let (asset, span, picture_context) =
-        passage(document, plan, at, frames, false, "Bleep", index)?;
+    let passage = passage(document, plan, at, frames, false, "Bleep", index)?;
     Ok(PauseProvider {
-        video: HoldVideo::Play { asset, span },
-        picture_context,
+        video: HoldVideo::Play {
+            asset: passage.asset,
+            span: passage.span,
+            origin: Some(passage.start),
+        },
+        picture_context: passage.picture_context,
         audio: HoldAudio::Tone {
             frequency_hz,
             level,
@@ -211,9 +217,17 @@ pub fn bleep_provider(
     })
 }
 
-/// The measured picture span of one continuous natural-rate Original passage
-/// over the `frames` before `at` (without its last picture when `bounce`),
-/// and the composition a freeze at `at` would keep.
+struct Passage {
+    asset: AssetId,
+    span: SourceSpan,
+    start: ExactRatio,
+    end: ExactRatio,
+    picture_context: Option<CapturedFraming>,
+}
+
+/// The source-clock interval and containing measured pictures of one continuous
+/// natural-rate Original passage. Bounce omits one project frame at the turn;
+/// it does not erase the rest of a longer VFR picture's presentation interval.
 fn passage(
     document: &ProjectDocument,
     plan: &RenderPlan,
@@ -222,7 +236,7 @@ fn passage(
     bounce: bool,
     action: &str,
     index: &mut IndexLookup<'_>,
-) -> Result<(AssetId, SourceSpan, Option<CapturedFraming>), String> {
+) -> Result<Passage, String> {
     let rate = document.presentation_basis().frame_rate;
     let count = frames.frames();
     if count <= i64::from(bounce) || count > at.0 {
@@ -231,7 +245,9 @@ fn passage(
             action.to_lowercase()
         ));
     }
-    if count * i64::from(rate.denominator()) > MAX_REVERSE_SECONDS * i64::from(rate.numerator()) {
+    if i128::from(count) * i128::from(rate.denominator())
+        > i128::from(MAX_REVERSE_SECONDS) * i128::from(rate.numerator())
+    {
         return Err(format!(
             "{action} at most {MAX_REVERSE_SECONDS} s at a time."
         ));
@@ -290,15 +306,12 @@ fn passage(
             .map_err(|error| error.to_string())
     };
     let start = frame_of(&samples[0])?.pts;
-    let last = frame_of(samples.last().expect("count is positive"))?;
-    let end = if bounce {
-        last.pts
-    } else {
-        pictures
-            .interval(last.identity)
-            .map_err(|error| error.to_string())?
-            .1
-    };
+    let included = samples.len() - usize::from(bounce);
+    let last = frame_of(&samples[included - 1])?;
+    let end = pictures
+        .interval(last.identity)
+        .map_err(|error| error.to_string())?
+        .1;
     let span = SourceSpan::new(
         SourceTimestamp {
             ticks: start,
@@ -312,7 +325,28 @@ fn passage(
     .map_err(|_| not_continuous())?;
     // The same composition a freeze at the cursor would keep.
     let frozen = pause_provider(document, plan, at, index)?;
-    Ok((asset, span, frozen.picture_context))
+    let clock_start = origin
+        .ticks
+        .checked_sub(
+            ticks_per_frame
+                .checked_mul(ExactRatio::new(1, 2).map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?,
+        )
+        .map_err(|error| error.to_string())?;
+    let clock_end = clock_start
+        .checked_add(
+            ticks_per_frame
+                .checked_mul(ExactRatio::integer(count - i64::from(bounce)))
+                .map_err(|error| error.to_string())?,
+        )
+        .map_err(|error| error.to_string())?;
+    Ok(Passage {
+        asset,
+        span,
+        start: clock_start,
+        end: clock_end,
+        picture_context: frozen.picture_context,
+    })
 }
 
 /// The exact source audio heard over `[from, to)`: one contiguous run of a

@@ -57,6 +57,10 @@ fn plan_picture(picture: &Value) -> Result<Expected> {
 }
 
 fn check(fixture: &Fixture) -> Result {
+    check_with_picture(fixture, plan_picture)
+}
+
+fn check_with_picture(fixture: &Fixture, picture: impl Fn(&Value) -> Result<Expected>) -> Result {
     let path = fixture.package.to_str().ok_or("UTF-8 package")?;
     success(&["project", "validate", path])?;
     let plan = success(&["inspect-plan", path])?;
@@ -64,7 +68,7 @@ fn check(fixture: &Fixture) -> Result {
     for (frame, expected) in &fixture.expectations {
         let sample = success(&["inspect-plan", path, "--frame", &frame.to_string()])?;
         assert_eq!(sample["sample"]["revision_id"], fixture.revision.as_str());
-        let actual = plan_picture(&sample["sample"]["picture"])?;
+        let actual = picture(&sample["sample"]["picture"])?;
         assert_eq!(
             actual, *expected,
             "{} frame {frame}: {}",
@@ -370,6 +374,55 @@ fn clean_aperture_original_renders_at_its_visible_size_without_av_changes() -> R
     assert!(report["summary"]["signal_windows"].as_u64() > Some(0));
     check_provenance(&fixture, &report)?;
     eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
+fn vfr_recipe_plans_match_independent_source_clocks() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("VFR recipe plan evidence: {}", root.display());
+    for fixture in recipes::vfr::matrix(&root)? {
+        eprintln!(
+            "{}: {} frames at {}",
+            fixture.name, fixture.frames, fixture.revision
+        );
+        check_with_picture(&fixture, recipes::vfr::plan_picture)?;
+    }
+    Ok(())
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "real eleven-recipe matrix; run with --release"
+)]
+fn vfr_recipe_exports_match_independent_provenance_and_committed_preview() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("VFR recipe export evidence: {}", root.display());
+    let mut rows = Vec::new();
+    let mut failures = Vec::new();
+    for fixture in recipes::vfr::matrix(&root.join("fixtures"))? {
+        check_with_picture(&fixture, recipes::vfr::plan_picture)?;
+        let started = std::time::Instant::now();
+        let movie = render(&fixture, &root.join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{}-verification.json", fixture.name)),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["frame_rate"], json!([30000, 1001]));
+        check_provenance(&fixture, &report)?;
+        let mut row = summary_row(&fixture, &report);
+        row["seconds"] = json!(started.elapsed().as_secs_f64());
+        eprintln!("{row}");
+        if !passed {
+            failures.push(fixture.name);
+        }
+        rows.push(row);
+    }
+    std::fs::write(root.join("results.json"), serde_json::to_vec_pretty(&rows)?)?;
+    assert!(failures.is_empty(), "VFR export failures: {failures:?}");
     Ok(())
 }
 

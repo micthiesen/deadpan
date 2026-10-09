@@ -9,7 +9,8 @@ reverse. All are Hold providers: inserted time with independent picture and soun
 
 | Provider | Meaning |
 | --- | --- |
-| `HoldVideo::Reverse { asset, span }` | Plays a measured Original picture span backwards at the project rate from its end. Hold-local frame `k` shows the picture at `span.end - (k + 1/2)` project frames, an exact rational source point; past the span's start the first selected picture holds (adjacent-hold endpoint policy). |
+| `HoldVideo::Reverse { asset, span, origin }` | Plays a measured Original picture span backwards at the project rate from an exact source-clock origin. Hold-local frame `k` samples `origin - (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.end`; outside the selected span, its adjacent endpoint picture holds. |
+| `HoldVideo::Play { asset, span, origin }` | Plays forward with the same endpoint policy, sampling `origin + (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.start`. |
 | `HoldAudio::Reverse { source }` | Plays the source span backwards from the Hold's start at its natural rate, then digital silence. The span is at most 1,048,576 samples at 48 kHz (about 21.8 s), the one-block limit, checked at document validation. |
 | `HoldAudio::Tail { maximum, effect }` | A live reference: the wet output of `effect` fed with the processed Original sound heard over the two seconds before this occurrence, ringing from the Hold's start for `maximum` frames, then exact silence. `effect` is `reverb` (default, omitted on the wire) or `delay`. It stores no source. |
 
@@ -25,7 +26,12 @@ can be reversed, not a framed group or a Repeat.
 
 Validation requires the picture span inside the asset's video and the audio
 span inside its audio (and a reversed span within the one-block limit); a
-Tail's maximum is positive and at most the Hold.
+Tail's maximum is positive and at most the Hold. Explicit picture origins retain
+fractional source ticks independently of the containing decoded-picture span;
+validation checks the full Hold's source-clock arithmetic for overflow. Core
+format 48 and database schema 76 store these origins. The
+[VFR qualification](qualification/vfr-recipes-2026-10-09.md) covers reverse,
+ping-pong and bleep timing through actual exports.
 `SetHoldDuration` shortens a Tail's maximum with a shorter Hold. Pause
 insertion admits Reverse pictures like freezes; splitting a reversed Hold keeps
 its full recipe behind Partitions. Generated media cannot be accepted onto a
@@ -117,7 +123,7 @@ sits under a speed stage, since reversing it would replay something else.
 ## Bleeps
 
 A bleep keeps the pictures and replaces the sound. `HoldVideo::Play { asset,
-span }` plays an Original span forward at the project rate (the mirror of
+span, origin }` plays an Original span forward at the project rate (the mirror of
 `Reverse`, holding its last picture past the end), and `HoldAudio::Tone {
 frequency_hz, level }` synthesizes a sine for the whole Hold: 20 Hz to 20 kHz at
 or below full scale, 2 ms linear ramps to exact zero at both ends, and the phase
@@ -144,13 +150,15 @@ native app, macros and the headless semantic path:
 
 - `:reverse 8f` (default 8f) inserts at the Edit cursor a pause playing the
   frames before it backwards. Every picture must be the same Original leaf at
-  its natural rate (exact source steps); the span runs from the first picture's
-  PTS to the end of the last, and the sound heard over those frames, as exact
-  inward-rounded source samples, is reversed (silence stays silence; a sound
+  its natural rate (exact source steps). The selected decoded-picture span runs
+  from the first picture's PTS to the end of the last, while a separate exact
+  origin preserves the requested project passage's end. The sound heard over
+  those frames, as exact inward-rounded source samples, is reversed (silence stays silence; a sound
   that is not one continuous passage refuses). At most 20 s.
-- `:ping-pong 12f` (default 12f) is the same with the picture at the cursor
-  left out: the pause is one frame shorter and its span ends at that picture's
-  PTS, so the turn is not shown twice.
+- `:ping-pong 12f` (default 12f) omits the last project-frame sample before the
+  cursor: the pause is one project frame shorter and its source-clock origin
+  moves back exactly one project frame. A longer VFR picture may still appear
+  at neighboring project samples; its complete decoded interval is not removed.
 - `:tail [D] [effect=reverb|delay]`: on a selected pause its sound becomes the
   live tail of the two seconds heard just before it, ringing for `D` (at most
   the pause; the whole pause when omitted). Only the sound changes, so this
