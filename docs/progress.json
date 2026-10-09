@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T19:11:50Z",
+  "updated_at": "2026-10-09T20:09:29Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implementing AV1, ProRes and remaining source-format, metadata and operation coverage.",
+  "focus": "Implementing AV1 and remaining source-format, metadata and operation coverage.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. Integer8/16/24/32 and float32 WAV, MP3 and Opus sounds join qualified VP9 and HEVC/High10. AV1, ProRes, broader containers/metadata and source-color policies remain."
+      "note": "Local and YouTube Originals work. Qualified ProRes 422 joins VP9 and HEVC/High10; WAV, MP3 and Opus sounds preserve exact samples. AV1, broader containers/metadata and source-color policies remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "WAV, MP3 and Opus catalog sounds preserve exact sample timing through release and packaged exports. SDR/HDR, fractional-rate editing and qualified HEVC/High10/VP9 paths are verified. Full effects and format/operation coverage remain."
+      "note": "WAV, MP3 and Opus sounds and ProRes 422 Originals pass release and packaged exports with exact timing. SDR/HDR, fractional-rate editing and qualified HEVC/High10/VP9 paths are verified. Full effects and format/operation coverage remain."
     },
     {
       "id": "ui",
@@ -341,6 +341,14 @@
       "revision": "dfe5ed8cc9b1f37806a809e85b1ef14d0e5e41fd",
       "retrospective": false,
       "summary": "Verified integer8/16/24/32 and float32 WAV with exact scalar PCM, truthful non-finite failures, full regressions after two test corrections, 151 sanitized source tests, and six release plus three packaged exports at zero audio offset."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "a43f839e01c3b315c0e5cdf99a27f65fec70e9ca",
+      "retrospective": false,
+      "summary": "ProRes 422 Proxy/LT/Standard/HQ preserves ten-bit pictures, VFR, anamorphic display and both field orders. All 5,575 workspace, 1,097 UI and 157 sanitized source tests pass; ten release imports/exports verify 144 pictures and ten zero-offset audio windows, and packaged checks verify 48 pictures/three windows. Broader formats and operations remain."
     }
   ]
 }
