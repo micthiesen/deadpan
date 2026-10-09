@@ -11,7 +11,8 @@
     "telecine": "tests/generate_telecine_fixtures.py: byte-level H.264 picture-timing SEI changes over hash-pinned moving TFF/BFF fixtures; retains every compressed slice and AAC byte. Exact MP4 intervals alternate two/three fields at 60000/1001 Hz, with odd-interval, single-picture and B-frame cases. A separate progressive-coded input and an HRD picture-timing control use development FFmpeg 9.0.1/libx264, never linked into Deadpan. --check reproduces all bytes.",
     "sdr_hevc_h264": "tests/generate_sdr_hevc_fixtures.py: development-only FFmpeg 9.0.1/libx265/libx264 (not linked into Deadpan). Six independently authored 96x64, 12-picture BT.709 4:2:0 inputs at 30000/1001: HEVC Main eight-bit, HEVC Main10 ten-bit and H.264 High10 ten-bit, each limited/full range, explicit left chroma siting, two B frames, IDR every four pictures. Raw input and output color tags match so FFmpeg performs no implicit matrix conversion. Upper-half black/gray/color/white patches and lower-half motion retain ten-bit low codes. HEVC lossless, H.264 QP 1; unchanged hash-pinned fields-bff.mp4 mono AAC ends at sample 19219. --check reproduces all retained bytes. Motion has the same visible contrast at both depths; ten-bit low codes remain in the flat patches and moving raster.",
     "vp9": "tests/generate_vp9_fixtures.py: development-only FFmpeg 9.0.1/libvpx, not linked into Deadpan. Four lossless 96x64 SDR profile-0 eight-bit/profile-2 ten-bit 4:2:0 inputs, full/limited BT.709 and explicit left chroma, 12 pictures at 30000/1001 with hash-pinned fields-bff.mp4 mono AAC through sample 19219. Uses the independently authored patches/motion in generate_sdr_hevc_fixtures.py. vp9-altref.mp4: 60 pictures, two-pass 100 kbit/s, GOP 30, six actual hidden altref pictures in superframes. vp9-existing-8/10.mp4: first lossless key picture followed by an authored one-byte show_existing_frame selecting reference slot zero; IVF remux preserves separate PTS 0 and 2002. --check reproduces all retained bytes.",
-    "vp9_webm": "tests/generate_webm_fixtures.py: development-only FFmpeg 9.0.1 bitexact VP9 remuxes of pinned MP4 fixtures, without AAC. Explicit left chroma siting. Four 8/10-bit full/limited WebM clips, altref and existing-reference clips, a Matroska variant, an anamorphic 4:3 SAR variant, and 12-picture VFR alternating 60/40 ms over 600 ms. Retains encoded picture bytes; actual container clock is 1/1000. --check reproduces retained bytes without writes."
+    "vp9_webm": "tests/generate_webm_fixtures.py: development-only FFmpeg 9.0.1 bitexact VP9 remuxes of pinned MP4 fixtures, without AAC. Explicit left chroma siting. Four 8/10-bit full/limited WebM clips, altref and existing-reference clips, a Matroska variant, an anamorphic 4:3 SAR variant, and 12-picture VFR alternating 60/40 ms over 600 ms. Retains encoded picture bytes; actual container clock is 1/1000. --check reproduces retained bytes without writes.",
+    "av1": "tests/generate_av1_fixtures.py: development-only FFmpeg 9.0.1/SVT-AV1 4.2.0, not linked into Deadpan. Authored 128x96 Main 8/10-bit 4:2:0 patches and motion at 30000/1001; full/limited SDR, anamorphic 3:2 SAR, VFR, multiple GOPs, actual synthesized grain, super-resolution, PQ/HLG, and av1C/packet static HDR. MP4 retains pinned mono AAC through sample 19219, except the packet-HDR IVF remux. WebM retains video packets and explicit nominal 30000/1001 on a millisecond clock. Empty-config-sequence variant changes only av1C, ancestor lengths and chunk offsets. Raw libdav1d output is an independent scalar-conversion reference; authored patches separately check decoding. --check reproduces all bytes. The topleft pair separately verifies vertically co-sited chroma."
   },
   "known_source_limit": "Legacy vfr.mp4 itself encodes final video duration 1001 and terminal 238238 ticks in stts/mdhd/tkhd/elst, although the producer authored 3003 and 240240. This is an encode/mux fixture limitation, not evidence of lost decoder metadata. The separate vfr-long-terminal.mp4 explicitly encodes the intended 3003-tick final picture without changing compressed data or PTS. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
@@ -359,6 +360,201 @@
       "name": "vp9-vfr.webm",
       "bytes": 5055,
       "sha256": "80d756818f2d5c7482b4a78a7e9191a1d75b15f5cd7e5bac0cca91abfdfd1b79"
+    },
+    {
+      "name": "av1-sdr-8-limited.mp4",
+      "bytes": 24848,
+      "sha256": "ef943ed49342ffd1dc71f442f7ac54f75b50ab815930291fec5c855b604e2d44"
+    },
+    {
+      "name": "av1-sdr-8-limited.webm",
+      "bytes": 17227,
+      "sha256": "66c2150a378f632c603674662980d389805e0ff59d4554c8f282e9f73fcbe58b"
+    },
+    {
+      "name": "av1-sdr-8-limited.yuv420p",
+      "bytes": 221184,
+      "sha256": "77f959fed31a5ecdb5fc878e816df355917ca9baf6e0e58465a99e8fd091aae3"
+    },
+    {
+      "name": "av1-sdr-8-full.mp4",
+      "bytes": 24718,
+      "sha256": "ac30207324e1f0c5470bef62f8855a64c5ed29271216cdc2e3d408a9ee6ae25f"
+    },
+    {
+      "name": "av1-sdr-8-full.webm",
+      "bytes": 17097,
+      "sha256": "14dea5b3595622043942bb28331abfe40d65a4b1b9b44a751c59985efbc14295"
+    },
+    {
+      "name": "av1-sdr-8-full.yuv420p",
+      "bytes": 221184,
+      "sha256": "81f7155f44017c99a1e134ed272a831f24eb9d5ba16d9a8bf0a4042ab3a64b80"
+    },
+    {
+      "name": "av1-sdr-10-limited.mp4",
+      "bytes": 28404,
+      "sha256": "34afbe60d03c3ac4247381947dd19bdab5da026279f1648725fd52cf5d9a7a64"
+    },
+    {
+      "name": "av1-sdr-10-limited.webm",
+      "bytes": 20783,
+      "sha256": "48b59955cfa70c23d2ca640159f9e1cd1cfa0ac68d23783fdf6ff7047c33d2d6"
+    },
+    {
+      "name": "av1-sdr-10-limited.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
+    },
+    {
+      "name": "av1-no-config-sequence.mp4",
+      "bytes": 28388,
+      "sha256": "cf55458b8275276a7a0f00338d943241be70d6c3e2373375f911ad0291bc6b5b"
+    },
+    {
+      "name": "av1-sdr-10-full.mp4",
+      "bytes": 29011,
+      "sha256": "fb93f14198b38dfc00f541517d8112017215ee335494156abe018c2246444965"
+    },
+    {
+      "name": "av1-sdr-10-full.webm",
+      "bytes": 21390,
+      "sha256": "c9563f48c90b6e8c661bce4fc170635841d5484795803cba828b0385152062ab"
+    },
+    {
+      "name": "av1-sdr-10-full.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "e8503ef336e82a8322bb20227baa1247ed79642329078755b612aae4b1f25fbe"
+    },
+    {
+      "name": "av1-anamorphic.mp4",
+      "bytes": 28420,
+      "sha256": "169183dd41ccca335ef32c5644c25a4f7fc6f7d44656d923940a3b0e040f6b0a"
+    },
+    {
+      "name": "av1-anamorphic.webm",
+      "bytes": 20791,
+      "sha256": "89bc469eb9be2830251bdac91e6ed789ccea2811739ff2b2e763886d776f2572"
+    },
+    {
+      "name": "av1-anamorphic.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
+    },
+    {
+      "name": "av1-vfr.mp4",
+      "bytes": 25793,
+      "sha256": "a4cef132b233894decec2024880308d0964fc1eb790ba8b8dc962c9b5d5271e7"
+    },
+    {
+      "name": "av1-vfr.webm",
+      "bytes": 18183,
+      "sha256": "f3d15413c6a4bca4f348fe0ab18cc3e70a7e5dd12f85863c85b4e95de24200cf"
+    },
+    {
+      "name": "av1-vfr.yuv420p10le",
+      "bytes": 368640,
+      "sha256": "3a004cc976168fb7634587275597bf2635c6582b4e9119fba5a1e22a62b2f884"
+    },
+    {
+      "name": "av1-multigop.mp4",
+      "bytes": 72074,
+      "sha256": "d3729448208aa5d1d6f8934e374ceb1a79c03ebaad6e7e1e29c563f761221ad0"
+    },
+    {
+      "name": "av1-multigop.webm",
+      "bytes": 64524,
+      "sha256": "daa08abce1be6fca5d3e8cae7b1c584a55e192d553c3098e7d219ac9805f7a61"
+    },
+    {
+      "name": "av1-multigop.yuv420p10le",
+      "bytes": 1327104,
+      "sha256": "955bfc2e4183d64e1b991f779410e1f884ab733386317c21b3d7c79c1a581945"
+    },
+    {
+      "name": "av1-grain.mp4",
+      "bytes": 67145,
+      "sha256": "b246a9b910f4cf723f48a792931314a65b3e4e696f1385a632eb7916b166f9a0"
+    },
+    {
+      "name": "av1-grain.webm",
+      "bytes": 59595,
+      "sha256": "9d80c7d8ab3aaa51cf7db20dbd3bfe21df1f09a7987c5aa3a8e45f9cfadf7a30"
+    },
+    {
+      "name": "av1-grain.yuv420p10le",
+      "bytes": 1327104,
+      "sha256": "84563b2ec2c28735deb905e29c7e2917b955934c87015c42ef1283c7d3e77feb"
+    },
+    {
+      "name": "av1-superres.mp4",
+      "bytes": 22055,
+      "sha256": "453c64188340ada4ba2de4334a74b875890e5efb6d541c9b7a3613137b5e2475"
+    },
+    {
+      "name": "av1-superres.webm",
+      "bytes": 14433,
+      "sha256": "2b5a28430bdb5a88013f3afd9c7d451015339fbde5289672753f7660a1e0d466"
+    },
+    {
+      "name": "av1-superres.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "b044d7429e6e154fb6dfdfc8b3dae7f3d48b1033ddc6a59acc18651d7f12c79d"
+    },
+    {
+      "name": "av1-pq.mp4",
+      "bytes": 28404,
+      "sha256": "b35e0aa521b875a993aa3f8a2c4a84a0389d8dbddbacc6b019b116187981dd97"
+    },
+    {
+      "name": "av1-pq.webm",
+      "bytes": 20783,
+      "sha256": "acd245b1fb7e360f119447964af8edff317eb46d9cbf40d0dadb8d6a8dab0bda"
+    },
+    {
+      "name": "av1-pq.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
+    },
+    {
+      "name": "av1-pq-static-config.mp4",
+      "bytes": 28440,
+      "sha256": "ca44e6495b9fc493d900d78d827fbec1883c8722e7b9d9f4f187a9bf414a4d6d"
+    },
+    {
+      "name": "av1-pq-static-packet.mp4",
+      "bytes": 21009,
+      "sha256": "a2dec06145d7aa7099d0849e9fe8e7f1cde1f6ed877030fe544f2763934d3532"
+    },
+    {
+      "name": "av1-hlg.mp4",
+      "bytes": 28404,
+      "sha256": "65c231e7e2816c244613b2baf29dc679a8613948b4543d963110e8a88ef10aa2"
+    },
+    {
+      "name": "av1-hlg.webm",
+      "bytes": 20783,
+      "sha256": "75d71e3d75565a556afb1320980a84f05c3dd7b3c4e102579d22863a23716ec2"
+    },
+    {
+      "name": "av1-hlg.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
+    },
+    {
+      "name": "av1-topleft.mp4",
+      "bytes": 28404,
+      "sha256": "dba3d528bb101dbd1cd5ec4d18ef5e6cbf2486fddd04337eea6f21bc4b2da6a5"
+    },
+    {
+      "name": "av1-topleft.webm",
+      "bytes": 20783,
+      "sha256": "882d325d0260f84f19fa5035376b8da7f776e2730b0a6f626e6565c5a7080c73"
+    },
+    {
+      "name": "av1-topleft.yuv420p10le",
+      "bytes": 442368,
+      "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
     }
   ]
 }

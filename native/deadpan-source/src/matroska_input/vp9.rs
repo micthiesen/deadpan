@@ -1,4 +1,4 @@
-//! Resolve a VP9 track from explicit Matroska interpretation and its first key.
+//! Check AV1 container interpretation and resolve VP9 from its first key.
 //! The native guard subsequently checks every packet, including hidden frames.
 use super::{Result, require};
 use crate::{Mp4ColorDescription, Mp4Vp9Configuration};
@@ -12,6 +12,59 @@ pub(super) struct Video {
 }
 
 impl Video {
+    pub fn av1_configuration(&self, header: &[u8]) -> Result<()> {
+        crate::input::av1_configuration_prefix(header)?;
+        self.layout()?;
+        let get = |id| self.fields.get(&id).copied();
+        let depth = if header[2] & 64 == 0 { 8 } else { 10 };
+        let vertical_chroma = if header[2] & 3 == 1 { 2 } else { 1 };
+        require(
+            get(0x55b2).is_none_or(|v| v == depth)
+                && [0x55b3, 0x55b4]
+                    .iter()
+                    .all(|id| get(*id).is_none_or(|v| v == 1))
+                && [0x55b5, 0x55b6]
+                    .iter()
+                    .all(|id| get(*id).is_none_or(|v| v == 0))
+                && get(0x55b7).is_none_or(|v| v == 1)
+                && get(0x55b8).is_none_or(|v| v == vertical_chroma),
+            "AV1 Matroska chroma/depth and av1C disagree",
+        )?;
+        // Optional container declarations must be interpreted, not discarded
+        // by the demuxer. The native guard compares them to the sequence OBU.
+        require(
+            get(0x55b1).is_none_or(|v| matches!(v, 1 | 5 | 6 | 9))
+                && get(0x55b9).is_none_or(|v| matches!(v, 1 | 2))
+                && get(0x55ba).is_none_or(|v| matches!(v, 1 | 8 | 13 | 16 | 18))
+                && get(0x55bb).is_none_or(|v| matches!(v, 1 | 9 | 12)),
+            "unqualified Matroska AV1 color interpretation",
+        )
+    }
+
+    fn layout(&self) -> Result<()> {
+        let get = |id| self.fields.get(&id).copied();
+        require(
+            matches!(get(0x9a), None | Some(0 | 2))
+                && matches!(get(0x9d), None | Some(0 | 2))
+                && [0x53b8, 0x53c0, 0x54aa, 0x54bb, 0x54cc, 0x54dd]
+                    .iter()
+                    .all(|id| get(*id).is_none_or(|value| value == 0)),
+            "unqualified Matroska video field, stereo, alpha or crop interpretation",
+        )?;
+        require(
+            matches!(get(0x54b2), None | Some(0 | 3 | 4))
+                && [0x54b0, 0x54ba]
+                    .iter()
+                    .all(|id| get(*id).is_none_or(|value| value > 0 && value <= i32::MAX as u64))
+                && (get(0x54b2) != Some(4) || (get(0x54b0).is_none() && get(0x54ba).is_none())),
+            "unqualified Matroska video display dimensions or units",
+        )?;
+        require(
+            get(0x54b2) != Some(3) || (get(0x54b0).is_some() && get(0x54ba).is_some()),
+            "unqualified Matroska video display dimensions or units",
+        )
+    }
+
     pub fn configuration(&self, header: &[u8]) -> Result<Mp4Vp9Configuration> {
         let mut bits = Bits {
             data: header,
@@ -50,27 +103,8 @@ impl Video {
                 "VP9 render size differs from its coded raster",
             )?;
         }
+        self.layout()?;
         let get = |id| self.fields.get(&id).copied();
-        require(
-            matches!(get(0x9a), None | Some(0 | 2))
-                && matches!(get(0x9d), None | Some(0 | 2))
-                && [0x53b8, 0x53c0, 0x54aa, 0x54bb, 0x54cc, 0x54dd]
-                    .iter()
-                    .all(|id| get(*id).is_none_or(|value| value == 0)),
-            "unqualified Matroska VP9 field, stereo, alpha or crop interpretation",
-        )?;
-        require(
-            matches!(get(0x54b2), None | Some(0 | 3 | 4))
-                && [0x54b0, 0x54ba]
-                    .iter()
-                    .all(|id| get(*id).is_none_or(|value| value > 0 && value <= i32::MAX as u64))
-                && (get(0x54b2) != Some(4) || (get(0x54b0).is_none() && get(0x54ba).is_none())),
-            "unqualified Matroska VP9 display dimensions or units",
-        )?;
-        require(
-            get(0x54b2) != Some(3) || (get(0x54b0).is_some() && get(0x54ba).is_some()),
-            "unqualified Matroska VP9 display dimensions or units",
-        )?;
         require(
             get(0x55b1) == Some(matrix)
                 && get(0x55b2).is_none_or(|value| value == u64::from(depth))

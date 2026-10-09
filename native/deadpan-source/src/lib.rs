@@ -265,7 +265,7 @@ pub struct SourceStreamInfo {
     pub color: ColorMetadata,
     pub codec: String,
     pub pixel_format: String,
-    /// Admitted Matroska VP9 DefaultDuration in nanoseconds, a nominal cadence
+    /// Admitted Matroska VP9/AV1 DefaultDuration in nanoseconds, a nominal cadence
     /// hint only. It never supplies or replaces measured picture timestamps.
     pub nominal_frame_duration_ns: Option<u64>,
     /// Original stream ticks. These are observations, not trusted frame endpoints.

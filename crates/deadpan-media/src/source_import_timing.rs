@@ -499,6 +499,9 @@ pub enum CadenceConfidence {
     /// A declared Matroska cadence whose complete measured PTS sequence and
     /// terminal endpoint stay within one original tick of that regular grid.
     DeclaredQuantizedCfr,
+    /// A declared cadence with measured VFR gaps of one through eight grid
+    /// units; all PTS and the terminal endpoint stay within one original tick.
+    DeclaredQuantizedVfr,
     /// Repeated intervals share a bounded exact grid, even when the most
     /// frequent interval is not itself the grid's shortest unit.
     RepeatedIntegralGridVfr,
@@ -644,8 +647,8 @@ fn derive_cadence(
     let total = counts.values().sum::<u64>();
     let quantized = nominal_duration_ns.and_then(|ns| quantized_cadence(snapshot, ns));
     let mut selected_interval = mode;
-    let confidence = if quantized.is_some() {
-        CadenceConfidence::DeclaredQuantizedCfr
+    let confidence = if let Some((_, confidence)) = quantized {
+        confidence
     } else if single {
         CadenceConfidence::SingleDecodedFrame
     } else if counts.len() == 1 {
@@ -677,7 +680,7 @@ fn derive_cadence(
         ticks: selected_interval,
         time_base: index.time_base(),
     })?;
-    let observed = if let Some((n, d)) = quantized {
+    let observed = if let Some(((n, d), _)) = quantized {
         ExactRatio::new(n, d)?
     } else {
         ExactRatio::ONE.checked_div(interval_seconds)?
@@ -709,7 +712,10 @@ fn gcd(mut a: i64, mut b: i64) -> i64 {
     a
 }
 
-fn quantized_cadence(snapshot: &SourceIndexSnapshot, nominal_ns: u64) -> Option<(i128, i128)> {
+fn quantized_cadence(
+    snapshot: &SourceIndexSnapshot,
+    nominal_ns: u64,
+) -> Option<((i128, i128), CadenceConfidence)> {
     // Matroska stores an integer nanosecond DefaultDuration. Match only a
     // standard cadence within that one-nanosecond representation error. A
     // declared cadence alone never overrides contradictory measured timing.
@@ -754,12 +760,41 @@ fn quantized_cadence(snapshot: &SourceIndexSnapshot, nominal_ns: u64) -> Option<
     };
     let last = frames.last()?;
     let end = i128::from(last.pts) + i128::from(last.reported_duration?);
-    (frames
+    if frames
         .iter()
         .enumerate()
         .all(|(i, frame)| matches(i, i128::from(frame.pts)))
-        && matches(frames.len(), end))
-    .then_some(rate)
+        && matches(frames.len(), end)
+    {
+        return Some((rate, CadenceConfidence::DeclaredQuantizedCfr));
+    }
+    // VFR can retain that declared grid while holding a picture for several
+    // units. Check absolute phase, not rounded adjacent deltas: otherwise a
+    // millisecond clock drifts or makes 33/34/67 ms look like a 1000 fps grid.
+    // Require repeated single-unit intervals and the existing eight-unit gap
+    // bound. This changes only the proposed project rate, never source PTS.
+    let mut previous = 0;
+    let mut single_units = 0;
+    for frame in frames.iter().skip(1) {
+        let position = (i128::from(frame.pts) - first) * numerator;
+        let ordinal = (position + denominator / 2) / denominator;
+        if (position - ordinal * denominator).abs() > numerator
+            || !(1..=8).contains(&(ordinal - previous))
+        {
+            return None;
+        }
+        if ordinal - previous == 1 {
+            single_units += 1;
+        }
+        previous = ordinal;
+    }
+    let position = (end - first) * numerator;
+    let terminal = (position + denominator / 2) / denominator;
+    (single_units >= 2
+        && single_units * 4 >= frames.len() - 1
+        && (position - terminal * denominator).abs() <= numerator
+        && (1..=8).contains(&(terminal - previous)))
+    .then_some((rate, CadenceConfidence::DeclaredQuantizedVfr))
 }
 
 fn to_frame_rate(rate: ExactRatio) -> Result<FrameRate, ImportTimingError> {

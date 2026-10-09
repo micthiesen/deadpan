@@ -46,7 +46,7 @@ typedef struct { uint32_t magic; int pic_struct; } H264PictureTiming;
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS (DEADPAN_SOURCE_MAX_AUDIO_STREAMS + 1)
 #define DEMUXERS "mov,matroska,webm"
-#define CODECS "h264,ffv1,hevc,vp9,prores"
+#define CODECS "h264,ffv1,hevc,vp9,prores,libdav1d"
 // hvcC parameter sets retained for exact in-band comparison.
 #define MAX_PARAMETER_SETS 64
 
@@ -70,6 +70,14 @@ struct DeadpanSource {
     int pending_first_frame, nal_length_bytes, hevc, hdr;
     int prores_header_seen;
     uint8_t prores_interpretation[4];
+    // AV1 has its own allocator in libdav1d. Validate the complete sequence
+    // envelope before opening it, and every packet before sending it.
+    uint8_t av1_config[4];
+    unsigned av1_color[4];
+    int av1_sequence_seen, av1_reduced;
+    AVMasteringDisplayMetadata av1_mastering;
+    AVContentLightMetadata av1_light;
+    int av1_has_mastering, av1_has_light;
     // Offsets/lengths of VPS/SPS/PPS units inside the immutable hvcC extradata.
     int parameter_sets;
     struct { int type, offset, length; } parameter_set[MAX_PARAMETER_SETS];
@@ -244,7 +252,7 @@ static int runtime(DeadpanSource *s) {
 }
 static int allowed_codec(enum AVCodecID id) {
     switch (id) {
-        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: case AV_CODEC_ID_HEVC: case AV_CODEC_ID_VP9: case AV_CODEC_ID_PRORES: return 1;
+        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: case AV_CODEC_ID_HEVC: case AV_CODEC_ID_VP9: case AV_CODEC_ID_PRORES: case AV_CODEC_ID_AV1: return 1;
         default: return 0;
     }
 }
@@ -282,19 +290,19 @@ static int color(DeadpanSource *s, enum AVCodecID codec, int format, int range, 
     if (desc->flags & AV_PIX_FMT_FLAG_ALPHA) return fail(s, "unsupported_pixel_format", "source alpha is not qualified");
     if (hdr_transfer(transfer)) {
         // The single qualified HDR interpretation: PQ or HLG, BT.2020 primaries,
-        // BT.2020 non-constant matrix, limited range, ten-bit 4:2:0 HEVC/H.264.
+        // BT.2020 non-constant matrix, limited range, ten-bit 4:2:0 HEVC/H.264/AV1.
         if (primaries != AVCOL_PRI_BT2020) return fail(s, "unsupported_primaries", "HDR source requires BT.2020 primaries");
         if (matrix != AVCOL_SPC_BT2020_NCL) return fail(s, "unsupported_matrix", "HDR source requires the BT.2020 non-constant matrix");
         if (range != AVCOL_RANGE_MPEG) return fail(s, "unsupported_range", "HDR source requires limited range");
         if (format != AV_PIX_FMT_YUV420P10LE)
             return fail(s, desc->comp[0].depth != 10 ? "unsupported_depth" : "unsupported_pixel_format",
                         "HDR source requires ten-bit 4:2:0 (yuv420p10le)");
-        if (codec != AV_CODEC_ID_HEVC && codec != AV_CODEC_ID_H264)
-            return fail(s, "unsupported_codec", "HDR source requires HEVC Main10 or H264 High10");
+        if (codec != AV_CODEC_ID_HEVC && codec != AV_CODEC_ID_H264 && codec != AV_CODEC_ID_AV1)
+            return fail(s, "unsupported_codec", "HDR source requires HEVC Main10, H264 High10 or AV1 Main10");
         return 1;
     }
     int ten_bit = (format == AV_PIX_FMT_YUV420P10LE &&
-        (codec == AV_CODEC_ID_HEVC || codec == AV_CODEC_ID_H264 || codec == AV_CODEC_ID_VP9)) ||
+        (codec == AV_CODEC_ID_HEVC || codec == AV_CODEC_ID_H264 || codec == AV_CODEC_ID_VP9 || codec == AV_CODEC_ID_AV1)) ||
         (format == AV_PIX_FMT_YUV422P10LE && codec == AV_CODEC_ID_PRORES);
     for (int i = 0; i < desc->nb_components; i++)
         if (desc->comp[i].depth != (ten_bit ? 10 : 8))
@@ -752,6 +760,7 @@ static int capture_static(DeadpanSource *s) {
     }
     return 1;
 }
+#include "av1.h"
 static int receive_frame(DeadpanSource *s);
 static int check_frame(DeadpanSource *s);
 static int receive_picture(DeadpanSource *s);
@@ -762,6 +771,8 @@ static int allocate_decoder(DeadpanSource *s) {
     AVStream *stream = s->format->streams[s->stream];
     const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!codec) return fail(s, "unsupported_codec", "required source software decoder is unavailable");
+    if (stream->codecpar->codec_id == AV_CODEC_ID_AV1 && strcmp(codec->name, "libdav1d"))
+        return fail(s, "runtime_mismatch", "AV1 requires the pinned software libdav1d decoder");
     s->decoder = avcodec_alloc_context3(codec);
     if (!s->decoder) return fail(s, "resource_exhausted", "allocate source decode context");
     int result = avcodec_parameters_to_context(s->decoder, stream->codecpar);
@@ -795,6 +806,13 @@ static int allocate_decoder(DeadpanSource *s) {
     // Keep the coded crop available for the shared visible-rectangle check.
     s->decoder->apply_cropping = 0;
     s->decoder->flags |= AV_CODEC_FLAG_COPY_OPAQUE;
+    if (stream->codecpar->codec_id == AV_CODEC_ID_AV1) {
+        // dav1d's private allocator bypasses get_format/get_buffer2. av1.h
+        // bounds each possible dimension, and max_pixels reaches dav1d's
+        // pre-allocation frame_size_limit. Keep only one frame in flight.
+        s->decoder->flags |= AV_CODEC_FLAG_LOW_DELAY;
+        s->decoder->strict_std_compliance = FF_COMPLIANCE_STRICT;
+    }
     if ((result = avcodec_open2(s->decoder, codec, NULL)) < 0)
         return fferror(s, "open source decoder", result);
     return check(s);
@@ -880,6 +898,8 @@ static int open_impl(DeadpanSource *s) {
     // outer sample entry. proresdec ignores it; frame packets remain authoritative.
     if (p->codec_id == AV_CODEC_ID_PRORES && !prores_tag(p->codec_tag))
         return fail(s, "unsupported_codec", "ProRes requires a 422 Proxy/LT/Standard/HQ sample entry");
+    if (p->codec_id == AV_CODEC_ID_AV1 && av1_configuration(s, p->extradata, (size_t)p->extradata_size) < 0)
+        return -1;
     if (p->codec_id == AV_CODEC_ID_VP9) {
         const uint32_t *v = s->limits.vp9;
         if (!((v[0] == 0 && v[1] == 8) || (v[0] == 2 && v[1] == 10)) || v[2] > 1 || v[3] > 1 ||
@@ -950,7 +970,7 @@ static int open_impl(DeadpanSource *s) {
     s->hdr = hdr_transfer(f->color_trc);
     if (capture_static(s) < 0) return -1;
     s->pixel_format = f->format;
-    (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", codec->name);
+    (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", p->codec_id == AV_CODEC_ID_AV1 ? "av1" : codec->name);
     (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(f->format));
     if (check_frame(s) < 0) return -1;
     if (s->info.bwdif_fields) {
@@ -1029,6 +1049,12 @@ static int check_frame(DeadpanSource *s) {
         return fail(s, "stream_changed", "source geometry, pixel layout, or color interpretation changed");
     if ((int)f->chroma_location != s->chroma_location) return fail(s, "stream_changed", "source chroma location changed");
     AVRational aspect = sar(f->sample_aspect_ratio);
+    if (stream->codecpar->codec_id == AV_CODEC_ID_AV1 && aspect.num == aspect.den) {
+        // libdav1d always reports the render-size ratio, including 1:1 when
+        // no render transform exists. A container pasp still applies then.
+        AVRational declared = stream->sample_aspect_ratio.num ? stream->sample_aspect_ratio : stream->codecpar->sample_aspect_ratio;
+        aspect = sar(declared);
+    }
     if (av_cmp_q(aspect, (AVRational){s->info.sar_num,s->info.sar_den})) return fail(s, "stream_changed", "frame sample aspect ratio differs from source metadata");
     if (stream->time_base.num != s->info.time_base_num ||
         (int64_t)stream->time_base.den * (s->info.bwdif_fields ? 6 : 1) != s->info.time_base_den)
@@ -1445,6 +1471,7 @@ static int packet_budget(DeadpanSource *s) {
     }
     if (s->packet->stream_index == s->stream && s->limits.vp9[1] && vp9_packet(s) < 0) return -1;
     if (s->packet->stream_index == s->stream && s->decoder->codec_id == AV_CODEC_ID_PRORES && prores_packet(s) < 0) return -1;
+    if (s->packet->stream_index == s->stream && s->decoder->codec_id == AV_CODEC_ID_AV1 && av1_packet(s) < 0) return -1;
     if (s->packet->stream_index == s->stream && s->nal_length_bytes) {
         size_t position = 0;
         uint32_t count = 0;
@@ -1539,6 +1566,7 @@ static int receive_frame(DeadpanSource *s) {
         if (check(s) < 0) return -1;
         if (result == 0) {
             if (apply_picture_timing(s) < 0) return -1;
+            if (s->decoder->codec_id == AV_CODEC_ID_AV1 && av1_picture(s) < 0) return -1;
             if (s->frames >= s->limits.max_frames) return fail(s, "resource_limit", "decoded frame count exceeds configured bound");
             if (s->work.frames == UINT64_MAX) return fail(s, "resource_limit", "cumulative decoded frame count overflow");
             s->frames++;

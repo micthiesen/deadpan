@@ -4,19 +4,20 @@ Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application tar
 
 The CLI and source preview need no credentials or model weights. The complete
 workspace builds its media helpers against pinned LGPL FFmpeg 8.0.3 with BSD
-libopus 1.6.1 statically linked into libavcodec.
+libopus 1.6.1 and dav1d 1.5.4 statically linked into libavcodec.
 Build that developer dependency once on Apple Silicon macOS with Python 3, GnuPG,
-Clang, and Make available:
+Clang, Make, Meson and Ninja available:
 
 ```sh
 python3 tools/media-qualification/compatible/build.py \
-  --work "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-qualified" \
-  --output "$HOME/Library/Developer/Deadpan/ffmpeg-opus-build.json"
-export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-qualified/prefix"
+  --work "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3" \
+  --output "$HOME/Library/Developer/Deadpan/ffmpeg-opus-dav1d-build.json"
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
 ```
 
 The work directory must be empty. The builder verifies the pinned archive hash
-and FFmpeg release signature, runs libopus's tests, disables GPL/nonfree/version-3 components and networking,
+and FFmpeg/dav1d release signatures, runs libopus's tests and dav1d's
+assembly-versus-scalar checks, disables GPL/nonfree/version-3 components and networking,
 and records build/license/library evidence. The Cargo build refuses an absent or
 incompatible prefix. It never falls back to a system FFmpeg installation.
 Keep the prefix available when running Cargo-built executables. A packaged
@@ -27,11 +28,14 @@ These developer tools must never become end-user requirements.
 
 Use a durable development directory for this dependency. macOS's temporary-file
 cleanup removed headers from the former `/private/tmp/deadpan-ui-ffmpeg/prefix`.
-On 2026-10-09 the pinned builder created the libopus-qualified prefix above;
-all sixteen libopus upstream tests passed. The native FFmpeg Opus decoder is
-disabled because measured SILK/hybrid output failed the reference comparison.
-The earlier durable `ffmpeg-8.0.3` prefix remains intact for archived binaries;
-new source builds require the libopus prefix. Do not relocate dylibs by copying alone: their
+On 2026-10-09 the pinned builder created the dav1d-qualified prefix with suffix
+`-3`; two earlier attempts exposed GPG's agent socket path limit. The builder
+now dearmors public keys and verifies with `gpgv`, without an agent or import.
+All sixteen libopus and seven dav1d upstream tests passed. FFmpeg's native
+Opus decoder is disabled after its measured SILK/hybrid mismatch; native AV1
+is hardware-only and disabled in favor of software libdav1d. The earlier
+durable prefixes remain intact for archived binaries; new source builds need
+both dependencies. Do not relocate dylibs by copying alone: their
 install names must match the new prefix. The build report and command logs live
 beside the durable build, outside the repository.
 

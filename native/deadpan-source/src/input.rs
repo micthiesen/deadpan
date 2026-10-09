@@ -815,7 +815,15 @@ fn mp4_layout(r: &mut Reader<'_>) -> Result<Mp4Layout> {
                     require(
                         matches!(
                             &brand,
-                            b"isom" | b"iso2" | b"mp41" | b"mp42" | b"avc1" | b"M4A " | b"qt  "
+                            b"isom"
+                                | b"iso2"
+                                | b"iso6"
+                                | b"mp41"
+                                | b"mp42"
+                                | b"avc1"
+                                | b"av01"
+                                | b"M4A "
+                                | b"qt  "
                         ),
                         "unqualified MP4 brand",
                     )?;
@@ -1339,7 +1347,9 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         "sample description count or size disagrees with box",
     )?;
     let (kind, mut fixed) = match &entry.tag {
-        b"avc1" | b"hvc1" | b"vp09" | b"apco" | b"apcs" | b"apcn" | b"apch" => (Kind::Video, 78),
+        b"avc1" | b"hvc1" | b"vp09" | b"av01" | b"apco" | b"apcs" | b"apcn" | b"apch" => {
+            (Kind::Video, 78)
+        }
         b"mp4a" => (Kind::Audio, 28),
         // hev1 permits parameter sets that exist only in-band and may change
         // between pictures; only hvc1's complete hvcC arrays are admitted.
@@ -1353,7 +1363,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         _ => {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_codec".into(),
-                message: "only avc1, hvc1, vp09, ProRes 422 Proxy/LT/Standard/HQ and mp4a sample descriptions are admitted"
+                message: "only avc1, hvc1, vp09, av01, ProRes 422 Proxy/LT/Standard/HQ and mp4a sample descriptions are admitted"
                     .into(),
             });
         }
@@ -1449,6 +1459,15 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                 config = true;
                 track.vp9 = Some(vpcc(r, atom.body)?);
             }
+            b"av1C" if entry.tag == *b"av01" => {
+                require(!config, "duplicate video configuration")?;
+                config = true;
+                require(
+                    (4..=EXTRA_BYTES).contains(&atom.body.len()),
+                    "invalid AV1 configuration size",
+                )?;
+                av1_configuration_prefix(&r.bytes::<4>(atom.body.start)?)?;
+            }
             b"hvcC" if hevc => {
                 require(!config, "duplicate video configuration")?;
                 config = true;
@@ -1482,8 +1501,9 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                 )?;
                 field_description = Some(r.bytes::<2>(atom.body.start)?);
                 require(
-                    entry.tag != *b"vp09" || r.bytes::<2>(atom.body.start)? == [1, 0],
-                    "VP9 requires progressive pictures",
+                    !matches!(&entry.tag, b"vp09" | b"av01")
+                        || r.bytes::<2>(atom.body.start)? == [1, 0],
+                    "VP9 and AV1 require progressive pictures",
                 )?;
             }
             b"avcC" if entry.tag == *b"avc1" => {
@@ -1691,6 +1711,27 @@ fn quicktime_aac_wave(r: &mut Reader<'_>, span: Span) -> Result<()> {
     require(
         end.tag == [0; 4] && end.body.len() == 0 && cursor == span.end,
         "QuickTime AAC wrapper needs one empty terminator",
+    )
+}
+
+/// Shared MP4/WebM av1C prefix admission. Native AV1 admission then checks
+/// every sequence/config OBU before any decoder allocation based on it.
+pub(crate) fn av1_configuration_prefix(bytes: &[u8]) -> Result<()> {
+    require(
+        (4..=EXTRA_BYTES as usize).contains(&bytes.len()),
+        "invalid AV1 configuration size",
+    )?;
+    require(
+        bytes[0] == 0x81
+            && bytes[1] >> 5 == 0
+            && matches!(bytes[1] & 31, 0..=23 | 31)
+            && bytes[2] & 0x30 == 0
+            && bytes[2] & 12 == 12
+            && matches!(bytes[2] & 3, 1 | 2)
+            && (bytes[1] & 31 > 7 || bytes[2] & 128 == 0)
+            && bytes[3] & 0xe0 == 0
+            && (bytes[3] & 16 != 0 || bytes[3] & 15 == 0),
+        "AV1 requires valid Main eight/ten-bit 4:2:0 av1C with explicit chroma siting",
     )
 }
 

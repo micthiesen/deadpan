@@ -30,6 +30,11 @@ jobs:
           if ! command -v gpg >/dev/null; then
             brew install gnupg
           fi
+          for tool in meson ninja; do
+            if ! command -v "$tool" >/dev/null; then
+              brew install "$tool"
+            fi
+          done
           python3 tools/media-qualification/compatible/build.py \
             --work "$RUNNER_TEMP/deadpan-ffmpeg" \
             --output "$RUNNER_TEMP/deadpan-ffmpeg-build.json"

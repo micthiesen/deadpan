@@ -45,6 +45,8 @@ def main() -> None:
     pins = json.loads((ROOT / "pins.json").read_text())
     pin = pins["ffmpeg"]
     opus = pins["opus"]
+    dav1d = pins["dav1d"]
+    checkasm = pins["checkasm"]
     report = {"schema_version": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
               "scope": "isolated developer build; not distribution or OS matrix qualification",
               "work_directory": str(work), "pins": pins, "commands": [], "result": "failed"}
@@ -69,7 +71,11 @@ def main() -> None:
         names = [(f"ffmpeg-{pin['version']}.tar.xz", pin["archive_url"], pin["archive_sha256"]),
                  (f"ffmpeg-{pin['version']}.tar.xz.asc", pin["archive_url"] + ".asc", pin["signature_sha256"]),
                  ("ffmpeg-devel.asc", pin["key_url"], pin["key_sha256"]),
-                 (f"opus-{opus['version']}.tar.gz", opus["archive_url"], opus["archive_sha256"])]
+                 (f"opus-{opus['version']}.tar.gz", opus["archive_url"], opus["archive_sha256"]),
+                 (f"dav1d-{dav1d['version']}.tar.xz", dav1d["archive_url"], dav1d["archive_sha256"]),
+                 (f"dav1d-{dav1d['version']}.tar.xz.asc", dav1d["archive_url"] + ".asc", dav1d["signature_sha256"]),
+                 ("videolan-release.asc", dav1d["key_url"], dav1d["key_sha256"]),
+                 (f"checkasm-{checkasm['commit']}.tar.gz", checkasm["archive_url"], checkasm["archive_sha256"])]
         for name, url, expected in names:
             target = downloads / name
             cached = args.download_cache / name if args.download_cache else None
@@ -83,12 +89,22 @@ def main() -> None:
                 raise RuntimeError(f"SHA-256 mismatch: {name}")
         keyring = work / "gnupg"
         keyring.mkdir(mode=0o700)
-        run(["gpg", "--batch", "--homedir", keyring, "--import", downloads / "ffmpeg-devel.asc"])
-        signature = run(["gpg", "--batch", "--homedir", keyring, "--status-fd", "1", "--verify",
+        # Dearmor and gpgv verify these pinned public keys without importing
+        # them or opening an agent socket, whose macOS path limit is short.
+        run(["gpg", "--batch", "--no-autostart", "--homedir", keyring, "--dearmor",
+             "--output", keyring / "ffmpeg.gpg", downloads / "ffmpeg-devel.asc"])
+        signature = run(["gpgv", "--homedir", keyring, "--keyring", keyring / "ffmpeg.gpg", "--status-fd", "1",
                          downloads / names[1][0], downloads / names[0][0]])
         if f"[GNUPG:] VALIDSIG {pin['signing_key_fingerprint']} " not in signature:
             raise RuntimeError("signature did not match the pinned FFmpeg release key")
         report["signature_verification"] = signature
+        run(["gpg", "--batch", "--no-autostart", "--homedir", keyring, "--dearmor",
+             "--output", keyring / "videolan.gpg", downloads / "videolan-release.asc"])
+        dav1d_signature = run(["gpgv", "--homedir", keyring, "--keyring", keyring / "videolan.gpg", "--status-fd", "1",
+                              downloads / names[5][0], downloads / names[4][0]])
+        if f"[GNUPG:] VALIDSIG {dav1d['signing_key_fingerprint']} " not in dav1d_signature:
+            raise RuntimeError("signature did not match the pinned VideoLAN release key")
+        report["dav1d_signature_verification"] = dav1d_signature
         with tarfile.open(downloads / names[0][0]) as archive:
             archive.extractall(work, filter="data")
         source = work / f"ffmpeg-{pin['version']}"
@@ -120,20 +136,56 @@ def main() -> None:
                           "static_library_sha256": digest(opus_prefix / "lib/libopus.a"),
                           "license_sha256": digest(opus_source / "COPYING"),
                           "config_header": (opus_source / "config.h").read_text()}
+        with tarfile.open(downloads / names[4][0]) as archive:
+            archive.extractall(work, filter="data")
+        dav1d_source = work / f"dav1d-{dav1d['version']}"
+        with tarfile.open(downloads / names[7][0]) as archive:
+            archive.extractall(work, filter="data")
+        checkasm_source = dav1d_source / "subprojects/checkasm"
+        (work / f"checkasm-{checkasm['commit']}").rename(checkasm_source)
+        dav1d_prefix = work / "dav1d-prefix"
+        dav1d_build = work / "dav1d-build"
+        dav1d_env = dict(opus_env, CC="clang", PKG_CONFIG_PATH="", PKG_CONFIG_LIBDIR="")
+        report["meson_version"] = run(["meson", "--version"]).strip()
+        run(["meson", "setup", dav1d_build, dav1d_source, f"--prefix={dav1d_prefix}",
+             "--buildtype=release", "--default-library=static", "--wrap-mode=nodownload",
+             "--force-fallback-for=checkasm",
+             "-Db_staticpic=true", "-Denable_tools=false", "-Denable_examples=false",
+             "-Denable_tests=true", "-Dtestdata_tests=false", "-Dxxhash_muxer=disabled"],
+            env=dav1d_env, timeout=300)
+        run(["meson", "compile", "-C", dav1d_build, "-j", str(args.jobs)], env=dav1d_env, timeout=600)
+        run(["meson", "test", "-C", dav1d_build, "--print-errorlogs"], env=dav1d_env, timeout=600)
+        dav1d_tests = [json.loads(line) for line in (dav1d_build / "meson-logs/testlog.json").read_text().splitlines()]
+        if not dav1d_tests or any(test["result"] != "OK" for test in dav1d_tests):
+            raise RuntimeError("dav1d upstream tests were absent, skipped or unsuccessful")
+        if not any("checkasm" in test["name"] for test in dav1d_tests):
+            raise RuntimeError("dav1d did not run its assembly-versus-scalar checks")
+        run(["meson", "install", "-C", dav1d_build], env=dav1d_env)
+        report["dav1d"] = {"archive_sha256": dav1d["archive_sha256"],
+                           "static_library_sha256": digest(dav1d_prefix / "lib/libdav1d.a"),
+                           "license_sha256": digest(dav1d_source / "COPYING"),
+                           "tests": dav1d_tests,
+                           "config_header": (dav1d_build / "config.h").read_text()}
+        report["checkasm"] = {"archive_sha256": checkasm["archive_sha256"],
+                              "license_sha256": digest(checkasm_source / "LICENSE"),
+                              "scope": "upstream test dependency only; not shipped"}
         configure = [str(source / "configure"), f"--prefix={prefix}", "--enable-shared", "--disable-static",
                      "--enable-pic", "--disable-gpl", "--disable-nonfree", "--disable-version3",
                      "--disable-autodetect", "--disable-network", "--disable-doc", "--disable-debug",
                      "--enable-libopus", "--disable-decoder=opus", "--disable-encoder=libopus",
+                     "--enable-libdav1d", "--disable-decoder=av1",
                      "--disable-ffmpeg", "--disable-ffplay", "--arch=aarch64", "--cpu=generic",
                      "--target-os=darwin", f"--sysroot={sdk}", "--enable-videotoolbox", "--enable-audiotoolbox",
                      "--extra-cflags=-arch arm64 -mmacosx-version-min=15.0",
                      "--extra-ldflags=-arch arm64 -mmacosx-version-min=15.0"]
         report["configure_argv"] = configure
-        env = dict(os.environ, MACOSX_DEPLOYMENT_TARGET="15.0", PKG_CONFIG_PATH="", PKG_CONFIG_LIBDIR=str(opus_prefix / "lib/pkgconfig"))
+        env = dict(os.environ, MACOSX_DEPLOYMENT_TARGET="15.0", PKG_CONFIG_PATH="",
+                   PKG_CONFIG_LIBDIR=os.pathsep.join(str(p / "lib/pkgconfig") for p in [opus_prefix, dav1d_prefix]))
         run(configure, cwd=source, env=env, timeout=300)
         run(["make", f"-j{args.jobs}"], cwd=source, env=env, timeout=1800)
         run(["make", "install"], cwd=source, env=env, timeout=180)
         shutil.copytree(opus_prefix / "include/opus", prefix / "include/opus")
+        shutil.copytree(dav1d_prefix / "include/dav1d", prefix / "include/dav1d")
         report["configuration"] = (source / "ffbuild/config.mak").read_text()
         report["license_file_sha256"] = {name: digest(source / name) for name in
                                          ("COPYING.LGPLv2.1", "LICENSE.md")}

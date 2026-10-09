@@ -3,6 +3,12 @@
   "retrieved": "2026-10-04",
   "files": [
     {
+      "path": "dav1d/COPYING",
+      "component": "dav1d 1.5.4 (statically linked into LGPL FFmpeg libavcodec)",
+      "source": "https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz (COPYING)",
+      "sha256": "dd92c3c2247c5651606fc23a5e2d6a1ebc5ace9a3e49cbde0e12f05ad1cb1ee5"
+    },
+    {
       "path": "opus/COPYING",
       "component": "Opus 1.6.1 (statically linked into LGPL FFmpeg libavcodec)",
       "source": "https://downloads.xiph.org/releases/opus/opus-1.6.1.tar.gz (COPYING)",

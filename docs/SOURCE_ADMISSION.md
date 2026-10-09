@@ -22,7 +22,7 @@ and MP3 in other containers remain unqualified. See
 [MP3 evidence and sample semantics](qualification/mp3-sources-2026-10-09.md).
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
-requires exactly one `avc1` H.264, `hvc1` HEVC, `vp09` VP9 or ProRes 422 track
+requires exactly one `avc1` H.264, `hvc1` HEVC, `vp09` VP9, `av01` AV1 or ProRes 422 track
 and allows at most 32 AAC audio tracks.
 Audio selection uses the same all-track checks before opening its selected AAC
 decoder. Declared packet sizes, sample/chunk/time table expansion, external data
@@ -73,11 +73,38 @@ its own PTS. A different VP9 render size or raster, interlaced declaration,
 contradictory metadata, unsupported profile or malformed index fails explicitly.
 See [VP9 qualification](qualification/vp9-sources-2026-10-09.md).
 
-This MP4 path does not complete AV1, VP9 HDR or the full §16.3
+AV1 Main uses static dav1d 1.5.4 through pinned FFmpeg 8.0.3, with its native
+hardware-only AV1 decoder disabled. MP4 uses `av01`/`av1C`; Matroska/WebM uses
+`V_AV1` and a bounded av1C `CodecPrivate`. Eight/ten-bit 4:2:0 supports explicit
+SDR full/limited range and ten-bit limited BT.2020 NCL PQ/HLG. Left and top-left
+chroma are explicit. Container color must agree with the bitstream. Static HDR
+metadata is retained from both av1C and packets, compared with other declarations,
+and subjected to the ordinary valid/ignored rules. Compression-tool flags may
+differ between av1C and later sequence headers without changing interpretation.
+
+Before allocation, the guard parses the complete bounded Main sequence header,
+checks its fixed configuration fields and raster, and bounds every dimension
+representable by a frame-size override. Dav1d checks the actual pixel product
+before its private allocator, which bypasses FFmpeg's normal buffer callback.
+One frame is in flight and at most sixteen threads are used. Each temporal unit
+has at most 256 sized OBUs and 32 frame headers, with exactly one displayed
+picture last. Hidden/show-existing pictures retain their own dependencies and
+do not add output time. Packet provenance prevents a show-existing key picture
+from becoming a false seek anchor. Every submitted header charges decode work.
+Film grain remains applied, and super-resolution restores the declared raster.
+The common SAR, retained-picture and exact seek paths apply.
+
+AV1 Professional/High profiles, monochrome, twelve-bit, multilayer streams,
+unknown chroma siting, tile lists, redundant frame headers, dynamic HDR and
+unqualified metadata/sample groups fail explicitly. A non-power-of-two custom
+dimension limit can conservatively reject a sequence whose actual pictures fit.
+See [AV1 evidence and remaining checks](qualification/av1-sources-2026-10-09.md).
+
+This MP4 path does not complete VP9 HDR or the full §16.3
 matrix. Those remain implementation and qualification work.
 
-Video Matroska admission requires one `V_FFV1` or SDR `V_VP9` track; WebM
-admits `V_VP9`. Both also admit up to 32 mono/stereo `A_OPUS` tracks, including
+Video Matroska admission requires one `V_FFV1`, SDR `V_VP9` or Main `V_AV1` track;
+WebM admits `V_VP9` and `V_AV1`. Both also admit up to 32 mono/stereo `A_OPUS` tracks, including
 audio-only files. Both require finite Segment and Cluster
 lengths, and a closed element grammar. Every cluster and packet declaration is
 checked, including metadata following picture payloads. SeekHead and Cue targets

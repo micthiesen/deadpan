@@ -1,14 +1,15 @@
 # Compatible native media boundary
 
 The builder supplies the application's pinned LGPL FFmpeg 8.0.3 libraries,
-with static BSD libopus 1.6.1. It verifies the signed FFmpeg release and the
-pinned Opus archive, runs the upstream Opus tests, and disables FFmpeg's native
-Opus decoder. The separate developer qualification harness runs the pinned
-rsmpeg revision against the original numbered-picture and audio impulse
+with static BSD libopus 1.6.1 and dav1d 1.5.4. It verifies the signed FFmpeg and
+dav1d releases and pinned Opus archive, runs upstream tests, and disables
+FFmpeg's native Opus and hardware-only AV1 decoders. The separate developer
+qualification harness runs the pinned rsmpeg revision against numbered-picture and audio impulse
 fixtures. Gate A and export acceptance remain open.
 
 Prerequisites: Apple Silicon macOS, Python 3.12+, Xcode command-line tools,
-`make`, `git`, `gpg`, `pkg-config`, and the repository's Rust 1.97.1 toolchain.
+`make`, `git`, `gpg`, `gpgv`, `pkg-config`, Meson, Ninja, and the repository's
+Rust 1.97.1 toolchain.
 Python, GPG, Cargo, and `ffprobe` are developer tools, not end-user requirements.
 No Homebrew FFmpeg libraries or external H.264 encoders are used by this build.
 
@@ -27,7 +28,9 @@ python3 tools/media-qualification/compatible/qualify.py \
 
 The build creates a fresh `/tmp/deadpan-media-compatible-*` prefix, verifies the
 archive, detached signature, release key bytes, and signer fingerprint against
-`pins.json`, and installs only into that prefix. An optional `--download-cache`
+`pins.json`, and installs only into that prefix. Public keys are dearmored into
+isolated keyrings and checked with `gpgv`; no key import or agent is needed.
+An optional `--download-cache`
 directory may supply the pinned download files; hashes and signature are
 still verified. `--work` must name an empty directory. The default build uses
 eight jobs, and the report retains configure arguments, command logs/hashes,
@@ -37,10 +40,18 @@ Git tag/commit is a source reference, not a claimed archive/tree comparison.
 
 Opus is built as PIC into a private prefix, with neural extensions disabled and
 extra programs enabled so `make check` actually runs the 16 upstream tests.
-FFmpeg's pkg-config search is restricted to that prefix; libopus is statically
-linked into libavcodec, with no new runtime dylib. Its source, build flags,
+FFmpeg's pkg-config search is restricted to the two private dependency prefixes;
+libopus is statically linked into libavcodec, with no new runtime dylib. Its source, build flags,
 test log and license hash are retained in the report. See the
 [Opus qualification](../../../docs/qualification/opus-sources-2026-10-09.md).
+
+dav1d is built as PIC with assembly and both eight- and high-bit-depth paths.
+Its pinned checkasm 1.2.0 test dependency is unpacked before Meson runs with
+downloads disabled and a forced local fallback. Qualification requires the
+assembly-versus-scalar checkasm test as well as every API-header check; header
+checks alone do not suffice. checkasm is not shipped. Static dav1d adds no
+runtime dylib; its source, configuration, tests and license hash are retained.
+The builder records its actual Meson version (1.12.1 in the 2026-10-09 run).
 
 The qualification script fetches the exact rsmpeg commit into a fresh scratch
 Git repository and extracts a committed-source archive. Its sibling source

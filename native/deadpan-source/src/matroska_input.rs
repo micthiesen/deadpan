@@ -276,6 +276,7 @@ struct Admission<'a> {
     timestamp_scale_ns: u64,
     webm: bool,
     is_vp9: bool,
+    is_av1: bool,
     video: vp9::Video,
     vp9: Option<crate::Mp4Vp9Configuration>,
     default_duration: Option<u64>,
@@ -564,10 +565,17 @@ impl Admission<'_> {
                     )?;
                     self.is_vp9 = true;
                 }
+                b"V_AV1" => {
+                    self.video
+                        .av1_configuration(private.as_deref().ok_or_else(|| {
+                            error("invalid_input", "AV1 requires av1C CodecPrivate")
+                        })?)?;
+                    self.is_av1 = true;
+                }
                 _ => {
                     return Err(error(
                         "unsupported_codec",
-                        "only FFV1 Matroska or VP9 Matroska/WebM video is admitted",
+                        "only FFV1 Matroska or VP9/AV1 Matroska/WebM video is admitted",
                     ));
                 }
             }
@@ -1061,6 +1069,7 @@ pub(crate) fn validate_selection(
         timestamp_scale_ns: 1_000_000,
         webm: false,
         is_vp9: false,
+        is_av1: false,
         video: vp9::Video::default(),
         vp9: None,
         default_duration: None,
@@ -1121,8 +1130,7 @@ pub(crate) fn validate_selection(
         matroska_opus,
         aperture: None,
         vp9: admission.vp9,
-        nominal_frame_duration_ns: admission
-            .is_vp9
+        nominal_frame_duration_ns: (admission.is_vp9 || admission.is_av1)
             .then_some(admission.default_duration)
             .flatten(),
     })

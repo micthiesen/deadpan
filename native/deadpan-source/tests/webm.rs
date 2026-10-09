@@ -109,7 +109,12 @@ fn contradictory_or_missing_webm_interpretation_fails_before_decoding() {
     use std::io::Write;
     let original = std::fs::read(fixture("vp9-sdr-8-limited.webm")).unwrap();
     for (anchor, replacement, expected) in [
-        (&b"V_VP9"[..], &b"V_AV1"[..], "unsupported_codec"),
+        (
+            &b"V_VP9"[..],
+            &b"V_AV1"[..],
+            "AV1 requires av1C CodecPrivate",
+        ),
+        (&b"V_VP9"[..], &b"V_XXX"[..], "unsupported_codec"),
         (
             &[0xb0, 0x81, 96][..],
             &[0xb0, 0x81, 97][..],

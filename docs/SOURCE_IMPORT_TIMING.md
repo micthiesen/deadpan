@@ -61,14 +61,18 @@ At most 256 distinct intervals are admitted.
 A single frame uses its measured positive terminal duration. Other ambiguous
 cadences return an error requiring a later host policy, never an invented rate.
 
-VP9 Matroska/WebM retains its admitted `DefaultDuration` as a separate nominal
+VP9/AV1 Matroska/WebM retains its admitted `DefaultDuration` as a separate nominal
 nanosecond observation. A standard rational cadence is selected from that hint
 only within one nanosecond of its encoded duration and when every measured PTS
 and the decoded terminal endpoint fit the regular grid within one source tick.
+VFR gaps may span one through eight grid units if at least two measured
+intervals are single units and those have at least 25% support. All timestamps
+are checked against the original grid origin, preventing accumulated drift.
 This preserves 30000/1001 across a millisecond container clock. A contradictory
 hint falls back to measured interval analysis; it never rewrites PTS, intervals
 or terminal duration. A clock coarser than half a nominal frame cannot establish
-the declared grid. Evidence distinguishes `DeclaredQuantizedCfr` and
+the declared grid. Evidence distinguishes `DeclaredQuantizedCfr`,
+`DeclaredQuantizedVfr` and
 `RepeatedIntegralGridVfr` from exact CFR and the earlier modal VFR policy.
 
 Rates above 60 fps choose the highest common rate that divides the observed

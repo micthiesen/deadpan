@@ -1099,6 +1099,22 @@ fn assemble(
             { "name": "deadpan:notice", "value": "opus/COPYING" }
         ]
     }));
+    let dav1d = &ffmpeg_pins["dav1d"];
+    if !version_text.contains("--enable-libdav1d")
+        || !version_text.contains("--disable-decoder=av1")
+    {
+        return Err("the FFmpeg prefix must contain pinned libdav1d and disable native AV1".into());
+    }
+    native.push(json!({
+        "type": "library", "bom-ref": "native:dav1d", "name": "dav1d",
+        "version": dav1d["version"], "licenses": [{ "license": { "id": dav1d["license"] } }],
+        "hashes": [{ "alg": "SHA-256", "content": dav1d["archive_sha256"] }],
+        "externalReferences": [{ "type": "distribution", "url": dav1d["archive_url"] }],
+        "properties": [
+            { "name": "deadpan:statically-linked-by", "value": "FFmpeg libavcodec" },
+            { "name": "deadpan:notice", "value": "dav1d/COPYING" }
+        ]
+    }));
     if let (Some(built), Some(directory)) = (ai, &ai_directory) {
         native.extend(ai_runtime::sbom_components(built, directory)?);
     }

@@ -238,6 +238,50 @@ pub fn prores_original(directory: &Path, name: &'static str) -> Result<Fixture> 
         vec!["Ten-bit 422, container PTS and SAR, progressive or measured BWDIF fields, unchanged AAC".into()])
 }
 
+pub fn av1_original(directory: &Path, name: &'static str) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(name);
+    let project = Project::create_from(directory, name, &media)?;
+    let document = project.document()?;
+    let rate = document.presentation_basis().frame_rate;
+    let count = if name.contains("multigop") || name.contains("grain") {
+        36
+    } else {
+        12
+    };
+    let ordinals: Vec<u64> = (0..count)
+        .filter(|n| !name.contains("vfr") || ![4, 7].contains(n))
+        .collect();
+    let webm = name.ends_with(".webm");
+    let clock = if webm { 1000 } else { 60000 };
+    let expected = (0..u64::try_from(document.duration()?.frames())?)
+        .map(|frame| {
+            let center = u128::from(2 * frame + 1) * u128::from(rate.denominator()) * clock;
+            let ordinal = ordinals
+                .iter()
+                .rposition(|&n| {
+                    let pts = if webm { (n * 1001 + 15) / 30 } else { n * 2002 };
+                    u128::from(pts) * 2 * u128::from(rate.numerator()) <= center
+                })
+                .unwrap_or(0) as u64;
+            (
+                frame,
+                Expected::Original {
+                    source_ordinal: ordinal,
+                },
+            )
+        })
+        .collect();
+    project.finish(
+        vec!["AV1 Main Original"],
+        expected,
+        vec![
+            "Measured AV1 pictures and audio, exact source clock, declared color and aspect".into(),
+        ],
+    )
+}
+
 pub fn sdr_source_original(directory: &Path, name: &'static str, frames: u64) -> Result<Fixture> {
     let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/fixtures")

@@ -785,6 +785,45 @@ fn repeated_vfr_intervals_can_share_a_grid_shorter_than_the_mode() {
 }
 
 #[test]
+fn declared_quantized_vfr_keeps_absolute_phase_without_inventing_source_frames() {
+    let clock = SourceTimeBase::new(1, 1000).unwrap();
+    let mut metadata = info(clock);
+    metadata.nominal_frame_duration_ns = Some(33_366_666);
+    let ordinals = [0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12];
+    let points: Vec<i64> = ordinals.map(|n| (n * 1001 + 15) / 30).to_vec();
+    let intervals: Vec<_> = points.windows(2).map(|p| p[1] - p[0]).collect();
+    let video = indexed_video(-7000, &intervals, clock);
+    let candidate = derive_presentation_basis(&video, &metadata).unwrap();
+    assert_eq!(
+        candidate.basis.frame_rate,
+        FrameRate::new(30000, 1001).unwrap()
+    );
+    assert_eq!(
+        candidate.cadence.confidence,
+        CadenceConfidence::DeclaredQuantizedVfr
+    );
+    assert_eq!(video.index().frames().len(), 10);
+    assert_eq!(video.index().terminal_end(), -6600);
+    for (frame, point) in video.index().frames().iter().zip(points) {
+        assert_eq!(frame.pts, -7000 + point);
+    }
+    for bad in [
+        vec![33, 34, 33, 70, 33, 66, 33, 34, 33, 33], // phase moved three ms
+        vec![33, 34, 33, 300, 33, 67, 33, 34, 33, 33], // nine-unit gap
+    ] {
+        assert!(derive_presentation_basis(&indexed_video(0, &bad, clock), &metadata).is_err());
+    }
+    metadata.nominal_frame_duration_ns = Some(33_333_333);
+    // A long run distinguishes 30 from 30000/1001 despite millisecond ticks.
+    let points: Vec<_> = (0..=900)
+        .filter(|n| n % 4 != 3)
+        .map(|n| (n * 1001 + 15) / 30)
+        .collect();
+    let intervals: Vec<_> = points.windows(2).map(|p| p[1] - p[0]).collect();
+    assert!(derive_presentation_basis(&indexed_video(0, &intervals, clock), &metadata).is_err());
+}
+
+#[test]
 fn geometry_applies_sar_before_rotation_with_even_rounding_and_no_target_upscale() {
     let clock = SourceTimeBase::new(1, 24).unwrap();
     let video = indexed_video(0, &[1; 3], clock);

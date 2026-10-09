@@ -447,7 +447,7 @@ fn interpretation_guidance(channels: u32) -> String {
 }
 
 /// The decoder's single HDR interpretation, rechecked on stored evidence:
-/// PQ/HLG only as ten-bit 4:2:0 limited-range BT.2020 NCL HEVC or H.264 with
+/// PQ/HLG only as ten-bit 4:2:0 limited-range BT.2020 NCL HEVC, H.264 or AV1 with
 /// BT.2020 primaries; static metadata only with it. Present values satisfy the
 /// shared `deadpan_core` rule set; a declaration that failed it is recorded as
 /// ignored and absent, never both.
@@ -455,7 +455,7 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
     let color = &info.color;
     let hdr = matches!(color.transfer, ColorTransfer::Pq | ColorTransfer::Hlg);
     let valid = if hdr {
-        matches!(info.codec.as_str(), "hevc" | "h264")
+        matches!(info.codec.as_str(), "hevc" | "h264" | "av1")
             && info.pixel_format == "yuv420p10le"
             && color.range == ColorRange::Limited
             && color.matrix == ColorMatrix::Bt2020NonConstant
@@ -466,7 +466,7 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
             && !(color.ignored_static.content_light && color.content_light.is_some())
     } else {
         (info.pixel_format != "yuv420p10le"
-            || matches!(info.codec.as_str(), "hevc" | "h264" | "vp9"))
+            || matches!(info.codec.as_str(), "hevc" | "h264" | "vp9" | "av1"))
             && (info.pixel_format != "yuv422p10le" || info.codec == "prores")
             && (info.codec != "prores"
                 || (info.pixel_format == "yuv422p10le" && color.range == ColorRange::Limited))
@@ -475,7 +475,7 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
                     info.pixel_format.as_str(),
                     "yuv420p" | "yuvj420p" | "yuv420p10le"
                 ))
-            && (info.codec != "vp9"
+            && (!matches!(info.codec.as_str(), "vp9" | "av1")
                 || (!info.bwdif_fields
                     && matches!(info.pixel_format.as_str(), "yuv420p" | "yuv420p10le")))
             && color.mastering.is_none()
@@ -504,13 +504,14 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
+        || (info.codec == "av1" && info.bwdif_fields)
         || !matches!(
             info.codec.as_str(),
-            "h264" | "ffv1" | "hevc" | "vp9" | "prores"
+            "h264" | "ffv1" | "hevc" | "vp9" | "prores" | "av1"
         )
         || info
             .nominal_frame_duration_ns
-            .is_some_and(|ns| ns == 0 || info.codec != "vp9")
+            .is_some_and(|ns| ns == 0 || !matches!(info.codec.as_str(), "vp9" | "av1"))
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
     }

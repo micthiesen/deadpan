@@ -32,6 +32,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/decoder.h");
     println!("cargo:rerun-if-changed=src/vp9.h");
     println!("cargo:rerun-if-changed=src/prores.h");
+    println!("cargo:rerun-if-changed=src/av1.h");
     println!("cargo:rerun-if-changed=src/deinterlace.c");
     println!("cargo:rerun-if-changed=src/deinterlace.h");
     println!("cargo:rerun-if-changed=src/audio_decoder.c");
@@ -62,6 +63,10 @@ fn main() {
     assert!(
         version.contains("--enable-libopus") && version.contains("--disable-decoder=opus"),
         "FFmpeg must use the pinned libopus build with its unqualified native Opus decoder disabled"
+    );
+    assert!(
+        version.contains("--enable-libdav1d") && version.contains("--disable-decoder=av1"),
+        "FFmpeg must use the pinned libdav1d software decoder with its hardware-only native AV1 decoder disabled"
     );
     for (option, forbidden) in REQUIRED_CONFIGURATION
         .into_iter()

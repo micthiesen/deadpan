@@ -560,6 +560,53 @@ fn prores_originals_render_ten_bit_422_vfr_aspect_and_both_field_orders() -> Res
 }
 
 #[test]
+fn av1_originals_render_sdr_hdr_grain_superres_and_variable_timing() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("AV1 Render evidence: {}", root.display());
+    for name in [
+        "av1-sdr-8-limited.mp4",
+        "av1-sdr-8-full.mp4",
+        "av1-sdr-10-limited.mp4",
+        "av1-sdr-10-full.mp4",
+        "av1-anamorphic.mp4",
+        "av1-vfr.mp4",
+        "av1-multigop.mp4",
+        "av1-grain.mp4",
+        "av1-superres.mp4",
+        "av1-no-config-sequence.mp4",
+        "av1-pq.mp4",
+        "av1-hlg.mp4",
+        "av1-pq-static-config.mp4",
+        "av1-pq-static-packet.mp4",
+        "av1-sdr-8-limited.webm",
+        "av1-sdr-10-full.webm",
+        "av1-anamorphic.webm",
+        "av1-vfr.webm",
+        "av1-grain.webm",
+        "av1-pq.webm",
+    ] {
+        let fixture = recipes::av1_original(&root.join(name), name)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(
+            report["output_color"]["hdr_sources"],
+            name.contains("pq") || name.contains("hlg")
+        );
+        assert_eq!(report["frame_rate"], json!([30000, 1001]));
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 fn opus_webm_originals_render_with_exact_source_samples_and_verified_encoded_audio() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("Opus Render evidence: {}", root.display());

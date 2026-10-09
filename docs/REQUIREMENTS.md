@@ -4,6 +4,18 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[AV1 Main import](qualification/av1-sources-2026-10-09.md) now retains
+eight/ten-bit SDR, ten-bit PQ/HLG, VFR, anamorphic pixels, grain and super-resolution
+through pinned dav1d in MP4/WebM/Matroska. Bounded sequence/packet admission and
+static HDR metadata checks precede acceptance; quantized VFR keeps its measured
+clock. The gate completes in parts after three test repairs and one unchanged
+VideoToolbox follow-up; 163 native sanitizer tests pass. Release checks import
+29 inputs and verify 444 pictures/sixteen zero-offset signal windows. The
+fresh-home bundle imports all 29 and verifies 120 pictures/five zero-offset
+windows; relocation and tamper checks pass. Broader AV1 profiles, high-resolution
+measurements and the full source/operation matrix remain open. DP-02 and DP-16
+stay partial.
+
 [ProRes 422 import](qualification/prores-sources-2026-10-09.md) now implements
 Proxy/LT/Standard/HQ, ten-bit SDR pictures, VFR, anamorphic pixels and both
 field orders through the shared picture and audio paths. Bounded QuickTime
