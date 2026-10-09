@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-08T23:18:46Z",
+  "updated_at": "2026-10-09T04:05:39Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Verifying 10,000 fractional-rate edits and completing read-only recovery behavior.",
+  "focus": "Completing named project takes and remaining source-format requirements.",
   "features": [
     {
       "id": "editing",
@@ -25,7 +25,7 @@
       "requirements": [
         "DP-01"
       ],
-      "note": "Saving, durable history and recovery work. Remaining failure cases need qualification."
+      "note": "Saving, recovery, offline relinking and process-kill cases are verified. Named history branches and takes remain."
     },
     {
       "id": "picture",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Verified SDR/HDR paths and exact clocks work. Full effects and format coverage remain."
+      "note": "SDR/HDR export and 10,000 fractional-rate edits are verified. Quiet AAC openings preserve exact timing; full effects and format coverage remain."
     },
     {
       "id": "ui",
@@ -253,6 +253,14 @@
       "revision": "a3886ef8",
       "retrospective": false,
       "summary": "Integrated AI extensions and native controls; eight real cases pass acceptance, history and offline export. Added disk-full import checks and fixed read-only Render replies."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 4,
+      "revision": "b17f1bff",
+      "retrospective": false,
+      "summary": "Fixed quiet AAC openings; verified 10,000 fractional-rate edits, 44 recipe exports, four HDR renders, native AAC timing and relocated packaging."
     }
   ]
 }
