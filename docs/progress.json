@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T09:22:13Z",
+  "updated_at": "2026-10-09T10:43:27Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing exact source policies and the VFR/creative-operation playback and export matrix.",
+  "focus": "Completing interlaced and remaining source policies, then the source/creative-operation playback and export matrix.",
   "features": [
     {
       "id": "editing",
@@ -269,6 +269,14 @@
       "revision": "0ebda1e9",
       "retrospective": false,
       "summary": "Closed DP-01: verified linked Originals, native recovery, durable history, concurrent inspection and reliable import completion."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "48614c58",
+      "retrospective": false,
+      "summary": "Fractional MP4 apertures retain exact geometry through decoding, rendering, analysis, Vision, conditioning and proxies. Workspace 5,546 tests plus final focused checks, strict Clippy and release Render pass; DP-02 remains partial."
     }
   ]
 }
