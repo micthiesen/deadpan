@@ -277,6 +277,14 @@
       "revision": "48614c58",
       "retrospective": false,
       "summary": "Fractional MP4 apertures retain exact geometry through decoding, rendering, analysis, Vision, conditioning and proxies. Workspace 5,546 tests plus final focused checks, strict Clippy and release Render pass; DP-02 remains partial."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "d395821b",
+      "retrospective": false,
+      "summary": "Interlaced Originals retain motion at exact field cadence. Workspace 5,555 tests, final focused checks, sanitizers, strict Clippy, release exports and packaged import/render pass. Telecine and the broader source/operation matrix remain; DP-02 stays partial."
     }
   ]
 }
