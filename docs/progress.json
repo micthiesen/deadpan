@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T14:15:51Z",
+  "updated_at": "2026-10-09T14:17:37Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Finishing remaining source-format and color policies, then the source/creative-operation playback and export matrix.",
   "features": [
@@ -293,6 +293,14 @@
       "revision": "a6b0acd1",
       "retrospective": false,
       "summary": "Explicit H.264 telecine preserves two/three-field timing across threads and seeks. Workspace 5,560 tests, 124 sanitized source tests, strict Clippy, 155-picture release exports and packaged import/render/verification pass. Broader source-format and operation coverage remains; DP-02 stays partial."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "61cc5a96",
+      "retrospective": false,
+      "summary": "SDR HEVC/High10 retain full/limited range and ten-bit precision. HEVC seeks discard stale output; proxy checks read sixteen-bit channels correctly. Workspace 5,567 tests, final media/proxy checks, sanitizers, strict lint, 72-picture/132-neighbor release exports and packaged verification pass. Broader formats and operation coverage remain; DP-02 stays partial."
     }
   ]
 }
