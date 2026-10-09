@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T15:25:27Z",
+  "updated_at": "2026-10-09T16:12:57Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Finishing remaining source formats and color policies, then the source/creative-operation playback and export matrix.",
+  "focus": "Implementing remaining source formats, beginning with Opus/audio-bearing WebM, then the full source/operation matrix.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. Clean apertures, interlace, telecine and SDR HEVC/High10 are verified; broader codec/profile and source-color policies remain."
+      "note": "Local and YouTube Originals work. SDR VP9 in MP4 and video-only WebM/Matroska joins verified apertures, field cadence and SDR HEVC/High10. Audio-bearing WebM/Opus, other codecs and source-color policies remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "SDR/HDR export, 10,000 fractional-rate edits, eleven VFR recipes, field cadence and SDR HEVC/High10 are verified. HEVC seeks discard stale pictures; full effects and format coverage remain."
+      "note": "SDR/HDR export, 10,000 fractional-rate edits, VFR recipes and SDR HEVC/High10/VP9 are verified. Video-only WebM preserves measured clocks and anamorphic display; full effects, audio-bearing WebM and format coverage remain."
     },
     {
       "id": "ui",
@@ -309,6 +309,14 @@
       "revision": "f0ffda502b05d7937955b33c0ff7836c8e2eae85",
       "retrospective": false,
       "summary": "SDR VP9 MP4 preserves eight/ten-bit color, altref and repeated-frame timing. Workspace 5,576 tests, 134 sanitized source tests, strict lint, 112-picture release verification and fresh-home packaged runs pass. WebM/Opus, HDR VP9, AV1 and the broader format/operation matrix remain; DP-02 stays partial."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "21372b19d5c53a921766bd0f045a6aad5f5f7f39",
+      "retrospective": false,
+      "summary": "Video-only SDR VP9 WebM/Matroska preserves color, anamorphic display and measured clocks. Final source/media regressions, 138 sanitized tests, strict lint, 166-picture release verification and 54-picture packaged runs pass. Opus/audio-bearing WebM and quantized-CFR proxies remain open; DP-02 and DP-16 stay partial."
     }
   ]
 }
