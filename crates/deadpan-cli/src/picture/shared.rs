@@ -88,8 +88,8 @@ pub fn source_to_render_frame(
             time_base: SourceTimeBase::new(info.time_base_num, info.time_base_den)?,
         },
     };
-    // HDR sources arrive as RGBA64 so ten-bit PQ/HLG codes reach the shared
-    // renderer unquantized; an eight-bit HDR picture is analysis-only.
+    // Ten-bit SDR/HDR sources arrive as RGBA64 so their low bits reach the
+    // shared renderer; an eight-bit HDR picture is analysis-only.
     match (decoded.sample_bits, info.color.transfer) {
         (8, ColorTransfer::Bt709 | ColorTransfer::Srgb | ColorTransfer::Linear) => {
             Ok(Rgba8Frame::new(metadata, decoded.rgba)?)

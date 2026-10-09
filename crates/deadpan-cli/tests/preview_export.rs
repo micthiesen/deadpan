@@ -443,6 +443,44 @@ fn vfr_recipe_plans_match_independent_source_clocks() -> Result {
 }
 
 #[test]
+fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("SDR codec Render evidence: {}", root.display());
+    for name in [
+        "hevc-sdr-8-limited",
+        "hevc-sdr-8-full",
+        "hevc-sdr-10-limited",
+        "hevc-sdr-10-full",
+        "h264-sdr-10-limited",
+        "h264-sdr-10-full",
+    ] {
+        let fixture = recipes::sdr_codec_original(&root.join(name), name)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["frame_rate"], json!([30000, 1001]));
+        assert_eq!(report["range"], json!([0, 12]));
+        assert_eq!(report["output_color"]["output"], "sdr_rec709");
+        assert_eq!(report["output_color"]["hdr_sources"], false);
+        assert_eq!(report["movie"]["color"]["container"], json!([1, 1, 1]));
+        assert_eq!(report["movie"]["color"]["container_full_range"], false);
+        assert_eq!(report["movie"]["color"]["problems"], json!([]));
+        assert_eq!(report["summary"]["pictures_checked"], 12);
+        assert_eq!(report["summary"]["index_observable_comparisons"], 22);
+        assert_eq!(report["summary"]["index_unobservable_comparisons"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(report["movie"]["audio"]["presented_end"], 19219);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 #[cfg_attr(
     debug_assertions,
     ignore = "real eleven-recipe matrix; run with --release"

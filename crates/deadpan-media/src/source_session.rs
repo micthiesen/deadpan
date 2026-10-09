@@ -942,8 +942,8 @@ impl SourceSession {
     /// preroll and copies only the requested picture. Returned bytes outlive
     /// further seeks and this session.
     /// The picture-path representation: packed RGBA8 (`sample_bits == 8`) for
-    /// SDR sources, unchanged, and little-endian RGBA64 (`sample_bits == 16`)
-    /// of the nonlinear R'G'B' for sources qualified as PQ or HLG.
+    /// eight-bit sources, unchanged, and little-endian RGBA64 (`sample_bits == 16`)
+    /// of the nonlinear R'G'B' for ten-bit SDR and HDR sources.
     pub fn frame(
         &mut self,
         id: SourceFrameId,
@@ -1175,7 +1175,7 @@ impl SourceSession {
         &mut self,
         deadline: &Deadline<'_>,
     ) -> Result<DecodedRgbaFrame, SourceSessionError> {
-        Ok(if self.decoder.info().color.transfer.is_hdr() {
+        Ok(if self.decoder.info().pixel_format == "yuv420p10le" {
             self.decoder.copy_current_rgba16(control(deadline)?)?
         } else {
             self.decoder.copy_current_rgba(control(deadline)?)?

@@ -309,7 +309,6 @@ fn av_fixtures_decode_every_picture_and_seek_through_b_frames() {
 #[test]
 fn unqualified_hdr_and_depth_combinations_fail_with_explicit_codes() {
     for (name, expected) in [
-        ("hevc-ten-bit-sdr.mp4", "unsupported_depth"),
         ("hevc-pq-bt709.mp4", "unsupported_primaries"),
         ("hevc-pq-mastering-change.mp4", "stream_changed"),
         ("hdr-pq.mkv", "unsupported_primaries"),

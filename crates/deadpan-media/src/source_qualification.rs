@@ -465,8 +465,12 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
             && !(color.ignored_static.mastering && color.mastering.is_some())
             && !(color.ignored_static.content_light && color.content_light.is_some())
     } else {
-        info.codec != "hevc"
-            && info.pixel_format != "yuv420p10le"
+        (info.pixel_format != "yuv420p10le" || matches!(info.codec.as_str(), "hevc" | "h264"))
+            && (info.codec != "hevc"
+                || matches!(
+                    info.pixel_format.as_str(),
+                    "yuv420p" | "yuvj420p" | "yuv420p10le"
+                ))
             && color.mastering.is_none()
             && color.content_light.is_none()
             && color.ignored_static.is_empty()
@@ -550,7 +554,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
     }
     let rgb = match info.pixel_format.as_str() {
         "gbrp" | "rgb24" | "bgr24" | "rgb0" | "bgr0" | "0rgb" | "0bgr" => true,
-        // Admitted only under the HDR interpretation checked by validate_hdr.
+        // Codec/depth and HDR constraints are checked by validate_hdr.
         "yuv420p10le" => false,
         "yuv410p" | "yuv411p" | "yuv420p" | "yuv422p" | "yuv440p" | "yuv444p" | "yuvj411p"
         | "yuvj420p" | "yuvj422p" | "yuvj440p" | "yuvj444p" | "nv12" | "nv21" | "nv16" | "nv24"

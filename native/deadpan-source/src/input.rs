@@ -1465,7 +1465,7 @@ fn avcc(r: &mut Reader<'_>, span: Span) -> Result<()> {
     require(cursor == span.end, "AVC configuration exceeds its box")
 }
 /// ISO/IEC 14496-15 8.3.3.1 HEVCDecoderConfigurationRecord, closed to one
-/// Main10 4:2:0 ten-bit single-layer stream: complete VPS/SPS/PPS arrays plus
+/// Main/Main10 4:2:0 eight/ten-bit single-layer stream: complete VPS/SPS/PPS arrays plus
 /// optional prefix/suffix SEI, at most 8 arrays and 64 units in 64 KiB.
 fn hvcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4HevcConfiguration> {
     require(
@@ -1499,16 +1499,18 @@ fn hvcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4HevcConfiguration> {
         sps_cropped_size: [0, 0],
     };
     if configuration.profile_space != 0
-        || configuration.profile_idc != 2
+        || !matches!(configuration.profile_idc, 1 | 2)
         || configuration.chroma_format_idc != 1
-        || configuration.bit_depth_luma != 10
-        || configuration.bit_depth_chroma != 10
+        || !matches!(configuration.bit_depth_luma, 8 | 10)
+        || configuration.bit_depth_chroma != configuration.bit_depth_luma
+        || (configuration.profile_idc == 1 && configuration.bit_depth_luma != 8)
         || configuration.nal_length_bytes == 3
     {
         return Err(SourceDecodeError::Native {
             code: "unsupported_codec".into(),
-            message: "only HEVC Main10 4:2:0 ten-bit with 1, 2 or 4 byte NAL lengths is admitted"
-                .into(),
+            message:
+                "HEVC requires Main/Main10 4:2:0 eight/ten-bit with 1, 2 or 4 byte NAL lengths"
+                    .into(),
         });
     }
     let mut configuration = configuration;
@@ -1561,6 +1563,13 @@ fn hvcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4HevcConfiguration> {
             if kind == 33 {
                 let sps = hevc_sps_prefix(r, cursor, size)?;
                 let geometry = hevc_sps_geometry(&sps)?;
+                require(
+                    geometry.profile_space == configuration.profile_space
+                        && geometry.profile_idc == configuration.profile_idc
+                        && geometry.depths
+                            == [configuration.bit_depth_luma, configuration.bit_depth_chroma],
+                    "HEVC SPS profile or depth differs from hvcC",
+                )?;
                 let [width, height] = geometry.coded;
                 if width > r.limits.max_dimension
                     || height > r.limits.max_dimension
@@ -1622,6 +1631,9 @@ fn hevc_sps_prefix(r: &mut Reader<'_>, start: u64, size: u64) -> Result<Vec<u8>>
 struct HevcSpsGeometry {
     coded: [u32; 2],
     cropped: [u32; 2],
+    profile_space: u8,
+    profile_idc: u8,
+    depths: [u8; 2],
 }
 
 /// Big-endian RBSP bit reader over a NAL unit that removes emulation
@@ -1700,7 +1712,8 @@ fn hevc_sps_geometry(nal: &[u8]) -> Result<HevcSpsGeometry> {
     require(sub_layers <= 6, "HEVC SPS declares too many sub-layers")?;
     rbsp.skip(1)?; // sps_temporal_id_nesting_flag
     // profile_tier_level(1, sps_max_sub_layers_minus1)
-    rbsp.skip(88 + 8)?;
+    let profile = rbsp.bits(8)? as u8;
+    rbsp.skip(80 + 8)?;
     let mut present = [(false, false); 7];
     for flags in present.iter_mut().take(sub_layers as usize) {
         *flags = (rbsp.bit()? == 1, rbsp.bit()? == 1);
@@ -1747,7 +1760,22 @@ fn hevc_sps_geometry(nal: &[u8]) -> Result<HevcSpsGeometry> {
             remaining(coded[1], vertical)?,
         ];
     }
-    Ok(HevcSpsGeometry { coded, cropped })
+    let mut depths = [0; 2];
+    for depth in &mut depths {
+        let minus_eight = rbsp.ue()?;
+        require(
+            matches!(minus_eight, 0 | 2),
+            "HEVC SPS depth is not eight or ten bits",
+        )?;
+        *depth = minus_eight as u8 + 8;
+    }
+    Ok(HevcSpsGeometry {
+        coded,
+        cropped,
+        profile_space: profile >> 6,
+        profile_idc: profile & 31,
+        depths,
+    })
 }
 /// SMPTE ST 2086 `mdcv` body: display primaries in G, B, R order (as in the
 /// HEVC SEI), white point, then max and min luminance. Returned in R, G, B.
@@ -2757,7 +2785,7 @@ mod tests {
     }
 
     #[test]
-    fn hvcc_admits_only_bounded_complete_main10_configurations() {
+    fn hvcc_admits_only_bounded_complete_main_and_main10_configurations() {
         let original = hevc_configuration();
         let parsed = with_reader(&original, hvcc).unwrap();
         assert_eq!(
@@ -2783,9 +2811,24 @@ mod tests {
             assert_eq!(code(with_reader(&bytes, hvcc).unwrap_err()), expected);
         };
         reject(&|b| b[0] = 2, "invalid_input"); // configuration version
-        reject(&|b| b[1] = 1, "unsupported_codec"); // Main, not Main10
+        reject(&|b| b[1] = 1, "unsupported_codec"); // Main cannot carry ten bits
         reject(&|b| b[16] = 0xfe, "unsupported_codec"); // 4:2:2
         reject(&|b| b[17] = 0xf8, "unsupported_codec"); // eight-bit luma
+        reject(
+            &|b| {
+                b[17] = 0xf8;
+                b[18] = 0xf8;
+            },
+            "invalid_input",
+        ); // SPS still ten-bit
+        reject(
+            &|b| {
+                b[1] = 1;
+                b[17] = 0xf8;
+                b[18] = 0xf8;
+            },
+            "invalid_input",
+        ); // SPS still Main10
         reject(&|b| b[21] = (b[21] & !3) | 2, "unsupported_codec"); // 3-byte NAL lengths
         reject(&|b| b[13] = 0, "invalid_input"); // reserved bits
         reject(&|b| b[22] = 9, "invalid_input"); // too many arrays
@@ -2869,6 +2912,8 @@ mod tests {
         for value in window.into_iter().flatten() {
             ue(&mut bits, value);
         }
+        ue(&mut bits, 2); // bit_depth_luma_minus8
+        ue(&mut bits, 2); // bit_depth_chroma_minus8
         bits.push(true); // rbsp_stop_one_bit
         while !bits.len().is_multiple_of(8) {
             bits.push(false);
@@ -2939,7 +2984,13 @@ mod tests {
             let sps = hevc_sps(width, height, window, layers);
             assert_eq!(
                 hevc_sps_geometry(&sps).unwrap(),
-                HevcSpsGeometry { coded, cropped }
+                HevcSpsGeometry {
+                    coded,
+                    cropped,
+                    profile_space: 0,
+                    profile_idc: 2,
+                    depths: [10, 10]
+                }
             );
             let parsed = with_reader(&with_sps(&original, &sps), hvcc).unwrap();
             assert_eq!(

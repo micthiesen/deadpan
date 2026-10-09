@@ -9,7 +9,7 @@ Authored import remains separate work.
 ## Admitted containers
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
-requires exactly one `avc1` H.264 or `hvc1` HEVC track (see HDR sources below)
+requires exactly one `avc1` H.264 or `hvc1` HEVC track (see HEVC grammar below)
 and allows at most 32 AAC audio tracks.
 Audio selection uses the same all-track checks before opening its selected AAC
 decoder. Declared packet sizes, sample/chunk/time table expansion, external data
@@ -103,25 +103,48 @@ normal seek counters. Later calls have their own per-call deadlines and I/O
 allowances. These are cooperative checks, not preemptive time or OS memory limits.
 No process-global allocator setting changes another decoder's behavior.
 
+## SDR source depth
+
+SDR MP4 admits eight-bit HEVC Main/Main10 and ten-bit HEVC Main10 or H.264
+High10 4:2:0, in addition to the existing eight-bit H.264 inputs. Range,
+transfer, matrix and primaries must retain their explicit qualified values.
+Static HDR metadata on SDR remains refused. Ten-bit SDR uses the same RGBA64
+picture path as HDR, retaining its low bits through the shared renderer;
+analysis can request RGBA8. This adds no HDR interpretation or tone mapping.
+
+The [SDR codec qualification](qualification/sdr-source-codecs-2026-10-09.md)
+covers full/limited BT.709, B-frame clocks, repeated threaded seeks and public
+Render. The broader codec/profile and source-color matrix remains open.
+
+Before reusing a HEVC decoder for a seek, drain its pending output through the
+public codec API, then flush. Pinned FFmpeg 8.0.3 clears its DPB on flush but
+retains `output_fifo`; flushing alone can return a picture from the previous
+seek. Draining reads no new source packets, checks the cooperative deadline,
+counts discarded work and stops after at most 512 API steps. The persistent
+decoder is retained. SDR and existing HDR regression fixtures exercise this
+with 1, 8 and 16 codec threads.
+
 ## HDR sources
 
 One HDR interpretation is admitted: transfer SMPTE ST 2084 (PQ) or ARIB
 STD-B67 (HLG), BT.2020 primaries, BT.2020 non-constant matrix, limited range,
 decoded ten-bit 4:2:0 (`yuv420p10le`), as HEVC Main10 in `hvc1` MP4 or H.264
 High10 in `avc1` MP4. Matroska stays FFV1-only, and FFV1 stream HDR metadata is
-still refused before decoding. Eight-bit SDR behavior is unchanged.
+still refused before decoding. SDR depth is qualified separately above.
 
 Container grammar. `hvc1` requires one `hvcC` (ISO/IEC 14496-15 8.3.3.1) of at
-most 64 KiB: configuration version 1, profile space 0, general profile 2
-(Main10), chroma format 1, ten-bit luma and chroma, reserved bits set, a 1, 2 or
+most 64 KiB: configuration version 1, profile space 0, general profile 1 or 2
+(Main/Main10), chroma format 1, equal eight/ten-bit luma and chroma (Main
+requires eight bits), reserved bits set, a 1, 2 or
 4 byte NAL length, at most 8 arrays and 64 units, complete nonempty VPS/SPS/PPS
 arrays, optional prefix/suffix SEI arrays, and unit headers that match their
 array with layer 0 and a nonzero temporal ID. Every SPS is parsed through its
-conformance window (emulation prevention removed, at most 512 bytes read):
+conformance window and depth (emulation prevention removed, at most 512 bytes read):
 `pic_width/height_in_luma_samples` must be positive, `chroma_format_idc` 1 and
 the window inside the picture, and the coded size, which is what the decoder
 allocates, must fit `max_dimension` and `max_pixels` (`resource_limit`) even
-when the sample entry declares a smaller picture. `hev1` is refused
+when the sample entry declares a smaller picture. Every SPS profile and depth
+must match `hvcC`. `hev1` is refused
 (`unsupported_codec`): its parameter sets may exist only in-band and change
 between pictures, which is not trivially safe. Visual sample entries may also
 carry one `fiel` (progressive `01 00` or defined interlaced orders
@@ -148,12 +171,12 @@ a CRA without RASL pictures, is exact. Ordinary seeks are unaffected because
 they decode from the preceding key picture.
 
 Decoding. The format callback admits ten-bit `yuv420p10le` in addition to
-eight-bit formats; first-picture admission then requires the HDR
-interpretation above. A ten-bit SDR picture fails `unsupported_depth`; HDR
+eight-bit formats; first-picture admission requires the SDR codec/depth policy
+or the HDR interpretation above. HDR
 transfer with other primaries, matrix or range fails `unsupported_primaries`,
 `unsupported_matrix` or `unsupported_range`; another depth or layout fails
-`unsupported_depth`/`unsupported_pixel_format`; FFV1 fails `unsupported_codec`;
-SDR HEVC fails `unsupported_codec`. HEVC and H.264 infer left chroma siting
+`unsupported_depth`/`unsupported_pixel_format`; HDR FFV1 fails `unsupported_codec`.
+HEVC and H.264 infer left chroma siting
 when the VUI omits it, as both specifications define; the existing explicit
 siting requirement is otherwise unchanged.
 

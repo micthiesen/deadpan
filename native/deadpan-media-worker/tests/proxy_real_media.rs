@@ -240,6 +240,42 @@ fn every_proxy_picture_keeps_its_original_time_and_duration() -> Result {
     Ok(())
 }
 
+#[test]
+fn sdr_hevc_and_high10_proxies_compare_actual_channel_depths() -> Result {
+    let _slot = vt_slot();
+    for name in [
+        "hevc-sdr-8-limited.mp4",
+        "hevc-sdr-8-full.mp4",
+        "hevc-sdr-10-limited.mp4",
+        "hevc-sdr-10-full.mp4",
+        "h264-sdr-10-limited.mp4",
+        "h264-sdr-10-full.mp4",
+    ] {
+        let original = original(name)?;
+        let scratch = tempfile::tempdir()?;
+        let (file, sidecar) = build(&original, scratch.path())?;
+        sidecar.validate_for(&identity(&original), original.index.index(), &original.info)?;
+        assert_eq!(sidecar.index.index().frames().len(), 12);
+        for (ordinal, frame) in sidecar.index.index().frames().iter().enumerate() {
+            assert_eq!(frame.pts, ordinal as i64 * 2002, "{name}");
+            assert_eq!(frame.reported_duration, Some(2002), "{name}");
+        }
+        assert!(
+            sidecar.fidelity.mean() <= 3.0,
+            "{name}: {:?}",
+            sidecar.fidelity
+        );
+        eprintln!("{name}: {:?}", sidecar.fidelity);
+        if let Some(directory) = std::env::var_os("DEADPAN_PROXY_FIXTURE_DIR") {
+            let directory = Path::new(&directory);
+            let mut copy = File::create(directory.join(format!("{name}.proxy.mp4")))?;
+            std::io::copy(&mut &file, &mut copy)?;
+            std::fs::write(directory.join(format!("{name}.json")), sidecar.to_json()?)?;
+        }
+    }
+    Ok(())
+}
+
 /// A fractional clean rectangle is presentation geometry over the complete
 /// downscaled backing raster, with the same picture times and verified colors.
 #[test]

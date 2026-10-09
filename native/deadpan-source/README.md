@@ -81,7 +81,7 @@ audio, establish exact sample bounds or claim an audio stream is ready for use.
 codec allowlist contains only `h264,ffv1,hevc`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC before opening its decoder.
 Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
-The measured fixtures are H.264 in MP4 and FFV1 in Matroska; this is not
+The measured fixtures are H.264/HEVC in MP4 and FFV1 in Matroska; this is not
 qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. No audio decode or VideoToolbox
 acceleration is implemented here.
@@ -90,7 +90,10 @@ The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
 H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit
 `next_rgba16` and ten-bit `next_yuv420p10` outputs are described in
 [source admission](../../docs/SOURCE_ADMISSION.md#hdr-sources) and tested by
-`tests/hdr_decode.rs`. Otherwise the boundary admits eight-bit three-component SDR input with explicit
+`tests/hdr_decode.rs`. SDR also admits HEVC Main/Main10 eight/ten-bit and
+H.264 High10 ten-bit 4:2:0 with RGBA64 picture output, tested by
+`tests/sdr_hevc.rs`. Other admitted SDR inputs use eight-bit three-component
+pixels with explicit
 range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,
 sRGB and linear, with BT.709/BT.2020/P3-D65 primaries retained for the shared
@@ -99,7 +102,7 @@ It uses explicit source chroma siting for subsampled YUV, rejecting missing or
 changing siting metadata. It does not change gamma or gamut. Exact RGB and BT.709 range/matrix vectors are
 covered by tests; wider-gamut and BT.601 admission still needs additional end-to-
 end qualification. Stream, packet and frame HDR/ICC/ambient metadata are rejected
-even when the transfer tags claim SDR. Missing interpretation, HDR, depth above eight bits, alpha,
+even when the transfer tags claim SDR. Missing interpretation, unqualified HDR/depth, alpha,
 unsupported display transforms and stream/geometry/color changes fail
 explicitly. Standard codec padding is cropped only to the immutable declared
 visible rectangle. Right-angle rotation and SAR are reported, not baked into

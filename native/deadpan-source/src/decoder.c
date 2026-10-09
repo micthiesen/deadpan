@@ -106,7 +106,7 @@ static void adopt_async(DeadpanSource *s) {
     const char *code = NULL, *message = NULL;
     switch (atomic_load(&s->async_failure)) {
         case ASYNC_GEOMETRY: code = "resource_limit"; message = "decoder geometry exceeds max_dimension or max_pixels"; break;
-        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit SDR or ten-bit 4:2:0 HDR decode is qualified"; break;
+        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit or ten-bit 4:2:0 decode is qualified"; break;
         case ASYNC_FORMAT: code = "unsupported_pixel_format"; message = "no bounded software picture format"; break;
         default: return;
     }
@@ -291,9 +291,11 @@ static int color(DeadpanSource *s, enum AVCodecID codec, int format, int range, 
             return fail(s, "unsupported_codec", "HDR source requires HEVC Main10 or H264 High10");
         return 1;
     }
+    int ten_bit = format == AV_PIX_FMT_YUV420P10LE &&
+        (codec == AV_CODEC_ID_HEVC || codec == AV_CODEC_ID_H264);
     for (int i = 0; i < desc->nb_components; i++)
-        if (desc->comp[i].depth != 8) return fail(s, "unsupported_depth", "only eight-bit SDR decode is qualified");
-    if (codec == AV_CODEC_ID_HEVC) return fail(s, "unsupported_codec", "HEVC is admitted only for the qualified HDR interpretation");
+        if (desc->comp[i].depth != (ten_bit ? 10 : 8))
+            return fail(s, "unsupported_depth", "SDR requires eight-bit pixels or ten-bit H264/HEVC 4:2:0");
     if (range != AVCOL_RANGE_MPEG && range != AVCOL_RANGE_JPEG)
         return fail(s, "missing_interpretation", "source color range needs an explicit interpretation");
     if (transfer != AVCOL_TRC_BT709 && transfer != AVCOL_TRC_IEC61966_2_1 && transfer != AVCOL_TRC_LINEAR)
@@ -425,8 +427,7 @@ static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVP
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
         const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
-        // Ten-bit 4:2:0 exists only for the HDR interpretation, which first-
-        // picture admission enforces from the decoded color description.
+        // First-picture admission checks the codec and SDR/HDR interpretation.
         if (formats[i] == AV_PIX_FMT_YUV420P10LE) return formats[i];
         for (unsigned int component = 0; component < pixel->nb_components; component++) {
             if (pixel->comp[component].depth != 8) {
@@ -1633,6 +1634,37 @@ int deadpan_source_copy(DeadpanSource *s, uint64_t timeout, DeadpanCancelled can
     metadata(s, frame);
     return finish(s, rgba(s, pixels, length));
 }
+static int flush_decoder(DeadpanSource *s) {
+    /* Pinned 8.0.3's HEVC flush clears the DPB but leaves output_fifo intact.
+       Drain through the public API first, including every frame thread, so a
+       partial previous drain cannot return old pictures after a seek. No new
+       source packets are read. The bound exceeds single-layer DPB/thread work;
+       a broken decoder fails rather than retaining stale presentation state. */
+    if (s->hevc) {
+        int draining = 0, complete = 0;
+        for (unsigned step = 0; step < 512; step++) {
+            if (check(s) < 0) return -1;
+            av_frame_unref(s->frame);
+            int result = avcodec_receive_frame(s->decoder, s->frame);
+            if (result == AVERROR_EOF) { complete = 1; break; }
+            if (result == 0) {
+                if (s->work.frames == UINT64_MAX) return fail(s, "resource_limit", "cumulative HEVC drain count overflow");
+                s->work.frames++;
+                continue;
+            }
+            if (result != AVERROR(EAGAIN)) return fferror(s, "drain previous HEVC pictures", result);
+            if (draining) return fail(s, "decode_protocol", "HEVC requested packets after accepting drain");
+            result = avcodec_send_packet(s->decoder, NULL);
+            if (result == AVERROR_EOF) { complete = 1; break; }
+            if (result < 0) return fferror(s, "drain HEVC before seek", result);
+            draining = 1;
+        }
+        av_frame_unref(s->frame);
+        if (!complete) return fail(s, "resource_limit", "HEVC pending-picture drain exceeded its bound");
+    }
+    avcodec_flush_buffers(s->decoder);
+    return check(s);
+}
 static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
     if (pts == AV_NOPTS_VALUE || (skip && target == AV_NOPTS_VALUE))
         return fail(s, "invalid_timestamp", "seek timestamp is reserved for unknown PTS");
@@ -1652,7 +1684,7 @@ static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
     }
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
     if (result < 0) return fferror(s, "seek source", result);
-    avcodec_flush_buffers(s->decoder);
+    if (flush_decoder(s) < 0) return -1;
     s->draining = 0; s->ended = 0; s->frames = 0; s->packets = 0;
     if (s->info.bwdif_fields && !skip) {
         /* General callers have no measured seek anchor. Inspect the landed
@@ -1667,7 +1699,7 @@ static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
         av_frame_unref(s->frame);
         result = av_seek_frame(s->format, s->stream, anchor, AVSEEK_FLAG_BACKWARD);
         if (result < 0) return fferror(s, "seek BWDIF temporal context", result);
-        avcodec_flush_buffers(s->decoder);
+        if (flush_decoder(s) < 0) return -1;
         s->draining = 0; s->ended = 0;
     }
     s->skip_nonref = skip && !s->info.bwdif_fields; s->skip_before_pts = target;

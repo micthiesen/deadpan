@@ -159,7 +159,9 @@ would need a new admission path.
      planned raster, `yuv420p` and the planned color tags.
    - It decodes sixteen evenly spaced pictures (first and last included) from
      both the proxy and the Original and compares 16×9 block averages of
-     their RGB values.
+     their RGB values. Ten-bit SDR Originals arrive as RGBA64; complete
+     little-endian channels are normalized to the proxy's 0..255 scale
+     after summing each block. Low bits are retained until that comparison.
 10. **Publication.** It publishes the movie and its sidecar atomically, then
    removes the partial build state.
 
@@ -481,9 +483,14 @@ Timing, audio, the heard clock and the requested frames never depend on it.
 
 ## Evidence
 
+The [SDR HEVC/High10 qualification](qualification/sdr-source-codecs-2026-10-09.md)
+adds six full/limited-range cases with exact clocks and depth-aware comparisons.
+Their maximum mean/block differences are 0.776/6.667 eight-bit codes and maximum
+absolute channel bias is 0.489, below the unchanged 3.0/16.0/1.5 limits.
+
 | Test | What it shows |
 | --- | --- |
-| `native/deadpan-media-worker/tests/proxy_real_media.rs` (12 tests) | **Timing:** the real worker encodes CFR, offset-start, B-pyramid, VFR and `frame_mbs_only_flag` 0 Originals, and every proxy picture has the Original's exact PTS and duration and is intra. **Interpretation:** 4K is downscaled to 1920×1080 by policy, and SAR 4:3 with a BT.601 matrix, Display P3 with sRGB, and a rotated Original keep their interpretation with per-channel bias under 1.5; a 4×2 RGB picture is refused by fidelity. **Rejections:** sidecars for other bytes, indexes, recipes or a tinted bias are refused; at or below 1080p nothing gets a proxy. **Stall and retry:** a stub worker hangs then delegates (two spawns, output only from the second run, the first staging removed, no surviving process); a second stall is reported, not looped; an `invalid_packet` refusal is retried once and two are reported. **Control:** a paused build is suspended without a stall; cancellation; a wrong plan or picture count is refused. **Ranges:** CFR, offset-start, VFR and B-pyramid Originals, and rotated, anamorphic BT.601 and Display P3 ones, encoded in two to four keyframe-aligned ranges stored out of picture order in one file, joined by the worker and verified like a single encoding, with every picture intra at its exact time and the interpretation kept; an assembly of swapped or truncated ranges is refused. |
+| `native/deadpan-media-worker/tests/proxy_real_media.rs` (14 tests) | **Timing:** the real worker encodes CFR, offset-start, B-pyramid, VFR and `frame_mbs_only_flag` 0 Originals, and every proxy picture has the Original's exact PTS and duration and is intra. **Interpretation:** 4K is downscaled to 1920×1080 by policy, and SAR 4:3 with a BT.601 matrix, Display P3 with sRGB, and a rotated Original keep their interpretation with per-channel bias under 1.5; a 4×2 RGB picture is refused by fidelity. **Rejections:** sidecars for other bytes, indexes, recipes or a tinted bias are refused; at or below 1080p nothing gets a proxy. **Stall and retry:** a stub worker hangs then delegates (two spawns, output only from the second run, the first staging removed, no surviving process); a second stall is reported, not looped; an `invalid_packet` refusal is retried once and two are reported. **Control:** a paused build is suspended without a stall; cancellation; a wrong plan or picture count is refused. **Ranges:** CFR, offset-start, VFR and B-pyramid Originals, and rotated, anamorphic BT.601 and Display P3 ones, encoded in two to four keyframe-aligned ranges stored out of picture order in one file, joined by the worker and verified like a single encoding, with every picture intra at its exact time and the interpretation kept; an assembly of swapped or truncated ranges is refused. |
 | `crates/deadpan-media` conversion tests | Stall detection with confirmed teardown; a suspended group is resumed, not reported as stalled. |
 | `crates/deadpan-cli/src/proxy/cache_tests.rs` (9 tests) | Staging is invisible until publication; replacement swaps atomically while a reader keeps the old movie; hashing happens once per file state and changed bytes are damaged; symbolic links are never followed; cleanup handles grace, retention, readers in use, budget, staging and stale recipes; failures are remembered across handles until published or forgotten; a replaced cache directory is never written. **Partial state:** it is private (0700/0600), never an entry and counted in usage; the journal is replaced atomically; a second build waits and cancels; a duplicate of the ranges descriptor, as a worker holds it, keeps the lock after the build's handle is gone; cleanup removes other recipes', published keys', aged and over-budget partial states, keeps the retained and held ones, and removes a symbolic link without following it. |
 | `crates/deadpan-cli/tests/proxy_resume.rs` (3 tests and a host helper; an ignored measurement) | Through `build_subject` and the real worker, eight 15-picture ranges of `cfr-bframes.mp4`. **Killed worker:** a worker SIGKILLed after a journaled range ends the build as `worker_terminated`, a machine condition: nothing remembered or published, ranges kept; the next build reuses exactly the journaled ranges, encodes only the rest, publishes a proxy whose every picture is a keyframe at the Original's exact PTS and duration, and removes the partial state. **Killed host:** the test re-executes itself as a host building into the same private cache and SIGKILLs it while a worker runs after a journaled range; the orphaned worker exits by itself; a build in the test process reuses the journaled ranges, encodes the rest, verifies and removes the partial state. **Damage and identity:** cancellation keeps ranges and cleanup retains them; a flipped byte inside a range, a torn tail, truncation into the last range and a torn journal are dropped and encoded again; a journal naming other Original bytes or length, another recipe, encoder or raster, or another range target reuses nothing; a remembered failure removes the partial state; a final build from nothing verifies. |
@@ -520,5 +527,7 @@ Timing, audio, the heard clock and the requested frames never depend on it.
   build runs. A state that `pmset` does not report is not detected.
 - A `pmset`-less or HOME-less environment, or an unsafe cache directory,
   disables proxies with an "unavailable" state.
-- A future HDR or 10-bit interpretation needs a new recipe: the source adapter
-  admits only eight-bit SDR today.
+- HDR Originals remain ineligible for this SDR recipe. Admitted ten-bit SDR
+  Originals use the existing eight-bit proxy representation, with depth-aware
+  fidelity checks against the exact Original. See the
+  [SDR codec qualification](qualification/sdr-source-codecs-2026-10-09.md).

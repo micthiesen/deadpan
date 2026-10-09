@@ -1251,6 +1251,11 @@ fn block_means(frame: &DecodedRgbaFrame, columns: u32, rows: u32) -> Vec<f64> {
     let mut means = Vec::with_capacity((columns * rows * 3) as usize);
     let width = u64::from(frame.width);
     let height = u64::from(frame.height);
+    // SourceSession returns RGBA64 for ten-bit SDR Originals. Compare in the
+    // proxy's 0..255 code scale, preserving low bits until the block mean.
+    let deep = frame.sample_bits == 16;
+    let bytes_per_channel = if deep { 2 } else { 1 };
+    let code_scale = if deep { 257.0 } else { 1.0 };
     for row in 0..u64::from(rows) {
         let (y0, y1) = (
             row * height / u64::from(rows),
@@ -1265,14 +1270,23 @@ fn block_means(frame: &DecodedRgbaFrame, columns: u32, rows: u32) -> Vec<f64> {
             for y in y0..y1 {
                 let line = y as usize * frame.row_stride_bytes;
                 for x in x0..x1 {
-                    let pixel = line + x as usize * 4;
+                    let pixel = line + x as usize * 4 * bytes_per_channel;
                     for (channel, total) in channels.iter_mut().enumerate() {
-                        *total += u64::from(frame.rgba[pixel + channel]);
+                        let at = pixel + channel * bytes_per_channel;
+                        *total += if deep {
+                            u64::from(u16::from_le_bytes([frame.rgba[at], frame.rgba[at + 1]]))
+                        } else {
+                            u64::from(frame.rgba[at])
+                        };
                     }
                 }
             }
             let area = ((y1 - y0) * (x1 - x0)).max(1) as f64;
-            means.extend(channels.iter().map(|total| *total as f64 / area));
+            means.extend(
+                channels
+                    .iter()
+                    .map(|total| *total as f64 / (area * code_scale)),
+            );
         }
     }
     means
@@ -1281,6 +1295,43 @@ fn block_means(frame: &DecodedRgbaFrame, columns: u32, rows: u32) -> Vec<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sixteen_bit_block_means_use_full_samples_and_padded_rows() {
+        let mut rgba = vec![0xaa; 48];
+        let pixels: [[u16; 4]; 4] = [
+            [0, 65535, 257, 65535],
+            [12345, 1, 256, 65535],
+            [65535, 0, 514, 65535],
+            [54321, 256, 1, 65535],
+        ];
+        for (i, pixel) in pixels.iter().enumerate() {
+            for (c, code) in pixel.iter().enumerate() {
+                let at = (i / 2) * 24 + (i % 2) * 8 + c * 2;
+                rgba[at..at + 2].copy_from_slice(&code.to_le_bytes());
+            }
+        }
+        let frame = DecodedRgbaFrame {
+            metadata: deadpan_source::SourceFrameMetadata {
+                pts: 0,
+                reported_duration: Some(1),
+                keyframe: true,
+                decode_timestamp: None,
+            },
+            width: 2,
+            height: 2,
+            row_stride_bytes: 24,
+            sample_bits: 16,
+            rgba,
+        };
+        let actual = block_means(&frame, 2, 1);
+        for (a, b) in actual
+            .iter()
+            .zip([127.5, 127.5, 1.5, 66666.0 / 514.0, 0.5, 0.5])
+        {
+            assert!((a - b).abs() < 1e-12, "{actual:?}");
+        }
+    }
 
     #[test]
     fn raster_fits_the_box_in_either_orientation_without_upscaling() {

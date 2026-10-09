@@ -141,6 +141,59 @@ fn telecine_receipts_preserve_field_cadence_terminal_time_and_original_audio() {
 }
 
 #[test]
+fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
+    use deadpan_core::SourceFrameId;
+    for (name, bits) in [
+        ("hevc-sdr-8-limited.mp4", 8),
+        ("hevc-sdr-8-full.mp4", 8),
+        ("hevc-sdr-10-limited.mp4", 16),
+        ("hevc-sdr-10-full.mp4", 16),
+        ("h264-sdr-10-limited.mp4", 16),
+        ("h264-sdr-10-full.mp4", 16),
+    ] {
+        let (mut video, audio) = av(name);
+        let qualified = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio))
+            .unwrap_or_else(|error| panic!("{name}: {error}"));
+        let bytes = qualified.snapshot().to_json().unwrap();
+        let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+        assert_eq!(&restored, qualified.snapshot());
+        let rate = FrameRate::new(30000, 1001).unwrap();
+        assert_eq!(
+            restored
+                .basis_candidate()
+                .unwrap()
+                .unwrap()
+                .basis
+                .frame_rate,
+            rate
+        );
+        let timing = restored.derive_timing(rate).unwrap();
+        assert_eq!(
+            timing.video.unwrap().duration_frames,
+            ExactRatio::integer(12)
+        );
+        assert_eq!(timing.audio.unwrap().span.end().ticks, 19219);
+        let frame = video
+            .frame(
+                SourceFrameId(1),
+                Duration::from_secs(5),
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(frame.sample_bits, bits, "{name}");
+        assert_eq!(frame.metadata.pts, 2002);
+        if bits == 16 {
+            let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
+            forged["video"]["interpretation"]["codec"] = json!("ffv1");
+            assert!(
+                SourceQualificationSnapshot::from_json(&serde_json::to_vec(&forged).unwrap())
+                    .is_err()
+            );
+        }
+    }
+}
+
+#[test]
 fn field_receipts_keep_progressive_cadence_audio_and_temporal_seek_anchors() {
     use deadpan_core::SourceFrameId;
     for (name, rate, samples, count) in [
@@ -717,8 +770,8 @@ fn malformed_snapshots_reject_inconsistent_identity_clock_geometry_color_and_inv
             8 => value["video"]["interpretation"]["sample_aspect_num"] = 0.into(),
             9 => value["video"]["interpretation"]["sample_aspect_den"] = u32::MAX.into(),
             10 => value["video"]["interpretation"]["rotation_quarter_turns"] = 4.into(),
-            11 => value["video"]["interpretation"]["codec"] = "hevc".into(),
-            12 => value["video"]["interpretation"]["pixel_format"] = "yuv420p10le".into(),
+            11 => value["video"]["interpretation"]["codec"] = "vp9".into(),
+            12 => value["video"]["interpretation"]["pixel_format"] = "yuv420p12le".into(),
             13 => value["video"]["interpretation"]["color"]["range"] = "unknown".into(),
             14 => value["video"]["interpretation"]["color"]["matrix"] = "rgb".into(),
             15 => value["video"]["interpretation"]["color"]["transfer"] = "pq".into(),

@@ -201,6 +201,29 @@ pub fn interlaced_original(
     )
 }
 
+pub fn sdr_codec_original(directory: &Path, name: &'static str) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(format!("{name}.mp4"));
+    Project::create_from(directory, name, &media)?.finish(
+        vec!["SDR HEVC/H.264 High10 Original"],
+        (0..12)
+            .map(|frame| {
+                (
+                    frame,
+                    Expected::Original {
+                        source_ordinal: frame,
+                    },
+                )
+            })
+            .collect(),
+        vec![
+            "Main/Main10/High10 limited/full-range SDR; original audio and B-frame timestamps"
+                .into(),
+        ],
+    )
+}
+
 fn sound_media() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav")

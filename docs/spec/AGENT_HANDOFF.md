@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[SDR HEVC and H.264 High10](../qualification/sdr-source-codecs-2026-10-09.md)
+now retain eight/ten-bit full/limited-range pictures and exact B-frame clocks
+through import and the shared renderer. Six public Render cases verify 72
+pictures and six zero-offset audio windows. HEVC seeks drain pending codec
+output before flush, fixing a pinned FFmpeg stale-picture failure in SDR and
+HDR. Broader formats and deep-SDR AI conditioning remain required work.
+Read the qualification for final checks and retained failures.
+
 [H.264 telecine](../qualification/telecine-sources-2026-10-09.md) now retains
 explicit picture-timing SEI through decoder reordering, removing a measured
 thread-dependent interlace guess. The versioned `bwdif_fields_v2` source recipe
