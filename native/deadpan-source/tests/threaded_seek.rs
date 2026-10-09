@@ -191,7 +191,7 @@ fn skipping_needs_a_declared_reorder_depth_and_frame_only_pictures() {
 }
 
 #[test]
-fn interlaced_sources_are_rejected_at_every_thread_count() {
+fn tiny_interlaced_planes_are_refused_at_every_thread_count() {
     for threads in [1, 8] {
         let error = SourceDecoder::open(
             fixture("interlaced.mkv"),

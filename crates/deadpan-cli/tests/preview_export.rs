@@ -394,6 +394,37 @@ fn aperture_render(fractional: bool) -> Result {
 }
 
 #[test]
+fn interlaced_originals_render_progressive_at_the_automatic_field_cadence() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("interlaced Render evidence: {}", root.display());
+    for (name, frames, step, rate, samples) in [
+        ("fields-tff", 24, 1, [50, 1], 23040),
+        ("fields-bff", 24, 1, [60000, 1001], 19219),
+        ("fields-single", 2, 1, [50, 1], 1920),
+        ("fields-100", 12, 2, [50, 1], 11520),
+    ] {
+        let fixture = recipes::interlaced_original(&root.join(name), name, frames, step)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["raster"], json!([96, 64]));
+        assert_eq!(report["range"], json!([0, frames]));
+        assert_eq!(report["frame_rate"], json!(rate));
+        assert_eq!(report["movie"]["expected_audio_samples"], samples);
+        assert_eq!(report["movie"]["audio"]["presented_end"], samples);
+        assert_eq!(report["summary"]["pictures_checked"], frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 fn vfr_recipe_plans_match_independent_source_clocks() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("VFR recipe plan evidence: {}", root.display());

@@ -1338,14 +1338,15 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                     max_fall: u16::from_be_bytes([bytes[2], bytes[3]]),
                 });
             }
-            // Progressive only; the decoder independently rejects interlace.
+            // QuickTime's progressive and four defined field orders. Decoded
+            // frame flags select the bounded progressive BWDIF interpretation.
             b"fiel" if kind == Kind::Video => {
                 require(!field, "duplicate field description")?;
                 field = true;
                 r.fixed(atom.body, 2)?;
                 require(
-                    r.bytes::<2>(atom.body.start)? == [1, 0],
-                    "only progressive field descriptions are admitted",
+                    matches!(r.bytes::<2>(atom.body.start)?, [1, 0] | [2, 1 | 6 | 9 | 14]),
+                    "unrecognized field description",
                 )?;
             }
             b"avcC" if kind == Kind::Video && !hevc => {

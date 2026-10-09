@@ -492,12 +492,48 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_num > i32::MAX as u32
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
+        || (info.bwdif_fields && !info.time_base_den.is_multiple_of(2))
         || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc")
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
     }
     info.visible_bounds()
         .map_err(|_| SourceQualificationError::Metadata("clean aperture"))?;
+    if info.bwdif_fields {
+        if !matches!(
+            info.pixel_format.as_str(),
+            "gbrp"
+                | "yuv410p"
+                | "yuv411p"
+                | "yuv420p"
+                | "yuv422p"
+                | "yuv440p"
+                | "yuv444p"
+                | "yuvj411p"
+                | "yuvj420p"
+                | "yuvj422p"
+                | "yuvj440p"
+                | "yuvj444p"
+                | "yuv420p10le"
+        ) {
+            return Err(SourceQualificationError::Metadata(
+                "unqualified deinterlace pixel format",
+            ));
+        }
+        let mut previous_key = None;
+        let mut anchor = None;
+        for frame in video.index.index().frames() {
+            if frame.keyframe {
+                anchor = previous_key.or(Some(frame.identity));
+                previous_key = Some(frame.identity);
+            }
+            if frame.seek_from != anchor {
+                return Err(SourceQualificationError::Metadata(
+                    "missing deinterlace temporal context",
+                ));
+            }
+        }
+    }
     validate_hdr(info)?;
     validate_observations(info.stream_start, info.stream_duration)?;
     validate_observations(info.container_start, info.container_duration)?;
@@ -718,6 +754,8 @@ fn write_json(
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "SourceStreamInfo", deny_unknown_fields)]
 pub(crate) struct SourceStreamInfoWire {
+    #[serde(default, skip_serializing_if = "is_false")]
+    bwdif_fields: bool,
     width: u32,
     height: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -742,6 +780,10 @@ pub(crate) struct SourceStreamInfoWire {
     container_duration: Option<i64>,
     #[serde(with = "audio_inventory")]
     audio_streams: Vec<SourceAudioStreamInfo>,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 #[derive(Serialize, Deserialize)]

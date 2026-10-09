@@ -206,6 +206,7 @@ fn runtime() -> serde_json::Value {
         ("avformat", RuntimeImageKind::Avformat),
         ("avutil", RuntimeImageKind::Avutil),
         ("swscale", RuntimeImageKind::Swscale),
+        ("avfilter", RuntimeImageKind::Avfilter),
     ]
     .map(
         |(name, kind)| match RuntimeImageObservation::capture(kind) {

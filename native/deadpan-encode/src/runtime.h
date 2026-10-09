@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define DP_RUNTIME_ABI 1
-#define DP_RUNTIME_IMAGES 5
+#define DP_RUNTIME_ROLES 6
 #define DP_RUNTIME_PATH 1024
 
 typedef struct {

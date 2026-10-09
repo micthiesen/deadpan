@@ -69,7 +69,7 @@ build-time tool only.
 | --- | --- |
 | `Contents/MacOS/deadpan-app` | Main executable; also `--headless` and the render worker. |
 | `Contents/MacOS/deadpan-cli`, `deadpan-media-worker`, `deadpan-transcribe`, `deadpan-track` | Helper tools. Workers already resolve beside the running executable, so no lookup changed. |
-| `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
+| `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,avfilter.11,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
 | `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
 | `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
@@ -119,7 +119,7 @@ from `tools/build-app.py` therefore keep development behavior.
   resolve beside the running executable, which inside the bundle is
   `Contents/MacOS`. Rendering re-executes the current executable.
 - FFmpeg: dyld resolves `@rpath` to `Contents/Frameworks`. `doctor` matches
-  each loaded libavcodec, libavformat, libavutil and libswscale image to a
+  each loaded libavcodec, libavformat, libavutil, libswscale and libavfilter image to a
   `Contents/Frameworks` file by mapped device and inode, so it reports where the
   loader actually mapped them.
 - Downloader: a compatible active [signed update](UPDATES.md#downloader-updates)

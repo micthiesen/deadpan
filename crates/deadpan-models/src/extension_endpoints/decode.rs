@@ -43,6 +43,7 @@ pub(crate) fn measure(
     control.remaining()?;
     let mut session = opened.map_err(invalid)?;
     if session.index().index().frames().len() != contract.frames as usize
+        || session.info().bwdif_fields
         || session.info().width != contract.width
         || session.info().height != contract.height
         || session.info().time_base_num != 1

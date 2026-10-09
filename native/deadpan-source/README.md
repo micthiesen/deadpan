@@ -16,8 +16,8 @@ software decoder session. It performs no subprocess launch, path reopening,
 networking, database write, or authored mutation. `next_metadata` decodes and
 retains the next presented AVFrame without allocating/converting RGB.
 `copy_current_rgba` converts only that frame and copies into a Rust-owned `Vec`.
-`next_rgba` combines both operations. `seek` seeks backward in original stream
-ticks, flushes reorder state, and leaves exact indexed target selection to the
+`next_rgba` combines both operations. `seek` seeks backward in the reported
+presentation clock, flushes reorder state, and leaves exact indexed target selection to the
 host. `seek_to` additionally names the target PTS: packets presented before it
 skip their non-reference pictures (`AVDISCARD_NONREF`), which are never
 returned and on which no other picture depends. Skipping applies only while
@@ -26,7 +26,8 @@ every SPS, from the AVC configuration and in-band, declares
 depth FFmpeg estimates it from the pictures it sees, which skipping changes,
 and field pictures pair across packets. `DecodeWork::decoded_pictures` counts
 pictures the codec actually decoded. Pictures at or after the target
-always decode, so forward steps continue. Returned pixels survive subsequent
+always decode, so forward steps continue. Interlaced input disables skipping and
+uses the preceding GOP as temporal context. Returned pixels survive subsequent
 decoding, seek, and session destruction.
 
 `DecodeLimits::threads` (1 to 16, default 1) enables FFmpeg frame and slice
@@ -89,7 +90,7 @@ The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
 H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit
 `next_rgba16` and ten-bit `next_yuv420p10` outputs are described in
 [source admission](../../docs/SOURCE_ADMISSION.md#hdr-sources) and tested by
-`tests/hdr_decode.rs`. Otherwise the boundary admits progressive eight-bit three-component SDR input with explicit
+`tests/hdr_decode.rs`. Otherwise the boundary admits eight-bit three-component SDR input with explicit
 range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,
 sRGB and linear, with BT.709/BT.2020/P3-D65 primaries retained for the shared
@@ -99,23 +100,37 @@ changing siting metadata. It does not change gamma or gamut. Exact RGB and BT.70
 covered by tests; wider-gamut and BT.601 admission still needs additional end-to-
 end qualification. Stream, packet and frame HDR/ICC/ambient metadata are rejected
 even when the transfer tags claim SDR. Missing interpretation, HDR, depth above eight bits, alpha,
-interlace, unsupported display transforms and stream/geometry/color changes fail
+unsupported display transforms and stream/geometry/color changes fail
 explicitly. Standard codec padding is cropped only to the immutable declared
 visible rectangle. Right-angle rotation and SAR are reported, not baked into
 pixels. Missing SAR retains FFmpeg's conventional square-pixel interpretation.
 
-MP4 `clap` clean apertures are admitted when exact rational declarations resolve
-to an integral rectangle within the sample-entry raster. Pixel-aligned half-pixel
-center offsets are valid; fractional pixel edges fail explicitly. Packed RGBA8
-and RGBA64 are cropped after full-raster color conversion, so odd crop origins
-preserve the original chroma interpolation. Stream dimensions and returned row
-strides name the clean raster. Source PTS, audio, SAR and rotation stay intact.
-Raw I420 and ten-bit planes require an even chroma-aligned rectangle and reject
-otherwise before consuming a frame. Input/codec allocation limits still apply
-to the full raster. See [clean-aperture qualification](../../docs/qualification/clean-aperture-2026-10-09.md).
+Interlaced pictures use the pinned LGPL FFmpeg 8.0.3 BWDIF filter with
+`mode=send_field:parity=auto:deint=interlaced`, before color conversion. A
+one-coded-picture clip has no temporal neighbors and uses spatial bob: copy
+the current field's rows, average nearest same-field rows, replicate boundaries.
+The stream's `bwdif_fields` receipt flag identifies this fixed recipe. A bounded
+three-entry clock queue maps internal ordinals to exact half-source-tick times;
+the last field uses its own decoded duration, never an extrapolated interval.
+Progressive pictures inside an admitted interlaced stream pass through once.
+No automatic format conversion occurs. Every plane must have at least 3x4
+samples; missing terminal duration and unrepresentable clocks fail explicitly.
+Both field orders, B frames, odd VFR intervals, single-picture clips, thread
+equivalence and seeks have real encoded fixtures in `tests/deinterlace.rs`.
 
-Frame PTS remains original, not `best_effort_timestamp`; missing PTS is rejected.
-DTS hints and positive decoder-reported frame durations are optional. Stream
+MP4 `clap` clean apertures retain exact rational bounds within the sample-entry
+raster. Integral rectangles compact RGBA8/RGBA64 after full-raster color
+conversion, preserving chroma interpolation at odd crop origins. Fractional
+rectangles retain the complete backing raster and exact clean geometry for the
+shared renderer and analysis consumers. Source PTS, audio, SAR and rotation stay
+intact. Raw I420 and ten-bit planes require an even chroma-aligned integral
+rectangle and reject otherwise before consuming a frame. Input/codec allocation
+limits still apply to the full raster. See the
+[fractional-aperture qualification](../../docs/qualification/fractional-aperture-2026-10-09.md).
+
+Progressive PTS remains original, not `best_effort_timestamp`; interlaced fields
+use the exact half-tick presentation clock above. Missing PTS is rejected.
+DTS hints and positive decoder-reported progressive durations are optional. Stream
 start/duration and container start/duration remain distinct observed candidates.
 No frame-rate fallback, terminal-duration guess, or origin normalization occurs.
 The VFR fixture intentionally reports a final 1001-tick duration despite the
@@ -134,7 +149,7 @@ cargo clippy -p deadpan-source --all-targets --locked -- -D warnings
 The integration suite covers real CFR/B-frame, VFR and offset source clocks,
 396 backward/random seeks with exact PTS and linear-decode pixel-hash agreement,
 retained pixel ownership, exact RGB values, BT.709 limited/full vectors,
-orientation and anamorphic metadata, unsupported interlace/HDR/depth/missing
+orientation and anamorphic metadata, unsupported interlace cases/HDR/depth/missing
 color, stream-level HDR with SDR transfer tags, packet/frame/byte/geometry bounds,
 cancellation, and external-playlist
 rejection. `tests/fixtures/manifest.json` records committed file identities and

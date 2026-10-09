@@ -144,7 +144,8 @@ pub(super) fn inspect(
         hdr_color(context, track, transfer, &info.color)?;
     }
     require(
-        info.stream_index == track.index
+        !info.bwdif_fields
+            && info.stream_index == track.index
             && info.time_base_num == 1
             && info.time_base_den == track.media_timescale
             && info.stream_start == Some(0)

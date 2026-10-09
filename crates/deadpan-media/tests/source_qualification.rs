@@ -71,6 +71,101 @@ fn snapshot_value() -> Value {
 }
 
 #[test]
+fn field_receipts_keep_progressive_cadence_audio_and_temporal_seek_anchors() {
+    use deadpan_core::SourceFrameId;
+    for (name, rate, samples, count) in [
+        ("fields-tff.mp4", FrameRate::new(50, 1).unwrap(), 23040, 24),
+        (
+            "fields-tff-bframes.mp4",
+            FrameRate::new(50, 1).unwrap(),
+            23040,
+            24,
+        ),
+        (
+            "fields-bff.mp4",
+            FrameRate::new(60000, 1001).unwrap(),
+            19219,
+            24,
+        ),
+        ("fields-single.mp4", FrameRate::new(50, 1).unwrap(), 1920, 2),
+    ] {
+        let (mut video, audio) = av(name);
+        let captured =
+            DecodedSourceQualification::from_sessions(Some(&video), Some(&audio)).unwrap();
+        let bytes = captured.snapshot().to_json().unwrap();
+        let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+        assert_eq!(restored, *captured.snapshot());
+        if count == 24 {
+            let mut damaged: Value = serde_json::from_slice(&bytes).unwrap();
+            let frames = damaged["video"]["index"]["index"]["frames"]
+                .as_array_mut()
+                .unwrap();
+            frames[6]["seek_from"] = json!(6);
+            assert!(
+                SourceQualificationSnapshot::from_json(&serde_json::to_vec(&damaged).unwrap())
+                    .is_err()
+            );
+        }
+        assert!(restored.video().unwrap().interpretation().bwdif_fields);
+        let mut unsupported: Value = serde_json::from_slice(&bytes).unwrap();
+        unsupported["video"]["interpretation"]["pixel_format"] = json!("nv12");
+        assert!(
+            SourceQualificationSnapshot::from_json(&serde_json::to_vec(&unsupported).unwrap())
+                .is_err()
+        );
+        assert_eq!(
+            restored
+                .basis_candidate()
+                .unwrap()
+                .unwrap()
+                .basis
+                .frame_rate,
+            rate
+        );
+        let timing = restored.derive_timing(rate).unwrap();
+        assert_eq!(
+            timing.video.unwrap().duration_frames,
+            ExactRatio::integer(count)
+        );
+        assert_eq!(timing.audio.unwrap().span.start().ticks, 0);
+        assert_eq!(timing.audio.unwrap().span.end().ticks, samples);
+        let mut pixels = Vec::new();
+        for id in 0..u64::try_from(count).unwrap() {
+            pixels.push(
+                video
+                    .frame(
+                        SourceFrameId(id),
+                        Duration::from_secs(5),
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap()
+                    .rgba,
+            );
+            // First field of a GOP can be filtered only with the preceding GOP.
+            let expected_anchor = if id < 6 { 0 } else { (id / 6 - 1) * 6 };
+            assert_eq!(
+                video.index().index().frames()[id as usize].seek_from,
+                Some(SourceFrameId(expected_anchor))
+            );
+        }
+        for id in (0..u64::try_from(count).unwrap()).rev() {
+            assert_eq!(
+                video
+                    .frame(
+                        SourceFrameId(id),
+                        Duration::from_secs(5),
+                        &AtomicBool::new(false)
+                    )
+                    .unwrap()
+                    .rgba,
+                pixels[id as usize],
+                "{name} field {id}"
+            );
+        }
+    }
+}
+
+#[test]
 fn real_offset_and_vfr_capture_preserve_complete_interpretation_and_timing_after_roundtrip() {
     for (name, picture_frames, audio_frames, occupancy) in [
         (

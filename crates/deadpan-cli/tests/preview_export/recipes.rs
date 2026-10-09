@@ -176,6 +176,31 @@ fn aperture_original_kind(directory: &Path, fractional: bool) -> Result<Fixture>
     )
 }
 
+pub fn interlaced_original(
+    directory: &Path,
+    name: &'static str,
+    count: u64,
+    step: u64,
+) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(format!("{name}.mp4"));
+    Project::create_from(directory, name, &media)?.finish(
+        vec!["Interlaced Original field cadence"],
+        (0..count)
+            .map(|frame| {
+                (
+                    frame,
+                    Expected::Original {
+                        source_ordinal: frame * step + step / 2,
+                    },
+                )
+            })
+            .collect(),
+        vec!["Measured progressive fields; original audio clock; automatic project cadence".into()],
+    )
+}
+
 fn sound_media() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav")

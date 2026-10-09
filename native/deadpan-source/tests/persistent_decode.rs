@@ -473,7 +473,7 @@ fn source_orientation_is_retained_and_unqualified_hdr_and_depth_fail() {
 }
 
 #[test]
-fn anamorphic_samples_are_retained_and_interlace_is_rejected() {
+fn anamorphic_samples_are_retained_and_tiny_interlaced_planes_are_refused() {
     let mut decoder = open("anamorphic.mkv");
     assert_eq!(
         (

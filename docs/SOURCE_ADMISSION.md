@@ -60,13 +60,26 @@ The parser's RFC-derived components retain their Simplified BSD notice in
 [the source](../native/deadpan-source/src/video_codec.rs).
 
 Video opening does not call `avformat_find_stream_info` or enable demux parsers.
-It opens one software decoder with frame threading disabled, decodes one frame
-under controlled callbacks, and retains it for the first caller. H.264's format
+It opens one software decoder with bounded configured threading, decodes under
+controlled callbacks, and retains the first presented picture. H.264's format
 callback checks visible and padded coded dimensions before the pinned decoder
 allocates macroblock tables. The buffer callback checks picture dimensions again.
 Color, depth, interlace, crop, HDR metadata, aspect and timestamp checks remain
 mandatory. Opening does not turn container audio observations into decoded audio
 readiness.
+
+Interlaced Originals use pinned FFmpeg 8.0.3 BWDIF at field cadence, with a
+single-picture spatial bob fallback and no automatic format conversion. A fixed
+three-entry queue retains source timestamps independently of filter ordinals.
+Video clocks use exact half ticks; all audio clocks stay unchanged. Interior
+fields bisect the measured interval to the next coded picture, and the final
+pair requires its own positive decoded duration. Source receipts retain
+`bwdif_fields` and previous-GOP seek anchors. A later unannounced change from
+progressive to interlaced fails; malformed/tiny planes, unsupported formats and
+unknown terminal timing fail explicitly. Export and proxy verification require
+progressive encoded pictures and never use deinterlacing to hide a bad output.
+Repeated-field telecine is explicitly refused pending its own cadence
+qualification; it is not silently treated as an ordinary two-field picture.
 
 Every demuxed packet, including unselected audio, is limited to the configured
 payload plus side-data byte allowance, at most 16 MiB. H.264 packets have at most
@@ -102,7 +115,8 @@ allocates, must fit `max_dimension` and `max_pixels` (`resource_limit`) even
 when the sample entry declares a smaller picture. `hev1` is refused
 (`unsupported_codec`): its parameter sets may exist only in-band and change
 between pictures, which is not trivially safe. Visual sample entries may also
-carry one progressive `fiel` (`01 00`), one 24-byte `mdcv` and one 4-byte `clli`;
+carry one `fiel` (progressive `01 00` or defined interlaced orders
+`02 01`, `02 06`, `02 09`, `02 0e`), one 24-byte `mdcv` and one 4-byte `clli`;
 `mdcv` stores primaries G, B, R like the HEVC SEI and is reported R, G, B.
 Only its size is container grammar; its values follow the static-metadata
 policy below. `sdtp` sample-dependency tables (one byte per

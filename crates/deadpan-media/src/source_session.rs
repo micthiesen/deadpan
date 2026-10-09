@@ -756,11 +756,13 @@ fn scan(
 ) -> Result<Scanned, SourceSessionError> {
     let info = decoder.info();
     let time_base = SourceTimeBase::new(info.time_base_num, info.time_base_den)?;
+    let temporal_fields = info.bwdif_fields;
     let maximum_frames = limits
         .maximum_index_frames
         .min(limits.maximum_index_bytes / std::mem::size_of::<IndexedSourceFrame>());
     let mut count = 0_usize;
     let mut seek_from = None;
+    let mut newest_keyframe = None;
     let mut last: Option<(i64, Option<i64>)> = None;
     while let Some(frame) = decoder.next_metadata(control(deadline)?)? {
         if count >= maximum_frames {
@@ -773,7 +775,14 @@ fn scan(
         }
         let id = SourceFrameId(count as u64);
         if frame.keyframe {
-            seek_from = Some(id);
+            // The first fields of a GOP need the preceding coded picture.
+            // Keep an older keyframe as the measured temporal preroll anchor.
+            seek_from = if temporal_fields {
+                newest_keyframe.or(Some(id))
+            } else {
+                Some(id)
+            };
+            newest_keyframe = Some(id);
         }
         push(IndexedSourceFrame {
             identity: id,

@@ -41,10 +41,13 @@ pub enum RuntimeImageKind {
     Avformat,
     Avutil,
     Swscale,
+    /// Source deinterlacing dependency, observed by doctor. It is not part of
+    /// the encoder capability inventory, which consumes already composed pixels.
+    Avfilter,
 }
 
 impl RuntimeImageKind {
-    pub const ALL: [Self; 5] = [
+    pub const ENCODER_IMAGES: [Self; 5] = [
         Self::Helper,
         Self::Avcodec,
         Self::Avformat,
@@ -63,6 +66,7 @@ impl RuntimeImageKind {
             Self::Avformat => 2,
             Self::Avutil => 3,
             Self::Swscale => 4,
+            Self::Avfilter => 5,
         }
     }
 }
@@ -207,7 +211,8 @@ impl RuntimeImageObservation {
     }
 }
 
-/// Fixed complete inventory. Missing swscale fails explicitly; standalone
+/// Fixed complete encoder inventory. Source-only avfilter is observed separately.
+/// Missing swscale fails explicitly; standalone
 /// encoder-only tools can request the individual roles they actually link.
 pub fn capture_current() -> Result<[RuntimeImageObservation; 5], RuntimeIdentityError> {
     Ok([

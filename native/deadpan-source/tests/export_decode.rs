@@ -45,6 +45,7 @@ fn i420_observes_the_current_picture_without_converting_or_advancing() {
     assert_eq!(runtime.avformat, (62 << 16) | (3 << 8) | 103);
     assert_eq!(runtime.avutil, (60 << 16) | (8 << 8) | 103);
     assert_eq!(runtime.swscale, (9 << 16) | (1 << 8) | 103);
+    assert_eq!(runtime.avfilter, (11 << 16) | (4 << 8) | 103);
     assert_eq!(
         decoder.work().frames,
         1,

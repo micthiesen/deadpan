@@ -70,6 +70,18 @@ fn run(spec: &ProbeSpec) -> Result<(content::ProbeContentReport, i32, u64), Stri
         .finish_with_light(content::declared_light(&generator, &cancelled, deadline)?)
         .map_err(|e| format!("{:?}: {e}", e.kind()))?
         .into_parts();
+    if let Some(root) = std::env::var_os("DEADPAN_PROBE_RETAIN") {
+        let root = std::path::PathBuf::from(root);
+        std::fs::create_dir_all(&root).map_err(|e| e.to_string())?;
+        std::fs::copy(
+            &path,
+            root.join(format!(
+                "{:?}-{:?}-{}x{}.mp4",
+                spec.choice.mode, spec.choice.b_frames, spec.raster[0], spec.raster[1]
+            )),
+        )
+        .map_err(|e| e.to_string())?;
+    }
     let measured = content::inspect(
         &file,
         spec,
@@ -79,6 +91,22 @@ fn run(spec: &ProbeSpec) -> Result<(content::ProbeContentReport, i32, u64), Stri
         deadline,
     )?;
     Ok((measured, report.info.video_profile, report.output_bytes))
+}
+
+#[test]
+#[ignore = "measurement of real small-raster VideoToolbox encoders"]
+fn measure_small_sdr_probe_geometry() {
+    for mode in [EncoderMode::Hardware, EncoderMode::Software] {
+        for b_frames in [BFramePolicy::None, BFramePolicy::TargetTwo] {
+            let spec = ProbeSpec {
+                raster: [96, 64],
+                frame_rate: [50, 1],
+                choice: EncoderChoice { mode, b_frames },
+                color_policy: ColorPolicy::SdrRec709,
+            };
+            eprintln!("{mode:?} {b_frames:?}: {:?}", run(&spec));
+        }
+    }
 }
 
 #[test]

@@ -3,6 +3,7 @@
 #define _DARWIN_C_SOURCE
 #endif
 #include "decoder.h"
+#include "deinterlace.h"
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -21,6 +22,8 @@
 #include <libavcodec/version.h>
 #include <libavformat/avformat.h>
 #include <libavformat/version.h>
+#include <libavfilter/avfilter.h>
+#include <libavfilter/version.h>
 #include <libavutil/avutil.h>
 #include <libavutil/display.h>
 #include <libavutil/error.h>
@@ -31,7 +34,7 @@
 #include <libavutil/version.h>
 #include <libswscale/swscale.h>
 #include <libswscale/version.h>
-#if LIBAVCODEC_VERSION_INT != AV_VERSION_INT(62, 11, 103) || LIBAVFORMAT_VERSION_INT != AV_VERSION_INT(62, 3, 103) || LIBAVUTIL_VERSION_INT != AV_VERSION_INT(60, 8, 103) || LIBSWSCALE_VERSION_INT != AV_VERSION_INT(9, 1, 103)
+#if LIBAVCODEC_VERSION_INT != AV_VERSION_INT(62, 11, 103) || LIBAVFORMAT_VERSION_INT != AV_VERSION_INT(62, 3, 103) || LIBAVUTIL_VERSION_INT != AV_VERSION_INT(60, 8, 103) || LIBSWSCALE_VERSION_INT != AV_VERSION_INT(9, 1, 103) || LIBAVFILTER_VERSION_INT != AV_VERSION_INT(11, 4, 103)
 #error "deadpan-source requires exactly FFmpeg 8.0.3 headers"
 #endif
 #define IO_BUFFER_BYTES 32768
@@ -52,6 +55,9 @@ struct DeadpanSource {
     AVCodecContext *decoder;
     AVPacket *packet;
     AVFrame *frame;
+    DeadpanFields *fields;
+    int fields_flushed;
+    uint64_t presented;
     struct SwsContext *scaler;
     int stream, pixel_format, chroma_location, draining, ended, poisoned, inventory_ready;
     // Length-prefixed NAL width for H.264 (avcC) or HEVC (hvcC); hevc selects
@@ -62,6 +68,7 @@ struct DeadpanSource {
     struct { int type, offset, length; } parameter_set[MAX_PARAMETER_SETS];
     int fresh_keyframe, fresh_key_packet_pending;
     int64_t fresh_key_pts;
+    int64_t first_source_pts;
     // Set after a fresh HEVC key packet whose CRA/BLA_W_LP may have RASL
     // leading pictures, until a trailing or IRAP picture ends that window.
     int fresh_leading;
@@ -78,6 +85,7 @@ struct DeadpanSource {
     // Set by codec callbacks, which may run on FFmpeg frame threads outside
     // any exported call. Only this atomic code crosses that thread boundary.
     _Atomic int async_failure;
+    _Atomic uint64_t rejected_geometry;
     unsigned int stream_count;
     uint64_t frames, packets, io_bytes, deadline;
     DeadpanDecodeWork work;
@@ -97,7 +105,13 @@ static void adopt_async(DeadpanSource *s) {
         default: return;
     }
     (void)snprintf(s->error->code, sizeof(s->error->code), "%s", code);
-    (void)snprintf(s->error->message, sizeof(s->error->message), "%s", message);
+    if (atomic_load(&s->async_failure) == ASYNC_GEOMETRY) {
+        uint64_t geometry = atomic_load(&s->rejected_geometry);
+        (void)snprintf(s->error->message, sizeof(s->error->message),
+            "decoder geometry %ux%u exceeds max_dimension=%u or max_pixels=%" PRIu64,
+            (unsigned)(geometry >> 32), (unsigned)(geometry & UINT32_MAX),
+            s->limits.max_dimension, s->limits.max_pixels);
+    } else (void)snprintf(s->error->message, sizeof(s->error->message), "%s", message);
 }
 static void async_fail(DeadpanSource *s, int code) {
     int none = ASYNC_NONE;
@@ -205,13 +219,14 @@ static int deny_external_io(AVFormatContext *format, AVIOContext **io, const cha
 }
 static int runtime(DeadpanSource *s) {
     if (avcodec_version() != LIBAVCODEC_VERSION_INT || avformat_version() != LIBAVFORMAT_VERSION_INT ||
-        avutil_version() != LIBAVUTIL_VERSION_INT || swscale_version() != LIBSWSCALE_VERSION_INT)
+        avutil_version() != LIBAVUTIL_VERSION_INT || swscale_version() != LIBSWSCALE_VERSION_INT ||
+        avfilter_version() != LIBAVFILTER_VERSION_INT)
         return fail(s, "runtime_mismatch", "loaded FFmpeg libraries differ from pinned 8.0.3");
     const char *required[] = {"--disable-gpl", "--disable-nonfree", "--disable-version3", "--disable-network"};
     const char *forbidden[] = {"--enable-gpl", "--enable-nonfree", "--enable-version3", "--enable-network"};
-    const char *configs[] = {avcodec_configuration(), avformat_configuration(), avutil_configuration(), swscale_configuration()};
-    const char *licenses[] = {avcodec_license(), avformat_license(), avutil_license(), swscale_license()};
-    for (size_t i = 0; i < 4; i++) {
+    const char *configs[] = {avcodec_configuration(), avformat_configuration(), avutil_configuration(), swscale_configuration(), avfilter_configuration()};
+    const char *licenses[] = {avcodec_license(), avformat_license(), avutil_license(), swscale_license(), avfilter_license()};
+    for (size_t i = 0; i < 5; i++) {
         if (strcmp(licenses[i], "LGPL version 2.1 or later")) return fail(s, "runtime_mismatch", "loaded FFmpeg license differs from LGPL 2.1+");
         for (size_t j = 0; j < 4; j++)
             if (!strstr(configs[i], required[j]) || strstr(configs[i], forbidden[j]))
@@ -379,6 +394,10 @@ static int geometry_ok(const DeadpanSourceLimits *limits, int width, int height)
     return width > 0 && height > 0 && (unsigned)width <= limits->max_dimension && (unsigned)height <= limits->max_dimension &&
         (uint64_t)width * (uint64_t)height <= limits->max_pixels;
 }
+static void async_geometry(DeadpanSource *s, int width, int height) {
+    atomic_store(&s->rejected_geometry, (uint64_t)(uint32_t)width << 32 | (uint32_t)height);
+    async_fail(s, ASYNC_GEOMETRY);
+}
 // These callbacks run on the controlled decoder. In pinned FFmpeg 8.0.3,
 // h264_init_ps calls get_format after installing SPS coded dimensions and before
 // h264_slice_header_init allocates macroblock tables. Frame-buffer max_pixels
@@ -389,9 +408,12 @@ static int geometry_ok(const DeadpanSourceLimits *limits, int width, int height)
 static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVPixelFormat *formats) {
     DeadpanSource *s = context->opaque;
     if (atomic_load(&s->async_failure) != ASYNC_NONE) return AV_PIX_FMT_NONE;
-    if (!geometry_ok(&s->limits, context->width, context->height) ||
-        !geometry_ok(&s->limits, context->coded_width, context->coded_height)) {
-        async_fail(s, ASYNC_GEOMETRY);
+    if (!geometry_ok(&s->limits, context->width, context->height)) {
+        async_geometry(s, context->width, context->height);
+        return AV_PIX_FMT_NONE;
+    }
+    if (!geometry_ok(&s->limits, context->coded_width, context->coded_height)) {
+        async_geometry(s, context->coded_width, context->coded_height);
         return AV_PIX_FMT_NONE;
     }
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
@@ -415,7 +437,7 @@ static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
     DeadpanSource *s = context->opaque;
     if (atomic_load(&s->async_failure) != ASYNC_NONE) return AVERROR(EINVAL);
     if (!geometry_ok(&s->limits, frame->width, frame->height)) {
-        async_fail(s, ASYNC_GEOMETRY);
+        async_geometry(s, frame->width, frame->height);
         return AVERROR(EINVAL);
     }
     atomic_fetch_add(&s->pictures, 1);
@@ -697,6 +719,7 @@ static int capture_static(DeadpanSource *s) {
 }
 static int receive_frame(DeadpanSource *s);
 static int check_frame(DeadpanSource *s);
+static int receive_picture(DeadpanSource *s);
 static int allocate_decoder(DeadpanSource *s) {
     // Any previous codec and its threads are gone; a failure they reported
     // poisoned that session, and a fresh codec starts clean.
@@ -798,7 +821,6 @@ static int open_impl(DeadpanSource *s) {
     AVStream *stream = s->format->streams[s->stream];
     AVCodecParameters *p = stream->codecpar;
     if (stream->time_base.num <= 0 || stream->time_base.den <= 0) return fail(s, "invalid_time_base", "source stream has no positive time base");
-    if (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE) return fail(s, "unsupported_interlace", "interlaced source requires a qualified deinterlacer");
     const AVCodec *codec = avcodec_find_decoder(p->codec_id);
     if (!codec) return fail(s, "unsupported_codec", "required source software decoder is unavailable");
     if (p->extradata_size <= 0 || p->extradata_size > 65536)
@@ -826,6 +848,7 @@ static int open_impl(DeadpanSource *s) {
     if (!result) return fail(s, "invalid_stream", "source contains no decoded picture");
     if (s->fresh_keyframe && check_fresh_keyframe(s) < 0) return -1;
     AVFrame *f = s->frame;
+    s->first_source_pts = f->pts;
     if (color(s, p->codec_id, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
@@ -839,6 +862,24 @@ static int open_impl(DeadpanSource *s) {
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
     s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info.bwdif_fields = (f->flags & AV_FRAME_FLAG_INTERLACED) ||
+        (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE);
+    if (s->info.bwdif_fields) {
+        if (AV_CEIL_RSHIFT(f->width, pixel->log2_chroma_w) < 3 ||
+            AV_CEIL_RSHIFT(f->height, pixel->log2_chroma_h) < 4)
+            return fail(s, "unsupported_interlace", "BWDIF requires source planes at least three columns by four rows");
+        if (s->fresh_key_pts != AV_NOPTS_VALUE)
+            return fail(s, "unsupported_interlace", "fresh encoded-output GOP inspection requires progressive pictures");
+        if (stream->time_base.den > INT_MAX / 2 ||
+            (stream->start_time != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->start_time, (int64_t)2, &s->info.stream_start)) ||
+            (stream->duration != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->duration, (int64_t)2, &s->info.stream_duration)))
+            return fail(s, "invalid_time_base", "interlaced source cannot represent exact half-tick timestamps");
+        s->info.time_base_den *= 2;
+        if ((stream->start_time != AV_NOPTS_VALUE && s->info.stream_start == AV_NOPTS_VALUE) ||
+            (stream->duration != AV_NOPTS_VALUE && s->info.stream_duration == AV_NOPTS_VALUE))
+            return fail(s, "invalid_time_base", "interlaced timestamp became the unknown-time sentinel");
+        s->skip_safe = 0;
+    }
     if (capture_audio_inventory(s) < 0 || rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
     s->hdr = hdr_transfer(f->color_trc);
     if (capture_static(s) < 0) return -1;
@@ -846,12 +887,21 @@ static int open_impl(DeadpanSource *s) {
     (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", codec->name);
     (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(f->format));
     if (check_frame(s) < 0) return -1;
+    if (s->info.bwdif_fields) {
+        result = deadpan_fields_open(&s->fields, s->frame, s->limits.threads);
+        if (result < 0) return fferror(s, "prepare bounded BWDIF fields", result);
+        result = deadpan_fields_push(s->fields, s->frame);
+        if (result < 0) return fferror(s, "prepare first BWDIF picture", result);
+        result = receive_picture(s);
+        if (result <= 0) return result < 0 ? result : fail(s, "invalid_stream", "deinterlaced source contains no picture");
+    }
     s->pending_first_frame = 1;
     return check(s);
 }
 void deadpan_source_close(DeadpanSource *s) {
     if (!s) return;
     sws_freeContext(s->scaler);
+    deadpan_fields_close(&s->fields);
     av_frame_free(&s->frame);
     av_packet_free(&s->packet);
     avcodec_free_context(&s->decoder);
@@ -866,7 +916,7 @@ static int open_source(int fd, int64_t length, const DeadpanSourceLimits *limits
     DeadpanSource *s = av_mallocz(sizeof(*s));
     if (!s) { (void)snprintf(error->code, sizeof(error->code), "resource_exhausted"); (void)snprintf(error->message, sizeof(error->message), "allocate source session"); return -1; }
     s->fd = fd; s->length = length; s->limits = *limits;
-    s->fresh_keyframe = fresh; s->fresh_key_pts = pts;
+    s->fresh_keyframe = fresh; s->fresh_key_pts = fresh ? pts : AV_NOPTS_VALUE;
     int result = begin(s, timeout, cancelled, opaque, error);
     if (result > 0 && preflight_io_bytes > s->limits.max_io_bytes_per_call)
         result = fail(s, "resource_limit", "container admission exhausted the opening input budget");
@@ -890,7 +940,10 @@ static int check_frame(DeadpanSource *s) {
     AVFrame *f = s->frame;
     AVStream *stream = s->format->streams[s->stream];
     if (f->decode_error_flags || (f->flags & AV_FRAME_FLAG_CORRUPT)) return fail(s, "corrupt_frame", "decoder reported a corrupt or concealed frame");
-    if (f->flags & AV_FRAME_FLAG_INTERLACED) return fail(s, "unsupported_interlace", "interlaced frame requires a qualified deinterlacer");
+    if ((f->flags & AV_FRAME_FLAG_INTERLACED) && !s->info.bwdif_fields)
+        return fail(s, "stream_changed", "progressive source changed to unannounced interlaced pictures");
+    if ((f->flags & AV_FRAME_FLAG_INTERLACED) && f->repeat_pict)
+        return fail(s, "unsupported_interlace", "repeated-field telecine requires a qualified field-repeat cadence");
     if (f->crop_top || f->crop_bottom || f->crop_left || f->crop_right) {
         // Codec padding is part of decoding the declared visible rectangle.
         // Admit it only when it resolves exactly to the immutable stream size.
@@ -908,7 +961,8 @@ static int check_frame(DeadpanSource *s) {
     if ((int)f->chroma_location != s->chroma_location) return fail(s, "stream_changed", "source chroma location changed");
     AVRational aspect = sar(f->sample_aspect_ratio);
     if (av_cmp_q(aspect, (AVRational){s->info.sar_num,s->info.sar_den})) return fail(s, "stream_changed", "frame sample aspect ratio differs from source metadata");
-    if (stream->time_base.num != s->info.time_base_num || stream->time_base.den != s->info.time_base_den)
+    if (stream->time_base.num != s->info.time_base_num ||
+        (int64_t)stream->time_base.den * (s->info.bwdif_fields ? 2 : 1) != s->info.time_base_den)
         return fail(s, "stream_changed", "source time base changed");
     if (f->pts == AV_NOPTS_VALUE) return fail(s, "missing_pts", "frame has no original presentation timestamp");
     const AVFrameSideData *matrix = av_frame_get_side_data(f, AV_FRAME_DATA_DISPLAYMATRIX);
@@ -1371,10 +1425,52 @@ static int receive_frame(DeadpanSource *s) {
     }
     return fail(s, "resource_limit", "bounded decode progress budget exhausted");
 }
+/* At most two decoded inputs are needed before BWDIF can produce one picture.
+   Pull before feeding, so neither its queue nor our exact clock queue grows
+   with the input. Raw frames are validated before entering the filter. */
+static int receive_picture(DeadpanSource *s) {
+    if (!s->info.bwdif_fields) return receive_frame(s);
+    for (unsigned step = 0; step < 4; step++) {
+        if (check(s) < 0) return -1;
+        if (s->fields) {
+            int result = deadpan_fields_pull(s->fields, s->frame);
+            if (check(s) < 0) return -1;
+            if (result == 0) {
+                if (s->presented >= s->limits.max_frames)
+                    return fail(s, "resource_limit", "progressive field count exceeds configured bound");
+                s->presented++;
+                s->frame->time_base = (AVRational){s->info.time_base_num, s->info.time_base_den};
+                return 1;
+            }
+            if (result == AVERROR_EOF) return 0;
+            if (result == AVERROR(ENODATA))
+                return fail(s, "missing_duration", "terminal interlaced picture has no positive decoded duration");
+            if (result != AVERROR(EAGAIN)) return fferror(s, "read exact BWDIF field", result);
+        }
+        int result = receive_frame(s);
+        if (result < 0) return -1;
+        if (!result) {
+            if (!s->fields || s->fields_flushed)
+                return fail(s, "decode_protocol", "BWDIF requested input after draining");
+            result = deadpan_fields_flush(s->fields);
+            if (result < 0) return fferror(s, "drain BWDIF fields", result);
+            s->fields_flushed = 1;
+        } else {
+            if (check_frame(s) < 0) return -1;
+            if (!s->fields) {
+                result = deadpan_fields_open(&s->fields, s->frame, s->limits.threads);
+                if (result < 0) return fferror(s, "prepare BWDIF after seek", result);
+            }
+            result = deadpan_fields_push(s->fields, s->frame);
+            if (result < 0) return fferror(s, "submit BWDIF picture", result);
+        }
+    }
+    return fail(s, "decode_protocol", "BWDIF exceeded its bounded picture progress");
+}
 static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels, size_t length) {
     if (s->pending_first_frame) s->pending_first_frame = 0;
     else {
-        int result = receive_frame(s);
+        int result = receive_picture(s);
         if (result <= 0) return result;
     }
     if (table(s, 0) < 0 || check_frame(s) < 0) return -1;
@@ -1418,11 +1514,37 @@ static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
     s->pending_first_frame = 0;
     s->skip_nonref = 0;
     s->fresh_leading = 0;
+    deadpan_fields_close(&s->fields);
+    s->fields_flushed = 0;
+    s->presented = 0;
+    if (s->info.bwdif_fields) {
+        /* Public/index coordinates use half source ticks. Floor signed odd
+           coordinates, never round a second field forward to another packet. */
+        int64_t remainder = pts % 2;
+        pts /= 2;
+        if (remainder < 0) pts--;
+    }
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
     if (result < 0) return fferror(s, "seek source", result);
     avcodec_flush_buffers(s->decoder);
     s->draining = 0; s->ended = 0; s->frames = 0; s->packets = 0;
-    s->skip_nonref = skip; s->skip_before_pts = target;
+    if (s->info.bwdif_fields && !skip) {
+        /* General callers have no measured seek anchor. Inspect the landed
+           coded picture, then restart at the preceding GOP for temporal
+           context. Indexed seek_to callers already supply that older anchor. */
+        result = receive_frame(s);
+        if (result <= 0) return result < 0 ? result : fail(s, "invalid_timestamp", "interlaced seek found no picture");
+        if (check_frame(s) < 0) return -1;
+        int64_t anchor = s->frame->pts;
+        if (anchor > s->first_source_pts) anchor--;
+        else anchor = s->first_source_pts;
+        av_frame_unref(s->frame);
+        result = av_seek_frame(s->format, s->stream, anchor, AVSEEK_FLAG_BACKWARD);
+        if (result < 0) return fferror(s, "seek BWDIF temporal context", result);
+        avcodec_flush_buffers(s->decoder);
+        s->draining = 0; s->ended = 0;
+    }
+    s->skip_nonref = skip && !s->info.bwdif_fields; s->skip_before_pts = target;
     return check(s);
 }
 int deadpan_source_seek(DeadpanSource *s, int64_t pts, uint64_t timeout, DeadpanCancelled cancelled,
@@ -1438,6 +1560,7 @@ int deadpan_source_seek_to(DeadpanSource *s, int64_t pts, int64_t target, uint64
 int deadpan_source_restart_at_keyframe(DeadpanSource *s, int64_t pts, uint64_t timeout, DeadpanCancelled cancelled,
                         const void *opaque, DeadpanSourceError *error) {
     if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    if (s->info.bwdif_fields) return finish(s, fail(s, "unsupported_interlace", "fresh encoded-output GOP inspection requires progressive pictures"));
     av_frame_unref(s->frame); av_packet_unref(s->packet);
     // Retain only admitted demux/index state. Replacing the whole codec, rather
     // than flushing it, removes every decoded reference picture and codec cache.
@@ -1498,7 +1621,7 @@ void deadpan_source_work(const DeadpanSource *s, DeadpanDecodeWork *work) {
 void deadpan_source_runtime(DeadpanDecoderRuntime *runtime) {
     *runtime = (DeadpanDecoderRuntime){
         .avcodec=avcodec_version(),.avformat=avformat_version(),
-        .avutil=avutil_version(),.swscale=swscale_version()
+        .avutil=avutil_version(),.swscale=swscale_version(),.avfilter=avfilter_version()
     };
 }
 int deadpan_source_lower_thread_priority(void) {

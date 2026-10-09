@@ -30,6 +30,8 @@ fn main() {
     println!("cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX");
     println!("cargo:rerun-if-changed=src/decoder.c");
     println!("cargo:rerun-if-changed=src/decoder.h");
+    println!("cargo:rerun-if-changed=src/deinterlace.c");
+    println!("cargo:rerun-if-changed=src/deinterlace.h");
     println!("cargo:rerun-if-changed=src/audio_decoder.c");
     println!("cargo:rerun-if-changed=src/audio_decoder.h");
 
@@ -67,6 +69,7 @@ fn main() {
 
     cc::Build::new()
         .file("src/decoder.c")
+        .file("src/deinterlace.c")
         .file("src/audio_decoder.c")
         .include(&include)
         .flag("-std=c11")
@@ -76,7 +79,7 @@ fn main() {
         .compile("deadpan_source_decoder");
 
     println!("cargo:rustc-link-search=native={}", library.display());
-    for library_name in ["avformat", "avcodec", "avutil", "swscale"] {
+    for library_name in ["avformat", "avcodec", "avutil", "swscale", "avfilter"] {
         println!("cargo:rustc-link-lib=dylib={library_name}");
     }
     println!("cargo:rustc-link-arg=-Wl,-rpath,{}", library.display());

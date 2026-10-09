@@ -50,16 +50,36 @@ fn open(path: &Path) -> Result<File, VerifyError> {
 }
 
 fn limits(raster: [u32; 2], frames: u64, hdr: bool) -> DecodeLimits {
-    // Complete 16x16 H.264 macroblocks, or HEVC coding tree blocks of at most
-    // 64x64, are stored before the visible crop.
-    let block = if hdr { 64 } else { 16 };
     DecodeLimits {
         // Room for extra pictures so they are reported rather than refused.
         max_frames: frames.saturating_mul(2).saturating_add(16).min(10_000_000),
-        max_pixels: (u64::from(raster[0]).div_ceil(block) * block)
-            * (u64::from(raster[1]).div_ceil(block) * block),
+        max_pixels: crate::encoded_render::verification::decode_pixel_budget(raster, hdr),
         ..DecodeLimits::default()
     }
+}
+
+#[cfg(test)]
+#[test]
+fn emitted_movie_cannot_be_repaired_by_source_deinterlacing() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures/fields-tff.mp4");
+    let result = pictures(
+        &path,
+        PictureGrid {
+            raster: [96, 64],
+            frames: 24,
+            rate: (50, 1),
+        },
+        ExpectedColor {
+            policy: ColorPolicy::SdrRec709,
+            mastering: None,
+        },
+        None,
+        &AtomicBool::new(false),
+        Instant::now() + Duration::from_secs(10),
+        |_, _| panic!("interlaced output must fail before comparing filtered pixels"),
+    );
+    assert!(matches!(result, Err(VerifyError::Movie(message)) if message.contains("progressive")));
 }
 
 /// The committed output branch the movie must carry.
@@ -354,6 +374,11 @@ pub(super) fn pictures(
     )
     .map_err(|error| VerifyError::Movie(error.to_string()))?;
     let info = decoder.info().clone();
+    if info.bwdif_fields {
+        return Err(VerifyError::Movie(
+            "encoded output must contain progressive pictures".into(),
+        ));
+    }
     let mut color = ColorObservation::default();
     container_color(track, expected, &mut color);
     decoded_color(&info, expected, &mut color);

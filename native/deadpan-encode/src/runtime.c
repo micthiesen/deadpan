@@ -137,7 +137,7 @@ static int copy_stat(dp_runtime_image *image, const struct vinfo_stat *stat, dp_
 }
 
 int dp_runtime_capture(uint32_t kind, dp_runtime_image *image, dp_runtime_error *error) {
-    if (!image || kind >= DP_RUNTIME_IMAGES) return failure(error, "image_invalid", "unknown runtime image role");
+    if (!image || kind >= DP_RUNTIME_ROLES) return failure(error, "image_invalid", "unknown runtime image role");
     memset(image, 0, sizeof(*image));
     const void *anchor;
     switch (kind) {
@@ -145,7 +145,8 @@ int dp_runtime_capture(uint32_t kind, dp_runtime_image *image, dp_runtime_error 
         case 1: anchor = (const void *)&avcodec_version; break;
         case 2: anchor = (const void *)&avformat_version; break;
         case 3: anchor = (const void *)&avutil_version; break;
-        default: anchor = dlsym(RTLD_DEFAULT, "swscale_version"); break;
+        case 4: anchor = dlsym(RTLD_DEFAULT, "swscale_version"); break;
+        default: anchor = dlsym(RTLD_DEFAULT, "avfilter_version"); break;
     }
     Dl_info location;
     memset(&location, 0, sizeof(location));
@@ -215,7 +216,7 @@ static int descriptor_matches(const dp_runtime_image *image, int fd, dp_runtime_
 }
 
 int dp_runtime_revalidate(const dp_runtime_image *image, int fd, dp_runtime_error *error) {
-    if (!image || image->abi_version != DP_RUNTIME_ABI || image->kind >= DP_RUNTIME_IMAGES ||
+    if (!image || image->abi_version != DP_RUNTIME_ABI || image->kind >= DP_RUNTIME_ROLES ||
         image->header_file_offset > image->file_size)
         return failure(error, "image_invalid", "invalid live runtime image observation");
     dp_runtime_image current;

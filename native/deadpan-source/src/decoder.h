@@ -49,6 +49,9 @@ typedef struct {
     uint32_t mastering_max_luminance, mastering_min_luminance;
     int32_t has_content_light;
     uint16_t max_cll, max_fall;
+    /* Pinned BWDIF send_field interpretation; output ticks are half source
+       ticks, including stream_start/duration. Audio clocks are unchanged. */
+    int32_t bwdif_fields;
 } DeadpanSourceInfo;
 typedef struct {
     int64_t pts, duration, dts;
@@ -70,7 +73,7 @@ typedef struct {
     uint64_t pictures;
 } DeadpanDecodeWork;
 typedef struct {
-    uint32_t avcodec, avformat, avutil, swscale;
+    uint32_t avcodec, avformat, avutil, swscale, avfilter;
 } DeadpanDecoderRuntime;
 typedef struct {
     char code[48];

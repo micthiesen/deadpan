@@ -47,6 +47,7 @@ pub(crate) fn measure(
     remaining()?;
     let contract = super::native_contract(plan);
     if session.index().index().frames().len() != contract.frames as usize
+        || session.info().bwdif_fields
         || session.info().width != contract.width
         || session.info().height != contract.height
         || session.info().time_base_num != 1

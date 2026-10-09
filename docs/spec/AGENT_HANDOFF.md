@@ -4,6 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Interlaced source presentation](../qualification/interlaced-sources-2026-10-09.md)
+uses pinned BWDIF at field cadence and spatial bob for single coded pictures.
+Source receipts retain the recipe and previous-GOP anchors; video clocks have
+exact half ticks and audio stays unchanged. Both debug and release public Render matrices
+passes all 62 pictures/four audio windows at zero measured offset. A measured
+192x96 minimum coded H.264 raster fixes verification of small 96x64 outputs.
+Export validators still require progressive output. Repeated-field telecine
+remains an explicit refusal pending cadence qualification. Read the qualification
+for final workspace, release, sanitizer and bundle evidence.
+
 [Fractional clean apertures](../qualification/fractional-aperture-2026-10-09.md)
 now retain exact bounds through source receipts, project basis, canonical
 rendering, thumbnails, tracking, AI conditioning/join measurements and proxy

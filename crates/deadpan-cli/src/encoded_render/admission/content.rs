@@ -280,10 +280,10 @@ fn inspect_pictures(
     report: &mut ProbeContentReport,
 ) -> Result<(), String> {
     let config = generator.config();
-    let pixels = u64::from(config.raster[0]).div_ceil(16)
-        * 16
-        * u64::from(config.raster[1]).div_ceil(16)
-        * 16;
+    let pixels = crate::encoded_render::verification::decode_pixel_budget(
+        config.raster,
+        matches!(generator, ProbeGenerator::Hdr(_)),
+    );
     let limits = DecodeLimits {
         max_input_bytes: maximum_bytes,
         max_frames: config.video_frames + 1,

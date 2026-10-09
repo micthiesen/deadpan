@@ -919,7 +919,8 @@ fn correspondence(
     original_info: &SourceStreamInfo,
 ) -> Result<(), ProxyError> {
     let wrong = ProxyError::Correspondence;
-    if proxy_info.clean_aperture.is_some()
+    if proxy_info.bwdif_fields
+        || proxy_info.clean_aperture.is_some()
         || proxy_info.codec != "h264"
         || proxy_info.pixel_format != "yuv420p"
         || proxy_info.color.range != ColorRange::Limited

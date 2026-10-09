@@ -60,17 +60,7 @@ pub(crate) fn inspect(
     limits.validate()?;
     manifest.validate()?;
     let native = manifest.contract.native_contract()?;
-    // Progressive H.264 stores complete 16x16 macroblocks and HEVC complete
-    // coding tree blocks (at most 64x64) before applying the visible crop.
-    // Visible dimensions are still checked against the contract.
-    let block = if native.video_format().is_hdr() {
-        64
-    } else {
-        16
-    };
-    let pixels = u64::from(native.raster()[0]).div_ceil(block)
-        * block
-        * (u64::from(native.raster()[1]).div_ceil(block) * block);
+    let pixels = super::decode_pixel_budget(native.raster(), native.video_format().is_hdr());
     let context = Context {
         file,
         manifest,

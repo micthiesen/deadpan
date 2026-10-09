@@ -5,7 +5,9 @@
 //! Calls perform I/O and allocation and belong on a media worker, never the UI or
 //! audio callback. Deadlines are cooperative around FFmpeg calls, not preemptive.
 //! Encoded RGB values retain their source transfer and primaries. No gamma or
-//! gamut conversion, deinterlacing, tone mapping, or orientation is performed.
+//! gamut conversion, tone mapping, or orientation is performed. Interlaced
+//! sources use pinned BWDIF at field cadence with exact half-tick timestamps;
+//! a single coded picture uses spatial bob because no temporal neighbors exist.
 //! HDR (PQ/HLG) sources keep their nonlinear R'G'B'; the eight-bit RGBA output
 //! of such a source is a quantized analysis view, and pictures should use the
 //! sixteen-bit [`SourceDecoder::next_rgba16`] output.
@@ -33,7 +35,8 @@ pub use input::{
 #[derive(Clone, Copy, Debug)]
 pub struct DecodeLimits {
     pub max_input_bytes: u64,
-    /// Frames decoded since the most recent successful seek, including scan calls.
+    /// Both coded frames and progressive pictures since the most recent seek,
+    /// including scan calls. Each count independently respects this bound.
     pub max_frames: u64,
     /// Demuxed packets since the most recent successful seek.
     pub max_packets: u64,
@@ -233,6 +236,10 @@ pub struct SourceAudioStreamInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceStreamInfo {
+    /// Pinned FFmpeg 8.0.3 BWDIF send-field view with single-picture spatial bob.
+    /// Video ticks are exactly half the container's ticks; progressive streams
+    /// and every audio clock are unchanged. This recipe is retained in receipts.
+    pub bwdif_fields: bool,
     /// Decoded backing raster. Codec padding and integral clean apertures are
     /// removed; fractional apertures, SAR and rotation remain independent.
     pub width: u32,
@@ -296,9 +303,11 @@ impl SourceStreamInfo {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceFrameMetadata {
-    /// Original decoded frame PTS in `SourceStreamInfo`'s time base. Never guessed.
+    /// Measured presentation PTS in `SourceStreamInfo`'s time base. Interlaced
+    /// second fields bisect the measured coded-picture interval exactly.
     pub pts: i64,
-    /// Only a positive decoder-reported duration. No nominal-rate substitution.
+    /// Positive decoded duration, or the measured half-interval for a field.
+    /// No nominal-rate substitution; terminal fields require decoded duration.
     pub reported_duration: Option<i64>,
     pub keyframe: bool,
     pub decode_timestamp: Option<i64>,
@@ -410,6 +419,7 @@ pub struct DecoderRuntimeInfo {
     pub avformat: u32,
     pub avutil: u32,
     pub swscale: u32,
+    pub avfilter: u32,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -854,15 +864,20 @@ impl SourceDecoder {
             rgba,
         }))
     }
-    /// Backward keyframe seek in original stream ticks. Decode forward to the
-    /// desired indexed PTS; the first returned frame need not be the target.
+    /// Backward seek in the reported presentation clock (half source ticks for
+    /// interlaced sources). Decode forward to the desired indexed PTS; the first
+    /// picture need not be the target. Interlaced seeks include a preceding GOP
+    /// for temporal context; preroll pixels before the target are not guaranteed.
     pub fn seek(&mut self, pts: i64, control: DecodeControl<'_>) -> Result<(), SourceDecodeError> {
         self.inner.seek(pts, None, control)
     }
     /// Seek like [`Self::seek`] for a known target PTS. Non-reference pictures
     /// whose packets precede `target` are not decoded and never returned; every
-    /// returned picture equals an ordinary forward decode, and pictures at or
-    /// after `target` all decode, so forward steps from the target continue.
+    /// returned progressive-source picture equals an ordinary forward decode.
+    /// For interlaced sources, `pts` must be the measured index's temporal anchor
+    /// (the preceding GOP, or the stream start); no pictures are skipped. Preroll
+    /// pixels before the target are not guaranteed. Pictures at/after `target`
+    /// equal forward decoding, so forward steps from the target continue.
     pub fn seek_to(
         &mut self,
         pts: i64,
@@ -954,6 +969,7 @@ mod ffi {
         has_content_light: i32,
         max_cll: u16,
         max_fall: u16,
+        bwdif_fields: i32,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -999,6 +1015,7 @@ mod ffi {
         avformat: u32,
         avutil: u32,
         swscale: u32,
+        avfilter: u32,
     }
     #[repr(C)]
     struct Error {
@@ -1415,6 +1432,11 @@ mod ffi {
                 });
             }
             let value = SourceStreamInfo {
+                bwdif_fields: match info.bwdif_fields {
+                    0 => false,
+                    1 => true,
+                    _ => return Err(invalid_native()),
+                },
                 clean_aperture: None,
                 width: positive(info.width)?,
                 height: positive(info.height)?,
@@ -1469,6 +1491,7 @@ mod ffi {
                 avformat: runtime.avformat,
                 avutil: runtime.avutil,
                 swscale: runtime.swscale,
+                avfilter: runtime.avfilter,
             }
         }
         pub(super) fn i420(
