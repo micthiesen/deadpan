@@ -1,0 +1,21 @@
+[
+  {
+    "name": "clippy-2",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--example",
+      "qualify_render_host_crash",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 101,
+    "seconds": 3.101144500076771
+  }
+]

@@ -1,0 +1,95 @@
+[
+  {
+    "name": "clippy-4",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--example",
+      "qualify_render_host_crash",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 0.30684045888483524
+  },
+  {
+    "name": "gate-tests-4",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--lib",
+      "host_crash_gate",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "seconds": 0.14994641626253724
+  },
+  {
+    "name": "example-tests-4",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--example",
+      "qualify_render_host_crash",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "seconds": 0.693216749932617
+  },
+  {
+    "name": "build-4",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "qualify_render_host_crash",
+      "--features",
+      "qualification-render-host-crash"
+    ],
+    "exit_code": 0,
+    "seconds": 0.9319076668471098
+  },
+  {
+    "name": "seed-4",
+    "command": [
+      "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+      "project",
+      "create-original",
+      "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan",
+      "/tmp/deadpan-dp02-fractional-20261008/run-doiiN7/original.mp4"
+    ],
+    "exit_code": 0,
+    "seconds": 0.09879312524572015
+  },
+  {
+    "name": "qualify-4",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+      "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan",
+      "/private/tmp/deadpan-render-host-crash-20261008/run-4"
+    ],
+    "exit_code": 0,
+    "seconds": 47.88924574991688
+  }
+]

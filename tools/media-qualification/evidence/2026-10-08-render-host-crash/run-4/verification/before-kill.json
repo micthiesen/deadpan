@@ -1,0 +1,143 @@
+{
+  "attempt_before": {
+    "attempt_id": "host-crash-verification-initial",
+    "cancellation_requested": false,
+    "cancellation_token": "host-crash-verification-initial-cancel",
+    "checkpoint_attempt_id": "host-crash-verification-initial",
+    "diagnostic": null,
+    "job_id": "host-crash-verification",
+    "ordinal": 1,
+    "state": "verifying",
+    "transition_sequence": 4,
+    "verification": null
+  },
+  "checkpoint_before": {
+    "checkpoint": {
+      "encoding_attempt_id": "host-crash-verification-initial",
+      "job_id": "host-crash-verification",
+      "media": {
+        "manifest": {
+          "byte_length": 14924,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "74606839f2485d4df8223bc3faa7d2deb73f4739a0ecf9248cdc8ebb944692e1"
+          }
+        },
+        "manifest_sha256": "7c6d85a40a1e92d81ffd02e18700216a52e573f1dc52fbda76abe531e4f8e646",
+        "movie": {
+          "byte_length": 127076,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "776864265b216f932cb9b211ea955a6aaf638c62446ea338ac76537d53ad28fe"
+          }
+        },
+        "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550"
+      }
+    },
+    "manifest_sha256": "7c6d85a40a1e92d81ffd02e18700216a52e573f1dc52fbda76abe531e4f8e646",
+    "movie_bytes": 127076,
+    "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550"
+  },
+  "executable": {
+    "bytes": 181220984,
+    "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+    "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+  },
+  "gate": {
+    "completed": 1,
+    "identity": {
+      "attempt_id": "host-crash-verification-initial",
+      "request_id": "host-crash-verification"
+    },
+    "maximum_pause_seconds": 60,
+    "pid": 84723,
+    "progress_flushed": true,
+    "schema_version": 1,
+    "stage": "verification",
+    "total": 100
+  },
+  "gate_configuration": {
+    "identity": {
+      "attempt_id": "host-crash-verification-initial",
+      "request_id": "host-crash-verification"
+    },
+    "schema_version": 1,
+    "stage": "verification"
+  },
+  "gate_configuration_file": {
+    "bytes": 170,
+    "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/render-host-crash-gate.json",
+    "sha256": "58f8459d642833d07cfa89120f0fdff3f20ff7943fffda13bbe746aaf0c48dc9"
+  },
+  "host_pid": 84094,
+  "public_status": {
+    "attempt": {
+      "attempt_id": "host-crash-verification-initial",
+      "cancellation_requested": false,
+      "cancellation_token": "host-crash-verification-initial-cancel",
+      "checkpoint_attempt_id": "host-crash-verification-initial",
+      "diagnostic": null,
+      "job_id": "host-crash-verification",
+      "ordinal": 1,
+      "state": "verifying",
+      "transition_sequence": 4,
+      "verification": null
+    },
+    "cancellation_requested": false,
+    "cleanup_confirmed": false,
+    "diagnostic": null,
+    "identity": {
+      "attempt_id": "host-crash-verification-initial",
+      "cancellation_token": "host-crash-verification-initial-cancel",
+      "job_id": "host-crash-verification"
+    },
+    "intent": {
+      "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+      "job_id": "host-crash-verification",
+      "policy": {
+        "algorithm": "automatic_sdr_v1",
+        "schema_version": 1,
+        "selection": "automatic"
+      },
+      "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+      "range": {
+        "end": 100,
+        "start": 0
+      },
+      "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+      "schema_version": 2
+    },
+    "journal_diagnostic": null,
+    "observed_movie_commit": false,
+    "outcome": null,
+    "progress": {
+      "kind": "verification",
+      "value": {
+        "completed": 1,
+        "stage": "pictures",
+        "total": 100
+      }
+    },
+    "publication": null,
+    "receipt": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "stage": "verifying"
+  },
+  "source_executable": {
+    "bytes": 181220984,
+    "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+    "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+  },
+  "stage": "verification",
+  "status": "running",
+  "worker_before_kill": {
+    "group": 84723,
+    "parent": 84094,
+    "pid": 84723,
+    "start_and_executable": "Thu Oct 8 20:00:40 2026 /private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash"
+  }
+}

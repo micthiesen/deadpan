@@ -1,0 +1,9 @@
+{
+  "arguments": [
+    "--render-verify-worker"
+  ],
+  "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+  "group": 84824,
+  "pid": 84824,
+  "role": "verification"
+}

@@ -417,6 +417,14 @@ The regression run is 8 kills per test with a fixed seed;
   covered by the worker supervision tests, and full disks by the
   [disk-full tests](RECOVERY.md#storage-failures).
 
+- **Render host during encoding and verification.** The
+  [2026-10-08 qualification](qualification/render-host-crash-2026-10-08.md)
+  kills the production coordinator after matching real worker and public
+  progress. Both helper groups exit through their ordinary control-pipe EOF,
+  reopening reports Interrupted attempts and authored history is unchanged.
+  The verification case retains its exact checkpoint; retry runs a fresh
+  verifier and publishes the same movie without another encoder.
+
 ## Limits
 
 - A process kill is not a power loss: the kernel still writes back cached

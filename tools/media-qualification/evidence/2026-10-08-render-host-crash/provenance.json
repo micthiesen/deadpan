@@ -1,0 +1,21 @@
+{
+  "base_revision": "515d8b160aa1aeb0ac28fe20903c77e6d061eb0c",
+  "hardware": "Apple M5 Max, 128 GiB",
+  "os": "macOS 26.5.2",
+  "rust": "1.97.1",
+  "ffmpeg": "pinned 8.0.3",
+  "profile": "debug",
+  "performance_claim": false,
+  "test_results": {
+    "gate_tests": 3,
+    "example_tests": 5,
+    "strict_clippy": "passed",
+    "real_crash_cases": 2
+  },
+  "earlier_failures": [
+    "Run 1 rejected the fixture runtime environment overrides during automatic admission; no worker started. The fixture now uses byte-verified case executable copies and bounded adjacent configuration with empty runtime arguments/environment.",
+    "Run 2 failed to compile SQL result reads as u64; changed to i64 plus checked conversions.",
+    "Run 3 passed gate tests but failed to compile u64 test parameters; changed to checked i64 parameters."
+  ],
+  "omitted": "Executed binaries and scratch SQLite packages; exact binary hashes, authored row captures, source fixture, real published movie and complete reports retained."
+}

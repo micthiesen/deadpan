@@ -1,0 +1,106 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+   --> crates/deadpan-cli/examples/qualify_render_host_crash/evidence.rs:280:17
+    |
+278 |             .execute(
+    |              ------- required by a bound introduced by this call
+279 |                 "INSERT INTO revisions(id,document) VALUES(1,zeroblob(?1))",
+280 |                 [MAX_AUTHORED_BYTES + 1],
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ToSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `ToSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+    = note: required for `[u64; 1]` to implement `Params`
+note: required by a bound in `rusqlite::Connection::execute`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/lib.rs:620:23
+    |
+620 |     pub fn execute<P: Params>(&self, sql: &str, params: P) -> Result<usize> {
+    |                       ^^^^^^ required by this bound in `Connection::execute`
+
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+   --> crates/deadpan-cli/examples/qualify_render_host_crash/evidence.rs:294:31
+    |
+294 |                 .execute(sql, [MAX_AUTHORED_BYTES / 2 + 1])
+    |                  -------      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ToSql` is not implemented for `u64`
+    |                  |
+    |                  required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `ToSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+    = note: required for `[u64; 1]` to implement `Params`
+note: required by a bound in `rusqlite::Connection::execute`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/lib.rs:620:23
+    |
+620 |     pub fn execute<P: Params>(&self, sql: &str, params: P) -> Result<usize> {
+    |                       ^^^^^^ required by this bound in `Connection::execute`
+
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+   --> crates/deadpan-cli/examples/qualify_render_host_crash/evidence.rs:306:17
+    |
+304 |             .execute(
+    |              ------- required by a bound introduced by this call
+305 |                 "INSERT INTO revisions(id,document) VALUES(1,CAST(zeroblob(?1) AS TEXT))",
+306 |                 [MAX_AUTHORED_BYTES / 6 + 1],
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ToSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `ToSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+    = note: required for `[u64; 1]` to implement `Params`
+note: required by a bound in `rusqlite::Connection::execute`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/lib.rs:620:23
+    |
+620 |     pub fn execute<P: Params>(&self, sql: &str, params: P) -> Result<usize> {
+    |                       ^^^^^^ required by this bound in `Connection::execute`
+
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+   --> crates/deadpan-cli/examples/qualify_render_host_crash/evidence.rs:319:17
+    |
+316 |             .execute(
+    |              ------- required by a bound introduced by this call
+...
+319 |                 [MAX_AUTHORED_ROWS],
+    |                 ^^^^^^^^^^^^^^^^^^^ the trait `ToSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `ToSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+    = note: required for `[u64; 1]` to implement `Params`
+note: required by a bound in `rusqlite::Connection::execute`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/lib.rs:620:23
+    |
+620 |     pub fn execute<P: Params>(&self, sql: &str, params: P) -> Result<usize> {
+    |                       ^^^^^^ required by this bound in `Connection::execute`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-cli` (example "qualify_render_host_crash" test) due to 4 previous errors

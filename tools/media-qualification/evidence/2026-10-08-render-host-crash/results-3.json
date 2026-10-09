@@ -1,0 +1,57 @@
+[
+  {
+    "name": "clippy-3",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--example",
+      "qualify_render_host_crash",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 0.3539792075753212
+  },
+  {
+    "name": "gate-tests-3",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--lib",
+      "host_crash_gate",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "seconds": 12.23524516588077
+  },
+  {
+    "name": "example-tests-3",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "qualification-render-host-crash",
+      "--example",
+      "qualify_render_host_crash",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "seconds": 3.790687750093639
+  }
+]

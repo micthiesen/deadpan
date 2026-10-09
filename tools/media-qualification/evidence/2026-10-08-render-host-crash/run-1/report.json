@@ -1,0 +1,39 @@
+{
+  "captured_frames": 100,
+  "cases": [
+    {
+      "error": "host exited before matching progress witness: exit status: 1",
+      "failure_cleanup": {
+        "helpers_signalled_by_harness": false,
+        "host_cleanup": {
+          "status": "stopped_or_already_reaped"
+        },
+        "observed_worker_groups": [],
+        "status": "confirmed",
+        "worker_launches": []
+      },
+      "host_pid": 56452,
+      "stage": "encoding",
+      "status": "failed"
+    }
+  ],
+  "elapsed_seconds": 0.195449,
+  "error": "host exited before matching progress witness: exit status: 1",
+  "executable": {
+    "bytes": 181184616,
+    "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+    "sha256": "af375f3eb416129aaf89bb3cf00c014ce8ea183910bba3ee5c51d34d76ac903c"
+  },
+  "limitations": [
+    "direct coordinator harness, not native UI or authenticated IPC",
+    "first at most 120 frames of a caller-prepared fixture",
+    "process groups are observed, not containment of escaped processes",
+    "no physical power-loss or crash inside a filesystem or SQLite call",
+    "qualification pause is absent from ordinary builds"
+  ],
+  "package": "/private/tmp/deadpan-render-host-crash-20261008/source-1.deadpan",
+  "revision": "682d5dad-acb0-48f3-91e2-6b52903922ec",
+  "schema_version": 1,
+  "scope": "production automatic SDR RenderWorkflow; real encode and full-file verifier processes; SIGKILL of host leader only after flushed intermediate progress and matching public status",
+  "status": "failed"
+}

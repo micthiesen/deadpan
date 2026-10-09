@@ -1,0 +1,1548 @@
+{
+  "authored_history_preserved": true,
+  "captured_frames": 100,
+  "cases": [
+    {
+      "attempt_before": {
+        "attempt_id": "host-crash-encoding-initial",
+        "cancellation_requested": false,
+        "cancellation_token": "host-crash-encoding-initial-cancel",
+        "checkpoint_attempt_id": null,
+        "diagnostic": null,
+        "job_id": "host-crash-encoding",
+        "ordinal": 1,
+        "state": "encoding",
+        "transition_sequence": 2,
+        "verification": null
+      },
+      "authored_history_preserved": true,
+      "checkpoint_before": null,
+      "executable": {
+        "bytes": 181220984,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "executable_after": {
+        "bytes": 181220984,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "gate": {
+        "completed": 1,
+        "identity": {
+          "attempt_id": "host-crash-encoding-initial",
+          "request_id": "host-crash-encoding"
+        },
+        "maximum_pause_seconds": 60,
+        "pid": 83986,
+        "progress_flushed": true,
+        "schema_version": 1,
+        "stage": "encoding",
+        "total": 100
+      },
+      "gate_configuration": {
+        "identity": {
+          "attempt_id": "host-crash-encoding-initial",
+          "request_id": "host-crash-encoding"
+        },
+        "schema_version": 1,
+        "stage": "encoding"
+      },
+      "gate_configuration_file": {
+        "bytes": 158,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/render-host-crash-gate.json",
+        "sha256": "7ebebafc51b05a45ad67f740dd2c85f36f52e96668da7b47967ae621e85964c3"
+      },
+      "gate_configuration_file_after": {
+        "bytes": 158,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/render-host-crash-gate.json",
+        "sha256": "7ebebafc51b05a45ad67f740dd2c85f36f52e96668da7b47967ae621e85964c3"
+      },
+      "helper_groups_absent_after_seconds": 0.200552875,
+      "helpers_signalled_by_harness": false,
+      "host_exit_signal": 9,
+      "host_pid": 83926,
+      "observed_worker_groups": [
+        83928,
+        83933,
+        83986
+      ],
+      "public_status": {
+        "attempt": {
+          "attempt_id": "host-crash-encoding-initial",
+          "cancellation_requested": false,
+          "cancellation_token": "host-crash-encoding-initial-cancel",
+          "checkpoint_attempt_id": null,
+          "diagnostic": null,
+          "job_id": "host-crash-encoding",
+          "ordinal": 1,
+          "state": "encoding",
+          "transition_sequence": 2,
+          "verification": null
+        },
+        "cancellation_requested": false,
+        "cleanup_confirmed": false,
+        "diagnostic": null,
+        "identity": {
+          "attempt_id": "host-crash-encoding-initial",
+          "cancellation_token": "host-crash-encoding-initial-cancel",
+          "job_id": "host-crash-encoding"
+        },
+        "intent": {
+          "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+          "job_id": "host-crash-encoding",
+          "policy": {
+            "algorithm": "automatic_sdr_v1",
+            "schema_version": 1,
+            "selection": "automatic"
+          },
+          "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+          "range": {
+            "end": 100,
+            "start": 0
+          },
+          "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+          "schema_version": 2
+        },
+        "journal_diagnostic": null,
+        "observed_movie_commit": false,
+        "outcome": null,
+        "progress": {
+          "kind": "encoding",
+          "value": {
+            "completed_audio_samples": 0,
+            "completed_frames": 1,
+            "total_audio_samples": 160160,
+            "total_frames": 100
+          }
+        },
+        "publication": null,
+        "receipt": null,
+        "retained": {
+          "partial_movie": null,
+          "partial_report": null,
+          "published_report": null
+        },
+        "stage": "encoding"
+      },
+      "recovered_attempt": {
+        "attempt_id": "host-crash-encoding-initial",
+        "cancellation_requested": false,
+        "cancellation_token": "host-crash-encoding-initial-cancel",
+        "checkpoint_attempt_id": null,
+        "diagnostic": {
+          "code": "InterruptedOnOpen",
+          "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+        },
+        "job_id": "host-crash-encoding",
+        "ordinal": 1,
+        "state": "interrupted",
+        "transition_sequence": 3,
+        "verification": null
+      },
+      "recovery": {
+        "interrupted_generation_count": 0,
+        "interrupted_generations": [],
+        "interrupted_publication_count": 0,
+        "interrupted_publications": [],
+        "interrupted_render_count": 1,
+        "interrupted_renders": [
+          {
+            "attempt_id": "host-crash-encoding-initial",
+            "checkpoint_attempt_id": null,
+            "job_id": "host-crash-encoding",
+            "ordinal": 1
+          }
+        ],
+        "unclean_previous_writer": {
+          "marker": "deadpan writer pid=83926 opened_unix=1791514798 package=16777233:83730855"
+        }
+      },
+      "source_executable": {
+        "bytes": 181220984,
+        "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "stage": "encoding",
+      "status": "passed",
+      "worker_before_kill": {
+        "group": 83986,
+        "parent": 83926,
+        "pid": 83986,
+        "start_and_executable": "Thu Oct 8 20:00:05 2026 /private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash"
+      },
+      "worker_launches": [
+        {
+          "arguments": [
+            "--render-probe-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+          "group": 83928,
+          "pid": 83928,
+          "role": "admission"
+        },
+        {
+          "arguments": [
+            "--render-probe-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+          "group": 83933,
+          "pid": 83933,
+          "role": "admission"
+        },
+        {
+          "arguments": [
+            "--render-encode-worker",
+            "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+          "group": 83986,
+          "pid": 83986,
+          "role": "encoding"
+        }
+      ]
+    },
+    {
+      "attempt_before": {
+        "attempt_id": "host-crash-verification-initial",
+        "cancellation_requested": false,
+        "cancellation_token": "host-crash-verification-initial-cancel",
+        "checkpoint_attempt_id": "host-crash-verification-initial",
+        "diagnostic": null,
+        "job_id": "host-crash-verification",
+        "ordinal": 1,
+        "state": "verifying",
+        "transition_sequence": 4,
+        "verification": null
+      },
+      "authored_history_preserved": true,
+      "checkpoint_before": {
+        "checkpoint": {
+          "encoding_attempt_id": "host-crash-verification-initial",
+          "job_id": "host-crash-verification",
+          "media": {
+            "manifest": {
+              "byte_length": 14924,
+              "content": {
+                "algorithm": "blake3",
+                "digest": "74606839f2485d4df8223bc3faa7d2deb73f4739a0ecf9248cdc8ebb944692e1"
+              }
+            },
+            "manifest_sha256": "7c6d85a40a1e92d81ffd02e18700216a52e573f1dc52fbda76abe531e4f8e646",
+            "movie": {
+              "byte_length": 127076,
+              "content": {
+                "algorithm": "blake3",
+                "digest": "776864265b216f932cb9b211ea955a6aaf638c62446ea338ac76537d53ad28fe"
+              }
+            },
+            "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550"
+          }
+        },
+        "manifest_sha256": "7c6d85a40a1e92d81ffd02e18700216a52e573f1dc52fbda76abe531e4f8e646",
+        "movie_bytes": 127076,
+        "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550"
+      },
+      "executable": {
+        "bytes": 181220984,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "executable_after": {
+        "bytes": 181220984,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "gate": {
+        "completed": 1,
+        "identity": {
+          "attempt_id": "host-crash-verification-initial",
+          "request_id": "host-crash-verification"
+        },
+        "maximum_pause_seconds": 60,
+        "pid": 84723,
+        "progress_flushed": true,
+        "schema_version": 1,
+        "stage": "verification",
+        "total": 100
+      },
+      "gate_configuration": {
+        "identity": {
+          "attempt_id": "host-crash-verification-initial",
+          "request_id": "host-crash-verification"
+        },
+        "schema_version": 1,
+        "stage": "verification"
+      },
+      "gate_configuration_file": {
+        "bytes": 170,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/render-host-crash-gate.json",
+        "sha256": "58f8459d642833d07cfa89120f0fdff3f20ff7943fffda13bbe746aaf0c48dc9"
+      },
+      "gate_configuration_file_after": {
+        "bytes": 170,
+        "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/render-host-crash-gate.json",
+        "sha256": "58f8459d642833d07cfa89120f0fdff3f20ff7943fffda13bbe746aaf0c48dc9"
+      },
+      "helper_groups_absent_after_seconds": 0.19774925,
+      "helpers_signalled_by_harness": false,
+      "host_exit_signal": 9,
+      "host_pid": 84094,
+      "observed_worker_groups": [
+        84095,
+        84100,
+        84153,
+        84723
+      ],
+      "public_status": {
+        "attempt": {
+          "attempt_id": "host-crash-verification-initial",
+          "cancellation_requested": false,
+          "cancellation_token": "host-crash-verification-initial-cancel",
+          "checkpoint_attempt_id": "host-crash-verification-initial",
+          "diagnostic": null,
+          "job_id": "host-crash-verification",
+          "ordinal": 1,
+          "state": "verifying",
+          "transition_sequence": 4,
+          "verification": null
+        },
+        "cancellation_requested": false,
+        "cleanup_confirmed": false,
+        "diagnostic": null,
+        "identity": {
+          "attempt_id": "host-crash-verification-initial",
+          "cancellation_token": "host-crash-verification-initial-cancel",
+          "job_id": "host-crash-verification"
+        },
+        "intent": {
+          "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+          "job_id": "host-crash-verification",
+          "policy": {
+            "algorithm": "automatic_sdr_v1",
+            "schema_version": 1,
+            "selection": "automatic"
+          },
+          "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+          "range": {
+            "end": 100,
+            "start": 0
+          },
+          "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+          "schema_version": 2
+        },
+        "journal_diagnostic": null,
+        "observed_movie_commit": false,
+        "outcome": null,
+        "progress": {
+          "kind": "verification",
+          "value": {
+            "completed": 1,
+            "stage": "pictures",
+            "total": 100
+          }
+        },
+        "publication": null,
+        "receipt": null,
+        "retained": {
+          "partial_movie": null,
+          "partial_report": null,
+          "published_report": null
+        },
+        "stage": "verifying"
+      },
+      "recovered_attempt": {
+        "attempt_id": "host-crash-verification-initial",
+        "cancellation_requested": false,
+        "cancellation_token": "host-crash-verification-initial-cancel",
+        "checkpoint_attempt_id": "host-crash-verification-initial",
+        "diagnostic": {
+          "code": "InterruptedOnOpen",
+          "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+        },
+        "job_id": "host-crash-verification",
+        "ordinal": 1,
+        "state": "interrupted",
+        "transition_sequence": 5,
+        "verification": null
+      },
+      "recovery": {
+        "interrupted_generation_count": 0,
+        "interrupted_generations": [],
+        "interrupted_publication_count": 0,
+        "interrupted_publications": [],
+        "interrupted_render_count": 1,
+        "interrupted_renders": [
+          {
+            "attempt_id": "host-crash-verification-initial",
+            "checkpoint_attempt_id": "host-crash-verification-initial",
+            "job_id": "host-crash-verification",
+            "ordinal": 1
+          }
+        ],
+        "unclean_previous_writer": {
+          "marker": "deadpan writer pid=84094 opened_unix=1791514810 package=16777233:83730855"
+        }
+      },
+      "retry": {
+        "attempts": [
+          {
+            "attempt_id": "host-crash-verification-initial",
+            "cancellation_requested": false,
+            "cancellation_token": "host-crash-verification-initial-cancel",
+            "checkpoint_attempt_id": "host-crash-verification-initial",
+            "diagnostic": {
+              "code": "InterruptedOnOpen",
+              "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+            },
+            "job_id": "host-crash-verification",
+            "ordinal": 1,
+            "state": "interrupted",
+            "transition_sequence": 5,
+            "verification": null
+          },
+          {
+            "attempt_id": "host-crash-verification-retry",
+            "cancellation_requested": false,
+            "cancellation_token": "host-crash-verification-retry-cancel",
+            "checkpoint_attempt_id": "host-crash-verification-initial",
+            "diagnostic": null,
+            "job_id": "host-crash-verification",
+            "ordinal": 2,
+            "state": "verified",
+            "transition_sequence": 3,
+            "verification": {
+              "movie_byte_length": 127076,
+              "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+              "report": {
+                "audio_edit_media_time": 1024,
+                "audio_packets": 158,
+                "audio_samples": 160160,
+                "contract": {
+                  "choice": {
+                    "b_frames": "none",
+                    "mode": "hardware"
+                  },
+                  "picture": {
+                    "canvas": [
+                      320,
+                      180
+                    ],
+                    "color_policy": "sdr_rec709",
+                    "frame_count": 100,
+                    "frame_rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "project_audio_end": 160160,
+                    "project_audio_start": 0,
+                    "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+                    "range": {
+                      "end": 100,
+                      "start": 0
+                    },
+                    "raster": [
+                      320,
+                      180
+                    ],
+                    "relative_aspect_error": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+                    "terminal_pts": 100100,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+                "fresh_gop_frames": 100,
+                "gops": 7,
+                "manual_first_sample": -1024,
+                "manual_physical_samples": 161792,
+                "maximum_b_run": 0,
+                "movie_bytes": 127076,
+                "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+                "movie_timescale": 240000,
+                "ordinary_first_sample": 0,
+                "ordinary_physical_samples": 160768,
+                "policy_version": 1,
+                "runtime_versions": [
+                  4066151,
+                  4064103,
+                  3934311
+                ],
+                "video_edit_media_time": 0,
+                "video_frames": 100,
+                "video_packets": 100
+              },
+              "schema_version": 1,
+              "validator_id": "deadpan-sdr-finished-file",
+              "validator_version": "0.1.0:policy-1"
+            }
+          }
+        ],
+        "movie": {
+          "bytes": 127076,
+          "path": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/retried.mp4",
+          "sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550"
+        },
+        "new_encoder_processes": 0,
+        "new_verifier_processes": 1,
+        "stages": [
+          "verifying",
+          "preparing_publication",
+          "committing_report",
+          "committing_movie",
+          "releasing",
+          "finished"
+        ],
+        "status": {
+          "attempt": {
+            "attempt_id": "host-crash-verification-retry",
+            "cancellation_requested": false,
+            "cancellation_token": "host-crash-verification-retry-cancel",
+            "checkpoint_attempt_id": "host-crash-verification-initial",
+            "diagnostic": null,
+            "job_id": "host-crash-verification",
+            "ordinal": 2,
+            "state": "verified",
+            "transition_sequence": 3,
+            "verification": {
+              "movie_byte_length": 127076,
+              "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+              "report": {
+                "audio_edit_media_time": 1024,
+                "audio_packets": 158,
+                "audio_samples": 160160,
+                "contract": {
+                  "choice": {
+                    "b_frames": "none",
+                    "mode": "hardware"
+                  },
+                  "picture": {
+                    "canvas": [
+                      320,
+                      180
+                    ],
+                    "color_policy": "sdr_rec709",
+                    "frame_count": 100,
+                    "frame_rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "project_audio_end": 160160,
+                    "project_audio_start": 0,
+                    "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+                    "range": {
+                      "end": 100,
+                      "start": 0
+                    },
+                    "raster": [
+                      320,
+                      180
+                    ],
+                    "relative_aspect_error": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+                    "terminal_pts": 100100,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+                "fresh_gop_frames": 100,
+                "gops": 7,
+                "manual_first_sample": -1024,
+                "manual_physical_samples": 161792,
+                "maximum_b_run": 0,
+                "movie_bytes": 127076,
+                "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+                "movie_timescale": 240000,
+                "ordinary_first_sample": 0,
+                "ordinary_physical_samples": 160768,
+                "policy_version": 1,
+                "runtime_versions": [
+                  4066151,
+                  4064103,
+                  3934311
+                ],
+                "video_edit_media_time": 0,
+                "video_frames": 100,
+                "video_packets": 100
+              },
+              "schema_version": 1,
+              "validator_id": "deadpan-sdr-finished-file",
+              "validator_version": "0.1.0:policy-1"
+            }
+          },
+          "cancellation_requested": false,
+          "cleanup_confirmed": true,
+          "diagnostic": null,
+          "identity": {
+            "attempt_id": "host-crash-verification-retry",
+            "cancellation_token": "host-crash-verification-retry-cancel",
+            "job_id": "host-crash-verification"
+          },
+          "intent": {
+            "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+            "job_id": "host-crash-verification",
+            "policy": {
+              "algorithm": "automatic_sdr_v1",
+              "schema_version": 1,
+              "selection": "automatic"
+            },
+            "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+            "range": {
+              "end": 100,
+              "start": 0
+            },
+            "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+            "schema_version": 2
+          },
+          "journal_diagnostic": null,
+          "observed_movie_commit": true,
+          "outcome": "published",
+          "progress": null,
+          "publication": {
+            "cancellation_requested": false,
+            "encoding_attempt_id": "host-crash-verification-initial",
+            "intent": {
+              "destination": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/retried.mp4",
+              "job_id": "host-crash-verification",
+              "publication_id": "host-crash-publish-verification-retry",
+              "schema_version": 1,
+              "verified_attempt_id": "host-crash-verification-retry"
+            },
+            "movie_bytes": 127076,
+            "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+            "observed_movie_commit": true,
+            "operation": {
+              "active": false,
+              "cancellation_token": "host-crash-publish-verification-retry-cancel",
+              "diagnostic": null,
+              "kind": "publish",
+              "operation_id": "host-crash-publication-verification-retry",
+              "ordinal": 1,
+              "outcome": "published",
+              "publication_id": "host-crash-publish-verification-retry",
+              "verified_attempt_id": "host-crash-verification-retry"
+            },
+            "outcome": "published",
+            "phase": "movie_committing",
+            "prepared": {
+              "contains_generated_pictures": false,
+              "filesystem": {
+                "directory": {
+                  "canonical": [
+                    47,
+                    112,
+                    114,
+                    105,
+                    118,
+                    97,
+                    116,
+                    101,
+                    47,
+                    116,
+                    109,
+                    112,
+                    47,
+                    100,
+                    101,
+                    97,
+                    100,
+                    112,
+                    97,
+                    110,
+                    45,
+                    114,
+                    101,
+                    110,
+                    100,
+                    101,
+                    114,
+                    45,
+                    104,
+                    111,
+                    115,
+                    116,
+                    45,
+                    99,
+                    114,
+                    97,
+                    115,
+                    104,
+                    45,
+                    50,
+                    48,
+                    50,
+                    54,
+                    49,
+                    48,
+                    48,
+                    56,
+                    47,
+                    114,
+                    117,
+                    110,
+                    45,
+                    52,
+                    47,
+                    118,
+                    101,
+                    114,
+                    105,
+                    102,
+                    105,
+                    99,
+                    97,
+                    116,
+                    105,
+                    111,
+                    110
+                  ],
+                  "canonical_entries": [
+                    {
+                      "birth_nanoseconds": 0,
+                      "birth_seconds": 1782354543,
+                      "device": 16777233,
+                      "flags": 1048576,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 2,
+                      "mode": 16877,
+                      "owner": 0,
+                      "volume_uuid": [
+                        234,
+                        19,
+                        232,
+                        37,
+                        180,
+                        235,
+                        68,
+                        135,
+                        140,
+                        38,
+                        60,
+                        130,
+                        165,
+                        187,
+                        214,
+                        187
+                      ]
+                    },
+                    {
+                      "birth_nanoseconds": 0,
+                      "birth_seconds": 1782354543,
+                      "device": 16777233,
+                      "flags": 1081344,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 9859493,
+                      "mode": 16877,
+                      "owner": 0,
+                      "volume_uuid": [
+                        65,
+                        91,
+                        236,
+                        34,
+                        122,
+                        231,
+                        74,
+                        47,
+                        133,
+                        109,
+                        218,
+                        125,
+                        253,
+                        152,
+                        214,
+                        191
+                      ]
+                    },
+                    {
+                      "birth_nanoseconds": 583088374,
+                      "birth_seconds": 1788108328,
+                      "device": 16777233,
+                      "flags": 0,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 18170150,
+                      "mode": 17407,
+                      "owner": 0,
+                      "volume_uuid": [
+                        65,
+                        91,
+                        236,
+                        34,
+                        122,
+                        231,
+                        74,
+                        47,
+                        133,
+                        109,
+                        218,
+                        125,
+                        253,
+                        152,
+                        214,
+                        191
+                      ]
+                    },
+                    {
+                      "birth_nanoseconds": 575954670,
+                      "birth_seconds": 1791505046,
+                      "device": 16777233,
+                      "flags": 0,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 83696761,
+                      "mode": 16877,
+                      "owner": 501,
+                      "volume_uuid": [
+                        65,
+                        91,
+                        236,
+                        34,
+                        122,
+                        231,
+                        74,
+                        47,
+                        133,
+                        109,
+                        218,
+                        125,
+                        253,
+                        152,
+                        214,
+                        191
+                      ]
+                    },
+                    {
+                      "birth_nanoseconds": 662159084,
+                      "birth_seconds": 1791514795,
+                      "device": 16777233,
+                      "flags": 0,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 83730877,
+                      "mode": 16877,
+                      "owner": 501,
+                      "volume_uuid": [
+                        65,
+                        91,
+                        236,
+                        34,
+                        122,
+                        231,
+                        74,
+                        47,
+                        133,
+                        109,
+                        218,
+                        125,
+                        253,
+                        152,
+                        214,
+                        191
+                      ]
+                    },
+                    {
+                      "birth_nanoseconds": 330061287,
+                      "birth_seconds": 1791514808,
+                      "device": 16777233,
+                      "flags": 0,
+                      "generation": null,
+                      "group": 0,
+                      "inode": 83730958,
+                      "mode": 16877,
+                      "owner": 501,
+                      "volume_uuid": [
+                        65,
+                        91,
+                        236,
+                        34,
+                        122,
+                        231,
+                        74,
+                        47,
+                        133,
+                        109,
+                        218,
+                        125,
+                        253,
+                        152,
+                        214,
+                        191
+                      ]
+                    }
+                  ],
+                  "schema_version": 1,
+                  "selected": [
+                    47,
+                    112,
+                    114,
+                    105,
+                    118,
+                    97,
+                    116,
+                    101,
+                    47,
+                    116,
+                    109,
+                    112,
+                    47,
+                    100,
+                    101,
+                    97,
+                    100,
+                    112,
+                    97,
+                    110,
+                    45,
+                    114,
+                    101,
+                    110,
+                    100,
+                    101,
+                    114,
+                    45,
+                    104,
+                    111,
+                    115,
+                    116,
+                    45,
+                    99,
+                    114,
+                    97,
+                    115,
+                    104,
+                    45,
+                    50,
+                    48,
+                    50,
+                    54,
+                    49,
+                    48,
+                    48,
+                    56,
+                    47,
+                    114,
+                    117,
+                    110,
+                    45,
+                    52,
+                    47,
+                    118,
+                    101,
+                    114,
+                    105,
+                    102,
+                    105,
+                    99,
+                    97,
+                    116,
+                    105,
+                    111,
+                    110
+                  ],
+                  "selected_entries": [
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 0,
+                        "birth_seconds": 1782354543,
+                        "device": 16777233,
+                        "flags": 1048576,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 2,
+                        "mode": 16877,
+                        "owner": 0,
+                        "volume_uuid": [
+                          234,
+                          19,
+                          232,
+                          37,
+                          180,
+                          235,
+                          68,
+                          135,
+                          140,
+                          38,
+                          60,
+                          130,
+                          165,
+                          187,
+                          214,
+                          187
+                        ]
+                      },
+                      "path": [
+                        47
+                      ],
+                      "symlink_target": null
+                    },
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 0,
+                        "birth_seconds": 1782354543,
+                        "device": 16777233,
+                        "flags": 1081344,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 9859493,
+                        "mode": 16877,
+                        "owner": 0,
+                        "volume_uuid": [
+                          65,
+                          91,
+                          236,
+                          34,
+                          122,
+                          231,
+                          74,
+                          47,
+                          133,
+                          109,
+                          218,
+                          125,
+                          253,
+                          152,
+                          214,
+                          191
+                        ]
+                      },
+                      "path": [
+                        47,
+                        112,
+                        114,
+                        105,
+                        118,
+                        97,
+                        116,
+                        101
+                      ],
+                      "symlink_target": null
+                    },
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 583088374,
+                        "birth_seconds": 1788108328,
+                        "device": 16777233,
+                        "flags": 0,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 18170150,
+                        "mode": 17407,
+                        "owner": 0,
+                        "volume_uuid": [
+                          65,
+                          91,
+                          236,
+                          34,
+                          122,
+                          231,
+                          74,
+                          47,
+                          133,
+                          109,
+                          218,
+                          125,
+                          253,
+                          152,
+                          214,
+                          191
+                        ]
+                      },
+                      "path": [
+                        47,
+                        112,
+                        114,
+                        105,
+                        118,
+                        97,
+                        116,
+                        101,
+                        47,
+                        116,
+                        109,
+                        112
+                      ],
+                      "symlink_target": null
+                    },
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 575954670,
+                        "birth_seconds": 1791505046,
+                        "device": 16777233,
+                        "flags": 0,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 83696761,
+                        "mode": 16877,
+                        "owner": 501,
+                        "volume_uuid": [
+                          65,
+                          91,
+                          236,
+                          34,
+                          122,
+                          231,
+                          74,
+                          47,
+                          133,
+                          109,
+                          218,
+                          125,
+                          253,
+                          152,
+                          214,
+                          191
+                        ]
+                      },
+                      "path": [
+                        47,
+                        112,
+                        114,
+                        105,
+                        118,
+                        97,
+                        116,
+                        101,
+                        47,
+                        116,
+                        109,
+                        112,
+                        47,
+                        100,
+                        101,
+                        97,
+                        100,
+                        112,
+                        97,
+                        110,
+                        45,
+                        114,
+                        101,
+                        110,
+                        100,
+                        101,
+                        114,
+                        45,
+                        104,
+                        111,
+                        115,
+                        116,
+                        45,
+                        99,
+                        114,
+                        97,
+                        115,
+                        104,
+                        45,
+                        50,
+                        48,
+                        50,
+                        54,
+                        49,
+                        48,
+                        48,
+                        56
+                      ],
+                      "symlink_target": null
+                    },
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 662159084,
+                        "birth_seconds": 1791514795,
+                        "device": 16777233,
+                        "flags": 0,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 83730877,
+                        "mode": 16877,
+                        "owner": 501,
+                        "volume_uuid": [
+                          65,
+                          91,
+                          236,
+                          34,
+                          122,
+                          231,
+                          74,
+                          47,
+                          133,
+                          109,
+                          218,
+                          125,
+                          253,
+                          152,
+                          214,
+                          191
+                        ]
+                      },
+                      "path": [
+                        47,
+                        112,
+                        114,
+                        105,
+                        118,
+                        97,
+                        116,
+                        101,
+                        47,
+                        116,
+                        109,
+                        112,
+                        47,
+                        100,
+                        101,
+                        97,
+                        100,
+                        112,
+                        97,
+                        110,
+                        45,
+                        114,
+                        101,
+                        110,
+                        100,
+                        101,
+                        114,
+                        45,
+                        104,
+                        111,
+                        115,
+                        116,
+                        45,
+                        99,
+                        114,
+                        97,
+                        115,
+                        104,
+                        45,
+                        50,
+                        48,
+                        50,
+                        54,
+                        49,
+                        48,
+                        48,
+                        56,
+                        47,
+                        114,
+                        117,
+                        110,
+                        45,
+                        52
+                      ],
+                      "symlink_target": null
+                    },
+                    {
+                      "identity": {
+                        "birth_nanoseconds": 330061287,
+                        "birth_seconds": 1791514808,
+                        "device": 16777233,
+                        "flags": 0,
+                        "generation": null,
+                        "group": 0,
+                        "inode": 83730958,
+                        "mode": 16877,
+                        "owner": 501,
+                        "volume_uuid": [
+                          65,
+                          91,
+                          236,
+                          34,
+                          122,
+                          231,
+                          74,
+                          47,
+                          133,
+                          109,
+                          218,
+                          125,
+                          253,
+                          152,
+                          214,
+                          191
+                        ]
+                      },
+                      "path": [
+                        47,
+                        112,
+                        114,
+                        105,
+                        118,
+                        97,
+                        116,
+                        101,
+                        47,
+                        116,
+                        109,
+                        112,
+                        47,
+                        100,
+                        101,
+                        97,
+                        100,
+                        112,
+                        97,
+                        110,
+                        45,
+                        114,
+                        101,
+                        110,
+                        100,
+                        101,
+                        114,
+                        45,
+                        104,
+                        111,
+                        115,
+                        116,
+                        45,
+                        99,
+                        114,
+                        97,
+                        115,
+                        104,
+                        45,
+                        50,
+                        48,
+                        50,
+                        54,
+                        49,
+                        48,
+                        48,
+                        56,
+                        47,
+                        114,
+                        117,
+                        110,
+                        45,
+                        52,
+                        47,
+                        118,
+                        101,
+                        114,
+                        105,
+                        102,
+                        105,
+                        99,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110
+                      ],
+                      "symlink_target": null
+                    }
+                  ]
+                },
+                "movie": {
+                  "byte_length": 127076,
+                  "identity": {
+                    "birth_nanoseconds": 501608109,
+                    "birth_seconds": 1791514841,
+                    "device": 16777233,
+                    "flags": 0,
+                    "generation": null,
+                    "group": 0,
+                    "inode": 83731145,
+                    "mode": 33152,
+                    "owner": 501,
+                    "volume_uuid": [
+                      65,
+                      91,
+                      236,
+                      34,
+                      122,
+                      231,
+                      74,
+                      47,
+                      133,
+                      109,
+                      218,
+                      125,
+                      253,
+                      152,
+                      214,
+                      191
+                    ]
+                  },
+                  "links": 1,
+                  "modified_nanoseconds": 501765108,
+                  "modified_seconds": 1791514841,
+                  "schema_version": 1
+                },
+                "report": {
+                  "byte_length": 32637,
+                  "identity": {
+                    "birth_nanoseconds": 511193164,
+                    "birth_seconds": 1791514841,
+                    "device": 16777233,
+                    "flags": 0,
+                    "generation": null,
+                    "group": 0,
+                    "inode": 83731147,
+                    "mode": 33152,
+                    "owner": 501,
+                    "volume_uuid": [
+                      65,
+                      91,
+                      236,
+                      34,
+                      122,
+                      231,
+                      74,
+                      47,
+                      133,
+                      109,
+                      218,
+                      125,
+                      253,
+                      152,
+                      214,
+                      191
+                    ]
+                  },
+                  "links": 1,
+                  "modified_nanoseconds": 511511622,
+                  "modified_seconds": 1791514841,
+                  "schema_version": 1
+                },
+                "schema_version": 1
+              },
+              "movie_bytes": 127076,
+              "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+              "report_bytes": 32637,
+              "report_sha256": "979143adf5a086fa41847b5eea3ce6ee025d41c55423109d0eee024048299fc3",
+              "schema_version": 1
+            },
+            "render_intent": {
+              "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+              "job_id": "host-crash-verification",
+              "policy": {
+                "algorithm": "automatic_sdr_v1",
+                "schema_version": 1,
+                "selection": "automatic"
+              },
+              "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+              "range": {
+                "end": 100,
+                "start": 0
+              },
+              "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+              "schema_version": 2
+            },
+            "sequence": 6
+          },
+          "receipt": {
+            "contains_generated_pictures": false,
+            "movie": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/retried.mp4",
+            "movie_bytes": 127076,
+            "movie_sha256": "99930a45dbcf928f4df4c6f950375c7f3d6f06feb8f3d0527cef0119011c9550",
+            "publication_id": "host-crash-publish-verification-retry",
+            "report": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/deadpan-render-host-crash-publish-verification-retry.json",
+            "report_bytes": 32637,
+            "report_sha256": "979143adf5a086fa41847b5eea3ce6ee025d41c55423109d0eee024048299fc3"
+          },
+          "retained": {
+            "partial_movie": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/.deadpan-host-crash-publish-verification-retry.movie.partial",
+            "partial_report": null,
+            "published_report": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/deadpan-render-host-crash-publish-verification-retry.json"
+          },
+          "stage": "finished"
+        }
+      },
+      "retry_remaining_processes": [],
+      "source_executable": {
+        "bytes": 181220984,
+        "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+        "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+      },
+      "stage": "verification",
+      "status": "passed",
+      "worker_before_kill": {
+        "group": 84723,
+        "parent": 84094,
+        "pid": 84723,
+        "start_and_executable": "Thu Oct 8 20:00:40 2026 /private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash"
+      },
+      "worker_launches": [
+        {
+          "arguments": [
+            "--render-probe-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+          "group": 84095,
+          "pid": 84095,
+          "role": "admission"
+        },
+        {
+          "arguments": [
+            "--render-probe-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+          "group": 84100,
+          "pid": 84100,
+          "role": "admission"
+        },
+        {
+          "arguments": [
+            "--render-encode-worker",
+            "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+          "group": 84153,
+          "pid": 84153,
+          "role": "encoding"
+        },
+        {
+          "arguments": [
+            "--render-verify-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+          "group": 84723,
+          "pid": 84723,
+          "role": "verification"
+        },
+        {
+          "arguments": [
+            "--render-verify-worker"
+          ],
+          "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/verification/qualify_render_host_crash",
+          "group": 84824,
+          "pid": 84824,
+          "role": "verification"
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 46.951707792,
+  "executable": {
+    "bytes": 181220984,
+    "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+    "sha256": "4715b63f7461fcc55e42cc9ffd592b0b81c75e6fbf7140d473675e49f8a7a2c1"
+  },
+  "limitations": [
+    "direct coordinator harness, not native UI or authenticated IPC",
+    "first at most 120 frames of a caller-prepared fixture",
+    "process groups are observed, not containment of escaped processes",
+    "no physical power-loss or crash inside a filesystem or SQLite call",
+    "qualification pause is absent from ordinary builds"
+  ],
+  "package": "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan",
+  "revision": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+  "schema_version": 1,
+  "scope": "production automatic SDR RenderWorkflow; real encode and full-file verifier processes; SIGKILL of host leader only after flushed intermediate progress and matching public status",
+  "status": "passed"
+}

@@ -1,0 +1,74 @@
+{
+  "gate": {
+    "completed": 1,
+    "identity": {
+      "attempt_id": "host-crash-encoding-initial",
+      "request_id": "host-crash-encoding"
+    },
+    "maximum_pause_seconds": 60,
+    "pid": 83986,
+    "progress_flushed": true,
+    "schema_version": 1,
+    "stage": "encoding",
+    "total": 100
+  },
+  "host_pid": 83926,
+  "status": {
+    "attempt": {
+      "attempt_id": "host-crash-encoding-initial",
+      "cancellation_requested": false,
+      "cancellation_token": "host-crash-encoding-initial-cancel",
+      "checkpoint_attempt_id": null,
+      "diagnostic": null,
+      "job_id": "host-crash-encoding",
+      "ordinal": 1,
+      "state": "encoding",
+      "transition_sequence": 2,
+      "verification": null
+    },
+    "cancellation_requested": false,
+    "cleanup_confirmed": false,
+    "diagnostic": null,
+    "identity": {
+      "attempt_id": "host-crash-encoding-initial",
+      "cancellation_token": "host-crash-encoding-initial-cancel",
+      "job_id": "host-crash-encoding"
+    },
+    "intent": {
+      "document_sha256": "9720fac13349fda3a62dd6ca60338e2f99da29e5f34bc5827c53b560e0f6a842",
+      "job_id": "host-crash-encoding",
+      "policy": {
+        "algorithm": "automatic_sdr_v1",
+        "schema_version": 1,
+        "selection": "automatic"
+      },
+      "project_id": "26d71dc1-f6d0-4354-a907-f91247afb9ec",
+      "range": {
+        "end": 100,
+        "start": 0
+      },
+      "revision_id": "9bd5772e-f3ae-4c82-a409-2f7c8931c679",
+      "schema_version": 2
+    },
+    "journal_diagnostic": null,
+    "observed_movie_commit": false,
+    "outcome": null,
+    "progress": {
+      "kind": "encoding",
+      "value": {
+        "completed_audio_samples": 0,
+        "completed_frames": 1,
+        "total_audio_samples": 160160,
+        "total_frames": 100
+      }
+    },
+    "publication": null,
+    "receipt": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "stage": "encoding"
+  }
+}

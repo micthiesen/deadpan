@@ -1,0 +1,10 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-950a58057c3ef4e1)
+
+running 3 tests
+test encoded_render::host_crash_gate::tests::adjacent_gate_configuration_rejects_unknown_fields_and_retry_binding ... ok
+test encoded_render::host_crash_gate::tests::gate_binds_initial_attempt_and_skips_retry_and_other_stage ... ok
+test encoded_render::host_crash_gate::tests::adjacent_gate_configuration_is_optional_bounded_and_never_follows_symlinks ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 458 filtered out; finished in 0.00s
+

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "build-1",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "qualify_render_host_crash",
+      "--features",
+      "qualification-render-host-crash"
+    ],
+    "exit_code": 0,
+    "seconds": 10.954048291780055
+  },
+  {
+    "name": "seed-1",
+    "command": [
+      "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+      "project",
+      "create-original",
+      "/private/tmp/deadpan-render-host-crash-20261008/source-1.deadpan",
+      "/tmp/deadpan-dp02-fractional-20261008/run-doiiN7/original.mp4"
+    ],
+    "exit_code": 0,
+    "seconds": 0.12334816670045257
+  },
+  {
+    "name": "qualify-1",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_host_crash",
+      "/private/tmp/deadpan-render-host-crash-20261008/source-1.deadpan",
+      "/private/tmp/deadpan-render-host-crash-20261008/run-1"
+    ],
+    "exit_code": 1,
+    "seconds": 1.0780513752251863
+  }
+]

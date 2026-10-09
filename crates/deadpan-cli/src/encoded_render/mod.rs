@@ -9,6 +9,8 @@ use std::time::Instant;
 
 pub mod admission;
 mod host;
+#[cfg(feature = "qualification-render-host-crash")]
+mod host_crash_gate;
 pub mod jobs;
 pub mod protocol;
 pub mod publication;

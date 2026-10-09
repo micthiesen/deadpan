@@ -1,0 +1,17 @@
+   Compiling ring v0.17.14
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls v0.23.45
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.19s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-950a58057c3ef4e1)
+
+running 3 tests
+test encoded_render::host_crash_gate::tests::adjacent_gate_configuration_rejects_unknown_fields_and_retry_binding ... ok
+test encoded_render::host_crash_gate::tests::gate_binds_initial_attempt_and_skips_retry_and_other_stage ... ok
+test encoded_render::host_crash_gate::tests::adjacent_gate_configuration_is_optional_bounded_and_never_follows_symlinks ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 458 filtered out; finished in 0.00s
+

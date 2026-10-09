@@ -1,0 +1,29 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+root=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+source=Path('/tmp/deadpan-dp02-fractional-20261008/run-doiiN7/original.mp4')
+seed_cli=repo/'target/release/deadpan-cli'
+example=repo/'target/debug/examples/qualify_render_host_crash'
+env=dict(os.environ,DEADPAN_FFMPEG_PREFIX='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix')
+(root/'inputs-4.json').write_text(json.dumps(dict(source=str(source),source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),seed_cli_sha256=hashlib.sha256(seed_cli.read_bytes()).hexdigest(),base_revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()),indent=2)+'\n')
+commands=[
+ ('clippy-4',['cargo','clippy','--locked','-p','deadpan-cli','--features','qualification-render-host-crash','--example','qualify_render_host_crash','--','-D','warnings']),
+ ('gate-tests-4',['cargo','test','--locked','-p','deadpan-cli','--features','qualification-render-host-crash','--lib','host_crash_gate','--','--nocapture']),
+ ('example-tests-4',['cargo','test','--locked','-p','deadpan-cli','--features','qualification-render-host-crash','--example','qualify_render_host_crash','--','--nocapture']),
+ ('build-4',['cargo','build','--locked','-p','deadpan-cli','--example','qualify_render_host_crash','--features','qualification-render-host-crash']),
+ ('seed-4',[str(seed_cli),'project','create-original',str(root/'source-4.deadpan'),str(source)]),
+ ('qualify-4',[str(example),str(root/'source-4.deadpan'),str(root/'run-4')]),
+]
+results=[]
+for name,command in commands:
+    start=time.monotonic()
+    with (root/(name+'.log')).open('x') as log:
+        result=subprocess.run(command,cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT)
+    record=dict(name=name,command=command,exit_code=result.returncode,seconds=time.monotonic()-start)
+    results.append(record)
+    (root/'results-4.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(record),flush=True)
+    if result.returncode:
+        print('\n'.join(line[:800] for line in (root/(name+'.log')).read_text().splitlines()[-60:]),flush=True)
+        raise SystemExit(result.returncode)

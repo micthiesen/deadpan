@@ -96,7 +96,20 @@ fn run() -> Result<bool, String> {
                         identity: identity.clone(),
                         progress,
                     },
-                )
+                )?;
+                #[cfg(feature = "qualification-render-host-crash")]
+                if progress.stage == super::VerificationStage::Pictures {
+                    stdout.flush().map_err(|error| error.to_string())?;
+                    super::super::host_crash_gate::after_progress(
+                        "verification",
+                        &identity,
+                        progress.completed,
+                        progress.total,
+                        control.cancelled(),
+                        deadline,
+                    )?;
+                }
+                Ok(())
             },
         )?;
         use std::os::unix::fs::MetadataExt;

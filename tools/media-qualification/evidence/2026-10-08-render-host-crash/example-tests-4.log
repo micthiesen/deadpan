@@ -1,0 +1,13 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.63s
+     Running unittests examples/qualify_render_host_crash.rs (target/debug/examples/qualify_render_host_crash-7e9be83da56d3a4c)
+
+running 5 tests
+test harness::tests::automatic_workflow_uses_case_helper_without_runtime_overrides ... ok
+test harness::evidence::tests::authored_preflight_checks_total_rows_across_tables_and_retains_small_fixtures ... ok
+test harness::evidence::tests::authored_preflight_checks_aggregate_bytes_across_tables ... ok
+test harness::evidence::tests::authored_preflight_rejects_an_oversized_row_before_json_conversion ... ok
+test harness::evidence::tests::authored_preflight_checks_json_escaping_before_collecting_strings ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

@@ -1,0 +1,15 @@
+{
+  "error": "host exited before matching progress witness: exit status: 1",
+  "failure_cleanup": {
+    "helpers_signalled_by_harness": false,
+    "host_cleanup": {
+      "status": "stopped_or_already_reaped"
+    },
+    "observed_worker_groups": [],
+    "status": "confirmed",
+    "worker_launches": []
+  },
+  "host_pid": 56452,
+  "stage": "encoding",
+  "status": "failed"
+}

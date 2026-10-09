@@ -1,0 +1,12 @@
+{
+  "crates/deadpan-cli/examples/qualify_render_host_crash.rs": "2e9311d277e1562cffa2eefaafcbcc868df05c3faff4683d57ca0d03e457488b",
+  "crates/deadpan-cli/src/encoded_render/host_crash_gate.rs": "88a4d854f90f1c51cc435246fc8348865728b075905ee8577c2cd64956511c50",
+  "crates/deadpan-cli/src/encoded_render/mod.rs": "1f0e4e7e218f33b15690851fa53261c8738408a332527a85b4a14e18e9eeb181",
+  "crates/deadpan-cli/src/encoded_render/worker.rs": "270065450228a7ed271e7b410ad51281a05a04e6f98be2b406c9bd48bf486272",
+  "crates/deadpan-cli/src/encoded_render/verification/worker.rs": "1a27a373823586a367ee16c43d5fc4a1f76947ebfac274232ac702412aa795d1",
+  "crates/deadpan-cli/Cargo.toml": "07cb4e03e757cc3ab4e87b5c271e86d2684b2dd7e1898354df448f33c733d080",
+  "Cargo.lock": "a887658dd1384871c441e375124a5a328b6853e48077e5e6032e54449013fd2e",
+  "crates/deadpan-cli/examples/qualify_render_host_crash/evidence.rs": "cde04175dce8b56d017bc68b33c7c444f9945ef2dce3eb9cd88e988331d4a38e",
+  "crates/deadpan-cli/examples/qualify_render_host_crash/harness.rs": "b04b388c28d7ea8b42f5a116c89198812c43e4587b45d930e13b375a9aa5852a",
+  "crates/deadpan-cli/examples/qualify_render_host_crash/process.rs": "9b73ec192072cb6bbffba582f73a76993319dc42f7510a8e93e7ece8a5272796"
+}

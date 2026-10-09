@@ -1,0 +1,10 @@
+{
+  "arguments": [
+    "--render-encode-worker",
+    "/private/tmp/deadpan-render-host-crash-20261008/source-4.deadpan"
+  ],
+  "executable": "/private/tmp/deadpan-render-host-crash-20261008/run-4/encoding/qualify_render_host_crash",
+  "group": 83986,
+  "pid": 83986,
+  "role": "encoding"
+}

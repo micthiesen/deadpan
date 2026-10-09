@@ -1,0 +1,56 @@
+{
+  "identity": {
+    "job_id": "host-crash-encoding",
+    "attempt_id": "host-crash-encoding-initial",
+    "cancellation_token": "host-crash-encoding-initial-cancel"
+  },
+  "stage": "finished",
+  "intent": {
+    "schema_version": 2,
+    "job_id": "host-crash-encoding",
+    "project_id": "4f472376-095b-42d2-92c2-df98712a9c33",
+    "revision_id": "682d5dad-acb0-48f3-91e2-6b52903922ec",
+    "document_sha256": "82ca4176e32b59cbc72e0871927c7cabc4f35d44482b95741056cdf819b5dd4f",
+    "range": {
+      "start": 0,
+      "end": 100
+    },
+    "policy": {
+      "schema_version": 1,
+      "selection": "automatic",
+      "algorithm": "automatic_sdr_v1"
+    }
+  },
+  "attempt": {
+    "job_id": "host-crash-encoding",
+    "attempt_id": "host-crash-encoding-initial",
+    "cancellation_token": "host-crash-encoding-initial-cancel",
+    "ordinal": 1,
+    "transition_sequence": 2,
+    "state": "failed",
+    "checkpoint_attempt_id": null,
+    "cancellation_requested": false,
+    "diagnostic": {
+      "code": "render_stage_failed",
+      "detail": "invalid encoded render configuration: automatic admission requires the direct host-selected helper without argument or environment overrides"
+    },
+    "verification": null
+  },
+  "publication": null,
+  "progress": null,
+  "cancellation_requested": false,
+  "outcome": "failed",
+  "diagnostic": {
+    "code": "render_stage_failed",
+    "detail": "invalid encoded render configuration: automatic admission requires the direct host-selected helper without argument or environment overrides"
+  },
+  "journal_diagnostic": null,
+  "retained": {
+    "partial_movie": null,
+    "partial_report": null,
+    "published_report": null
+  },
+  "receipt": null,
+  "observed_movie_commit": false,
+  "cleanup_confirmed": true
+}

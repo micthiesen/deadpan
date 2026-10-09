@@ -1,0 +1,8 @@
+{
+  "identity": {
+    "attempt_id": "host-crash-encoding-initial",
+    "request_id": "host-crash-encoding"
+  },
+  "schema_version": 1,
+  "stage": "encoding"
+}

@@ -350,6 +350,16 @@ fn prepare(
             stdout
                 .flush()
                 .map_err(|error| failure(EncodedFailureKind::Control, error))?;
+            #[cfg(feature = "qualification-render-host-crash")]
+            super::host_crash_gate::after_progress(
+                "encoding",
+                &request.identity,
+                encoder.accepted_pictures(),
+                captured.frame_count(),
+                cancelled,
+                deadline,
+            )
+            .map_err(|error| failure(EncodedFailureKind::Control, error))?;
         }
     }
     if completed_inputs != total_inputs {

@@ -1,0 +1,8 @@
+{
+  "identity": {
+    "attempt_id": "host-crash-verification-initial",
+    "request_id": "host-crash-verification"
+  },
+  "schema_version": 1,
+  "stage": "verification"
+}
