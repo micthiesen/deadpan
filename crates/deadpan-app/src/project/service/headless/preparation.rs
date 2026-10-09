@@ -361,7 +361,7 @@ impl Service {
                         } else {
                             self.refresh().err()
                         };
-                        self.error = error.clone();
+                        self.set_error(error.clone());
                         self.message = Some("Headless media operation saved".into());
                         self.publish();
                         error

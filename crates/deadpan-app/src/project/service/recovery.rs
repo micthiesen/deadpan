@@ -11,6 +11,13 @@ use super::*;
 use crate::project::{OpenReport, OriginalStatus, RelinkState, RelinkStatus};
 use crate::recovery::{StorageAlert, storage_code};
 
+/// Editor feedback may describe another package (failed Open or Create).
+/// Its storage failure must never label the retained workspace unsaved.
+pub(super) struct CommandFailure {
+    pub(super) message: String,
+    session: Option<u64>,
+}
+
 /// What the storage alert has already seen, so a standing failure message
 /// raises it once and a save without a new revision can clear it.
 #[derive(Default)]
@@ -90,6 +97,14 @@ fn original_statuses(
 }
 
 impl Service {
+    pub(super) fn set_error(&mut self, message: Option<String>) {
+        self.set_scoped_error(message, Some(self.session));
+    }
+
+    pub(super) fn set_scoped_error(&mut self, message: Option<String>, session: Option<u64>) {
+        self.error = message.map(|message| CommandFailure { message, session });
+    }
+
     pub(super) fn current_storage_alert(&self) -> Option<StorageAlert> {
         let alert = self.storage.as_ref()?;
         let workspace = self.workspace.as_ref()?;
@@ -107,41 +122,60 @@ impl Service {
             result.as_ref().err()
         }
         let mut messages: Vec<String> = [
-            self.error.as_ref(),
+            self.error
+                .as_ref()
+                .filter(|failure| failure.session == Some(self.session))
+                .map(|failure| &failure.message),
             self.import
                 .as_ref()
                 .and_then(|status| status.error.as_ref()),
             self.captured_original
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.captured_slice
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.cut_slice
                 .as_ref()
+                .filter(|update| update.request.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.slip_commit
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.trim_commit
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.splice_commit
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
             self.macros
                 .as_ref()
+                .filter(|update| update.id.session == self.session)
                 .and_then(|update| failed(&update.result)),
-            self.room_tone_error.as_ref().map(|failure| &failure.error),
+            self.room_tone_error
+                .as_ref()
+                .filter(|failure| failure.session == self.session)
+                .map(|failure| &failure.error),
             self.transcript_save
                 .as_ref()
+                .filter(|save| save.session == self.session)
                 .and_then(|save| save.error.as_ref()),
             self.activity_save
                 .as_ref()
+                .filter(|save| save.session == self.session)
                 .and_then(|save| save.error.as_ref()),
-            self.shot_save.as_ref().and_then(|save| save.error.as_ref()),
+            self.shot_save
+                .as_ref()
+                .filter(|save| save.session == self.session)
+                .and_then(|save| save.error.as_ref()),
             self.correction_save
                 .as_ref()
+                .filter(|save| save.session == self.session)
                 .and_then(|save| save.error.as_ref()),
         ]
         .into_iter()
@@ -153,16 +187,32 @@ impl Service {
                 render
                     .command
                     .as_ref()
+                    .filter(|command| command.context.session == self.session)
                     .and_then(|command| command.result.as_ref().err())
                     .into_iter()
-                    .chain(render.service_error.as_ref())
+                    .chain(render.service_error.as_ref().filter(|_| {
+                        render
+                            .workflow
+                            .as_ref()
+                            .is_some_and(|status| status.context.session == self.session)
+                    }))
                     .map(|error| error.message.clone()),
             );
         }
-        if let Some(Err(error)) = self.render_history.as_ref().map(|update| &update.result) {
+        if let Some(Err(error)) = self
+            .render_history
+            .as_ref()
+            .filter(|update| update.context.session == self.session)
+            .map(|update| &update.result)
+        {
             messages.push(error.message.clone());
         }
-        if let Some(RelinkState::Failed(error)) = self.relink.as_ref().map(|status| &status.state) {
+        if let Some(RelinkState::Failed(error)) = self
+            .relink
+            .as_ref()
+            .filter(|status| status.session == self.session)
+            .map(|status| &status.state)
+        {
             messages.push(error.clone());
         }
         messages
@@ -380,7 +430,7 @@ impl Service {
                         let _ = self.refresh_after_relink();
                         self.message = Some(error.clone());
                     } else {
-                        self.error = Some(error.clone());
+                        self.set_error(Some(error.clone()));
                         self.message = None;
                     }
                     RelinkState::Failed(error)

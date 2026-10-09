@@ -185,13 +185,13 @@ Placement inspection evaluates the selected revision's recipe on an explicit sig
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    #[error(transparent)]
+    #[error("{0}")]
     LiveProject(#[from] live_project::LiveError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     DiagnosticExport(#[from] diagnostic_export::ExportError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    #[error(transparent)]
+    #[error("{0}")]
     Render(#[from] render::PublicRenderError),
     #[error("{0}")]
     Usage(String),
@@ -199,7 +199,7 @@ pub enum CliError {
     Import(#[from] youtube::ImportError),
     #[error("Unsupported command protocol {0}; expected 1")]
     Protocol(u32),
-    #[error(transparent)]
+    #[error("{0}")]
     Store(#[from] StoreError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]

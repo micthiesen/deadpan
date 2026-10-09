@@ -74,7 +74,7 @@ struct Service {
     store: Option<ProjectStore>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
-    error: Option<String>,
+    error: Option<recovery::CommandFailure>,
     message: Option<String>,
     committed: Option<CommittedEdit>,
     semantic: semantic::State,
@@ -405,7 +405,7 @@ impl Service {
         let update = ProjectUpdate {
             workspace: self.workspace.clone(),
             import: self.import.clone(),
-            error: self.error.clone(),
+            error: self.error.as_ref().map(|error| error.message.clone()),
             message: self.message.clone(),
             committed: self.committed.clone(),
             semantic: self.semantic.snapshot(),
@@ -2305,18 +2305,18 @@ fn registered_source(
         .map(|_| {
             deadpan_playback::Original::new(rate, asset.clone(), receipt.clone()).map(Arc::new)
         })
-        .transpose()
-        .map_err(display)?;
+        .transpose()?;
     let video_index = original_audition.as_ref().map(|view| view.index().clone());
-    let sound_audition = if receipt.snapshot().video().is_none()
-        && receipt.snapshot().audio().is_some()
-    {
-        Some(Arc::new(
-            deadpan_playback::Sound::new(rate, asset.clone(), receipt.clone()).map_err(display)?,
-        ))
-    } else {
-        None
-    };
+    let sound_audition =
+        if receipt.snapshot().video().is_none() && receipt.snapshot().audio().is_some() {
+            Some(Arc::new(deadpan_playback::Sound::new(
+                rate,
+                asset.clone(),
+                receipt.clone(),
+            )?))
+        } else {
+            None
+        };
     Ok(Arc::new(RegisteredSource {
         asset: asset.clone(),
         label: metadata.label.clone(),
@@ -2353,9 +2353,6 @@ fn node() -> NodeId {
 
 /// Store failures get their person-facing explanation and suggested action;
 /// disk-full and permission failures also raise the persistent alert.
-fn display<E: std::fmt::Display + 'static>(error: E) -> String {
-    if let Some(store) = (&error as &dyn std::any::Any).downcast_ref::<StoreError>() {
-        return crate::recovery::describe_store_error(store);
-    }
-    error.to_string()
+fn display<E: std::error::Error + 'static>(error: E) -> String {
+    crate::recovery::describe_error(&error)
 }

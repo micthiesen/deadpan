@@ -8,8 +8,8 @@ use std::time::Instant;
 
 use deadpan_cli::generation::acceptance;
 use deadpan_cli::generation::attempt::{
-    self, AllocateInput, Allocated, AttemptProgress, AttemptRecord, GenerationError, RunResult,
-    RunTimings, WorkerRun,
+    self, AllocateInput, Allocated, AttemptProgress, AttemptRecord, RunResult, RunTimings,
+    WorkerRun,
 };
 use deadpan_cli::generation::conditioning::PreparedInputs;
 use deadpan_cli::generation::prepare;
@@ -1079,8 +1079,8 @@ impl Service {
         let selected_node = scoped
             .as_ref()
             .map_or_else(|| mapped.node.clone(), |captured| captured.root.clone());
-        let outcome = acceptance::accept(self.writer()?, &request, new_revision)
-            .map_err(|error| error.to_string())?;
+        let outcome =
+            acceptance::accept(self.writer()?, &request, new_revision).map_err(display)?;
         self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.generation.preview = None;
         self.generation.epoch += 1;
@@ -1346,14 +1346,18 @@ impl Service {
                         .as_ref()
                         .and_then(|running| running.allocated.as_ref()),
                 ) {
-                    (Some(store), Some(allocated)) => attempt::record(store, allocated, &record)
-                        .map_err(|error| error.to_string()),
+                    (Some(store), Some(allocated)) => {
+                        attempt::record(store, allocated, &record).map_err(display)
+                    }
                     _ => Err("The project writer is unavailable.".into()),
                 };
                 if record == AttemptRecord::CancelRequested
                     && let Some(job) = &mut self.generation.job
                 {
                     job.phase = Phase::Cancelling;
+                }
+                if let Err(error) = &result {
+                    self.set_error(Some(error.clone()));
                 }
                 // The job thread may have timed out; it then fails the attempt.
                 let _ = acknowledge.try_send(result);
@@ -1456,7 +1460,7 @@ impl Service {
                     provider,
                 ),
             }
-            .map_err(|error: GenerationError| error.to_string())
+            .map_err(display)
         })();
         match allocated {
             Ok(allocated) => self.dispatch_attempt(allocated),
@@ -1523,7 +1527,7 @@ impl Service {
                             .map_or_else(|| "The AI pause did not finish.".into(), failure_text),
                     ),
                 },
-                Err(error) => Outcome::Failed(error.to_string()),
+                Err(error) => Outcome::Failed(display(error)),
             },
             _ => match run.result {
                 RunResult::Cancelled => Outcome::Cancelled,
@@ -1549,7 +1553,7 @@ impl Service {
                         previous.request.clone(),
                         previous.inputs().clone(),
                     )
-                    .map_err(|error| error.to_string())
+                    .map_err(display)
                 });
             match allocated {
                 Ok(allocated) => {
@@ -1676,7 +1680,7 @@ impl Service {
             ) {
                 Ok(finished) if finished.state == JobState::Cancelled => Outcome::Cancelled,
                 Ok(_) => Outcome::Failed("The AI pause job stopped unexpectedly.".into()),
-                Err(error) => Outcome::Failed(error.to_string()),
+                Err(error) => Outcome::Failed(display(error)),
             }
         } else if cancelled {
             Outcome::Cancelled
@@ -1691,6 +1695,16 @@ impl Service {
     }
 
     fn conclude_generation(&mut self, outcome: Outcome) {
+        if let Outcome::Failed(error) = &outcome
+            && crate::recovery::storage_code(error).is_some()
+            && self
+                .generation
+                .job
+                .as_ref()
+                .is_some_and(|job| job.session == self.session)
+        {
+            self.set_error(Some(error.clone()));
+        }
         self.finish_preparation_for_outcome(&outcome);
         self.generation.epoch += 1;
         // A Ready attempt is offered only while its request is current and

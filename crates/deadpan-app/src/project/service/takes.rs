@@ -9,7 +9,7 @@ impl Service {
         if matches!(request.operation, Operation::Apply(_))
             && let Err(error) = &result
         {
-            self.error = Some(error.clone());
+            self.set_error(Some(error.clone()));
             self.message = None;
         }
         self.takes = Some(Update {
@@ -61,7 +61,7 @@ impl Service {
                 } else {
                     None
                 };
-                self.error = refresh_error.clone();
+                self.set_error(refresh_error.clone());
                 self.message = Some(if committed_revision.is_some() {
                     "Take opened. Undo returns to the previous edit.".into()
                 } else if outcome.changed {

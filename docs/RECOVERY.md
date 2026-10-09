@@ -162,17 +162,28 @@ counts as full here and in store codes.
 In the app, store errors carry an explanation and an action
 (`crate::recovery::describe_store_error`): *Not saved: the disk is full. Your
 last saved edit is intact. Free space…*. The headline is the classification:
-`storage_code` recovers it from the message on any thread, including import
-worker replies, with SQLite's own wording as a fallback. The service checks
+`describe_error` follows retained error sources before crossing a string-only
+mailbox, including CLI, generation and Render workflow wrappers. Live-command
+and public Render failures retain their stable store codes. `storage_code`
+recovers the explained headline on any thread, including import worker
+replies; raw SQLite or OS wording alone is not proof of a project failure.
+Export-destination I/O keeps its separate failure. The service checks
 every failure it is about to publish (commands, copies and cuts, registers,
 macros, slip/trim/splice commits, Render and its history, annotation saves,
 imports and relinks) in one place, so a newly appearing storage failure always
 raises the persistent **Not saved** alert and the header reads **Not saved**
 instead of **Saved**. The alert stays through navigation and repeated refusals
 and clears when a later save succeeds: a new head revision, or a save without
-one (register bank, annotation, relink), or when the project closes. Editing
+one (register bank, annotation, take or relink), or when the project closes. Editing
 stays available; each attempt either saves or is refused truthfully. Obsolete
 and newer schemas explain that nothing was changed and what to do.
+
+Command failures retain their affected session. A failed Open or Create of
+another package leaves the current workspace's save state intact, including
+when damaged-database replacement succeeds but reopening fails. Retained
+operation replies from older sessions cannot raise a new session's storage
+alert. Generation journal and acceptance failures keep the same explanation.
+See [storage-error qualification](qualification/storage-errors-2026-10-08.md).
 
 ## Closing with unsaved previews
 
@@ -207,7 +218,9 @@ production router, service and Metal picture path:
   repeats with an unreadable manifest requiring typed identity. It checks
   IME protection, retained files, exact revision, visible controls and focus
   return. Only the native package picker is scripted.
-- `storage-failure`: refuses one split as a full disk would (the only injected
+- `storage-failure`: first opens another disposable project with a real
+  permission-denied writer lock and checks that the current header remains
+  **Saved**. It then refuses one split as a full disk would (the only injected
   failure; real ENOSPC is qualified by the tests above), checks the message,
   alert and **Not saved** header through navigation, saves and clears it,
   then asks before closing with a Camera draft and keeps it on Escape.
@@ -252,10 +265,6 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)
   is verified on detached private APFS volumes, including wrong-byte refusal
   and identical decoded pictures after relinking.
-- Store errors wrapped in other error types keep SQLite's raw wording; the
-  alert still recognizes SQLite's disk-full and read-only messages but not
-  other raw I/O wording. Render workflow journal failures are classified only
-  by those messages.
 - The Dock/system Quit path cannot show the close prompt (see above).
 - Physical power-loss behavior (owner: To verify). Process kills during
   commits, AI attempt states, backups, checkpoints, restores and migrations

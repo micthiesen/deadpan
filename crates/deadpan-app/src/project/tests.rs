@@ -41,6 +41,7 @@ mod slip;
 mod sound;
 mod speech_activity;
 mod splice;
+mod storage_errors;
 mod takes;
 mod targets;
 mod trim;
@@ -908,8 +909,12 @@ fn native_open_refuses_schemas1_through38_without_writes_or_backups() {
         let opened = command(&service, ProjectRequest::Open(path.clone()));
         assert_eq!(
             opened.error,
-            Some(crate::recovery::describe_store_error(
-                &deadpan_store::StoreError::UnsupportedSchema(version)
+            Some(format!(
+                "Could not open {}: {}",
+                path.display(),
+                crate::recovery::describe_store_error(
+                    &deadpan_store::StoreError::UnsupportedSchema(version)
+                )
             ))
         );
         assert!(
@@ -937,8 +942,12 @@ fn unsupported_native_open_retains_the_current_project_and_its_active_preparatio
     let failed = command(&harness.service, ProjectRequest::Open(path.clone()));
     assert_eq!(
         failed.error,
-        Some(crate::recovery::describe_store_error(
-            &deadpan_store::StoreError::UnsupportedSchema(16)
+        Some(format!(
+            "Could not open {}: {}",
+            path.display(),
+            crate::recovery::describe_store_error(&deadpan_store::StoreError::UnsupportedSchema(
+                16
+            ))
         ))
     );
     assert!(failed.committed.is_none());

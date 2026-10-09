@@ -76,10 +76,21 @@ impl Service {
             let error = display(StoreError::Io(std::io::Error::from(
                 std::io::ErrorKind::StorageFull,
             )));
-            self.error = Some(error);
+            self.set_error(Some(error));
             self.message = None;
             return true;
         }
+        let previous_session = self.session;
+        let other_project = match &request {
+            ProjectRequest::Open(path) => Some(format!("Could not open {}", path.display())),
+            ProjectRequest::CreateFromSource { path } => Some(format!(
+                "Could not create a project from {}",
+                path.display()
+            )),
+            #[cfg(test)]
+            ProjectRequest::Create(path) => Some(format!("Could not create {}", path.display())),
+            _ => None,
+        };
         let outcome = if self.render.is_some() || self.generation.active() || self.targets.active()
         {
             self.defer_session_change(request)
@@ -92,7 +103,13 @@ impl Service {
                 complete
             }
             Err(error) => {
-                self.error = Some(error);
+                let session = (other_project.is_none() || self.session != previous_session)
+                    .then_some(self.session);
+                let error = match other_project.filter(|_| session.is_none()) {
+                    Some(context) => format!("{context}: {error}"),
+                    None => error,
+                };
+                self.set_scoped_error(Some(error), session);
                 self.message = None;
                 true
             }
@@ -361,6 +378,11 @@ impl Service {
         })?;
         let config = native_config(package, limits)?;
         let workflow = RenderWorkflow::new(store, config).map_err(workflow_error)?;
+        // A new owner must not inherit the previous workflow's fault, even
+        // when starting this owner fails before returning an identity.
+        self.render_update
+            .get_or_insert_with(Default::default)
+            .service_error = None;
         self.render = Some(NativeRender {
             workflow,
             context: request.context.clone(),
@@ -404,9 +426,6 @@ impl Service {
             ProjectRenderOperation::Cancel(_) => unreachable!("cancellation was handled above"),
             ProjectRenderOperation::Recover(_) => unreachable!("recovery was resolved above"),
         };
-        self.render_update
-            .get_or_insert_with(Default::default)
-            .service_error = None;
         Ok(identity)
     }
 
@@ -534,6 +553,22 @@ impl Service {
         ) {
             self.backup_before_session_change();
         }
+        let other_project = match &pending {
+            PendingSessionChange::Open(prepared) => Some(format!(
+                "Could not open {}",
+                prepared.workspace.path.display()
+            )),
+            PendingSessionChange::CreateFromSource(path) => Some(format!(
+                "Could not create a project from {}",
+                path.display()
+            )),
+            #[cfg(test)]
+            PendingSessionChange::Create(path) => {
+                Some(format!("Could not create {}", path.display()))
+            }
+            _ => None,
+        };
+        let previous_session = self.session;
         let outcome = match pending {
             PendingSessionChange::Close => {
                 self.cancel();
@@ -562,7 +597,13 @@ impl Service {
             PendingSessionChange::Create(path) => self.open(path, true),
         };
         if let Err(error) = outcome {
-            self.error = Some(error);
+            let session = (other_project.is_none() || self.session != previous_session)
+                .then_some(self.session);
+            let error = match other_project.filter(|_| session.is_none()) {
+                Some(context) => format!("{context}: {error}"),
+                None => error,
+            };
+            self.set_scoped_error(Some(error), session);
             self.message = None;
         }
         self.shared.busy.store(false, Ordering::Release);
@@ -613,7 +654,7 @@ fn workflow_error(error: WorkflowError) -> ProjectRenderError {
         WorkflowError::Store(_) => "RenderStoreFailure",
         WorkflowError::Io(_) => "RenderIoFailure",
     };
-    native_error(code, error)
+    native_error(code, display(error))
 }
 
 impl Service {
@@ -661,5 +702,27 @@ impl Service {
             None => ("Preparing", None),
         };
         handle.set_progress(stage, fraction);
+    }
+}
+
+#[cfg(test)]
+mod storage_tests {
+    use super::*;
+
+    #[test]
+    fn journal_io_is_explained_but_destination_io_is_separate() {
+        for kind in [
+            std::io::ErrorKind::StorageFull,
+            std::io::ErrorKind::QuotaExceeded,
+            std::io::ErrorKind::ReadOnlyFilesystem,
+            std::io::ErrorKind::PermissionDenied,
+        ] {
+            let failure = workflow_error(WorkflowError::Store(StoreError::Io(kind.into())));
+            assert_eq!(failure.code, "RenderStoreFailure");
+            assert!(crate::recovery::storage_code(&failure.message).is_some());
+            let external = workflow_error(WorkflowError::Io(kind.into()));
+            assert_eq!(external.code, "RenderIoFailure");
+            assert_eq!(crate::recovery::storage_code(&external.message), None);
+        }
     }
 }

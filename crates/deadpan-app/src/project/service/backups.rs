@@ -793,7 +793,7 @@ impl Service {
                 Ok(serde_json::json!({ "protocol": 1, "restored": outcome }))
             }
             Err(failure) => {
-                self.error = Some(failure.message.clone());
+                self.set_error(Some(failure.message.clone()));
                 Err(LiveError {
                     committed_revision: failure.restored_revision,
                     ..LiveError::new(failure.code, failure.message)

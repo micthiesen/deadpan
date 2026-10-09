@@ -369,8 +369,12 @@ fn opening_a_schema66_package_refuses_without_rewriting_or_backing_it_up() {
     let opened = command(&service, ProjectRequest::Open(path.clone()));
     assert_eq!(
         opened.error,
-        Some(crate::recovery::describe_store_error(
-            &deadpan_store::StoreError::UnsupportedSchema(66)
+        Some(format!(
+            "Could not open {}: {}",
+            path.display(),
+            crate::recovery::describe_store_error(&deadpan_store::StoreError::UnsupportedSchema(
+                66
+            ))
         ))
     );
     assert!(

@@ -1454,6 +1454,7 @@ impl OriginalMediaError {
             Self::Deadline => "OriginalDeadline",
             Self::Io(e) if e.kind() == io::ErrorKind::NotFound => "OriginalOffline",
             Self::Io(e) if e.kind() == io::ErrorKind::PermissionDenied => "PermissionDenied",
+            Self::Io(e) if e.kind() == io::ErrorKind::ReadOnlyFilesystem => "ProjectReadOnly",
             Self::Io(e)
                 if matches!(
                     e.kind(),

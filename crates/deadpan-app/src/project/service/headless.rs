@@ -472,7 +472,7 @@ impl Service {
             } else {
                 self.refresh().err()
             };
-            self.error = refresh_error.clone();
+            self.set_error(refresh_error.clone());
             self.message = Some(match &committed_revision {
                 Some(revision) => format!("Headless edit saved at revision {revision}"),
                 None => "Headless macro saved in the register bank".into(),
@@ -506,11 +506,9 @@ impl Service {
                 }
                 match serde_json::from_value(output["outcome"]["catalog"].clone()) {
                     Ok(catalog) => self.take_catalog = Some(catalog),
-                    Err(error) => {
-                        self.error = Some(format!(
-                            "Take saved, but its catalog reply could not be read: {error}"
-                        ))
-                    }
+                    Err(error) => self.set_error(Some(format!(
+                        "Take saved, but its catalog reply could not be read: {error}"
+                    ))),
                 }
                 // Restore publishes the catalog together with its refreshed
                 // workspace, or with the retained post-commit refresh failure.
@@ -548,7 +546,7 @@ impl Service {
             }
             Short::Corrections { .. } => {
                 if let Err(error) = self.reload_corrections() {
-                    self.error = Some(error);
+                    self.set_error(Some(error));
                 }
                 "Saved a transcript correction from the command line."
             }

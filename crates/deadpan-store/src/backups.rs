@@ -268,7 +268,7 @@ pub enum BackupError {
         #[source]
         source: std::io::Error,
     },
-    #[error(transparent)]
+    #[error("{0}")]
     Store(#[from] StoreError),
     #[error(transparent)]
     Database(#[from] rusqlite::Error),

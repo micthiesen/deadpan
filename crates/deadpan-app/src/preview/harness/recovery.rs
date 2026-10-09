@@ -282,6 +282,7 @@ pub(super) fn relink(d: &mut Driver<'_>) -> Result<(), String> {
 /// A refused save never reads as saved, keeps an alert up, and clears after
 /// a real save.
 pub(super) fn storage_failure(d: &mut Driver<'_>) -> Result<(), String> {
+    denied_other_project(d)?;
     super::transcript::focus_your_edit(d)?;
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
     let before = d.revision();
@@ -337,6 +338,57 @@ pub(super) fn storage_failure(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Saved again after space returned")?;
     close_with_preview(d)
+}
+
+/// A real candidate-package EACCES must leave the retained edit marked Saved.
+fn denied_other_project(d: &mut Driver<'_>) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt as _;
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let path = workspace
+        .path
+        .parent()
+        .ok_or("No fixture parent")?
+        .join("denied-open.deadpan");
+    let document = deadpan_core::ProjectDocument::new_automatic(
+        deadpan_core::ProjectId::new("denied-open").map_err(|e| e.to_string())?,
+        deadpan_core::RevisionId::new("initial").map_err(|e| e.to_string())?,
+        deadpan_core::NodeId::new("root").map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    drop(ProjectStore::create(&path, &document).map_err(|e| e.to_string())?);
+    let lock = path.join(".writer.lock");
+    let permissions = std::fs::metadata(&lock)
+        .map_err(|e| e.to_string())?
+        .permissions();
+    std::fs::set_permissions(&lock, std::fs::Permissions::from_mode(0o000))
+        .map_err(|e| e.to_string())?;
+    d.app_mut().submit(ProjectRequest::Open(path));
+    let delivered = d.wait_for("Permission-denied Open delivered", |app| {
+        !app.service.is_busy()
+            && app.project_error.as_ref().is_some_and(|error| {
+                crate::recovery::storage_code(error) == Some("PermissionDenied")
+            })
+    });
+    std::fs::set_permissions(lock, permissions).map_err(|e| e.to_string())?;
+    delivered?;
+    d.step("Retained saved workspace after denied Open", true)?;
+    let shown = |label: &str| {
+        d.harness.root().children_recursive().any(|node| {
+            let access = node.accesskit_node();
+            access.label().as_deref() == Some(label) || access.value().as_deref() == Some(label)
+        })
+    };
+    let (saved, not_saved) = (shown("Saved"), shown("Not saved"));
+    d.check(
+        "Failed Open keeps the existing project, revision and Saved header without a storage alert",
+        d.app().workspace.as_ref().is_some_and(|current| {
+            current.session == workspace.session
+                && current.document.revision_id() == workspace.document.revision_id()
+        }) && d.app().recovery.storage.is_none() && saved && !not_saved,
+        json!({"session":workspace.session,"saved":true,"not_saved":false,"alert":null}),
+        json!({"session":d.app().workspace.as_ref().map(|w| w.session),"saved":saved,"not_saved":not_saved,"alert":format!("{:?}",d.app().recovery.storage)}),
+    )?;
+    d.capture("Another project cannot open; current edit remains saved")
 }
 
 /// A window close with an open Camera draft asks first; Escape keeps it.

@@ -39,15 +39,6 @@ pub fn describe_store_error(error: &StoreError) -> String {
             deadpan_store::DATABASE_SCHEMA_VERSION
         ),
         (_, StoreError::ReadOnlyLocation(_)) => error.to_string(),
-        ("DiskFull", _) => format!(
-            "{DISK_FULL} Your last saved edit is intact. Free space on the disk that holds this project, then repeat the action. ({error})"
-        ),
-        ("ProjectReadOnly", _) => format!(
-            "{READ_ONLY} (read-only file or volume). Your last saved edit is intact. Check its permissions or copy it to a writable folder, then reopen it. ({error})"
-        ),
-        ("PermissionDenied", _) => format!(
-            "{DENIED} Your last saved edit is intact. Restore access to the project folder, then repeat the action. ({error})"
-        ),
         ("OriginalOffline", _) => format!(
             "The Original's file is missing. Locate it with :relink; nothing in the project was changed. ({error})"
         ),
@@ -57,18 +48,68 @@ pub fn describe_store_error(error: &StoreError) -> String {
         ("ProjectAlreadyOpen", _) => format!(
             "{error}. If Deadpan is open in another window or a headless command is running, finish there first."
         ),
-        _ => error.to_string(),
+        (code, _) => storage_explanation(code, error).unwrap_or_else(|| error.to_string()),
     }
 }
 
-/// The storage failure a message reports, from its headline, or from
-/// SQLite's own wording when a store error reached the message unexplained.
+fn storage_explanation(code: &str, error: &dyn std::fmt::Display) -> Option<String> {
+    Some(match code {
+        "DiskFull" => format!(
+            "{DISK_FULL} Your last saved edit is intact. Free space on the disk that holds this project, then repeat the action. ({error})"
+        ),
+        "ProjectReadOnly" => format!(
+            "{READ_ONLY} (read-only file or volume). Your last saved edit is intact. Check its permissions or copy it to a writable folder, then reopen it. ({error})"
+        ),
+        "PermissionDenied" => format!(
+            "{DENIED} Your last saved edit is intact. Restore access to the project folder, then repeat the action. ({error})"
+        ),
+        _ => return None,
+    })
+}
+
+/// Find an actual store failure before errors cross a string-only mailbox.
+/// Raw I/O errors alone may belong to an export destination or source file;
+/// only a store error establishes project ownership. Preserve outer context.
+pub fn describe_error(error: &(dyn std::error::Error + 'static)) -> String {
+    let original = error.to_string();
+    let mut cause = Some(error);
+    // Error implementations can contain cycles. Our owned chains are short.
+    for _ in 0..32 {
+        let Some(current) = cause else { break };
+        if let Some(store) = current.downcast_ref::<StoreError>() {
+            let explained = describe_store_error(store);
+            return if explained == store.to_string() {
+                original
+            } else if original == store.to_string() {
+                explained
+            } else {
+                format!("{explained} Context: {original}")
+            };
+        }
+        // These protocol boundaries retain a stable typed store code, rather
+        // than the original Error object. Do not infer it from their prose.
+        let code = current
+            .downcast_ref::<deadpan_cli::live_project::LiveError>()
+            .map(|error| error.code.as_str())
+            .or_else(|| {
+                current
+                    .downcast_ref::<deadpan_cli::render::PublicRenderError>()
+                    .map(|error| error.code.as_str())
+            });
+        if let Some(text) = code.and_then(|code| storage_explanation(code, &original)) {
+            return text;
+        }
+        cause = current.source();
+    }
+    original
+}
+
+/// The storage failure a message reports, from an explained store headline.
+/// Raw SQLite or OS wording alone does not identify the affected project.
 pub fn storage_code(message: &str) -> Option<&'static str> {
-    if message.contains(DISK_FULL) || message.contains("database or disk is full") {
+    if message.contains(DISK_FULL) {
         Some("DiskFull")
-    } else if message.contains(READ_ONLY)
-        || message.contains("attempt to write a readonly database")
-    {
+    } else if message.contains(READ_ONLY) {
         Some("ProjectReadOnly")
     } else if message.contains(DENIED) {
         Some("PermissionDenied")
@@ -305,6 +346,53 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrapped_store_io_keeps_typed_codes_and_external_io_does_not() {
+        use deadpan_cli::encoded_render::workflow::WorkflowError;
+        use deadpan_cli::generation::attempt::GenerationError;
+        use rustix::io::Errno;
+
+        for (errno, expected) in [
+            (Errno::NOSPC, "DiskFull"),
+            (Errno::DQUOT, "DiskFull"),
+            (Errno::ROFS, "ProjectReadOnly"),
+            (Errno::ACCESS, "PermissionDenied"),
+        ] {
+            let io = || std::io::Error::from_raw_os_error(errno.raw_os_error());
+            let store = || StoreError::Io(io());
+            let errors: Vec<Box<dyn std::error::Error>> = vec![
+                Box::new(deadpan_cli::CliError::Store(store())),
+                Box::new(GenerationError::Store(store())),
+                Box::new(WorkflowError::Store(store())),
+                Box::new(deadpan_store::backups::BackupError::Store(store())),
+                Box::new(deadpan_cli::live_project::LiveError::store(store())),
+                Box::new(StoreError::OriginalMedia(
+                    deadpan_store::original_media::OriginalMediaError::Io(io()),
+                )),
+                Box::new(StoreError::MigrationFailed {
+                    backup: PathBuf::from("/retained-backup.sqlite"),
+                    source: Box::new(store()),
+                }),
+            ];
+            for error in errors {
+                let text = describe_error(error.as_ref());
+                assert_eq!(storage_code(&text), Some(expected), "{error}: {text}");
+                assert!(text.contains(&error.to_string()), "lost context: {text}");
+                assert!(text.contains("last saved edit is intact"), "{text}");
+            }
+            let external = WorkflowError::Io(io());
+            assert_eq!(describe_error(&external), external.to_string());
+            assert_eq!(storage_code(&describe_error(&external)), None);
+        }
+        let unrelated = deadpan_cli::CliError::Store(StoreError::NothingToUndo);
+        assert_eq!(describe_error(&unrelated), unrelated.to_string());
+        assert_eq!(storage_code("destination: database or disk is full"), None);
+        assert_eq!(
+            storage_code("destination: attempt to write a readonly database"),
+            None
+        );
+    }
+
+    #[test]
     fn storage_failures_carry_their_classification_in_the_message() {
         let full = StoreError::Database(rusqlite::Error::SqliteFailure(
             rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_FULL),
@@ -319,7 +407,7 @@ mod tests {
             storage_code(&format!("Cut saved, but: {text}")),
             Some("DiskFull")
         );
-        assert_eq!(storage_code(&full.to_string()), Some("DiskFull"));
+        assert_eq!(storage_code(&full.to_string()), None);
         let quota = StoreError::Io(std::io::Error::from(std::io::ErrorKind::QuotaExceeded));
         assert_eq!(
             storage_code(&describe_store_error(&quota)),

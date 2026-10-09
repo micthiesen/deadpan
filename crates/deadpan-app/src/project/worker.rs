@@ -136,12 +136,7 @@ pub(super) fn prepare(job: Job) -> Result<Prepared, String> {
         } => qualify(&job, record, streams)
             .map(Box::new)
             .map(Prepared::Qualified)
-            .map_err(
-                |error| match error.downcast_ref::<deadpan_store::StoreError>() {
-                    Some(store) => crate::recovery::describe_store_error(store),
-                    None => error.to_string(),
-                },
-            ),
+            .map_err(|error| crate::recovery::describe_error(error.as_ref())),
         Work::Restore {
             ref record,
             ref path,

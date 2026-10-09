@@ -65,13 +65,16 @@ impl Service {
 
     pub(super) fn damaged_command(&mut self, request: Request) {
         let Some(update) = &self.damaged.update else {
-            self.error =
-                Some("The failed Open is no longer current. Open that project again.".into());
+            self.set_error(Some(
+                "The failed Open is no longer current. Open that project again.".into(),
+            ));
             return;
         };
         let offer = Arc::clone(&update.offer);
         if request.offer != offer.id || request.ticket == 0 {
-            self.error = Some("The failed Open changed before this recovery request.".into());
+            self.set_error(Some(
+                "The failed Open changed before this recovery request.".into(),
+            ));
             return;
         }
         if matches!(request.action, Action::Dismiss) {
@@ -147,7 +150,7 @@ impl Service {
                             None => Err("The recovered project unexpectedly remained open.".into()),
                         });
                 let open_error = opened.err();
-                self.error = open_error.clone();
+                self.set_scoped_error(open_error.clone(), None);
                 self.message = Some(format!(
                     "Backup restored. Previous database files were kept at {}.{}",
                     replaced.quarantine.display(),

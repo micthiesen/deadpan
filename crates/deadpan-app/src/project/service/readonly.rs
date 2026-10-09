@@ -245,7 +245,7 @@ impl Service {
             #[cfg(test)]
             ProjectRequest::Create(_) => {}
         }
-        self.error = Some(reason);
+        self.set_error(Some(reason));
         self.message = None;
         true
     }

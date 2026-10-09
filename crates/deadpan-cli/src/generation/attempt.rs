@@ -87,7 +87,7 @@ pub enum GenerationError {
     Runtime(#[from] super::runtime::RuntimeError),
     #[error("{0}")]
     Inputs(String),
-    #[error(transparent)]
+    #[error("{0}")]
     Store(#[from] StoreError),
     #[error("{0}")]
     Invalid(String),

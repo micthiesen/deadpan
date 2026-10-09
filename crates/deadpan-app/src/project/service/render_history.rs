@@ -207,5 +207,5 @@ fn public_error(failure: public_render::PublicRenderError) -> ProjectRenderError
         "RenderInvalidRequest" => "RenderInvalidRequest",
         _ => "RenderRecoveryRequestFailed",
     };
-    error(code, failure)
+    error(code, display(failure))
 }

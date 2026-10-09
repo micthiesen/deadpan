@@ -162,7 +162,7 @@ pub enum WorkflowError {
     Configuration(String),
     #[error("render workflow requires recovery: {0}")]
     Unresolved(String),
-    #[error(transparent)]
+    #[error("{0}")]
     Store(#[from] StoreError),
     #[error(transparent)]
     Io(#[from] std::io::Error),

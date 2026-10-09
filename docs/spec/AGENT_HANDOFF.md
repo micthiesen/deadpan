@@ -14,7 +14,12 @@ checks. Native failed-Open backup recovery now verifies and restores an
 unreadable database through separate keyboard actions, retains its old files
 and refuses changed captures; unreadable manifest identity needs explicit
 typed confirmation. See its [qualification](../qualification/damaged-recovery-2026-10-08.md).
-DP-01 remains partial: wrapped raw I/O failure classification remains.
+Wrapped store I/O now keeps its typed classification through CLI, generation
+and Render errors. Storage alerts retain their affected session; a failed
+Open of another package leaves the current project saved. See
+[qualification](../qualification/storage-errors-2026-10-08.md). DP-01 remains
+partial while the [system Quit limitation](../RECOVERY.md#closing-with-unsaved-previews)
+and final recovery acceptance are addressed.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening
