@@ -69,9 +69,12 @@ Geometry applies sample aspect ratio before rotation, then rounds each display
 axis to the closest positive even dimension, downward on a tie. It records the
 exact display dimensions and relative aspect error. Each axis differs by at
 most one pixel, including the minimum 2-pixel raster. There is no enlargement to
-a target resolution. The source decoder supplies the visible raster after codec
-padding and an admitted [pixel-aligned clean aperture](qualification/clean-aperture-2026-10-09.md).
-The original SAR and rotation then apply to that raster. HDR interpretation
+a target resolution. The source decoder removes codec padding and compacts
+[pixel-aligned clean apertures](qualification/clean-aperture-2026-10-09.md).
+[Fractional clean apertures](qualification/fractional-aperture-2026-10-09.md)
+remain exact rectangles over the complete decoded backing raster. Geometry uses
+those clean extents before SAR and rotation; the shared renderer samples their
+offset and extent after color interpretation. HDR interpretation
 belongs to the shared source/color path; this timing helper does not invent it.
 
 `SdrRec709` is the project's proposed output policy, not a replacement for source

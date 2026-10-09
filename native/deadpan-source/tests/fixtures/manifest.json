@@ -1,6 +1,6 @@
 {
   "producers": {
-    "clean_aperture": "tests/generate_aperture_fixtures.py: byte-level addition of one clap box to SHA-256-pinned cfr-bframes.mp4 and hevc-pq.mp4. Changes only clap, enclosing box lengths and chunk offsets; compressed payload and timing/color/audio declarations remain identical. aperture.mp4 selects [13,9,300,160] from 320x180, including odd chroma phase; aperture-hdr.mp4 selects [6,2,48,28] from 64x36. Reproduce with python3 native/deadpan-source/tests/generate_aperture_fixtures.py; --check verifies without writes.",
+    "clean_aperture": "tests/generate_aperture_fixtures.py: byte-level addition of one clap box to SHA-256-pinned cfr-bframes.mp4 and hevc-pq.mp4. Changes only clap, enclosing box lengths and chunk offsets; compressed payload and timing/color/audio declarations remain identical. aperture.mp4 selects [13,9,300,160] from 320x180, including odd chroma phase; aperture-hdr.mp4 selects [6,2,48,28] from 64x36. Reproduce with python3 native/deadpan-source/tests/generate_aperture_fixtures.py; --check verifies without writes. Fractional variants preserve the complete backing raster: aperture-fractional.mp4 retains [13.25,9.25,299.5,159.5]; aperture-fractional-hdr.mp4 retains [6.25,2.25,47.5,27.5]. aperture-fractional-uhd.mp4 adds [519.75,279.75,2800.5,1600.5] to the pinned 3840x2160 worker proxy fixture, retaining its compressed payload for real downscale/proxy verification.",
     "h264_clock_fixtures": "tools/media-qualification/compatible/media_probe.c (includes ../media_probe.c), pinned FFmpeg 8.0.3 h264_videotoolbox require_software; recorded source run /tmp/deadpan-media-compatible-probe-8efkj8h2 and compatible/results/qualification-2026-09-20.json",
     "vfr_long_terminal": "tests/generate_vfr_terminal_fixture.py: pure byte-level patch of the SHA-256-pinned vfr.mp4. Changes only the final video stts delta 1001 to 3003, mdhd duration 238238 to 240240, and video tkhd/elst duration 1905904 to 1921920 at movie timescale 240000. Verifies exact box/field anchors, complete timing consistency, unchanged every-picture PTS, compressed mdat, audio track and all other bytes. No encoder or media subprocess. Reproduce with python3 native/deadpan-source/tests/generate_vfr_terminal_fixture.py; append --check for read-only verification.",
     "ffv1_and_rotation": "tests/generate_color_fixtures.py, development-only ffmpeg 9.0.1 CLI; pinned FFmpeg 8.0.3 decoder validates emitted files",
@@ -19,6 +19,21 @@
       "name": "aperture-hdr.mp4",
       "bytes": 4925,
       "sha256": "55c40f0ef970692cdaa203334cf0f3c12777dec1fd0dc03de29bd70951bee548"
+    },
+    {
+      "name": "aperture-fractional-hdr.mp4",
+      "bytes": 4925,
+      "sha256": "aad1e389bb8ebce04e0fc5ec1588ad33374bd72e39ac534b6b61a88c3e288f78"
+    },
+    {
+      "name": "aperture-fractional.mp4",
+      "bytes": 39197,
+      "sha256": "7fd3e7faf2d65d9ca1b462c1d58933ec1fc41c93ecc49c0e91f4289999c96a92"
+    },
+    {
+      "name": "aperture-fractional-uhd.mp4",
+      "bytes": 792802,
+      "sha256": "7bda4e5784735f93b6065ca155530d614d01dd5e52f674ff5cd085bf18ed2fbd"
     },
     {
       "name": "anamorphic.mkv",

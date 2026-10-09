@@ -437,8 +437,14 @@ impl Thumbnails {
 /// Displayed proportions of an uncomposed source frame: pixel aspect first,
 /// then the quarter-turn rotations that swap width and height.
 fn display_aspect(metadata: &deadpan_render::FrameMetadata) -> f32 {
-    let aspect = f64::from(metadata.width) * metadata.sample_aspect_ratio.as_f64()
-        / f64::from(metadata.height);
+    let [width, height] = metadata.clean_aperture.map_or(
+        [f64::from(metadata.width), f64::from(metadata.height)],
+        |aperture| {
+            let rect = aperture.rect();
+            [rect[2], rect[3]].map(|v| v.numerator() as f64 / v.denominator() as f64)
+        },
+    );
+    let aspect = width * metadata.sample_aspect_ratio.as_f64() / height;
     match metadata.rotation {
         deadpan_render::Rotation::Clockwise90 | deadpan_render::Rotation::Clockwise270 => {
             (1.0 / aspect) as f32
@@ -450,6 +456,44 @@ fn display_aspect(metadata: &deadpan_render::FrameMetadata) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn thumbnail_aspect_uses_fractional_clean_extents_before_sar_and_rotation() {
+        use deadpan_core::{ExactRatio, SourceTimeBase, SourceTimestamp};
+        use deadpan_render::{
+            CleanAperture, FrameMetadata, Rotation, SampleAspectRatio, SourceColor,
+        };
+        let metadata = FrameMetadata {
+            width: 10,
+            height: 8,
+            row_stride_bytes: 40,
+            clean_aperture: Some(
+                CleanAperture::new(
+                    [(1, 2), (1, 2), (17, 2), (13, 2)].map(|(n, d)| ExactRatio::new(n, d).unwrap()),
+                )
+                .unwrap(),
+            ),
+            sample_aspect_ratio: SampleAspectRatio::new(2, 1).unwrap(),
+            rotation: Rotation::Clockwise90,
+            color: SourceColor {
+                transfer: deadpan_render::Transfer::Srgb,
+                primaries: deadpan_render::Primaries::Rec709,
+            },
+            pts: SourceTimestamp {
+                ticks: 0,
+                time_base: SourceTimeBase::new(1, 24).unwrap(),
+            },
+        };
+        assert!((display_aspect(&metadata) - 13.0 / 34.0).abs() < 1e-6);
+        assert!(
+            (display_aspect(&FrameMetadata {
+                rotation: Rotation::None,
+                ..metadata
+            }) - 34.0 / 13.0)
+                .abs()
+                < 1e-6
+        );
+    }
 
     fn key(slot: Slot, revision: &str, frame: i64) -> Key {
         Key {

@@ -107,14 +107,33 @@ def boundary_identity(boundary):
     exact_keys(decoded, ["source_frame", "pts", "stream", "model_input"])
     timestamp(decoded["pts"])
     stream = decoded["stream"]
-    exact_keys(stream, ["codec", "pixel_format", "width", "height", "sample_aspect",
-                        "rotation_quarter_turns", "decoded_sample_bits", "color"])
+    stream_fields = ["codec", "pixel_format", "width", "height", "sample_aspect",
+                     "rotation_quarter_turns", "decoded_sample_bits", "color"]
+    if isinstance(stream, dict) and "clean_aperture" in stream:
+        stream_fields.append("clean_aperture")
+    exact_keys(stream, stream_fields)
     for key in ("codec", "pixel_format"):
         text = stream[key]
         if not isinstance(text, str) or not 1 <= len(text) <= 64 or any(not 33 <= ord(c) <= 126 for c in text):
             raise ValueError("invalid measured stream label")
     for key in ("width", "height"):
         integer(stream[key], 1, 8192)
+    aperture = stream.get("clean_aperture")
+    if aperture is not None:
+        if not isinstance(aperture, list) or len(aperture) != 4:
+            raise ValueError("invalid measured clean aperture")
+        left, top, width, height = map(exact_ratio, aperture)
+        if left < 0 or top < 0 or width <= 0 or height <= 0:
+            raise ValueError("invalid measured clean aperture")
+        for start, extent, bound in ((left, width, stream["width"]), (top, height, stream["height"])):
+            # Match Rust ExactRatio::checked_add's bounded intermediates, not
+            # merely Python Fraction's unbounded mathematical result.
+            divisor = gcd(start.denominator, extent.denominator)
+            denominator = start.denominator * (extent.denominator // divisor)
+            numerator = (start.numerator * (extent.denominator // divisor)
+                         + extent.numerator * (start.denominator // divisor))
+            if denominator >= 1 << 127 or numerator >= 1 << 127 or Fraction(numerator, denominator) > bound:
+                raise ValueError("measured clean aperture exceeds its backing raster or arithmetic bounds")
     aspect = stream["sample_aspect"]
     if not isinstance(aspect, list) or len(aspect) != 2:
         raise ValueError("invalid measured stream aspect")

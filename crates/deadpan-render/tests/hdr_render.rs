@@ -69,6 +69,7 @@ fn frame16(transfer: Transfer) -> Rgba8Frame {
 
 fn metadata(transfer: Transfer, stride: u32) -> FrameMetadata {
     FrameMetadata {
+        clean_aperture: None,
         width: WIDTH,
         height: HEIGHT,
         row_stride_bytes: stride,
@@ -249,6 +250,36 @@ fn render_and_measure(
         );
     }
     measured
+}
+
+#[test]
+fn fractional_clean_apertures_keep_hdr_interpretation_before_filtering() {
+    use deadpan_core::ExactRatio;
+    use deadpan_render::CleanAperture;
+
+    let (device, queue) = device();
+    let mut renderer = PictureRenderer::new(&device, &queue);
+    let q = |n, d| ExactRatio::new(n, d).unwrap();
+    for transfer in [Transfer::Pq, Transfer::Hlg] {
+        for rotation in [Rotation::None, Rotation::Clockwise90] {
+            let original = frame16(transfer);
+            let mut metadata = *original.metadata();
+            metadata.clean_aperture =
+                Some(CleanAperture::new([q(5, 4), q(1, 2), q(91, 2), q(27, 2)]).unwrap());
+            metadata.rotation = rotation;
+            metadata.sample_aspect_ratio = SampleAspectRatio::new(4, 3).unwrap();
+            let frame = Rgba8Frame::new_rgba16(metadata, original.bytes().to_vec()).unwrap();
+            let tone = ToneMap::new(10000.0).unwrap();
+            for pipeline in [
+                ColorPipeline::sdr(tone),
+                ColorPipeline::hdr(HdrTransfer::Pq, tone),
+            ] {
+                let measured = render_and_measure(&device, &queue, &mut renderer, &frame, pipeline);
+                assert!(measured.display_codes <= 1);
+                assert!(measured.luma_codes <= 1);
+            }
+        }
+    }
 }
 
 #[test]

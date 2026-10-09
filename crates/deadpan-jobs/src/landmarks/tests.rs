@@ -21,6 +21,7 @@ fn request() -> HostMessage {
             stream_index: 0,
             width: 768,
             height: 320,
+            clean_aperture: None,
             time_base_num: 1,
             time_base_den: 1000,
             rotation_quarter_turns: 0,

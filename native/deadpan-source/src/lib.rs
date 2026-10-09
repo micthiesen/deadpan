@@ -233,10 +233,14 @@ pub struct SourceAudioStreamInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceStreamInfo {
-    /// Displayable raster after the exact pixel-aligned container aperture.
-    /// Codec padding is already removed; SAR and rotation remain independent.
+    /// Decoded backing raster. Codec padding and integral clean apertures are
+    /// removed; fractional apertures, SAR and rotation remain independent.
     pub width: u32,
     pub height: u32,
+    /// Fractional visible bounds [left, top, width, height] in decoded pixel-edge
+    /// coordinates. Integral apertures are already compacted into width/height.
+    /// Colour-aware sampling must apply these before SAR and rotation.
+    pub clean_aperture: Option<[deadpan_core::ExactRatio; 4]>,
     pub stream_index: u32,
     pub time_base_num: u32,
     pub time_base_den: u32,
@@ -257,6 +261,37 @@ pub struct SourceStreamInfo {
     /// Complete bounded inventory of admitted audio streams. These are probe
     /// observations only; no audio stream was decoded or qualified as ready.
     pub audio_streams: Vec<SourceAudioStreamInfo>,
+}
+
+impl SourceStreamInfo {
+    /// Visible pixel-edge bounds before sample aspect and rotation. Validate
+    /// retained metadata as well as freshly decoded declarations.
+    pub fn visible_bounds(&self) -> Result<[deadpan_core::ExactRatio; 4], SourceDecodeError> {
+        use deadpan_core::ExactRatio;
+        let bounds = self.clean_aperture.unwrap_or([
+            ExactRatio::ZERO,
+            ExactRatio::ZERO,
+            ExactRatio::integer(i64::from(self.width)),
+            ExactRatio::integer(i64::from(self.height)),
+        ]);
+        let [left, top, width, height] = bounds;
+        let valid = left.compare_integer(0).is_ge()
+            && top.compare_integer(0).is_ge()
+            && width.compare_integer(0).is_gt()
+            && height.compare_integer(0).is_gt()
+            && left
+                .checked_add(width)
+                .is_ok_and(|end| end.compare_integer(i64::from(self.width)).is_le())
+            && top
+                .checked_add(height)
+                .is_ok_and(|end| end.compare_integer(i64::from(self.height)).is_le());
+        if !valid {
+            return Err(SourceDecodeError::InvalidConfiguration(
+                "clean aperture lies outside the backing raster",
+            ));
+        }
+        Ok(bounds)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -568,8 +603,12 @@ impl SourceDecoder {
                     message: "clean-aperture sample entry disagrees with decoded raster".into(),
                 });
             }
-            info.width = aperture.rect[2];
-            info.height = aperture.rect[3];
+            if let Some(rect) = aperture.rect {
+                info.width = rect[2];
+                info.height = rect[3];
+            } else {
+                info.clean_aperture = Some(aperture.bounds);
+            }
         }
         Ok(Self {
             inner,
@@ -1376,6 +1415,7 @@ mod ffi {
                 });
             }
             let value = SourceStreamInfo {
+                clean_aperture: None,
                 width: positive(info.width)?,
                 height: positive(info.height)?,
                 stream_index: video_stream_index,

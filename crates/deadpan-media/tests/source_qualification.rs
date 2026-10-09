@@ -142,6 +142,83 @@ fn real_offset_and_vfr_capture_preserve_complete_interpretation_and_timing_after
 }
 
 #[test]
+fn fractional_aperture_roundtrips_exact_bounds_and_reopens_the_retained_source() {
+    use std::sync::Arc;
+    let (video, audio) = av("aperture-fractional.mp4");
+    let captured = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio)).unwrap();
+    let bytes = captured.snapshot().to_json().unwrap();
+    let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+    assert_eq!(&restored, captured.snapshot());
+    let expected =
+        [(53, 4), (37, 4), (599, 2), (319, 2)].map(|(n, d)| ExactRatio::new(n, d).unwrap());
+    let qualified = restored.video().unwrap();
+    assert_eq!(qualified.interpretation().clean_aperture, Some(expected));
+    assert_eq!(
+        restored.basis_candidate().unwrap().unwrap().basis.width,
+        300
+    );
+    let cancelled = AtomicBool::new(false);
+    let mut reopened = SourceSession::open_input_indexed(
+        input("deadpan-source/tests/fixtures", "aperture-fractional.mp4"),
+        Arc::new(qualified.index().clone()),
+        qualified.interpretation(),
+        SourceSessionLimits::default(),
+        &cancelled,
+    )
+    .unwrap();
+    let picture = reopened
+        .frame(
+            deadpan_core::SourceFrameId(119),
+            Duration::from_secs(10),
+            &cancelled,
+        )
+        .unwrap();
+    assert_eq!((picture.width, picture.height), (320, 180));
+    let original: Value = serde_json::from_slice(&bytes).unwrap();
+    for rect in [
+        [
+            ExactRatio::integer(-1),
+            ExactRatio::ZERO,
+            ExactRatio::ONE,
+            ExactRatio::ONE,
+        ],
+        [
+            ExactRatio::ZERO,
+            ExactRatio::ZERO,
+            ExactRatio::integer(321),
+            ExactRatio::ONE,
+        ],
+        [
+            ExactRatio::new(i128::MAX, 1).unwrap(),
+            ExactRatio::ZERO,
+            ExactRatio::ONE,
+            ExactRatio::ONE,
+        ],
+    ] {
+        let mut changed = original.clone();
+        changed["video"]["interpretation"]["clean_aperture"] = serde_json::to_value(rect).unwrap();
+        assert!(
+            SourceQualificationSnapshot::from_json(&serde_json::to_vec(&changed).unwrap()).is_err()
+        );
+    }
+    let mut proxy = video.info().clone();
+    proxy.width = 160;
+    proxy.height = 90;
+    proxy.clean_aperture = None;
+    for rotation in 0..4 {
+        proxy.rotation_quarter_turns = rotation;
+        let shown = deadpan_media::proxy::presentation_info(&proxy, video.info()).unwrap();
+        assert_eq!(
+            shown.clean_aperture,
+            Some(expected.map(|v| v.checked_div(ExactRatio::integer(2)).unwrap()))
+        );
+        assert_eq!(shown.rotation_quarter_turns, rotation);
+    }
+    proxy.clean_aperture = Some(expected);
+    assert!(deadpan_media::proxy::presentation_info(&proxy, video.info()).is_err());
+}
+
+#[test]
 fn persisted_normalization_origin_is_required_and_bound_to_measured_spans() {
     let original = snapshot_value();
     for malformed in [

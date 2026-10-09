@@ -16,14 +16,15 @@ fn track() -> HostMessage {
             49_000,
         )
         .unwrap(),
-        stream: ExpectedStream {
+        stream: Box::new(ExpectedStream {
             stream_index: 0,
             width: 320,
             height: 180,
+            clean_aperture: None,
             time_base_num: 1,
             time_base_den: 1_000,
             rotation_quarter_turns: 0,
-        },
+        }),
         start_pts: 0,
         end_pts: 1_250,
         pictures: 30,
@@ -39,6 +40,43 @@ fn with(change: impl FnOnce(&mut HostMessage)) -> HostMessage {
     let mut message = track();
     change(&mut message);
     message
+}
+
+#[test]
+fn retained_clean_aperture_is_bounded_and_roundtrips_in_worker_requests() {
+    use deadpan_core::ExactRatio as Q;
+    let valid = [
+        Q::new(1, 4).unwrap(),
+        Q::new(1, 4).unwrap(),
+        Q::new(639, 2).unwrap(),
+        Q::new(359, 2).unwrap(),
+    ];
+    let message = with(|message| {
+        let HostMessage::Track { stream, .. } = message else {
+            unreachable!()
+        };
+        stream.clean_aperture = Some(valid);
+    });
+    message.validate().unwrap();
+    let restored: HostMessage =
+        serde_json::from_slice(&serde_json::to_vec(&message).unwrap()).unwrap();
+    assert_eq!(restored, message);
+    for bounds in [
+        [Q::integer(-1), Q::ZERO, Q::ONE, Q::ONE],
+        [Q::ZERO, Q::ZERO, Q::integer(321), Q::ONE],
+        [Q::new(i128::MAX, 1).unwrap(), Q::ZERO, Q::ONE, Q::ONE],
+    ] {
+        assert!(
+            with(|message| {
+                let HostMessage::Track { stream, .. } = message else {
+                    unreachable!()
+                };
+                stream.clean_aperture = Some(bounds);
+            })
+            .validate()
+            .is_err()
+        );
+    }
 }
 
 fn completed(reference: &str, decoded: u32, analysed: u32) -> WorkerMessage {

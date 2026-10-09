@@ -4,14 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Fractional clean apertures](../qualification/fractional-aperture-2026-10-09.md)
+now retain exact bounds through source receipts, project basis, canonical
+rendering, thumbnails, tracking, AI conditioning/join measurements and proxy
+presentation. SDR/HDR backing pixels remain unfiltered until shared rendering;
+analysis uses a separate bounded RGB8 clean raster. Source clocks and existing
+core 48 / SQLite 76 remain unchanged. The workspace gate passes 5,546 tests;
+final focused reruns, both strict Clippy configurations, the real UHD proxy and
+release Render's 120 pictures/four audio windows pass. Read the qualification
+for fixture/binary hashes and the retained Vision detector sensitivity investigation.
+
 Current formats are core 48 / SQLite 76. The
 [eleven-case VFR matrix](../qualification/vfr-recipes-2026-10-09.md) found and
 fixed source-phase rounding in reverse and bleep Holds. Providers now retain
 exact source-clock origins separately from containing decoded-picture spans;
 ping-pong omits one project-frame sample rather than a complete long VFR picture.
 All 867 exported pictures and 28 audio windows pass, with zero offset in all
-17 signal windows. This qualifies a concrete VFR recipe subset; fractional
-apertures and the complete source/operation matrix remain open under DP-02.
+17 signal windows. This qualifies a concrete VFR recipe subset; the complete
+source/operation matrix remains open under DP-02.
 Obsolete development schemas through 75 are refused without writes under the
 existing format-break authorization.
 All 5531 runnable workspace tests (including 1096 UI-harness app tests), both
@@ -54,9 +64,9 @@ DP-02's source-policy and VFR/creative-operation playback/export matrix.
 Pixel-aligned MP4 clean apertures now pass exact source admission, independent
 SDR/HDR pixel comparisons, threaded seeking and real Render. The complete
 115-test native gate and all 120 exported pictures/four audio windows pass
-([qualification](../qualification/clean-aperture-2026-10-09.md)). Fractional
-aperture sampling and the broader VFR/creative-operation matrix remain open;
-DP-02 is still partial. That aperture change required no format/schema change.
+([qualification](../qualification/clean-aperture-2026-10-09.md)). The later fractional
+aperture work is recorded above. The broader source/VFR/creative-operation matrix
+remains open; DP-02 is still partial. That aperture change required no format/schema change.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

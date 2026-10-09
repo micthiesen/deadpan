@@ -122,7 +122,7 @@ fn main() -> ExitCode {
     let job = Job { request, attempt };
     let parameters = Request {
         source,
-        stream,
+        stream: *stream,
         start_pts,
         end_pts,
         pictures,
@@ -267,6 +267,7 @@ fn track(
         let picture = decoder
             .copy_current_rgba(control()?)
             .map_err(|error| format!("convert picture at PTS {}: {error}", metadata.pts))?;
+        let picture = analysis_picture(picture, decoder.info(), cancelled, request.deadline)?;
         if failures >= MAX_CONSECUTIVE_FAILURES {
             observations.push(RawObservation {
                 pts: metadata.pts,
@@ -385,6 +386,7 @@ fn check_stream(
 ) -> Result<(), String> {
     if info.stream_index != expected.stream_index
         || (info.width, info.height) != (expected.width, expected.height)
+        || info.clean_aperture != expected.clean_aperture
         || (info.time_base_num, info.time_base_den)
             != (expected.time_base_num, expected.time_base_den)
         || info.rotation_quarter_turns != expected.rotation_quarter_turns
@@ -392,6 +394,23 @@ fn check_stream(
         return Err("the decoder selected a different picture stream or interpretation".into());
     }
     Ok(())
+}
+
+fn analysis_picture(
+    picture: deadpan_source::DecodedRgbaFrame,
+    info: &deadpan_source::SourceStreamInfo,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<deadpan_source::DecodedRgbaFrame, Interrupted> {
+    deadpan_media::analysis_picture::visible_picture(picture, info, || {
+        decode_control(cancelled, deadline)
+            .map(|_| ())
+            .map_err(|error| match error {
+                Interrupted::Cancelled => "analysis cancelled".into(),
+                Interrupted::Failed(message) => message,
+            })
+    })
+    .map_err(Interrupted::Failed)
 }
 
 /// Open the source directly below `input/` without following links.

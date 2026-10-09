@@ -31,7 +31,7 @@ use deadpan_core::{
 use deadpan_render::{Rgba8Frame, Rotation, SampleDepth};
 use deadpan_store::generated_media::GeneratedReadHandle;
 use deadpan_store::generation_attempts::BundleValidationReceipt;
-use image::{ImageBuffer, Rgb, RgbImage, RgbaImage, imageops};
+use image::{ImageBuffer, Rgb, RgbImage, imageops};
 use serde::Serialize;
 
 use crate::picture::{
@@ -126,6 +126,8 @@ pub enum JoinError {
     Limits(&'static str),
     #[error("join pictures cannot be compared: {0}")]
     Unsupported(&'static str),
+    #[error("join picture interpretation failed: {0}")]
+    Aperture(String),
     #[error(transparent)]
     Picture(#[from] ProjectPictureError),
 }
@@ -397,18 +399,31 @@ pub fn rgb(frame: &Rgba8Frame) -> Result<RgbPicture, JoinError> {
         ));
     }
     let codes = super::color::srgb_codes(metadata.color).map_err(JoinError::Unsupported)?;
-    let (width, height) = (metadata.width, metadata.height);
-    let stride = metadata.row_stride_bytes as usize;
-    let mut rgb = Vec::with_capacity(width as usize * height as usize * 3);
-    for row in frame.bytes().chunks_exact(stride).take(height as usize) {
-        for pixel in row[..width as usize * 4].chunks_exact(4) {
-            rgb.extend_from_slice(&[
-                codes[usize::from(pixel[0])],
-                codes[usize::from(pixel[1])],
-                codes[usize::from(pixel[2])],
-            ]);
+    if metadata.clean_aperture.is_none() {
+        // Ordinary pictures retain the direct RGB conversion and allocation.
+        let (width, height) = (metadata.width, metadata.height);
+        let mut rgb = Vec::with_capacity(width as usize * height as usize * 3);
+        for row in frame
+            .bytes()
+            .chunks_exact(metadata.row_stride_bytes as usize)
+            .take(height as usize)
+        {
+            for pixel in row[..width as usize * 4].chunks_exact(4) {
+                rgb.extend_from_slice(&[
+                    codes[usize::from(pixel[0])],
+                    codes[usize::from(pixel[1])],
+                    codes[usize::from(pixel[2])],
+                ]);
+            }
         }
+        return Ok(RgbPicture { width, height, rgb });
     }
+    let image = super::conditioning::clean_rgba(frame).map_err(JoinError::Aperture)?;
+    let (width, height) = image.dimensions();
+    let rgb = image
+        .pixels()
+        .flat_map(|pixel| [pixel[0], pixel[1], pixel[2]])
+        .collect();
     Ok(RgbPicture { width, height, rgb })
 }
 
@@ -428,24 +443,7 @@ fn boundary_in_region(
         if metadata.rotation != Rotation::None {
             return Err(JoinError::Unsupported("rotated pictures are not measured"));
         }
-        let decoded = rgb(frame)?;
-        let rgba: Vec<u8> = decoded
-            .rgb
-            .chunks_exact(3)
-            .flat_map(|pixel| [pixel[0], pixel[1], pixel[2], 255])
-            .collect();
-        let mut image = RgbaImage::from_raw(decoded.width, decoded.height, rgba)
-            .ok_or(JoinError::Shape("decoded picture layout"))?;
-        let sar = metadata.sample_aspect_ratio.as_f64();
-        if (sar - 1.0).abs() >= f64::EPSILON {
-            let display = ((f64::from(decoded.width) * sar).round() as u32).max(1);
-            image = imageops::resize(
-                &image,
-                display,
-                decoded.height,
-                imageops::FilterType::Lanczos3,
-            );
-        }
+        let image = super::conditioning::rgba(frame).map_err(JoinError::Aperture)?;
         let (fitted_width, fitted_height) =
             fitted((image.width(), image.height()), (region[0], region[1]));
         let fitted = imageops::resize(
@@ -530,6 +528,7 @@ mod tests {
     fn frame(picture: &RgbPicture) -> Rgba8Frame {
         Rgba8Frame::new(
             deadpan_render::FrameMetadata {
+                clean_aperture: None,
                 width: picture.width,
                 height: picture.height,
                 row_stride_bytes: picture.width * 4,

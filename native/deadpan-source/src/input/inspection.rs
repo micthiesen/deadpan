@@ -97,6 +97,8 @@ pub struct Mp4TrackInspection {
     /// Exact integral clean rectangle [left, top, width, height], before SAR
     /// and rotation. `sample_dimensions` still names the complete raster.
     pub clean_aperture: Option<[u32; 4]>,
+    /// Every admitted clean rectangle, including fractional pixel edges.
+    pub clean_aperture_bounds: Option<[deadpan_core::ExactRatio; 4]>,
     pub sample_audio_channels: Option<u32>,
     pub sample_audio_rate: Option<u32>,
 }
@@ -219,7 +221,8 @@ fn summary(layout: &Mp4Layout) -> Result<Mp4Inspection> {
             mastering: track.mastering,
             content_light: track.content_light,
             pixel_aspect_ratio: track.pixel_aspect_ratio,
-            clean_aperture: track.clean_aperture.map(|aperture| aperture.rect),
+            clean_aperture: track.clean_aperture.and_then(|aperture| aperture.rect),
+            clean_aperture_bounds: track.clean_aperture.map(|aperture| aperture.bounds),
             sample_audio_channels: track.audio_channels,
             sample_audio_rate: track.audio_sample_rate,
         });

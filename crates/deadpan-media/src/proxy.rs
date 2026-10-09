@@ -681,6 +681,36 @@ pub fn proxy_raster(width: u32, height: u32) -> (u32, u32) {
     (even(width), even(height))
 }
 
+/// Metadata used only when uploading a verified proxy for presentation. The
+/// proxy contains the full backing raster, so the Original's fractional clean
+/// rectangle scales independently along its two encoded axes.
+pub fn presentation_info(
+    proxy: &SourceStreamInfo,
+    original: &SourceStreamInfo,
+) -> Result<SourceStreamInfo, ProxyError> {
+    use deadpan_core::ExactRatio;
+    let wrong = || ProxyError::Correspondence("invalid presentation aperture");
+    if proxy.clean_aperture.is_some() || proxy.width == 0 || proxy.height == 0 {
+        return Err(wrong());
+    }
+    original.visible_bounds().map_err(|_| wrong())?;
+    let mut info = proxy.clone();
+    if let Some(rect) = original.clean_aperture {
+        let x = ExactRatio::new(i128::from(proxy.width), i128::from(original.width))
+            .map_err(|_| wrong())?;
+        let y = ExactRatio::new(i128::from(proxy.height), i128::from(original.height))
+            .map_err(|_| wrong())?;
+        info.clean_aperture = Some([
+            rect[0].checked_mul(x).map_err(|_| wrong())?,
+            rect[1].checked_mul(y).map_err(|_| wrong())?,
+            rect[2].checked_mul(x).map_err(|_| wrong())?,
+            rect[3].checked_mul(y).map_err(|_| wrong())?,
+        ]);
+        info.visible_bounds().map_err(|_| wrong())?;
+    }
+    Ok(info)
+}
+
 /// The Original bytes and stream a proxy belongs to. BLAKE3 is the retained
 /// object's content address; SHA-256 is the snapshot identity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -889,7 +919,8 @@ fn correspondence(
     original_info: &SourceStreamInfo,
 ) -> Result<(), ProxyError> {
     let wrong = ProxyError::Correspondence;
-    if proxy_info.codec != "h264"
+    if proxy_info.clean_aperture.is_some()
+        || proxy_info.codec != "h264"
         || proxy_info.pixel_format != "yuv420p"
         || proxy_info.color.range != ColorRange::Limited
         || proxy_info.color.matrix != ColorMatrix::Bt709

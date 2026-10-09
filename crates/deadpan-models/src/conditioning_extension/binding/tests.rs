@@ -162,6 +162,7 @@ fn decoded() -> crate::DecodedBoundary {
             pixel_format: "rgb24".into(),
             width: 512,
             height: 320,
+            clean_aperture: None,
             sample_aspect: [1, 1],
             rotation_quarter_turns: 0,
             decoded_sample_bits: 8,

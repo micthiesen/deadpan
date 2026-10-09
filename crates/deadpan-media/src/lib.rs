@@ -26,6 +26,9 @@ pub mod source_session;
 pub mod picture_scan;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod analysis_picture;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod playback_pictures;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]

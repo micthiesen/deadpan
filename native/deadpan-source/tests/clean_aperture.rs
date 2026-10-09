@@ -146,7 +146,7 @@ fn hdr_aperture_preserves_sixteen_bit_rgba_raw_planes_and_fresh_gop_decode() {
 }
 
 #[test]
-fn malformed_and_fractional_apertures_fail_before_decode() {
+fn malformed_apertures_fail_before_decode() {
     let source = std::fs::read(fixture("aperture.mp4")).unwrap();
     let tag = source.windows(4).position(|b| b == b"clap").unwrap();
     for (field, value, code) in [
@@ -155,7 +155,6 @@ fn malformed_and_fractional_apertures_fail_before_decode() {
         (5, -1, "invalid_input"),
         (6, 12, "invalid_input"),
         (4, -11, "invalid_input"),
-        (0, 299, "unsupported_transform"),
     ] {
         let mut bytes = source.clone();
         bytes[tag + 4 + field * 4..tag + 8 + field * 4].copy_from_slice(&i32::to_be_bytes(value));
@@ -168,6 +167,89 @@ fn malformed_and_fractional_apertures_fail_before_decode() {
             matches!(error, SourceDecodeError::Native { code: actual, .. } if actual == code),
             "field {field}: expected {code}"
         );
+    }
+}
+
+#[test]
+fn fractional_apertures_retain_exact_geometry_and_unfiltered_backing_pixels() {
+    use deadpan_core::ExactRatio as Q;
+    for (source, cropped, rect, frames, hdr) in [
+        (
+            "cfr-bframes.mp4",
+            "aperture-fractional.mp4",
+            [(53, 4), (37, 4), (599, 2), (319, 2)],
+            120,
+            false,
+        ),
+        (
+            "hevc-pq.mp4",
+            "aperture-fractional-hdr.mp4",
+            [(25, 4), (9, 4), (95, 2), (55, 2)],
+            8,
+            true,
+        ),
+    ] {
+        let bounds = rect.map(|(n, d)| Q::new(n, d).unwrap());
+        let mut full = open(source, 1);
+        let mut clean = open(cropped, 8);
+        let mut expected = full.info().clone();
+        expected.clean_aperture = Some(bounds);
+        assert_eq!(clean.info(), &expected);
+        assert_eq!(clean.info().visible_bounds().unwrap(), bounds);
+        let inspection = inspect_mp4(
+            &File::open(fixture(cropped)).unwrap(),
+            DecodeLimits::default(),
+            control(),
+        )
+        .unwrap();
+        assert_eq!(inspection.tracks[0].clean_aperture, None);
+        assert_eq!(inspection.tracks[0].clean_aperture_bounds, Some(bounds));
+        assert!(clean.next_i420(control()).is_err());
+        assert!(clean.next_yuv420p10(control()).is_err());
+        let mut last = None;
+        for _ in 0..frames {
+            let expected = if hdr {
+                full.next_rgba16(control())
+            } else {
+                full.next_rgba(control())
+            }
+            .unwrap()
+            .unwrap();
+            let actual = if hdr {
+                clean.next_rgba16(control())
+            } else {
+                clean.next_rgba(control())
+            }
+            .unwrap()
+            .unwrap();
+            assert_eq!(actual, expected);
+            last = Some(actual);
+        }
+        assert!(clean.next_metadata(control()).unwrap().is_none());
+        let last = last.unwrap();
+        clean.seek(last.metadata.pts, control()).unwrap();
+        loop {
+            let metadata = clean.next_metadata(control()).unwrap().unwrap();
+            assert!(metadata.pts <= last.metadata.pts);
+            if metadata.pts == last.metadata.pts {
+                break;
+            }
+        }
+        let actual = if hdr {
+            clean.copy_current_rgba16(control())
+        } else {
+            clean.copy_current_rgba(control())
+        }
+        .unwrap();
+        assert_eq!(actual, last);
+        for invalid in [
+            [Q::integer(-1), Q::ZERO, Q::ONE, Q::ONE],
+            [Q::ZERO, Q::ZERO, Q::integer(8193), Q::ONE],
+            [Q::new(i128::MAX, 1).unwrap(), Q::ZERO, Q::ONE, Q::ONE],
+        ] {
+            expected.clean_aperture = Some(invalid);
+            assert!(expected.visible_bounds().is_err());
+        }
     }
 }
 

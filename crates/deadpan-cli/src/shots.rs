@@ -298,6 +298,19 @@ pub fn scan_shots(
             cancelled,
             start,
             |ordinal, picture| {
+                let picture = deadpan_media::analysis_picture::visible_picture(
+                    picture,
+                    video.interpretation(),
+                    || {
+                        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                            Err("shot detection cancelled".into())
+                        } else if Instant::now() >= deadline {
+                            Err("shot detection deadline elapsed".into())
+                        } else {
+                            Ok(())
+                        }
+                    },
+                )?;
                 pictures
                     .send((ordinal, picture))
                     .map_err(|_| "the signature thread stopped".to_string())?;
@@ -306,7 +319,16 @@ pub fn scan_shots(
                 }
                 Ok::<_, String>(())
             },
-        )?;
+        )
+        .map_err(|error| {
+            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                ShotScanError::Cancelled
+            } else if Instant::now() >= deadline {
+                ShotScanError::Deadline
+            } else {
+                ShotScanError::from(error)
+            }
+        })?;
         drop(pictures);
         for result in signatures {
             absorb(result)?;

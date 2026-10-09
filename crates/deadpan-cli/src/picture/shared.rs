@@ -49,6 +49,10 @@ pub fn source_to_render_frame(
         return Err(ProjectPictureError::DecodedDimensions);
     }
     let metadata = FrameMetadata {
+        clean_aperture: info
+            .clean_aperture
+            .map(deadpan_render::CleanAperture::new)
+            .transpose()?,
         width: decoded.width,
         height: decoded.height,
         row_stride_bytes: u32::try_from(decoded.row_stride_bytes).map_err(|_| {

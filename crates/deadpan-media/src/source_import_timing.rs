@@ -733,8 +733,11 @@ fn derive_geometry(
         i128::from(info.sample_aspect_num),
         i128::from(info.sample_aspect_den),
     )?;
-    let mut display_width = ExactRatio::integer(i64::from(info.width)).checked_mul(sar)?;
-    let mut display_height = ExactRatio::integer(i64::from(info.height));
+    let [_, _, clean_width, clean_height] = info
+        .visible_bounds()
+        .map_err(|_| ImportTimingError::UnsupportedGeometry)?;
+    let mut display_width = clean_width.checked_mul(sar)?;
+    let mut display_height = clean_height;
     if info.rotation_quarter_turns % 2 == 1 {
         std::mem::swap(&mut display_width, &mut display_height);
     }

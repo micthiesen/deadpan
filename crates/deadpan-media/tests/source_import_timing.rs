@@ -467,6 +467,7 @@ fn indexed_audio(start: i64, sample_rate: u32, counts: &[u32]) -> AudioIndexSnap
 
 fn info(time_base: SourceTimeBase) -> SourceStreamInfo {
     SourceStreamInfo {
+        clean_aperture: None,
         width: 1920,
         height: 1080,
         stream_index: 0,
@@ -770,4 +771,37 @@ fn geometry_applies_sar_before_rotation_with_even_rounding_and_no_target_upscale
         derive_presentation_basis(&video, &metadata),
         Err(ImportTimingError::VideoMetadataMismatch)
     ));
+}
+
+#[test]
+fn fractional_clean_aperture_sets_exact_canvas_basis_before_sar_and_rotation() {
+    let clock = SourceTimeBase::new(1, 24).unwrap();
+    let video = indexed_video(0, &[1; 3], clock);
+    let mut metadata = info(clock);
+    metadata.width = 320;
+    metadata.height = 180;
+    metadata.clean_aperture = Some([ratio(53, 4), ratio(37, 4), ratio(599, 2), ratio(319, 2)]);
+    metadata.sample_aspect_num = 4;
+    metadata.sample_aspect_den = 3;
+    for turns in 0..4 {
+        metadata.rotation_quarter_turns = turns;
+        let result = derive_presentation_basis(&video, &metadata).unwrap();
+        let (width, height) = if turns % 2 == 0 {
+            (ratio(1198, 3), ratio(319, 2))
+        } else {
+            (ratio(319, 2), ratio(1198, 3))
+        };
+        assert_eq!(result.geometry.display_width, width);
+        assert_eq!(result.geometry.display_height, height);
+        assert_eq!(
+            (result.basis.width, result.basis.height),
+            if turns % 2 == 0 {
+                (400, 160)
+            } else {
+                (160, 400)
+            }
+        );
+    }
+    metadata.clean_aperture.as_mut().unwrap()[0] = ratio(100, 1);
+    assert!(derive_presentation_basis(&video, &metadata).is_err());
 }

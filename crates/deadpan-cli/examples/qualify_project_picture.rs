@@ -994,6 +994,7 @@ fn qualify_generated(
         // sampling oracle, never from a freshly decoded production frame.
         let frame = Rgba8Frame::new(
             FrameMetadata {
+                clean_aperture: None,
                 width: 4,
                 height: 2,
                 row_stride_bytes: 16,

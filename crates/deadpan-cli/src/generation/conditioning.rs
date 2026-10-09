@@ -497,6 +497,7 @@ pub fn measured_stream(info: &SourceStreamInfo, frame: &Rgba8Frame) -> MeasuredS
         pixel_format: info.pixel_format.clone(),
         width: info.width,
         height: info.height,
+        clean_aperture: info.clean_aperture,
         sample_aspect: [info.sample_aspect_num, info.sample_aspect_den],
         rotation_quarter_turns: info.rotation_quarter_turns,
         decoded_sample_bits: match frame.sample_depth() {
@@ -549,29 +550,52 @@ fn decoded_boundary(
 
 /// The decoded picture at its display aspect, as straight RGBA.
 /// [`decoded_boundary`] has already refused rotated, HDR and deep pictures.
-fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
+pub(super) fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
+    let metadata = frame.metadata();
+    let extent = metadata.clean_aperture.map_or(
+        deadpan_core::ExactRatio::integer(i64::from(metadata.width)),
+        |rect| rect.rect()[2],
+    );
+    let aspect = metadata.sample_aspect_ratio;
+    let display = extent
+        .checked_mul(
+            deadpan_core::ExactRatio::new(
+                i128::from(aspect.numerator()),
+                i128::from(aspect.denominator()),
+            )
+            .map_err(|e| e.to_string())?,
+        )
+        .and_then(|v| v.checked_add(deadpan_core::ExactRatio::new(1, 2).expect("half")))
+        .map_err(|e| e.to_string())?
+        .floor()
+        .max(1);
+    let display = u32::try_from(display).map_err(|_| "conditioning display width overflowed")?;
+    if display > deadpan_render::MAX_DIMENSION
+        || u64::from(display) * u64::from(metadata.height) > deadpan_render::MAX_PIXELS
+    {
+        return Err("conditioning display aspect exceeds the bounded picture raster".into());
+    }
+    let image = clean_rgba(frame)?;
+    if display == image.width() {
+        return Ok(image);
+    }
+    Ok(imageops::resize(
+        &image,
+        display,
+        image.height(),
+        imageops::FilterType::Lanczos3,
+    ))
+}
+
+/// Convert the backing codes first, then sample the clean image, retaining
+/// its unrotated pixel aspect. Join measurements use this same conversion.
+pub(super) fn clean_rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     let metadata = frame.metadata();
     if frame.sample_depth() != SampleDepth::Eight {
         return Err("only eight-bit pictures can condition an AI pause".into());
     }
     let codes = super::color::srgb_codes(metadata.color)?;
     let (width, height) = (metadata.width, metadata.height);
-    // Bound display-aspect expansion before allocating another raster. Coded
-    // dimensions alone do not bound a hostile but positive sample aspect.
-    let aspect = metadata.sample_aspect_ratio;
-    let denominator = u64::from(aspect.denominator());
-    let display = u64::from(width)
-        .checked_mul(u64::from(aspect.numerator()))
-        .and_then(|value| value.checked_add(denominator / 2))
-        .ok_or("conditioning display width overflowed")?
-        / denominator;
-    let display =
-        u32::try_from(display.max(1)).map_err(|_| "conditioning display width overflowed")?;
-    if display > deadpan_render::MAX_DIMENSION
-        || u64::from(display) * u64::from(height) > deadpan_render::MAX_PIXELS
-    {
-        return Err("conditioning display aspect exceeds the bounded picture raster".into());
-    }
     let stride = metadata.row_stride_bytes as usize;
     let mut pixels = Vec::with_capacity(width as usize * height as usize * 4);
     for row in frame.bytes().chunks_exact(stride).take(height as usize) {
@@ -584,17 +608,16 @@ fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
             ]);
         }
     }
-    let image = RgbaImage::from_raw(width, height, pixels).ok_or("decoded frame layout")?;
-    // Non-square pixels stretch horizontally to their display width.
-    if display == width {
-        return Ok(image);
+    if let Some(aperture) = metadata.clean_aperture {
+        return deadpan_media::analysis_picture::aperture_rgba8(
+            &pixels,
+            [width, height],
+            width as usize * 4,
+            aperture.rect(),
+            || Ok(()),
+        );
     }
-    Ok(imageops::resize(
-        &image,
-        display,
-        height,
-        imageops::FilterType::Lanczos3,
-    ))
+    RgbaImage::from_raw(width, height, pixels).ok_or_else(|| "decoded frame layout".into())
 }
 
 /// The project canvas fitted whole inside the native raster.
@@ -707,6 +730,7 @@ mod tests {
 
     fn info(color: deadpan_source::ColorMetadata) -> SourceStreamInfo {
         SourceStreamInfo {
+            clean_aperture: None,
             width: 4,
             height: 2,
             stream_index: 0,
@@ -889,6 +913,7 @@ mod tests {
             .collect();
         Rgba8Frame::new(
             deadpan_render::FrameMetadata {
+                clean_aperture: None,
                 width: image.width(),
                 height: image.height(),
                 row_stride_bytes: image.width() * 4,
@@ -906,6 +931,43 @@ mod tests {
             rgba,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn conditioning_and_join_measurements_sample_the_same_fractional_clean_image() {
+        use deadpan_core::ExactRatio;
+        let mut ramp = RgbImage::new(10, 8);
+        for (x, y, pixel) in ramp.enumerate_pixels_mut() {
+            *pixel = Rgb([(x * 20) as u8, (y * 20) as u8, 0]);
+        }
+        let backing = frame(&ramp);
+        let mut metadata = *backing.metadata();
+        let bounds = [(1, 2), (5, 4), (8, 1), (11, 2)].map(|(n, d)| ExactRatio::new(n, d).unwrap());
+        metadata.clean_aperture = Some(deadpan_render::CleanAperture::new(bounds).unwrap());
+        let picture = Rgba8Frame::new(metadata, backing.bytes().to_vec()).unwrap();
+        let conditioning = rgba(&picture).unwrap();
+        let joins = super::super::joins::rgb(&picture).unwrap();
+        assert_eq!(conditioning.dimensions(), (8, 6));
+        assert_eq!((joins.width, joins.height), (8, 6));
+        for (x, y, pixel) in conditioning.enumerate_pixels() {
+            let expected = [
+                ((f64::from(x) + 0.5) * 20.0).round() as u8,
+                ((0.75 + (f64::from(y) + 0.5) * 5.5 / 6.0) * 20.0).round() as u8,
+                0,
+            ];
+            assert_eq!(&pixel.0[..3], &expected);
+            let offset = (y * 8 + x) as usize * 3;
+            assert_eq!(&joins.rgb[offset..offset + 3], &expected);
+        }
+        let mut stream = info(sdr(ColorTransfer::Srgb, ColorPrimaries::Bt709));
+        stream.width = 10;
+        stream.height = 8;
+        stream.clean_aperture = Some(bounds);
+        let boundary = decoded_boundary(&stream, SourceFrameId(0), &picture).unwrap();
+        assert_eq!(boundary.stream.clean_aperture, Some(bounds));
+        let encoded = serde_json::to_vec(&boundary).unwrap();
+        let roundtrip: DecodedBoundary = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(roundtrip, boundary);
     }
 
     #[test]

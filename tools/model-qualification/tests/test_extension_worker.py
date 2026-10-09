@@ -410,6 +410,25 @@ class ExtensionContextTests(unittest.TestCase):
                 picture["model_input"] = "srgb_codes_unchanged"
             self.validate(wire, context)
 
+    def test_fractional_clean_aperture_is_retained_and_strictly_bounded(self):
+        ratio = lambda n, d=1: {"numerator": str(n), "denominator": str(d)}
+        valid = [ratio(1, 4), ratio(1, 4), ratio(1535, 2), ratio(639, 2)]
+        for direction in ("from_left", "from_right"):
+            wire = request_wire(direction)
+            context = decoded_context(wire)
+            for entry in context["context"] + [context["opposite"]]:
+                entry["picture"]["original"]["picture"]["stream"]["clean_aperture"] = copy.deepcopy(valid)
+            self.validate(wire, context)
+            for invalid in [[], valid[:3], [ratio(-1), *valid[1:]],
+                            [ratio(0), ratio(0), ratio(769), ratio(1)],
+                            [ratio((1 << 127)-1), ratio(0), ratio(1), ratio(1)],
+                            [ratio(1, 0), *valid[1:]],
+                            [ratio(0), ratio(0), ratio(0), ratio(1)]]:
+                changed = copy.deepcopy(context)
+                changed["context"][2]["picture"]["original"]["picture"]["stream"]["clean_aperture"] = invalid
+                with self.subTest(direction=direction, invalid=invalid), self.assertRaises(ValueError):
+                    self.validate(wire, changed)
+
     def test_schema_policy_binding_support_and_alias_mutations_fail(self):
         mutations = [
             lambda c: c.update(schema_version=1), lambda c: c.pop("continuity"),

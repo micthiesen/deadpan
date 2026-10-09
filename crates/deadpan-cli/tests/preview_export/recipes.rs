@@ -142,8 +142,21 @@ fn source_media() -> PathBuf {
 /// Real SDR clean-aperture input. Its independently retained compressed pictures
 /// and source timestamps equal cfr-bframes.mp4; only its visible raster changes.
 pub fn aperture_original(directory: &Path) -> Result<Fixture> {
+    aperture_original_kind(directory, false)
+}
+
+pub fn fractional_aperture_original(directory: &Path) -> Result<Fixture> {
+    aperture_original_kind(directory, true)
+}
+
+fn aperture_original_kind(directory: &Path, fractional: bool) -> Result<Fixture> {
     let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../native/deadpan-source/tests/fixtures/aperture.mp4");
+        .join("../../native/deadpan-source/tests/fixtures")
+        .join(if fractional {
+            "aperture-fractional.mp4"
+        } else {
+            "aperture.mp4"
+        });
     Project::create_from(directory, "aperture-original", &media)?.finish(
         vec!["Source clean aperture"],
         (0..120)
@@ -157,8 +170,8 @@ pub fn aperture_original(directory: &Path) -> Result<Fixture> {
             })
             .collect(),
         vec![
-            "300x160 clean raster at [13,9] within the encoded 320x180; unchanged A/V clocks"
-                .into(),
+            if fractional { "299.5x159.5 clean aperture at [13.25,9.25]; 300x160 project canvas; unchanged A/V clocks" }
+            else { "300x160 clean raster at [13,9] within the encoded 320x180; unchanged A/V clocks" }.into(),
         ],
     )
 }

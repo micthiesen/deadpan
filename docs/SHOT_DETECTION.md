@@ -36,6 +36,12 @@ picture fails with the ordinal and both values; nothing is skipped, inserted
 or guessed. Bytes other than the qualified content are refused before
 decoding.
 
+Fractional clean-aperture bounds must also match the qualification. Before
+handing a picture to the signature thread, `scan_shots` samples the clean image
+through `deadpan_media::analysis_picture`, checking cancellation and the deadline
+per row. This bounded RGB8 analysis conversion preserves the original PTS and
+never enters preview or export. Integral apertures need no further copy.
+
 `scan_shots` hands each converted picture over a two-picture channel to a
 `deadpan-shot-signatures` thread, which reduces it to its signature; a picture
 of at least 2^20 pixels is reduced in up to four row bands on scoped threads

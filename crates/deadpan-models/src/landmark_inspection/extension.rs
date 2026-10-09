@@ -76,6 +76,7 @@ pub(crate) fn inspect(
             stream_index: 0,
             width: contract.width,
             height: contract.height,
+            clean_aperture: None,
             time_base_num: 1,
             time_base_den: 1000,
             rotation_quarter_turns: 0,

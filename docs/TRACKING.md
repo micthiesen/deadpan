@@ -40,6 +40,16 @@ axis uniformly, so it does not change normalized coordinates; it does change
 distances, so the policy measures them in the display aspect (below).
 Deserialized regions are checked, not adjusted, so stored paths round-trip.
 
+For fractional clean apertures, the worker checks the receipt's exact rectangle
+against the decoder and prepares a bounded RGB8 clean image before calling
+Vision. Coordinates remain normalized to that clean image; the policy's distance
+aspect uses the exact clean extents followed by SAR and rotation. The bilinear
+analysis conversion samples encoded RGB and is separate from the renderer's
+color-aware filtering. Integral apertures are already compacted by the decoder.
+[Synthetic real-worker evidence](qualification/fractional-aperture-2026-10-09.md)
+covers tracking, shot boundaries and excluding an outside face. Detection remains
+a proposal and may return no face for a valid picture.
+
 Every sample carries the source picture's exact PTS in the qualified stream's
 time base. A path covers the half-open PTS range `[start_pts, end_pts)`. The
 host picks pictures from the Original's qualified index: the first is the

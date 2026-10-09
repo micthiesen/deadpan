@@ -44,6 +44,7 @@ fn frame(width: u32, height: u32, color: SourceColor, seed: u32) -> Rgba8Frame {
         .collect();
     Rgba8Frame::new(
         FrameMetadata {
+            clean_aperture: None,
             width,
             height,
             row_stride_bytes: stride,

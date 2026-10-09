@@ -355,6 +355,7 @@ fn fixture(width: u32) -> Result<Rgba8Frame> {
     }
     Ok(Rgba8Frame::new(
         FrameMetadata {
+            clean_aperture: None,
             width,
             height: HEIGHT,
             row_stride_bytes: stride,

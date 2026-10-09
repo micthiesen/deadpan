@@ -114,6 +114,7 @@ pub fn scan_pictures_from<E: std::fmt::Display>(
     if info.stream_index != index.stream_index()
         || info.stream_index != expected.stream_index
         || (info.width, info.height) != (expected.width, expected.height)
+        || info.clean_aperture != expected.clean_aperture
         || (info.time_base_num, info.time_base_den)
             != (expected.time_base_num, expected.time_base_den)
     {

@@ -76,7 +76,7 @@ fn seek_picture(
                     .to_owned()
                     .into());
             }
-            return Ok(picture);
+            return crate::analysis_picture(picture, decoder.info(), cancelled, request.deadline);
         }
     }
     Err("extension seek exceeded its picture budget"

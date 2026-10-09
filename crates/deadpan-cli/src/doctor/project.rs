@@ -74,6 +74,7 @@ pub fn report(package: &Path) -> Result<serde_json::Value, CliError> {
             serde_json::json!({
                 "codec": info.codec, "pixel_format": info.pixel_format,
                 "width": info.width, "height": info.height,
+                "clean_aperture": info.clean_aperture,
                 "rotation_quarter_turns": info.rotation_quarter_turns,
                 "indexed_frames": frames.len(), "keyframes": keyframes.len(),
                 "max_keyframe_spacing_frames": max_spacing,

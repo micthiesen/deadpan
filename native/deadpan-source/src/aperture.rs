@@ -1,16 +1,18 @@
 //! Exact MP4 clean-aperture admission and packed-picture extraction.
 //!
 //! `clap` describes pixel centers relative to the center of the sample-entry
-//! raster. Admit only rectangles with integral pixel edges; never use the
-//! demuxer's floating-point/truncated crop as the authority.
+//! raster. Preserve fractional rectangles for the shared renderer; never use
+//! the demuxer's floating-point/truncated crop as the authority.
 
 use crate::SourceDecodeError;
+use deadpan_core::ExactRatio;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct CleanAperture {
     pub coded: [u32; 2],
     /// Left, top, width, height before sample aspect and rotation.
-    pub rect: [u32; 4],
+    pub rect: Option<[u32; 4]>,
+    pub bounds: [ExactRatio; 4],
 }
 
 fn invalid(message: &'static str) -> SourceDecodeError {
@@ -36,31 +38,32 @@ impl CleanAperture {
             if left < 0 || left + 2 * n * od > i128::from(extent) * denominator {
                 return Err(invalid("clean aperture lies outside the declared raster"));
             }
-            if n % d != 0 || left % denominator != 0 {
-                return Err(SourceDecodeError::Native {
-                    code: "unsupported_transform".into(),
-                    message: "fractional clean-aperture pixel edges require qualified sampling"
-                        .into(),
-                });
-            }
             Ok((
-                u32::try_from(left / denominator)
+                ExactRatio::new(left, denominator)
                     .map_err(|_| invalid("clean aperture offset overflow"))?,
-                u32::try_from(n / d).map_err(|_| invalid("clean aperture extent overflow"))?,
+                ExactRatio::new(n, d).map_err(|_| invalid("clean aperture extent overflow"))?,
             ))
         };
         let (left, width) = axis(coded[0], wn, wd, xn, xd)?;
         let (top, height) = axis(coded[1], hn, hd, yn, yd)?;
+        let bounds = [left, top, width, height];
+        let rect = if bounds.iter().all(|v| v.denominator() == 1) {
+            Some(bounds.map(|v| u32::try_from(v.numerator()).expect("bounded clean rectangle")))
+        } else {
+            None
+        };
         Ok(Self {
             coded,
-            rect: [left, top, width, height],
+            rect,
+            bounds,
         })
     }
 
     /// Compact rows in the already allocated full-raster buffer. Conversion
     /// happens before this crop, preserving chroma interpolation at odd edges.
     pub fn packed<T: Copy>(&self, pixels: &mut Vec<T>, channels: usize) {
-        let [left, top, width, height] = self.rect.map(pixel_count);
+        let Some(rect) = self.rect else { return };
+        let [left, top, width, height] = rect.map(pixel_count);
         let stride = pixel_count(self.coded[0]) * channels;
         let output_stride = width * channels;
         for row in 0..height {
@@ -71,12 +74,13 @@ impl CleanAperture {
     }
 
     pub fn validate_420(&self) -> Result<(), SourceDecodeError> {
-        if self
-            .coded
-            .iter()
-            .chain(&self.rect)
-            .any(|v| !v.is_multiple_of(2))
-        {
+        let Some(rect) = self.rect else {
+            return Err(SourceDecodeError::Native {
+                code: "unsupported_transform".into(),
+                message: "raw 4:2:0 reads cannot represent a fractional clean aperture; use RGBA and its retained aperture".into(),
+            });
+        };
+        if self.coded.iter().chain(&rect).any(|v| !v.is_multiple_of(2)) {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_transform".into(),
                 message: "raw 4:2:0 clean aperture must align to the chroma grid; use RGBA".into(),
@@ -86,7 +90,10 @@ impl CleanAperture {
     }
 
     pub fn planar_420<T: Copy>(&self, pixels: &mut Vec<T>) {
-        let [left, top, width, height] = self.rect.map(pixel_count);
+        let [left, top, width, height] = self
+            .rect
+            .expect("validated planar aperture")
+            .map(pixel_count);
         let mut source_base = 0;
         let mut output_base = 0;
         for scale in [1, 2, 2] {
@@ -120,14 +127,14 @@ mod tests {
             CleanAperture::from_words([320, 180], [600, 2, 320, 2, 6, 2, -2, 2])
                 .unwrap()
                 .rect,
-            [13, 9, 300, 160]
+            Some([13, 9, 300, 160])
         );
         // An odd aperture in an even raster needs a half-pixel center offset.
         assert_eq!(
             CleanAperture::from_words([320, 180], [299, 1, 159, 1, -1, 2, 1, 2])
                 .unwrap()
                 .rect,
-            [10, 11, 299, 159]
+            Some([10, 11, 299, 159])
         );
         for words in [
             [300, 0, 160, 1, 0, 1, 0, 1],
@@ -141,8 +148,10 @@ mod tests {
                 Err(SourceDecodeError::Native { code, .. }) if code == "invalid_input"));
         }
         for words in [[299, 1, 160, 1, 0, 1, 0, 1], [599, 2, 160, 1, 0, 1, 0, 1]] {
-            assert!(matches!(CleanAperture::from_words([320, 180], words),
-                Err(SourceDecodeError::Native { code, .. }) if code == "unsupported_transform"));
+            let aperture = CleanAperture::from_words([320, 180], words).unwrap();
+            assert!(aperture.rect.is_none());
+            assert!(aperture.bounds[0].denominator() > 1);
+            assert!(aperture.validate_420().is_err());
         }
     }
 }

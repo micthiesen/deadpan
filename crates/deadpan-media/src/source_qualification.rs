@@ -496,6 +496,8 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
     }
+    info.visible_bounds()
+        .map_err(|_| SourceQualificationError::Metadata("clean aperture"))?;
     validate_hdr(info)?;
     validate_observations(info.stream_start, info.stream_duration)?;
     validate_observations(info.container_start, info.container_duration)?;
@@ -718,6 +720,8 @@ fn write_json(
 pub(crate) struct SourceStreamInfoWire {
     width: u32,
     height: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    clean_aperture: Option<[ExactRatio; 4]>,
     stream_index: u32,
     time_base_num: u32,
     time_base_den: u32,

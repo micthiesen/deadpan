@@ -20,6 +20,15 @@ CASES = [
     ("hevc-pq.mp4", "aperture-hdr.mp4",
      "d59a3ca17af6f88748c87aa72659e700971f4da42012020b1bb2ea82d062d7b0",
      [48, 1, 28, 1, -2, 1, -2, 1]),  # left 6, top 2; planar-aligned
+    ("cfr-bframes.mp4", "aperture-fractional.mp4",
+     "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+     [599, 2, 319, 2, 3, 1, -1, 1]),  # [13.25,9.25,299.5,159.5]
+    ("hevc-pq.mp4", "aperture-fractional-hdr.mp4",
+     "d59a3ca17af6f88748c87aa72659e700971f4da42012020b1bb2ea82d062d7b0",
+     [95, 2, 55, 2, -2, 1, -2, 1]),  # [6.25,2.25,47.5,27.5]
+    ("../../../deadpan-media-worker/tests/fixtures/proxy/uhd-bt709.mp4", "aperture-fractional-uhd.mp4",
+     "a04f59c16b66eaac02605093f5565efb0edaa762acdb0d8877c1afb5a891524b",
+     [5601, 2, 3201, 2, 0, 1, 0, 1]),  # [519.75,279.75,2800.5,1600.5]
 ]
 
 

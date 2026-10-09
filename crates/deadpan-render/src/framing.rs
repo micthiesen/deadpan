@@ -309,9 +309,11 @@ impl PictureGeometry {
         {
             return Err(RenderError::FramingLayers);
         }
+        let source_rect = source.visible_rect()?;
+        let [_, _, visible_width, visible_height] = source_rect;
         let mut d = [
-            f64::from(source.width) * source.sample_aspect_ratio.as_f64(),
-            f64::from(source.height),
+            visible_width * source.sample_aspect_ratio.as_f64(),
+            visible_height,
         ];
         if matches!(
             source.rotation,
@@ -388,6 +390,7 @@ impl PictureGeometry {
             inputs,
             output: current,
             source_metadata: *source,
+            source_rect,
         };
         // Admit GPU representability before any upload, even on a CPU-only call.
         result.sampling_parameters()?;
@@ -481,12 +484,21 @@ impl PictureGeometry {
         let origin = self.unclipped_uv([f64::from(left) + 0.5, f64::from(top) + 0.5]);
         let dx = 1.0 / self.rectangle[2];
         let dy = 1.0 / self.rectangle[3];
-        let (horizontal, vertical) = match self.rotation {
+        let (mut horizontal, mut vertical) = match self.rotation {
             Rotation::None => ([dx, 0.0], [0.0, dy]),
             Rotation::Clockwise90 => ([0.0, -dx], [dy, 0.0]),
             Rotation::Clockwise180 => ([-dx, 0.0], [0.0, -dy]),
             Rotation::Clockwise270 => ([0.0, dx], [-dy, 0.0]),
         };
+        let [_, _, width, height] = self.source_rect;
+        let scale = [
+            width / f64::from(self.source_metadata.width),
+            height / f64::from(self.source_metadata.height),
+        ];
+        for axis in 0..2 {
+            horizontal[axis] *= scale[axis];
+            vertical[axis] *= scale[axis];
+        }
         let values = [
             [origin[0], origin[1], horizontal[0], horizontal[1]],
             [vertical[0], vertical[1], 0.0, 0.0],

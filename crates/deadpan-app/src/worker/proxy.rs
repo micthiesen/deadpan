@@ -61,6 +61,7 @@ impl PreviewFrame {
 /// sidecar index, itself checked against the Original's receipt.
 struct ProxyReader {
     session: SourceSession,
+    presentation: SourceStreamInfo,
     _sidecar: Arc<ProxySidecar>,
 }
 
@@ -91,8 +92,14 @@ impl ProxyReader {
             cancelled,
         )
         .map_err(|error| error.to_string())?;
+        // The cache encodes the complete backing raster. Attach the Original's
+        // visible rectangle only after validating the proxy's own metadata.
+        let presentation =
+            deadpan_media::proxy::presentation_info(session.info(), video.interpretation())
+                .map_err(|error| error.to_string())?;
         Ok(Some(Self {
             session,
+            presentation,
             _sidecar: sidecar,
         }))
     }
@@ -106,7 +113,7 @@ impl ProxyReader {
             .session
             .frame(id, FRAME_TIMEOUT, cancelled)
             .map_err(|error| error.to_string())?;
-        Ok((PreviewFrame(frame), self.session.info().clone()))
+        Ok((PreviewFrame(frame), self.presentation.clone()))
     }
 }
 

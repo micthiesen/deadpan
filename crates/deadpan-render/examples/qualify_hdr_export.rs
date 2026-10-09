@@ -375,6 +375,7 @@ fn fixture(transfer: HdrTransfer, width: u32) -> Result<Rgba8Frame> {
     }
     Ok(Rgba8Frame::new_rgba16(
         FrameMetadata {
+            clean_aperture: None,
             width,
             height: HEIGHT,
             row_stride_bytes: stride,

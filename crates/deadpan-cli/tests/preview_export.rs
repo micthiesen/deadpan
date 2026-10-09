@@ -353,9 +353,25 @@ fn keep_or(scratch: tempfile::TempDir) -> (PathBuf, Option<tempfile::TempDir>) {
 /// basis, composed pictures and encoded output without changing either clock.
 #[test]
 fn clean_aperture_original_renders_at_its_visible_size_without_av_changes() -> Result {
+    aperture_render(false)
+}
+
+#[test]
+fn fractional_clean_aperture_renders_at_its_visible_size_without_av_changes() -> Result {
+    aperture_render(true)
+}
+
+fn aperture_render(fractional: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
-    eprintln!("clean aperture Render evidence: {}", root.display());
-    let fixture = recipes::aperture_original(&root.join("fixture"))?;
+    eprintln!(
+        "clean aperture Render evidence (fractional={fractional}): {}",
+        root.display()
+    );
+    let fixture = if fractional {
+        recipes::fractional_aperture_original(&root.join("fixture"))?
+    } else {
+        recipes::aperture_original(&root.join("fixture"))?
+    };
     check(&fixture)?;
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;

@@ -69,6 +69,7 @@ fn picture(id: u64) -> Picture {
         frame: Some(
             Rgba8Frame::new(
                 FrameMetadata {
+                    clean_aperture: None,
                     width: 1,
                     height: 1,
                     row_stride_bytes: 4,

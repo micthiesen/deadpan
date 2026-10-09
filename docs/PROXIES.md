@@ -11,6 +11,13 @@ calls for this tier, and DP-16 tracks it. Proxies are never authoritative:
 export, render, verification, AI conditioning, tracking, shot analysis and
 thumbnails never read them.
 
+Fractional clean-aperture Originals keep their complete backing raster in the
+proxy. Its own source metadata must declare no crop. After cache/receipt
+verification, the private viewer reader scales the Original's exact clean
+rectangle to the proxy dimensions before upload. The shared renderer then uses
+the same clean-image proportions and source-percent coordinates for either tier.
+This does not change authored media, source clocks or the cache recipe.
+
 ## Eligibility and recipe
 
 §16.4 asks for proxies only where they materially improve seeking.

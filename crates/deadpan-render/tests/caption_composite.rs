@@ -39,6 +39,7 @@ fn renderer() -> PictureRenderer {
 fn gray() -> Rgba8Frame {
     Rgba8Frame::new(
         FrameMetadata {
+            clean_aperture: None,
             width: WIDTH,
             height: HEIGHT,
             row_stride_bytes: WIDTH * 4,

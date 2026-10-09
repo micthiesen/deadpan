@@ -288,6 +288,8 @@ fn inspect(
         }
         control()?;
         let vision_started = Instant::now();
+        let picture =
+            super::analysis_picture(picture, decoder.info(), cancelled, request.deadline)?;
         let observation = detect_picture(
             picture.width,
             picture.height,

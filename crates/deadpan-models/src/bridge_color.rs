@@ -106,6 +106,9 @@ pub struct MeasuredStream {
     pub pixel_format: String,
     pub width: u32,
     pub height: u32,
+    /// Exact visible bounds in decoded pixels; sampling precedes display fitting.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clean_aperture: Option<[deadpan_core::ExactRatio; 4]>,
     /// Sample aspect ratio `[numerator, denominator]`.
     pub sample_aspect: [u32; 2],
     pub rotation_quarter_turns: u8,
@@ -131,6 +134,20 @@ impl MeasuredStream {
             || !matches!(self.decoded_sample_bits, 8 | 16)
         {
             return Err("invalid measured stream geometry or depth");
+        }
+        if let Some([left, top, width, height]) = self.clean_aperture
+            && (left.compare_integer(0).is_lt()
+                || top.compare_integer(0).is_lt()
+                || width.compare_integer(0).is_le()
+                || height.compare_integer(0).is_le()
+                || !left
+                    .checked_add(width)
+                    .is_ok_and(|v| v.compare_integer(i64::from(self.width)).is_le())
+                || !top
+                    .checked_add(height)
+                    .is_ok_and(|v| v.compare_integer(i64::from(self.height)).is_le()))
+        {
+            return Err("invalid measured clean aperture");
         }
         Ok(())
     }
@@ -448,6 +465,7 @@ mod tests {
             pixel_format: "yuv420p".into(),
             width: 320,
             height: 180,
+            clean_aperture: None,
             sample_aspect: [1, 1],
             rotation_quarter_turns: 0,
             decoded_sample_bits: 8,
@@ -461,6 +479,22 @@ mod tests {
             primaries,
             matrix: BridgeMatrix::Bt709,
             range: BridgeRange::Limited,
+        }
+    }
+
+    #[test]
+    fn measured_clean_aperture_rejects_outside_and_overflowing_geometry() {
+        let mut measured = stream(color(BridgeTransfer::Srgb, BridgePrimaries::Bt709));
+        let q = ExactRatio::integer;
+        measured.clean_aperture = Some([ExactRatio::new(1, 4).unwrap(), q(0), q(300), q(180)]);
+        measured.validate_shape().unwrap();
+        for bounds in [
+            [q(-1), q(0), q(1), q(1)],
+            [q(0), q(0), q(321), q(1)],
+            [ExactRatio::new(i128::MAX, 1).unwrap(), q(0), q(1), q(1)],
+        ] {
+            measured.clean_aperture = Some(bounds);
+            assert!(measured.validate_shape().is_err());
         }
     }
 

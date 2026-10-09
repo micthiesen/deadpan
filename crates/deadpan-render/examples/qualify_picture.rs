@@ -513,6 +513,7 @@ fn metadata(
     sample_aspect_ratio: SampleAspectRatio,
 ) -> Result<FrameMetadata> {
     Ok(FrameMetadata {
+        clean_aperture: None,
         width,
         height,
         row_stride_bytes: width * 4 + padding,

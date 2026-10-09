@@ -35,13 +35,26 @@ fn clip() -> AssetId {
 
 /// A project with the fixture registered as asset `clip`.
 fn project(scratch: &Path) -> PathBuf {
+    project_media(scratch, false)
+}
+
+fn project_media(scratch: &Path, fractional: bool) -> PathBuf {
+    let bytes: &[u8] = if fractional {
+        include_bytes!("fixtures/faces-aperture.mp4")
+    } else {
+        include_bytes!("fixtures/two-drawn-faces.mkv")
+    };
+    project_bytes(scratch, bytes)
+}
+
+fn project_bytes(scratch: &Path, bytes: &[u8]) -> PathBuf {
     let package = scratch.join("faces.deadpan");
     let path = package.to_str().unwrap();
     cli(&[
         "project", "create", path, "--fps", "24/1", "--size", "480x270",
     ]);
-    let source = scratch.join("source.mkv");
-    std::fs::write(&source, include_bytes!("fixtures/two-drawn-faces.mkv")).unwrap();
+    let source = scratch.join("source.media");
+    std::fs::write(&source, bytes).unwrap();
     cli(&["project", "retain-original", path, source.to_str().unwrap()]);
     let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
     let records = store.original_records(None, 8).unwrap();
@@ -74,6 +87,44 @@ fn request(at_pts: i64) -> FaceRequest {
         asset: Some(clip()),
         at_pts,
     }
+}
+
+#[test]
+fn encoded_face_fixture_baseline() {
+    let mut bytes = include_bytes!("fixtures/faces-aperture.mp4").to_vec();
+    let tag = bytes.windows(4).position(|v| v == b"clap").unwrap();
+    for (i, value) in [480_i32, 1, 270, 1, 0, 1, 0, 1].into_iter().enumerate() {
+        bytes[tag + 4 + i * 4..tag + 8 + i * 4].copy_from_slice(&value.to_be_bytes());
+    }
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project_bytes(scratch.path(), &bytes);
+    let cancelled = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    let prepared = prepare_faces(&store, &request(0), &cancelled, deadline).unwrap();
+    let detection = detect_faces(&runtime(), &prepared, "baseline", &cancelled, deadline).unwrap();
+    assert_eq!(detection.faces.len(), 2);
+}
+
+#[test]
+fn fractional_aperture_excludes_the_hidden_face_and_reports_clean_coordinates() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project_media(scratch.path(), true);
+    let cancelled = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    let prepared = prepare_faces(&store, &request(0), &cancelled, deadline).unwrap();
+    let detection =
+        detect_faces(&runtime(), &prepared, "fractional", &cancelled, deadline).unwrap();
+    assert_eq!(
+        detection.faces.len(),
+        1,
+        "the second face lies outside the clean aperture"
+    );
+    let (x, y) = detection.faces[0].region.center();
+    assert!((0.25 + x * 319.5 - 135.0).abs() < 20.0);
+    assert!((0.25 + y * 269.5 - 128.0).abs() < 30.0);
+    assert!(detection.faces[0].confidence >= 0.3);
 }
 
 #[test]

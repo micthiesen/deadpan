@@ -61,6 +61,7 @@ pub(crate) fn sidecar(key: &ProxyKey, bytes: &[u8]) -> ProxySidecar {
             byte_length: bytes.len() as u64,
         },
         info: SourceStreamInfo {
+            clean_aperture: None,
             width: 2,
             height: 2,
             stream_index: 0,

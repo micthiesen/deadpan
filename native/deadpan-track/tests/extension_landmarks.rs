@@ -127,6 +127,7 @@ impl Fixture {
                     stream_index: 0,
                     width,
                     height,
+                    clean_aperture: None,
                     time_base_num: 1,
                     time_base_den: 1000,
                     rotation_quarter_turns: 0,

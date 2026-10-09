@@ -99,7 +99,7 @@ pub enum HostMessage {
         cancellation_token: CancellationToken,
         /// The Original's verified bytes, directly below `input/`.
         source: WorkspaceArtifact,
-        stream: ExpectedStream,
+        stream: Box<ExpectedStream>,
         /// The exact PTS of the indexed picture to analyse.
         pts: i64,
         timeout_millis: u64,

@@ -1,4 +1,4 @@
-use deadpan_core::SourceTimestamp;
+use deadpan_core::{ExactRatio, SourceTimestamp};
 
 use crate::{RenderError, SourceColor};
 
@@ -69,10 +69,65 @@ pub struct FrameMetadata {
     pub width: u32,
     pub height: u32,
     pub row_stride_bytes: u32,
+    /// Visible bounds in unrotated backing-raster pixels, before SAR. Sampling
+    /// retains fractional edges until after source colour interpretation.
+    pub clean_aperture: Option<CleanAperture>,
     pub sample_aspect_ratio: SampleAspectRatio,
     pub rotation: Rotation,
     pub color: SourceColor,
     pub pts: SourceTimestamp,
+}
+
+/// An exact clean rectangle within a decoded raster. It changes display
+/// geometry without resampling or discarding the owned source texels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CleanAperture {
+    rect: [ExactRatio; 4],
+}
+
+impl CleanAperture {
+    /// Left, top, width and height in source pixel-edge coordinates.
+    pub fn new(rect: [ExactRatio; 4]) -> Result<Self, RenderError> {
+        if rect[..2].iter().any(|v| v.compare_integer(0).is_lt())
+            || rect[2..].iter().any(|v| !v.compare_integer(0).is_gt())
+        {
+            return Err(RenderError::CleanAperture);
+        }
+        Ok(Self { rect })
+    }
+
+    pub const fn rect(self) -> [ExactRatio; 4] {
+        self.rect
+    }
+
+    fn validate(self, width: u32, height: u32) -> Result<(), RenderError> {
+        for (start, length, bound) in [
+            (self.rect[0], self.rect[2], width),
+            (self.rect[1], self.rect[3], height),
+        ] {
+            let end = start
+                .checked_add(length)
+                .map_err(|_| RenderError::CleanAperture)?;
+            if end.compare_integer(i64::from(bound)).is_gt() {
+                return Err(RenderError::CleanAperture);
+            }
+        }
+        Ok(())
+    }
+}
+
+impl FrameMetadata {
+    pub(crate) fn visible_rect(&self) -> Result<[f64; 4], RenderError> {
+        match self.clean_aperture {
+            Some(aperture) => {
+                aperture.validate(self.width, self.height)?;
+                Ok(aperture
+                    .rect
+                    .map(|v| v.numerator() as f64 / v.denominator() as f64))
+            }
+            None => Ok([0.0, 0.0, f64::from(self.width), f64::from(self.height)]),
+        }
+    }
 }
 
 /// A single owned plane, validated once and immutable thereafter. The allocation
@@ -90,6 +145,7 @@ pub struct Rgba8Frame {
 impl Rgba8Frame {
     pub fn new(metadata: FrameMetadata, bytes: Vec<u8>) -> Result<Self, RenderError> {
         validate_dimensions(metadata.width, metadata.height)?;
+        metadata.visible_rect()?;
         let required = u64::from(metadata.row_stride_bytes) * u64::from(metadata.height);
         if !metadata.row_stride_bytes.is_multiple_of(4)
             || metadata.row_stride_bytes < metadata.width * 4
@@ -110,6 +166,7 @@ impl Rgba8Frame {
     /// at least `width * 8`, and the total is at most [`MAX_FRAME16_BYTES`].
     pub fn new_rgba16(metadata: FrameMetadata, bytes: Vec<u8>) -> Result<Self, RenderError> {
         validate_dimensions(metadata.width, metadata.height)?;
+        metadata.visible_rect()?;
         let required = u64::from(metadata.row_stride_bytes) * u64::from(metadata.height);
         if !metadata.row_stride_bytes.is_multiple_of(8)
             || u64::from(metadata.row_stride_bytes) < u64::from(metadata.width) * 8
@@ -192,6 +249,7 @@ pub(crate) mod tests {
 
     pub(crate) fn metadata(width: u32, height: u32) -> FrameMetadata {
         FrameMetadata {
+            clean_aperture: None,
             width,
             height,
             row_stride_bytes: width * 4,

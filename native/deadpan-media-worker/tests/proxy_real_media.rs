@@ -240,6 +240,37 @@ fn every_proxy_picture_keeps_its_original_time_and_duration() -> Result {
     Ok(())
 }
 
+/// A fractional clean rectangle is presentation geometry over the complete
+/// downscaled backing raster, with the same picture times and verified colors.
+#[test]
+fn fractional_aperture_proxy_keeps_backing_pixels_and_scales_presentation_bounds() -> Result {
+    use deadpan_core::ExactRatio;
+    let _slot = vt_slot();
+    let original = original("aperture-fractional-uhd.mp4")?;
+    let scratch = tempfile::tempdir()?;
+    let (_, sidecar) = build(&original, scratch.path())?;
+    assert_eq!((sidecar.info.width, sidecar.info.height), (1920, 1080));
+    assert!(sidecar.info.clean_aperture.is_none());
+    assert_eq!(
+        sidecar.index.index().frames().len(),
+        original.index.index().frames().len()
+    );
+    let shown = deadpan_media::proxy::presentation_info(&sidecar.info, &original.info)?;
+    let expected =
+        [(2079, 8), (1119, 8), (5601, 4), (3201, 4)].map(|(n, d)| ExactRatio::new(n, d).unwrap());
+    assert_eq!(shown.clean_aperture, Some(expected));
+    assert!(
+        sidecar
+            .fidelity
+            .bias()
+            .iter()
+            .all(|channel| channel.abs() <= 1.5)
+    );
+    assert!(sidecar.fidelity.mean() <= 3.0);
+    eprintln!("fractional UHD proxy: {:?}", sidecar.fidelity);
+    Ok(())
+}
+
 /// The downscale path, rotation, non-square sample aspect and non-BT.709
 /// matrix, primaries and transfer: the proxy keeps the Original's
 /// interpretation, and the sampled colors match without bias.

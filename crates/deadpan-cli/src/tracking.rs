@@ -265,6 +265,7 @@ pub fn prepare_tracking(
         stream_index,
         width: interpretation.width,
         height: interpretation.height,
+        clean_aperture: interpretation.clean_aperture,
         time_base_num: interpretation.time_base_num,
         time_base_den: interpretation.time_base_den,
         rotation_quarter_turns: interpretation.rotation_quarter_turns,
@@ -279,11 +280,13 @@ pub fn prepare_tracking(
         ));
     }
 
-    // Sample aspect ratio stretches the coded width; odd quarter turns swap
-    // the displayed axes.
-    let coded_aspect = (f64::from(interpretation.width)
-        * f64::from(interpretation.sample_aspect_num))
-        / (f64::from(interpretation.height) * f64::from(interpretation.sample_aspect_den));
+    // Distances use the clean image's display aspect, not its backing raster.
+    let [_, _, clean_width, clean_height] = interpretation
+        .visible_bounds()
+        .map_err(|error| TrackingError::Unavailable(error.to_string()))?;
+    let value = |q: deadpan_core::ExactRatio| q.numerator() as f64 / q.denominator() as f64;
+    let coded_aspect = (value(clean_width) * f64::from(interpretation.sample_aspect_num))
+        / (value(clean_height) * f64::from(interpretation.sample_aspect_den));
     let display_aspect = if interpretation.rotation_quarter_turns % 2 == 1 {
         coded_aspect.recip()
     } else {
@@ -449,7 +452,7 @@ fn run_worker(
         attempt: attempt_id,
         cancellation_token: token,
         source: prepared.source.clone(),
-        stream: prepared.stream,
+        stream: Box::new(prepared.stream),
         start_pts: seed.pts,
         end_pts,
         pictures,

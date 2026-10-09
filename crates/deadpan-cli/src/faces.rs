@@ -166,6 +166,7 @@ pub fn prepare_faces(
         stream_index: video.index().stream_index(),
         width: interpretation.width,
         height: interpretation.height,
+        clean_aperture: interpretation.clean_aperture,
         time_base_num: interpretation.time_base_num,
         time_base_den: interpretation.time_base_den,
         rotation_quarter_turns: interpretation.rotation_quarter_turns,
@@ -249,7 +250,7 @@ pub fn detect_faces(
         attempt: attempt_id,
         cancellation_token: token,
         source: prepared.source.clone(),
-        stream: prepared.stream,
+        stream: Box::new(prepared.stream),
         pts: prepared.pts,
         timeout_millis,
     };

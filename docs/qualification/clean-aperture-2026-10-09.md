@@ -1,5 +1,9 @@
 # Pixel-aligned MP4 clean apertures, 2026-10-09
 
+This records the earlier integral-aperture milestone. The later
+[fractional-aperture qualification](fractional-aperture-2026-10-09.md) extends
+its source policy; the failures and limits below describe this original run.
+
 DP-02 / specification §4.3. MP4 Originals with a pixel-aligned `clap` rectangle
 now import and render their clean picture. Previously the container admission
 grammar rejected the box. This is a source-policy increment; DP-02 remains

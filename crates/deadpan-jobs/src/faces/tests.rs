@@ -15,14 +15,15 @@ fn detect() -> HostMessage {
             49_000,
         )
         .unwrap(),
-        stream: ExpectedStream {
+        stream: Box::new(ExpectedStream {
             stream_index: 0,
             width: 320,
             height: 180,
+            clean_aperture: None,
             time_base_num: 1,
             time_base_den: 1_000,
             rotation_quarter_turns: 0,
-        },
+        }),
         pts: 1_000,
         timeout_millis: 60_000,
     }

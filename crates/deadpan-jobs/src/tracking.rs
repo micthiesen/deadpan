@@ -41,6 +41,9 @@ pub struct ExpectedStream {
     pub stream_index: u32,
     pub width: u32,
     pub height: u32,
+    /// Exact visible bounds within the decoded backing raster, before rotation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clean_aperture: Option<[deadpan_core::ExactRatio; 4]>,
     pub time_base_num: u32,
     pub time_base_den: u32,
     /// Clockwise quarter turns from coded to displayed orientation.
@@ -56,6 +59,20 @@ impl ExpectedStream {
             || self.rotation_quarter_turns > 3
         {
             return Err("expected picture stream is outside its bounds".into());
+        }
+        if let Some([left, top, width, height]) = self.clean_aperture
+            && (left.compare_integer(0).is_lt()
+                || top.compare_integer(0).is_lt()
+                || width.compare_integer(0).is_le()
+                || height.compare_integer(0).is_le()
+                || !left
+                    .checked_add(width)
+                    .is_ok_and(|v| v.compare_integer(i64::from(self.width)).is_le())
+                || !top
+                    .checked_add(height)
+                    .is_ok_and(|v| v.compare_integer(i64::from(self.height)).is_le()))
+        {
+            return Err("expected clean aperture is outside the backing raster".into());
         }
         Ok(())
     }
@@ -80,7 +97,7 @@ pub enum HostMessage {
         cancellation_token: CancellationToken,
         /// The Original's verified bytes, directly below `input/`.
         source: WorkspaceArtifact,
-        stream: ExpectedStream,
+        stream: Box<ExpectedStream>,
         /// PTS of the first picture: the one the region was selected on.
         start_pts: i64,
         /// Exclusive PTS end of the range.

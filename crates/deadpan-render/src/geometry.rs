@@ -28,6 +28,7 @@ pub struct PictureGeometry {
     pub(crate) inputs: Vec<crate::framing::InputGeometry>,
     pub(crate) output: crate::framing::InputGeometry,
     pub(crate) source_metadata: FrameMetadata,
+    pub(crate) source_rect: [f64; 4],
 }
 
 impl PictureGeometry {
@@ -58,12 +59,20 @@ impl PictureGeometry {
         let [left, top, width, height] = self.rectangle;
         let u = (pixel[0] - left) / width;
         let v = (pixel[1] - top) / height;
-        match self.rotation {
+        let uv = match self.rotation {
             Rotation::None => [u, v],
             Rotation::Clockwise90 => [v, 1.0 - u],
             Rotation::Clockwise180 => [1.0 - u, 1.0 - v],
             Rotation::Clockwise270 => [1.0 - v, u],
+        };
+        if self.source_metadata.clean_aperture.is_none() {
+            return uv;
         }
+        let [x, y, width, height] = self.source_rect;
+        [
+            (x + uv[0] * width) / f64::from(self.source_metadata.width),
+            (y + uv[1] * height) / f64::from(self.source_metadata.height),
+        ]
     }
 }
 

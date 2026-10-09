@@ -45,6 +45,7 @@ fn boundary(pts: i64) -> BoundaryPicture {
                 pixel_format: "rgb24".into(),
                 width: 640,
                 height: 480,
+                clean_aperture: None,
                 sample_aspect: [4, 3],
                 rotation_quarter_turns: 0,
                 decoded_sample_bits: 8,

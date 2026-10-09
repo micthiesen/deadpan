@@ -49,13 +49,26 @@ fn center_pixels(region: &NormalizedRect) -> (f64, f64) {
 /// A project with the fixture registered as asset `clip` and its shot
 /// analysis stored.
 fn project(scratch: &Path, with_shots: bool) -> PathBuf {
+    project_media(scratch, with_shots, false)
+}
+
+fn project_media(scratch: &Path, with_shots: bool, fractional: bool) -> PathBuf {
     let package = scratch.join("track.deadpan");
     let path = package.to_str().unwrap();
     cli(&[
         "project", "create", path, "--fps", "24/1", "--size", "320x180",
     ]);
-    let source = scratch.join("source.mkv");
-    std::fs::write(&source, include_bytes!("fixtures/moving-square-cut.mkv")).unwrap();
+    let source = scratch.join(if fractional {
+        "source.mp4"
+    } else {
+        "source.mkv"
+    });
+    let bytes: &[u8] = if fractional {
+        include_bytes!("fixtures/moving-square-aperture.mp4")
+    } else {
+        include_bytes!("fixtures/moving-square-cut.mkv")
+    };
+    std::fs::write(&source, bytes).unwrap();
     cli(&["project", "retain-original", path, source.to_str().unwrap()]);
     let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
     let records = store.original_records(None, 8).unwrap();
@@ -118,6 +131,45 @@ fn request(stop_at_shots: bool, stride: u32) -> TrackRequest {
             .unwrap(),
         stride,
         stop_at_shots,
+    }
+}
+
+#[test]
+fn fractional_aperture_tracking_and_shot_detection_use_the_clean_picture() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project_media(scratch.path(), true, true);
+    let cancelled = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut request = request(true, 1);
+    // Whole coded square translated into the exact [20.25,10.25,279.5,159.5]
+    // clean image. The independent truth remains the synthetic generator.
+    request.region = NormalizedRect::new(
+        (40.0 - 20.25) / 279.5,
+        (40.0 - 10.25) / 159.5,
+        36.0 / 279.5,
+        36.0 / 159.5,
+    )
+    .unwrap();
+    {
+        let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+        let prepared = prepare_tracking(&store, &request, &cancelled, deadline).unwrap();
+        assert!((prepared.display_aspect - 279.5 / 159.5).abs() < 1e-12);
+    }
+    let report = track_project(&runtime(), &package, &request, &cancelled, deadline)
+        .unwrap()
+        .report;
+    let path: deadpan_analysis::TrackedPath =
+        serde_json::from_value(report["path"].clone()).unwrap();
+    assert_eq!(path.stop(), TrackStop::ShotBoundary { picture: CUT });
+    assert_eq!(path.samples().len(), CUT);
+    for (ordinal, sample) in path.samples()[..12].iter().enumerate() {
+        let (x, y) = sample.region.center();
+        let (tx, ty) = truth(ordinal);
+        let error = (20.25 + x * 279.5 - tx).hypot(10.25 + y * 159.5 - ty);
+        assert!(error < 8.0, "picture {ordinal}: error {error}");
+        if ordinal > 0 {
+            assert_eq!(sample.state, TrackState::Tracked);
+        }
     }
 }
 

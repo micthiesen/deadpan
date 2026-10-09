@@ -19,6 +19,77 @@ fn geometry(layers: &[FramingLayer]) -> PictureGeometry {
 }
 
 #[test]
+fn fractional_clean_aperture_keeps_source_percent_and_backing_uv_distinct() {
+    let q = |n, d| ExactRatio::new(n, d).unwrap();
+    for rotation in [
+        Rotation::None,
+        Rotation::Clockwise90,
+        Rotation::Clockwise180,
+        Rotation::Clockwise270,
+    ] {
+        let mut meta = metadata(10, 8);
+        meta.clean_aperture =
+            Some(crate::CleanAperture::new([q(1, 2), q(5, 4), q(8, 1), q(6, 1)]).unwrap());
+        meta.rotation = rotation;
+        let canvas = if matches!(rotation, Rotation::Clockwise90 | Rotation::Clockwise270) {
+            [6, 8]
+        } else {
+            [8, 6]
+        };
+        let g = PictureGeometry::new(&meta, canvas[0], canvas[1], FitMode::Fit).unwrap();
+        let gpu = g.sampling_parameters().unwrap();
+        assert_eq!(g.source_to_input(0, [0.0, 0.0]).unwrap(), Some([0.0, 0.0]));
+        assert_eq!(g.source_to_canvas([1.0, 1.0]).unwrap(), Some([1.0, 1.0]));
+        for y in 0..canvas[1] {
+            for x in 0..canvas[0] {
+                let u = (f64::from(x) + 0.5) / f64::from(canvas[0]);
+                let v = (f64::from(y) + 0.5) / f64::from(canvas[1]);
+                let raw = match rotation {
+                    Rotation::None => [u, v],
+                    Rotation::Clockwise90 => [v, 1.0 - u],
+                    Rotation::Clockwise180 => [1.0 - u, 1.0 - v],
+                    Rotation::Clockwise270 => [1.0 - v, u],
+                };
+                let expected = [(0.5 + 8.0 * raw[0]) / 10.0, (1.25 + 6.0 * raw[1]) / 8.0];
+                let actual = g.pixel_uv(x, y).unwrap();
+                let shader = [
+                    gpu[0][0] + x as f32 * gpu[0][2] + y as f32 * gpu[1][0],
+                    gpu[0][1] + x as f32 * gpu[0][3] + y as f32 * gpu[1][1],
+                ];
+                for axis in 0..2 {
+                    assert!((actual[axis] - expected[axis]).abs() < 1e-14);
+                    assert!((f64::from(shader[axis]) - expected[axis]).abs() < 1e-6);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn clean_aperture_bounds_are_checked_before_picture_or_geometry_admission() {
+    use crate::CleanAperture;
+    let q = ExactRatio::integer;
+    assert!(CleanAperture::new([q(-1), q(0), q(1), q(1)]).is_err());
+    assert!(CleanAperture::new([q(0), q(0), q(0), q(1)]).is_err());
+    for rect in [
+        [q(1), q(0), q(4), q(4)],
+        [q(0), q(1), q(4), q(4)],
+        [ExactRatio::new(i128::MAX, 1).unwrap(), q(0), q(1), q(1)],
+    ] {
+        let mut meta = metadata(4, 4);
+        meta.clean_aperture = Some(CleanAperture::new(rect).unwrap());
+        assert!(matches!(
+            Rgba8Frame::new(meta, vec![0; 64]),
+            Err(RenderError::CleanAperture)
+        ));
+        assert!(matches!(
+            PictureGeometry::new(&meta, 4, 4, FitMode::Fit),
+            Err(RenderError::CleanAperture)
+        ));
+    }
+}
+
+#[test]
 fn ancestor_identity_preserves_child_pan_and_selected_input_scope() {
     let g = geometry(&[layer(3, 4, ExactRatio::ONE), FramingLayer::identity()]);
     assert_eq!(g.source_uv([0.5, 0.5]), Some([0.375, 0.125]));

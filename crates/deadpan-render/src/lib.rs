@@ -39,8 +39,8 @@ pub use geometry::{
 };
 pub use gpu::{PictureRenderer, RenderTarget, WorkingReadback};
 pub use surface::{
-    FrameMetadata, MAX_DIMENSION, MAX_FRAME_BYTES, MAX_FRAME16_BYTES, MAX_PIXELS, Rgba8Frame,
-    Rotation, SampleAspectRatio, SampleDepth,
+    CleanAperture, FrameMetadata, MAX_DIMENSION, MAX_FRAME_BYTES, MAX_FRAME16_BYTES, MAX_PIXELS,
+    Rgba8Frame, Rotation, SampleAspectRatio, SampleDepth,
 };
 pub use tone::{
     ColorPipeline, HdrTransfer, OutputColor, ToneMap, source_to_working_with, tone_map_highlights,
@@ -63,6 +63,8 @@ pub enum RenderError {
         "picture dimensions must be nonzero, at most {MAX_DIMENSION} per axis and {MAX_PIXELS} pixels"
     )]
     Dimensions,
+    #[error("clean aperture must be positive and contained in the backing raster")]
+    CleanAperture,
     #[error(
         "RGBA8 rows require a four-byte-aligned stride, exact buffer length, and at most {MAX_FRAME_BYTES} bytes"
     )]
