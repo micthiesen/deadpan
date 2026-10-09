@@ -1,7 +1,7 @@
 # Persistent source decoder
 
 The separate `audio` module decodes an explicitly selected AAC-LC, mono/stereo
-Opus, MP3 or signed16 little-endian PCM stream at its original rate and channel layout. It retains raw
+Opus, MP3 or unsigned8, signed16/24/32 and float32 PCM stream at its original rate and channel layout. It retains raw
 PTS/DTS, duration, sample count/format, discard and manual skip evidence, and
 returns owned interleaved f32 without resampling, mixing or additional gain.
 AAC/MP4, raw MP3, Opus/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation

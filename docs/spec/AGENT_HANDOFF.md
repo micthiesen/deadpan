@@ -4,6 +4,19 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Wider PCM/WAVE sounds](../qualification/pcm-sources-2026-10-09.md) preserve
+unsigned8, signed16/24/32 and float32 samples through the normal catalog and
+shared audio paths. Plain fmt16/18 and exact extensible fmt40 retain rate and
+speaker identity; optional fact must match complete data frames. Fourteen
+stress fixtures match scalar f32 references exactly; non-finite inputs fail.
+The workspace/UI checks, strict lint and 151 native sanitizer tests pass after
+two test corrections. Six nonperiodic export probes verify 720 pictures and
+24 zero-offset windows; the isolated-home bundle registers twenty files and
+verifies 360 pictures/twelve windows. Read the qualification for the retained
+periodic/unobservable stress-file export and delayed-stdio diagnostics. Broader
+metadata/container grammars, AV1, ProRes and full operation coverage remain;
+DP-02 and DP-16 are still partial.
+
 [MP3 sounds](../qualification/mp3-sources-2026-10-09.md) now use the normal catalog,
 placement, history and Render path. Raw MPEG-1/2/2.5 preserves all nine rates and
 exact encoder trim, including skips across frames. Untagged/unknown-encoder

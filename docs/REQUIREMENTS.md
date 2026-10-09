@@ -4,6 +4,18 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Wider PCM/WAVE sound import](qualification/pcm-sources-2026-10-09.md) adds
+unsigned8, signed24/32 and float32 alongside signed16. Exact format/alignment,
+speaker declarations and optional fact counts are checked before decoding;
+finite float levels remain intact and non-finite samples fail without a receipt.
+Fourteen scalar-reference fixtures, all workspace/UI cases after two test
+corrections, strict lint and 151 native sanitizer tests pass. Separate
+nonperiodic signals verify 720 release pictures/24 audio windows and 360
+packaged pictures/twelve windows at zero offset. Both builds register twenty
+files. The qualification retains the original periodic/unobservable timing
+result and stdio diagnostics. Broader WAV metadata/containers, AV1, ProRes and
+the full operation matrix remain open; DP-02 and DP-16 stay partial.
+
 [MP3 sound import](qualification/mp3-sources-2026-10-09.md) adds raw mono/stereo
 MPEG-1/2/2.5 at all nine rates, with exact declared trim across frames, bounded
 metadata and CRC checks. Untagged samples remain intact. Six release exports

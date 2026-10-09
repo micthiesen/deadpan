@@ -12,13 +12,22 @@ frame PTS/DTS, reported duration, original sample rate, channel interpretation,
 sample format/count, discard flag and manual skip side data. It returns owned
 interleaved f32 samples without resampling, downmixing, additional gain, clipping or automatic
 padding removal. PCM16 conversion is exactly `sample / 32768`.
+Unsigned8 uses `(sample - 128) / 128`; signed24 is left-aligned by FFmpeg into
+signed32 and divided by `2^31`, preserving every normalized 24-bit value exactly.
+Signed32 uses the same scale and rounds once to f32. Float32 retains every finite
+value, including signed zero, subnormals and levels outside ±1. NaN and infinity
+fail sample copying and poison the decoder; qualification cannot publish a PCM
+cache from them.
 
 The tested subset is AAC-LC in MP4, mono/stereo raw MP3, mono/stereo Opus in finite WebM/Matroska,
-and signed 16-bit little-endian PCM in WAV. Opus applies its declared header gain.
-The opening guard admits a strict nonfragmented MP4 grammar and PCM16 RIFF/WAV
+and unsigned8, signed16/24/32 or float32 PCM in WAV. Opus applies its declared header gain.
+The opening guard admits a strict nonfragmented MP4 grammar and qualified RIFF/WAV
 with either a plain format header or the closed extensible format described in
 [source admission](SOURCE_ADMISSION.md). The extensible form retains its explicit
-speaker mask; sixteen valid bits and the PCM subtype are checked before demuxing.
+speaker mask; equal valid/container widths and the PCM/IEEE float subtype are
+checked before demuxing. Optional `fact` must match the complete data-frame count.
+WAV packet limits use the encoded width and block alignment for every format.
+See [wide PCM qualification](qualification/pcm-sources-2026-10-09.md).
 Fragmented/encrypted/compressed container structures and unqualified
 metadata grammars are rejected before FFmpeg parsing. Other codecs, custom/ambisonic layouts, unsupported
 sample formats, corrupt frames and changed stream contracts fail explicitly.

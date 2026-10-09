@@ -168,7 +168,10 @@ pub struct MatroskaOpusClock {
 /// Actual decoder output representation, before the owned float copy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AudioSampleFormat {
+    Unsigned8,
     Signed16,
+    /// Includes signed24 decoded into left-aligned signed32 samples.
+    Signed32,
     Float32Planar,
     Float32Interleaved,
 }
@@ -813,7 +816,17 @@ mod ffi {
                 _not_sync: PhantomData,
             };
             let codec = string(&info.codec);
-            if !matches!(codec.as_str(), "aac" | "pcm_s16le" | "opus" | "mp3") {
+            if !matches!(
+                codec.as_str(),
+                "aac"
+                    | "pcm_u8"
+                    | "pcm_s16le"
+                    | "pcm_s24le"
+                    | "pcm_s32le"
+                    | "pcm_f32le"
+                    | "opus"
+                    | "mp3"
+            ) {
                 return Err(invalid_report());
             }
             let value = AudioStreamInfo {
@@ -926,7 +939,14 @@ mod ffi {
                 )
                 || !matches!(
                     decoder_name.as_str(),
-                    "aac" | "pcm_s16le" | "libopus" | "mp3float"
+                    "aac"
+                        | "pcm_u8"
+                        | "pcm_s16le"
+                        | "pcm_s24le"
+                        | "pcm_s32le"
+                        | "pcm_f32le"
+                        | "libopus"
+                        | "mp3float"
                 )
                 || (decoder_name == "aac"
                     && (!matches!(self.container_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)
@@ -1014,7 +1034,9 @@ mod ffi {
 
     fn sample_format(value: i32) -> Result<AudioSampleFormat, SourceDecodeError> {
         match value {
+            0 => Ok(AudioSampleFormat::Unsigned8),
             1 => Ok(AudioSampleFormat::Signed16),
+            2 => Ok(AudioSampleFormat::Signed32),
             8 => Ok(AudioSampleFormat::Float32Planar),
             3 => Ok(AudioSampleFormat::Float32Interleaved),
             _ => Err(invalid_report()),

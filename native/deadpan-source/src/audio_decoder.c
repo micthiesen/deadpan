@@ -29,7 +29,7 @@
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS 33
 #define DEMUXERS "mov,wav,matroska,webm,mp3"
-#define CODECS "aac,pcm_s16le,libopus,mp3float"
+#define CODECS "aac,pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,libopus,mp3float"
 #define DECODE_MANUAL 0
 #define DECODE_ORDINARY 1
 struct DeadpanAudio {
@@ -165,8 +165,12 @@ static int runtime(DeadpanAudio *s) {
     }
     return 1;
 }
+static int pcm_codec(enum AVCodecID id) {
+    return id == AV_CODEC_ID_PCM_U8 || id == AV_CODEC_ID_PCM_S16LE ||
+        id == AV_CODEC_ID_PCM_S24LE || id == AV_CODEC_ID_PCM_S32LE || id == AV_CODEC_ID_PCM_F32LE;
+}
 static int allowed_codec(enum AVCodecID id) {
-    return id == AV_CODEC_ID_AAC || id == AV_CODEC_ID_PCM_S16LE || id == AV_CODEC_ID_OPUS || id == AV_CODEC_ID_MP3;
+    return id == AV_CODEC_ID_AAC || pcm_codec(id) || id == AV_CODEC_ID_OPUS || id == AV_CODEC_ID_MP3;
 }
 static int layout(DeadpanAudio *s, const AVChannelLayout *value, DeadpanAudioLayout *out) {
     if (!av_channel_layout_check(value) || value->nb_channels <= 0 ||
@@ -342,11 +346,15 @@ static int open_impl(DeadpanAudio *s) {
     AVStream *stream = s->format->streams[s->stream];
     AVCodecParameters *p = stream->codecpar;
     if (!strcmp(s->format->iformat->name, "wav")) {
-        // Header preflight admits only PCM16 with a plain or checked extensible
+        // Header preflight admits fixed-width integer/float PCM with a checked
         // format header. Preserve FFmpeg's normal
         // packet size unless a tighter caller budget requires smaller blocks.
         int64_t packet_size = 0;
-        uint64_t alignment = 2ULL * (uint64_t)p->ch_layout.nb_channels;
+        int bits = av_get_exact_bits_per_sample(p->codec_id);
+        if (!pcm_codec(p->codec_id) || bits <= 0 || bits % 8 ||
+            p->block_align != p->ch_layout.nb_channels * (bits / 8))
+            return fail(s, "unsupported_sample_format", "WAV header and decoder disagree on PCM alignment");
+        uint64_t alignment = (uint64_t)p->block_align;
         uint64_t ceiling = (uint64_t)s->limits.max_samples_per_frame * alignment;
         if (ceiling > s->limits.max_packet_bytes) ceiling = s->limits.max_packet_bytes;
         if (!alignment || ceiling < alignment ||
@@ -448,7 +456,10 @@ static int validate_frame(DeadpanAudio *s) {
         return fail(s, "stream_changed", "decoded audio rate or layout differs from selected stream contract");
     if (((s->decoder->codec_id == AV_CODEC_ID_AAC || s->decoder->codec_id == AV_CODEC_ID_MP3) && f->format != AV_SAMPLE_FMT_FLTP) ||
         (s->decoder->codec_id == AV_CODEC_ID_OPUS && f->format != AV_SAMPLE_FMT_FLT) ||
-        (s->decoder->codec_id == AV_CODEC_ID_PCM_S16LE && f->format != AV_SAMPLE_FMT_S16))
+        (s->decoder->codec_id == AV_CODEC_ID_PCM_U8 && f->format != AV_SAMPLE_FMT_U8) ||
+        (s->decoder->codec_id == AV_CODEC_ID_PCM_S16LE && f->format != AV_SAMPLE_FMT_S16) ||
+        ((s->decoder->codec_id == AV_CODEC_ID_PCM_S24LE || s->decoder->codec_id == AV_CODEC_ID_PCM_S32LE) && f->format != AV_SAMPLE_FMT_S32) ||
+        (s->decoder->codec_id == AV_CODEC_ID_PCM_F32LE && f->format != AV_SAMPLE_FMT_FLT))
         return fail(s, "unsupported_sample_format", "decoded audio sample representation is unqualified");
     s->current = (DeadpanAudioFrame){.pts=f->pts,.duration=f->duration,.dts=f->pkt_dts,.nb_samples=f->nb_samples,
         .sample_rate=f->sample_rate,.sample_format=f->format,.channel_layout=channels,
@@ -529,9 +540,18 @@ static int copy_impl(DeadpanAudio *s, DeadpanAudioFrame *out, float *samples, si
     for (size_t n = 0; n < (size_t)f->nb_samples; n++) {
         if ((n & 1023) == 0 && check(s) < 0) return -1;
         for (size_t c = 0; c < channels; c++) {
-            float value = planar ? ((const float *)f->extended_data[c])[n] :
-                f->format == AV_SAMPLE_FMT_FLT ? ((const float *)f->extended_data[0])[n * channels + c] :
-                (float)((const int16_t *)f->extended_data[0])[n * channels + c] / 32768.0f;
+            size_t at = n * channels + c;
+            float value;
+            switch (f->format) {
+                case AV_SAMPLE_FMT_FLTP: value = ((const float *)f->extended_data[c])[n]; break;
+                case AV_SAMPLE_FMT_FLT: value = ((const float *)f->extended_data[0])[at]; break;
+                case AV_SAMPLE_FMT_U8: value = ((int)f->extended_data[0][at] - 128) / 128.0f; break;
+                case AV_SAMPLE_FMT_S16: value = (float)((const int16_t *)f->extended_data[0])[at] / 32768.0f; break;
+                // FFmpeg left-aligns signed24 in S32. Power-of-two scaling is
+                // exact for every 24-bit value; signed32 rounds once to f32.
+                case AV_SAMPLE_FMT_S32: value = (float)((const int32_t *)f->extended_data[0])[at] / 2147483648.0f; break;
+                default: return fail(s, "unsupported_sample_format", "cannot copy unqualified PCM representation");
+            }
             if (!isfinite(value)) return fail(s, "invalid_samples", "decoded audio contains a non-finite sample");
             samples[n * channels + c] = value;
         }

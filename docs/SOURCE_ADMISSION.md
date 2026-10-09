@@ -87,18 +87,24 @@ The nominal `DefaultDuration` is retained separately for checked cadence
 selection; source timestamps remain in their measured container clock.
 See [WebM qualification](qualification/webm-vp9-sources-2026-10-09.md).
 
-PCM16 RIFF/WAVE admits one plain `fmt16` or one closed extensible `fmt40` before
-its aligned nonempty data chunk. The extensible form requires tag `0xfffe`,
-`cbSize = 22`, sixteen valid bits, the exact PCM subtype GUID and a nonzero
+RIFF/WAVE admits unsigned 8-bit, signed little-endian 16/24/32-bit and IEEE
+float32 PCM. One plain `fmt16`, `fmt18` with zero `cbSize`, or closed extensible
+`fmt40` precedes its aligned nonempty data chunk. The extensible form requires
+tag `0xfffe`, `cbSize = 22`, equal valid/container widths, the exact PCM or IEEE
+float subtype GUID and a nonzero
 speaker mask containing only the eighteen canonical WAVE speaker bits, with
 one bit per channel. Channel/rate, block alignment, byte rate, file length,
 sample count, packet and header budgets remain checked before FFmpeg opening.
-Unknown extensions, reserved speaker bits, float and other subtypes stay rejected.
+One optional four-byte `fact` before data must match the actual sample-frame
+count, never an interleaved scalar count. `JUNK` is the only other admitted chunk.
+Odd data chunks require RIFF padding. Reduced valid widths (including 24-in-32),
+float64, unknown extensions/metadata and reserved speaker bits stay rejected.
 The downstream matrix independently checks whether it supports the declared
 layout. Plain WAV channels remain unspecified when the file supplies no layout.
 The field contract follows Microsoft's
 [WAVEFORMATEXTENSIBLE definition](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible);
-Deadpan deliberately admits only the exact PCM16 subset above. See
+Deadpan deliberately admits only the exact subset above. See
+[wide PCM qualification](qualification/pcm-sources-2026-10-09.md) and
 [source-voice qualification](qualification/source-voices-2026-09-27.md) for real
 declared-layout decoding and malformed-header tests. Other codecs and container
 grammars remain required product work; rejecting them here does not reduce the spec.

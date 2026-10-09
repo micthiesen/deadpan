@@ -692,3 +692,83 @@ fn mp3_catalog_pcm_preserves_exact_trim_and_refuses_forged_clock_or_skip_receipt
         }
     }
 }
+
+#[test]
+fn wide_pcm_cache_retains_scalar_samples_exact_endpoints_and_checked_sample_formats() {
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&fixture("audio-fixtures", "wide-pcm-manifest.json")).unwrap();
+    for row in manifest["files"].as_array().unwrap() {
+        let name = row["name"].as_str().unwrap();
+        let bytes = fixture("audio-fixtures", name);
+        let session = open(&bytes, 0);
+        let index = session.index();
+        assert_eq!(index.stream().codec, row["codec"].as_str().unwrap());
+        assert_eq!(index.decoded_samples(), 8197);
+        assert_eq!(index.valid_samples(), 8197);
+        assert_eq!(
+            AudioIndexSnapshot::from_json(&index.to_json().unwrap()).unwrap(),
+            *index
+        );
+        let actual = session
+            .read_samples(
+                SourceAudioSample(0),
+                8197,
+                Duration::from_secs(2),
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        let reference = fixture("audio-fixtures", &name.replace(".wav", ".f32le"));
+        let actual: Vec<u8> = actual
+            .samples
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        assert_eq!(actual, reference, "{name}");
+        for start in [-1, 8197] {
+            assert!(
+                session
+                    .read_samples(
+                        SourceAudioSample(start),
+                        1,
+                        Duration::from_secs(2),
+                        &AtomicBool::new(false)
+                    )
+                    .is_err()
+            );
+        }
+        for mutation in 0..3 {
+            let mut wire = serde_json::to_value(index).unwrap();
+            match mutation {
+                0 => wire["observations"][0]["sample_format"] = "dbl".into(),
+                1 => {
+                    wire["observations"][0]["reported_duration"] =
+                        (index.observations()[0].sample_count + 1).into()
+                }
+                2 => wire["stream"]["codec"] = "pcm_f64le".into(),
+                _ => unreachable!(),
+            }
+            assert!(
+                AudioIndexSnapshot::from_json(&serde_json::to_vec(&wire).unwrap()).is_err(),
+                "{name} {mutation}"
+            );
+        }
+    }
+}
+
+#[test]
+fn float_wave_with_nonfinite_samples_never_opens_a_qualified_pcm_cache() {
+    let bytes = fixture("audio-fixtures", "wide-f32-stereo.wav");
+    let data = bytes.windows(4).position(|v| v == b"data").unwrap() + 8;
+    for value in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        let mut bad = bytes.clone();
+        bad[data..data + 4].copy_from_slice(&value.to_le_bytes());
+        assert!(
+            AudioSession::open_first_input(
+                verified_input(&bad),
+                AudioSessionLimits::default(),
+                &AtomicBool::new(false)
+            )
+            .is_err()
+        );
+    }
+}

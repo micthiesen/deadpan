@@ -235,7 +235,9 @@ impl AudioSession {
                 reported_duration: frame.reported_duration,
                 sample_count: frame.nb_samples,
                 sample_format: match frame.sample_format {
+                    AudioSampleFormat::Unsigned8 => "u8",
                     AudioSampleFormat::Signed16 => "s16",
+                    AudioSampleFormat::Signed32 => "s32",
                     AudioSampleFormat::Float32Planar => "fltp",
                     AudioSampleFormat::Float32Interleaved => "flt",
                 }

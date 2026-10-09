@@ -553,6 +553,15 @@ signals with `python3 native/deadpan-source/tests/generate_mp3_fixtures.py --che
 (development FFmpeg/libmp3lame and LAME; no end-user encoding dependency).
 The audio container mutation campaign automatically includes these `.mp3` seeds.
 
+Wider PCM/WAVE uses the native `wide_pcm` tests and the media/CLI audio cases.
+`python3 native/deadpan-source/tests/generate_pcm_fixtures.py --check` verifies
+fourteen integer8/16/24/32 and float32 stress fixtures without external tools.
+For export timing, use separate nonperiodic probes:
+`python3 tools/media-qualification/generate_pcm_export_signals.py --output /tmp/deadpan-pcm-probes-NEW`.
+Repeat with `--check` to verify their bytes. Periodic conversion-stress signals
+may leave encoded timing unobservable; never call that zero-offset evidence.
+See [PCM qualification](qualification/pcm-sources-2026-10-09.md).
+
 ## Audio preparation checks
 
 Structural audio queries are covered by `cargo test --locked -p deadpan-plan

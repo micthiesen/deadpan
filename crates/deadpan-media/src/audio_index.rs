@@ -224,7 +224,17 @@ impl AudioIndexSnapshot {
         stream.channel_layout.validate()?;
         if stream.stream_index >= 33
             || !(1..=384_000).contains(&stream.sample_rate)
-            || !matches!(stream.codec.as_str(), "aac" | "pcm_s16le" | "opus" | "mp3")
+            || !matches!(
+                stream.codec.as_str(),
+                "aac"
+                    | "pcm_u8"
+                    | "pcm_s16le"
+                    | "pcm_s24le"
+                    | "pcm_s32le"
+                    | "pcm_f32le"
+                    | "opus"
+                    | "mp3"
+            )
             || (stream.codec == "opus") != stream.matroska_opus.is_some()
             || (stream.codec == "mp3") != stream.mp3.is_some()
         {
@@ -254,7 +264,11 @@ impl AudioIndexSnapshot {
                 || observation.sample_count > 65_536
                 || !matches!(
                     (stream.codec.as_str(), observation.sample_format.as_str()),
-                    ("pcm_s16le", "s16") | ("aac" | "mp3", "fltp") | ("opus", "flt")
+                    ("pcm_u8", "u8")
+                        | ("pcm_s16le", "s16")
+                        | ("pcm_s24le" | "pcm_s32le", "s32")
+                        | ("aac" | "mp3", "fltp")
+                        | ("opus" | "pcm_f32le", "flt")
                 )
             {
                 return Err(AudioIndexError::Metadata("frame samples or format").into());

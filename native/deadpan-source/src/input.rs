@@ -576,7 +576,7 @@ fn validate_selection(
         return Err(SourceDecodeError::Native {
             code: "unsupported_container".into(),
             message:
-                "only strict MP4, qualified finite Matroska/WebM, raw MP3, and PCM16 RIFF/WAVE are admitted"
+                "only strict MP4, qualified finite Matroska/WebM, raw MP3, and qualified PCM RIFF/WAVE are admitted"
                     .into(),
         });
     };
@@ -609,6 +609,7 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
     let mut cursor = 12;
     let mut align = None;
     let mut data = false;
+    let mut fact = None;
     while cursor < r.length {
         r.check()?;
         if r.atoms >= ATOMS {
@@ -626,25 +627,22 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
         match &tag {
             b"fmt " => {
                 require(
-                    align.is_none() && !data && matches!(length, 16 | 40),
-                    "WAVE requires one PCM fmt16 or extensible fmt40 before data",
+                    align.is_none() && !data && matches!(length, 16 | 18 | 40),
+                    "WAVE requires one PCM fmt16/18 or extensible fmt40 before data",
                 )?;
                 let bytes = r.bytes::<16>(start)?;
                 let format = u16::from_le_bytes([bytes[0], bytes[1]]);
-                if !matches!((format, length), (1, 16) | (0xfffe, 40)) {
+                if !matches!((format, length), (1 | 3, 16 | 18) | (0xfffe, 40)) {
                     return Err(SourceDecodeError::Native {
                         code: "unsupported_codec".into(),
-                        message: "only signed16 PCM WAVE is admitted".into(),
+                        message: "only integer PCM or IEEE float WAVE is admitted".into(),
                     });
                 }
                 let channels = u32::from(u16::from_le_bytes([bytes[2], bytes[3]]));
                 let rate = u32::from_le_bytes(bytes[4..8].try_into().expect("four bytes"));
                 let byte_rate = u32::from_le_bytes(bytes[8..12].try_into().expect("four bytes"));
                 let block = u32::from(u16::from_le_bytes([bytes[12], bytes[13]]));
-                require(
-                    u16::from_le_bytes([bytes[14], bytes[15]]) == 16,
-                    "WAVE sample width is not signed16",
-                )?;
+                let bits = u16::from_le_bytes([bytes[14], bytes[15]]);
                 if channels == 0
                     || channels > r.limits.max_channels
                     || rate == 0
@@ -652,19 +650,39 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
                 {
                     return Err(limit("WAVE channels or rate exceed configured bounds"));
                 }
-                if format == 0xfffe {
-                    wave_extensible_pcm16(r, start + 16, channels)?;
-                }
+                let format = if format == 0xfffe {
+                    wave_extensible_pcm(r, start + 16, channels, bits)?
+                } else {
+                    if length == 18 {
+                        require(
+                            r.bytes::<2>(start + 16)? == [0, 0],
+                            "WAVE cbSize must be zero",
+                        )?;
+                    }
+                    format
+                };
                 require(
-                    block == channels * 2
+                    matches!((format, bits), (1, 8 | 16 | 24 | 32) | (3, 32)),
+                    "WAVE sample representation is outside qualified integer8/16/24/32 or float32",
+                )?;
+                require(
+                    block == channels * u32::from(bits / 8)
                         && u64::from(byte_rate) == u64::from(rate) * u64::from(block),
-                    "WAVE block alignment or byte rate disagrees with PCM16",
+                    "WAVE block alignment or byte rate disagrees with PCM representation",
                 )?;
                 if u64::from(block) > r.limits.max_packet_bytes {
                     return Err(limit("one PCM sample frame exceeds packet bound"));
                 }
                 align = Some(block);
                 r.charge_header(8 + length)?;
+            }
+            b"fact" => {
+                require(
+                    align.is_some() && !data && fact.is_none() && length == 4,
+                    "WAVE permits one four-byte fact after format and before data",
+                )?;
+                fact = Some(u64::from(u32::from_le_bytes(r.bytes(start)?)));
+                r.charge_header(12)?;
             }
             b"data" => {
                 let block = align.ok_or_else(|| invalid("WAVE data precedes format"))?;
@@ -675,6 +693,10 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
                 if length / u64::from(block) > r.limits.max_decoded_samples {
                     return Err(limit("WAVE sample count exceeds configured bound"));
                 }
+                require(
+                    fact.is_none_or(|count| count == length / u64::from(block)),
+                    "WAVE fact sample count disagrees with complete data frames",
+                )?;
                 data = true;
                 r.charge_header(8)?;
             }
@@ -686,29 +708,31 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
     require(data && align.is_some(), "WAVE has no complete PCM stream")
 }
 
-fn wave_extensible_pcm16(r: &mut Reader<'_>, start: u64, channels: u32) -> Result<()> {
+fn wave_extensible_pcm(r: &mut Reader<'_>, start: u64, channels: u32, bits: u16) -> Result<u16> {
     // A closed extension, not arbitrary WAVEFORMATEX extradata. The containing
     // fmt40 has already been bounded before any of these fixed-size reads.
     let bytes = r.bytes::<24>(start)?;
     require(
         u16::from_le_bytes([bytes[0], bytes[1]]) == 22
-            && u16::from_le_bytes([bytes[2], bytes[3]]) == 16,
-        "WAVE extensible PCM requires cbSize22 and sixteen valid bits",
+            && u16::from_le_bytes([bytes[2], bytes[3]]) == bits,
+        "WAVE extensible PCM requires cbSize22 and equal valid/container widths",
     )?;
     let mask = u32::from_le_bytes(bytes[4..8].try_into().expect("four bytes"));
     require(
         mask != 0 && mask & !0x3ffff == 0 && mask.count_ones() == channels,
         "WAVE extensible speaker mask is unspecified, reserved or inconsistent",
     )?;
-    // KSDATAFORMAT_SUBTYPE_PCM in RIFF GUID byte order. Other codecs, float
-    // data and vendor-defined subtype namespaces remain unqualified.
+    // Exact PCM/IEEE_FLOAT GUID namespace in RIFF byte order. Reduced valid
+    // widths remain unqualified: FFmpeg can reinterpret 24-in-32 as float24.
     require(
-        bytes[8..]
-            == [
-                1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71,
-            ],
-        "WAVE extensible subtype is not signed16 PCM",
-    )
+        matches!(bytes[8], 1 | 3)
+            && bytes[9..]
+                == [
+                    0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71,
+                ],
+        "WAVE extensible subtype is not PCM or IEEE float",
+    )?;
+    Ok(u16::from(bytes[8]))
 }
 
 type Mp4Selection = (
