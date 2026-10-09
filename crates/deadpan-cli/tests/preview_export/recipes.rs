@@ -202,12 +202,16 @@ pub fn interlaced_original(
 }
 
 pub fn sdr_codec_original(directory: &Path, name: &'static str) -> Result<Fixture> {
+    sdr_source_original(directory, name, 12)
+}
+
+pub fn sdr_source_original(directory: &Path, name: &'static str, frames: u64) -> Result<Fixture> {
     let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/fixtures")
         .join(format!("{name}.mp4"));
     Project::create_from(directory, name, &media)?.finish(
-        vec!["SDR HEVC/H.264 High10 Original"],
-        (0..12)
+        vec!["SDR HEVC/H.264 High10/VP9 Original"],
+        (0..frames)
             .map(|frame| {
                 (
                     frame,
@@ -218,7 +222,7 @@ pub fn sdr_codec_original(directory: &Path, name: &'static str) -> Result<Fixtur
             })
             .collect(),
         vec![
-            "Main/Main10/High10 limited/full-range SDR; original audio and B-frame timestamps"
+            "Main/Main10/High10/VP9 limited/full-range SDR; original audio and picture timestamps"
                 .into(),
         ],
     )

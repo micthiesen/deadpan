@@ -4,11 +4,20 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[SDR VP9 in MP4](qualification/vp9-sources-2026-10-09.md) now retains
+eight/ten-bit full/limited-range pictures, explicit chroma siting and exact
+clocks. Hidden altref pictures and repeated existing frames preserve the
+authored timeline. Native pixel/seek tests, source receipts, real proxies and
+debug/release public Render pass, including 112 VP9 pictures and four zero-offset
+signal windows. Final gate results are recorded in the qualification. DP-02
+and DP-16 remain partial for WebM/Opus, VP9 HDR, AV1, other required codecs
+and the full source/operation matrix.
+
 [SDR HEVC and H.264 High10](qualification/sdr-source-codecs-2026-10-09.md)
 retain full/limited range, ten-bit picture precision and exact B-frame clocks.
 Six public Render cases verify 72 pictures and six audio windows at zero offset.
 Bounded draining before HEVC seeks also fixes stale output in existing HDR
-decoders. VP9, AV1, ProRes, deep-SDR AI conditioning and the broader
+decoders. Further VP9 formats, AV1, ProRes, deep-SDR AI conditioning and the broader
 source/operation matrix remain open; final gate evidence is in the qualification.
 
 [H.264 telecine](qualification/telecine-sources-2026-10-09.md) now uses explicit

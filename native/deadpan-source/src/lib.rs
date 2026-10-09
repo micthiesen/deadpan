@@ -29,7 +29,7 @@ pub use input::fuzzing;
 pub use input::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
     Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,
-    Mp4TrackInspection, Mp4TrackKind, inspect_mp4,
+    Mp4TrackInspection, Mp4TrackKind, Mp4Vp9Configuration, inspect_mp4,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -595,7 +595,8 @@ impl SourceDecoder {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let (preflight_io_bytes, aperture) = input::validate_video(&file, limits.into(), control)?;
+        let admitted = input::validate_video(&file, limits.into(), control)?;
+        let aperture = admitted.aperture;
         let timeout = control
             .timeout
             .checked_sub(started.elapsed())
@@ -607,9 +608,10 @@ impl SourceDecoder {
         let (inner, mut info) = ffi::Decoder::open_with_keyframe(
             file,
             limits,
-            preflight_io_bytes,
+            admitted.io_bytes,
             DecodeControl { timeout, ..control },
             pts,
+            admitted.vp9,
         )?;
         let coded = [info.width, info.height];
         if let Some(aperture) = aperture {
@@ -930,6 +932,7 @@ mod ffi {
         max_packets_per_frame: u32,
         threads: u32,
         progressive_only: u32,
+        vp9: [u32; 7],
     }
     const MAX_AUDIO_STREAMS: usize = MAX_SOURCE_AUDIO_STREAMS;
 
@@ -1253,7 +1256,7 @@ mod ffi {
             preflight_io_bytes: u64,
             ctl: DecodeControl<'_>,
         ) -> Result<(Self, SourceStreamInfo), SourceDecodeError> {
-            Self::open_with_keyframe(file, limits, preflight_io_bytes, ctl, None)
+            Self::open_with_keyframe(file, limits, preflight_io_bytes, ctl, None, None)
         }
         pub(super) fn open_with_keyframe(
             file: File,
@@ -1261,6 +1264,7 @@ mod ffi {
             preflight_io_bytes: u64,
             ctl: DecodeControl<'_>,
             pts: Option<i64>,
+            vp9: Option<Mp4Vp9Configuration>,
         ) -> Result<(Self, SourceStreamInfo), SourceDecodeError> {
             let (timeout, opaque) = control(ctl)?;
             limits.validate()?;
@@ -1284,6 +1288,17 @@ mod ffi {
                 max_packets_per_frame: limits.max_packets_per_frame,
                 threads: limits.threads,
                 progressive_only: u32::from(limits.progressive_only),
+                vp9: vp9.map_or([0; 7], |v| {
+                    [
+                        u32::from(v.profile),
+                        u32::from(v.bit_depth),
+                        u32::from(v.chroma_subsampling),
+                        u32::from(v.color.full_range),
+                        u32::from(v.color.primaries),
+                        u32::from(v.color.transfer),
+                        u32::from(v.color.matrix),
+                    ]
+                }),
             };
             let mut pointer = std::ptr::null_mut();
             let mut info = Info::default();

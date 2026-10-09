@@ -46,7 +46,7 @@ use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
     Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,
-    Mp4TrackInspection, Mp4TrackKind, inspect_mp4,
+    Mp4TrackInspection, Mp4TrackKind, Mp4Vp9Configuration, inspect_mp4,
 };
 
 const HEADER_BYTES: u64 = 16 * 1024 * 1024;
@@ -202,6 +202,7 @@ struct Track {
     composition: Option<(Table, u8)>,
     avc: Option<Mp4AvcConfiguration>,
     hevc: Option<Mp4HevcConfiguration>,
+    vp9: Option<Mp4Vp9Configuration>,
     mastering: Option<MasteringDisplay>,
     content_light: Option<ContentLight>,
     dimensions: Option<[u32; 2]>,
@@ -455,9 +456,8 @@ pub(crate) fn validate_video(
     file: &File,
     limits: InputLimits,
     control: DecodeControl<'_>,
-) -> Result<(u64, Option<CleanAperture>)> {
-    let admitted = validate_selection(file, Selection::Video, limits, control)?;
-    Ok((admitted.io_bytes, admitted.aperture))
+) -> Result<Admission> {
+    validate_selection(file, Selection::Video, limits, control)
 }
 
 /// Resolve the first audio stream from the same bounded grammar pass that
@@ -473,10 +473,11 @@ pub(crate) fn validate_audio(
     Ok((admitted.audio.ok_or_else(selection)?, admitted.io_bytes))
 }
 
-struct Admission {
-    io_bytes: u64,
+pub(crate) struct Admission {
+    pub(crate) io_bytes: u64,
     audio: Option<u32>,
-    aperture: Option<CleanAperture>,
+    pub(crate) aperture: Option<CleanAperture>,
+    pub(crate) vp9: Option<Mp4Vp9Configuration>,
 }
 
 fn validate_selection(
@@ -546,16 +547,17 @@ fn validate_selection(
             io_bytes: reader.read_bytes + charged,
             audio: None,
             aperture: None,
+            vp9: None,
         });
     }
-    let (audio, aperture) = if magic == *b"RIFF" {
+    let (audio, aperture, vp9) = if magic == *b"RIFF" {
         let selected_stream = match policy {
             Selection::Audio(index) => index,
             Selection::FirstAudio => 0,
             Selection::Video => return Err(selection()),
         };
         wave(&mut reader, selected_stream)?;
-        (Some(selected_stream), None)
+        (Some(selected_stream), None, None)
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
         mp4(&mut reader, policy)?
     } else {
@@ -570,6 +572,7 @@ fn validate_selection(
         io_bytes: reader.read_bytes,
         audio,
         aperture,
+        vp9,
     })
 }
 
@@ -692,7 +695,12 @@ fn wave_extensible_pcm16(r: &mut Reader<'_>, start: u64, channels: u32) -> Resul
     )
 }
 
-fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<(Option<u32>, Option<CleanAperture>)> {
+type Mp4Selection = (
+    Option<u32>,
+    Option<CleanAperture>,
+    Option<Mp4Vp9Configuration>,
+);
+fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
     let layout = mp4_layout(r)?;
     let tracks = layout.tracks;
     match policy {
@@ -700,7 +708,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<(Option<u32>, Option<Cle
             if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
                 return Err(selection());
             }
-            Ok((Some(index), None))
+            Ok((Some(index), None, None))
         }
         Selection::FirstAudio => {
             let index = tracks
@@ -709,6 +717,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<(Option<u32>, Option<Cle
                 .ok_or_else(selection)?;
             Ok((
                 Some(u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?),
+                None,
                 None,
             ))
         }
@@ -727,6 +736,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<(Option<u32>, Option<Cle
                     .iter()
                     .find(|track| track.codec == Some(Kind::Video))
                     .and_then(|track| track.clean_aperture),
+                tracks.iter().find_map(|track| track.vp9),
             ))
         }
     }
@@ -1246,7 +1256,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         "sample description count or size disagrees with box",
     )?;
     let (kind, fixed) = match &entry.tag {
-        b"avc1" | b"hvc1" => (Kind::Video, 78),
+        b"avc1" | b"hvc1" | b"vp09" => (Kind::Video, 78),
         b"mp4a" => (Kind::Audio, 28),
         // hev1 permits parameter sets that exist only in-band and may change
         // between pictures; only hvc1's complete hvcC arrays are admitted.
@@ -1260,7 +1270,8 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         _ => {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_codec".into(),
-                message: "only avc1, hvc1 and mp4a MP4 sample descriptions are admitted".into(),
+                message: "only avc1, hvc1, vp09 and mp4a MP4 sample descriptions are admitted"
+                    .into(),
             });
         }
     };
@@ -1317,6 +1328,11 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
     while cursor < children.end {
         let atom = r.atom(&mut cursor, children.end, 7)?;
         match &atom.tag {
+            b"vpcC" if entry.tag == *b"vp09" => {
+                require(!config, "duplicate video configuration")?;
+                config = true;
+                track.vp9 = Some(vpcc(r, atom.body)?);
+            }
             b"hvcC" if hevc => {
                 require(!config, "duplicate video configuration")?;
                 config = true;
@@ -1348,8 +1364,12 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                     matches!(r.bytes::<2>(atom.body.start)?, [1, 0] | [2, 1 | 6 | 9 | 14]),
                     "unrecognized field description",
                 )?;
+                require(
+                    entry.tag != *b"vp09" || r.bytes::<2>(atom.body.start)? == [1, 0],
+                    "VP9 requires progressive pictures",
+                )?;
             }
-            b"avcC" if kind == Kind::Video && !hevc => {
+            b"avcC" if entry.tag == *b"avc1" => {
                 require(!config, "duplicate video configuration")?;
                 config = true;
                 avcc(r, atom.body)?;
@@ -1421,7 +1441,47 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         config,
         "sample description has no bounded codec configuration",
     )?;
+    if let (Some(vp9), Some(color)) = (track.vp9, track.color) {
+        require(
+            color == vp9.color,
+            "VP9 colr and vpcC color declarations disagree",
+        )?;
+    }
     Ok(kind)
+}
+
+fn vpcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4Vp9Configuration> {
+    r.fixed(span, 12)?;
+    r.full(span, &[1], 0)?;
+    let b = r.bytes::<8>(span.start + 4)?;
+    let profile = b[0];
+    let bit_depth = b[2] >> 4;
+    let chroma_subsampling = (b[2] >> 1) & 7;
+    require(
+        matches!((profile, bit_depth), (0, 8) | (2, 10)) && chroma_subsampling <= 1,
+        "VP9 requires profile 0/eight-bit or profile 2/ten-bit 4:2:0",
+    )?;
+    require(
+        matches!(
+            b[1],
+            10 | 11 | 20 | 21 | 30 | 31 | 40 | 41 | 50 | 51 | 52 | 60 | 61 | 62
+        ) && b[6..] == [0, 0],
+        "invalid VP9 level or initialization payload",
+    )?;
+    let full_range = b[2] & 1 != 0;
+    Ok(Mp4Vp9Configuration {
+        profile,
+        level: b[1],
+        bit_depth,
+        chroma_subsampling,
+        color: Mp4ColorDescription {
+            primaries: u16::from(b[3]),
+            transfer: u16::from(b[4]),
+            matrix: u16::from(b[5]),
+            full_range,
+            range_byte: if full_range { 128 } else { 0 },
+        },
+    })
 }
 
 fn avcc(r: &mut Reader<'_>, span: Span) -> Result<()> {

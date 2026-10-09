@@ -27,8 +27,8 @@ pub struct Mp4AvcConfiguration {
     pub nal_length_bytes: u8,
 }
 
-/// Admitted hvcC fields. Admission requires profile space 0, Main10
-/// (profile_idc 2), 4:2:0 (chroma_format_idc 1), ten-bit luma and chroma,
+/// Admitted hvcC fields. Admission requires profile space 0, Main/Main10,
+/// 4:2:0 (chroma_format_idc 1), eight- or ten-bit luma and chroma,
 /// a 1, 2 or 4 byte NAL length and complete nonempty VPS/SPS/PPS arrays.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mp4HevcConfiguration {
@@ -63,6 +63,17 @@ pub struct Mp4ColorDescription {
     pub range_byte: u8,
 }
 
+/// VP Codec ISO Media File Format Binding version 1, profiles 0/2, 4:2:0.
+/// VP9 has no initialization payload; chroma 0 is left, 1 is top-left.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mp4Vp9Configuration {
+    pub profile: u8,
+    pub level: u8,
+    pub bit_depth: u8,
+    pub chroma_subsampling: u8,
+    pub color: Mp4ColorDescription,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mp4TrackInspection {
     /// Zero-based container track order, matching the admitted demux stream order.
@@ -88,6 +99,7 @@ pub struct Mp4TrackInspection {
     pub avc: Option<Mp4AvcConfiguration>,
     /// hvc1 tracks only; `avc` is then None.
     pub hevc: Option<Mp4HevcConfiguration>,
+    pub vp9: Option<Mp4Vp9Configuration>,
     pub color: Option<Mp4ColorDescription>,
     /// `mdcv` box, converted from its stored G, B, R primary order to R, G, B.
     pub mastering: Option<MasteringDisplay>,
@@ -217,6 +229,7 @@ fn summary(layout: &Mp4Layout) -> Result<Mp4Inspection> {
             timing_duration: track.timing_duration,
             avc: track.avc,
             hevc: track.hevc,
+            vp9: track.vp9,
             color: track.color,
             mastering: track.mastering,
             content_light: track.content_light,

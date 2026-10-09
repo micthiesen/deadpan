@@ -9,7 +9,7 @@ Authored import remains separate work.
 ## Admitted containers
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
-requires exactly one `avc1` H.264 or `hvc1` HEVC track (see HEVC grammar below)
+requires exactly one `avc1` H.264, `hvc1` HEVC or `vp09` VP9 track
 and allows at most 32 AAC audio tracks.
 Audio selection uses the same all-track checks before opening its selected AAC
 decoder. Declared packet sizes, sample/chunk/time table expansion, external data
@@ -17,6 +17,23 @@ references, nested metadata and codec descriptors are checked before demuxing.
 The limits include 16 MiB of headers/read work, one million aggregate table rows
 and samples, 100,000 atoms, depth 16, and 64 KiB codec configuration records.
 Profile 244 AVC configuration is admitted for the existing lossless RGB fixtures.
+
+VP9 uses the [VP Codec MP4 binding](https://www.webmproject.org/vp9/mp4/):
+exactly one version-1 `vpcC`, profile 0/eight-bit or profile 2/ten-bit 4:2:0,
+defined level, zero flags and no initialization payload. Optional `colr` must
+agree with its color declaration. Left and top-left chroma siting are carried
+through the native boundary because pinned FFmpeg's MOV reader drops that field.
+The existing explicit SDR color policy applies; VP9 HDR is not yet qualified.
+Before each packet reaches the codec, a bounded header check verifies every
+frame's profile, declared depth/range/matrix and unchanged raster. A superframe
+has at most eight frames, exactly one displayed picture last, and exact lengths.
+Hidden references do not add timeline pictures; `show_existing_frame` retains
+its own PTS. A different VP9 render size or raster, interlaced declaration,
+contradictory metadata, unsupported profile or malformed index fails explicitly.
+See [VP9 qualification](qualification/vp9-sources-2026-10-09.md).
+
+This MP4 path does not complete WebM/Opus, AV1, VP9 HDR or the full §16.3
+matrix. Those remain implementation and qualification work.
 
 Video Matroska admission requires one `V_FFV1` track, finite Segment and Cluster
 lengths, and a closed element grammar. Every cluster and packet declaration is

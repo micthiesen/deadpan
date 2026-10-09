@@ -453,6 +453,10 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
         "hevc-sdr-10-full",
         "h264-sdr-10-limited",
         "h264-sdr-10-full",
+        "vp9-sdr-8-limited",
+        "vp9-sdr-8-full",
+        "vp9-sdr-10-limited",
+        "vp9-sdr-10-full",
     ] {
         let fixture = recipes::sdr_codec_original(&root.join(name), name)?;
         let movie = render(&fixture, &root.join(name).join("exports"))?;
@@ -474,6 +478,33 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
         assert_eq!(report["summary"]["index_unobservable_comparisons"], 0);
         assert_eq!(report["summary"]["nonzero_offsets"], 0);
         assert_eq!(report["movie"]["audio"]["presented_end"], 19219);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
+fn vp9_reference_pictures_render_without_adding_or_losing_timeline_frames() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("VP9 reference Render evidence: {}", root.display());
+    for (name, frames) in [
+        ("vp9-altref", 60),
+        ("vp9-existing-8", 2),
+        ("vp9-existing-10", 2),
+    ] {
+        let fixture = recipes::sdr_source_original(&root.join(name), name, frames)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["range"], json!([0, frames]));
+        assert_eq!(report["summary"]["pictures_checked"], frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(report["output_color"]["output"], "sdr_rec709");
         check_provenance(&fixture, &report)?;
         eprintln!("{}", summary_row(&fixture, &report));
     }

@@ -30,6 +30,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX");
     println!("cargo:rerun-if-changed=src/decoder.c");
     println!("cargo:rerun-if-changed=src/decoder.h");
+    println!("cargo:rerun-if-changed=src/vp9.h");
     println!("cargo:rerun-if-changed=src/deinterlace.c");
     println!("cargo:rerun-if-changed=src/deinterlace.h");
     println!("cargo:rerun-if-changed=src/audio_decoder.c");

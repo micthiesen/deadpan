@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[SDR VP9 MP4](../qualification/vp9-sources-2026-10-09.md) adds profile 0
+eight-bit and profile 2 ten-bit 4:2:0 with explicit full/limited range and
+left/top-left chroma. Bounded configuration and packet checks preserve
+superframe and existing-reference timing, and reject changing or unhandled
+display geometry. Seven real inputs pass debug/release public Render: 112 pictures,
+four signal-bearing audio windows at zero offset. Read the qualification for
+final regression, release and packaging evidence. WebM/Opus, VP9 HDR, AV1,
+other required codecs and the full source/operation matrix remain open.
+
 [SDR HEVC and H.264 High10](../qualification/sdr-source-codecs-2026-10-09.md)
 now retain eight/ten-bit full/limited-range pictures and exact B-frame clocks
 through import and the shared renderer. Six public Render cases verify 72

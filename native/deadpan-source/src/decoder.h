@@ -20,6 +20,9 @@ typedef struct {
     uint32_t threads;
     /* Encoded outputs must be decoded without source field presentation. */
     uint32_t progressive_only;
+    /* Admitted vpcC: profile, depth (0 when absent), chroma, full range,
+       primaries, transfer, matrix. FFmpeg's MOV reader drops chroma siting. */
+    uint32_t vp9[7];
 } DeadpanSourceLimits;
 typedef struct {
     int32_t stream_index;

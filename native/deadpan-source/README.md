@@ -78,13 +78,21 @@ retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
 `AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
-codec allowlist contains only `h264,ffv1,hevc`; pinned FFmpeg propagates that allowlist
+codec allowlist contains only `h264,ffv1,hevc,vp9`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC before opening its decoder.
 Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
-The measured fixtures are H.264/HEVC in MP4 and FFV1 in Matroska; this is not
+The measured fixtures are H.264/HEVC/VP9 in MP4 and FFV1 in Matroska; this is not
 qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. No audio decode or VideoToolbox
 acceleration is implemented here.
+
+VP9 MP4 profile 0/eight-bit and profile 2/ten-bit 4:2:0 preserve explicit SDR
+color, left/top-left chroma siting and exact sample clocks. Bounded `vpcC`
+admission and packet headers reject changing geometry, unhandled render-size
+transforms and contradictory configuration before decode. Hidden altref
+pictures and `show_existing_frame` use their normal presentation semantics.
+See [qualification](../../docs/qualification/vp9-sources-2026-10-09.md) for
+real color, thread, seek, proxy and emitted-file evidence and remaining formats.
 
 The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
 H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit

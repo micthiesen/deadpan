@@ -150,6 +150,10 @@ fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
         ("hevc-sdr-10-full.mp4", 16),
         ("h264-sdr-10-limited.mp4", 16),
         ("h264-sdr-10-full.mp4", 16),
+        ("vp9-sdr-8-limited.mp4", 8),
+        ("vp9-sdr-8-full.mp4", 8),
+        ("vp9-sdr-10-limited.mp4", 16),
+        ("vp9-sdr-10-full.mp4", 16),
     ] {
         let (mut video, audio) = av(name);
         let qualified = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio))
@@ -770,7 +774,7 @@ fn malformed_snapshots_reject_inconsistent_identity_clock_geometry_color_and_inv
             8 => value["video"]["interpretation"]["sample_aspect_num"] = 0.into(),
             9 => value["video"]["interpretation"]["sample_aspect_den"] = u32::MAX.into(),
             10 => value["video"]["interpretation"]["rotation_quarter_turns"] = 4.into(),
-            11 => value["video"]["interpretation"]["codec"] = "vp9".into(),
+            11 => value["video"]["interpretation"]["codec"] = "av1".into(),
             12 => value["video"]["interpretation"]["pixel_format"] = "yuv420p12le".into(),
             13 => value["video"]["interpretation"]["color"]["range"] = "unknown".into(),
             14 => value["video"]["interpretation"]["color"]["matrix"] = "rgb".into(),

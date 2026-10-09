@@ -130,14 +130,15 @@ fn box_body(bytes: &[u8], tag: &[u8; 4]) -> Option<(usize, usize)> {
 }
 
 /// Mutates only the codec configuration record in place, so the container
-/// remains structurally valid and the avcC/hvcC/SPS parsers see the damage.
+/// remains structurally valid and the avcC/hvcC/vpcC parsers see the damage.
 #[test]
 fn codec_configuration_records_survive_in_place_mutation() {
     let hosts: Vec<(Vec<u8>, usize, usize)> = fixtures(&["mp4"])
         .into_iter()
         .filter_map(|bytes| {
-            let (start, length) =
-                box_body(&bytes, b"hvcC").or_else(|| box_body(&bytes, b"avcC"))?;
+            let (start, length) = box_body(&bytes, b"hvcC")
+                .or_else(|| box_body(&bytes, b"avcC"))
+                .or_else(|| box_body(&bytes, b"vpcC"))?;
             Some((bytes, start, length))
         })
         .collect();

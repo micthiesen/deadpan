@@ -241,7 +241,7 @@ fn every_proxy_picture_keeps_its_original_time_and_duration() -> Result {
 }
 
 #[test]
-fn sdr_hevc_and_high10_proxies_compare_actual_channel_depths() -> Result {
+fn sdr_codecs_proxies_compare_actual_channel_depths() -> Result {
     let _slot = vt_slot();
     for name in [
         "hevc-sdr-8-limited.mp4",
@@ -250,6 +250,10 @@ fn sdr_hevc_and_high10_proxies_compare_actual_channel_depths() -> Result {
         "hevc-sdr-10-full.mp4",
         "h264-sdr-10-limited.mp4",
         "h264-sdr-10-full.mp4",
+        "vp9-sdr-8-limited.mp4",
+        "vp9-sdr-8-full.mp4",
+        "vp9-sdr-10-limited.mp4",
+        "vp9-sdr-10-full.mp4",
     ] {
         let original = original(name)?;
         let scratch = tempfile::tempdir()?;

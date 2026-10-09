@@ -465,12 +465,16 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
             && !(color.ignored_static.mastering && color.mastering.is_some())
             && !(color.ignored_static.content_light && color.content_light.is_some())
     } else {
-        (info.pixel_format != "yuv420p10le" || matches!(info.codec.as_str(), "hevc" | "h264"))
+        (info.pixel_format != "yuv420p10le"
+            || matches!(info.codec.as_str(), "hevc" | "h264" | "vp9"))
             && (info.codec != "hevc"
                 || matches!(
                     info.pixel_format.as_str(),
                     "yuv420p" | "yuvj420p" | "yuv420p10le"
                 ))
+            && (info.codec != "vp9"
+                || (!info.bwdif_fields
+                    && matches!(info.pixel_format.as_str(), "yuv420p" | "yuv420p10le")))
             && color.mastering.is_none()
             && color.content_light.is_none()
             && color.ignored_static.is_empty()
@@ -497,7 +501,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
-        || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc")
+        || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc" | "vp9")
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
     }

@@ -531,3 +531,6 @@ absolute channel bias is 0.489, below the unchanged 3.0/16.0/1.5 limits.
   Originals use the existing eight-bit proxy representation, with depth-aware
   fidelity checks against the exact Original. See the
   [SDR codec qualification](qualification/sdr-source-codecs-2026-10-09.md).
+  [VP9 MP4](qualification/vp9-sources-2026-10-09.md) also passes real proxy
+  generation for eight/ten-bit full/limited range, with all 48 fixture pictures'
+  PTS and durations retained and the same fidelity thresholds.

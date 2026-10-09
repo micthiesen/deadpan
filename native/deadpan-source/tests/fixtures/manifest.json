@@ -9,7 +9,8 @@
     "hdr_hevc_h264_fixtures": "tests/generate_hdr_fixtures.py: development-only Homebrew ffmpeg 9.0.1 CLI with libx265 and libx264 (GPL, not linked by Deadpan) and native AAC; PQ stream mdcv/clli boxes added by tests/generate_hdr_static_metadata.c through pinned FFmpeg 8.0.3 movenc (bitexact, faststart, write_colr). Content and code values are documented in the generator. hevc-pq.mp4/hevc-hlg.mp4: 64x36 24 fps 8 frames lossless HEVC Main10, IDR every 4, no B frames; PQ carries SEI and boxes with P3-D65 primaries, 1000/0.0001 cd/m2, MaxCLL 1000, MaxFALL 400. h264-high10-pq.mp4: same content, H.264 High10 qp 1, no static metadata. SDR control: hevc-ten-bit-sdr.mp4 (BT.709 tags), initially refused and now admitted. Refusal fixtures: hevc-pq-bt709.mp4 (PQ with BT.709 primaries/matrix), hevc-pq-mastering-change.mp4 (two IDR segments, second SEI peak 4000 cd/m2). hdr-pq-av.mp4/hdr-hlg-av.mp4: 320x180 30 fps 60 frames CRF 18 HEVC Main10, IDR every 30, two B frames, 48 kHz stereo AAC with a 10 ms 1 kHz burst at 1 s and a video marker in frame 30. hdr-pq-grain-av.mp4/hdr-hlg-grain-av.mp4 (`generate_hdr_fixtures.py grain`): 320x180 30 fps 60 frames of grainy real-like footage (sky gradient, soft highlight disc, panning textured ground with 2-pixel fence edges, a moving dark subject, a graphics-white sign) with deterministic clumped luma/chroma grain (sigma 10/5 ten-bit codes, integer-hash noise), CRF 18 HEVC Main10 with -tune grain, IDR every 30, two B frames; same AAC track and PQ mastering/content-light boxes as the clean AV fixtures. hevc-pq-open-gop.mp4 (`generate_hdr_fixtures.py review`): the small PQ content, 24 frames, lossless HEVC Main10 with x265 open-gop=1, keyint 8, 3 B frames: IDR, then CRA at pictures 8 and 16 each followed by three RASL pictures (NAL types 9, 8, 8), no static metadata. hevc-pq-invalid-static.mp4 (`review`): 2 lossless PQ frames whose SEI declares a 10 cd/m2 mastering peak and MaxCLL 100 with MaxFALL 400, both invalid under the shared rule set.",
     "interlaced_fields": "tests/generate_interlace_fixtures.py: development-only FFmpeg 9.0.1/libx264 (not linked by Deadpan), 96x64 independently authored moving fields, top/bottom field first, 50, 60000/1001 and 100 fields/s, single coded pictures and two-B-frame GOPs, 48 kHz mono AAC. tests/generate_interlace_timing_fixture.py varies only video duration tables and relocation offsets over the hash-pinned TFF file, retaining all compressed video/audio bytes; odd intervals require half ticks and the final 6001-tick duration differs from its predecessor. Both support --check.",
     "telecine": "tests/generate_telecine_fixtures.py: byte-level H.264 picture-timing SEI changes over hash-pinned moving TFF/BFF fixtures; retains every compressed slice and AAC byte. Exact MP4 intervals alternate two/three fields at 60000/1001 Hz, with odd-interval, single-picture and B-frame cases. A separate progressive-coded input and an HRD picture-timing control use development FFmpeg 9.0.1/libx264, never linked into Deadpan. --check reproduces all bytes.",
-    "sdr_hevc_h264": "tests/generate_sdr_hevc_fixtures.py: development-only FFmpeg 9.0.1/libx265/libx264 (not linked into Deadpan). Six independently authored 96x64, 12-picture BT.709 4:2:0 inputs at 30000/1001: HEVC Main eight-bit, HEVC Main10 ten-bit and H.264 High10 ten-bit, each limited/full range, explicit left chroma siting, two B frames, IDR every four pictures. Raw input and output color tags match so FFmpeg performs no implicit matrix conversion. Upper-half black/gray/color/white patches and lower-half motion retain ten-bit low codes. HEVC lossless, H.264 QP 1; unchanged hash-pinned fields-bff.mp4 mono AAC ends at sample 19219. --check reproduces all retained bytes. Motion has the same visible contrast at both depths; ten-bit low codes remain in the flat patches and moving raster."
+    "sdr_hevc_h264": "tests/generate_sdr_hevc_fixtures.py: development-only FFmpeg 9.0.1/libx265/libx264 (not linked into Deadpan). Six independently authored 96x64, 12-picture BT.709 4:2:0 inputs at 30000/1001: HEVC Main eight-bit, HEVC Main10 ten-bit and H.264 High10 ten-bit, each limited/full range, explicit left chroma siting, two B frames, IDR every four pictures. Raw input and output color tags match so FFmpeg performs no implicit matrix conversion. Upper-half black/gray/color/white patches and lower-half motion retain ten-bit low codes. HEVC lossless, H.264 QP 1; unchanged hash-pinned fields-bff.mp4 mono AAC ends at sample 19219. --check reproduces all retained bytes. Motion has the same visible contrast at both depths; ten-bit low codes remain in the flat patches and moving raster.",
+    "vp9": "tests/generate_vp9_fixtures.py: development-only FFmpeg 9.0.1/libvpx, not linked into Deadpan. Four lossless 96x64 SDR profile-0 eight-bit/profile-2 ten-bit 4:2:0 inputs, full/limited BT.709 and explicit left chroma, 12 pictures at 30000/1001 with hash-pinned fields-bff.mp4 mono AAC through sample 19219. Uses the independently authored patches/motion in generate_sdr_hevc_fixtures.py. vp9-altref.mp4: 60 pictures, two-pass 100 kbit/s, GOP 30, six actual hidden altref pictures in superframes. vp9-existing-8/10.mp4: first lossless key picture followed by an authored one-byte show_existing_frame selecting reference slot zero; IVF remux preserves separate PTS 0 and 2002. --check reproduces all retained bytes."
   },
   "known_source_limit": "Legacy vfr.mp4 itself encodes final video duration 1001 and terminal 238238 ticks in stts/mdhd/tkhd/elst, although the producer authored 3003 and 240240. This is an encode/mux fixture limitation, not evidence of lost decoder metadata. The separate vfr-long-terminal.mp4 explicitly encodes the intended 3003-tick final picture without changing compressed data or PTS. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
@@ -272,6 +273,41 @@
       "name": "hevc-sdr-8-limited.mp4",
       "bytes": 13868,
       "sha256": "afaed95999c99d92eb9e1efd149fd2406baa9bc435db670fb294644fed64bdab"
+    },
+    {
+      "name": "vp9-altref.mp4",
+      "bytes": 4870,
+      "sha256": "a8104736eb4f2e161ce7dd6d8b71cec773627a9c475fc936422715a5bf893727"
+    },
+    {
+      "name": "vp9-existing-10.mp4",
+      "bytes": 1167,
+      "sha256": "ec8f44cc8b6fa8bf0fa420149891b4ec68d66c230e8d93b3ab59ec984c5b2758"
+    },
+    {
+      "name": "vp9-existing-8.mp4",
+      "bytes": 1109,
+      "sha256": "9b1a76ffd7f8a79d5c755b35ce5b36a28649cc33bb2503ea472180db9ca0bfe1"
+    },
+    {
+      "name": "vp9-sdr-10-full.mp4",
+      "bytes": 12678,
+      "sha256": "d478a72ff1c271d1615cc6b96d5851a89b061dd38dd820affd19120ffd63c363"
+    },
+    {
+      "name": "vp9-sdr-10-limited.mp4",
+      "bytes": 12693,
+      "sha256": "dbecfbcc682a9d404e80dd2fe095b739360b26a0efd55705700b4dc1eae0720f"
+    },
+    {
+      "name": "vp9-sdr-8-full.mp4",
+      "bytes": 10375,
+      "sha256": "6af5efc97aacfac61ce5155187e6e6c1fbf47bd38cc8c32170e33ffd4a1d2eb6"
+    },
+    {
+      "name": "vp9-sdr-8-limited.mp4",
+      "bytes": 10362,
+      "sha256": "e8db949afbb5112a70d67122e025edf751f74e9ca0bee7482768bedb7966be5b"
     }
   ]
 }

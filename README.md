@@ -88,10 +88,10 @@ Use `?` or `:help` for the implemented
 keyboard vocabulary. Legacy projects keep register/insert compatibility behavior.
 `--project PATH` opens a
 project at launch; `--preview-source PATH` opens a non-destructive source preview.
-The current decoder admits explicitly tagged progressive 8-bit SDR H.264/FFV1 in
-MP4/Matroska; unsupported interpretations fail visibly. See
-[source preview qualification](docs/qualification/source-preview-2026-09-21.md)
-for measured scope and [Headless commands](docs/HEADLESS.md) for project operations.
+Qualified sources include explicitly tagged SDR H.264, HEVC and VP9 in MP4,
+FFV1 in Matroska, and the HDR/interlaced cases described in
+[source admission](docs/SOURCE_ADMISSION.md). Unsupported interpretations fail
+visibly. See [Headless commands](docs/HEADLESS.md) for project operations.
 `doctor` reports the foundation, not release qualification. No credentials or
 model downloads are required.
 
