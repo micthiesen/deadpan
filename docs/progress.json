@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T08:36:13Z",
+  "updated_at": "2026-10-09T08:56:00Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Completing exact source policies and the VFR/creative-operation playback and export matrix.",
   "features": [
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. Some import UI and media cases remain."
+      "note": "Local and YouTube Originals work. Pixel-aligned clean apertures are verified; fractional apertures and the full format/VFR matrix remain."
     },
     {
       "id": "render",

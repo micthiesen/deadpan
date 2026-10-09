@@ -104,6 +104,16 @@ explicitly. Standard codec padding is cropped only to the immutable declared
 visible rectangle. Right-angle rotation and SAR are reported, not baked into
 pixels. Missing SAR retains FFmpeg's conventional square-pixel interpretation.
 
+MP4 `clap` clean apertures are admitted when exact rational declarations resolve
+to an integral rectangle within the sample-entry raster. Pixel-aligned half-pixel
+center offsets are valid; fractional pixel edges fail explicitly. Packed RGBA8
+and RGBA64 are cropped after full-raster color conversion, so odd crop origins
+preserve the original chroma interpolation. Stream dimensions and returned row
+strides name the clean raster. Source PTS, audio, SAR and rotation stay intact.
+Raw I420 and ten-bit planes require an even chroma-aligned rectangle and reject
+otherwise before consuming a frame. Input/codec allocation limits still apply
+to the full raster. See [clean-aperture qualification](../../docs/qualification/clean-aperture-2026-10-09.md).
+
 Frame PTS remains original, not `best_effort_timestamp`; missing PTS is rejected.
 DTS hints and positive decoder-reported frame durations are optional. Stream
 start/duration and container start/duration remain distinct observed candidates.

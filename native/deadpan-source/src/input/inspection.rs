@@ -94,6 +94,9 @@ pub struct Mp4TrackInspection {
     /// `clli` box.
     pub content_light: Option<ContentLight>,
     pub pixel_aspect_ratio: Option<[u32; 2]>,
+    /// Exact integral clean rectangle [left, top, width, height], before SAR
+    /// and rotation. `sample_dimensions` still names the complete raster.
+    pub clean_aperture: Option<[u32; 4]>,
     pub sample_audio_channels: Option<u32>,
     pub sample_audio_rate: Option<u32>,
 }
@@ -216,6 +219,7 @@ fn summary(layout: &Mp4Layout) -> Result<Mp4Inspection> {
             mastering: track.mastering,
             content_light: track.content_light,
             pixel_aspect_ratio: track.pixel_aspect_ratio,
+            clean_aperture: track.clean_aperture.map(|aperture| aperture.rect),
             sample_audio_channels: track.audio_channels,
             sample_audio_rate: track.audio_sample_rate,
         });

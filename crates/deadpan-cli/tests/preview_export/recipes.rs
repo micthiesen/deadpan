@@ -130,6 +130,30 @@ fn source_media() -> PathBuf {
         .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
 }
 
+/// Real SDR clean-aperture input. Its independently retained compressed pictures
+/// and source timestamps equal cfr-bframes.mp4; only its visible raster changes.
+pub fn aperture_original(directory: &Path) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/fixtures/aperture.mp4");
+    Project::create_from(directory, "aperture-original", &media)?.finish(
+        vec!["Source clean aperture"],
+        (0..120)
+            .map(|frame| {
+                (
+                    frame,
+                    Expected::Original {
+                        source_ordinal: frame,
+                    },
+                )
+            })
+            .collect(),
+        vec![
+            "300x160 clean raster at [13,9] within the encoded 320x180; unchanged A/V clocks"
+                .into(),
+        ],
+    )
+}
+
 fn sound_media() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav")

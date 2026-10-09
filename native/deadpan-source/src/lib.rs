@@ -16,6 +16,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod aperture;
 pub mod audio;
 mod input;
 mod matroska_input;
@@ -232,6 +233,8 @@ pub struct SourceAudioStreamInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceStreamInfo {
+    /// Displayable raster after the exact pixel-aligned container aperture.
+    /// Codec padding is already removed; SAR and rotation remain independent.
     pub width: u32,
     pub height: u32,
     pub stream_index: u32,
@@ -391,6 +394,8 @@ pub enum SourceDecodeError {
 pub struct SourceDecoder {
     inner: ffi::Decoder,
     info: SourceStreamInfo,
+    aperture: Option<aperture::CleanAperture>,
+    coded: [u32; 2],
     max_pixels: u64,
 }
 
@@ -539,8 +544,7 @@ impl SourceDecoder {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let preflight_io_bytes =
-            input::validate(&file, input::Selection::Video, limits.into(), control)?;
+        let (preflight_io_bytes, aperture) = input::validate_video(&file, limits.into(), control)?;
         let timeout = control
             .timeout
             .checked_sub(started.elapsed())
@@ -549,16 +553,29 @@ impl SourceDecoder {
                 code: "deadline_exceeded".into(),
                 message: "video header admission exhausted the opening budget".into(),
             })?;
-        let (inner, info) = ffi::Decoder::open_with_keyframe(
+        let (inner, mut info) = ffi::Decoder::open_with_keyframe(
             file,
             limits,
             preflight_io_bytes,
             DecodeControl { timeout, ..control },
             pts,
         )?;
+        let coded = [info.width, info.height];
+        if let Some(aperture) = aperture {
+            if aperture.coded != coded {
+                return Err(SourceDecodeError::Native {
+                    code: "unsupported_transform".into(),
+                    message: "clean-aperture sample entry disagrees with decoded raster".into(),
+                });
+            }
+            info.width = aperture.rect[2];
+            info.height = aperture.rect[3];
+        }
         Ok(Self {
             inner,
             info,
+            aperture,
+            coded,
             max_pixels: limits.max_pixels,
         })
     }
@@ -638,7 +655,10 @@ impl SourceDecoder {
     ) -> Result<Option<DecodedYuv420p10Frame>, SourceDecodeError> {
         let started = Instant::now();
         ffi::preflight(control)?;
-        let pixels = u64::from(self.info.width) * u64::from(self.info.height);
+        if let Some(aperture) = self.aperture {
+            aperture.validate_420()?;
+        }
+        let pixels = u64::from(self.coded[0]) * u64::from(self.coded[1]);
         if pixels > self.max_pixels {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "YUV420P10 picture exceeds the configured pixel budget",
@@ -666,6 +686,11 @@ impl SourceDecoder {
         let metadata =
             self.inner
                 .yuv420p10(DecodeControl { timeout, ..control }, &mut samples, copy)?;
+        if metadata.is_some()
+            && let Some(aperture) = self.aperture
+        {
+            aperture.planar_420(&mut samples);
+        }
         Ok(metadata.map(|metadata| DecodedYuv420p10Frame {
             metadata,
             width: self.info.width,
@@ -694,7 +719,10 @@ impl SourceDecoder {
     ) -> Result<Option<DecodedI420Frame>, SourceDecodeError> {
         let started = Instant::now();
         ffi::preflight(control)?;
-        let pixels = u64::from(self.info.width) * u64::from(self.info.height);
+        if let Some(aperture) = self.aperture {
+            aperture.validate_420()?;
+        }
+        let pixels = u64::from(self.coded[0]) * u64::from(self.coded[1]);
         if pixels > self.max_pixels {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "I420 picture exceeds the configured pixel budget",
@@ -723,6 +751,11 @@ impl SourceDecoder {
         let metadata = self
             .inner
             .i420(DecodeControl { timeout, ..control }, &mut i420, copy)?;
+        if metadata.is_some()
+            && let Some(aperture) = self.aperture
+        {
+            aperture.planar_420(&mut i420);
+        }
         Ok(metadata.map(|metadata| DecodedI420Frame {
             metadata,
             width: self.info.width,
@@ -738,18 +771,19 @@ impl SourceDecoder {
     ) -> Result<Option<DecodedRgbaFrame>, SourceDecodeError> {
         // Reject cancelled/invalid requests before allocating the owned picture.
         ffi::preflight(control)?;
-        if u64::from(self.info.width) * u64::from(self.info.height) > self.max_pixels {
+        if u64::from(self.coded[0]) * u64::from(self.coded[1]) > self.max_pixels {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "RGBA picture exceeds the configured pixel budget",
             ));
         }
-        let stride = usize::try_from(self.info.width)
+        let bytes_per_pixel = if sample_bits == 16 { 8 } else { 4 };
+        let stride = usize::try_from(self.coded[0])
             .ok()
-            .and_then(|v| v.checked_mul(if sample_bits == 16 { 8 } else { 4 }))
+            .and_then(|v| v.checked_mul(bytes_per_pixel))
             .ok_or(SourceDecodeError::InvalidConfiguration(
                 "RGBA stride overflow",
             ))?;
-        let size = usize::try_from(self.info.height)
+        let size = usize::try_from(self.coded[1])
             .ok()
             .and_then(|v| v.checked_mul(stride))
             .ok_or(SourceDecodeError::InvalidConfiguration(
@@ -766,12 +800,18 @@ impl SourceDecoder {
         } else {
             self.inner.next(control, Some(&mut rgba))?
         };
+        if metadata.is_some()
+            && let Some(aperture) = self.aperture
+        {
+            aperture.packed(&mut rgba, bytes_per_pixel);
+        }
         Ok(metadata.map(|metadata| DecodedRgbaFrame {
             metadata,
             width: self.info.width,
             height: self.info.height,
             sample_bits,
-            row_stride_bytes: stride,
+            row_stride_bytes: usize::try_from(self.info.width).expect("bounded raster width")
+                * bytes_per_pixel,
             rgba,
         }))
     }

@@ -1,5 +1,6 @@
 {
   "producers": {
+    "clean_aperture": "tests/generate_aperture_fixtures.py: byte-level addition of one clap box to SHA-256-pinned cfr-bframes.mp4 and hevc-pq.mp4. Changes only clap, enclosing box lengths and chunk offsets; compressed payload and timing/color/audio declarations remain identical. aperture.mp4 selects [13,9,300,160] from 320x180, including odd chroma phase; aperture-hdr.mp4 selects [6,2,48,28] from 64x36. Reproduce with python3 native/deadpan-source/tests/generate_aperture_fixtures.py; --check verifies without writes.",
     "h264_clock_fixtures": "tools/media-qualification/compatible/media_probe.c (includes ../media_probe.c), pinned FFmpeg 8.0.3 h264_videotoolbox require_software; recorded source run /tmp/deadpan-media-compatible-probe-8efkj8h2 and compatible/results/qualification-2026-09-20.json",
     "vfr_long_terminal": "tests/generate_vfr_terminal_fixture.py: pure byte-level patch of the SHA-256-pinned vfr.mp4. Changes only the final video stts delta 1001 to 3003, mdhd duration 238238 to 240240, and video tkhd/elst duration 1905904 to 1921920 at movie timescale 240000. Verifies exact box/field anchors, complete timing consistency, unchanged every-picture PTS, compressed mdat, audio track and all other bytes. No encoder or media subprocess. Reproduce with python3 native/deadpan-source/tests/generate_vfr_terminal_fixture.py; append --check for read-only verification.",
     "ffv1_and_rotation": "tests/generate_color_fixtures.py, development-only ffmpeg 9.0.1 CLI; pinned FFmpeg 8.0.3 decoder validates emitted files",
@@ -9,6 +10,16 @@
   },
   "known_source_limit": "Legacy vfr.mp4 itself encodes final video duration 1001 and terminal 238238 ticks in stts/mdhd/tkhd/elst, although the producer authored 3003 and 240240. This is an encode/mux fixture limitation, not evidence of lost decoder metadata. The separate vfr-long-terminal.mp4 explicitly encodes the intended 3003-tick final picture without changing compressed data or PTS. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
+    {
+      "name": "aperture.mp4",
+      "bytes": 39197,
+      "sha256": "9ad6958800a899000645cc4af8d5fd472ac3f62b0556d36807a8b04f009a7a81"
+    },
+    {
+      "name": "aperture-hdr.mp4",
+      "bytes": 4925,
+      "sha256": "55c40f0ef970692cdaa203334cf0f3c12777dec1fd0dc03de29bd70951bee548"
+    },
     {
       "name": "anamorphic.mkv",
       "bytes": 729,

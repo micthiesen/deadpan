@@ -345,6 +345,34 @@ fn keep_or(scratch: tempfile::TempDir) -> (PathBuf, Option<tempfile::TempDir>) {
     }
 }
 
+/// Container aperture admission must reach the same retained source, project
+/// basis, composed pictures and encoded output without changing either clock.
+#[test]
+fn clean_aperture_original_renders_at_its_visible_size_without_av_changes() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("clean aperture Render evidence: {}", root.display());
+    let fixture = recipes::aperture_original(&root.join("fixture"))?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    std::fs::write(
+        root.join("verification.json"),
+        serde_json::to_vec_pretty(&report)?,
+    )?;
+    assert!(passed, "{}", report["failures"]);
+    assert_eq!(report["raster"], json!([300, 160]));
+    assert_eq!(report["range"], json!([0, 120]));
+    assert_eq!(report["frame_rate"], json!([30000, 1001]));
+    assert_eq!(report["movie"]["expected_audio_samples"], 192_192);
+    assert_eq!(report["movie"]["audio"]["presented_end"], 192_192);
+    assert_eq!(report["summary"]["pictures_checked"], 120);
+    assert_eq!(report["summary"]["nonzero_offsets"], 0);
+    assert!(report["summary"]["signal_windows"].as_u64() > Some(0));
+    check_provenance(&fixture, &report)?;
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
 /// Default-gate end-to-end check: one real export of a Section 8 recipe
 /// matches its committed preview, and a later same-duration reframe and gain
 /// change of that revision is reported against the old movie.

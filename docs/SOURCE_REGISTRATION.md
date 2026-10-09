@@ -4,7 +4,8 @@ The headless host can register a retained original as a qualified asset, or
 register and insert its full selected streams in one undoable edit. Registration
 uses [automatic presentation policy](PRESENTATION_BASIS.md): the first primary
 picture can establish a provisional basis; timed or explicit projects keep their
-clock. Native import UI and the complete format matrix remain open. See [measured timing](SOURCE_IMPORT_TIMING.md) for the exact mapping policy.
+clock. The native [one-Original workflow](SINGLE_ORIGINAL.md) uses this same
+admission boundary. The complete format matrix remains open. See [measured timing](SOURCE_IMPORT_TIMING.md) for the exact mapping policy.
 
 ## Explicit speaker interpretation
 
@@ -120,8 +121,10 @@ protocols before opening the project or media. Tests use real retained CFR, VFR,
 and audio-only media, plus historical migration fixtures. [Qualification and
 review evidence](qualification/source-registration-2026-09-21.md) records results.
 
-The app still previews individual sources without editing project documents.
-Native import/retry/relink controls, visible canvas previews, qualification of
-existing legacy assets, still-image import, bookmark resolution, full codec/color
-support, audio playback and export remain required work. No GUI or release
-readiness is implied by this developer API.
+Native Original creation, retry, relink and bookmark resolution, sound admission,
+editing, playback and Render now use these retained qualifications. Managed and
+linked Originals have [end-to-end evidence](qualification/linked-original-2026-10-09.md).
+Pixel-aligned MP4 clean apertures preserve exact decoded pixels and clocks;
+fractional aperture sampling and the complete source-format/creative-operation
+matrix remain open. V1 excludes additional still-image/video imports. Current
+product completion is tracked in [Requirements](REQUIREMENTS.md).

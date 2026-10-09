@@ -1,6 +1,7 @@
 //! Closed container grammar checked before FFmpeg can allocate from header counts.
 //! This is allocation admission for immutable snapshots, not media qualification.
 
+use crate::aperture::CleanAperture;
 use crate::audio::AudioDecodeLimits;
 use crate::{ContentLight, DecodeControl, DecodeLimits, MasteringDisplay, SourceDecodeError};
 use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant};
@@ -206,6 +207,7 @@ struct Track {
     dimensions: Option<[u32; 2]>,
     color: Option<Mp4ColorDescription>,
     pixel_aspect_ratio: Option<[u32; 2]>,
+    clean_aperture: Option<CleanAperture>,
     audio_channels: Option<u32>,
     audio_sample_rate: Option<u32>,
 }
@@ -439,6 +441,7 @@ impl Reader<'_> {
     }
 }
 
+#[cfg(any(test, feature = "fuzzing"))]
 pub(crate) fn validate(
     file: &File,
     policy: Selection,
@@ -446,6 +449,15 @@ pub(crate) fn validate(
     control: DecodeControl<'_>,
 ) -> Result<u64> {
     Ok(validate_selection(file, policy, limits, control)?.io_bytes)
+}
+
+pub(crate) fn validate_video(
+    file: &File,
+    limits: InputLimits,
+    control: DecodeControl<'_>,
+) -> Result<(u64, Option<CleanAperture>)> {
+    let admitted = validate_selection(file, Selection::Video, limits, control)?;
+    Ok((admitted.io_bytes, admitted.aperture))
 }
 
 /// Resolve the first audio stream from the same bounded grammar pass that
@@ -464,6 +476,7 @@ pub(crate) fn validate_audio(
 struct Admission {
     io_bytes: u64,
     audio: Option<u32>,
+    aperture: Option<CleanAperture>,
 }
 
 fn validate_selection(
@@ -532,16 +545,17 @@ fn validate_selection(
         return Ok(Admission {
             io_bytes: reader.read_bytes + charged,
             audio: None,
+            aperture: None,
         });
     }
-    let audio = if magic == *b"RIFF" {
+    let (audio, aperture) = if magic == *b"RIFF" {
         let selected_stream = match policy {
             Selection::Audio(index) => index,
             Selection::FirstAudio => 0,
             Selection::Video => return Err(selection()),
         };
         wave(&mut reader, selected_stream)?;
-        Some(selected_stream)
+        (Some(selected_stream), None)
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
         mp4(&mut reader, policy)?
     } else {
@@ -555,6 +569,7 @@ fn validate_selection(
     Ok(Admission {
         io_bytes: reader.read_bytes,
         audio,
+        aperture,
     })
 }
 
@@ -677,7 +692,7 @@ fn wave_extensible_pcm16(r: &mut Reader<'_>, start: u64, channels: u32) -> Resul
     )
 }
 
-fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
+fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<(Option<u32>, Option<CleanAperture>)> {
     let layout = mp4_layout(r)?;
     let tracks = layout.tracks;
     match policy {
@@ -685,15 +700,16 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
             if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
                 return Err(selection());
             }
-            Ok(Some(index))
+            Ok((Some(index), None))
         }
         Selection::FirstAudio => {
             let index = tracks
                 .iter()
                 .position(|track| track.codec == Some(Kind::Audio))
                 .ok_or_else(selection)?;
-            Ok(Some(
-                u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?,
+            Ok((
+                Some(u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?),
+                None,
             ))
         }
         Selection::Video => {
@@ -705,7 +721,13 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
             {
                 return Err(selection());
             }
-            Ok(None)
+            Ok((
+                None,
+                tracks
+                    .iter()
+                    .find(|track| track.codec == Some(Kind::Video))
+                    .and_then(|track| track.clean_aperture),
+            ))
         }
     }
 }
@@ -1370,6 +1392,21 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                 )?;
                 track.pixel_aspect_ratio =
                     Some([r.u32(atom.body.start)?, r.u32(atom.body.start + 4)?]);
+            }
+            b"clap" if kind == Kind::Video => {
+                require(track.clean_aperture.is_none(), "duplicate clean aperture")?;
+                r.fixed(atom.body, 32)?;
+                let mut words = [0; 8];
+                for (index, word) in words.iter_mut().enumerate() {
+                    let offset = u64::try_from(index).expect("eight clean-aperture fields") * 4;
+                    *word = i32::from_be_bytes(r.bytes(atom.body.start + offset)?);
+                }
+                track.clean_aperture = Some(CleanAperture::from_words(
+                    track
+                        .dimensions
+                        .ok_or_else(|| invalid("clean aperture needs a video raster"))?,
+                    words,
+                )?);
             }
             b"btrt" => {
                 require(!bitrate, "duplicate bitrate metadata")?;

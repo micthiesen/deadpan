@@ -36,6 +36,13 @@ under §29.1. Physical power loss, File Provider eviction, Dock Quit and logout
 retain their exact owner checks. The full product goal remains active; continue
 DP-02's source-policy and VFR/creative-operation playback/export matrix.
 
+Pixel-aligned MP4 clean apertures now pass exact source admission, independent
+SDR/HDR pixel comparisons, threaded seeking and real Render. The complete
+115-test native gate and all 120 exported pictures/four audio windows pass
+([qualification](../qualification/clean-aperture-2026-10-09.md)). Fractional
+aperture sampling and the broader VFR/creative-operation matrix remain open;
+DP-02 is still partial. No format/schema change was required.
+
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening
 tolerances. Native ABI and finished-file policy 2 retain two priming packets
