@@ -572,6 +572,49 @@ fn retained_reordered_hdr_preserves_video_regression_but_refuses_retired_aac() {
 const RASTER: [u32; 2] = [640, 360];
 
 #[test]
+fn small_hdr_outputs_bound_coded_padding_and_keep_the_exact_visible_raster() {
+    for raster in [[96, 64], [144, 64], [64, 96], [32, 32]] {
+        for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
+            let encoded = encode(
+                transfer,
+                raster,
+                hardware(BFramePolicy::None),
+                Content::Probe,
+                None,
+            );
+            let packets = Mp4PacketReader::open(
+                File::open(&encoded.path).unwrap(),
+                deadpan_source::DecodeLimits::default(),
+                DecodeControl {
+                    cancelled: &NOT_CANCELLED,
+                    timeout: Duration::from_secs(60),
+                },
+            )
+            .unwrap();
+            let video = packets
+                .inspection()
+                .tracks
+                .iter()
+                .find(|track| track.kind == deadpan_source::Mp4TrackKind::Video)
+                .unwrap();
+            let geometry = video.hevc.unwrap();
+            assert_eq!(geometry.sps_cropped_size, raster);
+            assert_eq!(video.sample_dimensions, Some(raster));
+            let inspected = if transfer == HdrTransfer::Pq {
+                inspect(&encoded)
+            } else {
+                inspect_hlg(&encoded)
+            };
+            let report = inspected.unwrap_or_else(|error| {
+                panic!("{transfer:?} {raster:?}, SPS {geometry:?}: {error}")
+            });
+            report.validate(VerificationLimits::default()).unwrap();
+            assert_eq!(report.fresh_gop_frames, report.video_frames);
+        }
+    }
+}
+
+#[test]
 fn hdr_pq_and_hlg_main10_files_pass_complete_inspection() {
     for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
         for b_frames in [BFramePolicy::None, BFramePolicy::TargetTwo] {

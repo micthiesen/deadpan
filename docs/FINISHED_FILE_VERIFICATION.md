@@ -97,7 +97,11 @@ format checks differ:
   B-policy check uses the packet clock's maximum reorder delay (decode index
   minus presentation index) instead of consecutive B slice types. It must not
   exceed the requested B frames and must be positive when they were requested
-  over more than one GOP. The coded-size pixel allowance uses 64x64 CTBs.
+  over more than one GOP. The coded-size pixel allowance uses 64x64 CTBs after
+  applying the measured 160x64 VideoToolbox minimum. A 96x64 output has a
+  160x64 SPS raster on this Mac; its conformance crop and every decoded visible
+  picture must still match 96x64 exactly. PQ/HLG regression files cover 32x32,
+  96x64, 144x64 and 64x96 outputs.
 
 ### Content light (PQ)
 

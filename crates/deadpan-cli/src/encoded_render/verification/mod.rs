@@ -27,11 +27,16 @@ pub const PRIVATE_WORKER_ARGUMENT: &str = "--render-verify-worker";
 
 /// Complete coded planes before the visible crop. On this host VideoToolbox
 /// H.264 encodes a 96x64 input as 192x96 (SPS 12x6 macroblocks, right/bottom
-/// crop 48/16). HEVC uses coding tree blocks up to 64x64. The verifier still
+/// crop 48/16). HEVC encodes 96x64 as 160x64 on this host, and uses coding tree
+/// blocks up to 64x64. Retain that measured minimum before rounding. The verifier still
 /// requires the exact contracted visible raster and checks every output pixel.
 /// Saturation makes an unvalidated extreme raster fail DecodeLimits validation.
 pub(crate) fn decode_pixel_budget(raster: [u32; 2], hdr: bool) -> u64 {
-    let (block, minimum) = if hdr { (64, [0, 0]) } else { (16, [192, 96]) };
+    let (block, minimum) = if hdr {
+        (64, [160, 64])
+    } else {
+        (16, [192, 96])
+    };
     let [width, height] = std::array::from_fn::<_, 2, _>(|i| {
         u64::from(raster[i].max(minimum[i])).div_ceil(block) * block
     });
