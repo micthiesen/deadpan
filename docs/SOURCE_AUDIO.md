@@ -19,7 +19,7 @@ value, including signed zero, subnormals and levels outside ±1. NaN and infinit
 fail sample copying and poison the decoder; qualification cannot publish a PCM
 cache from them.
 
-The tested subset is AAC-LC in MP4, mono/stereo raw MP3, mono/stereo Opus in finite WebM/Matroska,
+The tested subset is AAC-LC in MP4, mono/stereo raw MP3, mono/stereo Opus in MP4 and finite WebM/Matroska,
 and unsigned8, signed16/24/32 or float32 PCM in WAV. Opus applies its declared header gain.
 The opening guard admits a strict nonfragmented MP4 grammar and qualified RIFF/WAV
 with either a plain format header or the closed extensible format described in
@@ -115,6 +115,29 @@ interior trailing skips, discard flags, mismatched counts or drift outside the
 tick envelope fail. Deserialization reconstructs and rechecks every coordinate.
 The final endpoint uses physical samples and explicit trims, never the rounded
 container duration. See the [qualification](qualification/opus-sources-2026-10-09.md).
+
+## MP4 Opus sample clocks
+
+Mono/stereo Opus in nonfragmented MP4 uses the same pinned libopus decoder.
+The [Opus ISO BMFF mapping](https://opus-codec.org/docs/opus_in_isobmff.html)
+defines the `Opus` entry, big-endian `dOps` fields, roll recovery and presentation
+edits. Deadpan admits the qualified grammar in [source admission](SOURCE_ADMISSION.md).
+
+The separate `mp4_opus` receipt retains pre-skip, channels, physical packet/sample
+counts, the first exact sample position and the valid presented count. Every
+decoded packet must match that inventory. PTS uses exact `1/48000` ticks;
+there is no Matroska quantization allowance. Raw discard and skip evidence must
+match the admitted edit, including wholly skipped priming packets. The final
+reported duration may be shorter than the physical decoded packet and defines
+its available endpoint. Header duration alone never supplies PCM coverage.
+
+The eleven retained fixtures cover CELT, SILK, hybrid, 2.5/20/60/120 ms packets,
+mono/stereo, header gain, cross-packet priming and a 6,000-sample offset. Their
+compressed audio packets match the retained WebM corpus; independent reference
+PCM checks every available sample. H.264, AV1 and HDR VP9 picture copies retain
+their exact decoded pictures and timestamps. Receipt loading rechecks every
+coordinate and rejects altered counts, offsets, skips and durations. See
+[qualification](qualification/opus-mp4-2026-10-09.md).
 
 ## Shared indexing and cache limits
 

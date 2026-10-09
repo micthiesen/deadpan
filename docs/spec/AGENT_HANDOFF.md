@@ -4,6 +4,19 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[MP4 Opus](../qualification/opus-mp4-2026-10-09.md) now admits mono/stereo
+sources through pinned libopus, with exact presentation edits and physical
+packet inventories. Eleven fixtures cover gain, cross-packet pre-skip, terminal
+trim and offsets; copied H.264/AV1/HDR VP9 pictures remain unchanged. The shared
+packet guard also serves Matroska. The gate completes in parts with one recorded
+VideoToolbox proxy follow-up; 170 native sanitizer tests pass. Eleven release
+imports/exports verify 1,104 pictures and 27 zero-offset audio windows.
+The fresh-home bundle imports all eleven and verifies 504 pictures/twelve
+windows; relocation and tamper checks pass.
+YouTube selection and assembly still accept
+only H.264 plus AAC; extending assembly must preserve exact clocks, packet
+payloads and picture metadata. DP-02, DP-14 and DP-16 remain partial.
+
 [VP9 HDR](../qualification/vp9-hdr-sources-2026-10-09.md) now admits ten-bit
 limited-range BT.2020 NCL PQ/HLG with retained MP4/WebM static metadata and Opus
 audio. The shared verifier also accounts for VideoToolbox's measured 160x64

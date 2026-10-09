@@ -53,6 +53,102 @@ fn verified_input(bytes: &[u8]) -> VerifiedSourceInput {
 }
 
 #[test]
+fn mp4_opus_exact_edits_and_terminal_samples_survive_receipts_and_random_reads() {
+    for name in [
+        "stereo-20",
+        "mono-2.5",
+        "mono-60",
+        "stereo-120",
+        "mono-silk",
+        "mono-hybrid",
+        "mono-gain",
+        "mono-preskip",
+        "av-h264",
+        "av-av1",
+        "av-vp9-offset",
+    ] {
+        let bytes = fixture("audio-fixtures", &format!("opus-mp4-{name}.mp4"));
+        let stream = u32::from(name.starts_with("av-"));
+        let start = if name == "av-vp9-offset" { 6000 } else { 0 };
+        let available = if name == "mono-preskip" { 7717 } else { 8197 };
+        let session = open(&bytes, stream);
+        let index = session.index();
+        assert_eq!(index.valid_samples(), available);
+        assert_eq!(
+            index.frames().last().unwrap().valid_end,
+            start + available as i64
+        );
+        assert_eq!(
+            AudioIndexSnapshot::from_json(&index.to_json().unwrap()).unwrap(),
+            *index
+        );
+        let reference_name = if name.starts_with("av-") {
+            "stereo-20"
+        } else {
+            name
+        };
+        let reference = fixture("audio-fixtures", &format!("opus-{reference_name}.f32le"));
+        let channels = index.stream().mp4_opus.unwrap().channels as usize;
+        for (at, count) in [
+            (0, available as u32),
+            (available as i64 - 37, 37),
+            (120, 193),
+            (0, 1),
+        ] {
+            let samples = session
+                .read_samples(
+                    SourceAudioSample(start + at),
+                    count,
+                    Duration::from_secs(2),
+                    &AtomicBool::new(false),
+                )
+                .unwrap()
+                .samples;
+            let from = at as usize * channels * 4;
+            let expected = &reference[from..from + count as usize * channels * 4];
+            assert_eq!(samples.len() * 4, expected.len());
+            for (actual, expected) in samples.iter().zip(expected.chunks_exact(4)) {
+                assert!(
+                    (actual - f32::from_le_bytes(expected.try_into().unwrap())).abs() < 0.0001,
+                    "{name}"
+                );
+            }
+        }
+        for at in [start - 1, start + available as i64] {
+            assert!(
+                session
+                    .read_samples(
+                        SourceAudioSample(at),
+                        1,
+                        Duration::from_secs(2),
+                        &AtomicBool::new(false)
+                    )
+                    .is_err()
+            );
+        }
+        for path in [
+            "first_sample",
+            "pre_skip",
+            "packet_count",
+            "decoded_sample_count",
+            "valid_samples",
+            "channels",
+        ] {
+            let mut value = serde_json::to_value(index).unwrap();
+            let old = value["stream"]["mp4_opus"][path].as_i64().unwrap();
+            value["stream"]["mp4_opus"][path] = serde_json::json!(old + 1);
+            assert!(
+                AudioIndexSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err(),
+                "{name} {path}"
+            );
+        }
+        let mut value = serde_json::to_value(index).unwrap();
+        value["observations"][1]["pts"] = serde_json::json!(index.observations()[1].pts + 1);
+        assert!(AudioIndexSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+}
+
+#[test]
 fn automatic_audio_selection_retains_exact_index_and_samples() {
     for (folder, name, stream, start) in [
         ("audio-fixtures", "pcm-stereo-48000.wav", 0, 0),

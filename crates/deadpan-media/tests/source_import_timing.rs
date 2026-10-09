@@ -435,6 +435,7 @@ fn indexed_video(start: i64, intervals: &[i64], time_base: SourceTimeBase) -> So
 fn indexed_audio(start: i64, sample_rate: u32, counts: &[u32]) -> AudioIndexSnapshot {
     let stream = AudioStreamDescriptor {
         matroska_opus: None,
+        mp4_opus: None,
         mp3: None,
         stream_index: 1,
         codec: "pcm_s16le".into(),

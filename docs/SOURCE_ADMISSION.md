@@ -23,13 +23,29 @@ and MP3 in other containers remain unqualified. See
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
 requires exactly one `avc1` H.264, `hvc1` HEVC, `vp09` VP9, `av01` AV1 or ProRes 422 track
-and allows at most 32 AAC audio tracks.
-Audio selection uses the same all-track checks before opening its selected AAC
+and allows at most 32 AAC or mono/stereo Opus audio tracks.
+Audio selection uses the same all-track checks before opening its selected audio
 decoder. Declared packet sizes, sample/chunk/time table expansion, external data
 references, nested metadata and codec descriptors are checked before demuxing.
 The limits include 16 MiB of headers/read work, one million aggregate table rows
 and samples, 100,000 atoms, depth 16, and 64 KiB codec configuration records.
 Profile 244 AVC configuration is admitted for the existing lossless RGB fixtures.
+
+MP4 Opus uses an ISO `Opus` sample entry with one exact version-zero, family-zero
+`dOps` box, matching mono/stereo channels and a 48 kHz sample clock. The original
+input-rate field is informational; signed Q8 output gain is applied by the pinned
+libopus decoder. Admission checks every packet's RFC 6716 framing, physical
+sample count and `stts` duration before native allocation, including ignored
+audio tracks. Only the last duration may trim the physical packet. Bounded
+`roll` groups may name the one recovery description or zero (not yet available).
+The Opus description must have a negative roll distance.
+
+The presentation edit must be sample-exact, start at the declared pre-skip and
+end at the packet table's measured terminal sample, with an optional initial
+empty edit for an audio offset. No missing edit, rounded movie clock, alternate
+channel mapping, conflicting duration or unqualified edit layout is repaired
+silently. Priming can span packets, and terminal padding stays unavailable.
+See [MP4 Opus sample clocks](SOURCE_AUDIO.md#mp4-opus-sample-clocks).
 
 QuickTime `qt  ` movies use the same closed tables and self-contained data
 references. Empty `wide` atoms and one URL data handler are admitted. Optional

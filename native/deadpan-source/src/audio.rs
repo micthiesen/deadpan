@@ -141,8 +141,20 @@ pub struct AudioStreamInfo {
     /// Checked Matroska declarations before FFmpeg rounds CodecDelay to ticks.
     /// Raw frame PTS and skip observations remain unchanged.
     pub matroska_opus: Option<MatroskaOpusClock>,
+    /// Exact MP4 packet inventory and presentation edit, before native decoding.
+    pub mp4_opus: Option<Mp4OpusFraming>,
     /// Complete raw Layer III frame inventory and explicit encoder trim.
     pub mp3: Option<Mp3Framing>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mp4OpusFraming {
+    pub channels: u32,
+    pub pre_skip: u32,
+    pub packet_count: u64,
+    pub decoded_sample_count: u64,
+    pub first_sample: i64,
+    pub valid_samples: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -397,6 +409,7 @@ impl AudioDecoder {
             DecodeControl { timeout, ..control },
         )?;
         info.matroska_opus = matroska_opus;
+        info.mp4_opus = admission.mp4_opus;
         info.mp3 = admission.mp3;
         if (info.codec == "mp3") != info.mp3.is_some()
             || info.mp3.is_some_and(|framing| {
@@ -411,7 +424,16 @@ impl AudioDecoder {
                 message: "MP3 decoder disagrees with admitted frame inventory".into(),
             });
         }
-        if (info.codec == "opus") != matroska_opus.is_some()
+        if (info.codec == "opus") != (matroska_opus.is_some() || info.mp4_opus.is_some())
+            || (matroska_opus.is_some() && info.mp4_opus.is_some())
+            || info.mp4_opus.is_some_and(|framing| {
+                info.sample_rate != 48_000
+                    || info.channel_layout.channels() != framing.channels
+                    || info.initial_padding != framing.pre_skip
+                    || info.seek_preroll != 3840
+                    || info.time_base_num != 1
+                    || info.time_base_den != 48_000
+            })
             || matroska_opus.is_some_and(|clock| {
                 info.sample_rate != 48_000
                     || info.initial_padding != clock.pre_skip
@@ -472,6 +494,20 @@ impl AudioDecoder {
             return Err(SourceDecodeError::Native {
                 code: "invalid_decode".into(),
                 message: "MP3 decode did not preserve every admitted frame and sample".into(),
+            });
+        }
+        if self.mode == AudioDecodeMode::Manual
+            && self.info.mp4_opus.is_some_and(|framing| {
+                self.decoded_frames > framing.packet_count
+                    || self.decoded_samples > framing.decoded_sample_count
+                    || (current.is_none()
+                        && (self.decoded_frames != framing.packet_count
+                            || self.decoded_samples != framing.decoded_sample_count))
+            })
+        {
+            return Err(SourceDecodeError::Native {
+                code: "invalid_decode".into(),
+                message: "MP4 Opus decode did not preserve every admitted packet and sample".into(),
             });
         }
         if self.mode == AudioDecodeMode::Manual
@@ -832,6 +868,7 @@ mod ffi {
             let value = AudioStreamInfo {
                 mp3: None,
                 matroska_opus: None,
+                mp4_opus: None,
                 stream_index: nonnegative(info.stream_index)?,
                 codec,
                 time_base_num: positive(info.time_base_num)?,

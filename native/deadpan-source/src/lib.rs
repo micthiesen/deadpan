@@ -22,6 +22,7 @@ mod aperture;
 pub mod audio;
 mod input;
 mod matroska_input;
+mod opus_packet;
 mod video_codec;
 
 #[cfg(feature = "fuzzing")]

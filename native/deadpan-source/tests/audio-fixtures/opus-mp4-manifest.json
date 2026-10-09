@@ -1,0 +1,138 @@
+{
+  "producer": "MP4 Opus from repository PCM, with exact edits and independent WebM PCM references.\n\nDevelopment FFmpeg/libopus encodes the same packet payloads as the retained\nOpus/WebM corpus. The private decoder uses the pinned qualified FFmpeg build.\nNo timestamps are inferred from signal matching. --check is read-only.\n",
+  "license": "Repository-authored synthetic signals and pictures",
+  "files": [
+    {
+      "name": "opus-mp4-stereo-20.mp4",
+      "bytes": 4961,
+      "sha256": "3f206321de228d820034169b84e9a149eaa2740ea2b11f28a99c54a6f9f9f159",
+      "channels": 2,
+      "reference": "opus-stereo-20.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-mono-2.5.mp4",
+      "bytes": 4501,
+      "sha256": "7c88da9febc8d694d73ae6bfccc7d126f09baea207144342d64ebde57c12446c",
+      "channels": 1,
+      "reference": "opus-mono-2.5.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "2.5"
+    },
+    {
+      "name": "opus-mp4-mono-60.mp4",
+      "bytes": 2920,
+      "sha256": "ceb36f5368ce3d37ca5f4a38204ade8e25dcfa64a12e0052172d7b15d35f02e3",
+      "channels": 1,
+      "reference": "opus-mono-60.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "60"
+    },
+    {
+      "name": "opus-mp4-stereo-120.mp4",
+      "bytes": 3635,
+      "sha256": "a6d7a280ad447cfdb029e0cf3cb3bba4ca090cedbbcf2c39d02e7772a293be2b",
+      "channels": 2,
+      "reference": "opus-stereo-120.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "120"
+    },
+    {
+      "name": "opus-mp4-mono-silk.mp4",
+      "bytes": 1073,
+      "sha256": "e2b13ffb818481206fad31cfe1f06c418002e02e42da307ee6c6790244607045",
+      "channels": 1,
+      "reference": "opus-mono-silk.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-mono-hybrid.mp4",
+      "bytes": 1340,
+      "sha256": "55dd8ebc71e21910bec959070b6a8149df3d1e06433b83fa63a9bf7ae95c5523",
+      "channels": 1,
+      "reference": "opus-mono-hybrid.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-mono-gain.mp4",
+      "bytes": 4527,
+      "sha256": "856d9f857cdbb973a69ab732e491e10f22e52694e95836c00b2aa665bd02893d",
+      "channels": 1,
+      "reference": "opus-mono-gain.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-mono-preskip.mp4",
+      "bytes": 4501,
+      "sha256": "1fe21a92e1d7dce1952e7787f643eb857588a9629175415f59d1652ee1157ad1",
+      "channels": 1,
+      "reference": "opus-mono-preskip.f32le",
+      "valid_samples": 7717,
+      "offset_samples": 0,
+      "audio_stream": 0,
+      "video": null,
+      "packet_duration_ms": "2.5"
+    },
+    {
+      "name": "opus-mp4-av-h264.mp4",
+      "bytes": 36574,
+      "sha256": "73b73e9f6f949b6417b62b0eb30079b29f5efedb0ded21d9300c91f68e5e157a",
+      "channels": 2,
+      "reference": "opus-stereo-20.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 1,
+      "video": "cfr-bframes.mp4",
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-av-av1.mp4",
+      "bytes": 22219,
+      "sha256": "1332f068a861cca29888ecc1859a8dbd8bb99d452cdec530f8ee40c6d0bebb97",
+      "channels": 2,
+      "reference": "opus-stereo-20.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 0,
+      "audio_stream": 1,
+      "video": "av1-sdr-8-limited.mp4",
+      "packet_duration_ms": "20"
+    },
+    {
+      "name": "opus-mp4-av-vp9-offset.mp4",
+      "bytes": 10084,
+      "sha256": "7e6ccdd4aa61a9545d330b53d3f26b4fa11b426e33f8bb3968ffb4f93979598d",
+      "channels": 2,
+      "reference": "opus-stereo-20.f32le",
+      "valid_samples": 8197,
+      "offset_samples": 6000,
+      "audio_stream": 1,
+      "video": "vp9-pq.mp4",
+      "packet_duration_ms": "20"
+    }
+  ]
+}

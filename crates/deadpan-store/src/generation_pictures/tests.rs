@@ -179,6 +179,7 @@ fn retain_receipt(connection: &Connection) -> (SourceQualificationId, Vec<u8>) {
         content,
         AudioStreamDescriptor {
             matroska_opus: None,
+            mp4_opus: None,
             mp3: None,
             stream_index: 1,
             codec: "aac".into(),

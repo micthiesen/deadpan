@@ -4,7 +4,7 @@ The separate `audio` module decodes an explicitly selected AAC-LC, mono/stereo
 Opus, MP3 or unsigned8, signed16/24/32 and float32 PCM stream at its original rate and channel layout. It retains raw
 PTS/DTS, duration, sample count/format, discard and manual skip evidence, and
 returns owned interleaved f32 without resampling, mixing or additional gain.
-AAC/MP4, raw MP3, Opus/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation
+AAC/MP4, raw MP3, Opus/MP4/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation
 sizes and table expansion before FFmpeg opens the audio container. Other audio
 container grammars, custom layouts and unsupported representations fail.
 See [source audio](../../docs/SOURCE_AUDIO.md) for host indexing, private PCM
@@ -72,20 +72,21 @@ I/O and around native work. These are cooperative deadlines: an individual
 FFmpeg codec operation is not preempted. This adapter does not establish an OS
 process memory/CPU limit and must stay off UI/audio callback threads.
 
-MP4/MOV admits one qualified H.264, HEVC, VP9 or ProRes 422 video stream and up to 32
-ignored AAC streams. Finite Matroska admits one FFV1 or SDR VP9 video track;
-WebM admits one SDR VP9 video track. Both admit up to 32 qualified Opus tracks,
+MP4/MOV admits one qualified H.264, HEVC, VP9, AV1 or ProRes 422 video stream and up to 32
+ignored AAC or Opus streams. Finite Matroska admits one FFV1, VP9 or AV1 video track;
+WebM admits one VP9 or AV1 video track. Both admit up to 32 qualified Opus tracks,
 including audio-only files through the separate audio decoder.
 The bounded audio inventory
 retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
 `AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
-codec allowlist contains only `h264,ffv1,hevc,vp9,prores`; pinned FFmpeg propagates that allowlist
+codec allowlist contains only `h264,ffv1,hevc,vp9,prores,libdav1d`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC/Opus before opening their decoders.
 Audio-bearing fixtures therefore emit expected audio-not-on-whitelist diagnostics.
-The measured fixtures are H.264/HEVC/VP9 in MP4, ProRes 422 in QuickTime, FFV1/VP9 in Matroska and
-VP9 with mono/stereo Opus in WebM; this is not
+The measured fixtures include H.264/HEVC in MP4, ProRes 422 in QuickTime, FFV1 in
+Matroska, and SDR/HDR VP9/AV1 in MP4/WebM/Matroska. Mono/stereo Opus combinations
+retain their picture and audio clocks; this is not
 qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. The picture decoder never decodes audio
 or uses VideoToolbox acceleration.
@@ -116,8 +117,14 @@ uses pinned libopus 1.6.1, explicit pre-skip and terminal padding, and a checked
 hybrid and pre-skip spanning packets have fixtures. Ogg, mapping families above
 zero, lacing and the broader container grammar remain unqualified.
 
-The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
-H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit
+[MP4 Opus](../../docs/qualification/opus-mp4-2026-10-09.md) shares the packet
+framing guard and pinned decoder. Exact presentation edits and `dOps` pre-skip
+define the available 48 kHz samples; the final packet's reported duration may
+trim padding. Admission and host receipt loading check packet/sample counts,
+offsets, raw PTS and skip evidence independently of Matroska's quantized clock.
+
+The qualified HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
+H.264 High10 in MP4, plus VP9/AV1 in MP4/WebM/Matroska, with optional exact static metadata) and the sixteen-bit
 `next_rgba16` and ten-bit `next_yuv420p10` outputs are described in
 [source admission](../../docs/SOURCE_ADMISSION.md#hdr-sources) and tested by
 `tests/hdr_decode.rs`. SDR also admits HEVC Main/Main10 eight/ten-bit and

@@ -174,6 +174,7 @@ impl AudioSession {
         let info = decoder.info().clone();
         let stream = AudioStreamDescriptor {
             matroska_opus: info.matroska_opus.map(Into::into),
+            mp4_opus: info.mp4_opus.map(Into::into),
             mp3: info.mp3.map(Into::into),
             stream_index: info.stream_index,
             codec: info.codec.clone(),
@@ -404,6 +405,7 @@ mod tests {
         let stream = AudioStreamDescriptor {
             stream_index: 0,
             matroska_opus: None,
+            mp4_opus: None,
             mp3: None,
             codec: "pcm_s16le".into(),
             time_base: SourceTimeBase::new(1, 48000).unwrap(),

@@ -7,8 +7,10 @@ use serde::{Deserialize, Serialize};
 use crate::source_index::{MAX_SOURCE_INDEX_JSON_BYTES, SourceContentIdentity};
 mod mp3;
 mod opus;
+mod opus_mp4;
 pub use mp3::Mp3Framing;
 pub use opus::MatroskaOpusClock;
+pub use opus_mp4::Mp4OpusFraming;
 
 pub const AUDIO_INDEX_VERSION: u32 = 1;
 pub const AUDIO_DECODER_CONTRACT: &str = "ffmpeg-8.0.3/audio-manual-skip-v1";
@@ -116,6 +118,8 @@ pub struct AudioStreamDescriptor {
     pub seek_preroll: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub matroska_opus: Option<MatroskaOpusClock>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mp4_opus: Option<Mp4OpusFraming>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mp3: Option<Mp3Framing>,
 }
@@ -235,7 +239,9 @@ impl AudioIndexSnapshot {
                     | "opus"
                     | "mp3"
             )
-            || (stream.codec == "opus") != stream.matroska_opus.is_some()
+            || (stream.codec == "opus")
+                != (stream.matroska_opus.is_some() || stream.mp4_opus.is_some())
+            || (stream.matroska_opus.is_some() && stream.mp4_opus.is_some())
             || (stream.codec == "mp3") != stream.mp3.is_some()
         {
             return Err(AudioIndexError::Metadata("stream contract").into());
@@ -245,6 +251,9 @@ impl AudioIndexSnapshot {
         }
         if let Some(framing) = stream.mp3 {
             framing.validate(&stream, observations.len())?;
+        }
+        if let Some(framing) = stream.mp4_opus {
+            framing.validate(&stream, &observations)?;
         }
         let mut frames = Vec::new();
         frames
@@ -304,6 +313,14 @@ impl AudioIndexSnapshot {
             let mut trailing = i64::from(skip.map_or(0, |skip| skip.trailing));
             if let Some(framing) = stream.mp3 {
                 (leading, trailing) = framing.trim(observation, ordinal, decoded_samples)?;
+            }
+            if let Some(framing) = stream.mp4_opus {
+                leading = i64::try_from(
+                    u64::from(framing.pre_skip)
+                        .saturating_sub(decoded_samples)
+                        .min(u64::from(observation.sample_count)),
+                )
+                .expect("bounded frame samples");
             }
             if opus.is_some() {
                 if observation.discard
@@ -455,6 +472,7 @@ mod tests {
             SourceContentIdentity::new([3; 32], 100).unwrap(),
             AudioStreamDescriptor {
                 matroska_opus: None,
+                mp4_opus: None,
                 mp3: None,
                 stream_index: 32,
                 codec: "aac".into(),

@@ -263,6 +263,7 @@ mod tests {
             SourceContentIdentity::new([7; 32], 100).unwrap(),
             AudioStreamDescriptor {
                 matroska_opus: None,
+                mp4_opus: None,
                 mp3: None,
                 stream_index: 0,
                 codec: "pcm_s16le".into(),

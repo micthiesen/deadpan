@@ -4,6 +4,19 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[MP4 Opus audio](qualification/opus-mp4-2026-10-09.md) implements mono/stereo
+sources with exact pre-skip, terminal trim, header gain and sample-clock offsets.
+Eleven retained fixtures preserve independent reference PCM and copied H.264,
+AV1 and HDR VP9 pictures; malformed inputs and altered receipts fail explicitly.
+The gate completes in parts with one recorded VideoToolbox proxy follow-up;
+all 170 native sanitizer tests pass. Eleven release imports/exports verify
+1,104 pictures and 27 zero-offset audio windows, including sound placement
+and Undo/Redo with unchanged picture time. The fresh-home bundle imports all
+eleven and verifies 504 pictures/twelve audio windows; relocation and tamper
+checks pass.
+Downloader selection and stream-copy assembly still accept H.264 plus AAC, so
+higher-quality YouTube acquisition remains open. DP-02, DP-14 and DP-16 stay partial.
+
 [VP9 HDR import](qualification/vp9-hdr-sources-2026-10-09.md) adds ten-bit
 limited-range BT.2020 NCL PQ/HLG in MP4/WebM/Matroska, including exact or explicitly
 ignored static metadata and mono/stereo Opus combinations. Real rendering also

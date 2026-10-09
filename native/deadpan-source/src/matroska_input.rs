@@ -1136,6 +1136,7 @@ pub(crate) fn validate_selection(
     };
     Ok(crate::input::Admission {
         mp3: None,
+        mp4_opus: None,
         io_bytes: admission.reader.read_bytes,
         audio: selected.map(|index| u32::try_from(index).expect("bounded stream ordinal")),
         matroska_opus,

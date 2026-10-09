@@ -43,6 +43,7 @@ pub mod fuzzing {
 }
 mod inspection;
 mod mp3;
+mod opus;
 use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
@@ -193,6 +194,7 @@ struct Track {
     /// sdtp entry count (one byte per sample), checked against stsz.
     dependencies: Option<u64>,
     roll_description: bool,
+    roll_distance: Option<i16>,
     roll_samples: Option<u32>,
     header: Option<TrackHeader>,
     media_timescale: u32,
@@ -213,6 +215,7 @@ struct Track {
     clean_aperture: Option<CleanAperture>,
     audio_channels: Option<u32>,
     audio_sample_rate: Option<u32>,
+    opus: Option<crate::audio::Mp4OpusFraming>,
 }
 
 struct Mp4Layout {
@@ -485,6 +488,7 @@ pub(crate) struct Admission {
     pub(crate) vp9_static: Option<crate::matroska_input::Vp9StaticMetadata>,
     pub(crate) nominal_frame_duration_ns: Option<u64>,
     pub(crate) matroska_opus: Option<crate::audio::MatroskaOpusClock>,
+    pub(crate) mp4_opus: Option<crate::audio::Mp4OpusFraming>,
     pub(crate) mp3: Option<crate::audio::Mp3Framing>,
 }
 
@@ -535,6 +539,7 @@ fn validate_selection(
             vp9_static: None,
             nominal_frame_duration_ns: None,
             matroska_opus: None,
+            mp4_opus: None,
             mp3: Some(framing),
         });
     }
@@ -565,14 +570,14 @@ fn validate_selection(
         admitted.io_bytes += reader.read_bytes;
         return Ok(admitted);
     }
-    let (audio, aperture, vp9) = if magic == *b"RIFF" {
+    let (audio, aperture, vp9, mp4_opus) = if magic == *b"RIFF" {
         let selected_stream = match policy {
             Selection::Audio(index) => index,
             Selection::FirstAudio => 0,
             Selection::Video => return Err(selection()),
         };
         wave(&mut reader, selected_stream)?;
-        (Some(selected_stream), None, None)
+        (Some(selected_stream), None, None, None)
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
         mp4(&mut reader, policy)?
     } else {
@@ -587,6 +592,7 @@ fn validate_selection(
     Ok(Admission {
         mp3: None,
         matroska_opus: None,
+        mp4_opus,
         nominal_frame_duration_ns: None,
         vp9_static: None,
         io_bytes: reader.read_bytes,
@@ -743,6 +749,7 @@ type Mp4Selection = (
     Option<u32>,
     Option<CleanAperture>,
     Option<Mp4Vp9Configuration>,
+    Option<crate::audio::Mp4OpusFraming>,
 );
 fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
     let layout = mp4_layout(r)?;
@@ -752,7 +759,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
             if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
                 return Err(selection());
             }
-            Ok((Some(index), None, None))
+            Ok((Some(index), None, None, tracks[index as usize].opus))
         }
         Selection::FirstAudio => {
             let index = tracks
@@ -763,6 +770,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
                 Some(u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?),
                 None,
                 None,
+                tracks[index].opus,
             ))
         }
         Selection::Video => {
@@ -781,6 +789,7 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
                     .find(|track| track.codec == Some(Kind::Video))
                     .and_then(|track| track.clean_aperture),
                 tracks.iter().find_map(|track| track.vp9),
+                None,
             ))
         }
     }
@@ -865,8 +874,13 @@ fn mp4_layout(r: &mut Reader<'_>) -> Result<Mp4Layout> {
         "MP4 lacks its bounded movie header",
     )?;
     let media = media.ok_or_else(|| invalid("MP4 has no media-data box"))?;
-    for track in &tracks {
+    for track in &mut tracks {
         validate_track(r, track, media)?;
+        opus::validate_timing(
+            r,
+            track,
+            movie.as_ref().expect("checked movie header").timescale,
+        )?;
     }
     Ok(Mp4Layout {
         movie: movie.ok_or_else(|| invalid("MP4 has no movie header"))?,
@@ -1261,21 +1275,33 @@ fn sample_tables(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()
                     "only one fixed-size roll description is admitted",
                 )?;
                 track.roll_description = true;
+                track.roll_distance = Some(i16::from_be_bytes(r.bytes(atom.body.start + 16)?));
             }
             b"sbgp" => {
                 require(
                     track.roll_samples.is_none(),
                     "duplicate sample-to-group table",
                 )?;
-                r.fixed(atom.body, 20)?;
                 r.full(atom.body, &[0], 0)?;
+                require(atom.body.len() >= 12, "truncated roll group table")?;
+                let rows = r.u32(atom.body.start + 8)?;
+                r.charge_rows(u64::from(rows))?;
                 require(
                     r.bytes::<4>(atom.body.start + 4)? == *b"roll"
-                        && r.u32(atom.body.start + 8)? == 1
-                        && r.u32(atom.body.start + 16)? == 1,
-                    "only one roll group is admitted",
+                        && rows > 0
+                        && atom.body.len() == 12 + u64::from(rows) * 8,
+                    "invalid roll group table",
                 )?;
-                track.roll_samples = Some(r.u32(atom.body.start + 12)?);
+                let mut samples = 0_u32;
+                for row in 0..rows {
+                    let at = atom.body.start + 12 + u64::from(row) * 8;
+                    let count = r.u32(at)?;
+                    require(count > 0 && r.u32(at + 4)? <= 1, "invalid roll group run")?;
+                    samples = samples
+                        .checked_add(count)
+                        .ok_or_else(|| limit("roll group sample count overflow"))?;
+                }
+                track.roll_samples = Some(samples);
             }
             _ => return Err(invalid("unqualified sample table or encryption metadata")),
         }
@@ -1354,7 +1380,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         b"avc1" | b"hvc1" | b"vp09" | b"av01" | b"apco" | b"apcs" | b"apcn" | b"apch" => {
             (Kind::Video, 78)
         }
-        b"mp4a" => (Kind::Audio, 28),
+        b"mp4a" | b"Opus" => (Kind::Audio, 28),
         // hev1 permits parameter sets that exist only in-band and may change
         // between pictures; only hvc1's complete hvcC arrays are admitted.
         b"hev1" => {
@@ -1367,7 +1393,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         _ => {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_codec".into(),
-                message: "only avc1, hvc1, vp09, av01, ProRes 422 Proxy/LT/Standard/HQ and mp4a sample descriptions are admitted"
+                message: "only avc1, hvc1, vp09, av01, ProRes 422 Proxy/LT/Standard/HQ, mp4a and Opus sample descriptions are admitted"
                     .into(),
             });
         }
@@ -1381,6 +1407,14 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
     )?;
     if kind == Kind::Audio {
         let version = u16::from_be_bytes(r.bytes(entry.body.start + 8)?);
+        require(
+            entry.tag != *b"Opus" || version == 0,
+            "Opus requires ISO audio sample entries",
+        )?;
+        require(
+            entry.tag != *b"Opus" || r.u32(entry.body.start + 20)? == 0,
+            "Opus audio sample entry has reserved flags",
+        )?;
         require(
             version <= 1 && r.bytes::<6>(entry.body.start + 10)? == [0; 6],
             "unqualified QuickTime audio description version or vendor",
@@ -1541,7 +1575,12 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                     nal_length_bytes: (prefix[4] & 3) + 1,
                 });
             }
-            b"esds" if kind == Kind::Audio => {
+            b"dOps" if entry.tag == *b"Opus" => {
+                require(!config, "duplicate Opus configuration")?;
+                config = true;
+                track.opus = Some(opus::configuration(r, atom.body, track)?);
+            }
+            b"esds" if entry.tag == *b"mp4a" => {
                 require(!config, "duplicate audio configuration")?;
                 config = true;
                 esds(r, atom.body)?;
@@ -2348,7 +2387,7 @@ fn encoder_metadata(r: &mut Reader<'_>, span: Span) -> Result<()> {
     require(found_handler && found_list, "incomplete encoder metadata")
 }
 
-fn validate_track(r: &mut Reader<'_>, track: &Track, media: Span) -> Result<()> {
+fn validate_track(r: &mut Reader<'_>, track: &mut Track, media: Span) -> Result<()> {
     require(
         track.codec.is_some() && track.codec == track.handler,
         "track handler and sample description disagree",
@@ -2398,6 +2437,7 @@ fn validate_track(r: &mut Reader<'_>, track: &Track, media: Span) -> Result<()> 
         }
     }
     let mut sample = 0_u32;
+    let mut opus_timing = opus::Timing::default();
     let mut previous_end = media.start;
     for row in 0..mapping.rows {
         let at = mapping.data.start + u64::from(row) * 12;
@@ -2436,7 +2476,30 @@ fn validate_track(r: &mut Reader<'_>, track: &Track, media: Span) -> Result<()> 
             )?;
             let mut bytes = 0_u64;
             for _ in 0..count {
-                bytes += u64::from(r.sample_size(sizes, sample)?);
+                let size = u64::from(r.sample_size(sizes, sample)?);
+                require(
+                    bytes + size <= media.end - offset,
+                    "sample extends beyond media-data box",
+                )?;
+                if let Some(framing) = &mut track.opus {
+                    let samples =
+                        crate::opus_packet::samples(offset + bytes, offset + bytes + size, |at| {
+                            r.charge_header(1)?;
+                            Ok(r.bytes::<1>(at)?[0])
+                        })?;
+                    framing.decoded_sample_count += samples;
+                    if framing.decoded_sample_count > r.limits.max_decoded_samples {
+                        return Err(limit("MP4 Opus physical samples exceed configured limit"));
+                    }
+                    opus_timing.packet(
+                        r,
+                        track.timing.expect("validated timing"),
+                        sample + 1 == sizes.count,
+                        samples,
+                    )?;
+                    framing.packet_count += 1;
+                }
+                bytes += size;
                 sample += 1;
             }
             require(
