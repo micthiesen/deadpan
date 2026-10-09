@@ -285,7 +285,9 @@ has been changed". `ProjectStore::open(…, ReadOnly)` opens it for **viewing**:
   cleanup refuse with `NewerSchema` (a later build's tables may name objects
   this build cannot see).
 
-The app's Open falls back to this view: the header reads **Read-only** (hover
+The app's Open captures this view in a private database copy, releasing its
+source read transaction before viewing so another owner's WAL can checkpoint
+([concurrent inspection](RECOVERY.md#inspecting-an-open-project)). The header reads **Read-only** (hover
 and accessibility text give the reason) instead of **Saved**, and the open
 message says so. Commands that persist changes are refused with
 "Not saved: …" before reaching the store (background analysis saves use the

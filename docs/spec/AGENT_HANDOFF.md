@@ -22,7 +22,13 @@ Native AppKit Quit now confirms unsaved previews while retaining the pinned
 winit delegate and shutdown callback. Release native cancellation/discard,
 keyboard focus and real encoder shutdown pass; Dock UI and physical logout
 remain owner checks ([qualification](../qualification/native-quit-2026-10-09.md)).
-DP-01 remains partial pending final recovery acceptance.
+Concurrent native inspection now captures a private fixed database while the
+first owner retains its writer and CLI endpoint. Reopen explicitly refreshes
+or acquires ownership after that owner closes; the view does not retain a WAL
+read transaction ([qualification](../qualification/project-inspection-2026-10-09.md)).
+DP-01 remains partial: native creation still forces managed Original ownership
+(the linked checkbox applies to later imports), and final recovery acceptance
+remains.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

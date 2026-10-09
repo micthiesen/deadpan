@@ -3501,7 +3501,7 @@ impl DeadpanApp {
                                 .as_ref()
                                 .and_then(|workspace| workspace.read_only.clone())
                             {
-                                // A newer package viewed read-only: never "Saved".
+                                // An inspection view cannot save authored edits.
                                 let response = ui
                                     .push_id("header-save-state", |ui| {
                                         ui.colored_label(style::WARNING, "Read-only")

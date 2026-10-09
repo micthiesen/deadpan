@@ -20,9 +20,34 @@ the native app; headless commands keep their documented contracts.
 | Disk-full and permission errors stop commits and show unsaved status (20.4, 26.3) | **New** messaging; failure behavior verified | Real ENOSPC, EROFS and EACCES tests; persistent "Not saved" alert; never "saved" after a failed transaction. |
 | Missing media placeholder and relink (20.3, 26.3) | **New** native flow | Degraded open with a report, `:relink`, managed restore and linked relink verified against content identity. |
 | Open newer unsupported schema read-only with an explanation (20.4) | **Implemented** | Writers refuse a newer schema as `SchemaNewer`; read-only opens view it without writing (header **Read-only**, edits refused with the reason); `project view`. Older development schemas still refuse. See [newer packages](BACKUPS.md#packages-a-newer-deadpan-saved). |
+| Two windows inspect one project with one writable owner (20.5) | Implemented | A second native Open captures a fixed read-only view; explicit reopen refreshes it or acquires the writer after the owner closes. The owner retains its authenticated CLI endpoint. See [inspection](#inspecting-an-open-project). |
 | Rotating consistent backups, including before migration (20.4) | **Implemented** | Verified backups every 15 minutes while editing, on close, on request, before every restore and before a release migration, rotated hourly/daily/weekly within a budget; restore from the Storage panel (`:backups`) and `project restore`. See [backups](BACKUPS.md). |
 | Native restore when the database cannot open (20.4) | Implemented | Failed Open offers listed backups; inspection and separate confirmed replacement retain damaged files and open a new session. An unreadable manifest requires a typed project identity. Changed files or sessions refuse. See [damaged recovery](BACKUPS.md#a-database-that-no-longer-opens) and its [qualification](qualification/damaged-recovery-2026-10-08.md). |
 | Release migration policy (Gate F/G) | Policy and hook | [Release migration policy](BACKUPS.md#release-migration-policy): back up, migrate a copy, validate, promote atomically; exercised by a synthetic step and process kills. The production chain upgrades schema 66 to 67; [development formats](DEVELOPMENT_FORMATS.md) still refuse schemas 1-65. |
+
+## Inspecting an open project
+
+Opening a project another window or headless process owns shows **Read-only**
+and explains that this is a fixed view. Navigation, picture inspection and
+private parameter previews work; authored changes use the existing read-only
+refusal path. Opening the same package again explicitly refreshes its snapshot.
+If the other owner has closed, that Open may acquire a new writable session.
+A view never silently becomes writable when another window disappears.
+
+`ProjectStore::open_inspection` copies one SQLite read transaction, including
+committed WAL data, into a private temporary database. It releases the source
+transaction before validation and viewing, so a long-lived inspector cannot
+keep the editing window's WAL from being checkpointed. The copy uses at most
+256 pages per step, the existing 16 GiB database bound and a 60-second
+cooperative copy deadline. It runs on the project service, away from the UI;
+failures leave the previous workspace in place. SQLite closes before the
+private files are removed. Originals and accepted media still resolve through
+the project's existing verified readers. No writer marker, endpoint, recovery
+acknowledgment, backup or authored row belongs to the inspection view.
+
+A newer-schema native view uses the same private-copy boundary and its
+existing readable-document validation. Ordinary headless read-only APIs retain
+their existing behavior. See [qualification](qualification/project-inspection-2026-10-09.md).
 
 ## Detecting an unclean exit
 
@@ -280,6 +305,9 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 
 ## Remaining work
 
+- Native creation and interrupted initialization currently force managed
+  Original ownership. Offer explicit linked-Original creation as §20.3
+  requires; the existing linked checkbox applies to sound/legacy imports.
 - Actual File Provider eviction remains an owner check
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)

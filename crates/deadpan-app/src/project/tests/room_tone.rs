@@ -65,6 +65,14 @@ fn assert_rejected(service: &ProjectService, workspace: &Workspace, request: Pro
         _ => None,
     };
     let update = command(service, request);
+    // The service can clear its admission bit just before publishing the
+    // command reply. A previously queued background update is not that reply.
+    // Wait for the refusal itself, with the normal bounded test deadline.
+    let update = if update.error.is_some() {
+        update
+    } else {
+        wait(service, |update| update.error.is_some())
+    };
     assert!(update.error.is_some());
     assert_eq!(
         update.room_tone_error,

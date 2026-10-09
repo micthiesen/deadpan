@@ -13,6 +13,7 @@ use super::*;
 use crate::project::backups::SettingsStatus;
 use deadpan_store::backups::{BackupReason, list_backups};
 
+mod inspection;
 mod readonly;
 
 fn replace_text(d: &mut Driver<'_>, label: &str, value: &str) -> Result<(), String> {
@@ -238,6 +239,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()?;
 
     readonly::seed(d)?;
+    inspection::run(d, &path)?;
     // A package a newer Deadpan saved opens read-only.
     d.app_mut().submit(ProjectRequest::Close);
     d.wait_for("Project and its owned close backups finished", |app| {

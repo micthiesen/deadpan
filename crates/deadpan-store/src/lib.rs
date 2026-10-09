@@ -29,6 +29,7 @@ mod generation_scope;
 mod history;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host_owner;
+mod inspection;
 pub mod migration;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod object_storage;
@@ -106,6 +107,9 @@ pub enum AccessMode {
 
 pub struct ProjectStore {
     connection: Connection,
+    /// Private database copy for a stable inspection of another owner's project.
+    /// Declared after the connection so SQLite closes before its files are removed.
+    _inspection: Option<tempfile::TempDir>,
     /// Validated documents of committed revisions, including the head.
     documents: document_cache::DocumentCache,
     /// How opening validated the history.
@@ -328,6 +332,7 @@ impl ProjectStore {
         ))?);
         Ok(Self {
             connection,
+            _inspection: None,
             documents,
             opened: HistoryValidation {
                 revisions: 1,
@@ -374,6 +379,22 @@ impl ProjectStore {
     }
 
     pub fn open(path: &Path, mode: AccessMode) -> Result<Self, StoreError> {
+        Self::open_with_inspection(path, mode, false)
+    }
+
+    /// Capture a consistent, private read-only database while another owner
+    /// keeps editing. Media still resolves against the original package. The
+    /// short SQLite snapshot ends before this returns, so leaving the view
+    /// open cannot hold back the writer's WAL checkpoint. Run off the UI thread.
+    pub fn open_inspection(path: &Path) -> Result<Self, StoreError> {
+        Self::open_with_inspection(path, AccessMode::ReadOnly, true)
+    }
+
+    fn open_with_inspection(
+        path: &Path,
+        mode: AccessMode,
+        inspection: bool,
+    ) -> Result<Self, StoreError> {
         validate_extension(path)?;
         let package = fs::canonicalize(path)?;
         // A WAL database needs writable shared memory even to read, so a
@@ -383,19 +404,25 @@ impl ProjectStore {
             if mode == AccessMode::ReadWrite {
                 return Err(StoreError::ReadOnlyLocation(package));
             }
-            return Self::open_package(package.clone(), mode).map_err(|error| match error {
-                StoreError::Database(rusqlite::Error::SqliteFailure(failure, _))
-                    if failure.code == rusqlite::ErrorCode::CannotOpen =>
-                {
-                    StoreError::ReadOnlyLocation(package)
-                }
-                error => error,
-            });
+            return Self::open_package(package.clone(), mode, inspection).map_err(
+                |error| match error {
+                    StoreError::Database(rusqlite::Error::SqliteFailure(failure, _))
+                        if failure.code == rusqlite::ErrorCode::CannotOpen =>
+                    {
+                        StoreError::ReadOnlyLocation(package)
+                    }
+                    error => error,
+                },
+            );
         }
-        Self::open_package(package, mode)
+        Self::open_package(package, mode, inspection)
     }
 
-    fn open_package(package: PathBuf, mode: AccessMode) -> Result<Self, StoreError> {
+    fn open_package(
+        package: PathBuf,
+        mode: AccessMode,
+        inspection: bool,
+    ) -> Result<Self, StoreError> {
         let database = package.join("project.sqlite");
         require_regular_file(&database)?;
         // Probe the format read-only before acquiring writable state or enabling WAL.
@@ -466,6 +493,12 @@ impl ProjectStore {
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
+        let (connection, inspection) = if inspection {
+            let (connection, files) = inspection::capture(connection)?;
+            (connection, Some(files))
+        } else {
+            (connection, None)
+        };
         if readable_version(&connection, mode)? != newer_schema {
             return Err(StoreError::Integrity(
                 "database schema changed while opening".into(),
@@ -493,6 +526,7 @@ impl ProjectStore {
         .map_err(render_media::RenderMediaError::from)?;
         let mut store = Self {
             connection,
+            _inspection: inspection,
             documents: document_cache::DocumentCache::default(),
             opened: HistoryValidation::default(),
             context_resolver: None,

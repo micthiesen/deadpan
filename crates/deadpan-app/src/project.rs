@@ -216,8 +216,8 @@ pub struct Workspace {
     pub corrections: Option<Arc<OriginalCorrections>>,
     /// Receipt-derived automatic SDR/HDR branch of this committed revision.
     pub color: deadpan_cli::picture::OutputColorDecision,
-    /// Why this session cannot save: a package a newer Deadpan saved, opened
-    /// read-only for viewing. `None` for an ordinary writable session.
+    /// Why this session cannot save: another writable owner or a newer schema.
+    /// `None` for an ordinary writable session.
     pub read_only: Option<Arc<str>>,
 }
 

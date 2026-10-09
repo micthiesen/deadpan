@@ -233,6 +233,119 @@ fn a_package_from_a_newer_deadpan_opens_read_only_and_never_saves() {
 }
 
 #[test]
+fn a_second_window_inspects_without_replacing_the_owner_and_reopens_explicitly() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("two-windows.deadpan");
+    drop(seed_holds(&path, &["first"]));
+    let owner = ProjectService::new(Arc::new(|| {})).unwrap();
+    let owner_workspace = command(&owner, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let owner_id = deadpan_cli::host::Client::discover(&path)
+        .unwrap()
+        .unwrap()
+        .owner_id();
+    let viewer = ProjectService::new(Arc::new(|| {})).unwrap();
+    viewer.set_backup_interval_for_check(Duration::from_millis(1));
+    let opened = command(&viewer, ProjectRequest::Open(path.clone()));
+    assert!(opened.error.is_none(), "{:?}", opened.error);
+    let view = opened.workspace.unwrap();
+    assert!(
+        view.read_only
+            .as_deref()
+            .unwrap()
+            .contains("Another window")
+    );
+    assert_eq!(view.document, owner_workspace.document);
+    assert_eq!(
+        deadpan_cli::host::Client::discover(&path)
+            .unwrap()
+            .unwrap()
+            .owner_id(),
+        owner_id
+    );
+    let refused = command(
+        &viewer,
+        edit_request(
+            &view,
+            ProjectEdit::Split {
+                node: node("first"),
+                at: FrameDuration::new(4).unwrap(),
+            },
+        ),
+    );
+    assert!(
+        refused
+            .error
+            .as_deref()
+            .unwrap()
+            .contains("nothing can be saved")
+    );
+    assert_eq!(refused.workspace.unwrap().document, view.document);
+    let changed = split_first(&owner, &owner_workspace, 6);
+    // A read-only request sees its own captured history, not the owner's new edit.
+    let refused = command(
+        &viewer,
+        ProjectRequest::Undo {
+            expected_revision: view.document.revision_id().clone(),
+        },
+    );
+    assert!(refused.error.is_some());
+    assert_eq!(refused.workspace.unwrap().document, view.document);
+    assert!(backups_of(&path).is_empty());
+    let refreshed = command(&viewer, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    assert_ne!(refreshed.session, view.session);
+    assert_eq!(refreshed.document, changed.document);
+    assert!(refreshed.read_only.is_some());
+    assert_eq!(
+        deadpan_cli::host::Client::discover(&path)
+            .unwrap()
+            .unwrap()
+            .owner_id(),
+        owner_id
+    );
+    command(&owner, ProjectRequest::Close);
+    // Losing the other owner never silently turns the old view into a writer.
+    let refused = command(
+        &viewer,
+        ProjectRequest::Undo {
+            expected_revision: refreshed.document.revision_id().clone(),
+        },
+    );
+    assert!(refused.error.is_some());
+    let editable = command(&viewer, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    assert!(editable.read_only.is_none());
+    assert_eq!(editable.document, changed.document);
+    assert_ne!(
+        deadpan_cli::host::Client::discover(&path)
+            .unwrap()
+            .unwrap()
+            .owner_id(),
+        owner_id
+    );
+    let undone = command(
+        &viewer,
+        ProjectRequest::Undo {
+            expected_revision: editable.document.revision_id().clone(),
+        },
+    );
+    assert!(undone.error.is_none(), "{:?}", undone.error);
+    assert_eq!(
+        undone.workspace.unwrap().document.nodes(),
+        view.document.nodes()
+    );
+    command(&viewer, ProjectRequest::Close);
+    ProjectStore::open(&path, AccessMode::ReadOnly)
+        .unwrap()
+        .validate_full()
+        .unwrap();
+}
+
+#[test]
 fn a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open() {
     let scratch = tempfile::tempdir().unwrap();
     let root = scratch.path().canonicalize().unwrap();

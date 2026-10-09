@@ -1508,6 +1508,7 @@ impl Service {
     ) -> Result<Option<render::PreparedOpen>> {
         if !create
             && let Some(current) = &self.workspace
+            && current.read_only.is_none()
             && path.canonicalize().ok().as_ref() == Some(&current.path)
         {
             return Ok(None);
@@ -1525,9 +1526,11 @@ impl Service {
                     migration = Some(ProjectStore::migrate(&path).map_err(display)?);
                     ProjectStore::open(&path, AccessMode::ReadWrite)
                 }
-                // A newer Deadpan saved it: view it read-only, never rewrite.
-                Err(StoreError::NewerSchema { .. }) => {
-                    ProjectStore::open(&path, AccessMode::ReadOnly)
+                // A second window may inspect a fixed view without claiming
+                // the writer, changing its endpoint or delaying checkpoints.
+                // A newer package also remains strictly read-only.
+                Err(StoreError::AlreadyOpen | StoreError::NewerSchema { .. }) => {
+                    ProjectStore::open_inspection(&path)
                 }
                 result => result,
             }
@@ -1554,7 +1557,10 @@ impl Service {
             ),
             _ if create => "Project created".into(),
             _ if workspace.read_only.is_some() => {
-                "Opened read-only: a newer Deadpan saved this project. You can look at it; nothing can be saved here.".into()
+                format!(
+                    "Opened read-only: {}",
+                    workspace.read_only.as_deref().expect("checked")
+                )
             }
             _ => "Project opened".into(),
         };
@@ -2156,14 +2162,15 @@ fn snapshot(
         ),
     };
     let color = store.output_color(&document).map_err(display)?;
-    let read_only = store.newer_schema().map(|found| {
-        Arc::<str>::from(
-            StoreError::NewerSchema {
+    let read_only = (store.access_mode() == AccessMode::ReadOnly).then(|| {
+        Arc::<str>::from(match store.newer_schema() {
+            Some(found) => StoreError::NewerSchema {
                 found,
                 supported: deadpan_store::DATABASE_SCHEMA_VERSION,
             }
             .to_string(),
-        )
+            None => "Another window or process owns this project. This is a fixed view; nothing can be saved here. Reopen to refresh or, after the owner closes, edit here.".into(),
+        })
     });
     Ok(Workspace {
         read_only,
