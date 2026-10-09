@@ -120,8 +120,14 @@ it precedes the alphabetic-list/focus-scroll correction and the Help assertion
 update, which the focused release runs cover. The final 54 changed/new Rust
 files have canonical path-to-SHA-256 map digest
 `c34caaa2e2ed1c09ff965ae7c0fbaa03811426c0dab4a64565c4e40a2208774c`;
-the map is `/tmp/deadpan-takes-source-20261008.json`. The full replay suite is
-still running at this checkpoint.
+the map is `/tmp/deadpan-takes-source-20261008.json`. The full replay suite
+completed in 2,537.760 seconds: 71 scenarios passed, the stale `menus`
+assertion failed, and `ai-pause-ready` / `generated-picture` were skipped
+because they require explicit project fixtures. Its 7,328 checks and the
+initial failure are retained in
+`/tmp/deadpan-takes-full-20261008/summary.json`. Together with the corrective
+release `menus` and `takes` runs above, this completes the general replay
+verification in stages; it does not qualify the two fixture-only scenarios.
 
 Native QA uses a disposable real-media project at
 `/tmp/deadpan-takes-native-20261008/session.deadpan`, initialized from
