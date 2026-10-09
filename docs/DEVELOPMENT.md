@@ -3,19 +3,20 @@
 Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application targets Apple Silicon macOS; the specification proposes macOS 15 as the initial deployment baseline, pending qualification. Cargo installs/builds the locked Rust dependencies. Native development requires the macOS build tools.
 
 The CLI and source preview need no credentials or model weights. The complete
-workspace builds an isolated FFV1 helper and persistent source decoder against pinned LGPL FFmpeg 8.0.3.
+workspace builds its media helpers against pinned LGPL FFmpeg 8.0.3 with BSD
+libopus 1.6.1 statically linked into libavcodec.
 Build that developer dependency once on Apple Silicon macOS with Python 3, GnuPG,
 Clang, and Make available:
 
 ```sh
 python3 tools/media-qualification/compatible/build.py \
-  --work "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3" \
-  --output "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-build.json"
-export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
+  --work "$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-qualified" \
+  --output "$HOME/Library/Developer/Deadpan/ffmpeg-opus-build.json"
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-qualified/prefix"
 ```
 
 The work directory must be empty. The builder verifies the pinned archive hash
-and release signature, disables GPL/nonfree/version-3 components and networking,
+and FFmpeg release signature, runs libopus's tests, disables GPL/nonfree/version-3 components and networking,
 and records build/license/library evidence. The Cargo build refuses an absent or
 incompatible prefix. It never falls back to a system FFmpeg installation.
 Keep the prefix available when running Cargo-built executables. A packaged
@@ -26,10 +27,11 @@ These developer tools must never become end-user requirements.
 
 Use a durable development directory for this dependency. macOS's temporary-file
 cleanup removed headers from the former `/private/tmp/deadpan-ui-ffmpeg/prefix`.
-On 2026-10-06 the pinned builder rebuilt FFmpeg in the location above and verified
-its release signature, configuration and installed libraries. Reuse that prefix
-for local checks; the old temporary prefix remains only for existing development
-binaries until they are rebuilt. Do not relocate dylibs by copying alone: their
+On 2026-10-09 the pinned builder created the libopus-qualified prefix above;
+all sixteen libopus upstream tests passed. The native FFmpeg Opus decoder is
+disabled because measured SILK/hybrid output failed the reference comparison.
+The earlier durable `ffmpeg-8.0.3` prefix remains intact for archived binaries;
+new source builds require the libopus prefix. Do not relocate dylibs by copying alone: their
 install names must match the new prefix. The build report and command logs live
 beside the durable build, outside the repository.
 

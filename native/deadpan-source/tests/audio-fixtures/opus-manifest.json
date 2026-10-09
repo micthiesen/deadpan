@@ -1,0 +1,318 @@
+{
+  "producer": "Deterministic Opus/WebM fixtures from pinned repository PCM and VP9.\n\nDevelopment FFmpeg/libopus encodes and independently decodes the reference PCM;\nDeadpan uses its separately built, pinned FFmpeg/libopus decoder. --check is read-only.\n",
+  "license": "Repository-authored synthetic signals and pictures",
+  "files": [
+    {
+      "name": "opus-stereo-20.webm",
+      "bytes": 4718,
+      "sha256": "481b36e298f5d5eea74d0e3358e2b9484f815c85ee9dc0319e73f0a21c0be9fd",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-stereo-20.f32le",
+      "bytes": 65576,
+      "sha256": "15a3822b7d5c2587398cdb6c03d2994f6ec5ec785c258e090750803074506c3c",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-2.5.webm",
+      "bytes": 4369,
+      "sha256": "91bf2ac8cfee4e78ea3aaf2f53ba4461d840e9ebe71861e31d9b6da03f97f037",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "2.5",
+      "audio_offset": null,
+      "opus_configurations": [
+        28
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-2.5.f32le",
+      "bytes": 32788,
+      "sha256": "fd41c9973cf5df5dae960f185ecbf709cfaf0a860bffcd385ec57433e6e400e2",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "2.5",
+      "audio_offset": null,
+      "opus_configurations": [
+        28
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-60.webm",
+      "bytes": 2671,
+      "sha256": "a1855c54d12bd09eb2699307cd1847f489e5bf7faa9491f61b47de5dc2fdf28f",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "60",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-60.f32le",
+      "bytes": 32788,
+      "sha256": "caf77df6b41f37b4825f1d49c06464e339b2092866a5172d587f9a37da94f845",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "60",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-stereo-120.webm",
+      "bytes": 3380,
+      "sha256": "bdffa42373bbf78c9d027699ec5b396df6e9fdd205841d5385b9573eb57fd2af",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "120",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-stereo-120.f32le",
+      "bytes": 65576,
+      "sha256": "9b54da77ed16f96635f98ee319d51b6067db0b1ea08707dc09c57396f65a9c12",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "120",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av.webm",
+      "bytes": 7063,
+      "sha256": "c886348f15598f0e8aeed596a1450d84da9b3e72cb3ede193c43f0b3c0b2e515",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av.f32le",
+      "bytes": 65576,
+      "sha256": "15a3822b7d5c2587398cdb6c03d2994f6ec5ec785c258e090750803074506c3c",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-offset.webm",
+      "bytes": 7063,
+      "sha256": "b6ab95f1a6d616c01cc702c0681065b87211c9573314ced19f57becb1c2351e5",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0.125",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-offset.f32le",
+      "bytes": 65576,
+      "sha256": "15a3822b7d5c2587398cdb6c03d2994f6ec5ec785c258e090750803074506c3c",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0.125",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-audio-first.webm",
+      "bytes": 7063,
+      "sha256": "cc7e0989dc9c3841bb15a503b190e9219e399c09d0b765066ea0fb206cfd8fb2",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-audio-first.f32le",
+      "bytes": 65576,
+      "sha256": "15a3822b7d5c2587398cdb6c03d2994f6ec5ec785c258e090750803074506c3c",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-multi.webm",
+      "bytes": 11491,
+      "sha256": "afeb469f860aca218e1971bb5c4de253cee9734b8a7c6326dd1b8ce80d692814",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-av-multi.f32le",
+      "bytes": 65576,
+      "sha256": "15a3822b7d5c2587398cdb6c03d2994f6ec5ec785c258e090750803074506c3c",
+      "channels": 2,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": "0",
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-silk.webm",
+      "bytes": 820,
+      "sha256": "6d9efe3c59caedc7fe5278a5b31cde0d69298a7e78095d3d90cb76bbc36e206b",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        9
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-silk.f32le",
+      "bytes": 32788,
+      "sha256": "b020e63e7fe8f31b624c03209bcc80cd22b1d1c6d2b52369293e3aecd81b3fea",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        9
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-hybrid.webm",
+      "bytes": 1087,
+      "sha256": "ce6fff2e959e00a52fad9217e4f0cf4ed2c28efc4e59e6cd77a4091a3243ab9c",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        13
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-hybrid.f32le",
+      "bytes": 32788,
+      "sha256": "29955d6e6300ff18876046082c05083d3f6691a67365bfcafac73e9d5b766eec",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        13
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-preskip.webm",
+      "bytes": 4369,
+      "sha256": "a50a9e4f5fb05f6557a9c4f870ca4f80e28dfe562008e97fd3cd3e09ab40a62e",
+      "channels": 1,
+      "available_samples": 7717,
+      "packet_duration_ms": "2.5",
+      "audio_offset": null,
+      "opus_configurations": [
+        28
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-preskip.f32le",
+      "bytes": 30868,
+      "sha256": "7818c037f8201f685da0ebb626c3a3ca6646d5ea6e50a8897394230e9ef8391a",
+      "channels": 1,
+      "available_samples": 7717,
+      "packet_duration_ms": "2.5",
+      "audio_offset": null,
+      "opus_configurations": [
+        28
+      ],
+      "header_gain_q8_db": 0
+    },
+    {
+      "name": "opus-mono-gain.webm",
+      "bytes": 4284,
+      "sha256": "1522a889d8e7a27fa8f47a32d3f48ffd9b7bc40b39c12f5a87673c3ce7388910",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 512
+    },
+    {
+      "name": "opus-mono-gain.f32le",
+      "bytes": 32788,
+      "sha256": "8685a6923d41a303d33888986a670a4d7ac12bb0f3e60135d8543204b22a01fe",
+      "channels": 1,
+      "available_samples": 8197,
+      "packet_duration_ms": "20",
+      "audio_offset": null,
+      "opus_configurations": [
+        31
+      ],
+      "header_gain_q8_db": 512
+    }
+  ]
+}

@@ -594,7 +594,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         if audio.stream_index >= 33
             || audio.stream_index == info.stream_index
             || previous.is_some_and(|index| audio.stream_index <= index)
-            || audio.codec != "aac"
+            || !matches!(audio.codec.as_str(), "aac" | "opus")
             || audio.stream_index as usize > info.audio_streams.len()
             || audio
                 .sample_rate

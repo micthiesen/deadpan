@@ -58,6 +58,10 @@ fn main() {
         version.starts_with(VERSION_LINE),
         "FFmpeg must be exactly 8.0.3"
     );
+    assert!(
+        version.contains("--enable-libopus") && version.contains("--disable-decoder=opus"),
+        "FFmpeg must use the pinned libopus build with its unqualified native Opus decoder disabled"
+    );
     for (option, forbidden) in REQUIRED_CONFIGURATION
         .into_iter()
         .zip(FORBIDDEN_CONFIGURATION)

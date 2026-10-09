@@ -91,6 +91,144 @@ fn automatic_audio_selection_retains_exact_index_and_samples() {
 }
 
 #[test]
+fn opus_sample_clock_retains_raw_ticks_and_exact_padding_without_cumulative_drift() {
+    for (name, start, stream) in [
+        ("stereo-20", 0, 0),
+        ("mono-2.5", 0, 0),
+        ("mono-60", 0, 0),
+        ("stereo-120", 0, 0),
+        ("mono-silk", 0, 0),
+        ("mono-hybrid", 0, 0),
+        ("mono-preskip", 0, 0),
+        ("av", 0, 1),
+        ("av-offset", 6048, 1),
+    ] {
+        let bytes = fixture("audio-fixtures", &format!("opus-{name}.webm"));
+        let available = if name == "mono-preskip" { 7717 } else { 8197 };
+        let session = open(&bytes, stream);
+        let index = session.index();
+        let clock = index.stream().matroska_opus.unwrap();
+        assert_eq!(index.observations().len() as u64, clock.packet_count);
+        assert_eq!(index.decoded_samples(), clock.decoded_sample_count);
+        assert_eq!(index.valid_samples(), available as u64);
+        assert_eq!(
+            index.frames().first().unwrap().source_start,
+            start - i64::from(clock.pre_skip)
+        );
+        assert_eq!(
+            index
+                .frames()
+                .iter()
+                .find(|f| f.valid_start < f.valid_end)
+                .unwrap()
+                .valid_start,
+            start
+        );
+        assert_eq!(index.frames().last().unwrap().valid_end, start + available);
+        assert_eq!(
+            AudioIndexSnapshot::from_json(&index.to_json().unwrap()).unwrap(),
+            *index
+        );
+        let samples = session
+            .read_samples(
+                SourceAudioSample(start),
+                available as u32,
+                Duration::from_secs(2),
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .samples;
+        let reference = fixture("audio-fixtures", &format!("opus-{name}.f32le"));
+        assert_eq!(samples.len() * 4, reference.len());
+        for (actual, expected) in samples.iter().zip(reference.chunks_exact(4)) {
+            let expected = f32::from_le_bytes(expected.try_into().unwrap());
+            assert!(
+                (actual - expected).abs() < 0.0001,
+                "{name}: {actual} != {expected}"
+            );
+        }
+        assert!(
+            session
+                .read_samples(
+                    SourceAudioSample(start - 1),
+                    1,
+                    Duration::from_secs(2),
+                    &AtomicBool::new(false)
+                )
+                .is_err()
+        );
+        assert!(
+            session
+                .read_samples(
+                    SourceAudioSample(start + available),
+                    1,
+                    Duration::from_secs(2),
+                    &AtomicBool::new(false)
+                )
+                .is_err()
+        );
+        // Tampered receipts must not turn real discontinuities into continuous PCM.
+        let mut value = serde_json::to_value(index).unwrap();
+        value["observations"][1]["pts"] = serde_json::json!(index.observations()[1].pts + 2);
+        assert!(
+            AudioIndexSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err(),
+            "{name}"
+        );
+        let mut value = serde_json::to_value(index).unwrap();
+        value["stream"]["matroska_opus"]["codec_delay_ns"] =
+            serde_json::json!(clock.codec_delay_ns + 1000);
+        assert!(AudioIndexSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+}
+
+#[test]
+fn long_opus_clock_does_not_accumulate_rounding_and_cross_packet_preskip_remains_unavailable() {
+    use deadpan_media::audio_index::{AudioFrameObservation, AudioSkipSamples};
+    let source = fixture("audio-fixtures", "opus-mono-2.5.webm");
+    let session = open(&source, 0);
+    let mut stream = session.index().stream().clone();
+    let count = 100_000_u64;
+    let clock = stream.matroska_opus.as_mut().unwrap();
+    clock.packet_count = count;
+    clock.decoded_sample_count = count * 120;
+    clock.pre_skip = 600;
+    clock.codec_delay_ns = 12_500_000;
+    stream.initial_padding = 600;
+    let observations: Vec<_> = (0..count)
+        .map(|i| AudioFrameObservation {
+            pts: (i * 5).div_ceil(2) as i64 - 13,
+            discard: false,
+            decode_timestamp: None,
+            reported_duration: Some(2),
+            sample_count: 120,
+            sample_format: "flt".into(),
+            skip_samples: Some(AudioSkipSamples {
+                leading: if i == 0 { 600 } else { 0 },
+                trailing: if i + 1 == count { 83 } else { 0 },
+                leading_reason: 0,
+                trailing_reason: 0,
+            }),
+        })
+        .collect();
+    let index =
+        AudioIndexSnapshot::new(identity(&source), stream.clone(), observations.clone()).unwrap();
+    assert_eq!(index.valid_samples(), count * 120 - 600 - 83);
+    assert_eq!(index.frames()[5].valid_start, 0);
+    assert_eq!(
+        index.frames().last().unwrap().valid_end,
+        (count * 120 - 683) as i64
+    );
+    for f in &index.frames()[..5] {
+        assert_eq!(f.valid_start, f.valid_end);
+    }
+    let mut drift = observations;
+    for (i, frame) in drift.iter_mut().enumerate() {
+        frame.pts += (i / 1000) as i64;
+    }
+    assert!(AudioIndexSnapshot::new(identity(&source), stream, drift).is_err());
+}
+
+#[test]
 fn automatic_audio_selection_preserves_absence_cancellation_and_cache_limits() {
     let no_audio = fixture("fixtures", "rotated90.mp4");
     assert!(

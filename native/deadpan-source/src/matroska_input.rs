@@ -2,6 +2,7 @@
 //! Payloads are skipped, but every element and every deferred seek target is checked.
 
 use crate::{DecodeControl, SourceDecodeError, input::InputLimits};
+mod opus;
 mod vp9;
 use std::{
     collections::BTreeSet, fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant,
@@ -200,15 +201,26 @@ impl Reader<'_> {
         }
         Ok(value)
     }
-    fn float(&mut self, span: Span) -> Result<()> {
+    fn sint(&mut self, span: Span) -> Result<i64> {
+        let value = self.uint(span)?;
+        let shift = 64 - span.len() * 8;
+        Ok(((value << shift) as i64) >> shift)
+    }
+    fn float_value(&mut self, span: Span) -> Result<f64> {
         require(matches!(span.len(), 4 | 8), "invalid Matroska float size")?;
         let bits = self.uint(span)?;
-        let finite = if span.len() == 4 {
-            f32::from_bits(u32::try_from(bits).expect("four-byte scalar")).is_finite()
+        let value = if span.len() == 4 {
+            f64::from(f32::from_bits(
+                u32::try_from(bits).expect("four-byte scalar"),
+            ))
         } else {
-            f64::from_bits(bits).is_finite()
+            f64::from_bits(bits)
         };
-        require(finite, "nonfinite Matroska float")
+        require(value.is_finite(), "nonfinite Matroska float")?;
+        Ok(value)
+    }
+    fn float(&mut self, span: Span) -> Result<()> {
+        self.float_value(span).map(|_| ())
     }
     fn fixed(&mut self, span: Span, size: u64) -> Result<()> {
         require(span.len() == size, "invalid fixed Matroska field size")?;
@@ -250,10 +262,18 @@ struct Cue {
     cluster: u64,
     relative: Option<u64>,
     block: Option<u64>,
+    track: u64,
+}
+struct Track {
+    number: u64,
+    opus: Option<crate::audio::MatroskaOpusClock>,
+    packets: u64,
 }
 struct Admission<'a> {
     reader: Reader<'a>,
     track: Option<u64>,
+    tracks: Vec<Track>,
+    timestamp_scale_ns: u64,
     webm: bool,
     is_vp9: bool,
     video: vp9::Video,
@@ -316,10 +336,10 @@ impl Admission<'_> {
             }
             singleton(&mut seen, e.id)?;
             match e.id {
-                0x2ad7b1 => require(
-                    self.reader.uint(e.body)? > 0,
-                    "zero Matroska timestamp scale",
-                )?,
+                0x2ad7b1 => {
+                    self.timestamp_scale_ns = self.reader.uint(e.body)?;
+                    require(self.timestamp_scale_ns > 0, "zero Matroska timestamp scale")?;
+                }
                 0x4489 => self.reader.float(e.body)?,
                 0x7ba9 | 0x4d80 | 0x5741 => self.reader.string(e.body)?,
                 0x73a4 => self.reader.fixed(e.body, 16)?,
@@ -405,19 +425,38 @@ impl Admission<'_> {
             require(e.id == 0xae, "unqualified Matroska Tracks field")?;
             tracks += 1;
             limit(tracks <= 33, "Matroska track count exceeds hard limit")?;
-            require(
-                tracks == 1,
-                "Matroska/WebM currently admits only one video track and no audio",
-            )?;
             self.track(e.body)?;
         }
-        require(tracks == 1, "one Matroska video track is required")
+        require(tracks > 0, "Matroska requires at least one track")
+    }
+    fn audio(&mut self, span: Span) -> Result<(u64, f64)> {
+        let mut cursor = span.start;
+        let mut seen = BTreeSet::new();
+        let (mut channels, mut rate) = (1, 8000.0);
+        while cursor < span.end {
+            let e = self.reader.element(&mut cursor, span.end, 4, true)?;
+            if self.reader.padding(e, &mut seen)? {
+                continue;
+            }
+            singleton(&mut seen, e.id)?;
+            match e.id {
+                0x9f => channels = self.reader.uint(e.body)?,
+                0xb5 => rate = self.reader.float_value(e.body)?,
+                0x6264 => {
+                    require(self.reader.uint(e.body)? <= 64, "invalid Opus BitDepth")?;
+                }
+                _ => return Err(error("invalid_input", "unqualified Matroska Audio field")),
+            }
+        }
+        Ok((channels, rate))
     }
     fn track(&mut self, span: Span) -> Result<()> {
         let mut cursor = span.start;
         let mut seen = BTreeSet::new();
         let mut codec = Vec::new();
         let mut private = None;
+        let (mut number, mut kind, mut audio) = (None, None, None);
+        let (mut delay, mut preroll, mut default_duration) = (None, 0, None);
         while cursor < span.end {
             let e = self.reader.element(&mut cursor, span.end, 3, true)?;
             if self.reader.padding(e, &mut seen)? {
@@ -426,22 +465,32 @@ impl Admission<'_> {
             singleton(&mut seen, e.id)?;
             match e.id {
                 0xd7 => {
-                    let number = self.reader.uint(e.body)?;
+                    let value = self.reader.uint(e.body)?;
                     require(
-                        number > 0 && number < (1_u64 << 56) - 1,
+                        value > 0 && value < (1_u64 << 56) - 1,
                         "invalid Matroska TrackNumber",
                     )?;
-                    self.track = Some(number);
+                    require(
+                        !self.tracks.iter().any(|track| track.number == value),
+                        "duplicate Matroska TrackNumber",
+                    )?;
+                    // Keep the stream ordinal in TrackEntry order, as FFmpeg does.
+                    // TrackNumber is an independent container identity.
+                    number = Some(value);
                 }
-                0x83 => require(
-                    self.reader.uint(e.body)? == 1,
-                    "only Matroska video tracks are admitted",
-                )?,
+                0x83 => kind = Some(self.reader.uint(e.body)?),
                 0x86 => codec = self.reader.blob(e.body, STRING_BYTES)?,
                 0x63a2 => {
                     private = Some(self.reader.blob(e.body, CODEC_BYTES)?);
                 }
-                0xe0 => self.video(e.body)?,
+                0xe0 => {
+                    require(
+                        self.track.is_none(),
+                        "only one Matroska video track is admitted",
+                    )?;
+                    self.video(e.body)?;
+                }
+                0xe1 => audio = Some(self.audio(e.body)?),
                 0x9c | 0x55ee => require(
                     self.reader.uint(e.body)? == 0,
                     "Matroska lacing and additional payloads are not admitted",
@@ -450,14 +499,12 @@ impl Admission<'_> {
                 0x73c5 | 0xb9 | 0x88 | 0x55aa | 0x55ab | 0x55ac | 0x55ad | 0x55ae | 0x55af => {
                     self.reader.uint(e.body)?;
                 }
-                0x56aa | 0x56bb => require(
-                    self.reader.uint(e.body)? == 0,
-                    "Matroska video codec delay and preroll are not qualified",
-                )?,
+                0x56aa => delay = Some(self.reader.uint(e.body)?),
+                0x56bb => preroll = self.reader.uint(e.body)?,
                 0x23e383 => {
                     let value = self.reader.uint(e.body)?;
                     require(value > 0, "Matroska DefaultDuration must be positive")?;
-                    self.default_duration = Some(value);
+                    default_duration = Some(value);
                 }
                 _ => {
                     return Err(error(
@@ -468,33 +515,79 @@ impl Admission<'_> {
             }
         }
         require(
-            [0xd7, 0x83, 0x86, 0xe0].iter().all(|id| seen.contains(id)),
-            "Matroska video track lacks required fields",
+            [0xd7, 0x83, 0x86].iter().all(|id| seen.contains(id)),
+            "Matroska track lacks required fields",
         )?;
-        match codec.as_slice() {
-            b"V_FFV1" if !self.webm => {
-                crate::video_codec::validate_ffv1(
-                    private
-                        .as_deref()
-                        .ok_or_else(|| error("invalid_input", "FFV1 needs CodecPrivate"))?,
-                    self.reader.limits.max_pixels,
-                    self.reader.limits.max_dimension,
-                )?;
+        let opus = if kind == Some(2) && codec == b"A_OPUS" {
+            require(
+                !seen.contains(&0xe0)
+                    && default_duration
+                        .is_none_or(|value| (2_500_000..=120_000_000).contains(&value)),
+                "Opus track has video or unqualified DefaultDuration declarations",
+            )?;
+            let (channels, rate) =
+                audio.ok_or_else(|| error("invalid_input", "Opus requires Audio settings"))?;
+            Some(opus::header(
+                private
+                    .as_deref()
+                    .ok_or_else(|| error("invalid_input", "Opus requires CodecPrivate"))?,
+                channels,
+                rate,
+                delay,
+                preroll,
+                self.timestamp_scale_ns,
+                self.reader.limits,
+            )?)
+        } else {
+            require(
+                kind == Some(1) && seen.contains(&0xe0) && audio.is_none(),
+                "unqualified Matroska track: expected video or Opus audio",
+            )?;
+            require(
+                delay.unwrap_or(0) == 0 && preroll == 0,
+                "Matroska video codec delay and preroll are not qualified",
+            )?;
+            match codec.as_slice() {
+                b"V_FFV1" if !self.webm => {
+                    crate::video_codec::validate_ffv1(
+                        private
+                            .as_deref()
+                            .ok_or_else(|| error("invalid_input", "FFV1 needs CodecPrivate"))?,
+                        self.reader.limits.max_pixels,
+                        self.reader.limits.max_dimension,
+                    )?;
+                }
+                b"V_VP9" => {
+                    require(
+                        private.is_none(),
+                        "VP9 CodecPrivate extensions are not qualified",
+                    )?;
+                    self.is_vp9 = true;
+                }
+                _ => {
+                    return Err(error(
+                        "unsupported_codec",
+                        "only FFV1 Matroska or VP9 Matroska/WebM video is admitted",
+                    ));
+                }
             }
-            b"V_VP9" => {
-                require(
-                    private.is_none(),
-                    "VP9 CodecPrivate extensions are not qualified",
-                )?;
-                self.is_vp9 = true;
-            }
-            _ => {
-                return Err(error(
-                    "unsupported_codec",
-                    "only FFV1 Matroska or VP9 Matroska/WebM video is admitted",
-                ));
-            }
-        }
+            self.track = number;
+            self.default_duration = default_duration;
+            None
+        };
+        self.tracks.push(Track {
+            number: number.expect("required TrackNumber"),
+            opus,
+            packets: 0,
+        });
+        limit(
+            self.tracks
+                .iter()
+                .filter(|track| track.opus.is_some())
+                .count()
+                <= 32,
+            "Matroska audio track count exceeds hard limit",
+        )?;
         self.reader.check()
     }
     fn tags(&mut self, span: Span, kind: u32, depth: u32) -> Result<()> {
@@ -596,7 +689,8 @@ impl Admission<'_> {
                 if self.reader.padding(field, &mut fields)? {
                     continue;
                 }
-                // Exactly one admitted track means only one position per point.
+                // This closed subset retains one position per CuePoint. Separate
+                // points may refer to different qualified tracks.
                 singleton(&mut fields, field.id)?;
                 match field.id {
                     0xb3 => {
@@ -649,7 +743,7 @@ impl Admission<'_> {
             }
         }
         require(
-            track.is_some() && track == self.track,
+            track.is_some_and(|number| self.tracks.iter().any(|track| track.number == number)),
             "Matroska cue references an unqualified track",
         )?;
         let cluster =
@@ -658,10 +752,11 @@ impl Admission<'_> {
             cluster,
             relative,
             block,
+            track: track.expect("checked track"),
         });
         Ok(())
     }
-    fn block(&mut self, e: Element) -> Result<()> {
+    fn block(&mut self, e: Element, timestamp: u64) -> Result<u64> {
         self.reader.packets += 1;
         limit(
             self.reader.packets <= self.reader.limits.max_packets.min(PACKETS),
@@ -673,10 +768,16 @@ impl Admission<'_> {
             "Matroska Block exceeds configured packet bytes",
         )?;
         let (track, track_bytes) = self.reader.vint(e.body.start, e.body.end, false)?;
-        require(
-            Some(track) == self.track,
-            "Matroska Block references an unqualified track",
-        )?;
+        let entry = self
+            .tracks
+            .iter_mut()
+            .find(|entry| entry.number == track)
+            .ok_or_else(|| {
+                error(
+                    "invalid_input",
+                    "Matroska Block references an unqualified track",
+                )
+            })?;
         require(
             e.body.len() > track_bytes + 3,
             "truncated or empty Matroska Block",
@@ -685,7 +786,44 @@ impl Admission<'_> {
         require(flags & 0x06 == 0, "Matroska laced blocks are not admitted")?;
         let allowed = if e.id == SIMPLE_BLOCK { 0x89 } else { 0x08 };
         require(flags & !allowed == 0, "unsupported Matroska Block flags")?;
-        if self.is_vp9 && self.vp9.is_none() {
+        let relative = i16::from_be_bytes([
+            self.reader.byte(e.body.start + track_bytes)?,
+            self.reader.byte(e.body.start + track_bytes + 1)?,
+        ]);
+        let absolute =
+            i64::try_from(i128::from(timestamp) + i128::from(relative)).map_err(|_| {
+                error(
+                    "invalid_input",
+                    "Matroska block timestamp exceeds signed coordinates",
+                )
+            })?;
+        if let Some(opus) = &mut entry.opus {
+            require(
+                flags & 0x09 == 0,
+                "Opus invisible or discardable blocks are not qualified",
+            )?;
+            if entry.packets == 0 {
+                opus.first_block_timestamp = absolute;
+            }
+            let samples = opus::packet(
+                &mut self.reader,
+                Span {
+                    start: e.body.start + track_bytes + 3,
+                    end: e.body.end,
+                },
+            )?;
+            opus.packet_count += 1;
+            opus.decoded_sample_count = opus
+                .decoded_sample_count
+                .checked_add(samples)
+                .ok_or_else(|| error("resource_limit", "Opus sample count overflow"))?;
+            limit(
+                opus.decoded_sample_count <= self.reader.limits.max_decoded_samples,
+                "Opus decoded samples exceed configured limit",
+            )?;
+        }
+        entry.packets += 1;
+        if Some(track) == self.track && self.is_vp9 && self.vp9.is_none() {
             let start = e.body.start + track_bytes + 3;
             let prefix = self.reader.blob(
                 Span {
@@ -696,11 +834,14 @@ impl Admission<'_> {
             )?;
             self.vp9 = Some(self.video.configuration(&prefix)?);
         }
-        self.reader.charge(track_bytes + 3)
+        self.reader.charge(track_bytes + 3)?;
+        Ok(track)
     }
-    fn block_group(&mut self, span: Span) -> Result<()> {
+    fn block_group(&mut self, span: Span, timestamp: u64) -> Result<()> {
         let mut cursor = span.start;
         let mut seen = BTreeSet::new();
+        let mut block = None;
+        let mut discard = 0;
         while cursor < span.end {
             let e = self.reader.element(&mut cursor, span.end, 3, true)?;
             if self.reader.padding(e, &mut seen)? {
@@ -708,10 +849,11 @@ impl Admission<'_> {
             }
             singleton(&mut seen, e.id)?;
             match e.id {
-                BLOCK => self.block(e)?,
-                0x9b | 0xfb | 0x75a2 => {
+                BLOCK => block = Some(e),
+                0x9b | 0xfb => {
                     self.reader.uint(e.body)?;
                 }
+                0x75a2 => discard = self.reader.sint(e.body)?,
                 _ => {
                     return Err(error(
                         "invalid_input",
@@ -720,14 +862,25 @@ impl Admission<'_> {
                 }
             }
         }
+        let track = self.block(
+            block
+                .ok_or_else(|| error("invalid_input", "Matroska BlockGroup requires one Block"))?,
+            timestamp,
+        )?;
+        let discard_scaled = i128::from(discard) * 48_000;
+        let discard_samples = (discard_scaled + 500_000_000) / 1_000_000_000;
         require(
-            seen.contains(&BLOCK),
-            "Matroska BlockGroup requires one Block",
+            discard == 0
+                || (Some(track) != self.track
+                    && (1..=120_000_000).contains(&discard)
+                    && (discard_scaled - discard_samples * 1_000_000_000).abs() < 48_000),
+            "unqualified Matroska DiscardPadding",
         )
     }
     fn cluster(&mut self, span: Span) -> Result<()> {
         let mut cursor = span.start;
         let mut seen = BTreeSet::new();
+        let mut timestamp = 0;
         while cursor < span.end {
             let e = self.reader.element(&mut cursor, span.end, 2, true)?;
             if self.reader.padding(e, &mut seen)? {
@@ -740,14 +893,17 @@ impl Admission<'_> {
                         "Matroska cluster timestamp must precede blocks",
                     )?;
                     if e.id == SIMPLE_BLOCK {
-                        self.block(e)?;
+                        self.block(e, timestamp)?;
                     } else {
-                        self.block_group(e.body)?;
+                        self.block_group(e.body, timestamp)?;
                     }
                 }
                 0xe7 | 0xa7 | 0xab => {
                     singleton(&mut seen, e.id)?;
-                    self.reader.uint(e.body)?;
+                    let value = self.reader.uint(e.body)?;
+                    if e.id == 0xe7 {
+                        timestamp = value;
+                    }
                 }
                 _ => return Err(error("invalid_input", "unqualified Matroska Cluster field")),
             }
@@ -768,7 +924,10 @@ impl Admission<'_> {
             match e.id {
                 SEEK_HEAD => self.seek_head(e.body)?,
                 INFO => self.info(e.body)?,
-                TRACKS => self.tracks(e.body)?,
+                TRACKS => {
+                    require(seen.contains(&INFO), "Matroska Info must precede Tracks")?;
+                    self.tracks(e.body)?;
+                }
                 TAGS => self.tags(e.body, TAGS, 2)?,
                 CUES => self.cues(e.body)?,
                 CLUSTER => {
@@ -784,6 +943,10 @@ impl Admission<'_> {
         require(
             seen.contains(&INFO) && seen.contains(&TRACKS) && self.reader.packets > 0,
             "Matroska requires Info, Tracks, and video Blocks",
+        )?;
+        require(
+            self.tracks.iter().all(|track| track.packets > 0),
+            "Matroska track has no blocks",
         )?;
         self.targets(span)
     }
@@ -816,10 +979,9 @@ impl Admission<'_> {
             while self.cues.first().is_some_and(|cue| cue.cluster == offset) {
                 let cue = self.cues.pop_first().expect("checked cue");
                 require(e.id == CLUSTER, "Matroska cue target is not a Cluster")?;
-                wanted.insert((cue.relative, cue.block));
+                wanted.insert((cue.relative, cue.block, cue.track));
             }
             if !wanted.is_empty() {
-                wanted.remove(&(None, None));
                 let mut at = e.body.start;
                 let mut block = 0;
                 while at < e.body.end && !wanted.is_empty() {
@@ -827,9 +989,26 @@ impl Admission<'_> {
                     if matches!(child.id, SIMPLE_BLOCK | BLOCK_GROUP) {
                         block += 1;
                         let relative = child.start - e.body.start;
-                        wanted.remove(&(Some(relative), None));
-                        wanted.remove(&(None, Some(block)));
-                        wanted.remove(&(Some(relative), Some(block)));
+                        let mut packet = child;
+                        if child.id == BLOCK_GROUP {
+                            let mut inside = child.body.start;
+                            while inside < child.body.end {
+                                let candidate =
+                                    self.reader.element(&mut inside, child.body.end, 3, false)?;
+                                if candidate.id == BLOCK {
+                                    packet = candidate;
+                                    break;
+                                }
+                            }
+                            require(packet.id == BLOCK, "Matroska cue group has no Block")?;
+                        }
+                        let (track, _) =
+                            self.reader
+                                .vint(packet.body.start, packet.body.end, false)?;
+                        wanted.remove(&(None, None, track));
+                        wanted.remove(&(Some(relative), None, track));
+                        wanted.remove(&(None, Some(block), track));
+                        wanted.remove(&(Some(relative), Some(block), track));
                     }
                 }
                 require(
@@ -845,8 +1024,9 @@ impl Admission<'_> {
     }
 }
 
-pub(crate) fn validate_video(
+pub(crate) fn validate_selection(
     file: &File,
+    policy: crate::input::Selection,
     limits: InputLimits,
     control: DecodeControl<'_>,
 ) -> Result<crate::input::Admission> {
@@ -877,6 +1057,8 @@ pub(crate) fn validate_video(
             packets: 0,
         },
         track: None,
+        tracks: Vec::new(),
+        timestamp_scale_ns: 1_000_000,
         webm: false,
         is_vp9: false,
         video: vp9::Video::default(),
@@ -900,9 +1082,42 @@ pub(crate) fn validate_video(
     )?;
     admission.segment(segment.body)?;
     admission.reader.check()?;
+    use crate::input::Selection;
+    let selected = match policy {
+        Selection::Video => {
+            if admission.track.is_none() {
+                return Err(error(
+                    "unsupported_streams",
+                    "Matroska contains no video track",
+                ));
+            }
+            None
+        }
+        Selection::FirstAudio => admission
+            .tracks
+            .iter()
+            .position(|track| track.opus.is_some()),
+        Selection::Audio(index) => Some(index as usize),
+    };
+    let matroska_opus = if policy == Selection::Video {
+        None
+    } else {
+        Some(
+            selected
+                .and_then(|index| admission.tracks.get(index))
+                .and_then(|track| track.opus)
+                .ok_or_else(|| {
+                    error(
+                        "unsupported_streams",
+                        "selected Matroska audio track is unavailable",
+                    )
+                })?,
+        )
+    };
     Ok(crate::input::Admission {
         io_bytes: admission.reader.read_bytes,
-        audio: None,
+        audio: selected.map(|index| u32::try_from(index).expect("bounded stream ordinal")),
+        matroska_opus,
         aperture: None,
         vp9: admission.vp9,
         nominal_frame_duration_ns: admission
@@ -914,7 +1129,7 @@ pub(crate) fn validate_video(
 
 #[cfg(test)]
 fn validate(file: &File, limits: InputLimits, control: DecodeControl<'_>) -> Result<u64> {
-    Ok(validate_video(file, limits, control)?.io_bytes)
+    Ok(validate_selection(file, crate::input::Selection::Video, limits, control)?.io_bytes)
 }
 
 #[cfg(test)]
@@ -1045,6 +1260,198 @@ mod tests {
                 &[element(0x53ab, &id.to_be_bytes()), uint(0x53ac, position)].concat(),
             ),
         )
+    }
+
+    fn opus_track(number: u64, private: &[u8], delay: u64) -> Vec<u8> {
+        element(
+            0xae,
+            &[
+                uint(0xd7, number),
+                uint(0x83, 2),
+                element(0x86, b"A_OPUS"),
+                element(0x63a2, private),
+                uint(0x56aa, delay),
+                uint(0x56bb, 80_000_000),
+                element(
+                    0xe1,
+                    &[
+                        uint(0x9f, 2),
+                        element(0xb5, &48_000_f64.to_bits().to_be_bytes()),
+                    ]
+                    .concat(),
+                ),
+            ]
+            .concat(),
+        )
+    }
+    fn opus_head() -> Vec<u8> {
+        [
+            b"OpusHead".to_vec(),
+            vec![1, 2],
+            312_u16.to_le_bytes().to_vec(),
+            48_000_u32.to_le_bytes().to_vec(),
+            vec![0, 0, 0],
+        ]
+        .concat()
+    }
+    fn opus_document(track: &[u8], payload: &[u8]) -> Vec<u8> {
+        document(
+            &[
+                element(INFO, &uint(0x2ad7b1, 1_000_000)),
+                element(TRACKS, track),
+                element(
+                    CLUSTER,
+                    &[
+                        uint(0xe7, 0),
+                        element(SIMPLE_BLOCK, &[&[0x82, 0, 0, 0x80][..], payload].concat()),
+                    ]
+                    .concat(),
+                ),
+            ]
+            .concat(),
+        )
+    }
+    fn audio_check(bytes: &[u8]) -> Result<crate::input::Admission> {
+        validate_selection(
+            &file(bytes),
+            crate::input::Selection::FirstAudio,
+            limits(),
+            control(),
+        )
+    }
+
+    #[test]
+    fn opus_headers_packet_framing_and_allocation_limits_are_checked_before_native_open() {
+        let head = opus_head();
+        let track = opus_track(2, &head, 6_500_000);
+        let admitted = audio_check(&opus_document(&track, &[0xf8, 1])).unwrap();
+        assert_eq!(admitted.audio, Some(0));
+        assert_eq!(admitted.matroska_opus.unwrap().decoded_sample_count, 960);
+        for (at, value) in [(0, b'x'), (8, 2), (9, 3), (18, 1), (12, 0)] {
+            let mut changed = head.clone();
+            changed[at] = value;
+            assert!(
+                audio_check(&opus_document(
+                    &opus_track(2, &changed, 6_500_000),
+                    &[0xf8, 1]
+                ))
+                .is_err()
+            );
+        }
+        assert!(audio_check(&opus_document(&opus_track(2, &head, 6_501_000), &[0xf8, 1])).is_err());
+        for packet in [
+            &[0xfb, 0][..],
+            &[0xfb, 49],
+            &[0xfb, 7],
+            &[0xf9, 1],
+            &[0xfa, 252],
+            &[0xfa, 20, 1],
+            &[0xfb, 0x41, 255],
+        ] {
+            assert!(
+                audio_check(&opus_document(&track, packet)).is_err(),
+                "{packet:?}"
+            );
+        }
+        let doc = opus_document(&track, &[0xf8, 1]);
+        for limits in [
+            InputLimits {
+                max_channels: 1,
+                ..limits()
+            },
+            InputLimits {
+                max_sample_rate: 44_100,
+                ..limits()
+            },
+            InputLimits {
+                max_decoded_samples: 959,
+                ..limits()
+            },
+        ] {
+            assert!(
+                validate_selection(
+                    &file(&doc),
+                    crate::input::Selection::FirstAudio,
+                    limits,
+                    control()
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn opus_discard_padding_requires_a_positive_sample_count_with_sub_nanosecond_error() {
+        let track = opus_track(2, &opus_head(), 6_500_000);
+        for (padding, admitted) in [
+            (0_i64, true),
+            (20_833, true),
+            (20_834, true),
+            (20_835, false),
+            (10_000, false),
+            (-20_833, false),
+            (120_000_000, true),
+            (120_000_001, false),
+        ] {
+            let bytes = document(
+                &[
+                    element(INFO, &uint(0x2ad7b1, 1_000_000)),
+                    element(TRACKS, &track),
+                    element(
+                        CLUSTER,
+                        &[
+                            uint(0xe7, 0),
+                            element(
+                                BLOCK_GROUP,
+                                &[
+                                    element(BLOCK, &[0x82, 0, 0, 0, 0xf8, 1]),
+                                    element(0x75a2, &padding.to_be_bytes()),
+                                ]
+                                .concat(),
+                            ),
+                        ]
+                        .concat(),
+                    ),
+                ]
+                .concat(),
+            );
+            assert_eq!(audio_check(&bytes).is_ok(), admitted, "{padding}");
+        }
+    }
+
+    #[test]
+    fn mixed_tracks_preserve_stream_ordinals_and_cues_must_name_the_actual_track() {
+        let audio = opus_track(2, &opus_head(), 6_500_000);
+        let video = element(0xae, &track_body());
+        let audio_block = element(SIMPLE_BLOCK, &[0x82, 0, 0, 0x80, 0xf8, 1]);
+        for (tracks, selected) in [
+            ([video.clone(), audio.clone()].concat(), 1),
+            ([audio.clone(), video.clone()].concat(), 0),
+        ] {
+            let prefix = [
+                element(INFO, &uint(0x2ad7b1, 1_000_000)),
+                element(TRACKS, &tracks),
+            ]
+            .concat();
+            let cluster = element(
+                CLUSTER,
+                &[uint(0xe7, 0), block(), audio_block.clone()].concat(),
+            );
+            let bytes = document(&[prefix.clone(), cluster.clone()].concat());
+            assert_eq!(audio_check(&bytes).unwrap().audio, Some(selected));
+            let position = [
+                uint(0xf7, 2),
+                uint(0xf1, prefix.len() as u64),
+                uint(0xf0, uint(0xe7, 0).len() as u64),
+            ]
+            .concat();
+            let wrong = element(
+                CUES,
+                &element(0xbb, &[uint(0xb3, 0), element(0xb7, &position)].concat()),
+            );
+            assert!(audio_check(&document(&[prefix, cluster, wrong].concat())).is_err());
+        }
+        assert!(audio_check(&opus_document(&[audio.clone(), audio].concat(), &[0xf8, 1])).is_err());
     }
 
     #[test]
@@ -1193,7 +1600,7 @@ mod tests {
         );
         rejection(
             &document(&[element(INFO, &[]), tracks, cluster()].concat()),
-            "only one",
+            "duplicate Matroska TrackNumber",
         );
     }
 

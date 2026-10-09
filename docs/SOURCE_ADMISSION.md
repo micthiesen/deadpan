@@ -32,11 +32,12 @@ its own PTS. A different VP9 render size or raster, interlaced declaration,
 contradictory metadata, unsupported profile or malformed index fails explicitly.
 See [VP9 qualification](qualification/vp9-sources-2026-10-09.md).
 
-This MP4 path does not complete audio-bearing WebM/Opus, AV1, VP9 HDR or the full §16.3
+This MP4 path does not complete AV1, VP9 HDR or the full §16.3
 matrix. Those remain implementation and qualification work.
 
 Video Matroska admission requires one `V_FFV1` or SDR `V_VP9` track; WebM
-admits `V_VP9`. Both currently require video-only files, finite Segment and Cluster
+admits `V_VP9`. Both also admit up to 32 mono/stereo `A_OPUS` tracks, including
+audio-only files. Both require finite Segment and Cluster
 lengths, and a closed element grammar. Every cluster and packet declaration is
 checked, including metadata following picture payloads. SeekHead and Cue targets
 must resolve to actual structural boundaries, not matching bytes inside a packet.
@@ -44,15 +45,30 @@ The scanner caps metadata and header reads at 16 MiB, metadata elements at one
 million, depth at 16, strings at 4 KiB and CodecPrivate at 64 KiB. A small bounded
 read window avoids charging a large page for each sparse packet header. Lacing,
 compression, encryption, attachments, chapters, unknown elements and multiple
-tracks remain rejected. SimpleTags must be flat, with at most 1,024 in the file;
+video tracks remain rejected. SimpleTags must be flat, with at most 1,024 in the file;
 this bounds FFmpeg's language-dependent metadata expansion and dictionary work.
-The audio adapter still rejects Matroska.
+Track numbers must be unique; stream ordinals preserve TrackEntry order. Cue
+positions must resolve to a block of the declared track. Info precedes Tracks,
+which precede Clusters. The closed CuePoint grammar admits one track position
+per point.
+
+Opus requires exact version-one, mapping-family-zero `OpusHead`, matching mono
+or stereo channels, explicit 48 kHz declarations, CodecDelay with strictly less
+than one nanosecond error from exact pre-skip, and 80 ms SeekPreRoll. Positive
+terminal DiscardPadding must identify whole samples with the same precision.
+Every packet's RFC 6716
+TOC, frame count, CBR/VBR lengths and padding are checked before FFmpeg parsing.
+Each frame is at most 1,275 bytes and each packet at most 120 ms; aggregate
+packet/sample limits apply. Manual decoding must account for every admitted
+packet and physical sample. The decoder explicitly selects pinned libopus;
+native FFmpeg Opus is disabled. See [Opus qualification](qualification/opus-sources-2026-10-09.md)
+and [sample-clock semantics](SOURCE_AUDIO.md#opus-container-and-sample-clocks).
 
 VP9 Matroska/WebM uses explicit SDR range, matrix, transfer, primaries and
 left/top-left chroma siting, plus its first bounded keyframe header. Profiles
 0/2 and eight/ten-bit 4:2:0 must agree with container dimensions and color.
 Every subsequent packet uses the same native VP9 guard as MP4. Alpha, stereo,
-cropping, nonzero codec delay/preroll and VP9 CodecPrivate extensions remain
+cropping, nonzero video codec delay/preroll and VP9 CodecPrivate extensions remain
 unqualified. Display dimensions supply SAR to both metadata and the decoder.
 The nominal `DefaultDuration` is retained separately for checked cadence
 selection; source timestamps remain in their measured container clock.

@@ -71,6 +71,47 @@ fn snapshot_value() -> Value {
 }
 
 #[test]
+fn opus_webm_receipts_preserve_selected_track_and_independent_exact_audio_endpoints() {
+    for (name, audio_stream, audio_start, video_start) in [
+        ("opus-av.webm", 1, 0, 0),
+        ("opus-av-offset.webm", 1, 6048, 0),
+        ("opus-av-audio-first.webm", 0, 0, 0),
+        ("opus-av-multi.webm", 2, 0, 0),
+    ] {
+        let input = input("deadpan-source/tests/audio-fixtures", name);
+        let video = video(input.clone(), "opus-original");
+        let audio = audio(input, audio_stream);
+        let captured =
+            DecodedSourceQualification::from_sessions(Some(&video), Some(&audio)).unwrap();
+        let snapshot = captured.snapshot();
+        assert_eq!(
+            snapshot
+                .basis_candidate()
+                .unwrap()
+                .unwrap()
+                .basis
+                .frame_rate,
+            FrameRate::new(30000, 1001).unwrap()
+        );
+        let timing = snapshot
+            .derive_timing(FrameRate::new(30000, 1001).unwrap())
+            .unwrap();
+        let sound = timing.audio.unwrap();
+        assert_eq!(sound.span.start().ticks, audio_start);
+        assert_eq!(sound.span.end().ticks, audio_start + 8197);
+        assert_eq!(timing.video.unwrap().span.start().ticks, video_start);
+        let json = snapshot.to_json().unwrap();
+        assert_eq!(
+            SourceQualificationSnapshot::from_json(&json)
+                .unwrap()
+                .to_json()
+                .unwrap(),
+            json
+        );
+    }
+}
+
+#[test]
 fn telecine_receipts_preserve_field_cadence_terminal_time_and_original_audio() {
     use deadpan_core::SourceFrameId;
     let rate = FrameRate::new(60000, 1001).unwrap();

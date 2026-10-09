@@ -10,6 +10,13 @@
     "key_sha256": "397b3becedcd5a98769967ff1ff8501ddc89f8368b8f766e4701377d7dbaabe5",
     "signing_key_fingerprint": "FCF986EA15E6E293A5644F10B4322F04D67658D8"
   },
+  "opus": {
+    "version": "1.6.1",
+    "archive_url": "https://downloads.xiph.org/releases/opus/opus-1.6.1.tar.gz",
+    "archive_sha256": "6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1",
+    "checksum_source": "https://opus-codec.org/downloads/",
+    "license": "BSD-3-Clause"
+  },
   "rsmpeg": {
     "repository": "https://github.com/larksuite/rsmpeg.git",
     "commit": "b21fcfde8bb1ffdc179504e370e330385baa9819",

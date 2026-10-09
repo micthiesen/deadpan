@@ -417,7 +417,13 @@ fn downscaled_rotated_anamorphic_and_wide_gamut_originals_keep_their_interpretat
 /// each written after the previous one into one private file (out of picture
 /// order, as a resumed build may), then join them at packet level and verify
 /// the result as a single encoding is verified.
-fn build_in_ranges(original: &Original, scratch: &Path, target: u64) -> Result<ProxySidecar> {
+fn build_in_ranges(
+    original: &Original,
+    scratch: &Path,
+    target: u64,
+    executable: &Path,
+    stall: Duration,
+) -> Result<ProxySidecar> {
     let plan = requested_plan(original);
     let ranges = proxy_segments(original.index.index(), target);
     let data = private_output(&scratch.join("segments.bin"))?;
@@ -439,15 +445,17 @@ fn build_in_ranges(original: &Original, scratch: &Path, target: u64) -> Result<P
         )
         .expect("SDR range request");
         let report = encode_proxy_retrying(
-            worker(),
+            executable,
             &original.input,
             &request,
-            || Ok(((), data.try_clone()?)),
-            &cancelled,
-            ProxyEncodeOptions {
-                stall: TEST_STALL,
-                pause: None,
+            || {
+                // Match production resume: teardown has completed before stage
+                // runs again, so discard only this attempt's uncommitted tail.
+                data.set_len(offset)?;
+                Ok(((), data.try_clone()?))
             },
+            &cancelled,
+            ProxyEncodeOptions { stall, pause: None },
         )?
         .1;
         assert_eq!(
@@ -517,7 +525,7 @@ fn ranges_joined_at_packet_level_verify_as_one_encoding() -> Result {
             assert_eq!(count, ranges, "{name}");
         }
         let scratch = tempfile::tempdir()?;
-        let sidecar = build_in_ranges(&original, scratch.path(), target)?;
+        let sidecar = build_in_ranges(&original, scratch.path(), target, worker(), TEST_STALL)?;
         let frames = original.index.index().frames();
         let proxy_frames = sidecar.index.index().frames();
         assert_eq!(proxy_frames.len(), frames.len(), "{name}");
@@ -579,7 +587,10 @@ fn an_assembly_refuses_a_misplaced_or_damaged_range() -> Result {
             worker(),
             &original.input,
             &request,
-            || Ok(((), data.try_clone()?)),
+            || {
+                data.set_len(offset)?;
+                Ok(((), data.try_clone()?))
+            },
             &cancelled,
             ProxyEncodeOptions {
                 stall: TEST_STALL,
@@ -831,6 +842,25 @@ fn a_wrong_plan_is_refused_by_the_worker() -> Result {
 struct Stub {
     directory: tempfile::TempDir,
     path: PathBuf,
+}
+
+#[test]
+fn a_stalled_range_discards_partial_bytes_before_retry_and_then_assembles() -> Result {
+    let _slot = vt_slot();
+    let original = original("cfr-bframes.mp4")?;
+    let stub = Stub::new("hang", 1)?;
+    let scratch = tempfile::tempdir()?;
+    let sidecar = build_in_ranges(
+        &original,
+        scratch.path(),
+        60,
+        &stub.path,
+        Duration::from_secs(1),
+    )?;
+    assert_eq!(stub.runs(), 3, "one stalled attempt, two completed ranges");
+    assert!(!stub.hung_processes_alive(), "the stalled group is gone");
+    assert_eq!(sidecar.index.index().frames().len(), 120);
+    Ok(())
 }
 
 impl Stub {

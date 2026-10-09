@@ -262,6 +262,7 @@ mod tests {
         AudioIndexSnapshot::new(
             SourceContentIdentity::new([7; 32], 100).unwrap(),
             AudioStreamDescriptor {
+                matroska_opus: None,
                 stream_index: 0,
                 codec: "pcm_s16le".into(),
                 time_base: SourceTimeBase::new(1, 48_000).unwrap(),

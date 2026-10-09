@@ -4,12 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Opus source audio](../qualification/opus-sources-2026-10-09.md) adds mono/stereo
+WebM/Matroska sounds and audio-bearing Originals. Use the new pinned FFmpeg
+prefix with static libopus 1.6.1; FFmpeg's native Opus decoder failed SILK/hybrid
+reference comparisons. Retained container metadata and packet sample counts
+establish exact sample positions, with raw timestamps checked against a bounded
+quantization envelope. Pre-skip can span packets; terminal padding remains
+unavailable. Release exports verify 48 pictures/four zero-offset audio windows;
+the isolated-home bundle verifies 60 pictures/five windows and eight catalog
+sounds. Read the qualification for final checks and remaining limitations.
+Ogg, other mapping families, broader container grammars and the full source/
+operation matrix remain open. DP-02 and DP-16 stay partial.
+
 [Video-only VP9 WebM/Matroska](../qualification/webm-vp9-sources-2026-10-09.md)
 preserves SDR depth/range, container SAR, raw millisecond timestamps and VFR.
 Bounded first-key admission feeds the existing packet guard; checked nominal
 cadence preserves fractional project rates. Ten public Render cases verify
-166 pictures. Opus and audio-bearing WebM remain unimplemented; the retained
-Opus probe demonstrates why coarse timestamps need explicit sample semantics.
+166 pictures. The later Opus milestone above supplies explicit sample semantics
+for audio-bearing inputs while preserving raw container observations.
 Quantized CFR remains ineligible for the strict proxy recipe; exact Original
 decoding remains available. Read the qualification for evidence and final checks.
 
@@ -19,7 +31,7 @@ left/top-left chroma. Bounded configuration and packet checks preserve
 superframe and existing-reference timing, and reject changing or unhandled
 display geometry. Seven real inputs pass debug/release public Render: 112 pictures,
 four signal-bearing audio windows at zero offset. Read the qualification for
-final regression, release and packaging evidence. Audio-bearing WebM/Opus, VP9 HDR, AV1,
+final regression, release and packaging evidence. VP9 HDR, AV1,
 other required codecs and the full source/operation matrix remain open.
 
 [SDR HEVC and H.264 High10](../qualification/sdr-source-codecs-2026-10-09.md)

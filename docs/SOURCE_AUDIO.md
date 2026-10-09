@@ -10,15 +10,16 @@ Both paths share header/opening byte and deadline budgets; absence of admitted
 audio fails explicitly. Its persistent software decoder retains raw
 frame PTS/DTS, reported duration, original sample rate, channel interpretation,
 sample format/count, discard flag and manual skip side data. It returns owned
-interleaved f32 samples without resampling, downmixing, gain, clipping or automatic
+interleaved f32 samples without resampling, downmixing, additional gain, clipping or automatic
 padding removal. PCM16 conversion is exactly `sample / 32768`.
 
-The tested subset is AAC-LC in MP4 and signed 16-bit little-endian PCM in WAV.
+The tested subset is AAC-LC in MP4, mono/stereo Opus in finite WebM/Matroska,
+and signed 16-bit little-endian PCM in WAV. Opus applies its declared header gain.
 The opening guard admits a strict nonfragmented MP4 grammar and PCM16 RIFF/WAV
 with either a plain format header or the closed extensible format described in
 [source admission](SOURCE_ADMISSION.md). The extensible form retains its explicit
 speaker mask; sixteen valid bits and the PCM subtype are checked before demuxing.
-Matroska, fragmented/encrypted/compressed container structures and unqualified
+Fragmented/encrypted/compressed container structures and unqualified
 metadata grammars are rejected before FFmpeg parsing. Other codecs, custom/ambisonic layouts, unsupported
 sample formats, corrupt frames and changed stream contracts fail explicitly.
 Unspecified channel slots remain unspecified; they are not assigned speakers.
@@ -53,13 +54,43 @@ authored documents.
 
 Exact indexing currently requires integral original sample coordinates, positive
 measured frame durations, and contiguous physical decoded sample positions.
-Unsupported gaps, coarse clocks, cross-frame skip counts and contradictory
+For AAC/PCM, unsupported gaps, coarse clocks, cross-frame skip counts and contradictory
 duration/skip evidence are explicit failures. Within each frame, explicit skip
 and discard metadata and the measured frame duration determine available
 coverage. Excluded spans remain unavailable. Sample-range reads return an error
 for padding, gaps or out-of-range requests; they never substitute silence.
 
-Container duration and codec-parameter padding remain observations. They do not
+## Opus container and sample clocks
+
+Mono/stereo Opus in finite WebM/Matroska uses pinned libopus 1.6.1, through
+FFmpeg 8.0.3, with owned interleaved float output. CELT, SILK and hybrid modes
+are exercised. Ogg, multichannel mapping families and other container grammars
+remain unqualified. No source-clock behavior is inferred from a file extension.
+
+`matroska_opus` retains the checked pre-skip, nanosecond CodecDelay, timestamp
+scale, first raw Block timestamp, packet count and physical sample count.
+The first Block names an exact 48 kHz sample; subtracting pre-skip establishes
+the physical decode origin. The codec's decoded counts supply subsequent
+sample positions. Every raw frame PTS remains in the receipt and must agree
+with that origin-based clock within one original tick, capped at one millisecond.
+The check reverses only FFmpeg's documented rounding of CodecDelay to ticks.
+It never accumulates rounded packet durations, resamples, inserts silence,
+drops packets or aligns to audio events. Coarse metadata cannot distinguish a
+deliberate gap inside that tick envelope from quantization; this is an explicit continuity
+interpretation, not a claim that raw timestamps have sample precision.
+
+Raw reported durations must agree with physical or explicitly trimmed packet
+duration within that same tick. Exact leading pre-skip may span packets;
+terminal DiscardPadding must represent whole samples within strictly less than
+one nanosecond and removes only that declared count. Extra leading skips,
+interior trailing skips, discard flags, mismatched counts or drift outside the
+tick envelope fail. Deserialization reconstructs and rechecks every coordinate.
+The final endpoint uses physical samples and explicit trims, never the rounded
+container duration. See the [qualification](qualification/opus-sources-2026-10-09.md).
+
+## Shared indexing and cache limits
+
+For AAC/PCM, container duration and codec-parameter padding remain observations. They do not
 override measured frame endpoints or establish an editorial origin. The offset
 AAC fixture starts at sample 95072 without explicit leading-skip evidence. The
 host preserves those samples, including the 1024 samples that independent fixture

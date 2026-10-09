@@ -28,8 +28,8 @@
 #define IO_BUFFER_BYTES 32768
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS 33
-#define DEMUXERS "mov,wav"
-#define CODECS "aac,pcm_s16le"
+#define DEMUXERS "mov,wav,matroska,webm"
+#define CODECS "aac,pcm_s16le,libopus"
 #define DECODE_MANUAL 0
 #define DECODE_ORDINARY 1
 struct DeadpanAudio {
@@ -150,6 +150,9 @@ static int runtime(DeadpanAudio *s) {
     if (avcodec_version() != LIBAVCODEC_VERSION_INT || avformat_version() != LIBAVFORMAT_VERSION_INT ||
         avutil_version() != LIBAVUTIL_VERSION_INT)
         return fail(s, "runtime_mismatch", "loaded FFmpeg libraries differ from pinned 8.0.3");
+    if (!strstr(avcodec_configuration(), "--enable-libopus") ||
+        !strstr(avcodec_configuration(), "--disable-decoder=opus"))
+        return fail(s, "runtime_mismatch", "loaded FFmpeg does not use the qualified libopus decoder build");
     const char *required[] = {"--disable-gpl", "--disable-nonfree", "--disable-version3", "--disable-network"};
     const char *forbidden[] = {"--enable-gpl", "--enable-nonfree", "--enable-version3", "--enable-network"};
     const char *configs[] = {avcodec_configuration(), avformat_configuration(), avutil_configuration()};
@@ -163,7 +166,7 @@ static int runtime(DeadpanAudio *s) {
     return 1;
 }
 static int allowed_codec(enum AVCodecID id) {
-    return id == AV_CODEC_ID_AAC || id == AV_CODEC_ID_PCM_S16LE;
+    return id == AV_CODEC_ID_AAC || id == AV_CODEC_ID_PCM_S16LE || id == AV_CODEC_ID_OPUS;
 }
 static int layout(DeadpanAudio *s, const AVChannelLayout *value, DeadpanAudioLayout *out) {
     if (!av_channel_layout_check(value) || value->nb_channels <= 0 ||
@@ -225,7 +228,10 @@ static int table(DeadpanAudio *s, int initial) {
         (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", avcodec_get_name(p->codec_id));
     } else if (stream->index != s->info.stream_index || stream->time_base.num != s->info.time_base_num ||
         stream->time_base.den != s->info.time_base_den || p->sample_rate != s->info.sample_rate ||
-        !same_layout(&channels, &s->header_layout) || strcmp(avcodec_get_name(p->codec_id), s->info.codec))
+        (!same_layout(&channels, &s->header_layout) &&
+         !(p->codec_id == AV_CODEC_ID_OPUS && s->header_layout.order == AV_CHANNEL_ORDER_UNSPEC &&
+           channels.channels == s->header_layout.channels && same_layout(&channels, &s->info.channel_layout))) ||
+        strcmp(avcodec_get_name(p->codec_id), s->info.codec))
         return fail(s, "stream_changed", "selected audio interpretation changed while decoding");
     return 1;
 }
@@ -310,7 +316,10 @@ static int open_impl(DeadpanAudio *s) {
         if (av_opt_set_int(s->format->priv_data, "max_size", packet_size, 0) < 0)
             return fail(s, "invalid_configuration", "could not apply bounded WAV packet size");
     }
-    const AVCodec *codec = avcodec_find_decoder_by_name(s->info.codec);
+    // The native FFmpeg Opus implementation did not match the qualified SILK
+    // and hybrid reference signals. Select the pinned libopus wrapper explicitly;
+    // never fall back to whichever decoder happens to register first.
+    const AVCodec *codec = avcodec_find_decoder_by_name(p->codec_id == AV_CODEC_ID_OPUS ? "libopus" : s->info.codec);
     if (!codec || codec->id != p->codec_id) return fail(s, "unsupported_codec", "qualified software audio decoder is unavailable");
     s->decoder = avcodec_alloc_context3(codec);
     s->packet = av_packet_alloc(); s->frame = av_frame_alloc();
@@ -321,6 +330,7 @@ static int open_impl(DeadpanAudio *s) {
     s->decoder->max_samples = (int64_t)s->limits.max_samples_per_frame * s->limits.max_channels;
     s->decoder->err_recognition = AV_EF_EXPLODE | AV_EF_CAREFUL;
     s->decoder->pkt_timebase = stream->time_base;
+    if (p->codec_id == AV_CODEC_ID_OPUS) s->decoder->request_sample_fmt = AV_SAMPLE_FMT_FLT;
     if (s->mode == DECODE_MANUAL) s->decoder->flags2 |= AV_CODEC_FLAG2_SKIP_MANUAL;
     else s->decoder->flags2 &= ~AV_CODEC_FLAG2_SKIP_MANUAL;
     s->decoder->opaque = s;
@@ -394,7 +404,8 @@ static int validate_frame(DeadpanAudio *s) {
     if (f->sample_rate != s->info.sample_rate || !same_layout(&channels, &s->info.channel_layout))
         return fail(s, "stream_changed", "decoded audio rate or layout differs from selected stream contract");
     if ((s->decoder->codec_id == AV_CODEC_ID_AAC && f->format != AV_SAMPLE_FMT_FLTP) ||
-        (s->decoder->codec_id != AV_CODEC_ID_AAC && f->format != AV_SAMPLE_FMT_S16))
+        (s->decoder->codec_id == AV_CODEC_ID_OPUS && f->format != AV_SAMPLE_FMT_FLT) ||
+        (s->decoder->codec_id == AV_CODEC_ID_PCM_S16LE && f->format != AV_SAMPLE_FMT_S16))
         return fail(s, "unsupported_sample_format", "decoded audio sample representation is unqualified");
     s->current = (DeadpanAudioFrame){.pts=f->pts,.duration=f->duration,.dts=f->pkt_dts,.nb_samples=f->nb_samples,
         .sample_rate=f->sample_rate,.sample_format=f->format,.channel_layout=channels,
@@ -489,6 +500,7 @@ static int copy_impl(DeadpanAudio *s, DeadpanAudioFrame *out, float *samples, si
         if ((n & 1023) == 0 && check(s) < 0) return -1;
         for (size_t c = 0; c < channels; c++) {
             float value = planar ? ((const float *)f->extended_data[c])[n] :
+                f->format == AV_SAMPLE_FMT_FLT ? ((const float *)f->extended_data[0])[n * channels + c] :
                 (float)((const int16_t *)f->extended_data[0])[n * channels + c] / 32768.0f;
             if (!isfinite(value)) return fail(s, "invalid_samples", "decoded audio contains a non-finite sample");
             samples[n * channels + c] = value;

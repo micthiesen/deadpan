@@ -526,6 +526,34 @@ fn webm_originals_render_the_measured_clock_and_sample_aspect() -> Result {
 }
 
 #[test]
+fn opus_webm_originals_render_with_exact_source_samples_and_verified_encoded_audio() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("Opus Render evidence: {}", root.display());
+    for name in [
+        "opus-av",
+        "opus-av-offset",
+        "opus-av-audio-first",
+        "opus-av-multi",
+    ] {
+        let fixture = recipes::opus_original(&root.join(name), name)?;
+        let movie = render(&fixture, &root.join(name).join("exports"))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        std::fs::write(
+            root.join(format!("{name}.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{name}: {}", report["failures"]);
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert!(report["summary"]["signal_windows"].as_u64() > Some(0));
+        assert_eq!(report["frame_rate"], json!([30000, 1001]));
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+    }
+    Ok(())
+}
+
+#[test]
 fn vp9_reference_pictures_render_without_adding_or_losing_timeline_frames() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("VP9 reference Render evidence: {}", root.display());

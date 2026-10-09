@@ -5,6 +5,8 @@ use deadpan_core::SourceTimeBase;
 use serde::{Deserialize, Serialize};
 
 use crate::source_index::{MAX_SOURCE_INDEX_JSON_BYTES, SourceContentIdentity};
+mod opus;
+pub use opus::MatroskaOpusClock;
 
 pub const AUDIO_INDEX_VERSION: u32 = 1;
 pub const AUDIO_DECODER_CONTRACT: &str = "ffmpeg-8.0.3/audio-manual-skip-v1";
@@ -110,6 +112,8 @@ pub struct AudioStreamDescriptor {
     pub initial_padding: u32,
     pub trailing_padding: u32,
     pub seek_preroll: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub matroska_opus: Option<MatroskaOpusClock>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -216,7 +220,8 @@ impl AudioIndexSnapshot {
         stream.channel_layout.validate()?;
         if stream.stream_index >= 33
             || !(1..=384_000).contains(&stream.sample_rate)
-            || !matches!(stream.codec.as_str(), "aac" | "pcm_s16le")
+            || !matches!(stream.codec.as_str(), "aac" | "pcm_s16le" | "opus")
+            || (stream.codec == "opus") != stream.matroska_opus.is_some()
         {
             return Err(AudioIndexError::Metadata("stream contract").into());
         }
@@ -230,18 +235,27 @@ impl AudioIndexSnapshot {
         let mut decoded_samples = 0_u64;
         let mut valid_samples = 0_u64;
         let mut previous_end = None;
-        for observation in &observations {
+        let opus = stream
+            .matroska_opus
+            .map(|clock| clock.validate(&stream))
+            .transpose()?;
+        let mut opus_leading = stream.matroska_opus.map_or(0, |clock| clock.pre_skip);
+        for (ordinal, observation) in observations.iter().enumerate() {
             check()?;
             if observation.sample_count == 0
                 || observation.sample_count > 65_536
                 || !matches!(
                     (stream.codec.as_str(), observation.sample_format.as_str()),
-                    ("pcm_s16le", "s16") | ("aac", "fltp")
+                    ("pcm_s16le", "s16") | ("aac", "fltp") | ("opus", "flt")
                 )
             {
                 return Err(AudioIndexError::Metadata("frame samples or format").into());
             }
-            let start = sample_position(observation.pts, &stream)?;
+            let start = if let Some(clock) = &opus {
+                clock.position(observation, decoded_samples)?
+            } else {
+                sample_position(observation.pts, &stream)?
+            };
             if previous_end.is_some_and(|end| end != start) {
                 return Err(
                     AudioIndexError::Metadata("discontinuous physical decode positions").into(),
@@ -252,7 +266,12 @@ impl AudioIndexSnapshot {
                 .reported_duration
                 .filter(|duration| *duration > 0)
                 .ok_or(AudioIndexError::Metadata("missing measured frame duration"))?;
-            let duration_samples = sample_position(duration, &stream)?;
+            let duration_samples = if let Some(clock) = &opus {
+                clock.duration(observation, duration)?;
+                count
+            } else {
+                sample_position(duration, &stream)?
+            };
             if duration_samples <= 0 || duration_samples > count {
                 return Err(
                     AudioIndexError::Metadata("frame duration exceeds physical samples").into(),
@@ -261,6 +280,27 @@ impl AudioIndexSnapshot {
             let skip = observation.skip_samples;
             let mut leading = i64::from(skip.map_or(0, |skip| skip.leading));
             let trailing = i64::from(skip.map_or(0, |skip| skip.trailing));
+            if opus.is_some() {
+                if observation.discard
+                    || leading
+                        != if ordinal == 0 {
+                            i64::from(opus_leading)
+                        } else {
+                            0
+                        }
+                    || (ordinal + 1 != observations.len() && trailing != 0)
+                    || skip
+                        .is_some_and(|skip| skip.leading_reason != 0 || skip.trailing_reason != 0)
+                {
+                    return Err(AudioIndexError::Metadata(
+                        "Opus skip evidence disagrees with header or terminal packet",
+                    )
+                    .into());
+                }
+                let consume = opus_leading.min(observation.sample_count);
+                opus_leading -= consume;
+                leading = i64::from(consume);
+            }
             if leading + trailing > count {
                 return Err(AudioIndexError::Metadata(
                     "cross-frame skip requires further qualification",
@@ -302,8 +342,17 @@ impl AudioIndexSnapshot {
                 .checked_add((end_offset - leading) as u64)
                 .ok_or(AudioIndexError::Limit)?;
         }
-        if valid_samples == 0 {
+        if valid_samples == 0 || opus_leading != 0 {
             return Err(AudioIndexError::Metadata("no measured valid samples").into());
+        }
+        if stream.matroska_opus.is_some_and(|clock| {
+            clock.packet_count != observations.len() as u64
+                || clock.decoded_sample_count != decoded_samples
+        }) {
+            return Err(AudioIndexError::Metadata(
+                "Opus decode did not preserve every admitted packet and sample",
+            )
+            .into());
         }
         check()?;
         Ok(Self {
@@ -380,6 +429,7 @@ mod tests {
         AudioIndexSnapshot::new(
             SourceContentIdentity::new([3; 32], 100).unwrap(),
             AudioStreamDescriptor {
+                matroska_opus: None,
                 stream_index: 32,
                 codec: "aac".into(),
                 time_base: SourceTimeBase::new(1, 48000).unwrap(),

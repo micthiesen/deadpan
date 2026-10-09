@@ -4,12 +4,24 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Opus source audio](qualification/opus-sources-2026-10-09.md) adds mono/stereo
+WebM/Matroska sounds and audio-bearing Originals, with CELT, SILK and hybrid
+decoding through pinned libopus 1.6.1. Exact pre-skip and terminal trim define
+available samples; every raw timestamp is checked against the origin-based
+sample clock. Audio-first and multiple-audio tracks preserve stream identity.
+Release verification covers 48 pictures and four zero-offset audio windows;
+the packaged app covers 60 pictures, five zero-offset windows and eight catalog
+sounds. The qualification records final regression and packaging evidence. Ogg,
+multichannel mappings, broader container grammar and the remaining format and
+operation matrix stay open; DP-02 and DP-16 remain partial.
+
 [Video-only VP9 WebM/Matroska](qualification/webm-vp9-sources-2026-10-09.md)
 now preserves explicit eight/ten-bit SDR color, anamorphic display, measured
 millisecond timestamps and VFR intervals through native decoding and public
 Render. Checked nominal cadence retains fractional project rates. Ten inputs
 verify 166 exported pictures, including thirty project frames from twelve VFR
-pictures. Opus/audio-bearing WebM, quantized-CFR proxies, missing-color
+pictures. Opus/audio-bearing WebM is covered by the newer milestone above;
+quantized-CFR proxies, missing-color
 interpretations and the remaining format matrix stay open; DP-02 and DP-16
 remain partial. The qualification records final checks and known limitations.
 
@@ -19,7 +31,7 @@ clocks. Hidden altref pictures and repeated existing frames preserve the
 authored timeline. Native pixel/seek tests, source receipts, real proxies and
 debug/release public Render pass, including 112 VP9 pictures and four zero-offset
 signal windows. Final gate results are recorded in the qualification. DP-02
-and DP-16 remain partial for audio-bearing WebM/Opus, VP9 HDR, AV1, other required codecs
+and DP-16 remain partial for VP9 HDR, AV1, other required codecs
 and the full source/operation matrix.
 
 [SDR HEVC and H.264 High10](qualification/sdr-source-codecs-2026-10-09.md)

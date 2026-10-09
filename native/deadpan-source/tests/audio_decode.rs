@@ -293,7 +293,7 @@ fn first_audio_does_not_fall_back_to_video_or_relax_admission() {
         )
         .err()
         .unwrap(),
-        "unsupported_container",
+        "unsupported_streams",
     );
     let cancelled = AtomicBool::new(true);
     assert_code(
@@ -645,7 +645,7 @@ fn wav_packet_sizes_are_bounded_before_demux_allocation() {
     )
     .err()
     .unwrap();
-    assert_code(error, "unsupported_container");
+    assert_code(error, "unsupported_streams");
 }
 
 #[test]

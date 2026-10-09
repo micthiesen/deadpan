@@ -1,10 +1,10 @@
 # Persistent source decoder
 
-The separate `audio` module decodes an explicitly selected AAC-LC or signed16
-little-endian PCM stream at its original rate and channel layout. It retains raw
+The separate `audio` module decodes an explicitly selected AAC-LC, mono/stereo
+Opus or signed16 little-endian PCM stream at its original rate and channel layout. It retains raw
 PTS/DTS, duration, sample count/format, discard and manual skip evidence, and
-returns owned interleaved f32 without resampling, mixing or gain. AAC/MP4 and
-PCM/WAV have actual fixture coverage. A strict header guard checks allocation
+returns owned interleaved f32 without resampling, mixing or additional gain.
+AAC/MP4, Opus/WebM/Matroska and PCM/WAV have actual fixture coverage. A strict header guard checks allocation
 sizes and table expansion before FFmpeg opens the audio container. Other audio
 container grammars, custom layouts and unsupported representations fail.
 See [source audio](../../docs/SOURCE_AUDIO.md) for host indexing, private PCM
@@ -74,20 +74,21 @@ process memory/CPU limit and must stay off UI/audio callback threads.
 
 MP4/MOV admits one qualified H.264, HEVC or VP9 video stream and up to 32
 ignored AAC streams. Finite Matroska admits one FFV1 or SDR VP9 video track;
-WebM admits one SDR VP9 video track. Both currently reject audio-bearing files.
+WebM admits one SDR VP9 video track. Both admit up to 32 qualified Opus tracks,
+including audio-only files through the separate audio decoder.
 The bounded audio inventory
 retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
 `AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
 codec allowlist contains only `h264,ffv1,hevc,vp9`; pinned FFmpeg propagates that allowlist
-to probe decoder initialization and rejects AAC before opening its decoder.
-Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
+to probe decoder initialization and rejects AAC/Opus before opening their decoders.
+Audio-bearing fixtures therefore emit expected audio-not-on-whitelist diagnostics.
 The measured fixtures are H.264/HEVC/VP9 in MP4, FFV1/VP9 in Matroska and
-video-only VP9 in WebM; this is not
+VP9 with mono/stereo Opus in WebM; this is not
 qualification of every profile/container combination. Other video codecs require
-further fixtures and explicit admission. No audio decode or VideoToolbox
-acceleration is implemented here.
+further fixtures and explicit admission. The picture decoder never decodes audio
+or uses VideoToolbox acceleration.
 
 VP9 MP4 profile 0/eight-bit and profile 2/ten-bit 4:2:0 preserve explicit SDR
 color, left/top-left chroma siting and exact sample clocks. Bounded `vpcC`
@@ -100,7 +101,11 @@ real color, thread, seek, proxy and emitted-file evidence and remaining formats.
 The [WebM/Matroska VP9 path](../../docs/qualification/webm-vp9-sources-2026-10-09.md)
 retains explicit color, container SAR, millisecond PTS and a separately reported
 nominal nanosecond frame duration. Admission requires a leading key and uses
-the same per-packet bounds as MP4. Opus and audio-bearing WebM remain open.
+the same per-packet bounds as MP4. The [Opus path](../../docs/qualification/opus-sources-2026-10-09.md)
+uses pinned libopus 1.6.1, explicit pre-skip and terminal padding, and a checked
+48 kHz sample clock alongside retained raw container timestamps. CELT, SILK,
+hybrid and pre-skip spanning packets have fixtures. Ogg, mapping families above
+zero, lacing and the broader container grammar remain unqualified.
 
 The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
 H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit

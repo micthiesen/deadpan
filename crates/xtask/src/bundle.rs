@@ -1080,6 +1080,25 @@ fn assemble(
         .unwrap_or_default();
     let timestamp = now();
     let mut native = native_components(workspace, &crates)?;
+    let opus = &ffmpeg_pins["opus"];
+    if !version_text.contains("--enable-libopus")
+        || !version_text.contains("--disable-decoder=opus")
+    {
+        return Err(
+            "the FFmpeg prefix must contain the pinned libopus decoder and disable native Opus"
+                .into(),
+        );
+    }
+    native.push(json!({
+        "type": "library", "bom-ref": "native:opus", "name": "Opus",
+        "version": opus["version"], "licenses": [{ "license": { "id": opus["license"] } }],
+        "hashes": [{ "alg": "SHA-256", "content": opus["archive_sha256"] }],
+        "externalReferences": [{ "type": "distribution", "url": opus["archive_url"] }],
+        "properties": [
+            { "name": "deadpan:statically-linked-by", "value": "FFmpeg libavcodec" },
+            { "name": "deadpan:notice", "value": "opus/COPYING" }
+        ]
+    }));
     if let (Some(built), Some(directory)) = (ai, &ai_directory) {
         native.extend(ai_runtime::sbom_components(built, directory)?);
     }

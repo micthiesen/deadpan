@@ -3,7 +3,7 @@
 //! Supply an immutable host snapshot. Operations perform I/O and allocation and
 //! belong on a worker, never the audio callback. Cancellation and deadlines are
 //! cooperative. The decoder preserves source rate and channel order, performs no
-//! resampling, downmix, gain, or clipping, and never derives a terminal endpoint
+//! resampling, downmix, additional gain, or clipping, and never derives a terminal endpoint
 //! from a declared container duration.
 //!
 //! The default manual mode uses FFmpeg's `AV_CODEC_FLAG2_SKIP_MANUAL` to return
@@ -13,8 +13,9 @@
 //! A zero skip record, absent skip record, codec padding observation, or container
 //! duration is not by itself proof that every decoded sample is presentation data.
 //!
-//! Repository fixtures qualify AAC-LC/MP4 and signed16 little-endian PCM/WAVE.
-//! A strict MP4/WAV header guard rejects unsafe size/table declarations before
+//! Repository fixtures qualify AAC-LC/MP4, mono/stereo Opus/WebM/Matroska,
+//! and signed16 little-endian PCM/WAVE. Opus honors its declared header gain.
+//! A strict container guard rejects unsafe size/table declarations before
 //! FFmpeg allocation. Other container grammars require separate qualification.
 
 use std::{fs::File, time::Instant};
@@ -137,6 +138,19 @@ pub struct AudioStreamInfo {
     pub initial_padding: u32,
     pub trailing_padding: u32,
     pub seek_preroll: u32,
+    /// Checked Matroska declarations before FFmpeg rounds CodecDelay to ticks.
+    /// Raw frame PTS and skip observations remain unchanged.
+    pub matroska_opus: Option<MatroskaOpusClock>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MatroskaOpusClock {
+    pub pre_skip: u32,
+    pub codec_delay_ns: u64,
+    pub timestamp_scale_ns: u64,
+    pub first_block_timestamp: i64,
+    pub packet_count: u64,
+    pub decoded_sample_count: u64,
 }
 
 /// Actual decoder output representation, before the owned float copy.
@@ -144,6 +158,7 @@ pub struct AudioStreamInfo {
 pub enum AudioSampleFormat {
     Signed16,
     Float32Planar,
+    Float32Interleaved,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -192,6 +207,8 @@ pub struct AudioDecoder {
     mode: AudioDecodeMode,
     evidence: AudioDecoderEvidence,
     current: Option<AudioFrameMetadata>,
+    decoded_frames: u64,
+    decoded_samples: u64,
 }
 
 #[cfg(test)]
@@ -313,7 +330,7 @@ impl AudioDecoder {
         Self::open_selection(file, Some(selected_stream), mode, limits, control)
     }
 
-    /// Select the first audio track in the fully admitted MP4/WAVE inventory.
+    /// Select the first audio track in the fully admitted container inventory.
     /// A container without audio fails; metadata reports the actual stream ID.
     /// Preserves the original Manual-mode physical-sample contract.
     pub fn open_first(
@@ -343,7 +360,7 @@ impl AudioDecoder {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let (selected_stream, preflight_io_bytes) =
+        let (selected_stream, preflight_io_bytes, matroska_opus) =
             input::validate_audio(&file, selected_stream, limits.into(), control)?;
         let timeout = control
             .timeout
@@ -353,7 +370,7 @@ impl AudioDecoder {
                 code: "deadline_exceeded".into(),
                 message: "audio header validation exhausted the opening budget".into(),
             })?;
-        let (inner, info, evidence) = ffi::Decoder::open(
+        let (inner, mut info, evidence) = ffi::Decoder::open(
             file,
             selected_stream,
             mode,
@@ -361,12 +378,29 @@ impl AudioDecoder {
             preflight_io_bytes,
             DecodeControl { timeout, ..control },
         )?;
+        info.matroska_opus = matroska_opus;
+        if (info.codec == "opus") != matroska_opus.is_some()
+            || matroska_opus.is_some_and(|clock| {
+                info.sample_rate != 48_000
+                    || info.initial_padding != clock.pre_skip
+                    || info.seek_preroll != 3840
+                    || u128::from(info.time_base_num) * 1_000_000_000
+                        != u128::from(info.time_base_den) * u128::from(clock.timestamp_scale_ns)
+            })
+        {
+            return Err(SourceDecodeError::Native {
+                code: "invalid_report".into(),
+                message: "Opus decoder disagrees with admitted container clock".into(),
+            });
+        }
         Ok(Self {
             inner,
             info,
             mode,
             evidence,
             current: None,
+            decoded_frames: 0,
+            decoded_samples: 0,
         })
     }
 
@@ -392,6 +426,24 @@ impl AudioDecoder {
         ffi::preflight(control)?;
         self.current = None;
         let (current, evidence) = self.inner.next(control)?;
+        if let Some(frame) = current {
+            self.decoded_frames += 1;
+            self.decoded_samples += u64::from(frame.nb_samples);
+        }
+        if self.mode == AudioDecodeMode::Manual
+            && self.info.matroska_opus.is_some_and(|clock| {
+                self.decoded_frames > clock.packet_count
+                    || self.decoded_samples > clock.decoded_sample_count
+                    || (current.is_none()
+                        && (self.decoded_frames != clock.packet_count
+                            || self.decoded_samples != clock.decoded_sample_count))
+            })
+        {
+            return Err(SourceDecodeError::Native {
+                code: "invalid_decode".into(),
+                message: "Opus decode did not preserve every admitted packet and sample".into(),
+            });
+        }
         self.current = current;
         self.evidence = evidence;
         Ok(self.current)
@@ -720,10 +772,11 @@ mod ffi {
                 _not_sync: PhantomData,
             };
             let codec = string(&info.codec);
-            if !matches!(codec.as_str(), "aac" | "pcm_s16le") {
+            if !matches!(codec.as_str(), "aac" | "pcm_s16le" | "opus") {
                 return Err(invalid_report());
             }
             let value = AudioStreamInfo {
+                matroska_opus: None,
                 stream_index: nonnegative(info.stream_index)?,
                 codec,
                 time_base_num: positive(info.time_base_num)?,
@@ -741,7 +794,13 @@ mod ffi {
                 return Err(invalid_report());
             }
             let evidence = evidence.convert(mode)?;
-            if evidence.decoder_name != value.codec {
+            if evidence.decoder_name
+                != if value.codec == "opus" {
+                    "libopus"
+                } else {
+                    &value.codec
+                }
+            {
                 return Err(invalid_report());
             }
             Ok((inner, value, evidence))
@@ -817,8 +876,11 @@ mod ffi {
             let decoder_name = checked_string(&self.decoder_name)?;
             let decoder_profile_name = checked_string(&self.decoder_profile_name)?;
             if self.mode != mode_id(mode)
-                || !matches!(container_format.as_str(), "mov,mp4,m4a,3gp,3g2,mj2" | "wav")
-                || !matches!(decoder_name.as_str(), "aac" | "pcm_s16le")
+                || !matches!(
+                    container_format.as_str(),
+                    "mov,mp4,m4a,3gp,3g2,mj2" | "wav" | "matroska,webm"
+                )
+                || !matches!(decoder_name.as_str(), "aac" | "pcm_s16le" | "libopus")
                 || (decoder_name == "aac"
                     && (!matches!(self.container_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)
                         || !matches!(self.decoder_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)))
@@ -907,6 +969,7 @@ mod ffi {
         match value {
             1 => Ok(AudioSampleFormat::Signed16),
             8 => Ok(AudioSampleFormat::Float32Planar),
+            3 => Ok(AudioSampleFormat::Float32Interleaved),
             _ => Err(invalid_report()),
         }
     }

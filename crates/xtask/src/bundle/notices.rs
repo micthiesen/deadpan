@@ -412,6 +412,8 @@ Build configuration: {configuration}\n",
     }
     text.push('\n');
 
+    text.push_str("Opus is statically linked into FFmpeg libavcodec under BSD-3-Clause.\nIts complete copyright, conditions and patent-license references are retained\nin opus/COPYING. The pinned source version and archive hash are in the SBOM.\n\n");
+
     for helper in helpers {
         let _ = writeln!(
             text,

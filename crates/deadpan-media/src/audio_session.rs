@@ -173,6 +173,7 @@ impl AudioSession {
         };
         let info = decoder.info().clone();
         let stream = AudioStreamDescriptor {
+            matroska_opus: info.matroska_opus.map(Into::into),
             stream_index: info.stream_index,
             codec: info.codec.clone(),
             time_base: SourceTimeBase::new(info.time_base_num, info.time_base_den)?,
@@ -235,6 +236,7 @@ impl AudioSession {
                 sample_format: match frame.sample_format {
                     AudioSampleFormat::Signed16 => "s16",
                     AudioSampleFormat::Float32Planar => "fltp",
+                    AudioSampleFormat::Float32Interleaved => "flt",
                 }
                 .into(),
                 skip_samples: frame.skip_samples.map(|skip| AudioSkipSamples {
@@ -398,6 +400,7 @@ mod tests {
     fn range_scan_checks_cancellation_between_segments_and_preserves_deadline_errors() {
         let stream = AudioStreamDescriptor {
             stream_index: 0,
+            matroska_opus: None,
             codec: "pcm_s16le".into(),
             time_base: SourceTimeBase::new(1, 48000).unwrap(),
             sample_rate: 48000,

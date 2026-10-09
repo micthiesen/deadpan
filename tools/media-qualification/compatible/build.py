@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import tarfile
@@ -43,6 +44,7 @@ def main() -> None:
         parser.error("work directory must be empty")
     pins = json.loads((ROOT / "pins.json").read_text())
     pin = pins["ffmpeg"]
+    opus = pins["opus"]
     report = {"schema_version": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
               "scope": "isolated developer build; not distribution or OS matrix qualification",
               "work_directory": str(work), "pins": pins, "commands": [], "result": "failed"}
@@ -66,7 +68,8 @@ def main() -> None:
         downloads.mkdir()
         names = [(f"ffmpeg-{pin['version']}.tar.xz", pin["archive_url"], pin["archive_sha256"]),
                  (f"ffmpeg-{pin['version']}.tar.xz.asc", pin["archive_url"] + ".asc", pin["signature_sha256"]),
-                 ("ffmpeg-devel.asc", pin["key_url"], pin["key_sha256"])]
+                 ("ffmpeg-devel.asc", pin["key_url"], pin["key_sha256"]),
+                 (f"opus-{opus['version']}.tar.gz", opus["archive_url"], opus["archive_sha256"])]
         for name, url, expected in names:
             target = downloads / name
             cached = args.download_cache / name if args.download_cache else None
@@ -97,18 +100,40 @@ def main() -> None:
         report["compiler"] = run(["clang", "--version"])
         report["sdk_version"] = run(["xcrun", "--show-sdk-version"]).strip()
         report["prefix"] = str(prefix)
+        with tarfile.open(downloads / names[3][0]) as archive:
+            archive.extractall(work, filter="data")
+        opus_source = work / f"opus-{opus['version']}"
+        opus_prefix = work / "opus-prefix"
+        opus_env = dict(os.environ, MACOSX_DEPLOYMENT_TARGET="15.0",
+                        CFLAGS="-O2 -arch arm64 -mmacosx-version-min=15.0",
+                        LDFLAGS="-arch arm64 -mmacosx-version-min=15.0")
+        run([opus_source / "configure", f"--prefix={opus_prefix}", "--disable-shared",
+             "--enable-static", "--with-pic", "--disable-doc", "--enable-extra-programs",
+             "--disable-deep-plc", "--disable-dred", "--disable-osce"], cwd=opus_source, env=opus_env, timeout=300)
+        run(["make", f"-j{args.jobs}"], cwd=opus_source, env=opus_env, timeout=600)
+        opus_tests = run(["make", "check", f"-j{args.jobs}"], cwd=opus_source, env=opus_env, timeout=600)
+        total = re.search(r"# TOTAL:\s+(\d+)", opus_tests)
+        if total is None or int(total[1]) == 0:
+            raise RuntimeError("libopus build did not run its tests")
+        run(["make", "install"], cwd=opus_source, env=opus_env)
+        report["opus"] = {"archive_sha256": opus["archive_sha256"],
+                          "static_library_sha256": digest(opus_prefix / "lib/libopus.a"),
+                          "license_sha256": digest(opus_source / "COPYING"),
+                          "config_header": (opus_source / "config.h").read_text()}
         configure = [str(source / "configure"), f"--prefix={prefix}", "--enable-shared", "--disable-static",
                      "--enable-pic", "--disable-gpl", "--disable-nonfree", "--disable-version3",
                      "--disable-autodetect", "--disable-network", "--disable-doc", "--disable-debug",
+                     "--enable-libopus", "--disable-decoder=opus", "--disable-encoder=libopus",
                      "--disable-ffmpeg", "--disable-ffplay", "--arch=aarch64", "--cpu=generic",
                      "--target-os=darwin", f"--sysroot={sdk}", "--enable-videotoolbox", "--enable-audiotoolbox",
                      "--extra-cflags=-arch arm64 -mmacosx-version-min=15.0",
                      "--extra-ldflags=-arch arm64 -mmacosx-version-min=15.0"]
         report["configure_argv"] = configure
-        env = dict(os.environ, MACOSX_DEPLOYMENT_TARGET="15.0", PKG_CONFIG_PATH="", PKG_CONFIG_LIBDIR="/nonexistent")
+        env = dict(os.environ, MACOSX_DEPLOYMENT_TARGET="15.0", PKG_CONFIG_PATH="", PKG_CONFIG_LIBDIR=str(opus_prefix / "lib/pkgconfig"))
         run(configure, cwd=source, env=env, timeout=300)
         run(["make", f"-j{args.jobs}"], cwd=source, env=env, timeout=1800)
         run(["make", "install"], cwd=source, env=env, timeout=180)
+        shutil.copytree(opus_prefix / "include/opus", prefix / "include/opus")
         report["configuration"] = (source / "ffbuild/config.mak").read_text()
         report["license_file_sha256"] = {name: digest(source / name) for name in
                                          ("COPYING.LGPLv2.1", "LICENSE.md")}

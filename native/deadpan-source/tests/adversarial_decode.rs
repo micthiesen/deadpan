@@ -30,9 +30,10 @@ struct Host {
 }
 
 fn hosts() -> Vec<Host> {
-    let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
-    let mut paths: Vec<PathBuf> = std::fs::read_dir(directory)
-        .expect("fixtures")
+    let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
+    let mut paths: Vec<PathBuf> = ["fixtures", "audio-fixtures"]
+        .into_iter()
+        .flat_map(|name| std::fs::read_dir(directory.join(name)).expect("fixtures"))
         .filter_map(Result::ok)
         .map(|entry| entry.path())
         .filter(|path| {
@@ -114,7 +115,7 @@ fn decode(bytes: &[u8]) -> Outcome {
         }
         Err(error) => class(error)?,
     };
-    if bytes.get(4..8) == Some(b"ftyp") {
+    if bytes.get(4..8) == Some(b"ftyp") || bytes.get(..4) == Some(&[0x1a, 0x45, 0xdf, 0xa3]) {
         match AudioDecoder::open_first(snapshot(bytes), AudioDecodeLimits::default(), control()) {
             Ok(mut decoder) => {
                 for _ in 0..256 {

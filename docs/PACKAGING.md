@@ -11,7 +11,7 @@ signature is needed, and is never notarized or distributed.
 ## Build
 
 ```sh
-export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"   # build time only
+export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-qualified/prefix"   # build time only
 cargo xtask bundle --output /tmp/deadpan-bundle
 cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 ```
@@ -72,7 +72,7 @@ build-time tool only.
 | `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,avfilter.11,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
 | `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
-| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
+| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, Opus, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
 | `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, signature kind and limitations. |
 | `Contents/Resources/Assets.car`, `Deadpan.icns` | Layered icon and ICNS fallback. |
 
@@ -83,6 +83,11 @@ Documents (the project library), Desktop, Downloads and removable volumes. The
 app uses no camera, microphone or other privacy-gated service.
 
 ## FFmpeg relocation
+
+Pinned libopus 1.6.1 is statically linked into libavcodec. The bundle carries its
+BSD notice and source identity in the SBOM; no external Opus library is loaded.
+Build-time and runtime checks require libopus and disable FFmpeg's native Opus
+decoder, following the measured source-audio qualification.
 
 Every non-system load command must name a file in the pinned prefix. Each such
 library is copied to `Contents/Frameworks`, its install name becomes

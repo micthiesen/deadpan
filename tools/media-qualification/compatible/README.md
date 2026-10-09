@@ -1,9 +1,11 @@
 # Compatible native media boundary
 
-This developer-only harness builds signed FFmpeg 8.0.3 and runs the pinned
-rsmpeg revision against the repository's original numbered-picture and audio
-impulse fixtures. It does not change the app's dependencies. Gate A and export
-acceptance remain open.
+The builder supplies the application's pinned LGPL FFmpeg 8.0.3 libraries,
+with static BSD libopus 1.6.1. It verifies the signed FFmpeg release and the
+pinned Opus archive, runs the upstream Opus tests, and disables FFmpeg's native
+Opus decoder. The separate developer qualification harness runs the pinned
+rsmpeg revision against the original numbered-picture and audio impulse
+fixtures. Gate A and export acceptance remain open.
 
 Prerequisites: Apple Silicon macOS, Python 3.12+, Xcode command-line tools,
 `make`, `git`, `gpg`, `pkg-config`, and the repository's Rust 1.97.1 toolchain.
@@ -26,12 +28,19 @@ python3 tools/media-qualification/compatible/qualify.py \
 The build creates a fresh `/tmp/deadpan-media-compatible-*` prefix, verifies the
 archive, detached signature, release key bytes, and signer fingerprint against
 `pins.json`, and installs only into that prefix. An optional `--download-cache`
-directory may supply the three pinned download files; hashes and signature are
+directory may supply the pinned download files; hashes and signature are
 still verified. `--work` must name an empty directory. The default build uses
 eight jobs, and the report retains configure arguments, command logs/hashes,
 versions, license text, dylib hashes/linkage, and deployment load commands.
 The release archive checksum is the authoritative source input; the recorded
 Git tag/commit is a source reference, not a claimed archive/tree comparison.
+
+Opus is built as PIC into a private prefix, with neural extensions disabled and
+extra programs enabled so `make check` actually runs the 16 upstream tests.
+FFmpeg's pkg-config search is restricted to that prefix; libopus is statically
+linked into libavcodec, with no new runtime dylib. Its source, build flags,
+test log and license hash are retained in the report. See the
+[Opus qualification](../../../docs/qualification/opus-sources-2026-10-09.md).
 
 The qualification script fetches the exact rsmpeg commit into a fresh scratch
 Git repository and extracts a committed-source archive. Its sibling source

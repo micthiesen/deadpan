@@ -89,7 +89,8 @@ keyboard vocabulary. Legacy projects keep register/insert compatibility behavior
 `--project PATH` opens a
 project at launch; `--preview-source PATH` opens a non-destructive source preview.
 Qualified sources include explicitly tagged SDR H.264, HEVC and VP9 in MP4,
-video-only SDR VP9 in WebM/Matroska, FFV1 in Matroska, and the HDR/interlaced
+SDR VP9 with mono/stereo Opus in WebM/Matroska, standalone Opus sound in those
+containers, FFV1 in Matroska, and the HDR/interlaced
 cases described in
 [source admission](docs/SOURCE_ADMISSION.md). Unsupported interpretations fail
 visibly. See [Headless commands](docs/HEADLESS.md) for project operations.

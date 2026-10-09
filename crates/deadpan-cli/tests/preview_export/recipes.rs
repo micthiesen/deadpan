@@ -270,6 +270,20 @@ fn node(value: &str) -> Result<NodeId> {
     Ok(NodeId::new(value)?)
 }
 
+pub fn opus_original(directory: &Path, name: &'static str) -> Result<Fixture> {
+    let media = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/audio-fixtures")
+        .join(format!("{name}.webm"));
+    let project = Project::create_from(directory, name, &media)?;
+    // Retained picture timestamps start at zero. The exact 29.97 project-frame
+    // centers select ordinals 0..11; the shorter audio never extends picture time.
+    let frames = u64::try_from(project.document()?.duration()?.frames())?;
+    assert_eq!(frames, 12);
+    project.finish(vec!["VP9/Opus WebM Original"],
+        (0..frames).map(|frame| (frame, Expected::Original { source_ordinal: frame.min(11) })).collect(),
+        vec!["8197 exact audible Opus samples; raw millisecond picture clock and independent sample clock".into()])
+}
+
 fn ratio(numerator: i128, denominator: i128) -> Result<ExactRatio> {
     Ok(ExactRatio::new(numerator, denominator)?)
 }

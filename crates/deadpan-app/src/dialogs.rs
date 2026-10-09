@@ -293,7 +293,10 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
         DialogKind::ImportSound => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Add a sound (audio stream only)")
-                .add_filter("Qualified audio containers", &["wav", "mp4", "m4a", "m4v"])
+                .add_filter(
+                    "Qualified audio containers",
+                    &["wav", "mp4", "m4a", "m4v", "webm", "mkv", "mka"],
+                )
                 .pick_file(),
         ),
         DialogKind::ImportMedia => Box::pin(
