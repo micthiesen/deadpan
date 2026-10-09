@@ -14,6 +14,8 @@ publish.workspace = true
 synthetic-worker = []
 # Deterministic real-worker crash qualification. Absent from normal binaries.
 qualification-render-host-crash = []
+# Real private APFS image detach and cross-volume relink qualification.
+qualification-relink-volumes = []
 
 [dependencies]
 deadpan-diagnostics.workspace = true
@@ -66,6 +68,10 @@ required-features = ["synthetic-worker"]
 [[example]]
 name = "qualify_render_host_crash"
 required-features = ["qualification-render-host-crash"]
+
+[[test]]
+name = "relink_cross_volume"
+required-features = ["qualification-relink-volumes"]
 
 [lints]
 workspace = true
