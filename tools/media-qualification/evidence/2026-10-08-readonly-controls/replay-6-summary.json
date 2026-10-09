@@ -1,0 +1,43 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-6/bin/deadpan-app",
+      "sha256": "848ba22ff78e9635fdd10c7c3cb50495e1cef50b2a89ef7ceddbc72042476d93",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-6/bin/deadpan-media-worker",
+      "sha256": "2fabd4b67861f0fc20836a6c30bbff54e25713dd73582f257334f7ba9a683eb3",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-6/bin/deadpan-track",
+      "sha256": "28aeee4881ecd628d96a2f9574a004edf038c7512528ba5a47d1e293ec148ac8",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-6/bin/deadpan-transcribe",
+      "sha256": "32d586bcee27e58512207e2003486ec977f805c4d2ee6faa3de6c49bd3afe07d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 10.426868375,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 50,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "backups",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 96.548157959,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 96.732497416
+}

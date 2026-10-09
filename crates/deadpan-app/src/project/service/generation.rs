@@ -281,6 +281,10 @@ impl Service {
         Ok(())
     }
 
+    pub(super) fn refuse_generation(&mut self, ticket: u64, reason: String) {
+        self.generation.reply = Some((ticket, Some(reason)));
+    }
+
     /// Independent generation feedback. Accept is an ordinary edit and is
     /// handled through [`Service::accept_generation`].
     pub(super) fn generation_command(&mut self, operation: GenerationOperation) {

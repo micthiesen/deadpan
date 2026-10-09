@@ -1,0 +1,56 @@
+[
+  {
+    "name": "clippy-5",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 4.652985000051558
+  },
+  {
+    "name": "readonly-dialog-tests-5",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "-E",
+      "test(project::tests::readonly::) + test(project::tests::backups::) + test(project::tests::render::) + test(render_history::) + test(=dialogs::tests::render_directory_preparation_creates_only_the_neighbor_folder_and_preserves_collisions)",
+      "--test-threads",
+      "1",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 14.958359334152192
+  },
+  {
+    "name": "backups-replay-5",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--scenario",
+      "backups",
+      "--output",
+      "/private/tmp/deadpan-readonly-20261008/replays-5",
+      "--jobs",
+      "1"
+    ],
+    "exit_code": 0,
+    "seconds": 109.80555429123342
+  }
+]

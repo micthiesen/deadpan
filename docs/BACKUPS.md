@@ -204,7 +204,7 @@ still beside it into its own quarantine before installing. Identities the
 damaged database issued cannot be carried forward (it cannot be read).
 Open the project normally afterwards. The app does not offer this yet.
 
-The app refuses a restore while The app refuses a restore while
+The app refuses a restore while
 an import, relink, render, AI pause or tracking job runs, then opens the
 result as a **new session**, so drafts, selections, copies and caches of the
 replaced revisions cannot reach it, and relinks moved files if needed.
@@ -261,23 +261,39 @@ has been changed". `ProjectStore::open(…, ReadOnly)` opens it for **viewing**:
   this build cannot see).
 
 The app's Open falls back to this view: the header reads **Read-only** (hover
-and accessibility text give the reason) instead of **Saved**, the open message
-says so, and every command except opening, closing and cancelling is refused
-with "Not saved: …" before it reaches the store (background analysis saves
-fail with the store's own read-only refusal). It has no live command
+and accessibility text give the reason) instead of **Saved**, and the open
+message says so. Commands that persist changes are refused with
+"Not saved: …" before reaching the store (background analysis saves use the
+store's own read-only refusal). Mark jumps, face detection, Room tone
+preparation and private Gain, Slip and Trim previews remain available.
+Place Slice preparation still requires store writer admission, and generation
+Preview persists the selected variant, so both are refused. It has no live command
 endpoint and no backups; media is read through a viewing handle that cannot
 publish objects. The timeline, inspector, pictures and audition work as far as
 this build understands the document. Render needs a writer (render jobs are
 stored), so exporting a newer package is not available; copy it with a newer
 build or use that build.
 
-Refused Render and saved-render-history requests return their captured ticket,
-project context and query through the normal response channel, so the native
-controls leave their pending state. They never start a workflow or commit a
-preview. The 2026-10-08 regression covers repeated Render, preview commit,
-stale Cancel and both history queries, and compares database bytes after close.
-All 16 focused render/history tests and strict app Clippy pass. This refusal
-handling does not implement export from newer packages.
+Every refused action with a pending control returns its captured identity
+through the normal response channel. This covers marks, macros, corrections,
+targets, generation, registers and cuts, proposal commits, cleanup, relinking,
+Render and saved-render history. Controls leave their pending state while
+retaining the previous register or private draft. New request variants must
+choose an explicit admission and completion policy in the service's exhaustive
+match. A refusal never starts a workflow or commits a preview.
+
+The 2026-10-08 service regressions cover captured and stale identities,
+repeated Render, preview commit, Cancel and both history queries, plus real
+read-only queries and private previews. They compare every retained package
+file, including database, WAL, registers and media; SQLite shared-memory
+coordination is excluded. All 25 focused tests and strict app Clippy pass.
+The production keyboard/service/Metal replay passes 50 checks, including
+repeated read-only copy, target, Slip and cleanup actions with usable controls
+after refusal. Its fixture waits for the previous writable session's owned
+backup workers before comparing package bytes. See the
+[qualification record](qualification/readonly-controls-2026-10-08.md) for
+earlier failed assertions, the full app suite and verification limits.
+This refusal handling does not implement export from newer packages.
 
 A package an interrupted rollback-journal write left behind (a hot journal,
 only possible during a release migration's switch out of WAL mode) is rolled

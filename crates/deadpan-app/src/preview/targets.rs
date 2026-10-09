@@ -32,6 +32,11 @@ pub(super) struct Capture {
 }
 
 impl State {
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn pending_for_check(&self) -> bool {
+        self.awaiting.is_some()
+    }
+
     fn next_ticket(&mut self) -> u64 {
         self.ticket = self.ticket.wrapping_add(1).max(1);
         self.ticket

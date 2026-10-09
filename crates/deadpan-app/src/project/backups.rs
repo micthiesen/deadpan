@@ -30,6 +30,10 @@ pub enum Request {
 #[derive(Clone, Debug, Default)]
 pub struct Update {
     pub session: u64,
+    /// Test/replay observation of all owned backup threads, including copies
+    /// detached by Close. A closed workspace alone does not mean they finished.
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub owned_workers_active_for_check: bool,
     /// The newest backup this app published for the project, with the
     /// revision it holds.
     pub latest: Option<(BackupInfo, Option<String>)>,

@@ -38,6 +38,7 @@ mod headless;
 mod macros;
 mod marks;
 mod moment;
+mod readonly;
 mod recovery;
 mod registers;
 mod remote_storage;
@@ -807,29 +808,6 @@ impl Service {
                 Ok(())
             }
         }
-    }
-
-    /// Why a request cannot run in a read-only session (a newer package
-    /// opened for viewing). Session changes and cancellations always can.
-    fn read_only_refusal(&self, request: &ProjectRequest) -> Option<String> {
-        let reason = self.workspace.as_ref()?.read_only.as_ref()?;
-        if matches!(
-            request,
-            ProjectRequest::Open(_)
-                | ProjectRequest::Close
-                | ProjectRequest::CreateFromSource { .. }
-                | ProjectRequest::CancelImport
-                | ProjectRequest::Backup(
-                    super::backups::Request::LoadSettings { .. }
-                        | super::backups::Request::SaveSettings { .. }
-                )
-                | ProjectRequest::AbandonSplice(_)
-                | ProjectRequest::AbandonSlip(_)
-                | ProjectRequest::AbandonTrim(_)
-        ) {
-            return None;
-        }
-        Some(format!("Not saved: {reason}"))
     }
 
     fn writer(&mut self) -> Result<&mut ProjectStore> {

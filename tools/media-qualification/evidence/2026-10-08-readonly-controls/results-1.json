@@ -1,0 +1,54 @@
+[
+  {
+    "name": "clippy-1",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 5.246805916074663
+  },
+  {
+    "name": "focused-tests-1",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "-E",
+      "test(project::tests::readonly::) + test(project::tests::render::) + test(render_history::)",
+      "--no-fail-fast"
+    ],
+    "exit_code": 0,
+    "seconds": 8.143791832961142
+  },
+  {
+    "name": "backups-replay-1",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--scenario",
+      "backups",
+      "--output",
+      "/private/tmp/deadpan-readonly-20261008/replays-1",
+      "--jobs",
+      "1"
+    ],
+    "exit_code": 1,
+    "seconds": 112.51782641699538
+  }
+]

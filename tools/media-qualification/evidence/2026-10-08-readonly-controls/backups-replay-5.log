@@ -1,0 +1,26 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --scenario backups --output /private/tmp/deadpan-readonly-20261008/replays-5 --jobs 1`
+   Compiling ring v0.17.14
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.62s
+replays: built and copied /private/tmp/deadpan-readonly-20261008/replays-5/bin/deadpan-app in 13.0 s (sha256 72d6deac16af8c4c4fdc3021381e5183cd333bab00819380eeabe41f70add505)
+replays: backups                PASS    96.6 s
+
+scenario                     seconds  checks  layout-retry warnings
+backups                PASS     96.6      48  16 frame(s) settled their layout only on a second retry; egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+1 passed, 0 failed, 0 skipped; 48 checks; build 13.0 s, replays 96.7 s wall (96.6 s summed, 1 job(s))
+Reports: /private/tmp/deadpan-readonly-20261008/replays-5

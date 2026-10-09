@@ -44,6 +44,9 @@ pub(super) struct State {
     pending: Option<u64>,
     /// A preview running on a read-only open, for its session and revision.
     previewing: Option<(u64, String, PreviewReply)>,
+    /// Count real worker starts even when a preview finishes within one frame.
+    #[cfg(feature = "ui-harness")]
+    preview_workers_started: u64,
     /// The latest previewed cleanup and the session and revision it saw. R
     /// removes exactly these entries; any project change discards it.
     preview: Option<(u64, String, CleanupOutcome)>,
@@ -72,6 +75,16 @@ pub(super) enum ClockStep {
 }
 
 impl State {
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn pending_for_check(&self) -> bool {
+        self.previewing.is_some() || self.pending.is_some()
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn preview_workers_started_for_check(&self) -> u64 {
+        self.preview_workers_started
+    }
+
     fn user(&self) -> Option<UserStorage> {
         self.user.clone().or_else(UserStorage::current)
     }
@@ -707,6 +720,14 @@ impl DeadpanApp {
             });
         match spawned {
             Ok(_) => {
+                #[cfg(feature = "ui-harness")]
+                {
+                    self.storage.preview_workers_started = self
+                        .storage
+                        .preview_workers_started
+                        .checked_add(1)
+                        .expect("replay cleanup preview counter overflow");
+                }
                 self.storage.preview = None;
                 self.storage.previewing = Some((session, revision, receiver));
                 self.storage.status = Some("Finding unreferenced files…".into());

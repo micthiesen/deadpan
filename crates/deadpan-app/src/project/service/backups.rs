@@ -202,6 +202,14 @@ impl State {
     pub(super) fn update(&self) -> Update {
         let mut update = self.update.clone();
         update.settings = self.settings.clone();
+        #[cfg(any(test, feature = "ui-harness"))]
+        {
+            update.owned_workers_active_for_check = self
+                .running
+                .as_ref()
+                .is_some_and(|running| !running.handle.is_finished())
+                || self.detached.iter().any(|handle| !handle.is_finished());
+        }
         update
     }
 
@@ -624,7 +632,14 @@ impl Service {
                 }
             }
         }
+        #[cfg(any(test, feature = "ui-harness"))]
+        let detached_before = self.backups.detached.len();
         self.backups.detached.retain(|handle| !handle.is_finished());
+        #[cfg(any(test, feature = "ui-harness"))]
+        {
+            // Publish the completion observation even with no project open.
+            changed |= self.backups.detached.len() != detached_before;
+        }
         if self.backups.running.is_none()
             && let Some((session, _, version)) = self.backup_target()
             && !self.backup_covered(session, version)

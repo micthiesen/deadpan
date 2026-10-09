@@ -23,6 +23,7 @@ mod macros;
 mod marks;
 mod moment;
 mod pause;
+mod readonly;
 mod recovery;
 mod registers;
 mod render;

@@ -33,6 +33,8 @@ pub(super) struct View {
     pending: Option<u64>,
     /// The service's backup state of the current session.
     pub(super) update: Update,
+    #[cfg(feature = "ui-harness")]
+    pub(super) owned_workers_active_for_check: bool,
     pub(super) status: Option<String>,
     /// Opened by `:backups`: the panel shows only this section.
     pub(super) only: bool,
@@ -176,6 +178,10 @@ impl DeadpanApp {
     pub(super) fn receive_backups(&mut self, update: Update) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         let view = &mut self.storage.backups;
+        #[cfg(feature = "ui-harness")]
+        {
+            view.owned_workers_active_for_check = update.owned_workers_active_for_check;
+        }
         let settings_ticket = update.settings.ticket;
         let settings_is_current = view
             .settings_expected

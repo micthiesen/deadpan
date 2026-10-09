@@ -13,6 +13,8 @@ use super::*;
 use crate::project::backups::SettingsStatus;
 use deadpan_store::backups::{BackupReason, list_backups};
 
+mod readonly;
+
 fn replace_text(d: &mut Driver<'_>, label: &str, value: &str) -> Result<(), String> {
     // Opening the draft changes the panel after its action row is painted.
     // Let the next frame expose and size the newly added fields.
@@ -235,11 +237,15 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.settled()?;
 
+    readonly::seed(d)?;
     // A package a newer Deadpan saved opens read-only.
     d.app_mut().submit(ProjectRequest::Close);
-    d.wait_for("Project closed", |app| {
-        app.workspace.is_none() && !app.service.is_busy()
+    d.wait_for("Project and its owned close backups finished", |app| {
+        app.workspace.is_none()
+            && !app.service.is_busy()
+            && !app.storage.backups.owned_workers_active_for_check
     })?;
+    readonly::orphan(&path)?;
     {
         let connection = rusqlite::Connection::open(path.join("project.sqlite"))
             .map_err(|error| error.to_string())?;
@@ -295,6 +301,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"revision":d.revision(),"error":d.app().project_error,"database_unchanged":after == before}),
     )?;
     d.capture("An edit refused in a read-only project")?;
+
+    readonly::run(d)?;
 
     d.command("backups")?;
     d.wait_for("Backup settings available in read-only project", |app| {

@@ -1,0 +1,15 @@
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0433]: cannot find module or crate `blake3` in this scope
+   --> crates/deadpan-app/src/preview/harness/backups/readonly.rs:100:57
+    |
+100 |             |bytes| json!({"bytes":bytes.len(),"blake3":blake3::hash(bytes).to_hex().to_string()}),
+    |                                                         ^^^^^^ use of unresolved module or unlinked crate `blake3`
+    |
+    = help: if you wanted to use a crate named `blake3`, use `cargo add blake3` to add it to your `Cargo.toml`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

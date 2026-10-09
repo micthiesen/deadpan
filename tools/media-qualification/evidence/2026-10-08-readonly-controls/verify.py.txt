@@ -1,0 +1,25 @@
+from pathlib import Path
+import json
+import os
+import subprocess
+import time
+
+root=Path(__file__).resolve().parent
+env=dict(os.environ, DEADPAN_FFMPEG_PREFIX='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix', DEADPAN_REQUIRE_SYNTHETIC_WORKER='1')
+commands=[
+    ('clippy-6', ['cargo','clippy','--locked','-p','deadpan-app','--all-targets','--features','ui-harness','--','-D','warnings']),
+    ('readonly-dialog-tests-6', ['cargo','nextest','run','--locked','-p','deadpan-app','--features','ui-harness','-E','test(project::tests::readonly::) + test(project::tests::backups::) + test(project::tests::render::) + test(render_history::) + test(=dialogs::tests::render_directory_preparation_creates_only_the_neighbor_folder_and_preserves_collisions)','--test-threads','1','--no-fail-fast']),
+    ('backups-replay-6', ['cargo','xtask','replays','--scenario','backups','--output',str(root/'replays-6'),'--jobs','1']),
+]
+results=[]
+for name, command in commands:
+    start=time.monotonic()
+    with (root/(name+'.log')).open('x') as log:
+        result=subprocess.run(command,cwd='/Users/michael/Code/deadpan',env=env,stdout=log,stderr=subprocess.STDOUT)
+    record=dict(name=name,command=command,exit_code=result.returncode,seconds=time.monotonic()-start)
+    results.append(record)
+    (root/'results-6.json').write_text(json.dumps(results,indent=2)+'\n')
+    print(json.dumps(record),flush=True)
+    if result.returncode:
+        print('\n'.join(line[:800] for line in (root/(name+'.log')).read_text().splitlines()[-60:]),flush=True)
+        raise SystemExit(result.returncode)

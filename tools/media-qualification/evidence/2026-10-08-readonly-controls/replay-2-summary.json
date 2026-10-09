@@ -1,0 +1,47 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-2/bin/deadpan-app",
+      "sha256": "ab2220ee883dba16fcc702e3284cf11b4be0956182e08edb3a41c6395e92bb5d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-2/bin/deadpan-media-worker",
+      "sha256": "2fabd4b67861f0fc20836a6c30bbff54e25713dd73582f257334f7ba9a683eb3",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-2/bin/deadpan-track",
+      "sha256": "28aeee4881ecd628d96a2f9574a004edf038c7512528ba5a47d1e293ec148ac8",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/private/tmp/deadpan-readonly-20261008/replays-2/bin/deadpan-transcribe",
+      "sha256": "32d586bcee27e58512207e2003486ec977f805c4d2ee6faa3de6c49bd3afe07d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.211109667,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 36,
+      "failed_checks": [
+        "Refused Slip keeps its draft usable and clears applying"
+      ],
+      "failures": [
+        "Check failed: Refused Slip keeps its draft usable and clears applying"
+      ],
+      "layout_retry_warnings": [
+        "11 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "backups",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 97.563348458,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 97.744801
+}

@@ -1,0 +1,29 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --scenario backups --output /private/tmp/deadpan-readonly-20261008/replays-2 --jobs 1`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.82s
+replays: built and copied /private/tmp/deadpan-readonly-20261008/replays-2/bin/deadpan-app in 9.2 s (sha256 ab2220ee883dba16fcc702e3284cf11b4be0956182e08edb3a41c6395e92bb5d)
+replays: backups                FAIL    97.6 s
+
+scenario                     seconds  checks  layout-retry warnings
+backups                FAIL     97.6      36  11 frame(s) settled their layout only on a second retry; egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+backups failed (report: /private/tmp/deadpan-readonly-20261008/replays-2/backups/report.html):
+  check: Refused Slip keeps its draft usable and clears applying
+  Check failed: Refused Slip keeps its draft usable and clears applying
+
+0 passed, 1 failed, 0 skipped; 36 checks; build 9.2 s, replays 97.7 s wall (97.6 s summed, 1 job(s))
+Reports: /private/tmp/deadpan-readonly-20261008/replays-2
+xtask: 1 replay scenario(s) failed

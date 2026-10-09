@@ -1,0 +1,40 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.61s
+────────────
+ Nextest run ID 5985f5a9-a504-46d4-9076-df3d6dc67fac with nextest profile: default
+    Starting 25 tests across 2 binaries (1060 tests skipped)
+        PASS [   0.013s] ( 1/25) deadpan-app::bin/deadpan-app dialogs::tests::render_directory_preparation_creates_only_the_neighbor_folder_and_preserves_collisions
+        PASS [   0.405s] ( 2/25) deadpan-app::bin/deadpan-app project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked
+        PASS [   0.376s] ( 3/25) deadpan-app::bin/deadpan-app project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open
+        PASS [   0.195s] ( 4/25) deadpan-app::bin/deadpan-app project::tests::backups::a_package_from_a_newer_deadpan_opens_read_only_and_never_saves
+        PASS [   0.609s] ( 5/25) deadpan-app::bin/deadpan-app project::tests::backups::edits_are_backed_up_periodically_and_when_the_project_closes
+        PASS [   0.100s] ( 6/25) deadpan-app::bin/deadpan-app project::tests::backups::opening_a_schema66_package_refuses_without_rewriting_or_backing_it_up
+        PASS [   0.395s] ( 7/25) deadpan-app::bin/deadpan-app project::tests::backups::restoring_a_backup_starts_a_new_session_at_its_revision_and_is_reversible
+        PASS [   0.354s] ( 8/25) deadpan-app::bin/deadpan-app project::tests::readonly::readonly_pending_channels_preserve_captured_identities_and_all_package_bytes
+        PASS [   0.311s] ( 9/25) deadpan-app::bin/deadpan-app project::tests::readonly::readonly_queries_and_private_previews_work_without_package_writes
+        PASS [   0.144s] (10/25) deadpan-app::bin/deadpan-app project::tests::render::close_retains_the_render_writer_until_checked_result_admission
+        PASS [   0.140s] (11/25) deadpan-app::bin/deadpan-app project::tests::render::native_render_admission_preserves_proposals_and_rejects_stale_targets
+        PASS [   0.265s] (12/25) deadpan-app::bin/deadpan-app project::tests::render::open_validates_before_cancelling_and_switches_only_after_render_release
+        PASS [   0.179s] (13/25) deadpan-app::bin/deadpan-app project::tests::render::preview_commit_renders_its_exact_receipt_and_busy_render_does_not_commit
+        PASS [   0.149s] (14/25) deadpan-app::bin/deadpan-app project::tests::render::preview_render_rejects_wrong_context_revision_scope_cursor_and_edit_without_commit
+        PASS [   0.112s] (15/25) deadpan-app::bin/deadpan-app project::tests::render::read_only_render_refusals_complete_each_captured_request_without_writes
+        PASS [   0.132s] (16/25) deadpan-app::bin/deadpan-app project::tests::render::refresh_failure_keeps_the_durable_preview_receipt_without_starting_render
+        PASS [   0.141s] (17/25) deadpan-app::bin/deadpan-app project::tests::render::render_admission_failure_reports_and_preserves_the_preview_commit
+        PASS [   0.187s] (18/25) deadpan-app::bin/deadpan-app project::tests::render::render_capture_pending_does_not_block_edits_or_retarget_its_revision
+        PASS [   0.176s] (19/25) deadpan-app::bin/deadpan-app project::tests::render::scoped_render_preview_validates_captured_context_and_retains_mapped_commit_after_failure
+        PASS [   0.224s] (20/25) deadpan-app::bin/deadpan-app project::tests::render::shutdown_finishes_admitted_edit_and_pumps_render_before_releasing_writer
+        PASS [   0.146s] (21/25) deadpan-app::bin/deadpan-app project::tests::render::unchanged_preview_cannot_reuse_an_earlier_commit_receipt
+        PASS [   0.603s] (22/25) deadpan-app::bin/deadpan-app project::tests::render_history::bounded_history_pages_survive_reopen_and_preserve_publication_commit_knowledge
+        PASS [   0.426s] (23/25) deadpan-app::bin/deadpan-app project::tests::render_history::captured_recovery_targets_keep_historical_revision_and_fresh_attempts
+        PASS [   0.171s] (24/25) deadpan-app::bin/deadpan-app project::tests::render_history::history_rejects_stale_sessions_and_invalid_queries_without_erasing_receipts
+        PASS [   0.167s] (25/25) deadpan-app::bin/deadpan-app project::tests::render_history::recovery_rejects_reopened_session_and_missing_or_engineering_targets
+────────────
+     Summary [   6.125s] 25 tests run: 25 passed, 1060 skipped

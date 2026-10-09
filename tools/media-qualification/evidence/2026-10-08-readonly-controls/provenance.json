@@ -1,0 +1,22 @@
+{
+  "base_revision": "3aef49d122c58655e730278d535707f1e16a8205",
+  "scope": "read-only app request completion and actual service/keyboard/Metal replay",
+  "final_app_sha256": "848ba22ff78e9635fdd10c7c3cb50495e1cef50b2a89ef7ceddbc72042476d93",
+  "source_inventory": "source-sha256.json",
+  "full_app_tests": {
+    "passed": 1083,
+    "ignored_existing": 2,
+    "leak_warnings": 1,
+    "note": "Before later test/replay-only synchronization fixes. The warned dialog test passes isolated and in the final focused run with no leak warning; original cause unproven."
+  },
+  "final_focused_tests": 25,
+  "final_replay_checks": 50,
+  "strict_clippy": "passed",
+  "retained_failures": [
+    "Replay 1 sampled the Slip Apply accessibility state before its first paint.",
+    "Replay 2 incorrectly expected the consumed Slip apply token to survive a refusal; draft and controls are retained.",
+    "Focused run 3 compared package bytes before a detached close backup finished. Tests now observe owned backup worker completion.",
+    "Clippy 4 rejected a dev-only hash dependency in ui-harness diagnostics; replaced with the existing SHA256 dependency.",
+    "Replay 5 passed; final replay adds proof that each cleanup-preview key press launches a fresh real worker."
+  ]
+}

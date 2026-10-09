@@ -204,6 +204,11 @@ impl Service {
         self.targets.reply = Some((ticket, result.err()));
     }
 
+    pub(super) fn refuse_target(&mut self, ticket: u64, reason: String) {
+        self.sync_target_session();
+        self.targets.reply = Some((ticket, Some(reason)));
+    }
+
     fn sync_target_session(&mut self) {
         if let Some(workspace) = &self.workspace
             && self.targets.session != workspace.session
