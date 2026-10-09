@@ -6,7 +6,7 @@
 //! audio callback. Deadlines are cooperative around FFmpeg calls, not preemptive.
 //! Encoded RGB values retain their source transfer and primaries. No gamma or
 //! gamut conversion, tone mapping, or orientation is performed. Interlaced
-//! sources use pinned BWDIF at field cadence with exact half-tick timestamps;
+//! sources use pinned BWDIF at field cadence with exact sixth-tick timestamps;
 //! a single coded picture uses spatial bob because no temporal neighbors exist.
 //! HDR (PQ/HLG) sources keep their nonlinear R'G'B'; the eight-bit RGBA output
 //! of such a source is a quantized analysis view, and pictures should use the
@@ -51,6 +51,9 @@ pub struct DecodeLimits {
     /// slice threading, which returns the same pictures bit for bit; it adds
     /// pipeline delay and memory, not different output.
     pub threads: u32,
+    /// Refuse interlaced or repeated fields instead of applying source
+    /// presentation. Use for encoded exports, proxies and generated masters.
+    pub progressive_only: bool,
 }
 
 impl Default for DecodeLimits {
@@ -65,6 +68,7 @@ impl Default for DecodeLimits {
             max_dimension: 8192,
             max_packets_per_frame: 10_000,
             threads: 1,
+            progressive_only: false,
         }
     }
 }
@@ -237,8 +241,10 @@ pub struct SourceAudioStreamInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceStreamInfo {
     /// Pinned FFmpeg 8.0.3 BWDIF send-field view with single-picture spatial bob.
-    /// Video ticks are exactly half the container's ticks; progressive streams
-    /// and every audio clock are unchanged. This recipe is retained in receipts.
+    /// Video ticks are exactly one sixth of the container's ticks, representing
+    /// two/three-field pictures without rounding. H.264 picture-timing support
+    /// reserves this clock even before its first interlaced/repeated field.
+    /// Ordinary progressive streams and every audio clock stay unchanged.
     pub bwdif_fields: bool,
     /// Decoded backing raster. Codec padding and integral clean apertures are
     /// removed; fractional apertures, SAR and rotation remain independent.
@@ -304,9 +310,9 @@ impl SourceStreamInfo {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceFrameMetadata {
     /// Measured presentation PTS in `SourceStreamInfo`'s time base. Interlaced
-    /// second fields bisect the measured coded-picture interval exactly.
+    /// fields divide the measured coded-picture interval exactly.
     pub pts: i64,
-    /// Positive decoded duration, or the measured half-interval for a field.
+    /// Positive decoded duration, or the measured subinterval for a field.
     /// No nominal-rate substitution; terminal fields require decoded duration.
     pub reported_duration: Option<i64>,
     pub keyframe: bool,
@@ -864,7 +870,7 @@ impl SourceDecoder {
             rgba,
         }))
     }
-    /// Backward seek in the reported presentation clock (half source ticks for
+    /// Backward seek in the reported presentation clock (sixth source ticks for
     /// interlaced sources). Decode forward to the desired indexed PTS; the first
     /// picture need not be the target. Interlaced seeks include a preceding GOP
     /// for temporal context; preroll pixels before the target are not guaranteed.
@@ -923,6 +929,7 @@ mod ffi {
         max_dimension: u32,
         max_packets_per_frame: u32,
         threads: u32,
+        progressive_only: u32,
     }
     const MAX_AUDIO_STREAMS: usize = MAX_SOURCE_AUDIO_STREAMS;
 
@@ -1276,6 +1283,7 @@ mod ffi {
                 max_dimension: limits.max_dimension,
                 max_packets_per_frame: limits.max_packets_per_frame,
                 threads: limits.threads,
+                progressive_only: u32::from(limits.progressive_only),
             };
             let mut pointer = std::ptr::null_mut();
             let mut info = Info::default();

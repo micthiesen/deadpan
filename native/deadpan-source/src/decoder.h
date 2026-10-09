@@ -18,6 +18,8 @@ typedef struct {
     /* Decoder worker threads, 1..16. More than one enables FFmpeg's
        deterministic frame/slice threading; output is unchanged. */
     uint32_t threads;
+    /* Encoded outputs must be decoded without source field presentation. */
+    uint32_t progressive_only;
 } DeadpanSourceLimits;
 typedef struct {
     int32_t stream_index;
@@ -49,7 +51,7 @@ typedef struct {
     uint32_t mastering_max_luminance, mastering_min_luminance;
     int32_t has_content_light;
     uint16_t max_cll, max_fall;
-    /* Pinned BWDIF send_field interpretation; output ticks are half source
+    /* Pinned BWDIF field/repeat interpretation; output ticks are sixth source
        ticks, including stream_start/duration. Audio clocks are unchanged. */
     int32_t bwdif_fields;
 } DeadpanSourceInfo;

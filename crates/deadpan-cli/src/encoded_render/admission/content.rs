@@ -285,6 +285,7 @@ fn inspect_pictures(
         matches!(generator, ProbeGenerator::Hdr(_)),
     );
     let limits = DecodeLimits {
+        progressive_only: true,
         max_input_bytes: maximum_bytes,
         max_frames: config.video_frames + 1,
         max_packets: maximum_packets + 1,

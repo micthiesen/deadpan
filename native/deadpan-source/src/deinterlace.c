@@ -15,12 +15,12 @@
 #define FIELD_QUEUE 3
 typedef struct {
     int64_t ordinal, pts, duration, dts;
-    int keyframe, interlaced;
+    int keyframe, interlaced, fields;
 } FieldClock;
 struct DeadpanFields {
     AVFilterGraph *graph;
     AVFilterContext *source, *sink;
-    AVFrame *single;
+    AVFrame *single, *repeated;
     FieldClock clocks[FIELD_QUEUE];
     unsigned head, count;
     int64_t inputs, last_pts;
@@ -31,6 +31,7 @@ void deadpan_fields_close(DeadpanFields **fields) {
     if (!*fields) return;
     avfilter_graph_free(&(*fields)->graph);
     av_frame_free(&(*fields)->single);
+    av_frame_free(&(*fields)->repeated);
     av_freep(fields);
 }
 
@@ -81,13 +82,15 @@ failed:
 
 int deadpan_fields_push(DeadpanFields *f, AVFrame *input) {
     if (f->flushed || f->count == FIELD_QUEUE || f->inputs >= 10000000 ||
-        ((input->flags & AV_FRAME_FLAG_INTERLACED) && input->repeat_pict) ||
+        input->repeat_pict < 0 || input->repeat_pict > 4 || input->repeat_pict == 3 ||
+        ((input->flags & AV_FRAME_FLAG_INTERLACED) && input->repeat_pict > 1) ||
         input->pts == AV_NOPTS_VALUE || (f->inputs && input->pts <= f->last_pts))
         return AVERROR_INVALIDDATA;
     FieldClock clock = {.ordinal=f->inputs, .pts=input->pts,
         .duration=input->duration, .dts=input->pkt_dts,
         .keyframe=!!(input->flags & AV_FRAME_FLAG_KEY),
-        .interlaced=!!(input->flags & AV_FRAME_FLAG_INTERLACED)};
+        .interlaced=!!(input->flags & AV_FRAME_FLAG_INTERLACED) || input->repeat_pict == 1};
+    clock.fields = input->repeat_pict == 1 ? 3 : clock.interlaced ? 2 : 1;
     if (!f->inputs) {
         f->single = av_frame_clone(input);
         if (!f->single) return AVERROR(ENOMEM);
@@ -97,6 +100,12 @@ int deadpan_fields_push(DeadpanFields *f, AVFrame *input) {
     input->pts = f->inputs;
     input->duration = 1;
     input->time_base = (AVRational){1, 1};
+    /* H.264 reports pic_struct 5/6 as progressive even when the coded picture
+       contains different fields. Its declared three-field sequence is explicit.
+       We own repeats; leaving their hints in BWDIF can bypass neighboring
+       interlaced pictures instead of deinterlacing them. */
+    if (clock.interlaced) input->flags |= AV_FRAME_FLAG_INTERLACED;
+    input->repeat_pict = 0;
     int result = av_buffersrc_add_frame_flags(f->source, input, 0);
     if (result < 0) return result;
     f->clocks[(f->head + f->count) % FIELD_QUEUE] = clock;
@@ -155,22 +164,29 @@ static int single_field(const AVFrame *input, AVFrame *output, int phase) {
 
 int deadpan_fields_pull(DeadpanFields *f, AVFrame *output) {
     av_frame_unref(output);
-    int result = av_buffersink_get_frame(f->sink, output);
+    int phase = f->phase;
+    if (phase == 2 && !f->repeated) return AVERROR_INVALIDDATA;
+    int result = phase == 2 ? av_frame_ref(output, f->repeated) :
+        av_buffersink_get_frame(f->sink, output);
     if (result < 0) return result == AVERROR_EOF && f->count ? AVERROR_INVALIDDATA : result;
     if (!f->count || output->pts < 0 || (output->flags & AV_FRAME_FLAG_INTERLACED))
         return AVERROR_INVALIDDATA;
     FieldClock clock = f->clocks[f->head];
-    int phase = f->phase;
     /* With one input, upstream's EOF neighbor has the same ordinal, so its
        second output also reports zero. Output order and the retained field
        flag identify that field; its real time still requires measured duration. */
     int single_end = f->flushed && f->inputs == 1 && phase && output->pts == 0;
-    if ((!single_end && output->pts != clock.ordinal * 2 + phase) ||
+    if (phase != 2 && ((!single_end && output->pts != clock.ordinal * 2 + phase) ||
         output->duration != (clock.interlaced ? 1 : 2) ||
-        (phase && !clock.interlaced)) return AVERROR_INVALIDDATA;
-    if (f->flushed && f->inputs == 1 && clock.interlaced) {
+        (phase && !clock.interlaced))) return AVERROR_INVALIDDATA;
+    if (phase != 2 && f->flushed && f->inputs == 1 && clock.interlaced) {
         result = single_field(f->single, output, phase);
         if (result < 0) return result;
+    }
+    if (!phase && clock.fields == 3) {
+        if (f->repeated) return AVERROR_INVALIDDATA;
+        f->repeated = av_frame_clone(output);
+        if (!f->repeated) return AVERROR(ENOMEM);
     }
     int64_t interval;
     if (f->count > 1) {
@@ -184,22 +200,30 @@ int deadpan_fields_pull(DeadpanFields *f, AVFrame *output) {
         if (interval <= 0) return AVERROR(ENODATA);
     }
     if (interval <= 0) return AVERROR_INVALIDDATA;
-    int64_t pts, duration, end, dts = AV_NOPTS_VALUE;
-    if (__builtin_mul_overflow(clock.pts, (int64_t)2, &pts) ||
-        (phase && __builtin_add_overflow(pts, interval, &pts)) ||
-        __builtin_mul_overflow(interval, output->duration, &duration) ||
+    int64_t pts, duration, offset, end, dts = AV_NOPTS_VALUE;
+    /* Sixth ticks represent both halves and thirds without rounding, even for
+       odd coded-picture intervals. Container PTS/duration own the total span;
+       repeat_pict determines subdivisions, never extra time beyond that span. */
+    if (__builtin_mul_overflow(clock.pts, (int64_t)6, &pts) ||
+        __builtin_mul_overflow(interval, (int64_t)(6 / clock.fields), &duration) ||
+        __builtin_mul_overflow(duration, (int64_t)phase, &offset) ||
+        __builtin_add_overflow(pts, offset, &pts) ||
         __builtin_add_overflow(pts, duration, &end) || pts == AV_NOPTS_VALUE ||
         (clock.dts != AV_NOPTS_VALUE &&
-            (__builtin_mul_overflow(clock.dts, (int64_t)2, &dts) || dts == AV_NOPTS_VALUE)))
+            (__builtin_mul_overflow(clock.dts, (int64_t)6, &dts) || dts == AV_NOPTS_VALUE)))
         return AVERROR(EOVERFLOW);
-    int complete = phase || output->duration == 2;
+    int complete = phase + 1 == clock.fields;
     output->pts = pts;
     output->best_effort_timestamp = pts;
     output->duration = duration;
     output->pkt_dts = dts;
+    output->repeat_pict = 0;
     output->flags &= ~AV_FRAME_FLAG_KEY;
     if (!phase && clock.keyframe) output->flags |= AV_FRAME_FLAG_KEY;
-    f->phase = !complete;
-    if (complete) { f->head = (f->head + 1) % FIELD_QUEUE; f->count--; }
+    f->phase = complete ? 0 : phase + 1;
+    if (complete) {
+        f->head = (f->head + 1) % FIELD_QUEUE; f->count--;
+        av_frame_free(&f->repeated);
+    }
     return 0;
 }

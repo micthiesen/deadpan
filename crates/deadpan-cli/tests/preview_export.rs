@@ -402,6 +402,10 @@ fn interlaced_originals_render_progressive_at_the_automatic_field_cadence() -> R
         ("fields-bff", 24, 1, [60000, 1001], 19219),
         ("fields-single", 2, 1, [50, 1], 1920),
         ("fields-100", 12, 2, [50, 1], 11520),
+        ("telecine-tff", 30, 1, [60000, 1001], 24024),
+        ("telecine-bff", 30, 1, [60000, 1001], 24024),
+        ("telecine-progressive", 30, 1, [60000, 1001], 24024),
+        ("telecine-single", 3, 1, [60000, 1001], 2402),
     ] {
         let fixture = recipes::interlaced_original(&root.join(name), name, frames, step)?;
         let movie = render(&fixture, &root.join(name).join("exports"))?;

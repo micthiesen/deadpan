@@ -51,6 +51,7 @@ fn open(path: &Path) -> Result<File, VerifyError> {
 
 fn limits(raster: [u32; 2], frames: u64, hdr: bool) -> DecodeLimits {
     DecodeLimits {
+        progressive_only: true,
         // Room for extra pictures so they are reported rather than refused.
         max_frames: frames.saturating_mul(2).saturating_add(16).min(10_000_000),
         max_pixels: crate::encoded_render::verification::decode_pixel_budget(raster, hdr),

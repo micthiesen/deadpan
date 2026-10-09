@@ -67,6 +67,7 @@ pub(crate) fn inspect(
         cancelled,
         deadline,
         limits: DecodeLimits {
+            progressive_only: true,
             max_input_bytes: limits.maximum_bytes,
             max_frames: native.video_frames() + 1,
             max_packets: limits.maximum_packets + 1,

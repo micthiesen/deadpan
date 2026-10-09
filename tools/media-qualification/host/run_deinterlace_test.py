@@ -26,8 +26,21 @@ result = subprocess.run([str(binary)], text=True, capture_output=True, timeout=3
 report = {'command':command, 'exit_code':result.returncode,
           'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
           'scope':'C adapter instrumented with ASan/UBSan; pinned FFmpeg libraries uninstrumented'}
-(args.output/'report.json').write_text(json.dumps(report, indent=2)+'\n')
 print(result.stdout, end='')
 print(result.stderr, end='')
+timing_binary = args.output.resolve() / 'h264-timing-test'
+timing_command = command.copy()
+timing_command[timing_command.index(str(Path(__file__).with_name('deinterlace_test.c')))] = str(Path(__file__).with_name('h264_timing_test.c'))
+timing_command[-1] = str(timing_binary)
+timing_command += ['-lavcodec', '-lavformat', '-lswscale']
+subprocess.run(timing_command, check=True, timeout=60)
+timing = subprocess.run([str(timing_binary)], text=True, capture_output=True, timeout=30)
+(args.output/'h264-timing.log').write_text(timing.stdout + timing.stderr)
+report['picture_timing'] = {'command':timing_command, 'exit_code':timing.returncode,
+                            'binary_sha256':hashlib.sha256(timing_binary.read_bytes()).hexdigest()}
+report['exit_code'] = result.returncode or timing.returncode
+(args.output/'report.json').write_text(json.dumps(report, indent=2)+'\n')
+print(timing.stdout, end='')
+print(timing.stderr, end='')
 print(json.dumps(report))
-raise SystemExit(result.returncode)
+raise SystemExit(report['exit_code'])

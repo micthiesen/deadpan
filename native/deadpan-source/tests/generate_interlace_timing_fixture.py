@@ -16,15 +16,18 @@ ROOT = Path(__file__).parent / 'fixtures'
 INTERVALS = [2401, 4801, 2401, 2401, 7201, 2401, 2401, 4801, 2401, 2401, 2401, 6001]
 CONTAINERS = {b'moov', b'trak', b'mdia', b'minf', b'stbl', b'edts'}
 
-def generate(data):
-    require(hashlib.sha256(data).hexdigest() ==
-            'b51ac86c5cb35827c34dfc90b37aec11379cc808efc3637b68f6d8940807e42b', 'pinned input')
+def generate(data, intervals=INTERVALS, original_interval=2400,
+             source_sha256='b51ac86c5cb35827c34dfc90b37aec11379cc808efc3637b68f6d8940807e42b'):
+    require(hashlib.sha256(data).hexdigest() == source_sha256, 'pinned input')
     moov = one(data, (0, len(data)), b'moov')
     mdat = one(data, (0, len(data)), b'mdat')
     require(moov[1] < mdat[0], 'faststart source')
-    delta = (len(INTERVALS) - 1) * 8
-    terminal = sum(INTERVALS)
-    movie_terminal = (terminal * 4 + 4) // 5
+    delta = (len(intervals) - 1) * 8
+    terminal = sum(intervals)
+    movie_header, _ = one(data, moov, b'mvhd')
+    movie_clock = u32(data, movie_header + 12)
+    require(0 < movie_clock <= 1_000_000, 'bounded movie clock')
+    movie_terminal = (terminal * movie_clock + 59999) // 60000
 
     def rewrite(start, end, video=False):
         output = bytearray()
@@ -38,9 +41,9 @@ def generate(data):
             if kind in CONTAINERS:
                 body = rewrite(at, limit, is_video)
             elif kind == b'stts' and video:
-                require(body == struct.pack('>IIII', 0, 1, 12, 2400), 'original CFR runs')
-                body = bytearray(struct.pack('>II', 0, len(INTERVALS)))
-                for duration in INTERVALS:
+                require(body == struct.pack('>IIII', 0, 1, len(intervals), original_interval), 'original CFR runs')
+                body = bytearray(struct.pack('>II', 0, len(intervals)))
+                for duration in intervals:
                     body.extend(struct.pack('>II', 1, duration))
             elif kind == b'stco':
                 count = u32(body, 4)
@@ -50,7 +53,7 @@ def generate(data):
                     require(mdat[0] <= offset < mdat[1], 'chunk inside retained payload')
                     struct.pack_into('>I', body, 8 + index * 4, offset + delta)
             elif kind == b'mvhd':
-                require(u32(body, 0) == 0 and u32(body, 12) == 48000, 'movie clock')
+                require(u32(body, 0) == 0 and u32(body, 12) == movie_clock, 'movie clock')
                 struct.pack_into('>I', body, 16, movie_terminal)
             elif video and kind == b'mdhd':
                 require(u32(body, 0) == 0 and u32(body, 12) == 60000, 'video clock')

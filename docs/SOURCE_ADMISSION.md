@@ -71,15 +71,24 @@ readiness.
 Interlaced Originals use pinned FFmpeg 8.0.3 BWDIF at field cadence, with a
 single-picture spatial bob fallback and no automatic format conversion. A fixed
 three-entry queue retains source timestamps independently of filter ordinals.
-Video clocks use exact half ticks; all audio clocks stay unchanged. Interior
-fields bisect the measured interval to the next coded picture, and the final
-pair requires its own positive decoded duration. Source receipts retain
-`bwdif_fields` and previous-GOP seek anchors. A later unannounced change from
-progressive to interlaced fails; malformed/tiny planes, unsupported formats and
-unknown terminal timing fail explicitly. Export and proxy verification require
-progressive encoded pictures and never use deinterlacing to hide a bad output.
-Repeated-field telecine is explicitly refused pending its own cadence
-qualification; it is not silently treated as an ordinary two-field picture.
+Video clocks use exact sixth ticks; all audio clocks stay unchanged. Two-field
+pictures bisect the measured interval; three-field pictures divide it into
+thirds and repeat the first field's pixels. The final picture requires its own
+positive decoded duration. Repeats never add time outside that measured span.
+Source receipts retain `bwdif_fields_v2` and previous-GOP seek anchors. Older
+development field receipts are refused; ordinary progressive receipts retain
+their serialization.
+
+H.264 SPS picture-timing support reserves the field clock before any repeated
+picture. A bounded SEI reader retains the declared picture structure with its
+packet through reference-counted decoder reordering. This avoids FFmpeg's
+thread-dependent interlace guess for progressive-coded telecine. Timing changes
+between SPSs, standalone field pictures needing a separate pairing contract,
+malformed/tiny planes and unknown terminal timing fail explicitly. Unannounced
+interlace still fails for formats without an admitted field clock. Explicit
+progressive-only decoding protects exports, generated masters and proxies;
+progressive HRD timing is allowed, while interlaced/repeated fields are refused.
+See [telecine qualification](qualification/telecine-sources-2026-10-09.md).
 
 Every demuxed packet, including unselected audio, is limited to the configured
 payload plus side-data byte allowance, at most 16 MiB. H.264 packets have at most

@@ -7,7 +7,8 @@
     "sdr_with_stream_hdr": "tests/generate_stream_hdr_fixture.c, pinned FFmpeg 8.0.3 libraries; bitexact Matroska remux of limited709.mkv without opening a decoder. Retains its 4x2 eight-bit FFV1 packet, BT.709 transfer/matrix/primary tags, and limited range; adds stream AV_PKT_DATA_CONTENT_LIGHT_LEVEL (MaxCLL=1000, MaxFALL=400). Pinned ffprobe confirms color_transfer=bt709 and Content light level metadata in streams[0].side_data_list.",
     "x264_seek_skip_fixtures": "development-only Homebrew ffmpeg 9.0.1 libx264 (GPL, not linked by Deadpan): testsrc2 320x180 at 24 fps, yuv420p, x264-params colorprim/transfer/colormatrix=bt709, -color_range tv -chroma_sample_location left. pyramid-bframes.mp4: 96 frames, keyint=48, scenecut=0, bframes=3, b-pyramid=normal (reference B), ref=3; declares bitstream_restriction with frame_mbs_only_flag 1. fake-interlaced.mp4: 72 frames, keyint=36, bframes=2, fake-interlaced=1, so frame_mbs_only_flag 0 with progressive pictures. Pinned FFmpeg 8.0.3 decodes both in tests/threaded_seek.rs.",
     "hdr_hevc_h264_fixtures": "tests/generate_hdr_fixtures.py: development-only Homebrew ffmpeg 9.0.1 CLI with libx265 and libx264 (GPL, not linked by Deadpan) and native AAC; PQ stream mdcv/clli boxes added by tests/generate_hdr_static_metadata.c through pinned FFmpeg 8.0.3 movenc (bitexact, faststart, write_colr). Content and code values are documented in the generator. hevc-pq.mp4/hevc-hlg.mp4: 64x36 24 fps 8 frames lossless HEVC Main10, IDR every 4, no B frames; PQ carries SEI and boxes with P3-D65 primaries, 1000/0.0001 cd/m2, MaxCLL 1000, MaxFALL 400. h264-high10-pq.mp4: same content, H.264 High10 qp 1, no static metadata. Refusal fixtures: hevc-ten-bit-sdr.mp4 (BT.709 tags), hevc-pq-bt709.mp4 (PQ with BT.709 primaries/matrix), hevc-pq-mastering-change.mp4 (two IDR segments, second SEI peak 4000 cd/m2). hdr-pq-av.mp4/hdr-hlg-av.mp4: 320x180 30 fps 60 frames CRF 18 HEVC Main10, IDR every 30, two B frames, 48 kHz stereo AAC with a 10 ms 1 kHz burst at 1 s and a video marker in frame 30. hdr-pq-grain-av.mp4/hdr-hlg-grain-av.mp4 (`generate_hdr_fixtures.py grain`): 320x180 30 fps 60 frames of grainy real-like footage (sky gradient, soft highlight disc, panning textured ground with 2-pixel fence edges, a moving dark subject, a graphics-white sign) with deterministic clumped luma/chroma grain (sigma 10/5 ten-bit codes, integer-hash noise), CRF 18 HEVC Main10 with -tune grain, IDR every 30, two B frames; same AAC track and PQ mastering/content-light boxes as the clean AV fixtures. hevc-pq-open-gop.mp4 (`generate_hdr_fixtures.py review`): the small PQ content, 24 frames, lossless HEVC Main10 with x265 open-gop=1, keyint 8, 3 B frames: IDR, then CRA at pictures 8 and 16 each followed by three RASL pictures (NAL types 9, 8, 8), no static metadata. hevc-pq-invalid-static.mp4 (`review`): 2 lossless PQ frames whose SEI declares a 10 cd/m2 mastering peak and MaxCLL 100 with MaxFALL 400, both invalid under the shared rule set.",
-    "interlaced_fields": "tests/generate_interlace_fixtures.py: development-only FFmpeg 9.0.1/libx264 (not linked by Deadpan), 96x64 independently authored moving fields, top/bottom field first, 50, 60000/1001 and 100 fields/s, single coded pictures and two-B-frame GOPs, 48 kHz mono AAC. tests/generate_interlace_timing_fixture.py varies only video duration tables and relocation offsets over the hash-pinned TFF file, retaining all compressed video/audio bytes; odd intervals require half ticks and the final 6001-tick duration differs from its predecessor. Both support --check."
+    "interlaced_fields": "tests/generate_interlace_fixtures.py: development-only FFmpeg 9.0.1/libx264 (not linked by Deadpan), 96x64 independently authored moving fields, top/bottom field first, 50, 60000/1001 and 100 fields/s, single coded pictures and two-B-frame GOPs, 48 kHz mono AAC. tests/generate_interlace_timing_fixture.py varies only video duration tables and relocation offsets over the hash-pinned TFF file, retaining all compressed video/audio bytes; odd intervals require half ticks and the final 6001-tick duration differs from its predecessor. Both support --check.",
+    "telecine": "tests/generate_telecine_fixtures.py: byte-level H.264 picture-timing SEI changes over hash-pinned moving TFF/BFF fixtures; retains every compressed slice and AAC byte. Exact MP4 intervals alternate two/three fields at 60000/1001 Hz, with odd-interval, single-picture and B-frame cases. A separate progressive-coded input and an HRD picture-timing control use development FFmpeg 9.0.1/libx264, never linked into Deadpan. --check reproduces all bytes."
   },
   "known_source_limit": "Legacy vfr.mp4 itself encodes final video duration 1001 and terminal 238238 ticks in stts/mdhd/tkhd/elst, although the producer authored 3003 and 240240. This is an encode/mux fixture limitation, not evidence of lost decoder metadata. The separate vfr-long-terminal.mp4 explicitly encodes the intended 3003-tick final picture without changing compressed data or PTS. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
@@ -200,6 +201,46 @@
       "name": "vfr.mp4",
       "bytes": 43455,
       "sha256": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884"
+    },
+    {
+      "name": "telecine-tff.mp4",
+      "bytes": 11253,
+      "sha256": "c4013e12b97b336189385fcc82dfe6523b4b5dffab604ddfa11cba0fdd04ac9e"
+    },
+    {
+      "name": "telecine-bff.mp4",
+      "bytes": 9888,
+      "sha256": "42d27bcd6a75553294ea4e05e4da494fd705deed4c03ccca96a77f2c13a45376"
+    },
+    {
+      "name": "telecine-progressive.mp4",
+      "bytes": 10890,
+      "sha256": "8829818e88993b49df55d567e19f7fc13b6ca21d98dae387a090cb6d5593382b"
+    },
+    {
+      "name": "telecine-variable.mp4",
+      "bytes": 11253,
+      "sha256": "b2eee95c7bf0bf07560c4ca3625aaff5e6bae1e199ef016742e63d551221f97b"
+    },
+    {
+      "name": "telecine-single.mp4",
+      "bytes": 3284,
+      "sha256": "7c9bc978d019fd28163b3ce84bde8652b89d9f8b127e93b7f3faab63aaddb723"
+    },
+    {
+      "name": "telecine-bframes.mp4",
+      "bytes": 11347,
+      "sha256": "a23f5d35b28ffefa44e24b8ffea3e5c712ec67e5d9d90cd86e8f82eb112e9212"
+    },
+    {
+      "name": "progressive-timing-hrd.mp4",
+      "bytes": 57909,
+      "sha256": "aadf02a282bb549357271a4c751489b47d4d6bf392b157690ba8661be0eccbbc"
+    },
+    {
+      "name": "progressive-repeats.mp4",
+      "bytes": 10890,
+      "sha256": "44e226fe4ade1b6a1b81c4c521b3c531da1d1013689c957fe44a1a7b178e7fca"
     }
   ]
 }

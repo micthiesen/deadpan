@@ -49,6 +49,7 @@ pub(crate) fn measure(
     limits.decode.max_input_bytes = sampled.object().byte_length();
     limits.decode.max_frames = u64::from(MAX_SAMPLED_FRAMES) * 3;
     limits.decode.max_pixels = MAX_PIXELS;
+    limits.decode.progressive_only = true;
     let input = sampled.verified_source_input().map_err(invalid)?;
     let asset = AssetId::new("bridge-endpoint-master").map_err(invalid)?;
     let opened = SourceSession::open_input(input, asset, limits, cancelled);

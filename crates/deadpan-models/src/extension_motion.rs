@@ -267,6 +267,7 @@ pub(crate) fn measure(
     limits.decode.max_input_bytes = native.object().byte_length();
     limits.decode.max_frames = u64::from(MAX_NATIVE_FRAMES) * 3;
     limits.decode.max_pixels = deadpan_analysis::generation_quality::MAX_PIXELS;
+    limits.decode.progressive_only = true;
     let input = native.verified_source_input().map_err(invalid)?;
     let asset = AssetId::new("extension-motion-master").map_err(invalid)?;
     let session = SourceSession::open_input(input, asset, limits, cancelled);

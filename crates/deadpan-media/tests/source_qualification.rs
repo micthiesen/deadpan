@@ -71,6 +71,76 @@ fn snapshot_value() -> Value {
 }
 
 #[test]
+fn telecine_receipts_preserve_field_cadence_terminal_time_and_original_audio() {
+    use deadpan_core::SourceFrameId;
+    let rate = FrameRate::new(60000, 1001).unwrap();
+    for (name, count, audio_end) in [
+        ("telecine-tff.mp4", 30, 23040),
+        ("telecine-bff.mp4", 30, 19219),
+        ("telecine-progressive.mp4", 30, 23040),
+        ("telecine-single.mp4", 3, 1920),
+    ] {
+        let (mut video, audio) = av(name);
+        let qualified =
+            DecodedSourceQualification::from_sessions(Some(&video), Some(&audio)).unwrap();
+        let bytes = qualified.snapshot().to_json().unwrap();
+        let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+        assert_eq!(&restored, qualified.snapshot());
+        let mut obsolete: Value = serde_json::from_slice(&bytes).unwrap();
+        let interpretation = obsolete["video"]["interpretation"].as_object_mut().unwrap();
+        assert_eq!(interpretation.remove("bwdif_fields_v2"), Some(json!(true)));
+        interpretation.insert("bwdif_fields".into(), json!(true));
+        assert!(
+            SourceQualificationSnapshot::from_json(&serde_json::to_vec(&obsolete).unwrap())
+                .is_err()
+        );
+        assert_eq!(
+            restored
+                .basis_candidate()
+                .unwrap()
+                .unwrap()
+                .basis
+                .frame_rate,
+            rate,
+            "{name}"
+        );
+        let timing = restored.derive_timing(rate).unwrap();
+        assert_eq!(
+            timing.video.unwrap().duration_frames,
+            ExactRatio::integer(count)
+        );
+        assert_eq!(timing.audio.unwrap().span.end().ticks, audio_end);
+        let mut pixels = Vec::new();
+        for id in 0..count as u64 {
+            pixels.push(
+                video
+                    .frame(
+                        SourceFrameId(id),
+                        Duration::from_secs(5),
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap()
+                    .rgba,
+            );
+        }
+        for id in (0..count as u64).rev() {
+            assert_eq!(
+                video
+                    .frame(
+                        SourceFrameId(id),
+                        Duration::from_secs(5),
+                        &AtomicBool::new(false)
+                    )
+                    .unwrap()
+                    .rgba,
+                pixels[id as usize],
+                "{name} {id}"
+            );
+        }
+    }
+}
+
+#[test]
 fn field_receipts_keep_progressive_cadence_audio_and_temporal_seek_anchors() {
     use deadpan_core::SourceFrameId;
     for (name, rate, samples, count) in [

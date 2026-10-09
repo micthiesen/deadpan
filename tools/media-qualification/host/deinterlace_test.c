@@ -46,7 +46,7 @@ static void single_fields(void) {
             assert(deadpan_fields_flush(f) == 0);
             for (int phase = 0; phase < 2; phase++) {
                 assert(deadpan_fields_pull(f, out) == 0);
-                assert(out->pts == -202 + phase * 31 && out->duration == 31);
+                assert(out->pts == -606 + phase * 93 && out->duration == 93);
                 assert(!(out->flags & AV_FRAME_FLAG_INTERLACED));
                 assert(!!(out->flags & AV_FRAME_FLAG_KEY) == !phase);
                 assert(out->color_trc == (bits == 8 ? AVCOL_TRC_BT709 : AVCOL_TRC_SMPTE2084));
@@ -75,13 +75,14 @@ static void mixed_clocks(void) {
     for (int i = 0; i <= 4; i++) {
         if (i < 4) {
             AVFrame *in = picture(10, 1, i != 1, input_pts[i], i == 3 ? 37 : 0);
+            if (i == 1) in->repeat_pict = 2; /* Must not bypass adjacent fields. */
             if (!f) assert(deadpan_fields_open(&f, in, 8) == 0);
             assert(deadpan_fields_push(f, in) == 0);
             av_frame_free(&in);
         } else assert(deadpan_fields_flush(f) == 0);
         int result;
         while ((result = deadpan_fields_pull(f, out)) == 0) {
-            assert(seen < 7 && out->pts == pts[seen] && out->duration == duration[seen]);
+            assert(seen < 7 && out->pts == pts[seen] * 3 && out->duration == duration[seen] * 3);
             seen++;
         }
         assert(result == (i == 4 ? AVERROR_EOF : AVERROR(EAGAIN)));
@@ -112,14 +113,40 @@ static void bad_clocks(void) {
     assert(deadpan_fields_push(f, in) == AVERROR_INVALIDDATA);
     deadpan_fields_close(&f); av_frame_free(&in);
     in = picture(8, 1, 1, 0, 3);
-    in->repeat_pict = 1;
+    in->repeat_pict = 3;
     assert(deadpan_fields_open(&f, in, 1) == 0);
     assert(deadpan_fields_push(f, in) == AVERROR_INVALIDDATA);
     deadpan_fields_close(&f); av_frame_free(&in);
 }
 
+static void repeated_fields(void) {
+    for (int bits = 8; bits <= 10; bits += 2) for (int top = 0; top <= 1; top++) {
+        AVFrame *in = picture(bits, top, 0, -101, 31), *out = av_frame_alloc();
+        in->repeat_pict = 1; /* H.264 reports pic_struct 5/6 as progressive. */
+        DeadpanFields *f = NULL;
+        assert(deadpan_fields_open(&f, in, 1) == 0);
+        assert(deadpan_fields_push(f, in) == 0);
+        assert(deadpan_fields_flush(f) == 0);
+        for (int phase = 0; phase < 3; phase++) {
+            assert(deadpan_fields_pull(f, out) == 0);
+            assert(out->pts == -606 + phase * 62 && out->duration == 62);
+            assert(!out->repeat_pict && !(out->flags & AV_FRAME_FLAG_INTERLACED));
+            unsigned expected = ((top ^ (phase % 2)) ? 20 : 200) * (bits == 8 ? 1 : 4);
+            for (int plane = 0; plane < 3; plane++) {
+                int size = plane ? 8 : 16;
+                for (int y = 0; y < size; y++) for (int x = 0; x < size; x++) {
+                    uint8_t *p = out->data[plane] + y * out->linesize[plane] + x * (bits == 8 ? 1 : 2);
+                    assert((bits == 8 ? *p : AV_RL16(p)) == expected);
+                }
+            }
+        }
+        assert(deadpan_fields_pull(f, out) == AVERROR_EOF);
+        deadpan_fields_close(&f); av_frame_free(&in); av_frame_free(&out);
+    }
+}
+
 int main(void) {
-    single_fields(); mixed_clocks(); bad_clocks();
+    single_fields(); mixed_clocks(); bad_clocks(); repeated_fields();
     puts("single TFF/BFF 8/10-bit spatial fields, mixed negative/odd clocks, terminal duration, overflow/sentinel refusals: passed");
     return 0;
 }

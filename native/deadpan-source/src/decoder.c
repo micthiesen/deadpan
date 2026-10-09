@@ -38,6 +38,11 @@
 #error "deadpan-source requires exactly FFmpeg 8.0.3 headers"
 #endif
 #define IO_BUFFER_BYTES 32768
+typedef struct {
+    int valid, frame_only, pic_struct, delay_bits, field_cadence;
+} H264Timing;
+typedef struct { uint32_t magic; int pic_struct; } H264PictureTiming;
+#define PICTURE_TIMING_MAGIC 0x4450544d
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS (DEADPAN_SOURCE_MAX_AUDIO_STREAMS + 1)
 #define DEMUXERS "mov,matroska,webm"
@@ -80,6 +85,7 @@ struct DeadpanSource {
     // Packets whose PTS precedes this target may skip non-reference pictures,
     // only while every admitted SPS makes that safe (see sps_allows_skip).
     int skip_nonref, skip_safe;
+    H264Timing h264_timing;
     _Atomic uint64_t pictures;
     int64_t skip_before_pts;
     // Set by codec callbacks, which may run on FFmpeg frame threads outside
@@ -463,19 +469,25 @@ static uint32_t ue(Bits *b) {
     return (uint32_t)(((uint64_t)1 << zeros) - 1 + bits(b, zeros));
 }
 static void se(Bits *b) { (void)ue(b); }
-static void hrd(Bits *b) {
-    uint32_t count = ue(b) + 1;
-    if (count > 32) { b->failed = 1; return; }
+static int hrd(Bits *b) {
+    uint32_t count = ue(b);
+    if (count >= 32) { b->failed = 1; return 0; }
+    count++;
     (void)bits(b, 8);
     for (uint32_t i = 0; i < count && !b->failed; i++) { (void)ue(b); (void)ue(b); (void)bit(b); }
-    (void)bits(b, 20);
+    (void)bits(b, 5);
+    int delays = (int)bits(b, 5) + 1;
+    delays += (int)bits(b, 5) + 1;
+    (void)bits(b, 5);
+    return delays;
 }
 // Skipping non-reference preroll is safe only when the decoder's reorder
 // depth is declared rather than estimated from the POCs it happens to see
 // (FFmpeg raises an estimated depth only without bitstream_restriction), and
 // when every picture is a frame (no PAFF/MBAFF field pairing). Returns 1 only
 // for a complete SPS proving both; anything unparsed or unusual returns 0.
-static int sps_allows_skip(const uint8_t *nal, size_t length) {
+static int sps_allows_skip(const uint8_t *nal, size_t length, H264Timing *timing) {
+    *timing = (H264Timing){0};
     if (length < 4 || length > 4096 || (nal[0] & 31) != 7) return 0;
     uint8_t rbsp[4096];
     size_t size = 0, zeros = 0;
@@ -501,6 +513,7 @@ static int sps_allows_skip(const uint8_t *nal, size_t length) {
                 for (int j = 0; j < (i < 6 ? 16 : 64) && !b.failed; j++) {
                     if (next) {
                         uint32_t code = ue(&b);
+                        if (code > 256 || code == 255) { b.failed = 1; break; }
                         int32_t delta = code & 1 ? (int32_t)((code + 1) / 2) : -(int32_t)(code / 2);
                         next = (last + delta + 256) % 256;
                     }
@@ -519,41 +532,56 @@ static int sps_allows_skip(const uint8_t *nal, size_t length) {
         for (uint32_t i = 0; i < cycle && !b.failed; i++) se(&b);
     } else if (poc != 2) return 0;
     (void)ue(&b); (void)bit(&b); (void)ue(&b); (void)ue(&b);
-    if (!bit(&b)) return 0;  // frame_mbs_only_flag
+    int frame_only = (int)bit(&b);  // frame_mbs_only_flag
+    if (!frame_only) (void)bit(&b);  // mb_adaptive_frame_field_flag
     (void)bit(&b);
     if (bit(&b)) { (void)ue(&b); (void)ue(&b); (void)ue(&b); (void)ue(&b); }
-    if (!bit(&b)) return 0;  // vui_parameters_present_flag
+    if (!bit(&b)) {
+        if (!b.failed) *timing = (H264Timing){.valid=1, .frame_only=frame_only, .field_cadence=!frame_only};
+        return 0;
+    }
     if (bit(&b) && bits(&b, 8) == 255) (void)bits(&b, 32);
     if (bit(&b)) (void)bit(&b);
     if (bit(&b)) { (void)bits(&b, 4); if (bit(&b)) (void)bits(&b, 24); }
     if (bit(&b)) { (void)ue(&b); (void)ue(&b); }
     if (bit(&b)) (void)bits(&b, 32), (void)bits(&b, 32), (void)bit(&b);
     int nal_hrd = (int)bit(&b);
-    if (nal_hrd) hrd(&b);
+    int delay_bits = nal_hrd ? hrd(&b) : 0;
     int vcl_hrd = (int)bit(&b);
-    if (vcl_hrd) hrd(&b);
+    if (vcl_hrd) delay_bits = hrd(&b);
     if (nal_hrd || vcl_hrd) (void)bit(&b);
-    (void)bit(&b);
+    int pic_struct = (int)bit(&b);
     int restricted = (int)bit(&b);  // bitstream_restriction_flag
     if (restricted) {
         (void)bit(&b);
         for (int i = 0; i < 6; i++) (void)ue(&b);
     }
-    return restricted && !b.failed;
+    if (!b.failed) *timing = (H264Timing){.valid=1, .frame_only=frame_only,
+        .pic_struct=pic_struct, .delay_bits=delay_bits, .field_cadence=!frame_only || pic_struct};
+    return frame_only && restricted && !b.failed;
 }
 // Every SPS in the admitted AVC configuration must allow skipping.
-static int avcc_allows_skip(const uint8_t *data, int size) {
+static int same_timing(H264Timing a, H264Timing b) {
+    return a.valid && b.valid && a.frame_only == b.frame_only &&
+        a.pic_struct == b.pic_struct && a.delay_bits == b.delay_bits;
+}
+static int avcc_allows_skip(const uint8_t *data, int size, H264Timing *timing) {
     if (size < 7) return 0;
     int count = data[5] & 31, position = 6;
     if (!count) return 0;
+    int safe = 1;
     for (int i = 0; i < count; i++) {
         if (position + 2 > size) return 0;
         int length = (data[position] << 8) | data[position + 1];
         position += 2;
-        if (length <= 0 || position + length > size || !sps_allows_skip(data + position, (size_t)length)) return 0;
+        if (length <= 0 || position + length > size) return 0;
+        H264Timing current;
+        if (!sps_allows_skip(data + position, (size_t)length, &current)) safe = 0;
+        if (!current.valid || (i && !same_timing(*timing, current))) return -1;
+        *timing = current;
         position += length;
     }
-    return 1;
+    return safe;
 }
 // Independent recheck of the admitted hvcC (ISO/IEC 14496-15 8.3.3.1). VPS,
 // SPS and PPS arrays must be present; their exact units are retained so an
@@ -745,6 +773,7 @@ static int allocate_decoder(DeadpanSource *s) {
     s->decoder->pkt_timebase = stream->time_base;
     // Keep the coded crop available for the shared visible-rectangle check.
     s->decoder->apply_cropping = 0;
+    s->decoder->flags |= AV_CODEC_FLAG_COPY_OPAQUE;
     if ((result = avcodec_open2(s->decoder, codec, NULL)) < 0)
         return fferror(s, "open source decoder", result);
     return check(s);
@@ -777,8 +806,9 @@ static int open_impl(DeadpanSource *s) {
         !s->limits.max_packet_bytes || s->limits.max_packet_bytes > 16ULL*1024*1024 ||
         !s->limits.max_pixels || s->limits.max_pixels > 8192ULL*8192 ||
         !s->limits.max_dimension || s->limits.max_dimension > 8192 || !s->limits.max_packets_per_frame || s->limits.max_packets_per_frame > 10000 ||
-        !s->limits.threads || s->limits.threads > 16)
+        !s->limits.threads || s->limits.threads > 16 || s->limits.progressive_only > 1)
         return fail(s, "invalid_configuration", "source decode limits exceed hard bounds");
+    if (s->fresh_key_pts != AV_NOPTS_VALUE) s->limits.progressive_only = 1;
     struct stat status;
     if (fstat(s->fd, &status) || !S_ISREG(status.st_mode) || status.st_size != s->length || s->length <= 0 || (uint64_t)s->length > s->limits.max_input_bytes)
         return fail(s, "invalid_input", "source must be a nonempty regular snapshot within its byte bound");
@@ -829,7 +859,9 @@ static int open_impl(DeadpanSource *s) {
         if (p->extradata_size < 7 || p->extradata[0] != 1)
             return fail(s, "unsupported_codec", "H264 source requires admitted AVC configuration");
         s->nal_length_bytes = (p->extradata[4] & 3) + 1;
-        s->skip_safe = avcc_allows_skip(p->extradata, p->extradata_size);
+        s->skip_safe = avcc_allows_skip(p->extradata, p->extradata_size, &s->h264_timing);
+        if (s->skip_safe < 0)
+            return fail(s, "unsupported_codec", "H264 parameter sets need one qualified picture-timing interpretation");
         if (s->nal_length_bytes == 3) return fail(s, "unsupported_codec", "unsupported AVC NAL length field");
     } else if (p->codec_id == AV_CODEC_ID_HEVC && parse_hvcc(s, p->extradata, p->extradata_size) < 0) {
         return -1;
@@ -862,19 +894,20 @@ static int open_impl(DeadpanSource *s) {
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
     s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
-    s->info.bwdif_fields = (f->flags & AV_FRAME_FLAG_INTERLACED) ||
-        (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE);
+    s->info.bwdif_fields = !s->limits.progressive_only &&
+        (s->h264_timing.field_cadence || f->repeat_pict == 1 || (f->flags & AV_FRAME_FLAG_INTERLACED) ||
+        (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE));
     if (s->info.bwdif_fields) {
         if (AV_CEIL_RSHIFT(f->width, pixel->log2_chroma_w) < 3 ||
             AV_CEIL_RSHIFT(f->height, pixel->log2_chroma_h) < 4)
             return fail(s, "unsupported_interlace", "BWDIF requires source planes at least three columns by four rows");
         if (s->fresh_key_pts != AV_NOPTS_VALUE)
             return fail(s, "unsupported_interlace", "fresh encoded-output GOP inspection requires progressive pictures");
-        if (stream->time_base.den > INT_MAX / 2 ||
-            (stream->start_time != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->start_time, (int64_t)2, &s->info.stream_start)) ||
-            (stream->duration != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->duration, (int64_t)2, &s->info.stream_duration)))
-            return fail(s, "invalid_time_base", "interlaced source cannot represent exact half-tick timestamps");
-        s->info.time_base_den *= 2;
+        if (stream->time_base.den > INT_MAX / 6 ||
+            (stream->start_time != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->start_time, (int64_t)6, &s->info.stream_start)) ||
+            (stream->duration != AV_NOPTS_VALUE && __builtin_mul_overflow(stream->duration, (int64_t)6, &s->info.stream_duration)))
+            return fail(s, "invalid_time_base", "field cadence cannot represent exact sixth-tick timestamps");
+        s->info.time_base_den *= 6;
         if ((stream->start_time != AV_NOPTS_VALUE && s->info.stream_start == AV_NOPTS_VALUE) ||
             (stream->duration != AV_NOPTS_VALUE && s->info.stream_duration == AV_NOPTS_VALUE))
             return fail(s, "invalid_time_base", "interlaced timestamp became the unknown-time sentinel");
@@ -940,10 +973,13 @@ static int check_frame(DeadpanSource *s) {
     AVFrame *f = s->frame;
     AVStream *stream = s->format->streams[s->stream];
     if (f->decode_error_flags || (f->flags & AV_FRAME_FLAG_CORRUPT)) return fail(s, "corrupt_frame", "decoder reported a corrupt or concealed frame");
-    if ((f->flags & AV_FRAME_FLAG_INTERLACED) && !s->info.bwdif_fields)
+    if (s->limits.progressive_only && ((f->flags & AV_FRAME_FLAG_INTERLACED) || f->repeat_pict))
+        return fail(s, "unsupported_interlace", "encoded output requires progressive pictures without field repeats");
+    if (((f->flags & AV_FRAME_FLAG_INTERLACED) || f->repeat_pict == 1) && !s->info.bwdif_fields)
         return fail(s, "stream_changed", "progressive source changed to unannounced interlaced pictures");
-    if ((f->flags & AV_FRAME_FLAG_INTERLACED) && f->repeat_pict)
-        return fail(s, "unsupported_interlace", "repeated-field telecine requires a qualified field-repeat cadence");
+    if (f->repeat_pict < 0 || f->repeat_pict > 4 || f->repeat_pict == 3 ||
+        ((f->flags & AV_FRAME_FLAG_INTERLACED) && f->repeat_pict > 1))
+        return fail(s, "unsupported_interlace", "unrecognized field-repeat cadence");
     if (f->crop_top || f->crop_bottom || f->crop_left || f->crop_right) {
         // Codec padding is part of decoding the declared visible rectangle.
         // Admit it only when it resolves exactly to the immutable stream size.
@@ -962,7 +998,7 @@ static int check_frame(DeadpanSource *s) {
     AVRational aspect = sar(f->sample_aspect_ratio);
     if (av_cmp_q(aspect, (AVRational){s->info.sar_num,s->info.sar_den})) return fail(s, "stream_changed", "frame sample aspect ratio differs from source metadata");
     if (stream->time_base.num != s->info.time_base_num ||
-        (int64_t)stream->time_base.den * (s->info.bwdif_fields ? 2 : 1) != s->info.time_base_den)
+        (int64_t)stream->time_base.den * (s->info.bwdif_fields ? 6 : 1) != s->info.time_base_den)
         return fail(s, "stream_changed", "source time base changed");
     if (f->pts == AV_NOPTS_VALUE) return fail(s, "missing_pts", "frame has no original presentation timestamp");
     const AVFrameSideData *matrix = av_frame_get_side_data(f, AV_FRAME_DATA_DISPLAYMATRIX);
@@ -1288,6 +1324,80 @@ static int yuv420p10(DeadpanSource *s, uint16_t *samples, size_t count) {
     }
     return check(s);
 }
+/* Read an EBSP byte without allocating an unbounded SEI copy. */
+static int rbsp_byte(const uint8_t *data, size_t length, size_t *at, unsigned *zeros) {
+    if (*at >= length) return -1;
+    int value = data[(*at)++];
+    if (*zeros >= 2 && value == 3) {
+        if (*at >= length || data[*at] > 3) return -1;
+        value = data[(*at)++];
+        *zeros = 0;
+    }
+    *zeros = value ? 0 : *zeros + 1;
+    return value;
+}
+/* H.264's pic_struct 3/4 flag is otherwise guessed from decoder history,
+   including per-thread history. Retain the declared structure with the packet
+   through FFmpeg's reference-counted COPY_OPAQUE path, including B-frame reorder.
+   Nine timing bytes cover 64 HRD delay bits, pic_struct and its clock flags. */
+static int picture_timing(DeadpanSource *s, const uint8_t *nal, size_t length, int *structure) {
+    size_t at = 1;
+    unsigned zeros = 0;
+    while (at < length) {
+        if (at + 1 == length && nal[at] == 0x80) return 0;
+        uint64_t header[2] = {0, 0};
+        for (unsigned part = 0; part < 2; part++) {
+            int byte;
+            do {
+                if ((at & 4095) == 0 && check(s) < 0) return -1;
+                byte = rbsp_byte(nal, length, &at, &zeros);
+                if (byte < 0) return fail(s, "invalid_input", "truncated H264 SEI header");
+                header[part] += (unsigned)byte;
+                if (header[part] > s->limits.max_packet_bytes)
+                    return fail(s, "resource_limit", "H264 SEI header exceeds packet bound");
+            } while (byte == 255);
+        }
+        if (header[1] > length - at) return fail(s, "invalid_input", "H264 SEI payload escapes its NAL");
+        uint8_t prefix[9] = {0};
+        for (uint64_t i = 0; i < header[1]; i++) {
+            if ((i & 4095) == 0 && check(s) < 0) return -1;
+            int byte = rbsp_byte(nal, length, &at, &zeros);
+            if (byte < 0) return fail(s, "invalid_input", "truncated H264 SEI payload");
+            if (i < sizeof(prefix)) prefix[i] = (uint8_t)byte;
+        }
+        if (header[0] == 1) {
+            if (*structure >= 0) return fail(s, "invalid_input", "multiple picture timings in one H264 sample");
+            size_t bytes = header[1] < sizeof(prefix) ? (size_t)header[1] : sizeof(prefix);
+            Bits b = {prefix, bytes * 8, (size_t)s->h264_timing.delay_bits, 0};
+            int value = (int)bits(&b, 4);
+            if (b.failed || value > 8) return fail(s, "invalid_input", "invalid H264 picture structure");
+            static const unsigned clock_flags[] = {1, 1, 1, 2, 2, 3, 3, 2, 3};
+            if (bytes * 8 < (size_t)s->h264_timing.delay_bits + 4 + clock_flags[value])
+                return fail(s, "invalid_input", "truncated H264 picture timing clock flags");
+            if (value == 1 || value == 2)
+                return fail(s, "unsupported_interlace", "standalone H264 field pictures need a qualified pairing contract");
+            *structure = value;
+        }
+    }
+    return fail(s, "invalid_input", "H264 SEI has no trailing stop bit");
+}
+static int apply_picture_timing(DeadpanSource *s) {
+    if (!s->h264_timing.pic_struct) return 0;
+    AVFrame *f = s->frame;
+    if (!f->opaque_ref || f->opaque_ref->size != sizeof(H264PictureTiming))
+        return fail(s, "decode_protocol", "H264 decoder lost packet picture timing");
+    H264PictureTiming timing;
+    memcpy(&timing, f->opaque_ref->data, sizeof(timing));
+    if (timing.magic != PICTURE_TIMING_MAGIC || timing.pic_struct < -1 || timing.pic_struct > 8)
+        return fail(s, "decode_protocol", "H264 decoder returned invalid picture timing");
+    if (timing.pic_struct < 0 && !s->h264_timing.frame_only) return 0;
+    int structure = timing.pic_struct < 0 ? 0 : timing.pic_struct;
+    f->flags &= ~(AV_FRAME_FLAG_INTERLACED | AV_FRAME_FLAG_TOP_FIELD_FIRST);
+    if (structure >= 3 && structure <= 6) f->flags |= AV_FRAME_FLAG_INTERLACED;
+    if (structure == 3 || structure == 5) f->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+    f->repeat_pict = structure == 5 || structure == 6 ? 1 : structure == 7 ? 2 : structure == 8 ? 4 : 0;
+    return 0;
+}
 static int packet_budget(DeadpanSource *s) {
     if (s->packet->size <= 0 || (uint64_t)s->packet->size > s->limits.max_packet_bytes)
         return fail(s, "resource_limit", "source packet exceeds configured byte bound");
@@ -1307,6 +1417,7 @@ static int packet_budget(DeadpanSource *s) {
         const uint8_t *data = s->packet->data;
         const char *name = s->hevc ? "HEVC" : "H264";
         int idr = 0, other_vcl = 0, rasl = 0, trailing = 0, rasl_capable = 0;
+        int structure = -1;
         // A packet that FFmpeg would reinterpret as avcC is a configuration
         // change, not an ordinary length-prefixed picture packet.
         if (!s->hevc && length >= 7 && data[0] == 1 && (data[4] & 0xfc) == 0xfc && (data[5] & 0xe0) == 0xe0)
@@ -1347,10 +1458,24 @@ static int packet_budget(DeadpanSource *s) {
                 if (type == 5) idr = 1;
                 // An in-band SPS governs the following pictures; it must also
                 // prove skipping safe, before this packet's skip decision.
-                if (type == 7 && !sps_allows_skip(data + position, amount)) s->skip_safe = 0;
+                if (type == 7) {
+                    H264Timing timing;
+                    if (!sps_allows_skip(data + position, amount, &timing)) s->skip_safe = 0;
+                    if (!same_timing(timing, s->h264_timing))
+                        return fail(s, "stream_changed", "H264 SPS changes picture timing interpretation");
+                }
+                if (type == 6 && s->h264_timing.pic_struct &&
+                    picture_timing(s, data + position, amount, &structure) < 0) return -1;
                 if (type >= 1 && type <= 4) other_vcl = 1;
             }
             position += amount;
+        }
+        if (s->h264_timing.pic_struct) {
+            av_buffer_unref(&s->packet->opaque_ref);
+            s->packet->opaque_ref = av_buffer_alloc(sizeof(H264PictureTiming));
+            if (!s->packet->opaque_ref) return fail(s, "resource_exhausted", "retain H264 picture timing");
+            H264PictureTiming timing = {.magic=PICTURE_TIMING_MAGIC, .pic_struct=structure};
+            memcpy(s->packet->opaque_ref->data, &timing, sizeof(timing));
         }
         if (s->fresh_key_packet_pending) {
             if (s->packet->pts != s->fresh_key_pts || !(s->packet->flags & AV_PKT_FLAG_KEY) || !idr || other_vcl)
@@ -1378,6 +1503,7 @@ static int receive_frame(DeadpanSource *s) {
         int result = avcodec_receive_frame(s->decoder, s->frame);
         if (check(s) < 0) return -1;
         if (result == 0) {
+            if (apply_picture_timing(s) < 0) return -1;
             if (s->frames >= s->limits.max_frames) return fail(s, "resource_limit", "decoded frame count exceeds configured bound");
             if (s->work.frames == UINT64_MAX) return fail(s, "resource_limit", "cumulative decoded frame count overflow");
             s->frames++;
@@ -1518,10 +1644,10 @@ static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
     s->fields_flushed = 0;
     s->presented = 0;
     if (s->info.bwdif_fields) {
-        /* Public/index coordinates use half source ticks. Floor signed odd
+        /* Public/index coordinates use sixth source ticks. Floor signed fractional
            coordinates, never round a second field forward to another packet. */
-        int64_t remainder = pts % 2;
-        pts /= 2;
+        int64_t remainder = pts % 6;
+        pts /= 6;
         if (remainder < 0) pts--;
     }
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);

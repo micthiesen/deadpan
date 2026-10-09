@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T11:45:55Z",
+  "updated_at": "2026-10-09T12:54:01Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Qualifying repeated-field telecine and remaining source policies, then the source/creative-operation playback and export matrix.",
+  "focus": "Finishing remaining source-format and color policies, then the source/creative-operation playback and export matrix.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. Integral and fractional clean apertures and ordinary interlaced fields are verified; telecine and the full format/VFR matrix remain."
+      "note": "Local and YouTube Originals work. Clean apertures, interlaced fields and explicit H.264 telecine are verified; broader codec/profile and source-color policies remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "SDR/HDR export, 10,000 fractional-rate edits, eleven VFR recipes and interlaced field cadence are verified. Reverse and bleep preserve exact source phase; full effects and format coverage remain."
+      "note": "SDR/HDR export, 10,000 fractional-rate edits, eleven VFR recipes and two/three-field cadence are verified. Reverse and bleep preserve exact source phase; full effects and format coverage remain."
     },
     {
       "id": "ui",

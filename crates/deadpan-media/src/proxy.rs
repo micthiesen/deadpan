@@ -1097,10 +1097,11 @@ pub fn verify_proxy(
     let identity = SourceContentIdentity::new(sha256, length)?;
     let input = VerifiedSourceInput::from_verified_file(proxy.try_clone()?, identity)?;
     let asset = AssetId::new("proxy")?;
-    let limits = SourceSessionLimits {
+    let mut limits = SourceSessionLimits {
         opening_timeout: control.remaining()?,
         ..SourceSessionLimits::default()
     };
+    limits.decode.progressive_only = true;
     // One codec thread, as for every measured index.
     let mut session = SourceSession::open_input(input, asset, limits, cancelled)?;
     let proxy_index = session.index().clone();

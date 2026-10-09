@@ -28,7 +28,7 @@ fn open(name: &str, threads: u32) -> SourceDecoder {
 fn decode(name: &str, threads: u32) -> Vec<DecodedRgbaFrame> {
     let mut decoder = open(name, threads);
     assert!(decoder.info().bwdif_fields, "{name}");
-    assert_eq!(decoder.info().time_base_den, 120000);
+    assert_eq!(decoder.info().time_base_den, 360000);
     let mut frames = Vec::new();
     while let Some(frame) = decoder.next_rgba(control()).unwrap() {
         frames.push(frame);
@@ -46,6 +46,7 @@ fn both_field_orders_retain_motion_at_field_cadence_including_single_picture_eof
         ("fields-tff-bframes.mp4", 24, 2400),
         ("fields-100.mp4", 24, 1200),
     ] {
+        let ticks = ticks * 3;
         let frames = decode(name, 1);
         assert_eq!(frames.len(), count, "{name}");
         for (ordinal, frame) in frames.iter().enumerate() {
@@ -83,6 +84,14 @@ fn threaded_fields_and_backward_seeks_equal_sequential_pixels() {
         "fields-single-bff.mp4",
         "fields-tff-bframes.mp4",
         "fields-100.mp4",
+        "telecine-tff.mp4",
+        "telecine-bff.mp4",
+        "telecine-progressive.mp4",
+        "telecine-variable.mp4",
+        "telecine-single.mp4",
+        "telecine-bframes.mp4",
+        "progressive-timing-hrd.mp4",
+        "progressive-repeats.mp4",
     ] {
         let expected = decode(name, 1);
         for threads in [1, 8, 16] {
@@ -123,6 +132,7 @@ fn variable_intervals_keep_exact_half_ticks_and_the_measured_final_duration() {
     assert_eq!(frames.len(), intervals.len() * 2);
     let mut pts = 0;
     for (pair, interval) in frames.chunks_exact(2).zip(intervals) {
+        let interval = interval * 3;
         assert_eq!(pair[0].metadata.pts, pts);
         assert_eq!(pair[1].metadata.pts, pts + interval);
         for field in pair {
@@ -145,7 +155,7 @@ fn fields_obey_output_count_bounds_and_preflight_cancellation_preserves_pending_
             })
             .is_err()
     );
-    assert_eq!(decoder.next_metadata(control()).unwrap().unwrap().pts, 2400);
+    assert_eq!(decoder.next_metadata(control()).unwrap().unwrap().pts, 7200);
     assert!(
         !decoder
             .copy_current_i420(control())
@@ -172,4 +182,172 @@ fn fields_obey_output_count_bounds_and_preflight_cancellation_preserves_pending_
     }
     assert!(matches!(bounded.next_metadata(control()),
         Err(deadpan_source::SourceDecodeError::Native {code, ..}) if code == "resource_limit"));
+}
+
+#[test]
+fn telecine_preserves_two_three_fields_and_repeats_exactly_the_first_field() {
+    for name in [
+        "telecine-tff.mp4",
+        "telecine-bff.mp4",
+        "telecine-variable.mp4",
+        "telecine-single.mp4",
+        "telecine-bframes.mp4",
+    ] {
+        let frames = decode(name, 1);
+        let single = name == "telecine-single.mp4";
+        let reordered = name == "telecine-bframes.mp4";
+        assert_eq!(
+            frames.len(),
+            if single {
+                3
+            } else if reordered {
+                36
+            } else {
+                30
+            },
+            "{name}"
+        );
+        let mut offset = 0;
+        let mut pts = 0;
+        for coded in 0..if single { 1 } else { 12 } {
+            let count = if single || reordered || coded % 2 == 1 {
+                3
+            } else {
+                2
+            };
+            let interval = if reordered {
+                2400
+            } else if name == "telecine-variable.mp4" {
+                if count == 2 { 2003 } else { 3001 }
+            } else {
+                count * 1001
+            };
+            let duration = interval * 6 / count;
+            for phase in 0..count {
+                let frame = &frames[offset + phase as usize];
+                assert_eq!(frame.metadata.pts, pts + phase * duration);
+                assert_eq!(frame.metadata.reported_duration, Some(duration));
+                let expected = 13.5 + (coded * 2 + phase % 2) as f64 * 2.0;
+                for row in 16..48 {
+                    let lit: Vec<_> = (0..96)
+                        .filter(|x| frame.rgba[(row * 96 + x) * 4] > 128)
+                        .collect();
+                    assert!(!lit.is_empty());
+                    let center = lit.iter().sum::<usize>() as f64 / lit.len() as f64;
+                    assert!(
+                        (center - expected).abs() <= 1.0,
+                        "{name} {coded}/{phase} row {row}: {center} vs {expected}"
+                    );
+                }
+            }
+            if count == 3 {
+                assert_eq!(frames[offset].rgba, frames[offset + 2].rgba);
+            }
+            offset += count as usize;
+            pts += interval * 6;
+        }
+    }
+}
+
+#[test]
+fn progressive_hrd_picture_timing_is_valid_output_and_retains_identical_source_pixels() {
+    let reference = decode("progressive-timing-hrd.mp4", 1);
+    assert_eq!(reference.len(), 12);
+    let file = File::open(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/progressive-timing-hrd.mp4"),
+    )
+    .unwrap();
+    let mut decoder = SourceDecoder::open(
+        file,
+        DecodeLimits {
+            progressive_only: true,
+            ..DecodeLimits::default()
+        },
+        control(),
+    )
+    .unwrap();
+    assert!(!decoder.info().bwdif_fields);
+    assert_eq!(decoder.info().time_base_den, 60000);
+    for expected in &reference {
+        let actual = decoder.next_rgba(control()).unwrap().unwrap();
+        assert_eq!(actual.metadata.pts * 6, expected.metadata.pts);
+        assert_eq!(actual.rgba, expected.rgba);
+    }
+    assert!(decoder.next_metadata(control()).unwrap().is_none());
+    let file = File::open(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/progressive-timing-hrd.mp4"),
+    )
+    .unwrap();
+    let mut fresh =
+        SourceDecoder::open_at_keyframe(file, DecodeLimits::default(), control(), 0).unwrap();
+    assert!(!fresh.info().bwdif_fields);
+    assert_eq!(
+        fresh.next_rgba(control()).unwrap().unwrap().rgba,
+        reference[0].rgba
+    );
+}
+
+#[test]
+fn progressive_telecine_declares_field_timing_before_its_first_repeated_picture() {
+    let frames = decode("telecine-progressive.mp4", 1);
+    assert_eq!(frames.len(), 30);
+    let mut offset = 0;
+    let mut pts = 0;
+    for coded in 0..12 {
+        let count = if coded % 2 == 0 { 2 } else { 3 };
+        let duration = 6006;
+        for phase in 0..count {
+            let frame = &frames[offset + phase];
+            assert_eq!(frame.metadata.pts, pts + phase as i64 * duration);
+            assert_eq!(frame.metadata.reported_duration, Some(duration));
+            let expected = 13.5 + coded as f64 * 2.0;
+            for row in 16..48 {
+                let lit: Vec<_> = (0..96)
+                    .filter(|x| frame.rgba[(row * 96 + x) * 4] > 128)
+                    .collect();
+                let center = lit.iter().sum::<usize>() as f64 / lit.len() as f64;
+                assert!((center - expected).abs() <= 1.0);
+            }
+        }
+        offset += count;
+        pts += duration * count as i64;
+    }
+    // Output verification cannot silently apply this source interpretation.
+    let file = File::open(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/telecine-progressive.mp4"),
+    )
+    .unwrap();
+    assert!(
+        matches!(SourceDecoder::open(file, DecodeLimits { progressive_only: true, ..DecodeLimits::default() }, control()), Err(deadpan_source::SourceDecodeError::Native {code, ..}) if code == "unsupported_interlace")
+    );
+}
+
+#[test]
+fn progressive_repeat_hints_do_not_add_time_beyond_container_intervals() {
+    let frames = decode("progressive-repeats.mp4", 1);
+    assert_eq!(frames.len(), 12);
+    let mut pts = 0;
+    for (ordinal, frame) in frames.iter().enumerate() {
+        let duration = [2400, 4800, 7200][ordinal % 3] * 6;
+        assert_eq!(frame.metadata.pts, pts);
+        assert_eq!(frame.metadata.reported_duration, Some(duration));
+        pts += duration;
+    }
+    let file = File::open(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/progressive-repeats.mp4"),
+    )
+    .unwrap();
+    let mut strict = SourceDecoder::open(
+        file,
+        DecodeLimits {
+            progressive_only: true,
+            ..DecodeLimits::default()
+        },
+        control(),
+    )
+    .unwrap();
+    assert_eq!(strict.next_metadata(control()).unwrap().unwrap().pts, 0);
+    assert!(
+        matches!(strict.next_metadata(control()), Err(deadpan_source::SourceDecodeError::Native {code, ..}) if code == "unsupported_interlace")
+    );
 }

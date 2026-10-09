@@ -109,14 +109,21 @@ Interlaced pictures use the pinned LGPL FFmpeg 8.0.3 BWDIF filter with
 `mode=send_field:parity=auto:deint=interlaced`, before color conversion. A
 one-coded-picture clip has no temporal neighbors and uses spatial bob: copy
 the current field's rows, average nearest same-field rows, replicate boundaries.
-The stream's `bwdif_fields` receipt flag identifies this fixed recipe. A bounded
-three-entry clock queue maps internal ordinals to exact half-source-tick times;
-the last field uses its own decoded duration, never an extrapolated interval.
-Progressive pictures inside an admitted interlaced stream pass through once.
+The stream's `bwdif_fields` flag (wire `bwdif_fields_v2`) identifies this recipe.
+A bounded three-entry clock queue maps internal ordinals to exact sixth-source
+ticks. Two-field and three-field pictures divide the measured interval into
+halves or thirds, repeating the first field for the third. The last picture
+requires its own decoded duration, never an extrapolated interval. Progressive
+pictures inside an admitted field stream pass through once. H.264's explicit
+picture-timing SEI, carried through packet/frame references, determines field
+structure independently of codec thread history. Repeat hints are removed
+before BWDIF so they cannot bypass neighboring interlaced pictures.
 No automatic format conversion occurs. Every plane must have at least 3x4
 samples; missing terminal duration and unrepresentable clocks fail explicitly.
 Both field orders, B frames, odd VFR intervals, single-picture clips, thread
 equivalence and seeks have real encoded fixtures in `tests/deinterlace.rs`.
+`DecodeLimits::progressive_only` validates outputs without source presentation:
+progressive HRD timing passes, while interlace and repeats fail explicitly.
 
 MP4 `clap` clean apertures retain exact rational bounds within the sample-entry
 raster. Integral rectangles compact RGBA8/RGBA64 after full-raster color
@@ -128,8 +135,9 @@ rectangle and reject otherwise before consuming a frame. Input/codec allocation
 limits still apply to the full raster. See the
 [fractional-aperture qualification](../../docs/qualification/fractional-aperture-2026-10-09.md).
 
-Progressive PTS remains original, not `best_effort_timestamp`; interlaced fields
-use the exact half-tick presentation clock above. Missing PTS is rejected.
+Sources outside the field recipe retain original PTS, not
+`best_effort_timestamp`; the field recipe uses the exact sixth-tick clock above,
+including progressive pictures with H.264 picture-timing support. Missing PTS is rejected.
 DTS hints and positive decoder-reported progressive durations are optional. Stream
 start/duration and container start/duration remain distinct observed candidates.
 No frame-rate fallback, terminal-duration guess, or origin normalization occurs.

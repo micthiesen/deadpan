@@ -492,7 +492,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_num > i32::MAX as u32
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
-        || (info.bwdif_fields && !info.time_base_den.is_multiple_of(2))
+        || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
         || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc")
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
@@ -754,7 +754,7 @@ fn write_json(
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "SourceStreamInfo", deny_unknown_fields)]
 pub(crate) struct SourceStreamInfoWire {
-    #[serde(default, skip_serializing_if = "is_false")]
+    #[serde(default, rename = "bwdif_fields_v2", skip_serializing_if = "is_false")]
     bwdif_fields: bool,
     width: u32,
     height: u32,

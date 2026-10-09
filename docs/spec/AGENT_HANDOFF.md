@@ -4,14 +4,23 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[H.264 telecine](../qualification/telecine-sources-2026-10-09.md) now retains
+explicit picture-timing SEI through decoder reordering, removing a measured
+thread-dependent interlace guess. The versioned `bwdif_fields_v2` source recipe
+uses exact sixth ticks for two/three-field intervals and repeats the first
+field's pixels without extending container time. Strict output decoding rejects
+field/repeat declarations while accepting progressive HRD timing. The expanded
+debug and release Render matrices pass 155 pictures and eight zero-offset audio windows.
+Read the qualification for final gate evidence and remaining format limits.
+
 [Interlaced source presentation](../qualification/interlaced-sources-2026-10-09.md)
 uses pinned BWDIF at field cadence and spatial bob for single coded pictures.
-Source receipts retain the recipe and previous-GOP anchors; video clocks have
-exact half ticks and audio stays unchanged. Both debug and release public Render matrices
-passes all 62 pictures/four audio windows at zero measured offset. A measured
+Source receipts retain the recipe and previous-GOP anchors; video clocks remain
+exact and audio stays unchanged. Both debug and release public Render matrices
+pass all 62 pictures/four audio windows at zero measured offset. A measured
 192x96 minimum coded H.264 raster fixes verification of small 96x64 outputs.
-Export validators still require progressive output. Repeated-field telecine
-remains an explicit refusal pending cadence qualification. Read the qualification
+Export validators still require progressive output. The telecine work above
+extends the initial two-field recipe. Read the qualification
 for final workspace, release, sanitizer and bundle evidence.
 
 [Fractional clean apertures](../qualification/fractional-aperture-2026-10-09.md)

@@ -151,19 +151,28 @@ fn skipping_preroll_returns_the_exact_target_and_following_pictures() {
 fn decoded_preroll(name: &str, skip: bool) -> u64 {
     let expected = reference(name);
     let target = expected.len() - 1;
-    let anchor = expected
+    let mut anchor = expected
         .iter()
         .rposition(|picture| picture.keyframe)
         .unwrap();
     let mut decoder = open(name, 1);
-    let before = decoder.work().decoded_pictures;
-    if skip {
-        decoder
-            .seek_to(expected[anchor].pts, expected[target].pts, control())
-            .unwrap();
-    } else {
-        decoder.seek(expected[anchor].pts, control()).unwrap();
+    if decoder.info().bwdif_fields {
+        anchor = expected[..anchor]
+            .iter()
+            .rposition(|picture| picture.keyframe)
+            .unwrap_or(0);
     }
+    let before = decoder.work().decoded_pictures;
+    // Compare the same measured anchor. A target at that anchor leaves no
+    // earlier packets to skip; generic seek also performs a temporal-context
+    // probe for field streams, which is separate work from skipped preroll.
+    decoder
+        .seek_to(
+            expected[anchor].pts,
+            expected[if skip { target } else { anchor }].pts,
+            control(),
+        )
+        .unwrap();
     while decoder.next_metadata(control()).unwrap().unwrap().pts < expected[target].pts {}
     decoder.work().decoded_pictures - before
 }

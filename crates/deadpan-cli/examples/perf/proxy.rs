@@ -45,6 +45,7 @@ pub struct Samples {
 fn proxy_limits() -> SourceSessionLimits {
     let mut limits = SourceSessionLimits::interactive();
     limits.decode.threads = PROXY_SERVING_THREADS;
+    limits.decode.progressive_only = true;
     limits
 }
 
