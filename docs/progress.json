@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T18:22:50Z",
+  "updated_at": "2026-10-09T19:11:50Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implementing remaining PCM, AV1, ProRes and broader source-format and operation coverage.",
+  "focus": "Implementing AV1, ProRes and remaining source-format, metadata and operation coverage.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. MP3 and Opus sounds join qualified VP9 and HEVC/High10. AV1, ProRes, broader PCM/containers and source-color policies remain."
+      "note": "Local and YouTube Originals work. Integer8/16/24/32 and float32 WAV, MP3 and Opus sounds join qualified VP9 and HEVC/High10. AV1, ProRes, broader containers/metadata and source-color policies remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "MP3 catalog sounds preserve rate and exact trims through release and packaged exports. SDR/HDR, fractional-rate editing and qualified HEVC/High10/VP9/Opus paths are verified. Full effects and format/operation coverage remain."
+      "note": "WAV, MP3 and Opus catalog sounds preserve exact sample timing through release and packaged exports. SDR/HDR, fractional-rate editing and qualified HEVC/High10/VP9 paths are verified. Full effects and format/operation coverage remain."
     },
     {
       "id": "ui",
@@ -333,6 +333,14 @@
       "revision": "f6cf633f840701e3092a4a8e7c68d24ca6054ab8",
       "retrospective": false,
       "summary": "Verified MP3 sound import at all nine rates, exact cross-frame trims, 16 fixtures, full regression and sanitizer checks, and release/packaged exports at zero audio offset."
+    },
+    {
+      "date": "2026-10-09",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "dfe5ed8cc9b1f37806a809e85b1ef14d0e5e41fd",
+      "retrospective": false,
+      "summary": "Verified integer8/16/24/32 and float32 WAV with exact scalar PCM, truthful non-finite failures, full regressions after two test corrections, 151 sanitized source tests, and six release plus three packaged exports at zero audio offset."
     }
   ]
 }
