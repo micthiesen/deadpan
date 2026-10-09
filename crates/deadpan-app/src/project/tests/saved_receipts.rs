@@ -184,6 +184,7 @@ fn initialized_original_retains_saved_baseline_after_refresh_failure() {
     let before = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     )
@@ -212,6 +213,7 @@ fn initialized_original_retains_saved_baseline_after_refresh_failure() {
     let rejected = command(
         &harness.service,
         ProjectRequest::InitializeSource {
+            ownership: OriginalOwnership::Managed,
             expected_session: before.session,
             expected_revision: before.document.revision_id().clone(),
             path: fixture("cfr-bframes.mp4"),

@@ -26,9 +26,12 @@ Concurrent native inspection now captures a private fixed database while the
 first owner retains its writer and CLI endpoint. Reopen explicitly refreshes
 or acquires ownership after that owner closes; the view does not retain a WAL
 read transaction ([qualification](../qualification/project-inspection-2026-10-09.md)).
-DP-01 remains partial: native creation still forces managed Original ownership
-(the linked checkbox applies to later imports), and final recovery acceptance
-remains.
+Native `:new-linked` and incomplete-project `:original-linked` now capture
+explicit external Original ownership; normal New stays managed. Headless
+`create-original --linked` has the same full-source baseline. Native bookmark
+relocation and portable export with the external path unavailable pass
+([qualification](../qualification/linked-original-2026-10-09.md)). DP-01 remains
+partial pending final project/recovery acceptance.
 
 The [AAC preroll qualification](../qualification/aac-preroll-2026-10-08.md)
 fixes quiet opening distortion without changing authored PCM or widening

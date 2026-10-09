@@ -13,6 +13,7 @@ impl Service {
         if matches!(
             request,
             ProjectRequest::Open(_)
+                | ProjectRequest::OpenReported { .. }
                 | ProjectRequest::Damaged(_)
                 | ProjectRequest::Close
                 | ProjectRequest::CreateFromSource { .. }
@@ -226,6 +227,7 @@ impl Service {
             // Admitted above. Listing them also makes allowlist changes
             // reviewable alongside the terminal-response policy.
             ProjectRequest::Open(_)
+            | ProjectRequest::OpenReported { .. }
             | ProjectRequest::Close
             | ProjectRequest::CreateFromSource { .. }
             | ProjectRequest::CancelImport

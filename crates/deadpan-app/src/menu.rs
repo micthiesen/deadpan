@@ -14,6 +14,7 @@ use muda::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MenuCommand {
     New,
+    NewLinked,
     NewFromUrl,
     Open,
     Import,
@@ -31,8 +32,9 @@ pub enum MenuCommand {
     PortableCopy,
 }
 
-const COMMANDS: [(&str, MenuCommand); 16] = [
+const COMMANDS: [(&str, MenuCommand); 17] = [
     ("deadpan.file.new", MenuCommand::New),
+    ("deadpan.file.new-linked", MenuCommand::NewLinked),
     ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
     ("deadpan.file.import", MenuCommand::Import),
@@ -88,7 +90,10 @@ impl MenuState {
 
     pub fn enabled(&self, command: MenuCommand) -> bool {
         match command {
-            MenuCommand::New | MenuCommand::NewFromUrl | MenuCommand::Open => self.ready,
+            MenuCommand::New
+            | MenuCommand::NewLinked
+            | MenuCommand::NewFromUrl
+            | MenuCommand::Open => self.ready,
             MenuCommand::Import => self.ready && self.project && !self.importing,
             MenuCommand::Close
             | MenuCommand::Render
@@ -130,6 +135,7 @@ impl MenuBar {
     pub fn install(repaint: impl Fn() + Send + Sync + 'static) -> Result<Self, String> {
         let error = |error: muda::Error| error.to_string();
         let new = item("deadpan.file.new", "New Project…", command_key(Code::KeyN));
+        let new_linked = item("deadpan.file.new-linked", "New Linked Project…", None);
         let new_url = item(
             "deadpan.file.new-url",
             "New from YouTube URL…",
@@ -193,6 +199,7 @@ impl MenuBar {
             true,
             &[
                 &new,
+                &new_linked,
                 &new_url,
                 &open,
                 &PredefinedMenuItem::separator(),
@@ -239,6 +246,7 @@ impl MenuBar {
             events,
             items: vec![
                 (MenuCommand::New, new),
+                (MenuCommand::NewLinked, new_linked),
                 (MenuCommand::NewFromUrl, new_url),
                 (MenuCommand::Open, open),
                 (MenuCommand::Import, import.clone()),

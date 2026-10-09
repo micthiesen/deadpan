@@ -35,6 +35,7 @@ mod hold_effects;
 mod jobs;
 mod keymap;
 mod layouts;
+mod linked_original;
 mod macros;
 mod marks;
 mod model_packs;
@@ -478,6 +479,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 }
                 if name == "youtube" {
                     return youtube::run(&mut driver);
+                }
+                if name == "linked-original" {
+                    return linked_original::run(&mut driver);
                 }
                 if name == "accessibility" {
                     return accessibility::run(&mut driver);

@@ -28,6 +28,8 @@ pub(super) struct Flow {
     /// A created package waiting to open, with its canonical path once the
     /// Open request was admitted, and when opening began.
     opening: Option<(PathBuf, Option<PathBuf>, std::time::Instant)>,
+    /// An explicit service outcome, independent of its admission bit and UI mailbox.
+    open_reply: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
     /// The project session the visible step belongs to.
     session: Option<u64>,
     /// Title of the video being imported, for the opening message.
@@ -44,6 +46,7 @@ impl Flow {
             focus_field: false,
             key: None,
             opening: None,
+            open_reply: None,
             session: None,
             title: None,
         }
@@ -481,11 +484,12 @@ impl DeadpanApp {
         if let Some(path) = self.youtube.jobs.take_created() {
             self.youtube.opening = Some((path, None, std::time::Instant::now()));
         }
-        let Some((path, admitted, started)) = self.youtube.opening.clone() else {
+        let Some((path, admitted, mut started)) = self.youtube.opening.clone() else {
             return;
         };
         let failed = |app: &mut Self, reason: String| {
             app.youtube.opening = None;
+            app.youtube.open_reply = None;
             // Enter must not download it again.
             app.youtube.url.clear();
             app.youtube.jobs.fail(Failure::new(
@@ -507,8 +511,13 @@ impl DeadpanApp {
                     return;
                 }
                 let canonical = path.canonicalize().unwrap_or_else(|_| path.clone());
-                if self.submit(ProjectRequest::Open(path.clone())) {
+                let (reply, result) = std::sync::mpsc::sync_channel(1);
+                if self.submit(ProjectRequest::OpenReported {
+                    path: path.clone(),
+                    reply,
+                }) {
                     self.youtube.opening = Some((path, Some(canonical), started));
+                    self.youtube.open_reply = Some(result);
                 } else {
                     let reason = self
                         .error
@@ -518,8 +527,33 @@ impl DeadpanApp {
                 }
             }
             Some(canonical) => {
-                if self.service.is_busy() {
-                    return;
+                if let Some(reply) = &self.youtube.open_reply {
+                    match reply.try_recv() {
+                        Ok(Ok(())) => {
+                            self.youtube.open_reply = None;
+                            started = std::time::Instant::now();
+                            self.youtube.opening =
+                                Some((path.clone(), Some(canonical.clone()), started));
+                        }
+                        Ok(Err(reason)) => {
+                            failed(self, reason);
+                            return;
+                        }
+                        Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                            failed(
+                                self,
+                                "the project service stopped before reporting Open".into(),
+                            );
+                            return;
+                        }
+                        Err(std::sync::mpsc::TryRecvError::Empty) => {
+                            // An admitted Open may still be verifying a large
+                            // project or draining owned workers. Only its reply
+                            // completes it; the admission wait is not its limit.
+                            context.request_repaint_after(Duration::from_millis(16));
+                            return;
+                        }
+                    }
                 }
                 if self
                     .workspace
@@ -542,13 +576,15 @@ impl DeadpanApp {
                         None => format!("Created {name} from YouTube"),
                     });
                     context.memory_mut(|memory| memory.request_focus(pane_id(self.pane)));
+                } else if started.elapsed() >= OPEN_WAIT {
+                    failed(
+                        self,
+                        "Open completed but its workspace was not received".into(),
+                    );
                 } else {
-                    let reason = self
-                        .project_error
-                        .clone()
-                        .or_else(|| self.error.clone())
-                        .unwrap_or_else(|| "the project did not open".into());
-                    failed(self, reason);
+                    // The command can finish after this frame consumed its UI
+                    // mailbox. Admit its actual workspace on a following frame.
+                    context.request_repaint_after(Duration::from_millis(16));
                 }
             }
         }
@@ -653,7 +689,7 @@ impl DeadpanApp {
                                 - 2.0
                                 - ui.spacing().scroll.allocated_width(),
                         );
-                        ui.spacing_mut().item_spacing.y = 6.0;
+                        ui.spacing_mut().item_spacing.y = if compact { 4.0 } else { 6.0 };
                         if importing {
                             ui.label(style::section_title("NEW PROJECT FROM YOUTUBE", true));
                             ui.add_space(2.0);
@@ -700,6 +736,10 @@ impl DeadpanApp {
                         if choose.clicked() {
                             self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false);
                         }
+                        if ui.button(style::action_text("Link video in place…", ":new-linked", 13.0)).clicked() {
+                            self.action(Action::NewLinked, ui.ctx());
+                        }
+                        ui.small("Choose video keeps a project copy. Linking keeps the video at its existing location.");
                         ui.add_space(if compact { 0.0 } else { 6.0 });
                         divider(ui, "or");
                         ui.add_space(if compact { 0.0 } else { 6.0 });

@@ -139,6 +139,7 @@ fn native_split_refines_the_original_and_restores_it_through_durable_history() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -1151,6 +1152,12 @@ impl Harness {
 
 #[test]
 fn native_new_starts_with_the_full_original_and_history_stops_at_that_baseline() {
+    for linked in [false, true] {
+        new_original_baseline(linked);
+    }
+}
+
+fn new_original_baseline(linked: bool) {
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start(
         Arc::new(|| {}),
@@ -1159,6 +1166,11 @@ fn native_new_starts_with_the_full_original_and_history_stops_at_that_baseline()
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: if linked {
+                OriginalOwnership::Linked { bookmark: None }
+            } else {
+                OriginalOwnership::Managed
+            },
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -1191,6 +1203,19 @@ fn native_new_starts_with_the_full_original_and_history_stops_at_that_baseline()
     assert_eq!(before.sources.len(), 1);
     assert_eq!(&initialized.committed.unwrap().selected_node.unwrap(), node);
     assert!(!before.can_undo);
+    let inspection = ProjectStore::open(&before.path, AccessMode::ReadOnly).unwrap();
+    let records = inspection.original_records(None, 2).unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].managed(), !linked);
+    assert_eq!(
+        records[0].linked().map(|location| location.path()),
+        linked.then(|| fixture("cfr-bframes.mp4")).as_deref()
+    );
+    #[cfg(target_os = "macos")]
+    if linked {
+        assert!(records[0].linked().unwrap().bookmark().is_some());
+    }
+    drop(inspection);
     let asset = asset.clone();
     let node = node.clone();
     let rejected = command(
@@ -1249,6 +1274,7 @@ fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_sw
     let created = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     )
@@ -1264,6 +1290,7 @@ fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_sw
     let rejected = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("offset-bframes.mp4"),
         },
     );
@@ -1288,6 +1315,7 @@ fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_sw
     harness
         .service
         .submit(ProjectRequest::InitializeSource {
+            ownership: OriginalOwnership::Managed,
             expected_session: created.session,
             expected_revision: created.document.revision_id().clone(),
             path: fixture("cfr-bframes.mp4"),
@@ -1314,6 +1342,7 @@ fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_sw
     let retry = command(
         &harness.service,
         ProjectRequest::InitializeSource {
+            ownership: OriginalOwnership::Managed,
             expected_session: reopened.session,
             expected_revision: reopened.document.revision_id().clone(),
             path: fixture("cfr-bframes.mp4"),
@@ -1339,6 +1368,7 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );
@@ -1510,6 +1540,7 @@ fn failed_original_qualification_reopens_as_an_incomplete_project_for_retry() {
     let created = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("../audio-fixtures/pcm-stereo-48000.wav"),
         },
     )
@@ -1551,6 +1582,7 @@ fn failed_original_qualification_reopens_as_an_incomplete_project_for_retry() {
         command(
             &harness.service,
             ProjectRequest::InitializeSource {
+                ownership: OriginalOwnership::Linked { bookmark: None },
                 expected_session: reopened.session,
                 expected_revision: reopened.document.revision_id().clone(),
                 path: fixture("cfr-bframes.mp4")
@@ -1561,13 +1593,19 @@ fn failed_original_qualification_reopens_as_an_incomplete_project_for_retry() {
     );
     harness.finish(harness.job());
     harness.finish(harness.job());
+    let ready = complete(&harness.service);
+    assert_eq!(ready.document.duration().unwrap().frames(), 120);
+    let store = ProjectStore::open(&ready.path, AccessMode::ReadOnly).unwrap();
+    let original = store
+        .original_records(None, 10)
+        .unwrap()
+        .into_iter()
+        .find(|record| record.linked().is_some())
+        .expect("retry linked the video");
+    assert!(!original.managed());
     assert_eq!(
-        complete(&harness.service)
-            .document
-            .duration()
-            .unwrap()
-            .frames(),
-        120
+        original.linked().unwrap().path(),
+        fixture("cfr-bframes.mp4")
     );
 }
 

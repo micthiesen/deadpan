@@ -23,12 +23,16 @@ pub(super) struct PreparedOpen {
     pub registers: Arc<super::super::registers::Bank>,
     pub message: String,
     pub report: Arc<super::super::OpenReport>,
+    pub reply: Option<std::sync::mpsc::SyncSender<Result<()>>>,
 }
 
 pub(super) enum PendingSessionChange {
     Close,
     Open(Box<PreparedOpen>),
-    CreateFromSource(PathBuf),
+    CreateFromSource {
+        path: PathBuf,
+        ownership: OriginalOwnership,
+    },
     #[cfg(test)]
     Create(PathBuf),
     Shutdown,
@@ -38,6 +42,23 @@ impl Service {
     /// True completes the short user command; false retains its admission while
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
+        if let ProjectRequest::OpenReported { path, reply } = request {
+            let complete = self.dispatch_request(ProjectRequest::Open(path));
+            if complete {
+                let outcome = self
+                    .error
+                    .as_ref()
+                    .map_or(Ok(()), |error| Err(error.message.clone()));
+                let _ = reply.try_send(outcome);
+            } else if let Some(PendingSessionChange::Open(prepared)) =
+                &mut self.pending_session_change
+            {
+                prepared.reply = Some(reply);
+            } else {
+                let _ = reply.try_send(Err("Open was deferred without a pending package".into()));
+            }
+            return complete;
+        }
         if self.refuse_read_only(&request) {
             return true;
         }
@@ -83,7 +104,7 @@ impl Service {
         let previous_session = self.session;
         let other_project = match &request {
             ProjectRequest::Open(path) => Some(format!("Could not open {}", path.display())),
-            ProjectRequest::CreateFromSource { path } => Some(format!(
+            ProjectRequest::CreateFromSource { path, .. } => Some(format!(
                 "Could not create a project from {}",
                 path.display()
             )),
@@ -140,13 +161,13 @@ impl Service {
                     return Ok(true);
                 }
             },
-            ProjectRequest::CreateFromSource { path } => {
+            ProjectRequest::CreateFromSource { path, ownership } => {
                 if self.active.is_some() || self.host_preparation_active() {
                     return Err(
                         "Wait for the current import to stop before creating a project".into(),
                     );
                 }
-                PendingSessionChange::CreateFromSource(path)
+                PendingSessionChange::CreateFromSource { path, ownership }
             }
             #[cfg(test)]
             ProjectRequest::Create(path) => PendingSessionChange::Create(path),
@@ -558,7 +579,7 @@ impl Service {
                 "Could not open {}",
                 prepared.workspace.path.display()
             )),
-            PendingSessionChange::CreateFromSource(path) => Some(format!(
+            PendingSessionChange::CreateFromSource { path, .. } => Some(format!(
                 "Could not create a project from {}",
                 path.display()
             )),
@@ -592,7 +613,9 @@ impl Service {
                 Ok(())
             }
             PendingSessionChange::Open(prepared) => self.install_open(*prepared),
-            PendingSessionChange::CreateFromSource(path) => self.create_from_source(path),
+            PendingSessionChange::CreateFromSource { path, ownership } => {
+                self.create_from_source(path, ownership)
+            }
             #[cfg(test)]
             PendingSessionChange::Create(path) => self.open(path, true),
         };

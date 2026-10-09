@@ -62,6 +62,7 @@ fn original_and_edited_names_reopen_without_history_and_restamp_shared_aliases()
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

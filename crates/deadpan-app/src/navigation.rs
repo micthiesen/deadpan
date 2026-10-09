@@ -167,6 +167,8 @@ pub enum Action {
         selector: deadpan_core::SemanticSelector,
     },
     New,
+    NewLinked,
+    InitializeLinked,
     /// Start a project from one YouTube video URL (`⌘⇧N`, `:youtube`).
     NewFromUrl,
     Open,

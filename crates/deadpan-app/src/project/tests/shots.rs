@@ -64,6 +64,7 @@ fn saved_shots_are_published_carried_across_edits_and_reloaded() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -199,6 +200,7 @@ fn analysis_save_in_flight_never_refuses_a_user_command() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

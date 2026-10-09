@@ -82,6 +82,7 @@ fn future_fixture(documents: &Path) -> (Harness, Arc<Workspace>, NodeId) {
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

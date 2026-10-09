@@ -1205,8 +1205,10 @@ impl DeadpanApp {
         }
         if self.service.is_busy() {
             let action = match kind {
-                DialogKind::CreateProject => "New project",
-                DialogKind::InitializeSource => "Choose Original",
+                DialogKind::CreateProject | DialogKind::CreateLinkedProject => "New project",
+                DialogKind::InitializeSource | DialogKind::InitializeLinkedSource => {
+                    "Choose Original"
+                }
                 DialogKind::OpenProject => "Open project",
                 DialogKind::ImportSound => "Import sound",
                 DialogKind::ImportMedia => "Import media",
@@ -1226,7 +1228,9 @@ impl DeadpanApp {
         if matches!(
             kind,
             DialogKind::CreateProject
+                | DialogKind::CreateLinkedProject
                 | DialogKind::InitializeSource
+                | DialogKind::InitializeLinkedSource
                 | DialogKind::ImportSound
                 | DialogKind::ImportMedia
         ) && !preview_only
@@ -1238,7 +1242,10 @@ impl DeadpanApp {
         }
         if matches!(
             kind,
-            DialogKind::InitializeSource | DialogKind::ImportSound | DialogKind::ImportMedia
+            DialogKind::InitializeSource
+                | DialogKind::InitializeLinkedSource
+                | DialogKind::ImportSound
+                | DialogKind::ImportMedia
         ) && !preview_only
             && self.workspace.is_none()
         {
@@ -1248,8 +1255,12 @@ impl DeadpanApp {
         match self.dialogs.start(kind, context) {
             Ok(()) => {
                 // Choosing or opening another project leaves an idle URL sheet.
-                if matches!(kind, DialogKind::CreateProject | DialogKind::OpenProject)
-                    && !self.youtube.active()
+                if matches!(
+                    kind,
+                    DialogKind::CreateProject
+                        | DialogKind::CreateLinkedProject
+                        | DialogKind::OpenProject
+                ) && !self.youtube.active()
                 {
                     self.youtube.modal = false;
                 }
@@ -1264,7 +1275,13 @@ impl DeadpanApp {
                     } else {
                         ImportMedia::Video
                     },
-                    linked: self.linked_import,
+                    linked: match kind {
+                        DialogKind::CreateLinkedProject | DialogKind::InitializeLinkedSource => {
+                            true
+                        }
+                        DialogKind::CreateProject | DialogKind::InitializeSource => false,
+                        _ => self.linked_import,
+                    },
                     preview_only,
                 });
                 self.bindings.clear();
@@ -1341,8 +1358,18 @@ impl DeadpanApp {
                     self.youtube.cookies = Some(path);
                 }
             }
-            DialogKind::CreateProject => {
-                self.submit(ProjectRequest::CreateFromSource { path });
+            DialogKind::CreateProject | DialogKind::CreateLinkedProject => {
+                let Some(intent) = intent else {
+                    return;
+                };
+                self.submit(ProjectRequest::CreateFromSource {
+                    path,
+                    ownership: if intent.linked {
+                        OriginalOwnership::Linked { bookmark: None }
+                    } else {
+                        OriginalOwnership::Managed
+                    },
+                });
             }
             DialogKind::OpenProject => {
                 self.submit(ProjectRequest::Open(path));
@@ -1357,7 +1384,9 @@ impl DeadpanApp {
             DialogKind::DiagnosticReport => {
                 unreachable!("diagnostic reports return to Diagnostics")
             }
-            DialogKind::InitializeSource | DialogKind::ImportSound => {
+            DialogKind::InitializeSource
+            | DialogKind::InitializeLinkedSource
+            | DialogKind::ImportSound => {
                 let Some(intent) = intent else {
                     return;
                 };
@@ -1366,29 +1395,39 @@ impl DeadpanApp {
                 else {
                     return;
                 };
-                self.submit(if result.kind == DialogKind::InitializeSource {
-                    ProjectRequest::InitializeSource {
-                        expected_session,
-                        expected_revision,
-                        path,
-                    }
-                } else {
-                    ProjectRequest::ImportSound {
-                        expected_session,
-                        expected_revision,
-                        path,
-                        stream: match intent.media {
-                            ImportMedia::Audio { stream, .. } => Some(stream),
-                            ImportMedia::FirstAudio { .. } | ImportMedia::Video => None,
-                        },
-                        interpretation: intent.media.interpretation(),
-                        ownership: if intent.linked {
-                            OriginalOwnership::Linked { bookmark: None }
-                        } else {
-                            OriginalOwnership::Managed
-                        },
-                    }
-                });
+                self.submit(
+                    if matches!(
+                        result.kind,
+                        DialogKind::InitializeSource | DialogKind::InitializeLinkedSource
+                    ) {
+                        ProjectRequest::InitializeSource {
+                            expected_session,
+                            expected_revision,
+                            path,
+                            ownership: if intent.linked {
+                                OriginalOwnership::Linked { bookmark: None }
+                            } else {
+                                OriginalOwnership::Managed
+                            },
+                        }
+                    } else {
+                        ProjectRequest::ImportSound {
+                            expected_session,
+                            expected_revision,
+                            path,
+                            stream: match intent.media {
+                                ImportMedia::Audio { stream, .. } => Some(stream),
+                                ImportMedia::FirstAudio { .. } | ImportMedia::Video => None,
+                            },
+                            interpretation: intent.media.interpretation(),
+                            ownership: if intent.linked {
+                                OriginalOwnership::Linked { bookmark: None }
+                            } else {
+                                OriginalOwnership::Managed
+                            },
+                        }
+                    },
+                );
             }
             DialogKind::ImportMedia => {
                 let Some(intent) = intent else {
@@ -2016,6 +2055,14 @@ impl DeadpanApp {
             Action::SaveFraming(name) => self.save_framing_preset(name),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
+            Action::NewLinked => self.begin_dialog(DialogKind::CreateLinkedProject, context, false),
+            Action::InitializeLinked => {
+                if self.import_dialog_kind() == DialogKind::InitializeSource {
+                    self.begin_dialog(DialogKind::InitializeLinkedSource, context, false);
+                } else {
+                    self.error = Some("Choose a linked Original only for a project waiting for its Original. Use :new-linked to start another project.".into());
+                }
+            }
             Action::NewFromUrl => self.open_youtube(context),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
             Action::Import => self.begin_dialog(self.import_dialog_kind(), context, false),
@@ -3217,6 +3264,7 @@ impl DeadpanApp {
             }
             match command {
                 MenuCommand::New => self.action(Action::New, context),
+                MenuCommand::NewLinked => self.action(Action::NewLinked, context),
                 MenuCommand::NewFromUrl => self.action(Action::NewFromUrl, context),
                 MenuCommand::Open => self.action(Action::Open, context),
                 MenuCommand::Import => self.action(Action::Import, context),
@@ -3370,6 +3418,7 @@ impl DeadpanApp {
                             ui.menu_button("File", |ui| {
                                 for (label, action) in [
                                     ("New project…  ⌘N", Action::New),
+                                    ("New linked project…  :new-linked", Action::NewLinked),
                                     ("New from YouTube URL…  ⌘⇧N", Action::NewFromUrl),
                                     ("Open project…  ⌘O", Action::Open),
                                     (
@@ -3937,6 +3986,10 @@ impl DeadpanApp {
                         if ui.add_enabled(!self.importing() && !self.service.is_busy(), egui::Button::new("Choose Original…  ⌘I")).clicked() {
                             self.begin_dialog(DialogKind::InitializeSource, ui.ctx(), false);
                         }
+                        if ui.add_enabled(!self.importing() && !self.service.is_busy(), style::row_action(ui, "Link Original in place…", ":original-linked")).clicked() {
+                            self.action(Action::InitializeLinked, ui.ctx());
+                        }
+                        ui.small("Choose Original keeps a project copy. Linking keeps the video at its existing location.");
                     } else if matches!(profile, Some(SingleSourceState::Ready { .. })) {
                         let sources = Arc::clone(&self.source_rows);
                         if let Some((asset, label, _)) = sources.first() {
@@ -5396,6 +5449,8 @@ fn sound_action_allowed(action: Action) -> bool {
     matches!(
         action,
         Action::New
+            | Action::NewLinked
+            | Action::InitializeLinked
             | Action::NewFromUrl
             | Action::Open
             | Action::Import

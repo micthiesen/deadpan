@@ -1,8 +1,7 @@
 # One Original, one evolving edit
 
 [Specification 1.1](spec/DEADPAN_SPEC.md) defines the V1 workflow. Choose one local
-video or one YouTube video ([headless import](YOUTUBE_IMPORT.md); the native
-URL flow and signed helper bundling remain open). The full
+video or one YouTube video ([native and headless import](YOUTUBE_IMPORT.md)). The full
 qualified source becomes the initial timeline. The user changes that existing
 video through cuts, repeats, Holds, reframing and sound rather than assembling
 a project from unrelated picture sources.
@@ -16,8 +15,8 @@ projects keep all their media, edits and history.
 ## Authoritative profile and baseline
 
 The optional strict SQLite single-source profile and workflow discriminator
-were introduced in database schema 17. Current schema 55 preserves the profile;
-generic projects stay generic. The supported schema-52 upgrade adds no profile.
+were introduced in database schema 17. Current schema 75 preserves the profile;
+generic projects stay generic.
 See [development formats](DEVELOPMENT_FORMATS.md) for current admission.
 No JSON sidecar or global catalog becomes the authority for an Original's identity.
 
@@ -75,6 +74,19 @@ Switch/close/cancel ordering rejects stale preparation and retains sole worker
 ownership. Initialization completion explicitly selects the resulting Source
 and opens Your edit.
 
+Choose video (`⌘N` / `:new`) keeps a project-managed Original by default.
+**Link video in place…**, File › New Linked Project, or `:new-linked` explicitly
+keeps the video at its current location. Both create the same qualified full-source
+baseline. An unfinished project offers **Link Original in place…** /
+`:original-linked`; its ordinary Choose Original (`⌘I`) keeps a project copy.
+Each picker captures ownership when opened, independently of later sound-import
+options. The preparation worker records a macOS bookmark for linked media.
+Private verified snapshots still protect decoding; linking avoids a permanent
+managed Original copy, not bounded working storage. Keep linked files available,
+use [relinking](RECOVERY.md#moved-linked-files) if they move, or make a
+[portable copy](ORIGINAL_MEDIA.md) to include them. Headless
+`project create-original <project> <video> --linked` uses the same ownership rules.
+
 ## Native interface and keyboard
 
 The [single-original imagegen targets](design/README.md) guide the native layout:
@@ -90,10 +102,10 @@ from selected media or beats. Text, IME and native composition keep their own
 input, including after a pointer event changes focus. Inspector parameter entry
 uses the same command field and typed transactions as keyboard commands.
 
-Whole-original reuse remains a real supported command. Arbitrary moment copying,
-range paste, nested navigation and the rest of the specified grammar require
-their corresponding command implementation; a concept board's `y` label cannot
-stand in for that work. Generic/legacy projects have an explicit compatibility
+Whole-original reuse, Original moment copying, linked range paste/replacement,
+and nested navigation use typed reversible commands. Their current boundaries
+and verification remain in [Requirements](REQUIREMENTS.md); concept boards do
+not establish implementation. Generic/legacy projects have an explicit compatibility
 view that preserves their broader source catalog and existing insertion path.
 
 ## Sound effects and remaining scope
@@ -116,8 +128,7 @@ container admission pass as explicit selection, sharing opening byte/deadline
 budgets. They do not probe guessed streams or weaken allocation guards. Explicit
 stream selection remains available through the backend.
 
-The full V1 still requires sound-event authoring/mixing/placement, native YouTube
-acquisition and signed helper bundling, arbitrary ranges and splices, analysis, app generation/audition,
-playback, export and release qualification. These remain explicit in
-[Requirements](REQUIREMENTS.md). A focused interface does not remove them or
-justify exposing a control that pretends they work.
+Sound-event placement, analysis, local AI candidates with explicit acceptance,
+playback and export now have implemented paths and qualification records.
+[Requirements](REQUIREMENTS.md) retains their exact coverage and remaining
+acceptance work. This workflow summary does not establish full V1 completion.

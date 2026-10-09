@@ -22,6 +22,7 @@ fn fixture_at(documents: &Path) -> (Harness, Arc<Workspace>, Target) {
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

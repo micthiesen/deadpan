@@ -50,6 +50,7 @@ fn project_with(backend: Backend) -> Fixture {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

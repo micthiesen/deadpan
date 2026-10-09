@@ -85,7 +85,7 @@ const HELP: &str = "Deadpan headless commands:
   doctor --project <project.deadpan>   (macOS/Linux)
   diagnostics export <new-report.json> [--project <project.deadpan>]
   project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
-  project create-original <project.deadpan> <absolute-video>
+  project create-original <project.deadpan> <absolute-video> [--linked]
   project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
   project validate <project.deadpan> [--quick]
   project dump <project.deadpan> --json
@@ -872,7 +872,11 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ] => originals::run(action, rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "create-original", path, source] => {
-            single_original::run(Path::new(path), Path::new(source))
+            single_original::run(Path::new(path), Path::new(source), false)
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "create-original", path, source, "--linked"] => {
+            single_original::run(Path::new(path), Path::new(source), true)
         }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "insert-original", rest @ ..] => source_registration::run_insert_original(rest),

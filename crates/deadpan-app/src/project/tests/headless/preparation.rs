@@ -197,6 +197,7 @@ fn new_project_cannot_allocate_a_package_while_remote_preparation_is_draining() 
             let refused = command(
                 &harness.service,
                 ProjectRequest::CreateFromSource {
+                    ownership: OriginalOwnership::Managed,
                     path: fixture("cfr-bframes.mp4"),
                 },
             );

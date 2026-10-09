@@ -459,6 +459,30 @@ fn success(d: &mut Driver<'_>) -> Result<(), String> {
         app.youtube.step_name() == "downloading"
     })?;
     d.downloader().ok_or("No scripted downloader")?.release();
+    // Force the real completion/publication race: Open may finish while the
+    // UI has not consumed its workspace yet. Idle admission is not its reply.
+    d.app_mut().feedback.hold_project_updates = true;
+    d.wait_for(
+        "Created package Open admitted with its UI update held",
+        |app| app.youtube.step_name() == "opening",
+    )?;
+    d.wait_for(
+        "The service finishes Open before its workspace is consumed",
+        |app| !app.service.is_busy(),
+    )?;
+    d.step(
+        "Opening remains pending across a delayed workspace publication",
+        false,
+    )?;
+    d.check(
+        "A completed Open waits for its workspace without losing import cleanup",
+        d.app().youtube.step_name() == "opening"
+            && d.app().youtube.cookies.is_some()
+            && d.app().workspace.is_none(),
+        json!("opening with cookies retained until the workspace arrives"),
+        state(d),
+    )?;
+    d.app_mut().feedback.hold_project_updates = false;
     d.wait_for("Project created and opened", |app| {
         app.workspace.as_ref().is_some_and(|workspace| {
             matches!(

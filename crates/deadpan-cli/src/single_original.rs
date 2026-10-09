@@ -1,11 +1,12 @@
 //! Headless creation of a one-Original project from a complete local file.
 //!
 //! This is the closed-project equivalent of native New: create an Awaiting
-//! Source package, retain the complete original as managed bytes, qualify its
+//! Source package, retain the complete original as managed bytes or an explicit
+//! linked location, qualify its
 //! picture and first audio track from a verified snapshot, then atomically
 //! establish the full-source baseline through `initialize_prepared_source`.
-//! A failure after package creation leaves the explicit, recoverable Awaiting
-//! Source state and any retained bytes; it never claims a ready Original.
+//! Publish only after qualification and baseline creation succeed. A failure
+//! removes the private staging package and leaves the requested path unused.
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -103,6 +104,26 @@ pub fn create_at_free_name(
     cancelled: &AtomicBool,
     retained: impl FnOnce(&ProjectStore, &OriginalMediaRecord) -> Result<(), CliError>,
 ) -> Result<(PathBuf, CreatedOriginal), CliError> {
+    create_owned_at_free_name(
+        package,
+        next,
+        source,
+        label,
+        OriginalOwnership::Managed,
+        cancelled,
+        retained,
+    )
+}
+
+fn create_owned_at_free_name(
+    package: &Path,
+    next: &dyn Fn(&Path) -> Option<PathBuf>,
+    source: &Path,
+    label: &str,
+    ownership: OriginalOwnership,
+    cancelled: &AtomicBool,
+    retained: impl FnOnce(&ProjectStore, &OriginalMediaRecord) -> Result<(), CliError>,
+) -> Result<(PathBuf, CreatedOriginal), CliError> {
     /// Bounds a pathological stream of racing creators.
     const MAX_CANDIDATES: usize = 1000;
     if !source.is_absolute() {
@@ -145,7 +166,7 @@ pub fn create_at_free_name(
         target = advance(&target).ok_or_else(|| taken(&target))?;
     }
     let staging = parent.join(format!(".{}.creating.deadpan", uuid::Uuid::new_v4()));
-    let built = build(&staging, source, label, cancelled, retained);
+    let built = build(&staging, source, label, ownership, cancelled, retained);
     let published = built.and_then(|created| {
         loop {
             match rustix::fs::renameat_with(
@@ -175,6 +196,7 @@ fn build(
     package: &Path,
     source: &Path,
     label: &str,
+    ownership: OriginalOwnership,
     cancelled: &AtomicBool,
     retained: impl FnOnce(&ProjectStore, &OriginalMediaRecord) -> Result<(), CliError>,
 ) -> Result<CreatedOriginal, CliError> {
@@ -184,12 +206,8 @@ fn build(
         identity(NodeId::new)?,
     )?;
     let mut store = ProjectStore::create_single_source(package, &document)?;
-    let retention = store.retain_original(
-        source,
-        OriginalOwnership::Managed,
-        preparation::original_limits(),
-        cancelled,
-    )?;
+    let retention =
+        store.retain_original(source, ownership, preparation::original_limits(), cancelled)?;
     retained(&store, &retention.record)?;
     let asset = identity(AssetId::new)?;
     let handle = store.original_import_handle()?;
@@ -223,21 +241,61 @@ fn build(
     })
 }
 
-/// `project create-original <project.deadpan> <absolute-source>`
-pub(crate) fn run(package: &Path, source: &Path) -> Result<(), CliError> {
+/// `project create-original <project.deadpan> <absolute-source> [--linked]`
+pub(crate) fn run(package: &Path, source: &Path, linked: bool) -> Result<(), CliError> {
     let label = source
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or("Original");
-    let created = create(package, source, label, &AtomicBool::new(false), |_, _| {
-        Ok(())
-    })?;
+    let ownership = if linked {
+        OriginalOwnership::linked_at(source)
+    } else {
+        OriginalOwnership::Managed
+    };
+    let (_, created) = create_owned_at_free_name(
+        package,
+        &|_| None,
+        source,
+        label,
+        ownership,
+        &AtomicBool::new(false),
+        |_, _| Ok(()),
+    )?;
     write_json(&serde_json::json!({ "protocol": 1, "created": created }))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn linked_creation_keeps_the_external_original_and_the_managed_default() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
+            .canonicalize()
+            .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        for linked in [true, false] {
+            let package = directory.path().join(format!("{linked}.deadpan"));
+            run(&package, &source, linked).unwrap();
+            let store = ProjectStore::open(&package, deadpan_store::AccessMode::ReadOnly).unwrap();
+            let records = store.original_records(None, 2).unwrap();
+            assert_eq!(records.len(), 1);
+            assert_eq!(records[0].managed(), !linked);
+            assert_eq!(
+                records[0].linked().map(|link| link.path()),
+                linked.then_some(source.as_path())
+            );
+            assert_eq!(store.snapshot().unwrap().duration().unwrap().frames(), 120);
+            assert!(matches!(
+                store.single_source_state().unwrap(),
+                Some(SingleSourceState::Ready { .. })
+            ));
+            store.validate_full().unwrap();
+        }
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 2);
+        assert!(source.is_file());
+    }
 
     #[test]
     fn a_name_taken_during_the_build_moves_to_the_next_candidate() {

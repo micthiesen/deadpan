@@ -2,7 +2,7 @@
   "schema_version": 1,
   "updated_at": "2026-10-09T07:58:29Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing native linked-Original creation and final recovery acceptance.",
+  "focus": "Verifying linked-Original creation and reconciling final project/recovery acceptance.",
   "features": [
     {
       "id": "editing",
@@ -25,7 +25,7 @@
       "requirements": [
         "DP-01"
       ],
-      "note": "Recovery, named takes, durable history, native Quit and concurrent inspection work. Native linked-Original creation and final acceptance remain."
+      "note": "Recovery, named takes, durable history, native Quit, concurrent inspection and linked-Original creation work. Final acceptance remains."
     },
     {
       "id": "picture",

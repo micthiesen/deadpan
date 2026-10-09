@@ -53,6 +53,7 @@ fn saved_speech_activity_is_published_carried_across_edits_and_reloaded() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

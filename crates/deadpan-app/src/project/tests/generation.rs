@@ -55,6 +55,7 @@ fn project_with_pause_at(backend: Backend, extension_from_left: Option<bool>) ->
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -1118,6 +1119,7 @@ fn real_worker_generates_a_candidate_that_acceptance_commits() {
         None => {
             service
                 .submit(ProjectRequest::CreateFromSource {
+                    ownership: OriginalOwnership::Managed,
                     path: fixture("cfr-bframes.mp4"),
                 })
                 .unwrap();

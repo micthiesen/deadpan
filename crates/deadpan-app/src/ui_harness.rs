@@ -77,6 +77,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "storage-failure",
     "generated-picture",
     "youtube",
+    "linked-original",
     "accessibility",
     "diagnostics",
     "storage",

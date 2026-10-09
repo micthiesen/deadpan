@@ -11,13 +11,15 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-199 actions, 122 command verbs.
+201 actions, 124 command verbs.
 
 ## Start & View
 
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
-| **New project from a video** (`project.new`)<br>Choose one Original. A new project starts with the whole video on the timeline and lives in Documents/Deadpan; its Original stays intact while Your edit changes. | `⌘N` (native) | `:new` | Anywhere | not recorded | [Equivalent](PARITY.md#project-and-files): `project create-original <p> <video>` |
+| **New project from a video** (`project.new`)<br>Choose one Original and keep a project-managed copy. A new project starts with the whole video on the timeline and lives in Documents/Deadpan; its Original stays intact while Your edit changes. | `⌘N` (native) | `:new` | Anywhere | not recorded | [Equivalent](PARITY.md#project-and-files): `project create-original <p> <video>` |
+| **New project with a linked Original** (`project.new-linked`)<br>Start with the whole Original while keeping its video at the selected location, without a permanent project copy. Keep that file available. Moved or missing media can be relinked; a portable copy can include it later. | `File › New Linked Project…` (native) | `:new-linked` | Anywhere | not recorded | [Equivalent](PARITY.md#project-and-files): `project create-original <p> <video> --linked` |
+| **Link the Original for an unfinished project** (`project.original-linked`)<br>Retry setup in a project still waiting for its first Original, keeping the chosen video at its current location. This never changes the Original of an initialized project. Choose Original (⌘I) keeps a project copy instead. | - | `:original-linked` | Every editor context | not recorded | [GUI-only](PARITY.md#project-and-files): `native setup retry` |
 | **New project from a YouTube URL** (`project.new-url`)<br>Start a project from one YouTube video URL. Its details appear before anything downloads; Enter confirms and Esc cancels. | `⌘⇧N` (native) | `:youtube`, `:new-url` | Anywhere | not recorded | [Equivalent](PARITY.md#project-and-files): `project create-from-url, downloader install\|status` |
 | **Open a project** (`project.open`)<br>Open an existing project package. The current package is validated before the open project is replaced. | `⌘O` (native) | `:open` | Anywhere | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 | **Close the project** (`project.close`)<br>Close the open project with the same readiness as File › Close Project. It refuses, naming them, while unsaved previews such as Camera, Gain or Trim drafts, a Render decision, a recording, a save or an open panel are pending, and never discards a draft. | `File › Close Project` (native) | `:close` | Every editor context | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |

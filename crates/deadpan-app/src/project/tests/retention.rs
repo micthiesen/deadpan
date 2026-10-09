@@ -46,6 +46,7 @@ fn the_automatic_pass_defers_while_an_import_runs_and_runs_when_idle() {
     let created = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

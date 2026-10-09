@@ -633,6 +633,9 @@ impl Service {
         self.room_tone_error = None;
         self.gain = None;
         match request {
+            ProjectRequest::OpenReported { .. } => {
+                unreachable!("reported Open uses dispatch feedback")
+            }
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
             ProjectRequest::Takes(_) => unreachable!("takes use independent feedback"),
             ProjectRequest::Damaged(_) => {
@@ -655,12 +658,15 @@ impl Service {
             ProjectRequest::RenderHistory(_) => {
                 unreachable!("render history queries use their own feedback")
             }
-            ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
+            ProjectRequest::CreateFromSource { path, ownership } => {
+                self.create_from_source(path, ownership)
+            }
             ProjectRequest::InitializeSource {
                 expected_session,
                 expected_revision,
                 path,
-            } => self.initialize_source(expected_session, expected_revision, path),
+                ownership,
+            } => self.initialize_source(expected_session, expected_revision, path, ownership),
             ProjectRequest::ImportSound {
                 expected_session,
                 expected_revision,
@@ -985,7 +991,7 @@ impl Service {
         Ok(())
     }
 
-    fn create_from_source(&mut self, path: PathBuf) -> Result<()> {
+    fn create_from_source(&mut self, path: PathBuf, ownership: OriginalOwnership) -> Result<()> {
         // A cancelled preparation retains its single worker slot until its reply.
         // Never allocate a package that cannot immediately start initialization.
         if self.active.is_some() || self.host_preparation_active() {
@@ -1026,7 +1032,7 @@ impl Service {
         self.import = None;
         self.begin_backup_session();
         self.retention.begin_session(next);
-        self.initialize_source(next, document.revision_id().clone(), path)
+        self.initialize_source(next, document.revision_id().clone(), path, ownership)
     }
 
     fn initialize_source(
@@ -1034,6 +1040,7 @@ impl Service {
         expected_session: u64,
         expected_revision: RevisionId,
         path: PathBuf,
+        ownership: OriginalOwnership,
     ) -> Result<()> {
         self.check_context(expected_session, &expected_revision)?;
         if !matches!(
@@ -1057,10 +1064,7 @@ impl Service {
             None,
             Some(initialization),
             SequenceScope::default(),
-            Work::Retain {
-                path,
-                ownership: OriginalOwnership::Managed,
-            },
+            Work::Retain { path, ownership },
         )
     }
 
@@ -1570,10 +1574,20 @@ impl Service {
             registers,
             message,
             report,
+            reply: None,
         }))
     }
 
     fn install_open(&mut self, mut prepared: render::PreparedOpen) -> Result<()> {
+        let reply = prepared.reply.take();
+        let outcome = self.install_prepared_open(prepared);
+        if let Some(reply) = reply {
+            let _ = reply.try_send(outcome.clone());
+        }
+        outcome
+    }
+
+    fn install_prepared_open(&mut self, mut prepared: render::PreparedOpen) -> Result<()> {
         // A pending Open is unadvertised until installation. Bind before
         // replacing the old session so a failed endpoint keeps that session.
         // A read-only view has no writer, so no command endpoint either.

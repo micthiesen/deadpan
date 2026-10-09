@@ -61,6 +61,7 @@ fn project(ai: Vec<AiScript>, tracking: Vec<TrackScript>) -> Fixture {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

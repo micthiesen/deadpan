@@ -10,6 +10,7 @@ use super::*;
 fn initialize(service: &ProjectService) -> Arc<Workspace> {
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("offset-bframes.mp4"),
         })
         .unwrap();

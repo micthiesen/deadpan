@@ -9,6 +9,12 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+`:new-linked` and `:original-linked` add explicit linked-Original creation
+and setup retry without adding a modified key chord. The 2026-10-09 release
+linked-creation and YouTube replays each pass 21,884,016 production-router
+cases against the 62 pinned Kestrel bindings. The live source was unavailable.
+See [linked Original qualification](qualification/linked-original-2026-10-09.md).
+
 AI motion and guidance extend `:generate` and `:generate-ai` with optional
 `motion=still|subtle|moderate` and final `text=…` arguments. `:generate N`
 keeps its route; counted AI insertion is described below. The command reference and routing snapshot

@@ -15,6 +15,7 @@ fn original_project(scratch: &Path) -> (ProjectService, Arc<Workspace>) {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

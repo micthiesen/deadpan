@@ -80,6 +80,7 @@ fn corrections_are_published_undone_without_edit_history_and_reloaded() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -246,6 +247,7 @@ fn a_transcript_only_session_is_backed_up() {
     service.set_backup_interval_for_check(std::time::Duration::from_millis(50));
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

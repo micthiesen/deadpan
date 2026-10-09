@@ -14,6 +14,7 @@ fn initialize(harness: &Harness) -> Arc<Workspace> {
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

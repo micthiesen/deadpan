@@ -19,6 +19,7 @@ fn intermediate_original_repeat_copy_reopens_after_undo_and_pastes_in_native_ser
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

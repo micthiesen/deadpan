@@ -22,6 +22,7 @@ fn request(workspace: &Workspace, scope: SequenceScope, index: usize) -> Project
 fn initialize(service: &ProjectService) -> Arc<Workspace> {
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

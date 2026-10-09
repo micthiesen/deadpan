@@ -960,6 +960,7 @@ See [original media](ORIGINAL_MEDIA.md) for durability and remaining import work
 
 ```sh
 cargo run --locked -p deadpan-cli -- project create-original /tmp/example.deadpan /absolute/source.mp4
+cargo run --locked -p deadpan-cli -- project create-original /tmp/linked.deadpan /absolute/source.mp4 --linked
 cargo run --locked -p deadpan-cli -- downloader install
 cargo run --locked -p deadpan-cli -- downloader status --probe
 cargo run --locked -p deadpan-cli -- project create-from-url /tmp/example.deadpan 'https://youtu.be/VIDEO_ID' [--cookies /absolute/cookies.txt]
@@ -968,7 +969,8 @@ cargo run --locked -p deadpan-cli -- project original-provenance /tmp/example.de
 
 `create-original` is the closed-project equivalent of native New: it creates an
 Awaiting Source [single-Original](SINGLE_ORIGINAL.md) package at the explicit
-path, retains the complete file as a managed original, qualifies its picture and
+path, retains the complete file as a managed original by default (or records its
+existing location and platform bookmark with `--linked`), qualifies its picture and
 first audio track and establishes the full-source baseline in one store
 transaction. The package is built at a hidden sibling path and renamed into
 place only once Ready, so a failure leaves nothing at the requested path.

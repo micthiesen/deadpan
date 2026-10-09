@@ -179,6 +179,7 @@ fn native_full_original_delete_reopens_and_undo_restores_the_protected_baseline(
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

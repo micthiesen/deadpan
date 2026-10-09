@@ -305,9 +305,10 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 
 ## Remaining work
 
-- Native creation and interrupted initialization currently force managed
-  Original ownership. Offer explicit linked-Original creation as §20.3
-  requires; the existing linked checkbox applies to sound/legacy imports.
+- Native creation and incomplete-project retry now offer explicit linked
+  Originals, with captured ownership and verified bookmark relinking
+  ([qualification](qualification/linked-original-2026-10-09.md)). Final
+  project/recovery acceptance remains to reconcile against §20.
 - Actual File Provider eviction remains an owner check
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
   [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)

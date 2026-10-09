@@ -11,6 +11,7 @@ fn native_capture_keeps_lower_clips_and_inherits_root_motion_once() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -193,6 +194,7 @@ fn native_pause_retains_framing_and_repeated_capture_does_not_grow_it() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -323,6 +325,7 @@ fn native_pause_freezes_measured_vfr_picture_and_keeps_one_undo_step() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("vfr.mp4"),
         })
         .unwrap();
@@ -583,6 +586,7 @@ fn native_pause_inside_a_source_fragment_preserves_the_following_repeat_and_dura
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("vfr.mp4"),
         })
         .unwrap();
@@ -761,6 +765,7 @@ fn native_pause_descends_to_nested_sequence_and_keeps_its_framing_live() {
     let service = ProjectService::start(Arc::new(|| {}), Some(library)).unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
@@ -1141,6 +1146,7 @@ fn black_pause_inserts_background_picture_and_silence_as_one_undo() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();

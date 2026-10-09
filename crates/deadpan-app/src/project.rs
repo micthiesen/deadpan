@@ -989,11 +989,13 @@ pub enum ProjectRequest {
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
         path: PathBuf,
+        ownership: OriginalOwnership,
     },
     InitializeSource {
         expected_session: u64,
         expected_revision: RevisionId,
         path: PathBuf,
+        ownership: OriginalOwnership,
     },
     /// Register an audio-only catalog entry, not a timeline or overlay insertion.
     /// None selects the first actual audio stream through guarded admission.
@@ -1012,6 +1014,11 @@ pub enum ProjectRequest {
     #[cfg(test)]
     Create(PathBuf),
     Open(PathBuf),
+    /// Completion for a created package. Readiness alone is not an Open reply.
+    OpenReported {
+        path: PathBuf,
+        reply: std::sync::mpsc::SyncSender<Result<(), String>>,
+    },
     Close,
     /// The person has seen this session's recovery report; the store may
     /// forget its retained findings. Never an edit.

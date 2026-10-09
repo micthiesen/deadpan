@@ -969,11 +969,16 @@ fn open_validates_before_cancelling_and_switches_only_after_render_release() {
         &harness.service,
         start(&initial, scratch.path(), "switch", 1),
     );
+    let (invalid_reply, invalid_result) = std::sync::mpsc::sync_channel(1);
     let invalid = command(
         &harness.service,
-        ProjectRequest::Open(scratch.path().join("missing.deadpan")),
+        ProjectRequest::OpenReported {
+            path: scratch.path().join("missing.deadpan"),
+            reply: invalid_reply,
+        },
     );
     assert!(invalid.error.is_some());
+    assert!(invalid_result.recv_timeout(TIMEOUT).unwrap().is_err());
     assert!(
         !invalid
             .render
@@ -986,9 +991,13 @@ fn open_validates_before_cancelling_and_switches_only_after_render_release() {
             .cancellation_requested
     );
     assert_eq!(invalid.workspace.unwrap().session, initial.session);
+    let (reply, opened_result) = std::sync::mpsc::sync_channel(1);
     harness
         .service
-        .submit(ProjectRequest::Open(new_path.clone()))
+        .submit(ProjectRequest::OpenReported {
+            path: new_path.clone(),
+            reply,
+        })
         .unwrap();
     let pending = wait(&harness.service, |update| {
         update
@@ -1002,6 +1011,10 @@ fn open_validates_before_cancelling_and_switches_only_after_render_release() {
             .cancellation_requested
     });
     assert_eq!(pending.workspace.unwrap().session, initial.session);
+    assert!(matches!(
+        opened_result.try_recv(),
+        Err(std::sync::mpsc::TryRecvError::Empty)
+    ));
     assert!(ProjectStore::open(&old_path, AccessMode::ReadWrite).is_err());
     pause(&harness, false);
     let switched = wait(&harness.service, |update| {
@@ -1012,6 +1025,7 @@ fn open_validates_before_cancelling_and_switches_only_after_render_release() {
             && !harness.service.is_busy()
     });
     let current = switched.workspace.unwrap();
+    assert_eq!(opened_result.recv_timeout(TIMEOUT).unwrap(), Ok(()));
     assert_eq!(current.path, new_path.canonicalize().unwrap());
     assert_eq!(current.session, initial.session + 1);
     assert_eq!(

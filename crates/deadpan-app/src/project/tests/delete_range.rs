@@ -320,6 +320,7 @@ fn native_range_delete_terminal_and_full_original_keep_the_protected_baseline() 
     command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

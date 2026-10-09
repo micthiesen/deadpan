@@ -12,6 +12,7 @@ pub(super) fn catalog(harness: &Harness) -> Arc<Workspace> {
     let update = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         },
     );

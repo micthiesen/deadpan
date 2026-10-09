@@ -20,6 +20,7 @@ fn native_original_retime_adjusts_one_wrapper_and_has_durable_undo() {
     .unwrap();
     service
         .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
             path: fixture("cfr-bframes.mp4"),
         })
         .unwrap();
