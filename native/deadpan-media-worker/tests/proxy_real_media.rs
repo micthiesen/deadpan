@@ -865,6 +865,14 @@ fn a_stalled_range_discards_partial_bytes_before_retry_and_then_assembles() -> R
 
 impl Stub {
     fn new(first: &str, failures: u32) -> Result<Self> {
+        Self::with_tail(
+            first,
+            failures,
+            &format!("exec {} \"$@\"", worker().display()),
+        )
+    }
+
+    fn with_tail(first: &str, failures: u32, tail: &str) -> Result<Self> {
         use std::os::unix::fs::PermissionsExt;
         let directory = tempfile::tempdir()?;
         let root = directory.path().display().to_string();
@@ -875,8 +883,7 @@ impl Stub {
             other => panic!("unknown stub mode {other}"),
         };
         let script = format!(
-            "#!/bin/sh\necho run >> {root}/runs.log\nrun=$(/usr/bin/wc -l < {root}/runs.log)\nif [ \"$run\" -le {failures} ]; then\n{misbehave}\nfi\nexec {} \"$@\"\n",
-            worker().display()
+            "#!/bin/sh\necho run >> {root}/runs.log\nrun=$(/usr/bin/wc -l < {root}/runs.log)\nif [ \"$run\" -le {failures} ]; then\n{misbehave}\nfi\n{tail}\n"
         );
         let path = directory.path().join("worker.sh");
         std::fs::write(&path, script)?;
@@ -1014,22 +1021,38 @@ fn a_second_stall_is_reported_without_another_retry() -> Result {
 }
 
 #[test]
-fn a_refused_packet_is_retried_once_in_a_new_process() -> Result {
-    let _slot = vt_slot();
+fn a_refused_packet_retries_once_and_preserves_the_second_failure() -> Result {
     let original = original("cfr-bframes.mp4")?;
-    let stub = Stub::new("invalid_packet", 1)?;
+    // A real VideoToolbox retry can also return out-of-order packets. This
+    // lifecycle check must not assume that a new encoder always succeeds.
+    // Real retry success and verified output are covered by the stalled-worker
+    // test above; here a distinct terminal failure proves the second run's
+    // result survives and no extra retry or partial output is published.
+    let stub = Stub::with_tail(
+        "invalid_packet",
+        1,
+        r#"printf '{"status":"failure","code":"invalid_media","message":"second attempt refused input"}\n' >&2; exit 1"#,
+    )?;
     let scratch = tempfile::tempdir()?;
     let staged = std::sync::Mutex::new(Vec::new());
-    let (_, report) = encode_proxy_retrying(
+    let error = encode_proxy_retrying(
         &stub.path,
         &original.input,
         &retry_request(&original),
         || stage(scratch.path(), &staged),
         &AtomicBool::new(false),
         ProxyEncodeOptions::default(),
-    )?;
-    assert_eq!(report.frames, 120);
+    )
+    .map(|_| ())
+    .unwrap_err();
+    assert!(
+        matches!(&error, ConversionError::Worker { code, message }
+        if code == "invalid_media" && message == "second attempt refused input"),
+        "{error}"
+    );
     assert_eq!(stub.runs(), 2);
+    assert_eq!(staged.lock().unwrap().len(), 2);
+    assert!(staged.lock().unwrap().iter().all(|path| !path.exists()));
     // Two refusals are reported, not retried again.
     let twice = Stub::new("invalid_packet", 2)?;
     let error = encode_proxy_retrying(
@@ -1047,6 +1070,9 @@ fn a_refused_packet_is_retried_once_in_a_new_process() -> Result {
         "{error}"
     );
     assert_eq!(twice.runs(), 2);
+    let staged = staged.into_inner().unwrap();
+    assert_eq!(staged.len(), 4);
+    assert!(staged.iter().all(|path| !path.exists()));
     Ok(())
 }
 
