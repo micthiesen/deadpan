@@ -7,6 +7,7 @@ mod vp9;
 use std::{
     collections::BTreeSet, fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant,
 };
+pub(crate) use vp9::StaticMetadata as Vp9StaticMetadata;
 
 const HEADER_BYTES: u64 = 16 * 1024 * 1024;
 const METADATA_ITEMS: u64 = 1_000_000;
@@ -404,11 +405,21 @@ impl Admission<'_> {
             }
             singleton(&mut seen, e.id)?;
             match e.id {
-                0x55d1..=0x55da if mastering => self.reader.float(e.body)?,
+                0x55d1..=0x55da if mastering => {
+                    let value = self.reader.float_value(e.body)?;
+                    self.video
+                        .mastering
+                        .as_mut()
+                        .expect("mastering parent")
+                        .insert(e.id, value);
+                }
                 0x55b1..=0x55bd if !mastering => {
                     self.video.fields.insert(e.id, self.reader.uint(e.body)?);
                 }
-                0x55d0 if !mastering => self.colour(e.body, true)?,
+                0x55d0 if !mastering => {
+                    self.video.mastering = Some(Default::default());
+                    self.colour(e.body, true)?;
+                }
                 _ => return Err(error("invalid_input", "unqualified Matroska Colour field")),
             }
         }
@@ -1130,6 +1141,7 @@ pub(crate) fn validate_selection(
         matroska_opus,
         aperture: None,
         vp9: admission.vp9,
+        vp9_static: admission.is_vp9.then(|| admission.video.static_metadata()),
         nominal_frame_duration_ns: (admission.is_vp9 || admission.is_av1)
             .then_some(admission.default_duration)
             .flatten(),

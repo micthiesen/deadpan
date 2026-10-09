@@ -64,14 +64,21 @@ exactly one version-1 `vpcC`, profile 0/eight-bit or profile 2/ten-bit 4:2:0,
 defined level, zero flags and no initialization payload. Optional `colr` must
 agree with its color declaration. Left and top-left chroma siting are carried
 through the native boundary because pinned FFmpeg's MOV reader drops that field.
-The existing explicit SDR color policy applies; VP9 HDR is not yet qualified.
+The existing explicit SDR policy and ten-bit limited-range BT.2020 NCL PQ/HLG
+policy apply. VP9 `SmDm`/`CoLL` FullBoxes require version zero, zero flags and
+exact lengths. Mastering xy uses /65536, maximum luminance /256 and minimum
+/16384; exact conversion supplies the shared static-metadata contract, while
+unrepresentable or semantically invalid values are recorded as ignored.
+Unsigned luminance outside FFmpeg's signed rational range is refused. Duplicate
+declarations, including mixing `SmDm` with `mdcv` or `CoLL` with `clli`, fail.
 Before each packet reaches the codec, a bounded header check verifies every
 frame's profile, declared depth/range/matrix and unchanged raster. A superframe
 has at most eight frames, exactly one displayed picture last, and exact lengths.
 Hidden references do not add timeline pictures; `show_existing_frame` retains
 its own PTS. A different VP9 render size or raster, interlaced declaration,
 contradictory metadata, unsupported profile or malformed index fails explicitly.
-See [VP9 qualification](qualification/vp9-sources-2026-10-09.md).
+See [SDR VP9 qualification](qualification/vp9-sources-2026-10-09.md) and
+[HDR VP9 qualification](qualification/vp9-hdr-sources-2026-10-09.md).
 
 AV1 Main uses static dav1d 1.5.4 through pinned FFmpeg 8.0.3, with its native
 hardware-only AV1 decoder disabled. MP4 uses `av01`/`av1C`; Matroska/WebM uses
@@ -100,10 +107,10 @@ unqualified metadata/sample groups fail explicitly. A non-power-of-two custom
 dimension limit can conservatively reject a sequence whose actual pictures fit.
 See [AV1 evidence and remaining checks](qualification/av1-sources-2026-10-09.md).
 
-This MP4 path does not complete VP9 HDR or the full §16.3
-matrix. Those remain implementation and qualification work.
+The full §16.3 source/operation matrix remains implementation and qualification
+work; the admitted profiles above do not establish complete format support.
 
-Video Matroska admission requires one `V_FFV1`, SDR `V_VP9` or Main `V_AV1` track;
+Video Matroska admission requires one `V_FFV1`, qualified `V_VP9` or Main `V_AV1` track;
 WebM admits `V_VP9` and `V_AV1`. Both also admit up to 32 mono/stereo `A_OPUS` tracks, including
 audio-only files. Both require finite Segment and Cluster
 lengths, and a closed element grammar. Every cluster and packet declaration is
@@ -132,7 +139,7 @@ packet and physical sample. The decoder explicitly selects pinned libopus;
 native FFmpeg Opus is disabled. See [Opus qualification](qualification/opus-sources-2026-10-09.md)
 and [sample-clock semantics](SOURCE_AUDIO.md#opus-container-and-sample-clocks).
 
-VP9 Matroska/WebM uses explicit SDR range, matrix, transfer, primaries and
+VP9 Matroska/WebM uses explicit SDR or qualified PQ/HLG range, matrix, transfer, primaries and
 left/top-left chroma siting, plus its first bounded keyframe header. Profiles
 0/2 and eight/ten-bit 4:2:0 must agree with container dimensions and color.
 Every subsequent packet uses the same native VP9 guard as MP4. Alpha, stereo,
@@ -140,6 +147,11 @@ cropping, nonzero video codec delay/preroll and VP9 CodecPrivate extensions rema
 unqualified. Display dimensions supply SAR to both metadata and the decoder.
 The nominal `DefaultDuration` is retained separately for checked cadence
 selection; source timestamps remain in their measured container clock.
+VP9 static HDR values are retained during container admission. A missing member,
+unrepresentable float or out-of-range integer is recorded as ignored; explicitly
+unknown zero light levels remain present. This avoids FFmpeg dropping partial
+declarations or narrowing wide content-light integers. SDR with any static HDR
+declaration fails. VP9 has no in-band static metadata to override this binding.
 See [WebM qualification](qualification/webm-vp9-sources-2026-10-09.md).
 
 RIFF/WAVE admits unsigned 8-bit, signed little-endian 16/24/32-bit and IEEE

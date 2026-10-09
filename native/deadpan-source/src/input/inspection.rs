@@ -101,9 +101,11 @@ pub struct Mp4TrackInspection {
     pub hevc: Option<Mp4HevcConfiguration>,
     pub vp9: Option<Mp4Vp9Configuration>,
     pub color: Option<Mp4ColorDescription>,
-    /// `mdcv` box, converted from its stored G, B, R primary order to R, G, B.
+    /// `mdcv` (G, B, R reordered to R, G, B) or exactly representable VP9
+    /// `SmDm` converted to ST 2086 units. Unrepresentable `SmDm` is absent here;
+    /// the source decoder additionally records it as ignored metadata.
     pub mastering: Option<MasteringDisplay>,
-    /// `clli` box.
+    /// `clli` or VP9 `CoLL` box.
     pub content_light: Option<ContentLight>,
     pub pixel_aspect_ratio: Option<[u32; 2]>,
     /// Exact integral clean rectangle [left, top, width, height], before SAR

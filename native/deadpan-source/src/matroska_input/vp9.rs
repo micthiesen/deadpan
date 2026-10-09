@@ -1,7 +1,10 @@
 //! Check AV1 container interpretation and resolve VP9 from its first key.
 //! The native guard subsequently checks every packet, including hidden frames.
 use super::{Result, require};
-use crate::{Mp4ColorDescription, Mp4Vp9Configuration};
+use crate::{
+    ColorMetadata, ContentLight, IgnoredStaticMetadata, MasteringDisplay, Mp4ColorDescription,
+    Mp4Vp9Configuration,
+};
 use std::collections::BTreeMap;
 
 #[derive(Default)]
@@ -9,9 +12,75 @@ pub(super) struct Video {
     pub width: u64,
     pub height: u64,
     pub fields: BTreeMap<u32, u64>,
+    pub mastering: Option<BTreeMap<u32, f64>>,
+}
+
+/// VP9 has no in-band static HDR declarations. Preserve the single container
+/// declaration before FFmpeg can omit partial/zero values or narrow integers.
+#[derive(Debug, Default)]
+pub(crate) struct StaticMetadata {
+    mastering: Option<MasteringDisplay>,
+    content_light: Option<ContentLight>,
+    ignored: IgnoredStaticMetadata,
+}
+impl StaticMetadata {
+    pub(crate) fn apply(self, color: &mut ColorMetadata) -> Result<()> {
+        if !color.transfer.is_hdr()
+            && (self.mastering.is_some()
+                || self.content_light.is_some()
+                || !self.ignored.is_empty())
+        {
+            return Err(super::error(
+                "unsupported_hdr",
+                "SDR VP9 carries HDR static metadata",
+            ));
+        }
+        color.mastering = self.mastering;
+        color.content_light = self.content_light;
+        color.ignored_static = self.ignored;
+        Ok(())
+    }
 }
 
 impl Video {
+    pub fn static_metadata(&self) -> StaticMetadata {
+        let mut result = StaticMetadata::default();
+        if let Some(fields) = &self.mastering {
+            let parse = || {
+                let units = |id, scale: f64, maximum: u32| {
+                    let value = *fields.get(&id)?;
+                    let scaled = (value * scale).round();
+                    (scaled >= 0.0 && scaled <= f64::from(maximum) && scaled / scale == value)
+                        .then_some(scaled as u32)
+                };
+                let xy = |id| u16::try_from(units(id, 50_000.0, 50_000)?).ok();
+                Some(MasteringDisplay {
+                    primaries: [
+                        [xy(0x55d1)?, xy(0x55d2)?],
+                        [xy(0x55d3)?, xy(0x55d4)?],
+                        [xy(0x55d5)?, xy(0x55d6)?],
+                    ],
+                    white_point: [xy(0x55d7)?, xy(0x55d8)?],
+                    max_luminance: units(0x55d9, 10_000.0, 100_000_000)?,
+                    min_luminance: units(0x55da, 10_000.0, 500_000)?,
+                })
+            };
+            result.mastering = parse().filter(MasteringDisplay::is_valid);
+            result.ignored.mastering = result.mastering.is_none();
+        }
+        if self.fields.contains_key(&0x55bc) || self.fields.contains_key(&0x55bd) {
+            let parse = || {
+                Some(ContentLight {
+                    max_cll: u16::try_from(*self.fields.get(&0x55bc)?).ok()?,
+                    max_fall: u16::try_from(*self.fields.get(&0x55bd)?).ok()?,
+                })
+            };
+            result.content_light = parse().filter(ContentLight::is_valid);
+            result.ignored.content_light = result.content_light.is_none();
+        }
+        result
+    }
+
     pub fn av1_configuration(&self, header: &[u8]) -> Result<()> {
         crate::input::av1_configuration_prefix(header)?;
         self.layout()?;
@@ -127,8 +196,12 @@ impl Video {
         let transfer = get(0x55ba);
         let primaries = get(0x55bb);
         require(
-            matches!(transfer, Some(1 | 8 | 13)) && matches!(primaries, Some(1 | 9 | 12)),
-            "Matroska VP9 needs explicit qualified SDR transfer and primaries",
+            if matches!(transfer, Some(16 | 18)) {
+                depth == 10 && !full_range && matrix == 9 && primaries == Some(9)
+            } else {
+                matches!(transfer, Some(1 | 8 | 13)) && matches!(primaries, Some(1 | 9 | 12))
+            },
+            "Matroska VP9 needs qualified SDR color or ten-bit limited-range BT.2020 NCL PQ/HLG",
         )?;
         Ok(Mp4Vp9Configuration {
             profile: profile as u8,
@@ -210,6 +283,51 @@ mod tests {
                 (0x55b7, 1),
                 (0x55b8, 2),
             ]),
+            mastering: None,
+        }
+    }
+
+    #[test]
+    fn hdr_requires_ten_bit_limited_bt2020_ncl_and_preserves_static_declarations() {
+        for transfer in [16, 18] {
+            let mut video = video();
+            video.fields.insert(0x55b1, 9);
+            video.fields.insert(0x55ba, transfer);
+            video.fields.insert(0x55bb, 9);
+            let mut hdr_key = key(2, false, 96, 64);
+            hdr_key[4] = (hdr_key[4] & 0x8f) | 0x50; // colorspace BT.2020
+            assert_eq!(
+                video.configuration(&hdr_key).unwrap().color.transfer,
+                transfer as u16
+            );
+            assert!(video.configuration(&key(0, false, 96, 64)).is_err());
+            for (id, invalid) in [(0x55b1, 1), (0x55b9, 2), (0x55bb, 1), (0x9a, 1)] {
+                let old = video.fields.insert(id, invalid);
+                assert!(video.configuration(&hdr_key).is_err(), "{id:x}");
+                if let Some(value) = old {
+                    video.fields.insert(id, value);
+                } else {
+                    video.fields.remove(&id);
+                }
+            }
+            video.fields.insert(0x55bc, u64::from(u32::MAX) + 1001);
+            video.fields.insert(0x55bd, 400);
+            let meta = video.static_metadata();
+            assert!(meta.ignored.content_light);
+            assert!(meta.content_light.is_none());
+            video.fields.insert(0x55bc, 0);
+            video.fields.insert(0x55bd, 0);
+            assert_eq!(
+                video.static_metadata().content_light,
+                Some(ContentLight {
+                    max_cll: 0,
+                    max_fall: 0
+                })
+            );
+            video.fields.remove(&0x55bd);
+            assert!(video.static_metadata().ignored.content_light);
+            video.mastering = Some(BTreeMap::new());
+            assert!(video.static_metadata().ignored.mastering);
         }
     }
 

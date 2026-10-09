@@ -290,15 +290,15 @@ static int color(DeadpanSource *s, enum AVCodecID codec, int format, int range, 
     if (desc->flags & AV_PIX_FMT_FLAG_ALPHA) return fail(s, "unsupported_pixel_format", "source alpha is not qualified");
     if (hdr_transfer(transfer)) {
         // The single qualified HDR interpretation: PQ or HLG, BT.2020 primaries,
-        // BT.2020 non-constant matrix, limited range, ten-bit 4:2:0 HEVC/H.264/AV1.
+        // BT.2020 non-constant matrix, limited range, ten-bit 4:2:0 HEVC/H.264/VP9/AV1.
         if (primaries != AVCOL_PRI_BT2020) return fail(s, "unsupported_primaries", "HDR source requires BT.2020 primaries");
         if (matrix != AVCOL_SPC_BT2020_NCL) return fail(s, "unsupported_matrix", "HDR source requires the BT.2020 non-constant matrix");
         if (range != AVCOL_RANGE_MPEG) return fail(s, "unsupported_range", "HDR source requires limited range");
         if (format != AV_PIX_FMT_YUV420P10LE)
             return fail(s, desc->comp[0].depth != 10 ? "unsupported_depth" : "unsupported_pixel_format",
                         "HDR source requires ten-bit 4:2:0 (yuv420p10le)");
-        if (codec != AV_CODEC_ID_HEVC && codec != AV_CODEC_ID_H264 && codec != AV_CODEC_ID_AV1)
-            return fail(s, "unsupported_codec", "HDR source requires HEVC Main10, H264 High10 or AV1 Main10");
+        if (codec != AV_CODEC_ID_HEVC && codec != AV_CODEC_ID_H264 && codec != AV_CODEC_ID_VP9 && codec != AV_CODEC_ID_AV1)
+            return fail(s, "unsupported_codec", "HDR source requires HEVC Main10, H264 High10, VP9 profile 2 or AV1 Main10");
         return 1;
     }
     int ten_bit = (format == AV_PIX_FMT_YUV420P10LE &&

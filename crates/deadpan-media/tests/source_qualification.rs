@@ -325,6 +325,113 @@ fn sdr_codec_receipts_keep_depth_range_and_exact_original_clocks() {
 }
 
 #[test]
+fn vp9_hdr_receipts_keep_color_policy_static_metadata_timing_and_progressive_contract() {
+    use deadpan_core::ColorPolicy;
+    for name in [
+        "pq",
+        "hlg",
+        "pq-static",
+        "pq-mdcv",
+        "pq-topleft",
+        "hlg-anamorphic",
+        "pq-vfr",
+    ] {
+        for suffix in ["mp4", "webm"] {
+            if name == "pq-mdcv" && suffix == "webm" {
+                continue;
+            }
+            let file = format!("vp9-{name}.{suffix}");
+            let original = input("deadpan-source/tests/fixtures", &file);
+            let mut video = video(original.clone(), "vp9-hdr");
+            let audio = (suffix == "mp4").then(|| audio(original, 1));
+            let captured =
+                DecodedSourceQualification::from_sessions(Some(&video), audio.as_ref()).unwrap();
+            let bytes = captured.snapshot().to_json().unwrap();
+            let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+            assert_eq!(&restored, captured.snapshot());
+            let basis = restored.basis_candidate().unwrap().unwrap().basis;
+            assert_eq!(basis.width, if name == "hlg-anamorphic" { 144 } else { 96 });
+            assert_eq!(basis.frame_rate, FrameRate::new(30000, 1001).unwrap());
+            assert_eq!(
+                basis.color_policy,
+                if name.starts_with("hlg") {
+                    ColorPolicy::HdrRec2020Hlg
+                } else {
+                    ColorPolicy::HdrRec2020Pq
+                }
+            );
+            let info = restored.video().unwrap().interpretation();
+            assert_eq!(
+                info.color.mastering.is_some(),
+                matches!(name, "pq-static" | "pq-mdcv")
+            );
+            assert_eq!(
+                info.color.content_light.is_some(),
+                matches!(name, "pq-static" | "pq-mdcv")
+            );
+            let timing = restored.derive_timing(basis.frame_rate).unwrap();
+            assert_eq!(
+                timing.video.unwrap().duration_frames,
+                if suffix == "mp4" {
+                    ExactRatio::integer(12)
+                } else {
+                    ExactRatio::new(12000, 1001).unwrap()
+                }
+            );
+            if let Some(audio) = timing.audio {
+                assert_eq!(audio.span.end().ticks, 19219);
+            }
+            let ordinals: Vec<u64> = (0..12)
+                .filter(|n| name != "pq-vfr" || ![4, 7].contains(n))
+                .collect();
+            for index in (0..ordinals.len()).rev() {
+                let frame = video
+                    .frame(
+                        deadpan_core::SourceFrameId(index as u64),
+                        Duration::from_secs(5),
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap();
+                assert_eq!(frame.sample_bits, 16);
+                assert_eq!(
+                    frame.metadata.pts,
+                    if suffix == "mp4" {
+                        ordinals[index] * 2002
+                    } else {
+                        (ordinals[index] * 1001 + 15) / 30
+                    } as i64
+                );
+            }
+            for (field, value) in [
+                ("pixel_format", json!("yuv420p")),
+                ("bwdif_fields", json!(true)),
+            ] {
+                let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
+                forged["video"]["interpretation"][field] = value;
+                assert!(
+                    SourceQualificationSnapshot::from_json(&serde_json::to_vec(&forged).unwrap())
+                        .is_err(),
+                    "{file}/{field}"
+                );
+            }
+            for (field, value) in [
+                ("range", "full"),
+                ("matrix", "bt709"),
+                ("primaries", "bt709"),
+            ] {
+                let mut forged: Value = serde_json::from_slice(&bytes).unwrap();
+                forged["video"]["interpretation"]["color"][field] = json!(value);
+                assert!(
+                    SourceQualificationSnapshot::from_json(&serde_json::to_vec(&forged).unwrap())
+                        .is_err(),
+                    "{file}/{field}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn av1_receipts_preserve_original_precision_color_timing_and_seek_identity() {
     for name in [
         "sdr-8-limited",

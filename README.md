@@ -88,10 +88,11 @@ Use `?` or `:help` for the implemented
 keyboard vocabulary. Legacy projects keep register/insert compatibility behavior.
 `--project PATH` opens a
 project at launch; `--preview-source PATH` opens a non-destructive source preview.
-Qualified sources include explicitly tagged SDR H.264, HEVC and VP9 in MP4,
+Qualified sources include explicitly tagged SDR H.264 and HEVC in MP4,
 ProRes 422 Proxy/LT/Standard/HQ in QuickTime,
 AV1 Main eight/ten-bit SDR and ten-bit PQ/HLG in MP4/WebM/Matroska,
-SDR VP9 with mono/stereo Opus in WebM/Matroska, standalone Opus sound in those
+VP9 SDR and ten-bit PQ/HLG in MP4/WebM/Matroska, with mono/stereo Opus in WebM/Matroska,
+standalone Opus sound in those
 containers, mono/stereo MP3 sounds, integer8/16/24/32 and float32 WAV sounds,
 FFV1 in Matroska, and the HDR/interlaced
 cases described in

@@ -4,6 +4,17 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[VP9 HDR import](qualification/vp9-hdr-sources-2026-10-09.md) adds ten-bit
+limited-range BT.2020 NCL PQ/HLG in MP4/WebM/Matroska, including exact or explicitly
+ignored static metadata and mono/stereo Opus combinations. Real rendering also
+exposed and fixed the small HEVC coded-raster budget while preserving exact
+visible dimensions. The gate completes in parts with recorded proxy/stdio
+follow-ups; 167 native sanitizer tests and the affected export tests pass.
+Fifteen release imports verify 180 output pictures/nine zero-offset signal
+windows. The fresh-home bundle imports all fifteen and verifies 84 pictures/four
+signal windows; relocation and tamper checks pass. Broader profiles, performance
+and the full operation matrix remain open; DP-02 and DP-16 stay partial.
+
 [AV1 Main import](qualification/av1-sources-2026-10-09.md) now retains
 eight/ten-bit SDR, ten-bit PQ/HLG, VFR, anamorphic pixels, grain and super-resolution
 through pinned dav1d in MP4/WebM/Matroska. Bounded sequence/packet admission and

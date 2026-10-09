@@ -12,7 +12,8 @@
     "sdr_hevc_h264": "tests/generate_sdr_hevc_fixtures.py: development-only FFmpeg 9.0.1/libx265/libx264 (not linked into Deadpan). Six independently authored 96x64, 12-picture BT.709 4:2:0 inputs at 30000/1001: HEVC Main eight-bit, HEVC Main10 ten-bit and H.264 High10 ten-bit, each limited/full range, explicit left chroma siting, two B frames, IDR every four pictures. Raw input and output color tags match so FFmpeg performs no implicit matrix conversion. Upper-half black/gray/color/white patches and lower-half motion retain ten-bit low codes. HEVC lossless, H.264 QP 1; unchanged hash-pinned fields-bff.mp4 mono AAC ends at sample 19219. --check reproduces all retained bytes. Motion has the same visible contrast at both depths; ten-bit low codes remain in the flat patches and moving raster.",
     "vp9": "tests/generate_vp9_fixtures.py: development-only FFmpeg 9.0.1/libvpx, not linked into Deadpan. Four lossless 96x64 SDR profile-0 eight-bit/profile-2 ten-bit 4:2:0 inputs, full/limited BT.709 and explicit left chroma, 12 pictures at 30000/1001 with hash-pinned fields-bff.mp4 mono AAC through sample 19219. Uses the independently authored patches/motion in generate_sdr_hevc_fixtures.py. vp9-altref.mp4: 60 pictures, two-pass 100 kbit/s, GOP 30, six actual hidden altref pictures in superframes. vp9-existing-8/10.mp4: first lossless key picture followed by an authored one-byte show_existing_frame selecting reference slot zero; IVF remux preserves separate PTS 0 and 2002. --check reproduces all retained bytes.",
     "vp9_webm": "tests/generate_webm_fixtures.py: development-only FFmpeg 9.0.1 bitexact VP9 remuxes of pinned MP4 fixtures, without AAC. Explicit left chroma siting. Four 8/10-bit full/limited WebM clips, altref and existing-reference clips, a Matroska variant, an anamorphic 4:3 SAR variant, and 12-picture VFR alternating 60/40 ms over 600 ms. Retains encoded picture bytes; actual container clock is 1/1000. --check reproduces retained bytes without writes.",
-    "av1": "tests/generate_av1_fixtures.py: development-only FFmpeg 9.0.1/SVT-AV1 4.2.0, not linked into Deadpan. Authored 128x96 Main 8/10-bit 4:2:0 patches and motion at 30000/1001; full/limited SDR, anamorphic 3:2 SAR, VFR, multiple GOPs, actual synthesized grain, super-resolution, PQ/HLG, and av1C/packet static HDR. MP4 retains pinned mono AAC through sample 19219, except the packet-HDR IVF remux. WebM retains video packets and explicit nominal 30000/1001 on a millisecond clock. Empty-config-sequence variant changes only av1C, ancestor lengths and chunk offsets. Raw libdav1d output is an independent scalar-conversion reference; authored patches separately check decoding. --check reproduces all bytes. The topleft pair separately verifies vertically co-sited chroma."
+    "av1": "tests/generate_av1_fixtures.py: development-only FFmpeg 9.0.1/SVT-AV1 4.2.0, not linked into Deadpan. Authored 128x96 Main 8/10-bit 4:2:0 patches and motion at 30000/1001; full/limited SDR, anamorphic 3:2 SAR, VFR, multiple GOPs, actual synthesized grain, super-resolution, PQ/HLG, and av1C/packet static HDR. MP4 retains pinned mono AAC through sample 19219, except the packet-HDR IVF remux. WebM retains video packets and explicit nominal 30000/1001 on a millisecond clock. Empty-config-sequence variant changes only av1C, ancestor lengths and chunk offsets. Raw libdav1d output is an independent scalar-conversion reference; authored patches separately check decoding. --check reproduces all bytes. The topleft pair separately verifies vertically co-sited chroma.",
+    "vp9_hdr": "tests/generate_vp9_hdr_fixtures.py: development-only FFmpeg 9.0.1/libvpx 1.17.0. Lossless 96x64 profile-2 ten-bit limited BT.2020 NCL PQ/HLG, authored patches/motion from generate_sdr_hevc_fixtures.py, 12 pictures at 30000/1001, GOP 4. MP4 retains hash-pinned mono AAC through sample 19219. WebM remuxes identical video packets with explicit left/top-left chroma. Additional 3:2 SAR and VFR omit authored pictures 4 and 7 without retiming. SmDm/CoLL and mdcv/clli variants add exactly representable identical static metadata and relocate only ancestor sizes/chunk offsets. --check reproduces all 13 files without writes."
   },
   "known_source_limit": "Legacy vfr.mp4 itself encodes final video duration 1001 and terminal 238238 ticks in stts/mdhd/tkhd/elst, although the producer authored 3003 and 240240. This is an encode/mux fixture limitation, not evidence of lost decoder metadata. The separate vfr-long-terminal.mp4 explicitly encodes the intended 3003-tick final picture without changing compressed data or PTS. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
   "files": [
@@ -555,6 +556,71 @@
       "name": "av1-topleft.yuv420p10le",
       "bytes": 442368,
       "sha256": "2583651b29893ba50772684b498e88506b8dd3b7b874dac61bd9f0378d5818bf"
+    },
+    {
+      "name": "vp9-pq.mp4",
+      "bytes": 12693,
+      "sha256": "2d55fd41281b020a632af0e96598bfeb1df650f879d804f13d9fa3853a96cd41"
+    },
+    {
+      "name": "vp9-pq-static.mp4",
+      "bytes": 12745,
+      "sha256": "ed3eac8ec22bcaac25b49cf9df6cd24a47dd3f218458053964594c055d2b82a2"
+    },
+    {
+      "name": "vp9-pq-mdcv.mp4",
+      "bytes": 12737,
+      "sha256": "8afda1d395b45845972bf26e57ef4262a5fc2d5e818ac061695a3e34719e7516"
+    },
+    {
+      "name": "vp9-hlg.mp4",
+      "bytes": 12693,
+      "sha256": "a3105e9e3a3a9a7ff7e19f44b992f367ffd9d80b2f496df2f47b821667c295a9"
+    },
+    {
+      "name": "vp9-pq-topleft.mp4",
+      "bytes": 12693,
+      "sha256": "d55deeb7897471660336cbb3c99bfe741611bc96adf60fa41b3866dbba8644bb"
+    },
+    {
+      "name": "vp9-hlg-anamorphic.mp4",
+      "bytes": 12709,
+      "sha256": "fbc85ecece3ed07679b673fb276b31f00c8b3772e84d83864bb82acdbb8e5413"
+    },
+    {
+      "name": "vp9-pq-vfr.mp4",
+      "bytes": 12284,
+      "sha256": "ccb8d9b62dca62457a9d8d298f8a21f07c3b51e919ebf7cc358ea54ad7653309"
+    },
+    {
+      "name": "vp9-pq.webm",
+      "bytes": 5114,
+      "sha256": "7dfc938fd3c076a4365dee7c8628dde1c3864382f54c13175dbb80537a79278f"
+    },
+    {
+      "name": "vp9-pq-static.webm",
+      "bytes": 5240,
+      "sha256": "0cc620cd3f1b83d48fd83ad92907100e7cde940c93078ed04647ff63c9d4feab"
+    },
+    {
+      "name": "vp9-hlg.webm",
+      "bytes": 5114,
+      "sha256": "e33ab5c9430e2a479049ba84c71c7daae7c5b23b7a7128d197086502f226ba17"
+    },
+    {
+      "name": "vp9-pq-topleft.webm",
+      "bytes": 5114,
+      "sha256": "280845669d66e3bb5325d6f72304081633bf2635363056c5e0517b32348dae3c"
+    },
+    {
+      "name": "vp9-hlg-anamorphic.webm",
+      "bytes": 5122,
+      "sha256": "9706dd0c85b0d935a7a0c6d99762c4c38b44b955c64c162c2a38b298033de14b"
+    },
+    {
+      "name": "vp9-pq-vfr.webm",
+      "bytes": 4695,
+      "sha256": "337717a48fa691943d5490f7d5f0d5144cfcba378c839e16fe77cceb3567b55b"
     }
   ]
 }

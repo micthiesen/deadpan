@@ -205,6 +205,7 @@ struct Track {
     hevc: Option<Mp4HevcConfiguration>,
     vp9: Option<Mp4Vp9Configuration>,
     mastering: Option<MasteringDisplay>,
+    mastering_present: bool,
     content_light: Option<ContentLight>,
     dimensions: Option<[u32; 2]>,
     color: Option<Mp4ColorDescription>,
@@ -481,6 +482,7 @@ pub(crate) struct Admission {
     pub(crate) audio: Option<u32>,
     pub(crate) aperture: Option<CleanAperture>,
     pub(crate) vp9: Option<Mp4Vp9Configuration>,
+    pub(crate) vp9_static: Option<crate::matroska_input::Vp9StaticMetadata>,
     pub(crate) nominal_frame_duration_ns: Option<u64>,
     pub(crate) matroska_opus: Option<crate::audio::MatroskaOpusClock>,
     pub(crate) mp3: Option<crate::audio::Mp3Framing>,
@@ -530,6 +532,7 @@ fn validate_selection(
             audio: Some(0),
             aperture: None,
             vp9: None,
+            vp9_static: None,
             nominal_frame_duration_ns: None,
             matroska_opus: None,
             mp3: Some(framing),
@@ -585,6 +588,7 @@ fn validate_selection(
         mp3: None,
         matroska_opus: None,
         nominal_frame_duration_ns: None,
+        vp9_static: None,
         io_bytes: reader.read_bytes,
         audio,
         aperture,
@@ -1474,8 +1478,27 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
                 track.hevc = Some(hvcc(r, atom.body)?);
             }
             b"mdcv" if kind == Kind::Video => {
-                require(track.mastering.is_none(), "duplicate mastering display")?;
+                require(!track.mastering_present, "duplicate mastering display")?;
                 track.mastering = Some(mdcv(r, atom.body)?);
+                track.mastering_present = true;
+            }
+            b"SmDm" if entry.tag == *b"vp09" => {
+                require(!track.mastering_present, "duplicate mastering display")?;
+                track.mastering = smdm(r, atom.body)?;
+                track.mastering_present = true;
+            }
+            b"CoLL" if entry.tag == *b"vp09" => {
+                require(
+                    track.content_light.is_none(),
+                    "duplicate content light level",
+                )?;
+                r.fixed(atom.body, 8)?;
+                r.full(atom.body, &[0], 0)?;
+                let bytes = r.bytes::<4>(atom.body.start + 4)?;
+                track.content_light = Some(ContentLight {
+                    max_cll: u16::from_be_bytes([bytes[0], bytes[1]]),
+                    max_fall: u16::from_be_bytes([bytes[2], bytes[3]]),
+                });
             }
             b"clli" if kind == Kind::Video => {
                 require(
@@ -2137,6 +2160,45 @@ fn mdcv(r: &mut Reader<'_>, span: Span) -> Result<MasteringDisplay> {
         max_luminance: long(16),
         min_luminance: long(20),
     })
+}
+/// VP9 MP4 binding: a version-zero FullBox, RGB xy /65536, peak /256,
+/// black /16384. FFmpeg retains the raw rationals; the shared native rule
+/// converts only exactly representable values and records others as ignored.
+fn smdm(r: &mut Reader<'_>, span: Span) -> Result<Option<MasteringDisplay>> {
+    r.fixed(span, 28)?;
+    r.full(span, &[0], 0)?;
+    // FFmpeg stores these unsigned fields in signed AVRational numerators.
+    // Refuse values it cannot retain rather than let integer wrap alter them.
+    require(
+        r.u32(span.start + 20)? <= i32::MAX as u32 && r.u32(span.start + 24)? <= i32::MAX as u32,
+        "VP9 mastering luminance exceeds the demuxer rational representation",
+    )?;
+    let bytes = r.bytes::<24>(span.start + 4)?;
+    let mut xy = [0_u16; 8];
+    for (index, value) in xy.iter_mut().enumerate() {
+        let at = index * 2;
+        let scaled = u32::from(u16::from_be_bytes([bytes[at], bytes[at + 1]])) * 50_000;
+        if scaled % 65_536 != 0 {
+            return Ok(None);
+        }
+        *value = u16::try_from(scaled / 65_536).expect("bounded chromaticity");
+    }
+    let luminance = |at: usize, denominator: u64| {
+        let scaled = u64::from(u32::from_be_bytes(
+            bytes[at..at + 4].try_into().expect("four bytes"),
+        )) * 10_000;
+        (scaled % denominator == 0)
+            .then(|| u32::try_from(scaled / denominator).ok())
+            .flatten()
+    };
+    Ok(luminance(16, 256)
+        .zip(luminance(20, 16_384))
+        .map(|(max_luminance, min_luminance)| MasteringDisplay {
+            primaries: [[xy[0], xy[1]], [xy[2], xy[3]], [xy[4], xy[5]]],
+            white_point: [xy[6], xy[7]],
+            max_luminance,
+            min_luminance,
+        }))
 }
 fn nal_units(r: &mut Reader<'_>, cursor: &mut u64, end: u64, count: u8) -> Result<()> {
     for _ in 0..count {

@@ -124,7 +124,7 @@ fn contradictory_or_missing_webm_interpretation_fails_before_decoding() {
         (
             &[0x55, 0xba, 0x81, 1][..],
             &[0x55, 0xba, 0x81, 16][..],
-            "SDR transfer",
+            "qualified SDR color",
         ),
         (
             &[0x55, 0xb1, 0x81, 1][..],
@@ -144,7 +144,7 @@ fn contradictory_or_missing_webm_interpretation_fails_before_decoding() {
         (
             &[0x55, 0xbb, 0x81, 1][..],
             &[0x55, 0xbb, 0x81, 2][..],
-            "SDR transfer",
+            "qualified SDR color",
         ),
         // Replace explicit chroma siting with a same-sized Void.
         (

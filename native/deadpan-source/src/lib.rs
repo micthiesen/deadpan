@@ -618,6 +618,9 @@ impl SourceDecoder {
         )?;
         let coded = [info.width, info.height];
         info.nominal_frame_duration_ns = admitted.nominal_frame_duration_ns;
+        if let Some(metadata) = admitted.vp9_static {
+            metadata.apply(&mut info.color)?;
+        }
         if let Some(aperture) = aperture {
             if aperture.coded != coded {
                 return Err(SourceDecodeError::Native {

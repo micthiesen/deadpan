@@ -4,6 +4,26 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[VP9 HDR](../qualification/vp9-hdr-sources-2026-10-09.md) now admits ten-bit
+limited-range BT.2020 NCL PQ/HLG with retained MP4/WebM static metadata and Opus
+audio. The shared verifier also accounts for VideoToolbox's measured 160x64
+minimum HEVC coded raster, while retaining exact visible-size checks. The gate
+completes in parts with recorded proxy/stdio follow-ups; 167 native sanitizer
+tests pass. Fifteen release imports verify 180 pictures/nine zero-offset signal
+windows; the fresh-home bundle imports all fifteen and verifies 84 pictures/four
+windows. Relocation and tamper checks pass. DP-02 and DP-16 remain partial for
+broader profiles, performance and the full source/operation matrix.
+
+[AV1 Main](../qualification/av1-sources-2026-10-09.md) now retains eight/ten-bit
+SDR, ten-bit PQ/HLG, VFR, anamorphic pixels, grain and super-resolution through
+pinned static dav1d 1.5.4. Use the qualified-3 FFmpeg/Opus/dav1d prefix recorded
+there. The gate completed in parts after three test repairs and an unchanged
+VideoToolbox follow-up; 163 native sanitizer tests pass. Release checks import
+29 inputs and verify 444 pictures/sixteen zero-offset signal windows. The
+fresh-home bundle imports all 29 and verifies 120 pictures/five windows;
+relocation and tamper checks pass. Broader profiles, high-resolution measurement
+and the full operation matrix remain open. DP-02 and DP-16 remain partial.
+
 [ProRes 422](../qualification/prores-sources-2026-10-09.md) has implemented
 Proxy/LT/Standard/HQ QuickTime admission, bounded per-packet checks, ten-bit
 RGBA64, exact VFR/SAR and both BWDIF field orders, plus QuickTime AAC wrappers.

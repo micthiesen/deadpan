@@ -447,7 +447,7 @@ fn interpretation_guidance(channels: u32) -> String {
 }
 
 /// The decoder's single HDR interpretation, rechecked on stored evidence:
-/// PQ/HLG only as ten-bit 4:2:0 limited-range BT.2020 NCL HEVC, H.264 or AV1 with
+/// PQ/HLG only as ten-bit 4:2:0 limited-range BT.2020 NCL HEVC, H.264, VP9 or AV1 with
 /// BT.2020 primaries; static metadata only with it. Present values satisfy the
 /// shared `deadpan_core` rule set; a declaration that failed it is recorded as
 /// ignored and absent, never both.
@@ -455,7 +455,7 @@ fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError>
     let color = &info.color;
     let hdr = matches!(color.transfer, ColorTransfer::Pq | ColorTransfer::Hlg);
     let valid = if hdr {
-        matches!(info.codec.as_str(), "hevc" | "h264" | "av1")
+        matches!(info.codec.as_str(), "hevc" | "h264" | "vp9" | "av1")
             && info.pixel_format == "yuv420p10le"
             && color.range == ColorRange::Limited
             && color.matrix == ColorMatrix::Bt2020NonConstant
@@ -504,7 +504,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
-        || (info.codec == "av1" && info.bwdif_fields)
+        || (matches!(info.codec.as_str(), "vp9" | "av1") && info.bwdif_fields)
         || !matches!(
             info.codec.as_str(),
             "h264" | "ffv1" | "hevc" | "vp9" | "prores" | "av1"
