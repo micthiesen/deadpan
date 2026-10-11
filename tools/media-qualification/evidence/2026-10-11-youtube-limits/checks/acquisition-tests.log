@@ -1,0 +1,25 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.12s
+────────────
+ Nextest run ID b1ba923f-61ac-49f9-b924-af82e1ca853c with nextest profile: default
+    Starting 18 tests across 1 binary (472 tests skipped)
+        PASS [   0.015s] ( 1/18) deadpan-cli youtube::acquire::tests::size_estimates_preserve_unknowns_and_the_inclusive_limit
+        PASS [   0.018s] ( 2/18) deadpan-cli youtube::acquire::tests::selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate
+        PASS [   0.018s] ( 3/18) deadpan-cli youtube::acquire::tests::environment_is_private_and_complete
+        PASS [   0.019s] ( 4/18) deadpan-cli youtube::acquire::tests::original_names_are_bounded_and_never_form_paths
+        PASS [   0.019s] ( 5/18) deadpan-cli youtube::acquire::tests::selection_prefers_admissible_highest_quality_streams
+        PASS [   0.019s] ( 6/18) deadpan-cli youtube::acquire::tests::downloader_errors_map_to_actionable_codes
+        PASS [   0.019s] ( 7/18) deadpan-cli youtube::acquire::tests::downloader_messages_redact_url_queries_and_credentials
+        PASS [   0.020s] ( 8/18) deadpan-cli youtube::acquire::tests::metadata_refuses_playlists_live_streams_other_videos_and_long_videos
+        PASS [   0.082s] ( 9/18) deadpan-cli youtube::acquire::tests::cookies_are_copied_owner_only_and_removed
+        PASS [   0.082s] (10/18) deadpan-cli youtube::acquire::tests::arguments_disable_configuration_plugins_and_browser_sessions
+        PASS [   0.143s] (11/18) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+        PASS [   0.153s] (12/18) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+        PASS [   0.153s] (13/18) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+        PASS [   0.209s] (14/18) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+        PASS [   0.345s] (15/18) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+        PASS [   0.385s] (16/18) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+        PASS [   0.394s] (17/18) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+        PASS [   1.053s] (18/18) deadpan-cli youtube::acquire::tests::adversarial_metadata_json
+────────────
+     Summary [   1.053s] 18 tests run: 18 passed, 472 skipped

@@ -1,0 +1,20 @@
+{
+  "reviewer": "sole implementation agent, separate complete-diff review",
+  "base": "c78eed46",
+  "scope": [
+    "crates/deadpan-cli/src/youtube/acquire.rs",
+    "crates/deadpan-cli/src/youtube/acquire/tests.rs"
+  ],
+  "checks": [
+    "The metadata sum uses checked addition and compares the known lower bound even when the complete estimate is unknown.",
+    "Declared sizes retain precedence over approximate sizes; exact-limit totals remain admissible.",
+    "Confirmation rechecks the acquisition limit rather than trusting the inspection-time limit.",
+    "The complete selected files are bounded before the assembling event, append operation or media worker launch.",
+    "The checked total is reused for free-space and assembly-overhead calculations; existing hard output caps remain.",
+    "All refusal paths retain the existing private workspace and cookie RAII cleanup and publish no project.",
+    "No codec selection, stream timing, helper provenance, model, native ABI or UI behavior was changed."
+  ],
+  "regression_witness": "Both initial behavior tests fail against the original implementation: integer overflow and entry into assembly above the transfer limit.",
+  "documentation_correction": "The release profile also enables overflow checks; the qualification records a potential panic, not release wrapping.",
+  "unresolved_findings_in_this_diff": []
+}

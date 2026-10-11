@@ -1,0 +1,41 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+error: failed to run custom build command for `deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)`
+
+Caused by:
+  process didn't exit successfully: `/Users/michael/Code/deadpan/target/debug/build/deadpan-source-b8493d8d09d89423/build-script-build` (exit status: 101)
+  --- stdout
+  cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX
+  cargo:rerun-if-changed=src/decoder.c
+  cargo:rerun-if-changed=src/decoder.h
+  cargo:rerun-if-changed=src/vp9.h
+  cargo:rerun-if-changed=src/prores.h
+  cargo:rerun-if-changed=src/av1.h
+  cargo:rerun-if-changed=src/deinterlace.c
+  cargo:rerun-if-changed=src/deinterlace.h
+  cargo:rerun-if-changed=src/audio_decoder.c
+  cargo:rerun-if-changed=src/audio_decoder.h
+
+  --- stderr
+
+  thread 'main' (119819247) panicked at native/deadpan-source/build.rs:43:10:
+  DEADPAN_FFMPEG_PREFIX must name the qualified FFmpeg 8.0.3 prefix
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+warning: build failed, waiting for other jobs to finish...
+error: failed to run custom build command for `deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)`
+
+Caused by:
+  process didn't exit successfully: `/Users/michael/Code/deadpan/target/debug/build/deadpan-encode-bcd5f52c5ac19385/build-script-build` (exit status: 101)
+  --- stdout
+  cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX
+  cargo:rerun-if-changed=src/encoder.c
+  cargo:rerun-if-changed=src/encoder.h
+  cargo:rerun-if-changed=src/runtime.c
+  cargo:rerun-if-changed=src/runtime.h
+
+  --- stderr
+
+  thread 'main' (119819254) panicked at native/deadpan-encode/build.rs:38:10:
+  DEADPAN_FFMPEG_PREFIX must name the qualified FFmpeg 8.0.3 prefix
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-cli --lib --locked` exited with code 101

@@ -14,6 +14,15 @@ checks and offscreen workflow replays pass; regression and release results,
 including the retained intermittent proxy failure, are recorded in the linked
 qualification. DP-14 remains partial for its other requirements.
 
+[YouTube import size bounds](qualification/youtube-limits-2026-10-11.md)
+replace unchecked metadata addition and recheck complete downloads before
+assembly. Overflow, a known over-limit stream beside an unknown one, and fast
+oversized transfers now fail with `YouTubeTooLarge` without publishing a
+project. Both initial regression tests fail against the old implementation.
+The fresh bundle passes relocation/tamper checks and imports a real
+3840×1608 AV1/Opus Original in 37.439 s, then reopens and validates it.
+DP-14 remains partial.
+
 [Proxy encoder investigation](qualification/proxy-order-2026-10-11.md)
 reproduces the intermittent packet-order violation and retains three timed-out
 diagnostic runs. The retry lifecycle test now uses recorded, independently

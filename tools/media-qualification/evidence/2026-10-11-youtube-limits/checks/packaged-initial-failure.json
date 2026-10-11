@@ -1,0 +1,8 @@
+{
+  "script": "packaged-initial.py",
+  "stage": "parsing baseline-probe.jsonl after successful command",
+  "command_exit": 0,
+  "harness_error": "json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+  "cause": "The harness tried to decode the first line of a pretty-printed JSON document as a complete JSON record.",
+  "correction": "Decode successive complete JSON values; reuse the successful baseline probe rather than rerunning it. No import had started."
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "-E",
+    "test(oversized_metadata_is_refused_before_confirmation_or_transfer) | test(completed_transfer_rechecks_combined_size_before_assembly)"
+  ],
+  "exit": 100,
+  "seconds": 6.12204104103148,
+  "log_sha256": "42719247aff3964ad17a098cb2c411acbdccb68f0d5424ae2641167946a57c7c"
+}

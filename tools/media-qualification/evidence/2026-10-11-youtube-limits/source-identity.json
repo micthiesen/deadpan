@@ -1,0 +1,18 @@
+{
+  "base": "c78eed460435cb4b010df7811017e88ec9c040ab",
+  "files": {
+    "crates/deadpan-cli/src/youtube/acquire.rs": "d4a31d7727218958ae9881ca308f13e81f6c7ec56dd48d76a6552238295748ac",
+    "crates/deadpan-cli/src/youtube/acquire/tests.rs": "b74cda12d05e45378f283709af6e0b46a9e9aa32eca033b010f332879211217d"
+  },
+  "review": "Sole-agent review of the complete diff; no subagent or live GUI used.",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "cpu": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "binaries": {
+    "deadpan-transcribe": "f644672062cfb9d59d0a06b3d14d452f20162e25abd363e909f6ad7aa45d08cd",
+    "deadpan-app": "79c5cfa36ffac7f1b3c4aab8a9805fc01441e914573a91355ed1d333f15ec93c",
+    "deadpan-media-worker": "11dff2da1fc852dcf8c458349180a2e6145a6acb99ec482b424ccae13fa19eb0",
+    "deadpan-track": "5f7a99c5a00682e8724ee4cb2fc0e4eaec1b516eef382530f0b0069dc3c64d2b",
+    "deadpan-cli": "50d3d7f59d609d03425fcaee70fd1a6c9486161cf7a23cb6b3d2fd7db8eda58f"
+  }
+}

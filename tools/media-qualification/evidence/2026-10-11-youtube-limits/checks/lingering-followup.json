@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "--test-threads",
+    "1",
+    "-E",
+    "test(cli_policy_rejects_incomplete_and_out_of_range_values_without_replacing) | test(settings_survive_restart_and_are_private)"
+  ],
+  "exit": 0,
+  "seconds": 0.3169381250627339,
+  "log_sha256": "6baa580311ecd5e5ba01083aace6efcad1f21d82d2778cb06f0fa3d6f796edd1"
+}

@@ -1,0 +1,41 @@
+{
+  "author": "Blender Studio",
+  "duration_seconds": 263.0,
+  "estimated_bytes": 115805956,
+  "event": "metadata",
+  "license": null,
+  "notice": "You are responsible for having the rights to use this video.",
+  "selection": {
+    "audio": {
+      "approximate_bytes": 4365207,
+      "bitrate_kbps": 132.923,
+      "codec": "opus",
+      "declared_bytes": 4365234,
+      "dynamic_range": null,
+      "ext": "webm",
+      "format_id": "251",
+      "fps": null,
+      "height": null,
+      "note": "medium",
+      "sample_rate": 48000,
+      "width": null
+    },
+    "video": {
+      "approximate_bytes": 111440700,
+      "bitrate_kbps": 3393.599,
+      "codec": "av01.0.12M.08",
+      "declared_bytes": 111440722,
+      "dynamic_range": "SDR",
+      "ext": "mp4",
+      "format_id": "401",
+      "fps": 24.0,
+      "height": 1608,
+      "note": "2160p",
+      "sample_rate": null,
+      "width": 3840
+    }
+  },
+  "thumbnail_url": "https://i.ytimg.com/vi/UXqq0ZvbOnk/maxresdefault.jpg",
+  "title": "CHARGE - Blender Open Movie",
+  "video_id": "UXqq0ZvbOnk"
+}

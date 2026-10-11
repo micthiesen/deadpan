@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-media-worker",
+    "--test",
+    "youtube_import",
+    "--test",
+    "remux_real_media",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 3.812092083040625,
+  "log_sha256": "74dbd5bd77a9217e06bdff7dcce2966f0b0b2b440fbb65ee17480f2da90eefaa"
+}

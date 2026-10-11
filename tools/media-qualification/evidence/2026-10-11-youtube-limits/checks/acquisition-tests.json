@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "-E",
+    "test(youtube::acquire::tests)"
+  ],
+  "exit": 0,
+  "seconds": 4.362562957685441,
+  "log_sha256": "acc0f291fbce146f879e84c657f0f1db5c6ba038a4f90dc11f6074ab121bbef2"
+}

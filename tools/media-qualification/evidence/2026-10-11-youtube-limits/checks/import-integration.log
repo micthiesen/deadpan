@@ -1,0 +1,13 @@
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.22s
+────────────
+ Nextest run ID 7d10261f-af2d-4ee0-8da6-fa5ec4bcdd62 with nextest profile: default
+    Starting 5 tests across 2 binaries
+        PASS [   0.055s] (1/5) deadpan-media-worker::remux_real_media output_budget_and_cancellation_are_enforced
+        PASS [   0.057s] (2/5) deadpan-media-worker::remux_real_media separate_picture_and_sound_become_one_progressive_mp4
+        PASS [   0.071s] (3/5) deadpan-media-worker::remux_real_media swapped_or_unexpected_streams_are_refused
+        PASS [   0.081s] (4/5) deadpan-media-worker::remux_real_media assembly_preserves_every_packet_timestamp_trim_and_byte
+        PASS [   0.371s] (5/5) deadpan-media-worker::youtube_import a_youtube_url_becomes_a_ready_one_original_project_with_provenance
+────────────
+     Summary [   0.371s] 5 tests run: 5 passed, 0 skipped

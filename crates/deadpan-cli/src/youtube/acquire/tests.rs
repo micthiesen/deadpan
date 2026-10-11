@@ -783,6 +783,156 @@ fn confirming_an_inspection_refuses_an_existing_package_before_transfer() {
     assert!(!directory.path().join("transferred").exists());
 }
 
+#[test]
+fn oversized_metadata_is_refused_before_confirmation_or_transfer() {
+    for (video_bytes, audio_bytes, limit) in [
+        (Some(u64::MAX), Some(1), u64::MAX),
+        (Some(700), Some(400), 1024),
+        (Some(1025), None, 1024),
+        (None, Some(1025), 1024),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let package = directory.path().join("never.deadpan");
+        let mut video = video_format("137", "avc1.640028", 1080, 24.0, "https");
+        let mut audio = audio_format("140", "mp4a.40.2", 129.0, -1);
+        video["filesize"] = serde_json::json!(video_bytes);
+        audio["filesize"] = serde_json::json!(audio_bytes);
+        let data = metadata(vec![video, audio]);
+        let body = format!(
+            "case \"$*\" in *--dump-single-json*) cat <<'JSON'\n{data}\nJSON\n;; *) touch '{}/transferred'; exit 1;; esac",
+            directory.path().display()
+        );
+        let helpers = stub(directory.path(), &body);
+        let cancelled = AtomicBool::new(false);
+        let mut request = import(&package, &helpers, &cancelled);
+        request.limits.max_download_bytes = limit;
+        let mut events = Vec::new();
+        let error = create_from_url(&request, &mut |event| {
+            events.push(event);
+            Ok(())
+        })
+        .unwrap_err();
+        assert!(
+            matches!(&error, CliError::Import(error) if error.code == "YouTubeTooLarge"),
+            "{error}"
+        );
+        assert!(!events.iter().any(|event| event["event"] == "metadata"));
+        assert!(!directory.path().join("transferred").exists());
+        assert!(!package.exists());
+    }
+}
+
+#[test]
+fn size_estimates_preserve_unknowns_and_the_inclusive_limit() {
+    let mut selection = select_formats(&[
+        video_format("137", "avc1.640028", 1080, 24.0, "https"),
+        audio_format("140", "mp4a.40.2", 129.0, -1),
+    ])
+    .unwrap();
+    assert_eq!(
+        estimated_download_bytes(&selection, 1100).unwrap(),
+        Some(1100)
+    );
+    selection.video.declared_bytes = None;
+    assert_eq!(estimated_download_bytes(&selection, 1100).unwrap(), None);
+    selection.video.approximate_bytes = Some(1000);
+    assert_eq!(
+        estimated_download_bytes(&selection, 1100).unwrap(),
+        Some(1100)
+    );
+    selection.audio.declared_bytes = None;
+    selection.audio.approximate_bytes = Some(u64::MAX);
+    assert_eq!(
+        estimated_download_bytes(&selection, u64::MAX)
+            .unwrap_err()
+            .code,
+        "YouTubeTooLarge"
+    );
+}
+
+#[test]
+fn completed_transfer_rechecks_combined_size_before_assembly() {
+    let directory = tempfile::tempdir().unwrap();
+    let package = directory.path().join("never.deadpan");
+    let mut video = video_format("137", "avc1.640028", 1080, 24.0, "https");
+    let mut audio = audio_format("140", "mp4a.40.2", 129.0, -1);
+    video["filesize"] = Value::Null;
+    audio["filesize"] = Value::Null;
+    let data = metadata(vec![video, audio]);
+    // Finish before the periodic directory watchdog necessarily observes
+    // these bytes; the completed files must still obey the combined bound.
+    let body = format!(
+        "case \"$*\" in *--dump-single-json*) cat <<'JSON'\n{data}\nJSON\n;; *) printf '%s' '{}' >137.mp4; printf '%s' '{}' >140.m4a;; esac",
+        "v".repeat(700),
+        "a".repeat(400)
+    );
+    let helpers = stub(directory.path(), &body);
+    let cancelled = AtomicBool::new(false);
+    let mut request = import(&package, &helpers, &cancelled);
+    request.limits.max_download_bytes = 1024;
+    let mut events = Vec::new();
+    let error = create_from_url(&request, &mut |event| {
+        events.push(event);
+        Ok(())
+    })
+    .unwrap_err();
+    assert!(
+        matches!(&error, CliError::Import(error) if error.code == "YouTubeTooLarge"),
+        "{error}"
+    );
+    assert!(!events.iter().any(|event| event["event"] == "assembling"));
+    assert!(!package.exists());
+}
+
+#[test]
+fn confirmation_honors_a_tighter_transfer_limit() {
+    let directory = tempfile::tempdir().unwrap();
+    let package = directory.path().join("never.deadpan");
+    let data = metadata(vec![
+        video_format("137", "avc1.640028", 1080, 24.0, "https"),
+        audio_format("140", "mp4a.40.2", 129.0, -1),
+    ]);
+    let body = format!(
+        "case \"$*\" in *--dump-single-json*) cat <<'JSON'\n{data}\nJSON\n;; *) touch '{}/transferred'; exit 1;; esac",
+        directory.path().display()
+    );
+    let helpers = stub(directory.path(), &body);
+    let cancelled = AtomicBool::new(false);
+    let inspected = inspect(
+        &Inspection {
+            url: "https://youtu.be/Z4C82eyhwgU",
+            cookies: None,
+            helpers: &helpers,
+            limits: ImportLimits::default(),
+            cancelled: &cancelled,
+        },
+        &mut |_| Ok(()),
+    )
+    .unwrap();
+    let error = download_and_create(
+        inspected,
+        &Acquisition {
+            package: &package,
+            alternatives: None,
+            helpers: &helpers,
+            media_worker: Path::new("/nonexistent/deadpan-media-worker"),
+            limits: ImportLimits {
+                max_download_bytes: 1024,
+                ..ImportLimits::default()
+            },
+            cancelled: &cancelled,
+        },
+        &mut |_| Ok(()),
+    )
+    .unwrap_err();
+    assert!(
+        matches!(&error, CliError::Import(error) if error.code == "YouTubeTooLarge"),
+        "{error}"
+    );
+    assert!(!directory.path().join("transferred").exists());
+    assert!(!package.exists());
+}
+
 /// Gate G: hostile `--dump-single-json` output. yt-dlp is a pinned but
 /// external program whose output describes remote content; parsing and
 /// format selection must end in typed `ImportError`s within bounds.

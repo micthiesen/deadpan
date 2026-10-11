@@ -15,6 +15,14 @@ the real app job requires a decoded thumbnail before creating its AV1/Opus
 Original. See the qualification for regression failures and their follow-ups.
 DP-14 remains partial.
 
+[YouTube size bounds](../qualification/youtube-limits-2026-10-11.md)
+use checked addition during inspection and confirmation, retain known-size
+rejection evidence beside an unknown stream, and check completed files before
+assembly. A fast transfer cannot evade the bound between watchdog polls.
+Keep these checks distinct from the approximate progress estimate. A fresh
+relocated bundle imports and validates the real 3840×1608 AV1/Opus *Charge*
+Original in 37.439 s. DP-14 remains partial.
+
 [Proxy packet-order investigation](../qualification/proxy-order-2026-10-11.md)
 reproduces an adjacent PTS swap followed by a stalled diagnostic encoder.
 Keep the production early refusal, confirmed teardown and single retry; no

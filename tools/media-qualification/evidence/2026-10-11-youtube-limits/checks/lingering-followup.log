@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+────────────
+ Nextest run ID 6876dc2f-5705-41df-bdd4-2401b83d8547 with nextest profile: default
+    Starting 2 tests across 1 binary (489 tests skipped)
+        PASS [   0.019s] (1/2) deadpan-cli backup_settings::tests::settings_survive_restart_and_are_private
+        PASS [   0.017s] (2/2) deadpan-cli backups::tests::cli_policy_rejects_incomplete_and_out_of_range_values_without_replacing
+────────────
+     Summary [   0.036s] 2 tests run: 2 passed, 489 skipped

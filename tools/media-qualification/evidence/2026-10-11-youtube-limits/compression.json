@@ -1,0 +1,17 @@
+[
+  {
+    "path": "checks/bundle-verify.log.gz",
+    "original_bytes": 24167,
+    "original_sha256": "c82d77773df92fa12f148ee1d5d0705c60563765d3a9641a96fc707f073723fe"
+  },
+  {
+    "path": "checks/cli-tests.log.gz",
+    "original_bytes": 69086,
+    "original_sha256": "3215f5e4f4f72a05e84eb6667f5e5cc0fc2313b5226ccd2ab1faec59277eccaa"
+  },
+  {
+    "path": "bundle/Deadpan.sbom.cdx.json.gz",
+    "original_bytes": 727319,
+    "original_sha256": "27cb87d42d84254c30eb5a4a3ecb46925beba09d5998bf425045c489b6f8028d"
+  }
+]

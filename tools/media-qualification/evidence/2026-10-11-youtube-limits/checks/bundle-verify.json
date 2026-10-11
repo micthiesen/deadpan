@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "bundle-verify",
+    "/tmp/deadpan-youtube-limits-bundle-20261011/Deadpan.app"
+  ],
+  "exit": 0,
+  "seconds": 29.63007712503895,
+  "log_sha256": "c82d77773df92fa12f148ee1d5d0705c60563765d3a9641a96fc707f073723fe"
+}

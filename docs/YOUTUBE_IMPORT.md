@@ -277,6 +277,14 @@ soon as the transfer ends. Each file must exist, be a regular nonempty file and 
 size exactly. Package creation has not happened yet, so a failed or cancelled
 transfer leaves nothing behind.
 
+Size estimates use checked addition. A known stream already over the limit is
+refused even when the other stream's size is unknown; approximate sizes are
+used only when a declared size is absent. Confirmation rechecks the caller's
+current limit. After the downloader exits, the actual combined file lengths
+are checked before assembly, including transfers that finish between watchdog
+polls. Overflow and over-limit pairs return `YouTubeTooLarge` without creating
+a project. The exact limit is allowed.
+
 ### Assembly
 
 YouTube delivers picture and sound as separate single-stream MP4 or WebM

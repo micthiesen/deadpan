@@ -428,6 +428,32 @@ pub struct Selection {
     pub audio: Format,
 }
 
+fn bounded_download_bytes(video: u64, audio: u64, limit: u64) -> Result<u64, ImportError> {
+    video
+        .checked_add(audio)
+        .filter(|total| *total <= limit)
+        .ok_or_else(|| {
+            ImportError::new(
+                "YouTubeTooLarge",
+                format!("the selected streams exceed the {limit}-byte import limit"),
+            )
+        })
+}
+
+fn estimated_download_bytes(selection: &Selection, limit: u64) -> Result<Option<u64>, ImportError> {
+    let video = selection
+        .video
+        .declared_bytes
+        .or(selection.video.approximate_bytes);
+    let audio = selection
+        .audio
+        .declared_bytes
+        .or(selection.audio.approximate_bytes);
+    // An unknown stream size must not hide an already oversized known one.
+    let total = bounded_download_bytes(video.unwrap_or(0), audio.unwrap_or(0), limit)?;
+    Ok(video.zip(audio).map(|_| total))
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct VideoMetadata {
     pub id: String,
@@ -1002,21 +1028,7 @@ pub fn inspect(
     }
     let metadata = parse_metadata(&run.stdout, &id, &request.limits)?;
     let selection = &metadata.selection;
-    let estimate = [&selection.video, &selection.audio]
-        .iter()
-        .map(|f| f.declared_bytes.or(f.approximate_bytes))
-        .sum::<Option<u64>>();
-    if estimate.is_some_and(|bytes| bytes > request.limits.max_download_bytes) {
-        return Err(ImportError::new(
-            "YouTubeTooLarge",
-            format!(
-                "the selected streams need about {} bytes; imports are limited to {} bytes",
-                estimate.unwrap_or(0),
-                request.limits.max_download_bytes
-            ),
-        )
-        .into());
-    }
+    let estimate = estimated_download_bytes(selection, request.limits.max_download_bytes)?;
     events(serde_json::json!({
         "event": "metadata",
         "video_id": metadata.id, "title": metadata.title, "author": metadata.author,
@@ -1060,10 +1072,10 @@ pub fn download_and_create(
     let Inspected {
         id,
         metadata,
-        estimate,
         info: metadata_json,
         workspace,
         cookies,
+        ..
     } = inspected;
     if import.alternatives.is_none() && fs::symlink_metadata(import.package).is_ok() {
         return Err(CliError::Usage(format!(
@@ -1073,6 +1085,8 @@ pub fn download_and_create(
     }
     let cookie_path = cookies.as_ref().map(PrivateCookies::path);
     let selection = &metadata.selection;
+    // Callers may tighten their limits between inspection and confirmation.
+    let estimate = estimated_download_bytes(selection, import.limits.max_download_bytes)?;
     if let Some(estimate) = estimate {
         // Downloads, then the assembled copy beside them, then retention.
         require_space(workspace.path(), estimate.saturating_mul(2))?;
@@ -1140,8 +1154,11 @@ pub fn download_and_create(
     let mut audio = downloaded(&directory, &selection.audio)?;
     let video_bytes = video.metadata()?.len();
     let audio_bytes = audio.metadata()?.len();
+    // A short transfer can finish between watchdog polls, and metadata may
+    // omit sizes. Enforce the combined bound again on the complete files.
+    let total_bytes = bounded_download_bytes(video_bytes, audio_bytes, limit)?;
     // Assembly writes about as much again; retention may copy it once more.
-    require_space(workspace.path(), video_bytes + audio_bytes)?;
+    require_space(workspace.path(), total_bytes)?;
 
     events(
         serde_json::json!({ "event": "assembling", "video_bytes": video_bytes, "audio_bytes": audio_bytes }),
@@ -1179,8 +1196,8 @@ pub fn download_and_create(
         deadpan_media::RemuxLimits {
             // Stream copy adds only container overhead; never exceed what
             // retention accepts.
-            max_output_bytes: (video_length + audio_length)
-                .saturating_add((video_length + audio_length) / 50)
+            max_output_bytes: total_bytes
+                .saturating_add(total_bytes / 50)
                 .saturating_add(16 * 1024 * 1024)
                 .min(crate::live_project::preparation::original_byte_limit())
                 .min(deadpan_media::protocol::MAX_REMUX_OUTPUT_BYTES),
