@@ -1093,6 +1093,7 @@ fn delivery(
         .as_ref()
         .ok_or("No slice audition to deliver")?;
     Ok(Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),

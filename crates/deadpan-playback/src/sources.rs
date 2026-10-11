@@ -437,6 +437,7 @@ pub(crate) struct Sources {
     recency: VecDeque<AssetId>,
     cache_bytes: u64,
     cache_index_frames: u64,
+    preparation_monitor: Option<Arc<deadpan_audio::PreparationMonitor>>,
 }
 
 impl Sources {
@@ -447,7 +448,14 @@ impl Sources {
             recency: VecDeque::new(),
             cache_bytes: 0,
             cache_index_frames: 0,
+            preparation_monitor: None,
         }
+    }
+    pub(crate) fn set_preparation_monitor(
+        &mut self,
+        monitor: Option<Arc<deadpan_audio::PreparationMonitor>>,
+    ) {
+        self.preparation_monitor = monitor;
     }
     pub(crate) fn matches(&self, snapshot: &Snapshot) -> bool {
         self.snapshot.validate_admission().is_ok()
@@ -530,6 +538,10 @@ impl AudioSourceProvider for Sources {
             mark_recent(&mut self.recency, asset);
         } else {
             deadpan_diagnostics::CACHES.decoded_pcm.misses.increment();
+            let progress = self
+                .preparation_monitor
+                .as_ref()
+                .map(|monitor| monitor.enter(deadpan_audio::PreparationActivity::LoadingSource));
             // Decoded physical samples include priming and padding. The opener
             // receives this exact reservation and must reproduce the receipt.
             let bytes = expected
@@ -581,6 +593,9 @@ impl AudioSourceProvider for Sources {
                 .ok_or_else(|| unavailable("source cache index accounting overflow"))?;
             // The store's private snapshot was verified against these exact
             // bytes; decode it without a second copy.
+            if let Some(progress) = &progress {
+                progress.report(deadpan_audio::PreparationActivity::DecodingSource);
+            }
             let session = AudioSession::open_input(
                 original
                     .into_source_input(expected.content())

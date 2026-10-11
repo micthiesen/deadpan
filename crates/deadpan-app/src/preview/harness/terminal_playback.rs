@@ -26,6 +26,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             let run = d.app().transport.as_ref().ok_or("No replay transport")?;
             let end = run.window().end();
             let update = |phase, sample, error| Update {
+                preparation: None,
                 ticket: run.ticket,
                 session: run.session,
                 project_id: run.project.clone(),

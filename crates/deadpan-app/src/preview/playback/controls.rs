@@ -74,11 +74,11 @@ impl Controls {
         let status = app.transport.as_ref().map(|run| {
             let millis = run.content_sample().unwrap_or(run.sample).0 / 48;
             let status = if preparing {
-                "Preparing"
+                run.preparation_label()
             } else if finishing {
-                "Finishing picture"
+                "Finishing picture".into()
             } else {
-                "Playing"
+                "Playing".into()
             };
             let lap = if looping {
                 format!(" · loop {}", run.lap().unwrap_or(0) + 1)

@@ -1490,6 +1490,7 @@ fn playback_update(
 ) -> Result<Update, String> {
     let run = d.app().transport.as_ref().ok_or("No Trim transport")?;
     Ok(Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),

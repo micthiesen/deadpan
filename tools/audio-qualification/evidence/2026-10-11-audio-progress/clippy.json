@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "--workspace",
+    "--all-targets",
+    "--features",
+    "ui-harness",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "exit": 0,
+  "seconds": 21.436887999996543,
+  "log_sha256": "9fd524fa15dbbe8479a588ab81b6d33655f4c586b1765a162965f4a8560a19d5"
+}

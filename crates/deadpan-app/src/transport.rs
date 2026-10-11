@@ -151,6 +151,7 @@ pub struct Run {
     pub sample: AudioSample,
     pub generation: Option<Generation>,
     pub phase: Phase,
+    pub preparation: Option<deadpan_playback::Preparation>,
     requested_frame: Option<u64>,
     submitted_picture: Option<u64>,
 }
@@ -273,6 +274,7 @@ impl Run {
             sample: delivery_start,
             generation: None,
             phase: Phase::Preparing,
+            preparation: None,
             requested_frame: None,
             submitted_picture: None,
         };
@@ -282,6 +284,44 @@ impl Run {
 
     pub fn domain(&self) -> &Domain {
         &self.domain
+    }
+
+    pub fn preparation_label(&self) -> String {
+        let Some(preparation) = self.preparation else {
+            return "Preparing".into();
+        };
+        use deadpan_audio::PreparationActivity as Activity;
+        let work = |label: &str, completed: u32, total: u32| {
+            // These are this stage's processed samples, not a total-job estimate.
+            format!(
+                "{label} {}.{}/{}.{}s",
+                completed / 48_000,
+                completed / 4800 % 10,
+                total / 48_000,
+                total / 4800 % 10
+            )
+        };
+        let activity = match preparation.activity {
+            Activity::CheckingPlan => "Checking audio".into(),
+            Activity::LoadingSource => "Verifying source".into(),
+            Activity::DecodingSource => "Decoding source".into(),
+            Activity::PreparingOutput => "Preparing output".into(),
+            Activity::CheckingStretch {
+                completed, total, ..
+            } => work("Checking stretch", completed, total),
+            Activity::Stretching {
+                completed, total, ..
+            } => work("Stretching stage", completed, total),
+            Activity::CheckingStretchInput {
+                completed, total, ..
+            } => work("Checking stretch input", completed, total),
+            Activity::SavingStretch { .. } => "Saving stretch".into(),
+        };
+        format!(
+            "Preparing · {activity} · {}.{}s elapsed",
+            preparation.elapsed_millis / 1000,
+            preparation.elapsed_millis / 100 % 10
+        )
     }
 
     pub fn window(&self) -> &Window {
@@ -428,6 +468,11 @@ impl Run {
         }
         self.sample = sample;
         self.phase = update.phase;
+        self.preparation = if update.phase == Phase::Preparing {
+            update.preparation
+        } else {
+            None
+        };
         if update.generation.is_some() {
             self.generation = update.generation;
         }

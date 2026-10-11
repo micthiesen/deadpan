@@ -500,6 +500,7 @@ fn transport(d: &mut Driver<'_>) -> Result<(), String> {
         .restart(run.sample.0)
         .map_err(|error| error.to_string())?;
     let playing = deadpan_playback::Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),
@@ -510,6 +511,49 @@ fn transport(d: &mut Driver<'_>) -> Result<(), String> {
         generation: Some(generation),
         error: None,
     };
+    for activity in [
+        deadpan_audio::PreparationActivity::DecodingSource,
+        deadpan_audio::PreparationActivity::Stretching {
+            depth: 2,
+            completed: 576_000,
+            total: 11_531_520,
+        },
+        deadpan_audio::PreparationActivity::CheckingStretchInput {
+            depth: 1,
+            completed: 86_399_000,
+            total: 86_400_000,
+        },
+    ] {
+        let preparation = deadpan_playback::Preparation {
+            activity,
+            elapsed_millis: 61_200,
+        };
+        d.app_mut()
+            .feedback
+            .playback_updates
+            .push_back(deadpan_playback::Update {
+                phase: deadpan_playback::Phase::Preparing,
+                sample: None,
+                preparation: Some(preparation),
+                ..playing.clone()
+            });
+        d.step("Measured audio preparation in compact Original", true)?;
+        d.settled()?;
+        d.check(
+            "Preparation activity preserves both cursors, selection and the captured revision",
+            d.app().transport.as_ref().is_some_and(|run| run.preparation == Some(preparation))
+                && editor_state(d) == state && d.revision() == revision,
+            json!({"activity":format!("{activity:?}"),"elapsed_millis":61_200,"state":state,"revision":revision}),
+            d.snapshot(),
+        )?;
+        let label = d
+            .app()
+            .transport
+            .as_ref()
+            .ok_or("Missing preparation")?
+            .preparation_label();
+        original_layout(d, 1, 100.0, "Cancel preparation", Some(&label))?;
+    }
     d.app_mut().feedback.playback_updates.push_back(playing);
     d.step("First injected Playing feedback in compact Original", true)?;
     d.check(

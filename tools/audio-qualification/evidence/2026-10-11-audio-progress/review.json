@@ -1,0 +1,25 @@
+{
+  "reviewer": "Primary agent only, per owner instruction; no subagents",
+  "scope": [
+    "All modified Rust files and three new progress/test files; docs and retained evidence",
+    "Monitor scopes and lock lifetimes, cancellation, retained-cache monitor replacement, nested admission and actual frame counters",
+    "Controller epoch and native request/session/project/revision/content/generation gates, sample-free progress and no device callback access",
+    "Native measured text geometry, compact/normal sound card, Original transport and long custom shortcuts"
+  ],
+  "corrections": [
+    "Added preparation: None to every harness and transport Update constructor after the first compile rejected missing fields",
+    "Fixed the new fake-device test's clock: its first content interval began at 10 ms while the fake clock remained zero; kept the production stalled-clock watchdog unchanged",
+    "Converted request elapsed time to bounded u64 before 100 ms quantization, avoiding an extreme-duration multiplication overflow",
+    "Re-ran transport tests on the app binary after the library-only command selected zero tests",
+    "Extended unused-input failure coverage and foreign-generation rejection before final focused tests",
+    "Visual review of the passing 59-check sound replay found mid-word wrapping in the narrow status column. Preparation now owns a full-width row below Sound; the 61-check replay adds actual glyph-row word-boundary checks at both window sizes. The older render is retained as pre-fix evidence."
+  ],
+  "verification_order": "The 576-test audio/playback run preceded elapsed-counter saturation correction and final test-only additions. Final controller, unused-input and app transport tests plus strict all-target Clippy cover those changes. Initial four UI replays precede the sound progress checkpoints. The 59-check sound replay exposed a visual wrapping defect despite passing paint-visibility assertions; the final 61-check sound-layout-replay and layout-clippy cover the correction.",
+  "limits": [
+    "Fake-device controller test, real decoded-WAV PCM and offscreen Metal replay; no new live-window, acoustic, physical input or real-device measurement",
+    "Future-stage prewarming, persistent PCM reuse and the rest of the cache lifecycle remain open; DP-09 and DP-16 remain partial",
+    "Replay warning findings retain required first-paint/layout retries with distinct input causes, a scrolling rail step and intermediate image budget; they are not ignored assertion failures",
+    "The debug replay linker emits the existing large __eh_frame warning; no change to compiler or linker policy",
+    "The first evidence check incorrectly treated each replay's three unmeasured OS/device scope notes as skipped scenarios. The corrected checker verifies every actual assertion, requires those scope notes, and preserves them in the replay summary."
+  ]
+}

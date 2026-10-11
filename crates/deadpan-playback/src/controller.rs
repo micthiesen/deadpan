@@ -5,6 +5,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use deadpan_audio::{PreparationActivity, PreparationMonitor};
 use deadpan_core::{AudioSample, ProjectId, RevisionId};
 use deadpan_output::{
     ClockPosition, DeliveryClock, DeviceReport, Feed, FeedError, Generation, RenderStatus,
@@ -34,6 +35,15 @@ pub struct Update {
     pub sample: Option<AudioSample>,
     pub generation: Option<Generation>,
     pub error: Option<String>,
+    /// Current request's worker observation; never advances the heard clock.
+    pub preparation: Option<Preparation>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Preparation {
+    pub activity: PreparationActivity,
+    /// Actual request age, rounded down to 100 ms, with no estimated completion.
+    pub elapsed_millis: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -59,6 +69,8 @@ pub(crate) struct Job {
     pub start: AudioSample,
     pub gain: f32,
     pub cancelled: AtomicBool,
+    pub monitor: Arc<PreparationMonitor>,
+    started: Instant,
 }
 
 impl Job {
@@ -79,6 +91,13 @@ impl Job {
             sample,
             generation,
             error,
+            preparation: (phase == Phase::Preparing).then(|| {
+                let millis = u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
+                Preparation {
+                    activity: self.monitor.activity(),
+                    elapsed_millis: millis / 100 * 100,
+                }
+            }),
         }
     }
 }
@@ -448,6 +467,10 @@ impl Engine {
             start,
             gain: monitor_gain,
             cancelled: AtomicBool::new(false),
+            monitor: Arc::new(PreparationMonitor::new(
+                PreparationActivity::PreparingOutput,
+            )),
+            started: Instant::now(),
         });
         state.epoch = epoch;
         state.current = Some(job.clone());
@@ -570,6 +593,7 @@ struct Active {
     last_clock: Option<(u64, Instant)>,
     last_route: Instant,
     uncovered: Option<Instant>,
+    last_preparation: Instant,
 }
 
 impl Active {
@@ -623,6 +647,7 @@ impl Active {
             last_clock: None,
             last_route: now,
             uncovered: None,
+            last_preparation: now,
         })
     }
 
@@ -701,6 +726,14 @@ impl Active {
         }
         if !self.terminal_report {
             self.supply(shared)?;
+        }
+        if !self.activated && self.last_preparation.elapsed() >= Duration::from_millis(100) {
+            shared.publish(
+                &self.job,
+                self.job
+                    .update(Phase::Preparing, Some(self.generation), None, None),
+            );
+            self.last_preparation = Instant::now();
         }
         self.device_queue
             .set(self.device.feed().queued_packets() as u64);

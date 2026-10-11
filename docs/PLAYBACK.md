@@ -12,6 +12,17 @@ project transitions and quit stop the current generation. Sleep and wake revoke
 it through an owned main-thread NSWorkspace observer; playback never resumes
 automatically.
 
+During preparation, the transport and sound card show actual worker activity:
+checking the captured audio plan, verifying and decoding a cold source,
+checking a stretch, processing its samples, admitting remaining input or
+finishing its cache, and preparing output. Stretch counters describe the
+current stage's 48 kHz sample extent; nested stages have separate counters.
+Elapsed time is measured from the playback request and updated at 100 ms
+intervals. There is no estimated completion time or overall percentage.
+Space still cancels. [Preparation observations](qualification/audio-progress-2026-10-11.md)
+are bound to the same request, session, revision, proposed-content identity
+and output generation as playback; they never advance the heard clock.
+
 Explicit pause of ordinary edit playback selects and reveals the beat under the
 last admitted audio position. Original playback leaves the edit cursor, scope
 and selected beat alone. The exact subframe sample is retained for resume; a seek or authored
@@ -142,11 +153,14 @@ Original/Sequence/Sound target. A temporary validated Source-only view compiles 
 preparation worker, while source admission retains the actual authored snapshot.
 This view is never written to SQLite and creates no edit revision or history.
 
-Existing source-admission and StageAudio limits still apply. In particular,
-continuous Preserve input is bounded to 1,048,576 frames, approximately 21.8 s at
-48 kHz. Exceeding a preparation limit reports failure; arbitrary chunk resets do
-not substitute for continuous history. Cold qualification may read the whole
-source, but cancellation and editing remain available.
+Existing source-admission and [StageAudio limits](AUDIO_STAGE_PREPARATION.md)
+still apply. Continuous Preserve uses bounded input windows and private files
+for long output. Its per-stage input/output, aggregate work, RAM and disk limits
+remain explicit. Each playback batch has one cooperative 60-second deadline;
+source opening retains its own bound. Exceeding a limit reports failure;
+arbitrary chunk resets do not substitute for continuous history. Cold
+qualification may read the whole source, but cancellation and editing remain
+available.
 
 Prepared PCM uses at most two 8192-frame batches plus the native queue. A shared
 limited reader retains at most four verified 8192-frame tiles and twelve exact

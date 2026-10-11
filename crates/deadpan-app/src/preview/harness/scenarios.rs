@@ -87,6 +87,7 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
     let update = |d: &Driver<'_>, phase, sample, error| {
         let run = d.app().transport.as_ref().expect("active playback");
         deadpan_playback::Update {
+            preparation: None,
             ticket: run.ticket,
             session: run.session,
             project_id: run.project.clone(),

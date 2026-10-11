@@ -28,8 +28,9 @@ use serde::Serialize;
 use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
     AudioSourceProvider, DomainSignalTransfer, DomainTransferDescriptor, MAX_OUTPUT_FRAMES,
-    PcmWindow, PreparationError, ResampleRecipe, Resampler, RoomTone, RoomToneRecipe,
-    RootSignalBlock, RootSignalTransfer, SignalTransferError, StereoMatrix, check_cancel,
+    PcmWindow, PreparationActivity, PreparationError, PreparationMonitor, ResampleRecipe,
+    Resampler, RoomTone, RoomToneRecipe, RootSignalBlock, RootSignalTransfer, SignalTransferError,
+    StereoMatrix, check_cancel,
 };
 
 #[path = "signal_input.rs"]
@@ -554,6 +555,7 @@ pub struct StageAudio {
     sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
     active_frames: u64,
     active_disk_bytes: u64,
+    preparation_monitor: Option<Arc<PreparationMonitor>>,
     /// Set while a live tail reads the sound before it. Other tails in that
     /// window count as silent, so tails never feed each other or chain.
     feeding_tail: bool,
@@ -594,6 +596,7 @@ impl StageAudio {
             sound_processing_plans: BTreeMap::new(),
             active_frames: 0,
             active_disk_bytes: 0,
+            preparation_monitor: None,
             feeding_tail: false,
         }
     }
@@ -633,6 +636,12 @@ impl StageAudio {
 
     pub fn cached_stage_count(&self) -> usize {
         self.cache.len()
+    }
+
+    /// Observations belong to the current worker request, independently of
+    /// retained PCM. Replacing the monitor does not invalidate valid caches.
+    pub fn set_preparation_monitor(&mut self, monitor: Option<Arc<PreparationMonitor>>) {
+        self.preparation_monitor = monitor;
     }
 
     /// Retained PCM only; the bounded source halo and active work are separate.
@@ -2118,6 +2127,13 @@ impl StageAudio {
         depth: usize,
     ) -> Result<PreparedBlock, StageAudioError> {
         let WorkControl { cancelled, .. } = control;
+        let progress = self.preparation_monitor.as_ref().map(|monitor| {
+            monitor.enter(PreparationActivity::CheckingStretch {
+                depth,
+                completed: 0,
+                total: recipe.output_frames(),
+            })
+        });
         // A policy may own no input-grid points but become audible after the
         // stretch. Validate the complete intrinsic output before source I/O.
         let mut validated = 0_u32;
@@ -2133,6 +2149,13 @@ impl StageAudio {
                 control.preflight_content(content, &self.plan)?;
             }
             validated = end;
+            if let Some(progress) = &progress {
+                progress.report(PreparationActivity::CheckingStretch {
+                    depth,
+                    completed: validated,
+                    total: recipe.output_frames(),
+                });
+            }
         }
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
@@ -2144,6 +2167,13 @@ impl StageAudio {
         )?;
         while samples.len() < recipe.output_frames() as usize {
             control.check()?;
+            if let Some(progress) = &progress {
+                progress.report(PreparationActivity::Stretching {
+                    depth,
+                    completed: samples.len() as u32,
+                    total: recipe.output_frames(),
+                });
+            }
             let frames =
                 (recipe.output_frames() as usize - samples.len()).min(MAX_OUTPUT_FRAMES as usize);
             let range = dsp.required_input(frames)?;
@@ -2189,6 +2219,13 @@ impl StageAudio {
         // Explicit-rate output can end before retained input does. Preserve
         // full input admission and finite/peak validation without keeping it.
         while input_end < recipe.input_frames() {
+            if let Some(progress) = &progress {
+                progress.report(PreparationActivity::CheckingStretchInput {
+                    depth,
+                    completed: input_end,
+                    total: recipe.input_frames(),
+                });
+            }
             let end = input_end
                 .saturating_add(MAX_OUTPUT_FRAMES)
                 .min(recipe.input_frames());
@@ -2204,6 +2241,9 @@ impl StageAudio {
             input_end = end;
         }
         control.check()?;
+        if let Some(progress) = &progress {
+            progress.report(PreparationActivity::SavingStretch { depth });
+        }
         Ok(PreparedBlock {
             samples: samples.finish(control)?,
             dependencies,
@@ -2961,7 +3001,11 @@ mod controlled_reads {
 
     #[test]
     fn shortened_streamed_output_still_admits_unused_input_dependencies() {
-        struct Unavailable(usize);
+        struct Unavailable {
+            calls: usize,
+            monitor: Arc<PreparationMonitor>,
+            activity: Option<PreparationActivity>,
+        }
         impl AudioSourceProvider for Unavailable {
             fn source(
                 &mut self,
@@ -2970,7 +3014,8 @@ mod controlled_reads {
                 _: &AssetId,
                 _: &AtomicBool,
             ) -> Result<&crate::PreparedSource, PreparationError> {
-                self.0 += 1;
+                self.calls += 1;
+                self.activity = Some(self.monitor.activity());
                 Err(PreparationError::SourceUnavailable("unused tail".into()))
             }
         }
@@ -3007,7 +3052,15 @@ mod controlled_reads {
                 < 32_768
         );
         let mut renderer = StageAudio::new(Arc::clone(&plan));
-        let mut provider = Unavailable(0);
+        let monitor = Arc::new(PreparationMonitor::new(
+            PreparationActivity::PreparingOutput,
+        ));
+        renderer.set_preparation_monitor(Some(Arc::clone(&monitor)));
+        let mut provider = Unavailable {
+            calls: 0,
+            monitor,
+            activity: None,
+        };
         let cancelled = AtomicBool::new(false);
         let work = RefCell::new(ReadWork::default());
         let control = WorkControl {
@@ -3026,7 +3079,16 @@ mod controlled_reads {
         assert!(matches!(result, Err(StageAudioError::Preparation(
             PreparationError::SourceUnavailable(ref message)
         )) if message == "unused tail"));
-        assert_eq!(provider.0, 1);
+        assert_eq!(provider.calls, 1);
+        assert!(
+            matches!(provider.activity, Some(PreparationActivity::CheckingStretchInput {
+            depth: 0, completed, total
+        }) if completed < total)
+        );
+        assert_eq!(
+            provider.monitor.activity(),
+            PreparationActivity::PreparingOutput
+        );
         assert_eq!(renderer.cached_stage_count(), 0);
     }
 

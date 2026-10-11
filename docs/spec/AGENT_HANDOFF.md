@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Audio preparation activity](../qualification/audio-progress-2026-10-11.md)
+now reaches Original/Edit transport and catalog Sound from the existing worker.
+Actual stage-frame counters and request elapsed time preserve both editor clocks,
+cancel/supersession handling and warm PCM reuse. Full audio/playback suites,
+focused native transport tests and offscreen layout replays cover the path.
+Future-stage prewarming and persistent cache lifecycle remain open;
+DP-09/DP-16 stay partial.
+
 [Private disk-backed Preserve output](../qualification/disk-pcm-2026-10-11.md)
 removes the full-output RAM allocation for long stages. One continuous processor
 writes exact PCM into an unlinked file, with shared RAM/disk admission and

@@ -1,0 +1,134 @@
+[
+  {
+    "run": "replays",
+    "scenario": "original-layout",
+    "failed": false,
+    "checks": 334,
+    "unmeasured": [
+      "Original layout uses the real qualified picture and durable sound placement. Preparing/Playing uses injected typed delivery updates; no audio device, PCM preparation, physical keyboard, OS IME, or listening result is claimed.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "a708bee2840cd4577c475da8ce3ec7894f219f8b42f3b4b9af08c930afb671de",
+    "selected_images": [
+      {
+        "file": "replays-original-layout-original-layout-112.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 114
+      },
+      {
+        "file": "replays-original-layout-original-layout-113.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 115
+      },
+      {
+        "file": "replays-original-layout-original-layout-114.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 116
+      }
+    ]
+  },
+  {
+    "run": "replays",
+    "scenario": "original-layout-long",
+    "failed": false,
+    "checks": 353,
+    "unmeasured": [
+      "Original layout uses the real qualified picture and durable sound placement. Preparing/Playing uses injected typed delivery updates; no audio device, PCM preparation, physical keyboard, OS IME, or listening result is claimed.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "a708bee2840cd4577c475da8ce3ec7894f219f8b42f3b4b9af08c930afb671de",
+    "selected_images": [
+      {
+        "file": "replays-original-layout-long-original-layout-long-112.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 114
+      },
+      {
+        "file": "replays-original-layout-long-original-layout-long-113.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 115
+      },
+      {
+        "file": "replays-original-layout-long-original-layout-long-114.png",
+        "input": "Measured audio preparation in compact Original",
+        "frame": 116
+      }
+    ]
+  },
+  {
+    "run": "replays",
+    "scenario": "sound-playback",
+    "failed": false,
+    "checks": 53,
+    "unmeasured": [
+      "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "a708bee2840cd4577c475da8ce3ec7894f219f8b42f3b4b9af08c930afb671de",
+    "selected_images": []
+  },
+  {
+    "run": "replays",
+    "scenario": "room-tone",
+    "failed": false,
+    "checks": 223,
+    "unmeasured": [
+      "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "a708bee2840cd4577c475da8ce3ec7894f219f8b42f3b4b9af08c930afb671de",
+    "selected_images": []
+  },
+  {
+    "run": "sound-replay-final",
+    "scenario": "sound-playback",
+    "failed": false,
+    "checks": 59,
+    "unmeasured": [
+      "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "f730279d69c39ae2087a552305d5f711b7eadcd96dca86a404b0f1458f90ad3e",
+    "selected_images": [
+      {
+        "file": "sound-replay-final-sound-playback-sound-playback-061.png",
+        "input": "Measured sound preparation at 960x640",
+        "frame": 100
+      },
+      {
+        "file": "sound-replay-final-sound-playback-sound-playback-062.png",
+        "input": "Measured sound preparation at 1280x820",
+        "frame": 101
+      }
+    ]
+  },
+  {
+    "run": "sound-layout-replay",
+    "scenario": "sound-playback",
+    "failed": false,
+    "checks": 61,
+    "unmeasured": [
+      "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "5bad780453f662744d75fa50293e8c18a5cdb47e1422bfa0208216d9a4a534e2",
+    "selected_images": [
+      {
+        "file": "sound-layout-replay-sound-playback-sound-playback-061.png",
+        "input": "Measured sound preparation at 960x640",
+        "frame": 100
+      },
+      {
+        "file": "sound-layout-replay-sound-playback-sound-playback-062.png",
+        "input": "Measured sound preparation at 1280x820",
+        "frame": 101
+      }
+    ]
+  }
+]

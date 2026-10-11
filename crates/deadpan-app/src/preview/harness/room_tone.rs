@@ -437,6 +437,7 @@ fn audition(d: &mut Driver<'_>, editor: &Value, revision: &str) -> Result<(), St
             .as_ref()
             .ok_or("No prepared source audition")?;
         let update = deadpan_playback::Update {
+            preparation: None,
             ticket: run.ticket,
             session: run.session,
             project_id: run.project.clone(),
@@ -931,6 +932,7 @@ fn committed_audition(
         .as_ref()
         .ok_or("No committed edit audition")?;
     let update = deadpan_playback::Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),

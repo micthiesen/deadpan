@@ -178,6 +178,8 @@ mod source_voice;
 #[path = "tests/waveform.rs"]
 mod waveform;
 
+mod preparation_progress;
+
 struct Fake {
     callback: Mutex<Callback>,
     reports: Mutex<VecDeque<DeviceReport>>,

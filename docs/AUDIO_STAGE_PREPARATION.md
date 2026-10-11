@@ -132,6 +132,15 @@ no block; complete child caches may remain useful for a later bounded retry.
 policy, DSP and prepared-file I/O failures. Source identity/layout and range errors retain the source inspector's
 existing codes. This bounded worker path is not suitable for an audio callback.
 
+An optional `PreparationMonitor` observes the current worker request. Its scoped
+activities report output-policy checks, actual produced frames, remaining-input
+admission and final cache writes. Nested processing and cold source opens restore
+their parent's activity on success or failure. A new playback request attaches
+a new monitor without discarding valid PCM. These observations contain no media,
+authored state or readiness authority, and do not affect DSP scheduling or cache
+admission. The playback controller samples them outside the device callback;
+see [preparation progress](qualification/audio-progress-2026-10-11.md).
+
 ## Evidence and remaining work
 
 Tests cover actual PCM through seams, fractional input origins, nested history,

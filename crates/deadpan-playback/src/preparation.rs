@@ -138,6 +138,9 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
     if job.cancelled.load(Ordering::Acquire) {
         return Ok(());
     }
+    let admission = job
+        .monitor
+        .enter(deadpan_audio::PreparationActivity::CheckingPlan);
     job.snapshot
         .validate_admission()
         .map_err(|error| error.to_string())?;
@@ -159,8 +162,8 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
             .target
             .effective_end(plan.audio_duration().map_err(|e| e.to_string())?)?;
         let sources = Sources::new(job.snapshot.clone());
-        // Canonical Preserve has an explicit full-input limit (~21.8 s at 48 kHz),
-        // 128 MiB stereo stage residency and 64 stages. Exceeding it is an error.
+        // Canonical Preserve streams its input and long output under shared
+        // RAM/disk/work limits. Preparation failure never substitutes other DSP.
         let audio = LimitedAudio::from_stages(
             StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
         );
@@ -176,6 +179,13 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
     let Some(Retained::Playback(prepared)) = retained.as_mut() else {
         return Err("playback preparation cache is absent".into());
     };
+    prepared
+        .audio
+        .set_preparation_monitor(Some(Arc::clone(&job.monitor)));
+    prepared
+        .sources
+        .set_preparation_monitor(Some(Arc::clone(&job.monitor)));
+    drop(admission);
     let window = job
         .window
         .unwrap_or(Window::new(AudioSample(0), prepared.end, false).map_err(|e| e.to_string())?);

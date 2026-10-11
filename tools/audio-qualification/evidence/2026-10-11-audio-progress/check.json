@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--workspace",
+    "--all-targets",
+    "--features",
+    "ui-harness"
+  ],
+  "exit": 101,
+  "seconds": 39.81332700001076,
+  "log_sha256": "22e7b3241663379aa0c205eaea0bc2dccac514cdc83f414fa45768b582a2b5de"
+}

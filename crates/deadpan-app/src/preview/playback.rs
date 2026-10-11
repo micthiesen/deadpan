@@ -759,13 +759,16 @@ impl DeadpanApp {
         );
         let status = text(
             egui::RichText::new(if preparing {
-                "Preparing"
+                self.transport
+                    .as_ref()
+                    .expect("active preparation")
+                    .preparation_label()
             } else if active {
-                "Playing"
+                "Playing".into()
             } else if paused {
-                "Paused"
+                "Paused".into()
             } else {
-                "Ready"
+                "Ready".into()
             })
             .color(if active && !preparing {
                 style::SAVED
@@ -773,7 +776,11 @@ impl DeadpanApp {
                 style::muted(ui)
             }),
             egui::TextWrapMode::Wrap,
-            (width - title.size().x - ui.spacing().item_spacing.x).max(1.0),
+            if preparing {
+                width
+            } else {
+                (width - title.size().x - ui.spacing().item_spacing.x).max(1.0)
+            },
         );
         let name = text(
             egui::RichText::new(&sound_label),
@@ -822,7 +829,12 @@ impl DeadpanApp {
                 .interact_size
                 .y
                 .max(title.size().y)
-                .max(status.size().y)
+                .max(if preparing { 0.0 } else { status.size().y })
+            + if preparing {
+                status.size().y + 4.0
+            } else {
+                0.0
+            }
             + name.size().y
             + clock.size().y
             + 4.0
@@ -836,8 +848,9 @@ impl DeadpanApp {
             ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new(title));
-                ui.add(egui::Label::new(status));
+                if !preparing { ui.add(egui::Label::new(Arc::clone(&status))); }
             });
+            if preparing { ui.add(egui::Label::new(status)); }
             ui.add(egui::Label::new(name)).on_hover_text(&sound_label);
             ui.add(egui::Label::new(clock));
             ui.add(egui::ProgressBar::new(if end == 0 { 0.0 } else { self.sound_cursor.min(end) as f32 / end as f32 }).desired_width(ui.available_width()).desired_height(4.0));

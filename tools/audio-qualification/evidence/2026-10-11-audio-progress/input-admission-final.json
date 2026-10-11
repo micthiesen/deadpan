@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--lib",
+    "shortened_streamed_output_still_admits_unused_input_dependencies"
+  ],
+  "exit": 0,
+  "seconds": 0.9784907917492092,
+  "log_sha256": "4c6b1bd45bb87089b31733bcdc845fd2e46c5acf6d24cc23e0e69d5f95e5370b"
+}

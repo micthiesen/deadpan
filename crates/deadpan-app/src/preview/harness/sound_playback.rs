@@ -114,6 +114,72 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     let (mut feed, _callback) = deadpan_output::channel().map_err(|e| e.to_string())?;
     let generation = feed.restart(0).map_err(|e| e.to_string())?;
+    let mut progress = update(d, Phase::Preparing, AudioSample(0), generation, None)?;
+    progress.sample = None;
+    progress.preparation = Some(deadpan_playback::Preparation {
+        activity: deadpan_audio::PreparationActivity::DecodingSource,
+        elapsed_millis: 12_300,
+    });
+    inject(
+        d,
+        progress,
+        "Sound source preparation reports actual activity and elapsed time",
+    )?;
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(rect);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing viewport")?
+            .inner_rect = Some(rect);
+        d.capture(&format!("Measured sound preparation at {width}x{height}"))?;
+        for label in [
+            "Cancel preparation  Space",
+            "Preparing · Decoding source · 12.3s elapsed",
+        ] {
+            let paint = scenarios::text_paint_visibility(d, label);
+            d.check(
+                "Sound preparation activity and cancellation remain fully visible",
+                !paint.is_empty() && paint.iter().all(|p| p["fully_visible"] == true),
+                json!({"label":label,"size":[width,height]}),
+                json!(paint),
+            )?;
+        }
+        let status = "Preparing · Decoding source · 12.3s elapsed";
+        let rows = d
+            .harness
+            .output()
+            .shapes
+            .iter()
+            .find_map(|shape| {
+                let egui::Shape::Text(text) = &shape.shape else {
+                    return None;
+                };
+                (text.galley.text() == status).then(|| {
+                    text.galley
+                        .rows
+                        .iter()
+                        .map(|row| row.text())
+                        .collect::<Vec<_>>()
+                })
+            })
+            .ok_or("Missing sound preparation text")?;
+        d.check(
+            "Narrow sound preparation wraps at word boundaries",
+            rows.iter()
+                .flat_map(|row| row.split_whitespace())
+                .eq(status.split_whitespace()),
+            json!({"words":status.split_whitespace().collect::<Vec<_>>(),"size":[width,height]}),
+            json!({"rows":rows}),
+        )?;
+        preserved(
+            d,
+            &baseline,
+            "Preparation progress and resize leave the sound and editor clocks unchanged",
+        )?;
+    }
     let first = update(d, Phase::Playing, AudioSample(125), generation, None)?;
     inject(
         d,
@@ -477,6 +543,7 @@ fn update(
         .as_ref()
         .ok_or("No active sound playback request")?;
     Ok(Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),

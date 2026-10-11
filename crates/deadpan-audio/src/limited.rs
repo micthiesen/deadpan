@@ -113,6 +113,10 @@ impl LimitedAudio {
         self.bus_cache.len()
     }
 
+    pub fn set_preparation_monitor(&mut self, monitor: Option<Arc<crate::PreparationMonitor>>) {
+        self.stages.set_preparation_monitor(monitor);
+    }
+
     pub fn read(
         &mut self,
         provider: &mut impl AudioSourceProvider,

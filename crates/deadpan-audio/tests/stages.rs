@@ -50,6 +50,9 @@ mod streaming;
 #[path = "stages/disk_cache.rs"]
 mod disk_cache;
 
+#[path = "stages/progress.rs"]
+mod progress;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

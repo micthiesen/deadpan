@@ -4,6 +4,53 @@ mod original;
 mod sound;
 
 #[test]
+fn preparation_activity_is_request_bound_and_never_moves_the_playback_clock() {
+    let mut run = run();
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    run.generation = Some(feed.restart(0).unwrap());
+    let mut current = update(&run, 0);
+    current.phase = Phase::Preparing;
+    current.sample = None;
+    current.preparation = Some(deadpan_playback::Preparation {
+        activity: deadpan_audio::PreparationActivity::Stretching {
+            depth: 2,
+            completed: 576_000,
+            total: 11_531_520,
+        },
+        elapsed_millis: 2300,
+    });
+    assert!(run.receive(&current).unwrap().is_some());
+    assert_eq!(run.sample, AudioSample(0));
+    assert_eq!(
+        run.preparation_label(),
+        "Preparing · Stretching stage 12.0/240.2s · 2.3s elapsed"
+    );
+    for change in 0..6 {
+        let mut stale = current.clone();
+        match change {
+            0 => stale.ticket += 1,
+            1 => stale.session += 1,
+            2 => stale.project_id = ProjectId::new("foreign").unwrap(),
+            3 => stale.revision_id = RevisionId::new("foreign").unwrap(),
+            4 => {
+                stale.content = ContentIdentity::Proposed {
+                    base_revision: run.revision.clone(),
+                    draft: 7,
+                    change: 9,
+                }
+            }
+            _ => stale.generation = Some(feed.restart(0).unwrap()),
+        }
+        stale.preparation.as_mut().unwrap().elapsed_millis = 999_900;
+        assert_eq!(run.receive(&stale).unwrap(), None);
+        assert_eq!(run.preparation, current.preparation);
+    }
+    current.phase = Phase::Stopped;
+    assert!(run.receive(&current).unwrap().is_some());
+    assert_eq!(run.preparation, None);
+}
+
+#[test]
 fn loop_lookahead_uses_context_and_partial_frame_sample_bounds() {
     use deadpan_media::lookahead::LoopLookAhead;
     let domain = Domain::Sequence {
@@ -158,6 +205,7 @@ fn run() -> Run {
 
 fn update(run: &Run, sample: i64) -> Update {
     Update {
+        preparation: None,
         ticket: run.ticket,
         session: run.session,
         project_id: run.project.clone(),

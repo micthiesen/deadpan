@@ -1149,6 +1149,7 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
     let update = {
         let run = d.app().transport.as_ref().ok_or("No audition")?;
         deadpan_playback::Update {
+            preparation: None,
             ticket: run.ticket,
             session: run.session,
             project_id: run.project.clone(),
@@ -1769,6 +1770,7 @@ pub(super) fn compare(d: &mut Driver<'_>) -> Result<(), String> {
     let update = {
         let run = d.app().transport.as_ref().ok_or("No audition")?;
         deadpan_playback::Update {
+            preparation: None,
             ticket: run.ticket,
             session: run.session,
             project_id: run.project.clone(),
