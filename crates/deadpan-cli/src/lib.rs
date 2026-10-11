@@ -398,6 +398,9 @@ impl CliError {
                 audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Timeout) => {
                     "AudioPreparationTimeout"
                 }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Cache(_)) => {
+                    "AudioCacheFailed"
+                }
                 audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Unsupported(_)) => {
                     "AudioOperationUnsupported"
                 }

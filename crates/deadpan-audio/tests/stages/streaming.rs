@@ -7,6 +7,10 @@ const OUTPUT: u32 = INPUT / 2;
 const RESIDENT: u32 = OUTPUT + 2 * deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u32 + 1024;
 
 fn long_plan() -> Arc<RenderPlan> {
+    long_plan_with_output(OUTPUT)
+}
+
+fn long_plan_with_output(output: u32) -> Arc<RenderPlan> {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let mut repeated = hold(1);
     repeated.kind = NodeKind::Repeat {
@@ -25,7 +29,7 @@ fn long_plan() -> Arc<RenderPlan> {
                 "stretch",
                 retime(
                     "repeat",
-                    i64::from(OUTPUT),
+                    i64::from(output),
                     0..i64::from(INPUT),
                     PitchPolicy::Preserve,
                 ),
@@ -35,12 +39,22 @@ fn long_plan() -> Arc<RenderPlan> {
 }
 
 fn reference() -> Vec<[f32; 2]> {
+    reference_with_output(OUTPUT)
+}
+
+fn reference_with_output(output: u32) -> Vec<[f32; 2]> {
     let mut engine = StreamingStretch::new(
-        StreamRecipe::new(INPUT, OUTPUT, StretchRate::new(2, 1).unwrap(), 0).unwrap(),
+        StreamRecipe::new(
+            INPUT,
+            output,
+            StretchRate::new(u64::from(INPUT), u64::from(output)).unwrap(),
+            0,
+        )
+        .unwrap(),
     )
     .unwrap();
     let mut samples = Vec::new();
-    while engine.position() < OUTPUT {
+    while engine.position() < output {
         let range = engine.required_input(256).unwrap();
         // Independent clock and exact integer WAV values, without a plan query.
         let left: Vec<_> = range
@@ -63,6 +77,40 @@ fn reference() -> Vec<[f32; 2]> {
         samples.extend((0..count).map(|n| [first[n], second[n]]));
     }
     samples
+}
+
+#[test]
+fn four_minute_disk_output_matches_canonical_history_under_fixed_memory() {
+    let output = INPUT * 2;
+    let expected = reference_with_output(output);
+    let plan = long_plan_with_output(output);
+    let limits = StageLimits {
+        // Two input windows plus one 2048-frame file buffer; no full output.
+        maximum_resident_frames: 2 * deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u32 + 2048,
+        maximum_disk_bytes: u64::from(output) * 8,
+        ..Default::default()
+    };
+    let mut disk = StageAudio::with_limits(Arc::clone(&plan), limits).unwrap();
+    let mut provider = FixtureProvider::new();
+    assert_eq!(
+        read(&mut disk, &mut provider, output - 173, 173),
+        expected[expected.len() - 173..]
+    );
+    assert_eq!(disk.cached_disk_bytes(), u64::from(output) * 8);
+    assert_eq!(disk.cached_resident_frames(), 0);
+    for start in (0..output).step_by(256) {
+        let count = (output - start).min(256);
+        assert_eq!(
+            read(&mut disk, &mut provider, start, count),
+            expected[start as usize..(start + count) as usize]
+        );
+    }
+    // A cold controller recreates identical history and the terminal samples.
+    let mut cold = StageAudio::with_limits(plan, limits).unwrap();
+    assert_eq!(
+        read(&mut cold, &mut provider, output - 73, 73),
+        expected[expected.len() - 73..]
+    );
 }
 
 fn read(

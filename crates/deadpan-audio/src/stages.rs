@@ -36,6 +36,10 @@ use crate::{
 mod signal_input;
 use signal_input::SignalInput;
 
+#[path = "prepared_pcm.rs"]
+mod prepared_pcm;
+use prepared_pcm::{PcmSamples, PcmWriter, PreparedPcm};
+
 #[path = "stage_projection.rs"]
 mod stage_projection;
 
@@ -94,18 +98,24 @@ pub struct StageLimits {
     pub maximum_depth: usize,
     pub maximum_prepared_stages: u32,
     pub maximum_prepared_frames: u64,
+    /// Preserve outputs above this size stream to a private temporary file.
+    pub maximum_memory_stage_frames: u32,
+    /// Includes cached, pinned projected and currently preparing file outputs.
+    pub maximum_disk_bytes: u64,
 }
 
 impl Default for StageLimits {
     fn default() -> Self {
         Self {
-            maximum_input_frames: 16 * 1024 * 1024,
-            maximum_output_frames: deadpan_dsp::MAX_OUTPUT_FRAMES,
+            maximum_input_frames: 86_400_000,
+            maximum_output_frames: 86_400_000,
             maximum_resident_frames: 16 * 1024 * 1024,
             maximum_cached_stages: 64,
             maximum_depth: 32,
             maximum_prepared_stages: 64,
-            maximum_prepared_frames: 16 * 1024 * 1024,
+            maximum_prepared_frames: 128 * 1024 * 1024,
+            maximum_memory_stage_frames: 1024 * 1024,
+            maximum_disk_bytes: 1024 * 1024 * 1024,
         }
     }
 }
@@ -140,6 +150,8 @@ pub enum StageAudioError {
     Dsp(#[from] deadpan_dsp::DspError),
     #[error(transparent)]
     Transfer(#[from] SignalTransferError),
+    #[error("prepared audio cache I/O failed: {0}")]
+    Cache(#[from] std::io::Error),
 }
 
 impl StageAudioError {
@@ -337,7 +349,28 @@ struct PreparedStage {
     // Equal descriptors in different retained layouts do not share PCM.
     plan: Arc<RenderPlan>,
     key: PreparedKey,
-    block: SignalBlock,
+    block: PreparedBlock,
+}
+
+struct PreparedBlock {
+    samples: PreparedPcm,
+    dependencies: Dependencies,
+    relative_depth: usize,
+}
+
+impl From<SignalBlock> for PreparedBlock {
+    fn from(block: SignalBlock) -> Self {
+        Self {
+            samples: PreparedPcm::Memory(block.samples),
+            dependencies: block.dependencies,
+            relative_depth: block.relative_depth,
+        }
+    }
+}
+
+struct StreamReservation {
+    resident_frames: u64,
+    disk_bytes: u64,
 }
 
 pub(crate) type Dependencies = BTreeMap<AssetId, [u8; 32]>;
@@ -370,11 +403,12 @@ struct ReadWork {
     plan_work: usize,
     // Projection identity retains its allocation for this complete request.
     // Different routes through the same authored stage must never alias PCM.
-    projected: Vec<(AudioProjectionIdentity, Arc<SignalBlock>)>,
+    projected: Vec<(AudioProjectionIdentity, Arc<PreparedBlock>)>,
     projected_active: Vec<AudioProjectionIdentity>,
     projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
     intrinsic_preflight: Vec<(Arc<RenderPlan>, AudioStageDescriptor, usize)>,
     projected_resident_frames: u64,
+    projected_disk_bytes: u64,
 }
 
 const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
@@ -494,7 +528,7 @@ impl WorkControl<'_> {
         let fingerprint = source.provenance();
         let mut work = self.work.borrow_mut();
         work.source_checks += 1;
-        if work.source_checks > 65_536 {
+        if work.source_checks > 1_048_576 {
             return Err(StageAudioError::Limit("source provenance checks"));
         }
         if let Some(previous) = work.observed.get(asset) {
@@ -519,6 +553,7 @@ pub struct StageAudio {
     cache: Vec<Arc<PreparedStage>>,
     sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
     active_frames: u64,
+    active_disk_bytes: u64,
     /// Set while a live tail reads the sound before it. Other tails in that
     /// window count as silent, so tails never feed each other or chain.
     feeding_tail: bool,
@@ -558,6 +593,7 @@ impl StageAudio {
             cache: Vec::new(),
             sound_processing_plans: BTreeMap::new(),
             active_frames: 0,
+            active_disk_bytes: 0,
             feeding_tail: false,
         }
     }
@@ -567,9 +603,9 @@ impl StageAudio {
         limits: StageLimits,
     ) -> Result<Self, StageAudioError> {
         if limits.maximum_input_frames == 0
-            || limits.maximum_input_frames > 16 * 1024 * 1024
+            || limits.maximum_input_frames > 86_400_000
             || limits.maximum_output_frames == 0
-            || limits.maximum_output_frames > deadpan_dsp::MAX_OUTPUT_FRAMES
+            || limits.maximum_output_frames > 86_400_000
             || limits.maximum_resident_frames == 0
             || limits.maximum_resident_frames > 16 * 1024 * 1024
             || limits.maximum_cached_stages == 0
@@ -579,7 +615,9 @@ impl StageAudio {
             || limits.maximum_prepared_stages == 0
             || limits.maximum_prepared_stages > 64
             || limits.maximum_prepared_frames == 0
-            || limits.maximum_prepared_frames > 16 * 1024 * 1024
+            || limits.maximum_prepared_frames > 128 * 1024 * 1024
+            || limits.maximum_memory_stage_frames > 16 * 1024 * 1024
+            || limits.maximum_disk_bytes > 1024 * 1024 * 1024
         {
             return Err(StageAudioError::InvalidLimits);
         }
@@ -595,6 +633,22 @@ impl StageAudio {
 
     pub fn cached_stage_count(&self) -> usize {
         self.cache.len()
+    }
+
+    /// Retained PCM only; the bounded source halo and active work are separate.
+    pub fn cached_resident_frames(&self) -> u64 {
+        self.cache
+            .iter()
+            .map(|entry| entry.block.samples.resident_frames())
+            .sum()
+    }
+
+    /// Private files pinned by this controller's prepared stages.
+    pub fn cached_disk_bytes(&self) -> u64 {
+        self.cache
+            .iter()
+            .map(|entry| entry.block.samples.disk_bytes())
+            .sum()
     }
 
     pub fn read(
@@ -1627,7 +1681,7 @@ impl StageAudio {
                 depth,
             )
         });
-        self.active_frames -= reservation;
+        self.release_stream(reservation);
         self.publish(key, result?, control)
     }
 
@@ -1674,12 +1728,12 @@ impl StageAudio {
         if input_frames > deadpan_dsp::MAX_INPUT_FRAMES {
             return Err(StageAudioError::Limit("input frames"));
         }
-        self.reserve_pcm(
-            input_frames,
-            output_frames,
-            u64::from(input_frames) * 2,
-            control,
-        )
+        if output_frames > deadpan_dsp::MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Limit("output frames"));
+        }
+        let resident = u64::from(input_frames) * 2 + u64::from(output_frames);
+        self.reserve_budget(input_frames, output_frames, resident, 0, control)?;
+        Ok(resident)
     }
 
     fn reserve_stream(
@@ -1687,18 +1741,45 @@ impl StageAudio {
         input_frames: u32,
         output_frames: u32,
         control: WorkControl<'_>,
-    ) -> Result<u64, StageAudioError> {
+    ) -> Result<StreamReservation, StageAudioError> {
         let window = u64::from(input_frames).min(deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u64);
-        self.reserve_pcm(input_frames, output_frames, window * 2, control)
+        let disk = output_frames > self.limits.maximum_memory_stage_frames;
+        let reservation = StreamReservation {
+            resident_frames: window * 2
+                + if disk {
+                    prepared_pcm::FILE_BUFFER_FRAMES
+                } else {
+                    u64::from(output_frames)
+                },
+            disk_bytes: if disk {
+                u64::from(output_frames) * 8
+            } else {
+                0
+            },
+        };
+        self.reserve_budget(
+            input_frames,
+            output_frames,
+            reservation.resident_frames,
+            reservation.disk_bytes,
+            control,
+        )?;
+        Ok(reservation)
     }
 
-    fn reserve_pcm(
+    fn release_stream(&mut self, reservation: StreamReservation) {
+        self.active_frames -= reservation.resident_frames;
+        self.active_disk_bytes -= reservation.disk_bytes;
+    }
+
+    fn reserve_budget(
         &mut self,
         input_frames: u32,
         output_frames: u32,
-        input_residency: u64,
+        resident_frames: u64,
+        disk_bytes: u64,
         control: WorkControl<'_>,
-    ) -> Result<u64, StageAudioError> {
+    ) -> Result<(), StageAudioError> {
         if input_frames == 0 || input_frames > self.limits.maximum_input_frames {
             return Err(StageAudioError::Limit("input frames"));
         }
@@ -1718,19 +1799,25 @@ impl StageAudio {
         }
         // Account for interleaved input and its planar conversion simultaneously,
         // plus output. Recursive preparations share the same residency budget.
-        let reservation = input_residency + u64::from(output_frames);
-        self.make_room(reservation, false, control)?;
-        self.active_frames += reservation;
-        Ok(reservation)
+        self.make_room_for(resident_frames, disk_bytes, false, control)?;
+        self.active_frames += resident_frames;
+        self.active_disk_bytes += disk_bytes;
+        Ok(())
     }
 
     fn publish(
         &mut self,
         key: PreparedKey,
-        block: SignalBlock,
+        block: impl Into<PreparedBlock>,
         control: WorkControl<'_>,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
-        self.make_room(block.samples.len() as u64, true, control)?;
+        let block = block.into();
+        self.make_room_for(
+            block.samples.resident_frames(),
+            block.samples.disk_bytes(),
+            true,
+            control,
+        )?;
         let entry = Arc::new(PreparedStage {
             plan: Arc::clone(&self.plan),
             key,
@@ -1776,10 +1863,9 @@ impl StageAudio {
             return Ok(Arc::new(PreparedStage {
                 plan: Arc::clone(&self.plan),
                 key,
-                block: SignalBlock {
-                    samples: vec![[0.0; 2]; frames as usize],
+                block: PreparedBlock {
+                    samples: PreparedPcm::Silence(frames as usize),
                     dependencies: BTreeMap::new(),
-                    suppressed: Vec::new(),
                     relative_depth: 0,
                 },
             }));
@@ -1973,17 +2059,36 @@ impl StageAudio {
         new_entry: bool,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
+        self.make_room_for(additional, 0, new_entry, control)
+    }
+
+    fn make_room_for(
+        &mut self,
+        additional: u64,
+        disk_bytes: u64,
+        new_entry: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
         loop {
             let resident = self
                 .cache
                 .iter()
-                .map(|entry| entry.block.samples.len() as u64)
+                .map(|entry| entry.block.samples.resident_frames())
                 .sum::<u64>();
+            let disk = self
+                .cache
+                .iter()
+                .map(|entry| entry.block.samples.disk_bytes())
+                .sum::<u64>()
+                + self.active_disk_bytes
+                + control.work.borrow().projected_disk_bytes
+                + disk_bytes;
             if resident
                 + self.active_frames
                 + control.work.borrow().projected_resident_frames
                 + additional
                 <= u64::from(self.limits.maximum_resident_frames)
+                && disk <= self.limits.maximum_disk_bytes
                 && (!new_entry || self.cache.len() < self.limits.maximum_cached_stages)
             {
                 return Ok(());
@@ -1992,7 +2097,13 @@ impl StageAudio {
                 .cache
                 .iter()
                 .position(|entry| Arc::strong_count(entry) == 1)
-                .ok_or(StageAudioError::Limit("resident PCM or stage cache"))?;
+                .ok_or(StageAudioError::Limit(
+                    if disk > self.limits.maximum_disk_bytes {
+                        "prepared PCM disk bytes"
+                    } else {
+                        "resident PCM or stage cache"
+                    },
+                ))?;
             self.cache.remove(index);
         }
     }
@@ -2005,7 +2116,7 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
         depth: usize,
-    ) -> Result<SignalBlock, StageAudioError> {
+    ) -> Result<PreparedBlock, StageAudioError> {
         let WorkControl { cancelled, .. } = control;
         // A policy may own no input-grid points but become audible after the
         // stretch. Validate the complete intrinsic output before source I/O.
@@ -2027,7 +2138,10 @@ impl StageAudio {
         let mut relative_depth = 0;
         let mut input_end = 0;
         let mut dsp = StreamingStretch::new(recipe)?;
-        let mut samples = Vec::with_capacity(recipe.output_frames() as usize);
+        let mut samples = PcmWriter::new(
+            recipe.output_frames(),
+            self.limits.maximum_memory_stage_frames,
+        )?;
         while samples.len() < recipe.output_frames() as usize {
             control.check()?;
             let frames =
@@ -2070,7 +2184,7 @@ impl StageAudio {
                 &self.plan,
                 control,
             )?;
-            samples.extend(block);
+            samples.push(&block, control)?;
         }
         // Explicit-rate output can end before retained input does. Preserve
         // full input admission and finite/peak validation without keeping it.
@@ -2090,12 +2204,11 @@ impl StageAudio {
             input_end = end;
         }
         control.check()?;
-        Ok(SignalBlock {
-            samples,
+        Ok(PreparedBlock {
+            samples: samples.finish(control)?,
             dependencies,
             // Consumers query policy in their own point grid. Do not retain a
             // second full-stage interval cache or scale rounded input masks.
-            suppressed: Vec::new(),
             relative_depth,
         })
     }
@@ -2646,7 +2759,7 @@ fn stage_recipe(
 }
 
 fn sample_prepared(
-    samples: &[[f32; 2]],
+    samples: &(impl PcmSamples + ?Sized),
     recipe: ResampleRecipe,
     start: AudioSample,
     frames: u32,
@@ -2660,12 +2773,11 @@ fn sample_prepared(
     let window = sampler
         .required_source_range(start, frames)?
         .map(|range| {
-            let selected = samples
-                .get(range.start as usize..range.end as usize)
-                .ok_or(PreparationError::InvalidSamples)?;
-            Ok::<_, PreparationError>(PcmWindow {
+            let selected =
+                samples.read_window(range.start as usize..range.end as usize, cancelled)?;
+            Ok::<_, StageAudioError>(PcmWindow {
                 start: range.start,
-                samples: selected.iter().flat_map(|frame| *frame).collect(),
+                samples: selected,
             })
         })
         .transpose()?;

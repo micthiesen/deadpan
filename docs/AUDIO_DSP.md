@@ -23,7 +23,8 @@ restart, seek or otherwise change the canonical processor.
 Logical lengths allocate no whole input/output arrays in this API. The host
 must bound preparation work and admit the complete input, including dependencies
 or invalid samples beyond a shortened output. The shared stage worker performs
-that scan, retains bounded output and continues to enforce its deadline.
+that scan, retains bounded memory or [private file output](AUDIO_STAGE_PREPARATION.md)
+and continues to enforce its deadline.
 
 `CanonicalRecipe::new` retains the legacy positive input/output counts and
 their ratio, bounded to 1/8 through 8. `CanonicalRecipe::with_rate` instead takes

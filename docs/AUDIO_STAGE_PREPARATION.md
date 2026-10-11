@@ -99,28 +99,37 @@ is private to one immutable plan and one executable's engine implementations.
 
 Default admission limits are:
 
-- At most 16,777,216 logical input and 8,388,608 retained output frames per
-  Preserve stage, depth 32, also subject to the combined work limit below.
+- At most 86,400,000 logical input or output frames (30 minutes at 48 kHz)
+  per Preserve stage, depth 32, also subject to the combined work limit below.
 - At most 65,536 input frames resident in the streaming window; its interleaved
   and planar conversion are reserved together. Non-streamed Hold preparation
   retains its separate 1,048,576-frame input bound.
+- Preserve outputs above 1,048,576 frames stream into one private, unlinked
+  temporary file. A 2,048-frame write buffer is reserved with the input window.
+  Short outputs remain in memory. The threshold is configurable, including zero.
+- At most 1 GiB of prepared files across active output reservations, cached
+  stages and pinned request-local projections. File descriptors keep readers
+  alive; LRU eviction and dropped preparations release their files. No cache
+  file is an authored asset or a cross-process admission token.
 - 16,777,216 resident stereo-frame equivalents, including simultaneous input
   conversion, output and pinned descendants; at most 64 cached stages with LRU
   eviction. Native FFT state, decoder caches and a bounded sampler halo are
   additional memory.
-- 64 newly prepared stages and 16,777,216 total prepared input/output frames
+- 64 newly prepared stages and 134,217,728 total prepared input/output frames
   per read. Cache hits do not restart DSP or consume the preparation quota.
-- 1024 distinct source dependencies and 65,536 provenance checks per read.
+- 1024 distinct source dependencies and 1,048,576 provenance checks per read.
 - A shared cooperative deadline, with cancellation checked between bounded
   plan, source and canonical blocks. The host uses ten seconds. Source opening
   retains its separate bounded operation; neither that call nor native
   initialization is preempted at an exact wall-clock instant.
 
-Limits can be reduced, not raised beyond these defaults. Failed reads publish
+Hard limits can be reduced, not raised beyond these defaults. The memory/file
+threshold alone may be configured from zero through 16,777,216 frames, still
+subject to the shared residency limit. Failed reads publish
 no block; complete child caches may remain useful for a later bounded retry.
-`AudioPreparationLimit`, `AudioPreparationTimeout`, `AudioOperationUnsupported`
-and `AudioProcessingFailed` distinguish admission, deadline, policy and DSP
-failures. Source identity/layout and range errors retain the source inspector's
+`AudioPreparationLimit`, `AudioPreparationTimeout`, `AudioOperationUnsupported`,
+`AudioProcessingFailed` and `AudioCacheFailed` distinguish admission, deadline,
+policy, DSP and prepared-file I/O failures. Source identity/layout and range errors retain the source inspector's
 existing codes. This bounded worker path is not suitable for an audio callback.
 
 ## Evidence and remaining work
@@ -135,8 +144,14 @@ and real process evidence.
 
 Input streaming is covered by the [streamed-input qualification](qualification/streamed-input-2026-10-11.md),
 including a two-minute decoded-WAV signal, cold seeks and complete output
-comparison under a PCM budget smaller than the input. Output still resides
-in memory; disk-backed long-output preparation and background cache scheduling
-remain open. Fractional pitch, variable rates, remaining voice/group effects,
+comparison under a PCM budget smaller than the input. [Disk-backed output](qualification/disk-pcm-2026-10-11.md)
+preserves exact random-access PCM with bounded RAM, disk and complete-stage
+work. Ordinary stages and request-local projections use the same storage.
+Cache I/O errors are explicit and partial preparations never publish. The
+existing PCM file I/O diagnostics include these reads/writes; the controller
+also reports retained memory frames and disk bytes.
+
+Background cache scheduling, progress display and reuse after restart remain
+open. Fractional pitch, variable rates, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
 open; this qualification does not close DP-09 or DP-16.

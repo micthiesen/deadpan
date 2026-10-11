@@ -386,10 +386,10 @@ fn pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration() {
 fn pitch_preserving_stages_over_preparation_work_or_output_refuse_at_edit_time() {
     // Both counts individually fit, but combined preparation work does not.
     let mut wire = serde_json::to_value(fixture()).unwrap();
-    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(6000);
+    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(50_000);
     let long = ProjectDocument::from_json(&wire.to_string()).unwrap();
     for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 2 }] {
-        let refused = apply(&long, &request(&long, wrap(5000, pitch), "too-long")).unwrap_err();
+        let refused = apply(&long, &request(&long, wrap(42_000, pitch), "too-long")).unwrap_err();
         assert_eq!(refused.code, EditErrorCode::LimitExceeded, "{pitch:?}");
     }
     // A unity shift is processed too; tape speed needs no processor.
@@ -398,7 +398,7 @@ fn pitch_preserving_stages_over_preparation_work_or_output_refuse_at_edit_time()
             &long,
             &request(
                 &long,
-                wrap(6000, PitchPolicy::Shift { semitones: 1 }),
+                wrap(50_000, PitchPolicy::Shift { semitones: 1 }),
                 "unity"
             )
         )
@@ -407,17 +407,17 @@ fn pitch_preserving_stages_over_preparation_work_or_output_refuse_at_edit_time()
     assert!(
         apply(
             &long,
-            &request(&long, wrap(7000, PitchPolicy::FollowSpeed), "tape")
+            &request(&long, wrap(70_000, PitchPolicy::FollowSpeed), "tape")
         )
         .is_ok()
     );
-    let (wrapped, _) = edit(&long, wrap(7000, PitchPolicy::FollowSpeed), "tape");
+    let (wrapped, _) = edit(&long, wrap(70_000, PitchPolicy::FollowSpeed), "tape");
     assert!(
         apply(
             &wrapped,
             &request(
                 &wrapped,
-                set(6000, PitchPolicy::Shift { semitones: 3 }),
+                set(50_000, PitchPolicy::Shift { semitones: 3 }),
                 "set"
             )
         )
@@ -438,4 +438,16 @@ fn streamed_preserve_accepts_a_minute_of_input_as_one_reversible_stage() {
             NodeKind::Retime { .. }
         ));
     }
+}
+
+#[test]
+fn disk_prepared_preserve_accepts_four_minutes_of_output_with_undo() {
+    let mut wire = serde_json::to_value(fixture()).unwrap();
+    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(3600);
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let (wrapped, _) = edit(&original, wrap(7200, PitchPolicy::Preserve), "four-minutes");
+    assert!(matches!(
+        wrapped.nodes()[&id("rate")].kind,
+        NodeKind::Retime { .. }
+    ));
 }

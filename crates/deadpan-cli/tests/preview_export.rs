@@ -1182,3 +1182,31 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
     assert!(failed.is_empty(), "{failed:?}: {}", Value::Array(rows));
     Ok(())
 }
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "four-minute real export; run with --release"
+)]
+fn disk_prepared_preserve_export_matches_its_committed_preview() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("disk Preserve export evidence: {}", root.display());
+    let fixture = recipes::disk_preserve(&root.join("fixtures"))?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(&json!({
+                "fixture": fixture.name, "package": fixture.package, "movie": movie,
+                "revision": fixture.revision, "report": report,
+            }))?,
+        )?;
+    }
+    check_provenance(&fixture, &report)?;
+    assert!(passed, "{report}");
+    assert_eq!(report["summary"]["pictures_checked"], 7200);
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}

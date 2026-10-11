@@ -10,7 +10,7 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
         depth: usize,
-    ) -> Result<Arc<SignalBlock>, StageAudioError> {
+    ) -> Result<Arc<PreparedBlock>, StageAudioError> {
         control.check()?;
         let identity = projection.identity();
         let cached = control
@@ -68,13 +68,15 @@ impl StageAudio {
             depth,
         );
         control.work.borrow_mut().projected_active.pop();
-        self.active_frames -= reservation;
+        self.release_stream(reservation);
         let block = result?;
-        let frames = block.samples.len() as u64;
-        self.make_room(frames, false, control)?;
+        let frames = block.samples.resident_frames();
+        let disk = block.samples.disk_bytes();
+        self.make_room_for(frames, disk, false, control)?;
         let block = Arc::new(block);
         let mut work = control.work.borrow_mut();
         work.projected_resident_frames += frames;
+        work.projected_disk_bytes += disk;
         work.projected.push((identity, Arc::clone(&block)));
         Ok(block)
     }

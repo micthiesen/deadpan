@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-disk-pcm-20261011/baseline.py"
+  ],
+  "exit": 101,
+  "seconds": 13.335558124817908,
+  "log_sha256": "1b8daebde7d1846b1cc2569c3f91cc66fd085d002cf4ed09b17c0a368addd0fd"
+}

@@ -1,0 +1,25 @@
+{
+  "reviewer": "main session; no subagents",
+  "scope": [
+    "Private unlinked descriptor lifetime; no paths, durable assets or external admission tokens.",
+    "Exact little-endian finite PCM; bounded positional reads, complete-file publication and poisoned partial writes.",
+    "RAM and disk reservations include recursive preparations and request-local pinned projections; only unpinned LRU entries can be evicted.",
+    "Cancellation/failure releases reservations and drops unfinished files; complete child caches can survive retries.",
+    "Full input dependency admission, canonical DSP schedule and sampler are preserved; no engine-ID or schema change.",
+    "Core and worker Preserve budgets agree; non-streamed Hold bounds remain separate.",
+    "Long PCM compares an independent decoded-WAV mapping; real four-minute output is rendered and independently decoded."
+  ],
+  "resolved": [
+    "Corrected an initial patch anchor that changed the return type of read_stage_input; the initial compiler failure was not retained as a separate receipt.",
+    "Added poisoned-writer retry checks after reviewing partial writes.",
+    "Changed the eviction regression to exhaust disk quota rather than stage count.",
+    "The initial export test expected all pictures while using automatic sampling. The final test explicitly selects every picture and retains its report before provenance assertions.",
+    "The retained baseline reproduction script pins the already measured base revision instead of resolving a future HEAD."
+  ],
+  "remaining": [
+    "First demand still prepares complete DSP history within a cooperative deadline; background scheduling/progress remains open.",
+    "Files are ephemeral and private; no persistent content-addressed or cross-process cache is claimed.",
+    "The resident-frame admission bound excludes native FFT state, source caches and a bounded sampler halo; it is not whole-process RSS.",
+    "No live GUI, physical device, listening or new native sanitizer claim. Other export recipes were not rerun for this storage-only milestone."
+  ]
+}

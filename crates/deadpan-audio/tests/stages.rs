@@ -47,6 +47,9 @@ mod gain;
 #[path = "stages/streaming.rs"]
 mod streaming;
 
+#[path = "stages/disk_cache.rs"]
+mod disk_cache;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

@@ -102,8 +102,8 @@ PCM in `rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm`
 `audio-treatments` replay and the `pitch-shift` preview/export fixture, which
 measures a 1 kHz tone pause shifted an octave at about 4,000 zero crossings per
 second against 2,000 for the unshifted tone. `WrapRetime` and `SetRetime`
-refuse a processing stage exceeding 16,777,216 combined input/output samples
-or 8,388,608 output samples at edit time; tape speed is unaffected. Streamed
+refuse a processing stage exceeding 134,217,728 combined input/output samples
+or 86,400,000 input or output samples at edit time; tape speed is unaffected. Streamed
 input no longer requires a full input buffer or the old 21.8-second cap.
 
 ## Verification boundaries
@@ -115,10 +115,13 @@ Retime, arbitrary range/occurrence selection, reverse, variable speed, independe
 pitch shifting, mastered output and encoded export remain open.
 
 The current Preserve preparation path streams at most 65,536 input frames
-at once and retains at most 8,388,608 output frames. The shared preparation
-budget counts 16,777,216 input plus output frames across newly prepared stages;
-nested stages can exhaust it even when each individual edit fits. Output storage
-still bounds long preparations. See [streamed-input qualification](qualification/streamed-input-2026-10-11.md).
+at once and spills outputs above 1,048,576 frames to private temporary files.
+The shared preparation budget counts 134,217,728 input plus output frames
+across newly prepared stages, and prepared files are bounded to 1 GiB;
+nested stages can exhaust either budget even when each individual edit fits.
+The 30-minute per-stage ceiling is admission, not an interactive performance
+claim. Background preparation remains open. See
+[disk PCM qualification](qualification/disk-pcm-2026-10-11.md).
 Tape speed uses the existing bounded resampler. A requested speed that quantizes
 to unity needs no Preserve stage.
 

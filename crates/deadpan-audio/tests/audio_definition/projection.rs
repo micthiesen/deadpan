@@ -286,6 +286,67 @@ fn two_routes_through_one_stage_do_not_alias_prepared_pcm() {
 }
 
 #[test]
+fn disk_projection_keeps_child_files_pinned_and_charges_their_storage() {
+    let plan = compile(&fixture(), false);
+    let tape = output(&plan, nested(&plan));
+    let expected = stretch(&original_inner(false), 1024, 2, 1);
+    let mut provider = FixtureProvider::new();
+    // Parent 1024 plus child 2048 output frames are simultaneously pinned.
+    let mut refused = StageAudio::with_limits(
+        Arc::clone(&plan),
+        StageLimits {
+            maximum_memory_stage_frames: 0,
+            maximum_disk_bytes: (1024 + 2048) * 8 - 1,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert!(matches!(
+        refused.read_tape(
+            &mut provider,
+            &tape,
+            SignalSample(900),
+            1,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Limit("prepared PCM disk bytes"))
+    ));
+    assert_eq!(provider.calls, 0);
+    let mut disk = StageAudio::with_limits(
+        plan.clone(),
+        StageLimits {
+            maximum_memory_stage_frames: 0,
+            maximum_disk_bytes: (1024 + 2048) * 8,
+            maximum_resident_frames: 16_384,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    for (start, count) in [(900, 124), (0, 256), (377, 197)] {
+        let actual = disk
+            .read_tape(
+                &mut provider,
+                &tape,
+                SignalSample(start),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(
+            actual.samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+        assert_eq!(
+            disk.cached_disk_bytes(),
+            0,
+            "request-local files do not escape into descriptor cache"
+        );
+    }
+}
+
+#[test]
 fn nested_projection_enforces_depth_and_residency_then_recovers() {
     let doc = fixture();
     let plan = compile(&doc, false);

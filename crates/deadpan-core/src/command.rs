@@ -3498,10 +3498,10 @@ impl fmt::Display for EditError {
 impl Error for EditError {}
 
 /// Streamed input is work, rather than resident PCM. The shared preparation
-/// budget counts input plus output; output still occupies a bounded PCM cache.
-pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 16_777_216;
-pub const MAX_PRESERVE_OUTPUT_SAMPLES: i128 = 8_388_608;
-pub const MAX_PRESERVE_WORK_SAMPLES: i128 = 16_777_216;
+/// budget counts input plus output; long outputs occupy a bounded disk cache.
+pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 86_400_000;
+pub const MAX_PRESERVE_OUTPUT_SAMPLES: i128 = 86_400_000;
+pub const MAX_PRESERVE_WORK_SAMPLES: i128 = 134_217_728;
 
 /// Refuse a pitch-preserving or pitch-shifting stage the processor cannot
 /// prepare, at edit time rather than at playback or export.
@@ -3528,7 +3528,7 @@ fn check_preserve_bound(
     {
         return Err(EditError::new(
             EditErrorCode::LimitExceeded,
-            "pitch-preserving processing exceeds its preparation budget (about 349 seconds combined input/output, at most 175 seconds output); shorten the stage or choose pitch=tape",
+            "pitch-preserving processing exceeds its preparation budget (30 minutes input or output, about 46 minutes combined); shorten the stage or choose pitch=tape",
         ));
     }
     Ok(())

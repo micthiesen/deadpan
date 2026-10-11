@@ -1,0 +1,22 @@
+{
+  "base": "afacc963ad5b1044c8be12146987919c94ad366c",
+  "files": {
+    "crates/deadpan-audio/Cargo.toml": "4a214b2acc0ca65e59291bd5a79a3956ae811c6d4fde900da1bf124a372c46e1",
+    "crates/deadpan-audio/src/prepared_pcm.rs": "21b9a620bf353fc9ef7d9c9814c0db4bb2afb4d05526f31e4544b6ea9c5723ae",
+    "crates/deadpan-audio/src/stage_projection.rs": "c7ac857515b80d78f7ce89b1c595f90e269ff063e827198d75ee5723470881f2",
+    "crates/deadpan-audio/src/stages.rs": "7d238fd0135f3f802b1d6c3c104e4666a249811a2ecd0fd63e7736e61aa77b30",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs": "771c5a40ab4bd42ff8fc88759057abf862491068de2b1f156fb8c0ae4f6f843a",
+    "crates/deadpan-audio/tests/stages.rs": "8e1c385428fdd44ee81a070c9aed0efb24e28b1530b67914c020e38e9d0e0afb",
+    "crates/deadpan-audio/tests/stages/disk_cache.rs": "4b8445137a629a6cee7ce4ebe6388b70a4fe810c1eca3e6f49858bff41ddf5d7",
+    "crates/deadpan-audio/tests/stages/streaming.rs": "49b0b8f6997a89236b6e17d80d8e2ce45e04bc01cb6599ec1af833daca139327",
+    "crates/deadpan-cli/src/lib.rs": "5402f94df8591f5ffee41a01527298997506b1b4b6f6ab94f007ce54a15e5edd",
+    "crates/deadpan-cli/tests/preview_export.rs": "f5f16681478e21b2a517e126941afeff8cfc1cdfa4e66b1ccb4a1f82ce5f24da",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "dc0c223e37313d024e1a253c0153097821fa1f2db5009135a0e44ad79179ee30",
+    "crates/deadpan-core/src/command.rs": "adb125629e37805cbd9f32262a1e1c27e39630558ca23c66f0985e6eed0b1441",
+    "crates/deadpan-core/tests/retime_edits.rs": "759c2356852b9deddb1404dee4d4c5d03ad4eb5a490475d78e94add97c0c19ca",
+    "crates/deadpan-diagnostics/src/lib.rs": "06e25e66065aa4a3f4f8d8fd24bc145b153b044ff159d156d673ebb61171ce8a",
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "note": "The full suite covers final audio implementation. A final focused run covers the later disk-quota eviction assertion; Clippy and the real export cover the later CLI error mapping and long-export fixture."
+}

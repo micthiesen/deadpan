@@ -183,7 +183,8 @@ pub struct Io {
     pub media_snapshots: IoCounters,
     /// Native video decoder descriptor reads (FFmpeg AVIO callbacks).
     pub decoder_input: IoCounters,
-    /// Private decoded-PCM cache file: writes while indexing, reads on access.
+    /// Private decoded/prepared PCM cache files: writes during preparation,
+    /// bounded reads during source and processed-stage access.
     pub pcm_cache_file: IoCounters,
     /// Preview-proxy sidecar reads.
     pub proxy: IoCounters,

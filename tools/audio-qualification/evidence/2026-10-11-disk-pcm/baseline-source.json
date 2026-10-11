@@ -1,0 +1,8 @@
+{
+  "revision": "afacc963ad5b1044c8be12146987919c94ad366c",
+  "archive_sha256": "04b1a11309915f817281d83ef9b8c154be9235569e7142a7eab86fffcfee0857",
+  "test_overlays": {
+    "crates/deadpan-core/tests/retime_edits.rs": "759c2356852b9deddb1404dee4d4c5d03ad4eb5a490475d78e94add97c0c19ca"
+  },
+  "target": "/tmp/deadpan-group-mix-20261011/old-target"
+}

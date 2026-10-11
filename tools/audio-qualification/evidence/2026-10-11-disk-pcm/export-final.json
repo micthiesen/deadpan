@@ -1,0 +1,22 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+    "DEADPAN_PREVIEW_EXPORT_RESULTS=/tmp/deadpan-disk-pcm-20261011/export.json",
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "disk_prepared_preserve_export_matches_its_committed_preview",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 186.7901314171031,
+  "log_sha256": "4d113654cf815498e424d0f3252c1c1dec267206fe279560545977a9b0f47627"
+}

@@ -966,6 +966,38 @@ pub fn retime_half(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// One continuous four-minute Preserve stage, crossing the former output cap.
+/// Repeats stay inside the processor, so its state must not reset per play.
+pub fn disk_preserve(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "disk-preserve")?;
+    project.shorten()?;
+    project.apply(|_, document, _| {
+        Ok(Command::WrapRepeat {
+            node: root_child_at(document, 0)?.0,
+            id: node("long-repeat")?,
+            plays: 120,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: node("long-repeat")?,
+            id: node("long-preserve")?,
+            duration: FrameDuration::new(7200)?,
+            pitch: PitchPolicy::Preserve,
+        })
+    })?;
+    project.finish(
+        vec!["Slow delivery", "Stretch / pitch"],
+        [0, 1, 2, 58, 59, 60, 3599, 3600, 7199]
+            .into_iter()
+            .map(|frame| (frame, original(BASE_START + (frame % 60) / 2)))
+            .collect(),
+        vec!["120 source plays inside one continuous half-speed Preserve stage".into()],
+    )
+}
+
 /// Three beats over the base: Edit [0, 10) static 1.35x zoom, [10, 20) a
 /// smoothstep creep from 1x to 1.35x, [20, 30) a 1.35x follow of a target
 /// moving left to right over Original 32..42. Pictures are unchanged.

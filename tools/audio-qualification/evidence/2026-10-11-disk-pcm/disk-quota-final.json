@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "stages",
+    "disk_cache::disk_stage_matches_memory_and_releases_evicted_storage",
+    "--",
+    "--exact"
+  ],
+  "exit": 0,
+  "seconds": 2.238018332980573,
+  "log_sha256": "acfe76628d142329054a074e8336d64eec146cf56958bf82ee7c3dbb24a10c5b"
+}

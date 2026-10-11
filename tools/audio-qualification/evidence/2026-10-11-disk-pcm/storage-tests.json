@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--lib",
+    "prepared_pcm"
+  ],
+  "exit": 0,
+  "seconds": 4.468898708000779,
+  "log_sha256": "ff4e9e125225030dc65b536470df5ff972ece804abe60e56697aa3cf2008ae5c"
+}
