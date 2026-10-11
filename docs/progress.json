@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-09T23:11:03Z",
+  "updated_at": "2026-10-11T05:11:05Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Qualifying higher-quality YouTube acquisition and remaining source/operation coverage.",
+  "focus": "Investigating scene-cut encoder quality after completing higher-quality YouTube acquisition.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work. AV1 Main, SDR/HDR VP9, ProRes 422 and HEVC/High10 imports are qualified. WAV, MP3 and mono/stereo Opus in MP4/WebM/Matroska preserve exact samples. Higher-quality YouTube assembly, broader metadata and source-color policies remain."
+      "note": "Local and YouTube Originals work, including AV1/VP9 and exact Opus assembly. Real app-job and packaged imports pass. Broader profiles, correctable source interpretation and remaining URL workflow work remain."
     },
     {
       "id": "render",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Qualified AV1, HDR VP9, ProRes and WAV/MP3/Opus inputs pass release and packaged exports with exact timing. SDR/HDR and fractional-rate editing are verified. Full effects and remaining source/operation coverage remain."
+      "note": "Release AV1/VP9 YouTube exports preserve timing and pass sampled picture/audio checks. One packaged scene-cut picture fails the quality gate; diagnosis is active. Full effects and remaining source/operation coverage remain."
     },
     {
       "id": "ui",
@@ -373,6 +373,14 @@
       "revision": "5f6a8c58",
       "retrospective": false,
       "summary": "MP4 Opus preserves exact pre-skip, terminal trim, gain and offsets. Eleven release imports/exports verify 1,104 pictures/27 zero-offset audio windows; packaged checks verify 504 pictures/twelve windows. 170 sanitized source tests pass; the gate completes in parts with a retained proxy failure and passing isolated follow-up."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "6e4863e2",
+      "retrospective": false,
+      "summary": "AV1/VP9 and Opus YouTube acquisition implemented and verified through real app-job and packaged imports. Both release exports pass 1,170 sampled pictures and 286 zero-offset audio windows. A packaged scene-cut quality failure is retained and under investigation; no threshold was lowered."
     }
   ]
 }
