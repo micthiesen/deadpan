@@ -148,7 +148,6 @@ fn sequence_allocation_color_and_packet_grammar_fail_closed() {
         (2, 0x6d),
         (2, 0x5d),
         (2, 0x49),
-        (2, 0x4c),
         (2, 0x4f),
         (2, 0xcd),
         (3, 0x80),
@@ -234,6 +233,63 @@ fn sequence_allocation_color_and_packet_grammar_fail_closed() {
             .to_string()
             .contains("session_failed")
     );
+}
+
+#[test]
+fn unspecified_chroma_is_recorded_and_matches_the_left_pixel_reference() {
+    for name in ["sdr-8-limited", "sdr-10-limited"] {
+        let mp4 = std::fs::read(fixture(name, "mp4")).unwrap();
+        let config = mp4.windows(4).position(|b| b == b"av1C").unwrap() + 4;
+        let configuration = &mp4[config..config + 20];
+        assert_eq!(&configuration[4..6], &[0x0a, 14]);
+        let first = packets(name)[0].0;
+        let sequences = [&configuration[4..], &mp4[first..first + 16]];
+        assert_eq!(&sequences[1][..2], &[0x0a, 14]);
+        let mut inconsistent = mp4.clone();
+        inconsistent[config + 2] &= !3;
+        assert_eq!(refusal(&inconsistent), "stream_changed");
+        for suffix in ["mp4", "webm"] {
+            let mut data = std::fs::read(fixture(name, suffix)).unwrap();
+            let config = data
+                .windows(configuration.len())
+                .position(|b| b == configuration)
+                .unwrap();
+            data[config + 2] &= !3;
+            for sequence in sequences {
+                let positions: Vec<_> = data
+                    .windows(sequence.len())
+                    .enumerate()
+                    .filter_map(|(at, bytes)| (bytes == sequence).then_some(at))
+                    .collect();
+                assert_eq!(positions.len(), 1);
+                let at = positions[0];
+                set_bits(&mut data[at + 2..at + 16], 103, 2, 0);
+            }
+            // Remove the WebM declarations too; zero means unspecified. Its
+            // compressed planes and every timing value remain unchanged.
+            if suffix == "webm" {
+                for id in [0xb7, 0xb8] {
+                    let at = data.windows(3).position(|b| b == [0x55, id, 0x81]).unwrap();
+                    data[at + 3] = 0;
+                }
+            }
+            let mut actual =
+                SourceDecoder::open(copied(&data), DecodeLimits::default(), control()).unwrap();
+            assert!(actual.info().chroma_assumed_left);
+            let mut reference = open(name, suffix, 1);
+            assert!(!reference.info().chroma_assumed_left);
+            while let Some(expected) = reference.next_rgba16(control()).unwrap() {
+                assert_eq!(actual.next_rgba16(control()).unwrap().unwrap(), expected);
+            }
+            assert!(actual.next_metadata(control()).unwrap().is_none());
+            actual.seek(0, control()).unwrap();
+            reference.seek(0, control()).unwrap();
+            assert_eq!(
+                actual.next_rgba16(control()).unwrap(),
+                reference.next_rgba16(control()).unwrap()
+            );
+        }
+    }
 }
 
 #[test]

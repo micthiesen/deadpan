@@ -21,6 +21,8 @@
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/intreadwrite.h>
+#include <libavutil/mastering_display_metadata.h>
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
 #include <libavutil/sha.h>
@@ -1454,8 +1456,8 @@ cleanup:
     return success ? 0 : 1;
 }
 
-/* ---- Stream-copy assembly of one separately delivered H.264 picture stream
-   and one AAC sound stream into a progressive MP4. No decoder or encoder is
+/* ---- Stream-copy assembly of one H.264/VP9/AV1 picture stream
+   and one AAC/Opus sound stream into a progressive MP4. No decoder or encoder is
    opened; packets keep their exact timestamps in the muxer's time base. ---- */
 
 #define REMUX_MAX_PACKETS 50000000ULL
@@ -1469,9 +1471,22 @@ typedef struct {
     int output_index;
     uint64_t packets;
     struct AVSHA *timing;
+    int matroska;
+    int opus;
+    int opus_terminal;
+    uint64_t opus_samples;
+    int64_t opus_origin;
+    int64_t opus_offset;
+    const DeadpanRemuxRequest *admission;
+    uint64_t nominal_frame_duration_ns;
+    int chroma_assumed_left;
+    uint64_t av1_temporal_delimiters;
 } RemuxInput;
 
 static void remux_close(RemuxInput *input);
+static int remux_fill(RemuxInput *input);
+
+#include "remux_support.h"
 
 /* Digest of everything that defines a stream's demuxed timing and payload:
    timestamps and durations in the stream clock, key/discard flags, bytes and
@@ -1493,16 +1508,56 @@ static void remux_digest_packet(struct AVSHA *sha, const AVPacket *packet) {
     }
 }
 
-static void remux_digest_stream(struct AVSHA *sha, const AVStream *stream) {
+static void remux_digest_stream_clock(struct AVSHA *sha, const AVStream *stream, AVRational clock) {
     const AVCodecParameters *parameters = stream->codecpar;
     /* Start time is derived from the packets, which are digested exactly. */
-    int64_t fields[6] = {stream->time_base.num, stream->time_base.den,
+    int64_t fields[6] = {clock.num, clock.den,
                          parameters->initial_padding, parameters->trailing_padding,
                          parameters->seek_preroll, parameters->extradata_size};
     av_sha_update(sha, (const uint8_t *)fields, sizeof(fields));
     if (parameters->extradata_size > 0) {
         av_sha_update(sha, parameters->extradata, (size_t)parameters->extradata_size);
     }
+    int64_t metadata[] = {parameters->codec_id, parameters->width, parameters->height,
+        parameters->color_range, parameters->color_primaries, parameters->color_trc,
+        parameters->color_space, parameters->sample_rate, parameters->ch_layout.nb_channels};
+    av_sha_update(sha, (const uint8_t *)metadata, sizeof(metadata));
+    if (parameters->codec_id == AV_CODEC_ID_VP9) {
+        int64_t vp9[] = {parameters->profile, parameters->format, parameters->chroma_location};
+        av_sha_update(sha, (const uint8_t *)vp9, sizeof(vp9));
+    }
+    AVRational aspect = stream->sample_aspect_ratio;
+    if (aspect.num <= 0 || aspect.den <= 0) aspect = (AVRational){1, 1};
+    av_reduce(&aspect.num, &aspect.den, aspect.num, aspect.den, INT_MAX);
+    av_sha_update(sha, (const uint8_t *)&aspect, sizeof(aspect));
+    /* Container metadata ordering and rational representations may differ;
+       hash their exact values, without C struct padding or rounding. */
+    for (int type = 0; type < AV_PKT_DATA_NB; type++) {
+        const AVPacketSideData *side = av_packet_side_data_get(parameters->coded_side_data,
+                                                              parameters->nb_coded_side_data, type);
+        if (!side) continue;
+        if (type == AV_PKT_DATA_MASTERING_DISPLAY_METADATA && side->size == sizeof(AVMasteringDisplayMetadata)) {
+            const AVMasteringDisplayMetadata *m = (const AVMasteringDisplayMetadata *)side->data;
+            int64_t flags[] = {type, m->has_primaries, m->has_luminance};
+            av_sha_update(sha, (const uint8_t *)flags, sizeof(flags));
+            AVRational values[] = {m->display_primaries[0][0], m->display_primaries[0][1],
+                m->display_primaries[1][0], m->display_primaries[1][1],
+                m->display_primaries[2][0], m->display_primaries[2][1],
+                m->white_point[0], m->white_point[1], m->min_luminance, m->max_luminance};
+            for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+                av_reduce(&values[i].num, &values[i].den, values[i].num, values[i].den, INT_MAX);
+            }
+            av_sha_update(sha, (const uint8_t *)values, sizeof(values));
+            continue;
+        }
+        int64_t identity[] = {side->type, (int64_t)side->size};
+        av_sha_update(sha, (const uint8_t *)identity, sizeof(identity));
+        av_sha_update(sha, side->data, side->size);
+    }
+}
+
+static void remux_digest_stream(struct AVSHA *sha, const AVStream *stream) {
+    remux_digest_stream_clock(sha, stream, stream->time_base);
 }
 
 static int remux_new_digest(struct AVSHA **sha) {
@@ -1513,13 +1568,41 @@ static int remux_new_digest(struct AVSHA **sha) {
     return 1;
 }
 
+/* WebM video sample durations describe a nominal tick-rounded frame, whereas
+   MP4 stts records the distance to the next decode timestamp. Both picture
+   indexes use [PTS, next PTS), followed by the final packet's duration. Retain
+   precisely those intervals for non-reordered WebM video with one lookahead. */
+static int remux_digest_picture(struct AVSHA *sha, AVPacket *previous, const AVPacket *packet) {
+    if (packet && (packet->pts != packet->dts || packet->pts == AV_NOPTS_VALUE || packet->duration <= 0))
+        return fail("invalid_media", "WebM assembly requires explicit non-reordered picture clocks");
+    if (previous->size) {
+        if (packet) {
+            __int128 duration = (__int128)packet->pts - previous->pts;
+            if (duration <= 0 || duration > INT64_MAX)
+                return fail("invalid_media", "WebM picture presentation is not strictly increasing");
+            previous->duration = (int64_t)duration;
+        }
+        remux_digest_packet(sha, previous);
+        av_packet_unref(previous);
+    }
+    if (packet && av_packet_ref(previous, packet) < 0)
+        return fail("resource_exhausted", "retain assembly picture boundary");
+    return within_deadline();
+}
+
 /* Re-demux the written MP4 and require every stream to match its input. */
 static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
     RemuxInput check = {0};
+    RemuxInput audio_check = {0};
     struct AVSHA *digests[2] = {NULL, NULL};
     uint8_t expected[32];
     uint8_t actual[32];
     int verified = 0;
+    uint64_t nominal;
+    int chroma_assumed_left;
+    if (!remux_read_original(output_fd, 0, length, &nominal, &chroma_assumed_left)) return 0;
+    if (nominal != inputs[0].nominal_frame_duration_ns || chroma_assumed_left != inputs[0].chroma_assumed_left)
+        return fail("verification_failed", "assembled Original interpretation differs from its input");
     if (!owned_avio_open(&check.io, output_fd, length, length, 0)) {
         return 0;
     }
@@ -1530,6 +1613,7 @@ static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
     }
     check.format->pb = check.io.avio;
     check.format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    if (inputs[0].matroska || nominal) check.format->flags |= AVFMT_FLAG_NOPARSE | AVFMT_FLAG_NOFILLIN;
     check.format->max_streams = MAX_STREAMS;
     check.format->interrupt_callback.callback = deadline_interrupt;
     check.format->interrupt_callback.opaque = &state;
@@ -1549,6 +1633,8 @@ static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
         fail("verification_failed", "assembled MP4 does not have exactly two streams");
         goto done;
     }
+    AVCodecParameters *picture = check.format->streams[inputs[0].output_index]->codecpar;
+    if (picture->codec_id == AV_CODEC_ID_VP9 && !remux_vp9_mp4(&check, picture)) goto done;
     check.pending = av_packet_alloc();
     if (check.pending == NULL || !remux_new_digest(&digests[0]) ||
         !remux_new_digest(&digests[1])) {
@@ -1556,8 +1642,23 @@ static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
         goto done;
     }
     for (int index = 0; index < 2; index++) {
+        struct AVSHA *header = NULL;
+        const AVStream *stream = check.format->streams[inputs[index].output_index];
+        if (!remux_new_digest(&header)) goto done;
+        remux_digest_stream_clock(header, inputs[index].format->streams[0], stream->time_base);
+        av_sha_final(header, expected);
+        av_sha_init(header, 256);
+        remux_digest_stream(header, stream);
+        av_sha_final(header, actual);
+        av_free(header);
+        if (memcmp(expected, actual, sizeof(expected))) {
+            fail("verification_failed", "assembled %s stream metadata differs from its input",
+                 index == 0 ? "picture" : "sound");
+            goto done;
+        }
         remux_digest_stream(digests[index], check.format->streams[inputs[index].output_index]);
     }
+    audio_check.opus = inputs[1].opus;
     for (;;) {
         code = av_read_frame(check.format, check.pending);
         if (code == AVERROR_EOF) {
@@ -1569,6 +1670,10 @@ static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
         }
         for (int index = 0; index < 2; index++) {
             if (check.pending->stream_index == inputs[index].output_index) {
+                if (index == 1 && audio_check.opus &&
+                    !remux_opus_packet(&audio_check, check.format->streams[check.pending->stream_index], check.pending)) {
+                    goto done;
+                }
                 remux_digest_packet(digests[index], check.pending);
             }
         }
@@ -1610,7 +1715,12 @@ static int remux_validate(const DeadpanRemuxRequest *request) {
 
 static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
                       enum AVMediaType type, enum AVCodecID codec_id, const char *codec_name) {
-    const AVInputFormat *demuxer = av_find_input_format("mov");
+    uint8_t magic[4];
+    if (length < 4 || pread(fd, magic, sizeof(magic), base) != sizeof(magic)) {
+        return fail("invalid_media", "remux input has no container header");
+    }
+    input->matroska = codec_id == AV_CODEC_ID_NONE && AV_RB32(magic) == 0x1a45dfa3;
+    const AVInputFormat *demuxer = av_find_input_format(input->matroska ? "matroska" : "mov");
     int result;
     if (demuxer == NULL) {
         return fail("runtime_mismatch", "required MP4 demuxer is unavailable");
@@ -1631,7 +1741,7 @@ static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
     input->format->interrupt_callback.opaque = &state;
     input->format->io_open = deny_external_io;
     input->format->protocol_whitelist = av_strdup("");
-    input->format->format_whitelist = av_strdup("mov,mp4,m4a,3gp,3g2,mj2");
+    input->format->format_whitelist = av_strdup(input->matroska ? "matroska,webm" : "mov,mp4,m4a,3gp,3g2,mj2");
     input->format->codec_whitelist = av_strdup(codec_name);
     if (input->format->protocol_whitelist == NULL || input->format->format_whitelist == NULL ||
         input->format->codec_whitelist == NULL) {
@@ -1645,7 +1755,12 @@ static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
         return fail("invalid_media", "each remux input must contain exactly one stream");
     }
     const AVCodecParameters *parameters = input->format->streams[0]->codecpar;
-    if (parameters->codec_type != type || parameters->codec_id != codec_id) {
+    int allowed = codec_id == AV_CODEC_ID_NONE
+        ? (type == AVMEDIA_TYPE_VIDEO
+            ? parameters->codec_id == AV_CODEC_ID_H264 || parameters->codec_id == AV_CODEC_ID_VP9 || parameters->codec_id == AV_CODEC_ID_AV1
+            : parameters->codec_id == AV_CODEC_ID_AAC || parameters->codec_id == AV_CODEC_ID_OPUS)
+        : parameters->codec_id == codec_id;
+    if (parameters->codec_type != type || !allowed) {
         return fail("invalid_media", "remux input is not the required %s stream", codec_name);
     }
     if (type == AVMEDIA_TYPE_VIDEO &&
@@ -1653,7 +1768,7 @@ static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
          parameters->width > 8192 || parameters->height > 8192)) {
         return fail("invalid_media", "remux picture dimensions are out of range");
     }
-    if (parameters->extradata_size <= 0) {
+    if (parameters->codec_id != AV_CODEC_ID_VP9 && parameters->extradata_size <= 0) {
         return fail("invalid_media", "remux %s stream lacks its decoder configuration",
                     codec_name);
     }
@@ -1664,7 +1779,6 @@ static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
     if (!remux_new_digest(&input->timing)) {
         return 0;
     }
-    remux_digest_stream(input->timing, input->format->streams[0]);
     return within_deadline();
 }
 
@@ -1684,6 +1798,11 @@ static int remux_fill(RemuxInput *input) {
     while (!input->has_pending && !input->finished) {
         int result = av_read_frame(input->format, input->pending);
         if (result == AVERROR_EOF) {
+            if (input->opus && input->matroska &&
+                (input->packets != input->admission->opus_packet_count ||
+                 input->opus_samples != input->admission->opus_decoded_sample_count)) {
+                return fail("invalid_media", "Opus remux inventory differs from admission");
+            }
             input->finished = 1;
             break;
         }
@@ -1698,6 +1817,24 @@ static int remux_fill(RemuxInput *input) {
             av_packet_unref(input->pending);
             return fail("invalid_media", "remux packet has no timestamp");
         }
+        if (input->pending->size <= 0 || input->pending->size > 16 * 1024 * 1024) {
+            return fail("invalid_media", "remux packet size exceeds its bound");
+        }
+        /* AV1 ISOBMFF section 2.4 recommends omitting temporal delimiters.
+           YouTube nevertheless prefixes each MP4 temporal unit with 12 00;
+           FFmpeg removes it. Admit precisely that empty initial OBU, then
+           verify all remaining configuration, metadata and coded bytes.
+           Any other muxer filtering still fails the packet digest. */
+        if (input->format->streams[0]->codecpar->codec_id == AV_CODEC_ID_AV1 &&
+            input->pending->size >= 2 && input->pending->data[0] == 0x12 && input->pending->data[1] == 0) {
+            if (input->pending->size == 2) return fail("invalid_media", "AV1 temporal unit contains only a delimiter");
+            input->pending->data += 2;
+            input->pending->size -= 2;
+            input->av1_temporal_delimiters++;
+        }
+        if (input->opus && !remux_opus_packet(input, input->format->streams[0], input->pending)) {
+            return 0;
+        }
         input->has_pending = 1;
     }
     return within_deadline();
@@ -1711,6 +1848,7 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
                   DeadpanRemuxReport *report, DeadpanConversionError *error) {
     RemuxInput inputs[2];
     AVFormatContext *output = NULL;
+    AVPacket *picture_boundary = NULL;
     OwnedAvio output_io;
     struct stat metadata;
     uint64_t start;
@@ -1750,11 +1888,17 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         goto cleanup;
     }
     if (!remux_open(&inputs[0], input_fd, 0, (int64_t)request->video_byte_length,
-                    AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H264, "h264") ||
+                    AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_NONE, "h264,vp9,libdav1d") ||
         !remux_open(&inputs[1], input_fd, (int64_t)request->video_byte_length,
-                    (int64_t)request->audio_byte_length, AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_AAC,
-                    "aac")) {
+                    (int64_t)request->audio_byte_length, AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE,
+                    "aac,libopus")) {
         goto cleanup;
+    }
+    if (!remux_prepare_metadata(inputs, request) || !remux_fill(&inputs[1])) {
+        goto cleanup;
+    }
+    if (inputs[0].matroska && !(picture_boundary = av_packet_alloc())) {
+        fail("resource_exhausted", "allocate picture interval verification"); goto cleanup;
     }
     code = avformat_alloc_output_context2(&output, NULL, "mp4", NULL);
     if (code < 0 || output == NULL) {
@@ -1787,7 +1931,7 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
             goto cleanup;
         }
         stream->codecpar->codec_tag = 0;
-        stream->time_base = source->time_base;
+        stream->time_base = inputs[index].opus ? (AVRational){1, 48000} : source->time_base;
         stream->avg_frame_rate = source->avg_frame_rate;
         stream->r_frame_rate = source->r_frame_rate;
         stream->sample_aspect_ratio = source->sample_aspect_ratio;
@@ -1800,12 +1944,16 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         inputs[index].output_index = stream->index;
     }
     {
-        /* Express edit lists in the picture track's own clock. The default
-           millisecond movie clock would round an initial composition delay
-           (for example 1001/30000 s) and move every picture. */
+        /* Keep the original video clock and use the exact common movie clock
+           for both picture composition delay and individual audio samples.
+           A millisecond movie clock rounds a 1001/30000 s picture offset. */
         AVDictionary *options = NULL;
-        int timescale = inputs[0].format->streams[0]->time_base.den;
-        if (timescale <= 0 || av_dict_set_int(&options, "movie_timescale", timescale, 0) < 0) {
+        int video_scale = output->streams[0]->time_base.den;
+        int audio_scale = output->streams[1]->time_base.den;
+        int64_t common = (int64_t)video_scale / av_gcd(video_scale, audio_scale) * audio_scale;
+        int timescale = common > 0 && common <= INT_MAX ? (int)common : 0;
+        if (timescale <= 0 || av_dict_set_int(&options, "movie_timescale", timescale, 0) < 0 ||
+            av_dict_set_int(&options, "video_track_timescale", video_scale, 0) < 0) {
             av_dict_free(&options);
             fail("invalid_media", "picture time base cannot become the movie clock");
             goto cleanup;
@@ -1818,6 +1966,10 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         goto cleanup;
     }
     header_written = 1;
+    for (int index = 0; index < 2; index++) {
+        remux_digest_stream_clock(inputs[index].timing, inputs[index].format->streams[0],
+                                  output->streams[index]->time_base);
+    }
     for (;;) {
         RemuxInput *next = NULL;
         if (!remux_fill(&inputs[0]) || !remux_fill(&inputs[1])) {
@@ -1825,9 +1977,9 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         }
         if (inputs[0].has_pending && inputs[1].has_pending) {
             next = av_compare_ts(remux_order(inputs[0].pending),
-                                 inputs[0].format->streams[0]->time_base,
+                                 remux_packet_clock(&inputs[0]),
                                  remux_order(inputs[1].pending),
-                                 inputs[1].format->streams[0]->time_base) <= 0
+                                 remux_packet_clock(&inputs[1])) <= 0
                        ? &inputs[0]
                        : &inputs[1];
         } else if (inputs[0].has_pending) {
@@ -1842,9 +1994,19 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
             goto cleanup;
         }
         AVPacket *packet = next->pending;
-        remux_digest_packet(next->timing, packet);
-        av_packet_rescale_ts(packet, next->format->streams[0]->time_base,
-                             output->streams[next->output_index]->time_base);
+        if (!remux_rescale_packet(packet, remux_packet_clock(next),
+                                  output->streams[next->output_index]->time_base)) {
+            goto cleanup;
+        }
+        if (next == &inputs[0] && picture_boundary) {
+            if (!remux_digest_picture(next->timing, picture_boundary, packet)) goto cleanup;
+        } else {
+            remux_digest_packet(next->timing, packet);
+        }
+        if (next->opus) {
+            packet->pts -= next->opus_offset;
+            packet->dts -= next->opus_offset;
+        }
         packet->stream_index = next->output_index;
         packet->pos = -1;
         next->has_pending = 0;
@@ -1864,6 +2026,7 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         fail("invalid_media", "remux input stream has no packets");
         goto cleanup;
     }
+    if (picture_boundary && !remux_digest_picture(inputs[0].timing, picture_boundary, NULL)) goto cleanup;
     code = av_write_trailer(output);
     header_written = 0;
     if (code < 0) {
@@ -1879,10 +2042,22 @@ int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *reques
         fail(io_code(errno), "synchronize MP4 output: %s", strerror(errno));
         goto cleanup;
     }
+    if (inputs[1].opus && inputs[1].opus_offset > 0 &&
+        !remux_offset_edit(output_fd, &output_io.descriptor.length,
+                          request->max_output_bytes, inputs[1].opus_offset)) {
+        goto cleanup;
+    }
+    if (inputs[0].nominal_frame_duration_ns &&
+        !remux_append_original(output_fd, &output_io.descriptor.length,
+                              request->max_output_bytes, remux_cadence_uuid, inputs[0].nominal_frame_duration_ns)) goto cleanup;
+    if (inputs[0].chroma_assumed_left &&
+        !remux_append_original(output_fd, &output_io.descriptor.length,
+                              request->max_output_bytes, remux_chroma_uuid, 1)) goto cleanup;
     if (!remux_verify(output_fd, output_io.descriptor.length, inputs)) {
         goto cleanup;
     }
     report->output_bytes = (uint64_t)output_io.descriptor.length;
+    report->av1_temporal_delimiters = inputs[0].av1_temporal_delimiters;
     report->width = (uint32_t)inputs[0].format->streams[0]->codecpar->width;
     report->height = (uint32_t)inputs[0].format->streams[0]->codecpar->height;
     report->sample_rate = (uint32_t)inputs[1].format->streams[0]->codecpar->sample_rate;
@@ -1898,6 +2073,7 @@ cleanup:
         avformat_free_context(output);
     }
     owned_avio_close(&output_io);
+    av_packet_free(&picture_boundary);
     remux_close(&inputs[0]);
     remux_close(&inputs[1]);
     if (!success && error->code[0] == '\0') {

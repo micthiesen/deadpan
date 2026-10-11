@@ -38,8 +38,9 @@ use crate::CliError;
 use crate::single_original::{self, CreatedOriginal};
 
 /// Stream-copy assembly identity recorded in provenance.
-pub const ASSEMBLY: &str = "deadpan-media-worker remux v1 (H.264 + AAC stream copy, FFmpeg 8.0.3)";
-/// Download protocols that deliver one complete MP4 per format without FFmpeg.
+pub const ASSEMBLY: &str =
+    "deadpan-media-worker remux v2 (H.264/VP9/AV1 + AAC/Opus stream copy, FFmpeg 8.0.3)";
+/// Download protocols that deliver one complete MP4/WebM per format without FFmpeg.
 const DIRECT_PROTOCOLS: [&str; 2] = ["https", "http_dash_segments"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -413,6 +414,7 @@ pub struct Format {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub fps: Option<f64>,
+    pub dynamic_range: Option<String>,
     pub bitrate_kbps: Option<f64>,
     pub sample_rate: Option<u32>,
     pub declared_bytes: Option<u64>,
@@ -476,6 +478,7 @@ fn format(value: &Value, codec_key: &str) -> Option<Format> {
         width: count(value, "width").and_then(|n| u32::try_from(n).ok()),
         height: count(value, "height").and_then(|n| u32::try_from(n).ok()),
         fps: number(value, "fps"),
+        dynamic_range: text(value, "dynamic_range"),
         bitrate_kbps: number(value, "tbr"),
         sample_rate: count(value, "asr").and_then(|n| u32::try_from(n).ok()),
         declared_bytes: count(value, "filesize"),
@@ -503,13 +506,35 @@ fn direct(value: &Value) -> bool {
             .unwrap_or(false)
 }
 
-/// Choose the best admissible H.264 picture and AAC sound.
-///
-/// Deadpan's qualified decoder admits MP4/H.264 picture and AAC sound, so VP9
-/// and AV1 renditions are not candidates even when larger. Among admissible
-/// picture streams prefer resolution, then frame rate, then bitrate. Among
-/// sound streams prefer the original-language track, then the uncompressed
-/// dynamic range (not YouTube's `-drc` variant), then bitrate.
+fn video_codec_rank(codec: &str) -> Option<u8> {
+    if codec.starts_with("av01.0.") {
+        Some(3)
+    } else if codec == "vp9"
+        || codec == "vp9.2"
+        || codec.starts_with("vp09.00.")
+        || codec.starts_with("vp09.02.")
+    {
+        Some(2)
+    } else if codec.starts_with("avc1.") {
+        Some(1)
+    } else {
+        None
+    }
+}
+
+fn hdr_rank(range: Option<&str>) -> Option<u8> {
+    match range {
+        None | Some("SDR") => Some(0),
+        Some("HDR" | "HDR10" | "HLG") => Some(1),
+        _ => None,
+    }
+}
+
+/// Choose qualified direct streams by raster area, frame rate, retained HDR,
+/// codec efficiency (AV1, VP9, H.264), then bitrate within that codec.
+/// Sound keeps original language and normal dynamics ahead of bitrate.
+/// Metadata is only selection evidence; the actual downloads are independently
+/// admitted, assembled without transcoding, and fully qualified before use.
 pub fn select_formats(formats: &[Value]) -> Result<Selection, ImportError> {
     let video = formats
         .iter()
@@ -517,35 +542,57 @@ pub fn select_formats(formats: &[Value]) -> Result<Selection, ImportError> {
             direct(f)
                 && f.get("vcodec")
                     .and_then(Value::as_str)
-                    .is_some_and(|c| c.starts_with("avc1"))
+                    .is_some_and(|c| video_codec_rank(c).is_some())
                 && f.get("acodec").and_then(Value::as_str) == Some("none")
-                && f.get("ext").and_then(Value::as_str) == Some("mp4")
+                && matches!(f.get("ext").and_then(Value::as_str), Some("mp4" | "webm"))
+                && !(f.get("ext").and_then(Value::as_str) == Some("webm")
+                    && f.get("vcodec")
+                        .and_then(Value::as_str)
+                        .is_some_and(|c| c.starts_with("avc1")))
         })
         .filter_map(|f| format(f, "vcodec"))
         .filter(|f| {
             safe_format_id(&f.format_id)
-                && f.width.is_some_and(|w| w > 0)
-                && f.height.is_some_and(|h| h > 0)
+                && f.width.is_some_and(|w| (1..=8192).contains(&w))
+                && f.height.is_some_and(|h| (1..=8192).contains(&h))
+                // The ordinary Original qualification's default pixel bound.
+                && u64::from(f.width.unwrap_or(0)) * u64::from(f.height.unwrap_or(0)) <= 16_777_216
+                && f.fps.is_none_or(|fps| fps > 0.0 && fps <= 240.0)
+                && hdr_rank(f.dynamic_range.as_deref()).is_some()
         })
         .max_by(|a, b| {
-            (a.height, a.width)
-                .cmp(&(b.height, b.width))
+            let pixels =
+                |f: &Format| u64::from(f.width.unwrap_or(0)) * u64::from(f.height.unwrap_or(0));
+            pixels(a)
+                .cmp(&pixels(b))
                 .then(a.fps.unwrap_or(0.0).total_cmp(&b.fps.unwrap_or(0.0)))
+                .then(
+                    hdr_rank(a.dynamic_range.as_deref()).cmp(&hdr_rank(b.dynamic_range.as_deref())),
+                )
+                .then(video_codec_rank(&a.codec).cmp(&video_codec_rank(&b.codec)))
                 .then(
                     a.bitrate_kbps
                         .unwrap_or(0.0)
                         .total_cmp(&b.bitrate_kbps.unwrap_or(0.0)),
                 )
+                .then(a.format_id.cmp(&b.format_id))
         });
     let audio = formats
         .iter()
         .filter(|f| {
             direct(f)
-                && f.get("acodec")
-                    .and_then(Value::as_str)
-                    .is_some_and(|c| c.starts_with("mp4a"))
+                && match (
+                    f.get("acodec").and_then(Value::as_str),
+                    f.get("ext").and_then(Value::as_str),
+                ) {
+                    (Some("opus"), Some("webm" | "mp4")) => {
+                        count(f, "audio_channels").is_none_or(|c| (1..=2).contains(&c))
+                            && count(f, "asr").is_none_or(|rate| rate == 48000)
+                    }
+                    (Some(codec), Some("m4a" | "mp4")) => codec.starts_with("mp4a."),
+                    _ => false,
+                }
                 && f.get("vcodec").and_then(Value::as_str) == Some("none")
-                && matches!(f.get("ext").and_then(Value::as_str), Some("m4a" | "mp4"))
         })
         .filter_map(|f| {
             let language = f
@@ -566,17 +613,19 @@ pub fn select_formats(formats: &[Value]) -> Result<Selection, ImportError> {
                         .total_cmp(&b.bitrate_kbps.unwrap_or(0.0)),
                 )
                 .then(a.sample_rate.cmp(&b.sample_rate))
+                .then((a.codec == "opus").cmp(&(b.codec == "opus")))
+                .then(a.format_id.cmp(&b.format_id))
         })
         .map(|(_, format)| format);
     match (video, audio) {
         (Some(video), Some(audio)) => Ok(Selection { video, audio }),
         (None, _) => Err(ImportError::new(
             "YouTubeFormatUnavailable",
-            "YouTube offered no direct H.264 MP4 picture stream; Deadpan currently imports only H.264 picture",
+            "YouTube offered no supported direct H.264, VP9 or AV1 picture stream within Deadpan's Original limits",
         )),
         (_, None) => Err(ImportError::new(
             "YouTubeFormatUnavailable",
-            "YouTube offered no direct AAC sound stream; Deadpan currently imports only AAC sound",
+            "YouTube offered no supported direct AAC or mono/stereo Opus sound stream",
         )),
     }
 }

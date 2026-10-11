@@ -1,0 +1,9 @@
+{
+  "source": "deadpan-source/tests/fixtures/av1-sdr-8-limited.mp4",
+  "source_sha256": "ef943ed49342ffd1dc71f442f7ac54f75b50ab815930291fec5c855b604e2d44",
+  "fixture_sha256": "4f0d1a29c6f4c94608fc0e4f7a2bc1d09ea6fbe28cb7cf08de4cc4e84b04261c",
+  "packets": 12,
+  "bytes": 17415,
+  "license": "Repository-authored synthetic pictures",
+  "operation": "Prefix each unchanged coded temporal unit with 12 00"
+}

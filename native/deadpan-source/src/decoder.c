@@ -936,17 +936,20 @@ static int open_impl(DeadpanSource *s) {
     s->first_source_pts = f->pts;
     if (color(s, p->codec_id, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
+    int assumed_left = p->codec_id == AV_CODEC_ID_AV1 && !(s->av1_config[2] & 3) &&
+                       f->chroma_location == AVCHROMA_LOC_UNSPECIFIED;
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
         int x, y;
-        if (av_chroma_location_enum_to_pos(&x, &y, f->chroma_location) < 0)
+        if (!assumed_left && av_chroma_location_enum_to_pos(&x, &y, f->chroma_location) < 0)
             return fail(s, "missing_interpretation", "subsampled YUV needs an explicit chroma location");
     }
-    s->chroma_location = f->chroma_location;
+    s->chroma_location = assumed_left ? AVCHROMA_LOC_LEFT : f->chroma_location;
     AVRational declared_aspect = stream->sample_aspect_ratio.num ? stream->sample_aspect_ratio : p->sample_aspect_ratio;
     AVRational aspect = declared_aspect.num ? declared_aspect : sar(f->sample_aspect_ratio);
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
     s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info.chroma_assumed_left = assumed_left;
     s->info.bwdif_fields = !s->limits.progressive_only &&
         (s->h264_timing.field_cadence || f->repeat_pict == 1 || (f->flags & AV_FRAME_FLAG_INTERLACED) ||
         (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE));
@@ -1047,7 +1050,8 @@ static int check_frame(DeadpanSource *s) {
     if (f->width != s->info.width || f->height != s->info.height || f->format != s->pixel_format ||
         (int)f->color_range != s->info.range || (int)f->colorspace != s->info.matrix || (int)f->color_trc != s->info.transfer || (int)f->color_primaries != s->info.primaries)
         return fail(s, "stream_changed", "source geometry, pixel layout, or color interpretation changed");
-    if ((int)f->chroma_location != s->chroma_location) return fail(s, "stream_changed", "source chroma location changed");
+    if ((int)f->chroma_location != (s->info.chroma_assumed_left ? AVCHROMA_LOC_UNSPECIFIED : s->chroma_location))
+        return fail(s, "stream_changed", "source chroma location changed");
     AVRational aspect = sar(f->sample_aspect_ratio);
     if (stream->codecpar->codec_id == AV_CODEC_ID_AV1 && aspect.num == aspect.den) {
         // libdav1d always reports the render-size ratio, including 1:1 when

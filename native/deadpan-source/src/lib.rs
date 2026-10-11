@@ -22,6 +22,9 @@ mod aperture;
 pub mod audio;
 mod input;
 mod matroska_input;
+pub use matroska_input::{
+    MatroskaVideoMetadata, inspect_video_region as inspect_matroska_video_region,
+};
 mod opus_packet;
 mod video_codec;
 
@@ -266,9 +269,13 @@ pub struct SourceStreamInfo {
     pub color: ColorMetadata,
     pub codec: String,
     pub pixel_format: String,
-    /// Admitted Matroska VP9/AV1 DefaultDuration in nanoseconds, a nominal cadence
-    /// hint only. It never supplies or replaces measured picture timestamps.
+    /// Admitted Matroska DefaultDuration, retained also by Deadpan's MP4 assembly
+    /// UUID. A nominal hint only; it never supplies or replaces measured PTS.
     pub nominal_frame_duration_ns: Option<u64>,
+    /// AV1/VP9 omitted chroma positioning. Deadpan's recorded interpretation
+    /// places 4:2:0 chroma on the left, vertically between the luma rows.
+    /// This is an interpretation, never a claim about the source declaration.
+    pub chroma_assumed_left: bool,
     /// Original stream ticks. These are observations, not trusted frame endpoints.
     pub stream_start: Option<i64>,
     pub stream_duration: Option<i64>,
@@ -619,6 +626,7 @@ impl SourceDecoder {
         )?;
         let coded = [info.width, info.height];
         info.nominal_frame_duration_ns = admitted.nominal_frame_duration_ns;
+        info.chroma_assumed_left |= admitted.chroma_assumed_left;
         if let Some(metadata) = admitted.vp9_static {
             metadata.apply(&mut info.color)?;
         }
@@ -988,6 +996,7 @@ mod ffi {
         max_cll: u16,
         max_fall: u16,
         bwdif_fields: i32,
+        chroma_assumed_left: i32,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -1484,6 +1493,11 @@ mod ffi {
                 codec: string(&info.codec),
                 pixel_format: string(&info.pixel_format),
                 nominal_frame_duration_ns: None,
+                chroma_assumed_left: match info.chroma_assumed_left {
+                    0 => false,
+                    1 => true,
+                    _ => return Err(invalid_native()),
+                },
                 stream_start: timestamp(info.stream_start),
                 stream_duration: duration(info.stream_duration),
                 container_start: timestamp(info.container_start),

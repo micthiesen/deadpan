@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[YouTube acquisition](../qualification/youtube-quality-2026-10-09.md) now
+selects qualified AV1/VP9/H.264 picture and Opus/AAC sound. Remux protocol 2
+preserves exact clocks, Opus gain/pre-skip/trim/offsets, coded content and color
+metadata. Only an initial empty AV1 temporal delimiter is removed and counted.
+Bounded movie UUIDs retain WebM nominal cadence and VP9's original absence of
+chroma siting. Missing AV1/VP9 siting uses a recorded left interpretation;
+the viewer notice follows the successfully submitted picture. The gate
+completes in parts, 1,099 UI tests/replays and 242 native sanitizer tests pass,
+and the real app-job URL import passes. Both release exports pass; packaged
+import and relocation pass. The packaged export fails luma PSNR at scene-cut
+frame 3,126 (30.54 dB versus 32 dB), reproduced by the release verifier on the
+same saved movie. The imported Originals are byte-identical; the encoded
+packet differs. An isolated full export is investigating repeatability;
+retain the failed movie and keep the threshold. See the linked record for
+paths and exact evidence. Broader profiles, high-resolution performance, a source
+interpretation override and remaining URL workflow work stay open; DP-02,
+DP-14 and DP-16 remain partial.
+
 [MP4 Opus](../qualification/opus-mp4-2026-10-09.md) now admits mono/stereo
 sources through pinned libopus, with exact presentation edits and physical
 packet inventories. Eleven fixtures cover gain, cross-packet pre-skip, terminal
@@ -13,9 +31,8 @@ VideoToolbox proxy follow-up; 170 native sanitizer tests pass. Eleven release
 imports/exports verify 1,104 pictures and 27 zero-offset audio windows.
 The fresh-home bundle imports all eleven and verifies 504 pictures/twelve
 windows; relocation and tamper checks pass.
-YouTube selection and assembly still accept
-only H.264 plus AAC; extending assembly must preserve exact clocks, packet
-payloads and picture metadata. DP-02, DP-14 and DP-16 remain partial.
+The acquisition milestone above extends the former H.264/AAC-only downloader
+and assembly. DP-02, DP-14 and DP-16 remain partial.
 
 [VP9 HDR](../qualification/vp9-hdr-sources-2026-10-09.md) now admits ten-bit
 limited-range BT.2020 NCL PQ/HLG with retained MP4/WebM static metadata and Opus

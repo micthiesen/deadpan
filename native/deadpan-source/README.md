@@ -135,8 +135,12 @@ range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,
 sRGB and linear, with BT.709/BT.2020/P3-D65 primaries retained for the shared
 renderer. libswscale applies the matrix/range transform into full-range RGBA8.
-It uses explicit source chroma siting for subsampled YUV, rejecting missing or
-changing siting metadata. It does not change gamma or gamut. Exact RGB and BT.709 range/matrix vectors are
+It uses declared source chroma siting for subsampled YUV. AV1's unknown position
+and VP9 WebM with both positions absent/unspecified use Deadpan's recorded left
+interpretation, exposed as `SourceStreamInfo::chroma_assumed_left`; partial,
+conflicting and changing declarations still fail. Stream-copy MP4 retains VP9's
+original absence in a bounded UUID. See [acquisition evidence](../../docs/qualification/youtube-quality-2026-10-09.md).
+Other missing siting fails. Conversion does not change gamma or gamut. Exact RGB and BT.709 range/matrix vectors are
 covered by tests; wider-gamut and BT.601 admission still needs additional end-to-
 end qualification. Stream, packet and frame HDR/ICC/ambient metadata are rejected
 even when the transfer tags claim SDR. Missing interpretation, unqualified HDR/depth, alpha,

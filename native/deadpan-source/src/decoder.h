@@ -57,6 +57,7 @@ typedef struct {
     /* Pinned BWDIF field/repeat interpretation; output ticks are sixth source
        ticks, including stream_start/duration. Audio clocks are unchanged. */
     int32_t bwdif_fields;
+    int32_t chroma_assumed_left;
 } DeadpanSourceInfo;
 typedef struct {
     int64_t pts, duration, dts;

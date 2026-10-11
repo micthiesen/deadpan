@@ -471,6 +471,7 @@ fn indexed_audio(start: i64, sample_rate: u32, counts: &[u32]) -> AudioIndexSnap
 fn info(time_base: SourceTimeBase) -> SourceStreamInfo {
     SourceStreamInfo {
         nominal_frame_duration_ns: None,
+        chroma_assumed_left: false,
         bwdif_fields: false,
         clean_aperture: None,
         width: 1920,

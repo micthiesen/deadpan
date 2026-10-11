@@ -21,3 +21,14 @@ ffmpeg -i cfr-bframes.mp4 -map 0:a:0 -c copy \
 
 The runtime worker reassembles them with the pinned FFmpeg 8.0.3 libraries;
 the developer CLI is never a runtime dependency.
+
+`av1-temporal-delimiters.mp4` is derived from the independently qualified
+`deadpan-source/tests/fixtures/av1-sdr-8-limited.mp4`. The adjacent JSON records
+both hashes. `tests/generate_remux_fixtures.py` prepends only the empty AV1
+temporal-delimiter OBU (`12 00`) to each of twelve unchanged coded samples and
+updates their container sizes and offsets. Run the generator with `--check`
+to verify the retained bytes. The regression requires exactly twelve removals,
+identical decoded pixels and clocks, and refusal of other muxer filtering.
+
+The broader `remux_formats` tests reuse the source adapter's retained AV1,
+VP9 and Opus fixtures, including their independent pixel/PCM references.

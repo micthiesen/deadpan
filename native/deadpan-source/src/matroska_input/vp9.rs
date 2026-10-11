@@ -86,7 +86,7 @@ impl Video {
         self.layout()?;
         let get = |id| self.fields.get(&id).copied();
         let depth = if header[2] & 64 == 0 { 8 } else { 10 };
-        let vertical_chroma = if header[2] & 3 == 1 { 2 } else { 1 };
+        let vertical_chroma = if header[2] & 3 == 2 { 1 } else { 2 };
         require(
             get(0x55b2).is_none_or(|v| v == depth)
                 && [0x55b3, 0x55b4]
@@ -95,8 +95,8 @@ impl Video {
                 && [0x55b5, 0x55b6]
                     .iter()
                     .all(|id| get(*id).is_none_or(|v| v == 0))
-                && get(0x55b7).is_none_or(|v| v == 1)
-                && get(0x55b8).is_none_or(|v| v == vertical_chroma),
+                && get(0x55b7).is_none_or(|v| v == 0 || v == 1)
+                && get(0x55b8).is_none_or(|v| v == 0 || v == vertical_chroma),
             "AV1 Matroska chroma/depth and av1C disagree",
         )?;
         // Optional container declarations must be interpreted, not discarded
@@ -108,6 +108,12 @@ impl Video {
                 && get(0x55bb).is_none_or(|v| matches!(v, 1 | 9 | 12)),
             "unqualified Matroska AV1 color interpretation",
         )
+    }
+
+    pub fn chroma_assumed_left(&self) -> bool {
+        [0x55b7, 0x55b8]
+            .iter()
+            .all(|id| self.fields.get(id).is_none_or(|value| *value == 0))
     }
 
     fn layout(&self) -> Result<()> {
@@ -180,8 +186,9 @@ impl Video {
                 && get(0x55b9) == Some(if full_range { 2 } else { 1 }),
             "VP9 keyframe and Matroska color interpretation disagree",
         )?;
-        // Subsampling is specified by profiles 0/2. Chroma siting must be
-        // explicit; do not invent a phase when the container omits it.
+        // Profiles 0/2 specify subsampling. When BOTH siting coordinates are
+        // absent/unspecified, use the recorded left interpretation. Partial
+        // declarations and unsupported explicit positions still fail.
         require(
             [0x55b3, 0x55b4]
                 .iter()
@@ -189,9 +196,9 @@ impl Video {
                 && [0x55b5, 0x55b6]
                     .iter()
                     .all(|id| get(*id).is_none_or(|v| v == 0))
-                && get(0x55b7) == Some(1)
-                && matches!(get(0x55b8), Some(1 | 2)),
-            "Matroska VP9 needs explicit supported chroma siting",
+                && (self.chroma_assumed_left()
+                    || (get(0x55b7) == Some(1) && matches!(get(0x55b8), Some(1 | 2)))),
+            "Matroska VP9 has partial or unsupported chroma siting",
         )?;
         let transfer = get(0x55ba);
         let primaries = get(0x55bb);

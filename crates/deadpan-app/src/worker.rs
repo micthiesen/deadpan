@@ -894,7 +894,9 @@ fn perform_with(
         .frame(id, FRAME_TIMEOUT, &request.cancelled)
         .map_err(|error| error.to_string())?;
     Ok(Picture {
-        summary,
+        // Every raw-frame reply carries its interpretation, so presentation
+        // can bind notices to the submitted picture rather than current UI state.
+        summary: Some(summary.unwrap_or_else(|| source_summary(&session.source))),
         id,
         frame: Some(render_frame(decoded, session.source.info())?),
         canvas: None,
@@ -1877,7 +1879,10 @@ mod tests {
         let last = await_reply(&worker);
         assert_eq!(last.ticket, ticket(1, 20));
         let last = last.picture.unwrap();
-        assert!(last.summary.is_none());
+        assert_eq!(
+            last.summary.as_ref().unwrap().info,
+            first.summary.as_ref().unwrap().info
+        );
         assert_eq!(last.id, SourceFrameId(20));
         let last_frame = last.frame.as_ref().unwrap();
         assert_eq!(last_frame.metadata().pts.ticks, 20 * 1001);

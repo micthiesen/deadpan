@@ -30,6 +30,8 @@ fn main() {
     println!("cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX");
     println!("cargo:rerun-if-changed=src/converter.c");
     println!("cargo:rerun-if-changed=src/converter.h");
+    println!("cargo:rerun-if-changed=src/remux_support.h");
+    println!("cargo:rerun-if-changed=src/remux_edit.h");
 
     let prefix = env::var_os("DEADPAN_FFMPEG_PREFIX")
         .map(PathBuf::from)

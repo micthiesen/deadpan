@@ -505,6 +505,7 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.rotation_quarter_turns > 3
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
         || (matches!(info.codec.as_str(), "vp9" | "av1") && info.bwdif_fields)
+        || (info.chroma_assumed_left && !matches!(info.codec.as_str(), "vp9" | "av1"))
         || !matches!(
             info.codec.as_str(),
             "h264" | "ffv1" | "hevc" | "vp9" | "prores" | "av1"
@@ -791,6 +792,8 @@ pub(crate) struct SourceStreamInfoWire {
     pixel_format: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     nominal_frame_duration_ns: Option<u64>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    chroma_assumed_left: bool,
     #[serde(deserialize_with = "required_option")]
     stream_start: Option<i64>,
     #[serde(deserialize_with = "required_option")]

@@ -218,13 +218,15 @@ six hours, videos without admissible streams and estimates above 16 GiB. The
 `metadata` event reports title, author, duration, thumbnail URL, license and
 the selected streams, with the rights notice.
 
-Deadpan, not yt-dlp's format selector, chooses streams. The qualified source
-decoder admits MP4/H.264 picture and AAC sound, so the candidates are direct
-(`https`/DASH) DRM-free H.264 MP4 picture and AAC sound formats. Picture prefers
-resolution, then frame rate, then bitrate. Sound prefers the original-language
-track, then YouTube's normal dynamic range over its `-drc` compressed variant,
-then bitrate. YouTube serves H.264 up to 1080p; larger VP9/AV1 renditions are
-skipped rather than transcoded.
+Deadpan chooses direct (`https`/DASH), DRM-free H.264 MP4 or qualified VP9/AV1
+MP4/WebM picture, and AAC MP4 or mono/stereo 48 kHz Opus MP4/WebM sound.
+Picture prefers raster area, frame rate, retained HDR, then AV1, VP9 and H.264,
+with bitrate breaking ties within a codec. Ordinary Original bounds remain
+8,192 pixels per dimension and 16,777,216 pixels total. Sound prefers the
+original-language track, YouTube's normal dynamics over its `-drc` variant,
+then bitrate and sample rate. The confirmation shows the actual codecs and
+dynamic range. Metadata selects candidates; the downloaded media must pass
+independent admission and qualification.
 
 The second run downloads exactly those two format IDs with
 `--load-info-json` from the inspected metadata, so it fetches the same video and
@@ -240,20 +242,20 @@ transfer leaves nothing behind.
 
 ### Assembly
 
-YouTube delivers its best picture and sound as separate single-stream
-fragmented MP4 files, and the pinned developer FFmpeg prefix deliberately has
-no `ffmpeg` program. The isolated media worker gained a `remux` mode
+YouTube delivers picture and sound as separate single-stream MP4 or WebM
+files. The isolated media worker implements protocol 2 `remux`
 ([`deadpan_media::remux_av`](../crates/deadpan-media/src/conversion/remux.rs),
 C in [`converter.c`](../native/deadpan-media-worker/src/converter.c)). The host
 appends the sound download to the disposable picture download, so the picture
 is not copied, and passes that one descriptor; the worker opens each as
-exactly one H.264 or AAC stream through descriptor-only AVIO with empty
+exactly one H.264/VP9/AV1 or AAC/Opus stream through descriptor-only AVIO with empty
 protocol allowlists, copies packets in decode-time order into one progressive
 MP4 without opening a codec, and reports packet counts, geometry and sound
 format. Output is capped at the input size plus 2% and 16 MiB, never above what
 retention accepts; deadline and cancellation are enforced on both sides.
 
-Edit lists are written in the picture track's own clock (`movie_timescale`).
+Edit lists use the checked least common multiple of picture and sound clocks
+(`movie_timescale`), with exact packet rescaling.
 The default millisecond movie clock rounded a 1001/30000 s initial composition
 delay to 990/30000 and moved every picture; the remux test caught this. The
 worker then re-demuxes its own output and requires, per stream, an identical
@@ -261,9 +263,32 @@ SHA-256 over the time base, priming (`initial_padding`), trailing padding,
 seek preroll and decoder configuration, and over every packet's PTS, DTS,
 duration, key/discard flags, bytes and skip-samples side data, in its own
 clock. Any difference fails with `verification_failed`. The stream language tag
-is kept; `creation_time` and handler names are not. The output descriptor must
+is kept; `creation_time` and handler names are not. Color, SAR, static metadata
+and VP9 configuration are also compared. The output descriptor must
 therefore be readable as well as writable. This adds no quality loss; the result
 is a candidate original, not admitted media.
+
+Opus keeps its physical 48 kHz sample clock, header gain, pre-skip, terminal
+trim and any positive presentation offset. WebM's rounded timestamps are
+checked against the admitted packet inventory; MP4 uses exact timestamps.
+WebM picture intervals remain `[PTS, next PTS)` with the original final
+duration. A bounded movie UUID retains Matroska `DefaultDuration` as a cadence
+hint; it supplies no timestamps and every measured picture must fit the grid.
+
+Only the exact initial empty AV1 temporal delimiter (`12 00`) is removed,
+counted in the worker report, as recommended by the
+[AV1 MP4 sample format](https://aomediacodec.github.io/av1-isobmff/#av1-sample-format).
+All other encoded bytes must match; other muxer filtering fails verification.
+
+Some YouTube AV1/VP9 streams omit chroma positioning. Deadpan interprets that
+specific absence as left-sited 4:2:0, records `chroma_assumed_left` in the
+qualification receipt and shows “Source chroma position unspecified;
+interpreted as left” in the accessible viewer caption. VP9 assembly records
+the original absence in a second bounded movie UUID, preserved through another
+assembly. AV1 keeps the unspecified bitstream value. Partial or conflicting
+declarations still fail. This is a documented rendering interpretation, not
+evidence of the encoder's intended sample phase. Other missing color tags
+remain subject to the existing source qualification rules.
 
 In the real run below, YouTube's own files account for the 146.000 s and
 146.100 s lengths: format 137 holds 3,504 pictures of 512/12288 s (exactly
@@ -327,7 +352,7 @@ Codes are stable and messages say what to do next:
 | `YouTubeAgeRestricted`, `YouTubeSignInRequired` | Retry with an explicit `--cookies` file. |
 | `YouTubeRateLimited` | Bot check or HTTP 429; wait, or use cookies. |
 | `YouTubeLiveUnsupported` | Live, upcoming or still-processing stream. |
-| `YouTubeFormatUnavailable` | No direct H.264 picture or AAC sound offered. |
+| `YouTubeFormatUnavailable` | No supported direct picture or sound stream within Original limits. |
 | `YouTubeExtractorFailed` | YouTube changed; the pinned helpers need an update. |
 | `YouTubeNetworkFailed`, `YouTubeDownloadFailed`, `YouTubeDownloadIncomplete` | Retry the import. |
 | `YouTubeTooLong`, `YouTubeTooLarge`, `YouTubeMetadataTooLarge`, `YouTubeMetadataInvalid` | Bounds or malformed metadata. |
@@ -395,5 +420,5 @@ line in the message.
   published; updates come from a file or an explicit `https://` URL), and
   applying a signed update to a packaged app on a second Mac (To verify,
   owner).
-- VP9/AV1 and above-1080p originals need decoder qualification first.
+- Broader codec profiles and above-1080p performance qualification.
 - Resumable transfers, clean-machine acceptance and a broader failure corpus.

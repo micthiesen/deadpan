@@ -106,7 +106,7 @@ static int av1_sequence(DeadpanSource *s, const uint8_t *data, size_t length) {
         (p->color_space != AVCOL_SPC_UNSPECIFIED && (unsigned)p->color_space != matrix) ||
         (p->color_range != AVCOL_RANGE_UNSPECIFIED && (int)p->color_range != range) ||
         (p->chroma_location != AVCHROMA_LOC_UNSPECIFIED &&
-         p->chroma_location != (chroma == 1 ? AVCHROMA_LOC_LEFT : AVCHROMA_LOC_TOPLEFT)))
+         p->chroma_location != (chroma == 2 ? AVCHROMA_LOC_TOPLEFT : AVCHROMA_LOC_LEFT)))
         return fail(s, "stream_changed", "AV1 sequence and container color interpretation disagree");
     if (color(s, AV_CODEC_ID_AV1, high ? AV_PIX_FMT_YUV420P10LE : AV_PIX_FMT_YUV420P,
               range, (int)matrix, (int)transfer, (int)primaries) < 0) return -1;
@@ -251,10 +251,10 @@ static int av1_configuration(DeadpanSource *s, const uint8_t *data, size_t lengt
     if (length < 4 || data[0] != 0x81 || (data[1] >> 5) ||
         ((data[1] & 31) > 23 && (data[1] & 31) != 31) ||
         (data[2] & 0x30) || (data[2] & 12) != 12 ||
-        !(data[2] & 3) || (data[2] & 3) == 3 ||
+        (data[2] & 3) == 3 ||
         ((data[1] & 31) <= 7 && (data[2] & 128)) ||
         (data[3] & 0xe0) || (!(data[3] & 16) && (data[3] & 15)))
-        return fail(s, "unsupported_codec", "AV1 requires valid Main eight/ten-bit 4:2:0 av1C with explicit chroma siting");
+        return fail(s, "unsupported_codec", "AV1 requires valid Main eight/ten-bit 4:2:0 av1C");
     memcpy(s->av1_config, data, 4);
     int key;
     return av1_obus(s, data + 4, length - 4, 1, &key);

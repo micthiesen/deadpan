@@ -62,12 +62,29 @@ typedef struct {
     uint64_t audio_byte_length;
     uint64_t max_output_bytes;
     uint64_t timeout_ms;
+    uint32_t opus_present;
+    uint32_t opus_pre_skip;
+    uint64_t opus_codec_delay_ns;
+    uint64_t opus_timestamp_scale_ns;
+    int64_t opus_first_block_timestamp;
+    uint64_t opus_packet_count;
+    uint64_t opus_decoded_sample_count;
+    uint32_t vp9_profile_plus_one;
+    uint32_t vp9_bit_depth;
+    uint32_t vp9_chroma;
+    uint32_t vp9_primaries;
+    uint32_t vp9_transfer;
+    uint32_t vp9_matrix;
+    uint32_t vp9_full_range;
+    uint32_t chroma_assumed_left;
+    uint64_t nominal_frame_duration_ns;
 } DeadpanRemuxRequest;
 
 typedef struct {
     uint64_t output_bytes;
     uint64_t video_packets;
     uint64_t audio_packets;
+    uint64_t av1_temporal_delimiters;
     uint32_t width;
     uint32_t height;
     uint32_t sample_rate;

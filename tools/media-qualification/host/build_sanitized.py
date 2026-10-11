@@ -73,9 +73,20 @@ def main():
         command += ["-p", package]
     command += ["--locked", "--target", "aarch64-apple-darwin",
                 "--target-dir", str(work / "target")]
+    # Bridge qualification uses the real landmark worker beside the media
+    # worker. Cargo's package-scoped test command does not build that sibling.
+    preparation = []
+    if "deadpan-media-worker" in packages:
+        preparation.append(["cargo", "build", "-p", "deadpan-track", "--locked",
+                            "--target", "aarch64-apple-darwin",
+                            "--target-dir", str(work / "target")])
     start = time.monotonic()
     with (work / "test.log").open("w") as log:
-        exit_code, failure = run_test_command(command, cwd=repo, env=env, log=log)
+        exit_code, failure = 0, None
+        for step in preparation + [command]:
+            exit_code, failure = run_test_command(step, cwd=repo, env=env, log=log)
+            if exit_code or failure:
+                break
     binary = work / "target/aarch64-apple-darwin/debug/deadpan-media-worker"
     test_binaries = {}
     for candidate in re.findall(r"Running .*\(([^\n]+)\)", (work / "test.log").read_text()):
@@ -84,7 +95,7 @@ def main():
             test_binaries[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
     report = {"scope": "selected native C adapters and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
               "packages": packages, "test_binary_sha256": test_binaries,
-              "command": command, "cflags": env["CFLAGS"], "rust_flags": flags,
+              "command": command, "preparation": preparation, "cflags": env["CFLAGS"], "rust_flags": flags,
               "runtime": str(runtime), "runtime_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),
               "ffmpeg_prefix": prefix, "elapsed_seconds": time.monotonic() - start,
               "exit_code": exit_code, "failure": failure,

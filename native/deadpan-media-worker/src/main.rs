@@ -96,6 +96,22 @@ mod ffi {
         pub audio_byte_length: u64,
         pub max_output_bytes: u64,
         pub timeout_ms: u64,
+        pub opus_present: u32,
+        pub opus_pre_skip: u32,
+        pub opus_codec_delay_ns: u64,
+        pub opus_timestamp_scale_ns: u64,
+        pub opus_first_block_timestamp: i64,
+        pub opus_packet_count: u64,
+        pub opus_decoded_sample_count: u64,
+        pub vp9_profile_plus_one: u32,
+        pub vp9_bit_depth: u32,
+        pub vp9_chroma: u32,
+        pub vp9_primaries: u32,
+        pub vp9_transfer: u32,
+        pub vp9_matrix: u32,
+        pub vp9_full_range: u32,
+        pub chroma_assumed_left: u32,
+        pub nominal_frame_duration_ns: u64,
     }
 
     #[repr(C)]
@@ -104,6 +120,7 @@ mod ffi {
         pub output_bytes: u64,
         pub video_packets: u64,
         pub audio_packets: u64,
+        pub av1_temporal_delimiters: u64,
         pub width: u32,
         pub height: u32,
         pub sample_rate: u32,
@@ -532,13 +549,17 @@ fn parse_proxy_assembly(
 }
 
 mod proxy;
+mod remux_input;
 
 fn remux(request: &RemuxRequest) -> RemuxReply {
-    let native_request = ffi::RemuxRequest {
-        video_byte_length: request.video_byte_length,
-        audio_byte_length: request.audio_byte_length,
-        max_output_bytes: request.max_output_bytes,
-        timeout_ms: request.timeout_ms,
+    let native_request = match remux_input::inspect(request) {
+        Ok(request) => request,
+        Err(error) => {
+            return RemuxReply::Failure {
+                code: remux_input::failure_code(error.as_ref()).into(),
+                message: error.to_string(),
+            };
+        }
     };
     let mut native_report = ffi::RemuxReport::default();
     let mut native_error = ffi::Error::default();
@@ -570,6 +591,7 @@ fn remux(request: &RemuxRequest) -> RemuxReply {
         output_bytes: native_report.output_bytes,
         video_packets: native_report.video_packets,
         audio_packets: native_report.audio_packets,
+        av1_temporal_delimiters: native_report.av1_temporal_delimiters,
         width: native_report.width,
         height: native_report.height,
         sample_rate: native_report.sample_rate,

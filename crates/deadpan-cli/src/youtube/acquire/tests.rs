@@ -26,7 +26,7 @@ fn video_format(id: &str, codec: &str, height: u32, fps: f64, protocol: &str) ->
 fn audio_format(id: &str, codec: &str, tbr: f64, language: i64) -> Value {
     serde_json::json!({
         "format_id": id, "ext": if codec.starts_with("mp4a") { "m4a" } else { "webm" },
-        "vcodec": "none", "acodec": codec, "tbr": tbr, "asr": 44100,
+        "vcodec": "none", "acodec": codec, "tbr": tbr, "asr": if codec == "opus" {48000} else {44100},
         "protocol": "https", "language_preference": language, "filesize": 100,
     })
 }
@@ -144,8 +144,8 @@ fn selection_prefers_admissible_highest_quality_streams() {
         audio_format("140-dub", "mp4a.40.2", 200.0, -2),
     ];
     let selection = select_formats(&formats).unwrap();
-    assert_eq!(selection.video.format_id, "137");
-    assert_eq!(selection.audio.format_id, "140");
+    assert_eq!(selection.video.format_id, "399");
+    assert_eq!(selection.audio.format_id, "251");
 
     let mut drm = video_format("299", "avc1.64002a", 1080, 60.0, "https");
     drm["has_drm"] = true.into();
@@ -168,9 +168,45 @@ fn selection_prefers_admissible_highest_quality_streams() {
     );
     assert_eq!(
         select_formats(&[formats[4].clone(), formats[6].clone()])
-            .unwrap_err()
-            .code,
-        "YouTubeFormatUnavailable"
+            .unwrap()
+            .audio
+            .codec,
+        "opus"
+    );
+}
+
+#[test]
+fn selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate() {
+    let mut hdr = video_format("hdr", "vp9.2", 2160, 60.0, "https");
+    hdr["dynamic_range"] = "HDR10".into();
+    let av1 = video_format("av1", "av01.0.13M.10", 2160, 60.0, "https");
+    let mut h264 = video_format("h264", "avc1.640028", 1080, 60.0, "https");
+    h264["tbr"] = 100000.into();
+    let mut unsupported = hdr.clone();
+    unsupported["format_id"] = "dynamic-hdr".into();
+    unsupported["dynamic_range"] = "HDR10+".into();
+    let oversize = video_format("oversize", "av01.0.16M.08", 4320, 60.0, "https");
+    let selection = select_formats(&[
+        h264,
+        av1,
+        hdr,
+        unsupported,
+        oversize,
+        audio_format("opus-drc", "opus", 240.0, 1),
+        audio_format("dub", "opus", 300.0, 0),
+        audio_format("original", "mp4a.40.2", 128.0, 1),
+    ])
+    .unwrap();
+    assert_eq!(selection.video.format_id, "hdr");
+    assert_eq!(selection.audio.format_id, "original");
+    let mut surround = audio_format("surround", "opus", 600.0, 1);
+    surround["audio_channels"] = 6.into();
+    assert!(
+        select_formats(&[
+            video_format("v", "av01.0.08M.08", 1080, 24.0, "https"),
+            surround
+        ])
+        .is_err()
     );
 }
 

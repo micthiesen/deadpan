@@ -141,6 +141,7 @@ struct DecodedPicture {
     request: RequestedPicture,
     picture: Picture,
     geometry_revision: u64,
+    chroma_assumed_left: bool,
 }
 
 struct DisplayedPicture {
@@ -151,6 +152,7 @@ struct DisplayedPicture {
     source_frame: Option<SourceFrameId>,
     canvas: Option<(u32, u32)>,
     geometry_revision: u64,
+    chroma_assumed_left: bool,
 }
 
 #[derive(Default)]
@@ -277,10 +279,14 @@ impl Presentation {
         Some(match reply.picture {
             Ok(mut picture) => {
                 let summary = picture.summary.take();
+                let chroma_assumed_left = summary
+                    .as_ref()
+                    .is_some_and(|summary| summary.info.chroma_assumed_left);
                 self.decoded = Some(DecodedPicture {
                     request: request.clone(),
                     picture,
                     geometry_revision: 0,
+                    chroma_assumed_left,
                 });
                 Ok(summary)
             }
@@ -534,6 +540,7 @@ impl Presentation {
             source_frame: decoded.picture.frame.as_ref().map(|_| decoded.picture.id),
             canvas: decoded.picture.canvas,
             geometry_revision: decoded.geometry_revision,
+            chroma_assumed_left: decoded.chroma_assumed_left,
         });
     }
 
@@ -544,9 +551,14 @@ impl Presentation {
     pub fn displayed_label(&self) -> Option<String> {
         let displayed = self.displayed.as_ref()?;
         let label = displayed.request.label()?;
-        Some(match displayed.tier {
+        let label = match displayed.tier {
             PictureTier::Original => label,
             PictureTier::Proxy => format!("{label} · proxy preview"),
+        };
+        Some(if displayed.chroma_assumed_left {
+            format!("{label} · Source chroma position unspecified; interpreted as left")
+        } else {
+            label
         })
     }
 

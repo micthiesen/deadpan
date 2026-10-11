@@ -127,6 +127,8 @@ pub struct Mp4Inspection {
 }
 
 pub(super) struct MovieHeader {
+    pub(super) nominal_frame_duration_ns: Option<u64>,
+    pub(super) chroma_assumed_left: bool,
     pub(super) timescale: u32,
     pub(super) duration: Option<u64>,
     pub(super) matrix: [i32; 9],

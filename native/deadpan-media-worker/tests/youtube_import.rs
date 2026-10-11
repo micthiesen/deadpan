@@ -23,6 +23,12 @@ fn fixture(name: &str) -> std::path::PathBuf {
         .join(name)
 }
 
+fn source_fixture(name: &str) -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../deadpan-source/tests")
+        .join(name)
+}
+
 fn metadata() -> serde_json::Value {
     let bytes = |name| fs::metadata(fixture(name)).unwrap().len();
     serde_json::json!({
@@ -34,13 +40,17 @@ fn metadata() -> serde_json::Value {
         "thumbnail": "https://i.ytimg.com/vi/Z4C82eyhwgU/maxresdefault.jpg",
         "license": "Creative Commons Attribution license (reuse allowed)",
         "formats": [
+            {"format_id": "399", "ext": "webm", "vcodec": "av01.0.08M.08", "acodec": "none",
+             "width": 128, "height": 96, "fps": 29.97, "protocol": "https",
+             "filesize": fs::metadata(source_fixture("fixtures/av1-sdr-8-limited.webm")).unwrap().len()},
             {"format_id": "248", "ext": "webm", "vcodec": "vp9", "acodec": "none",
-             "width": 1920, "height": 1080, "fps": 24, "protocol": "https"},
+             "width": 96, "height": 64, "fps": 24, "protocol": "https"},
             {"format_id": "137", "ext": "mp4", "vcodec": "avc1.64000d", "acodec": "none",
-             "width": 320, "height": 180, "fps": 30, "tbr": 100.0, "protocol": "https",
+             "width": 64, "height": 48, "fps": 30, "tbr": 100.0, "protocol": "https",
              "filesize": bytes("video-fragmented.mp4")},
             {"format_id": "251", "ext": "webm", "vcodec": "none", "acodec": "opus",
-             "tbr": 160.0, "protocol": "https"},
+             "tbr": 160.0, "asr": 48000, "protocol": "https",
+             "filesize": fs::metadata(source_fixture("audio-fixtures/opus-stereo-20.webm")).unwrap().len()},
             {"format_id": "140", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.2",
              "tbr": 128.0, "asr": 48000, "protocol": "https",
              "filesize": bytes("audio-fragmented.m4a")}
@@ -50,7 +60,7 @@ fn metadata() -> serde_json::Value {
 
 /// Metadata on `--dump-single-json`; otherwise write both requested formats
 /// to the relative `--output` template in the working directory, as yt-dlp
-/// does for `-f 137,140`.
+/// does for `-f 399,251`.
 fn stand_in(directory: &Path) -> Helpers {
     let script = directory.join("yt-dlp");
     fs::write(
@@ -73,13 +83,13 @@ while [ $# -gt 0 ]; do
 done
 [ -s "$info" ] || {{ echo "ERROR: missing info" >&2; exit 1; }}
 [ "$template" = '%(format_id)s.%(ext)s' ] || {{ echo "ERROR: absolute template" >&2; exit 1; }}
-cp '{video}' 137.mp4
-cp '{audio}' 140.m4a
+cp '{video}' 399.webm
+cp '{audio}' 251.webm
 "#,
             log = directory.display(),
             metadata = metadata(),
-            video = fixture("video-fragmented.mp4").display(),
-            audio = fixture("audio-fragmented.m4a").display(),
+            video = source_fixture("fixtures/av1-sdr-8-limited.webm").display(),
+            audio = source_fixture("audio-fixtures/opus-stereo-20.webm").display(),
         ),
     )
     .unwrap();
@@ -136,8 +146,8 @@ fn a_youtube_url_becomes_a_ready_one_original_project_with_provenance()
             "creating_project"
         ]
     );
-    assert_eq!(events[1]["selection"]["video"]["format_id"], "137");
-    assert_eq!(events[1]["selection"]["audio"]["format_id"], "140");
+    assert_eq!(events[1]["selection"]["video"]["format_id"], "399");
+    assert_eq!(events[1]["selection"]["audio"]["format_id"], "251");
 
     // Both helper runs used the private cookie copy, never the user's file,
     // and the copy is gone.
@@ -177,7 +187,7 @@ fn a_youtube_url_becomes_a_ready_one_original_project_with_provenance()
     let document = store.snapshot()?;
     assert_eq!(document.revision_id(), &baseline_revision);
     assert!(document.duration()?.frames() > 0);
-    assert_eq!(document.presentation_basis().width, 320);
+    assert_eq!(document.presentation_basis().width, 128);
     let label = document.assets()[&asset].label.clone();
     assert_eq!(label, "Fixture: Gran Dillama / test");
 
@@ -204,8 +214,13 @@ fn a_youtube_url_becomes_a_ready_one_original_project_with_provenance()
     assert_eq!(provenance.author.as_deref(), Some("Blender"));
     assert_eq!(provenance.formats.len(), 2);
     assert_eq!(provenance.formats[0].role, FormatRole::Video);
-    assert_eq!(provenance.formats[0].format_id, "137");
-    assert_eq!(provenance.formats[1].format_id, "140");
+    assert_eq!(provenance.formats[0].format_id, "399");
+    assert_eq!(
+        provenance.formats[0].codec.as_deref(),
+        Some("av01.0.08M.08")
+    );
+    assert_eq!(provenance.formats[1].format_id, "251");
+    assert_eq!(provenance.formats[1].codec.as_deref(), Some("opus"));
     assert!(
         provenance
             .helpers

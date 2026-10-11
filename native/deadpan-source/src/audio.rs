@@ -177,6 +177,32 @@ pub struct MatroskaOpusClock {
     pub decoded_sample_count: u64,
 }
 
+/// Admit an immutable Matroska region without copying or decoding its audio.
+/// Stream-copy workers use this for an audio input following a video input in
+/// one descriptor. Offsets stay inside the region, including deferred Cues.
+pub fn inspect_matroska_opus_region(
+    file: &File,
+    offset: u64,
+    length: u64,
+    limits: AudioDecodeLimits,
+    control: DecodeControl<'_>,
+) -> Result<MatroskaOpusClock, SourceDecodeError> {
+    limits.validate()?;
+    crate::matroska_input::validate_region(
+        file,
+        offset,
+        length,
+        crate::input::Selection::FirstAudio,
+        limits.into(),
+        control,
+    )?
+    .matroska_opus
+    .ok_or_else(|| SourceDecodeError::Native {
+        code: "invalid_input".into(),
+        message: "Matroska region has no admitted Opus clock".into(),
+    })
+}
+
 /// Actual decoder output representation, before the owned float copy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AudioSampleFormat {

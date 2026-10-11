@@ -822,14 +822,25 @@ pub fn picture_summary(preview: &Preview) -> String {
             format!("{fps:.3} fps")
         });
     }
-    parts.push(format!("H.264 ({})", video.codec));
+    let codec = if video.codec.starts_with("av01.") {
+        "AV1"
+    } else if video.codec.starts_with("vp9") || video.codec.starts_with("vp09.") {
+        "VP9"
+    } else {
+        "H.264"
+    };
+    parts.push(format!("{codec} ({})", video.codec));
+    if let Some(range) = &video.dynamic_range {
+        parts.push(range.clone());
+    }
     parts.join(" · ")
 }
 
 /// The selected sound stream in one line.
 pub fn sound_summary(preview: &Preview) -> String {
     let audio = &preview.metadata.selection.audio;
-    let mut parts = vec![format!("AAC ({})", audio.codec)];
+    let codec = if audio.codec == "opus" { "Opus" } else { "AAC" };
+    let mut parts = vec![format!("{codec} ({})", audio.codec)];
     if let Some(rate) = audio.sample_rate {
         parts.push(format!("{:.1} kHz", f64::from(rate) / 1000.0));
     }
@@ -907,6 +918,7 @@ pub mod scripted {
                         declared_bytes: Some(52_740_343),
                         approximate_bytes: None,
                         note: Some("1080p".into()),
+                        dynamic_range: Some("SDR".into()),
                     },
                     audio: Format {
                         format_id: "140".into(),
@@ -920,6 +932,7 @@ pub mod scripted {
                         declared_bytes: Some(2_365_262),
                         approximate_bytes: None,
                         note: None,
+                        dynamic_range: None,
                     },
                 },
             },

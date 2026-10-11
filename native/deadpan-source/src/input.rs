@@ -57,6 +57,18 @@ const ATOMS: u32 = 100_000;
 const TRACKS: usize = 33;
 const EXTRA_BYTES: u64 = 64 * 1024;
 
+// Deadpan stream-copy metadata: UUID 164d86bf-c898-481b-9920-91633daee697,
+// followed by one big-endian u64 Matroska DefaultDuration (nanoseconds).
+// The declaration proposes a cadence only after every measured PTS agrees.
+const ORIGINAL_CADENCE_UUID: [u8; 16] = [
+    0x16, 0x4d, 0x86, 0xbf, 0xc8, 0x98, 0x48, 0x1b, 0x99, 0x20, 0x91, 0x63, 0x3d, 0xae, 0xe6, 0x97,
+];
+// Stream-copy provenance for VP9's formerly unspecified chroma position.
+// Payload is a big-endian u64 with value 1 (interpreted as left).
+const ORIGINAL_CHROMA_UUID: [u8; 16] = [
+    0xfa, 0xb3, 0x5b, 0x69, 0x35, 0x7d, 0x47, 0x8b, 0x97, 0xe4, 0xc7, 0xf9, 0x6a, 0x65, 0x54, 0x32,
+];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Selection {
     Audio(u32),
@@ -487,6 +499,7 @@ pub(crate) struct Admission {
     pub(crate) vp9: Option<Mp4Vp9Configuration>,
     pub(crate) vp9_static: Option<crate::matroska_input::Vp9StaticMetadata>,
     pub(crate) nominal_frame_duration_ns: Option<u64>,
+    pub(crate) chroma_assumed_left: bool,
     pub(crate) matroska_opus: Option<crate::audio::MatroskaOpusClock>,
     pub(crate) mp4_opus: Option<crate::audio::Mp4OpusFraming>,
     pub(crate) mp3: Option<crate::audio::Mp3Framing>,
@@ -538,6 +551,7 @@ fn validate_selection(
             vp9: None,
             vp9_static: None,
             nominal_frame_duration_ns: None,
+            chroma_assumed_left: false,
             matroska_opus: None,
             mp4_opus: None,
             mp3: Some(framing),
@@ -570,14 +584,16 @@ fn validate_selection(
         admitted.io_bytes += reader.read_bytes;
         return Ok(admitted);
     }
-    let (audio, aperture, vp9, mp4_opus) = if magic == *b"RIFF" {
+    let (audio, aperture, vp9, mp4_opus, nominal_frame_duration_ns, chroma_assumed_left) = if magic
+        == *b"RIFF"
+    {
         let selected_stream = match policy {
             Selection::Audio(index) => index,
             Selection::FirstAudio => 0,
             Selection::Video => return Err(selection()),
         };
         wave(&mut reader, selected_stream)?;
-        (Some(selected_stream), None, None, None)
+        (Some(selected_stream), None, None, None, None, false)
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
         mp4(&mut reader, policy)?
     } else {
@@ -593,7 +609,8 @@ fn validate_selection(
         mp3: None,
         matroska_opus: None,
         mp4_opus,
-        nominal_frame_duration_ns: None,
+        nominal_frame_duration_ns,
+        chroma_assumed_left,
         vp9_static: None,
         io_bytes: reader.read_bytes,
         audio,
@@ -750,6 +767,8 @@ type Mp4Selection = (
     Option<CleanAperture>,
     Option<Mp4Vp9Configuration>,
     Option<crate::audio::Mp4OpusFraming>,
+    Option<u64>,
+    bool,
 );
 fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
     let layout = mp4_layout(r)?;
@@ -759,7 +778,14 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
             if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
                 return Err(selection());
             }
-            Ok((Some(index), None, None, tracks[index as usize].opus))
+            Ok((
+                Some(index),
+                None,
+                None,
+                tracks[index as usize].opus,
+                None,
+                false,
+            ))
         }
         Selection::FirstAudio => {
             let index = tracks
@@ -771,6 +797,8 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
                 None,
                 None,
                 tracks[index].opus,
+                None,
+                false,
             ))
         }
         Selection::Video => {
@@ -790,6 +818,8 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Mp4Selection> {
                     .and_then(|track| track.clean_aperture),
                 tracks.iter().find_map(|track| track.vp9),
                 None,
+                layout.movie.nominal_frame_duration_ns,
+                layout.movie.chroma_assumed_left,
             ))
         }
     }
@@ -893,6 +923,8 @@ fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<
     let mut cursor = span.start;
     let mut header = None;
     let mut metadata = false;
+    let mut nominal = None;
+    let mut chroma_assumed_left = false;
     while cursor < span.end {
         let atom = r.atom(&mut cursor, span.end, 1)?;
         match &atom.tag {
@@ -906,6 +938,8 @@ fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<
                     "invalid movie time scale",
                 )?;
                 header = Some(MovieHeader {
+                    nominal_frame_duration_ns: None,
+                    chroma_assumed_left: false,
                     timescale,
                     duration: inspection::duration(r, atom.body, version, 16, 24)?,
                     matrix: inspection::matrix(
@@ -930,10 +964,59 @@ fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<
                 metadata = true;
                 encoder_metadata(r, atom.body)?;
             }
+            b"uuid" => {
+                require(atom.body.len() == 24, "malformed Original metadata")?;
+                let id = r.bytes::<16>(atom.body.start)?;
+                if id == ORIGINAL_CHROMA_UUID {
+                    require(
+                        !chroma_assumed_left && r.u64(atom.body.start + 16)? == 1,
+                        "duplicate or invalid Original chroma interpretation",
+                    )?;
+                    chroma_assumed_left = true;
+                    continue;
+                }
+                require(nominal.is_none(), "duplicate Original cadence metadata")?;
+                require(
+                    id == ORIGINAL_CADENCE_UUID,
+                    "unqualified movie UUID metadata",
+                )?;
+                let ns = r.u64(atom.body.start + 16)?;
+                require(
+                    (1..=1_000_000_000).contains(&ns),
+                    "Original cadence declaration out of range",
+                )?;
+                nominal = Some(ns);
+            }
             _ => return Err(invalid("unqualified movie metadata or fragmentation")),
         }
     }
-    header.ok_or_else(|| invalid("MP4 lacks movie header"))
+    let mut header = header.ok_or_else(|| invalid("MP4 lacks movie header"))?;
+    require(
+        nominal.is_none()
+            || tracks
+                .iter()
+                .filter(|t| t.codec == Some(Kind::Video))
+                .count()
+                == 1,
+        "Original cadence metadata requires exactly one picture track",
+    )?;
+    header.nominal_frame_duration_ns = nominal;
+    if chroma_assumed_left {
+        require(
+            tracks
+                .iter()
+                .filter(|t| t.codec == Some(Kind::Video))
+                .count()
+                == 1
+                && tracks
+                    .iter()
+                    .find_map(|t| t.vp9)
+                    .is_some_and(|vp9| vp9.chroma_subsampling == 0),
+            "Original chroma interpretation requires one left-sited VP9 picture track",
+        )?;
+    }
+    header.chroma_assumed_left = chroma_assumed_left;
+    Ok(header)
 }
 
 fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
@@ -1789,11 +1872,11 @@ pub(crate) fn av1_configuration_prefix(bytes: &[u8]) -> Result<()> {
             && matches!(bytes[1] & 31, 0..=23 | 31)
             && bytes[2] & 0x30 == 0
             && bytes[2] & 12 == 12
-            && matches!(bytes[2] & 3, 1 | 2)
+            && matches!(bytes[2] & 3, 0..=2)
             && (bytes[1] & 31 > 7 || bytes[2] & 128 == 0)
             && bytes[3] & 0xe0 == 0
             && (bytes[3] & 16 != 0 || bytes[3] & 15 == 0),
-        "AV1 requires valid Main eight/ten-bit 4:2:0 av1C with explicit chroma siting",
+        "AV1 requires valid Main eight/ten-bit 4:2:0 av1C",
     )
 }
 

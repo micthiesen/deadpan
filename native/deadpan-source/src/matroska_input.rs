@@ -70,6 +70,7 @@ struct Element {
 
 struct Reader<'a> {
     file: &'a File,
+    base: u64,
     control: DecodeControl<'a>,
     started: Instant,
     limits: InputLimits,
@@ -112,7 +113,7 @@ impl Reader<'_> {
                 self.check()?;
                 let read = match self.file.read_at(
                     &mut self.window[self.window_len..amount],
-                    at + self.window_len as u64,
+                    self.base + at + self.window_len as u64,
                 ) {
                     Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
                     result => result?,
@@ -1049,13 +1050,64 @@ pub(crate) fn validate_selection(
     limits: InputLimits,
     control: DecodeControl<'_>,
 ) -> Result<crate::input::Admission> {
+    validate_region(file, 0, file.metadata()?.len(), policy, limits, control)
+}
+
+/// Inspect one immutable video container region for stream-copy assembly.
+/// The admitted VP9 declaration supplies chroma siting that FFmpeg may omit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MatroskaVideoMetadata {
+    pub vp9: Option<crate::Mp4Vp9Configuration>,
+    pub nominal_frame_duration_ns: Option<u64>,
+    pub chroma_assumed_left: bool,
+}
+
+pub fn inspect_video_region(
+    file: &File,
+    offset: u64,
+    length: u64,
+    limits: crate::DecodeLimits,
+    control: DecodeControl<'_>,
+) -> Result<MatroskaVideoMetadata> {
+    limits.validate()?;
+    let admitted = validate_region(
+        file,
+        offset,
+        length,
+        crate::input::Selection::Video,
+        limits.into(),
+        control,
+    )?;
+    Ok(MatroskaVideoMetadata {
+        vp9: admitted.vp9,
+        nominal_frame_duration_ns: admitted.nominal_frame_duration_ns,
+        chroma_assumed_left: admitted.chroma_assumed_left,
+    })
+}
+
+pub(crate) fn validate_region(
+    file: &File,
+    base: u64,
+    length: u64,
+    policy: crate::input::Selection,
+    limits: InputLimits,
+    control: DecodeControl<'_>,
+) -> Result<crate::input::Admission> {
+    if control.timeout.is_zero() || control.timeout > std::time::Duration::from_secs(60) {
+        return Err(SourceDecodeError::InvalidConfiguration(
+            "timeout must be positive and at most 60 seconds",
+        ));
+    }
     let started = Instant::now();
     let metadata = file.metadata()?;
     require(
         metadata.is_file(),
         "Matroska preflight requires a regular file",
     )?;
-    let length = metadata.len();
+    require(
+        base <= metadata.len() && length <= metadata.len() - base,
+        "Matroska region exceeds its descriptor",
+    )?;
     limit(
         length > 0 && length <= limits.max_input_bytes,
         "Matroska input size exceeds configured limit",
@@ -1063,6 +1115,7 @@ pub(crate) fn validate_selection(
     let mut admission = Admission {
         reader: Reader {
             file,
+            base,
             control,
             started,
             limits,
@@ -1143,6 +1196,7 @@ pub(crate) fn validate_selection(
         aperture: None,
         vp9: admission.vp9,
         vp9_static: admission.is_vp9.then(|| admission.video.static_metadata()),
+        chroma_assumed_left: admission.is_vp9 && admission.video.chroma_assumed_left(),
         nominal_frame_duration_ns: (admission.is_vp9 || admission.is_av1)
             .then_some(admission.default_duration)
             .flatten(),
@@ -1820,23 +1874,24 @@ mod tests {
             .to_string()
             .contains("cancelled")
         );
-        assert!(
-            validate(
-                &file,
-                limits(),
-                DecodeControl {
-                    timeout: Duration::ZERO,
-                    ..control()
-                }
-            )
-            .unwrap_err()
-            .to_string()
-            .contains("deadline_exceeded")
-        );
+        for timeout in [Duration::ZERO, Duration::from_secs(61)] {
+            assert!(matches!(
+                validate(
+                    &file,
+                    limits(),
+                    DecodeControl {
+                        timeout,
+                        ..control()
+                    }
+                ),
+                Err(SourceDecodeError::InvalidConfiguration(_))
+            ));
+        }
         // Cancellation is checked on cache hits, not merely on descriptor I/O.
         cancelled.store(false, Ordering::Relaxed);
         let mut reader = Reader {
             file: &file,
+            base: 0,
             control: DecodeControl {
                 cancelled: &cancelled,
                 ..control()

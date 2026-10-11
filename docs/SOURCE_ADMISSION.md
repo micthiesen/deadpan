@@ -100,7 +100,12 @@ AV1 Main uses static dav1d 1.5.4 through pinned FFmpeg 8.0.3, with its native
 hardware-only AV1 decoder disabled. MP4 uses `av01`/`av1C`; Matroska/WebM uses
 `V_AV1` and a bounded av1C `CodecPrivate`. Eight/ten-bit 4:2:0 supports explicit
 SDR full/limited range and ten-bit limited BT.2020 NCL PQ/HLG. Left and top-left
-chroma are explicit. Container color must agree with the bitstream. Static HDR
+chroma declarations are retained. AV1's unspecified position and VP9 WebM with
+both siting coordinates absent/unspecified use the recorded left interpretation
+described in [YouTube acquisition qualification](qualification/youtube-quality-2026-10-09.md).
+The receipt and displayed-picture notice distinguish this choice from declared
+siting; partial and conflicting declarations still fail. Container color must
+agree with the bitstream. Static HDR
 metadata is retained from both av1C and packets, compared with other declarations,
 and subjected to the ordinary valid/ignored rules. Compression-tool flags may
 differ between av1C and later sequence headers without changing interpretation.

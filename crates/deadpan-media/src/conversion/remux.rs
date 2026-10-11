@@ -1,9 +1,10 @@
 //! Host side of the worker's MP4 stream-copy assembly.
 //!
 //! Remote services commonly deliver their best picture and sound as separate
-//! single-stream MP4 files. The isolated media worker copies one H.264 and one
-//! AAC stream, packet for packet, into one progressive MP4 without decoding
-//! or re-encoding. The result is an ordinary candidate original: its retention,
+//! MP4/WebM files. The isolated worker copies H.264/VP9/AV1 and AAC/Opus into
+//! progressive MP4, preserving encoded content and exact presentation clocks.
+//! Empty initial AV1 temporal delimiters are omitted as MP4 framing; no coded
+//! picture or sound is re-encoded. The result is a candidate Original: retention,
 //! stream qualification and admission still happen through the normal source
 //! path, which decodes it independently.
 

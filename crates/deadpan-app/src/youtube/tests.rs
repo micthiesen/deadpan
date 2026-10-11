@@ -5,6 +5,28 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 const URL: &str = "https://youtu.be/Z4C82eyhwgU?si=share";
 
+#[test]
+fn confirmation_names_the_selected_codec_and_dynamic_range() {
+    let mut preview = scripted::preview();
+    for (codec, label) in [
+        ("avc1.640028", "H.264"),
+        ("vp9", "VP9"),
+        ("vp09.02.41.10", "VP9"),
+        ("av01.0.08M.10", "AV1"),
+    ] {
+        preview.metadata.selection.video.codec = codec.into();
+        preview.metadata.selection.video.dynamic_range = Some("HDR10".into());
+        assert_eq!(
+            picture_summary(&preview),
+            format!("1920 × 1080 · 24 fps · {label} ({codec}) · HDR10")
+        );
+    }
+    for (codec, label) in [("mp4a.40.2", "AAC"), ("opus", "Opus")] {
+        preview.metadata.selection.audio.codec = codec.into();
+        assert!(sound_summary(&preview).starts_with(&format!("{label} ({codec}) · ")));
+    }
+}
+
 fn fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
@@ -294,7 +316,7 @@ fn library_errors_map_to_stable_codes() {
     let preview = scripted::preview();
     assert_eq!(
         picture_summary(&preview),
-        "1920 × 1080 · 24 fps · H.264 (avc1.640028)"
+        "1920 × 1080 · 24 fps · H.264 (avc1.640028) · SDR"
     );
     assert_eq!(
         sound_summary(&preview),

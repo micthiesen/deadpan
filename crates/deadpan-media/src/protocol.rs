@@ -443,15 +443,15 @@ pub enum WorkerReply {
 
 /// First worker argument selecting stream-copy assembly instead of conversion.
 pub const REMUX_ARGUMENT: &str = "remux";
-pub const REMUX_PROTOCOL_VERSION: u32 = 1;
+pub const REMUX_PROTOCOL_VERSION: u32 = 2;
 /// Upper bound on one remux's assembled output.
 pub const MAX_REMUX_OUTPUT_BYTES: u64 = 2 * MAX_FILE_BYTES;
 const MAX_REMUX_TIMEOUT_MS: u64 = 24 * 60 * 60 * 1000;
 /// Packets of either stream; bounds report values independently of the input.
 const MAX_REMUX_PACKETS: u64 = 50_000_000;
 
-/// Assemble one H.264 picture stream and one AAC sound stream, each delivered
-/// in its own MP4 container, into one progressive MP4 by stream copy. The
+/// Assemble one H.264/VP9/AV1 picture and one AAC/Opus sound, each delivered
+/// in its own MP4 or qualified WebM container, into progressive MP4 by stream copy. The
 /// worker's stdin carries the picture input followed by the sound input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -492,6 +492,8 @@ pub struct RemuxReport {
     pub output_bytes: u64,
     pub video_packets: u64,
     pub audio_packets: u64,
+    /// Empty initial AV1 temporal-delimiter OBUs omitted for MP4 encapsulation.
+    pub av1_temporal_delimiters: u64,
     pub width: u32,
     pub height: u32,
     pub sample_rate: u32,
@@ -505,6 +507,7 @@ impl RemuxReport {
             || self.output_bytes > request.max_output_bytes
             || self.video_packets == 0
             || self.audio_packets == 0
+            || self.av1_temporal_delimiters > self.video_packets
             || self.video_packets.saturating_add(self.audio_packets) > MAX_REMUX_PACKETS
             || self.width == 0
             || self.height == 0

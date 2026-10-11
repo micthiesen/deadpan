@@ -13,6 +13,60 @@ fn ticket(source: u64, request: u64) -> Ticket {
 }
 
 #[test]
+fn source_interpretation_notice_follows_gpu_submission_and_retained_picture() {
+    let cancelled = std::sync::atomic::AtomicBool::new(false);
+    let source = deadpan_source::SourceDecoder::open(
+        std::fs::File::open(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../native/deadpan-source/tests/fixtures/av1-sdr-8-limited.mp4"),
+        )
+        .unwrap(),
+        deadpan_source::DecodeLimits::default(),
+        deadpan_source::DecodeControl {
+            cancelled: &cancelled,
+            timeout: std::time::Duration::from_secs(10),
+        },
+    )
+    .unwrap();
+    let mut interpreted = picture(4);
+    let mut info = source.info().clone();
+    info.chroma_assumed_left = true;
+    interpreted.summary = Some(SourceSummary {
+        info,
+        frame_count: 12,
+        first_pts: 0,
+        terminal_pts: 24024,
+    });
+    let mut state = Presentation::default();
+    state.request(ticket(1, 1), &Work::Frame(SourceFrameId(4)));
+    accept(&mut state, ticket(1, 1), interpreted);
+    assert!(state.displayed_label().is_none());
+    state.presented();
+    let notice = state.displayed_label().unwrap();
+    assert!(notice.contains("Source chroma position unspecified; interpreted as left"));
+
+    // The next source has declared siting. Its reply and failed GPU attempt
+    // must not relabel the retained interpreted picture.
+    state.request(ticket(2, 1), &Work::Frame(SourceFrameId(8)));
+    let mut declared = picture(8);
+    declared.summary = Some(SourceSummary {
+        info: source.info().clone(),
+        frame_count: 12,
+        first_pts: 0,
+        terminal_pts: 24024,
+    });
+    accept(&mut state, ticket(2, 1), declared);
+    assert_eq!(state.displayed_label().as_deref(), Some(notice.as_str()));
+    state.render_failed("GPU unavailable".into());
+    assert_eq!(state.displayed_label().as_deref(), Some(notice.as_str()));
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing source frame 9")
+    );
+}
+
+#[test]
 fn transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode() {
     let (mut feed, _callback) = deadpan_output::channel().unwrap();
     let old_generation = feed.restart(0).unwrap();
