@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T05:11:05Z",
+  "updated_at": "2026-10-11T06:30:38Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Investigating scene-cut encoder quality after completing higher-quality YouTube acquisition.",
+  "focus": "Completing source interpretation and remaining import workflow.",
   "features": [
     {
       "id": "editing",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Release AV1/VP9 YouTube exports preserve timing and pass sampled picture/audio checks. One packaged scene-cut picture fails the quality gate; diagnosis is active. Full effects and remaining source/operation coverage remain."
+      "note": "Concurrent release and packaged exports now pass every decoded frame and preserve audio timing. The scene-cut quality loss is fixed; unsupported software quality controls fail explicitly. Full effects and remaining source/operation coverage remain."
     },
     {
       "id": "ui",
@@ -381,6 +381,14 @@
       "revision": "6e4863e2",
       "retrospective": false,
       "summary": "AV1/VP9 and Opus YouTube acquisition implemented and verified through real app-job and packaged imports. Both release exports pass 1,170 sampled pictures and 286 zero-offset audio windows. A packaged scene-cut quality failure is retained and under investigation; no threshold was lowered."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "0540e808",
+      "retrospective": false,
+      "summary": "Fixed concurrent SDR scene-cut quality loss. Release and packaged exports pass all 7,012 decoded pictures and 286 zero-offset signal windows; regression, sanitizer and relocation checks pass. Unsupported software QP controls are refused explicitly."
     }
   ]
 }
