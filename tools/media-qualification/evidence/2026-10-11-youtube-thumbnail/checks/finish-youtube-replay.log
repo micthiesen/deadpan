@@ -1,0 +1,24 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --jobs 1 --scenario youtube --output /tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.68s
+replays: built and copied /tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay/bin/deadpan-app in 9.1 s (sha256 322812a234e2b61a07cb01031597b9940dd4ce5de6a53ed0b7dbd3ea3e131beb)
+replays: youtube                PASS    93.4 s
+
+scenario                     seconds  checks  layout-retry warnings
+youtube                PASS     93.4     126  5 frame(s) settled their layout only on a second retry; egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+1 passed, 0 failed, 0 skipped; 126 checks; build 9.1 s, replays 93.5 s wall (93.4 s summed, 1 job(s))
+Reports: /tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay

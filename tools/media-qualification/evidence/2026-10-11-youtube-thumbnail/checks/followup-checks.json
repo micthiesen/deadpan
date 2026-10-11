@@ -1,0 +1,186 @@
+[
+  {
+    "name": "followup-fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 4.646199207752943,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "followup-workspace-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 10.065996416844428,
+    "log_sha256": "872bb06c1a5edcc6372e9e5b2256af0d8557ccfe7c8232dd9c9ea5afbe967f2d"
+  },
+  {
+    "name": "followup-harness-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 7.322661916259676,
+    "log_sha256": "d8a3250c7f5335112dd5a3aa5f08031b05bbd9333263da9a60dc6613c5c58c90"
+  },
+  {
+    "name": "followup-cli",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "--test",
+      "privacy_network_audit",
+      "--test",
+      "privacy_sandbox",
+      "-E",
+      "test(thumbnail) | binary(privacy_network_audit) | binary(privacy_sandbox)"
+    ],
+    "exit": 0,
+    "seconds": 56.957923042122275,
+    "log_sha256": "9d4b763925caf0b92bdc74570e1b03aab9f446f09712970c1e7ed3020c9abffe"
+  },
+  {
+    "name": "followup-proxy",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output)"
+    ],
+    "exit": 0,
+    "seconds": 14.122374374885112,
+    "log_sha256": "27692fb90cf052c522da42a45a2dc0d200bd91ebbb7a19fc870425a6b4ba1c16"
+  },
+  {
+    "name": "followup-ui-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 271.2718868339434,
+    "log_sha256": "17c60b30313e67a8f39ed394f103c5381510f6ddff2319ac199445f1a55c48cd"
+  },
+  {
+    "name": "followup-docs",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--doc",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 5.04726304160431,
+    "log_sha256": "4dbc2c1b293e5147fbd787b847a7ac9744ae16f6f93c7113e59fe5c7251c8182"
+  },
+  {
+    "name": "affected-replays",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "2",
+      "--scenario",
+      "youtube,linked-original,layouts",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-20261011/affected-replays"
+    ],
+    "exit": 0,
+    "seconds": 215.26155712502077,
+    "log_sha256": "8ea3d2b83295e0a973ffab0365a474f00e2ff953a9a28ddc58a4bc31844fb890"
+  },
+  {
+    "name": "bundle",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-bundle-20261011"
+    ],
+    "exit": 0,
+    "seconds": 236.91341712512076,
+    "log_sha256": "b13751e49598e45157ad64950ea8766aeac99c8d3e473f412a544288f313e205"
+  },
+  {
+    "name": "bundle-verify",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-youtube-thumbnail-bundle-20261011/Deadpan.app"
+    ],
+    "exit": 0,
+    "seconds": 29.773948250338435,
+    "log_sha256": "e5fe2cacdb382f4252809be11148fc8b08708e7e07ec8fabe7bc03005386330c"
+  },
+  {
+    "name": "release-thumbnail",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "qualify_youtube_thumbnail",
+      "--",
+      "/tmp/deadpan-youtube-thumbnail-20261011/release-thumbnail"
+    ],
+    "exit": 0,
+    "seconds": 108.36146791698411,
+    "log_sha256": "581455f5e0fced39ed1bd668ac0b60d2d9e5ef2d8e88edd4b996b66bff8d6aec"
+  }
+]

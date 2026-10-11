@@ -1,0 +1,42 @@
+{
+  "checks/followup-ui-tests.log.gz": {
+    "uncompressed_bytes": 181552,
+    "uncompressed_sha256": "17c60b30313e67a8f39ed394f103c5381510f6ddff2319ac199445f1a55c48cd"
+  },
+  "checks/milestone-gate.log.gz": {
+    "uncompressed_bytes": 842933,
+    "uncompressed_sha256": "fd2b46e57606fb1b86ddef778e0efb48353feab377dd1a9df59788662aeed839"
+  },
+  "replays/thumbnail-replay/youtube/report.json.gz": {
+    "uncompressed_bytes": 2512382,
+    "uncompressed_sha256": "84af6fa5d2e35fd881b5e8f276236b9403e60ff1d8a885bab66112be9862f2e8"
+  },
+  "replays/thumbnail-replay-2/youtube/report.json.gz": {
+    "uncompressed_bytes": 4110976,
+    "uncompressed_sha256": "18a6a20fb64bc3432977694bcf75164c185d02eaede138291dc10522daf63548"
+  },
+  "replays/thumbnail-replay-3/youtube/report.json.gz": {
+    "uncompressed_bytes": 6825451,
+    "uncompressed_sha256": "8603d7f3b31aaf3191cd6bceca429a995c166a0c0b9ac98805da8762d02de71e"
+  },
+  "replays/affected-replays/layouts/report.json.gz": {
+    "uncompressed_bytes": 18129246,
+    "uncompressed_sha256": "3dfd01cf9879362f86a0e02f982b33c87d30b4210deae7b6d2c3a9b94ccf93ae"
+  },
+  "replays/affected-replays/linked-original/report.json.gz": {
+    "uncompressed_bytes": 2528741,
+    "uncompressed_sha256": "0d985dcf31f3964fc9292afd187b5cb6c06ce563292d08f964896f66f405a659"
+  },
+  "replays/affected-replays/youtube/report.json.gz": {
+    "uncompressed_bytes": 8304795,
+    "uncompressed_sha256": "4c1fab1398333d961ff5d64ff1fbac3aeb9cdb1da04687af1ae93bf91a29957c"
+  },
+  "replays/finish-youtube-replay/youtube/report.json.gz": {
+    "uncompressed_bytes": 8261801,
+    "uncompressed_sha256": "97dcb9d8ab8d2a389ff5a20dbc0f893f40d686852ac4892f867a198ce6c24eb6"
+  },
+  "bundle/Deadpan.sbom.cdx.json.gz": {
+    "uncompressed_bytes": 727319,
+    "uncompressed_sha256": "6972221d4c53f9edf9c34da0db98e8e9bfb2b26dc7c8fdd6ca74954b0aef4c75"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "base": "ee2a96ac3e14ff9b54aaa0fef1d3361ab476fff2",
+  "files": {
+    "crates/deadpan-app/src/preview/youtube.rs": "653e4abf613e7883b2b8044b6b21b0b656619f4c19fc4e06721b922bb4148f77",
+    "crates/deadpan-app/src/preview/harness/youtube/thumbnail.rs": "33d8ba27500c47d05144506441b99533045010f0ee64cba40eed680dbeff8cf8"
+  }
+}

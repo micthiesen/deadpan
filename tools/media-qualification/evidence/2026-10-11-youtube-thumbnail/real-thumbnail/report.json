@@ -1,0 +1,12 @@
+{
+  "binary": "/Users/michael/Code/deadpan/target/debug/examples/qualify_youtube_thumbnail",
+  "binary_sha256": "39a5e6c48d4a05076d60f69cf3b21bfa8190494442fba5aab2a7bc23ebb0685a",
+  "height": 270,
+  "png_sha256": "3a574272712cdc17360c630a8dec96321e3980a8e21ad054c65aebae3b5baf91",
+  "rgba_bytes": 518400,
+  "rgba_sha256": "a777095af114074ddacec3a5949887eb9269f2d0d9ab4c5087a90ae457764c9f",
+  "seconds": 2.455477791,
+  "thumbnail_url": "https://i.ytimg.com/vi/Z4C82eyhwgU/maxresdefault.jpg",
+  "video_id": "Z4C82eyhwgU",
+  "width": 480
+}

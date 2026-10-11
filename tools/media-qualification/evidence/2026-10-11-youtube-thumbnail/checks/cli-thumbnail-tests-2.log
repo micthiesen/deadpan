@@ -1,0 +1,28 @@
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.41s
+────────────
+ Nextest run ID 2840ee09-33b5-4016-b559-36551d9383c8 with nextest profile: default
+    Starting 15 tests across 1 binary (471 tests skipped)
+        PASS [   0.014s] ( 1/15) deadpan-cli youtube::thumbnail::url::tests::admits_only_supported_images_of_the_expected_video
+        PASS [   0.013s] ( 2/15) deadpan-cli youtube::thumbnail::network::ip::tests::admits_public_cdn_addresses_and_checks_private_range_edges
+        PASS [   0.013s] ( 3/15) deadpan-cli youtube::thumbnail::tests::absent_and_rejected_addresses_never_start_a_network_request
+        PASS [   0.014s] ( 4/15) deadpan-cli youtube::thumbnail::url::tests::refuses_local_authorities_credentials_ports_path_traversal_and_header_injection
+        PASS [   0.014s] ( 5/15) deadpan-cli youtube::thumbnail::tests::interrupted_body_is_unavailable_and_ureq_timeout_keeps_its_reason
+        PASS [   0.014s] ( 6/15) deadpan-cli youtube::thumbnail::network::ip::tests::refuses_local_shared_documentation_multicast_and_embedded_private_addresses
+        PASS [   0.015s] ( 7/15) deadpan-cli youtube::thumbnail::webp::tests::forged_metadata_sizes_and_animations_are_rejected_before_decoder_allocation
+        PASS [   0.015s] ( 8/15) deadpan-cli youtube::thumbnail::webp::tests::checks_coded_dimensions_independently_of_the_extended_canvas
+        PASS [   0.016s] ( 9/15) deadpan-cli youtube::thumbnail::tests::body_reader_bounds_undeclared_responses_and_observes_cancellation_between_reads
+        PASS [   0.017s] (10/15) deadpan-cli youtube::thumbnail::tests::optional_thumbnail_failures_are_safe_confirmation_states
+        PASS [   0.017s] (11/15) deadpan-cli youtube::thumbnail::tests::jpeg_orientation_is_applied_before_sizing
+        PASS [   0.047s] (12/15) deadpan-cli youtube::thumbnail::network::tests::a_timed_out_lookup_retains_the_only_worker_slot_until_it_finishes
+        LEAK [   0.217s] (13/15) deadpan-cli youtube::thumbnail::tests::cancellation_before_or_during_fetch_never_reaches_confirmation
+        PASS [   0.235s] (14/15) deadpan-cli youtube::thumbnail::tests::refuses_encoded_dimension_and_area_limits_before_publishing_pixels
+        PASS [   0.310s] (15/15) deadpan-cli youtube::thumbnail::tests::decodes_the_three_remote_formats_to_owned_bounded_rgba_without_stretching
+────────────
+     Summary [   0.310s] 15 tests run: 15 passed (1 leaky), 471 skipped

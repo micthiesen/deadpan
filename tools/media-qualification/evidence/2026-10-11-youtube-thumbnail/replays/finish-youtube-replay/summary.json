@@ -1,0 +1,43 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay/bin/deadpan-app",
+      "sha256": "322812a234e2b61a07cb01031597b9940dd4ce5de6a53ed0b7dbd3ea3e131beb",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay/bin/deadpan-media-worker",
+      "sha256": "ef87a341fd6d2d9ac1d8c78488ddc98cc7d4396c1f14d804b377937e9b1146c7",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay/bin/deadpan-track",
+      "sha256": "1fea31d2570a952e2f9726f9330bed8284842ed914735929538f4ea663f8a99c",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay/bin/deadpan-transcribe",
+      "sha256": "173eaf1bf143f2093bdab6e285e831cd15f807100a8ecf508d047df2fccfc92f",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.127783875,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 126,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "youtube",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 93.420521666,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 93.512955
+}

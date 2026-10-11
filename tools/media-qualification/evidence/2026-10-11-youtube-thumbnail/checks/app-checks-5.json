@@ -1,0 +1,32 @@
+[
+  {
+    "name": "app-fmt-5",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.479651915840805,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "app-clippy-5",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 101,
+    "seconds": 7.741902166046202,
+    "log_sha256": "e8b3cb2aa7a141b6ac82da724d1e4c72439b0a46e126c1c84cf5edf8a716209a"
+  }
+]

@@ -1,0 +1,69 @@
+[
+  {
+    "name": "app-fmt-4",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.473076249938458,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "app-clippy-4",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 4.732405582908541,
+    "log_sha256": "b32e4857a300e19598736f52a15ee8c47a1a3fd95424b483f085ac2dd23af380"
+  },
+  {
+    "name": "app-youtube-tests-2",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app",
+      "-E",
+      "test(youtube)"
+    ],
+    "exit": 0,
+    "seconds": 4.8607531250454485,
+    "log_sha256": "dedcf39aec65bef5ac7f3684fc420801219a5b5c5af97467903ed36ad6d835e6"
+  },
+  {
+    "name": "thumbnail-replay",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "1",
+      "--scenario",
+      "youtube",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay"
+    ],
+    "exit": 1,
+    "seconds": 128.73108691722155,
+    "log_sha256": "72a0a69eee345a6b0b935316fce683e132f50aa7e7f8cc13115454af27f4a063"
+  }
+]

@@ -50,8 +50,9 @@ tempfile.workspace = true
 signal-hook.workspace = true
 # Extracts the pinned Deno executable from its verified release archive.
 flate2 = "=1.1.10"
-# Conditioning frames for local AI holds: contain-resize and PNG encoding.
-image = { version = "=0.25.10", default-features = false, features = ["png"] }
+# AI conditioning PNGs and bounded YouTube confirmation thumbnails.
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+ureq = { version = "=3.4.2", default-features = false, features = ["rustls", "platform-verifier"] }
 
 [dev-dependencies]
 deadpan-chaos.workspace = true

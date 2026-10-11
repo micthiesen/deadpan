@@ -1,0 +1,10 @@
+[
+  {
+    "path": "crates/deadpan-app/src/preview/youtube.rs",
+    "sha256": "7484a40b266d24a9249ae8fe83afffa826424185c4e9b6a4f11f94e51b4c0e32"
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/youtube/thumbnail.rs",
+    "sha256": "c6802d0c00a43ca44802ed83a2b3988fcc66e640077451aaa11ebed03f94f0e7"
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/bin/deadpan-app",
+      "sha256": "b1c2be6f3d381be25675e682745225553468afc17b66fc0f05f75e3cc5298bcc",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/bin/deadpan-media-worker",
+      "sha256": "f4c180fe23e384a0feeefbac0d76bf99dbe4e72cee06adffa46f1ddefe674542",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/bin/deadpan-track",
+      "sha256": "822b68767ff292aca914da707fcd22cd535573c734e9f4fcc12114740664de8a",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/bin/deadpan-transcribe",
+      "sha256": "491eeca8fe5f15f6515147a57cf465dd404709daf4d67600a7ce895866228633",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 10.374087792,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 74,
+      "failed_checks": [
+        "Confirmation paints the labelled thumbnail unclipped at its own aspect",
+        "Every painted frame has a settled layout (no ignored retry)",
+        "No layout retry repeats for three frames without new input"
+      ],
+      "failures": [
+        "Check failed: Confirmation paints the labelled thumbnail unclipped at its own aspect"
+      ],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "youtube",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 90.062867875,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 90.109125917
+}

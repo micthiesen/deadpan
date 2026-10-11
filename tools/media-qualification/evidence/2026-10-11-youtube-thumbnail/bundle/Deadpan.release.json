@@ -1,0 +1,10 @@
+{
+  "checksums": "Deadpan.app.SHA256SUMS",
+  "git_changes": true,
+  "git_commit": "ee2a96ac3e14ff9b54aaa0fef1d3361ab476fff2",
+  "notarized": false,
+  "sbom": "Deadpan.sbom.cdx.json",
+  "schema": 1,
+  "signature": "ad-hoc",
+  "stapled": false
+}

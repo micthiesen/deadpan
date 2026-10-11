@@ -1,0 +1,74 @@
+[
+  {
+    "path": "Cargo.lock",
+    "sha256": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5"
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/youtube.rs",
+    "sha256": "9bf71719a69a2d7ec782db197b8ddc1c21a59c2a55950f92a5443e9b5045162c"
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/youtube.rs",
+    "sha256": "1d7f75d3a8585d3b7498c9ac6376ac5236be033bda10fdd5e90cb57fa6bfc4de"
+  },
+  {
+    "path": "crates/deadpan-app/src/youtube.rs",
+    "sha256": "97c9f54148af9718a9b0d4a43e7894dd87f36909cab03309e086c8e0f4b4409a"
+  },
+  {
+    "path": "crates/deadpan-app/src/youtube/tests.rs",
+    "sha256": "fb4665d3571b4ed106f09589cd6bacecba5fba4d64b63075c59dd2b79284a7da"
+  },
+  {
+    "path": "crates/deadpan-cli/Cargo.toml",
+    "sha256": "1826b5c083bd746c8519131ffb6b186946d37398924e5c8f56bade655eae3a59"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube.rs",
+    "sha256": "8d8f71f02bdb0567cd30c09878535bfaa4fa67d847d19f7960e44e1f72b1220e"
+  },
+  {
+    "path": "docs/YOUTUBE_IMPORT.md",
+    "sha256": "3f4169dfb7b9ea85dd8c8b01cedc0e2d96ae09466927f037aeada7b7e7215aa9"
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/youtube/thumbnail.rs",
+    "sha256": "60c70c1f5f23953c8dd8daf8b3c2c5b438584db919b7d8fc7a8a79cf05794bf4"
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/youtube/thumbnail.rs",
+    "sha256": "ba35743abbe89e08aa036b424551fc4811cb66f5c09007894a25266c13398f5f"
+  },
+  {
+    "path": "crates/deadpan-app/tests/fixtures/youtube-thumbnail.md",
+    "sha256": "e4093eae861d4e0016bcf98bdaece3557754652da9b83a5b8ba6de725725f77f"
+  },
+  {
+    "path": "crates/deadpan-app/tests/fixtures/youtube-thumbnail.png",
+    "sha256": "bda6b2f2f84392c852a1236a811a667629fcf0adf12d312b191a41a143b01e0f"
+  },
+  {
+    "path": "crates/deadpan-cli/examples/qualify_youtube_thumbnail.rs",
+    "sha256": "127b0f76177a229bcf551ff0a3f84fc7a8a4f3fc22a09e098ce6542a1eecfdbe"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube/thumbnail.rs",
+    "sha256": "bcc90e149fbac94e074dc2624966aa206fc25f672b4a373c98d5c185304e7e7f"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube/thumbnail/network.rs",
+    "sha256": "f67adce85ccf01e3fd2bafcbe5ae02d5c535d7598e48ad68a470067c2d34c915"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube/thumbnail/network/ip.rs",
+    "sha256": "9ddc9ace9e02825888e9f2acd9fc2a47c2505b5324919e4d9b783631ef39e6bc"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube/thumbnail/tests.rs",
+    "sha256": "b99da05249b2c20dcc1f02b74884a19e7ccedfa4a4477d197b03c917d6bb6e75"
+  },
+  {
+    "path": "crates/deadpan-cli/src/youtube/thumbnail/url.rs",
+    "sha256": "345ab08d53bfdc717e2570d7ab76c7e41b0d8620e8c086cfb3be34fcb2d879fd"
+  }
+]

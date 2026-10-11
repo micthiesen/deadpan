@@ -4,7 +4,7 @@
 //! "Choose one Original" panel; over an open project the same steps appear in
 //! a sheet (`⌘⇧N`, `:youtube`). Typing, paste and IME stay native. Enter runs
 //! the current step's primary action and Escape cancels or leaves it. Details
-//! are shown before any transfer, the download starts only on confirmation,
+//! and thumbnails are shown before media transfer, which starts on confirmation,
 //! and the finished package opens through the ordinary Open path.
 
 use std::path::PathBuf;
@@ -14,6 +14,8 @@ use deadpan_cli::youtube::url::normalize;
 use super::*;
 use crate::navigation::youtube::{UrlKey, route_key};
 use crate::youtube::{self as job, Failure, Jobs, Request, Stage, Status};
+
+mod thumbnail;
 
 pub(super) const URL_ID: &str = "youtube-url";
 
@@ -34,6 +36,9 @@ pub(super) struct Flow {
     session: Option<u64>,
     /// Title of the video being imported, for the opening message.
     title: Option<String>,
+    thumbnail: Option<thumbnail::Cached>,
+    /// Each new confirmation starts at its title, even after a scrolled import.
+    confirm_scroll_reset: bool,
 }
 
 impl Flow {
@@ -49,6 +54,8 @@ impl Flow {
             open_reply: None,
             session: None,
             title: None,
+            thumbnail: None,
+            confirm_scroll_reset: true,
         }
     }
 
@@ -463,6 +470,10 @@ impl DeadpanApp {
         if self.youtube.jobs.poll() {
             context.request_repaint();
         }
+        if !matches!(self.youtube.jobs.status(), Status::Confirm { .. }) {
+            self.youtube.thumbnail = None;
+            self.youtube.confirm_scroll_reset = true;
+        }
         // A finished failure or cancellation belongs to the session it was shown in.
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         if self.youtube.session != session {
@@ -614,7 +625,13 @@ impl DeadpanApp {
             return;
         }
         let width = (context.content_rect().width() - 64.0).clamp(280.0, 520.0);
-        egui::Modal::new(egui::Id::new("youtube-sheet")).show(context, |ui| {
+        let id = egui::Id::new("youtube-sheet");
+        // Async steps can grow beyond the Area's previous frame size. A
+        // fixed top edge keeps the first confirmation fully in the window
+        // and its decision controls stationary on the next frame.
+        let area =
+            egui::Modal::default_area(id).anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 64.0));
+        egui::Modal::new(id).area(area).show(context, |ui| {
             super::accessibility::dialog(ui, "New project from YouTube");
             ui.set_width(width);
             ui.label(style::section_title("NEW PROJECT FROM YOUTUBE", true));
@@ -662,7 +679,13 @@ impl DeadpanApp {
         // Center the card on its measured height from the previous frame.
         let measured = egui::Id::new("start-card-height");
         let height = ui.ctx().data(|data| data.get_temp::<f32>(measured));
-        let top = height.map_or(12.0, |height| ((rect.height() - height) / 2.0).max(12.0));
+        // Import stages change height asynchronously. Anchor those stages to
+        // one top edge, so confirmation never moves underneath a click.
+        let top = if importing {
+            12.0
+        } else {
+            height.map_or(12.0, |height| ((rect.height() - height) / 2.0).max(12.0))
+        };
         let card = egui::Rect::from_min_max(
             egui::pos2(rect.center().x - width / 2.0, rect.top() + top),
             egui::pos2(rect.center().x + width / 2.0, rect.bottom() - 12.0),
@@ -764,10 +787,14 @@ impl DeadpanApp {
                     });
             });
         let content = output.content_size.y;
-        if height != Some(content) {
+        if !importing && height.is_none_or(|height| (height - content).abs() > 0.5) {
             ui.ctx()
                 .data_mut(|data| data.insert_temp(measured, content));
-            ui.ctx().request_repaint();
+            // Settle the centered card before it can be painted or clicked.
+            // Repainting on the next frame leaves its first button position
+            // stale when URL validation or an error changes its height.
+            ui.ctx()
+                .request_discard("YouTube start card changed height");
         }
     }
 
@@ -785,8 +812,14 @@ impl DeadpanApp {
         self.youtube_apply_key(ui.ctx());
         let status = self.youtube.jobs.status().clone();
         if self.youtube.opening.is_some() {
+            self.youtube.thumbnail = None;
+            self.youtube.confirm_scroll_reset = true;
             self.youtube_progress(ui, None, true);
             return;
+        }
+        if !matches!(status, Status::Confirm { .. }) {
+            self.youtube.thumbnail = None;
+            self.youtube.confirm_scroll_reset = true;
         }
         match status {
             Status::Idle | Status::Failed(_) | Status::Cancelled => {
@@ -809,7 +842,7 @@ impl DeadpanApp {
                     crate::preview::accessibility::busy(ui);
                     ui.label(match status {
                         Status::Working(Stage::CheckingDownloader) => "Checking the downloader…",
-                        _ => "Fetching title, length and streams… Nothing downloads yet.",
+                        _ => "Fetching video details and thumbnail…",
                     });
                 });
                 if ui.add(style::action("Cancel", "Esc")).clicked() {
@@ -902,7 +935,7 @@ impl DeadpanApp {
             None => {
                 ui.label(
                     egui::RichText::new(
-                        "Paste a link to one video. Its details appear before anything downloads.",
+                        "Paste a link to one video. Review its details before downloading the video.",
                     )
                     .size(12.0)
                     .weak(),
@@ -1047,6 +1080,53 @@ impl DeadpanApp {
         preview: &job::Preview,
         destination: &std::path::Path,
     ) {
+        // Remote titles and license text can wrap to many lines. Keep the
+        // explicit decision visible while the details scroll independently.
+        let max_height = (ui.ctx().content_rect().height() - 280.0).max(120.0);
+        let max_height = if self.youtube_surface_inline() {
+            max_height.min((ui.available_height() - 64.0).max(120.0))
+        } else {
+            max_height
+        };
+        let mut details = egui::ScrollArea::vertical()
+            .id_salt("youtube-confirm-details")
+            .max_height(max_height)
+            // An egui Area retains its previous size. Permit the details to
+            // grow beyond the shorter URL-entry sheet before shrinking to
+            // their natural height; otherwise the old height clips them.
+            .min_scrolled_height(max_height)
+            .auto_shrink([false, true]);
+        if std::mem::take(&mut self.youtube.confirm_scroll_reset) {
+            details = details.vertical_scroll_offset(0.0);
+        }
+        details.show(ui, |ui| {
+            self.youtube_confirm_details(ui, preview, destination)
+        });
+        ui.label(
+            egui::RichText::new("You are responsible for having the rights to use this video.")
+                .size(12.0)
+                .color(style::WARNING),
+        );
+        ui.add_space(4.0);
+        ui.horizontal_wrapped(|ui| {
+            if ui
+                .add(style::action("Download and create", "Enter").fill(style::SELECTED))
+                .clicked()
+            {
+                self.youtube_primary(ui.ctx());
+            }
+            if ui.add(style::action("Cancel", "Esc")).clicked() {
+                self.youtube.jobs.cancel();
+            }
+        });
+    }
+
+    fn youtube_confirm_details(
+        &mut self,
+        ui: &mut egui::Ui,
+        preview: &job::Preview,
+        destination: &std::path::Path,
+    ) {
         let metadata = &preview.metadata;
         ui.label(
             style::semibold(&metadata.title)
@@ -1069,6 +1149,9 @@ impl DeadpanApp {
             ));
         }
         ui.label(egui::RichText::new(byline.join(" · ")).weak());
+        ui.add_space(4.0);
+        self.youtube
+            .confirm_thumbnail(ui, &preview.thumbnail, &metadata.title);
         ui.add_space(4.0);
         let picture = job::picture_summary(preview);
         let sound = job::sound_summary(preview);
@@ -1095,23 +1178,6 @@ impl DeadpanApp {
                 format!("Downloader: {note}. Check Models (:models) to roll back or update."),
             );
         }
-        ui.label(
-            egui::RichText::new("You are responsible for having the rights to use this video.")
-                .size(12.0)
-                .color(style::WARNING),
-        );
-        ui.add_space(4.0);
-        ui.horizontal_wrapped(|ui| {
-            if ui
-                .add(style::action("Download and create", "Enter").fill(style::SELECTED))
-                .clicked()
-            {
-                self.youtube_primary(ui.ctx());
-            }
-            if ui.add(style::action("Cancel", "Esc")).clicked() {
-                self.youtube.jobs.cancel();
-            }
-        });
     }
 
     /// Stage rows from details to opening. `stage` None with `opening` true

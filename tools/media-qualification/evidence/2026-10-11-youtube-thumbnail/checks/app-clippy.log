@@ -1,0 +1,85 @@
+    Checking image v0.25.10
+    Checking rustls v0.23.45
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking arboard v3.6.1
+    Checking egui-winit v0.36.2
+    Checking eframe v0.36.2
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking egui_kittest v0.36.2
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0599]: no method named `query` found for struct `egui_kittest::Harness<'a, State>` in the current scope
+   --> crates/deadpan-app/src/preview/harness/youtube/thumbnail.rs:93:10
+    |
+ 91 |       let labelled = d
+    |  ____________________-
+ 92 | |         .harness
+ 93 | |         .query()
+    | |_________-^^^^^
+    |
+   ::: /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/kittest-0.4.0/src/query.rs:154:9
+    |
+154 |           query,
+    |           ----- the method is available for `egui_kittest::Harness<'static, preview::harness::ReplayApp>` here
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: there is a method `query_by` with a similar name, but with different arguments
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/kittest-0.4.0/src/query.rs:128:9
+    |
+128 |           fn $query_label(&'node self, $($args: $arg_ty),*) -> Option<$node> {
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+222 | /     impl_helper!(
+223 | |         "the node matches the given predicate.",
+224 | |         query_all_by,
+225 | |         get_all_by,
+...   |
+230 | |         By::new().predicate(f),
+231 | |     );
+    | |_____- in this macro invocation
+    = note: this error originates in the macro `impl_helper` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: trait `Queryable` which provides `query` is implemented but not in scope; perhaps you want to import it
+    |
+  3 + use egui_kittest::kittest::Queryable;
+    |
+
+error[E0599]: no method named `run` found for struct `eframe::egui::Context` in the current scope
+  --> crates/deadpan-app/src/preview/youtube/thumbnail.rs:87:29
+   |
+87 |             let _ = context.run(egui::RawInput::default(), |context| {
+   |                     --------^^^
+   |
+help: there is a method `run_ui` with a similar name
+   |
+87 |             let _ = context.run_ui(egui::RawInput::default(), |context| {
+   |                                +++
+
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/youtube/tests.rs:438:28
+    |
+438 |         ProjectStore::open(jobs.take_created().unwrap(), AccessMode::ReadOnly)
+    |         ------------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&Path`, found `PathBuf`
+    |         |
+    |         arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> crates/deadpan-store/src/lib.rs:381:12
+    |
+381 |     pub fn open(path: &Path, mode: AccessMode) -> Result<Self, StoreError> {
+    |            ^^^^
+help: consider borrowing here
+    |
+438 |         ProjectStore::open(&jobs.take_created().unwrap(), AccessMode::ReadOnly)
+    |                            +
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0308, E0599.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 3 previous errors

@@ -3,7 +3,7 @@
 DP-14 creates a new [single-Original](SINGLE_ORIGINAL.md) project from one
 YouTube video. This page covers URL rules, the pinned downloader helpers,
 acquisition, assembly, provenance and failures, headless and in the native app.
-Signed helper bundling remains open.
+Packaged apps include the verified helper baseline; see [Packaging](PACKAGING.md).
 
 ```sh
 deadpan-cli downloader install                 # pinned yt-dlp + Deno, verified
@@ -35,11 +35,12 @@ new one is ready.
    the 118.1 MB installed size and SHA-256 verification. Nothing is installed
    until that button or Enter is chosen; Esc declines. A finished install
    continues the same import.
-3. The details show title, uploader, length, upload date, license, the selected
+3. The details show title, an available thumbnail, uploader, length, upload date, license, the selected
    picture (`1920 × 1080 · 24 fps · H.264 (avc1.640028)`) and sound
    (`AAC (mp4a.40.2) · 44.1 kHz · 130 kb/s`), the download size and the
    destination, `Documents/Deadpan/<title>.deadpan` (or `<title> 2.deadpan`),
-   with the rights notice. Nothing has been transferred and no package exists.
+   with the rights notice. Only metadata and the optional small thumbnail have
+   been fetched; no picture/audio streams have transferred and no package exists.
    Details wait at most 10 minutes for confirmation: the private directory
    holds the cookie copy and YouTube's stream URLs expire, so an unconfirmed
    inspection is dropped with `YouTubeConfirmationExpired` and Enter checks the
@@ -93,8 +94,44 @@ for its teardown; app exit waits up to 10 s. The [preview layer](../crates/deadp
 routes only plain Enter and Escape to the step; a focused button keeps its own
 activation and composition owns its keys.
 
-No thumbnail is fetched or shown: the app has no JPEG/WebP decoder, and the
-title, length and streams identify the video before transfer.
+### Confirmation thumbnail
+
+The import worker fetches and decodes the optional thumbnail after metadata
+inspection and before asking for confirmation. Missing or failed images show
+"No thumbnail provided" or "Thumbnail unavailable" and still allow import.
+The unavailable label explains the bounded failure on hover; it never exposes
+remote response text or cookies. Cancellation prevents confirmation even if it
+arrives during fetch or decode.
+
+[`youtube/thumbnail.rs`](../crates/deadpan-cli/src/youtube/thumbnail.rs) admits
+only HTTPS `i.ytimg.com` or `i1` through `i4.ytimg.com`, under `vi` or `vi_webp`
+for the inspected eleven-character video ID. It rejects credentials, explicit
+ports, fragments, traversal, control characters and URLs longer than 2,048
+bytes. The fresh client has no cookies, environment proxy or redirects and
+uses platform TLS verification. Its resolver supplies only public unicast
+addresses. One bounded DNS worker retains its slot after a timeout until the
+OS lookup returns; repeated attempts cannot accumulate resolver threads.
+Global, connect, response and body deadlines are four seconds. Cancellation
+is checked between bounded reads, so an active network call can take up to
+its deadline to finish.
+
+Encoded input is at most 4 MiB. PNG, JPEG and still WebP headers must fit 4,096
+pixels per dimension and 4,194,304 total pixels; the decoded raster is at most
+32 MiB. WebP chunk ranges must fit the actual input, and its coded dimensions
+must agree with its extended canvas before the decoder runs. WebP animation is
+refused. The image library also receives a best-effort 32 MiB allocation budget;
+this is not a total-process memory limit. EXIF orientation is applied before
+resizing to at most 480 × 270 owned RGBA8 pixels. Decoding runs off the UI thread;
+there is no hard decoding wall-time guarantee.
+
+The native confirmation preserves the raster aspect and caps its displayed
+height at 160 points, or 96 below a 720-point window height. An image label
+names the video for accessibility. The texture cache retains one preview and
+is cleared on leaving confirmation. This picture never enters project media,
+qualification receipts, proxies, AI conditioning, playback or rendering.
+Long metadata scrolls independently while the rights notice and confirm/cancel
+buttons remain visible. Import stages keep a fixed top edge so new details
+cannot move a confirmation button after its first paint.
 
 ## URLs
 
@@ -415,7 +452,6 @@ line in the message.
 
 ## Remaining work
 
-- A thumbnail in the confirmation step (needs an image decoder for the app).
 - Linux and Intel helper builds. A hosted update channel (no URL is
   published; updates come from a file or an explicit `https://` URL), and
   applying a signed update to a packaged app on a second Mac (To verify,

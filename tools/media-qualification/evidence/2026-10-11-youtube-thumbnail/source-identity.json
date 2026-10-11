@@ -1,0 +1,27 @@
+{
+  "base_revision": "ee2a96ac3e14ff9b54aaa0fef1d3361ab476fff2",
+  "description": "Uncommitted final implementation over this base; file hashes bind the exact reviewed source. Verification binary hashes live in replay and real-check reports.",
+  "files": {
+    "crates/deadpan-app/src/preview/harness/youtube/thumbnail.rs": "9a243201ed763613655c7e4251c666f327314995ef717009b02b89433b592ca6",
+    "crates/deadpan-app/src/preview/youtube/thumbnail.rs": "ba35743abbe89e08aa036b424551fc4811cb66f5c09007894a25266c13398f5f",
+    "crates/deadpan-app/tests/fixtures/youtube-thumbnail.md": "e0afcbf15f245608a13f04de7ef852edb4b3630643b91c8dd3b77ef80e1ef488",
+    "crates/deadpan-app/tests/fixtures/youtube-thumbnail.png": "ea5bc8e2af57a592fc88d4e2f8c20a2932811c5a54889e3e4a6a0bb497030ad8",
+    "crates/deadpan-cli/examples/qualify_youtube_thumbnail.rs": "a661e2e57a92e0ca31990ecc157934662383305e665a17f10bae181ba4b4cf83",
+    "crates/deadpan-cli/src/youtube/thumbnail.rs": "65b58cb578f8ca2de7802249a8cb31e39bf166ef203786622df4d2ac64499c8f",
+    "crates/deadpan-cli/src/youtube/thumbnail/network.rs": "f67adce85ccf01e3fd2bafcbe5ae02d5c535d7598e48ad68a470067c2d34c915",
+    "crates/deadpan-cli/src/youtube/thumbnail/network/ip.rs": "9ddc9ace9e02825888e9f2acd9fc2a47c2505b5324919e4d9b783631ef39e6bc",
+    "crates/deadpan-cli/src/youtube/thumbnail/tests.rs": "fdaf58c2679e497fefc17fe5e11bb1152031031864d21d8449de7e103515ff2c",
+    "crates/deadpan-cli/src/youtube/thumbnail/url.rs": "345ab08d53bfdc717e2570d7ab76c7e41b0d8620e8c086cfb3be34fcb2d879fd",
+    "crates/deadpan-cli/src/youtube/thumbnail/webp.rs": "d827566a4b64122fee40c209cf177d431c4395cd9c32382e115a4fa359def3bb",
+    "crates/deadpan-cli/tests/fixtures/youtube-lossy.md": "86f3c57711c9374c8389a0e65fad35215ba28337b6868a400d6d7294137eb403",
+    "crates/deadpan-cli/tests/fixtures/youtube-lossy.webp": "2f9a9054c87a54db93abebcff572e27bb28e449ce46b063e341c7d9c6bead0f7",
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "crates/deadpan-app/src/preview/harness/youtube.rs": "9bf71719a69a2d7ec782db197b8ddc1c21a59c2a55950f92a5443e9b5045162c",
+    "crates/deadpan-app/src/preview/youtube.rs": "606f3842fe11b49716c46d7ea801c160be7b23710357bb2ed2686e7187b57cd0",
+    "crates/deadpan-app/src/youtube.rs": "ea210fcb74070b557aec245ffeb675e595f2a32bf6f638a43cacd8974028830f",
+    "crates/deadpan-app/src/youtube/tests.rs": "5dbe51a371edf3925e426778955196c9db01377373c0f12fd54a938d116a6220",
+    "crates/deadpan-cli/Cargo.toml": "1826b5c083bd746c8519131ffb6b186946d37398924e5c8f56bade655eae3a59",
+    "crates/deadpan-cli/src/youtube.rs": "8d8f71f02bdb0567cd30c09878535bfaa4fa67d847d19f7960e44e1f72b1220e",
+    "crates/deadpan-cli/tests/privacy_network_audit.rs": "5f8c0ede7576aeab9b98932e5cff41335341b96b3eb146f887976e0349aacee7"
+  }
+}

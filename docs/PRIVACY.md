@@ -5,16 +5,18 @@ keeps sources, transcripts, generated footage and face tracks local, limits
 network access to user-requested imports, model/helper/app updates and explicit
 links, requires no analytics, and forbids cookies or authentication headers in
 logs or project metadata. This record is the DP-23 privacy check as of
-2026-10-06. It covers the shipped `deadpan-app`, `deadpan-cli`, media,
+2026-10-11. It covers the shipped `deadpan-app`, `deadpan-cli`, media,
 transcription and tracking workers, and the AI runtime launch. The developer-only
 `crates/xtask` and the `tools/` qualification harnesses download pinned build
 inputs and are not shipped.
 
 ## Network paths
 
-There is one HTTP client: `HttpsTransport` in
-[`deadpan-models/src/packs.rs`](../crates/deadpan-models/src/packs.rs), using
-`ureq` 3.4.2 with rustls and the system trust store. It is HTTPS only, follows
+There is one HTTP stack, `ureq` 3.4.2 with rustls and platform trust, owned by
+`deadpan-models` for verified downloads and `deadpan-cli` for optional import
+thumbnails. Model and helper downloads use `HttpsTransport` in
+[`deadpan-models/src/packs.rs`](../crates/deadpan-models/src/packs.rs).
+It is HTTPS only, follows
 at most five redirects and hash-verifies every byte against a pinned or signed
 manifest. Each of its constructions runs only after an explicit user action:
 
@@ -23,7 +25,17 @@ manifest. Each of its constructions runs only after an explicit user action:
 | `models install <pack>`; Models panel install (license acceptance first) | [`cli/models.rs`](../crates/deadpan-cli/src/models.rs), [`app/model_packs.rs`](../crates/deadpan-app/src/model_packs.rs) | `huggingface.co` only (manifest host allowlist) |
 | `downloader install`; New from URL after its install confirmation | [`youtube/helpers.rs`](../crates/deadpan-cli/src/youtube/helpers.rs), [`app/youtube.rs`](../crates/deadpan-app/src/youtube.rs) | pinned `github.com` release assets for yt-dlp and Deno |
 | `downloader update` / `models update` with a signed manifest; Models panel **Apply signed update…** | [`update_signing.rs`](../crates/deadpan-cli/src/update_signing.rs), [`app/model_packs.rs`](../crates/deadpan-app/src/model_packs.rs) | the manifest's own URLs; an `https://` manifest argument is fetched only on the CLI, the app reads a chosen file |
-| `project create-from-url`; native New from URL | [`youtube/acquire.rs`](../crates/deadpan-cli/src/youtube/acquire.rs) through [`youtube/runner.rs`](../crates/deadpan-cli/src/youtube/runner.rs) | YouTube, contacted by the pinned yt-dlp and Deno helpers, not by Deadpan |
+| `project create-from-url`; native New from URL | [`youtube/acquire.rs`](../crates/deadpan-cli/src/youtube/acquire.rs) through [`youtube/runner.rs`](../crates/deadpan-cli/src/youtube/runner.rs) | Video metadata and streams from YouTube through the pinned yt-dlp and Deno helpers |
+| Native Start project with a valid YouTube URL, before media confirmation | [`youtube/thumbnail.rs`](../crates/deadpan-cli/src/youtube/thumbnail.rs) on the import worker | HTTPS `i.ytimg.com` or `i1` through `i4.ytimg.com`, only the inspected video's thumbnail |
+
+The optional thumbnail client runs only for that explicit import. It has no
+cookies, environment proxy or redirects, filters non-public addresses before
+connection and retains one bounded DNS worker even when an OS lookup times out.
+Its four-second network deadline, 4 MiB input limit, bounded raster and generic
+failure states are documented in [YouTube import](YOUTUBE_IMPORT.md#confirmation-thumbnail).
+No local footage, transcript, generated picture, credential or authored content
+is sent. Decoded pixels stay in the confirmation UI and never enter project
+media or diagnostics. A CDN failure leaves the video import available.
 
 The helpers run with a cleared environment (no inherited proxy, credentials or
 user configuration), `DENO_NO_UPDATE_CHECK=1`, `--ignore-config`,
@@ -37,8 +49,10 @@ Everything else is local:
 - The linked FFmpeg is configured `--disable-network`; the build scripts of
   `deadpan-source`, `deadpan-encode` and `deadpan-media-worker` refuse a prefix
   configured otherwise. Decoders read descriptors, never URLs.
-- No shipped code opens an IP socket, resolves names or uses Apple networking
-  APIs. The only sockets are Unix-domain: the authenticated
+- No shipped application code opens an IP socket directly or uses Apple
+  networking APIs. Only the reviewed thumbnail resolver resolves names; its
+  HTTPS library connects to the filtered public addresses. Other application
+  sockets are Unix-domain: the authenticated
   [live-project endpoint](LIVE_PROJECT.md) and worker control socket pairs.
 - The AI worker runs with `HF_HUB_OFFLINE`, `TRANSFORMERS_OFFLINE`,
   `HF_HUB_DISABLE_TELEMETRY` and `DO_NOT_TRACK` set; the worker refuses to
@@ -66,7 +80,8 @@ Everything else is local:
 - [`privacy_network_audit.rs`](../crates/deadpan-cli/tests/privacy_network_audit.rs)
   reads `Cargo.lock`, `cargo metadata` and every Rust source under `crates/`
   and `native/` (except `xtask`) and fails when:
-  - a package other than `deadpan-models` depends on the HTTPS stack (`ureq`,
+  - a package other than the reviewed `deadpan-models` and `deadpan-cli` owners
+    depends on the HTTPS stack (`ureq`,
     rustls, webpki, `http`, `httparse`);
   - a network client, async runtime, unreviewed browser opener, crash reporter
     or telemetry/analytics crate enters the lockfile;
@@ -77,6 +92,8 @@ Everything else is local:
   - `ureq`, `HttpsTransport`, IP or Apple networking APIs, Unix sockets,
     subprocess launch sites or the yt-dlp runner appear outside their
     file allowlist (or the allowlist names files that no longer use them);
+  - thumbnail fetching gains another application trigger, loses its HTTPS,
+    no-proxy/no-redirect configuration or stops using its public resolver;
   - shipped code names `curl`, `wget`, `nscurl`, `open`, `osascript`, `nc`,
     `ssh`, `scp`, `sftp` or `git` as a program;
   - the FFmpeg `--disable-network` requirement, either AI launch boundary,

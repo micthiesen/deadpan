@@ -114,7 +114,10 @@ fn confirmed_import_creates_one_ready_project_after_explicit_confirmation() {
         destination_label(&destination),
         "Documents/Deadpan/Caminandes 2 Gran Dillama.deadpan"
     );
-    // Nothing is transferred or created while waiting for the user.
+    assert!(
+        matches!(&preview.thumbnail, ThumbnailState::Ready(image) if image.dimensions() == [480, 270])
+    );
+    // No media is transferred or created while waiting for the user.
     std::thread::sleep(Duration::from_millis(50));
     jobs.poll();
     assert!(confirming(&jobs));
@@ -377,6 +380,12 @@ fn real_url_import_through_the_app_job_when_requested() {
                     sound_summary(preview),
                     destination.display()
                 );
+                eprintln!("confirmation thumbnail: {:?}", preview.thumbnail);
+                if std::env::var_os("DEADPAN_REAL_YOUTUBE_REQUIRE_THUMBNAIL").is_some() {
+                    assert!(matches!(&preview.thumbnail, ThumbnailState::Ready(image)
+                        if image.dimensions().iter().all(|dimension| *dimension > 0)));
+                }
+                assert!(!destination.exists(), "no package before confirmation");
                 assert!(jobs.confirm());
             }
             Status::Created(_) => break,
@@ -397,6 +406,40 @@ fn real_url_import_through_the_app_job_when_requested() {
         package.display(),
         started.elapsed().as_secs_f64()
     );
+}
+
+#[test]
+fn missing_or_unavailable_thumbnails_still_allow_explicit_import_confirmation() {
+    for state in [
+        ThumbnailState::Missing,
+        ThumbnailState::Unavailable(thumbnail::Unavailable::Timeout),
+    ] {
+        let scratch = tempfile::tempdir().unwrap();
+        let library = ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap();
+        let mut downloader = Scripted::new(fixture(), true);
+        downloader.preview.thumbnail = state.clone();
+        downloader.release();
+        let mut jobs = Jobs::new(Arc::new(downloader), Some(library), Arc::new(|| {}));
+        jobs.start(request()).unwrap();
+        wait(&mut jobs, "confirmation without thumbnail", confirming);
+        let Status::Confirm {
+            preview,
+            destination,
+        } = jobs.status()
+        else {
+            unreachable!()
+        };
+        assert_eq!(preview.thumbnail, state);
+        assert!(!destination.exists());
+        assert!(jobs.confirm());
+        wait(&mut jobs, "created without thumbnail", |jobs| {
+            matches!(jobs.status(), Status::Created(_))
+        });
+        ProjectStore::open(&jobs.take_created().unwrap(), AccessMode::ReadOnly)
+            .unwrap()
+            .validate()
+            .unwrap();
+    }
 }
 
 #[test]

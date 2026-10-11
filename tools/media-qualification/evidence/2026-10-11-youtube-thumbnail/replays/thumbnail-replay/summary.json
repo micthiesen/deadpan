@@ -1,0 +1,43 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/bin/deadpan-app",
+      "sha256": "4c9ff4215067f958c63861e5b9ccd93d91eb4c1dd32ec8f4ff94fb5bba1cee09",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/bin/deadpan-media-worker",
+      "sha256": "f4c180fe23e384a0feeefbac0d76bf99dbe4e72cee06adffa46f1ddefe674542",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/bin/deadpan-track",
+      "sha256": "822b68767ff292aca914da707fcd22cd535573c734e9f4fcc12114740664de8a",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/bin/deadpan-transcribe",
+      "sha256": "491eeca8fe5f15f6515147a57cf465dd404709daf4d67600a7ce895866228633",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 24.373777833,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 64,
+      "failed_checks": [],
+      "failures": [
+        "Timed out waiting for Held transfer: {\"annotation_busy\":false,\"beat_count\":0,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"\",\"command_open\":false,\"context\":\"Source\",\"copied_moment\":null,\"copied_slice\":null,\"copy_pending\":false,\"duration\":0,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":null,\"focused_widget\":null,\"footer_bottom\":[820.0,820.0],\"footer_command_open\":false,\"help_open\":false,\"import\":null,\"layout_passes\":1,\"message\":null,\"original_selection\":null,\"pane\":\"Viewer\",\"pending_keys\":\"\",\"picture\":{\"decoded\":null,\"decoded_framing\":null,\"decoded_geometry_revision\":null,\"decoded_tier\":null,\"displayed\":null,\"displayed_tier\":null,\"error\":null,\"geometry_revision\":null,\"loading\":false,\"needs_render\":false,\"requested\":null,\"source_frame\":null},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":null,\"room_tone\":null,\"scope_end\":0,\"scope_labels\":[],\"scope_start\":0,\"scoped\":null,\"selected_beat\":null,\"selected_event\":null,\"selected_sound\":null,\"selected_source\":null,\"sequence_cursor\":0,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":null,\"sound_routes\":null,\"source_cursor\":0,\"source_summary\":null,\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":null,\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[1280.0,820.0],\"visual_selection\":false}",
+        "1 timing sample(s) of Held transfer did not complete"
+      ],
+      "layout_retry_warnings": [],
+      "name": "youtube",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 104.234655,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 104.262598083
+}

@@ -1,0 +1,22 @@
+   Compiling objc2-core-foundation v0.3.2
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling objc2-metal v0.3.2
+   Compiling deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling wgpu-core v30.0.1
+   Compiling wgpu v30.0.1
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.56s
+────────────
+ Nextest run ID 19b0a4b7-5049-4212-9180-b4615c8df28c with nextest profile: default
+    Starting 1 test across 1 binary (16 tests skipped)
+        PASS [   1.364s] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+────────────
+     Summary [   1.364s] 1 test run: 1 passed, 16 skipped

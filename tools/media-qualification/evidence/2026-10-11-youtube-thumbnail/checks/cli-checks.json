@@ -1,0 +1,31 @@
+[
+  {
+    "name": "cli-check",
+    "command": [
+      "cargo",
+      "check",
+      "-p",
+      "deadpan-cli"
+    ],
+    "exit": 0,
+    "seconds": 13.583786999806762,
+    "log_sha256": "05e1381c8156106c43c70ec9c519fdeb05b9a0713381b607e59f2ace22ad0d47"
+  },
+  {
+    "name": "cli-thumbnail-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "-E",
+      "test(youtube::thumbnail)"
+    ],
+    "exit": 0,
+    "seconds": 24.751723874825984,
+    "log_sha256": "845037c81d5d05e3418e4d154887ef32a4c351d7ebcdf999933501937bd4acb2"
+  }
+]

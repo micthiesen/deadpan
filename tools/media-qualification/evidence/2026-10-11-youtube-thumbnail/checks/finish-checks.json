@@ -1,0 +1,144 @@
+[
+  {
+    "name": "finish-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.793576500378549,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "finish-fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 4.681057958863676,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "finish-app-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 22.7728293328546,
+    "log_sha256": "5c4f32572292008af9df0ab3f799bbd2f8d9d900e4c0f3b6c0c891d4489fc98f"
+  },
+  {
+    "name": "finish-harness-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 7.642418208066374,
+    "log_sha256": "f2476448df189f41835bb2afddefef9c1c181671243613a9ce7eeecca01837d4"
+  },
+  {
+    "name": "finish-plan-warning",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--test",
+      "audio_definition",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(intrinsic_policy_window_preserves_bound_support_outside_the_visible_run)"
+    ],
+    "exit": 0,
+    "seconds": 3.1469007921405137,
+    "log_sha256": "16da9f654ff720e61227d78e03cac4a90e17a7a4283326f3941db76d3edbb71a"
+  },
+  {
+    "name": "finish-app-checks",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(youtube) | test(empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_inference)"
+    ],
+    "exit": 0,
+    "seconds": 12.114465083926916,
+    "log_sha256": "c13f87bb0257e2c14f0848b9d4f7e6fa68630b604e82d412882f380f49a8ba8d"
+  },
+  {
+    "name": "finish-youtube-replay",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "1",
+      "--scenario",
+      "youtube",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-20261011/finish-youtube-replay"
+    ],
+    "exit": 0,
+    "seconds": 102.75857579242438,
+    "log_sha256": "47b3d8fb3034e4642acee50a49cd4f308ee7edc5ae3ee2cd480533200bf07f9c"
+  },
+  {
+    "name": "finish-bundle",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-final-bundle-20261011"
+    ],
+    "exit": 0,
+    "seconds": 117.93556470796466,
+    "log_sha256": "a14f06a35f4e04b9fd0fae4fe5c134f0d9f08fd241e0675ccdb477cb85dff117"
+  },
+  {
+    "name": "finish-bundle-verify",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-youtube-thumbnail-final-bundle-20261011/Deadpan.app"
+    ],
+    "exit": 0,
+    "seconds": 29.68289141682908,
+    "log_sha256": "1bde6b3e35c3356c292cfe3261b70126d3db622e25a797bc26c0b8eecef72626"
+  }
+]

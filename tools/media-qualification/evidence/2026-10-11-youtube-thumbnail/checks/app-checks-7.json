@@ -1,0 +1,103 @@
+[
+  {
+    "name": "app-fmt-7",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.470270125195384,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "cli-thumbnail-tests-2",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "-E",
+      "test(youtube::thumbnail)"
+    ],
+    "exit": 0,
+    "seconds": 6.913678875193,
+    "log_sha256": "69665a312a699b65e4ce623d9809ca91e01cf2dd7f0223afa629a6ecbe4ed882"
+  },
+  {
+    "name": "app-clippy-7",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 8.822041917126626,
+    "log_sha256": "775c8801044bb6d20b5afdedf3231da7b435c96fc9d2adbc71372c16a7e8ecfd"
+  },
+  {
+    "name": "app-youtube-tests-4",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app",
+      "-E",
+      "test(youtube)"
+    ],
+    "exit": 0,
+    "seconds": 8.640826458111405,
+    "log_sha256": "59439b78b57888b361450912e4dabb613f086cbddb5a67608fb2ba5ca2646375"
+  },
+  {
+    "name": "thumbnail-replay-3",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "1",
+      "--scenario",
+      "youtube",
+      "--output",
+      "/tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-3"
+    ],
+    "exit": 0,
+    "seconds": 103.71079429099336,
+    "log_sha256": "97bcce527fbb4e40da93f269e4fc48674eb7b8a2c9d15e2ea73f903941e35cae"
+  },
+  {
+    "name": "real-thumbnail",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "qualify_youtube_thumbnail",
+      "--",
+      "/tmp/deadpan-youtube-thumbnail-20261011/real-thumbnail"
+    ],
+    "exit": 101,
+    "seconds": 9.851317916996777,
+    "log_sha256": "b816f981ae98578d353f0be94f1b8e9968277a35f532c2bf4011f88b0d7324e8"
+  }
+]

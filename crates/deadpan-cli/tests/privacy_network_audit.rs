@@ -24,8 +24,8 @@ fn workspace() -> PathBuf {
         .expect("workspace root")
 }
 
-/// Packages in the user-facing download stack. Only these and the model-pack
-/// crate may depend on any of them.
+/// Packages in the user-facing download stack. Only these and the reviewed
+/// model-pack/thumbnail owners may depend on any of them.
 const NETWORK_STACK: [&str; 10] = [
     "ureq",
     "ureq-proto",
@@ -39,8 +39,8 @@ const NETWORK_STACK: [&str; 10] = [
     "httparse",
 ];
 
-/// The one workspace crate that owns the HTTPS client.
-const NETWORK_OWNER: &str = "deadpan-models";
+/// Model/helper downloads and optional thumbnails for an explicit import.
+const NETWORK_OWNERS: [&str; 2] = ["deadpan-models", "deadpan-cli"];
 
 /// Network clients, servers, runtimes, link openers, analytics and crash
 /// reporters that must not enter the lockfile at all.
@@ -169,7 +169,10 @@ impl Lock {
 fn lockfile_has_one_reviewed_https_stack_and_no_telemetry() {
     let lock = lock();
     assert!(
-        lock.workspace.contains(NETWORK_OWNER) && lock.dependencies.contains_key("ureq"),
+        NETWORK_OWNERS
+            .iter()
+            .all(|owner| lock.workspace.contains(*owner))
+            && lock.dependencies.contains_key("ureq"),
         "the audit no longer matches the lockfile; review docs/PRIVACY.md"
     );
     for (package, dependencies) in &lock.dependencies {
@@ -182,8 +185,9 @@ fn lockfile_has_one_reviewed_https_stack_and_no_telemetry() {
         for network in NETWORK_STACK {
             if dependencies.contains(network) {
                 assert!(
-                    package == NETWORK_OWNER || NETWORK_STACK.contains(&package.as_str()),
-                    "{package} depends on the network crate {network}; only {NETWORK_OWNER} \
+                    NETWORK_OWNERS.contains(&package.as_str())
+                        || NETWORK_STACK.contains(&package.as_str()),
+                    "{package} depends on the network crate {network}; only {NETWORK_OWNERS:?} \
                      may (see docs/PRIVACY.md)"
                 );
             }
@@ -267,7 +271,7 @@ fn local_workers_cannot_reach_the_https_client() {
             );
         }
     }
-    // The two user-facing binaries do reach it, through deadpan-models only.
+    // The user-facing binaries reach the reviewed model/helper and thumbnail clients.
     for binary in ["deadpan-cli", "deadpan-app"] {
         assert!(lock.closure(binary).contains("ureq"), "{binary}");
     }
@@ -372,10 +376,14 @@ fn network_clients_live_only_in_reviewed_download_paths() {
         "direct browser dispatch",
     );
 
-    // The one HTTP client: HTTPS only, bounded redirects, system trust.
+    // One HTTP stack: HTTPS only, bounded redirects, system trust.
     assert_allowlisted(
         shipped_with(&sources, &["ureq"]),
-        &["crates/deadpan-models/src/packs.rs"],
+        &[
+            "crates/deadpan-models/src/packs.rs",
+            "crates/deadpan-cli/src/youtube/thumbnail.rs",
+            "crates/deadpan-cli/src/youtube/thumbnail/network.rs",
+        ],
         "the ureq HTTP client",
     );
     let packs = &sources
@@ -384,6 +392,28 @@ fn network_clients_live_only_in_reviewed_download_paths() {
         .expect("packs.rs")
         .1;
     assert!(packs.contains(".https_only(true)") && packs.contains(".max_redirects(5)"));
+    let thumbnail = &sources
+        .iter()
+        .find(|(path, _)| path == "crates/deadpan-cli/src/youtube/thumbnail.rs")
+        .expect("thumbnail.rs")
+        .1;
+    for setting in [
+        ".https_only(true)",
+        ".max_redirects(0)",
+        ".proxy(None)",
+        "RootCerts::PlatformVerifier",
+        "network::PublicResolver",
+    ] {
+        assert!(
+            thumbnail.contains(setting),
+            "thumbnail client lost {setting}"
+        );
+    }
+    assert_allowlisted(
+        shipped_with(&sources, &["thumbnail::load("]),
+        &["crates/deadpan-app/src/youtube.rs"],
+        "the optional thumbnail import trigger",
+    );
 
     // Every construction of that transport is an explicit user download:
     // model packs (`models install/update`, the Models panel), helper
@@ -403,16 +433,25 @@ fn network_clients_live_only_in_reviewed_download_paths() {
         "the HTTPS download transport",
     );
 
-    // No IP sockets anywhere in shipped code.
+    // The optional thumbnail resolver is the only application DNS path.
+    // Its address classification module uses std::net's value types only.
+    assert_allowlisted(
+        shipped_with(&sources, &["std::net", "ToSocketAddrs"]),
+        &[
+            "crates/deadpan-cli/src/youtube/thumbnail/network.rs",
+            "crates/deadpan-cli/src/youtube/thumbnail/network/ip.rs",
+        ],
+        "IP address types or DNS resolution",
+    );
+    // No direct IP sockets anywhere in shipped application code. The
+    // reviewed HTTPS library connects only to its filtered resolver output.
     assert_allowlisted(
         shipped_with(
             &sources,
             &[
-                "std::net",
                 "TcpStream",
                 "TcpListener",
                 "UdpSocket",
-                "ToSocketAddrs",
                 "SocketAddrV4",
                 "SocketAddrV6",
                 "AddressFamily::INET",

@@ -1,0 +1,29 @@
+{
+  "width": 960,
+  "height": 540,
+  "colors": [
+    [
+      206,
+      94,
+      80
+    ],
+    [
+      66,
+      171,
+      169
+    ],
+    [
+      143,
+      108,
+      196
+    ],
+    [
+      217,
+      166,
+      66
+    ]
+  ],
+  "description": "Owned procedural four-quadrant thumbnail; real bounded decode reduces to 480x270 RGBA.",
+  "bytes": 2758,
+  "sha256": "ea5bc8e2af57a592fc88d4e2f8c20a2932811c5a54889e3e4a6a0bb497030ad8"
+}

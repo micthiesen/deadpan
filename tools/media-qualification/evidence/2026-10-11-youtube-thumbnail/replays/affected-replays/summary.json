@@ -1,0 +1,70 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/affected-replays/bin/deadpan-app",
+      "sha256": "0e6fe46ddd3d49dbf844c43695511359ac5a628e7466d56149e5a0cf45672bbb",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/affected-replays/bin/deadpan-media-worker",
+      "sha256": "ef87a341fd6d2d9ac1d8c78488ddc98cc7d4396c1f14d804b377937e9b1146c7",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/affected-replays/bin/deadpan-track",
+      "sha256": "1fea31d2570a952e2f9726f9330bed8284842ed914735929538f4ea663f8a99c",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-youtube-thumbnail-20261011/affected-replays/bin/deadpan-transcribe",
+      "sha256": "173eaf1bf143f2093bdab6e285e831cd15f807100a8ecf508d047df2fccfc92f",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 24.189501416,
+  "jobs": 2,
+  "scenarios": [
+    {
+      "checks": 125,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "youtube",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 96.44303075,
+      "status": "PASS"
+    },
+    {
+      "checks": 20,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "linked-original",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 89.316656292,
+      "status": "PASS"
+    },
+    {
+      "checks": 151,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "layouts",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 99.162219375,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 188.708021
+}

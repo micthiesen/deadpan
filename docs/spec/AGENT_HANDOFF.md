@@ -4,6 +4,17 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[YouTube confirmation thumbnails](../qualification/youtube-thumbnail-2026-10-11.md)
+now use a bounded import-worker fetch/decode path, with a single temporary UI
+texture, accessible image name and independent detail scrolling. Missing or
+unavailable images still permit explicit confirmation. The reviewed HTTPS
+client accepts only public ytimg addresses for the inspected video, sends no
+cookies, disables proxies/redirects and never enters project media. Compact
+layouts, cancellation, cache release and scrolling have offscreen evidence;
+the real app job requires a decoded thumbnail before creating its AV1/Opus
+Original. See the qualification for regression failures and their follow-ups.
+DP-14 remains partial.
+
 [Source interpretation](../qualification/source-interpretation-2026-10-11.md)
 is now an authored, reversible per-asset choice in core schema 49/store schema
 77. `:source-interpret` and the Original pane's **Interpret picture…** control

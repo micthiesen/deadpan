@@ -1,0 +1,72 @@
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-cli/examples/qualify_youtube_thumbnail.rs:45:38
+   |
+45 |         "rgba_sha256":format!("{:x}",Sha256::digest(thumbnail.rgba())),
+   |                                ----  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                                |
+   |                                required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Saturating<T>
+             Wrapping<T>
+             bytes::bytes::Bytes
+             bytes::bytes_mut::BytesMut
+             compiler_builtins::math::libm_math::support::big::i256
+             compiler_builtins::math::libm_math::support::big::u256
+           and 242 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/examples/qualify_youtube_thumbnail-e1495cd49d33d6ad.long-type-18430560519403132024.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-cli/examples/qualify_youtube_thumbnail.rs:46:37
+   |
+46 |         "png_sha256":format!("{:x}",Sha256::digest(std::fs::read(&png)?)),
+   |                               ----  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                               |
+   |                               required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Saturating<T>
+             Wrapping<T>
+             bytes::bytes::Bytes
+             bytes::bytes_mut::BytesMut
+             compiler_builtins::math::libm_math::support::big::i256
+             compiler_builtins::math::libm_math::support::big::u256
+           and 242 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/examples/qualify_youtube_thumbnail-e1495cd49d33d6ad.long-type-18430560519403132024.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-cli/examples/qualify_youtube_thumbnail.rs:47:57
+   |
+47 |         "binary":binary, "binary_sha256":format!("{:x}",Sha256::digest(std::fs::read(&binary)?)),
+   |                                                   ----  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                                                   |
+   |                                                   required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Saturating<T>
+             Wrapping<T>
+             bytes::bytes::Bytes
+             bytes::bytes_mut::BytesMut
+             compiler_builtins::math::libm_math::support::big::i256
+             compiler_builtins::math::libm_math::support::big::u256
+           and 242 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/examples/qualify_youtube_thumbnail-e1495cd49d33d6ad.long-type-18430560519403132024.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-cli` (example "qualify_youtube_thumbnail") due to 3 previous errors

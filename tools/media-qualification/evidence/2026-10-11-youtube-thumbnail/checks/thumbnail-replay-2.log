@@ -1,0 +1,31 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --jobs 1 --scenario youtube --output /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.97s
+replays: built and copied /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/bin/deadpan-app in 10.4 s (sha256 b1c2be6f3d381be25675e682745225553468afc17b66fc0f05f75e3cc5298bcc)
+replays: youtube                FAIL    90.1 s
+
+scenario                     seconds  checks  layout-retry warnings
+youtube                FAIL     90.1      74  4 frame(s) settled their layout only on a second retry; egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+youtube failed (report: /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2/youtube/report.html):
+  check: Confirmation paints the labelled thumbnail unclipped at its own aspect
+  check: Every painted frame has a settled layout (no ignored retry)
+  check: No layout retry repeats for three frames without new input
+  Check failed: Confirmation paints the labelled thumbnail unclipped at its own aspect
+
+0 passed, 1 failed, 0 skipped; 74 checks; build 10.4 s, replays 90.1 s wall (90.1 s summed, 1 job(s))
+Reports: /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay-2
+xtask: 1 replay scenario(s) failed

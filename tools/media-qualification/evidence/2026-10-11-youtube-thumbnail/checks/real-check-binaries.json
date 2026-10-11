@@ -1,0 +1,17 @@
+[
+  {
+    "path": "target/debug/examples/qualify_youtube_thumbnail",
+    "retained": "/tmp/deadpan-youtube-thumbnail-20261011/verified-binaries/qualify_youtube_thumbnail",
+    "sha256": "39a5e6c48d4a05076d60f69cf3b21bfa8190494442fba5aab2a7bc23ebb0685a"
+  },
+  {
+    "path": "target/debug/deadpan-media-worker",
+    "retained": "/tmp/deadpan-youtube-thumbnail-20261011/verified-binaries/deadpan-media-worker",
+    "sha256": "f4c180fe23e384a0feeefbac0d76bf99dbe4e72cee06adffa46f1ddefe674542"
+  },
+  {
+    "path": "target/debug/deps/deadpan_app-bdf67f64e84c4c7f",
+    "retained": "/tmp/deadpan-youtube-thumbnail-20261011/verified-binaries/deadpan_app-bdf67f64e84c4c7f",
+    "sha256": "d342b93e3da51937b407f9e05a7ee7d1f1a2fc233ac93d34c1a27ac9bfec4935"
+  }
+]

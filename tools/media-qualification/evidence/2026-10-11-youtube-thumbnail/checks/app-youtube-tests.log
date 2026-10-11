@@ -1,0 +1,58 @@
+   Compiling image v0.25.10
+   Compiling rustls v0.23.45
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling arboard v3.6.1
+   Compiling egui-winit v0.36.2
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling eframe v0.36.2
+   Compiling ureq v3.4.2
+   Compiling egui_kittest v0.36.2
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.75s
+────────────
+ Nextest run ID 4f6553d3-f017-4a00-b5ca-94b416584827 with nextest profile: default
+    Starting 16 tests across 1 binary (1087 tests skipped)
+        PASS [   0.013s] ( 1/16) deadpan-app::bin/deadpan-app youtube::tests::real_url_import_through_the_app_job_when_requested
+        PASS [   0.018s] ( 2/16) deadpan-app::bin/deadpan-app navigation::youtube::tests::only_plain_enter_and_escape_act_and_native_owners_keep_the_rest
+        PASS [   0.019s] ( 3/16) deadpan-app::bin/deadpan-app youtube::tests::library_errors_map_to_stable_codes
+        PASS [   0.019s] ( 4/16) deadpan-app::bin/deadpan-app preview::youtube::tests::typing_shows_the_normalized_video_or_the_exact_refusal
+        PASS [   0.020s] ( 5/16) deadpan-app::bin/deadpan-app youtube::tests::invalid_urls_are_refused_without_starting_a_job
+        PASS [   0.020s] ( 6/16) deadpan-app::bin/deadpan-app youtube::tests::confirmation_names_the_selected_codec_and_dynamic_range
+        FAIL [   0.026s] ( 7/16) deadpan-app::bin/deadpan-app preview::youtube::thumbnail::tests::youtube_thumbnail_cache_reuses_only_the_same_picture_and_drops_missing_images
+  stdout ───
+
+    running 1 test
+    test preview::youtube::thumbnail::tests::youtube_thumbnail_cache_reuses_only_the_same_picture_and_drops_missing_images ... FAILED
+
+    failures:
+
+    failures:
+        preview::youtube::thumbnail::tests::youtube_thumbnail_cache_reuses_only_the_same_picture_and_drops_missing_images
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1102 filtered out; finished in 0.01s
+
+  stderr ───
+
+    thread 'preview::youtube::thumbnail::tests::youtube_thumbnail_cache_reuses_only_the_same_picture_and_drops_missing_images' (119361288) panicked at /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.36.2/src/textures.rs:337:9:
+    Dropped TexturesDelta with 2 unapplied deltas. Deltas need to be handled. If you want to drop this intentionally call `clear` before dropping.
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+  Cancelling due to test failure: 9 tests still running
+        PASS [   0.081s] ( 8/16) deadpan-app::bin/deadpan-app youtube::tests::failures_keep_their_codes_and_app_guidance
+        PASS [   0.081s] ( 9/16) deadpan-app::bin/deadpan-app youtube::tests::one_job_at_a_time_and_shutdown_drains_it
+        PASS [   0.097s] (10/16) deadpan-app::bin/deadpan-app youtube::tests::declining_or_cancelling_a_transfer_creates_nothing
+        PASS [   0.146s] (11/16) deadpan-app::bin/deadpan-app youtube::tests::unconfirmed_details_expire_and_ask_to_check_again
+        PASS [   0.173s] (12/16) deadpan-app::bin/deadpan-app youtube::tests::missing_helpers_wait_for_an_explicit_install_then_continue
+        PASS [   0.351s] (13/16) deadpan-app::bin/deadpan-app youtube::tests::a_package_published_after_escape_still_opens_and_says_so
+        PASS [   0.373s] (14/16) deadpan-app::bin/deadpan-app youtube::tests::a_destination_taken_during_the_download_moves_to_the_next_name
+        PASS [   0.378s] (15/16) deadpan-app::bin/deadpan-app youtube::tests::confirmed_import_creates_one_ready_project_after_explicit_confirmation
+        PASS [   0.515s] (16/16) deadpan-app::bin/deadpan-app youtube::tests::missing_or_unavailable_thumbnails_still_allow_explicit_import_confirmation
+────────────
+     Summary [   0.517s] 16 tests run: 15 passed, 1 failed, 1087 skipped
+        FAIL [   0.026s] ( 7/16) deadpan-app::bin/deadpan-app preview::youtube::thumbnail::tests::youtube_thumbnail_cache_reuses_only_the_same_picture_and_drops_missing_images
+error: test run failed

@@ -1,0 +1,40 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --jobs 1 --scenario youtube --output /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay`
+   Compiling image v0.25.10
+   Compiling ring v0.17.14
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling arboard v3.6.1
+   Compiling egui-winit v0.36.2
+   Compiling eframe v0.36.2
+   Compiling rustls v0.23.45
+   Compiling egui_kittest v0.36.2
+   Compiling rustls-webpki v0.103.15
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.93s
+replays: built and copied /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/bin/deadpan-app in 24.4 s (sha256 4c9ff4215067f958c63861e5b9ccd93d91eb4c1dd32ec8f4ff94fb5bba1cee09)
+replays: youtube                FAIL   104.2 s
+
+scenario                     seconds  checks  layout-retry warnings
+youtube                FAIL    104.2      64  -
+
+youtube failed (report: /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay/youtube/report.html):
+  Timed out waiting for Held transfer: {"annotation_busy":false,"beat_count":0,"busy":false,"camera_open":false,"camera_pending":false,"command":"","command_open":false,"context":"Source","copied_moment":null,"copied_slice":null,"copy_pending…
+  1 timing sample(s) of Held transfer did not complete
+
+0 passed, 1 failed, 0 skipped; 64 checks; build 24.4 s, replays 104.3 s wall (104.2 s summed, 1 job(s))
+Reports: /tmp/deadpan-youtube-thumbnail-20261011/thumbnail-replay
+xtask: 1 replay scenario(s) failed

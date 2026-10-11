@@ -1,0 +1,29 @@
+{
+  "width": 240,
+  "height": 135,
+  "colors": [
+    [
+      206,
+      94,
+      80
+    ],
+    [
+      66,
+      171,
+      169
+    ],
+    [
+      143,
+      108,
+      196
+    ],
+    [
+      217,
+      166,
+      66
+    ]
+  ],
+  "description": "Generated four-quadrant image for the scripted YouTube confirmation; not a frame from the remote video.",
+  "bytes": 472,
+  "sha256": "bda6b2f2f84392c852a1236a811a667629fcf0adf12d312b191a41a143b01e0f"
+}

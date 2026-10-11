@@ -1,0 +1,52 @@
+[
+  {
+    "name": "app-fmt-2",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.534952708054334,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "app-clippy-2",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 11.542665416840464,
+    "log_sha256": "dd99ab3ca08e732de0a4d97da687bcfad3feef4a34fe92d181228ef82fcae843"
+  },
+  {
+    "name": "app-youtube-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app",
+      "-E",
+      "test(youtube)"
+    ],
+    "exit": 100,
+    "seconds": 26.481436874717474,
+    "log_sha256": "2c80804ecabf932d74fd22819ee2ee7e11fec49f20ca649e8012d3c0c90f8fe1"
+  }
+]

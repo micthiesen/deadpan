@@ -8,6 +8,8 @@
 use super::*;
 use egui::{Event, Key, Modifiers};
 
+mod thumbnail;
+
 const PLAYLIST: &str = "https://www.youtube.com/playlist?list=PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG";
 const URL: &str = "https://youtu.be/Z4C82eyhwgU?si=share";
 
@@ -309,6 +311,7 @@ fn install(d: &mut Driver<'_>) -> Result<(), String> {
 /// Check the confirmation; returns the library directory.
 fn confirm_details(d: &mut Driver<'_>) -> Result<std::path::PathBuf, String> {
     d.step("Paint the details", false)?;
+    thumbnail::visible(d)?;
     for needle in [
         "Caminandes 2: Gran Dillama",
         "Blender · 2:26 · uploaded 2014-11-30",
@@ -333,7 +336,7 @@ fn confirm_details(d: &mut Driver<'_>) -> Result<std::path::PathBuf, String> {
         .ok_or("Destination has no library")?
         .to_path_buf();
     d.check(
-        "Nothing is downloaded or created before confirmation",
+        "No media is downloaded or project created before confirmation",
         library(&root).is_empty(),
         json!({"library_entries": []}),
         json!({"library": library(&root), "destination": destination}),
@@ -344,16 +347,25 @@ fn confirm_details(d: &mut Driver<'_>) -> Result<std::path::PathBuf, String> {
 /// Escape declines at confirmation; cancelling a held transfer removes it.
 fn decline_and_cancel(d: &mut Driver<'_>) -> Result<(), String> {
     let root = confirm_details(d)?;
-    d.capture("Details before any transfer")?;
+    d.capture("Details and procedural thumbnail before media transfer")?;
+    d.harness.set_size(egui::vec2(960.0, 640.0));
+    d.step("Resize confirmation to the minimum window", false)?;
+    d.step("Settle the measured confirmation card", false)?;
+    thumbnail::visible(d)?;
+    thumbnail::controls(d)?;
+    d.capture("Confirmation thumbnail at 960×640")?;
     d.key(Key::Escape)?;
     d.wait_for("Declined", |app| app.youtube.step_name() == "cancelled")?;
     d.step("Paint the cancelled notice", false)?;
+    thumbnail::absent(d)?;
     painted(
         d,
         "Declining says nothing was created",
         "Import cancelled. No project was created.",
     )?;
     d.capture("Declined at confirmation")?;
+    d.harness.set_size(egui::vec2(1280.0, 820.0));
+    d.step("Restore the default window", false)?;
     d.key(Key::Enter)?;
     d.wait_for("Details again", |app| app.youtube.step_name() == "confirm")?;
     d.key(Key::Enter)?;
@@ -365,6 +377,7 @@ fn decline_and_cancel(d: &mut Driver<'_>) -> Result<(), String> {
         )
     })?;
     d.step("Paint the transfer", false)?;
+    thumbnail::absent(d)?;
     painted(
         d,
         "Download progress shows percent and bytes",
@@ -553,10 +566,11 @@ fn sheet(d: &mut Driver<'_>) -> Result<(), String> {
         state(d),
     )?;
     d.capture("Sheet closed")?;
+    thumbnail::sheet_confirmation(d)?;
     d.report.skipped.extend([
         "yt-dlp, Deno, network transfer and stream assembly: the downloader is scripted; docs/YOUTUBE_IMPORT.md records the real headless run".into(),
         "Native cookies picker: only its selected path is scripted".into(),
-        "Thumbnail: not fetched or shown".into(),
+        "The confirmation thumbnail is a decoded procedural fixture; real CDN fetch and JPEG decode are qualified separately".into(),
     ]);
     Ok(())
 }

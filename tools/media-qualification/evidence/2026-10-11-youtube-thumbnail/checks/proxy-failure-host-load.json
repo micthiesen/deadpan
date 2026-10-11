@@ -1,0 +1,21 @@
+{
+  "observed_at": "2026-10-11T10:56:43.281114+00:00",
+  "load_averages": [
+    11.50732421875,
+    14.69384765625,
+    10.54052734375
+  ],
+  "note": "Observed after the gate proxy packet failure, not at its exact instant. The thumbnail path is not invoked by this proxy test.",
+  "changed_paths": [
+    "Cargo.lock",
+    "crates/deadpan-app/src/preview/harness/youtube.rs",
+    "crates/deadpan-app/src/preview/youtube.rs",
+    "crates/deadpan-app/src/youtube.rs",
+    "crates/deadpan-app/src/youtube/tests.rs",
+    "crates/deadpan-cli/Cargo.toml",
+    "crates/deadpan-cli/src/youtube.rs",
+    "crates/deadpan-cli/tests/privacy_network_audit.rs",
+    "docs/PRIVACY.md",
+    "docs/YOUTUBE_IMPORT.md"
+  ]
+}

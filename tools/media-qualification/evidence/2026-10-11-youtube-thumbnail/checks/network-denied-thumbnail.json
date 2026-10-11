@@ -1,0 +1,12 @@
+{
+  "command": [
+    "sandbox-exec",
+    "-p",
+    "(version 1)(allow default)(deny network*)",
+    "qualify_youtube_thumbnail",
+    "/tmp/deadpan-youtube-thumbnail-20261011/network-denied-thumbnail"
+  ],
+  "exit": 1,
+  "seconds": 0.020992625039070845,
+  "files": []
+}

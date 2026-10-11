@@ -1,0 +1,79 @@
+[
+  {
+    "name": "final-fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.5213172496296465,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "isolated-cancellation",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(youtube::thumbnail::tests::cancellation_before_or_during_fetch_never_reaches_confirmation)"
+    ],
+    "exit": 0,
+    "seconds": 2.0679664160124958,
+    "log_sha256": "8273f984756344c42a4b135932cdd1aedb2995e3e5d8eb72578a6e71a8de93c5"
+  },
+  {
+    "name": "real-thumbnail-2",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "qualify_youtube_thumbnail",
+      "--",
+      "/tmp/deadpan-youtube-thumbnail-20261011/real-thumbnail"
+    ],
+    "exit": 0,
+    "seconds": 3.1604755828157067,
+    "log_sha256": "24568e1ea960df03ceca51698a0550b533be7f19919faf64d7f39325393861b8"
+  },
+  {
+    "name": "real-app-job",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "youtube::tests::real_url_import_through_the_app_job_when_requested",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "exit": 0,
+    "seconds": 35.81864712527022,
+    "log_sha256": "403997df700962dac903a7ad6dc259665a446a60ed4347190b0f1bac0d89f636"
+  },
+  {
+    "name": "milestone-gate",
+    "command": [
+      "cargo",
+      "xtask",
+      "gate"
+    ],
+    "exit": 1,
+    "seconds": 730.4619078747928,
+    "log_sha256": "fd2b46e57606fb1b86ddef778e0efb48353feab377dd1a9df59788662aeed839"
+  }
+]

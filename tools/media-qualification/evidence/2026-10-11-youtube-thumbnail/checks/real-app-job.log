@@ -1,0 +1,30 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling rustls v0.23.45
+   Compiling egui-winit v0.36.2
+   Compiling eframe v0.36.2
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.59s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-bdf67f64e84c4c7f)
+
+running 1 test
+    0.0s Working(CheckingDownloader)
+    0.7s Working(FetchingDetails)
+    3.3s Confirm { preview: Preview { metadata: V
+confirm: "Caminandes 2: Gran Dillama" - Blender Animated Short · 1920 × 1080 · 24 fps · AV1 (av01.0.08M.08) · SDR · Opus (opus) · 48.0 kHz · 139 kb/s -> /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpjN1JOj/Documents/Deadpan/"Caminandes 2 Gran Dillama" - Blender Animated Short.deadpan
+confirmation thumbnail: Ready(Thumbnail { width: 480, height: 270, bytes: 518400 })
+    3.3s downloading
+    5.6s Working(Assembling)
+    5.8s Working(Qualifying)
+   13.8s Created("/var/folders/37/7y1z4kxn5mv9bkb
+created /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpjN1JOj/Documents/Deadpan/"Caminandes 2 Gran Dillama" - Blender Animated Short.deadpan in 14.2s
+test youtube::tests::real_url_import_through_the_app_job_when_requested ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 14.19s
+

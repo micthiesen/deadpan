@@ -1,0 +1,8 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.86s
+────────────
+ Nextest run ID dde97496-fa4b-4ddf-a5fc-a161300448b4 with nextest profile: default
+    Starting 1 test across 1 binary (485 tests skipped)
+        PASS [   0.011s] (1/1) deadpan-cli youtube::thumbnail::tests::cancellation_before_or_during_fetch_never_reaches_confirmation
+────────────
+     Summary [   0.011s] 1 test run: 1 passed, 485 skipped

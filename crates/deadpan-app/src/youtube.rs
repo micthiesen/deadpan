@@ -20,6 +20,7 @@ use std::time::{Duration, Instant};
 use deadpan_cli::CliError;
 use deadpan_cli::youtube::acquire::VideoMetadata;
 use deadpan_cli::youtube::helpers::{DENO, YT_DLP};
+use deadpan_cli::youtube::thumbnail::{self, ThumbnailState};
 
 use crate::library::ProjectLibrary;
 
@@ -98,7 +99,7 @@ impl Failure {
             }
             "YouTubeLiveUnsupported" => "Try again once the recording is available.",
             "YouTubeFormatUnavailable" => {
-                "Deadpan imports H.264 picture with AAC sound, which this video does not offer."
+                "This video does not offer supported AV1, VP9 or H.264 picture with Opus or AAC sound."
             }
             "YouTubeExtractorFailed" => "YouTube changed; the pinned downloader needs an update.",
             "YouTubeNetworkFailed" | "YouTubeDownloadFailed" | "YouTubeDownloadIncomplete" => {
@@ -144,13 +145,14 @@ pub struct Request {
     pub cookies: Option<PathBuf>,
 }
 
-/// The inspected video and its selected streams, shown before any transfer.
+/// The inspected video and selected streams, shown before media transfer.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Preview {
     pub metadata: VideoMetadata,
+    pub thumbnail: ThumbnailState,
     pub estimated_bytes: Option<u64>,
     /// Why an installed signed downloader update is not used for this
-    /// import, shown as a warning before any transfer.
+    /// import, shown as a warning before media transfer.
     pub downloader_note: Option<String>,
 }
 
@@ -185,7 +187,7 @@ pub trait Downloader: Send + Sync {
 
     /// Inspect, ask `confirm` for the destination, then download and create.
     /// `confirm` blocks until the user decides; an error stops the import
-    /// before any transfer.
+    /// before media transfer.
     fn import(
         &self,
         request: &Request,
@@ -305,6 +307,12 @@ impl Downloader for Pinned {
             },
         )?;
         let preview = Preview {
+            thumbnail: thumbnail::load(
+                &inspected.metadata().id,
+                inspected.metadata().thumbnail_url.as_deref(),
+                cancelled,
+            )
+            .map_err(|_| Failure::cancelled())?,
             metadata: inspected.metadata().clone(),
             estimated_bytes: inspected.estimated_bytes(),
             downloader_note: helpers.selection_note.clone(),
@@ -348,7 +356,7 @@ pub enum Status {
     #[default]
     Idle,
     Working(Stage),
-    /// Inspected; nothing transferred. Waiting for explicit confirmation.
+    /// Inspected; no media transferred. Waiting for explicit confirmation.
     Confirm {
         preview: Box<Preview>,
         destination: PathBuf,
@@ -883,6 +891,8 @@ pub mod scripted {
         installed: AtomicBool,
         /// Failures returned by the next imports, before inspection completes.
         failures: Mutex<VecDeque<Failure>>,
+        /// Alternative metadata/thumbnail outcomes at the downloader seam.
+        previews: Mutex<VecDeque<Preview>>,
         /// The transfer waits at 40% until released, so replay can observe
         /// progress and cancellation deterministically.
         gate: (Mutex<bool>, Condvar),
@@ -895,6 +905,14 @@ pub mod scripted {
 
     pub fn preview() -> Preview {
         Preview {
+            // An owned procedural fixture, decoded through the production path.
+            // It is deliberately not presented as a frame of the remote video.
+            thumbnail: ThumbnailState::Ready(Arc::new(
+                thumbnail::Thumbnail::decode(include_bytes!(
+                    "../tests/fixtures/youtube-thumbnail.png"
+                ))
+                .expect("valid scripted confirmation thumbnail"),
+            )),
             metadata: VideoMetadata {
                 id: "Z4C82eyhwgU".into(),
                 title: "Caminandes 2: Gran Dillama".into(),
@@ -948,6 +966,7 @@ pub mod scripted {
                 preview: preview(),
                 installed: AtomicBool::new(installed),
                 failures: Mutex::default(),
+                previews: Mutex::default(),
                 gate: (Mutex::new(false), Condvar::new()),
                 requests: Mutex::default(),
                 take_during_build: Mutex::new(None),
@@ -959,6 +978,14 @@ pub mod scripted {
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
                 .push_back(failure);
+        }
+
+        #[cfg(feature = "ui-harness")]
+        pub fn preview_next(&self, preview: Preview) {
+            self.previews
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .push_back(preview);
         }
 
         /// Let held transfers continue past 40%.
@@ -1050,8 +1077,14 @@ pub mod scripted {
             {
                 return Err(failure);
             }
-            let package = confirm(&self.preview)?;
-            let estimated = self.preview.estimated_bytes;
+            let preview = self
+                .previews
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .pop_front()
+                .unwrap_or_else(|| self.preview.clone());
+            let package = confirm(&preview)?;
+            let estimated = preview.estimated_bytes;
             let total = estimated.unwrap_or(0);
             progress(Stage::Downloading {
                 downloaded: 0,
@@ -1081,7 +1114,7 @@ pub mod scripted {
                 &package,
                 &alternatives,
                 &self.original,
-                &self.preview.metadata.title,
+                &preview.metadata.title,
                 cancelled,
                 |_, _| Ok(()),
             )?;
