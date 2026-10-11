@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T17:02:00Z",
+  "updated_at": "2026-10-11T17:39:13Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16 playback and rendering: measure full-resolution Original/Generated handoffs through the actual preview worker.",
+  "focus": "Completing DP-16 playback and rendering: verify real Generated Hold export, then remaining format, effects and transition cases.",
   "features": [
     {
       "id": "editing",
@@ -477,6 +477,14 @@
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
       "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "c3a2e3ab",
+      "retrospective": false,
+      "summary": "Qualified real accepted LTX playback through the app worker: all 1,830 frames at 1080p60 and 615 at 4K30 reach Metal with zero skips, proxies or audio faults. Fixed lost GPU-completion timings; regression tests, control replays and strict Clippy pass."
     }
   ]
 }
