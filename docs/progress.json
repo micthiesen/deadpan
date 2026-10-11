@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T06:30:38Z",
+  "updated_at": "2026-10-11T10:23:52Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing source interpretation and remaining import workflow.",
+  "focus": "Completing YouTube import confirmation and remaining source workflows.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work, including AV1/VP9 and exact Opus assembly. Real app-job and packaged imports pass. Broader profiles, correctable source interpretation and remaining URL workflow work remain."
+      "note": "Local and YouTube Originals work, including AV1/VP9 and exact Opus assembly. Reversible range and chroma corrections pass native replay, release export and packaged checks. Broader profiles and remaining URL workflow work remain."
     },
     {
       "id": "render",
@@ -389,6 +389,14 @@
       "revision": "0540e808",
       "retrospective": false,
       "summary": "Fixed concurrent SDR scene-cut quality loss. Release and packaged exports pass all 7,012 decoded pictures and 286 zero-offset signal windows; regression, sanitizer and relocation checks pass. Unsupported software QP controls are refused explicitly."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "0c28e172173a07f0952feb39132401f3f2c4f3af",
+      "retrospective": false,
+      "summary": "Reversible source range and chroma interpretation implemented across preview, playback, export, analysis, tracking and AI conditioning. Full gate, 177 sanitized tests, affected replay follow-ups, release performance and 152-picture release and packaged exports pass. DP-02, DP-14 and DP-16 remain partial."
     }
   ]
 }
