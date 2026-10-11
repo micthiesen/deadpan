@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "replays",
+    "--scenario",
+    "original-layout,sound-playback",
+    "--output",
+    "/tmp/deadpan-audio-warm-20261011/regression-replays-final",
+    "--jobs",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 199.18466629087925,
+  "log_sha256": "2bd81d75925456d5ce7e0d2fb7b2276492bcde6c9ed754715571e84b3479c918"
+}

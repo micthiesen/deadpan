@@ -290,6 +290,10 @@ impl Run {
         let Some(preparation) = self.preparation else {
             return "Preparing".into();
         };
+        Self::preparation_status_label(preparation)
+    }
+
+    pub fn preparation_status_label(preparation: deadpan_playback::Preparation) -> String {
         use deadpan_audio::PreparationActivity as Activity;
         let work = |label: &str, completed: u32, total: u32| {
             // These are this stage's processed samples, not a total-job estimate.

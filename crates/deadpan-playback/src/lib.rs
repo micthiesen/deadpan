@@ -5,7 +5,9 @@ mod controller;
 mod preparation;
 mod sources;
 mod target;
+mod warming;
 mod waveform;
+pub use warming::{WARM_HORIZON_FRAMES, WarmRequestError, WarmStatus, WarmTicket, WarmUpdate};
 
 pub use controller::{Diagnostics, Engine, Phase, Preparation, RequestError, StopHandle, Update};
 pub use sources::{ContentIdentity, Snapshot, SnapshotError, SourceEntry};

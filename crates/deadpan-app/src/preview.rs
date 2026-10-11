@@ -142,6 +142,7 @@ pub struct DeadpanApp {
     worker: PreviewWorker,
     endpoint_worker: crate::worker::EndpointWorker,
     playback: deadpan_playback::Engine,
+    audio_warming: Option<playback::Warming>,
     #[cfg(target_os = "macos")]
     _lifecycle: deadpan_output::LifecycleObserver,
     playback_interrupted: Arc<AtomicBool>,
@@ -314,7 +315,10 @@ impl DeadpanApp {
         let worker = PreviewWorker::new(context.egui_ctx.clone())?;
         let endpoint_worker = crate::worker::EndpointWorker::new(context.egui_ctx.clone())?;
         let repaint = context.egui_ctx.clone();
-        let playback = deadpan_playback::Engine::new(Arc::new(move || repaint.request_repaint()))?;
+        let playback = deadpan_playback::Engine::with_warming_guard(
+            Arc::new(move || repaint.request_repaint()),
+            Arc::new(deadpan_cli::proxy::power_guard),
+        )?;
         let playback_interrupted = Arc::new(AtomicBool::new(false));
         #[cfg(target_os = "macos")]
         let lifecycle = {
@@ -342,6 +346,7 @@ impl DeadpanApp {
             worker,
             endpoint_worker,
             playback,
+            audio_warming: None,
             #[cfg(target_os = "macos")]
             _lifecycle: lifecycle,
             playback_interrupted,
@@ -5389,6 +5394,7 @@ impl eframe::App for DeadpanApp {
                 self.dispatch_takes(&context);
             }
             self.dispatch_ai_audition();
+            self.reconcile_audio_warming(&context);
             self.schedule_playback_picture();
             let main_busy = self.presentation.loading() || self.presentation.needs_render();
             self.thumbnails.pump(

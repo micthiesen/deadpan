@@ -179,6 +179,7 @@ mod source_voice;
 mod waveform;
 
 mod preparation_progress;
+mod warming;
 
 struct Fake {
     callback: Mutex<Callback>,
@@ -251,9 +252,15 @@ impl Device for FakeDevice {
     }
 }
 fn engine(permit: &Arc<resources::PcmPermit>) -> (Engine, Arc<Mutex<Vec<Arc<Fake>>>>) {
+    engine_with_guard(permit, Arc::new(|| None))
+}
+fn engine_with_guard(
+    permit: &Arc<resources::PcmPermit>,
+    guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+) -> (Engine, Arc<Mutex<Vec<Arc<Fake>>>>) {
     let devices = Arc::new(Mutex::new(Vec::new()));
     let registry = devices.clone();
-    let engine = Engine::with_factory(
+    let engine = Engine::with_factory_and_guard(
         resources::repaint(permit),
         Box::new(move || {
             let (feed, callback) =
@@ -270,6 +277,7 @@ fn engine(permit: &Arc<resources::PcmPermit>) -> (Engine, Arc<Mutex<Vec<Arc<Fake
             registry.lock().unwrap().push(shared.clone());
             Ok(Box::new(FakeDevice { feed, shared }))
         }),
+        guard,
     )
     .unwrap();
     (engine, devices)

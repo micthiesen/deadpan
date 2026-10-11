@@ -47,6 +47,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "structure-copies" => super::structure_copies::run(d),
         "macros" => super::macros::run(d),
         "original-playback" => super::original_playback::run(d),
+        "audio-warming" => super::audio_warming::run(d),
         "sound-playback" => super::sound_playback::run(d),
         "retime" => super::retime::run(d),
         "slip" => super::slip::run(d),

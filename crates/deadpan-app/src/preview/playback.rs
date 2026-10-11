@@ -5,6 +5,8 @@ use super::*;
 use crate::transport::{ContentRef, Domain, Identity, Run};
 
 mod controls;
+mod warming;
+pub(super) use warming::Warming;
 
 #[derive(Clone, Copy)]
 pub(super) struct AuditionContext {
@@ -648,14 +650,18 @@ impl DeadpanApp {
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
             if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(egui::WidgetText::from(Arc::clone(&layout.audition)))).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. {} pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label(), self.editor_key(EditorKey::Playback))).clicked() { self.audition_selection(); }
             if let Some(status) = &layout.status && !layout.status_in_context {
-                ui.label(Arc::clone(status));
+                let response = ui.label(Arc::clone(status));
+                if self.transport.is_none() { response.on_hover_text(self.idle_audio_detail()); }
             }
             if layout.inline_monitor { self.monitor_slider(ui); }
         });
         }
         if !layout.inline_monitor {
             ui.horizontal_wrapped(|ui| {
-            if let Some(status) = &layout.status && layout.status_in_context { ui.label(Arc::clone(status)); }
+            if let Some(status) = &layout.status && layout.status_in_context {
+                let response = ui.label(Arc::clone(status));
+                if self.transport.is_none() { response.on_hover_text(self.idle_audio_detail()); }
+            }
             ui.label(Arc::clone(&layout.context))
                 .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
             self.monitor_slider(ui);
@@ -757,6 +763,11 @@ impl DeadpanApp {
             egui::TextWrapMode::Extend,
             width,
         );
+        let idle_status = self
+            .sound_focused()
+            .then(|| self.idle_audio_label())
+            .flatten();
+        let extended_status = preparing || idle_status.is_some();
         let status = text(
             egui::RichText::new(if preparing {
                 self.transport
@@ -766,9 +777,9 @@ impl DeadpanApp {
             } else if active {
                 "Playing".into()
             } else if paused {
-                "Paused".into()
+                idle_status.clone().unwrap_or_else(|| "Paused".into())
             } else {
-                "Ready".into()
+                idle_status.clone().unwrap_or_else(|| "Ready".into())
             })
             .color(if active && !preparing {
                 style::SAVED
@@ -776,7 +787,7 @@ impl DeadpanApp {
                 style::muted(ui)
             }),
             egui::TextWrapMode::Wrap,
-            if preparing {
+            if extended_status {
                 width
             } else {
                 (width - title.size().x - ui.spacing().item_spacing.x).max(1.0)
@@ -829,8 +840,12 @@ impl DeadpanApp {
                 .interact_size
                 .y
                 .max(title.size().y)
-                .max(if preparing { 0.0 } else { status.size().y })
-            + if preparing {
+                .max(if extended_status {
+                    0.0
+                } else {
+                    status.size().y
+                })
+            + if extended_status {
                 status.size().y + 4.0
             } else {
                 0.0
@@ -848,9 +863,12 @@ impl DeadpanApp {
             ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new(title));
-                if !preparing { ui.add(egui::Label::new(Arc::clone(&status))); }
+                if !extended_status { ui.add(egui::Label::new(Arc::clone(&status))); }
             });
-            if preparing { ui.add(egui::Label::new(status)); }
+            if extended_status {
+                let response = ui.add(egui::Label::new(status));
+                if idle_status.is_some() { response.on_hover_text(self.idle_audio_detail()); }
+            }
             ui.add(egui::Label::new(name)).on_hover_text(&sound_label);
             ui.add(egui::Label::new(clock));
             ui.add(egui::ProgressBar::new(if end == 0 { 0.0 } else { self.sound_cursor.min(end) as f32 / end as f32 }).desired_width(ui.available_width()).desired_height(4.0));

@@ -4,13 +4,22 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Idle audio preparation](../qualification/audio-warming-2026-10-11.md) prepares
+a bounded 30-second horizon after the stopped Original/Edit/Sound cursor settles.
+The existing worker shares canonical caches with Play, preserves source admission
+and cancels on navigation, waveform priority and lifecycle changes. Matching Play
+finishes the current read; Stop still cancels it. Native status never moves the
+heard clock or activates output. Future-stage PCM, cancellation and native
+layout evidence are retained. Preparation during playback and persistent cache
+lifecycle remain open; DP-09/DP-16 stay partial.
+
 [Audio preparation activity](../qualification/audio-progress-2026-10-11.md)
 now reaches Original/Edit transport and catalog Sound from the existing worker.
 Actual stage-frame counters and request elapsed time preserve both editor clocks,
 cancel/supersession handling and warm PCM reuse. Full audio/playback suites,
 focused native transport tests and offscreen layout replays cover the path.
-Future-stage prewarming and persistent cache lifecycle remain open;
-DP-09/DP-16 stay partial.
+Idle prewarming is recorded above; preparation during playback and persistent
+cache lifecycle remain open. DP-09/DP-16 stay partial.
 
 [Private disk-backed Preserve output](../qualification/disk-pcm-2026-10-11.md)
 removes the full-output RAM allocation for long stages. One continuous processor
@@ -18,8 +27,8 @@ writes exact PCM into an unlinked file, with shared RAM/disk admission and
 pin-aware eviction for ordinary and projected stages. The four-minute decoded-WAV
 oracle and real export pass, including 7,200 picture comparisons and 240 audio
 windows with 120 zero-offset signal windows. Full audio/core/playback tests and
-strict checks pass. Background preparation and persistent cache lifecycle remain
-open; DP-09/DP-16 stay partial.
+strict checks pass. Idle preparation follows above; preparation during playback
+and persistent cache lifecycle remain open. DP-09/DP-16 stay partial.
 
 [Streamed Preserve input](../qualification/streamed-input-2026-10-11.md)
 removes the complete-input allocation and 21.8-second authoring cap while
@@ -27,7 +36,7 @@ preserving the canonical schedule. The worker retains one processor, bounded
 input windows, whole-input dependency admission and explicit output/work limits.
 A two-minute decoded-WAV signal fits a PCM budget smaller than its input;
 native owned-input comparisons are exact. The disk-backed output follow-up is
-above; background cache scheduling and the remaining audio pipeline keep
+above; preparation during playback and the remaining audio pipeline keep
 DP-09/DP-16 partial.
 
 [Retained group clocks](../qualification/group-clocks-2026-10-11.md) fixes

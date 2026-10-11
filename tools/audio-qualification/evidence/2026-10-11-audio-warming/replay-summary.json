@@ -1,0 +1,171 @@
+[
+  {
+    "run": "native-replay",
+    "scenario": "audio-warming",
+    "failed": true,
+    "checks": 16,
+    "unmeasured": [
+      "Idle preparation uses the real PCM worker and host power policy. No output device is activated; acoustic playback, physical keyboards and OS power transitions are not measured.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "bbcecaf1053d35cbe357fd4bcb97456c9a4a5393bdbb9a8014c85c6eb7bb3253",
+    "selected_images": [
+      {
+        "file": "native-replay-audio-warming-audio-warming-018.png",
+        "input": "Real idle Original preparation",
+        "frame": 45
+      },
+      {
+        "file": "native-replay-audio-warming-audio-warming-024.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 396
+      },
+      {
+        "file": "native-replay-audio-warming-audio-warming-025.png",
+        "input": "Idle audio cache at 960x640",
+        "frame": 397
+      },
+      {
+        "file": "native-replay-audio-warming-audio-warming-027.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 399
+      },
+      {
+        "file": "native-replay-audio-warming-audio-warming-041.png",
+        "input": "Failure state",
+        "frame": 415
+      }
+    ]
+  },
+  {
+    "run": "native-replay-fixed",
+    "scenario": "audio-warming",
+    "failed": true,
+    "checks": 21,
+    "unmeasured": [
+      "Idle preparation uses the real PCM worker and host power policy. No output device is activated; acoustic playback, physical keyboards and OS power transitions are not measured.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "68f82e56b9f2ddaafcc4ee615267adf0dbbb41f41d1c4e69f8dbacf47c4d89a0",
+    "selected_images": [
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-018.png",
+        "input": "Real idle Original preparation",
+        "frame": 45
+      },
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-024.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 392
+      },
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-025.png",
+        "input": "Idle audio cache at 960x640",
+        "frame": 393
+      },
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-027.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 395
+      },
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-036.png",
+        "input": "Prepared Edit audio leaves the edit untouched",
+        "frame": 797
+      },
+      {
+        "file": "native-replay-fixed-audio-warming-audio-warming-059.png",
+        "input": "Failure state",
+        "frame": 869
+      }
+    ]
+  },
+  {
+    "run": "native-replay-final",
+    "scenario": "audio-warming",
+    "failed": false,
+    "checks": 26,
+    "unmeasured": [
+      "Idle preparation uses the real PCM worker and host power policy. No output device is activated; acoustic playback, physical keyboards and OS power transitions are not measured.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "83e86fda5bfcbd5a0a532acf888a0ce77317fd0eedb7daa9895fdb506ae64e2d",
+    "selected_images": [
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-018.png",
+        "input": "Real idle Original preparation",
+        "frame": 45
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-024.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 394
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-025.png",
+        "input": "Idle audio cache at 960x640",
+        "frame": 395
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-027.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 397
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-036.png",
+        "input": "Prepared Edit audio leaves the edit untouched",
+        "frame": 804
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-060.png",
+        "input": "Idle audio cache at 1280x820",
+        "frame": 876
+      },
+      {
+        "file": "native-replay-final-audio-warming-audio-warming-061.png",
+        "input": "Idle audio cache at 960x640",
+        "frame": 877
+      }
+    ]
+  },
+  {
+    "run": "regression-replays-final",
+    "scenario": "original-layout",
+    "failed": false,
+    "checks": 334,
+    "unmeasured": [
+      "Original layout uses the real qualified picture and durable sound placement. Preparing/Playing uses injected typed delivery updates; no audio device, PCM preparation, physical keyboard, OS IME, or listening result is claimed.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "5f8b0b77637510340bc4f53d6c6754ddeece91a72a0178e697213c0b15fbd26b",
+    "selected_images": []
+  },
+  {
+    "run": "regression-replays-final",
+    "scenario": "sound-playback",
+    "failed": false,
+    "checks": 61,
+    "unmeasured": [
+      "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ],
+    "binary_sha256": "5f8b0b77637510340bc4f53d6c6754ddeece91a72a0178e697213c0b15fbd26b",
+    "selected_images": [
+      {
+        "file": "regression-replays-final-sound-playback-sound-playback-061.png",
+        "input": "Measured sound preparation at 960x640",
+        "frame": 100
+      },
+      {
+        "file": "regression-replays-final-sound-playback-sound-playback-062.png",
+        "input": "Measured sound preparation at 1280x820",
+        "frame": 101
+      }
+    ]
+  }
+]

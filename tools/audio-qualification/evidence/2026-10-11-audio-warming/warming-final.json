@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "tests::warming"
+  ],
+  "exit": 0,
+  "seconds": 28.1987227499485,
+  "log_sha256": "89ddf5ebeb9e396f8c86cf134204fb0daeca844da36c4a90377a161cdf3c85f7"
+}

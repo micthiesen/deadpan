@@ -142,6 +142,9 @@ impl Engine {
                 limits: request.limits,
             },
         )?;
+        state
+            .warming
+            .interrupt("Audio warming yielded to visible waveform analysis");
         drop(state);
         self.shared.wake.notify_all();
         self.shared.repaint();

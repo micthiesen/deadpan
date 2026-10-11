@@ -160,7 +160,12 @@ Cache I/O errors are explicit and partial preparations never publish. The
 existing PCM file I/O diagnostics include these reads/writes; the controller
 also reports retained memory frames and disk bytes.
 
-Background cache scheduling, progress display and reuse after restart remain
-open. Fractional pitch, variable rates, remaining voice/group effects,
+[Idle preparation](qualification/audio-warming-2026-10-11.md) now examines a
+bounded horizon ahead of the stopped native cursor, including future Preserve
+stages, on the existing PCM worker. It shares canonical caches, source admission
+and request-bound progress with Play. It does not prepare concurrently with
+active playback or guarantee that every examined tile remains cached.
+Preparation during playback, persistent reuse after restart and the remaining
+cache lifecycle stay open. Fractional pitch, variable rates, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
 open; this qualification does not close DP-09 or DP-16.

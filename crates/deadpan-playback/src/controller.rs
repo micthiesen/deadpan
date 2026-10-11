@@ -70,10 +70,17 @@ pub(crate) struct Job {
     pub gain: f32,
     pub cancelled: AtomicBool,
     pub monitor: Arc<PreparationMonitor>,
+    warming: Option<Arc<crate::warming::Job>>,
     started: Instant,
 }
 
 impl Job {
+    fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+        if let Some(warming) = &self.warming {
+            warming.cancelled.store(true, Ordering::Release);
+        }
+    }
     fn update(
         &self,
         phase: Phase,
@@ -118,6 +125,7 @@ pub(crate) struct State {
     update: Option<Update>,
     output_quiescent: bool,
     pub waveform: crate::waveform::State,
+    pub warming: crate::warming::State,
 }
 impl State {
     pub(crate) fn shutdown(&self) -> bool {
@@ -194,6 +202,7 @@ pub(crate) struct Shared {
     pub wake: Condvar,
     repaint: Arc<dyn Fn() + Send + Sync>,
     counters: Counters,
+    pub(crate) warming_guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
     #[cfg(test)]
     pub preparation_observer: Mutex<Option<preparation::Observer>>,
     #[cfg(test)]
@@ -253,12 +262,15 @@ impl Shared {
     fn stop(&self, shutdown: bool, interrupt_analysis: bool) {
         let mut state = self.lock();
         if let Some(job) = &state.current {
-            job.cancelled.store(true, Ordering::Release);
+            job.cancel();
         }
         if let Some(token) = &state.token {
             token.stop();
         }
         state.shutdown |= shutdown;
+        state
+            .warming
+            .interrupt("Audio warming stopped by a lifecycle interruption");
         let analysis_changed = if shutdown {
             state.waveform.shutdown();
             false
@@ -282,11 +294,14 @@ impl Shared {
     }
     fn worker_failed(&self, worker: &str) {
         let mut state = self.lock();
+        state
+            .warming
+            .interrupt("Audio preparation worker terminated unexpectedly");
         if let Some(token) = &state.token {
             token.stop();
         }
         if let Some(job) = &state.current {
-            job.cancelled.store(true, Ordering::Release);
+            job.cancel();
             state.update = Some(job.update(
                 Phase::Failed,
                 state.token.as_ref().map(StopToken::generation),
@@ -333,9 +348,27 @@ impl Engine {
         Self::with_factory(repaint, Box::new(open_device))
     }
 
+    /// Host policy for optional idle work, evaluated only on the preparation
+    /// worker. Direct playback is not subject to this gate; the host must keep
+    /// each check bounded so in-flight idle work can yield the worker promptly.
+    pub fn with_warming_guard(
+        repaint: Arc<dyn Fn() + Send + Sync>,
+        guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+    ) -> io::Result<Self> {
+        Self::with_factory_and_guard(repaint, Box::new(open_device), guard)
+    }
+
     pub(crate) fn with_factory(
         repaint: Arc<dyn Fn() + Send + Sync>,
         factory: Factory,
+    ) -> io::Result<Self> {
+        Self::with_factory_and_guard(repaint, factory, Arc::new(|| None))
+    }
+
+    pub(crate) fn with_factory_and_guard(
+        repaint: Arc<dyn Fn() + Send + Sync>,
+        factory: Factory,
+        warming_guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
     ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             state: Mutex::new(State {
@@ -349,10 +382,12 @@ impl Engine {
                 update: None,
                 output_quiescent: true,
                 waveform: Default::default(),
+                warming: Default::default(),
             }),
             wake: Condvar::new(),
             repaint,
             counters: Counters::default(),
+            warming_guard,
             #[cfg(test)]
             preparation_observer: Mutex::new(None),
             #[cfg(test)]
@@ -453,11 +488,20 @@ impl Engine {
             .waveform
             .interrupt("Waveform analysis interrupted by audition");
         if let Some(job) = &state.current {
-            job.cancelled.store(true, Ordering::Release);
+            job.cancel();
         }
         if let Some(token) = &state.token {
             token.stop();
         }
+        let warming = state.warming.promote(&snapshot, &target, start);
+        let monitor = warming.as_ref().map_or_else(
+            || {
+                Arc::new(PreparationMonitor::new(
+                    PreparationActivity::PreparingOutput,
+                ))
+            },
+            |warming| Arc::clone(&warming.monitor),
+        );
         let job = Arc::new(Job {
             epoch,
             ticket,
@@ -467,9 +511,8 @@ impl Engine {
             start,
             gain: monitor_gain,
             cancelled: AtomicBool::new(false),
-            monitor: Arc::new(PreparationMonitor::new(
-                PreparationActivity::PreparingOutput,
-            )),
+            monitor,
+            warming,
             started: Instant::now(),
         });
         state.epoch = epoch;
@@ -652,7 +695,7 @@ impl Active {
     }
 
     fn stop(&mut self) {
-        self.job.cancelled.store(true, Ordering::Release);
+        self.job.cancel();
         self.token.stop();
         // Native pause failure is reported by the caller only when no stronger
         // failure already explains this terminated generation.
@@ -720,7 +763,7 @@ impl Active {
                 // Stop producing, but retain already submitted prefix timing.
                 // This is separate from external generation revocation.
                 shared.lock().prep = None;
-                self.job.cancelled.store(true, Ordering::Release);
+                self.job.cancel();
                 shared.wake.notify_all();
             }
         }

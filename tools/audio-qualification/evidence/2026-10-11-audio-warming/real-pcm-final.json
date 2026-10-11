@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "warm_real_source_preserves_canonical_pcm",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 14.011373165994883,
+  "log_sha256": "3189b13814dd0b3096dd576fe007b384c30fc5adcafda2b0944206e23d733cb9"
+}

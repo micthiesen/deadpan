@@ -1,0 +1,41 @@
+{
+  "reviewer": "Primary agent only, per owner instruction; no subagents",
+  "scope": [
+    "Complete Rust diff and new warming/controller/native/test files, documentation and evidence",
+    "Single-worker cache ownership, budget preservation, snapshot/target admission, coalescing and stale-result rejection",
+    "Matching-read promotion and Stop/supersession cancellation, pending delivery quiescence, waveform priority and worker shutdown",
+    "Real canonical PCM through a future Preserve stage and independent limited-reader comparison",
+    "Final native-pass scheduling, workspace/domain/cursor-bound labels, power policy, compact/default measured layout"
+  ],
+  "corrections": [
+    "Initial compilation: extracted Arc document borrowing and replay helper scope/serialization",
+    "New real PCM test used a generic ten-second wait despite a 60-second idle-work budget; extended only the test wait after confirming real progress",
+    "Warm tooltips limited to idle status; a retained Sound card cannot show another domain's warm status",
+    "New replay fixture path canonicalized after import correctly refused parent traversal",
+    "New replay now checks selectable-row paint rather than a Button-only hit predicate; actual paint and normal pointer selection remain required",
+    "Regression replay invocation repeated --scenario; xtask refused before running. Corrected to its comma-separated scenario list and retained the failed command."
+  ],
+  "visual_review": [
+    "Inspected final offscreen Original preparing and compact completed frames (018,025), Edit completion (036), and Sound completion at 1280x820 and 960x640 (060,061)",
+    "Status is unobscured, Sound wraps on whole words, controls remain visible, picture aspect and editor state are retained",
+    "Inspected final control replay Sound preparation frames 061 and 062; the full-width status remains readable at compact/default sizes."
+  ],
+  "verification_order": "The full 80-test playback suite precedes three test-only additions, all covered by the final 10-test warming selection. No later engine change. Final native replay uses corrected fixture/row setup and includes Original, Edit and Sound. Final transport, formatting, strict Clippy and control replays cover the final source.",
+  "limits": [
+    "Actual decoded PCM and offscreen Metal UI; output delivery tests use a fake device, with no new acoustic, live-window or physical power-transition claim",
+    "Horizon completion is examined output, not a promise every tile remains resident. Warm Play can still wait for current bounded work",
+    "Paused subframe resume still uses its exact heard coordinate; idle warming starts at the visible frame boundary, so that in-progress read may be cancelled rather than promoted",
+    "Preparation during active playback and persistent cross-restart cache lifecycle remain open; DP-09/DP-16 stay partial",
+    "No automatic policy-deferral retry; a new cursor/context starts a new attempt",
+    "Debug linker large __eh_frame warning and replay layout/input warnings remain recorded"
+  ],
+  "passed": {
+    "playback_full_suite": 80,
+    "final_warming_cases": 10,
+    "native_transport_tests": 21,
+    "idle_ui_checks": 26,
+    "control_ui_checks": 395,
+    "strict_clippy": true,
+    "format": true
+  }
+}

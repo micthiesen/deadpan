@@ -56,6 +56,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "structure-copies",
     "macros",
     "original-playback",
+    "audio-warming",
     "sound-playback",
     "sound-placement",
     "room-tone",

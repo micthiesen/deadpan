@@ -316,6 +316,9 @@ impl Engine {
             return Err(WaveformRequestError::Shutdown);
         }
         let ticket = state.waveform.request(request)?;
+        state
+            .warming
+            .interrupt("Audio warming yielded to visible waveform analysis");
         drop(state);
         self.shared.wake.notify_all();
         self.shared.repaint();

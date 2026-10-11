@@ -22,6 +22,8 @@ use crate::{Target, WaveformStatus, Window};
 pub(crate) enum PreparationEvent {
     PlaybackAdmitted,
     PlaybackBatchPrepared,
+    WarmingAdmitted,
+    WarmingBatchPrepared,
     WaveformAdmitted,
     WaveformReleased,
     EditWaveformProgress,
@@ -48,6 +50,7 @@ pub(crate) enum Reply {
 enum Task {
     Playback(Arc<Job>),
     Waveform(Arc<crate::waveform::Job>, WaveformMemory),
+    Warm(Arc<crate::warming::Job>),
 }
 
 pub(crate) fn run(shared: Arc<Shared>) {
@@ -66,6 +69,11 @@ pub(crate) fn run(shared: Arc<Shared>) {
                     && let Some(job) = state.waveform.take_pending()
                 {
                     break Task::Waveform(job, state.waveform.memory.clone());
+                }
+                if state.can_analyze()
+                    && let Some(job) = state.warming.take_pending()
+                {
+                    break Task::Warm(job);
                 }
                 state = shared
                     .wake
@@ -89,8 +97,13 @@ pub(crate) fn run(shared: Arc<Shared>) {
                 }
             }
             Task::Waveform(job, memory) => {
+                shared
+                    .lock()
+                    .warming
+                    .interrupt("Audio cache released for waveform analysis");
                 measure(&shared, &job, &memory, &mut retained);
             }
+            Task::Warm(job) => warm(&shared, &job, &mut retained),
         }
     }
 }
@@ -134,6 +147,40 @@ enum Retained {
     Waveform(AnalysisPrepared),
 }
 
+fn admit(
+    snapshot: &Arc<crate::Snapshot>,
+    target: &Target,
+    cancelled: &std::sync::atomic::AtomicBool,
+    retained: &mut Option<Retained>,
+) -> Result<bool, String> {
+    snapshot
+        .validate_admission()
+        .map_err(|error| error.to_string())?;
+    snapshot
+        .check_media_live(cancelled)
+        .map_err(|error| error.to_string())?;
+    if retained.as_ref().is_some_and(|retained| {
+        matches!(retained, Retained::Playback(prepared)
+            if prepared.target == *target && prepared.sources.matches(snapshot))
+    }) {
+        return Ok(false);
+    }
+    // Drop the old cache before new admission, preserving aggregate budgets.
+    *retained = None;
+    let document = target.document(snapshot)?;
+    let plan = Arc::new(RenderPlan::compile(&document).map_err(|e| e.to_string())?);
+    let end = target.effective_end(plan.audio_duration().map_err(|e| e.to_string())?)?;
+    *retained = Some(Retained::Playback(Prepared {
+        target: target.clone(),
+        sources: Sources::new(Arc::clone(snapshot)),
+        audio: LimitedAudio::from_stages(
+            StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
+        ),
+        end,
+    }));
+    Ok(true)
+}
+
 fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Result<(), String> {
     if job.cancelled.load(Ordering::Acquire) {
         return Ok(());
@@ -141,38 +188,7 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
     let admission = job
         .monitor
         .enter(deadpan_audio::PreparationActivity::CheckingPlan);
-    job.snapshot
-        .validate_admission()
-        .map_err(|error| error.to_string())?;
-    job.snapshot
-        .check_media_live(&job.cancelled)
-        .map_err(|error| error.to_string())?;
-    if !retained.as_ref().is_some_and(|retained| {
-        let Retained::Playback(prepared) = retained else {
-            return false;
-        };
-        prepared.target == job.target && prepared.sources.matches(&job.snapshot)
-    }) {
-        // Drop the old cache before any new media admission, preserving the
-        // aggregate limit across revision/session changes as well as seeks.
-        *retained = None;
-        let document = job.target.document(&job.snapshot)?;
-        let plan = Arc::new(RenderPlan::compile(&document).map_err(|e| e.to_string())?);
-        let end = job
-            .target
-            .effective_end(plan.audio_duration().map_err(|e| e.to_string())?)?;
-        let sources = Sources::new(job.snapshot.clone());
-        // Canonical Preserve streams its input and long output under shared
-        // RAM/disk/work limits. Preparation failure never substitutes other DSP.
-        let audio = LimitedAudio::from_stages(
-            StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
-        );
-        *retained = Some(Retained::Playback(Prepared {
-            target: job.target.clone(),
-            sources,
-            audio,
-            end,
-        }));
+    if admit(&job.snapshot, &job.target, &job.cancelled, retained)? {
         #[cfg(test)]
         shared.observe_preparation(PreparationEvent::PlaybackAdmitted, &job.cancelled);
     }
@@ -295,6 +311,101 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
             return Ok(());
         }
     }
+}
+
+fn warm(shared: &Shared, job: &crate::warming::Job, retained: &mut Option<Retained>) {
+    let mut cursor = job.start;
+    let mut paused = false;
+    let result = (|| {
+        let admission = job
+            .monitor
+            .enter(deadpan_audio::PreparationActivity::CheckingPlan);
+        if job.cancelled.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if job.promoted.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if let Some(reason) = (shared.warming_guard)() {
+            paused = true;
+            return Err(reason);
+        }
+        let mut policy_checked = Instant::now();
+        admit(&job.snapshot, &job.target, &job.cancelled, retained)?;
+        #[cfg(test)]
+        shared.observe_preparation(PreparationEvent::WarmingAdmitted, &job.cancelled);
+        let Some(Retained::Playback(prepared)) = retained.as_mut() else {
+            return Err("audio warming cache is absent".to_owned());
+        };
+        prepared
+            .audio
+            .set_preparation_monitor(Some(Arc::clone(&job.monitor)));
+        prepared
+            .sources
+            .set_preparation_monitor(Some(Arc::clone(&job.monitor)));
+        drop(admission);
+        if cursor.0 < 0 || cursor >= prepared.end {
+            return Err("audio warming starts outside the captured audio".to_owned());
+        }
+        let end = AudioSample(
+            cursor
+                .0
+                .saturating_add(crate::WARM_HORIZON_FRAMES)
+                .min(prepared.end.0),
+        );
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while cursor < end
+            && !job.cancelled.load(Ordering::Acquire)
+            && !job.promoted.load(Ordering::Acquire)
+        {
+            if policy_checked.elapsed() >= Duration::from_secs(2) {
+                if let Some(reason) = (shared.warming_guard)() {
+                    paused = true;
+                    return Err(reason);
+                }
+                policy_checked = Instant::now();
+            }
+            let count = u32::try_from((end.0 - cursor.0).min(BATCH_FRAMES as i64))
+                .map_err(|e| e.to_string())?;
+            let block = prepared
+                .audio
+                .read(
+                    &mut prepared.sources,
+                    cursor,
+                    count,
+                    deadline
+                        .checked_duration_since(Instant::now())
+                        .ok_or("audio warming timed out")?,
+                    &job.cancelled,
+                )
+                .map_err(|e| e.to_string())?;
+            if block.project_id != *job.snapshot.document.project_id()
+                || block.revision_id != *job.snapshot.document.revision_id()
+                || block.start != cursor
+                || block.samples.len() != count as usize
+            {
+                return Err("audio warming returned a foreign or incomplete block".into());
+            }
+            cursor.0 += i64::from(count);
+            job.snapshot
+                .check_media_live(&job.cancelled)
+                .map_err(|e| e.to_string())?;
+            #[cfg(test)]
+            shared.observe_preparation(PreparationEvent::WarmingBatchPrepared, &job.cancelled);
+            shared.publish_warming(job, crate::WarmStatus::Preparing, cursor, None);
+        }
+        Ok(())
+    })();
+    let (status, error) = match result {
+        Err(error) if paused => (crate::WarmStatus::Interrupted, Some(error)),
+        Err(error) => (crate::WarmStatus::Unavailable, Some(error)),
+        Ok(()) if job.promoted.load(Ordering::Acquire) => (
+            crate::WarmStatus::Interrupted,
+            Some("Prepared audio handed to audition".into()),
+        ),
+        Ok(()) => (crate::WarmStatus::Complete, None),
+    };
+    shared.publish_warming(job, status, cursor, error);
 }
 
 fn measure(

@@ -71,33 +71,40 @@ impl Controls {
             &app.editor_key(EditorKey::Audition),
             (width - padding.x).max(1.0),
         );
-        let status = app.transport.as_ref().map(|run| {
-            let millis = run.content_sample().unwrap_or(run.sample).0 / 48;
-            let status = if preparing {
-                run.preparation_label()
-            } else if finishing {
-                "Finishing picture".into()
-            } else {
-                "Playing".into()
-            };
-            let lap = if looping {
-                format!(" · loop {}", run.lap().unwrap_or(0) + 1)
-            } else {
-                String::new()
-            };
-            text(
-                egui::RichText::new(format!(
-                    "{status} · {:02}:{:02}.{:03}{lap}",
-                    millis / 60_000,
-                    (millis / 1000) % 60,
-                    millis % 1000
-                ))
-                .monospace()
-                .size(10.0)
-                .weak(),
-                width,
-            )
-        });
+        let status = app
+            .transport
+            .as_ref()
+            .map(|run| {
+                let millis = run.content_sample().unwrap_or(run.sample).0 / 48;
+                let status = if preparing {
+                    run.preparation_label()
+                } else if finishing {
+                    "Finishing picture".into()
+                } else {
+                    "Playing".into()
+                };
+                let lap = if looping {
+                    format!(" · loop {}", run.lap().unwrap_or(0) + 1)
+                } else {
+                    String::new()
+                };
+                text(
+                    egui::RichText::new(format!(
+                        "{status} · {:02}:{:02}.{:03}{lap}",
+                        millis / 60_000,
+                        (millis / 1000) % 60,
+                        millis % 1000
+                    ))
+                    .monospace()
+                    .size(10.0)
+                    .weak(),
+                    width,
+                )
+            })
+            .or_else(|| {
+                app.idle_audio_label()
+                    .map(|label| text(egui::RichText::new(label).size(10.0).weak(), width))
+            });
         let context = text(
             egui::RichText::new(if app.sound_focused() {
                 "Sound loop · complete measured audio".into()
@@ -122,6 +129,7 @@ impl Controls {
             ui.spacing().interact_size.y.max(monitor_text.size().y),
         );
         let inline_monitor = !active
+            && status.is_none()
             && !app.sound_focused()
             && (app.compact_sound_layout(ui.ctx()) || app.compact_original_controls(ui.ctx()))
             && play_size.x + audition_size.x + monitor_size.x + 2.0 * ui.spacing().item_spacing.x

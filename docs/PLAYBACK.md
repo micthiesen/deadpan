@@ -23,6 +23,32 @@ Space still cancels. [Preparation observations](qualification/audio-progress-202
 are bound to the same request, session, revision, proposed-content identity
 and output generation as playback; they never advance the heard clock.
 
+After the stopped cursor and picture settle for 400 ms, the same preparation
+worker may examine up to 30 seconds of committed Original, Edit or focused
+catalog Sound audio ahead. It opens no output device, moves no clock and writes
+no project state. The transport shows actual activity, completion or a deferred
+or unavailable result. Completion describes the examined horizon; bounded LRU
+caches can retain only part of it. Hover explains that distinction.
+Original/Edit warming starts at the visible frame boundary; exact subframe
+pause/resume remains unchanged.
+
+Navigation, revision/domain changes, drafts, current picture work and renders
+cancel optional preparation. Waveform work has priority. Matching Play lets the
+current canonical read finish and retains its cache; other playback cancels it.
+Stop also cancels a read already handed to Play. Playback rechecks admission
+before using retained PCM. One worker owns all these caches, so warming does
+not duplicate their RAM or disk budgets or wait for the background job queue.
+
+The native host checks battery, Low Power Mode and thermal policy before idle
+work, then rechecks between reads when two seconds have elapsed. Checks and
+reads are bounded
+but cooperative; Play may wait for the in-flight check or canonical read.
+The horizon has a 60-second processing deadline after plan admission, with
+existing source-open limits. Deferred work waits for a new cursor/context;
+there is no automatic retry loop. Preparation during active playback,
+persistent cross-restart PCM reuse and full cache lifecycle remain open.
+See [idle audio preparation](qualification/audio-warming-2026-10-11.md).
+
 Explicit pause of ordinary edit playback selects and reveals the beat under the
 last admitted audio position. Original playback leaves the edit cursor, scope
 and selected beat alone. The exact subframe sample is retained for resume; a seek or authored

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "replays",
+    "--scenario",
+    "audio-warming",
+    "--output",
+    "/tmp/deadpan-audio-warm-20261011/native-replay-final",
+    "--jobs",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 115.90810658270493,
+  "log_sha256": "eb443e50b9625844745b50078b5794978666ade050f97de6308abe63d8700808"
+}

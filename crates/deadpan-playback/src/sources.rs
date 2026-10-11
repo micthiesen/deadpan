@@ -366,6 +366,24 @@ impl Snapshot {
             _ => Err(SnapshotError::InvalidAdmission),
         }
     }
+
+    /// Cheap immutable identity comparison; byte admission remains worker work.
+    pub(crate) fn same_inputs(&self, other: &Self) -> bool {
+        self.validate_admission().is_ok()
+            && other.validate_admission().is_ok()
+            && self.content == other.content
+            && self.session == other.session
+            && Arc::ptr_eq(&self.document, &other.document)
+            && (Arc::ptr_eq(&self.sources, &other.sources)
+                || (self.sources.len() == other.sources.len()
+                    && self.sources.iter().all(|(asset, before)| {
+                        other.sources.get(asset).is_some_and(|after| {
+                            Arc::ptr_eq(&before.receipt, &after.receipt)
+                                && before.original == after.original
+                        })
+                    })))
+            && self.originals.same_session(&other.originals)
+    }
 }
 
 fn media_error(error: impl std::fmt::Display) -> SnapshotError {
@@ -458,20 +476,7 @@ impl Sources {
         self.preparation_monitor = monitor;
     }
     pub(crate) fn matches(&self, snapshot: &Snapshot) -> bool {
-        self.snapshot.validate_admission().is_ok()
-            && snapshot.validate_admission().is_ok()
-            && self.snapshot.content == snapshot.content
-            && self.snapshot.session == snapshot.session
-            && Arc::ptr_eq(&self.snapshot.document, &snapshot.document)
-            && (Arc::ptr_eq(&self.snapshot.sources, &snapshot.sources)
-                || (self.snapshot.sources.len() == snapshot.sources.len()
-                    && self.snapshot.sources.iter().all(|(asset, before)| {
-                        snapshot.sources.get(asset).is_some_and(|after| {
-                            Arc::ptr_eq(&before.receipt, &after.receipt)
-                                && before.original == after.original
-                        })
-                    })))
-            && self.snapshot.originals.same_session(&snapshot.originals)
+        self.snapshot.same_inputs(snapshot)
     }
 }
 

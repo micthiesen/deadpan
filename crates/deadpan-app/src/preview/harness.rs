@@ -15,6 +15,7 @@ mod ai_insertion;
 mod ai_pause;
 mod ai_replacements;
 mod audio_treatments;
+mod audio_warming;
 mod backups;
 mod captions;
 mod corrections;
@@ -97,6 +98,7 @@ pub(super) struct Feedback {
     pub held_junction: Option<crate::worker::EditJunctionReply>,
     pub release_junction: Option<crate::worker::EditJunctionReply>,
     pub simulate_playback: bool,
+    pub suppress_audio_warming: bool,
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
     pub last_playback_update: Option<deadpan_playback::Update>,
     /// The scripted downloader behind the `youtube` replay's job seam.
@@ -360,6 +362,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = !ui_harness::real_playback(name);
+                        // Existing replay cache states remain deterministic.
+                        // The audio-warming scenario explicitly enables this.
+                        app.feedback.suppress_audio_warming = true;
                         app.feedback.original_fixture = Some(fixture.to_owned());
                         app.gag_presets =
                             crate::gag_presets::GagPresets::at(replay_root.join("gag-presets.json"));
