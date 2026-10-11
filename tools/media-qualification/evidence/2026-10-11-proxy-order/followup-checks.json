@@ -1,0 +1,55 @@
+[
+  {
+    "name": "warning-followup",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media",
+      "--test-threads",
+      "1",
+      "-E",
+      "test(downscaled_rotated_anamorphic_and_wide_gamut_originals_keep_their_interpretation) | test(an_assembly_refuses_a_misplaced_or_damaged_range)"
+    ],
+    "exit": 0,
+    "seconds": 6.185725583229214,
+    "log_sha256": "a7acf0a709aee886a2fbab4625a8df7f4c8aa012def47f4f435caf357625f511"
+  },
+  {
+    "name": "retry-stability",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media",
+      "--stress-count",
+      "20",
+      "-E",
+      "test(a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output)"
+    ],
+    "exit": 0,
+    "seconds": 23.972132958006114,
+    "log_sha256": "fa1537f2ee5cc2d729c006a0616c39dca36c07d8b3deb025012156b2b85a2eac"
+  },
+  {
+    "name": "fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 4.5691055417992175,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

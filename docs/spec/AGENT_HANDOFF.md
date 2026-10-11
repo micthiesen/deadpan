@@ -15,6 +15,15 @@ the real app job requires a decoded thumbnail before creating its AV1/Opus
 Original. See the qualification for regression failures and their follow-ups.
 DP-14 remains partial.
 
+[Proxy packet-order investigation](../qualification/proxy-order-2026-10-11.md)
+reproduces an adjacent PTS swap followed by a stalled diagnostic encoder.
+Keep the production early refusal, confirmed teardown and single retry; no
+packet-order normalization is justified by this evidence. The forced-stall
+lifecycle test now replays a real, independently verified proxy fixture on its
+second attempt, while separate real-media tests still exercise VideoToolbox.
+Seventeen proxy tests and twenty lifecycle repetitions pass; the service fault
+itself remains possible and is reported truthfully.
+
 [Source interpretation](../qualification/source-interpretation-2026-10-11.md)
 is now an authored, reversible per-asset choice in core schema 49/store schema
 77. `:source-interpret` and the Original pane's **Interpret picture…** control

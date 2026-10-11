@@ -1,0 +1,86 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+────────────
+ Nextest run ID 9e46a3c5-092e-4ba2-9ec5-fc8a368f75b9 with nextest profile: default
+    Starting 1 test across 1 binary (16 tests skipped)
+────────────
+ Stress test iteration 1/20 (00:00:00 elapsed so far, 20 iterations remaining)
+        PASS [   1.182s] [ 1/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.182s] iteration 1/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 2/20 (00:00:01 elapsed so far, 19 iterations remaining)
+        PASS [   1.185s] [ 2/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.185s] iteration 2/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 3/20 (00:00:02 elapsed so far, 18 iterations remaining)
+        PASS [   1.186s] [ 3/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.186s] iteration 3/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 4/20 (00:00:03 elapsed so far, 17 iterations remaining)
+        PASS [   1.182s] [ 4/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.183s] iteration 4/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 5/20 (00:00:04 elapsed so far, 16 iterations remaining)
+        PASS [   1.182s] [ 5/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.182s] iteration 5/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 6/20 (00:00:05 elapsed so far, 15 iterations remaining)
+        PASS [   1.188s] [ 6/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.188s] iteration 6/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 7/20 (00:00:07 elapsed so far, 14 iterations remaining)
+        PASS [   1.180s] [ 7/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.180s] iteration 7/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 8/20 (00:00:08 elapsed so far, 13 iterations remaining)
+        PASS [   1.184s] [ 8/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.184s] iteration 8/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 9/20 (00:00:09 elapsed so far, 12 iterations remaining)
+        PASS [   1.185s] [ 9/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.185s] iteration 9/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 10/20 (00:00:10 elapsed so far, 11 iterations remaining)
+        PASS [   1.189s] [10/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.189s] iteration 10/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 11/20 (00:00:11 elapsed so far, 10 iterations remaining)
+        PASS [   1.179s] [11/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.179s] iteration 11/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 12/20 (00:00:13 elapsed so far, 9 iterations remaining)
+        PASS [   1.187s] [12/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.188s] iteration 12/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 13/20 (00:00:14 elapsed so far, 8 iterations remaining)
+        PASS [   1.186s] [13/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.186s] iteration 13/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 14/20 (00:00:15 elapsed so far, 7 iterations remaining)
+        PASS [   1.185s] [14/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.186s] iteration 14/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 15/20 (00:00:16 elapsed so far, 6 iterations remaining)
+        PASS [   1.184s] [15/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.185s] iteration 15/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 16/20 (00:00:17 elapsed so far, 5 iterations remaining)
+        PASS [   1.183s] [16/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.184s] iteration 16/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 17/20 (00:00:18 elapsed so far, 4 iterations remaining)
+        PASS [   1.193s] [17/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.193s] iteration 17/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 18/20 (00:00:20 elapsed so far, 3 iterations remaining)
+        PASS [   1.180s] [18/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.180s] iteration 18/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 19/20 (00:00:21 elapsed so far, 2 iterations remaining)
+        PASS [   1.187s] [19/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.187s] iteration 19/20: 1 test run: 1 passed, 16 skipped
+────────────
+ Stress test iteration 20/20 (00:00:22 elapsed so far, 1 iteration remaining)
+        PASS [   1.188s] [20/20] (1/1) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+ Stress test [   1.188s] iteration 20/20: 1 test run: 1 passed, 16 skipped
+────────────
+     Summary [  23.703s] 20/20 stress run iterations: 20 passed

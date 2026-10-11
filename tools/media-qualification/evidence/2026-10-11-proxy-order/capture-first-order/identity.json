@@ -1,0 +1,27 @@
+{
+  "production_sha256": "7275f968ffb1a48b7fc424eb0f7e5d97b24a6e3f66544bba0a35199c581ca5d5",
+  "instrumented_sha256": "9d3c63f4fce8432bd811a3dffb73f627626aa077d7e5ac231f2eafd0be26b7b5",
+  "binary_sha256": "1ae3511b3fff735f1dce36f62774c88fb1e8282130c5ede020456aa891ffa484",
+  "original_rgba_sha256": "df16d4869cae0d3bb7dc029e68f8f69775c5b15d1d1d2e2bf4341c9b13f8c87e",
+  "command": [
+    "clang",
+    "-std=c11",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "/tmp/deadpan-proxy-order-20261011/capture-first-order/instrumented.c",
+    "-I/Users/michael/Code/deadpan/native/deadpan-media-worker/src",
+    "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+    "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-lavcodec",
+    "-lavformat",
+    "-lavutil",
+    "-lswscale",
+    "-o",
+    "/tmp/deadpan-proxy-order-20261011/capture-first-order/probe"
+  ],
+  "parallelism": 8,
+  "trials": 800
+}

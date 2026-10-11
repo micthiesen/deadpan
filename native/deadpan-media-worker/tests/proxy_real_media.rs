@@ -995,9 +995,19 @@ fn retry_request(original: &Original) -> deadpan_media::proxy::ProxyRequest {
 
 #[test]
 fn a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output() -> Result {
-    let _slot = vt_slot();
     let original = original("cfr-bframes.mp4")?;
-    let stub = Stub::new("hang", 1)?;
+    // This lifecycle test already spends the one retry on its deliberate
+    // stall. A second, unrelated VideoToolbox failure cannot then recover.
+    // Replay a real encoder's recorded output at the worker boundary; retain
+    // independent timing/pixel verification below. The other real-media tests
+    // exercise actual encoding through the production retry path.
+    let stub = Stub::with_tail("hang", 1, "/bin/cat \"$0.mp4\"\n/bin/cat \"$0.json\" >&2")?;
+    let encoded = include_bytes!("fixtures/proxy/cfr-retry-success.mp4");
+    std::fs::write(stub.directory.path().join("worker.sh.mp4"), encoded)?;
+    std::fs::write(
+        stub.directory.path().join("worker.sh.json"),
+        include_bytes!("fixtures/proxy/cfr-retry-success.json"),
+    )?;
     let scratch = tempfile::tempdir()?;
     let staged = std::sync::Mutex::new(Vec::new());
     let cancelled = AtomicBool::new(false);
@@ -1025,6 +1035,7 @@ fn a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output() -> Result 
     assert_eq!(&*path, staged[1].as_path());
     // The kept output is entirely the second run's, and verifies.
     let output = File::open(&path)?;
+    assert_eq!(std::fs::read(&path)?, encoded);
     assert_eq!(output.metadata()?.len(), report.output_bytes);
     verify_proxy(
         &output,
@@ -1085,7 +1096,7 @@ fn a_refused_packet_retries_once_and_preserves_the_second_failure() -> Result {
     let original = original("cfr-bframes.mp4")?;
     // A real VideoToolbox retry can also return out-of-order packets. This
     // lifecycle check must not assume that a new encoder always succeeds.
-    // Real retry success and verified output are covered by the stalled-worker
+    // Retry success and verified recorded output are covered by the stalled-worker
     // test above; here a distinct terminal failure proves the second run's
     // result survives and no extra retry or partial output is published.
     let stub = Stub::with_tail(

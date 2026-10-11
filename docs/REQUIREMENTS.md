@@ -14,6 +14,14 @@ checks and offscreen workflow replays pass; regression and release results,
 including the retained intermittent proxy failure, are recorded in the linked
 qualification. DP-14 remains partial for its other requirements.
 
+[Proxy encoder investigation](qualification/proxy-order-2026-10-11.md)
+reproduces the intermittent packet-order violation and retains three timed-out
+diagnostic runs. The retry lifecycle test now uses recorded, independently
+verified encoder output after its deliberate stall; all seventeen real-media
+proxy tests and twenty lifecycle repetitions pass. Production still rejects
+invalid packets and retries once after teardown. This is not an encoder-service
+fix and closes no additional requirement.
+
 [Correctable source interpretation](qualification/source-interpretation-2026-10-11.md)
 adds the Original pane's **Interpret picture…** control and
 `:source-interpret`. Range and chroma corrections are undoable, bound to the

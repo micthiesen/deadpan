@@ -1,0 +1,47 @@
+[
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.471946416888386,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 16.137004499789327,
+    "log_sha256": "16b9c557cd44347b087848f5a9a5bf4c6dd648b928b5ff2b27ffa19877ea9175"
+  },
+  {
+    "name": "proxy-tests",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 29.420166332740337,
+    "log_sha256": "a3b096aa8223d1813b2d933997c95bab54d42e73620f4f52c91af423347ddcd3"
+  }
+]

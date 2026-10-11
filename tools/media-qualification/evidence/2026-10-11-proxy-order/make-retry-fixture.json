@@ -1,0 +1,44 @@
+{
+  "request": {
+    "protocol": 2,
+    "input_byte_length": 39157,
+    "stream_index": 0,
+    "source_width": 320,
+    "source_height": 180,
+    "width": 320,
+    "height": 180,
+    "time_base_num": 1,
+    "time_base_den": 30000,
+    "sar_num": 1,
+    "sar_den": 1,
+    "rotation_quarter_turns": 0,
+    "transfer": "bt709",
+    "primaries": "bt709",
+    "quality": 60,
+    "frames": 120,
+    "decode_threads": 4,
+    "max_output_bytes": 33554432,
+    "timeout_ms": 60000,
+    "output_offset": 0,
+    "range": null
+  },
+  "exit": 0,
+  "seconds": 0.2038703327998519,
+  "reply": {
+    "status": "success",
+    "report": {
+      "protocol": 2,
+      "output_bytes": 66929,
+      "frames": 120,
+      "packets": 120,
+      "keyframes": 120,
+      "width": 320,
+      "height": 180,
+      "extradata_sha256": "29ae8a4be1c61269853a19ebfa0b86e2f73e666e84da5d77886386eaa5cc1ba0"
+    }
+  },
+  "worker": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+  "worker_sha256": "ef87a341fd6d2d9ac1d8c78488ddc98cc7d4396c1f14d804b377937e9b1146c7",
+  "original_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "output_sha256": "0120663d6db5e06f8e995e3ca70de0a8e8eaf033736d13a45900230605a5f6a0"
+}

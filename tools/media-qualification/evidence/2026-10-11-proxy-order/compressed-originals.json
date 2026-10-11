@@ -1,0 +1,47 @@
+[
+  {
+    "path": "sequential/results.json.gz",
+    "original_bytes": 33219,
+    "original_sha256": "d737e595d8b5d30b4a10f3b4803cadf01c3e72bcec2154a58ce5fd0ca73291c3"
+  },
+  {
+    "path": "sequential/instrumented.c.gz",
+    "original_bytes": 128215,
+    "original_sha256": "8aa0d2b224b7fd5f7a61d5e10c87f3508a061be8fad509f130f7a017f1eb3536"
+  },
+  {
+    "path": "concurrent-320x180/results.json.gz",
+    "original_bytes": 66473,
+    "original_sha256": "fc195b8c7aa7398b165221cb2e735eac38234a97c73fc5dea8885454bae0dea9"
+  },
+  {
+    "path": "concurrent-320x180/instrumented.c.gz",
+    "original_bytes": 128215,
+    "original_sha256": "ec5b9db209378281c891c4f0403dc8d824a34b047597c1931589fe127540cbd6"
+  },
+  {
+    "path": "actual-cfr/results.json.gz",
+    "original_bytes": 65703,
+    "original_sha256": "9e2a1a43ab3e0747a2f1f1b7f6bcc9e15737c23d6af44db7cf6af040b90aceec"
+  },
+  {
+    "path": "actual-cfr/instrumented.c.gz",
+    "original_bytes": 127866,
+    "original_sha256": "26f2cf21d2090ee6bc40e74f2db0ca8d037feb5bc6b6ab85f3713ff20aa9b402"
+  },
+  {
+    "path": "capture-first-order/results.json.gz",
+    "original_bytes": 130844,
+    "original_sha256": "fd8e268c9a0ab95265567ed4ee1843b4dac382c3207553300e37462844170cfb"
+  },
+  {
+    "path": "capture-first-order/instrumented.c.gz",
+    "original_bytes": 127998,
+    "original_sha256": "9d3c63f4fce8432bd811a3dffb73f627626aa077d7e5ac231f2eafd0be26b7b5"
+  },
+  {
+    "path": "sequential/sample-success-trace.jsonl.gz",
+    "original_bytes": 18826,
+    "original_sha256": "fb6868b1eb78fa94676c59fc47eeaf6ce25636a5d05335d61fbd32375d116bf9"
+  }
+]

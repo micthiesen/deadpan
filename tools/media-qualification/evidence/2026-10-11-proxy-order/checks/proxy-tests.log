@@ -1,0 +1,31 @@
+   Compiling ring v0.17.14
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls v0.23.45
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.24s
+────────────
+ Nextest run ID 6171e359-8482-4f6e-805e-f9ed60337fe3 with nextest profile: default
+    Starting 17 tests across 1 binary
+        PASS [   0.015s] ( 1/17) deadpan-media-worker::proxy_real_media quantized_webm_durations_keep_the_existing_proxy_ineligibility_gate
+        PASS [   0.048s] ( 2/17) deadpan-media-worker::proxy_real_media irregular_durations_and_fast_originals_get_no_proxy
+        PASS [   0.055s] ( 3/17) deadpan-media-worker::proxy_real_media a_refused_packet_retries_once_and_preserves_the_second_failure
+        PASS [   1.157s] ( 4/17) deadpan-media-worker::proxy_real_media a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output
+        PASS [   5.245s] ( 5/17) deadpan-media-worker::proxy_real_media a_paused_build_is_suspended_without_counting_as_a_stall
+        PASS [   9.406s] ( 6/17) deadpan-media-worker::proxy_real_media fractional_aperture_proxy_keeps_backing_pixels_and_scales_presentation_bounds
+        PASS [   9.463s] ( 7/17) deadpan-media-worker::proxy_real_media cancellation_stops_the_worker_and_leaves_no_success
+        PASS [  10.559s] ( 8/17) deadpan-media-worker::proxy_real_media sdr_codecs_proxies_compare_actual_channel_depths
+        PASS [  14.043s] ( 9/17) deadpan-media-worker::proxy_real_media ranges_joined_at_packet_level_verify_as_one_encoding
+        PASS [  15.480s] (10/17) deadpan-media-worker::proxy_real_media a_stalled_range_discards_partial_bytes_before_retry_and_then_assembles
+        LEAK [  21.269s] (11/17) deadpan-media-worker::proxy_real_media downscaled_rotated_anamorphic_and_wide_gamut_originals_keep_their_interpretation
+        PASS [  21.439s] (12/17) deadpan-media-worker::proxy_real_media a_wrong_plan_is_refused_by_the_worker
+        LEAK [  21.537s] (13/17) deadpan-media-worker::proxy_real_media an_assembly_refuses_a_misplaced_or_damaged_range
+        PASS [  21.704s] (14/17) deadpan-media-worker::proxy_real_media a_sidecar_for_other_bytes_or_index_is_refused
+        PASS [  21.927s] (15/17) deadpan-media-worker::proxy_real_media corrected_proxies_verify_against_corrected_pixels_and_keep_exact_source_times
+        PASS [  23.587s] (16/17) deadpan-media-worker::proxy_real_media a_second_stall_is_reported_without_another_retry
+        PASS [  24.961s] (17/17) deadpan-media-worker::proxy_real_media every_proxy_picture_keeps_its_original_time_and_duration
+────────────
+     Summary [  24.962s] 17 tests run: 17 passed (2 leaky), 0 skipped

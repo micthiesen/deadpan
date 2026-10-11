@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+────────────
+ Nextest run ID bc672927-6b76-4728-8c66-7bde0d5d83ef with nextest profile: default
+    Starting 2 tests across 1 binary (15 tests skipped)
+        PASS [   0.336s] (1/2) deadpan-media-worker::proxy_real_media an_assembly_refuses_a_misplaced_or_damaged_range
+        PASS [   5.581s] (2/2) deadpan-media-worker::proxy_real_media downscaled_rotated_anamorphic_and_wide_gamut_originals_keep_their_interpretation
+────────────
+     Summary [   5.917s] 2 tests run: 2 passed, 15 skipped

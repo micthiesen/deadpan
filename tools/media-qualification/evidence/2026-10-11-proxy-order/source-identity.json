@@ -1,0 +1,11 @@
+{
+  "base": "52da5ca45a5c012047a857170e8b272da5c8f219",
+  "note": "Uncommitted test and fixture change on this base; no production source changed.",
+  "files": {
+    "native/deadpan-media-worker/src/converter.c": "7275f968ffb1a48b7fc424eb0f7e5d97b24a6e3f66544bba0a35199c581ca5d5",
+    "native/deadpan-media-worker/tests/proxy_real_media.rs": "fea802c7f22164cac7ca06b677a30a2ad866167bfae35ccdb4b7a44c2c8b2f05",
+    "native/deadpan-media-worker/tests/fixtures/proxy/cfr-retry-success.mp4": "0120663d6db5e06f8e995e3ca70de0a8e8eaf033736d13a45900230605a5f6a0",
+    "native/deadpan-media-worker/tests/fixtures/proxy/cfr-retry-success.json": "99646e9af3bb0980f00e8daf478ca14ab9f4694d43c151df80f8d59e86fc68f5",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  }
+}

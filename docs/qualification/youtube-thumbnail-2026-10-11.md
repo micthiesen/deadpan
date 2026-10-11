@@ -103,6 +103,9 @@ The third failure is the unchanged proxy worker's
 `invalid_packet`, packet 20 had PTS 21021/DTS 20020 instead of PTS 20020.
 Its isolated follow-up passes in 1.364 s. This remains an intermittent failure;
 the rerun does not establish a fix or prove that machine load caused it.
+The later [encoder-fault investigation](proxy-order-2026-10-11.md) reproduces
+an adjacent packet swap and isolates the lifecycle test from that unrelated
+service failure without changing production rejection or retry behavior.
 
 Strict workspace and UI-harness Clippy checks pass. All 1,105 UI tests and
 workspace doctests pass in the gate continuation. The workspace and UI runs

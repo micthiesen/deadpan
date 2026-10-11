@@ -1,0 +1,24 @@
+{
+  "command": [
+    "ffmpeg",
+    "-v",
+    "error",
+    "-i",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "-map",
+    "0:v:0",
+    "-fps_mode",
+    "passthrough",
+    "-pix_fmt",
+    "rgba",
+    "-f",
+    "rawvideo",
+    "/tmp/deadpan-proxy-order-20261011/original.rgba"
+  ],
+  "exit": 0,
+  "stderr": "",
+  "binary": "/opt/homebrew/bin/ffmpeg",
+  "binary_sha256": "9f5ddd4f8b36eb07b0c5d60ab6ea1e618bedd70bc45feab82b4dc23be1596ad1",
+  "version": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "note": "The libraries-only qualified prefix has no ffmpeg executable; PATH selected this fixture-decoding CLI. Encoder/decoder probe uses the qualified 8.0.3 libraries."
+}
