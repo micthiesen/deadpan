@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Closely spaced Generated providers](../qualification/generated-transitions-2026-10-11.md)
+now prepare the next accepted Hold while a different one plays. Two real LTX
+Holds separated by one Original picture present all 180 frames at 1080p60 in
+both final runs, with no audio faults. Second entry falls from 190 ms to
+0.15–0.16 ms on the worker. Playback retains at most four decoders, including
+Original look-ahead and one upcoming Generated admission. Five real-media
+regressions, 45 worker tests and strict Clippy pass. DP-16 remains partial.
+
 [Real Generated export](../qualification/real-generated-export-2026-10-11.md)
 passes full picture/audio comparison at 1080p60 and 4K30: 225 pictures, six
 zero-offset windows, exact silent-Hold and shifted-chirp probes, and unchanged

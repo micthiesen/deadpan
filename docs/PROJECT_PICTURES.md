@@ -137,9 +137,11 @@ verified as a retained dependency; the sampled master supplies the picture.
 
 Cold reads share one cooperative 300-second deadline, a 16 GiB per-master byte
 bound, 32 MiB host provenance, 1 MiB context and 64 MiB per conditioning input.
-Contract frame/raster limits and native decoder bounds also apply. Only one
-decoder is retained across Original/generated switches. Native reuse keys the
-project session, full artifact, both asset records and color policy; ordinary
+Contract frame/raster limits and native decoder bounds also apply. Offline
+picture readers retain one decoder across Original/Generated switches. The app's
+[playback cache](PLAYBACK.md) retains Original and its return companion, one
+Generated decoder and at most one upcoming Generated admission. Native reuse
+keys the project session, full artifact, both asset records and color policy; ordinary
 revision and framing changes reuse its private immutable bytes. Missing or
 corrupt package objects fail cold admission while already admitted bytes remain
 usable. Closing the owning store revokes future preparation, including warm

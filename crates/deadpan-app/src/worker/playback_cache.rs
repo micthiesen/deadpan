@@ -1,4 +1,5 @@
-//! During committed playback, keep one Original and one Generated decoder.
+//! During committed playback, retain one Original and one Generated decoder,
+//! plus one upcoming Generated admission while Generated is serving.
 //! The active slot remains the only decoder that produces the requested
 //! picture. The other slot preserves its verified snapshot and (for an
 //! Original) the already running cut/loop look-ahead while its provider is
@@ -121,8 +122,7 @@ impl PlaybackCache {
                 media: Arc::new(GeneratedMediaKey::new(&workspace.document, &artifact)?),
             };
             if active.as_ref().is_none_or(|session| session.key != key) {
-                // A future admission owns the sole Generated slot until taken.
-                // Drop a different retained artifact before admitting this one.
+                // Drop the old provider before adopting its prepared successor.
                 *active = None;
                 *active = self.generated.take_for(&key, &request.cancelled)?;
             }
@@ -138,15 +138,12 @@ impl PlaybackCache {
         request: &Request,
         active: &Option<RetainedSession>,
     ) {
-        // Never have two Generated decoders. Its next admission can begin
-        // only while Original is serving and its previous Generated is idle.
-        if !active
-            .as_ref()
-            .is_some_and(|session| matches!(session.key, SessionKey::Project { .. }))
-        {
-            return;
-        }
-        let Some((workspace, frame, key)) = self.generated.target(request) else {
+        let serving = match active.as_ref().map(|session| &session.key) {
+            Some(SessionKey::Generated { media, .. }) => Some(Arc::clone(&media.artifact)),
+            Some(SessionKey::Project { .. }) => None,
+            _ => return,
+        };
+        let Some((workspace, frame, key)) = self.generated.target(request, serving) else {
             self.generated.stop_job();
             return;
         };
@@ -158,7 +155,15 @@ impl PlaybackCache {
             self.generated.stop_job();
             return;
         }
-        self.parked = None;
+        // Keep Original and its return look-ahead while Generated is serving.
+        // An idle Generated can be replaced by the next admission instead.
+        if self
+            .parked
+            .as_ref()
+            .is_some_and(|session| matches!(session.key, SessionKey::Generated { .. }))
+        {
+            self.parked = None;
+        }
         self.generated.start(workspace, frame, key);
         let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
         mailbox.generated_ahead = self.generated.stop_flag();

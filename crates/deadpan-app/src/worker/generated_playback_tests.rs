@@ -10,14 +10,165 @@ use super::super::playback_cache::PlaybackCache;
 use super::*;
 
 fn fixture() -> Fixture {
-    let package = std::env::var_os("DEADPAN_GENERATED_PREVIEW_PACKAGE")
+    fixture_from("DEADPAN_GENERATED_PREVIEW_PACKAGE")
+}
+
+fn fixture_from(variable: &str) -> Fixture {
+    let package = std::env::var_os(variable)
         .map(PathBuf::from)
-        .expect("DEADPAN_GENERATED_PREVIEW_PACKAGE must name the accepted bundle fixture");
+        .unwrap_or_else(|| panic!("{variable} must name the accepted bundle fixture"));
     let scratch = tempfile::tempdir().unwrap();
     let copy = scratch.path().join("preview.deadpan");
     deadpan_store::portable::copy_portable(&package, &copy, &AtomicBool::new(false)).unwrap();
     let store = ProjectStore::open(&copy, deadpan_store::AccessMode::ReadWrite).unwrap();
     Fixture { scratch, store }
+}
+
+#[test]
+#[ignore = "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"]
+fn next_generated_provider_prepares_while_the_current_hold_serves() {
+    let fixture = fixture_from("DEADPAN_GENERATED_TRANSITIONS_PACKAGE");
+    let workspace = fixture.workspace(706);
+    let mut entries = Vec::new();
+    let mut previous = None;
+    for frame in 0..workspace.plan.duration().frames() {
+        let artifact = match workspace.plan.picture(ProjectFrame(frame)).unwrap().picture {
+            deadpan_plan::Picture::Accepted { generated, .. } => generated,
+            _ => None,
+        };
+        if artifact.is_some() && artifact != previous {
+            entries.push(frame);
+        }
+        previous = artifact;
+    }
+    assert_eq!(entries.len(), 2);
+    let shared = Shared::default();
+    let mut cache = PlaybackCache::default();
+    let mut retained = None;
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let generation = feed.restart(0).unwrap();
+    let playing = |frame| {
+        let mut request = request(&workspace, sequence(frame), frame as u64 + 1);
+        request.ticket.transport = Some(generation);
+        shared.mailbox.lock().unwrap().latest = Some(request.ticket);
+        request
+    };
+    let wait = |cache: &PlaybackCache| {
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while !cache.generated_finished() {
+            assert!(Instant::now() < deadline, "next Generated was not prepared");
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    };
+    let zero = playing(0);
+    perform(&zero, &mut retained, &mut None).unwrap();
+    let original_index = Arc::downgrade(&retained.as_ref().unwrap().source.shared_index());
+    cache.prepare(&shared, &zero, &retained);
+    wait(&cache);
+    let first = playing(entries[0]);
+    cache.select(&first, &mut retained, true).unwrap();
+    perform(&first, &mut retained, &mut None).unwrap();
+    let first_index = Arc::downgrade(&retained.as_ref().unwrap().source.shared_index());
+    cache.prepare(&shared, &first, &retained);
+    let stop = shared
+        .mailbox
+        .lock()
+        .unwrap()
+        .generated_ahead
+        .clone()
+        .unwrap();
+    assert!(
+        !stop.load(Ordering::Acquire),
+        "second admission started during first Hold"
+    );
+    wait(&cache);
+    // Continuing the first provider must not replace its successor's job.
+    let next = playing(entries[0] + 1);
+    cache.prepare(&shared, &next, &retained);
+    assert!(Arc::ptr_eq(
+        &stop,
+        shared
+            .mailbox
+            .lock()
+            .unwrap()
+            .generated_ahead
+            .as_ref()
+            .unwrap()
+    ));
+    assert!(!stop.load(Ordering::Acquire));
+    let gap = playing(entries[1] - 1);
+    assert!(matches!(
+        workspace
+            .plan
+            .picture(ProjectFrame(entries[1] - 1))
+            .unwrap()
+            .picture,
+        deadpan_plan::Picture::Source { .. }
+    ));
+    cache.select(&gap, &mut retained, true).unwrap();
+    perform(&gap, &mut retained, &mut None).unwrap();
+    assert!(Arc::ptr_eq(
+        &original_index.upgrade().unwrap(),
+        &retained.as_ref().unwrap().source.shared_index()
+    ));
+    cache.prepare(&shared, &gap, &retained);
+    assert!(
+        first_index.upgrade().is_none(),
+        "idle old provider released"
+    );
+    assert!(
+        !stop.load(Ordering::Acquire),
+        "prepared successor survives the short Original gap"
+    );
+    let second = playing(entries[1]);
+    cache.select(&second, &mut retained, true).unwrap();
+    let admitted = retained.as_ref().expect("successor already admitted");
+    assert_eq!(
+        admitted.source.decode_plan(SourceFrameId(0)),
+        deadpan_media::source_session::DecodePlan::Current
+    );
+    let mut reference = None;
+    let mut compared = 0;
+    for frame in entries[1]..workspace.plan.duration().frames() {
+        if !matches!(
+            workspace.plan.picture(ProjectFrame(frame)).unwrap().picture,
+            deadpan_plan::Picture::Accepted {
+                generated: Some(_),
+                ..
+            }
+        ) {
+            break;
+        }
+        let request = playing(frame);
+        let actual = perform(&request, &mut retained, &mut None).unwrap();
+        let expected = perform(&request, &mut reference, &mut None).unwrap();
+        assert_eq!(actual.id, expected.id);
+        assert_eq!(
+            actual.frame.unwrap().bytes(),
+            expected.frame.unwrap().bytes()
+        );
+        compared += 1;
+    }
+    assert!(compared > 1);
+    // Stopping while the first provider serves also cancels a new successor
+    // admission, even without a stopped picture request.
+    let first = playing(entries[0]);
+    cache.select(&first, &mut retained, true).unwrap();
+    perform(&first, &mut retained, &mut None).unwrap();
+    cache.prepare(&shared, &first, &retained);
+    let stop = shared
+        .mailbox
+        .lock()
+        .unwrap()
+        .generated_ahead
+        .clone()
+        .unwrap();
+    cache.release(&mut retained);
+    assert!(stop.load(Ordering::Acquire));
+    assert!(
+        original_index.upgrade().is_none(),
+        "parked Original released on stop"
+    );
 }
 
 #[test]

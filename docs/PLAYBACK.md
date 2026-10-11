@@ -266,18 +266,26 @@ Original or Generated decoder stays parked while the other serves pictures.
 The Original's companion can prepare a return across a Generated Hold, and
 repeated entry reuses the accepted Generated decoder. Both slots retain their
 complete media-key and liveness checks. There is at most one Original, its one
-companion, and one Generated decoder. Stopped replies release the inactive
-slot and companion; cancellation also wakes the worker to release them when
-no new picture is requested. Native teardown stays outside the mailbox lock.
-The next accepted Generated Hold is also prepared on one background job while
-Original is serving. The worker finds that entry within the four-second horizon
-or captured loop window, then performs strict admission and its first decode;
-cached scanning checks at most 1,024 new frames per request. Preparation owns the sole Generated slot until
-entry, observes cancellation and cannot replace a different media key or
+companion, one retained Generated decoder and one upcoming Generated admission.
+Stopped replies release inactive slots and the companion; cancellation also
+wakes the worker to release them when no new picture is requested. Native
+teardown stays outside the mailbox lock.
+The next accepted Generated provider is prepared on one background job while
+Original or a different Generated provider is serving. The worker finds that
+entry within the four-second horizon or captured loop window, then performs
+strict admission and its first decode;
+cached scanning checks at most 1,024 new frames per request and excludes the
+currently serving Generated artifact. Changing that artifact resets the scan.
+An idle Generated decoder is released before a different admission begins;
+the Original and its return companion stay retained. Preparation
+observes cancellation and cannot replace a different media key or
 project session. The foreground reader still validates it before use. If
 entry catches unfinished preparation, it waits for that same admission rather
 than opening another decoder. See the [Generated handoff](qualification/generated-playback-cache-2026-10-11.md)
 and [entry preparation](qualification/generated-prefetch-2026-10-11.md) records.
+The [closely spaced provider qualification](qualification/generated-transitions-2026-10-11.md)
+covers two real accepted Holds separated by one Original picture, with all
+180 pictures presented at 1080p60 in both final runs.
 The [actual app playback measurement](qualification/generated-app-playback-2026-10-11.md) uses real accepted LTX
 pictures, 1080p60/4K30 Originals, device audio and offscreen Metal: all
 1,830/615 frames are presented, without skips, proxy pictures or audio faults.

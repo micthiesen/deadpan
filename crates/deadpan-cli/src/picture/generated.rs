@@ -23,11 +23,12 @@ const MAX_CONDITIONING_BYTES: u64 = 64 * 1024 * 1024;
 /// Admit the sampled master of an already accepted Generated Hold. Every
 /// retained object is required on a cold read. No worker path, mutable
 /// candidate selection, request relevance or installed model is consulted.
-/// The caller must release the previous Generated decoder before calling
-/// this and keep the resulting decoder keyed by the complete artifact, both asset records,
+/// The caller must bound retained decoders and keep each resulting decoder
+/// keyed by the complete artifact, both asset records,
 /// color policy and project session. Revision and framing changes alone do not
 /// invalidate those immutable media inputs. Playback may retain one inactive
-/// Original decoder and its bounded look-ahead companion across this admission.
+/// Original decoder and its bounded look-ahead companion across this admission,
+/// plus one serving Generated decoder while this prepares its successor.
 pub fn open_generated_picture(
     handle: &GeneratedReadHandle,
     document: &ProjectDocument,

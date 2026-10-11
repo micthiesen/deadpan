@@ -1,5 +1,5 @@
-//! One cancellable admission of an upcoming accepted Hold. The job owns the
-//! only Generated decoder until the playback cache takes it for a request.
+//! One cancellable admission of an upcoming accepted Hold. Its decoder is
+//! separate from the currently serving Generated provider, if any.
 
 use super::*;
 
@@ -67,6 +67,9 @@ struct ScanScope {
     revision: deadpan_core::RevisionId,
     generation: deadpan_output::Generation,
     window: Option<(i64, i64)>,
+    /// Skip the provider already serving pictures. Changing it changes which
+    /// entries are eligible, even within the same revision and generation.
+    serving: Option<Arc<deadpan_core::GeneratedArtifact>>,
 }
 
 #[derive(Default)]
@@ -97,6 +100,7 @@ impl GeneratedAhead {
     pub(super) fn target(
         &mut self,
         request: &Request,
+        serving: Option<Arc<deadpan_core::GeneratedArtifact>>,
     ) -> Option<(Arc<Workspace>, i64, SessionKey)> {
         let Work::Project {
             workspace,
@@ -131,6 +135,7 @@ impl GeneratedAhead {
             revision: workspace.document.revision_id().clone(),
             generation,
             window,
+            serving: serving.clone(),
         };
         if self.scope.as_ref() != Some(&scope) {
             self.scan = Scan::default();
@@ -146,9 +151,9 @@ impl GeneratedAhead {
                         matches!(
                             sample.picture,
                             deadpan_plan::Picture::Accepted {
-                                generated: Some(_),
+                                generated: Some(artifact),
                                 ..
-                            }
+                            } if serving.as_ref() != Some(&artifact)
                         )
                     })
                     .map_err(|error| error.to_string())

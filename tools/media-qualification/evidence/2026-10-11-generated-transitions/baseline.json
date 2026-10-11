@@ -1,0 +1,21 @@
+{
+  "command": [
+    "time",
+    "-l",
+    "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "generated-playback",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--project",
+    "/tmp/deadpan-generated-transitions-20261011/two-holds.deadpan",
+    "--output",
+    "/tmp/deadpan-generated-transitions-20261011/baseline"
+  ],
+  "exit": 1,
+  "seconds": 16.529486707877368,
+  "log_sha256": "db28444c985618b5808f78c7e7a3257e26326df976820ef6627727ae545d0dad"
+}

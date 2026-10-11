@@ -1,0 +1,17 @@
+{
+  "base": "23fbbbb50c5272bbe4399391e7d0b5020cc84cef",
+  "source_sha256": {
+    "crates/deadpan-app/src/worker.rs": "ce0b3ddaac77b43c11b21baa6d09385c2d702d46c378dfcb31deb35f4ccd574b",
+    "crates/deadpan-app/src/worker/generated_ahead.rs": "56e6afe5667fff1ae586bf600b3642cdac888945f3e7fc0e8aadf79475cf108c",
+    "crates/deadpan-app/src/worker/playback_cache.rs": "7af22860e8263c28f44b60301d7d6e57bb44baac2919d672c721d31abea7a1c9",
+    "crates/deadpan-app/src/worker/generated_playback_tests.rs": "afb42e8d26a7ad6e1adf8655c9b9ae912ba1e7cd80ac503eaf274933407211c8",
+    "crates/deadpan-app/src/preview/harness/generated_playback.rs": "d071c73f2549a355163dedf6601e3a32e5d2a45a2d0a170cdbb9509027d89396",
+    "crates/deadpan-cli/src/picture/generated.rs": "5db858973dd4a3f73612606f46faab506f969e3f1f6ed4d6dbbb7fcfe8fca4eb"
+  },
+  "baseline_app": "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-app",
+  "baseline_app_sha256": "9a4d7324657bd18bd5e48a7848dbe84f252cf7f32557d9db9c1b42ddc14778d6",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "hardware": "hw.model: Mac17,7\nhw.memsize: 137438953472\nhw.ncpu: 18\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "fixture": "/tmp/deadpan-generated-transitions-20261011/two-holds.deadpan"
+}

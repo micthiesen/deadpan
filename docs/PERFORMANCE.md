@@ -31,8 +31,12 @@ then exercises real accepted LTX pictures and full-resolution 1080p60/4K30
 Originals through the app worker, real device audio and complete offscreen Metal
 UI. Every picture is presented, with zero skips, proxies, underruns or faults.
 The record separates worker time from complete UI composition and documents
-the timing bookkeeping correction. A target without a measured workload is
-open, never passed.
+the timing bookkeeping correction. The [closely spaced provider qualification](qualification/generated-transitions-2026-10-11.md)
+adds a second real accepted Hold separated by one Original picture: both
+1080p60 runs show all 180 pictures, and second entry falls from 190 ms to
+0.15–0.16 ms. The four-decoder bound includes one upcoming Generated admission;
+whole-replay footprint is about 768 MiB, not a worst-case decoder measurement.
+A target without a measured workload is open, never passed.
 
 ## Run the suite
 

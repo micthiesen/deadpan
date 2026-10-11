@@ -1,0 +1,11 @@
+{
+  "test_executable": "/tmp/deadpan-generated-transitions-20261011/release-tests",
+  "test_executable_sha256": "8ea20270715e4619eec4a35e6ec26bd9c98ef579d47804a58f9d697ad431eeb9",
+  "libraries_sha256": {
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib": "ab05b025058f05f3c35b67061bb4c7b587db86d5e89cda1296e58dcd745d1779",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib": "fa1ac6944c4fcb5551f5794245a76b2d8887f0e3ed587278fe35fcc997ffa1b0",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib": "747add4f909d377d5d5d382c43c36fc2cbf73a3b56b173d22f3571afce821492",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib": "fc1470ede7231c87d51a0090ed465d3e39d4b2b3aca53f236df3ac90163a47ff",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib": "222b667e9ae7c26e2007dc75814487feb70782ec9bf269e6f7312428997f27cb"
+  }
+}
