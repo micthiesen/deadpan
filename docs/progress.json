@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T18:22:06Z",
+  "updated_at": "2026-10-11T18:58:51Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16 playback and rendering: remaining format, effects and Generated loop coverage.",
+  "focus": "Completing DP-16 playback: ordinary Generated startup timing and remaining format/effects acceptance.",
   "features": [
     {
       "id": "editing",
@@ -501,6 +501,14 @@
       "revision": "a3c05b2755000b3a044e68af0e68ca550bd82160",
       "retrospective": false,
       "summary": "Fixed closely spaced Generated playback: both 1080p60 runs present every frame; second entry falls from 190 ms to 0.15 ms, with five real-media tests and strict checks passing."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "353c0a0b6175c83e939ff28f35ebe6999b72149c",
+      "retrospective": false,
+      "summary": "Verified 30-lap Generated loops at 1080p60 and 4K30; first 4K Original request fell from 63.6 to 8.7 ms, with no loop picture loss or audio faults. Ordinary first-Hold startup timing remains under investigation."
     }
   ]
 }
