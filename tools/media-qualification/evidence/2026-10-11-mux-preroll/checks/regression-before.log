@@ -1,0 +1,29 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.63s
+────────────
+ Nextest run ID c1a46841-2e6c-4af5-bc30-46e050aaa4c9 with nextest profile: default
+    Starting 1 test across 1 binary (17 tests skipped)
+        FAIL [   0.009s] (1/1) deadpan-encode mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets
+  stdout ───
+
+    running 1 test
+    test mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets ... FAILED
+
+    failures:
+
+    failures:
+        mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets' (120139864) panicked at native/deadpan-encode/src/mux_duration_tests.rs:103:10:
+    called `Result::unwrap()` on an `Err` value: Native { code: "mux_duration_evidence", message: "source decode resource_limit: aggregate declared media samples exceed admission bound" }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+  Cancelling due to test failure: 
+────────────
+     Summary [   0.009s] 1 test run: 0 passed, 1 failed, 17 skipped
+        FAIL [   0.009s] (1/1) deadpan-encode mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets
+error: test run failed

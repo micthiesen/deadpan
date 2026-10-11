@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--features",
+    "deadpan-cli/synthetic-worker",
+    "--locked",
+    "--doc",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 5.737483500037342,
+  "log_sha256": "b5581deaaa37cdb0be8db0e2a778788dd52aba418ba43e7d4a3a6198774970ab"
+}

@@ -1,0 +1,8 @@
+{
+  "standalone_qualification_runs": 10,
+  "standalone_files_per_run": 8,
+  "isolated_exact_test_runs": 1,
+  "concurrent_exact_test_runs": 8,
+  "fresh_failure_reproduced": false,
+  "decision": "Use a documented reconstructed fixture from retained reordered HEVC and current native AAC; retain all failed reproduction attempts."
+}

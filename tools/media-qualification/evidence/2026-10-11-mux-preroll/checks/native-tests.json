@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-encode",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 4.360775915905833,
+  "log_sha256": "5e633e04c40652ea7550c7a17c56c9e06ff88099a3b9bcaba4d7f56541f2ff47"
+}

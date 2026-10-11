@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "-E",
+    "test(hdr_pq_and_hlg_main10_files_pass_complete_inspection)",
+    "--success-output",
+    "immediate"
+  ],
+  "exit": 0,
+  "seconds": 28.183902292046696,
+  "log_sha256": "3ce52da2e73264a4851aea2d69068e78bc7e13332aee5cda8209e5cfb9b3a7e1"
+}

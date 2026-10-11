@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "deadpan-encode",
+    "--example",
+    "qualify_hdr"
+  ],
+  "exit": 0,
+  "seconds": 9.596000167075545,
+  "log_sha256": "c7ce77ec013627df7a9bd7b6d2a76cde12d6a8e5b3dff5ea8057995a998bcc48"
+}

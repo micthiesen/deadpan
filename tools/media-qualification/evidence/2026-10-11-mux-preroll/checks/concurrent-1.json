@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-b90b433851f6f143",
+    "--exact",
+    "encoded_render::verification::inspect::hdr_tests::hdr_pq_and_hlg_main10_files_pass_complete_inspection",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 9.983761792071164,
+  "log_sha256": "342f5a5fd22f585f2148a7ff5ae084b2118789191f88743044467fdabe1d1113"
+}

@@ -283,7 +283,22 @@ pub(super) fn encode(
         max_fall: whole(host[1]).min(whole(host[0])),
     });
     let light = declared.unwrap_or(host_light);
-    let (mut file, report) = session.finish_with_light(light).unwrap().into_parts();
+    let (mut file, report) = match session.finish_with_light(light) {
+        Ok(output) => output.into_parts(),
+        Err(error) => {
+            let directory = directory.keep();
+            std::fs::write(
+                directory.join("encoded-contract.json"),
+                serde_json::to_vec_pretty(&contract).unwrap(),
+            )
+            .unwrap();
+            panic!(
+                "{transfer:?} {:?}: {error}; pre-finalization file and contract retained at {}",
+                choice.b_frames,
+                directory.display()
+            );
+        }
+    };
     let mut bytes = Vec::new();
     file.seek(SeekFrom::Start(0)).unwrap();
     file.read_to_end(&mut bytes).unwrap();

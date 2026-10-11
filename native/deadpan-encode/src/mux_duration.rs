@@ -363,7 +363,13 @@ fn prove(
                 .audio_samples()
                 .div_ceil(u64::from(crate::AUDIO_FRAME_SAMPLES)),
         )
-        .and_then(|count| count.checked_add(1))
+        // Retain both the codec delay and explicit silent preroll packets,
+        // exactly as the native writer and independent AAC verifier require.
+        .and_then(|count| {
+            count.checked_add(u64::from(
+                crate::AUDIO_PRIMING_SAMPLES / crate::AUDIO_FRAME_SAMPLES,
+            ))
+        })
         .ok_or(EncodeError::Evidence("mux packet count overflow"))?;
     let mut packets = inspect(
         Mp4PacketReader::open(

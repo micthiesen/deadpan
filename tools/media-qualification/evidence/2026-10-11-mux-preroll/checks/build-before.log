@@ -1,0 +1,15 @@
+   Compiling libc v0.2.189
+   Compiling rustix v1.1.5
+   Compiling once_cell v1.21.4
+   Compiling syn v3.0.6
+   Compiling errno v0.3.14
+   Compiling getrandom v0.4.3
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling tempfile v3.27.0
+   Compiling thiserror v2.0.20
+   Compiling serde v1.0.229
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.57s

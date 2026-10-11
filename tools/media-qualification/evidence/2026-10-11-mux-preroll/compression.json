@@ -1,0 +1,72 @@
+[
+  {
+    "path": "checks/capture-1.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "0875876def77009e9a791ef5624ed983f657f685549f3567bf501de80b264fe5"
+  },
+  {
+    "path": "checks/capture-10.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "724b14ff2021d15c44c815379255103c5935e87c576b12a2090c6b9bd8b8f76b"
+  },
+  {
+    "path": "checks/capture-2.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "2364095d9223b3b1348f8ae154e25939b404948fbbecd858bf595cccb6c8f0e7"
+  },
+  {
+    "path": "checks/capture-3.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "7aa771295aa92976e6f1ca5cb51761a0f0d11f4c1c49e8a327ff021083abc31d"
+  },
+  {
+    "path": "checks/capture-4.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "12e3e40a4433743cb8438390859db1a667a49c65735bf2fa51e71ecd229d0451"
+  },
+  {
+    "path": "checks/capture-5.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "58192366f959bc2092ecc1da20ca4dde4a0c2cb51eb96900f56a3a119f32e2c1"
+  },
+  {
+    "path": "checks/capture-6.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "443163ba56909af4fc158a9352ccc88ee2e99943666f5cb0657221e8068ebebd"
+  },
+  {
+    "path": "checks/capture-7.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "5aa3d58f0a2b502fac82ada1c3b8c6e7453dd7b333d3c821a11f12edc772adea"
+  },
+  {
+    "path": "checks/capture-8.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "174d06a09565c9467de61a64c82c1baaeff2634ef085bc6c415eea85e71ba1b9"
+  },
+  {
+    "path": "checks/capture-9.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "9793ebead7a215a2a9b6f049f57c0e87d55097b46e9a5b4bd7faa7e439c574b6"
+  },
+  {
+    "path": "checks/fixture-identity.json.gz",
+    "original_bytes": 26956,
+    "original_sha256": "5a7e62b5fd053753d4d27e03d4d9afa77521d64da5ac29b13b6e132e858656f0"
+  },
+  {
+    "path": "checks/render-tests.log.gz",
+    "original_bytes": 26673,
+    "original_sha256": "de449d034dd86bd5635bdda3374ec4cb3bc675364284f5c5c97edf7b180efd65"
+  },
+  {
+    "path": "checks/ui-tests.log.gz",
+    "original_bytes": 181552,
+    "original_sha256": "2b693c4a43f09642182657613c4d2e75c5bf2ad75c67391ae0e52a32fb00fa9d"
+  },
+  {
+    "path": "fixture-identity.json.gz",
+    "original_bytes": 26956,
+    "original_sha256": "5a7e62b5fd053753d4d27e03d4d9afa77521d64da5ac29b13b6e132e858656f0"
+  }
+]

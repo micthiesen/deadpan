@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/qualify_hdr",
+    "/tmp/deadpan-mux-preroll-20261011/capture-9",
+    "640",
+    "360",
+    "30",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 11.038284208159894,
+  "log_sha256": "9793ebead7a215a2a9b6f049f57c0e87d55097b46e9a5b4bd7faa7e439c574b6"
+}

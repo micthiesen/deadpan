@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-encode",
+    "--lib",
+    "-E",
+    "test(reordered_picture_proof_admits_both_current_aac_priming_packets)"
+  ],
+  "exit": 100,
+  "seconds": 0.8268598751164973,
+  "log_sha256": "f9fcabcd79cfad1c81e41403d893488f167bbc7d58d5477ceb4eeacd630d2ed0"
+}

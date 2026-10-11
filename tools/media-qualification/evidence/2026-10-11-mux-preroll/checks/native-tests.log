@@ -1,0 +1,71 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.98s
+────────────
+ Nextest run ID a5604f62-8a30-44c3-a820-dcfa06f9529c with nextest profile: default
+    Starting 64 tests across 11 binaries
+        PASS [   0.012s] ( 1/64) deadpan-encode tests::invalid_limits_cancel_and_expired_budget_fail_before_native_open
+        PASS [   0.013s] ( 2/64) deadpan-encode progress::tests::chronological_input_and_tie_precedence_are_exact
+        PASS [   0.013s] ( 3/64) deadpan-encode ffi::tests::length_prefixed_empty_and_rpu_only_packets_are_refused
+        PASS [   0.013s] ( 4/64) deadpan-encode mux_duration::tests::correction_arithmetic_rejects_invented_values_and_no_b_frame_policy
+        PASS [   0.013s] ( 5/64) deadpan-encode progress::tests::fractional_clock_interleave_preserves_origin_sample_count_and_short_final_input
+        PASS [   0.013s] ( 6/64) deadpan-encode mux_duration::tests::cancelled_expired_and_nonregular_inputs_are_rejected
+        PASS [   0.013s] ( 7/64) deadpan-encode tests::one_control_deadline_shrinks_and_cancellation_has_priority
+        PASS [   0.014s] ( 8/64) deadpan-encode progress::tests::native_or_control_failure_never_advances_counters_or_allows_finish
+        PASS [   0.014s] ( 9/64) deadpan-encode progress::tests::invalid_planes_audio_holes_short_blocks_and_nonfinite_pcm_are_rejected
+        PASS [   0.015s] (10/64) deadpan-encode mux_duration::tests::duplicate_headers_and_box_work_bound_fail_without_writes
+        PASS [   0.015s] (11/64) deadpan-encode progress::tests::missing_duplicate_out_of_order_and_wrong_clock_inputs_poison_without_native_work
+        PASS [   0.016s] (12/64) deadpan-encode mux_duration::tests::exact_version_zero_and_one_headers_are_unchanged
+        PASS [   0.011s] (13/64) deadpan-encode::failures capacity_io_input_and_control_failures_keep_distinct_noncapability_kinds
+        PASS [   0.011s] (14/64) deadpan-encode::failures only_exact_video_capability_codes_receive_specific_classification
+        PASS [   0.011s] (15/64) deadpan-encode::failures diagnostic_prose_never_promotes_an_ordinary_failure_to_capability_evidence
+        PASS [   0.024s] (16/64) deadpan-encode ffi::tests::descriptor_admission_rejects_nonempty_readonly_append_and_multiple_links_before_native_allocation
+        PASS [   0.024s] (17/64) deadpan-encode mux_duration::tests::reordered_picture_proof_admits_both_current_aac_priming_packets
+        PASS [   0.011s] (18/64) deadpan-encode::failures serialized_failure_kind_has_a_closed_vocabulary
+        PASS [   0.010s] (19/64) deadpan-encode::hdr_policy content_light_bounds
+        PASS [   0.009s] (20/64) deadpan-encode::hdr_policy frozen_hdr_version_one_bitrates_are_sdr_v1_times_five_quarters_half_up
+        PASS [   0.037s] (21/64) deadpan-encode mux_duration::tests::version_one_duration_correction_keeps_every_other_byte
+        PASS [   0.053s] (22/64) deadpan-encode ffi::tests::unspecified_hevc_nal_units_are_removed_and_others_kept_byte_for_byte
+        PASS [   0.053s] (23/64) deadpan-encode mux_duration::tests::retained_packet_order_corrects_only_mdhd_duration_and_is_idempotent
+        PASS [   0.053s] (24/64) deadpan-encode mux_duration::tests::malformed_and_unproven_duration_changes_are_rejected_before_writing
+        PASS [   0.010s] (25/64) deadpan-encode::hdr_probe clocks_and_markers_equal_the_sdr_probe_with_doubled_picture_bytes
+        PASS [   0.011s] (26/64) deadpan-encode::hdr_policy hdr_serialization_adds_only_the_hdr_object
+        PASS [   0.012s] (27/64) deadpan-encode::hdr_policy hlg_mastering_and_invalid_mastering_are_rejected_before_native_work
+        PASS [   0.011s] (28/64) deadpan-encode::hdr_policy mastering_and_content_light_rules_match_the_shared_core_rule_set
+        PASS [   0.012s] (29/64) deadpan-encode::hdr_probe version_one_has_known_reference_codes_and_motion
+        PASS [   0.012s] (30/64) deadpan-encode::policy caller_supplied_nonzero_origin_audio_count_is_not_replaced
+        PASS [   0.011s] (31/64) deadpan-encode::policy hard_geometry_clock_duration_and_allocation_bounds_fail_before_native_work
+        PASS [   0.012s] (32/64) deadpan-encode::policy frozen_version_one_preserves_serialized_contract
+        PASS [   0.012s] (33/64) deadpan-encode::policy exact_rate_gop_and_movie_clock_are_preserved
+        PASS [   0.013s] (34/64) deadpan-encode::hdr_probe contracts_carry_the_transfer_and_pq_only_metadata
+        PASS [   0.012s] (35/64) deadpan-encode::policy non_widescreen_rasters_interpolate_by_pixel_area
+        PASS [   0.012s] (36/64) deadpan-encode::policy quality_policy_bounds_all_admitted_rasters_and_preserves_exact_clocks
+        PASS [   0.012s] (37/64) deadpan-encode::policy specification_classes_and_rate_split_are_exact
+        PASS [   0.012s] (38/64) deadpan-encode::policy version_one_interpolation_keeps_fractional_class_areas_and_half_up_rounding
+        PASS [   0.011s] (39/64) deadpan-encode::probe invalid_geometry_rates_and_long_probes_fail_before_allocation
+        PASS [   0.012s] (40/64) deadpan-encode::probe encoder_choices_do_not_change_the_fixture_or_its_clocks
+        PASS [   0.013s] (41/64) deadpan-encode::policy version_one_resolves_low_and_fractional_rates_without_integer_rate_rounding
+        PASS [   0.013s] (42/64) deadpan-encode::probe clocks_preserve_fractional_rates_and_round_from_the_origin
+        PASS [   0.011s] (43/64) deadpan-encode::probe invalid_requests_leave_caller_buffers_unchanged
+        PASS [   0.011s] (44/64) deadpan-encode::probe stereo_events_have_fixed_independent_coordinates_and_amplitudes
+        PASS [   0.011s] (45/64) deadpan-encode::probe version_one_has_fixed_ordinal_colors_and_visible_motion
+        PASS [   0.012s] (46/64) deadpan-encode::runtime empty_and_out_of_range_identity_claims_fail_validation
+        PASS [   0.012s] (47/64) deadpan-encode::runtime platform_wire_contains_only_bounded_nonunique_platform_facts
+        PASS [   0.013s] (48/64) deadpan-encode::runtime fresh_loaded_images_match_pinned_descriptors_without_changing_their_cursor
+        PASS [   0.013s] (49/64) deadpan-encode::runtime runtime_identity_wire_is_closed_and_retains_exact_mapped_facts
+        PASS [   0.020s] (50/64) deadpan-encode::runtime copied_loaded_header_cannot_make_another_vnode_a_loaded_image
+        PASS [   0.025s] (51/64) deadpan-encode::probe tight_planes_cover_odd_chroma_dimensions_and_minimal_rasters
+        PASS [   0.035s] (52/64) deadpan-encode::probe audio_block_boundaries_preserve_each_marker_once_and_no_other_samples
+        PASS [   0.063s] (53/64) deadpan-encode::hdr_probe planar_little_endian_planes_match_pixels_and_limited_range
+        PASS [   0.052s] (54/64) deadpan-encode::probe every_ordinal_is_distinct_and_reproducible_in_one_reused_frame
+        PASS [   0.285s] (55/64) deadpan-encode::hdr_probe every_ordinal_is_distinct_and_invalid_requests_leave_buffers_unchanged
+        PASS [   0.600s] (56/64) deadpan-encode::sdr_quality sdr_quality_never_admits_an_unsupported_software_qp_request
+        PASS [   0.865s] (57/64) deadpan-encode::aac_opening sub_block_export_retains_signal_at_sample_zero_and_its_exact_terminal_sample
+        PASS [   0.892s] (58/64) deadpan-encode::hdr_encode out_of_range_ten_bit_codes_are_rejected_before_native_work
+        PASS [   0.840s] (59/64) deadpan-encode::sdr_bitstream_identity sdr_software_output_with_aac_preroll_is_repeatable
+        PASS [   1.039s] (60/64) deadpan-encode::hdr_encode sdr_sessions_keep_h264_declarations_and_reject_content_light
+        PASS [   1.132s] (61/64) deadpan-encode::hdr_encode content_light_presence_must_match_the_transfer_and_poisons_on_mismatch
+        PASS [   1.209s] (62/64) deadpan-encode::aac_opening quiet_aac_transcode_keeps_the_first_ten_milliseconds_at_the_authored_origin
+        PASS [   1.872s] (63/64) deadpan-encode::hdr_encode hardware_hevc_main10_pq_and_hlg_emit_tagged_files_with_static_metadata
+        PASS [   3.096s] (64/64) deadpan-encode::sdr_quality sdr_quality_preserves_grain_and_edges_with_concurrent_hardware_sessions
+────────────
+     Summary [   3.185s] 64 tests run: 64 passed, 0 skipped

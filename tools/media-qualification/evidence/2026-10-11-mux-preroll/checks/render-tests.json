@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "--test",
+    "encoded_verification",
+    "--features",
+    "synthetic-worker",
+    "-E",
+    "test(encoded_render::) | binary(encoded_verification)",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 26.20564049994573,
+  "log_sha256": "de449d034dd86bd5635bdda3374ec4cb3bc675364284f5c5c97edf7b180efd65"
+}

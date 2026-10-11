@@ -1,0 +1,6 @@
+{
+  "native/deadpan-encode/src/mux_duration.rs": "baeaf813014151d85740b8165e0cc2ed8b4e66f5ac804f58a9ddc8995409d405",
+  "native/deadpan-encode/src/ffi.rs": "f1ec575465ca4d6fc778059198e4f43d54d2beb4a4f3e998f33a26740a5ae06b",
+  "native/deadpan-encode/src/policy.rs": "d6137717b86484b0b2eadd8bc834e8df1350bfaffd25880e3cc2b3d3717d7900",
+  "crates/deadpan-cli/src/encoded_render/verification/inspect/hdr_tests.rs": "233e35fb3168f94f10eae8075c32457f4e776656c10158d5cbc5cfad8329e94e"
+}

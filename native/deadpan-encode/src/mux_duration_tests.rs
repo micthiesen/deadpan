@@ -73,6 +73,54 @@ fn retained_packet_order_corrects_only_mdhd_duration_and_is_idempotent() {
     assert_eq!(round_trip, correction);
 }
 
+#[test]
+fn reordered_picture_proof_admits_both_current_aac_priming_packets() {
+    // Retained reordered HEVC plus current native AAC, copied without
+    // re-encoding; only the measured 47-tick mdhd defect is reinstated.
+    // Qualification records exact packet-byte and timestamp identity.
+    const CURRENT: &[u8] = include_bytes!(
+        "../../../tools/media-qualification/evidence/2026-10-11-mux-preroll/reordered-current-aac.mp4"
+    );
+    let cancelled = AtomicBool::new(false);
+    let mut output = file(CURRENT);
+    let reader = Mp4PacketReader::open(
+        output.try_clone().unwrap(),
+        DecodeLimits::default(),
+        inspection_control(&control(&cancelled)).unwrap(),
+    )
+    .unwrap();
+    let audio = reader
+        .inspection()
+        .tracks
+        .iter()
+        .find(|track| track.kind == Mp4TrackKind::Audio)
+        .unwrap();
+    assert_eq!(audio.sample_count, 74);
+    assert_eq!(audio.edits.len(), 1);
+    assert_eq!(audio.edits[0].media_time, 2048);
+    drop(reader);
+    let correction = finalize(&mut output, &contract(), &control(&cancelled))
+        .unwrap()
+        .unwrap();
+    assert_eq!(correction.previous_ticks, 47);
+    assert_eq!(correction.corrected_ticks, 46);
+    assert_eq!((correction.first_cts, correction.minimum_cts), (2, 1));
+    let corrected = bytes(&mut output);
+    assert_eq!(corrected.len(), CURRENT.len());
+    let changed: Vec<_> = CURRENT
+        .iter()
+        .zip(&corrected)
+        .enumerate()
+        .filter_map(|(index, (before, after))| (before != after).then_some(index))
+        .collect();
+    assert_eq!(changed, [315]);
+    assert_eq!(
+        finalize(&mut output, &contract(), &control(&cancelled)).unwrap(),
+        None
+    );
+    assert_eq!(bytes(&mut output), corrected);
+}
+
 fn atom(kind: &[u8; 4], data: Vec<u8>) -> Vec<u8> {
     let mut result = u32::try_from(data.len() + 8)
         .unwrap()

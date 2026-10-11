@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--features",
+    "deadpan-cli/synthetic-worker",
+    "--locked",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "exit": 0,
+  "seconds": 9.480876666028053,
+  "log_sha256": "5cd3753b5f97d2ae414175696848d2cdeb72246c3da689b1f8fd9332f2bbbec4"
+}

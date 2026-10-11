@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 272.5681370422244,
+  "log_sha256": "2b693c4a43f09642182657613c4d2e75c5bf2ad75c67391ae0e52a32fb00fa9d"
+}

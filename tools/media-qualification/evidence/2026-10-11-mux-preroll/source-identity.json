@@ -1,0 +1,11 @@
+{
+  "base": "fb5fef8e8d7b3efc90834943f2868467eeaba91f",
+  "files": {
+    "native/deadpan-encode/src/mux_duration.rs": "414d88bb4db34bf37d7e680192a65617db7cc8c5b044d8065d35fa1990236583",
+    "native/deadpan-encode/src/mux_duration_tests.rs": "db596513f5183d2a7ba88efa752fa22426373d63e74e25298cd511f3ca405b1e",
+    "crates/deadpan-cli/src/encoded_render/verification/inspect/hdr_tests.rs": "70572a8448ab64d961f452a0307d0672ae20a839a5ce96ef246ccb9890213347"
+  },
+  "review": "Sole-agent review; derives the existing exact AAC priming budget without changing audio bytes, clocks or acceptance tolerances.",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "cpu": "Apple M5 Max"
+}
