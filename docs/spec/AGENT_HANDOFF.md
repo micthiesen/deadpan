@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Optional VideoToolbox decoding](../qualification/hardware-decode-2026-10-11.md)
+is implemented behind `DecodeAcceleration::PreferVideoToolbox`. Keep normal
+preview/playback on software: real long-GOP comparisons found VideoToolbox
+slower for H.264, HEVC and VP9. Surfaces retain their ownership, requested
+pixels alone download/unpack, and receipt measurement always uses software.
+Do not equate byte-exact hardware output with interactive qualification or
+count private hardware buffers as software allocations. DP-16/DP-24 remain open.
+
 [Exact timing acceptance](../qualification/exact-timing-acceptance-2026-10-11.md)
 closes DP-02 under §29.1. The added source-format test combines cuts, both
 retime pitch policies, nested Repeat, a gap and a freeze over 20 qualified

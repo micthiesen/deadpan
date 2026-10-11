@@ -1,0 +1,25 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-media/tests/progressive_admission.rs:246:
+             let hardware = name != "fields-tff.mp4";
+             assert_eq!(serving.decode_work().hardware_frames > 0, hardware);
+             let complete_serving = SourceSession::open_verified(
+[31m-                &mut Cursor::new(&bytes), identity(&bytes), AssetId::new("source").unwrap(),
+(B[m[31m-                limits, &cancelled,
+(B[m[31m-            ).unwrap();
+(B[m[32m+                &mut Cursor::new(&bytes),
+(B[m[32m+                identity(&bytes),
+(B[m[32m+                AssetId::new("source").unwrap(),
+(B[m[32m+                limits,
+(B[m[32m+                &cancelled,
+(B[m[32m+            )
+(B[m[32m+            .unwrap();
+(B[m             assert_eq!(complete_serving.index(), reference.index());
+[31m-            assert_eq!(complete_serving.decode_work().hardware_frames > 0, hardware,
+(B[m[31m-                "complete admission must not reuse its software measuring decoder for hardware serving");
+(B[m[32m+            assert_eq!(
+(B[m[32m+                complete_serving.decode_work().hardware_frames > 0,
+(B[m[32m+                hardware,
+(B[m[32m+                "complete admission must not reuse its software measuring decoder for hardware serving"
+(B[m[32m+            );
+(B[m             assert_eq!(serving.info(), reference.info());
+             assert_eq!(
+                 serving.wait_measured(Duration::from_secs(30)),

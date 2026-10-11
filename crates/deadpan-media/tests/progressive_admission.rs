@@ -225,6 +225,72 @@ fn measured_indexes_do_not_depend_on_the_serving_thread_count() {
 }
 
 #[test]
+#[cfg(target_os = "macos")]
+fn hardware_serving_preserves_software_receipts_and_rejects_bad_indexes() {
+    use deadpan_source::DecodeAcceleration;
+    let cancelled = AtomicBool::new(false);
+    for name in [
+        "cfr-bframes.mp4",
+        "hevc-sdr-10-full.mp4",
+        "vp9-pq-static.webm",
+        "fields-tff.mp4",
+    ] {
+        let bytes = fixture(name);
+        let mut reference = complete(&bytes);
+        for threads in [1, 16] {
+            let mut limits = SourceSessionLimits::interactive();
+            limits.decode.acceleration = DecodeAcceleration::PreferVideoToolbox;
+            limits.decode.threads = threads;
+            let mut serving =
+                progressive_with(&bytes, reference.index().clone(), &reference, limits).unwrap();
+            let hardware = name != "fields-tff.mp4";
+            assert_eq!(serving.decode_work().hardware_frames > 0, hardware);
+            let complete_serving = SourceSession::open_verified(
+                &mut Cursor::new(&bytes),
+                identity(&bytes),
+                AssetId::new("source").unwrap(),
+                limits,
+                &cancelled,
+            )
+            .unwrap();
+            assert_eq!(complete_serving.index(), reference.index());
+            assert_eq!(
+                complete_serving.decode_work().hardware_frames > 0,
+                hardware,
+                "complete admission must not reuse its software measuring decoder for hardware serving"
+            );
+            assert_eq!(serving.info(), reference.info());
+            assert_eq!(
+                serving.wait_measured(Duration::from_secs(30)),
+                IndexMeasurement::Verified
+            );
+            for ordinal in [0, 5, 2, 1] {
+                let expected = reference
+                    .frame(SourceFrameId(ordinal), TIMEOUT, &cancelled)
+                    .unwrap();
+                let actual = serving
+                    .frame(SourceFrameId(ordinal), TIMEOUT, &cancelled)
+                    .unwrap();
+                assert_eq!(
+                    actual, expected,
+                    "{name}, threads={threads}, frame={ordinal}"
+                );
+            }
+            // A valid-but-different receipt is rejected by the independent
+            // software measurement even while hardware could serve pictures.
+            let mut wrong =
+                progressive_with(&bytes, tampered(reference.index(), 3), &reference, limits)
+                    .unwrap();
+            assert!(matches!(
+                wrong.wait_measured(Duration::from_secs(30)),
+                IndexMeasurement::Mismatch(_)
+            ));
+            assert!(wrong.frame(SourceFrameId(0), TIMEOUT, &cancelled).is_err());
+        }
+    }
+}
+
+#[test]
 fn receipt_stream_metadata_and_content_identity_must_match_before_serving() {
     let bytes = fixture("cfr-bframes.mp4");
     let reference = complete(&bytes);

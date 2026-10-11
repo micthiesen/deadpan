@@ -1,0 +1,82 @@
+[
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/final/compare_decode",
+      "/tmp/deadpan-hardware-decode-20261011/1080p60.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/final/1080p60.json"
+    ],
+    "exit": 0,
+    "seconds": 65.64902120782062,
+    "load_before": [
+      3.4921875,
+      3.349609375,
+      3.25439453125
+    ],
+    "load_after": [
+      2.7646484375,
+      3.1708984375,
+      3.19287109375
+    ],
+    "binary_sha256": "95f2a710da91e40468b03f2c75d62056eb7390c8c0d1dc2b80353202698551ba"
+  },
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/final/compare_decode",
+      "/tmp/deadpan-hardware-decode-20261011/4k30.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/final/4k30.json"
+    ],
+    "exit": 0,
+    "seconds": 106.39718883298337,
+    "load_before": [
+      2.7646484375,
+      3.1708984375,
+      3.19287109375
+    ],
+    "load_after": [
+      2.73388671875,
+      2.962890625,
+      3.10205078125
+    ],
+    "binary_sha256": "95f2a710da91e40468b03f2c75d62056eb7390c8c0d1dc2b80353202698551ba"
+  },
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/final/compare_decode",
+      "/tmp/deadpan-hardware-decode-20261011/hevc-4k.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/final/hevc-4k.json"
+    ],
+    "exit": 0,
+    "seconds": 88.59111408423632,
+    "load_before": [
+      2.73388671875,
+      2.962890625,
+      3.10205078125
+    ],
+    "load_after": [
+      3.06591796875,
+      3.16015625,
+      3.1708984375
+    ],
+    "binary_sha256": "95f2a710da91e40468b03f2c75d62056eb7390c8c0d1dc2b80353202698551ba"
+  },
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/final/compare_decode",
+      "/tmp/deadpan-hardware-decode-20261011/vp9-4k.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/final/vp9-4k.json"
+    ],
+    "exit": 0,
+    "seconds": 143.93617137521505,
+    "load_before": [
+      3.06591796875,
+      3.16015625,
+      3.1708984375
+    ],
+    "load_after": [
+      2.30712890625,
+      3.00634765625,
+      3.119140625
+    ],
+    "binary_sha256": "95f2a710da91e40468b03f2c75d62056eb7390c8c0d1dc2b80353202698551ba"
+  }
+]

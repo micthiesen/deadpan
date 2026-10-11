@@ -38,6 +38,17 @@ pub use input::{
     Mp4TrackInspection, Mp4TrackKind, Mp4Vp9Configuration, inspect_mp4,
 };
 
+/// Decoder selection changes execution, never source interpretation or clocks.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum DecodeAcceleration {
+    /// Canonical admission, receipt measurement and offline inspection.
+    #[default]
+    Software,
+    /// Exercise VideoToolbox where the format/device supports it. Intended
+    /// for qualification; unsupported initialization falls back to software.
+    PreferVideoToolbox,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct DecodeLimits {
     pub max_input_bytes: u64,
@@ -60,6 +71,10 @@ pub struct DecodeLimits {
     /// Refuse interlaced or repeated fields instead of applying source
     /// presentation. Use for encoded exports, proxies and generated masters.
     pub progressive_only: bool,
+    /// Select software or qualified progressive VideoToolbox layouts. A failure after
+    /// decoding begins remains an error; it never discards or replaces frames.
+    /// Receipts, import measurement and export inspection default to software.
+    pub acceleration: DecodeAcceleration,
 }
 
 impl Default for DecodeLimits {
@@ -75,6 +90,7 @@ impl Default for DecodeLimits {
             max_packets_per_frame: 10_000,
             threads: 1,
             progressive_only: false,
+            acceleration: DecodeAcceleration::Software,
         }
     }
 }
@@ -429,9 +445,16 @@ pub struct DecodeWork {
     pub frames: u64,
     pub packets: u64,
     pub io_bytes: u64,
-    /// Pictures the codec actually decoded (buffers it allocated), including
-    /// preroll that is never returned. Skipped pictures add none.
+    /// Software picture buffers allocated, including unreturned preroll.
+    /// VideoToolbox owns its buffers and does not contribute to this count.
     pub decoded_pictures: u64,
+    /// VideoToolbox pictures returned by the codec, including seek drains.
+    /// This does not measure its private buffer allocations or prove that
+    /// Apple's implementation used a physical hardware engine.
+    pub hardware_frames: u64,
+    /// VideoToolbox surfaces downloaded for requested pixels. Metadata-only
+    /// preroll never downloads a surface; repeated copies reuse one download.
+    pub hardware_transfers: u64,
 }
 
 /// Actual linked-library version integers queried independently of any encoder.
@@ -1011,6 +1034,7 @@ mod ffi {
         max_packets_per_frame: u32,
         threads: u32,
         progressive_only: u32,
+        acceleration: u32,
         vp9: [u32; 7],
     }
     const MAX_AUDIO_STREAMS: usize = MAX_SOURCE_AUDIO_STREAMS;
@@ -1098,6 +1122,8 @@ mod ffi {
         packets: u64,
         io_bytes: u64,
         pictures: u64,
+        hardware_frames: u64,
+        hardware_transfers: u64,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -1405,6 +1431,10 @@ mod ffi {
                 max_packets_per_frame: limits.max_packets_per_frame,
                 threads: limits.threads,
                 progressive_only: u32::from(limits.progressive_only),
+                acceleration: match limits.acceleration {
+                    DecodeAcceleration::Software => 0,
+                    DecodeAcceleration::PreferVideoToolbox => 1,
+                },
                 vp9: vp9.map_or([0; 7], |v| {
                     [
                         u32::from(v.profile),
@@ -1621,6 +1651,8 @@ mod ffi {
                 packets: work.packets,
                 io_bytes: work.io_bytes,
                 decoded_pictures: work.pictures,
+                hardware_frames: work.hardware_frames,
+                hardware_transfers: work.hardware_transfers,
             }
         }
         /// Add descriptor reads since the last call to process diagnostics.

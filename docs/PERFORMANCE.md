@@ -112,6 +112,13 @@ which samples ran with a warm file cache.
 Close other heavy work first, and record what else was running. Compare only
 like workloads and the same summary schema.
 
+The [VideoToolbox comparison](qualification/hardware-decode-2026-10-11.md)
+uses `cargo run --locked --release -p deadpan-media --example compare_decode --
+ABSOLUTE_MOVIE ABSOLUTE_NEW_REPORT_JSON` to compare complete software and
+hardware pixels plus 100 random seeks per path. This isolates decoder work;
+it does not replace the shared Metal, playback or native UI stages above.
+Hardware decoding stays opt-in because the measured long-GOP seeks were slower.
+
 ## Target inventory
 
 | Section 25 target | Measurement | Notes |

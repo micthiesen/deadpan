@@ -20,6 +20,9 @@ typedef struct {
     uint32_t threads;
     /* Encoded outputs must be decoded without source field presentation. */
     uint32_t progressive_only;
+    /* 0: software, 1: prefer VideoToolbox for qualification.
+       Unsupported initialization falls back before returning a picture. */
+    uint32_t acceleration;
     /* Admitted vpcC: profile, depth (0 when absent), chroma, full range,
        primaries, transfer, matrix. FFmpeg's MOV reader drops chroma siting. */
     uint32_t vp9[7];
@@ -75,9 +78,12 @@ typedef struct {
 } DeadpanExportFrame;
 typedef struct {
     uint64_t frames, packets, io_bytes;
-    /* Picture buffers the codec allocated: pictures actually decoded,
-       including preroll that is never returned. Skipped pictures add none. */
+    /* Software picture buffers allocated, including unreturned preroll.
+       VideoToolbox owns its buffers; those are not counted here. */
     uint64_t pictures;
+    /* VideoToolbox pictures returned by the codec (including seek drains),
+       and surfaces downloaded on demand for pixel access. */
+    uint64_t hardware_frames, hardware_transfers;
 } DeadpanDecodeWork;
 typedef struct {
     uint32_t avcodec, avformat, avutil, swscale, avfilter;

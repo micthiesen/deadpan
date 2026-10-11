@@ -1,0 +1,22 @@
+[
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/compare-v1",
+      "/tmp/deadpan-hardware-decode-20261011/hevc-4k.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/hevc-4k.compare.json"
+    ],
+    "exit": 0,
+    "seconds": 87.93653191719204,
+    "binary_sha256": "6ed6c4f26ec1db8968f968dc45c9cc2fa6fa30d4232f0ff4af7b7737a09ff57e"
+  },
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/compare-v1",
+      "/tmp/deadpan-hardware-decode-20261011/vp9-4k.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/vp9-4k.compare.json"
+    ],
+    "exit": 0,
+    "seconds": 143.41178179113194,
+    "binary_sha256": "6ed6c4f26ec1db8968f968dc45c9cc2fa6fa30d4232f0ff4af7b7737a09ff57e"
+  }
+]

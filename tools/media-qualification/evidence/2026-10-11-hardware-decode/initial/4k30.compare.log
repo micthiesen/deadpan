@@ -1,0 +1,20 @@
+VideoToolbox=false: 600 exact pictures, 100 exact seeks; p95 162.124 ms
+VideoToolbox=true: 600 exact pictures, 100 exact seeks; p95 863.121 ms
+      105.27 real       126.79 user         3.35 sys
+          1012760576  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              179263  page reclaims
+                  39  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   0  voluntary context switches
+              252338  involuntary context switches
+       1739016527594  instructions retired
+        540393960375  cycles elapsed
+           763610360  peak memory footprint

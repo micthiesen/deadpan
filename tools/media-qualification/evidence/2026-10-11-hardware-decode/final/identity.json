@@ -1,0 +1,15 @@
+{
+  "head": "9479499f92e654b8ab0cc40e030a4894b84d32b5",
+  "source_sha256": {
+    "native/deadpan-source/src/decoder.c": "d03e9cfd28b797e10f6338c135e6a25bfd65ef3ec60a84de340acbb498e80b02",
+    "native/deadpan-source/src/decoder.h": "abf380f8fc0f5c8ab6b54adf55e4b846ca0f5d6cd3a9fcf56e2666fd9990a55f",
+    "native/deadpan-source/src/hardware.h": "4dd3ecd8c8f8f32449de8db258e5d8e3d4ae22634dc002eb04930ff4f4a23b8b",
+    "native/deadpan-source/src/lib.rs": "44657b59180d985f129dec24be117df3ecf33f6d5915cb98bd8cc348851c87eb",
+    "native/deadpan-source/build.rs": "86448ecddb623f5c896f857d2160b541b055f224540cfcf640319df7d483699f",
+    "native/deadpan-source/tests/hardware_decode.rs": "e238d9b588a61da46604cd417c80063102011765cccd37a429988671c8e99f8f",
+    "crates/deadpan-media/src/source_session.rs": "6a5e1cfcc81b4a13a7ad0c2b8b50b5cbd1604570de1f4e91c64c890ba37a6a17",
+    "crates/deadpan-media/tests/progressive_admission.rs": "08c95eab34ed8ea426b9b500be713d4507336cf4e01526448cbed241c5667246",
+    "crates/deadpan-media/examples/compare_decode.rs": "0a2fa497518f284183efe014c873b743a19c09c1c2a580ebd6f7a9c92ea9f2db"
+  },
+  "binary_sha256": "95f2a710da91e40468b03f2c75d62056eb7390c8c0d1dc2b80353202698551ba"
+}

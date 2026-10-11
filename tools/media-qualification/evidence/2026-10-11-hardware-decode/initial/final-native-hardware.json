@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-source",
+    "--test",
+    "hardware_decode",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 16.96640941593796,
+  "log_sha256": "446980ddddc366c8f6ad2f1b5113b2b306000b6001c7660a86abd531c9a209cd"
+}

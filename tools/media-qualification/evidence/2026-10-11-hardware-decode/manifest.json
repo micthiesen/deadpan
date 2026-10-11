@@ -1,0 +1,3201 @@
+[
+  {
+    "path": "initial/1080p60.compare.json.gz",
+    "sha256": "2418bf3e951ffbd9914afb559171f7ac1a3c482e65e3ad6e3a6d91aa1aa1eda7",
+    "bytes": 2735,
+    "original_sha256": "79b850eb5f896ac506e11728eb150a40b66e8f60b658234ec8cb8aafc945c3f5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/1080p60.compare.json"
+  },
+  {
+    "path": "initial/1080p60.compare.log",
+    "sha256": "675df111abc9b37db94e810795aaa5b1149d69080849bff1279a894383702e5f",
+    "bytes": 921,
+    "original_sha256": "675df111abc9b37db94e810795aaa5b1149d69080849bff1279a894383702e5f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/1080p60.compare.log"
+  },
+  {
+    "path": "initial/1080p60.generate.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/1080p60.generate.stderr"
+  },
+  {
+    "path": "initial/4k30.compare.json.gz",
+    "sha256": "81dece1b4f0f635390c055b1cd31254ffdabf61e83b533a60677ba814319e0b9",
+    "bytes": 2716,
+    "original_sha256": "01cd3869cb9c3b24b1ccdcb9a221f1050c36bf7e5490527b05222dc9b6546314",
+    "source": "/tmp/deadpan-hardware-decode-20261011/4k30.compare.json"
+  },
+  {
+    "path": "initial/4k30.compare.log",
+    "sha256": "04859f65f85bf5eaa5dbf616287008ce2241aa07237642283f06d40bcf8b4550",
+    "bytes": 920,
+    "original_sha256": "04859f65f85bf5eaa5dbf616287008ce2241aa07237642283f06d40bcf8b4550",
+    "source": "/tmp/deadpan-hardware-decode-20261011/4k30.compare.log"
+  },
+  {
+    "path": "initial/4k30.generate.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/4k30.generate.stderr"
+  },
+  {
+    "path": "initial/aperture-fractional.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture-fractional.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/aperture-fractional.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture-fractional.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/aperture-fractional.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture-fractional.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/aperture-fractional.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture-fractional.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/aperture.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/aperture.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/aperture.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/aperture.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/aperture.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/cfr-bframes.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/cfr-bframes.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/cfr-bframes.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/cfr-bframes.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/cfr-bframes.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/cfr-bframes.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/cfr-bframes.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/cfr-bframes.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/check.py",
+    "sha256": "41b1cfea6860b1f90d6da61bb1b485afd7381ee58879f0aac935677564f1c7c3",
+    "bytes": 3984,
+    "original_sha256": "41b1cfea6860b1f90d6da61bb1b485afd7381ee58879f0aac935677564f1c7c3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/check.py"
+  },
+  {
+    "path": "initial/collect.py",
+    "sha256": "f706d3f852a0833dad159fe57a51a11a67049a0f4984b0986bac143c347896cc",
+    "bytes": 4551,
+    "original_sha256": "f706d3f852a0833dad159fe57a51a11a67049a0f4984b0986bac143c347896cc",
+    "source": "/tmp/deadpan-hardware-decode-20261011/collect.py"
+  },
+  {
+    "path": "initial/committed-fixture-pins.json",
+    "sha256": "75b8f5a6328ee6fb555588cbfde129d07455ea50478f4e046294e6532df7734c",
+    "bytes": 3603,
+    "original_sha256": "75b8f5a6328ee6fb555588cbfde129d07455ea50478f4e046294e6532df7734c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/committed-fixture-pins.json"
+  },
+  {
+    "path": "initial/compare-build-1.json",
+    "sha256": "4fea931000793a2ed514624ff6775ecfcc178d6da0bb57dcadac69b9dc656a65",
+    "bytes": 281,
+    "original_sha256": "4fea931000793a2ed514624ff6775ecfcc178d6da0bb57dcadac69b9dc656a65",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-build-1.json"
+  },
+  {
+    "path": "initial/compare-build-1.log",
+    "sha256": "909a08e688075b871afb86ab87ccbad4a81aed0a6f4e4c70aae676c5cc95f0c9",
+    "bytes": 1249,
+    "original_sha256": "909a08e688075b871afb86ab87ccbad4a81aed0a6f4e4c70aae676c5cc95f0c9",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-build-1.log"
+  },
+  {
+    "path": "initial/compare-build-2.json",
+    "sha256": "f19e35f41535dbbbda7e9f5b94078b34c6a0955aa70cbe5440be9831e9f6261a",
+    "bytes": 279,
+    "original_sha256": "f19e35f41535dbbbda7e9f5b94078b34c6a0955aa70cbe5440be9831e9f6261a",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-build-2.json"
+  },
+  {
+    "path": "initial/compare-build-2.log",
+    "sha256": "48a18ea2b420f1f9ceb218acc1a61ec9d7f9b9539a52059f5111e047e1c46c52",
+    "bytes": 147,
+    "original_sha256": "48a18ea2b420f1f9ceb218acc1a61ec9d7f9b9539a52059f5111e047e1c46c52",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-build-2.log"
+  },
+  {
+    "path": "initial/compare-codecs-runs.json",
+    "sha256": "0347b76440b4ca2613d52785ae59307277e71eef2d5a11cf6859760aa81aa529",
+    "bytes": 710,
+    "original_sha256": "0347b76440b4ca2613d52785ae59307277e71eef2d5a11cf6859760aa81aa529",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-codecs-runs.json"
+  },
+  {
+    "path": "initial/compare-codecs.py",
+    "sha256": "938818c0044d0553030c8af423522313fe26eb2fc67b6e5e384e0afd812ada67",
+    "bytes": 668,
+    "original_sha256": "938818c0044d0553030c8af423522313fe26eb2fc67b6e5e384e0afd812ada67",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-codecs.py"
+  },
+  {
+    "path": "initial/compare-final-build.json",
+    "sha256": "afe23167a97b61a821ab5457a3f53b1a771c4b96db1e4586ed149ba60ec7b0fe",
+    "bytes": 280,
+    "original_sha256": "afe23167a97b61a821ab5457a3f53b1a771c4b96db1e4586ed149ba60ec7b0fe",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-final-build.json"
+  },
+  {
+    "path": "initial/compare-final-build.log",
+    "sha256": "8c422d2571ca3013f44d127abe8823b4d1e571f7a5006c87c84f660f0b267e30",
+    "bytes": 147,
+    "original_sha256": "8c422d2571ca3013f44d127abe8823b4d1e571f7a5006c87c84f660f0b267e30",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-final-build.log"
+  },
+  {
+    "path": "initial/compare-final.py",
+    "sha256": "8bd3ed64bb24697ea5d1618430d830bb50000da09f0628461d76297fbcf520f7",
+    "bytes": 2480,
+    "original_sha256": "8bd3ed64bb24697ea5d1618430d830bb50000da09f0628461d76297fbcf520f7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-final.py"
+  },
+  {
+    "path": "initial/compare-runs.json",
+    "sha256": "d8ffa12632b2e2d2ac902e4d06ef5e2f41c6d10cdee9acd9bcd4a629209b2727",
+    "bytes": 706,
+    "original_sha256": "d8ffa12632b2e2d2ac902e4d06ef5e2f41c6d10cdee9acd9bcd4a629209b2727",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare-runs.json"
+  },
+  {
+    "path": "initial/compare.py",
+    "sha256": "87125d9760bce98d19182596c1f1e793b3297704126c0a5dbff9d4058749df4e",
+    "bytes": 767,
+    "original_sha256": "87125d9760bce98d19182596c1f1e793b3297704126c0a5dbff9d4058749df4e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/compare.py"
+  },
+  {
+    "path": "initial/executed-test-binaries.json",
+    "sha256": "d8652af98266512ca8e177c5eacac8f4853698327aac70d9fe3239c7bfd0b4ff",
+    "bytes": 3923,
+    "original_sha256": "d8652af98266512ca8e177c5eacac8f4853698327aac70d9fe3239c7bfd0b4ff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/executed-test-binaries.json"
+  },
+  {
+    "path": "initial/fields-bff.mp4.soft.jsonl",
+    "sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "bytes": 3198,
+    "original_sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-bff.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/fields-bff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-bff.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/fields-bff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-bff.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/fields-bff.mp4.vt.stderr",
+    "sha256": "84820e802e466cdfb959e6f3e534ba8ab07b4334056d9d8cce678ae3ca068972",
+    "bytes": 133,
+    "original_sha256": "84820e802e466cdfb959e6f3e534ba8ab07b4334056d9d8cce678ae3ca068972",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-bff.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/fields-tff.mp4.soft.jsonl",
+    "sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "bytes": 3198,
+    "original_sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/fields-tff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/fields-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/fields-tff.mp4.vt.stderr",
+    "sha256": "dd62f021f1fa4c7890255bd2c45c6720c4240e6c3deef83a98997ac6a27c1506",
+    "bytes": 133,
+    "original_sha256": "dd62f021f1fa4c7890255bd2c45c6720c4240e6c3deef83a98997ac6a27c1506",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fields-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/final-admission-tests.json",
+    "sha256": "aebe133141cac46a6c3d875d4bcae5291739d63e84b65b42382069e13afbe73b",
+    "bytes": 283,
+    "original_sha256": "aebe133141cac46a6c3d875d4bcae5291739d63e84b65b42382069e13afbe73b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-admission-tests.json"
+  },
+  {
+    "path": "initial/final-admission-tests.log",
+    "sha256": "95d1695aed3aeb40e865d618b597f9f79606661b7569b644f1ac6b2fe6fcf90d",
+    "bytes": 978,
+    "original_sha256": "95d1695aed3aeb40e865d618b597f9f79606661b7569b644f1ac6b2fe6fcf90d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-admission-tests.log"
+  },
+  {
+    "path": "initial/final-clippy.json",
+    "sha256": "e7c3f298be100d9be092be5841c86535052eceaef03abd4eaee8a63692038208",
+    "bytes": 270,
+    "original_sha256": "e7c3f298be100d9be092be5841c86535052eceaef03abd4eaee8a63692038208",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-clippy.json"
+  },
+  {
+    "path": "initial/final-clippy.log",
+    "sha256": "2e4a3c7b4b95ab6462d5fbd1c78599e3018f75518bf5c77a3f16862c14714b6e",
+    "bytes": 947,
+    "original_sha256": "2e4a3c7b4b95ab6462d5fbd1c78599e3018f75518bf5c77a3f16862c14714b6e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-clippy.log"
+  },
+  {
+    "path": "initial/final-compare-build.json",
+    "sha256": "1e34c7357707530cef6759de7dff072a18919365f8b0c618319d77160542f34f",
+    "bytes": 282,
+    "original_sha256": "1e34c7357707530cef6759de7dff072a18919365f8b0c618319d77160542f34f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-compare-build.json"
+  },
+  {
+    "path": "initial/final-compare-build.log",
+    "sha256": "3997fc6790b8063b86c119e91f87ac7395ac6cf26135da637dcb229006bc32dc",
+    "bytes": 62,
+    "original_sha256": "3997fc6790b8063b86c119e91f87ac7395ac6cf26135da637dcb229006bc32dc",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-compare-build.log"
+  },
+  {
+    "path": "initial/final-format-check.json",
+    "sha256": "30a940057d23e4dbf7902048a4239b6dd4d62fd5196d118822a418fa462a0961",
+    "bytes": 203,
+    "original_sha256": "30a940057d23e4dbf7902048a4239b6dd4d62fd5196d118822a418fa462a0961",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-format-check.json"
+  },
+  {
+    "path": "initial/final-format-check.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-format-check.log"
+  },
+  {
+    "path": "initial/final-native-hardware.json",
+    "sha256": "a069fa92b88725999ed7fa0e6062d1526270d8a117edb8d1a05bba8040c17bd5",
+    "bytes": 331,
+    "original_sha256": "a069fa92b88725999ed7fa0e6062d1526270d8a117edb8d1a05bba8040c17bd5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-native-hardware.json"
+  },
+  {
+    "path": "initial/final-native-hardware.log.gz",
+    "sha256": "ee7948c609ae6fe8750da3961f210a2613ed2671071783282a9eb4bf0c09b7e8",
+    "bytes": 1540,
+    "original_sha256": "446980ddddc366c8f6ad2f1b5113b2b306000b6001c7660a86abd531c9a209cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-native-hardware.log"
+  },
+  {
+    "path": "initial/final-source-media-tests-2.json",
+    "sha256": "aa9fdc008a2664161e9ebc345b804ecf8bbeccec92366e2440c00de84fef069b",
+    "bytes": 306,
+    "original_sha256": "aa9fdc008a2664161e9ebc345b804ecf8bbeccec92366e2440c00de84fef069b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-source-media-tests-2.json"
+  },
+  {
+    "path": "initial/final-source-media-tests-2.log.gz",
+    "sha256": "e3f69da46e523714954347a672191e18b52804441cfe20a7323a5cd4013135b8",
+    "bytes": 10337,
+    "original_sha256": "611961368ffc4c70a7e7b0bb5d5363792cdbec328b076f1384a18e2f09e7883b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-source-media-tests-2.log"
+  },
+  {
+    "path": "initial/final-source-media-tests.json",
+    "sha256": "4df4a2e2b4da78ec1fd2acdda52f9fd791aed4e54ddede4988eb91f174b3043d",
+    "bytes": 306,
+    "original_sha256": "4df4a2e2b4da78ec1fd2acdda52f9fd791aed4e54ddede4988eb91f174b3043d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-source-media-tests.json"
+  },
+  {
+    "path": "initial/final-source-media-tests.log.gz",
+    "sha256": "5b0c1429c765ba90b0291343f79d55be3200508a18e01bb4036014d2c713e208",
+    "bytes": 10339,
+    "original_sha256": "a11de5e45f729b210b64009b0ea0181acdcbc18addbc8836bf80cb57282787b1",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final-source-media-tests.log"
+  },
+  {
+    "path": "initial/finalize.py",
+    "sha256": "01145b17ca42a070b6613c11081329f984edd488d44e7946a3edae18d9322b3d",
+    "bytes": 3501,
+    "original_sha256": "01145b17ca42a070b6613c11081329f984edd488d44e7946a3edae18d9322b3d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/finalize.py"
+  },
+  {
+    "path": "initial/fixture-ffmpeg-version.txt",
+    "sha256": "4db45f7e79a457642a487a65a67bfe6be66b0cee1bd461fa5b432b373cdfbc0e",
+    "bytes": 824,
+    "original_sha256": "4db45f7e79a457642a487a65a67bfe6be66b0cee1bd461fa5b432b373cdfbc0e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/fixture-ffmpeg-version.txt"
+  },
+  {
+    "path": "initial/format-check.json",
+    "sha256": "3df6b4c11ae9f53790967c54034f26a2fc6b96d5e51877ef1b5ddbea70a8a73d",
+    "bytes": 203,
+    "original_sha256": "3df6b4c11ae9f53790967c54034f26a2fc6b96d5e51877ef1b5ddbea70a8a73d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/format-check.json"
+  },
+  {
+    "path": "initial/format-check.log",
+    "sha256": "d558afc9fca565ece3574df6948e6d511dd090dcd63b1d6d5e91e15ce9d12f6a",
+    "bytes": 1509,
+    "original_sha256": "d558afc9fca565ece3574df6948e6d511dd090dcd63b1d6d5e91e15ce9d12f6a",
+    "source": "/tmp/deadpan-hardware-decode-20261011/format-check.log"
+  },
+  {
+    "path": "initial/generate-codecs.log",
+    "sha256": "907e51b04f47783b8697fc95063ed863264cf17b38a04bb20577c520f13d84e6",
+    "bytes": 1358,
+    "original_sha256": "907e51b04f47783b8697fc95063ed863264cf17b38a04bb20577c520f13d84e6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generate-codecs.log"
+  },
+  {
+    "path": "initial/generate-codecs.py",
+    "sha256": "26f5fda73c50376e1056e761f4a313bec87bd6484cb38fa40c3868b92c0d717c",
+    "bytes": 1176,
+    "original_sha256": "26f5fda73c50376e1056e761f4a313bec87bd6484cb38fa40c3868b92c0d717c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generate-codecs.py"
+  },
+  {
+    "path": "initial/generate.log",
+    "sha256": "4d15ed5f707dfa39204ad6de0ab720976784dba697867bd538bd1a19c45ee025",
+    "bytes": 1504,
+    "original_sha256": "4d15ed5f707dfa39204ad6de0ab720976784dba697867bd538bd1a19c45ee025",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generate.log"
+  },
+  {
+    "path": "initial/generate.py",
+    "sha256": "8e7fe6cb63880c1fc58b02a45f88e99bf2eb800d8a6dc9a2ec0af16626d0eb3c",
+    "bytes": 1279,
+    "original_sha256": "8e7fe6cb63880c1fc58b02a45f88e99bf2eb800d8a6dc9a2ec0af16626d0eb3c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generate.py"
+  },
+  {
+    "path": "initial/generated-codecs.json",
+    "sha256": "e79dfdbe79b61b0f104089602077782d8f0b8531e5efc89a5c8a141316d41bc8",
+    "bytes": 1844,
+    "original_sha256": "e79dfdbe79b61b0f104089602077782d8f0b8531e5efc89a5c8a141316d41bc8",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generated-codecs.json"
+  },
+  {
+    "path": "initial/generated-fixtures.json",
+    "sha256": "b5be04ee5f331e2bbb2a7d6b99e9845a9a114cc09185814e162039684d6ad7df",
+    "bytes": 2004,
+    "original_sha256": "b5be04ee5f331e2bbb2a7d6b99e9845a9a114cc09185814e162039684d6ad7df",
+    "source": "/tmp/deadpan-hardware-decode-20261011/generated-fixtures.json"
+  },
+  {
+    "path": "initial/h264-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/h264-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/h264-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/h264-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/h264-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/h264-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/h264-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/h264-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/h264-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hdr-hlg-av.mp4.soft.jsonl.gz",
+    "sha256": "45b441f957c6a0bf44acdf392f8bb808249e15c7fad5465c9b2728aaf39d1bdc",
+    "bytes": 3008,
+    "original_sha256": "44d5401ca81361066379d0cd5fb6d2a5ea1bb90490ae1ff0fa0fba530e66bb00",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-hlg-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hdr-hlg-av.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-hlg-av.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hdr-hlg-av.mp4.vt.jsonl.gz",
+    "sha256": "8952014468b77b510a42e50e8888d94a45e11626fc5ffde40f8a5a4a8968e76e",
+    "bytes": 3026,
+    "original_sha256": "ab467b63a3df8d715e206d6ba2fb98a49dc16a49af1f13b57e6bd6952530f1ce",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-hlg-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hdr-hlg-av.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-hlg-av.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hdr-pq-av.mp4.soft.jsonl.gz",
+    "sha256": "e6e65532fcddd784759aa7ebca238161be699b7cff73a8e1d738234c6e7f56ec",
+    "bytes": 3015,
+    "original_sha256": "937d008b664ed6a6efac7372cb1dbc3f7307113bc28452e7d57ef449586a6206",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-pq-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hdr-pq-av.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-pq-av.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hdr-pq-av.mp4.vt.jsonl.gz",
+    "sha256": "a5087de6e7b15fca556be7b5330360dd07a57940ebb3b3d1d6f8dd6d857cc2d0",
+    "bytes": 3034,
+    "original_sha256": "2c8570cc3b4d50bcb269fac8b61e4eefcbd96077580d75ea9d8911afcff52b4b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-pq-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hdr-pq-av.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hdr-pq-av.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hevc-4k.compare.json.gz",
+    "sha256": "74eaa61e1a31371d2e68bdc4abc54254cfd366ab4f77204e82dbfd350e58080f",
+    "bytes": 2659,
+    "original_sha256": "9308c78ad83a910630b1307eb231a47fcadbf1ff01f918c4e20be68ca3ff80ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-4k.compare.json"
+  },
+  {
+    "path": "initial/hevc-4k.compare.log",
+    "sha256": "4709e4f58e989ac84aac1949c5f6aedd32db73d409eb9325f9ef6f314772f33d",
+    "bytes": 921,
+    "original_sha256": "4709e4f58e989ac84aac1949c5f6aedd32db73d409eb9325f9ef6f314772f33d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-4k.compare.log"
+  },
+  {
+    "path": "initial/hevc-4k.generate.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-4k.generate.stderr"
+  },
+  {
+    "path": "initial/hevc-pq-open-gop.mp4.soft.jsonl.gz",
+    "sha256": "ffac4ef9d00591bcf9b467fee77d5d0c2c70bf74f3c13bf67aa7cf3b927da9ba",
+    "bytes": 1305,
+    "original_sha256": "c4e0ce381e20b4d0ed6f32c659304b8df6af3d9beb6e9b9805e703560fd1a461",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-pq-open-gop.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hevc-pq-open-gop.mp4.soft.stderr",
+    "sha256": "bfc9f7d8fb4eac4c068e2b4587c47420f51cb23edb874d17158dc2dbe1575302",
+    "bytes": 33,
+    "original_sha256": "bfc9f7d8fb4eac4c068e2b4587c47420f51cb23edb874d17158dc2dbe1575302",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-pq-open-gop.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hevc-pq-open-gop.mp4.vt.jsonl.gz",
+    "sha256": "92166ba7811ca627c8d66eafc80df1aa9b68eb8b375fea9d6f4ca80ffac69b58",
+    "bytes": 1319,
+    "original_sha256": "6b633f40df63f03125d9a727467a448e9b14f96558cfae3c4361ea45b670b329",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-pq-open-gop.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hevc-pq-open-gop.mp4.vt.stderr",
+    "sha256": "8a120cfa2dbd9fdaf1a5d4cee22d609eb87f215bf3b79801935f02d8ba450f65",
+    "bytes": 37,
+    "original_sha256": "8a120cfa2dbd9fdaf1a5d4cee22d609eb87f215bf3b79801935f02d8ba450f65",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-pq-open-gop.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "8a214d5665fdd6c9dddae1cb9c1b3cf0eb9b2d226a2e923507cb83773505a80e",
+    "bytes": 3222,
+    "original_sha256": "8a214d5665fdd6c9dddae1cb9c1b3cf0eb9b2d226a2e923507cb83773505a80e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-8-full.mp4.soft.stderr",
+    "sha256": "a038591781a13ec23c893958b602f2240e35dc9dbe6fc7ee9228b786b53b658c",
+    "bytes": 1149,
+    "original_sha256": "a038591781a13ec23c893958b602f2240e35dc9dbe6fc7ee9228b786b53b658c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "bytes": 3270,
+    "original_sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-8-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "bytes": 3198,
+    "original_sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/hevc-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "bytes": 3270,
+    "original_sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/hevc-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/hevc-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/matrix-results.json.gz",
+    "sha256": "e5938ace46dc7555e84207afde1cbd6da729422ae10d6f89df24ac34908d7d09",
+    "bytes": 1435,
+    "original_sha256": "b83ad5709c688cd53615e26e97b8124db22a4d0e31d612698a98ac08c78aecc1",
+    "source": "/tmp/deadpan-hardware-decode-20261011/matrix-results.json"
+  },
+  {
+    "path": "initial/matrix.py",
+    "sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "bytes": 2062,
+    "original_sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/matrix.py"
+  },
+  {
+    "path": "initial/native-hardware-1.json",
+    "sha256": "0e35fbe8854b246443c2b6dee81b6fb30fbb5e969acaf703d65cf8fb0a1ac983",
+    "bytes": 331,
+    "original_sha256": "0e35fbe8854b246443c2b6dee81b6fb30fbb5e969acaf703d65cf8fb0a1ac983",
+    "source": "/tmp/deadpan-hardware-decode-20261011/native-hardware-1.json"
+  },
+  {
+    "path": "initial/native-hardware-1.log.gz",
+    "sha256": "69ef30edc5d403015d70523ab3d30466f7f40c440392f18c98997cea91cc166f",
+    "bytes": 1561,
+    "original_sha256": "8711a018d8c1b49acb8415d553e8cb798c4181d9cdfb3aee93b4ae1cdd5b0f03",
+    "source": "/tmp/deadpan-hardware-decode-20261011/native-hardware-1.log"
+  },
+  {
+    "path": "initial/perf-binaries-1.json",
+    "sha256": "af174167421ef561085a94b75a232b540814d4664a0d352528d2004be1710fbe",
+    "bytes": 228,
+    "original_sha256": "af174167421ef561085a94b75a232b540814d4664a0d352528d2004be1710fbe",
+    "source": "/tmp/deadpan-hardware-decode-20261011/perf-binaries-1.json"
+  },
+  {
+    "path": "initial/perf-build-1.json",
+    "sha256": "ab306e516695bc9e426e02dc827901ec61ceb5506161454b6c7d695c06c7b97e",
+    "bytes": 268,
+    "original_sha256": "ab306e516695bc9e426e02dc827901ec61ceb5506161454b6c7d695c06c7b97e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/perf-build-1.json"
+  },
+  {
+    "path": "initial/perf-build-1.log",
+    "sha256": "c40781a13b085692faa02b37745aee4f096d10dc86ac98ed31994e932e2510cf",
+    "bytes": 751,
+    "original_sha256": "c40781a13b085692faa02b37745aee4f096d10dc86ac98ed31994e932e2510cf",
+    "source": "/tmp/deadpan-hardware-decode-20261011/perf-build-1.log"
+  },
+  {
+    "path": "initial/post-run-checks.txt",
+    "sha256": "bf998ffa08f1add0e343d1028c017144f01891ae2d1619af9ba30d281b476a26",
+    "bytes": 384,
+    "original_sha256": "bf998ffa08f1add0e343d1028c017144f01891ae2d1619af9ba30d281b476a26",
+    "source": "/tmp/deadpan-hardware-decode-20261011/post-run-checks.txt"
+  },
+  {
+    "path": "initial/probe-results.json.gz",
+    "sha256": "3b63a76c5ecf70e5e8c2b5fa7ce7f888288050652f3298ffa751bd6e9dd8853a",
+    "bytes": 808,
+    "original_sha256": "7ee2964e5d5bc43959acb89139f4d4ade15e0ec8eb678e0eac73f04b68111b6d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/probe-results.json"
+  },
+  {
+    "path": "initial/probe.c",
+    "sha256": "0ece4d61663ff29ba175c317d012d26ecfcacf2700b348a5a0b5c90bfd4e8cab",
+    "bytes": 4724,
+    "original_sha256": "0ece4d61663ff29ba175c317d012d26ecfcacf2700b348a5a0b5c90bfd4e8cab",
+    "source": "/tmp/deadpan-hardware-decode-20261011/probe.c"
+  },
+  {
+    "path": "initial/probe.py",
+    "sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "bytes": 1651,
+    "original_sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/probe.py"
+  },
+  {
+    "path": "initial/review-notes.txt",
+    "sha256": "8ff6e69be0aa89bd09b3c1221f6a461f3ea869a8d7436e6a3870343fd02e73a5",
+    "bytes": 1334,
+    "original_sha256": "8ff6e69be0aa89bd09b3c1221f6a461f3ea869a8d7436e6a3870343fd02e73a5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/review-notes.txt"
+  },
+  {
+    "path": "initial/rotated90.mp4.soft.jsonl",
+    "sha256": "5c1edd0442fc4893c294f29f34fb207789c7510afe6e7201e28f81743119a7d9",
+    "bytes": 256,
+    "original_sha256": "5c1edd0442fc4893c294f29f34fb207789c7510afe6e7201e28f81743119a7d9",
+    "source": "/tmp/deadpan-hardware-decode-20261011/rotated90.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/rotated90.mp4.soft.stderr",
+    "sha256": "3ba3dfa93edde55861d374051cbddb66aa5f88905f16e20925bd74e9f494ab9e",
+    "bytes": 32,
+    "original_sha256": "3ba3dfa93edde55861d374051cbddb66aa5f88905f16e20925bd74e9f494ab9e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/rotated90.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/rotated90.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/rotated90.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/rotated90.mp4.vt.stderr",
+    "sha256": "8495ed46f2b38940111ec06bb9e94905d93eab8cca9ab44f5865f1997adac981",
+    "bytes": 31,
+    "original_sha256": "8495ed46f2b38940111ec06bb9e94905d93eab8cca9ab44f5865f1997adac981",
+    "source": "/tmp/deadpan-hardware-decode-20261011/rotated90.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/run.py",
+    "sha256": "8161b38b305d746a814153094f1bedc88192c2125fc972a1171bb7b6c6c81402",
+    "bytes": 832,
+    "original_sha256": "8161b38b305d746a814153094f1bedc88192c2125fc972a1171bb7b6c6c81402",
+    "source": "/tmp/deadpan-hardware-decode-20261011/run.py"
+  },
+  {
+    "path": "initial/sanitizers.json",
+    "sha256": "f700c80ba6416665048d4ef69ecb579d6cb7d4a518f3717478ae4d30fe96ba0c",
+    "bytes": 333,
+    "original_sha256": "f700c80ba6416665048d4ef69ecb579d6cb7d4a518f3717478ae4d30fe96ba0c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/sanitizers.json"
+  },
+  {
+    "path": "initial/sanitizers.log.gz",
+    "sha256": "8eb4138a44ac4ad6b3b276c0db4ad60168d8cefcba9fe2cdc49e701f3dd30f16",
+    "bytes": 2052,
+    "original_sha256": "f8142556689bb8f171b316d4ce332df73c2de065ab86ab0346acd4a269694416",
+    "source": "/tmp/deadpan-hardware-decode-20261011/sanitizers.log"
+  },
+  {
+    "path": "initial/source-media-tests-1.json",
+    "sha256": "57e155309fe90122e8b8eef4d3a689f284ed56ee45e239e388a3b52afe3d8182",
+    "bytes": 305,
+    "original_sha256": "57e155309fe90122e8b8eef4d3a689f284ed56ee45e239e388a3b52afe3d8182",
+    "source": "/tmp/deadpan-hardware-decode-20261011/source-media-tests-1.json"
+  },
+  {
+    "path": "initial/source-media-tests-1.log.gz",
+    "sha256": "f754586bf656d2dd39b6599c4650e01bd1aec10ef0cd0177b71e797590fdb218",
+    "bytes": 10427,
+    "original_sha256": "ea139e66be81c2708a63cddbe4293d8cf776e05f0232f07d304dbf1c04a124d0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/source-media-tests-1.log"
+  },
+  {
+    "path": "initial/telecine-tff.mp4.soft.jsonl",
+    "sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "bytes": 3199,
+    "original_sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "source": "/tmp/deadpan-hardware-decode-20261011/telecine-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/telecine-tff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/telecine-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/telecine-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/telecine-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/telecine-tff.mp4.vt.stderr",
+    "sha256": "42be281f1d0d4ea45d135d7c9f4daa1c2f4a147a1c8d4b96dd89e42dea0ff21c",
+    "bytes": 133,
+    "original_sha256": "42be281f1d0d4ea45d135d7c9f4daa1c2f4a147a1c8d4b96dd89e42dea0ff21c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/telecine-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/verify.py",
+    "sha256": "a333de17d9c5ebda208b3ebe8e86cc9aa495609211bd9a9c88605b57ac1b844b",
+    "bytes": 762,
+    "original_sha256": "a333de17d9c5ebda208b3ebe8e86cc9aa495609211bd9a9c88605b57ac1b844b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/verify.py"
+  },
+  {
+    "path": "initial/vfr-long-terminal.mp4.soft.jsonl.gz",
+    "sha256": "d9436f5621d2ddbd9591a8ed554380273fe062f14108066593d364c2cfd7b77b",
+    "bytes": 6017,
+    "original_sha256": "f99a60483b2c41e87303b278146fb04d29684c8c4d246800c913f01a42b5e57b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr-long-terminal.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vfr-long-terminal.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr-long-terminal.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vfr-long-terminal.mp4.vt.jsonl.gz",
+    "sha256": "f6d6edbf649d7938d568eb781e5518b33cfa9a66d9115170c585e60ff73f8454",
+    "bytes": 6044,
+    "original_sha256": "b88df56df47ed978ec4bc15bf1306a741ffeab524efc13e644076d50bb9a6a46",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr-long-terminal.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vfr-long-terminal.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr-long-terminal.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vfr.mp4.soft.jsonl.gz",
+    "sha256": "89e3d3d0c9c4ff577b7e96410d0e1857292a1bd28c1e444bb5898983a9f2ab33",
+    "bytes": 6018,
+    "original_sha256": "c5e973c065a41af42d1a71cef97b872fd689496373258c675d0cf7b800c5ed2f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vfr.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vfr.mp4.vt.jsonl.gz",
+    "sha256": "5b2d0e453a8894fa801ac6e3fe5956a66783301da0d752cdf33b7767446d475e",
+    "bytes": 6048,
+    "original_sha256": "e6411d2ecb4156084e95f620c514e8841c6b462d510a730d97091e8ea8e74dd5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vfr.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vfr.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-4k.compare.json.gz",
+    "sha256": "c5e07bee6519976e152689f82eca5bf98490a65b8beffc4d26d26def0de0330e",
+    "bytes": 2698,
+    "original_sha256": "4be56fa36e8fa78f07e4e85933e92237210d8852175c9dce537ffd0c2423b86f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-4k.compare.json"
+  },
+  {
+    "path": "initial/vp9-4k.compare.log",
+    "sha256": "eddc56f673f7c9df423118b6abe4b7530ebd780f9388236f06328d5f4d2aee5c",
+    "bytes": 921,
+    "original_sha256": "eddc56f673f7c9df423118b6abe4b7530ebd780f9388236f06328d5f4d2aee5c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-4k.compare.log"
+  },
+  {
+    "path": "initial/vp9-4k.generate.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-4k.generate.stderr"
+  },
+  {
+    "path": "initial/vp9-altref.mp4.soft.jsonl.gz",
+    "sha256": "e5af6d9169864a1dd389e60bc9fb6067df2af85c0ae9c85fd278c515bac5b18d",
+    "bytes": 3027,
+    "original_sha256": "1cf474a825a0e5e14ecf8c3604788e415fec5ab1e1b96dabc950d5cb74284a4c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-altref.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-altref.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-altref.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-altref.mp4.vt.jsonl.gz",
+    "sha256": "2316d367caeda2e6d389acd07f6e979eca1f61f49a3127646f801517f7540c72",
+    "bytes": 3048,
+    "original_sha256": "616cba584f00ace7f5819fa131140048843aa367bd4c0471ff929b2e7aecb737",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-altref.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-altref.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-altref.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-existing-10.mp4.soft.jsonl",
+    "sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "bytes": 553,
+    "original_sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-10.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-existing-10.mp4.soft.stderr",
+    "sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "bytes": 32,
+    "original_sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-10.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-existing-10.mp4.vt.jsonl",
+    "sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "bytes": 553,
+    "original_sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-10.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-existing-10.mp4.vt.stderr",
+    "sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "bytes": 36,
+    "original_sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-10.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-existing-8.mp4.soft.jsonl",
+    "sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "bytes": 529,
+    "original_sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-8.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-existing-8.mp4.soft.stderr",
+    "sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "bytes": 32,
+    "original_sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-8.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-existing-8.mp4.vt.jsonl",
+    "sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "bytes": 541,
+    "original_sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-8.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-existing-8.mp4.vt.stderr",
+    "sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "bytes": 36,
+    "original_sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-existing-8.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-pq-static.mp4.soft.jsonl",
+    "sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "bytes": 3342,
+    "original_sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-pq-static.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-pq-static.mp4.vt.jsonl",
+    "sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "bytes": 3342,
+    "original_sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-pq-static.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-pq-static.webm.soft.jsonl",
+    "sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "bytes": 3298,
+    "original_sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.webm.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-pq-static.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.webm.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-pq-static.webm.vt.jsonl",
+    "sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "bytes": 3298,
+    "original_sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.webm.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-pq-static.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-pq-static.webm.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "bytes": 3342,
+    "original_sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "bytes": 3342,
+    "original_sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "bytes": 3342,
+    "original_sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "bytes": 3342,
+    "original_sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "bytes": 3198,
+    "original_sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "bytes": 3270,
+    "original_sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "bytes": 3198,
+    "original_sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "bytes": 3270,
+    "original_sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.webm.soft.jsonl",
+    "sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "bytes": 3154,
+    "original_sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.webm.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.webm.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.webm.vt.jsonl",
+    "sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "bytes": 3226,
+    "original_sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.webm.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-sdr-8-limited.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-sdr-8-limited.webm.vt.stderr"
+  },
+  {
+    "path": "initial/vp9-vfr.webm.soft.jsonl",
+    "sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "bytes": 3299,
+    "original_sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-vfr.webm.soft.jsonl"
+  },
+  {
+    "path": "initial/vp9-vfr.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-vfr.webm.soft.stderr"
+  },
+  {
+    "path": "initial/vp9-vfr.webm.vt.jsonl",
+    "sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "bytes": 3299,
+    "original_sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-vfr.webm.vt.jsonl"
+  },
+  {
+    "path": "initial/vp9-vfr.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/vp9-vfr.webm.vt.stderr"
+  },
+  {
+    "path": "initial/workspace-clippy.json",
+    "sha256": "24169428d4eaace63b6cdfab68075a5d15c28e7d140bb4c528f9096d96db3291",
+    "bytes": 269,
+    "original_sha256": "24169428d4eaace63b6cdfab68075a5d15c28e7d140bb4c528f9096d96db3291",
+    "source": "/tmp/deadpan-hardware-decode-20261011/workspace-clippy.json"
+  },
+  {
+    "path": "initial/workspace-clippy.log",
+    "sha256": "b40bbd122692d3fd1342d3838650faa8014f473a668d0ac0cbf7c0c30ba5c99b",
+    "bytes": 1220,
+    "original_sha256": "b40bbd122692d3fd1342d3838650faa8014f473a668d0ac0cbf7c0c30ba5c99b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/workspace-clippy.log"
+  },
+  {
+    "path": "probes/v2/aperture-fractional.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture-fractional.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/aperture-fractional.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture-fractional.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/aperture-fractional.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture-fractional.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/aperture-fractional.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture-fractional.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/aperture.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/aperture.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/aperture.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/aperture.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/aperture.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/cfr-bframes.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/cfr-bframes.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/cfr-bframes.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/cfr-bframes.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/cfr-bframes.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/cfr-bframes.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/cfr-bframes.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/cfr-bframes.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/fields-bff.mp4.soft.jsonl",
+    "sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "bytes": 3198,
+    "original_sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-bff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/fields-bff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-bff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/fields-bff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-bff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/fields-bff.mp4.vt.stderr",
+    "sha256": "67f8ad685442cc061a62054cb66a3cd1b0041a7da0b8cb1664bfb0ddab79399c",
+    "bytes": 133,
+    "original_sha256": "67f8ad685442cc061a62054cb66a3cd1b0041a7da0b8cb1664bfb0ddab79399c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-bff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/fields-tff.mp4.soft.jsonl",
+    "sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "bytes": 3198,
+    "original_sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/fields-tff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/fields-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/fields-tff.mp4.vt.stderr",
+    "sha256": "01d0d11eacdbf0a90056c797472015a707f1cdade101fc63d98365492d51194c",
+    "bytes": 133,
+    "original_sha256": "01d0d11eacdbf0a90056c797472015a707f1cdade101fc63d98365492d51194c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/fields-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/h264-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/h264-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hdr-hlg-av.mp4.soft.jsonl.gz",
+    "sha256": "45b441f957c6a0bf44acdf392f8bb808249e15c7fad5465c9b2728aaf39d1bdc",
+    "bytes": 3008,
+    "original_sha256": "44d5401ca81361066379d0cd5fb6d2a5ea1bb90490ae1ff0fa0fba530e66bb00",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-hlg-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hdr-hlg-av.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-hlg-av.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hdr-hlg-av.mp4.vt.jsonl.gz",
+    "sha256": "8952014468b77b510a42e50e8888d94a45e11626fc5ffde40f8a5a4a8968e76e",
+    "bytes": 3026,
+    "original_sha256": "ab467b63a3df8d715e206d6ba2fb98a49dc16a49af1f13b57e6bd6952530f1ce",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-hlg-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hdr-hlg-av.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-hlg-av.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hdr-pq-av.mp4.soft.jsonl.gz",
+    "sha256": "e6e65532fcddd784759aa7ebca238161be699b7cff73a8e1d738234c6e7f56ec",
+    "bytes": 3015,
+    "original_sha256": "937d008b664ed6a6efac7372cb1dbc3f7307113bc28452e7d57ef449586a6206",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-pq-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hdr-pq-av.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-pq-av.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hdr-pq-av.mp4.vt.jsonl.gz",
+    "sha256": "a5087de6e7b15fca556be7b5330360dd07a57940ebb3b3d1d6f8dd6d857cc2d0",
+    "bytes": 3034,
+    "original_sha256": "2c8570cc3b4d50bcb269fac8b61e4eefcbd96077580d75ea9d8911afcff52b4b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-pq-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hdr-pq-av.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hdr-pq-av.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-pq-open-gop.mp4.soft.jsonl.gz",
+    "sha256": "ffac4ef9d00591bcf9b467fee77d5d0c2c70bf74f3c13bf67aa7cf3b927da9ba",
+    "bytes": 1305,
+    "original_sha256": "c4e0ce381e20b4d0ed6f32c659304b8df6af3d9beb6e9b9805e703560fd1a461",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-pq-open-gop.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-pq-open-gop.mp4.soft.stderr",
+    "sha256": "bfc9f7d8fb4eac4c068e2b4587c47420f51cb23edb874d17158dc2dbe1575302",
+    "bytes": 33,
+    "original_sha256": "bfc9f7d8fb4eac4c068e2b4587c47420f51cb23edb874d17158dc2dbe1575302",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-pq-open-gop.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-pq-open-gop.mp4.vt.jsonl.gz",
+    "sha256": "92166ba7811ca627c8d66eafc80df1aa9b68eb8b375fea9d6f4ca80ffac69b58",
+    "bytes": 1319,
+    "original_sha256": "6b633f40df63f03125d9a727467a448e9b14f96558cfae3c4361ea45b670b329",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-pq-open-gop.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-pq-open-gop.mp4.vt.stderr",
+    "sha256": "8a120cfa2dbd9fdaf1a5d4cee22d609eb87f215bf3b79801935f02d8ba450f65",
+    "bytes": 37,
+    "original_sha256": "8a120cfa2dbd9fdaf1a5d4cee22d609eb87f215bf3b79801935f02d8ba450f65",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-pq-open-gop.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "4f0d954b385cb31fbdf34a4fb1dfa54a10804b6dfa1aecef404cded56188d83f",
+    "bytes": 3222,
+    "original_sha256": "4f0d954b385cb31fbdf34a4fb1dfa54a10804b6dfa1aecef404cded56188d83f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-full.mp4.soft.stderr",
+    "sha256": "8c40ad3fee44055f19f2f752d2556267ef184e1c146f93139d2517ce75138992",
+    "bytes": 1149,
+    "original_sha256": "8c40ad3fee44055f19f2f752d2556267ef184e1c146f93139d2517ce75138992",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "bytes": 3270,
+    "original_sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "bytes": 3198,
+    "original_sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "bytes": 3270,
+    "original_sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/hevc-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/hevc-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/matrix-results.json.gz",
+    "sha256": "1306f5d7865c009b2f53fea28222e4d91e0b73bd3af617d235fe8cfc7c564bf3",
+    "bytes": 1352,
+    "original_sha256": "bef4bd538cc2deab4fd51633a033f6bbe571bcee4974489a86cc49ca28f32fd3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/matrix-results.json"
+  },
+  {
+    "path": "probes/v2/matrix.log.gz",
+    "sha256": "2474659d7c5ea8587d6ef997304c551ca0d1221a831d603f013d771dc4aa5015",
+    "bytes": 1323,
+    "original_sha256": "e94e243126664f3078f82c49b20efb9fa3c8153bcac4932a5fba506d3096b6f9",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/matrix.log"
+  },
+  {
+    "path": "probes/v2/matrix.py",
+    "sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "bytes": 2062,
+    "original_sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/matrix.py"
+  },
+  {
+    "path": "probes/v2/probe-results.json.gz",
+    "sha256": "3b63a76c5ecf70e5e8c2b5fa7ce7f888288050652f3298ffa751bd6e9dd8853a",
+    "bytes": 808,
+    "original_sha256": "7ee2964e5d5bc43959acb89139f4d4ade15e0ec8eb678e0eac73f04b68111b6d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/probe-results.json"
+  },
+  {
+    "path": "probes/v2/probe.c",
+    "sha256": "cc8f2a3cf2098e7cd7ba383d9f9c5b01725f7a634458bddee2a6ded316ea7541",
+    "bytes": 4939,
+    "original_sha256": "cc8f2a3cf2098e7cd7ba383d9f9c5b01725f7a634458bddee2a6ded316ea7541",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/probe.c"
+  },
+  {
+    "path": "probes/v2/probe.log.gz",
+    "sha256": "b6f6cf1e984945abc10b3b3625784220def69233bff384a5fdab075734503206",
+    "bytes": 748,
+    "original_sha256": "15a182820903b8924823bb1798cfc82ab0bf07323ec9000ac3318c99769f9f2b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/probe.log"
+  },
+  {
+    "path": "probes/v2/probe.py",
+    "sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "bytes": 1651,
+    "original_sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/probe.py"
+  },
+  {
+    "path": "probes/v2/rotated90.mp4.soft.jsonl",
+    "sha256": "8fc1346e8a054e9fb5f03fddad4e584e705264c73ab25d4dcba717de55a75cbb",
+    "bytes": 256,
+    "original_sha256": "8fc1346e8a054e9fb5f03fddad4e584e705264c73ab25d4dcba717de55a75cbb",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/rotated90.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/rotated90.mp4.soft.stderr",
+    "sha256": "3ba3dfa93edde55861d374051cbddb66aa5f88905f16e20925bd74e9f494ab9e",
+    "bytes": 32,
+    "original_sha256": "3ba3dfa93edde55861d374051cbddb66aa5f88905f16e20925bd74e9f494ab9e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/rotated90.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/rotated90.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/rotated90.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/rotated90.mp4.vt.stderr",
+    "sha256": "1d57cc7a07a3b3de254c13cce544b6703303a1136607d4ebb7184b5a4c27d383",
+    "bytes": 31,
+    "original_sha256": "1d57cc7a07a3b3de254c13cce544b6703303a1136607d4ebb7184b5a4c27d383",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/rotated90.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/telecine-tff.mp4.soft.jsonl",
+    "sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "bytes": 3199,
+    "original_sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/telecine-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/telecine-tff.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/telecine-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/telecine-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/telecine-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/telecine-tff.mp4.vt.stderr",
+    "sha256": "1889f29d5409e943813fdf2d6b6003303ceabe735954147e3626e23720986594",
+    "bytes": 133,
+    "original_sha256": "1889f29d5409e943813fdf2d6b6003303ceabe735954147e3626e23720986594",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/telecine-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vfr-long-terminal.mp4.soft.jsonl.gz",
+    "sha256": "d9436f5621d2ddbd9591a8ed554380273fe062f14108066593d364c2cfd7b77b",
+    "bytes": 6017,
+    "original_sha256": "f99a60483b2c41e87303b278146fb04d29684c8c4d246800c913f01a42b5e57b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr-long-terminal.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vfr-long-terminal.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr-long-terminal.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vfr-long-terminal.mp4.vt.jsonl.gz",
+    "sha256": "f6d6edbf649d7938d568eb781e5518b33cfa9a66d9115170c585e60ff73f8454",
+    "bytes": 6044,
+    "original_sha256": "b88df56df47ed978ec4bc15bf1306a741ffeab524efc13e644076d50bb9a6a46",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr-long-terminal.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vfr-long-terminal.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr-long-terminal.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vfr.mp4.soft.jsonl.gz",
+    "sha256": "89e3d3d0c9c4ff577b7e96410d0e1857292a1bd28c1e444bb5898983a9f2ab33",
+    "bytes": 6018,
+    "original_sha256": "c5e973c065a41af42d1a71cef97b872fd689496373258c675d0cf7b800c5ed2f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vfr.mp4.soft.stderr",
+    "sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "bytes": 34,
+    "original_sha256": "3784e57eb3afcc621055ed26ce221f838b9b30a9292795b976aa350133768a9b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vfr.mp4.vt.jsonl.gz",
+    "sha256": "5b2d0e453a8894fa801ac6e3fe5956a66783301da0d752cdf33b7767446d475e",
+    "bytes": 6048,
+    "original_sha256": "e6411d2ecb4156084e95f620c514e8841c6b462d510a730d97091e8ea8e74dd5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vfr.mp4.vt.stderr",
+    "sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "bytes": 38,
+    "original_sha256": "4d38edf5c8f08fca25f0f480122af87c9f23b7f6301b59ccaeb151a3699d0111",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vfr.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-altref.mp4.soft.jsonl.gz",
+    "sha256": "e5af6d9169864a1dd389e60bc9fb6067df2af85c0ae9c85fd278c515bac5b18d",
+    "bytes": 3027,
+    "original_sha256": "1cf474a825a0e5e14ecf8c3604788e415fec5ab1e1b96dabc950d5cb74284a4c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-altref.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-altref.mp4.soft.stderr",
+    "sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "bytes": 33,
+    "original_sha256": "a7eaa2f7631d49ad927e2ddd2e6a649e1c90b841bfba4032a1fcbe8208e3cc8f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-altref.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-altref.mp4.vt.jsonl.gz",
+    "sha256": "2316d367caeda2e6d389acd07f6e979eca1f61f49a3127646f801517f7540c72",
+    "bytes": 3048,
+    "original_sha256": "616cba584f00ace7f5819fa131140048843aa367bd4c0471ff929b2e7aecb737",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-altref.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-altref.mp4.vt.stderr",
+    "sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "bytes": 37,
+    "original_sha256": "f29c43b8f392fcc4ee8ce4aa07b9b16848e4a052a5950dfdb9d1dc886a678117",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-altref.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-existing-10.mp4.soft.jsonl",
+    "sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "bytes": 553,
+    "original_sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-10.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-existing-10.mp4.soft.stderr",
+    "sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "bytes": 32,
+    "original_sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-10.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-existing-10.mp4.vt.jsonl",
+    "sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "bytes": 553,
+    "original_sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-10.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-existing-10.mp4.vt.stderr",
+    "sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "bytes": 36,
+    "original_sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-10.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-existing-8.mp4.soft.jsonl",
+    "sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "bytes": 529,
+    "original_sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-8.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-existing-8.mp4.soft.stderr",
+    "sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "bytes": 32,
+    "original_sha256": "b5806dfc6258af24e17d3ec94cb4308731a59534578c82203ac3540c1f95e8ed",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-8.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-existing-8.mp4.vt.jsonl",
+    "sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "bytes": 541,
+    "original_sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-8.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-existing-8.mp4.vt.stderr",
+    "sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "bytes": 36,
+    "original_sha256": "4b72a53e1efea4dd0e3e4b128ecea4320b928893f293b496d4e93367de950539",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-existing-8.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.mp4.soft.jsonl",
+    "sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "bytes": 3342,
+    "original_sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.mp4.vt.jsonl",
+    "sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "bytes": 3342,
+    "original_sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.webm.soft.jsonl",
+    "sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "bytes": 3298,
+    "original_sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.webm.vt.jsonl",
+    "sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "bytes": 3298,
+    "original_sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-pq-static.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-pq-static.webm.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "bytes": 3342,
+    "original_sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "bytes": 3342,
+    "original_sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "bytes": 3342,
+    "original_sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "bytes": 3342,
+    "original_sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "bytes": 3198,
+    "original_sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-full.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "bytes": 3270,
+    "original_sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-full.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "bytes": 3198,
+    "original_sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "bytes": 3270,
+    "original_sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.webm.soft.jsonl",
+    "sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "bytes": 3154,
+    "original_sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.webm.vt.jsonl",
+    "sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "bytes": 3226,
+    "original_sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-sdr-8-limited.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-sdr-8-limited.webm.vt.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-vfr.webm.soft.jsonl",
+    "sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "bytes": 3299,
+    "original_sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-vfr.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-vfr.webm.soft.stderr",
+    "sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "bytes": 33,
+    "original_sha256": "69a68545b1de515c8eab5ea90c17ab5165087b2d0f542997f7832fed0ebfff14",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-vfr.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v2/vp9-vfr.webm.vt.jsonl",
+    "sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "bytes": 3299,
+    "original_sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-vfr.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v2/vp9-vfr.webm.vt.stderr",
+    "sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "bytes": 37,
+    "original_sha256": "ca00fcb5bcd8ef9178101a5e576d968a92d1096e0e29fef3484dbdc92c3db145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v2/vp9-vfr.webm.vt.stderr"
+  },
+  {
+    "path": "probes/v3/aperture-fractional.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture-fractional.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/aperture-fractional.mp4.soft.stderr",
+    "sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "bytes": 84,
+    "original_sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture-fractional.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/aperture-fractional.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture-fractional.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/aperture-fractional.mp4.vt.stderr",
+    "sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "bytes": 88,
+    "original_sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture-fractional.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/aperture.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/aperture.mp4.soft.stderr",
+    "sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "bytes": 84,
+    "original_sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/aperture.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/aperture.mp4.vt.stderr",
+    "sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "bytes": 88,
+    "original_sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/aperture.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/cfr-bframes.mp4.soft.jsonl.gz",
+    "sha256": "59ca68fba158f11db8d198756cc23a8453cffada638c99763590155d44fe8fbd",
+    "bytes": 5971,
+    "original_sha256": "47922525e17d01760d509c669c82af0b9044e279077820e8a74a3a94ef992145",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/cfr-bframes.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/cfr-bframes.mp4.soft.stderr",
+    "sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "bytes": 84,
+    "original_sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/cfr-bframes.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/cfr-bframes.mp4.vt.jsonl.gz",
+    "sha256": "af52a11b0fe3ed02b91aa9c2788e007bb9b0ed35621cbfd07f38dd1243f5029a",
+    "bytes": 5991,
+    "original_sha256": "e11f0cf7b44b31a7b8e8c68b21518a9dca3851dbc4a4cc77c767aa39bda132e5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/cfr-bframes.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/cfr-bframes.mp4.vt.stderr",
+    "sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "bytes": 88,
+    "original_sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/cfr-bframes.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/fields-bff.mp4.soft.jsonl",
+    "sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "bytes": 3198,
+    "original_sha256": "7f0b5596d7e0b66b573175f6db73c0685a570e609516a6bfa344ec899639a748",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-bff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/fields-bff.mp4.soft.stderr",
+    "sha256": "5b8976f0bae28067f21e315c5e824f41bed5dd0113e0336fae220d1153790d06",
+    "bytes": 83,
+    "original_sha256": "5b8976f0bae28067f21e315c5e824f41bed5dd0113e0336fae220d1153790d06",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-bff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/fields-bff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-bff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/fields-bff.mp4.vt.stderr",
+    "sha256": "8e6058a40980c0666ea1abd55d4933161c3db04041cfd57d23fa72d052899fc7",
+    "bytes": 133,
+    "original_sha256": "8e6058a40980c0666ea1abd55d4933161c3db04041cfd57d23fa72d052899fc7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-bff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/fields-tff.mp4.soft.jsonl",
+    "sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "bytes": 3198,
+    "original_sha256": "9c156cbcdfc6912f332fa5740d3bfc3e71ba4d53ab6f1830482e92a32a7d04ff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/fields-tff.mp4.soft.stderr",
+    "sha256": "6d8a08c343a423528cdeb7e9de8938826a95702c66b5b82d49a5c241b4c076a7",
+    "bytes": 83,
+    "original_sha256": "6d8a08c343a423528cdeb7e9de8938826a95702c66b5b82d49a5c241b4c076a7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/fields-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/fields-tff.mp4.vt.stderr",
+    "sha256": "41b57cadffd47974decaa618d6fcf7bb663c187df0a2a0b5238e93da5b584d4f",
+    "bytes": 133,
+    "original_sha256": "41b57cadffd47974decaa618d6fcf7bb663c187df0a2a0b5238e93da5b584d4f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/fields-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-full.mp4.soft.stderr",
+    "sha256": "057f843020266060c9d05ca02f745f382b0d1d19dc21a751241a61d7ec1e1bb5",
+    "bytes": 87,
+    "original_sha256": "057f843020266060c9d05ca02f745f382b0d1d19dc21a751241a61d7ec1e1bb5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-full.mp4.vt.stderr",
+    "sha256": "f2798eb0faa0ac55c4f015d928b13604c09e7fb59c1545da25a2485f43363fe5",
+    "bytes": 91,
+    "original_sha256": "f2798eb0faa0ac55c4f015d928b13604c09e7fb59c1545da25a2485f43363fe5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "057f843020266060c9d05ca02f745f382b0d1d19dc21a751241a61d7ec1e1bb5",
+    "bytes": 87,
+    "original_sha256": "057f843020266060c9d05ca02f745f382b0d1d19dc21a751241a61d7ec1e1bb5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/h264-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "f2798eb0faa0ac55c4f015d928b13604c09e7fb59c1545da25a2485f43363fe5",
+    "bytes": 91,
+    "original_sha256": "f2798eb0faa0ac55c4f015d928b13604c09e7fb59c1545da25a2485f43363fe5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/h264-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hdr-hlg-av.mp4.soft.jsonl.gz",
+    "sha256": "45b441f957c6a0bf44acdf392f8bb808249e15c7fad5465c9b2728aaf39d1bdc",
+    "bytes": 3008,
+    "original_sha256": "44d5401ca81361066379d0cd5fb6d2a5ea1bb90490ae1ff0fa0fba530e66bb00",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-hlg-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hdr-hlg-av.mp4.soft.stderr",
+    "sha256": "3b3849f604eb64ef4e84b3b016be69487ed5dafa62258f54351c62aaee44a6cd",
+    "bytes": 85,
+    "original_sha256": "3b3849f604eb64ef4e84b3b016be69487ed5dafa62258f54351c62aaee44a6cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-hlg-av.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hdr-hlg-av.mp4.vt.jsonl.gz",
+    "sha256": "8952014468b77b510a42e50e8888d94a45e11626fc5ffde40f8a5a4a8968e76e",
+    "bytes": 3026,
+    "original_sha256": "ab467b63a3df8d715e206d6ba2fb98a49dc16a49af1f13b57e6bd6952530f1ce",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-hlg-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hdr-hlg-av.mp4.vt.stderr",
+    "sha256": "38bb54351ffda9495c89fcd4a8d2026df6eaf554ce46cf6230ec94f0414e9730",
+    "bytes": 89,
+    "original_sha256": "38bb54351ffda9495c89fcd4a8d2026df6eaf554ce46cf6230ec94f0414e9730",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-hlg-av.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hdr-pq-av.mp4.soft.jsonl.gz",
+    "sha256": "e6e65532fcddd784759aa7ebca238161be699b7cff73a8e1d738234c6e7f56ec",
+    "bytes": 3015,
+    "original_sha256": "937d008b664ed6a6efac7372cb1dbc3f7307113bc28452e7d57ef449586a6206",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-pq-av.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hdr-pq-av.mp4.soft.stderr",
+    "sha256": "3b3849f604eb64ef4e84b3b016be69487ed5dafa62258f54351c62aaee44a6cd",
+    "bytes": 85,
+    "original_sha256": "3b3849f604eb64ef4e84b3b016be69487ed5dafa62258f54351c62aaee44a6cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-pq-av.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hdr-pq-av.mp4.vt.jsonl.gz",
+    "sha256": "a5087de6e7b15fca556be7b5330360dd07a57940ebb3b3d1d6f8dd6d857cc2d0",
+    "bytes": 3034,
+    "original_sha256": "2c8570cc3b4d50bcb269fac8b61e4eefcbd96077580d75ea9d8911afcff52b4b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-pq-av.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hdr-pq-av.mp4.vt.stderr",
+    "sha256": "38bb54351ffda9495c89fcd4a8d2026df6eaf554ce46cf6230ec94f0414e9730",
+    "bytes": 89,
+    "original_sha256": "38bb54351ffda9495c89fcd4a8d2026df6eaf554ce46cf6230ec94f0414e9730",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hdr-pq-av.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-pq-open-gop.mp4.soft.jsonl.gz",
+    "sha256": "ffac4ef9d00591bcf9b467fee77d5d0c2c70bf74f3c13bf67aa7cf3b927da9ba",
+    "bytes": 1305,
+    "original_sha256": "c4e0ce381e20b4d0ed6f32c659304b8df6af3d9beb6e9b9805e703560fd1a461",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-pq-open-gop.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-pq-open-gop.mp4.soft.stderr",
+    "sha256": "700af3a1f4dca927838ecc1c27113907946fef95d1404c230a9f25460402b429",
+    "bytes": 85,
+    "original_sha256": "700af3a1f4dca927838ecc1c27113907946fef95d1404c230a9f25460402b429",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-pq-open-gop.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-pq-open-gop.mp4.vt.jsonl.gz",
+    "sha256": "92166ba7811ca627c8d66eafc80df1aa9b68eb8b375fea9d6f4ca80ffac69b58",
+    "bytes": 1319,
+    "original_sha256": "6b633f40df63f03125d9a727467a448e9b14f96558cfae3c4361ea45b670b329",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-pq-open-gop.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-pq-open-gop.mp4.vt.stderr",
+    "sha256": "d0355fcb6eb2dc655f0f452227cc225ffd42ccfb640e78d169a6d0fc5c7c0df0",
+    "bytes": 89,
+    "original_sha256": "d0355fcb6eb2dc655f0f452227cc225ffd42ccfb640e78d169a6d0fc5c7c0df0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-pq-open-gop.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "bytes": 3342,
+    "original_sha256": "3939999dee008407d8904800af2859447994fc53b4fd3acd4575e8a33449b5c0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-full.mp4.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "bytes": 3342,
+    "original_sha256": "7d1c97208b45dad3413c522f24e4078b04e57806013a9fe591114181d8a2fdbd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-full.mp4.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "bytes": 3342,
+    "original_sha256": "420c8a1cc8425124e4f4c32a179c34aa4fc02a41a1c7c49bef6d8d3ddb010b59",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "bytes": 3342,
+    "original_sha256": "bcc3cf62b83b1f6c7bcc084a61ceefa16a36a97c5d01a97d71f159a1cfcd99ee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "4f0d954b385cb31fbdf34a4fb1dfa54a10804b6dfa1aecef404cded56188d83f",
+    "bytes": 3222,
+    "original_sha256": "4f0d954b385cb31fbdf34a4fb1dfa54a10804b6dfa1aecef404cded56188d83f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-full.mp4.soft.stderr",
+    "sha256": "52989b75dc2bf635a073f632c4189c62ef51f860a92bb09228b1ee3b5fca2237",
+    "bytes": 1198,
+    "original_sha256": "52989b75dc2bf635a073f632c4189c62ef51f860a92bb09228b1ee3b5fca2237",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "bytes": 3270,
+    "original_sha256": "151f9917d631c09be647d08fe8298829b31197376e7531d2216a6a914f803929",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-full.mp4.vt.stderr",
+    "sha256": "a3702c45f323fde0a8184409fd62494fbe0e936a4e514f13b8b71fce5003ce42",
+    "bytes": 86,
+    "original_sha256": "a3702c45f323fde0a8184409fd62494fbe0e936a4e514f13b8b71fce5003ce42",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "bytes": 3198,
+    "original_sha256": "c43d8c4fd69492d594dd264b189e4ef44d30800865a5e67234f67fbb72949a83",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "6e340e1105a11d6bbd33b14270cc9a32cf48ef0330c47dfa7d76c64dbce75eee",
+    "bytes": 81,
+    "original_sha256": "6e340e1105a11d6bbd33b14270cc9a32cf48ef0330c47dfa7d76c64dbce75eee",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "bytes": 3270,
+    "original_sha256": "ba7c66ae4e6313e10953acafe5f17e832d6ba2108f231076d020c0b4730d92a3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/hevc-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "cbe1335633fb097f5ae22cca140824e802cc551ecaa9d5146882440bf713f249",
+    "bytes": 85,
+    "original_sha256": "cbe1335633fb097f5ae22cca140824e802cc551ecaa9d5146882440bf713f249",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/hevc-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/matrix-results.json.gz",
+    "sha256": "1306f5d7865c009b2f53fea28222e4d91e0b73bd3af617d235fe8cfc7c564bf3",
+    "bytes": 1352,
+    "original_sha256": "bef4bd538cc2deab4fd51633a033f6bbe571bcee4974489a86cc49ca28f32fd3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/matrix-results.json"
+  },
+  {
+    "path": "probes/v3/matrix.log.gz",
+    "sha256": "2474659d7c5ea8587d6ef997304c551ca0d1221a831d603f013d771dc4aa5015",
+    "bytes": 1323,
+    "original_sha256": "e94e243126664f3078f82c49b20efb9fa3c8153bcac4932a5fba506d3096b6f9",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/matrix.log"
+  },
+  {
+    "path": "probes/v3/matrix.py",
+    "sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "bytes": 2062,
+    "original_sha256": "c69891e72153791a2e18fd8c185bfdaa2a52d46056d8e41e0e233687142b05e3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/matrix.py"
+  },
+  {
+    "path": "probes/v3/probe-results.json.gz",
+    "sha256": "3b63a76c5ecf70e5e8c2b5fa7ce7f888288050652f3298ffa751bd6e9dd8853a",
+    "bytes": 808,
+    "original_sha256": "7ee2964e5d5bc43959acb89139f4d4ade15e0ec8eb678e0eac73f04b68111b6d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/probe-results.json"
+  },
+  {
+    "path": "probes/v3/probe.c",
+    "sha256": "69f8b4f9a9597e319209b6db795f99fd31f661cb8d76f078228cbb899a60e7e3",
+    "bytes": 5123,
+    "original_sha256": "69f8b4f9a9597e319209b6db795f99fd31f661cb8d76f078228cbb899a60e7e3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/probe.c"
+  },
+  {
+    "path": "probes/v3/probe.log.gz",
+    "sha256": "b6f6cf1e984945abc10b3b3625784220def69233bff384a5fdab075734503206",
+    "bytes": 748,
+    "original_sha256": "15a182820903b8924823bb1798cfc82ab0bf07323ec9000ac3318c99769f9f2b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/probe.log"
+  },
+  {
+    "path": "probes/v3/probe.py",
+    "sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "bytes": 1651,
+    "original_sha256": "ec0986a9213f8ba07874eeaf49ecb8fb9414197896e2b60f197f1ccd2550e8e7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/probe.py"
+  },
+  {
+    "path": "probes/v3/rotated90.mp4.soft.jsonl",
+    "sha256": "8fc1346e8a054e9fb5f03fddad4e584e705264c73ab25d4dcba717de55a75cbb",
+    "bytes": 256,
+    "original_sha256": "8fc1346e8a054e9fb5f03fddad4e584e705264c73ab25d4dcba717de55a75cbb",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/rotated90.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/rotated90.mp4.soft.stderr",
+    "sha256": "8df0cb35228463955e2661e9b7831ac7068a5efac6634e37dece296fa5c4ccbf",
+    "bytes": 79,
+    "original_sha256": "8df0cb35228463955e2661e9b7831ac7068a5efac6634e37dece296fa5c4ccbf",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/rotated90.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/rotated90.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/rotated90.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/rotated90.mp4.vt.stderr",
+    "sha256": "1872ea9a3e6e9b3c43fb1488649667a439ccadae336791e93cbff7f4cfdb81c4",
+    "bytes": 31,
+    "original_sha256": "1872ea9a3e6e9b3c43fb1488649667a439ccadae336791e93cbff7f4cfdb81c4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/rotated90.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/telecine-tff.mp4.soft.jsonl",
+    "sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "bytes": 3199,
+    "original_sha256": "974ed553ba1bf4585236696ccda9ed795f216a89f5b80dd545b78cf86a576006",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/telecine-tff.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/telecine-tff.mp4.soft.stderr",
+    "sha256": "6d8a08c343a423528cdeb7e9de8938826a95702c66b5b82d49a5c241b4c076a7",
+    "bytes": 83,
+    "original_sha256": "6d8a08c343a423528cdeb7e9de8938826a95702c66b5b82d49a5c241b4c076a7",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/telecine-tff.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/telecine-tff.mp4.vt.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/telecine-tff.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/telecine-tff.mp4.vt.stderr",
+    "sha256": "6123e265e6fbb66a3cb21803c69aed7f472b01f79dee37b5c334c049c66303b8",
+    "bytes": 133,
+    "original_sha256": "6123e265e6fbb66a3cb21803c69aed7f472b01f79dee37b5c334c049c66303b8",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/telecine-tff.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vfr-long-terminal.mp4.soft.jsonl.gz",
+    "sha256": "d9436f5621d2ddbd9591a8ed554380273fe062f14108066593d364c2cfd7b77b",
+    "bytes": 6017,
+    "original_sha256": "f99a60483b2c41e87303b278146fb04d29684c8c4d246800c913f01a42b5e57b",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr-long-terminal.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vfr-long-terminal.mp4.soft.stderr",
+    "sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "bytes": 84,
+    "original_sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr-long-terminal.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vfr-long-terminal.mp4.vt.jsonl.gz",
+    "sha256": "f6d6edbf649d7938d568eb781e5518b33cfa9a66d9115170c585e60ff73f8454",
+    "bytes": 6044,
+    "original_sha256": "b88df56df47ed978ec4bc15bf1306a741ffeab524efc13e644076d50bb9a6a46",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr-long-terminal.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vfr-long-terminal.mp4.vt.stderr",
+    "sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "bytes": 88,
+    "original_sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr-long-terminal.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vfr.mp4.soft.jsonl.gz",
+    "sha256": "89e3d3d0c9c4ff577b7e96410d0e1857292a1bd28c1e444bb5898983a9f2ab33",
+    "bytes": 6018,
+    "original_sha256": "c5e973c065a41af42d1a71cef97b872fd689496373258c675d0cf7b800c5ed2f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vfr.mp4.soft.stderr",
+    "sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "bytes": 84,
+    "original_sha256": "bb882da0a114ee5725969dd7c4ca303be0c2af6eaf24ad7cbcd2f33aa77bf345",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vfr.mp4.vt.jsonl.gz",
+    "sha256": "5b2d0e453a8894fa801ac6e3fe5956a66783301da0d752cdf33b7767446d475e",
+    "bytes": 6048,
+    "original_sha256": "e6411d2ecb4156084e95f620c514e8841c6b462d510a730d97091e8ea8e74dd5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vfr.mp4.vt.stderr",
+    "sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "bytes": 88,
+    "original_sha256": "ac2e471790de73c486b90f3fd9b0a642abd21b67ee0c8c9988e3f09016555702",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vfr.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-altref.mp4.soft.jsonl.gz",
+    "sha256": "e5af6d9169864a1dd389e60bc9fb6067df2af85c0ae9c85fd278c515bac5b18d",
+    "bytes": 3027,
+    "original_sha256": "1cf474a825a0e5e14ecf8c3604788e415fec5ab1e1b96dabc950d5cb74284a4c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-altref.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-altref.mp4.soft.stderr",
+    "sha256": "5525dad345fd4db3c907e4cd1b4473119b5ddd60922c80509691a6f653f22e2c",
+    "bytes": 81,
+    "original_sha256": "5525dad345fd4db3c907e4cd1b4473119b5ddd60922c80509691a6f653f22e2c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-altref.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-altref.mp4.vt.jsonl.gz",
+    "sha256": "2316d367caeda2e6d389acd07f6e979eca1f61f49a3127646f801517f7540c72",
+    "bytes": 3048,
+    "original_sha256": "616cba584f00ace7f5819fa131140048843aa367bd4c0471ff929b2e7aecb737",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-altref.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-altref.mp4.vt.stderr",
+    "sha256": "52c820ec10afa27b40e10edadd3949656edaf857aa24ef2b0de6a81244560c80",
+    "bytes": 85,
+    "original_sha256": "52c820ec10afa27b40e10edadd3949656edaf857aa24ef2b0de6a81244560c80",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-altref.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-existing-10.mp4.soft.jsonl",
+    "sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "bytes": 553,
+    "original_sha256": "654c8bd2b29feebc5a683b0d67d76206b4ce4a699b8ceba554443fa6b56bd336",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-10.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-existing-10.mp4.soft.stderr",
+    "sha256": "7fecdf0209382d3a2f1c43683bdb6e680d441e8acbd56cf0e27f9a69361e92ec",
+    "bytes": 84,
+    "original_sha256": "7fecdf0209382d3a2f1c43683bdb6e680d441e8acbd56cf0e27f9a69361e92ec",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-10.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-existing-10.mp4.vt.jsonl",
+    "sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "bytes": 553,
+    "original_sha256": "5165638b548a8163aad3cf09be1cd0349d6a0254d396ca7a1644730d3131d0f0",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-10.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-existing-10.mp4.vt.stderr",
+    "sha256": "68a349afb5cfb6c4720c8269e4811532822f0f788a0443370416faf8c161233a",
+    "bytes": 88,
+    "original_sha256": "68a349afb5cfb6c4720c8269e4811532822f0f788a0443370416faf8c161233a",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-10.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-existing-8.mp4.soft.jsonl",
+    "sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "bytes": 529,
+    "original_sha256": "5bfab030224dc61ece602d25bd404e53a5e68ffdcac86e5fb80612fd915fe082",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-8.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-existing-8.mp4.soft.stderr",
+    "sha256": "3e4b2a08964a8e87adf46aca0da539ecd45aded9cbb10d364133422405635c6e",
+    "bytes": 80,
+    "original_sha256": "3e4b2a08964a8e87adf46aca0da539ecd45aded9cbb10d364133422405635c6e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-8.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-existing-8.mp4.vt.jsonl",
+    "sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "bytes": 541,
+    "original_sha256": "8c64eb41a4d1a2c18347a28b57e8a61c83bbbd3f13723d10a3b632086dbab842",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-8.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-existing-8.mp4.vt.stderr",
+    "sha256": "acaa4f854acb4cb3e5afc9c1713b0462e5db1f862f0827ff404a77941a4ae066",
+    "bytes": 84,
+    "original_sha256": "acaa4f854acb4cb3e5afc9c1713b0462e5db1f862f0827ff404a77941a4ae066",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-existing-8.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.mp4.soft.jsonl",
+    "sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "bytes": 3342,
+    "original_sha256": "9449b4f73765c53088f7eef31b8112fe467ac75261da0bcfcfa0324adba6eb29",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.mp4.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.mp4.vt.jsonl",
+    "sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "bytes": 3342,
+    "original_sha256": "c859687cd09cdfeb7000f98906b59865a2dcbb117483b715f646fd6623b82896",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.mp4.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.webm.soft.jsonl",
+    "sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "bytes": 3298,
+    "original_sha256": "776fe2f9b69f1fae8f4dc854ee6e36cc0f483ddbf648625d5388767960df7b74",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.webm.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.webm.vt.jsonl",
+    "sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "bytes": 3298,
+    "original_sha256": "9307884fca738cab64fd696eaebc61f5046f05b6f07e7a8e64958175234bd781",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-pq-static.webm.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-pq-static.webm.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-full.mp4.soft.jsonl",
+    "sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "bytes": 3342,
+    "original_sha256": "072fcc5597b24d7ff59a2c831f062be463cb8ed7556bff76d8b120cb377f7c52",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-full.mp4.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-full.mp4.vt.jsonl",
+    "sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "bytes": 3342,
+    "original_sha256": "c9caa95571b36e1fdd8fd3bc8547ca84017981a97fdd6a6bf232b6668ae0e5fa",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-full.mp4.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-limited.mp4.soft.jsonl",
+    "sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "bytes": 3342,
+    "original_sha256": "37aa6f78d6dd68a1b022bc8a0e5c9ee5f8e81e8d52122be0ef06e3e8170728b5",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-limited.mp4.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-limited.mp4.vt.jsonl",
+    "sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "bytes": 3342,
+    "original_sha256": "88df4008dfc72e79dfbc57c9b8e405ae517c1141d498b38eea910dafbb32e265",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-10-limited.mp4.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-10-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-full.mp4.soft.jsonl",
+    "sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "bytes": 3198,
+    "original_sha256": "24771d7716deaacad09ae98b721a6815af1745618b8f8577f8561b81dd029a5f",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-full.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-full.mp4.soft.stderr",
+    "sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "bytes": 81,
+    "original_sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-full.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-full.mp4.vt.jsonl",
+    "sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "bytes": 3270,
+    "original_sha256": "40f82f667ba06450cb82906f6f8b385a9ecb5bd4b61e890561e3326962277ab4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-full.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-full.mp4.vt.stderr",
+    "sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "bytes": 85,
+    "original_sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-full.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.mp4.soft.jsonl",
+    "sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "bytes": 3198,
+    "original_sha256": "e3fd2cd6b9d1602fb7c9f40c7921cf2f2ac568813080da0e269ee11ec1bcb4a2",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.mp4.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.mp4.soft.stderr",
+    "sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "bytes": 81,
+    "original_sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.mp4.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.mp4.vt.jsonl",
+    "sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "bytes": 3270,
+    "original_sha256": "f95d1aa7bbaa12b397948d93a984628b060bee750f94538346234a3e4c4c8d6e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.mp4.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.mp4.vt.stderr",
+    "sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "bytes": 85,
+    "original_sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.mp4.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.webm.soft.jsonl",
+    "sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "bytes": 3154,
+    "original_sha256": "59e107b4936b7419ba402aaa230c4f68c0d1813c2dff311bea62e506a7413560",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.webm.soft.stderr",
+    "sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "bytes": 81,
+    "original_sha256": "1ce59899b09986a6391c7a8d01f5d11badff1285b4008c32ec8f59ab16418e79",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.webm.vt.jsonl",
+    "sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "bytes": 3226,
+    "original_sha256": "f09d441c74278a4b4927a96e2379d2b33ebbb691570f80907003f8a587d656cd",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-sdr-8-limited.webm.vt.stderr",
+    "sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "bytes": 85,
+    "original_sha256": "469bf5e4f47244466c8ad663ac92036e7389b569222f2e23b353ede1f7024db3",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-sdr-8-limited.webm.vt.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-vfr.webm.soft.jsonl",
+    "sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "bytes": 3299,
+    "original_sha256": "2d6c6cceb275233962efa29cfd2bc28e32ff43771db483a39201540a4ba3aba4",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-vfr.webm.soft.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-vfr.webm.soft.stderr",
+    "sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "bytes": 85,
+    "original_sha256": "5266d3633777f1ebf1a25bde47513485e6e6819818bf26767e2f80f9f6327d75",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-vfr.webm.soft.stderr"
+  },
+  {
+    "path": "probes/v3/vp9-vfr.webm.vt.jsonl",
+    "sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "bytes": 3299,
+    "original_sha256": "3cb687b63fe46368f6982868f779429a5da88d4860791f1dda7f56ccb0987bff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-vfr.webm.vt.jsonl"
+  },
+  {
+    "path": "probes/v3/vp9-vfr.webm.vt.stderr",
+    "sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "bytes": 89,
+    "original_sha256": "d895b2ea8231871ca4aded78a38257549bee7eadacd7272ac84b7283ea0ae1a6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/v3/vp9-vfr.webm.vt.stderr"
+  },
+  {
+    "path": "final/1080p60.json.gz",
+    "sha256": "f6517898b4de077dd6260b204cbab0c3bdd66ba16af0e6a2065cf1514efd967e",
+    "bytes": 82924,
+    "original_sha256": "f94dd911322bd56c20f824c81ed91dbb8c4a648e4347ba4189076bb0e9ca2cd6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/1080p60.json"
+  },
+  {
+    "path": "final/1080p60.log",
+    "sha256": "18221e023e18e1c57c11fa9b4d4e3420931cdc986fcd7dd64dc68ad5f7319569",
+    "bytes": 921,
+    "original_sha256": "18221e023e18e1c57c11fa9b4d4e3420931cdc986fcd7dd64dc68ad5f7319569",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/1080p60.log"
+  },
+  {
+    "path": "final/4k30.json.gz",
+    "sha256": "adf7e7037696ae5181a4841a192f0345cf3130fa554a30d71556d97550e5f3ff",
+    "bytes": 29871,
+    "original_sha256": "4541db1751a5cf8e22980150ccd752b1d41bc5c4c5859651fe2d5642ac99d231",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/4k30.json"
+  },
+  {
+    "path": "final/4k30.log",
+    "sha256": "74948ca16d3115adcf092e4f5c5c701ee71dfb5e042fe65e1fb999014df581d9",
+    "bytes": 920,
+    "original_sha256": "74948ca16d3115adcf092e4f5c5c701ee71dfb5e042fe65e1fb999014df581d9",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/4k30.log"
+  },
+  {
+    "path": "final/avcodec-dependencies.txt",
+    "sha256": "1623946af55188b3fc424472b74f215c80a93fdd7d5ad73dceeaae8e4e7fff87",
+    "bytes": 1337,
+    "original_sha256": "1623946af55188b3fc424472b74f215c80a93fdd7d5ad73dceeaae8e4e7fff87",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/avcodec-dependencies.txt"
+  },
+  {
+    "path": "final/dependencies.txt",
+    "sha256": "e17d0fb56ecd14608d8f8695bd14031d6787760b1ff52a9fe64f51e5a491a053",
+    "bytes": 1113,
+    "original_sha256": "e17d0fb56ecd14608d8f8695bd14031d6787760b1ff52a9fe64f51e5a491a053",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/dependencies.txt"
+  },
+  {
+    "path": "final/hardware.txt",
+    "sha256": "031d4a0cb7c0d38d7b26f2fa956dff63089ea87b3fe1b5e01e3d9b6d9d02b82d",
+    "bytes": 64,
+    "original_sha256": "031d4a0cb7c0d38d7b26f2fa956dff63089ea87b3fe1b5e01e3d9b6d9d02b82d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/hardware.txt"
+  },
+  {
+    "path": "final/hevc-4k.json.gz",
+    "sha256": "b08d0dd69df84c4a43c7a49cdebbefc2eef06d3817fd17ffb4feedf4718951a7",
+    "bytes": 13686,
+    "original_sha256": "6425fde02c3f5cd9a25a35ac2014aff63de8639155264c2064b15849f287df5e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/hevc-4k.json"
+  },
+  {
+    "path": "final/hevc-4k.log",
+    "sha256": "85a409930feb01d0febd5dc4dc3cbb75a120f66d48a3a03b4e65e642460d8c5d",
+    "bytes": 921,
+    "original_sha256": "85a409930feb01d0febd5dc4dc3cbb75a120f66d48a3a03b4e65e642460d8c5d",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/hevc-4k.log"
+  },
+  {
+    "path": "final/identity.json",
+    "sha256": "eae3016e55d5d26082a6890885b415fa093e9f886dbc7cb50b74244cf9a7950e",
+    "bytes": 1207,
+    "original_sha256": "eae3016e55d5d26082a6890885b415fa093e9f886dbc7cb50b74244cf9a7950e",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/identity.json"
+  },
+  {
+    "path": "final/library-pins.json",
+    "sha256": "5d4efa87c7d3380a42068a42213439225c0fab2a605133609bd7e70dc1a23a88",
+    "bytes": 1400,
+    "original_sha256": "5d4efa87c7d3380a42068a42213439225c0fab2a605133609bd7e70dc1a23a88",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/library-pins.json"
+  },
+  {
+    "path": "final/power-after.txt",
+    "sha256": "582c1fd411baffd9a49b7680243886a0e0e40c7f8b74a4ca56a56596355ff979",
+    "bytes": 107,
+    "original_sha256": "582c1fd411baffd9a49b7680243886a0e0e40c7f8b74a4ca56a56596355ff979",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/power-after.txt"
+  },
+  {
+    "path": "final/power-before.txt",
+    "sha256": "582c1fd411baffd9a49b7680243886a0e0e40c7f8b74a4ca56a56596355ff979",
+    "bytes": 107,
+    "original_sha256": "582c1fd411baffd9a49b7680243886a0e0e40c7f8b74a4ca56a56596355ff979",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/power-before.txt"
+  },
+  {
+    "path": "final/runs.json",
+    "sha256": "fbc6aa52baf3dd3c977fc8e221b1a341948f01fb6c23869d8c29d4aa518d0bb6",
+    "bytes": 2137,
+    "original_sha256": "fbc6aa52baf3dd3c977fc8e221b1a341948f01fb6c23869d8c29d4aa518d0bb6",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/runs.json"
+  },
+  {
+    "path": "final/rust.txt",
+    "sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850",
+    "bytes": 192,
+    "original_sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/rust.txt"
+  },
+  {
+    "path": "final/system.txt",
+    "sha256": "9a27ea4f1e11f7b9a4f7573d8729db037a10ce2e457f97cb73f646a96a550b16",
+    "bytes": 65,
+    "original_sha256": "9a27ea4f1e11f7b9a4f7573d8729db037a10ce2e457f97cb73f646a96a550b16",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/system.txt"
+  },
+  {
+    "path": "final/thermal-after.txt",
+    "sha256": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+    "bytes": 146,
+    "original_sha256": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/thermal-after.txt"
+  },
+  {
+    "path": "final/thermal-before.txt",
+    "sha256": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+    "bytes": 146,
+    "original_sha256": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/thermal-before.txt"
+  },
+  {
+    "path": "final/vp9-4k.json.gz",
+    "sha256": "dc9411120b03cecbaa2e8a5bf6fda62afe718f7503af2bf5dadd067d8b134fba",
+    "bytes": 13773,
+    "original_sha256": "bf693dc61193f8f9755e646f4c1b0db889c905216a8efae7523a1188c4972e2a",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/vp9-4k.json"
+  },
+  {
+    "path": "final/vp9-4k.log",
+    "sha256": "311026beedb4f2dad59dbc2449ad5f3c763be2d28f170e7626270b26f8a8b322",
+    "bytes": 921,
+    "original_sha256": "311026beedb4f2dad59dbc2449ad5f3c763be2d28f170e7626270b26f8a8b322",
+    "source": "/tmp/deadpan-hardware-decode-20261011/final/vp9-4k.log"
+  },
+  {
+    "path": "sanitizers/report.json.gz",
+    "sha256": "8eb4138a44ac4ad6b3b276c0db4ad60168d8cefcba9fe2cdc49e701f3dd30f16",
+    "bytes": 2052,
+    "original_sha256": "f8142556689bb8f171b316d4ce332df73c2de065ab86ab0346acd4a269694416",
+    "source": "/tmp/deadpan-hardware-decode-20261011/sanitizers/report.json"
+  },
+  {
+    "path": "sanitizers/test.log.gz",
+    "sha256": "176e34ed62a9b35acbc7b6a4b7e3e89e50443ffadba66b0f9a6295bf5fb3c6cd",
+    "bytes": 6572,
+    "original_sha256": "de7a8fd0b0cd2c70ab434a50ed7a65b65ce5c3c162c628cff5a89fd7c03de5aa",
+    "source": "/tmp/deadpan-hardware-decode-20261011/sanitizers/test.log"
+  },
+  {
+    "path": "executed-test-binaries.json",
+    "sha256": "d8652af98266512ca8e177c5eacac8f4853698327aac70d9fe3239c7bfd0b4ff",
+    "bytes": 3923,
+    "original_sha256": "d8652af98266512ca8e177c5eacac8f4853698327aac70d9fe3239c7bfd0b4ff",
+    "source": "/tmp/deadpan-hardware-decode-20261011/executed-test-binaries.json"
+  },
+  {
+    "path": "committed-fixture-pins.json",
+    "sha256": "75b8f5a6328ee6fb555588cbfde129d07455ea50478f4e046294e6532df7734c",
+    "bytes": 3603,
+    "original_sha256": "75b8f5a6328ee6fb555588cbfde129d07455ea50478f4e046294e6532df7734c",
+    "source": "/tmp/deadpan-hardware-decode-20261011/committed-fixture-pins.json"
+  }
+]

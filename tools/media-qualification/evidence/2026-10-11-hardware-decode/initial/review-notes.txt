@@ -1,0 +1,8 @@
+Self-review by the sole implementation agent; no delegated review.
+- Held codec callbacks to immutable admission data and atomic failures. Moved the HEVC frame-only test into initial hvcC admission before codec threads start; callbacks read only its retained boolean.
+- Hardware surfaces keep their actual format/ownership. Logical software format is used only for interpretation metadata; exact NV12/P010 unpack happens into separate owned CPU planes on requested pixel access.
+- Plane bounds and visible geometry checked; only progressive 4:2:0 8/10-bit layouts opt in. H.264 field cadence and unknown/non-frame-only HEVC stay in software.
+- Downloads are invalidated on next/seek/restart and repeated copies reuse one. Mid-call failures poison the session; no silent midstream retry or picture discard.
+- Full index measurement explicitly forces canonical software. Hardware preference cannot cause a one-thread serving session to reuse its software measuring decoder accidentally.
+- Long-GOP measured performance rejects default hardware preference for H.264, HEVC and VP9. Normal preview, playback, proxies, receipts and exports keep software; no GUI toggle is added.
+- Hardware output counts are distinct from software buffer allocations; neither proves physical HEVC hardware usage because FFmpeg permits Apple fallback there.

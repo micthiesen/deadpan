@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/host/build_sanitized.py",
+    "--work",
+    "/tmp/deadpan-hardware-decode-20261011/sanitizers",
+    "--package",
+    "deadpan-source"
+  ],
+  "exit": 0,
+  "seconds": 345.30560337472707,
+  "log_sha256": "f8142556689bb8f171b316d4ce332df73c2de065ab86ab0346acd4a269694416"
+}

@@ -1,0 +1,24 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+  --> crates/deadpan-media/examples/compare_decode.rs:35:24
+   |
+35 |     Ok(format!("{:x}", hash.finalize()))
+   |                 ----   ^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+   |                 |
+   |                 required by this formatting parameter
+   |
+   = help: the following other types implement trait `LowerHex`:
+             &T
+             &mut T
+             Access
+             AtFlags
+             CloneFlags
+             CopyfileFlags
+             DupFlags
+             FallocateFlags
+           and 45 others
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/release/examples/compare_decode-8ad8ddde82ad8fd0.long-type-9191037761349867884.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-media` (example "compare_decode") due to 1 previous error

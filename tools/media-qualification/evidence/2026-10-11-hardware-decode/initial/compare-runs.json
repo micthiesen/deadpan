@@ -1,0 +1,22 @@
+[
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/compare-v1",
+      "/tmp/deadpan-hardware-decode-20261011/1080p60.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/1080p60.compare.json"
+    ],
+    "exit": 0,
+    "seconds": 64.94620012491941,
+    "binary_sha256": "6ed6c4f26ec1db8968f968dc45c9cc2fa6fa30d4232f0ff4af7b7737a09ff57e"
+  },
+  {
+    "command": [
+      "/tmp/deadpan-hardware-decode-20261011/compare-v1",
+      "/tmp/deadpan-hardware-decode-20261011/4k30.mp4",
+      "/tmp/deadpan-hardware-decode-20261011/4k30.compare.json"
+    ],
+    "exit": 0,
+    "seconds": 105.30661775032058,
+    "binary_sha256": "6ed6c4f26ec1db8968f968dc45c9cc2fa6fa30d4232f0ff4af7b7737a09ff57e"
+  }
+]

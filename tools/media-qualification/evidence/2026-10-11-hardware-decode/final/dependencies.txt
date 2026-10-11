@@ -1,0 +1,8 @@
+/tmp/deadpan-hardware-decode-20261011/final/compare_decode:
+	/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+	/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)
+	/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)
+	/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)
+	/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)
+	/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib (compatibility version 11.0.0, current version 11.4.103)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)

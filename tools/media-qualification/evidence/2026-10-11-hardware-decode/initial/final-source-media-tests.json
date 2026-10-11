@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-source",
+    "-p",
+    "deadpan-media",
+    "--",
+    "--test-threads=4"
+  ],
+  "exit": 0,
+  "seconds": 72.83558820839971,
+  "log_sha256": "a11de5e45f729b210b64009b0ea0181acdcbc18addbc8836bf80cb57282787b1"
+}

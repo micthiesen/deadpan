@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T14:12:25Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing the remaining shared renderer and playback requirements in DP-16.",
+  "updated_at": "2026-10-11T15:14:09Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Completing remaining renderer and playback requirements in DP-16; measured VideoToolbox decoding remains opt-in because long-GOP seeks are slower.",
   "features": [
     {
       "id": "editing",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Exact timing is complete under the local verification scope. Forty combined-edit exports across 20 source fixtures pass independent picture clocks and zero-offset audio; renderer, effects and output qualification remain."
+      "note": "Exact timing is complete. Optional VideoToolbox decoding matches software pixels, but slower long-GOP seeks keep preview on software. Remaining renderer, effects and output qualification stay open."
     },
     {
       "id": "ui",
@@ -445,6 +445,14 @@
       "revision": "ad6709f2bc2bf8e13f29ea5b1368d95540094a93",
       "retrospective": false,
       "summary": "Closed DP-02: added combined source-format editing tests and reconciled the exact-time contract. Forty release exports pass 1,040 independent picture identities, 36 zero-offset signal windows and exact terminal sample counts; strict Clippy passes."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "9479499f92e654b8ab0cc40e030a4894b84d32b5",
+      "retrospective": false,
+      "summary": "Implemented optional persistent VideoToolbox decoding and exact bounded surface transfer. All 339 source/media and 182 native sanitizer tests pass; 5,760 longer-clip picture comparisons and 800 random seeks match. Hardware seeks are slower, so normal preview remains on software and DP-16/DP-24 stay open."
     }
   ]
 }

@@ -12,8 +12,8 @@ use deadpan_core::{
     SourceTimeBase, TerminalProvenance,
 };
 use deadpan_source::{
-    DecodeControl, DecodeLimits, DecodedRgbaFrame, SourceDecoder, SourceFrameMetadata,
-    SourceStreamInfo,
+    DecodeAcceleration, DecodeControl, DecodeLimits, DecodedRgbaFrame, SourceDecoder,
+    SourceFrameMetadata, SourceStreamInfo,
 };
 
 use crate::ConversionError;
@@ -24,7 +24,8 @@ use crate::source_input::VerifiedSourceInput;
 #[derive(Debug, Clone, Copy)]
 pub struct SourceSessionLimits {
     /// Limits of the decoder that serves pictures, including its codec thread
-    /// count. Index measurement always uses one codec thread (see `measure`).
+    /// count and VideoToolbox preference. Index measurement always uses one
+    /// software codec thread (see `measurement_limits`).
     pub decode: DecodeLimits,
     pub maximum_index_frames: usize,
     pub maximum_index_bytes: usize,
@@ -54,7 +55,8 @@ impl Default for SourceSessionLimits {
 }
 
 impl SourceSessionLimits {
-    /// Interactive preview: serving decoders use [`interactive_decode_threads`].
+    /// Interactive preview uses [`interactive_decode_threads`] for software
+    /// decoding. VideoToolbox remains opt-in: measured long-GOP seeks are slower.
     pub fn interactive() -> Self {
         Self::with_threads(interactive_decode_threads())
     }
@@ -414,9 +416,11 @@ impl SourceSession {
             control(deadline)?,
         )?;
         let index = measure_index(&mut measuring, input.identity(), asset, limits, deadline)?;
-        // Serve from a threaded decoder when configured; its pictures equal
-        // the single-threaded measurement's, which defined the index.
-        let decoder = if limits.decode.threads == 1 {
+        // Serving may use threads or VideoToolbox. Index measurement always
+        // uses software, independently of the serving decoder's capabilities.
+        let decoder = if limits.decode.threads == 1
+            && limits.decode.acceleration == DecodeAcceleration::Software
+        {
             measuring
         } else {
             drop(measuring);
@@ -712,11 +716,12 @@ impl SourceSession {
     }
 }
 
-/// Index measurement always decodes with one codec thread, so a measured
-/// index (receipts included) never depends on the serving thread count.
+/// Index measurement always uses one software codec thread, so receipts never
+/// depend on the serving thread count or VideoToolbox availability.
 fn measurement_limits(decode: DecodeLimits) -> DecodeLimits {
     DecodeLimits {
         threads: 1,
+        acceleration: DecodeAcceleration::Software,
         ..decode
     }
 }
@@ -914,6 +919,12 @@ fn measure_index(
 impl SourceSession {
     pub fn info(&self) -> &SourceStreamInfo {
         self.decoder.info()
+    }
+
+    /// Cumulative serving-decoder observations. Background receipt measurement
+    /// has its own decoder and does not contribute to these counters.
+    pub fn decode_work(&self) -> deadpan_source::DecodeWork {
+        self.decoder.work()
     }
 
     pub fn index(&self) -> &SourceIndexSnapshot {

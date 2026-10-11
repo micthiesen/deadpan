@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-media",
+    "--test",
+    "progressive_admission"
+  ],
+  "exit": 0,
+  "seconds": 2.320434084162116,
+  "log_sha256": "95d1695aed3aeb40e865d618b597f9f79606661b7569b644f1ac6b2fe6fcf90d"
+}

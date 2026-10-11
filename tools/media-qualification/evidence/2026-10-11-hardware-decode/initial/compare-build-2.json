@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-media",
+    "--example",
+    "compare_decode"
+  ],
+  "exit": 0,
+  "seconds": 1.71768799982965,
+  "log_sha256": "48a18ea2b420f1f9ceb218acc1a61ec9d7f9b9539a52059f5111e047e1c46c52"
+}

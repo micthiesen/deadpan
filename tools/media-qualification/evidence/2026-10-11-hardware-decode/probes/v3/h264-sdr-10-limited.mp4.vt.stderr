@@ -1,0 +1,2 @@
+software format=yuv420p10le field_order=1 profile=110
+decoded 12 pictures via VideoToolbox

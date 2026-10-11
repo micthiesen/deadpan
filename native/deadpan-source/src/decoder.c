@@ -27,6 +27,7 @@
 #include <libavutil/avutil.h>
 #include <libavutil/display.h>
 #include <libavutil/error.h>
+#include <libavutil/hwcontext.h>
 #include <libavutil/mastering_display_metadata.h>
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
@@ -60,6 +61,9 @@ struct DeadpanSource {
     AVCodecContext *decoder;
     AVPacket *packet;
     AVFrame *frame;
+    // Lazy CPU pixel access for the current hardware surface. Metadata-only
+    // preroll never transfers it; the codec keeps its persistent VT session.
+    AVFrame *download, *canonical;
     DeadpanFields *fields;
     int fields_flushed;
     uint64_t presented;
@@ -69,6 +73,8 @@ struct DeadpanSource {
     // Length-prefixed NAL width for H.264 (avcC) or HEVC (hvcC); hevc selects
     // the HEVC packet grammar. hdr is set once the first picture is admitted.
     int pending_first_frame, nal_length_bytes, hevc, hdr;
+    // Captured before codec threads start; callbacks never read demuxer state.
+    int hevc_frame_only;
     int prores_header_seen;
     uint8_t prores_interpretation[4];
     // AV1 has its own allocator in libdav1d. Validate the complete sequence
@@ -418,6 +424,7 @@ static void async_geometry(DeadpanSource *s, int width, int height) {
     atomic_store(&s->rejected_geometry, (uint64_t)(uint32_t)width << 32 | (uint32_t)height);
     async_fail(s, ASYNC_GEOMETRY);
 }
+#include "hardware.h"
 // These callbacks run on the controlled decoder. In pinned FFmpeg 8.0.3,
 // h264_init_ps calls get_format after installing SPS coded dimensions and before
 // h264_slice_header_init allocates macroblock tables. Frame-buffer max_pixels
@@ -436,6 +443,9 @@ static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVP
         async_geometry(s, context->coded_width, context->coded_height);
         return AV_PIX_FMT_NONE;
     }
+    if (hardware_format_allowed(context))
+        for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++)
+            if (formats[i] == AV_PIX_FMT_VIDEOTOOLBOX) return formats[i];
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
         const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
@@ -637,6 +647,7 @@ static int parse_hvcc(DeadpanSource *s, const uint8_t *d, int size) {
         return fail(s, "unsupported_codec", "HEVC configuration lacks complete VPS/SPS/PPS arrays");
     s->nal_length_bytes = length;
     s->hevc = 1;
+    s->hevc_frame_only = hardware_hevc_frame_only(s);
     return 1;
 }
 static int known_parameter_set(const DeadpanSource *s, int type, const uint8_t *nal, uint32_t length) {
@@ -807,6 +818,14 @@ static int allocate_decoder(DeadpanSource *s) {
     // Keep the coded crop available for the shared visible-rectangle check.
     s->decoder->apply_cropping = 0;
     s->decoder->flags |= AV_CODEC_FLAG_COPY_OPAQUE;
+    if (hardware_preferred(s, stream->codecpar->codec_id)) {
+        // No device or unsupported initialization is an ordinary software
+        // fallback. FFmpeg retries get_format without a failed HW format.
+        // The callback still checks coded dimensions before VT allocation.
+        (void)av_hwdevice_ctx_create(&s->decoder->hw_device_ctx,
+            AV_HWDEVICE_TYPE_VIDEOTOOLBOX, NULL, NULL, 0);
+        if (check(s) < 0) return -1;
+    }
     if (stream->codecpar->codec_id == AV_CODEC_ID_AV1) {
         // dav1d's private allocator bypasses get_format/get_buffer2. av1.h
         // bounds each possible dimension, and max_pixels reaches dav1d's
@@ -846,7 +865,8 @@ static int open_impl(DeadpanSource *s) {
         !s->limits.max_packet_bytes || s->limits.max_packet_bytes > 16ULL*1024*1024 ||
         !s->limits.max_pixels || s->limits.max_pixels > 8192ULL*8192 ||
         !s->limits.max_dimension || s->limits.max_dimension > 8192 || !s->limits.max_packets_per_frame || s->limits.max_packets_per_frame > 10000 ||
-        !s->limits.threads || s->limits.threads > 16 || s->limits.progressive_only > 1)
+        !s->limits.threads || s->limits.threads > 16 || s->limits.progressive_only > 1 ||
+        s->limits.acceleration > 1)
         return fail(s, "invalid_configuration", "source decode limits exceed hard bounds");
     if (s->fresh_key_pts != AV_NOPTS_VALUE) s->limits.progressive_only = 1;
     struct stat status;
@@ -935,14 +955,15 @@ static int open_impl(DeadpanSource *s) {
     if (s->fresh_keyframe && check_fresh_keyframe(s) < 0) return -1;
     AVFrame *f = s->frame;
     s->first_source_pts = f->pts;
-    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
+    int layout = picture_layout(s);
+    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(layout);
     // Only an absent range gets a heuristic: full for RGB, limited for YUV.
     // Retain the absence in info and compare later raw declarations against
     // it. Neither this nor an authored override modifies an AVFrame tag.
     int assumed_range = f->color_range == AVCOL_RANGE_UNSPECIFIED;
     int range = assumed_range && pixel ?
         ((pixel->flags & AV_PIX_FMT_FLAG_RGB) ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG) : f->color_range;
-    if (color(s, p->codec_id, f->format, range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
+    if (color(s, p->codec_id, layout, range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     int assumed_left = p->codec_id == AV_CODEC_ID_AV1 && !(s->av1_config[2] & 3) &&
                        f->chroma_location == AVCHROMA_LOC_UNSPECIFIED;
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
@@ -980,9 +1001,9 @@ static int open_impl(DeadpanSource *s) {
     if (capture_audio_inventory(s) < 0 || rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
     s->hdr = hdr_transfer(f->color_trc);
     if (capture_static(s) < 0) return -1;
-    s->pixel_format = f->format;
+    s->pixel_format = layout;
     (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", p->codec_id == AV_CODEC_ID_AV1 ? "av1" : codec->name);
-    (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(f->format));
+    (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(layout));
     if (check_frame(s) < 0) return -1;
     if (s->info.bwdif_fields) {
         result = deadpan_fields_open(&s->fields, s->frame, s->limits.threads);
@@ -999,6 +1020,8 @@ void deadpan_source_close(DeadpanSource *s) {
     if (!s) return;
     sws_freeContext(s->scaler);
     deadpan_fields_close(&s->fields);
+    av_frame_free(&s->canonical);
+    av_frame_free(&s->download);
     av_frame_free(&s->frame);
     av_packet_free(&s->packet);
     avcodec_free_context(&s->decoder);
@@ -1076,7 +1099,7 @@ static int check_frame(DeadpanSource *s) {
         int result = av_frame_apply_cropping(f, AV_FRAME_CROP_UNALIGNED);
         if (result < 0) return fferror(s, "apply declared decoder crop", result);
     }
-    if (f->width != s->info.width || f->height != s->info.height || f->format != s->pixel_format ||
+    if (f->width != s->info.width || f->height != s->info.height || picture_layout(s) != s->pixel_format ||
         (int)f->color_range != (s->info.range_assumed ? AVCOL_RANGE_UNSPECIFIED : s->info.range) || (int)f->colorspace != s->info.matrix || (int)f->color_trc != s->info.transfer || (int)f->color_primaries != s->info.primaries)
         return fail(s, "stream_changed", "source geometry, pixel layout, or color interpretation changed");
     if ((int)f->chroma_location != (s->info.chroma_assumed_left ? AVCHROMA_LOC_UNSPECIFIED : s->chroma_location))
@@ -1179,11 +1202,13 @@ static struct SwsContext *scaler(DeadpanSource *s, enum AVPixelFormat output) {
     return context;
 }
 static int convert(DeadpanSource *s, struct SwsContext **context, enum AVPixelFormat output, uint8_t *pixels, int stride) {
+    const AVFrame *f = picture_pixels(s);
+    if (!f) return -1;
     if (!*context && !(*context = scaler(s, output))) return -1;
     if (check(s) < 0) return -1;
     uint8_t *planes[4] = {pixels,NULL,NULL,NULL};
     int strides[4] = {stride,0,0,0};
-    int rows = sws_scale(*context, (const uint8_t * const *)s->frame->data, s->frame->linesize,
+    int rows = sws_scale(*context, (const uint8_t * const *)f->data, f->linesize,
         0, s->info.height, planes, strides);
     if (rows != s->info.height) return fail(s, "conversion_failure", "RGBA conversion did not write the complete frame");
     return check(s);
@@ -1242,7 +1267,8 @@ static inline void store_rgba64(uint8_t *out, const double value[3]) {
 static int rgba64(DeadpanSource *s, uint8_t *pixels, size_t length) {
     size_t expected = (size_t)s->info.width * (size_t)s->info.height * 8;
     if (!pixels || length != expected) return fail(s, "invalid_configuration", "RGBA64 output must have the exact packed frame size");
-    const AVFrame *f = s->frame;
+    const AVFrame *f = picture_pixels(s);
+    if (!f) return -1;
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(f->format);
     if (!desc || !(desc->flags & AV_PIX_FMT_FLAG_PLANAR) || (desc->flags & AV_PIX_FMT_FLAG_BE) || desc->nb_components != 3)
         return fail(s, "unsupported_conversion", "sixteen-bit output requires a planar little-endian three-component picture");
@@ -1351,7 +1377,8 @@ static void export_metadata(DeadpanSource *s, DeadpanExportFrame *out) {
     metadata(s, &out->source);
 }
 static int i420(DeadpanSource *s, uint8_t *pixels, size_t length) {
-    AVFrame *f = s->frame;
+    AVFrame *f = picture_pixels(s);
+    if (!f) return -1;
     if (f->format != AV_PIX_FMT_YUV420P || f->color_range != AVCOL_RANGE_MPEG ||
         f->colorspace != AVCOL_SPC_BT709 || f->color_trc != AVCOL_TRC_BT709 ||
         f->color_primaries != AVCOL_PRI_BT709 || (f->width & 1) || (f->height & 1))
@@ -1383,7 +1410,8 @@ static int i420(DeadpanSource *s, uint8_t *pixels, size_t length) {
     return check(s);
 }
 static int yuv420p10(DeadpanSource *s, uint16_t *samples, size_t count) {
-    AVFrame *f = s->frame;
+    AVFrame *f = picture_pixels(s);
+    if (!f) return -1;
     if (f->format != AV_PIX_FMT_YUV420P10LE || f->color_range != AVCOL_RANGE_MPEG ||
         f->colorspace != AVCOL_SPC_BT2020_NCL || !hdr_transfer(f->color_trc) ||
         f->color_primaries != AVCOL_PRI_BT2020 || (f->width & 1) || (f->height & 1))
@@ -1589,6 +1617,7 @@ static int packet_budget(DeadpanSource *s) {
     return check(s);
 }
 static int receive_frame(DeadpanSource *s) {
+    clear_hardware_pixels(s);
     av_frame_unref(s->frame);
     if (s->ended) return 0;
     uint32_t packets = 0;
@@ -1604,6 +1633,7 @@ static int receive_frame(DeadpanSource *s) {
             if (s->work.frames == UINT64_MAX) return fail(s, "resource_limit", "cumulative decoded frame count overflow");
             s->frames++;
             s->work.frames++;
+            if (s->frame->format == AV_PIX_FMT_VIDEOTOOLBOX) s->work.hardware_frames++;
             return 1;
         }
         if (result == AVERROR_EOF) { s->ended = 1; return 0; }
@@ -1730,6 +1760,7 @@ int deadpan_source_copy(DeadpanSource *s, uint64_t timeout, DeadpanCancelled can
     return finish(s, rgba(s, pixels, length));
 }
 static int flush_decoder(DeadpanSource *s) {
+    clear_hardware_pixels(s);
     /* Pinned 8.0.3's HEVC flush clears the DPB but leaves output_fifo intact.
        Drain through the public API first, including every frame thread, so a
        partial previous drain cannot return old pictures after a seek. No new
@@ -1745,6 +1776,7 @@ static int flush_decoder(DeadpanSource *s) {
             if (result == 0) {
                 if (s->work.frames == UINT64_MAX) return fail(s, "resource_limit", "cumulative HEVC drain count overflow");
                 s->work.frames++;
+                if (s->frame->format == AV_PIX_FMT_VIDEOTOOLBOX) s->work.hardware_frames++;
                 continue;
             }
             if (result != AVERROR(EAGAIN)) return fferror(s, "drain previous HEVC pictures", result);

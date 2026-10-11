@@ -1,0 +1,16 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `release` profile [optimized] target(s) in 1.98s
+     Running tests/progressive_admission.rs (target/release/deps/progressive_admission-c93eb40ba9cf57f2)
+
+running 8 tests
+test receipt_stream_metadata_and_content_identity_must_match_before_serving ... ok
+test an_adopted_private_snapshot_serves_like_a_copied_one ... ok
+test a_receipt_entry_that_differs_from_its_decoded_picture_is_never_served ... ok
+test an_exhausted_background_deadline_is_an_interruption_not_a_verdict ... ok
+test dropping_a_measuring_session_cancels_and_joins_its_thread ... ok
+test progressive_pictures_equal_complete_admission_and_measurement_verifies ... ok
+test measured_indexes_do_not_depend_on_the_serving_thread_count ... ok
+test hardware_serving_preserves_software_receipts_and_rejects_bad_indexes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+

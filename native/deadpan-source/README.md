@@ -12,7 +12,7 @@ cache semantics and remaining work. `tests/audio_decode.rs` and the media
 crate's audio session tests run without the GUI.
 
 `SourceDecoder` owns one regular input descriptor and one persistent FFmpeg demux/
-software decoder session. It performs no subprocess launch, path reopening,
+decoder session. Software is the default. It performs no subprocess launch, path reopening,
 networking, database write, or authored mutation. `next_metadata` decodes and
 retains the next presented AVFrame without allocating/converting RGB.
 `copy_current_rgba` converts only that frame and copies into a Rust-owned `Vec`.
@@ -25,10 +25,34 @@ every SPS, from the AVC configuration and in-band, declares
 `bitstream_restriction` and `frame_mbs_only_flag`: without a declared reorder
 depth FFmpeg estimates it from the pictures it sees, which skipping changes,
 and field pictures pair across packets. `DecodeWork::decoded_pictures` counts
-pictures the codec actually decoded. Pictures at or after the target
+software picture-buffer allocations. Pictures at or after the target
 always decode, so forward steps continue. Interlaced input disables skipping and
 uses the preceding GOP as temporal context. Returned pixels survive subsequent
 decoding, seek, and session destruction.
+
+`DecodeAcceleration::PreferVideoToolbox` opts into the pinned FFmpeg
+VideoToolbox path for progressive H.264, HEVC and VP9 4:2:0 eight/ten-bit
+pictures. Unsupported device/format initialization uses software; failures
+after decoding begins remain errors. H.264 field cadence, HEVC without explicit
+frame-only constraints, RGB, AV1, ProRes and FFV1 stay in software. Geometry
+checks run before hardware format selection. Codec callbacks read only captured
+admission data and limits, never live demuxer state or borrowed cancellation.
+
+Hardware surfaces retain their own format and ownership. Metadata uses the
+codec's logical software layout, preserving receipt equality. Pixel access
+downloads only the requested surface and unpacks NV12/P010 codes into bounded,
+owned planar buffers before the existing RGBA conversion. Repeated copies reuse
+that download; metadata-only preroll downloads nothing. `hardware_frames` counts
+returned VideoToolbox pictures, and `hardware_transfers` counts downloads.
+Neither counter proves physical HEVC hardware use: FFmpeg permits Apple's
+software fallback for HEVC. Index measurement always uses canonical software,
+even when the serving decoder opts into hardware.
+
+Normal preview/playback keeps threaded software. The
+[VideoToolbox qualification](../../docs/qualification/hardware-decode-2026-10-11.md)
+found exact pixels but substantially slower long-GOP seeks on the reference
+Mac. The opt-in API and `compare_decode` media example support further measured
+qualification; this does not close DP-16's acceleration/performance work.
 
 `DecodeLimits::threads` (1 to 16, default 1) enables FFmpeg frame and slice
 threading above one. Both threading and skipping return pictures bit-identical

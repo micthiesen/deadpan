@@ -1,0 +1,2 @@
+{"ordinal":0,"pts":0,"duration":2002,"native":"videotoolbox_vld","native_size":[96,64],"crop":[0,0,0,0],"transfer":"p010le","size":[96,64],"range":1,"matrix":1,"chroma":0,"normalized":"yuv420p10le","sha256":"ebd0d8421d098d33247c7629e44e3fb72c823216bf604d25c3666f697b007c36"}
+{"ordinal":1,"pts":2002,"duration":2002,"native":"videotoolbox_vld","native_size":[96,64],"crop":[0,0,0,0],"transfer":"p010le","size":[96,64],"range":1,"matrix":1,"chroma":0,"normalized":"yuv420p10le","sha256":"ebd0d8421d098d33247c7629e44e3fb72c823216bf604d25c3666f697b007c36"}
