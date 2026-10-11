@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-202 actions, 125 command verbs.
+203 actions, 126 command verbs.
 
 ## Start & View
 
@@ -212,6 +212,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Named takes** (`takes`)<br>Save named versions of the current committed edit. Open, update, rename or delete a take. Opening is one undoable edit; label changes preserve the current edit. Tab moves between controls; Escape returns to editing. | - | `:takes` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project takes <p>; project take <p> --json <request>` |
 | **Saved renders** (`renders`)<br>Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing. | - | `:renders` | Every editor context | not recorded | [Equivalent](PARITY.md#render-and-export): `render status <p>` |
 | **Relink the Original** (`relink`)<br>Locate a missing Original by choosing its file. Only identical content is accepted. | - | `:relink` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project relink-original … --expected-version <N>` |
+| **Relink the selected catalog sound** (`sound-relink`)<br>Select a sound in the Original / sounds pane, then locate its identical file. Repairs a missing or damaged project copy, or updates a linked location. The sound is captured when command entry opens; edits and the Original are unchanged. | - | `:sound-relink` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project relink-original … --expected-version <N>` |
 | **Recovery report** (`recovery`)<br>Show what opening this project recovered. | - | `:recovery` | Every editor context | not recorded | [GUI-only](PARITY.md#project-and-files): `session report; project validate, originals, render status read the same facts` |
 | **Correct the transcript** (`correct`)<br>Correct the Original's transcript words and pauses in a sheet; see Transcript corrections for its keys. Corrections are kept apart from the recognized words, survive transcribing again and are not edits. | - | `:correct` | Every editor context | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections <p> --json <request> (closed project)` |
 | **Background jobs** (`jobs`)<br>Show every background job (AI pictures, transcription, pause and shot detection, tracking, proxies, renders, downloads, model installs, copies) with its state, progress and elapsed time. One AI model runs at a time; others wait their turn, visibly. | `Deadpan › Jobs…` (native) | `:jobs` | Anywhere | not recorded | [GUI-only](PARITY.md#project-and-files): `each job's own command reports progress` |

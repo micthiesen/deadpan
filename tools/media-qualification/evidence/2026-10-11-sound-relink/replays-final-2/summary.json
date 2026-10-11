@@ -1,0 +1,46 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-2/bin/deadpan-app",
+      "sha256": "7fde5f4e6429629f24c08771f875b46b9558ca55597d9ddef334f17e49ea0970",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-2/bin/deadpan-media-worker",
+      "sha256": "0f62dc3382b1ec9d6e3b534b83e6ab845e1cc7b381312117054bb748f545cbf4",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-2/bin/deadpan-track",
+      "sha256": "7131d5ef7aca18bbe0800b6c75f63adcf557f16d220e8b69029b64e9a937d30d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-2/bin/deadpan-transcribe",
+      "sha256": "653551cb77b860d802d3325ed25d85903b12161ce315b5b7f08f6418f53ee280",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.023445334,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 20,
+      "failed_checks": [],
+      "failures": [
+        "Timed out waiting for New session arrives during sound command: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"\",\"command_open\":true,\"context\":\"Sequence\",\"copied_moment\":null,\"copied_slice\":null,\"copy_pending\":false,\"duration\":120,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":null,\"focused_widget\":\"Id::new(\\\"command-input\\\")\",\"footer_bottom\":[820.0,820.0],\"footer_command_open\":true,\"help_open\":false,\"import\":null,\"layout_passes\":1,\"message\":\"Project is already open\",\"original_selection\":null,\"pane\":\"Sources\",\"pending_keys\":\"\",\"picture\":{\"decoded\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 2, project: ProjectId(\\\"fe43ad51-6a8a-433a-b734-5dc44da21247\\\"), revision: RevisionId(\\\"94a736a1-c111-4a1f-a59c-f6304a00cb66\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 9, request: 9 }\"},\"decoded_framing\":\"[PictureFraming { instance: InstancePath { node: NodeId(\\\"1b092a60-d544-4d15-83e8-ff32515503b0\\\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\\\"d8dfa38c-afe4-4f34-9db7-d556f6e5c9d0\\\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]\",\"decoded_geometry_revision\":0,\"decoded_tier\":\"Original\",\"displayed\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 2, project: ProjectId(\\\"fe43ad51-6a8a-433a-b734-5dc44da21247\\\"), revision: RevisionId(\\\"94a736a1-c111-4a1f-a59c-f6304a00cb66\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 9, request: 9 }\"},\"displayed_tier\":\"Original\",\"error\":null,\"geometry_revision\":0,\"loading\":false,\"needs_render\":false,\"requested\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 2, project: ProjectId(\\\"fe43ad51-6a8a-433a-b734-5dc44da21247\\\"), revision: RevisionId(\\\"94a736a1-c111-4a1f-a59c-f6304a00cb66\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 9, request: 9 }\"},\"source_frame\":0},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":\"94a736a1-c111-4a1f-a59c-f6304a00cb66\",\"room_tone\":null,\"scope_end\":120,\"scope_labels\":[],\"scope_start\":0,\"scoped\":null,\"selected_beat\":\"1b092a60-d544-4d15-83e8-ff32515503b0\",\"selected_event\":null,\"selected_sound\":\"c65d2f75-f1a9-453e-8617-2944657f272f\",\"selected_source\":\"63bd43e3-b126-4432-9758-c9819a4735d2\",\"sequence_cursor\":0,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":{\"086bbe37-a053-4ca3-96fe-5a91e2a38d2b\":{\"end_edge\":\"automatic\",\"gain_millidecibels\":0,\"label\":\"pcm-stereo-48000.wav\",\"mapping\":{\"frames\":{\"denominator\":\"1144\",\"numerator\":\"5855\"},\"type\":\"duration\"},\"offset\":0,\"overflow\":\"reject\",\"owner\":\"d8dfa38c-afe4-4f34-9db7-d556f6e5c9d0\",\"source\":{\"asset\":\"c65d2f75-f1a9-453e-8617-2944657f272f\",\"span\":{\"end\":{\"ticks\":8197,\"time_base\":{\"denominator\":48000,\"numerator\":1}},\"start\":{\"ticks\":0,\"time_base\":{\"denominator\":48000,\"numerator\":1}}}},\"start_edge\":\"automatic\"}},\"sound_routes\":{},\"source_cursor\":0,\"source_summary\":{\"first_pts\":0,\"frame_count\":120,\"height\":180,\"terminal_pts\":120120,\"time_base\":[1,30000],\"width\":320},\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":{\"error\":\"Select a picture beat in Your edit before opening Trim.\"},\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[1280.0,820.0],\"visual_selection\":false}",
+        "1 timing sample(s) of New session arrives during sound command did not complete"
+      ],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "sound-relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 105.413953292,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 105.505274916
+}

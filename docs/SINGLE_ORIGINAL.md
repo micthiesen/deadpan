@@ -116,10 +116,11 @@ must not add blank picture, lengthen the sequence, or replace original speech.
 The generic backend's audio-only sequential Source beat remains available to
 developer and compatibility workflows; it is not an overlay implementation.
 
-The current native decoder's admitted sound formats remain PCM16 WAV and the
-guarded AAC/MP4 path. A filter or newly convenient track selector does not qualify
-MP3, FLAC or another container grammar. Exact source clocks, priming evidence,
-verified bytes and bounded decoding remain required.
+Qualified sound paths include integer and float WAV, MP3, AAC/MP4 and
+mono/stereo Opus in WebM, Matroska and MP4. Their exact admitted profiles and
+retained evidence are in [Requirements](REQUIREMENTS.md). A file-picker filter
+does not qualify an additional codec or container grammar. Exact source clocks,
+priming evidence, verified bytes and bounded decoding remain required.
 
 Native sound import chooses the first actual admitted audio track, including
 MP4 with video at stream 0 and audio at stream 1. `AudioSession::open_first_input`

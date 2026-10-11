@@ -1,0 +1,59 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final/bin/deadpan-app",
+      "sha256": "a92e3b5eb796308cb7a39d12ee66f744c317ee072918fc782c976df1b455e8eb",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final/bin/deadpan-media-worker",
+      "sha256": "0f62dc3382b1ec9d6e3b534b83e6ab845e1cc7b381312117054bb748f545cbf4",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final/bin/deadpan-track",
+      "sha256": "7131d5ef7aca18bbe0800b6c75f63adcf557f16d220e8b69029b64e9a937d30d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final/bin/deadpan-transcribe",
+      "sha256": "653551cb77b860d802d3325ed25d85903b12161ce315b5b7f08f6418f53ee280",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.786541834,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 10,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 87.592970625,
+      "status": "PASS"
+    },
+    {
+      "checks": 13,
+      "failed_checks": [
+        "Repair target is the focused catalog sound"
+      ],
+      "failures": [
+        "Check failed: Repair target is the focused catalog sound"
+      ],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "sound-relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 87.789559166,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 175.455083208
+}

@@ -1,0 +1,72 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays/bin/deadpan-app",
+      "sha256": "9ca44aab9526d64363b48e39fa8855aeda68956022418e2cf2803a28d941834f",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays/bin/deadpan-media-worker",
+      "sha256": "0f62dc3382b1ec9d6e3b534b83e6ab845e1cc7b381312117054bb748f545cbf4",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays/bin/deadpan-track",
+      "sha256": "7131d5ef7aca18bbe0800b6c75f63adcf557f16d220e8b69029b64e9a937d30d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays/bin/deadpan-transcribe",
+      "sha256": "653551cb77b860d802d3325ed25d85903b12161ce315b5b7f08f6418f53ee280",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 24.361295667,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 14,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "recovery",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 88.830039167,
+      "status": "PASS"
+    },
+    {
+      "checks": 10,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 86.718671666,
+      "status": "PASS"
+    },
+    {
+      "checks": 11,
+      "failed_checks": [],
+      "failures": [
+        "Timed out waiting for Wrong sound replacement refused: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"sound-relink\",\"command_open\":false,\"context\":\"Sequence\",\"copied_moment\":null,\"copied_slice\":null,\"copy_pending\":false,\"duration\":120,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":\"Select a catalog sound in the Original / sounds pane, then use :sound-relink.\",\"focused_widget\":\"Id::new(\\\"placed-sounds-pane\\\")\",\"footer_bottom\":[793.0,793.0],\"footer_command_open\":false,\"help_open\":false,\"import\":{\"error\":null,\"stage\":\"Complete\"},\"layout_passes\":1,\"message\":\"Sound placed and saved\",\"original_selection\":null,\"pane\":\"Sounds\",\"pending_keys\":\"\",\"picture\":{\"decoded\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 1, project: ProjectId(\\\"9fa93fd0-bff2-4da1-bda9-c4f709f4cb63\\\"), revision: RevisionId(\\\"ac0cf906-452d-4927-b45e-145f7c016323\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 4 }\"},\"decoded_framing\":\"[PictureFraming { instance: InstancePath { node: NodeId(\\\"da0cb284-542d-41ad-98cd-c193de141eea\\\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\\\"c0efab64-90d6-4ecf-90ca-d9d15b69fca8\\\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]\",\"decoded_geometry_revision\":0,\"decoded_tier\":\"Original\",\"displayed\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 1, project: ProjectId(\\\"9fa93fd0-bff2-4da1-bda9-c4f709f4cb63\\\"), revision: RevisionId(\\\"ac0cf906-452d-4927-b45e-145f7c016323\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 4 }\"},\"displayed_tier\":\"Original\",\"error\":null,\"geometry_revision\":0,\"loading\":false,\"needs_render\":false,\"requested\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 1, project: ProjectId(\\\"9fa93fd0-bff2-4da1-bda9-c4f709f4cb63\\\"), revision: RevisionId(\\\"ac0cf906-452d-4927-b45e-145f7c016323\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 4 }\"},\"source_frame\":0},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":\"ac0cf906-452d-4927-b45e-145f7c016323\",\"room_tone\":null,\"scope_end\":120,\"scope_labels\":[],\"scope_start\":0,\"scoped\":null,\"selected_beat\":\"da0cb284-542d-41ad-98cd-c193de141eea\",\"selected_event\":\"17ee0811-f989-46ad-b48f-49f15e5f9b74\",\"selected_sound\":\"b6149b3f-d01f-4c3e-a94d-e991728c6e4c\",\"selected_source\":\"a0d6dd26-9e9e-4776-b2c2-52510e7df8b4\",\"sequence_cursor\":0,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":{\"17ee0811-f989-46ad-b48f-49f15e5f9b74\":{\"end_edge\":\"automatic\",\"gain_millidecibels\":0,\"label\":\"pcm-stereo-48000.wav\",\"mapping\":{\"frames\":{\"denominator\":\"1144\",\"numerator\":\"5855\"},\"type\":\"duration\"},\"offset\":0,\"overflow\":\"reject\",\"owner\":\"c0efab64-90d6-4ecf-90ca-d9d15b69fca8\",\"source\":{\"asset\":\"b6149b3f-d01f-4c3e-a94d-e991728c6e4c\",\"span\":{\"end\":{\"ticks\":8197,\"time_base\":{\"denominator\":48000,\"numerator\":1}},\"start\":{\"ticks\":0,\"time_base\":{\"denominator\":48000,\"numerator\":1}}}},\"start_edge\":\"automatic\"}},\"sound_routes\":{},\"source_cursor\":0,\"source_summary\":{\"first_pts\":0,\"frame_count\":120,\"height\":180,\"terminal_pts\":120120,\"time_base\":[1,30000],\"width\":320},\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":null,\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[1280.0,820.0],\"visual_selection\":false}",
+        "1 timing sample(s) of Wrong sound replacement refused did not complete"
+      ],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "sound-relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 103.881567083,
+      "status": "FAIL"
+    }
+  ],
+  "wall_seconds": 279.552655417
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "replays",
+    "--scenario",
+    "sound-relink,relink,recovery",
+    "--output",
+    "/tmp/deadpan-sound-relink-20261011/replays",
+    "--jobs",
+    "1"
+  ],
+  "exit": 1,
+  "seconds": 304.0070190420374,
+  "log_sha256": "2dbf97c39397c3a16bd3263c63439cfdc5d1bbeb48d7cf7944e19ea677e58337"
+}

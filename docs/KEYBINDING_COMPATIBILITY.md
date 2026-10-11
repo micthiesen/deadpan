@@ -9,6 +9,11 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+`:sound-relink` adds an explicit catalog-file repair command without a new key
+chord. The 2026-10-11 sound recovery replay passes 21,884,016 production-router
+cases against all 62 pinned Kestrel reservations. The live source was unavailable.
+See [sound recovery](qualification/sound-recovery-2026-10-11.md).
+
 `:new-linked` and `:original-linked` add explicit linked-Original creation
 and setup retry without adding a modified key chord. The 2026-10-09 release
 linked-creation and YouTube replays each pass 21,884,016 production-router

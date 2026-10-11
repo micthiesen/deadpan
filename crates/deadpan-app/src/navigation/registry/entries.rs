@@ -1587,6 +1587,17 @@ pub static SPECS: &[Spec] = &[
         help: "Locate a missing Original by choosing its file. Only identical content is accepted.",
     },
     Spec {
+        id: "sound-relink",
+        name: "Relink the selected catalog sound",
+        section: Section::Project,
+        keys: &[],
+        commands: &[verb("sound-relink", ":sound-relink")],
+        contexts: C::EDITOR,
+        replay: Replay::Ignored,
+        headless: eq("project relink-original … --expected-version <N>", PROJECT),
+        help: "Select a sound in the Original / sounds pane, then locate its identical file. Repairs a missing or damaged project copy, or updates a linked location. The sound is captured when command entry opens; edits and the Original are unchanged.",
+    },
+    Spec {
         id: "recovery",
         name: "Recovery report",
         section: Section::Project,

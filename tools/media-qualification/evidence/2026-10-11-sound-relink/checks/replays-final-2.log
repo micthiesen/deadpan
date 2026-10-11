@@ -1,0 +1,29 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask replays --scenario sound-relink --output /tmp/deadpan-sound-relink-20261011/replays-final-2 --jobs 1`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.64s
+replays: built and copied /tmp/deadpan-sound-relink-20261011/replays-final-2/bin/deadpan-app in 9.0 s (sha256 7fde5f4e6429629f24c08771f875b46b9558ca55597d9ddef334f17e49ea0970)
+replays: sound-relink           FAIL   105.4 s
+
+scenario                     seconds  checks  layout-retry warnings
+sound-relink           FAIL    105.4      20  7 frame(s) settled their layout only on a second retry; egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+sound-relink failed (report: /tmp/deadpan-sound-relink-20261011/replays-final-2/sound-relink/report.html):
+  Timed out waiting for New session arrives during sound command: {"annotation_busy":false,"beat_count":1,"busy":false,"camera_open":false,"camera_pending":false,"command":"","command_open":true,"context":"Sequence","copied_moment":null,"copi…
+  1 timing sample(s) of New session arrives during sound command did not complete
+
+0 passed, 1 failed, 0 skipped; 20 checks; build 9.0 s, replays 105.5 s wall (105.4 s summed, 1 job(s))
+Reports: /tmp/deadpan-sound-relink-20261011/replays-final-2
+xtask: 1 replay scenario(s) failed

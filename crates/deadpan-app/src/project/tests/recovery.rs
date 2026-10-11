@@ -150,6 +150,10 @@ fn a_missing_original_opens_degraded_and_relinks_only_identical_bytes() {
     assert_eq!(missing.len(), 1);
     assert_eq!(missing[0].availability, OriginalAvailability::Missing);
     assert_eq!(missing[0].label, source.label);
+    assert!(
+        !missing[0].audio_only,
+        "a compatibility video is not a sound"
+    );
 
     let relink = |ticket: u64, file: PathBuf| {
         service
@@ -185,6 +189,125 @@ fn a_missing_original_opens_degraded_and_relinks_only_identical_bytes() {
         after.document.revision_id(),
         workspace.document.revision_id()
     );
+}
+
+/// Sound ownership uses the same content-verified locator lifecycle as video.
+#[cfg(target_os = "macos")]
+#[test]
+fn a_linked_catalog_sound_relinks_by_bookmark_and_explicit_choice_without_editing() {
+    let scratch = tempfile::tempdir().unwrap();
+    let root = scratch.path().canonicalize().unwrap();
+    let harness = Harness::with_library(Some(
+        ProjectLibrary::from_documents(root.join("Documents")).unwrap(),
+    ));
+    command(
+        &harness.service,
+        ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
+            path: fixture("cfr-bframes.mp4"),
+        },
+    );
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let ready = complete(&harness.service);
+    let original = ready.sources.values().next().unwrap().original.clone();
+    let source = root.join("linked-sound.wav");
+    std::fs::copy(fixture("../audio-fixtures/pcm-mono-44100.wav"), &source).unwrap();
+    command(
+        &harness.service,
+        ProjectRequest::ImportSound {
+            expected_session: ready.session,
+            expected_revision: ready.document.revision_id().clone(),
+            path: source.clone(),
+            stream: None,
+            interpretation: Some(AudioLayoutInterpretation::Mono),
+            ownership: OriginalOwnership::Linked { bookmark: None },
+        },
+    );
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let registered = complete(&harness.service);
+    let sound = registered
+        .sources
+        .values()
+        .find(|source| source.sound_audition.is_some())
+        .unwrap();
+    let asset = sound.asset.clone();
+    let content = sound.original.object().content().clone();
+    let version = sound.original.version();
+    assert!(!sound.original.managed());
+    assert!(sound.original.linked().unwrap().bookmark().is_some());
+    assert_eq!(registered.document.nodes(), ready.document.nodes());
+    assert_eq!(
+        registered.document.duration().unwrap(),
+        ready.document.duration().unwrap()
+    );
+    command(&harness.service, ProjectRequest::Close);
+    let moved = root.join("renamed-sound.wav");
+    std::fs::rename(source, &moved).unwrap();
+    command(
+        &harness.service,
+        ProjectRequest::Open(registered.path.clone()),
+    );
+    harness.finish(harness.job());
+    let moved_reply = wait(&harness.service, |update| {
+        update
+            .relink
+            .as_ref()
+            .is_some_and(|status| status.state == RelinkState::Restored)
+    });
+    let workspace = moved_reply.workspace.unwrap();
+    assert_eq!(*workspace.document, *registered.document);
+    assert_eq!(workspace.sources[&asset].original.version(), version + 1);
+    assert_eq!(
+        workspace.sources[&asset].original.linked().unwrap().path(),
+        moved
+    );
+    assert!(
+        moved_reply
+            .opened
+            .unwrap()
+            .originals
+            .iter()
+            .any(|status| status.audio_only && !status.primary)
+    );
+    let chosen = root.join("chosen-sound.wav");
+    std::fs::copy(&moved, &chosen).unwrap();
+    let request = |expected_version| ProjectRequest::RelinkOriginal {
+        ticket: 7,
+        expected_session: workspace.session,
+        content: content.clone(),
+        expected_version,
+        path: chosen.clone(),
+    };
+    let stale = command(&harness.service, request(version));
+    assert!(stale.error.unwrap().contains("location changed"));
+    command(&harness.service, request(version + 1));
+    harness.finish(harness.job());
+    let relinked = wait(&harness.service, |update| {
+        update
+            .relink
+            .as_ref()
+            .is_some_and(|status| status.ticket == 7 && status.state == RelinkState::Restored)
+    });
+    let after = relinked.workspace.unwrap();
+    assert_eq!(*after.document, *registered.document);
+    assert_eq!(after.sources[&asset].original.version(), version + 2);
+    assert_eq!(
+        after.sources[&asset].original.linked().unwrap().path(),
+        chosen
+    );
+    assert!(
+        after
+            .sources
+            .values()
+            .any(|source| source.original == original)
+    );
+    command(&harness.service, ProjectRequest::Close);
+    ProjectStore::open(&after.path, AccessMode::ReadOnly)
+        .unwrap()
+        .validate_full()
+        .unwrap();
 }
 
 /// A private attached APFS image, detached on drop (including on panic).

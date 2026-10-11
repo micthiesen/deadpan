@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--all-targets",
+    "--features",
+    "ui-harness",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "exit": 0,
+  "seconds": 9.653343291953206,
+  "log_sha256": "d29a478b67804fb2c342300a3a561f9b4be05b7c21158af332dc8dff66534767"
+}

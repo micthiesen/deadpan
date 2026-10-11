@@ -143,6 +143,21 @@ picture and thumbnails.
 
 ### Moved linked files
 
+For a particular catalog sound, select it in the Original / sounds pane and
+use `:sound-relink`. This also repairs a damaged project copy that is still
+present and therefore absent from the metadata-only missing-media report.
+The command captures the sound's asset, content identity, location version
+and project session when entry opens. A later selection or asynchronous
+project open cannot supply a different target. The file picker says **Locate
+the sound**; managed repair and linked relinking use the same verified worker
+and writer boundary as the Original. No authored revision is created.
+
+When only sounds are missing, the recovery report says **Sound missing** and
+focuses **Locate sound…** (`:relink`). It names the unavailable sound without
+claiming that the Original's pictures are missing. Restoring the Original
+refreshes its picture even if a separate sound still needs locating. See
+[sound recovery qualification](qualification/sound-recovery-2026-10-11.md).
+
 Linked originals and sounds record a system bookmark when they are retained
 (the import worker, `project retain-original --linked`, relinks), through the
 [`deadpan-filesystem`](../native/deadpan-filesystem/src/bookmark.rs) adapter.

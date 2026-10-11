@@ -1,0 +1,46 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask replays --scenario sound-relink,relink,recovery --output /tmp/deadpan-sound-relink-20261011/replays --jobs 1`
+   Compiling ring v0.17.14
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling egui v0.36.2
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-transcribe v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-transcribe)
+   Compiling rustls v0.23.45
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling egui-wgpu v0.36.2
+   Compiling egui-winit v0.36.2
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+   Compiling rustls-webpki v0.103.15
+   Compiling eframe v0.36.2
+   Compiling egui_kittest v0.36.2
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.91s
+replays: built and copied /tmp/deadpan-sound-relink-20261011/replays/bin/deadpan-app in 24.4 s (sha256 9ca44aab9526d64363b48e39fa8855aeda68956022418e2cf2803a28d941834f)
+replays: recovery               PASS    88.8 s
+replays: relink                 PASS    86.7 s
+replays: sound-relink           FAIL   103.9 s
+
+scenario                     seconds  checks  layout-retry warnings
+recovery               PASS     88.8      14  4 frame(s) settled their layout only on a second retry; egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+relink                 PASS     86.7      10  3 frame(s) settled their layout only on a second retry
+sound-relink           FAIL    103.9      11  3 frame(s) settled their layout only on a second retry
+
+sound-relink failed (report: /tmp/deadpan-sound-relink-20261011/replays/sound-relink/report.html):
+  Timed out waiting for Wrong sound replacement refused: {"annotation_busy":false,"beat_count":1,"busy":false,"camera_open":false,"camera_pending":false,"command":"sound-relink","command_open":false,"context":"Sequence","copied_moment":null,"…
+  1 timing sample(s) of Wrong sound replacement refused did not complete
+
+2 passed, 1 failed, 0 skipped; 35 checks; build 24.4 s, replays 279.6 s wall (279.4 s summed, 1 job(s))
+Reports: /tmp/deadpan-sound-relink-20261011/replays
+xtask: 1 replay scenario(s) failed

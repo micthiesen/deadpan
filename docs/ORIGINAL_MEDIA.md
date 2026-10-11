@@ -24,8 +24,10 @@ unsafe system call; it follows Apple's [clone API contract](https://github.com/a
 
 Linked retention records an absolute path, optional bounded opaque bookmark,
 and complete content identity. The current path API requires UTF-8, rejects
-parent traversal and final symlinks, and does not resolve bookmarks itself.
-Native bookmark creation/resolution remains open.
+parent traversal and final symlinks. Native bookmark creation and resolution
+live in the filesystem adapter. The app import worker records
+bookmarks; opening a project verifies and relinks moved linked Originals and
+sounds. See [recovery](RECOVERY.md#moved-linked-files).
 
 `original_availability` reports from metadata alone whether the bytes a
 snapshot would read are present, so a project opens with a missing Original
@@ -106,8 +108,8 @@ inventory is distinct from audio that exists but has not been qualified.
 qualification with retained ownership. It persists measured indexes and source
 interpretation, then registers and optionally inserts in one undoable command.
 [Automatic basis selection](PRESENTATION_BASIS.md) applies before timed edits. Import
-progress, retry UI, native dialogs, source-browser integration and the full
-format matrix remain open.
+progress, retry UI, native dialogs and source-browser integration are implemented.
+The remaining format and acceptance matrix is tracked in [Requirements](REQUIREMENTS.md).
 
 See [headless commands](HEADLESS.md), [ownership tests](../crates/deadpan-store/tests/original_media.rs),
 [CLI tests](../crates/deadpan-cli/tests/original_commands.rs), and

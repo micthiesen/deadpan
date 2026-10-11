@@ -117,6 +117,11 @@ peak predicted from the synthesized samples, silence before and after).
 
 ## Persisted root sounds
 
+A catalog sound can be repaired or relinked independently of its placed events:
+select it in the Original / sounds pane and use `:sound-relink`, then choose
+the identical original file. Its registered identity, placements and history
+stay intact. See [media recovery](RECOVERY.md#moved-linked-files).
+
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
 The current schemas are core 34 and database 43. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The

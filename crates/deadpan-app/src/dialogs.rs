@@ -24,6 +24,8 @@ pub enum DialogKind {
     Cookies,
     /// The moved or restored file of a missing Original.
     RelinkOriginal,
+    /// The identical file of the explicitly selected catalog sound.
+    RelinkSound,
     /// A folder holding a model pack's files, for an offline install.
     ModelPackFolder,
     /// An uncompressed tar archive of a model pack, for an offline install.
@@ -256,6 +258,11 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
         DialogKind::RelinkOriginal => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Locate the missing Original (its content must be identical)")
+                .pick_file(),
+        ),
+        DialogKind::RelinkSound => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Locate the sound (its content must be identical)")
                 .pick_file(),
         ),
         DialogKind::ModelPackFolder => Box::pin(

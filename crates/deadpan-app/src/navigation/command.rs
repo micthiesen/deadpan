@@ -69,6 +69,8 @@ pub enum Entry {
     Takes,
     /// `:relink`: locate a missing Original by choosing its file.
     Relink,
+    /// `:sound-relink`: locate the catalog sound captured on command entry.
+    SoundRelink,
     /// `:recovery`: show what opening this project recovered.
     Recovery,
     /// `:models`: open the model pack panel.
@@ -774,7 +776,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
         | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
-        | "correct" | "storage" | "backups" | "portable-copy" | "jobs"
+        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" | "sound-relink"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -783,6 +785,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "renders" => Entry::Renders,
                 "takes" => Entry::Takes,
                 "relink" => Entry::Relink,
+                "sound-relink" => Entry::SoundRelink,
                 "recovery" => Entry::Recovery,
                 "models" => Entry::Models,
                 "diagnostics" => Entry::Diagnostics,
@@ -799,7 +802,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
         | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
-        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" => {
+        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" | "sound-relink" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -1659,6 +1662,7 @@ mod tests {
             (":renders", Entry::Renders),
             (":takes", Entry::Takes),
             (":relink", Entry::Relink),
+            (":sound-relink", Entry::SoundRelink),
             ("recovery", Entry::Recovery),
             (":models", Entry::Models),
             (":diagnostics", Entry::Diagnostics),
@@ -1685,6 +1689,7 @@ mod tests {
             "hold-silence all",
             "renders current",
             "relink /tmp/clip.mp4",
+            "sound-relink /tmp/sound.wav",
             "models ltx",
             "diagnostics now",
             "splice 12",

@@ -1243,6 +1243,7 @@ impl DeadpanApp {
                 DialogKind::Render => "Render",
                 DialogKind::Cookies => "Choose cookies",
                 DialogKind::RelinkOriginal => "Locate Original",
+                DialogKind::RelinkSound => "Locate sound",
                 DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => "Choose model pack",
                 DialogKind::SignedUpdate => "Choose signed update",
                 DialogKind::PortableCopy => "Save portable copy",
@@ -1402,7 +1403,9 @@ impl DeadpanApp {
             DialogKind::OpenProject => {
                 self.submit(ProjectRequest::Open(path));
             }
-            DialogKind::RelinkOriginal => self.receive_relink_dialog(path),
+            DialogKind::RelinkOriginal | DialogKind::RelinkSound => {
+                self.receive_relink_dialog(path)
+            }
             DialogKind::ModelPackFolder
             | DialogKind::ModelPackArchive
             | DialogKind::SignedUpdate => {
@@ -1710,6 +1713,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.recovery.sound_command = Some(self.capture_sound_relink());
         self.source_interpretation_target = Some(self.capture_source_interpretation());
         self.scoped_command_target = Some(self.scoped_target());
         self.marks.command = Some(self.capture_mark());
@@ -2865,6 +2869,7 @@ impl DeadpanApp {
 
     fn run_command(&mut self, context: &egui::Context) {
         let command = navigation::command::parse(&self.command);
+        let sound_relink_target = self.recovery.sound_command.take();
         let source_interpretation_target = self.source_interpretation_target.take();
         let scoped_target = self.scoped_command_target.take();
         let hold_target = self.hold_command_target.take();
@@ -3191,6 +3196,9 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Jobs) => self.open_jobs(context),
             Ok(navigation::command::Entry::PortableCopy) => self.start_portable_copy(context),
             Ok(navigation::command::Entry::Relink) => self.locate_original(context),
+            Ok(navigation::command::Entry::SoundRelink) => {
+                self.locate_sound(sound_relink_target, context);
+            }
             Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
             Ok(navigation::command::Entry::Close) => self.close_command(),
             Ok(navigation::command::Entry::SoundChannels(choice)) => {
@@ -4123,7 +4131,7 @@ impl DeadpanApp {
                                 });
                                 ui.small("Automatic selects the first actual audio stream. Advanced indices refer to the container, not the audio-track order.");
                                 ui.small("Unlabelled channels: how to hear a file that declares no speaker layout, such as a plain WAV. Not chosen refuses such a file; Deadpan never guesses speakers from the channel count. A declared layout is used as is. Keyboard: :sound-channels mono|stereo|none.");
-                                ui.small("Admitted: PCM16 WAV or qualified MP4 audio.");
+                                ui.small("Supported: WAV, MP3, AAC and Opus. Unsupported profiles report an error.");
                             }
                             ui.checkbox(&mut self.linked_import, "Link to original location");
                         });

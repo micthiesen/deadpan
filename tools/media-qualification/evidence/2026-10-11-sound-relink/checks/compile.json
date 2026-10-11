@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--bin",
+    "deadpan-app"
+  ],
+  "exit": 101,
+  "seconds": 16.747015667147934,
+  "log_sha256": "965d03023660b87ff23bcbdcd9f24c9357477ca95131bf32f9623b190967e6b9"
+}

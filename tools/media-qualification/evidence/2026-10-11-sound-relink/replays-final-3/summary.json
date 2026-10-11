@@ -1,0 +1,43 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-3/bin/deadpan-app",
+      "sha256": "6fad6d4e80e50b740ba87ca61cba6c2c76c1b03e5c2fc7f5cedcd9e555487b2a",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-3/bin/deadpan-media-worker",
+      "sha256": "0f62dc3382b1ec9d6e3b534b83e6ab845e1cc7b381312117054bb748f545cbf4",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-3/bin/deadpan-track",
+      "sha256": "7131d5ef7aca18bbe0800b6c75f63adcf557f16d220e8b69029b64e9a937d30d",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-sound-relink-20261011/replays-final-3/bin/deadpan-transcribe",
+      "sha256": "653551cb77b860d802d3325ed25d85903b12161ce315b5b7f08f6418f53ee280",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.162674791,
+  "jobs": 1,
+  "scenarios": [
+    {
+      "checks": 22,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "11 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "sound-relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 92.321885917,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 92.416346834
+}

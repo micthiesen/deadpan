@@ -1,0 +1,47 @@
+[
+  {
+    "path": "checks/ui-tests-final.log.gz",
+    "original_bytes": 177002,
+    "original_sha256": "37c4fb77ec70ff2916a05611523fe357277c695ae8f1e411e7b9366bdf6467ed"
+  },
+  {
+    "path": "checks/ui-tests.log.gz",
+    "original_bytes": 39761,
+    "original_sha256": "a337465161bed6caf1af2d69145356fe2118b561c8d50e404cf628eb3f77e666"
+  },
+  {
+    "path": "replays/recovery/report.json.gz",
+    "original_bytes": 4218703,
+    "original_sha256": "557c64ee551691c50cb9e1a51e3d267aa185a894780b5a84fc3e5ebb37d83143"
+  },
+  {
+    "path": "replays/relink/report.json.gz",
+    "original_bytes": 2900949,
+    "original_sha256": "e17062c510ffbcfd619a188cd7545da8352a78b2f177cd273d2910f4746b1559"
+  },
+  {
+    "path": "replays/sound-relink/report.json.gz",
+    "original_bytes": 4321838,
+    "original_sha256": "bfab78165583a0a0755423364f48ebc18ac494a9232a52b6928f7e6a3292ed8d"
+  },
+  {
+    "path": "replays-final/relink/report.json.gz",
+    "original_bytes": 2900962,
+    "original_sha256": "b3cde6d527ddf8b0bc5a84d152166903896baf2830cfcc2ca864489cb7c1a6da"
+  },
+  {
+    "path": "replays-final/sound-relink/report.json.gz",
+    "original_bytes": 3810768,
+    "original_sha256": "76d9a11508d9b683c560ca933d7960328f9fcc7bdb85f0293f5d0c4dafaa8c0f"
+  },
+  {
+    "path": "replays-final-2/sound-relink/report.json.gz",
+    "original_bytes": 8398787,
+    "original_sha256": "efc776a7586d171b2fc83d4c5e02b04c47f4a65307ab044e277183a079a90dcb"
+  },
+  {
+    "path": "replays-final-3/sound-relink/report.json.gz",
+    "original_bytes": 8388188,
+    "original_sha256": "b8b19cb0b1e20b62ebedee8e9ce04e85139e8365aac55a1c780e7af8690ebe31"
+  }
+]

@@ -4,6 +4,13 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Catalog sound recovery](../qualification/sound-recovery-2026-10-11.md)
+adds `:sound-relink` with an entry-captured sound, content identity, location
+version and session. Keep absent and stale targets closed; repairs use the
+existing verified worker and never author history. Recovery distinguishes
+sounds from compatibility videos, and a still-missing sound cannot block a
+restored Original's picture. DP-15 remains under acceptance review.
+
 [The final YouTube audit](../qualification/youtube-acceptance-2026-10-11.md)
 closes DP-14 under §29.1. The confined packaged path imports and validates a
 3840×1608 AV1/Opus Original in 38.023 s. Keep the explicit owner checks for

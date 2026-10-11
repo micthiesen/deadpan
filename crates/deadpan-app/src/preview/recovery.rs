@@ -22,6 +22,7 @@ pub(super) struct RecoveryUi {
     answered: Option<u64>,
     pub(super) storage: Option<StorageAlert>,
     relink: Option<RelinkCapture>,
+    pub(super) sound_command: Option<Result<RelinkTarget, String>>,
     relink_status: Option<RelinkStatus>,
     /// Open previews that a requested window close would discard.
     pub(super) close_prompt: Option<Vec<&'static str>>,
@@ -41,6 +42,14 @@ struct RelinkCapture {
     ticket: u64,
 }
 
+pub(super) struct RelinkTarget {
+    session: u64,
+    asset: AssetId,
+    content: OriginalContentId,
+    version: u64,
+    label: String,
+}
+
 const LAUNCH_ID: &str = "recovery-launch";
 const REPORT_ID: &str = "recovery-report";
 const CLOSE_ID: &str = "recovery-close";
@@ -58,6 +67,11 @@ impl RecoveryUi {
     #[cfg(feature = "ui-harness")]
     pub(super) fn showing_report(&self) -> bool {
         self.showing.is_some()
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn relink_status(&self) -> Option<&RelinkStatus> {
+        self.relink_status.as_ref()
     }
 }
 
@@ -134,9 +148,9 @@ impl DeadpanApp {
                     .recovery
                     .report
                     .as_ref()
-                    .is_some_and(|report| report.missing().next().is_none())
+                    .is_some_and(|report| report.missing().all(|status| status.audio_only))
             {
-                // The project is whole again; decode the current picture.
+                // Missing sounds must not block a restored Original's picture.
                 self.request_picture(true);
                 self.thumbnails.reset();
             }
@@ -160,6 +174,63 @@ impl DeadpanApp {
                 self.recovery.focus_pending = true;
             }
             _ => self.message = Some("Open a project to see what opening it recovered.".into()),
+        }
+    }
+
+    /// Capture absence as well as identity before command entry changes focus.
+    pub(super) fn capture_sound_relink(&self) -> Result<RelinkTarget, String> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        let sound = self
+            .selected_sound
+            .as_ref()
+            .filter(|_| self.pane == Pane::Sources)
+            .and_then(|asset| workspace.sources.get(asset))
+            .filter(|source| source.sound_audition.is_some())
+            .ok_or(
+                "Select a catalog sound in the Original / sounds pane, then use :sound-relink.",
+            )?;
+        Ok(RelinkTarget {
+            session: workspace.session,
+            asset: sound.asset.clone(),
+            content: sound.original.object().content().clone(),
+            version: sound.original.version(),
+            label: sound.label.clone(),
+        })
+    }
+
+    pub(super) fn locate_sound(
+        &mut self,
+        target: Option<Result<RelinkTarget, String>>,
+        context: &egui::Context,
+    ) {
+        let result = (|| {
+            let target = target.ok_or("No sound was captured when command entry opened.")??;
+            let valid = self.workspace.as_ref().is_some_and(|workspace| {
+                workspace.session == target.session
+                    && workspace.sources.get(&target.asset).is_some_and(|source| {
+                        source.original.object().content() == &target.content
+                            && source.original.version() == target.version
+                    })
+            });
+            if !valid {
+                return Err("The captured sound or its location changed. Select it and use :sound-relink again.".to_owned());
+            }
+            self.recovery.ticket += 1;
+            self.recovery.relink = Some(RelinkCapture {
+                session: target.session,
+                content: target.content,
+                version: target.version,
+                ticket: self.recovery.ticket,
+            });
+            self.message = Some(format!(
+                "Choose the identical file for sound {}. A damaged project copy is repaired from it.",
+                target.label
+            ));
+            self.dialogs.start(DialogKind::RelinkSound, context)
+        })();
+        if let Err(error) = result {
+            self.recovery.relink = None;
+            self.error = Some(error);
         }
     }
 
@@ -202,7 +273,12 @@ impl DeadpanApp {
             "Choose the file of {}. Its content must be identical; a damaged project copy is repaired from it.",
             missing.label
         ));
-        if let Err(error) = self.dialogs.start(DialogKind::RelinkOriginal, context) {
+        let kind = if missing.audio_only {
+            DialogKind::RelinkSound
+        } else {
+            DialogKind::RelinkOriginal
+        };
+        if let Err(error) = self.dialogs.start(kind, context) {
             self.recovery.relink = None;
             self.error = Some(error);
         }
@@ -235,7 +311,7 @@ impl DeadpanApp {
         self.presentation.error()?;
         let report = self.recovery.report.as_ref()?;
         (Some(report.session) == self.workspace.as_ref().map(|workspace| workspace.session)
-            && report.missing().next().is_some())
+            && report.missing().any(|status| status.primary))
         .then_some("The Original's file is missing, so its pictures and sound are unavailable. Locate it with :relink; your edits are unchanged.")
     }
 
@@ -422,8 +498,10 @@ impl DeadpanApp {
             ui.set_max_width(500.0);
             ui.heading(if recovery.unclean_previous_writer.is_some() {
                 "Project recovered"
-            } else if !missing.is_empty() {
+            } else if missing.iter().any(|status| !status.audio_only) {
                 "Original missing"
+            } else if !missing.is_empty() {
+                "Sound missing"
             } else {
                 "Interrupted work"
             });
@@ -473,16 +551,14 @@ impl DeadpanApp {
                 ));
             }
             for status in &missing {
-                let what = if status.primary { "The Original" } else { "The sound" };
+                let what = if status.primary { "The Original" } else if status.audio_only { "The sound" } else { "The source" };
                 let reason = match &status.availability {
                     OriginalAvailability::Missing => "is missing (moved, renamed or deleted)".to_owned(),
                     OriginalAvailability::Unreadable { reason } => format!("cannot be used: {reason}"),
                     OriginalAvailability::Present => continue,
                 };
-                ui.label(format!(
-                    "{what} {} {reason}. Its pictures and sound are unavailable until you locate the file; the project and its edits are unchanged.",
-                    status.label
-                ));
+                let unavailable = if status.audio_only { "This sound is unavailable" } else { "Its pictures and sound are unavailable" };
+                ui.label(format!("{what} {} {reason}. {unavailable} until you locate the file; the project and its edits are unchanged.", status.label));
             }
             if let Some(error) = &recovery.record_error {
                 ui.weak(format!("Recovery evidence was not fully recorded: {error}"));
@@ -490,7 +566,9 @@ impl DeadpanApp {
             ui.add_space(6.0);
             let mut first = None;
             if !missing.is_empty() {
-                let button = ui.add(style::action("Locate Original…", ":relink"));
+                let target = missing.iter().find(|status| status.primary).or_else(|| missing.first());
+                let label = if target.is_some_and(|status| status.audio_only) { "Locate sound…" } else { "Locate Original…" };
+                let button = ui.add(style::action(label, ":relink"));
                 locate = button.clicked();
                 first.get_or_insert(button);
             }

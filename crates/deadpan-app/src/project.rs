@@ -637,6 +637,8 @@ pub struct OriginalStatus {
     pub label: String,
     /// The single-original project's Original, as opposed to a sound.
     pub primary: bool,
+    /// Audio-only catalog media, distinct from compatibility-view videos.
+    pub audio_only: bool,
     pub record: OriginalMediaRecord,
     pub availability: deadpan_store::original_media::OriginalAvailability,
     /// A missing linked file's bookmark found it here; the service is

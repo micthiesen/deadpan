@@ -1,0 +1,31 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask replays --scenario sound-relink,relink --output /tmp/deadpan-sound-relink-20261011/replays-final --jobs 1`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.34s
+replays: built and copied /tmp/deadpan-sound-relink-20261011/replays-final/bin/deadpan-app in 9.8 s (sha256 a92e3b5eb796308cb7a39d12ee66f744c317ee072918fc782c976df1b455e8eb)
+replays: relink                 PASS    87.6 s
+replays: sound-relink           FAIL    87.8 s
+
+scenario                     seconds  checks  layout-retry warnings
+relink                 PASS     87.6      10  3 frame(s) settled their layout only on a second retry
+sound-relink           FAIL     87.8      13  2 frame(s) settled their layout only on a second retry
+
+sound-relink failed (report: /tmp/deadpan-sound-relink-20261011/replays-final/sound-relink/report.html):
+  check: Repair target is the focused catalog sound
+  Check failed: Repair target is the focused catalog sound
+
+1 passed, 1 failed, 0 skipped; 23 checks; build 9.8 s, replays 175.5 s wall (175.4 s summed, 1 job(s))
+Reports: /tmp/deadpan-sound-relink-20261011/replays-final
+xtask: 1 replay scenario(s) failed

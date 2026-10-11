@@ -1,0 +1,24 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask replays --scenario sound-relink --output /tmp/deadpan-sound-relink-20261011/replays-final-3 --jobs 1`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.76s
+replays: built and copied /tmp/deadpan-sound-relink-20261011/replays-final-3/bin/deadpan-app in 9.2 s (sha256 6fad6d4e80e50b740ba87ca61cba6c2c76c1b03e5c2fc7f5cedcd9e555487b2a)
+replays: sound-relink           PASS    92.3 s
+
+scenario                     seconds  checks  layout-retry warnings
+sound-relink           PASS     92.3      22  11 frame(s) settled their layout only on a second retry; egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause
+
+1 passed, 0 failed, 0 skipped; 22 checks; build 9.2 s, replays 92.4 s wall (92.3 s summed, 1 job(s))
+Reports: /tmp/deadpan-sound-relink-20261011/replays-final-3

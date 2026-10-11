@@ -53,6 +53,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "render" => super::render::run(d),
         "recovery" => super::recovery::crash(d),
         "relink" => super::recovery::relink(d),
+        "sound-relink" => super::sound_relink::run(d),
         "storage-failure" => super::recovery::storage_failure(d),
         "diagnostics" => super::diagnostics::run(d),
         "storage" => super::storage::run(d),

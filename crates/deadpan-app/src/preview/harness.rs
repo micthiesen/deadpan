@@ -61,6 +61,7 @@ mod shots;
 mod slip;
 mod sound_placement;
 mod sound_playback;
+mod sound_relink;
 mod source_interpretation;
 mod splice;
 mod split_edits;

@@ -79,6 +79,7 @@ fn original_statuses(
         .map(|source| OriginalStatus {
             label: source.label.clone(),
             primary: primary == Some(&source.asset),
+            audio_only: source.video_index.is_none(),
             record: source.original.clone(),
             availability: store
                 .original_availability(&source.original)
@@ -383,17 +384,17 @@ impl Service {
                     .retain_prepared_original(&prepared.retention, &relinking.cancelled)
                     .map_err(display)?;
                 Ok(if prepared.quarantined.is_some() {
-                    "The damaged project copy was set aside and replaced by the verified file. Its pictures and sound are available again."
+                    "The damaged project copy was set aside and replaced by the verified file. Its media is available again."
                 } else if outcome.method == OriginalRetentionMethod::Existing {
                     "The project copy is intact; nothing needed to change."
                 } else {
-                    "found and verified. Its pictures and sound are available again."
+                    "found and verified. Its media is available again."
                 })
             }),
             Ok(Prepared::Relinked(prepared)) => self.writer().and_then(|store| {
                 store
                     .relink_prepared_original(&prepared, &relinking.cancelled)
-                    .map(|_| "found and verified. Its pictures and sound are available again.")
+                    .map(|_| "found and verified. Its media is available again.")
                     .map_err(display)
             }),
             Ok(_) => Err("The import worker returned an unrelated result.".into()),

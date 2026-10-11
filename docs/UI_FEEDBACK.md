@@ -561,6 +561,12 @@ affected frames; it does not replace release performance mode or the full gate.
 
 ## Replay the actual interface
 
+The `sound-relink` scenario imports and places a real WAV, damages its retained
+project copy, refuses a different replacement, then repairs the identical
+file through `:sound-relink`. It also restores a missing sound from the recovery
+report and rejects stale or absent command-entry targets. It checks exact
+bytes, the Original, both cursors, selections and the unchanged edit revision.
+
 Scenarios must enter through production input handling and draw production
 widgets. Pointer steps use actual control geometry or stable semantic targets;
 typing reaches the focused field. Avoid calling the edit method directly to stand

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_UPDATE_COMMANDS_MD=1",
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--bin",
+    "deadpan-app"
+  ],
+  "exit": 100,
+  "seconds": 231.94447620818391,
+  "log_sha256": "a337465161bed6caf1af2d69145356fe2118b561c8d50e404cf628eb3f77e666"
+}

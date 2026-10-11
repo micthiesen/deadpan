@@ -1,0 +1,3 @@
+sound-relink: FAIL
+UI feedback: /tmp/deadpan-sound-relink-20261011/replays-final-2/sound-relink/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

@@ -1,0 +1,23 @@
+{
+  "base_revision": "fec738e4c4e4da206421cbabb896fe2f2d85cdc7",
+  "files": {
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "crates/deadpan-app/src/dialogs.rs": "3159f1f93bc3913efda68ea8912a2f1d3d1b66c8d1b5638dc2edfca6c99b8787",
+    "crates/deadpan-app/src/navigation/command.rs": "ffe3537e22ad0b5ad4f2b275f1e97dcb6d86ac3ccb7be28f760772bbfeef3345",
+    "crates/deadpan-app/src/navigation/registry/entries.rs": "90d9bd18db9ebeedc2e23fa656b49fae62eed0e1929cd7744978ec7ab764197e",
+    "crates/deadpan-app/src/preview.rs": "93da0335ec5ef16db36df5b0e85b7c9dfe11d543bc4ff3ea93ef7454505bbee6",
+    "crates/deadpan-app/src/preview/harness.rs": "f30b010860da2b82d33a31bf1d124fbe631c9714550ebc96ef63d03915c99cb1",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "d4d60ce837b4c62aea201c2074ac1858af964e6923b0b47207d98a3fe80fd1c2",
+    "crates/deadpan-app/src/preview/harness/sound_relink.rs": "8677c7e92a6ed4b90dddca320337a24add111d93a455f4d53085e2d6550a8a77",
+    "crates/deadpan-app/src/preview/recovery.rs": "53204ed0b01b8ef73286b9059b62ad2662d0af2df1795dbdebce2a4e2556f9b4",
+    "crates/deadpan-app/src/project.rs": "b99a728271f25e7da6f909238211118119be4c34888a95e81a8ac2e7d54eafe4",
+    "crates/deadpan-app/src/project/service/recovery.rs": "f1c8faff7a34b587531dd7dc3a7fb5f74fbb24355d2de3e151d7783f8bdb3dfc",
+    "crates/deadpan-app/src/project/tests/recovery.rs": "6728210f43e17cfb4f10a5dc5c697721720e72ab4d309c500c42c949918c8c7a",
+    "crates/deadpan-app/src/ui_harness.rs": "78a7875eb75c231112579e514916997244c62da0cf5a6f351487b3d748c1b8a3",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "note": "Final source hashes. Initial compile/reference rewrite and replay failures are retained separately; replay reports identify each executed binary."
+}
