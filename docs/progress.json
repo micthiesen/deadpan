@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T11:22:26Z",
+  "updated_at": "2026-10-11T12:03:09Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Investigating intermittent proxy packet ordering and remaining import requirements.",
+  "focus": "Auditing remaining YouTube import security and acceptance requirements.",
   "features": [
     {
       "id": "editing",
@@ -405,6 +405,14 @@
       "revision": "649c3b27f451856daeded69b4e380734f1c9d3cc",
       "retrospective": false,
       "summary": "YouTube confirmation thumbnails implemented with bounded network/image work and accessible compact layouts. Real CDN/app-job checks, 125 workflow checks, UI tests and final bundle verification pass; the intermittent proxy failure remains recorded."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "b4f60f98",
+      "retrospective": false,
+      "summary": "Proxy retry lifecycle isolated with retained encoder-fault evidence. YouTube size overflow and fast-transfer bounds fixed; 487 CLI tests, import and app checks, fresh bundle verification and a real 4K AV1/Opus import pass."
     }
   ]
 }
