@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--bin",
+    "deadpan-app",
+    "-E",
+    "test(insert_and_remove_reshape_only_affected_segments_and_retain_cubic_controls)",
+    "--test-threads",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 4.174643583130091,
+  "log_sha256": "8a546025bd01368aa3a379116860c45363bd17a529cb4a0eedca1493da20394e"
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "-p",
+    "deadpan-media-worker"
+  ],
+  "exit": 0,
+  "seconds": 10.354685333091766,
+  "log_sha256": "33bfa17ccf8fca9e2adbb9fb8e81db9b873f096f314df48b62dfbb3dc372b3f9"
+}

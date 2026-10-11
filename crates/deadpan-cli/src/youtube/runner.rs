@@ -24,6 +24,8 @@ use rustix::fs::{FlockOperation, flock};
 use rustix::process::{Pid, WaitId, WaitIdOptions, waitid};
 
 use super::ImportError;
+pub use super::network::Access as NetworkAccess;
+use super::network::{self, Gateway};
 use crate::CliError;
 
 const PREFIX: &str = "deadpan-youtube-";
@@ -197,6 +199,38 @@ pub struct HelperCommand<'a> {
     /// The failure reported when stdout exceeds `max_stdout`.
     pub overflow: ImportError,
     pub timeout: Duration,
+}
+
+/// YouTube-only network policy layered over the shared process supervisor.
+/// Other worker owners retain their own launch boundary (for example the AI
+/// runtime's existing offline sandbox), without nesting sandbox launchers.
+pub fn run_youtube_helper(
+    command: HelperCommand<'_>,
+    access: NetworkAccess,
+    cancelled: &AtomicBool,
+    watch: impl FnMut() -> Result<(), ImportError>,
+) -> Result<HelperRun, CliError> {
+    let mut gateway = match access {
+        NetworkAccess::Offline => None,
+        NetworkAccess::YouTube => Some(Gateway::start()?),
+    };
+    let (executable, arguments) =
+        network::launch(command.executable, command.arguments, gateway.as_ref())?;
+    let result = run_helper(
+        HelperCommand {
+            executable: &executable,
+            arguments: &arguments,
+            ..command
+        },
+        cancelled,
+        watch,
+    );
+    let network_failure = gateway.as_mut().and_then(Gateway::finish);
+    let run = result?;
+    if let Some(failure) = network_failure {
+        return Err(failure.into());
+    }
+    Ok(run)
 }
 
 /// Run one helper as a process-group leader with bounded output, deadline,

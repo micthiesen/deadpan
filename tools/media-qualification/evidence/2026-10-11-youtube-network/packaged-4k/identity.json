@@ -1,0 +1,14 @@
+{
+  "base": "fb5fef8e8d7b3efc90834943f2868467eeaba91f",
+  "environment": {
+    "HOME": "/tmp/deadpan-youtube-network-20261011/packaged-4k/home",
+    "TMPDIR": "/tmp/deadpan-youtube-network-20261011/packaged-4k/tmp/",
+    "PATH": "/usr/bin:/bin",
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8"
+  },
+  "executable_sha256": "9aff891ab04aeec8d6592dc0c277f6bc2e425ce86e6a953553e5eb4f62ff3b64",
+  "source_url": "https://www.youtube.com/watch?v=UXqq0ZvbOnk",
+  "rights_source": "https://commons.wikimedia.org/wiki/File:Charge_-_Blender_Open_Movie-full_movie.webm",
+  "source_credit": "Charge, Blender Studio, CC BY 4.0 as recorded by Wikimedia Commons; YouTube metadata retained below."
+}

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_REAL_YOUTUBE_URL=https://youtu.be/Z4C82eyhwgU",
+    "DEADPAN_REAL_YOUTUBE_REQUIRE_THUMBNAIL=1",
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--bin",
+    "deadpan-app",
+    "-E",
+    "test(real_url_import_through_the_app_job_when_requested)",
+    "--success-output",
+    "immediate"
+  ],
+  "exit": 0,
+  "seconds": 43.327704375144094,
+  "log_sha256": "f1d6df6aaf5acbad161e4c477acc1b4bcf3483d4a40eb9942bd58f683caebc35"
+}

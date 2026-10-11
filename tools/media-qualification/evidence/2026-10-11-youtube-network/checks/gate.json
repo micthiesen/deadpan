@@ -1,0 +1,10 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "gate"
+  ],
+  "exit": 1,
+  "seconds": 715.9444950842299,
+  "log_sha256": "399352e45d88b62cb70c8aeca2c67fa22d57c095955009d698a05a435ee6c238"
+}

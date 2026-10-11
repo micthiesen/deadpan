@@ -1,0 +1,36 @@
+{
+  "base": "fb5fef8e8d7b3efc90834943f2868467eeaba91f",
+  "files": {
+    "crates/deadpan-app/src/youtube.rs": "6e496416afe4833d8d3e0c09885305571a641850d4d3c02a2681a2225c95a142",
+    "crates/deadpan-cli/Cargo.toml": "d5099fa4a31727bb5df89a04252538b3eaa1b87a6590eb6456f0779be717a66f",
+    "crates/deadpan-cli/src/youtube.rs": "688526801e840255940ad7a56a695f5f8db44893c8ca5f0a01318116fb264ea6",
+    "crates/deadpan-cli/src/youtube/acquire.rs": "d000c358110446b8c56f096dc602a5988d4c4080c72af4c130380357817a5905",
+    "crates/deadpan-cli/src/youtube/network.rs": "f495317ccb47ac02d50920221b78b199a780d0e3de06cf07e740843c92563342",
+    "crates/deadpan-cli/src/youtube/network/dns.rs": "de4c903e02bc8cf8e3b72b17916a08c8e5629c1a419adebd151b8b08a243d147",
+    "crates/deadpan-cli/src/youtube/network/ip.rs": "47efe11ae6cd06b9ef0bfab84df923748ac58ab87818410f8003980eb92ba0f9",
+    "crates/deadpan-cli/src/youtube/network/protocol.rs": "eaddc409dbb3482910a401d9fec7409b05f7abc1e16f9275ff3fb54e84422ca7",
+    "crates/deadpan-cli/src/youtube/network/tests.rs": "ff8184bd36ec4388313610d566e1149229301b866977e18b88b65212d36dcf6e",
+    "crates/deadpan-cli/src/youtube/network/tunnel.rs": "4bfb871031256aa504b75ec3877bb1d5d25abaa3eacd0e98256662839edd618f",
+    "crates/deadpan-cli/src/youtube/runner.rs": "59af313d5024e470f0798cb888cffc9bcb5fcdf37dc809d78318ef5da03bd601",
+    "crates/deadpan-cli/src/youtube/thumbnail/network.rs": "73206453aaf107332aee59504c64d20349042feae66025f05060639cb76fd3de",
+    "crates/deadpan-cli/tests/fixtures/youtube-connect.bin": "54624fc878244f5fe24d87b313edb0d74b898d7ab949be6876a31242d0cbd358",
+    "crates/deadpan-cli/tests/fixtures/youtube-connect.md": "55ea4e4697ff8498e82d0737e53be7ee84f0d11c0fd438920c5f90a2e01e2a32",
+    "crates/deadpan-cli/tests/privacy_network_audit.rs": "60d818e85c3e98270a58aaa8ceb60fbe10ee71554df113dc2d877e117167959a",
+    "crates/xtask/src/chaos.rs": "a97e6ad25bc6dbc7682987f6c96d7df0f8aca66b2c7d0c5330cd1a6ae6623f23",
+    "native/deadpan-encode/src/mux_duration.rs": "414d88bb4db34bf37d7e680192a65617db7cc8c5b044d8065d35fa1990236583",
+    "native/deadpan-encode/src/mux_duration_tests.rs": "db596513f5183d2a7ba88efa752fa22426373d63e74e25298cd511f3ca405b1e",
+    "crates/deadpan-cli/src/encoded_render/verification/inspect/hdr_tests.rs": "70572a8448ab64d961f452a0307d0672ae20a839a5ce96ef246ccb9890213347",
+    "tools/media-qualification/evidence/2026-10-11-mux-preroll/reordered-current-aac.mp4": "c47e32892cb99ae4b17356171b4cb471d691bee7c8a3a409b543ffdc4f81da02"
+  },
+  "review": "Sole-agent review of the complete diff; no subagent or live GUI used.",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "cpu": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "binaries": {
+    "deadpan-transcribe": "24c23605a5247c5b29f6b14e2c4140d480e341cbb22bbe29d587e8e253df090c",
+    "deadpan-app": "9aff891ab04aeec8d6592dc0c277f6bc2e425ce86e6a953553e5eb4f62ff3b64",
+    "deadpan-media-worker": "f40caf628f38f9e2988cf9bbd96c95b8acc783ecae163575fb7226cf6ce03b72",
+    "deadpan-track": "81233aeb46b741444e8695e1bd3631b53e96d709df80660dde8034c69066b3b5",
+    "deadpan-cli": "8931b0a5cdc8e6f655a444dafabb20956d66c5eaa0ecbef3a0ba87436276c66d"
+  }
+}

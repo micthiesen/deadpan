@@ -1,0 +1,51 @@
+{
+  "baseline": {
+    "root": "/Users/michael/Library/Application Support/Deadpan/helpers",
+    "source": "managed"
+  },
+  "distribution": "managed install of the compiled pins (development baseline)",
+  "ejs": {
+    "packaging": "embedded in the official yt-dlp executable",
+    "version": "0.8.0"
+  },
+  "helpers": [
+    {
+      "installed": true,
+      "license": "Unlicense",
+      "name": "yt-dlp",
+      "path": "/Users/michael/Library/Application Support/Deadpan/helpers/yt-dlp/2026.08.19/yt-dlp_macos",
+      "pinned_bytes": 37146048,
+      "pinned_sha256": "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
+      "problem": null,
+      "verified": true,
+      "version": "2026.08.19"
+    },
+    {
+      "installed": true,
+      "license": "MIT",
+      "name": "deno",
+      "path": "/Users/michael/Library/Application Support/Deadpan/helpers/deno/2.9.7/deno",
+      "pinned_bytes": 80982000,
+      "pinned_sha256": "b73737579d5a84c160e3316487594783fa5c15f4e13252a6a07050b755317f1a",
+      "problem": null,
+      "verified": true,
+      "version": "2.9.7"
+    }
+  ],
+  "probe": {
+    "deno": "deno 2.9.7 (stable, release, aarch64-apple-darwin)",
+    "ejs": "0.8.0",
+    "js_runtimes": "deno-2.9.7",
+    "matches_pins": true,
+    "yt_dlp": "stable@2026.08.19 from yt-dlp/yt-dlp [594bd50c2] (darwin_exe)"
+  },
+  "protocol": 1,
+  "root": "/Users/michael/Library/Application Support/Deadpan/helpers",
+  "source": "managed",
+  "updates": {
+    "active": "baseline",
+    "note": null,
+    "root": "/Users/michael/Library/Application Support/Deadpan/helpers",
+    "state": null
+  }
+}

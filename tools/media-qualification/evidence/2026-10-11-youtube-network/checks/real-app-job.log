@@ -1,0 +1,44 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling egui v0.36.2
+   Compiling egui-wgpu v0.36.2
+   Compiling egui-winit v0.36.2
+   Compiling eframe v0.36.2
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.32s
+────────────
+ Nextest run ID fd3af694-1464-480b-9648-6f70af34c407 with nextest profile: default
+    Starting 1 test across 1 binary (1063 tests skipped)
+        PASS [  13.801s] (1/1) deadpan-app::bin/deadpan-app youtube::tests::real_url_import_through_the_app_job_when_requested
+  stdout ───
+
+    running 1 test
+    test youtube::tests::real_url_import_through_the_app_job_when_requested ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 13.79s
+
+  stderr ───
+        0.0s Working(CheckingDownloader)
+        0.6s Working(FetchingDetails)
+        3.3s Confirm { preview: Preview { metadata: V
+    confirm: "Caminandes 2: Gran Dillama" - Blender Animated Short · 1920 × 1080 · 24 fps · AV1 (av01.0.08M.08) · SDR · Opus (opus) · 48.0 kHz · 139 kb/s -> /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp4ril5F/Documents/Deadpan/"Caminandes 2 Gran Dillama" - Blender Animated Short.deadpan
+    confirmation thumbnail: Ready(Thumbnail { width: 480, height: 270, bytes: 518400 })
+        3.3s downloading
+        5.2s Working(Assembling)
+        5.3s Working(Qualifying)
+       13.4s Created("/var/folders/37/7y1z4kxn5mv9bkb
+    created /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp4ril5F/Documents/Deadpan/"Caminandes 2 Gran Dillama" - Blender Animated Short.deadpan in 13.8s
+
+────────────
+     Summary [  13.802s] 1 test run: 1 passed, 1063 skipped

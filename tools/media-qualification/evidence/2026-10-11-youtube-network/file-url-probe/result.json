@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/tmp/deadpan-youtube-limits-bundle-20261011/Deadpan.app/Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos",
+    "--ignore-config",
+    "--no-plugin-dirs",
+    "--no-cache-dir",
+    "--retries",
+    "0",
+    "--load-info-json",
+    "/tmp/deadpan-youtube-network-20261011/file-url-probe/metadata.json",
+    "--format",
+    "137",
+    "--output",
+    "/tmp/deadpan-youtube-network-20261011/file-url-probe/download.mp4"
+  ],
+  "exit": 1,
+  "helper_sha256": "03583ed204d6814456f8e6c9c22b1441b5f213b99ad2e90a2783cd7e4559f883",
+  "downloaded": false
+}

@@ -87,6 +87,7 @@ const ENTRIES: &[Entry] = &[
         name: "cli-boundaries",
         package: "deadpan-cli",
         test: None,
+        // Includes the captured yt-dlp CONNECT parser/authentication boundary.
         filter: "adversarial",
         targets: 1,
     },

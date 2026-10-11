@@ -31,7 +31,8 @@ use serde_json::Value;
 use super::ImportError;
 use super::helpers::{DENO, Helpers, YT_DLP};
 pub use super::runner::{
-    HelperCommand, HelperRun, PrivateCookies, Workspace, environment, run_helper,
+    HelperCommand, HelperRun, NetworkAccess, PrivateCookies, Workspace, environment, run_helper,
+    run_youtube_helper,
 };
 use super::url::{VideoId, normalize};
 use crate::CliError;
@@ -751,7 +752,7 @@ pub fn probe(helpers: &Helpers) -> Result<ProbeReport, CliError> {
     arguments.push("--verbose".into());
     // Without a URL yt-dlp prints its diagnostics, then a usage error.
     helpers.recheck()?;
-    let run = run_helper(
+    let run = run_youtube_helper(
         HelperCommand {
             executable: &helpers.yt_dlp,
             arguments: &arguments,
@@ -761,6 +762,7 @@ pub fn probe(helpers: &Helpers) -> Result<ProbeReport, CliError> {
             overflow: ImportError::new("DownloaderOutputTooLarge", "yt-dlp printed too much"),
             timeout: Duration::from_secs(60),
         },
+        NetworkAccess::Offline,
         &cancelled,
         || Ok(()),
     )?;
@@ -780,7 +782,7 @@ pub fn probe(helpers: &Helpers) -> Result<ProbeReport, CliError> {
         })
     });
     let js_runtimes = debug("[debug] JS runtimes:");
-    let deno = run_helper(
+    let deno = run_youtube_helper(
         HelperCommand {
             executable: &helpers.deno,
             arguments: &["--version".into()],
@@ -790,6 +792,7 @@ pub fn probe(helpers: &Helpers) -> Result<ProbeReport, CliError> {
             overflow: ImportError::new("DownloaderOutputTooLarge", "deno printed too much"),
             timeout: Duration::from_secs(30),
         },
+        NetworkAccess::Offline,
         &cancelled,
         || Ok(()),
     )?;
@@ -1007,7 +1010,7 @@ pub fn inspect(
         serde_json::json!({ "event": "fetching_metadata", "video_id": id.as_str(), "source_url": id.watch_url() }),
     )?;
     request.helpers.recheck()?;
-    let run = run_helper(
+    let run = run_youtube_helper(
         HelperCommand {
             executable: &request.helpers.yt_dlp,
             arguments: &metadata_arguments(request.helpers, cookie_path, &id),
@@ -1020,6 +1023,7 @@ pub fn inspect(
             ),
             timeout: request.limits.metadata_timeout,
         },
+        NetworkAccess::YouTube,
         request.cancelled,
         || Ok(()),
     )?;
@@ -1107,7 +1111,7 @@ pub fn download_and_create(
     let limit = import.limits.max_download_bytes;
     import.helpers.recheck()?;
     let arguments = download_arguments(import.helpers, cookie_path, &info, selection, limit);
-    let transfer = run_helper(
+    let transfer = run_youtube_helper(
         HelperCommand {
             executable: &import.helpers.yt_dlp,
             arguments: &arguments,
@@ -1122,6 +1126,7 @@ pub fn download_and_create(
             ),
             timeout: import.limits.download_timeout,
         },
+        NetworkAccess::YouTube,
         import.cancelled,
         || {
             let bytes = directory_bytes(&directory);

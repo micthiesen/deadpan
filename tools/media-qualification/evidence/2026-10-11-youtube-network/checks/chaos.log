@@ -1,0 +1,24 @@
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s
+     Running `target/debug/xtask chaos --minutes 0.25 --seed 20261011 --only cli-boundaries --output /tmp/deadpan-youtube-network-20261011/chaos`
+   Compiling ring v0.17.14
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.35s
+chaos: cli-boundaries for 15 s per target
+chaos: cli-youtube-connect            5156846 executions 3 classes  max     0.5 ms  0 failure(s)
+chaos: cli-ytdlp-metadata             13471 executions 13 classes  max   135.6 ms  0 failure(s)
+chaos: cli-render-protocol            186644 executions 22 classes  max    12.3 ms  0 failure(s)
+chaos: cli-encoded-protocol           215355 executions 27 classes  max    10.6 ms  0 failure(s)
+chaos: cli-verification-protocol      140676 executions 27 classes  max    18.5 ms  0 failure(s)
+chaos: cli-admission-probe-protocol   203471 executions 22 classes  max     8.7 ms  0 failure(s)
+chaos: cli-update-manifests           682322 executions 47555 classes  max     2.1 ms  0 failure(s)
+chaos: cli-live-endpoint              89475 executions 796 classes  max    18.0 ms  0 failure(s)
+chaos: 6688260 executions; summary in /private/tmp/deadpan-youtube-network-20261011/chaos/summary.json

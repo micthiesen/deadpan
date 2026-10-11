@@ -1,0 +1,94 @@
+{"event":"fetching_metadata","source_url":"https://www.youtube.com/watch?v=UXqq0ZvbOnk","video_id":"UXqq0ZvbOnk"}
+{"author":"Blender Studio","duration_seconds":263.0,"estimated_bytes":115805956,"event":"metadata","license":null,"notice":"You are responsible for having the rights to use this video.","selection":{"audio":{"approximate_bytes":4365207,"bitrate_kbps":132.923,"codec":"opus","declared_bytes":4365234,"dynamic_range":null,"ext":"webm","format_id":"251","fps":null,"height":null,"note":"medium","sample_rate":48000,"width":null},"video":{"approximate_bytes":111440700,"bitrate_kbps":3393.599,"codec":"av01.0.12M.08","declared_bytes":111440722,"dynamic_range":"SDR","ext":"mp4","format_id":"401","fps":24.0,"height":1608,"note":"2160p","sample_rate":null,"width":3840}},"thumbnail_url":"https://i.ytimg.com/vi/UXqq0ZvbOnk/maxresdefault.jpg","title":"CHARGE - Blender Open Movie","video_id":"UXqq0ZvbOnk"}
+{"downloaded_bytes":0,"estimated_bytes":115805956,"event":"progress"}
+{"downloaded_bytes":14477785,"estimated_bytes":115805956,"event":"progress"}
+{"downloaded_bytes":45104165,"estimated_bytes":115805956,"event":"progress"}
+{"downloaded_bytes":73910752,"estimated_bytes":115805956,"event":"progress"}
+{"downloaded_bytes":94172232,"estimated_bytes":115805956,"event":"progress"}
+{"downloaded_bytes":113536850,"estimated_bytes":115805956,"event":"progress"}
+{"audio_bytes":4365234,"event":"assembling","video_bytes":111440722}
+{"event":"creating_project","package":"/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan"}
+{
+  "created": {
+    "asset_id": "bdea77f2-4f5c-4887-9447-8005bf69218b",
+    "byte_length": 115786791,
+    "content": "blake3:c737541cdf121e2b569483460999b01762501745c3d0daf22d953fa782ee21dd",
+    "duration_frames": 6306,
+    "node": "60529cc2-c66b-460f-acbb-92084bcccc66",
+    "presentation_basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "height": 1608,
+      "width": 3840
+    },
+    "project_id": "27b0b653-a038-455d-8aac-a19151e5c8f6",
+    "revision_id": "3f63d42c-786c-4071-a180-8d9d55f51f7c",
+    "single_source": {
+      "asset": "bdea77f2-4f5c-4887-9447-8005bf69218b",
+      "baseline_revision": "3f63d42c-786c-4071-a180-8d9d55f51f7c",
+      "initial_revision": "eb322273-d5b7-4b39-87a4-e72dbace0cba",
+      "node": "60529cc2-c66b-460f-acbb-92084bcccc66",
+      "qualification": "f8ffb19a09c301ec99b5bef7a5305fa0cf0d78db080a86b14b444305eccabf98",
+      "state": "ready"
+    }
+  },
+  "downloader_note": null,
+  "protocol": 1,
+  "provenance": {
+    "assembly": "deadpan-media-worker remux v2 (H.264/VP9/AV1 + AAC/Opus stream copy, FFmpeg 8.0.3)",
+    "author": "Blender Studio",
+    "author_id": "UCz75RVbH8q2jdBJ4SnwuZZQ",
+    "author_url": "https://www.youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ",
+    "duration_millis": 263000,
+    "formats": [
+      {
+        "bitrate_kbps": 3394,
+        "byte_length": 111440722,
+        "codec": "av01.0.12M.08",
+        "container": "mp4",
+        "format_id": "401",
+        "fps_millis": 24000,
+        "height": 1608,
+        "role": "video",
+        "width": 3840
+      },
+      {
+        "bitrate_kbps": 133,
+        "byte_length": 4365234,
+        "codec": "opus",
+        "container": "webm",
+        "format_id": "251",
+        "fps_millis": null,
+        "height": null,
+        "role": "audio",
+        "width": null
+      }
+    ],
+    "helpers": [
+      {
+        "name": "yt-dlp",
+        "version": "2026.08.19"
+      },
+      {
+        "name": "yt-dlp-ejs",
+        "version": "0.8.0"
+      },
+      {
+        "name": "deno",
+        "version": "2.9.7"
+      }
+    ],
+    "license": null,
+    "retrieved_at_unix_seconds": 1791723865,
+    "schema": 1,
+    "service": "youtube",
+    "source_id": "UXqq0ZvbOnk",
+    "source_url": "https://www.youtube.com/watch?v=UXqq0ZvbOnk",
+    "thumbnail_url": "https://i.ytimg.com/vi/UXqq0ZvbOnk/maxresdefault.jpg",
+    "title": "CHARGE - Blender Open Movie",
+    "upload_date": "20221215"
+  }
+}

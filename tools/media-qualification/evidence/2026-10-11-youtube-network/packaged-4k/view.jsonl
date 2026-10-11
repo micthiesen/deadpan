@@ -1,0 +1,20 @@
+{
+  "backups": 0,
+  "duration_frames": 6306,
+  "newer_schema": null,
+  "node_count": 2,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1,
+      "numerator": 24
+    },
+    "height": 1608,
+    "width": 3840
+  },
+  "project_id": "27b0b653-a038-455d-8aac-a19151e5c8f6",
+  "protocol": 1,
+  "read_only_reason": null,
+  "revision_id": "3f63d42c-786c-4071-a180-8d9d55f51f7c",
+  "schema": 77
+}

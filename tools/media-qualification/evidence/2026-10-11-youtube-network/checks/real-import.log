@@ -1,0 +1,91 @@
+{"event":"fetching_metadata","source_url":"https://www.youtube.com/watch?v=Z4C82eyhwgU","video_id":"Z4C82eyhwgU"}
+{"author":"Blender","duration_seconds":146.0,"estimated_bytes":28732081,"event":"metadata","license":null,"notice":"You are responsible for having the rights to use this video.","selection":{"audio":{"approximate_bytes":2538412,"bitrate_kbps":139.033,"codec":"opus","declared_bytes":2538420,"dynamic_range":null,"ext":"webm","format_id":"251","fps":null,"height":null,"note":"medium","sample_rate":48000,"width":null},"video":{"approximate_bytes":26193644,"bitrate_kbps":1435.278,"codec":"av01.0.08M.08","declared_bytes":26193661,"dynamic_range":"SDR","ext":"mp4","format_id":"399","fps":24.0,"height":1080,"note":"1080p","sample_rate":null,"width":1920}},"thumbnail_url":"https://i.ytimg.com/vi/Z4C82eyhwgU/maxresdefault.jpg","title":"\"Caminandes 2: Gran Dillama\" - Blender Animated Short","video_id":"Z4C82eyhwgU"}
+{"downloaded_bytes":0,"estimated_bytes":28732081,"event":"progress"}
+{"downloaded_bytes":0,"estimated_bytes":28732081,"event":"progress"}
+{"downloaded_bytes":18808416,"estimated_bytes":28732081,"event":"progress"}
+{"audio_bytes":2538420,"event":"assembling","video_bytes":26193661}
+{"event":"creating_project","package":"/tmp/deadpan-youtube-network-20261011/real.deadpan"}
+{
+  "created": {
+    "asset_id": "01aa74ec-8c7b-4be7-a75b-f458e8e47618",
+    "byte_length": 28721216,
+    "content": "blake3:56f105696d84fee03c23df63f120b65b42c126e342b9ab7a0c67ae41c08b2603",
+    "duration_frames": 3506,
+    "node": "091b9dd1-2ce3-4dcb-895a-ffce205056f3",
+    "presentation_basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "height": 1080,
+      "width": 1920
+    },
+    "project_id": "e70092b9-f64d-4b5c-b297-7421729bbd17",
+    "revision_id": "6e6cdae9-08ff-467b-999c-1425b77b41f6",
+    "single_source": {
+      "asset": "01aa74ec-8c7b-4be7-a75b-f458e8e47618",
+      "baseline_revision": "6e6cdae9-08ff-467b-999c-1425b77b41f6",
+      "initial_revision": "3cf12ff9-10ba-4154-ba25-110356cc6fdc",
+      "node": "091b9dd1-2ce3-4dcb-895a-ffce205056f3",
+      "qualification": "4f7267f8e0c72ac0999e163920d98a0624da48502dfed2d0321f713c454ff1b9",
+      "state": "ready"
+    }
+  },
+  "downloader_note": null,
+  "protocol": 1,
+  "provenance": {
+    "assembly": "deadpan-media-worker remux v2 (H.264/VP9/AV1 + AAC/Opus stream copy, FFmpeg 8.0.3)",
+    "author": "Blender",
+    "author_id": "UCSMOQeBJ2RAnuFungnQOxLg",
+    "author_url": "https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg",
+    "duration_millis": 146000,
+    "formats": [
+      {
+        "bitrate_kbps": 1435,
+        "byte_length": 26193661,
+        "codec": "av01.0.08M.08",
+        "container": "mp4",
+        "format_id": "399",
+        "fps_millis": 24000,
+        "height": 1080,
+        "role": "video",
+        "width": 1920
+      },
+      {
+        "bitrate_kbps": 139,
+        "byte_length": 2538420,
+        "codec": "opus",
+        "container": "webm",
+        "format_id": "251",
+        "fps_millis": null,
+        "height": null,
+        "role": "audio",
+        "width": null
+      }
+    ],
+    "helpers": [
+      {
+        "name": "yt-dlp",
+        "version": "2026.08.19"
+      },
+      {
+        "name": "yt-dlp-ejs",
+        "version": "0.8.0"
+      },
+      {
+        "name": "deno",
+        "version": "2.9.7"
+      }
+    ],
+    "license": null,
+    "retrieved_at_unix_seconds": 1791721564,
+    "schema": 1,
+    "service": "youtube",
+    "source_id": "Z4C82eyhwgU",
+    "source_url": "https://www.youtube.com/watch?v=Z4C82eyhwgU",
+    "thumbnail_url": "https://i.ytimg.com/vi/Z4C82eyhwgU/maxresdefault.jpg",
+    "title": "\"Caminandes 2: Gran Dillama\" - Blender Animated Short",
+    "upload_date": "20131122"
+  }
+}

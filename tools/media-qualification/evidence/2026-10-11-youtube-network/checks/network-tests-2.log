@@ -1,0 +1,189 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.59s
+────────────
+ Nextest run ID 8cded309-4695-4416-b091-7561425b17ef with nextest profile: default
+    Starting 28 tests across 1 binary (466 tests skipped)
+        PASS [   0.013s] ( 1/28) deadpan-cli youtube::acquire::tests::selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate
+        PASS [   0.014s] ( 2/28) deadpan-cli youtube::acquire::tests::selection_prefers_admissible_highest_quality_streams
+        PASS [   0.015s] ( 3/28) deadpan-cli youtube::acquire::tests::metadata_refuses_playlists_live_streams_other_videos_and_long_videos
+        PASS [   0.016s] ( 4/28) deadpan-cli youtube::acquire::tests::original_names_are_bounded_and_never_form_paths
+        PASS [   0.017s] ( 5/28) deadpan-cli youtube::acquire::tests::arguments_disable_configuration_plugins_and_browser_sessions
+        PASS [   0.017s] ( 6/28) deadpan-cli youtube::acquire::tests::environment_is_private_and_complete
+        PASS [   0.017s] ( 7/28) deadpan-cli youtube::acquire::tests::size_estimates_preserve_unknowns_and_the_inclusive_limit
+        PASS [   0.018s] ( 8/28) deadpan-cli youtube::acquire::tests::downloader_messages_redact_url_queries_and_credentials
+        PASS [   0.018s] ( 9/28) deadpan-cli youtube::acquire::tests::downloader_errors_map_to_actionable_codes
+        PASS [   0.014s] (10/28) deadpan-cli youtube::network::ip::tests::admits_public_cdn_addresses_and_checks_private_range_edges
+        PASS [   0.012s] (11/28) deadpan-cli youtube::network::protocol::tests::credential_encoding_uses_standard_padding
+        PASS [   0.013s] (12/28) deadpan-cli youtube::network::ip::tests::refuses_local_shared_documentation_multicast_and_embedded_private_addresses
+        PASS [   0.013s] (13/28) deadpan-cli youtube::network::protocol::tests::refuses_plain_http_smuggling_ambiguous_headers_and_oversized_requests
+        PASS [   0.013s] (14/28) deadpan-cli youtube::network::protocol::tests::every_tunnel_requires_the_owned_credential_and_a_supported_https_destination
+        PASS [   0.015s] (15/28) deadpan-cli youtube::runner::tests::sweep_removes_only_abandoned_workspaces
+        PASS [   0.041s] (16/28) deadpan-cli youtube::network::dns::tests::a_timed_out_lookup_retains_the_only_worker_slot_until_it_finishes
+        PASS [   0.120s] (17/28) deadpan-cli youtube::acquire::tests::cookies_are_copied_owner_only_and_removed
+        FAIL [   0.172s] (18/28) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.16s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing' (119905987) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:678:6:
+    called `Result::unwrap()` on an `Err` value: Import(ImportError { code: "DownloaderFailed", message: "The downloader failed. Downloader said: \t(remote tcp \"127.0.0.1:49188\")" })
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+  Cancelling due to test failure: 10 tests still running
+        FAIL [   0.172s] (19/28) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.16s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer' (119905990) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:815:9:
+    The downloader failed. Downloader said: (remote tcp "127.0.0.1:49185")
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.172s] (20/28) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.16s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata' (119905994) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:734:6:
+    called `Result::unwrap()` on an `Err` value: Import(ImportError { code: "DownloaderFailed", message: "The downloader failed. Downloader said: \t(remote tcp \"127.0.0.1:49186\")" })
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.169s] (21/28) deadpan-cli youtube::runner::tests::stdout_overflow_reports_the_callers_code
+        FAIL [   0.194s] (22/28) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::failures_before_transfer_create_no_project ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::failures_before_transfer_create_no_project
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.18s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::failures_before_transfer_create_no_project' (119905992) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:569:9:
+    YouTubeVideoPrivate: The downloader failed. Downloader said: (remote tcp "127.0.0.1:49187")
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.181s] (23/28) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.17s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project' (119906021) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:620:5:
+    The downloader failed. Downloader said: (remote tcp "127.0.0.1:49190")
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.201s] (24/28) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.19s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly' (119905993) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:879:5:
+    The downloader failed. Downloader said: (remote tcp "127.0.0.1:49189")
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.201s] (25/28) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.19s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer' (119905988) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:768:6:
+    called `Result::unwrap()` on an `Err` value: Import(ImportError { code: "DownloaderFailed", message: "The downloader failed. Downloader said: \t(remote tcp \"127.0.0.1:49183\")" })
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.201s] (26/28) deadpan-cli youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+  stdout ───
+
+    running 1 test
+    test youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit ... FAILED
+
+    failures:
+
+    failures:
+        youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 493 filtered out; finished in 0.18s
+
+  stderr ───
+
+    thread 'youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit' (119906003) panicked at crates/deadpan-cli/src/youtube/acquire/tests.rs:911:6:
+    called `Result::unwrap()` on an `Err` value: Import(ImportError { code: "DownloaderFailed", message: "The downloader failed. Downloader said: \t(remote tcp \"127.0.0.1:49184\")" })
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   1.060s] (27/28) deadpan-cli youtube::acquire::tests::adversarial_metadata_json
+        PASS [   5.174s] (28/28) deadpan-cli youtube::runner::tests::escaped_descendants_cannot_hold_the_run_open
+────────────
+     Summary [   5.193s] 28 tests run: 20 passed, 8 failed, 466 skipped
+        FAIL [   0.172s] (18/28) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+        FAIL [   0.172s] (19/28) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+        FAIL [   0.172s] (20/28) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+        FAIL [   0.194s] (22/28) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+        FAIL [   0.181s] (23/28) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+        FAIL [   0.201s] (24/28) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+        FAIL [   0.201s] (25/28) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+        FAIL [   0.201s] (26/28) deadpan-cli youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+error: test run failed

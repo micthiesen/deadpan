@@ -1,0 +1,28 @@
+[info] Z4C82eyhwgU: Downloading 1 format(s): 137
+Traceback (most recent call last):
+  File "yt_dlp/networking/common.py", line 108, in send
+  File "yt_dlp/networking/_helper.py", line 194, in wrapper
+  File "yt_dlp/networking/common.py", line 353, in validate
+  File "yt_dlp/networking/common.py", line 341, in _validate
+  File "yt_dlp/networking/common.py", line 293, in _check_url_scheme
+yt_dlp.networking.exceptions.UnsupportedRequest: Unsupported url scheme: "file"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "__main__.py", line 17, in <module>
+  File "yt_dlp/__init__.py", line 1080, in main
+  File "yt_dlp/__init__.py", line 1069, in _real_main
+  File "yt_dlp/YoutubeDL.py", line 3728, in download_with_info_file
+  File "yt_dlp/YoutubeDL.py", line 3687, in wrapper
+  File "yt_dlp/YoutubeDL.py", line 1946, in process_ie_result
+  File "yt_dlp/YoutubeDL.py", line 3134, in process_video_result
+  File "yt_dlp/YoutubeDL.py", line 194, in wrapper
+  File "yt_dlp/YoutubeDL.py", line 3588, in process_info
+  File "yt_dlp/YoutubeDL.py", line 3323, in dl
+  File "yt_dlp/downloader/common.py", line 480, in download
+  File "yt_dlp/downloader/http.py", line 362, in real_download
+  File "yt_dlp/downloader/http.py", line 119, in establish_connection
+  File "yt_dlp/YoutubeDL.py", line 4311, in urlopen
+yt_dlp.networking.exceptions.RequestError: file:// URLs are disabled by default in yt-dlp for security reasons. Use --enable-file-urls to enable at your own risk.
+[PYI-39145:ERROR] Failed to execute script '__main__' due to unhandled exception!

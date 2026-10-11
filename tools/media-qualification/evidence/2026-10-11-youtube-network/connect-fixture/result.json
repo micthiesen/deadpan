@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/tmp/deadpan-youtube-limits-bundle-20261011/Deadpan.app/Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos",
+    "--ignore-config",
+    "--no-plugin-dirs",
+    "--no-cache-dir",
+    "--retries",
+    "0",
+    "--proxy",
+    "http://deadpan:fixture@127.0.0.1:49974",
+    "--user-agent",
+    "OpenAI File Downloader, XaiImageApiFetch/1.0",
+    "--load-info-json",
+    "/tmp/deadpan-youtube-network-20261011/connect-fixture/metadata.json",
+    "--format",
+    "137",
+    "--output",
+    "/tmp/deadpan-youtube-network-20261011/connect-fixture/video.mp4"
+  ],
+  "exit": 1
+}

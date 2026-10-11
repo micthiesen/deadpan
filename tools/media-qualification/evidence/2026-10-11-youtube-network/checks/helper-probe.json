@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "downloader",
+    "status",
+    "--probe"
+  ],
+  "exit": 0,
+  "seconds": 2.2374992077238858,
+  "log_sha256": "fc8c41000d0985cd6144fe40290823e149734e2437d96911330cd97afcae41c3"
+}

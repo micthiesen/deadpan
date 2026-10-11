@@ -433,18 +433,20 @@ fn network_clients_live_only_in_reviewed_download_paths() {
         "the HTTPS download transport",
     );
 
-    // The optional thumbnail resolver is the only application DNS path.
-    // Its address classification module uses std::net's value types only.
+    // Explicit YouTube acquisition and its thumbnail share one bounded DNS
+    // worker. The gateway connects only to admitted public addresses.
     assert_allowlisted(
         shipped_with(&sources, &["std::net", "ToSocketAddrs"]),
         &[
-            "crates/deadpan-cli/src/youtube/thumbnail/network.rs",
-            "crates/deadpan-cli/src/youtube/thumbnail/network/ip.rs",
+            "crates/deadpan-cli/src/youtube/network.rs",
+            "crates/deadpan-cli/src/youtube/network/dns.rs",
+            "crates/deadpan-cli/src/youtube/network/ip.rs",
+            "crates/deadpan-cli/src/youtube/network/tunnel.rs",
         ],
         "IP address types or DNS resolution",
     );
-    // No direct IP sockets anywhere in shipped application code. The
-    // reviewed HTTPS library connects only to its filtered resolver output.
+    // Only the explicit-import CONNECT gateway owns direct TCP sockets. It
+    // listens on owned loopback endpoints and relays to filtered public IPs.
     assert_allowlisted(
         shipped_with(
             &sources,
@@ -460,7 +462,10 @@ fn network_clients_live_only_in_reviewed_download_paths() {
                 "getaddrinfo",
             ],
         ),
-        &[],
+        &[
+            "crates/deadpan-cli/src/youtube/network.rs",
+            "crates/deadpan-cli/src/youtube/network/tunnel.rs",
+        ],
         "an IP socket API",
     );
     // No Apple networking APIs.
@@ -653,7 +658,10 @@ fn secret_bearing_types_cannot_be_debug_formatted() {
                 .or_else(|| field.strip_prefix("pub(crate) "))
                 .or_else(|| field.strip_prefix("pub "))
                 .unwrap_or(field);
-            if !(field.starts_with("secret: ") || field.starts_with("cookie: ")) {
+            if !["secret: ", "cookie: ", "password: "]
+                .iter()
+                .any(|prefix| field.starts_with(prefix))
+            {
                 continue;
             }
             let Some(start) = lines[..index]
@@ -662,6 +670,14 @@ fn secret_bearing_types_cannot_be_debug_formatted() {
             else {
                 continue;
             };
+            // A field initializer in an inline test is not part of the last
+            // type declaration after that declaration's closing brace.
+            if lines[start + 1..index]
+                .iter()
+                .any(|line| line.trim() == "}")
+            {
+                continue;
+            }
             let attributes = lines[..start]
                 .iter()
                 .rev()
@@ -680,6 +696,6 @@ fn secret_bearing_types_cannot_be_debug_formatted() {
             checked += 1;
         }
     }
-    // host.rs Request and namespace.rs Discovery.
-    assert!(checked >= 2, "found only {checked} secret fields");
+    // Live endpoint request/discovery plus the local YouTube proxy credential.
+    assert!(checked >= 3, "found only {checked} secret fields");
 }

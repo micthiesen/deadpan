@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "bundle",
+    "--output",
+    "/tmp/deadpan-youtube-network-bundle-20261011"
+  ],
+  "exit": 0,
+  "seconds": 238.27173833269626,
+  "log_sha256": "283817adc30791bb98554053d18920ca727134644f10d59aeb86cc0d4c9c6deb"
+}

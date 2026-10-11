@@ -1,0 +1,65 @@
+[
+  {
+    "name": "pinned-helper-local-network",
+    "exit": 0,
+    "requests": [
+      "/owned"
+    ],
+    "command": [
+      "/tmp/deadpan-youtube-limits-bundle-20261011/Deadpan.app/Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos",
+      "--ignore-config",
+      "--no-plugin-dirs",
+      "--no-remote-components",
+      "--no-cache-dir",
+      "--no-cookies",
+      "--no-cookies-from-browser",
+      "--no-playlist",
+      "--user-agent",
+      "OpenAI File Downloader, XaiImageApiFetch/1.0",
+      "--load-info-json",
+      "/tmp/deadpan-youtube-network-20261011/metadata.json",
+      "--format",
+      "137",
+      "--output",
+      "/tmp/deadpan-youtube-network-20261011/download/test.mp4"
+    ]
+  },
+  {
+    "name": "blocked",
+    "exit": 7,
+    "requests": [],
+    "command": [
+      "sandbox-exec",
+      "-p",
+      "(version 1)(allow default)(deny network*)",
+      "curl",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "--user-agent",
+      "OpenAI File Downloader, XaiImageApiFetch/1.0",
+      "http://127.0.0.1:64974/blocked"
+    ]
+  },
+  {
+    "name": "allowed-port",
+    "exit": 0,
+    "requests": [
+      "/allowed-port"
+    ],
+    "command": [
+      "sandbox-exec",
+      "-p",
+      "(version 1)(allow default)(deny network*)(allow network-outbound (remote tcp \"localhost:64974\"))",
+      "curl",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "--user-agent",
+      "OpenAI File Downloader, XaiImageApiFetch/1.0",
+      "http://127.0.0.1:64974/allowed-port"
+    ]
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--lib",
+    "--test",
+    "privacy_network_audit",
+    "-E",
+    "test(youtube::) | binary(privacy_network_audit)"
+  ],
+  "exit": 100,
+  "seconds": 5.7872545421123505,
+  "log_sha256": "267c5fed2687d7b3ed5738e68cc8a28195945956b7f377181f3493964d2fbcbf"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "chaos",
+    "--minutes",
+    "0.25",
+    "--seed",
+    "20261011",
+    "--only",
+    "cli-boundaries",
+    "--output",
+    "/tmp/deadpan-youtube-network-20261011/chaos"
+  ],
+  "exit": 0,
+  "seconds": 24.290638374630362,
+  "log_sha256": "96f4eb89e1e1b212f11d57de91924b94b1a1cfd46c48ee66f05e832ca80b530a"
+}

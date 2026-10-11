@@ -1,0 +1,20 @@
+   Compiling rustix v1.1.5
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling tempfile v3.27.0
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0063]: missing field `network` in initializer of `runner::HelperCommand<'_>`
+   --> crates/deadpan-cli/src/generation/runtime.rs:637:13
+    |
+637 |             HelperCommand {
+    |             ^^^^^^^^^^^^^ missing `network`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `deadpan-cli` (lib test) due to 1 previous error
+error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-cli --lib --locked` exited with code 101

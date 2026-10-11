@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "project",
+    "create-from-url",
+    "/tmp/deadpan-youtube-network-20261011/real.deadpan",
+    "https://youtu.be/Z4C82eyhwgU"
+  ],
+  "exit": 0,
+  "seconds": 12.802275917027146,
+  "log_sha256": "8f62a0615f37f819fa80b03799b2f257cc8daee85ff76318cebd44fd3fd018df"
+}

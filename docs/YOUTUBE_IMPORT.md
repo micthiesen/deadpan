@@ -157,6 +157,45 @@ hosts, schemes, IDs and paths fail with `YouTubeUrlInvalid`. Only the canonical
 `https://www.youtube.com/watch?v=ID` reaches the downloader and provenance;
 the user's tracking parameters, timestamps and playlist context never do.
 
+### Network confinement
+
+Every metadata or transfer helper runs under macOS's network-denied sandbox
+with one exception: an authenticated CONNECT gateway owned by that import.
+Deadpan reserves both `127.0.0.1` and `::1` at the same ephemeral port before
+granting the localhost exception. Direct connections, environment proxies and
+proxy bypasses cannot escape it. Helper version probes run with no network
+exception. Failure to establish the boundary fails the import; there is no
+unrestricted fallback.
+
+[`youtube/network.rs`](../crates/deadpan-cli/src/youtube/network.rs) admits
+only HTTPS port 443 on `youtube.com`, `googlevideo.com`, `ytimg.com` and their
+subdomains, plus exactly `youtubei.googleapis.com`, `jnn-pa.googleapis.com`,
+`www.google.com` and `consent.google.com`. Each connection, including those
+following redirects, passes the same checks. IP literals, other hosts, ports,
+plaintext HTTP and ambiguous requests are refused. The shared bounded DNS
+worker supplies at most 16 addresses; the gateway connects only to an admitted
+public-unicast address from that result, without resolving it again. Private,
+loopback, link-local, shared and special-purpose address space is refused.
+The helper retains end-to-end TLS certificate validation; the gateway relays
+opaque bytes and does not read cookies or stream requests inside TLS.
+
+One random credential lasts for one helper run and is never written to the
+project or logs. Unauthenticated local requests cannot trigger an import's
+policy error. Each gateway permits at most 16 connections, an 8 KiB request
+header and two 32 KiB relay buffers per connection. Headers and DNS have
+five-second bounds, connection attempts share five seconds, and idle tunnels
+close after 60 seconds. Cancellation closes the gateway and joins its threads;
+an in-flight OS DNS lookup retains its single global slot if it outlives its
+caller, rather than accumulating abandoned resolver threads.
+
+`YouTubeNetworkRestricted` reports a refused destination and recommends
+updating Deadpan. `DownloaderNetworkUnavailable` means the local boundary
+could not start. Stream, metadata and cookie diagnostics still use the
+[privacy redaction rules](PRIVACY.md#secrets-cookies-and-reports).
+See the [network qualification](qualification/youtube-network-2026-10-11.md)
+for the pinned helper's pre-fix private-network witness, real socket tests,
+adversarial parser coverage and actual imports.
+
 ## Helper bundle
 
 Specification §15.2 requires yt-dlp, its EJS JavaScript components and a

@@ -49,10 +49,14 @@ Everything else is local:
 - The linked FFmpeg is configured `--disable-network`; the build scripts of
   `deadpan-source`, `deadpan-encode` and `deadpan-media-worker` refuse a prefix
   configured otherwise. Decoders read descriptors, never URLs.
-- No shipped application code opens an IP socket directly or uses Apple
-  networking APIs. Only the reviewed thumbnail resolver resolves names; its
-  HTTPS library connects to the filtered public addresses. Other application
-  sockets are Unix-domain: the authenticated
+- The explicit YouTube import owns a bounded authenticated CONNECT gateway.
+  Its helper sandbox permits only the gateway's reserved IPv4/IPv6 loopback
+  port; each tunnel admits a supported YouTube host and a public address from
+  the shared bounded DNS worker. TLS remains end to end in the helper, and no
+  cookie, request body or imported footage is inspected by the gateway. The
+  optional thumbnail uses the same address admission with its own HTTPS
+  client. No Apple networking API is used. Other application sockets are
+  Unix-domain: the authenticated
   [live-project endpoint](LIVE_PROJECT.md) and worker control socket pairs.
 - The AI worker runs with `HF_HUB_OFFLINE`, `TRANSFORMERS_OFFLINE`,
   `HF_HUB_DISABLE_TELEMETRY` and `DO_NOT_TRACK` set; the worker refuses to
@@ -141,6 +145,8 @@ Everything else is local:
 | Cookies come only from an explicit file, are copied owner-only and deleted | `youtube/acquire/tests.rs` `cookies_are_copied_owner_only_and_removed`, `arguments_disable_configuration_plugins_and_browser_sessions`, `environment_is_private_and_complete` |
 | No cookie value or cookie path in the project, provenance or events | [`media-worker/tests/youtube_import.rs`](../native/deadpan-media-worker/tests/youtube_import.rs) scans every package file (database, WAL, media), the provenance and emitted events for a distinctive cookie value and the cookie file path |
 | Helper error lines drop signed URL queries and credential header values | `youtube/acquire/tests.rs` `downloader_messages_redact_url_queries_and_credentials` (added with the fix below) |
+| Downloader connections cannot bypass the import's public YouTube boundary | [`network qualification`](qualification/youtube-network-2026-10-11.md); real curl sandbox bypass/private-target probes, DNS private-address refusal, authenticated CONNECT parser mutation, bounded relay and cancellation tests |
+| Local proxy credentials have no `Debug` and expire with the helper run | `privacy_network_audit.rs` `secret_bearing_types_cannot_be_debug_formatted`; `youtube/network/protocol.rs` authentication tests; no gateway request logging |
 | Provenance URL is canonical (tracking and playlist parameters removed) and stays out of history | `youtube_import.rs` and `original_provenance.rs` |
 | Render reports omit source paths, labels and URLs | [publication](RENDER_PUBLICATION.md); `privacy_sandbox.rs` checks the published report |
 

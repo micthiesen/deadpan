@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "bundle-verify",
+    "/tmp/deadpan-youtube-network-bundle-20261011/Deadpan.app"
+  ],
+  "exit": 0,
+  "seconds": 29.647029832936823,
+  "log_sha256": "76947ffa03e170f7ccef5d4b87e5be57ff99d25e1921ccf3f23f0b12915a358a"
+}

@@ -102,6 +102,8 @@ impl Failure {
                 "This video does not offer supported AV1, VP9 or H.264 picture with Opus or AAC sound."
             }
             "YouTubeExtractorFailed" => "YouTube changed; the pinned downloader needs an update.",
+            "YouTubeNetworkRestricted" => "Update Deadpan before retrying this import.",
+            "DownloaderNetworkUnavailable" => "Restart Deadpan and try the import again.",
             "YouTubeNetworkFailed" | "YouTubeDownloadFailed" | "YouTubeDownloadIncomplete" => {
                 "Check the connection and try again."
             }

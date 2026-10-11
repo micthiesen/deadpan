@@ -1,0 +1,32 @@
+[
+  {
+    "path": "checks/bundle-verify.log.gz",
+    "original_bytes": 24192,
+    "original_sha256": "76947ffa03e170f7ccef5d4b87e5be57ff99d25e1921ccf3f23f0b12915a358a"
+  },
+  {
+    "path": "checks/gate.log.gz",
+    "original_bytes": 843660,
+    "original_sha256": "399352e45d88b62cb70c8aeca2c67fa22d57c095955009d698a05a435ee6c238"
+  },
+  {
+    "path": "chaos/cli-boundaries.log.gz",
+    "original_bytes": 16892,
+    "original_sha256": "ef51df6bd076c1ae0dbf01b4dc55b3ebcf546fc87856783d0ba424e604858d7e"
+  },
+  {
+    "path": "chaos/report.jsonl.gz",
+    "original_bytes": 16074,
+    "original_sha256": "0941c4f572409c479e39feb220144556066b2012904b8f85d73ee510aa89fee6"
+  },
+  {
+    "path": "chaos/summary.json.gz",
+    "original_bytes": 19782,
+    "original_sha256": "6253133e9b95eb70aafb26bdc5538a4b45e835e9c5469558db25494deecd076d"
+  },
+  {
+    "path": "bundle/Deadpan.sbom.cdx.json.gz",
+    "original_bytes": 727319,
+    "original_sha256": "db331a1b96a30b04d1cf832f80a6576491758acab415b603a85bd9a896f53a28"
+  }
+]

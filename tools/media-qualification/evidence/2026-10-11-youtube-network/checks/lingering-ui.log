@@ -1,0 +1,10 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.96s
+────────────
+ Nextest run ID e0c6de3d-6b28-4a86-b66e-fcfe36ddcc1e with nextest profile: default
+    Starting 1 test across 1 binary (1102 tests skipped)
+        PASS [   0.011s] (1/1) deadpan-app::bin/deadpan-app gain::tests::insert_and_remove_reshape_only_affected_segments_and_retain_cubic_controls
+────────────
+     Summary [   0.012s] 1 test run: 1 passed, 1102 skipped

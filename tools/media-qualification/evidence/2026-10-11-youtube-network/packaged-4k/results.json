@@ -1,0 +1,76 @@
+[
+  {
+    "name": "baseline-probe",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "downloader",
+      "status",
+      "--probe"
+    ],
+    "exit": 0,
+    "seconds": 0.9799746251665056
+  },
+  {
+    "name": "create",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "project",
+      "create-from-url",
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan",
+      "https://www.youtube.com/watch?v=UXqq0ZvbOnk"
+    ],
+    "exit": 0,
+    "seconds": 38.02290662517771
+  },
+  {
+    "name": "validate",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "project",
+      "validate",
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan"
+    ],
+    "exit": 0,
+    "seconds": 0.09031254192814231
+  },
+  {
+    "name": "view",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "project",
+      "view",
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan"
+    ],
+    "exit": 0,
+    "seconds": 0.048098583240062
+  },
+  {
+    "name": "dump",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "project",
+      "dump",
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.04559562494978309
+  },
+  {
+    "name": "doctor",
+    "command": [
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Relocated Deadpan.app/Contents/MacOS/deadpan-app",
+      "--headless",
+      "doctor",
+      "--project",
+      "/tmp/deadpan-youtube-network-20261011/packaged-4k/Charge.deadpan"
+    ],
+    "exit": 0,
+    "seconds": 0.08991512516513467
+  }
+]

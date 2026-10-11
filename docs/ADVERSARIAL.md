@@ -149,6 +149,7 @@ with the target name), `DEADPAN_CHAOS_ITERATIONS`, `DEADPAN_CHAOS_OUT`.
 | `cli-render-protocol`, `cli-encoded-protocol`, `cli-verification-protocol`, `cli-admission-probe-protocol` | Render, encoded render, verification and encoder-probe worker protocols | As above | As above |
 | `cli-live-endpoint` | Bytes sent to a real bound live-project socket endpoint | Authenticated requests with representative operations | Dispatch only with the owner secret; responses never contain it; dispatched payloads pass the semantic decoder |
 | `cli-ytdlp-metadata` | `--dump-single-json` output and format selection | Representative metadata | Accepted metadata names the requested video |
+| `cli-youtube-connect` | Authenticated downloader CONNECT gateway | [Captured pinned-helper request](../crates/deadpan-cli/tests/fixtures/youtube-connect.md), public fixture credential | Every admitted destination is supported HTTPS and rejects a different credential; bounded 8 KiB header, no panic |
 | `models-pack-archive` | Offline pack tar import | Exported and system-tar archives plus traversal, absolute, link, pax and GNU long-name members | Imports exactly the manifest bytes; nothing written outside the store; no link staged |
 | `models-pack-manifest` | Pack manifest JSON | Approved manifests | |
 | `models-extension-conditioning` | Extension contexts and retained receipts | Both directions, optional opposite seam and retained frame objects | Strict bounded clocks, geometry and object identity survive round trip; registered in `model-packs` |

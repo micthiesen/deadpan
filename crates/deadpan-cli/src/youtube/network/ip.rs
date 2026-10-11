@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-/// Conservative public unicast admission for the named YouTube image hosts.
+/// Conservative public unicast admission for the named YouTube service/CDN hosts.
 /// Translated/tunnel IPv6 and special-purpose address space are unnecessary
 /// for those CDN hosts and are refused rather than resolving through them.
 pub(crate) fn public_address(address: IpAddr) -> bool {

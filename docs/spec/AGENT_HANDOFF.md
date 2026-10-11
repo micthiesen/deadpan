@@ -4,6 +4,30 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[The final YouTube audit](../qualification/youtube-acceptance-2026-10-11.md)
+closes DP-14 under §29.1. The confined packaged path imports and validates a
+3840×1608 AV1/Opus Original in 38.023 s. Keep the explicit owner checks for
+physical input/speech, authenticated content and clean/second-Mac acceptance.
+Video-transfer resumption, hosted update infrastructure and Intel/Linux ports
+were tracker extras, not missing requirements of §15.2–15.4. The complete
+product goal and all other open requirements remain active.
+
+[The reordered-video proof](../qualification/mux-preroll-2026-10-11.md)
+now budgets both current AAC priming packets. Keep this private MP4 inspection
+bound consistent with the encoder and independent audio verifier. The new
+retained-stream regression changes only the known `mdhd` duration defect and
+preserves every packet byte and timestamp; old AAC remains rejected by final
+verification. HDR test finalization failures now retain their file and contract.
+
+[YouTube network confinement](../qualification/youtube-network-2026-10-11.md)
+adds a YouTube-only helper wrapper around the existing process supervisor.
+Keep the sandbox's localhost exception bound to both owned loopback endpoints
+and authenticate every CONNECT before assigning a policy error to the import.
+Resolve once through the shared bounded DNS worker and connect only to an
+admitted public address; TLS remains in the helper. Generic `run_helper` still
+serves the independently sandboxed AI runtime. See the qualification for the
+private-network witness and final checks; the acceptance audit above closes DP-14.
+
 [YouTube confirmation thumbnails](../qualification/youtube-thumbnail-2026-10-11.md)
 now use a bounded import-worker fetch/decode path, with a single temporary UI
 texture, accessible image name and independent detail scrolling. Missing or

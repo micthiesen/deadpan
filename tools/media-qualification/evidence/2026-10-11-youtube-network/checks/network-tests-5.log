@@ -1,0 +1,92 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.42s
+────────────
+ Nextest run ID fad92aa3-5388-4a61-a7dd-95fc2bb7bdb0 with nextest profile: default
+    Starting 85 tests across 2 binaries (421 tests skipped)
+        PASS [   0.014s] ( 1/85) deadpan-cli youtube::acquire::tests::selection_prefers_admissible_highest_quality_streams
+        PASS [   0.016s] ( 2/85) deadpan-cli youtube::acquire::tests::arguments_disable_configuration_plugins_and_browser_sessions
+        PASS [   0.016s] ( 3/85) deadpan-cli youtube::acquire::tests::environment_is_private_and_complete
+        PASS [   0.017s] ( 4/85) deadpan-cli youtube::acquire::tests::original_names_are_bounded_and_never_form_paths
+        PASS [   0.017s] ( 5/85) deadpan-cli youtube::acquire::tests::selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate
+        PASS [   0.017s] ( 6/85) deadpan-cli youtube::acquire::tests::size_estimates_preserve_unknowns_and_the_inclusive_limit
+        PASS [   0.017s] ( 7/85) deadpan-cli youtube::acquire::tests::downloader_messages_redact_url_queries_and_credentials
+        PASS [   0.017s] ( 8/85) deadpan-cli youtube::acquire::tests::metadata_refuses_playlists_live_streams_other_videos_and_long_videos
+        PASS [   0.018s] ( 9/85) deadpan-cli youtube::acquire::tests::downloader_errors_map_to_actionable_codes
+        PASS [   0.038s] (10/85) deadpan-cli youtube::helpers::tests::inspection_reports_a_missing_bundle_baseline
+        PASS [   0.040s] (11/85) deadpan-cli youtube::helpers::tests::helper_connection_and_body_failures_are_actionable_without_private_details
+        PASS [   0.014s] (12/85) deadpan-cli youtube::helpers::tests::pins_are_well_formed
+        PASS [   0.061s] (13/85) deadpan-cli youtube::helpers::tests::bundled_permission_checks_stop_at_the_app
+        PASS [   0.070s] (14/85) deadpan-cli youtube::helpers::tests::bundled_baseline_rejects_inconsistent_or_missing_manifests
+        PASS [   0.085s] (15/85) deadpan-cli youtube::helpers::tests::helpers_others_can_modify_are_refused
+        PASS [   0.048s] (16/85) deadpan-cli youtube::helpers::tests::publication_never_replaces_a_racing_directory
+        PASS [   0.013s] (17/85) deadpan-cli youtube::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.011s] (18/85) deadpan-cli youtube::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.105s] (19/85) deadpan-cli youtube::helpers::tests::an_upstream_signed_helper_must_satisfy_its_signer
+        PASS [   0.048s] (20/85) deadpan-cli youtube::helpers::tests::verified_install_publishes_once_and_never_overwrites
+        PASS [   0.045s] (21/85) deadpan-cli youtube::helpers::tests::wrong_bytes_never_publish
+        PASS [   0.115s] (22/85) deadpan-cli youtube::helpers::tests::a_tampered_resigned_helper_fails_even_with_a_matching_manifest
+        PASS [   0.045s] (23/85) deadpan-cli youtube::helpers::tests::zip_entries_extract_and_verify
+        PASS [   0.012s] (24/85) deadpan-cli youtube::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.012s] (25/85) deadpan-cli youtube::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   0.012s] (26/85) deadpan-cli youtube::network::ip::tests::admits_public_cdn_addresses_and_checks_private_range_edges
+        PASS [   0.012s] (27/85) deadpan-cli youtube::network::ip::tests::refuses_local_shared_documentation_multicast_and_embedded_private_addresses
+        PASS [   0.012s] (28/85) deadpan-cli youtube::network::protocol::tests::credential_encoding_uses_standard_padding
+        PASS [   0.013s] (29/85) deadpan-cli youtube::network::protocol::tests::every_tunnel_requires_the_owned_credential_and_a_supported_https_destination
+        PASS [   0.013s] (30/85) deadpan-cli youtube::network::protocol::tests::refuses_plain_http_smuggling_ambiguous_headers_and_oversized_requests
+        PASS [   0.013s] (31/85) deadpan-cli youtube::network::tests::an_approved_hostname_resolving_to_private_addresses_never_connects
+        PASS [   0.013s] (32/85) deadpan-cli youtube::network::tests::cancellation_ends_an_idle_tunnel_without_waiting_for_its_peer
+        PASS [   0.034s] (33/85) deadpan-cli youtube::network::dns::tests::a_timed_out_lookup_retains_the_only_worker_slot_until_it_finishes
+        PASS [   0.027s] (34/85) deadpan-cli youtube::network::tests::relay_preserves_bytes_and_half_closed_replies_across_many_buffers
+        PASS [   0.016s] (35/85) deadpan-cli youtube::runner::tests::sweep_removes_only_abandoned_workspaces
+        PASS [   0.014s] (36/85) deadpan-cli youtube::thumbnail::tests::absent_and_rejected_addresses_never_start_a_network_request
+        PASS [   0.035s] (37/85) deadpan-cli youtube::network::tests::shutdown_drains_bounded_connections_waiting_for_headers
+        PASS [   0.014s] (38/85) deadpan-cli youtube::thumbnail::tests::body_reader_bounds_undeclared_responses_and_observes_cancellation_between_reads
+        PASS [   0.190s] (39/85) deadpan-cli youtube::acquire::tests::cookies_are_copied_owner_only_and_removed
+        PASS [   0.013s] (40/85) deadpan-cli youtube::thumbnail::tests::cancellation_before_or_during_fetch_never_reaches_confirmation
+        PASS [   0.012s] (41/85) deadpan-cli youtube::thumbnail::tests::interrupted_body_is_unavailable_and_ureq_timeout_keeps_its_reason
+        PASS [   0.015s] (42/85) deadpan-cli youtube::thumbnail::tests::jpeg_orientation_is_applied_before_sizing
+        PASS [   0.015s] (43/85) deadpan-cli youtube::thumbnail::tests::lossy_webp_decodes_its_coded_raster_and_preserves_quadrants
+        PASS [   0.014s] (44/85) deadpan-cli youtube::thumbnail::tests::optional_thumbnail_failures_are_safe_confirmation_states
+        PASS [   0.012s] (45/85) deadpan-cli youtube::thumbnail::url::tests::admits_only_supported_images_of_the_expected_video
+        PASS [   0.011s] (46/85) deadpan-cli youtube::thumbnail::url::tests::refuses_local_authorities_credentials_ports_path_traversal_and_header_injection
+        PASS [   0.010s] (47/85) deadpan-cli youtube::thumbnail::webp::tests::checks_coded_dimensions_independently_of_the_extended_canvas
+        PASS [   0.085s] (48/85) deadpan-cli youtube::network::tests::unrelated_local_requests_cannot_authorize_tunnels_or_poison_the_import
+        PASS [   0.010s] (49/85) deadpan-cli youtube::thumbnail::webp::tests::forged_metadata_sizes_and_animations_are_rejected_before_decoder_allocation
+        PASS [   0.033s] (50/85) deadpan-cli youtube::updates::tests::a_content_pin_mismatch_refuses_installation
+        PASS [   0.266s] (51/85) deadpan-cli youtube::helpers::tests::bundled_baseline_binds_resigned_bytes_to_the_compiled_pin
+        PASS [   0.295s] (52/85) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+        PASS [   0.299s] (53/85) deadpan-cli youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+        PASS [   0.299s] (54/85) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+        PASS [   0.300s] (55/85) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+        PASS [   0.154s] (56/85) deadpan-cli youtube::runner::tests::stdout_overflow_reports_the_callers_code
+        PASS [   0.075s] (57/85) deadpan-cli youtube::updates::tests::incompatible_or_malformed_manifests_never_install
+        PASS [   0.011s] (58/85) deadpan-cli youtube::url::tests::accepts_every_supported_video_form
+        PASS [   0.010s] (59/85) deadpan-cli youtube::url::tests::canonical_url_drops_tracking_and_playlist_context
+        PASS [   0.028s] (60/85) deadpan-cli youtube::url::tests::normalization_is_total_and_preserves_ids
+        PASS [   0.011s] (61/85) deadpan-cli youtube::url::tests::playlists_require_a_specific_video
+        PASS [   0.448s] (62/85) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+        PASS [   0.251s] (63/85) deadpan-cli youtube::thumbnail::tests::refuses_encoded_dimension_and_area_limits_before_publishing_pixels
+        PASS [   0.012s] (64/85) deadpan-cli youtube::url::tests::rejects_other_schemes_hosts_and_authorities
+        PASS [   0.008s] (65/85) deadpan-cli::privacy_network_audit local_engines_stay_offline_by_construction
+        PASS [   0.010s] (66/85) deadpan-cli::privacy_network_audit lockfile_has_one_reviewed_https_stack_and_no_telemetry
+        PASS [   0.364s] (67/85) deadpan-cli youtube::network::tests::sandbox_blocks_direct_bypass_and_gateway_rejects_local_http_and_https
+        PASS [   0.245s] (68/85) deadpan-cli youtube::updates::tests::adversarial_update_manifests
+        PASS [   0.340s] (69/85) deadpan-cli youtube::thumbnail::tests::decodes_the_three_remote_formats_to_owned_bounded_rgba_without_stretching
+        PASS [   0.294s] (70/85) deadpan-cli youtube::updates::tests::torn_envelopes_are_replaced_and_shared_directories_refused
+        PASS [   0.373s] (71/85) deadpan-cli youtube::updates::tests::a_failed_probe_leaves_the_previous_selection_active
+        PASS [   0.313s] (72/85) deadpan-cli youtube::updates::tests::integrity_failures_refuse_and_incompatibility_falls_back
+        PASS [   0.151s] (73/85) deadpan-cli::privacy_network_audit secret_bearing_types_cannot_be_debug_formatted
+        PASS [   0.355s] (74/85) deadpan-cli youtube::updates::tests::downgrades_and_replays_need_explicit_permission
+        PASS [   0.695s] (75/85) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+        PASS [   0.415s] (76/85) deadpan-cli youtube::updates::tests::retained_serials_bound_replays_without_state
+        PASS [   0.192s] (77/85) deadpan-cli::privacy_network_audit subprocess_launches_are_reviewed_and_name_no_network_tool
+        PASS [   0.434s] (78/85) deadpan-cli youtube::updates::tests::rollback_to_the_baseline_recovers_an_unreadable_state
+        PASS [   0.772s] (79/85) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+        PASS [   0.547s] (80/85) deadpan-cli youtube::updates::tests::a_signed_update_installs_probes_activates_and_rolls_back
+        PASS [   0.801s] (81/85) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+        PASS [   0.372s] (82/85) deadpan-cli::privacy_network_audit local_workers_cannot_reach_the_https_client
+        PASS [   0.373s] (83/85) deadpan-cli::privacy_network_audit network_clients_live_only_in_reviewed_download_paths
+        PASS [   1.148s] (84/85) deadpan-cli youtube::acquire::tests::adversarial_metadata_json
+        PASS [   5.158s] (85/85) deadpan-cli youtube::runner::tests::escaped_descendants_cannot_hold_the_run_open
+────────────
+     Summary [   5.306s] 85 tests run: 85 passed, 421 skipped
