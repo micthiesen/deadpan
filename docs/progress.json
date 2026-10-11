@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T10:23:52Z",
+  "updated_at": "2026-10-11T11:22:26Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing YouTube import confirmation and remaining source workflows.",
+  "focus": "Investigating intermittent proxy packet ordering and remaining import requirements.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work, including AV1/VP9 and exact Opus assembly. Reversible range and chroma corrections pass native replay, release export and packaged checks. Broader profiles and remaining URL workflow work remain."
+      "note": "Local and YouTube Originals work, including AV1/VP9, exact Opus assembly and bounded confirmation thumbnails. Reversible range/chroma corrections and compact import controls are verified. Broader profiles and remaining import qualification remain."
     },
     {
       "id": "render",
@@ -397,6 +397,14 @@
       "revision": "0c28e172173a07f0952feb39132401f3f2c4f3af",
       "retrospective": false,
       "summary": "Reversible source range and chroma interpretation implemented across preview, playback, export, analysis, tracking and AI conditioning. Full gate, 177 sanitized tests, affected replay follow-ups, release performance and 152-picture release and packaged exports pass. DP-02, DP-14 and DP-16 remain partial."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 5,
+      "revision": "649c3b27f451856daeded69b4e380734f1c9d3cc",
+      "retrospective": false,
+      "summary": "YouTube confirmation thumbnails implemented with bounded network/image work and accessible compact layouts. Real CDN/app-job checks, 125 workflow checks, UI tests and final bundle verification pass; the intermittent proxy failure remains recorded."
     }
   ]
 }
