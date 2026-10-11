@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T12:03:09Z",
+  "updated_at": "2026-10-11T13:13:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Auditing remaining YouTube import security and acceptance requirements.",
+  "focus": "Auditing local Original and external sound ownership, relinking and failure acceptance for DP-15.",
   "features": [
     {
       "id": "editing",
@@ -72,7 +72,7 @@
         "DP-14",
         "DP-15"
       ],
-      "note": "Local and YouTube Originals work, including AV1/VP9, exact Opus assembly and bounded confirmation thumbnails. Reversible range/chroma corrections and compact import controls are verified. Broader profiles and remaining import qualification remain."
+      "note": "YouTube import is complete under the local verification scope, including confined helpers, confirmation thumbnails, signed updates and packaged 4K AV1/Opus import. Local Original and sound ownership acceptance remains under review."
     },
     {
       "id": "render",
@@ -413,6 +413,14 @@
       "revision": "b4f60f98",
       "retrospective": false,
       "summary": "Proxy retry lifecycle isolated with retained encoder-fault evidence. YouTube size overflow and fast-transfer bounds fixed; 487 CLI tests, import and app checks, fresh bundle verification and a real 4K AV1/Opus import pass."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 6,
+      "revision": "aeab7483",
+      "retrospective": false,
+      "summary": "Closed DP-14: confined YouTube helpers, signed updates and packaged 4K imports verified. Corrected AAC priming admission in reordered-video duration proof; regression and release checks pass."
     }
   ]
 }
