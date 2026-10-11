@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T18:58:51Z",
+  "updated_at": "2026-10-11T19:31:43Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16 playback: ordinary Generated startup timing and remaining format/effects acceptance.",
+  "focus": "Completing DP-16: terminal playback picture delivery and the remaining format/effects acceptance.",
   "features": [
     {
       "id": "editing",
@@ -509,6 +509,14 @@
       "revision": "353c0a0b6175c83e939ff28f35ebe6999b72149c",
       "retrospective": false,
       "summary": "Verified 30-lap Generated loops at 1080p60 and 4K30; first 4K Original request fell from 63.6 to 8.7 ms, with no loop picture loss or audio faults. Ordinary first-Hold startup timing remains under investigation."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "5c55cc3688a8caa665129cca66d08a6e252deeee",
+      "retrospective": false,
+      "summary": "Generated preview uses bounded FFV1 slice threads: 5,220 exact comparisons, 183 native tests and sanitizers pass; eight app runs show all 3,752 pictures. A longer run exposes a final Original-picture handoff failure, retained as open."
     }
   ]
 }
