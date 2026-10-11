@@ -1,0 +1,10 @@
+{
+  "binary": "/tmp/deadpan-group-mix-20261011/old-target/debug/deps/stages-3c54adf64b26857e",
+  "binary_sha256": "5bed06c41efab7afe3f1023a02abaff3621f111e99079d4358330b4df0ef7e8b",
+  "expected_failures": [
+    "gain::nested_group_saturation_sums_only_its_members_before_parent_processing",
+    "gain::root_saturation_shapes_the_sum_of_original_and_independent_sound"
+  ],
+  "passed": 2,
+  "failed": 2
+}

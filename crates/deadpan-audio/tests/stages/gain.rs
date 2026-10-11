@@ -587,6 +587,190 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
+fn with_owned_sound(
+    document: &ProjectDocument,
+    owner: &str,
+    frames: i64,
+    gain: i32,
+) -> ProjectDocument {
+    let mut wire = serde_json::to_value(document).unwrap();
+    let source = audio(0, frames);
+    let event = BeatSound {
+        label: "Group contribution".into(),
+        mapping: SourceAudioMapping::natural_rate(
+            source.span,
+            document.presentation_basis().frame_rate,
+        )
+        .unwrap(),
+        source,
+        offset: AudioSample(0),
+        gain_millidecibels: gain,
+        start_edge: AudioEdgePolicy::Hard,
+        end_edge: AudioEdgePolicy::Hard,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    if wire.get("beat_sounds").is_none() {
+        wire["beat_sounds"] = serde_json::json!({});
+    }
+    wire["beat_sounds"][owner] = serde_json::json!({"effect": event});
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn root_saturation_shapes_the_sum_of_original_and_independent_sound() {
+    let base = source_document(256);
+    let sounded = with_sound(&base);
+    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
+    let root = treatment(3000, false, vec![], vec![])
+        .with_saturation(Some(drive))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(50).unwrap()))
+        .unwrap();
+    let treated = changed(&sounded, &[("root", root)]);
+    let mut provider = FixtureProvider::new();
+    let original = authored_all(&base, &mut provider, &[256]);
+    let gain = 10.0_f64.powf(3000.0 / 20000.0);
+    let expected: Vec<_> = original
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            let sound = fixture_sample(at as i64);
+            [0, 1].map(|ch| {
+                (drive.shape((f64::from(sample[ch]) + f64::from(sound[ch]) * gain) * gain)
+                    * if ch == 0 { 0.5 } else { 1.0 }) as f32
+            })
+        })
+        .collect();
+    assert_eq!(authored_all(&treated, &mut provider, &[256]), expected);
+    assert_eq!(
+        authored_all(&treated, &mut provider, &[1, 53, 97]),
+        expected
+    );
+    let old: Vec<_> = original
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            let sound = fixture_sample(at as i64);
+            [0, 1].map(|ch| {
+                ((drive.shape(f64::from(sample[ch]) * gain)
+                    + drive.shape(f64::from(sound[ch]) * gain * gain))
+                    * if ch == 0 { 0.5 } else { 1.0 }) as f32
+            })
+        })
+        .collect();
+    let difference = expected
+        .iter()
+        .flatten()
+        .zip(old.iter().flatten())
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0_f32, f32::max);
+    assert!(
+        difference > 0.0001,
+        "old per-voice result differs by {difference}"
+    );
+}
+
+#[test]
+fn nested_group_saturation_sums_only_its_members_before_parent_processing() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let base = document_with_asset(
+        rate,
+        &["outer"],
+        [
+            ("source", source(rate, 256, 0..256)),
+            (
+                "inner",
+                BeatNode::sequence("Inner group", vec![id("source")]),
+            ),
+            (
+                "outer",
+                BeatNode::sequence("Outer group", vec![id("inner")]),
+            ),
+        ],
+        BTreeMap::new(),
+        audio(0, 8197).span,
+    );
+    let sounded = with_owned_sound(
+        &with_owned_sound(&with_sound(&base), "source", 256, -6000),
+        "inner",
+        256,
+        0,
+    );
+    let drive = Saturation::new(GainDb::new(6000).unwrap()).unwrap();
+    let child = AudioTreatments::default()
+        .with_saturation(Some(drive))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(-50).unwrap()))
+        .unwrap();
+    let inner = AudioTreatments::with_all_stages(
+        vec![
+            AudioTreatmentStage::Saturation,
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::StereoBalance,
+        ],
+        Some(
+            ClipGain::new(
+                GainDb::new(-6000).unwrap(),
+                false,
+                vec![],
+                vec![range(100, 120)],
+            )
+            .unwrap(),
+        ),
+        Some(drive),
+        Some(StereoBalance::new(25).unwrap()),
+    )
+    .unwrap();
+    let root = AudioTreatments::default()
+        .with_saturation(Some(drive))
+        .unwrap();
+    let treated = changed(
+        &sounded,
+        &[
+            ("source", child),
+            ("inner", inner),
+            ("outer", treatment(-3000, false, vec![], vec![])),
+            ("root", root),
+        ],
+    );
+    let mut provider = FixtureProvider::new();
+    let original = authored_all(&base, &mut provider, &[256]);
+    let amplitude = |db: f64| 10.0_f64.powf(db / 20000.0);
+    let expected: Vec<_> = original
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            let sound = fixture_sample(at as i64).map(f64::from);
+            [0, 1].map(|ch| {
+                let child = drive.shape(f64::from(sample[ch]) + sound[ch] * amplitude(-6000.0))
+                    * if ch == 1 { 0.5 } else { 1.0 };
+                let inner = if (100..120).contains(&at) {
+                    0.0
+                } else {
+                    drive.shape(child + sound[ch])
+                        * amplitude(-6000.0)
+                        * if ch == 0 { 0.75 } else { 1.0 }
+                };
+                drive.shape(inner * amplitude(-3000.0) + sound[ch] * amplitude(3000.0)) as f32
+            })
+        })
+        .collect();
+    assert_eq!(authored_all(&treated, &mut provider, &[256]), expected);
+    assert_eq!(
+        authored_all(&treated, &mut provider, &[1, 17, 91]),
+        expected
+    );
+    let plan = Arc::new(RenderPlan::compile(&treated).unwrap());
+    for (start, count) in [(93, 41), (200, 56), (0, 13)] {
+        let mut cold = StageAudio::new(Arc::clone(&plan));
+        assert_eq!(
+            authored(&mut cold, &mut provider, start, count).samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+    }
+    assert_eq!(treated.duration(), base.duration());
+}
+
 #[test]
 fn source_mute_leaves_independent_sound_and_root_gain_composes_with_event_gain_once() {
     let base = source_document(256);

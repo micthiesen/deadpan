@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "retained_sound_histories_join_current_nonlinear_owners_after_a_move"
+  ],
+  "exit": 0,
+  "seconds": 1.0427690409123898,
+  "log_sha256": "4dfbc1395eeb469933217a2abcbb4f8163ac2d4be7c64cf759435fdc7a689c24"
+}

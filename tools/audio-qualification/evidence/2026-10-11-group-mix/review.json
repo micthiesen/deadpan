@@ -1,0 +1,23 @@
+{
+  "review": "single-session review, no subagents",
+  "scope": [
+    "mix ownership and nonlinear ordering",
+    "exact owner clocks and Repeat identity",
+    "finite f64 accumulation and final f32 conversion",
+    "residency/work/deadline admission and failure cleanup",
+    "read partition invariance",
+    "shared preview/export path"
+  ],
+  "changes_from_review": [
+    "Sibling reduction now follows stable occurrence identity within depth, independent of discovery order."
+  ],
+  "remaining": [
+    "EQ/filtering and arbitrary effect sends",
+    "oversampled saturation",
+    "full audio/mastering acceptance and owner listening"
+  ],
+  "notes": [
+    "No authored schema or UI/keymap changes.",
+    "No persistent authored-bus PCM cache was added."
+  ]
+}

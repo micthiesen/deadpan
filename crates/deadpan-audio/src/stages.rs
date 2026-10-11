@@ -46,6 +46,9 @@ mod sound_events;
 #[path = "authored_gain.rs"]
 mod authored_gain;
 
+#[path = "group_mix.rs"]
+mod group_mix;
+
 #[path = "definition_waveform.rs"]
 mod definition_waveform;
 

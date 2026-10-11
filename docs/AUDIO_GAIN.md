@@ -142,13 +142,26 @@ state it evaluates identically at any read or tile boundary in preview and
 export. A new stage is appended after clip gain (specification §10.2 order);
 a recipe authored with `Saturation` first trims after the clipper.
 
-Owners are evaluated innermost first. Between channel stages, gain factors
-(trim, envelopes and Repeat escalation, which enters before the owner's own
-stages) still add exactly in Q32 millidecibels; each saturation or noncenter balance closes the gain
-accumulated before it. Without either channel stage the chain is the previous
-single exact gain sum, bit for bit. Saturation applies to each voice (the
-Original, a placed sound, a beat sound) through its owners before mixing and the
-shared limiter, not to a summed group bus. Mute still yields exact silence.
+Owners are evaluated innermost first. Linear stretches accumulate gain factors
+(trim, envelopes and Repeat escalation) exactly in Q32 millidecibels; a channel
+stage or a nonlinear bus boundary closes that sum. Without saturation, the
+existing contribution order and exact gain accumulation are preserved.
+
+A saturation owner now sums all its incoming voices before running its declared
+treatments. Original sound and beat-owned sounds join their structural owner;
+independent root sounds join only the root. Nested groups reduce from children
+to parents, so a child's balance precedes its parent's saturation. Repeat
+instances retain distinct buses and exact owner clocks, including escalation.
+Gain, saturation and balance retain their serialized order on the summed bus.
+Mute yields exact silence and grants no silence-policy exemption.
+
+The worker admits routing and each f64 stereo bus under the existing work and
+PCM residency limits before opening media. Overlapping contributions must agree
+on their shared owner's exact clock. Stable occurrence order fixes sibling
+reduction order across partitions and cold reads. Nonfinite inputs, sums and
+results reject explicitly; only the final bus converts back to f32. Raw
+edge-faded inspection still excludes treatments. See the
+[group-mixing qualification](qualification/group-mix-2026-10-11.md).
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated

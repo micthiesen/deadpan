@@ -231,6 +231,66 @@ fn stereo_balance_keeps_channels_through_limited_preview_and_render() -> Result 
 }
 
 #[test]
+fn group_saturation_matches_summed_voice_oracle_and_verified_export() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::group_saturation(&root.join("group-saturation"))?;
+    let start = 16016 + 512;
+    let audio = success(&[
+        "inspect-audio",
+        fixture.package.to_str().ok_or("UTF-8")?,
+        "--samples",
+        &start.to_string(),
+        &(start + 256).to_string(),
+        "--limited",
+    ])?;
+    let pairs = audio["audio"]["samples"].as_array().ok_or("samples")?;
+    assert_eq!(pairs.len(), 256);
+    let amplitude = |db: f64| 10.0_f64.powf(db / 20.0);
+    let mut maximum_error = 0.0_f64;
+    for (index, pair) in pairs.iter().enumerate() {
+        let at = start + index as i64;
+        let source = at - 16016;
+        // Independently generated pcm-stereo-48000.wav fixture, exact i16 PCM.
+        let left = ((source * 97) % 16384) - 8192;
+        let right = match source % 257 {
+            0 => -32768,
+            1 => 32767,
+            _ => (source % 97) * 3 - 48 * 3,
+        };
+        let tone = ((std::f64::consts::TAU * 1000.0 * at as f64 / 48000.0).sin() * amplitude(-10.0))
+            as f32;
+        for (channel, pcm) in [left, right].into_iter().enumerate() {
+            let sound = pcm as f64 / 32768.0;
+            let group = ((f64::from(tone) + sound) * amplitude(12.0)).tanh() * amplitude(-12.0);
+            let expected =
+                ((group + sound * amplitude(-12.0)) * amplitude(6.0)).tanh() * amplitude(-6.0);
+            let actual = pair[channel].as_f64().ok_or("channel sample")?;
+            maximum_error = maximum_error.max((actual - expected).abs());
+        }
+    }
+    assert!(
+        maximum_error < 0.000001,
+        "shared bus oracle error: {maximum_error}"
+    );
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    assert!(passed, "{report}");
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(&json!({
+                "package":fixture.package,"movie":movie,"report":report,
+                "oracle_samples":256,"maximum_oracle_error":maximum_error,
+            }))?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> Result {
     let scratch = tempfile::tempdir()?;
     // DEADPAN_PREVIEW_EXPORT_KEEP=1 retains the packages for inspection.

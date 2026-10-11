@@ -109,7 +109,7 @@ impl GainSum {
     }
 
     /// One owner layer: its escalation step feeds its own treatment chain.
-    fn owner(
+    pub(super) fn owner(
         &mut self,
         owner: &deadpan_plan::AudioOwnerClock<'_>,
         at: AudioSample,
@@ -129,13 +129,17 @@ impl GainSum {
     }
 
     pub(super) fn apply(&self, sample: [f32; 2]) -> Result<[f64; 2], StageAudioError> {
+        self.apply_wide(sample.map(f64::from))
+    }
+
+    pub(super) fn apply_wide(&self, sample: [f64; 2]) -> Result<[f64; 2], StageAudioError> {
         if sample.iter().any(|value| !value.is_finite()) {
             return Err(PreparationError::InvalidSamples.into());
         }
         if self.muted {
             return Ok([0.0; 2]);
         }
-        let mut result = sample.map(f64::from);
+        let mut result = sample;
         for (before, stage) in &self.stages {
             let gain = Self::factor(*before);
             result = result.map(|value| value * gain);
@@ -265,29 +269,6 @@ pub(super) fn original_samples_except(
         return Err(PlanError::InvalidPlan("incomplete authored gain owners").into());
     }
     Ok(result)
-}
-
-pub(super) fn sound_gain(
-    plan: &RenderPlan,
-    at: AudioSample,
-    event_millidecibels: i32,
-    control: WorkControl<'_>,
-    authored: bool,
-) -> Result<GainSum, StageAudioError> {
-    let mut gain = GainSum::default();
-    gain.add(EvaluatedGain {
-        millidecibels: ExactRatio::integer(i64::from(event_millidecibels)),
-        muted: false,
-    })?;
-    if authored && !plan.root_audio_treatments().is_empty() {
-        let rate = plan.metadata().presentation_basis.frame_rate;
-        let local = ExactRatio::new(
-            i128::from(at.0) * i128::from(rate.numerator()),
-            i128::from(deadpan_core::MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
-        )?;
-        gain.treatment(plan.root_audio_treatments(), local, control)?;
-    }
-    Ok(gain)
 }
 
 pub(super) fn beat_sound_gain(

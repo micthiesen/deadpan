@@ -87,29 +87,29 @@ impl StageAudio {
         }
         let retained =
             self.prepare_sound_processing_plans(&plan, start..AudioSample(end), control)?;
-        let beat_voices =
+        let mut beat_voices =
             self.prepare_beat_sounds(&plan, &retained, start..AudioSample(end), control)?;
+        let mut mix = group_mix::GroupMix::plan(&plan, start, frames, authored_gain, control)?;
+        for voice in &mut beat_voices {
+            voice.route_mix(&mut mix, control)?;
+        }
         // Reserve the retained Original, the f64 sum and the source reader's
         // two transient PCM buffers under the existing shared residency limit.
         let routed = voices
             .iter()
             .any(|voice| matches!(&voice.input, PreparedSoundInput::Routed(_)))
             || beat_voices.iter().any(|voice| voice.has_routed());
-        let reservation = u64::from(frames) * if routed { 6 } else { 5 };
+        let reservation = (u64::from(frames) * if routed { 6 } else { 5 })
+            .checked_add(mix.resident_frames()?)
+            .ok_or(StageAudioError::Limit("group mix PCM"))?;
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         let result = (|| {
+            mix.allocate();
             // All sound dependencies and static work are admitted first. The
             // Original's own preflight then sees the same cumulative budget.
             let original = self.read_controlled(provider, start, frames, control, true, 0)?;
-            self.render_root_sounds(
-                provider,
-                original,
-                voices,
-                beat_voices,
-                control,
-                authored_gain,
-            )
+            self.render_root_sounds(provider, original, voices, beat_voices, control, mix)
         })();
         self.active_frames -= reservation;
         result
@@ -122,10 +122,9 @@ impl StageAudio {
         voices: Vec<PreparedSoundQuery<'_>>,
         beat_voices: Vec<super::beat_sounds::PreparedBeatSound<'_>>,
         control: WorkControl<'_>,
-        authored_gain: bool,
+        mut mix: group_mix::GroupMix<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
-        let mut sum =
-            authored_gain::original_samples(&self.plan, &original, control, authored_gain)?;
+        mix.original(&original.samples, control)?;
         for PreparedSoundQuery {
             voice,
             input,
@@ -169,7 +168,7 @@ impl StageAudio {
                     .map(|span| span.samples.clone()),
             );
             block.suppressed = merged_suppression(block.suppressed);
-            if block.samples.len() != sum.len() {
+            if block.samples.len() != original.samples.len() {
                 return Err(PlanError::InvalidPlan("incomplete authored sound PCM").into());
             }
             let edges = fades.into_iter().flat_map(|span| {
@@ -182,42 +181,19 @@ impl StageAudio {
                     )
                 })
             });
-            for (offset, ((total, sample), edge)) in
-                sum.iter_mut().zip(block.samples).zip(edges).enumerate()
-            {
-                let at = AudioSample(
-                    original
-                        .start
-                        .0
-                        .checked_add(i64::try_from(offset).map_err(|_| StageAudioError::Range)?)
-                        .ok_or(StageAudioError::Range)?,
-                );
-                let gain = authored_gain::sound_gain(
-                    &self.plan,
-                    at,
+            for (offset, (sample, edge)) in block.samples.into_iter().zip(edges).enumerate() {
+                mix.add_root(
+                    offset,
+                    sample.map(|value| value * edge),
                     event.gain_millidecibels,
                     control,
-                    authored_gain,
                 )?;
-                // Existing edges remain f32 and precede one conversion of the
-                // complete sound-event plus root dB sum to amplitude.
-                let gained = gain.apply(sample.map(|value| value * edge))?;
-                for channel in 0..2 {
-                    total[channel] += gained[channel];
-                }
             }
             original.suppressed = intersect_suppression(&original.suppressed, &block.suppressed);
             original.dependencies.extend(block.dependencies);
         }
-        self.render_beat_sounds(
-            provider,
-            &mut original,
-            &mut sum,
-            beat_voices,
-            control,
-            authored_gain,
-        )?;
-        authored_gain::write_finite_samples(&mut original.samples, sum)?;
+        self.render_beat_sounds(provider, &mut original, &mut mix, beat_voices, control)?;
+        authored_gain::write_finite_samples(&mut original.samples, mix.finish(control)?)?;
         // Exhaustion belongs to each contribution. There is no common source
         // endpoint mask after adding independent sound voices.
         original.exhausted.clear();

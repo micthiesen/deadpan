@@ -14,6 +14,7 @@ struct PreparedOccurrence<'plan> {
     samples: Range<AudioSample>,
     input: PreparedBeatInput<'plan>,
     fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+    mix_route: Option<super::group_mix::Route<'plan>>,
 }
 
 enum PreparedBeatInput<'plan> {
@@ -24,7 +25,22 @@ enum PreparedBeatInput<'plan> {
     },
 }
 
-impl PreparedBeatSound<'_> {
+impl<'plan> PreparedBeatSound<'plan> {
+    pub(super) fn route_mix(
+        &mut self,
+        mix: &mut super::group_mix::GroupMix<'plan>,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        for occurrence in &mut self.occurrences {
+            occurrence.mix_route = Some(mix.route(
+                occurrence.voice.gain_owners(),
+                occurrence.samples.clone(),
+                control,
+            )?);
+        }
+        Ok(())
+    }
+
     pub(super) fn has_routed(&self) -> bool {
         self.occurrences
             .iter()
@@ -176,6 +192,7 @@ impl StageAudio {
                         samples: interval,
                         input,
                         fades: fades.spans,
+                        mix_route: None,
                     });
                 }
                 prepared.push(PreparedBeatSound { event, occurrences });
@@ -188,10 +205,9 @@ impl StageAudio {
         &mut self,
         provider: &mut impl AudioSourceProvider,
         original: &mut ReadBlock,
-        sum: &mut [[f64; 2]],
+        mix: &mut super::group_mix::GroupMix<'_>,
         sounds: Vec<PreparedBeatSound<'_>>,
         control: WorkControl<'_>,
-        authored_gain: bool,
     ) -> Result<(), StageAudioError> {
         let end = AudioSample(
             original
@@ -252,31 +268,17 @@ impl StageAudio {
                         )
                     })
                 });
-                for (index, ((total, sample), edge)) in sum[offset..offset + expected]
-                    .iter_mut()
-                    .zip(block.samples)
-                    .zip(edges)
-                    .enumerate()
-                {
-                    let at = AudioSample(
-                        occurrence
-                            .samples
-                            .start
-                            .0
-                            .checked_add(i64::try_from(index).map_err(|_| StageAudioError::Range)?)
-                            .ok_or(StageAudioError::Range)?,
-                    );
-                    let gain = authored_gain::beat_sound_gain(
-                        occurrence.voice.gain_owners(),
-                        at,
+                let route = occurrence.mix_route.ok_or(PlanError::InvalidPlan(
+                    "beat sound mix route was not admitted",
+                ))?;
+                for (index, (sample, edge)) in block.samples.into_iter().zip(edges).enumerate() {
+                    mix.add(
+                        &route,
+                        offset + index,
+                        sample.map(|value| value * edge),
                         sound.event.gain_millidecibels,
                         control,
-                        authored_gain,
                     )?;
-                    let gained = gain.apply(sample.map(|value| value * edge))?;
-                    for channel in 0..2 {
-                        total[channel] += gained[channel];
-                    }
                 }
                 original.suppressed =
                     sound_events::intersect_suppression(&original.suppressed, &block.suppressed);

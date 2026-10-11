@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Shared nonlinear group mixing](../qualification/group-mix-2026-10-11.md)
+sums Original and owned sound contributions before each owner's saturation,
+then reduces nested buses into their parents. Independent root sounds retain
+their scope; exact repeat clocks, reordered gain/balance, work/PCM limits and
+source re-admission remain enforced. Regression tests fail on the previous
+implementation and pass with the new mixer. EQ/filtering, arbitrary sends,
+oversampled shaping and full mastering remain open.
+
 [Stereo balance](../qualification/stereo-balance-2026-10-11.md) adds exact
 signed-percent balance to captured native/headless commands, macros, dot and
 isolated Repeat plays. The shared voice stage preserves other treatments,

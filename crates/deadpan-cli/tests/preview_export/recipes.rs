@@ -2362,6 +2362,68 @@ pub fn stereo_balance(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// A group mixes its tone with an owned WAV before saturation; an independent
+/// root WAV joins only at the root's second saturation. Both stages trim after
+/// shaping, keeping the master below limiting for a direct arithmetic oracle.
+pub fn group_saturation(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "group-saturation")?;
+    tone_pauses(&mut project)?;
+    place_click_sound(&mut project)?;
+    project.apply(|_, document, _| {
+        Ok(Command::Group {
+            parent: document.root().clone(),
+            start: 0,
+            end: 2,
+            id: node("tone-group")?,
+            label: "Summed tones and sound".into(),
+        })
+    })?;
+    project.apply(|_, document, _| {
+        let sound = &document.sounds()[&SoundId::new("click")?];
+        Ok(Command::SetBeatSound {
+            owner: node("tone-group")?,
+            id: SoundId::new("group-click")?,
+            event: deadpan_core::BeatSound {
+                label: "Group sound".into(),
+                source: sound.source.clone(),
+                mapping: sound.mapping,
+                offset: sound.offset,
+                gain_millidecibels: 0,
+                start_edge: sound.start_edge,
+                end_edge: sound.end_edge,
+                overflow: sound.overflow,
+            },
+        })
+    })?;
+    project.apply(|_, document, _| {
+        let id = SoundId::new("click")?;
+        let mut event = document.sounds()[&id].clone();
+        event.gain_millidecibels = -12000;
+        Ok(Command::SetSound { id, event })
+    })?;
+    for (group, drive, trim) in [(true, 12000, -12000), (false, 6000, -6000)] {
+        project.apply(|_, document, _| {
+            Ok(Command::SetAudioTreatments {
+                node: if group {
+                    node("tone-group")?
+                } else {
+                    document.root().clone()
+                },
+                treatments: AudioTreatments::with_stages(
+                    vec![
+                        deadpan_core::AudioTreatmentStage::Saturation,
+                        deadpan_core::AudioTreatmentStage::ClipGain,
+                    ],
+                    Some(ClipGain::new(GainDb::new(trim)?, false, vec![], vec![])?),
+                    Some(deadpan_core::Saturation::new(GainDb::new(drive)?)?),
+                )?,
+            })
+        })?;
+    }
+    project.finish(vec!["Saturation", "Group mixing"], tone_expectations(),
+        vec!["Two shared nonlinear buses; owned and root catalog voices; gain follows saturation; unchanged 54 pictures".into()])
+}
+
 /// `:saturate 12dB` on the first of two -10 dBFS 1 kHz tone pauses, through
 /// the headless semantic path. tanh(3.98 · 0.316 · sin) flattens the sine:
 /// peak 0.851 and crest factor 1.288, against the untouched second tone's
@@ -2987,13 +3049,14 @@ const GENERATED: [(&str, Builder); 4] = {
 /// Build every fixture whose tools are available; return the others' names
 /// with the reason they were skipped.
 pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
-    let builders: [(&str, Builder); 39] = [
+    let builders: [(&str, Builder); 40] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
         ("range-gain", range_gain),
         ("saturation", saturation),
         ("stereo-balance", stereo_balance),
+        ("group-saturation", group_saturation),
         ("role-repeat", role_repeat),
         ("role-delete", role_delete),
         ("one-more-time-varied", one_more_time_varied),

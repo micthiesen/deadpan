@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "/tmp/deadpan-group-mix-20261011/old-source/Cargo.toml",
+    "--target-dir",
+    "/tmp/deadpan-group-mix-20261011/old-target",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "stages",
+    "saturation",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "seconds": 11.253504124935716,
+  "log_sha256": "219b2301959d788378b8bd3cf2d6c259df121692cf696c5f9cc9b5859a6f9b42"
+}

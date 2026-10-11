@@ -473,6 +473,78 @@ fn saved_clocks_keep_complete_nested_preserve_while_current_gain_and_source_admi
 }
 
 #[test]
+fn retained_sound_histories_join_current_nonlinear_owners_after_a_move() {
+    let mut wire = serde_json::to_value(saved(&occurrence_document(), "owner", 3840)).unwrap();
+    wire["beat_sounds"]["owner"]["second"] = wire["beat_sounds"]["owner"]["effect"].clone();
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let moved = insert_prefix(&before);
+    let mut wire = serde_json::to_value(&moved).unwrap();
+    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
+    wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(
+        trim(
+            0,
+            vec![GainRange::new(ExactRatio::ZERO, ExactRatio::integer(1920)).unwrap()],
+        )
+        .with_saturation(Some(drive))
+        .unwrap(),
+    )
+    .unwrap();
+    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_saturation(Some(drive))
+            .unwrap(),
+    )
+    .unwrap();
+    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let passage = stretch(&stretch(&raw_voice(3840), 2560, 3, 2), 1280, 2, 1);
+    let expected: Vec<_> = passage
+        .iter()
+        .chain(&passage)
+        .enumerate()
+        .map(|(at, sample)| {
+            if at % 1280 < 640 {
+                [0.0; 2]
+            } else {
+                sample.map(|value| drive.shape(drive.shape(2.0 * f64::from(value))) as f32)
+            }
+        })
+        .collect();
+    let plan = compile(&treated, false);
+    let mut provider = ClockProvider::new(&treated);
+    let mut renderer = StageAudio::new(plan.clone());
+    assert_eq!(
+        bus(&mut renderer, &mut provider, 18, 2560).samples,
+        expected
+    );
+    assert!(provider.fixture.context_calls > 0);
+    for (offset, count) in [(2440, 120), (0, 128), (1240, 128)] {
+        assert_eq!(
+            bus(
+                &mut StageAudio::new(plan.clone()),
+                &mut provider,
+                18 + offset,
+                count
+            )
+            .samples,
+            expected[offset as usize..offset as usize + count as usize]
+        );
+    }
+    provider.fixture.unavailable = true;
+    assert!(matches!(
+        renderer.prepare_authored_bus(
+            &mut provider,
+            AudioSample(18),
+            128,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Preparation(
+            PreparationError::SourceUnavailable(_)
+        ))
+    ));
+}
+
+#[test]
 fn sound_clocks_translate_processed_ntsc_extent_through_nested_preserve() {
     let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
     wire["nodes"]["inner"] =

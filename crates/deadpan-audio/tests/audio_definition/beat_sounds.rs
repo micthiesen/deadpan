@@ -130,6 +130,72 @@ fn saved_beat_sound_takes_its_repeat_escalation_on_later_plays() {
 }
 
 #[test]
+fn summed_nested_preserve_sounds_keep_repeat_clocks_and_escalation_through_saturation() {
+    let base = saved(&occurrence_document(), "owner", 3840);
+    let mut wire = serde_json::to_value(&base).unwrap();
+    wire["beat_sounds"]["owner"]["second"] = wire["beat_sounds"]["owner"]["effect"].clone();
+    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
+    wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(
+        trim(
+            0,
+            vec![GainRange::new(ExactRatio::ZERO, ExactRatio::integer(1920)).unwrap()],
+        )
+        .with_saturation(Some(drive))
+        .unwrap(),
+    )
+    .unwrap();
+    wire["nodes"]["repeat"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_saturation(Some(drive))
+            .unwrap(),
+    )
+    .unwrap();
+    wire["nodes"]["repeat"]["kind"]["escalation"] = serde_json::json!({"gain_step": 3000});
+    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut provider = FixtureProvider::new();
+    let neutral = bus(
+        &mut StageAudio::new(compile(&base, false)),
+        &mut provider,
+        0,
+        2577,
+    )
+    .samples;
+    let expected: Vec<_> = neutral
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            if at < 17 || (at - 17) % 1280 < 640 {
+                [0.0; 2]
+            } else {
+                let gain = if at >= 1297 {
+                    10.0_f64.powf(3000.0 / 20000.0)
+                } else {
+                    1.0
+                };
+                sample.map(|value| drive.shape(drive.shape(2.0 * f64::from(value)) * gain) as f32)
+            }
+        })
+        .collect();
+    let plan = compile(&treated, false);
+    assert_eq!(
+        bus(&mut StageAudio::new(plan.clone()), &mut provider, 0, 2577).samples,
+        expected
+    );
+    for (start, count) in [(1200, 256), (650, 71), (1290, 37), (1930, 100), (2500, 77)] {
+        assert_eq!(
+            bus(
+                &mut StageAudio::new(plan.clone()),
+                &mut provider,
+                start,
+                count
+            )
+            .samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+    }
+}
+
+#[test]
 fn saved_beat_sound_sums_overlapping_preserve_histories_before_one_limiter() {
     let mut wire = serde_json::to_value(occurrence_document()).unwrap();
     wire["nodes"].as_object_mut().unwrap().remove("inner");

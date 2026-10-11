@@ -1,0 +1,7 @@
+{
+  "revision": "ef3849a4d551a65e0fe27c5ca5a9ce6e3272040e",
+  "test_overlays": {
+    "crates/deadpan-audio/tests/stages/gain.rs": "2cc8559c465a839e2de6e4e76a01d0f6d53de75feeae7f72eb9f8e8eae6e9941"
+  },
+  "target": "/tmp/deadpan-group-mix-20261011/old-target"
+}

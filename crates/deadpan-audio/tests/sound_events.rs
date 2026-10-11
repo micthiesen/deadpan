@@ -304,6 +304,59 @@ fn resident_budget_rejection_and_provider_failure_release_bus_reservations() {
 }
 
 #[test]
+fn nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure() {
+    let mut hold = BeatNode::hold(
+        "Silent group member",
+        HoldRecipe {
+            duration: duration(256),
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+            picture_context: None,
+        },
+    );
+    hold.audio_treatments = AudioTreatments::default()
+        .with_saturation(Some(Saturation::new(GainDb::new(12000).unwrap()).unwrap()))
+        .unwrap();
+    let plan = planned(
+        BTreeMap::from([(node("silence"), hold)]),
+        BTreeMap::new(),
+        "silence",
+        256,
+        None,
+    );
+    let mut renderer = StageAudio::with_limits(
+        plan,
+        StageLimits {
+            maximum_resident_frames: 640,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut provider = SentinelProvider::default();
+    let active = AtomicBool::new(false);
+    assert!(matches!(
+        renderer.prepare_authored_bus(&mut provider, AudioSample(0), 128, TIMEOUT, &active),
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
+    ));
+    assert!(provider.calls.is_empty());
+    for expected_calls in 1..=2 {
+        reached_provider(
+            renderer
+                .prepare_authored_bus(&mut provider, AudioSample(0), 64, TIMEOUT, &active)
+                .unwrap_err(),
+        );
+        assert_eq!(provider.calls.len(), expected_calls);
+    }
+    // Raw inspection owns no group-effect buffers and still admits 128 frames.
+    reached_provider(
+        renderer
+            .prepare_edge_faded(&mut provider, AudioSample(0), 128, TIMEOUT, &active)
+            .unwrap_err(),
+    );
+    assert_eq!(provider.calls.len(), 3);
+}
+
+#[test]
 fn initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable() {
     let mut renderer = StageAudio::with_limits(
         held_sound(),
