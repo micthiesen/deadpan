@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T20:06:50Z",
+  "updated_at": "2026-10-11T20:27:58Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Resolve the reproduced Gain waveform visibility failure; continue the format/color, effects and mastered-playback matrix and remaining release gates. Endpoint cancellation is fixed; physical timing remains unverified.",
+  "focus": "Continue the remaining format/color, effects, mastered-playback, full-workflow and release-gate obligations against the normative specification. Gain replay and terminal-picture cancellation are resolved; physical timing remains unverified.",
   "features": [
     {
       "id": "editing",
@@ -525,6 +525,14 @@
       "revision": "af68b5030249f27ddf1d33385405a048fd60a3ce",
       "retrospective": false,
       "summary": "Automatic playback End preserves the final picture through GPU submission at the exact audio endpoint. Twelve deterministic cases, 42 final-source transport/presentation tests, eight interaction replays and seven real-device runs pass with all 8,206 pictures and no audio faults. One final picture is explicitly marked after admitted End. The Gain waveform visibility replay fails identically on prior/current binaries and remains open."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "335596bf5813849233fb7f79393357b920701ddf",
+      "retrospective": false,
+      "summary": "Resolved the Gain waveform replay failure as input sequencing: complete trackpad gestures and bounded native mouse-wheel settling preserve strict graph/axis checks. All 296 Gain checks pass in offscreen visual replay and release runs at 60/120 Hz, including four populated keyboard circuits. Production UI is unchanged; reviewed compact/default captures fit."
     }
   ]
 }
