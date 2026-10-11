@@ -1,0 +1,476 @@
+{
+  "chirp-v2-4k-media": {
+    "command": [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-f",
+      "lavfi",
+      "-i",
+      "testsrc2=size=3840x2160:rate=30:duration=2",
+      "-f",
+      "lavfi",
+      "-i",
+      "aevalsrc=exprs='if(between(mod(t,0.5),0.2,0.3),0.7*sin(2*PI*(300*(mod(t,0.5)-0.2)+6000*pow(mod(t,0.5)-0.2,2))),0)|if(between(mod(t,0.5),0.2,0.3),-0.6*sin(2*PI*(300*(mod(t,0.5)-0.2)+6000*pow(mod(t,0.5)-0.2,2))),0)':s=48000:d=2:c=stereo",
+      "-frames:v",
+      "60",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "veryfast",
+      "-g",
+      "150",
+      "-bf",
+      "3",
+      "-pix_fmt",
+      "yuv420p",
+      "-bsf:v",
+      "h264_metadata=video_full_range_flag=0:colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1",
+      "-color_range",
+      "tv",
+      "-colorspace",
+      "bt709",
+      "-color_primaries",
+      "bt709",
+      "-color_trc",
+      "bt709",
+      "-chroma_sample_location",
+      "left",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
+      "-movflags",
+      "+faststart",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.308375499676913,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-create": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "create-original",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.5330834998749197,
+    "stdout_sha256": "ad5d75e34b7b82aa2daf913381eb37d0b6bd53cc9e2082e728448ec192d4d8a4",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-original": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.009936042129993439,
+    "stdout_sha256": "ceda10ec0f7637d6e799c335bd1a74c74f6f3442f211cb377bba426b46f7e028",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-pause": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "macro",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--json",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k-pause-request.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03207158297300339,
+    "stdout_sha256": "e3642f3a7796f846ef9c76c667f1e3560903f7fc253786aa5db257285554bc3a",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-fallback": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.008704375009983778,
+    "stdout_sha256": "eb88ac17607707cc88cd11def57bb72466f9bcab34c8fec608dfe150522e35af",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-generate": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "generate-hold",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--hold",
+      "bc09a4f6-025c-4d7b-bfcb-f3c62a95cadf",
+      "--seed",
+      "813"
+    ],
+    "exit": 0,
+    "seconds": 71.0296359998174,
+    "stdout_sha256": "f3b6f3805be077ebee8c8ba8832fe9d85a09ae9f71659faf9cdabfe3dfc8841b",
+    "stderr_sha256": "291ca9ac6c9ccf15b182e6b00ebef94e5af594ec1f3ff97ede2ac72721f610bc"
+  },
+  "chirp-v2-4k-accept": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "accept-hold",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--request",
+      "ai-hold-8c6e38c87fc24c62a3839bfe10c47257"
+    ],
+    "exit": 0,
+    "seconds": 0.061022209003567696,
+    "stdout_sha256": "d48ae3776fdf7dc6e435b6366bbd72c928be90fd954a874caad41b3349d112a0",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-accepted": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.011153500061482191,
+    "stdout_sha256": "be39b911b4f704195a81f85bdcd1b0328f5e791131c2151fd637da499a37a34d",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-render": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "render",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k-exports",
+      "--name",
+      "accepted.mp4"
+    ],
+    "exit": 0,
+    "seconds": 21.20425520790741,
+    "stdout_sha256": "fa1aa8c7090a9b0148c2a9c35ddcf3d4cc8ab3ab6c234cdab868127dba86b2f1",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-verify": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "verify-export",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-generated-export-20261011/chirp-v2-4k-exports/accepted.mp4",
+      "--revision",
+      "122c6037-109f-41b8-9309-6f27083e267e",
+      "--every",
+      "1",
+      "--report",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k-verification.json"
+    ],
+    "exit": 0,
+    "seconds": 21.34245345927775,
+    "stdout_sha256": "c36397c40cb3aae0817f090720f6def86bd1bee1da55354545fbdcc5038cc60e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-early-chirp": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--samples",
+      "9700",
+      "9956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.049694915767759085,
+    "stdout_sha256": "cc96c4b3c838c1b4923a9047f895c3d4b51d7f6c4603828171a1621645e7ab3e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-silent-hold": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--samples",
+      "57700",
+      "57956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.05550137534737587,
+    "stdout_sha256": "4af2be0a9b16ec3a19ce1ed45c0e1605823a78bef519589ead8227bfc0ba359a",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-shifted-chirp": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--samples",
+      "81700",
+      "81956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.08189837541431189,
+    "stdout_sha256": "c1c093da44ae1c551fea6023777fee0b5436e08baafb4c168c303df3dd05a03a",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k-after": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.01098529202863574,
+    "stdout_sha256": "be39b911b4f704195a81f85bdcd1b0328f5e791131c2151fd637da499a37a34d",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-media": {
+    "command": [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-f",
+      "lavfi",
+      "-i",
+      "testsrc2=size=1920x1080:rate=60:duration=2",
+      "-f",
+      "lavfi",
+      "-i",
+      "aevalsrc=exprs='if(between(mod(t,0.5),0.2,0.3),0.7*sin(2*PI*(300*(mod(t,0.5)-0.2)+6000*pow(mod(t,0.5)-0.2,2))),0)|if(between(mod(t,0.5),0.2,0.3),-0.6*sin(2*PI*(300*(mod(t,0.5)-0.2)+6000*pow(mod(t,0.5)-0.2,2))),0)':s=48000:d=2:c=stereo",
+      "-frames:v",
+      "120",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "veryfast",
+      "-g",
+      "150",
+      "-bf",
+      "3",
+      "-pix_fmt",
+      "yuv420p",
+      "-bsf:v",
+      "h264_metadata=video_full_range_flag=0:colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1",
+      "-color_range",
+      "tv",
+      "-colorspace",
+      "bt709",
+      "-color_primaries",
+      "bt709",
+      "-color_trc",
+      "bt709",
+      "-chroma_sample_location",
+      "left",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
+      "-movflags",
+      "+faststart",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.1625567921437323,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-create": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "create-original",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.29528062511235476,
+    "stdout_sha256": "7ea9067c4058d02c55d38f3ba1fc2277f5651c55ed333fd5fc028d72261e5f93",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-original": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.00992695800960064,
+    "stdout_sha256": "b64561fae7614cd59f03fe8c691d01998490ce37ebf4d528ecd7c872bf840c3e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-pause": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "macro",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--json",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p-pause-request.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03404887532815337,
+    "stdout_sha256": "15a9c6a5d7521c9471da9176e3a86a8e690095be503cf8cbd7b56494a3a74bc0",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-fallback": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.008983917068690062,
+    "stdout_sha256": "19586734820320834a7d62b6945024f0fb89d71bc38a6e28f83ecfa646d1641c",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-generate": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "generate-hold",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--hold",
+      "39210602-7e30-4d8f-8211-3dcee3090ad4",
+      "--seed",
+      "814"
+    ],
+    "exit": 0,
+    "seconds": 71.6607029158622,
+    "stdout_sha256": "50e3c6cfb1f20a87e3ebdaf7fa3a4fceb8ae6fca15b1abc5a8a07c538d3b71fb",
+    "stderr_sha256": "291ca9ac6c9ccf15b182e6b00ebef94e5af594ec1f3ff97ede2ac72721f610bc"
+  },
+  "chirp-v2-1080p-accept": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "accept-hold",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--request",
+      "ai-hold-429b379b5a7a4c8f840b8b41f76e5e48"
+    ],
+    "exit": 0,
+    "seconds": 0.061326040886342525,
+    "stdout_sha256": "bbee04b2f285189a7dfdf8e6fc182a5a33a5a9beb9d36462d700fbe0610587a5",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-accepted": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.010995958000421524,
+    "stdout_sha256": "8914dad4190589df7e0c5f87baae49da64b5dd0c74a1640b360159657e80ba7b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-render": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "render",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p-exports",
+      "--name",
+      "accepted.mp4"
+    ],
+    "exit": 0,
+    "seconds": 11.731380291748792,
+    "stdout_sha256": "fb8301429e29af6e3c34ea9b2f0de657173ff08b7df94af4115ec7da1880c25b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-verify": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "verify-export",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-generated-export-20261011/chirp-v2-1080p-exports/accepted.mp4",
+      "--revision",
+      "ae312e90-077b-4536-88d3-0351aa2ba7bc",
+      "--every",
+      "1",
+      "--report",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p-verification.json"
+    ],
+    "exit": 0,
+    "seconds": 11.290113541763276,
+    "stdout_sha256": "45073a13cf493345cdcefb15395e67cbfe9f330e5598073d631356217e6d4229",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-early-chirp": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--samples",
+      "9700",
+      "9956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.04780404083430767,
+    "stdout_sha256": "b990292d2b3b1b8cb1a39a4fcd2d5c453cbfcbbec409bd58495973108bb34b58",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-silent-hold": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--samples",
+      "57700",
+      "57956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.052857291884720325,
+    "stdout_sha256": "f40107b5badb913e4eb98ba2a8cd17d197ae2d82875bb8ca327ce20da9d7286f",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-shifted-chirp": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "inspect-audio",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--samples",
+      "81700",
+      "81956",
+      "--limited"
+    ],
+    "exit": 0,
+    "seconds": 0.07890154188498855,
+    "stdout_sha256": "a9e96b49c86018b760b385ea49aa0fb58b6c8c5ffc2134ff23d76b7da09e6edd",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p-after": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-1080p.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.011006208136677742,
+    "stdout_sha256": "8914dad4190589df7e0c5f87baae49da64b5dd0c74a1640b360159657e80ba7b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

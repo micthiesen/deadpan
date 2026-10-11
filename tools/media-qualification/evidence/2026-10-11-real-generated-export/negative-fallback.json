@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+    "verify-export",
+    "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+    "--movie",
+    "/tmp/deadpan-generated-export-20261011/chirp-v2-4k-exports/accepted.mp4",
+    "--revision",
+    "chirp-v2-4k-pause",
+    "--frames",
+    "30,31,32,33,34,35,36,37,38,39,40,41,42,43,44",
+    "--no-audio",
+    "--report",
+    "/tmp/deadpan-generated-export-20261011/negative-fallback-report.json"
+  ],
+  "exit": 1,
+  "seconds": 5.404680208768696,
+  "log_sha256": "0c9f496107feb05921e39d670ae92f77b2b8f3d73c1013554557c3a000cc8eaf"
+}

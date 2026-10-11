@@ -1,0 +1,138 @@
+{
+  "chirp-v2-4k": {
+    "frames": 75,
+    "generated_frames": 15,
+    "audio_samples": 120000,
+    "summary": {
+      "pictures_checked": 75,
+      "pictures_failed": 0,
+      "min_luma_psnr_db": 51.24487956952638,
+      "min_chroma_psnr_db": 49.421732447908724,
+      "max_thumbnail_mad": 0.2351755401234568,
+      "max_local_luma_error": 4.5,
+      "min_neighbor_margin_db": 11.855290358283035,
+      "index_observable_comparisons": 0,
+      "index_unobservable_comparisons": 148,
+      "pictures_without_index_neighbors": 0,
+      "audio_windows_checked": 3,
+      "audio_windows_failed": 0,
+      "signal_windows": 3,
+      "blocks_compared": 40,
+      "min_block_snr_db": 32.93710847049435,
+      "max_block_level_db": 0.07999405452061037,
+      "offset_verified_windows": 3,
+      "offset_unobservable_windows": 0,
+      "nonzero_offsets": 0
+    },
+    "peaks": {
+      "early-chirp": 0.6968331336975098,
+      "silent-hold": 0.0,
+      "shifted-chirp": 0.7002851366996765
+    },
+    "seconds": {
+      "generate": 71.0296359998174,
+      "render": 21.20425520790741,
+      "verify": 21.34245345927775
+    },
+    "video_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 0,
+      "presented_media_ticks": 75
+    },
+    "audio_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 2048,
+      "presented_media_ticks": 120000
+    }
+  },
+  "chirp-v2-1080p": {
+    "frames": 150,
+    "generated_frames": 30,
+    "audio_samples": 120000,
+    "summary": {
+      "pictures_checked": 150,
+      "pictures_failed": 0,
+      "min_luma_psnr_db": 49.849071718914075,
+      "min_chroma_psnr_db": 47.964806173370505,
+      "max_thumbnail_mad": 0.24397569444444445,
+      "max_local_luma_error": 4.0625,
+      "min_neighbor_margin_db": 0.3831506083040921,
+      "index_observable_comparisons": 0,
+      "index_unobservable_comparisons": 298,
+      "pictures_without_index_neighbors": 0,
+      "audio_windows_checked": 3,
+      "audio_windows_failed": 0,
+      "signal_windows": 3,
+      "blocks_compared": 40,
+      "min_block_snr_db": 32.93710847049435,
+      "max_block_level_db": 0.07999405452061037,
+      "offset_verified_windows": 3,
+      "offset_unobservable_windows": 0,
+      "nonzero_offsets": 0
+    },
+    "peaks": {
+      "early-chirp": 0.6968331336975098,
+      "silent-hold": 0.0,
+      "shifted-chirp": 0.7002851366996765
+    },
+    "seconds": {
+      "generate": 71.6607029158622,
+      "render": 11.731380291748792,
+      "verify": 11.290113541763276
+    },
+    "video_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 0,
+      "presented_media_ticks": 150
+    },
+    "audio_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 2048,
+      "presented_media_ticks": 120000
+    }
+  },
+  "fallback_negative": {
+    "summary": {
+      "pictures_checked": 15,
+      "pictures_failed": 15,
+      "min_luma_psnr_db": 24.711772087260893,
+      "min_chroma_psnr_db": 22.366675969880667,
+      "max_thumbnail_mad": 6.572371238425926,
+      "max_local_luma_error": 152.6875,
+      "min_neighbor_margin_db": -2.2657062859159787,
+      "index_observable_comparisons": 0,
+      "index_unobservable_comparisons": 30,
+      "pictures_without_index_neighbors": 0,
+      "audio_windows_checked": 0,
+      "audio_windows_failed": 0,
+      "signal_windows": 0,
+      "blocks_compared": 0,
+      "min_block_snr_db": null,
+      "max_block_level_db": null,
+      "offset_verified_windows": 0,
+      "offset_unobservable_windows": 0,
+      "nonzero_offsets": 0
+    },
+    "failures": [
+      "picture 30: luma_psnr,chroma_psnr",
+      "picture 31: luma_psnr,chroma_psnr",
+      "picture 32: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 33: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 34: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 35: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 36: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 37: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 38: luma_psnr,chroma_psnr,gross_structural_mismatch",
+      "picture 39: luma_psnr,chroma_psnr",
+      "picture 40: luma_psnr,chroma_psnr",
+      "picture 41: luma_psnr,chroma_psnr",
+      "picture 42: luma_psnr,chroma_psnr",
+      "picture 43: luma_psnr,chroma_psnr",
+      "picture 44: luma_psnr,chroma_psnr"
+    ]
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "4k.deadpan/.render-candidates.lock": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "4k.deadpan/Media/Generated/blake3-45b5c266e3b324d05c9f9a0740b42be11d89fe557847a7de84fb44dc1d637597": {
+    "bytes": 52984,
+    "sha256": "e02c70556e43770af5e889652aad8c58544a79f178ab45ec36cc3ad239d3ac0b"
+  },
+  "4k.deadpan/Media/Generated/blake3-4dfcdff14ad2f608ff878604405a533ea97d53fef586286b552490ad35db41ae": {
+    "bytes": 3808462,
+    "sha256": "bf628c27ca4e9eca0a512b13eb060b4f2d2f12d3e404e1906308ab2e052565b6"
+  },
+  "4k.deadpan/Media/Generated/blake3-4e5cf7055b5998fd69ba0c5987e8289e8b11a38733167a452670858134dcb326": {
+    "bytes": 2692,
+    "sha256": "6670d6d06f8327b9e2f97ae0718a07d37e2cfb7aa05f6c1042a5e726b2cc50ee"
+  },
+  "4k.deadpan/Media/Generated/blake3-8567d0b491f680909b3e0be5b9d2eeacf2e4a67da7714bed098e134e465bb3c6": {
+    "bytes": 3456016,
+    "sha256": "0521a648a86c1e9c8c4b3e7176f255a401d2dd6cb5a44f315e1247bf06451b0c"
+  },
+  "4k.deadpan/Media/Generated/blake3-95d2e31e439130b9399462d349829fcedbde7a086ba02f5b445962a76592ca55": {
+    "bytes": 52852,
+    "sha256": "e877355f109fb05ebd904ca19a961203de349873c17e7a98fa5b16876f97c79e"
+  },
+  "4k.deadpan/Media/Generated/blake3-ec6ca3735c4f145a017d164726fac6aedd633e754ce1a17324b4332486afcab4": {
+    "bytes": 57998,
+    "sha256": "5740a5064aaddb3f9d5ebb9be0da7c70d4b4fe8985bfa6fc28d77e986b9dc30c"
+  },
+  "4k.deadpan/Media/Originals/blake3-de1e295e738a96188ac3a652681bd225806ec4a01f74c1f200262e3c2c1fdf93": {
+    "bytes": 52660951,
+    "sha256": "cf6dd21a097c7a75877596a3471d7a86b8c10c94b65f46e9f54e8436855f18ba"
+  },
+  "4k.deadpan/Media/RenderCandidates/blake3-0892c5b3a5c44cbd71cd2be0de6bebb9c859d199637b2f85f18dcfed93ebbf80": {
+    "bytes": 111154394,
+    "sha256": "14b30e7dbdf791cc7b26d7bdb66fe60bc7fdee144f2a4dd90c2ffeb6b82dc246"
+  },
+  "4k.deadpan/Media/RenderCandidates/blake3-2d02bd13d4a45993b3bdcde0d4ebec3d29e0dbba7d929b0afc581e8129597cf9": {
+    "bytes": 15094,
+    "sha256": "fb388abca7db867992fa766da763685144ea7504d43f1b084a7cb8c44e765b1a"
+  },
+  "4k.deadpan/manifest.json": {
+    "bytes": 82,
+    "sha256": "379a8afb76cfcf30ba8830a21d7911a18759e9b601eec82da55129dc863d7678"
+  },
+  "4k.deadpan/project.sqlite": {
+    "bytes": 733184,
+    "sha256": "72435f397d34702e9722a80c255e272af956f31f8570dc73d0cf311e37baec15"
+  },
+  "4k-exports/accepted.mp4": {
+    "bytes": 111154394,
+    "sha256": "14b30e7dbdf791cc7b26d7bdb66fe60bc7fdee144f2a4dd90c2ffeb6b82dc246"
+  },
+  "4k-exports/deadpan-render-e3199c70-ca45-4f7c-b348-a990e885a13e.json": {
+    "bytes": 34886,
+    "sha256": "eeb31a3c3499391f56ca1de71065227e885271efdecac7a4dc85830c8a20a688"
+  },
+  "chirp-4k.mp4": {
+    "bytes": 5171184,
+    "sha256": "eb7965c2ff51c91b79693d14f73de3fc560a4f6377c6d6dd47eda4832cb4f161"
+  },
+  "chirp-v2-4k.deadpan/.render-candidates.lock": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-0c78b0a93b5346009beb88b2b07fce0be825fbd2070bae7c4ce1d220dbd9d293": {
+    "bytes": 3331037,
+    "sha256": "98065d18353b4cc2aa48f3ffdf87da148ad142e38acbb13948c70c12a236f4a5"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-2f5618644969da4843d4205aad39ea3c2bf3aab6a86595e7678712f683ae65bf": {
+    "bytes": 2702,
+    "sha256": "692411a25141b49dc5a2327b1bca21ae7f60953830fc54d9c531fa312161aeb0"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-47ecdb8d59fe9424f10bafbd05a3f72ea6cb2312b7ac0cd9b5f8924131567fd7": {
+    "bytes": 53367,
+    "sha256": "72cc029c05268dddaa908eed8f9a51b3d8dbf240f9ceb16cac25be4fc5497045"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-6580d9da56b0b13105a24288538691a84f38f6611714bc638842e7d03f3283c5": {
+    "bytes": 3024561,
+    "sha256": "c1dab545e0f8dfb7f18b5b85384356ee1967c7c9e532d26570d800a1193ac252"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-c6a9069de82cd654c2b5ec5d0037e8a0b89d3c6dd77a9aaffa4ccda71eaa7485": {
+    "bytes": 58128,
+    "sha256": "974c91472d73dd700ec39d52935d42d71841485b05f962340a2aba6cf1b692c6"
+  },
+  "chirp-v2-4k.deadpan/Media/Generated/blake3-efbd8f4a4dc63c1dbe335e91d289dcfa65cb890c8ee6997936e1e01a19b01db4": {
+    "bytes": 53293,
+    "sha256": "fd108888f24fbaf445b8babbf9aacb6a21ef41086721701e3a561f17a75d5c92"
+  },
+  "chirp-v2-4k.deadpan/Media/Originals/blake3-89e2a0e96eabc83dfc28981f7468d2db53b9c54485ca7496658a46ef99809a88": {
+    "bytes": 5171184,
+    "sha256": "8eb842d9ebe23c6eaa39d0a6b6c4d6fb8eea51b272889589f6c036116ba298f9"
+  },
+  "chirp-v2-4k.deadpan/Media/RenderCandidates/blake3-d2a0fd3b6acbacd13feb9d3d72bd5404de3887f2ddd3b04f1fc51de3621a6cf2": {
+    "bytes": 11776051,
+    "sha256": "3b2f504ae29353ae26e8293267bf3c56256ed092790cb5fdb59c406cfe991b6b"
+  },
+  "chirp-v2-4k.deadpan/Media/RenderCandidates/blake3-e326799e6d9a67d29de1a5d08c84d08142c84d77e88fef0774d8815ee650c7bb": {
+    "bytes": 15081,
+    "sha256": "e5ddda70fbace68f39ab37820f6d5336490f354958362f87780a3473e64fec42"
+  },
+  "chirp-v2-4k.deadpan/manifest.json": {
+    "bytes": 82,
+    "sha256": "7b5902d407e7897cb78ad4c6b70861c74ed0a4c197ddb064985e0199b06599b4"
+  },
+  "chirp-v2-4k.deadpan/project.sqlite": {
+    "bytes": 548864,
+    "sha256": "621d049da4731ccef232413eebb8a521b4afda797c961fe7155ab5f7c1bb5f5e"
+  },
+  "chirp-v2-4k-exports/accepted.mp4": {
+    "bytes": 11776051,
+    "sha256": "3b2f504ae29353ae26e8293267bf3c56256ed092790cb5fdb59c406cfe991b6b"
+  },
+  "chirp-v2-4k-exports/deadpan-render-666667c4-ff73-480d-abfa-6584fa568f82.json": {
+    "bytes": 34862,
+    "sha256": "631e4fb920602dec7e93adaff22c8ffc27cd6e6a7bd470ca63d2d6f92d113348"
+  },
+  "chirp-v2-4k.mp4": {
+    "bytes": 5171184,
+    "sha256": "8eb842d9ebe23c6eaa39d0a6b6c4d6fb8eea51b272889589f6c036116ba298f9"
+  },
+  "chirp-v2-1080p.deadpan/.render-candidates.lock": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-0503db61e94fef6ffd9e2346f324f6cc41d7611a4a26a4da7f4a43f7d6953f18": {
+    "bytes": 6028158,
+    "sha256": "cf547b8538eac3fb9f4151b18269cd4f7cc513d8540ff8b58204d07c5b34c036"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-5cd13f9b87419f28d1d1bf17a096d873b3c99424199a9230fc66b9e23d6a25f3": {
+    "bytes": 50816,
+    "sha256": "fd8d9c143af05b8ea113f4b996c58d58714ca5ae549946cdb248aa3807d9333b"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-71ef9ce46c96d979aeafb54733dd26f3337c2ea2481beac3d1902098c1998b82": {
+    "bytes": 2711,
+    "sha256": "5a8e3de52fe5b67c3504f61f7f0f38da9280ed695f69088317b4a168421a8ca3"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-834d508480be62c012f4120a15bc838134d7aff037cb307899f74120800023d9": {
+    "bytes": 50711,
+    "sha256": "698aa39d18547f578436900f776f902078308220d8755f595c3f6c92e13be69d"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-ac60e1d3ed9380cf4309aed4b29ac9fe553f97aa4d151d149166507809016124": {
+    "bytes": 3389819,
+    "sha256": "9c0504d5b7901bcec6d0a293abeb73c9612860c1acc4e71534886059370fb9cf"
+  },
+  "chirp-v2-1080p.deadpan/Media/Generated/blake3-df212893535b97ad89c72307da8cf316e483f5162ec4b87095539aa6c3f11013": {
+    "bytes": 59347,
+    "sha256": "e077fb98e717752d110f0de4f4fc45504c1315765bff9da53e9cae13002100ae"
+  },
+  "chirp-v2-1080p.deadpan/Media/Originals/blake3-68b137350eeac5b75773ab8d567aaa7a411dd8937fe91712aa97f02d1feea0dd": {
+    "bytes": 1994147,
+    "sha256": "085344e94d73af968b9994266ecf4f4dfe8e28db527f543863bab836161e3958"
+  },
+  "chirp-v2-1080p.deadpan/Media/RenderCandidates/blake3-7be9e78d16afb97d2b521a5538daad3c0f24d8a4184615c6d8d01d5d8fcdc582": {
+    "bytes": 5041090,
+    "sha256": "0ecba2bb86462b8d5db833596711977d3f32e2caca5d8885bdd9eee4c6f09e75"
+  },
+  "chirp-v2-1080p.deadpan/Media/RenderCandidates/blake3-c238a39f62c68a22e313cc23548a7b7ba540dd4cc884ae70fb3ca26a23472ae9": {
+    "bytes": 15089,
+    "sha256": "4fd346bafe893ca7a5e168e3b2dbec5080f102256cfd62e92daf99f5ccb9426c"
+  },
+  "chirp-v2-1080p.deadpan/manifest.json": {
+    "bytes": 82,
+    "sha256": "a59b26bf710b09491e08ddfa8497cf65670628c87e9cb0474cfc2a74d1418510"
+  },
+  "chirp-v2-1080p.deadpan/project.sqlite": {
+    "bytes": 552960,
+    "sha256": "4e53cf564d4dbeba929283f7df63f4de927e03fb8da88deb83bc270a73dbcd18"
+  },
+  "chirp-v2-1080p-exports/accepted.mp4": {
+    "bytes": 5041090,
+    "sha256": "0ecba2bb86462b8d5db833596711977d3f32e2caca5d8885bdd9eee4c6f09e75"
+  },
+  "chirp-v2-1080p-exports/deadpan-render-d5debca3-c26d-45ea-9c60-e6db02d928ea.json": {
+    "bytes": 34875,
+    "sha256": "65caddb03424e479deab26cad0e842943cbde25305228fa759f14af09ba3a393"
+  },
+  "chirp-v2-1080p.mp4": {
+    "bytes": 1994147,
+    "sha256": "085344e94d73af968b9994266ecf4f4dfe8e28db527f543863bab836161e3958"
+  }
+}

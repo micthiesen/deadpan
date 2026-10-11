@@ -1,0 +1,9 @@
+{
+  "status": "picture checks pass; full export comparison correctly rejects unobservable periodic audio",
+  "checked_pictures": 19,
+  "generated_pictures": 15,
+  "zero_offset_windows": 2,
+  "unobservable_audio_windows": 19,
+  "nonzero_offsets": 0,
+  "frame_mapping": "before 15: Original n; [15,30): Generated n-15; after: Original n-15"
+}

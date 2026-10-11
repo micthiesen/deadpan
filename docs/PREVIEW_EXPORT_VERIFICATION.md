@@ -334,6 +334,13 @@ them with public `render` and verify them with `verify-export`:
   every play. The `generated-pause` movie is also verified against the
   pre-acceptance Background revision and must fail on exactly the 12 Hold
   frames.
+- [Real Generated Holds](qualification/real-generated-export-2026-10-11.md)
+  additionally qualify accepted LTX output at 1080p60 and 4K30: all 225 pictures,
+  six audio windows at zero offset, exact silent-Hold/shifted-chirp probes and
+  rejection of the pre-acceptance Freeze on all 15 4K Hold pictures. The initial
+  periodic-tone audio cannot establish alignment and remains a retained failure.
+  All adjacent-picture identities are unobservable at the lossy error bound;
+  the independent provenance checks establish the intended reference mapping.
 - Larger media: `large-1080p` and `large-2160p` generate their Original in
   the test (deterministic `testsrc2` with 48 kHz stereo AAC aperiodic chirps,
   long-GOP H.264 High with GOP 150, three B frames with pyramid references,

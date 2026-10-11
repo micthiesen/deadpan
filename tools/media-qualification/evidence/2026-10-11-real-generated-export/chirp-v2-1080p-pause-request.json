@@ -1,0 +1,25 @@
+{
+  "protocol": 1,
+  "project_id": "1924ac6e-8dd3-457d-8d1d-586bb507874e",
+  "expected_revision": "d12d79bc-8789-4b0b-ba2e-0bb3de0398cb",
+  "expected_bank_version": 0,
+  "operation": {
+    "type": "apply",
+    "parent": "b3f69ef2-496a-42b2-ab3e-1cd91d98c067",
+    "cursor": 60,
+    "selected_child": null,
+    "visual_selection": null,
+    "new_revision": "chirp-v2-1080p-pause",
+    "program": {
+      "instructions": [
+        {
+          "type": "insert_pause",
+          "length": {
+            "unit": "milliseconds",
+            "milliseconds": 500
+          }
+        }
+      ]
+    }
+  }
+}

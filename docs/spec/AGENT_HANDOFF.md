@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Real Generated export](../qualification/real-generated-export-2026-10-11.md)
+passes full picture/audio comparison at 1080p60 and 4K30: 225 pictures, six
+zero-offset windows, exact silent-Hold and shifted-chirp probes, and unchanged
+authored revisions. The exported 4K Hold fails all 15 pre-acceptance Freeze
+comparisons. Keep the original periodic-tone failure: its audio is unobservable,
+not offset-verified. Neighbor picture identity also remains unobservable at
+the lossy tolerance. DP-16/DP-17 remain partial.
+
 [Real Generated playback in the app](../qualification/generated-app-playback-2026-10-11.md)
 now qualifies the actual preview worker with real accepted LTX pictures,
 full-resolution Originals and device audio. All 1,830 frames at 1080p60 and

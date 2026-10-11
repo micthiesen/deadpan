@@ -1,0 +1,62 @@
+{
+  "4k-copy": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "copy-portable",
+      "/tmp/deadpan-generated-playback-performance-20261011/4k-fallback.deadpan",
+      "/tmp/deadpan-generated-export-20261011/4k.deadpan"
+    ],
+    "exit": 0,
+    "seconds": 0.3226723331026733,
+    "stdout_sha256": "d8867820f342a75b3cc78e77efcdf951f87686dec2bc5fba5fdac8b11de0949b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "4k-before": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-export-20261011/4k.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.01334712514653802,
+    "stdout_sha256": "ec7faca9f62d9cb670d5bb2dd99ee16100a89a34cc1495ff709ea117fc352d65",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "4k-render": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "render",
+      "/tmp/deadpan-generated-export-20261011/4k.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-export-20261011/4k-exports",
+      "--name",
+      "accepted.mp4"
+    ],
+    "exit": 0,
+    "seconds": 148.35466674994677,
+    "stdout_sha256": "a6a0aff21709c1562ba62c57fae766613ec7e85f9a7d4ae981af60fa9317e9cd",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "4k-verify": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "verify-export",
+      "/tmp/deadpan-generated-export-20261011/4k.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-generated-export-20261011/4k-exports/accepted.mp4",
+      "--revision",
+      "be153263-3912-45e8-855e-a08549ffe9b0",
+      "--frames",
+      "0,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,614",
+      "--report",
+      "/tmp/deadpan-generated-export-20261011/4k-verification.json"
+    ],
+    "exit": 1,
+    "seconds": 26.61021854216233,
+    "stdout_sha256": "e0fcf0124cc1ad72f6dcfc082481cb5505b5477802b3a7f2d9c2dca3c0260ff2",
+    "stderr_sha256": "387b16c87e2a7b5f74fc6eca4b7445e3986148c149c2c30809dd624504524e66"
+  }
+}

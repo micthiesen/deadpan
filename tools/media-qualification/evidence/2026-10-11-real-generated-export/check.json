@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-generated-export-20261011/check.py"
+  ],
+  "exit": 0,
+  "seconds": 0.21245329221710563,
+  "log_sha256": "617ee90a387f27f7ef7796fdcdda015c86339adde71897ab350e561806c5ee46"
+}
