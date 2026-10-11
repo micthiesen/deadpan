@@ -29,7 +29,7 @@ pub(super) struct GroupMix<'plan> {
     start: AudioSample,
     frames: usize,
     authored: bool,
-    original: Vec<(Range<usize>, AudioOwnerSupport, Route<'plan>)>,
+    original: Vec<(Range<usize>, AudioOwnerSupport, Option<Route<'plan>>)>,
     root: Route<'plan>,
     by_owner: BTreeMap<InstancePath, usize>,
     // Parents are inserted before children. Reduction additionally sorts by
@@ -69,10 +69,10 @@ impl<'plan> GroupMix<'plan> {
             mix.original.push((
                 0..frames as usize,
                 AudioOwnerSupport::Active,
-                Route {
+                Some(Route {
                     target: None,
                     owners: Vec::new(),
-                },
+                }),
             ));
             return Ok(mix);
         }
@@ -93,7 +93,14 @@ impl<'plan> GroupMix<'plan> {
             if range.start != cursor || range.end <= range.start || range.end > end {
                 return Err(PlanError::InvalidPlan("incomplete mix owner clocks").into());
             }
-            let route = mix.route(span.owners(), range.clone(), control)?;
+            // A picture-only recipe has no Original contribution to this
+            // bus. Its retained clock must not constrain an independent sound.
+            // Stateful processing is deliberately excluded from this proof.
+            let route = if span.original_is_silent() {
+                None
+            } else {
+                Some(mix.route(span.owners(), range.clone(), control)?)
+            };
             let local = mix.local(range.clone())?;
             mix.original.push((local, span.support(), route));
             cursor = range.end;
@@ -185,11 +192,14 @@ impl<'plan> GroupMix<'plan> {
             if overlap.start >= overlap.end {
                 continue;
             }
-            // A shared owner must have one exact clock for the same sample.
-            // Both maps are affine; their endpoints prove the whole overlap.
+            // Equal affine clocks prove the complete overlap directly. A
+            // retained Original can legitimately have a different clock from
+            // a current independent sound after an edit, even for one owner.
+            // For memoryless treatments, equal transfer programs suffice.
             if run.owners.len() != owners.len() {
                 return Err(PlanError::InvalidPlan("inconsistent nonlinear mix owners").into());
             }
+            let mut same_clocks = true;
             for (a, b) in run.owners.iter().zip(owners) {
                 control.spend_plan_work(1)?;
                 let first = AudioSample(self.start.0 + overlap.start as i64);
@@ -197,11 +207,33 @@ impl<'plan> GroupMix<'plan> {
                 if a.instance() != b.instance()
                     || a.kind() != b.kind()
                     || a.gap_after() != b.gap_after()
-                    || a.escalation_millidecibels() != b.escalation_millidecibels()
-                    || a.sampling().local_at(first)? != b.sampling().local_at(first)?
-                    || a.sampling().local_at(last)? != b.sampling().local_at(last)?
                 {
-                    return Err(PlanError::InvalidPlan("inconsistent nonlinear mix clock").into());
+                    return Err(PlanError::InvalidPlan("inconsistent nonlinear mix owners").into());
+                }
+                same_clocks &= a.escalation_millidecibels() == b.escalation_millidecibels()
+                    && a.sampling().local_at(first)? == b.sampling().local_at(first)?
+                    && a.sampling().local_at(last)? == b.sampling().local_at(last)?;
+            }
+            if !same_clocks {
+                // Endpoint gain equality cannot prove the interior of a
+                // curve or a mute range. Check every allocated sample, under
+                // the same work/deadline budget and before media admission.
+                for offset in overlap.clone() {
+                    control.check()?;
+                    let at = AudioSample(self.start.0 + offset as i64);
+                    let mut left = authored_gain::GainSum::default();
+                    let mut right = authored_gain::GainSum::default();
+                    for owner in run.owners.iter().rev() {
+                        left.owner(owner, at, control)?;
+                    }
+                    for owner in owners.iter().rev() {
+                        right.owner(owner, at, control)?;
+                    }
+                    if !left.same_transfer(&right) {
+                        return Err(StageAudioError::Unsupported(
+                            "different automation on independently timed inputs to one nonlinear owner",
+                        ));
+                    }
                 }
             }
             if cursor < overlap.start {
@@ -248,6 +280,14 @@ impl<'plan> GroupMix<'plan> {
         for (range, support, route) in &self.original {
             for index in range.clone() {
                 let sample = samples[index];
+                let Some(route) = route else {
+                    if sample.iter().any(|value| *value != 0.0) {
+                        return Err(
+                            PlanError::InvalidPlan("nonzero Original in declared silence").into(),
+                        );
+                    }
+                    continue;
+                };
                 if *support == AudioOwnerSupport::Inactive
                     && sample.iter().any(|value| *value != 0.0)
                 {

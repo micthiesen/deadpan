@@ -1,0 +1,12 @@
+{
+  "base": "3ded82d09dd31237476529195f50e76e1cb5fe5e",
+  "files": {
+    "crates/deadpan-audio/src/authored_gain.rs": "36686e9cc4968e10654323ff5d12baf1d7fc21dd950f564a107a5c325adcecec",
+    "crates/deadpan-audio/src/group_mix.rs": "23dff9fce522c01fdd179657b9d0b0a114b42071f9a7dd834d5812966caa8b41",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "67a6c565d53ff7625f928aa59bf79e354bf0166efed8f7881014fd857a99c9ca",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs": "f7227d501495ca246edafde49465d24713f37de9953184a9a9d8781a0feaa316",
+    "crates/deadpan-audio/tests/sound_events.rs": "7c6e1d1bc1c1ae6c07f74aa2d0e0960854a7350073dea730d4b4e7c8cde00fd5",
+    "crates/deadpan-plan/src/audio_owners.rs": "33f09c0ab49c9743b992b92a3cbfa0684fafafe67f3cbfce91bcbca960521340",
+    "crates/deadpan-plan/src/audio_owners/tests.rs": "1db0b36673c39801c251b09911074693d239d9e3048f950fbebc8878d920e757"
+  }
+}

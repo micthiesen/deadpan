@@ -9,7 +9,7 @@ use super::*;
 /// At most one saturation and one balance stage per owner layer.
 const MAX_CHANNEL_STAGES: usize = 2 * deadpan_core::MAX_GAIN_LAYERS;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum ChannelStage {
     Saturation(deadpan_core::Saturation),
     Balance(deadpan_core::StereoBalance),
@@ -28,6 +28,15 @@ pub(super) struct GainSum {
 }
 
 impl GainSum {
+    /// These memoryless programs are interchangeable at one output sample.
+    /// Clock identity is not required when the evaluated treatments agree.
+    pub(super) fn same_transfer(&self, other: &Self) -> bool {
+        self.muted == other.muted
+            && (self.muted
+                || (self.millidecibels_q32 == other.millidecibels_q32
+                    && self.stages == other.stages))
+    }
+
     fn add(&mut self, value: EvaluatedGain) -> Result<(), GainError> {
         // Core values are exact reduced Q32 millidecibels. Add on the common
         // wide grid; converting each factor to amplitude loses cancellation

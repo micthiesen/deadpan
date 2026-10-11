@@ -156,12 +156,18 @@ Gain, saturation and balance retain their serialized order on the summed bus.
 Mute yields exact silence and grants no silence-policy exemption.
 
 The worker admits routing and each f64 stereo bus under the existing work and
-PCM residency limits before opening media. Overlapping contributions must agree
-on their shared owner's exact clock. Stable occurrence order fixes sibling
+PCM residency limits before opening media. Overlapping contributions with
+different retained/current clocks may share a memoryless bus only when their
+evaluated treatment programs agree at every sample. Constant treatments
+therefore survive fractional-sample moves. A provably silent Original leaf
+contributes no clock constraint; stateful processing makes that proof
+inconclusive. Different automation on audible inputs to the same nonlinear
+owner still rejects explicitly. Stable occurrence order fixes sibling
 reduction order across partitions and cold reads. Nonfinite inputs, sums and
 results reject explicitly; only the final bus converts back to f32. Raw
 edge-faded inspection still excludes treatments. See the
-[group-mixing qualification](qualification/group-mix-2026-10-11.md).
+[group-mixing qualification](qualification/group-mix-2026-10-11.md) and
+[retained-clock regression](qualification/group-clocks-2026-10-11.md).
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated
@@ -206,7 +212,7 @@ The inspector and its Gain section show the direction; command help explains the
 Ranged gain and ordinary gain edits preserve balance.
 
 The treatment is shared by limited audition and Render. EQ/filtering, arbitrary
-sends and nonlinear group-bus processing remain open; this stage does not qualify
+sends and complete group automation remain open; this stage does not qualify
 the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps

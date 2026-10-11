@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "sound_events",
+    "nonlinear_bus_pcm"
+  ],
+  "exit": 0,
+  "seconds": 0.4336050837300718,
+  "log_sha256": "e303c9d078aa4cfdb58b65128bd4bb43cbb4ac4bf78d32bcc58095961e1d66a6"
+}

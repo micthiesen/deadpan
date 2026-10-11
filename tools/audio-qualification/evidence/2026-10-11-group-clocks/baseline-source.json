@@ -1,0 +1,9 @@
+{
+  "revision": "3ded82d09dd31237476529195f50e76e1cb5fe5e",
+  "archive_sha256": "8a84ccbff2b41aeded89543d1817a6aa6ee6aa3c154cb895b8583bf8a3f108e6",
+  "test_overlays": {
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "67a6c565d53ff7625f928aa59bf79e354bf0166efed8f7881014fd857a99c9ca",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs": "f7227d501495ca246edafde49465d24713f37de9953184a9a9d8781a0feaa316"
+  },
+  "target": "/tmp/deadpan-group-mix-20261011/old-target"
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "sound_clocks::group_mix",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "seconds": 2.1059377919882536,
+  "log_sha256": "5c27e07da2070e33dfd76bde842568bd085ee975685cb7ca8f89268ed218e7dc"
+}

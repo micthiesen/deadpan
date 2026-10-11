@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "group_saturation_matches_summed_voice_oracle_and_verified_export",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 145.65839841682464,
+  "log_sha256": "d5edf453d7a85d780414921e914c4cb7bede57ef18d260e2d72183e3154fd806"
+}

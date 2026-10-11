@@ -138,6 +138,37 @@ fn bind(
     wire["audio_bindings"] = serde_json::to_value(state).unwrap();
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
+#[test]
+fn zero_original_proof_does_not_flatten_stateful_processing() {
+    for (pitch, duration, silent) in [
+        (PitchPolicy::FollowSpeed, 2, true),
+        (PitchPolicy::Preserve, 2, false),
+        (PitchPolicy::Preserve, 4, true),
+    ] {
+        let doc = document(
+            48_000,
+            &["outer"],
+            vec![
+                ("voice", hold(4)),
+                (
+                    "outer",
+                    retime("voice", duration, 0..4, pitch, RetimePurpose::Edit),
+                ),
+            ],
+        );
+        let plan = RenderPlan::compile(&doc).unwrap();
+        let query = plan
+            .audio_gain_owners(AudioSample(0)..AudioSample(duration), Default::default())
+            .unwrap();
+        assert!(
+            query
+                .spans()
+                .iter()
+                .all(|span| span.original_is_silent() == silent)
+        );
+    }
+}
+
 fn clocks(plan: &RenderPlan, sample: i64) -> Vec<(String, AudioOwnerKind, ExactRatio, ExactRatio)> {
     let query = plan
         .audio_owners(

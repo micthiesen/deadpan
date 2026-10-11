@@ -136,6 +136,7 @@ pub struct AudioOwnerSpan<'plan, S = AudioSample> {
     samples: Range<S>,
     owners: Vec<AudioOwnerClock<'plan, S>>,
     support: AudioOwnerSupport,
+    original_is_silent: bool,
 }
 
 impl<'plan, S: Copy> AudioOwnerSpan<'plan, S> {
@@ -148,6 +149,12 @@ impl<'plan, S: Copy> AudioOwnerSpan<'plan, S> {
     }
     pub fn support(&self) -> AudioOwnerSupport {
         self.support
+    }
+    /// The terminal recipe produces zero Original PCM without traversing a
+    /// stateful processor. False is inconclusive: Preserve may carry signal
+    /// across a silent leaf. This proof grants no silence policy or admission.
+    pub fn original_is_silent(&self) -> bool {
+        self.original_is_silent
     }
 }
 
@@ -408,6 +415,8 @@ struct WalkOutput {
     end: i64,
     owners: Vec<RawOwner>,
     support: AudioOwnerSupport,
+    through_processor: bool,
+    original_is_silent: bool,
 }
 
 fn query<'plan, S: Copy>(
@@ -436,6 +445,8 @@ fn query<'plan, S: Copy>(
             end: samples.end,
             owners: Vec::new(),
             support: AudioOwnerSupport::Active,
+            through_processor: false,
+            original_is_silent: false,
         };
         walk(
             plan,
@@ -478,6 +489,7 @@ fn query<'plan, S: Copy>(
             samples: label(cursor)..label(output.end),
             owners,
             support: output.support,
+            original_is_silent: output.original_is_silent,
         });
         cursor = output.end;
     }
@@ -687,7 +699,15 @@ fn walk(
         }
         let local_probe = state.placement.local(probe)?;
         match &node.kind {
-            CompiledKind::Source { .. } | CompiledKind::Hold { .. } => return Ok(()),
+            CompiledKind::Source { audio, .. } => {
+                output.original_is_silent = !output.through_processor && audio.is_none();
+                return Ok(());
+            }
+            CompiledKind::Hold { audio, .. } => {
+                output.original_is_silent =
+                    !output.through_processor && matches!(audio, deadpan_core::HoldAudio::Silence);
+                return Ok(());
+            }
             CompiledKind::Sequence { entries } => {
                 let mut left = 0;
                 let mut right = entries.len();
@@ -721,6 +741,7 @@ fn walk(
                     inverse,
                 )?;
                 if pitch.processes(*scale == ExactRatio::ONE) {
+                    output.through_processor = true;
                     // Only the binding-resolution clock switches. Automation
                     // remains on the consuming output's exact nominal mapping.
                     // Canonical Preserve prepares its complete selected input;

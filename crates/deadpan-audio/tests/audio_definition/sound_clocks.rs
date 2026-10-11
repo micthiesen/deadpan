@@ -4,6 +4,9 @@ use super::*;
 #[path = "sound_clocks/repeats.rs"]
 mod repeats;
 
+#[path = "sound_clocks/group_mix.rs"]
+mod group_mix;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

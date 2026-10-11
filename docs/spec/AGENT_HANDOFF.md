@@ -4,6 +4,13 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Retained group clocks](../qualification/group-clocks-2026-10-11.md) fixes
+saturation after fractional-sample timeline moves. Shared memoryless treatments
+may use different clocks when their evaluated programs agree at every sample;
+a provably silent Original supplies no clock constraint. Stateful history stays
+conservative, dependencies remain admitted, and genuinely different automation
+on audible inputs still rejects explicitly. Full group automation remains open.
+
 [Shared nonlinear group mixing](../qualification/group-mix-2026-10-11.md)
 sums Original and owned sound contributions before each owner's saturation,
 then reduces nested buses into their parents. Independent root sounds retain

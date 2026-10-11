@@ -1,0 +1,22 @@
+{
+  "reviewer": "main session, no subagents",
+  "scope": [
+    "Exact current and retained sample clocks after a one-frame NTSC move",
+    "Memoryless transfer equality over every overlap sample, not just endpoints",
+    "No routing constraint from provably silent Original Source/Hold leaves",
+    "Conservative silence proof through stateful processors and retained bindings",
+    "Pre-media work/residency admission, finite PCM assertion, mute dependencies",
+    "Whole-window, partial and cold reads with an audible Original and independent sound"
+  ],
+  "changes_from_review": [
+    "Added picture-only automation regression and planner silence proof",
+    "Added an interior-only mute mismatch that must reject before source access",
+    "Retained explicit failure for genuinely divergent automation on shared audible inputs",
+    "Changed the residency fixture from a silent leaf to an audible Original so it still requires an allocated nonlinear bus"
+  ],
+  "limits": [
+    "Different evaluated automation programs on audible inputs to one nonlinear owner remain unsupported",
+    "No EQ/filtering or arbitrary effect sends implemented",
+    "No live GUI, physical-device or listening qualification"
+  ]
+}

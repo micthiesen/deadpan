@@ -305,22 +305,33 @@ fn resident_budget_rejection_and_provider_failure_release_bus_reservations() {
 
 #[test]
 fn nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure() {
-    let mut hold = BeatNode::hold(
-        "Silent group member",
-        HoldRecipe {
+    // A silent leaf needs no nonlinear bus. Use an actual Original voice to
+    // exercise the extra residency and its cleanup after provider failure.
+    let mut voice = BeatNode::sequence("Audible group member", Vec::new());
+    voice.kind = NodeKind::Source {
+        source: SourceNode {
+            edit_window: None,
             duration: duration(256),
-            video: HoldVideo::Background,
-            audio: HoldAudio::Silence,
-            picture_context: None,
+            video: SourceVideo::Blank,
+            video_mapping: SourceVideoMapping::FitBeat,
+            audio: Some(SourceAudio {
+                asset: asset("effect"),
+                span: span(256),
+            }),
+            audio_mapping: SourceAudioMapping::Duration {
+                frames: ExactRatio::integer(256),
+            },
+            audio_offset: AudioSample(0),
+            link: LinkRelation::Independent,
         },
-    );
-    hold.audio_treatments = AudioTreatments::default()
+    };
+    voice.audio_treatments = AudioTreatments::default()
         .with_saturation(Some(Saturation::new(GainDb::new(12000).unwrap()).unwrap()))
         .unwrap();
     let plan = planned(
-        BTreeMap::from([(node("silence"), hold)]),
+        BTreeMap::from([(node("voice"), voice)]),
         BTreeMap::new(),
-        "silence",
+        "voice",
         256,
         None,
     );

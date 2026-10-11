@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "nonlinear_owner_mixes_ntsc_sound_after_retained_clock_move"
+  ],
+  "exit": 0,
+  "seconds": 1.7236012080684304,
+  "log_sha256": "86b50b709f1fa2b4f341bb5e430fd87320478d5ff8f5f34f2ab294a009fa7916"
+}
