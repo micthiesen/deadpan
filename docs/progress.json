@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T19:31:43Z",
+  "updated_at": "2026-10-11T20:06:50Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16: terminal playback picture delivery and the remaining format/effects acceptance.",
+  "focus": "Resolve the reproduced Gain waveform visibility failure; continue the format/color, effects and mastered-playback matrix and remaining release gates. Endpoint cancellation is fixed; physical timing remains unverified.",
   "features": [
     {
       "id": "editing",
@@ -517,6 +517,14 @@
       "revision": "5c55cc3688a8caa665129cca66d08a6e252deeee",
       "retrospective": false,
       "summary": "Generated preview uses bounded FFV1 slice threads: 5,220 exact comparisons, 183 native tests and sanitizers pass; eight app runs show all 3,752 pictures. A longer run exposes a final Original-picture handoff failure, retained as open."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "af68b5030249f27ddf1d33385405a048fd60a3ce",
+      "retrospective": false,
+      "summary": "Automatic playback End preserves the final picture through GPU submission at the exact audio endpoint. Twelve deterministic cases, 42 final-source transport/presentation tests, eight interaction replays and seven real-device runs pass with all 8,206 pictures and no audio faults. One final picture is explicitly marked after admitted End. The Gain waveform visibility replay fails identically on prior/current binaries and remains open."
     }
   ]
 }
