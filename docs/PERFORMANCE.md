@@ -24,7 +24,9 @@ The report counts monotonic progress across wraps and records each seam.
 [Generated playback caching](qualification/generated-playback-cache-2026-10-11.md)
 retains Original decode-ahead across Generated Holds and reuses the Generated
 decoder on repeated entry. Its bounded fixture checks verify handoff and pixels;
-cold Generated admission and full-resolution device measurements remain open.
+[Cold Generated preparation](qualification/generated-prefetch-2026-10-11.md)
+now admits and decodes the upcoming Hold before entry; its small-fixture
+prepared entry takes 0.17–0.22 ms. Full-resolution device measurements remain open.
 A target
 without a measured workload is open, never passed.
 

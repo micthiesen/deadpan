@@ -1,0 +1,22 @@
+{
+  "reviewer": "sole implementing agent; no subagents",
+  "scope": [
+    "complete changed production code and tests",
+    "one Generated decoder bound including in-flight admission",
+    "key authority, revision and loop scan scope, cancellation, lifecycle teardown"
+  ],
+  "findings": [
+    {
+      "issue": "Clippy type complexity in scan scope",
+      "resolution": "Named ScanScope with session, revision, generation and loop window; strict Clippy passes"
+    }
+  ],
+  "invariants": [
+    "Original and its single companion plus at most one active, parked or preparing Generated decoder",
+    "No second Generated admission when the foreground catches preparation; cancellation is polled while waiting",
+    "Complete media keys and live handles are still checked by the foreground reader",
+    "A failed preparation is retried through the ordinary reader at actual demand; errors remain explicit there",
+    "Scans cache examined immutable frames and check at most 1,024 new frames per call, within the captured horizon and at most one loop lap"
+  ],
+  "remaining": "Full-resolution actual preview-worker/device/GPU measurements remain open. The CLI perf example uses a separate reader and would not exercise this app-owned preparation."
+}

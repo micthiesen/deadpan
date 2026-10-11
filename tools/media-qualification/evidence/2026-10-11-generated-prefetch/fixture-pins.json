@@ -1,0 +1,62 @@
+{
+  ".writer.lock": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Media/Generated/blake3-15d4fedf8bf3e34b8aa72feef28b1ba7aa4828caa376c4ff0ad6b6e437e656f6": {
+    "bytes": 113698,
+    "sha256": "379f445eb63b64d9359ee4b34f1ae78b8e429e07c3efbdc5ce491c28491f9800"
+  },
+  "Media/Generated/blake3-2a130ae7d4a1c56121f5c17dec36313bd7067cbd528cd96fb860635415331506": {
+    "bytes": 21466,
+    "sha256": "099a9a69979b0470c4061caa075e04bdb07ae5a05f843f44be98b01682e3a88a"
+  },
+  "Media/Generated/blake3-4c25d7875c477e880afee05ed8b42a196386f422fc1b7691373e1d53c68a75b2": {
+    "bytes": 14049,
+    "sha256": "22478ede4ddae87153f35685eeef959c0c60ecf8f6785f3da6490912a7a0539d"
+  },
+  "Media/Generated/blake3-502c5f5a001ef530b5c9c54fdc241abe5d75dc9aec233ad7abde07dd1adb71e7": {
+    "bytes": 114190,
+    "sha256": "e3ab20058b4455ca65abb62127e1c36c7ce4fc182f82c49f1f08918367b82683"
+  },
+  "Media/Generated/blake3-6c75d8af7dda493490ddc1ddf58dc7f6aea47a2b3442f1f5930b4b4aac848a61": {
+    "bytes": 101373,
+    "sha256": "3eb52e2708f06e6c0454e522e60dc9e27c64d0f03a81d9a4a095bb8fe246e064"
+  },
+  "Media/Generated/blake3-7e29292d96e1cfa1f6239ae37540b65c3d625d1b1af44860fdafd388b9009d49": {
+    "bytes": 21466,
+    "sha256": "3deffdaec28adcbad3d4ce94d696aa8438eda0bac59ce7d0d10219d65dd9afcb"
+  },
+  "Media/Generated/blake3-e50ea4bf2c0726e0c72c2ddf09812ce4ded9aac249dfc6f6ed434cb3b1427c10": {
+    "bytes": 14362,
+    "sha256": "ccfb53d0011caf2ce500a21454926902495cc874298e7d3076d3d95cf209a030"
+  },
+  "Media/Generated/blake3-e51c20d858737285b907f940ef2b187155ecb021543bf5d0f7d1a698cbe12e95": {
+    "bytes": 2707,
+    "sha256": "5c49c5a81fae3aa239168ec0b7bfa4c7a2ab218e22b07abbaca1617d3d90242e"
+  },
+  "Media/Generated/blake3-ff982a7a72e36b525c4635086b8806d59f03a413c7acfd749fb1434d8c097d31": {
+    "bytes": 100939,
+    "sha256": "35b5bf96279290b97b04511efb8926444a1ff83894bffc95d787f2041abe6f1b"
+  },
+  "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1": {
+    "bytes": 39157,
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  },
+  "manifest.json": {
+    "bytes": 82,
+    "sha256": "41fba9a9db40b311caa2ff9277ceede17b1259d2c9a6bdb3fc977e711d114ca5"
+  },
+  "project.sqlite": {
+    "bytes": 589824,
+    "sha256": "1647f24c2ef4146688f3321c9de3310efec05fcdbc53103a3dcec5c662854e1b"
+  },
+  "project.sqlite-shm": {
+    "bytes": 32768,
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+  },
+  "project.sqlite-wal": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

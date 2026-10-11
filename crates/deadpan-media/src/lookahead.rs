@@ -103,6 +103,12 @@ impl LoopLookAhead {
             through,
         })
     }
+
+    /// The validated half-open picture window and inclusive virtual horizon.
+    /// Consumers use these together when preparing another picture provider.
+    pub fn window(self) -> (i64, i64, i64) {
+        (self.start, self.end, self.through)
+    }
 }
 
 impl DiscontinuityScan {

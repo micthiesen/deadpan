@@ -45,6 +45,7 @@ pub const REFINE_DELAY: Duration = Duration::from_millis(150);
 pub const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 
 mod endpoints;
+mod generated_ahead;
 mod interpretation;
 mod playback_cache;
 mod proposed;
@@ -203,6 +204,7 @@ struct Mailbox {
     /// playback picture (a stopped request, cancel, clear, shutdown) stops
     /// it without waiting for the worker.
     lookahead: Option<Arc<AtomicBool>>,
+    generated_ahead: Option<Arc<AtomicBool>>,
     /// This worker's pending plus in-progress work in process diagnostics,
     /// including idle proxy preparation.
     depth: Option<deadpan_diagnostics::Share>,
@@ -237,6 +239,7 @@ impl Mailbox {
             })
         {
             self.stop_lookahead();
+            self.stop_generated_ahead();
         }
         self.latest = Some(ticket);
         self.pending = Some(Request {
@@ -311,9 +314,16 @@ impl Mailbox {
         }
     }
 
+    fn stop_generated_ahead(&mut self) {
+        if let Some(stop) = self.generated_ahead.take() {
+            stop.store(true, Ordering::Release);
+        }
+    }
+
     fn stop(&mut self) {
         self.shutdown = true;
         self.stop_lookahead();
+        self.stop_generated_ahead();
         self.cancel_active();
         self.pending = None;
         self.reply = None;
@@ -328,6 +338,7 @@ impl Mailbox {
     fn cancel(&mut self) {
         self.cancel_active();
         self.stop_lookahead();
+        self.stop_generated_ahead();
         self.latest = None;
         self.pending = None;
         self.reply = None;
@@ -567,14 +578,16 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         } else {
             REFINE_DELAY
         };
-        playback_cache.select(&request, &mut session, playback);
-        let picture = perform_with(&request, &mut session, &mut proposal, slot);
+        let picture = playback_cache
+            .select(&request, &mut session, playback)
+            .and_then(|()| perform_with(&request, &mut session, &mut proposal, slot));
         let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
         let published = publish_reply(&shared, &context, &request, picture, started);
         if playback {
             // Position the look-ahead decoder at the edit's next
             // discontinuity, after this picture was published.
             schedule_lookahead(&shared, &request, playback_cache.original(&mut session));
+            playback_cache.prepare(&shared, &request, &session);
             // Between playback pictures, move the Original decoder toward a
             // picture ahead of the heard clock so exact pictures resume.
             if refine {
@@ -743,7 +756,7 @@ fn publish_reply(
     publish
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 enum SessionKey {
     Raw(u64),
     Project {
@@ -1196,21 +1209,12 @@ fn generated_picture(
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
-        let source = deadpan_cli::picture::open_generated_picture(
+        *retained = Some(admit_generated(
             media.generated(),
             document,
-            artifact,
-            cancelled,
-        )
-        .map_err(|error| error.to_string())?;
-        *retained = Some(RetainedSession {
             key,
-            source,
-            catalog: None,
-            costs: PlaybackPictures::default(),
-            reposition: None,
-            ahead: Ahead::default(),
-        });
+            cancelled,
+        )?);
     }
     let session = retained
         .as_mut()
@@ -1244,6 +1248,28 @@ fn generated_picture(
         picture_context: None,
         captions: Vec::new(),
         tier: PictureTier::Original,
+    })
+}
+
+fn admit_generated(
+    handle: &deadpan_store::generated_media::GeneratedReadHandle,
+    document: &deadpan_core::ProjectDocument,
+    key: SessionKey,
+    cancelled: &AtomicBool,
+) -> Result<RetainedSession, String> {
+    let SessionKey::Generated { media, .. } = &key else {
+        return Err("Generated admission requires an accepted media key.".into());
+    };
+    let source =
+        deadpan_cli::picture::open_generated_picture(handle, document, &media.artifact, cancelled)
+            .map_err(|error| error.to_string())?;
+    Ok(RetainedSession {
+        key,
+        source,
+        catalog: None,
+        costs: PlaybackPictures::default(),
+        reposition: None,
+        ahead: Ahead::default(),
     })
 }
 

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/time",
+    "-l",
+    "/tmp/deadpan-generated-prefetch-20261011/release-tests",
+    "worker::project_tests::generated_playback_tests",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.60928695788607,
+  "log_sha256": "4375d061ef4840b55d63956d3aa74164efcada7f0e62de012f487f088cfea857"
+}

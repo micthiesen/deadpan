@@ -76,7 +76,7 @@ fn generated_holds_preserve_both_verified_decoders_and_original_lookahead() {
         playing.loop_ahead = LoopLookAhead::new(0, 30, frame + 120);
         shared.mailbox.lock().unwrap().latest = Some(playing.ticket);
         let started = Instant::now();
-        cache.select(&playing, &mut retained, true);
+        cache.select(&playing, &mut retained, true).unwrap();
         let picture = perform_with(
             &playing,
             &mut retained,
@@ -163,7 +163,7 @@ fn generated_holds_preserve_both_verified_decoders_and_original_lookahead() {
     );
     // Stop back on Original restores it before releasing the other slot.
     let stopped = request(&workspace, sequence(0), 10_000);
-    cache.select(&stopped, &mut retained, false);
+    cache.select(&stopped, &mut retained, false).unwrap();
     let picture = perform(&stopped, &mut retained, &mut proposal).unwrap();
     assert_eq!(picture.frame.unwrap().bytes(), source_first.unwrap());
     let generated_index = generated_index.unwrap();
@@ -227,4 +227,107 @@ fn generated_playback_worker_matches_the_independent_single_slot_reader() {
     );
     worker.cancel();
     worker.shutdown();
+}
+
+fn prepare_generated(
+    fixture: &Fixture,
+    session: u64,
+) -> (
+    Arc<Workspace>,
+    Shared,
+    PlaybackCache,
+    Option<RetainedSession>,
+    deadpan_output::Generation,
+) {
+    let workspace = fixture.workspace(session);
+    let shared = Shared::default();
+    let mut cache = PlaybackCache::default();
+    let mut retained = None;
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let generation = feed.restart(0).unwrap();
+    let mut playing = request(&workspace, sequence(0), 1);
+    playing.ticket.transport = Some(generation);
+    shared.mailbox.lock().unwrap().latest = Some(playing.ticket);
+    cache.select(&playing, &mut retained, true).unwrap();
+    perform(&playing, &mut retained, &mut None).unwrap();
+    cache.prepare(&shared, &playing, &retained);
+    let deadline = Instant::now() + Duration::from_secs(15);
+    while !cache.generated_finished() {
+        assert!(
+            Instant::now() < deadline,
+            "Generated admission did not finish ahead of entry"
+        );
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    (workspace, shared, cache, retained, generation)
+}
+
+#[test]
+#[ignore = "requires the real accepted bundle fixture; see module documentation"]
+fn generated_admission_and_first_decode_finish_before_the_hold_is_requested() {
+    let fixture = fixture();
+    let (workspace, shared, mut cache, mut retained, generation) = prepare_generated(&fixture, 703);
+    let mut entry = request(&workspace, sequence(15), 2);
+    entry.ticket.transport = Some(generation);
+    shared.mailbox.lock().unwrap().latest = Some(entry.ticket);
+    let started = Instant::now();
+    cache.select(&entry, &mut retained, true).unwrap();
+    let admitted = retained
+        .as_ref()
+        .expect("the prefetched decoder was adopted before reading");
+    assert!(matches!(admitted.key, SessionKey::Generated { .. }));
+    assert_eq!(
+        admitted.source.decode_plan(SourceFrameId(0)),
+        deadpan_media::source_session::DecodePlan::Current
+    );
+    let index = admitted.source.shared_index();
+    let actual = perform(&entry, &mut retained, &mut None).unwrap();
+    eprintln!(
+        "prepared_generated_entry_seconds={}",
+        started.elapsed().as_secs_f64()
+    );
+    assert!(Arc::ptr_eq(
+        &index,
+        &retained.as_ref().unwrap().source.shared_index()
+    ));
+    let expected = perform(&entry, &mut None, &mut None).unwrap();
+    assert_eq!(
+        actual.frame.unwrap().bytes(),
+        expected.frame.unwrap().bytes()
+    );
+    cache.release(&mut retained);
+}
+
+#[test]
+#[ignore = "requires the real accepted bundle fixture; see module documentation"]
+fn cancelled_or_different_project_admissions_cannot_be_adopted() {
+    let fixture = fixture();
+    for cancel in [false, true] {
+        let (workspace, shared, mut cache, mut retained, generation) =
+            prepare_generated(&fixture, 704);
+        let workspace = if cancel {
+            let stop = shared
+                .mailbox
+                .lock()
+                .unwrap()
+                .generated_ahead
+                .clone()
+                .unwrap();
+            shared.mailbox.lock().unwrap().cancel();
+            assert!(stop.load(Ordering::Acquire));
+            workspace
+        } else {
+            fixture.workspace(705)
+        };
+        let mut entry = request(&workspace, sequence(15), 2);
+        entry.ticket.transport = Some(generation);
+        cache.select(&entry, &mut retained, true).unwrap();
+        assert!(
+            retained.is_none(),
+            "stale/cancelled preparation was not reused"
+        );
+        // A normal request can still recover through the authoritative reader.
+        perform(&entry, &mut retained, &mut None).unwrap();
+        cache.release(&mut retained);
+    }
 }
