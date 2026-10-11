@@ -1,0 +1,16 @@
+{
+  "reviewer": "Primary session only; no subagents",
+  "scope": "Only crates/deadpan-app/src/preview/harness/gain.rs changes runtime code. Production rendering, scrolling, commands, PCM and history are unchanged.",
+  "findings": [
+    "The prior 8-frame delay samples moving geometry while discrete-wheel smoothing is active. The 96-point waveform fits the 109-point compact clip; its final failed allocation was ten points above that clip.",
+    "A bounded native-scroll-state wait fixes overshoot. Repeating large 2048-point discrete bursts then exhausts the existing 6000-frame trace cap; that failed attempt is retained.",
+    "Precision placement uses real Start/Move/End trackpad events. End follows on another frame so it cannot clear the Move delta before egui consumes it. No scroll state is set directly.",
+    "Both compact and default viewports retain explicit discrete-wheel checks: native smoothing finishes, full -24-point motion is measured, and revision is unchanged.",
+    "Existing complete-graph, axis, hit-target and focus assertions remain. The global trace cap stays 6000; the final visual replay uses 5273 frames.",
+    "Five inspected final captures show complete waveform/curve axes, fixed action controls and keyboard-visible Retry; the wide curve retains its exact fields beside it. Board v3 remains a visual target, not a claim of complete workspace parity."
+  ],
+  "limits": [
+    "Offscreen Metal only; physical mouse/trackpad, OS IME, VoiceOver and acoustic quality are not established",
+    "Debug visual timings are not release-performance evidence"
+  ]
+}

@@ -4,14 +4,23 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Gain scrolling verification](../qualification/gain-scroll-2026-10-11.md)
+resolves the waveform replay failure as incorrect input sequencing: corrective
+wheel events arrived before native smoothing finished. Complete trackpad
+gestures and explicit settled mouse-wheel checks now pass all 296 Gain checks
+in visual replay and release runs at both 60 and 120 Hz. Full graph/axis and
+keyboard-focus assertions remain, and inspected compact/default captures fit.
+The correction is confined to the replay; DP-20 remains partial.
+
 [Final-picture handoff](../qualification/terminal-picture-2026-10-11.md)
 preserves the final useful decode through GPU submission after the exact audio
 endpoint. Twelve deterministic Original/Edit cases and seven real-device runs
 pass, presenting all 8,206 pictures without audio faults. One final picture
 completes after the admitted End update and is explicitly marked in the report;
 this fixes cancellation without claiming physical timeliness. Core checks and
-eight interaction replays pass. A Gain waveform visibility replay fails on
-both the previous and current binaries and remains open under DP-20.
+eight interaction replays pass. A Gain waveform visibility replay failed on
+both binaries; the subsequent scrolling qualification above resolves it as a
+replay input-sequencing defect.
 
 [Generated slice decoding](../qualification/generated-slices-2026-10-11.md)
 uses four FFV1 slice threads for preview while preserving single-threaded

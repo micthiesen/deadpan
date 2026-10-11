@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-gain-waveform-20261011/bin-diagnose/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "gain",
+    "--mode",
+    "visual",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-gain-waveform-20261011/diagnose-visual"
+  ],
+  "exit": 1,
+  "seconds": 89.6790012079291,
+  "log_sha256": "1c39a0fa4fd37977643ae63afbbfaea7e90bddfd24d54bed456304352753bb74"
+}

@@ -269,6 +269,19 @@ fn measured_waveform(
         resize_waveform_view(d, width, height)?;
         d.settled()?;
         frame_plot(d, WAVEFORM)?;
+        let before_scroll = control_rect(d, WAVEFORM).ok_or("No measured waveform allocation")?;
+        scroll_controls(d, -24.0, false)?;
+        let after_scroll = control_rect(d, WAVEFORM).ok_or("Wheel lost the measured waveform")?;
+        d.check(
+            "A discrete mouse wheel finishes smoothing and moves the measured waveform by its full delta",
+            (after_scroll.top() - before_scroll.top() + 24.0).abs() <= 1.0
+                && !d.harness.ctx.input(|input| input.is_scrolling())
+                && d.revision() == revision,
+            json!({"delta":-24,"scrolling":false,"revision":revision}),
+            json!({"delta":after_scroll.top()-before_scroll.top(),"revision":d.revision()}),
+        )?;
+        wheel_controls(d, 24.0)?;
+        frame_plot(d, WAVEFORM)?;
         toolbar_visible(d, width, height)?;
         d.capture("Measured stereo waveform at its fixed amplitude scale")?;
     }
@@ -803,8 +816,11 @@ fn frame_plot(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
         })
         .ok_or("Cannot find the painted gain scroller after returning to its top")?;
     let viewport = d.harness.ctx.content_rect();
+    let mut attempts = Vec::new();
+    let bounds = |rect: egui::Rect| [rect.min.x, rect.min.y, rect.max.x, rect.max.y];
     for attempt in 0..=4 {
         let graph = control_rect(d, label).ok_or("Audio graph has no accessible allocation")?;
+        attempts.push(json!({"attempt":attempt,"graph":bounds(graph),"clip":bounds(clip),"viewport":bounds(viewport),"scrolling":d.harness.ctx.input(|input| input.is_scrolling())}));
         if clip.contains_rect(graph) && viewport.contains_rect(graph) {
             let axes = d
                 .harness
@@ -849,7 +865,7 @@ fn frame_plot(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     }
     Err(format!(
         "Gain graph did not fit after bounded measured scrolling: {}",
-        control_diagnostic(d, label)
+        json!({"control":control_diagnostic(d, label),"attempts":attempts})
     ))
 }
 
@@ -1647,21 +1663,45 @@ fn control_diagnostic(d: &Driver<'_>, label: &str) -> Value {
 }
 
 fn wheel_controls(d: &mut Driver<'_>, delta: f32) -> Result<(), String> {
+    scroll_controls(d, delta, true)
+}
+
+fn scroll_controls(d: &mut Driver<'_>, delta: f32, trackpad: bool) -> Result<(), String> {
     let point = d.rect(DRAFT_FOCUS)?.center() + egui::vec2(0.0, 70.0);
-    d.events(
-        "Scroll within the gain draft controls",
-        vec![
-            egui::Event::PointerMoved(point),
-            egui::Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: egui::vec2(0.0, delta),
-                phase: egui::TouchPhase::Move,
-                modifiers: Modifiers::NONE,
-            },
-        ],
-    )?;
-    for _ in 0..8 {
-        d.step("Gain control scroll settles", false)?;
+    let wheel = |phase, delta| egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: egui::vec2(0.0, delta),
+        phase,
+        modifiers: Modifiers::NONE,
+    };
+    let mut events = vec![egui::Event::PointerMoved(point)];
+    if trackpad {
+        events.push(wheel(egui::TouchPhase::Start, 0.0));
     }
-    Ok(())
+    events.push(wheel(egui::TouchPhase::Move, delta));
+    d.events(
+        if trackpad {
+            "Trackpad scroll within the gain draft controls"
+        } else {
+            "Discrete mouse wheel within the gain draft controls"
+        },
+        events,
+    )?;
+    if trackpad {
+        // End on the next frame, after the Move delta was consumed. End in
+        // the same input batch would discard that delta before layout.
+        d.events(
+            "Finish gain trackpad scroll",
+            vec![wheel(egui::TouchPhase::End, 0.0)],
+        )?;
+    }
+    // Discrete wheels are smoothed; trackpad gestures end explicitly. Wait
+    // for native input to settle before measuring either one's new geometry.
+    for _ in 0..d.options.hz {
+        d.step("Gain control scroll settles", false)?;
+        if !d.harness.ctx.input(|input| input.is_scrolling()) {
+            return Ok(());
+        }
+    }
+    Err("Gain wheel input did not settle within one second of replay time".into())
 }

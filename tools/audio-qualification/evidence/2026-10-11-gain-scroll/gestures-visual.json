@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-gain-waveform-20261011/bin-gestures/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "gain",
+    "--mode",
+    "visual",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-gain-waveform-20261011/gestures-visual"
+  ],
+  "exit": 0,
+  "seconds": 122.29228283371776,
+  "log_sha256": "d3104a467648d1f51ce1312b0700169c5d3a4b0059b125479e6cf1741d4d79e2"
+}

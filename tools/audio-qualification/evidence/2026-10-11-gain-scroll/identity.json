@@ -1,0 +1,6 @@
+{
+  "base": "be4c8b7e82a24ee4f262154dd8827813df70a7c9",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "hardware": "hw.model: Mac17,7\nhw.memsize: 137438953472\nhw.ncpu: 18\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+}
