@@ -1,0 +1,23 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+    "DEADPAN_PREVIEW_EXPORT_RESULTS=/tmp/deadpan-streamed-input-20261011/export.json",
+    "DEADPAN_PREVIEW_EXPORT_ONLY=retime-half,pitch-shift,group-saturation",
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "every_recipe_export_matches_its_committed_preview",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 159.7830403340049,
+  "log_sha256": "66950ec380094376850e91e7ad24b2f76702a849e9edbec801c19c10d3a9299d"
+}

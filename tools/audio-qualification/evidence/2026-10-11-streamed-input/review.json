@@ -1,0 +1,21 @@
+{
+  "reviewer": "main session; no subagents",
+  "scope": [
+    "Exact-rate rounding, negative priming union and buffered/EOF reads; native oracle keeps the original full-source interface.",
+    "Window construction order, no moves, call-scoped borrow clearing, checked views and output-before-publication validation.",
+    "Cancellation before native work, poisoning only after processing failure, and no Rust callbacks or unsafe outside ffi.",
+    "Recursive work/residency reservations; complete input dependency/PCM admission even after output ends; no cache publication on failure.",
+    "Owned adapter and non-streamed Hold bounds retained; default core/worker budgets agree; no schema or engine ID changes.",
+    "Two-minute independent plan/WAV mapping plus exact native reference; old core/audio failures reproduced on a separate target."
+  ],
+  "resolved": [
+    "Obsolete default hard-cap fixture now configures its limit.",
+    "Constant assertion moved into a const block.",
+    "Added unused-input dependency rejection regression after reviewing shortened output."
+  ],
+  "remaining": [
+    "Output is still a resident cache; cumulative work and deadlines remain bounded.",
+    "No long encoded export, live GUI, physical-device or listening claim.",
+    "43 unrelated export recipes not rerun in the scoped release check."
+  ]
+}

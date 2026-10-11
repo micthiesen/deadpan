@@ -17,6 +17,15 @@ semitones in both modes. Reads accept at most 256 frames. Configuration owns
 additional native DSP state; the retained-input bound is not a process-memory
 or allocation guarantee.
 
+`StreamRecipe` and `StreamingStretch` supply the exact-rate schedule through
+bounded call-scoped windows, with positive logical u32 lengths. Call
+`required_input(requested)` before each read and provide that exact range from
+the same immutable signal. The largest admitted window is 65,536 stereo frames;
+later calls need at most 2,048. No input pointer survives the call, and invalid
+or cancelled supplies do not advance DSP. The host separately bounds total
+work, validates unused input and owns output storage. The shared stage worker
+uses this path without changing the schedule or its engine ID.
+
 `FixedPeakBank` is a separate worker-side finite FIR detector, not a limiter. It
 copies a bounded 15-by-129 f64 coefficient table at construction and prepares
 the portable Signalsmith real-FFT kernels once. Each call consumes exactly 1152
@@ -107,3 +116,9 @@ Compile `tests/finite_peak_abi_probe.cpp` with `src/finite_peak.cpp` and the sam
 flags and include paths to exercise the detector's fixed ABI lengths, coefficient
 and sample admission, direct impulse response, output guards and independent
 plans.
+
+Compile `tests/streaming_probe.cpp` with `src/streaming.cpp` and the same
+sanitizer flags to compare bounded input against the original complete-source
+interface, including a two-minute input, irregular reads, extreme rates,
+invalid windows, nonfinite input, output guards and EOF. See
+[streamed-input qualification](../../docs/qualification/streamed-input-2026-10-11.md).

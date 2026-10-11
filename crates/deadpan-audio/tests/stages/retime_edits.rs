@@ -551,9 +551,18 @@ fn shifted_stages_keep_their_bound_pcm_through_insert_split_and_move() {
 }
 
 #[test]
-fn the_edit_time_preserve_bound_is_the_processor_input_bound() {
+fn edit_time_preserve_bounds_match_default_preparation_work_and_output() {
+    let limits = StageLimits::default();
     assert_eq!(
         deadpan_core::MAX_PRESERVE_INPUT_SAMPLES,
-        i128::from(deadpan_dsp::MAX_INPUT_FRAMES)
+        i128::from(limits.maximum_input_frames)
+    );
+    assert_eq!(
+        deadpan_core::MAX_PRESERVE_OUTPUT_SAMPLES,
+        i128::from(limits.maximum_output_frames)
+    );
+    assert_eq!(
+        deadpan_core::MAX_PRESERVE_WORK_SAMPLES,
+        i128::from(limits.maximum_prepared_frames)
     );
 }

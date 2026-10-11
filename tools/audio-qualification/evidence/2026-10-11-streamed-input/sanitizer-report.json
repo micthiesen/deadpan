@@ -1,0 +1,33 @@
+{
+  "command": [
+    "clang++",
+    "-std=c++17",
+    "-O2",
+    "-g",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-arch",
+    "arm64",
+    "-mmacosx-version-min=15.0",
+    "-fsanitize=address,undefined",
+    "-fno-omit-frame-pointer",
+    "-fno-sanitize-recover=all",
+    "-Inative/deadpan-dsp/src",
+    "-isystem",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/include",
+    "-isystem",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include",
+    "native/deadpan-dsp/src/streaming.cpp",
+    "native/deadpan-dsp/tests/streaming_probe.cpp",
+    "-o",
+    "/tmp/deadpan-streamed-input-20261011/streaming-probe"
+  ],
+  "exit": 0,
+  "binary_sha256": "ebe4e9faadf52c5aa3348cea642acba4a086b453ff0e7aa1f0e3f4ee3e0991c5",
+  "report": {
+    "compared_stereo_frames": 3030017,
+    "maximum_input_window": 27968
+  },
+  "limitation": "LeakSanitizer is unavailable on this macOS; ASan and UBSan enabled."
+}

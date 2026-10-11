@@ -11,7 +11,9 @@ use deadpan_core::{
     AssetId, AudioSample, AudioTimingId, ExactRatio, FrameDuration, FrameRate, InstancePath,
     IterationId, ProjectId, RevisionId, SourceAudio, SourceAudioMapping, SourcePoint, TimeError,
 };
-use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
+#[cfg(test)]
+use deadpan_dsp::{CanonicalRecipe, CanonicalStretch};
+use deadpan_dsp::{StereoPcm, StreamRecipe, StreamingStretch, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
     AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
@@ -97,7 +99,7 @@ pub struct StageLimits {
 impl Default for StageLimits {
     fn default() -> Self {
         Self {
-            maximum_input_frames: deadpan_dsp::MAX_INPUT_FRAMES,
+            maximum_input_frames: 16 * 1024 * 1024,
             maximum_output_frames: deadpan_dsp::MAX_OUTPUT_FRAMES,
             maximum_resident_frames: 16 * 1024 * 1024,
             maximum_cached_stages: 64,
@@ -565,7 +567,7 @@ impl StageAudio {
         limits: StageLimits,
     ) -> Result<Self, StageAudioError> {
         if limits.maximum_input_frames == 0
-            || limits.maximum_input_frames > deadpan_dsp::MAX_INPUT_FRAMES
+            || limits.maximum_input_frames > 16 * 1024 * 1024
             || limits.maximum_output_frames == 0
             || limits.maximum_output_frames > deadpan_dsp::MAX_OUTPUT_FRAMES
             || limits.maximum_resident_frames == 0
@@ -1605,7 +1607,7 @@ impl StageAudio {
         let output_frames = u32::try_from(output_signal.sample_count()?.0)
             .map_err(|_| StageAudioError::Limit("output frames"))?;
         let rate = stage.descriptor().rate;
-        let recipe = CanonicalRecipe::with_rate(
+        let recipe = StreamRecipe::new(
             input_frames,
             output_frames,
             StretchRate::new(
@@ -1614,7 +1616,7 @@ impl StageAudio {
             )?,
             i32::from(stage.descriptor().pitch.semitones()),
         );
-        let reservation = self.reserve(input_frames, output_frames, control)?;
+        let reservation = self.reserve_stream(input_frames, output_frames, control)?;
         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
             self.build_stage(
                 (&input_signal).into(),
@@ -1668,6 +1670,35 @@ impl StageAudio {
         output_frames: u32,
         control: WorkControl<'_>,
     ) -> Result<u64, StageAudioError> {
+        // Non-streamed Hold preparation keeps its separately qualified bound.
+        if input_frames > deadpan_dsp::MAX_INPUT_FRAMES {
+            return Err(StageAudioError::Limit("input frames"));
+        }
+        self.reserve_pcm(
+            input_frames,
+            output_frames,
+            u64::from(input_frames) * 2,
+            control,
+        )
+    }
+
+    fn reserve_stream(
+        &mut self,
+        input_frames: u32,
+        output_frames: u32,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
+        let window = u64::from(input_frames).min(deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u64);
+        self.reserve_pcm(input_frames, output_frames, window * 2, control)
+    }
+
+    fn reserve_pcm(
+        &mut self,
+        input_frames: u32,
+        output_frames: u32,
+        input_residency: u64,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
         if input_frames == 0 || input_frames > self.limits.maximum_input_frames {
             return Err(StageAudioError::Limit("input frames"));
         }
@@ -1687,7 +1718,7 @@ impl StageAudio {
         }
         // Account for interleaved input and its planar conversion simultaneously,
         // plus output. Recursive preparations share the same residency budget.
-        let reservation = u64::from(input_frames) * 2 + u64::from(output_frames);
+        let reservation = input_residency + u64::from(output_frames);
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         Ok(reservation)
@@ -1970,7 +2001,7 @@ impl StageAudio {
         &mut self,
         input: SignalInput<'_, '_>,
         output: SignalInput<'_, '_>,
-        recipe: CanonicalRecipe,
+        recipe: StreamRecipe,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
         depth: usize,
@@ -1992,32 +2023,38 @@ impl StageAudio {
             }
             validated = end;
         }
-        let mut input_pcm = Vec::with_capacity(recipe.input_frames() as usize);
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
-        while input_pcm.len() < recipe.input_frames() as usize {
-            control.check()?;
-            let start = SignalSample(input_pcm.len() as i64);
-            let frames = (recipe.input_frames() - input_pcm.len() as u32).min(MAX_OUTPUT_FRAMES);
-            let block = self.read_signal(input, provider, start, frames, control, depth)?;
-            input_pcm.extend(block.samples);
-            dependencies.extend(block.dependencies);
-            relative_depth = relative_depth.max(block.relative_depth);
-        }
-        check_cancel(cancelled)?;
-        let (left, right) = input_pcm
-            .into_iter()
-            .map(|frame| (frame[0], frame[1]))
-            .unzip();
-        let mut dsp = CanonicalStretch::new(recipe, StereoPcm::new(left, right)?)?;
+        let mut input_end = 0;
+        let mut dsp = StreamingStretch::new(recipe)?;
         let mut samples = Vec::with_capacity(recipe.output_frames() as usize);
         while samples.len() < recipe.output_frames() as usize {
             control.check()?;
             let frames =
                 (recipe.output_frames() as usize - samples.len()).min(MAX_OUTPUT_FRAMES as usize);
+            let range = dsp.required_input(frames)?;
+            if !range.is_empty() && range.start != input_end {
+                return Err(deadpan_dsp::DspError::NativeReport.into());
+            }
+            let block = self.read_stage_input(input, range.clone(), provider, control, depth)?;
+            if !range.is_empty() {
+                input_end = range.end;
+            }
+            dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
+            let (input_left, input_right): (Vec<_>, Vec<_>) = block
+                .samples
+                .into_iter()
+                .map(|frame| (frame[0], frame[1]))
+                .unzip();
             let mut left = [0.0; MAX_OUTPUT_FRAMES as usize];
             let mut right = [0.0; MAX_OUTPUT_FRAMES as usize];
-            let read = dsp.read(&mut left[..frames], &mut right[..frames], cancelled)?;
+            let read = dsp.read(
+                range.start,
+                [&input_left, &input_right],
+                [&mut left[..frames], &mut right[..frames]],
+                cancelled,
+            )?;
             if read != frames {
                 return Err(deadpan_dsp::DspError::NativeReport.into());
             }
@@ -2035,6 +2072,23 @@ impl StageAudio {
             )?;
             samples.extend(block);
         }
+        // Explicit-rate output can end before retained input does. Preserve
+        // full input admission and finite/peak validation without keeping it.
+        while input_end < recipe.input_frames() {
+            let end = input_end
+                .saturating_add(MAX_OUTPUT_FRAMES)
+                .min(recipe.input_frames());
+            let block = self.read_stage_input(input, input_end..end, provider, control, depth)?;
+            dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
+            let (left, right) = block
+                .samples
+                .into_iter()
+                .map(|frame| (frame[0], frame[1]))
+                .unzip();
+            StereoPcm::new(left, right)?;
+            input_end = end;
+        }
         control.check()?;
         Ok(SignalBlock {
             samples,
@@ -2043,6 +2097,45 @@ impl StageAudio {
             // second full-stage interval cache or scale rounded input masks.
             suppressed: Vec::new(),
             relative_depth,
+        })
+    }
+
+    fn read_stage_input(
+        &mut self,
+        input: SignalInput<'_, '_>,
+        range: Range<u32>,
+        provider: &mut impl AudioSourceProvider,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<SignalBlock, StageAudioError> {
+        let mut samples = Vec::with_capacity((range.end - range.start) as usize);
+        let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
+        let mut at = range.start;
+        while at < range.end {
+            control.check()?;
+            let frames = (range.end - at).min(MAX_OUTPUT_FRAMES);
+            let block = self.read_signal(
+                input,
+                provider,
+                SignalSample(i64::from(at)),
+                frames,
+                control,
+                depth,
+            )?;
+            if block.samples.len() != frames as usize {
+                return Err(PlanError::InvalidPlan("incomplete streamed stage input").into());
+            }
+            samples.extend(block.samples);
+            dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
+            at += frames;
+        }
+        Ok(SignalBlock {
+            samples,
+            dependencies,
+            relative_depth,
+            suppressed: Vec::new(),
         })
     }
 
@@ -2752,6 +2845,77 @@ mod controlled_reads {
         .unwrap();
         let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
         (doc, Provider { prepared, calls: 0 })
+    }
+
+    #[test]
+    fn shortened_streamed_output_still_admits_unused_input_dependencies() {
+        struct Unavailable(usize);
+        impl AudioSourceProvider for Unavailable {
+            fn source(
+                &mut self,
+                _: &ProjectId,
+                _: &RevisionId,
+                _: &AssetId,
+                _: &AtomicBool,
+            ) -> Result<&crate::PreparedSource, PreparationError> {
+                self.0 += 1;
+                Err(PreparationError::SourceUnavailable("unused tail".into()))
+            }
+        }
+        let (document, _) = fixture_document_at_rate(FrameRate::new(48_000, 1).unwrap());
+        let mut wire = serde_json::to_value(document).unwrap();
+        wire["nodes"]["a"] = serde_json::to_value(BeatNode::hold(
+            "Silent prefix",
+            HoldRecipe {
+                picture_context: None,
+                duration: FrameDuration::new(32_768).unwrap(),
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            },
+        ))
+        .unwrap();
+        let plan = Arc::new(
+            RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap(),
+        );
+        let signal = plan.audio_signal();
+        let recipe = StreamRecipe::new(
+            u32::try_from(signal.sample_count().unwrap().0).unwrap(),
+            1,
+            StretchRate::new(1, 1).unwrap(),
+            0,
+        )
+        .unwrap();
+        // The DSP emits its entire output before it needs any source media.
+        assert!(
+            StreamingStretch::new(recipe)
+                .unwrap()
+                .required_input(1)
+                .unwrap()
+                .end
+                < 32_768
+        );
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let mut provider = Unavailable(0);
+        let cancelled = AtomicBool::new(false);
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled: &cancelled,
+            deadline: Instant::now() + Duration::from_secs(10),
+            work: &work,
+        };
+        let result = renderer.build_stage(
+            (&signal).into(),
+            (&signal).into(),
+            recipe,
+            &mut provider,
+            control,
+            0,
+        );
+        assert!(matches!(result, Err(StageAudioError::Preparation(
+            PreparationError::SourceUnavailable(ref message)
+        )) if message == "unused tail"));
+        assert_eq!(provider.0, 1);
+        assert_eq!(renderer.cached_stage_count(), 0);
     }
 
     #[test]

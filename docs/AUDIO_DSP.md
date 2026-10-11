@@ -3,14 +3,27 @@
 `native/deadpan-dsp` wraps the measured Signalsmith Stretch schedule in a safe
 Rust API. The crate vendors the exact pinned Stretch 1.3.2 and Linear 0.3.1
 headers and complete MIT notices. Cargo builds C++17 with the portable FFT and
-does not download dependencies. Unsafe code is isolated in `src/ffi.rs`.
+does not download dependencies. Unsafe code is isolated in the `src/ffi` module.
 
 `StereoPcm` owns two immutable planar 48 kHz channels. Admission requires equal,
 nonempty lengths of at most 1,048,576 frames, finite samples, and an absolute
 peak no greater than 16.0. The ceiling rejects extreme input; it never normalizes
-or clips accepted samples. This bound currently limits a preparation to about
-21.85 seconds of input. It is not a transparent streaming solution for long
-clips, and arbitrary chunking must not reset the DSP phase.
+or clips accepted samples. This remains the owned-input API's bound.
+
+`StreamingStretch` uses `StreamRecipe` and the same exact-rate schedule with
+positive logical u32 input/output lengths. `required_input` reports the exact
+half-open input window needed by the next read without advancing DSP. A read
+borrows that window synchronously and retains no caller PCM. Priming plus one
+output quantum fits within 65,536 input frames; later windows contain at most
+2,048. Rust and C++ validate exact window identity, lengths, finite values and
+the same peak ceiling before processing. Invalid or cancelled supplies preserve
+progress and output. No Rust callback crosses the ABI. Input windows do not
+restart, seek or otherwise change the canonical processor.
+
+Logical lengths allocate no whole input/output arrays in this API. The host
+must bound preparation work and admit the complete input, including dependencies
+or invalid samples beyond a shortened output. The shared stage worker performs
+that scan, retains bounded output and continues to enforce its deadline.
 
 `CanonicalRecipe::new` retains the legacy positive input/output counts and
 their ratio, bounded to 1/8 through 8. `CanonicalRecipe::with_rate` instead takes
@@ -42,7 +55,10 @@ renderer there. Reads accept equal caller-owned buffers of at most 256 frames.
 Internal processing remains 256 frames regardless of consumer partitioning.
 The C ABI catches all exceptions, validates lengths and finite output, stages
 output before publishing it, and poisons the renderer after a processing failure.
-The native source and output pointers never cross a Rust callback.
+The native source and output pointers never cross a Rust callback. The streaming
+engine is also neither Send nor Sync; its ABI clears borrowed PCM pointers on
+every return path. The checked window view refuses any access outside the
+admitted range, including under sanitizer builds.
 
 Cancellation is cooperative before each bounded native read. The first read
 also runs a fixed, rate-bounded negative-context priming sequence; it cannot be

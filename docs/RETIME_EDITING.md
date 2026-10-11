@@ -102,9 +102,9 @@ PCM in `rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm`
 `audio-treatments` replay and the `pitch-shift` preview/export fixture, which
 measures a 1 kHz tone pause shifted an octave at about 4,000 zero crossings per
 second against 2,000 for the unshifted tone. `WrapRetime` and `SetRetime`
-refuse a processing stage whose input exceeds the processor's 1,048,576-sample
-bound (`MAX_PRESERVE_INPUT_SAMPLES`, about 21.8 s) or whose output exceeds eight
-times it, at edit time; tape speed is unaffected.
+refuse a processing stage exceeding 16,777,216 combined input/output samples
+or 8,388,608 output samples at edit time; tape speed is unaffected. Streamed
+input no longer requires a full input buffer or the old 21.8-second cap.
 
 ## Verification boundaries
 
@@ -114,12 +114,13 @@ does not add a separate preview algorithm. Native descendants under Repeat or
 Retime, arbitrary range/occurrence selection, reverse, variable speed, independent
 pitch shifting, mastered output and encoded export remain open.
 
-The current Preserve preparation path bounds each stage to 1,048,576 input
-audio frames and 8,388,608 output audio frames. At 48 kHz its input cap is about 21.8 seconds.
-Authoring a longer stage is valid, but audition can report
-`AudioPreparationLimit`; this increment does not qualify streaming Preserve
-preparation for a whole long Original. Tape speed uses the existing bounded
-resampler. A requested speed that quantizes to unity needs no Preserve stage.
+The current Preserve preparation path streams at most 65,536 input frames
+at once and retains at most 8,388,608 output frames. The shared preparation
+budget counts 16,777,216 input plus output frames across newly prepared stages;
+nested stages can exhaust it even when each individual edit fits. Output storage
+still bounds long preparations. See [streamed-input qualification](qualification/streamed-input-2026-10-11.md).
+Tape speed uses the existing bounded resampler. A requested speed that quantizes
+to unity needs no Preserve stage.
 
 The `retime` UI replay exercises pointer entry/cancel, command preview, initial
 wrapping, adjustment without compounding, explicit nesting, three undos and

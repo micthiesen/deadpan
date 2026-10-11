@@ -6,6 +6,9 @@ use std::ptr::NonNull;
 
 use crate::{CanonicalRecipe, DspError, PeakBankError, Schedule, StereoPcm};
 
+mod streaming;
+pub(super) use streaming::StreamEngine;
+
 unsafe extern "C" {
     fn dp_dsp_create(
         left: *const f32,

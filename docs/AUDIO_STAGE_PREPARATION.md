@@ -57,9 +57,10 @@ An outer crop or random seek must reproduce the corresponding portion of the
 full stage render; it must not redefine an inner stage's history. Integer cache
 capacity can enclose a fractional extent but cannot change it. Bind original
 identities, speaker layouts, exact grids/extents, ordered stage recipes, context
-policies and engine versions in prepared-cache provenance. The current native
-1,048,576-frame input limit applies to every intermediate; reject excess until
-a qualified long-input strategy exists, rather than resetting arbitrary chunks.
+policies and engine versions in prepared-cache provenance. Preserve input now
+streams through bounded windows while retaining one continuous processor.
+Its complete input/output work and retained output still require admission;
+streaming never resets a stage or changes its exact rate.
 
 `AudioStage` handles borrow their plan and cannot be reconstructed from a foreign
 descriptor. `AudioSignal` uses distinct `SignalSample` indices. Its point grid
@@ -98,7 +99,11 @@ is private to one immutable plan and one executable's engine implementations.
 
 Default admission limits are:
 
-- 1,048,576 input and 8,388,608 output frames per Preserve stage, depth 32.
+- At most 16,777,216 logical input and 8,388,608 retained output frames per
+  Preserve stage, depth 32, also subject to the combined work limit below.
+- At most 65,536 input frames resident in the streaming window; its interleaved
+  and planar conversion are reserved together. Non-streamed Hold preparation
+  retains its separate 1,048,576-frame input bound.
 - 16,777,216 resident stereo-frame equivalents, including simultaneous input
   conversion, output and pinned descendants; at most 64 cached stages with LRU
   eviction. Native FFT state, decoder caches and a bounded sampler halo are
@@ -128,6 +133,10 @@ rounding and indexed billion-play queries. See
 [qualification](qualification/audio-stages-2026-09-21.md) for the repository gate
 and real process evidence.
 
-Long-input preparation, fractional pitch, variable rates/reverse, full voice
-effects, gain/fades, tails, room-tone selection/audition, true-peak mastering, listening, background
-cache scheduling, device timing and preview/export equivalence remain open.
+Input streaming is covered by the [streamed-input qualification](qualification/streamed-input-2026-10-11.md),
+including a two-minute decoded-WAV signal, cold seeks and complete output
+comparison under a PCM budget smaller than the input. Output still resides
+in memory; disk-backed long-output preparation and background cache scheduling
+remain open. Fractional pitch, variable rates, remaining voice/group effects,
+full mastering, listening and the complete device/preview/export corpus remain
+open; this qualification does not close DP-09 or DP-16.

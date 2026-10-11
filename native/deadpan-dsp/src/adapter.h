@@ -30,6 +30,23 @@ int32_t dp_dsp_read(void *engine, float *left, float *right, uint32_t requested,
                     uint32_t *written) DP_DSP_NOEXCEPT;
 void dp_dsp_destroy(void *engine) DP_DSP_NOEXCEPT;
 
+// Streaming exact-rate renderer. Only the requested input window is borrowed,
+// synchronously during read; no PCM pointer survives the call. The logical
+// lengths are positive u32 values and do not allocate whole input/output PCM.
+int32_t dp_dsp_stream_create(uint32_t input_frames, uint32_t output_frames,
+    uint64_t numerator, uint64_t denominator, int32_t pitch, void **output) DP_DSP_NOEXCEPT;
+// Reports a half-open source range of at most 65536 frames. No DSP is advanced.
+int32_t dp_dsp_stream_required(void *engine, uint32_t requested,
+    uint32_t *start, uint32_t *frames) DP_DSP_NOEXCEPT;
+// The supplied range must match required(requested) exactly. Each source array
+// holds input_frames floats; output arrays hold requested <=256 floats.
+// Scalar/range validation precedes any array access. Failure leaves output
+// untouched; only a failure after DSP advancement poisons the renderer.
+int32_t dp_dsp_stream_read(void *engine, uint32_t input_start,
+    const float *input_left, const float *input_right, uint32_t input_frames,
+    float *left, float *right, uint32_t requested, uint32_t *written) DP_DSP_NOEXCEPT;
+void dp_dsp_stream_destroy(void *engine) DP_DSP_NOEXCEPT;
+
 #ifdef __cplusplus
 }
 #endif

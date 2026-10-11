@@ -1,0 +1,9 @@
+{
+  "revision": "913b4f226d772d40a5294432d3204903b9ed80ec",
+  "archive_sha256": "59384583692d0ecb5662e74e1287bfe39ec6699d88ed31a0f1cf384cc05dc10f",
+  "test_overlays": {
+    "crates/deadpan-core/tests/retime_edits.rs": "5775b37472f3eff0ecc104f25bd06b8a2d72c9d55c9d3ce43502e8b002676dd6",
+    "crates/deadpan-audio/tests/stages.rs": "25bdaef4026f8b9a55f5f019d7057fe1338b36dbb431b3f480944bb1aaec6b3c"
+  },
+  "target": "/tmp/deadpan-group-mix-20261011/old-target"
+}

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-streamed-input-20261011/baseline.py"
+  ],
+  "exit": 101,
+  "seconds": 13.515699500218034,
+  "log_sha256": "b701082457908eb9eb3ca8f0592c1141bf6d07569af69a48947ec3db0afc1d91"
+}

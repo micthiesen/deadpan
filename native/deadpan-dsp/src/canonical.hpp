@@ -85,6 +85,20 @@ public:
     int lookahead() const { return lookahead_; }
     std::int64_t position() const { return position_; }
 
+    // Real source samples needed by the next bounded read. Priming may run
+    // many negative quanta, but their union ends at the first output quantum.
+    // The source itself is zero-extended by View, so callers never supply pad.
+    std::array<std::int64_t, 2> required_input(int requested) const {
+        if (requested < 0 || requested > quantum)
+            throw std::invalid_argument("invalid streamed output count");
+        auto count = std::min<std::int64_t>(requested, output_frames_ - position_);
+        if (count <= buffered_ - consumed_) return {0, 0};
+        auto first = lookahead_ + boundary(cursor_);
+        auto last = lookahead_ + boundary(std::max<std::int64_t>(cursor_, 0) + quantum);
+        return {std::clamp(first, std::int64_t(0), input_frames_),
+                std::clamp(last, std::int64_t(0), input_frames_)};
+    }
+
 private:
     struct View {
         const Source &source;

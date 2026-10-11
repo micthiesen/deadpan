@@ -14,6 +14,9 @@ use thiserror::Error;
 #[allow(unsafe_code)]
 mod ffi;
 mod finite_peak;
+mod streaming;
+
+pub use streaming::{MAX_STREAM_WINDOW_FRAMES, StreamRecipe, StreamingStretch};
 
 pub use finite_peak::{
     FIXED_PEAK_ENGINE_ID, FIXED_PEAK_INPUT_FRAMES, FIXED_PEAK_OUTPUT_FRAMES, FIXED_PEAK_RADIUS,

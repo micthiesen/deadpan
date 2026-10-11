@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-dsp",
+    "stream"
+  ],
+  "exit": 0,
+  "seconds": 12.937108374666423,
+  "log_sha256": "804392ab4cd3479ebf4f1d472da5c797786278bfb529eb9e925eb28e163b0b98"
+}

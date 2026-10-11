@@ -1,0 +1,98 @@
+[
+  {
+    "audio_windows": 2,
+    "blocks_compared": 82,
+    "declared_audio_priming": 2048,
+    "failures": [],
+    "fixture": "group-saturation",
+    "frames": 54,
+    "max_block_level_db": 0.1745672000350691,
+    "max_thumbnail_mad": 0.03147078804347826,
+    "min_block_snr_db": 20.94495503745105,
+    "min_chroma_psnr_db": 54.20114864959314,
+    "min_luma_psnr_db": 58.00521393946159,
+    "min_neighbor_margin_db": 0.0,
+    "offsets": [
+      [
+        "verified_zero",
+        0
+      ],
+      [
+        "verified_zero",
+        0
+      ]
+    ],
+    "passed": true,
+    "pictures": 54,
+    "render_seconds": 1.582097375,
+    "rows": [
+      "Saturation",
+      "Group mixing"
+    ],
+    "signal_windows": 2,
+    "verify_seconds": 0.81505775
+  },
+  {
+    "audio_windows": 2,
+    "blocks_compared": 82,
+    "declared_audio_priming": 2048,
+    "failures": [],
+    "fixture": "pitch-shift",
+    "frames": 54,
+    "max_block_level_db": 0.48009190596468443,
+    "max_thumbnail_mad": 0.03147078804347826,
+    "min_block_snr_db": 20.997456160138526,
+    "min_chroma_psnr_db": 54.20114864959314,
+    "min_luma_psnr_db": 58.00521393946159,
+    "min_neighbor_margin_db": 0.0,
+    "offsets": [
+      [
+        "verified_zero",
+        0
+      ],
+      [
+        "verified_zero",
+        0
+      ]
+    ],
+    "passed": true,
+    "pictures": 54,
+    "render_seconds": 1.454707417,
+    "rows": [
+      "Pitch shift",
+      "Stretch / pitch"
+    ],
+    "signal_windows": 2,
+    "verify_seconds": 0.729641667
+  },
+  {
+    "audio_windows": 1,
+    "blocks_compared": 1,
+    "declared_audio_priming": 2048,
+    "failures": [],
+    "fixture": "retime-half",
+    "frames": 42,
+    "max_block_level_db": 0.03764256790799436,
+    "max_thumbnail_mad": 0.05022078804347826,
+    "min_block_snr_db": 31.75942898131361,
+    "min_chroma_psnr_db": 53.44486901527713,
+    "min_luma_psnr_db": 56.454656378842394,
+    "min_neighbor_margin_db": 0.0,
+    "offsets": [
+      [
+        "verified_zero",
+        0
+      ]
+    ],
+    "passed": true,
+    "pictures": 42,
+    "render_seconds": 1.5311865409999998,
+    "rows": [
+      "Slow delivery",
+      "Retime",
+      "Stretch / pitch"
+    ],
+    "signal_windows": 1,
+    "verify_seconds": 0.743000542
+  }
+]

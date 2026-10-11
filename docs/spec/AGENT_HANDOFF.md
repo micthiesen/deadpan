@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Streamed Preserve input](../qualification/streamed-input-2026-10-11.md)
+removes the complete-input allocation and 21.8-second authoring cap while
+preserving the canonical schedule. The worker retains one processor, bounded
+input windows, whole-input dependency admission and explicit output/work limits.
+A two-minute decoded-WAV signal fits a PCM budget smaller than its input;
+native owned-input comparisons are exact. Disk-backed output, background cache
+scheduling and the remaining audio pipeline keep DP-09/DP-16 partial.
+
 [Retained group clocks](../qualification/group-clocks-2026-10-11.md) fixes
 saturation after fractional-sample timeline moves. Shared memoryless treatments
 may use different clocks when their evaluated programs agree at every sample;

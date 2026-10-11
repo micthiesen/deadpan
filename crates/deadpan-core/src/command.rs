@@ -3497,10 +3497,11 @@ impl fmt::Display for EditError {
 }
 impl Error for EditError {}
 
-/// The canonical time/pitch processor prepares at most this many input
-/// samples per stage (`deadpan_dsp::MAX_INPUT_FRAMES`, about 21.8 s at 48 kHz)
-/// and eight times as many output samples.
-pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 1_048_576;
+/// Streamed input is work, rather than resident PCM. The shared preparation
+/// budget counts input plus output; output still occupies a bounded PCM cache.
+pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 16_777_216;
+pub const MAX_PRESERVE_OUTPUT_SAMPLES: i128 = 8_388_608;
+pub const MAX_PRESERVE_WORK_SAMPLES: i128 = 16_777_216;
 
 /// Refuse a pitch-preserving or pitch-shifting stage the processor cannot
 /// prepare, at edit time rather than at playback or export.
@@ -3522,11 +3523,12 @@ fn check_preserve_bound(
         (numerator + denominator - 1) / denominator
     };
     if samples(input) > MAX_PRESERVE_INPUT_SAMPLES
-        || samples(output) > 8 * MAX_PRESERVE_INPUT_SAMPLES
+        || samples(output) > MAX_PRESERVE_OUTPUT_SAMPLES
+        || samples(input) + samples(output) > MAX_PRESERVE_WORK_SAMPLES
     {
         return Err(EditError::new(
             EditErrorCode::LimitExceeded,
-            "pitch-preserving processing handles at most about 21.8 seconds of input; split the beat first or choose pitch=tape",
+            "pitch-preserving processing exceeds its preparation budget (about 349 seconds combined input/output, at most 175 seconds output); shorten the stage or choose pitch=tape",
         ));
     }
     Ok(())

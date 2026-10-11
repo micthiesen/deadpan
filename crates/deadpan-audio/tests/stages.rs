@@ -44,6 +44,9 @@ mod retime_edits;
 #[path = "stages/gain.rs"]
 mod gain;
 
+#[path = "stages/streaming.rs"]
+mod streaming;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -1440,7 +1443,7 @@ fn cancellation_during_source_access_leaves_no_partial_stage_and_retry_replays_e
 }
 
 #[test]
-fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
+fn nested_depth_and_configured_input_limits_fail_without_decoding_originals() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let nested = plan(
         rate,
@@ -1494,20 +1497,27 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
         cutaways: Vec::new(),
         captions: Vec::new(),
     };
-    let mut renderer = StageAudio::new(plan(
-        rate,
-        &["stretch"],
-        [
-            ("source", source(rate, 8192, 0..8192)),
-            ("repeat", repeated),
-            (
-                "stretch",
-                retime("repeat", 528_384, 0..1_056_768, PitchPolicy::Preserve),
-            ),
-        ],
-    ));
-    // A tiny late read still requires continuous full-stage history. It must
-    // reject the native cap, never manufacture support by chunked resets.
+    let mut renderer = StageAudio::with_limits(
+        plan(
+            rate,
+            &["stretch"],
+            [
+                ("source", source(rate, 8192, 0..8192)),
+                ("repeat", repeated),
+                (
+                    "stretch",
+                    retime("repeat", 528_384, 0..1_056_768, PitchPolicy::Preserve),
+                ),
+            ],
+        ),
+        StageLimits {
+            maximum_input_frames: deadpan_dsp::MAX_INPUT_FRAMES,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    // A tiny late read still charges the complete input against the host's
+    // configured work limit, even though PCM now arrives in bounded windows.
     assert!(matches!(
         renderer.read(
             &mut provider,

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-streamed-input-20261011/sanitize.py"
+  ],
+  "exit": 0,
+  "seconds": 9.26274804212153,
+  "log_sha256": "0bdb306304ba07a66e2b4b147c9959820a77560de9f75cb511772e3ee1af2de7"
+}

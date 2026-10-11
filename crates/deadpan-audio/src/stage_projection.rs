@@ -44,7 +44,7 @@ impl StageAudio {
         let output_frames = u32::try_from(output.sample_count()?.0)
             .map_err(|_| StageAudioError::Limit("output frames"))?;
         let rate = projection.stage().descriptor().rate;
-        let recipe = CanonicalRecipe::with_rate(
+        let recipe = StreamRecipe::new(
             input_frames,
             output_frames,
             StretchRate::new(
@@ -53,7 +53,7 @@ impl StageAudio {
             )?,
             i32::from(projection.stage().descriptor().pitch.semitones()),
         )?;
-        let reservation = self.reserve(input_frames, output_frames, control)?;
+        let reservation = self.reserve_stream(input_frames, output_frames, control)?;
         control
             .work
             .borrow_mut()

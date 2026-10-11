@@ -383,13 +383,13 @@ fn pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration() {
 }
 
 #[test]
-fn pitch_preserving_stages_over_the_processor_input_bound_refuse_at_edit_time() {
-    // 30000/1001 fps: 655 frames are 1,049,048 samples, over 1,048,576.
+fn pitch_preserving_stages_over_preparation_work_or_output_refuse_at_edit_time() {
+    // Both counts individually fit, but combined preparation work does not.
     let mut wire = serde_json::to_value(fixture()).unwrap();
-    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(655);
+    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(6000);
     let long = ProjectDocument::from_json(&wire.to_string()).unwrap();
     for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 2 }] {
-        let refused = apply(&long, &request(&long, wrap(700, pitch), "too-long")).unwrap_err();
+        let refused = apply(&long, &request(&long, wrap(5000, pitch), "too-long")).unwrap_err();
         assert_eq!(refused.code, EditErrorCode::LimitExceeded, "{pitch:?}");
     }
     // A unity shift is processed too; tape speed needs no processor.
@@ -398,7 +398,7 @@ fn pitch_preserving_stages_over_the_processor_input_bound_refuse_at_edit_time() 
             &long,
             &request(
                 &long,
-                wrap(655, PitchPolicy::Shift { semitones: 1 }),
+                wrap(6000, PitchPolicy::Shift { semitones: 1 }),
                 "unity"
             )
         )
@@ -407,20 +407,35 @@ fn pitch_preserving_stages_over_the_processor_input_bound_refuse_at_edit_time() 
     assert!(
         apply(
             &long,
-            &request(&long, wrap(700, PitchPolicy::FollowSpeed), "tape")
+            &request(&long, wrap(7000, PitchPolicy::FollowSpeed), "tape")
         )
         .is_ok()
     );
-    let (wrapped, _) = edit(&long, wrap(700, PitchPolicy::FollowSpeed), "tape");
+    let (wrapped, _) = edit(&long, wrap(7000, PitchPolicy::FollowSpeed), "tape");
     assert!(
         apply(
             &wrapped,
             &request(
                 &wrapped,
-                set(655, PitchPolicy::Shift { semitones: 3 }),
+                set(6000, PitchPolicy::Shift { semitones: 3 }),
                 "set"
             )
         )
         .is_err()
     );
+}
+
+#[test]
+fn streamed_preserve_accepts_a_minute_of_input_as_one_reversible_stage() {
+    let mut wire = serde_json::to_value(fixture()).unwrap();
+    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(1800);
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 2 }] {
+        // edit() verifies inverse restoration and document round-trip.
+        let (wrapped, _) = edit(&original, wrap(2000, pitch), "minute");
+        assert!(matches!(
+            wrapped.nodes()[&id("rate")].kind,
+            NodeKind::Retime { .. }
+        ));
+    }
 }

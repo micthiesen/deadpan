@@ -1,0 +1,26 @@
+{
+  "base": "913b4f226d772d40a5294432d3204903b9ed80ec",
+  "files": {
+    "crates/deadpan-audio/src/stage_projection.rs": "486c7ad179a663e67ab7d6a31c2d694c80f0997497f76af86336d2509fdf4598",
+    "crates/deadpan-audio/src/stages.rs": "ef299e86fd73585a9a83ce9634e53f5146275b88fa90b7b671f7aa1898072855",
+    "crates/deadpan-audio/tests/stages.rs": "29abc82ee2f8599dbd8899da5d52e01292d9aac553b47921595620e26fee888d",
+    "crates/deadpan-audio/tests/stages/retime_edits.rs": "8b5639d226fb3d17ea8fea019745d472d1faf56deabb07768c8b1fb0ea3b6a85",
+    "crates/deadpan-audio/tests/stages/streaming.rs": "0e1533e069a345bab3b6a963c532986b4405ceed381dde1a34f7e5c7213dd1ea",
+    "crates/deadpan-core/src/command.rs": "0b27a7083197ad70a6a94a54e31056b70d2a9ab1f740100f75f240ae6ebb04e4",
+    "crates/deadpan-core/tests/retime_edits.rs": "5775b37472f3eff0ecc104f25bd06b8a2d72c9d55c9d3ce43502e8b002676dd6",
+    "native/deadpan-dsp/README.md": "cb15d24c9052cc6e2c102c875cecc6f6a24ab11651411379c64b011f5b2c14a5",
+    "native/deadpan-dsp/build.rs": "7a46b7d98da900bb5e29609ac152e6758199a8e1565710c1e37957e700adbcdb",
+    "native/deadpan-dsp/src/adapter.h": "853fb05f8db73f1b0e8a66ef9459e04cd560066839034f6fcfed64868087a3d0",
+    "native/deadpan-dsp/src/canonical.hpp": "a9b4e23426dee5c4f67d287081c870f1a789fc2d3e6ad1dbd7d86f39728e6824",
+    "native/deadpan-dsp/src/ffi.rs": "1e72271e3872d6da674d493533eeae23e368ae3f6799866195bbedfc634e4bec",
+    "native/deadpan-dsp/src/ffi/streaming.rs": "cf68e0770d35d3d7c290d2d9163b3e5f63190b9561dcdc482493914e0c26bd58",
+    "native/deadpan-dsp/src/lib.rs": "26dc2733a11e43d7ece6301baea7b2ce93e254aa9a592971f57dd0509f66f41f",
+    "native/deadpan-dsp/src/streaming.cpp": "51709169046b417d5504846e5af469868e361392b2691c6cd6595a76008cb363",
+    "native/deadpan-dsp/src/streaming.rs": "cc66737d74f8d33982be052506e557bc89913c3e489d32ab9de5e90c1f25f311",
+    "native/deadpan-dsp/tests/streaming.rs": "f8f2dceab7437611434273c28f9a65e0a4af4b2daa7207382cb9a72386d9ad11",
+    "native/deadpan-dsp/tests/streaming_probe.cpp": "ac6534c0947550e90d7e1eaedff5b7d4160e1b96117f0d18cd382bd4adc08da8",
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "note": "Final source; the full suite precedes one additional test and a const-assert lint correction. Final focused tests and Clippy cover those test-only edits."
+}
