@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T20:59:27Z",
+  "updated_at": "2026-10-11T21:23:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Continue EQ/filtering, arbitrary sends, full group mixing/mastering, remaining format/color and full-workflow/release obligations. Stereo balance is qualified locally; DP-09 and DP-16 remain partial.",
+  "focus": "Continue EQ/filtering, arbitrary effect sends, oversampled shaping, long-source preparation, full mastering, remaining format/color and full-workflow/release obligations. Shared nonlinear owner mixing is qualified locally; DP-09 and DP-16 remain partial.",
   "features": [
     {
       "id": "editing",
@@ -541,6 +541,14 @@
       "revision": "3c7a42cb055ec9e1acabc48238eccbeab964f12f",
       "retrospective": false,
       "summary": "Stereo balance now persists through native/headless commands, macros, dot and isolated Repeat plays, with shared preview/Render PCM. Core/audio checks, 419 interaction checks, a 54-picture export and independently decoded AAC channel levels pass. A named-takes test reply race is fixed."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "9deb94a4d17d05d2d37fca3cc5e64ab1de151d67",
+      "retrospective": false,
+      "summary": "Shared nonlinear group mixing implemented and qualified: 486 audio tests across suite/follow-up, 72 playback tests, two regressions fail on old code, and a 54-picture AAC export passes with zero audio offset."
     }
   ]
 }
