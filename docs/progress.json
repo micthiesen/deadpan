@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T20:27:58Z",
+  "updated_at": "2026-10-11T20:59:27Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Continue the remaining format/color, effects, mastered-playback, full-workflow and release-gate obligations against the normative specification. Gain replay and terminal-picture cancellation are resolved; physical timing remains unverified.",
+  "focus": "Continue EQ/filtering, arbitrary sends, full group mixing/mastering, remaining format/color and full-workflow/release obligations. Stereo balance is qualified locally; DP-09 and DP-16 remain partial.",
   "features": [
     {
       "id": "editing",
@@ -533,6 +533,14 @@
       "revision": "335596bf5813849233fb7f79393357b920701ddf",
       "retrospective": false,
       "summary": "Resolved the Gain waveform replay failure as input sequencing: complete trackpad gestures and bounded native mouse-wheel settling preserve strict graph/axis checks. All 296 Gain checks pass in offscreen visual replay and release runs at 60/120 Hz, including four populated keyboard circuits. Production UI is unchanged; reviewed compact/default captures fit."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "3c7a42cb055ec9e1acabc48238eccbeab964f12f",
+      "retrospective": false,
+      "summary": "Stereo balance now persists through native/headless commands, macros, dot and isolated Repeat plays, with shared preview/Render PCM. Core/audio checks, 419 interaction checks, a 54-picture export and independently decoded AAC channel levels pass. A named-takes test reply race is fixed."
     }
   ]
 }
