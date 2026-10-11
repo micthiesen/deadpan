@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Exact timing acceptance](../qualification/exact-timing-acceptance-2026-10-11.md)
+closes DP-02 under §29.1. The added source-format test combines cuts, both
+retime pitch policies, nested Repeat, a gap and a freeze over 20 qualified
+inputs. All 40 exports, 1,040 independently calculated picture identities,
+36 zero-offset signal windows and exact terminal samples pass. Keep the
+fixture-clock oracle independent of decoder indexes and plans. Eight of 24
+requirements are complete; DP-16/DP-17/DP-24 and unfinished operations remain open.
+
 [Local Original and sound acceptance](../qualification/local-import-acceptance-2026-10-11.md)
 closes DP-15 under §29.1. Missing/corrupt placed sounds stop Render without
 publication or authored changes; identical repair and portable sound ownership
@@ -11,7 +19,7 @@ pass real exports. Explicit container-audio selection and deduplication preserve
 picture time and the mix. Current evidence includes 360 picture comparisons,
 six zero-offset signal windows and 36 focused store tests. Keep broader
 format/operation qualification with DP-02/DP-16 and physical/provider checks
-on the owner list. Seven of 24 requirements are complete; the goal remains active.
+on the owner list. The complete-product goal remains active.
 
 [Catalog sound recovery](../qualification/sound-recovery-2026-10-11.md)
 adds `:sound-relink` with an entry-captured sound, content identity, location

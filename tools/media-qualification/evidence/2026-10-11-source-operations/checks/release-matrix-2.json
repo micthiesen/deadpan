@@ -1,0 +1,20 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "source_formats_preserve_independent_clocks_through_combined_structural_edits",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 121.88005891628563,
+  "log_sha256": "e65f010db240b31c69022d3af964febc29f81bd35e7433feac3a010dcf962548"
+}

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T13:55:46Z",
+  "updated_at": "2026-10-11T14:12:25Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing the remaining source and editing-operation qualification for DP-02 and DP-16.",
+  "focus": "Completing the remaining shared renderer and playback requirements in DP-16.",
   "features": [
     {
       "id": "editing",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Concurrent release and packaged exports now pass every decoded frame and preserve audio timing. The scene-cut quality loss is fixed; unsupported software quality controls fail explicitly. Full effects and remaining source/operation coverage remain."
+      "note": "Exact timing is complete under the local verification scope. Forty combined-edit exports across 20 source fixtures pass independent picture clocks and zero-offset audio; renderer, effects and output qualification remain."
     },
     {
       "id": "ui",
@@ -437,6 +437,14 @@
       "revision": "7fa6dd062dd75c94f94cef6cc2d306cc0f4c86e6",
       "retrospective": false,
       "summary": "Closed DP-15: verified missing/corrupt sound export refusal, identical repair, portable linked sound export, explicit container-audio import and deduplication. All 360 picture comparisons, six zero-offset signal windows and 36 focused store tests pass."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "ad6709f2bc2bf8e13f29ea5b1368d95540094a93",
+      "retrospective": false,
+      "summary": "Closed DP-02: added combined source-format editing tests and reconciled the exact-time contract. Forty release exports pass 1,040 independent picture identities, 36 zero-offset signal windows and exact terminal sample counts; strict Clippy passes."
     }
   ]
 }

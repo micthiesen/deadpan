@@ -38,6 +38,9 @@ pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 #[path = "vfr.rs"]
 pub mod vfr;
 
+#[path = "formats.rs"]
+pub mod formats;
+
 #[cfg(feature = "synthetic-worker")]
 #[path = "generated.rs"]
 pub mod generated;

@@ -485,6 +485,37 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
 }
 
 #[test]
+fn source_formats_preserve_independent_clocks_through_combined_structural_edits() -> Result {
+    use deadpan_core::PitchPolicy;
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("Source-format operation evidence: {}", root.display());
+    for case in recipes::formats::CASES {
+        for (policy, pitch) in [
+            ("preserve", PitchPolicy::Preserve),
+            ("tape", PitchPolicy::FollowSpeed),
+        ] {
+            let directory = root.join(case.name).join(policy);
+            let fixture = recipes::formats::build(&directory, *case, pitch)?;
+            check_with_picture(&fixture, |picture| case.plan_picture(picture))?;
+            let movie = render(&fixture, &directory.join("exports"))?;
+            let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+            std::fs::write(
+                directory.join("verification.json"),
+                serde_json::to_vec_pretty(&report)?,
+            )?;
+            assert!(passed, "{} {policy}: {}", case.name, report["failures"]);
+            assert_eq!(report["frame_rate"], json!(case.rate));
+            assert_eq!(report["range"], json!([0, 26]));
+            assert_eq!(report["summary"]["pictures_checked"], 26);
+            assert_eq!(report["summary"]["nonzero_offsets"], 0);
+            check_provenance(&fixture, &report)?;
+            eprintln!("{policy}: {}", summary_row(&fixture, &report));
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn webm_originals_render_the_measured_clock_and_sample_aspect() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("WebM Render evidence: {}", root.display());

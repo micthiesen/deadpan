@@ -1,0 +1,382 @@
+[
+  {
+    "path": "runs/aperture-fractional.mp4/preserve/verification.json.gz",
+    "bytes": 36961,
+    "sha256": "d93f452dfec58a08f6aa3f720cdb93ba81c47f960f246c138bb22910745ddc70"
+  },
+  {
+    "path": "runs/aperture-fractional.mp4/tape/verification.json.gz",
+    "bytes": 36957,
+    "sha256": "2a70de328965ecbb6bb3bd5fd9399ceaf552b184afff3784179e7192e66b6edb"
+  },
+  {
+    "path": "runs/av1-grain.mp4/preserve/verification.json.gz",
+    "bytes": 39622,
+    "sha256": "f320752b401d21e5750bf4f6aab96b110dae1ce77aff2c29a47bf3ef77757f51"
+  },
+  {
+    "path": "runs/av1-grain.mp4/tape/verification.json.gz",
+    "bytes": 39616,
+    "sha256": "503e7cd511d85cfddaffb812736bc03cee3ca10c1aa7607bd30b46c79d791d58"
+  },
+  {
+    "path": "runs/av1-hlg.mp4/preserve/verification.json.gz",
+    "bytes": 39649,
+    "sha256": "696ccb0d3ab6b3335257df8851103750eeab7359337fff27c321d8d2b0ee08e6"
+  },
+  {
+    "path": "runs/av1-hlg.mp4/tape/verification.json.gz",
+    "bytes": 39641,
+    "sha256": "e7f35da6b97b2bdbebbd1c50d973460b0c9f11842d7fe0949142bece225eac8a"
+  },
+  {
+    "path": "runs/av1-pq.mp4/preserve/verification.json.gz",
+    "bytes": 39988,
+    "sha256": "51d1a4821f5618285edb352a66206f46c39043e1315e1e2ca0da663c99770645"
+  },
+  {
+    "path": "runs/av1-pq.mp4/tape/verification.json.gz",
+    "bytes": 39980,
+    "sha256": "72e9220725a126530869c1d3eb645e818e525d67f7287b300e49c71437cd9336"
+  },
+  {
+    "path": "runs/av1-sdr-10-limited.mp4/preserve/verification.json.gz",
+    "bytes": 39580,
+    "sha256": "0bbf15490aa70d8a9471b3b6621fb0b9531ff084dca365fd4ff22f0863bb6bdb"
+  },
+  {
+    "path": "runs/av1-sdr-10-limited.mp4/tape/verification.json.gz",
+    "bytes": 39572,
+    "sha256": "a9e11125231b54214f85773a2c2b961f7f0ac38b0ea51b74687fdb53baf4d427"
+  },
+  {
+    "path": "runs/av1-sdr-8-limited.mp4/preserve/verification.json.gz",
+    "bytes": 39585,
+    "sha256": "1c436b43f2f065ecfdaa21b7fe41bfabe885ea3eeea809980fb7169a56bb38f0"
+  },
+  {
+    "path": "runs/av1-sdr-8-limited.mp4/tape/verification.json.gz",
+    "bytes": 39577,
+    "sha256": "8b5b9c4c18dfd4b2f48684e904eb8708fbe59ba3e60bbc671d455e3525a59d68"
+  },
+  {
+    "path": "runs/av1-vfr.mp4/preserve/verification.json.gz",
+    "bytes": 39454,
+    "sha256": "da2f92dd799efd9bda3f753f1b13110b3b51501bd4baa246e8ea8368ce123bc4"
+  },
+  {
+    "path": "runs/av1-vfr.mp4/tape/verification.json.gz",
+    "bytes": 39446,
+    "sha256": "74e2327d5ef4ea75d72ab6abb186d501cd76b5c34f85a87b7acd04734cf57fdd"
+  },
+  {
+    "path": "runs/av1-vfr.webm/preserve/verification.json.gz",
+    "bytes": 36543,
+    "sha256": "dadaeeaf049c7b38f80307d75c9b181dd39ec0c1c5212ca744aabbfad6027518"
+  },
+  {
+    "path": "runs/av1-vfr.webm/tape/verification.json.gz",
+    "bytes": 36539,
+    "sha256": "ae1ffe9fbc81ca4e7cece9a79cb14d36756f2e5b5f9100950dc542b9217a8b84"
+  },
+  {
+    "path": "runs/cfr-bframes.mp4/preserve/verification.json.gz",
+    "bytes": 37331,
+    "sha256": "800c01eef691ca8b5325e851f2eed17579b0dcda9437dabec4fa835b014cfbc8"
+  },
+  {
+    "path": "runs/cfr-bframes.mp4/tape/verification.json.gz",
+    "bytes": 37327,
+    "sha256": "221802a7f7d487e5d0b6a028f7d76989e4b30656c30f5a69baf5ce652e194068"
+  },
+  {
+    "path": "runs/fields-bff.mp4/preserve/verification.json.gz",
+    "bytes": 37714,
+    "sha256": "87683d6ea92ba1fdea6830ed8e3398083eca762d6a7ebac2882d126c81193999"
+  },
+  {
+    "path": "runs/fields-bff.mp4/tape/verification.json.gz",
+    "bytes": 37713,
+    "sha256": "846c43a3c9c392baf171ab7b89d5631c6becce3998fc00e6a3a22df6ea224e30"
+  },
+  {
+    "path": "runs/fields-tff.mp4/preserve/verification.json.gz",
+    "bytes": 37976,
+    "sha256": "69ec51adbc540004b2bdf2550412883a00472f16e3624ddcdab2dddad2e5d481"
+  },
+  {
+    "path": "runs/fields-tff.mp4/tape/verification.json.gz",
+    "bytes": 37967,
+    "sha256": "ce0c63a40d7c5e8a0d0a60d70590e19c61f77e55c3bf8c2592814c41e7be6de9"
+  },
+  {
+    "path": "runs/h264-sdr-10-full.mp4/preserve/verification.json.gz",
+    "bytes": 39578,
+    "sha256": "184bb9b3f3d60401c634749de37bcfd68ce289caa45dcf686e8e279c6f9e94c9"
+  },
+  {
+    "path": "runs/h264-sdr-10-full.mp4/tape/verification.json.gz",
+    "bytes": 39570,
+    "sha256": "f0cd18e69fe0a19254a0d9764277a684fe038724862c47382763c3a7a08d426f"
+  },
+  {
+    "path": "runs/hevc-sdr-10-full.mp4/preserve/verification.json.gz",
+    "bytes": 39578,
+    "sha256": "880826a26807ce3c7ecdca6e53c537c248c1f324b8e61a4f8ecf6b25da006e8e"
+  },
+  {
+    "path": "runs/hevc-sdr-10-full.mp4/tape/verification.json.gz",
+    "bytes": 39570,
+    "sha256": "a2284f1d6dff899f3e2e39cf3f84ba3a52dc93e8361dd6fc23881e879c484715"
+  },
+  {
+    "path": "runs/hevc-sdr-8-limited.mp4/preserve/verification.json.gz",
+    "bytes": 39308,
+    "sha256": "0a3fe6d4012e8125603f2fffd983f1c39482b61bf6195fd83a384fe03e1ba791"
+  },
+  {
+    "path": "runs/hevc-sdr-8-limited.mp4/tape/verification.json.gz",
+    "bytes": 39300,
+    "sha256": "6780afbf6be0b5de2ec8e90b319ff5a7ee5fe45a064c579abc8530d79439f58b"
+  },
+  {
+    "path": "runs/prores-hq.mov/preserve/verification.json.gz",
+    "bytes": 39727,
+    "sha256": "8d40911784e9a67be3ec848094e2534cf8b4269cd9ede5712155fe991be99866"
+  },
+  {
+    "path": "runs/prores-hq.mov/tape/verification.json.gz",
+    "bytes": 39719,
+    "sha256": "74e729000be4e3080a75a2048d34113f659e74d76c832e9d154f02c441a1bed0"
+  },
+  {
+    "path": "runs/prores-vfr.mov/preserve/verification.json.gz",
+    "bytes": 39601,
+    "sha256": "46698a599a2d4e4a5e995540e1a1ef39751d9e4363e7527b8a6a2ff2754cbf3b"
+  },
+  {
+    "path": "runs/prores-vfr.mov/tape/verification.json.gz",
+    "bytes": 39593,
+    "sha256": "770e3171f149099098c9093f4ce0b18d1e72b7c404ad3b7f0121208663957fe8"
+  },
+  {
+    "path": "runs/telecine-tff.mp4/preserve/verification.json.gz",
+    "bytes": 37682,
+    "sha256": "4b00a10db34e398cbb2ea39f15d8b98348db7613ee3cac18069a3b51bdd9a081"
+  },
+  {
+    "path": "runs/telecine-tff.mp4/tape/verification.json.gz",
+    "bytes": 37681,
+    "sha256": "eb51ccfdac7613c688c0a99be835ab567aea99891c3c8a8647e2fe62d33321a9"
+  },
+  {
+    "path": "runs/vfr-long-terminal.mp4/preserve/verification.json.gz",
+    "bytes": 37016,
+    "sha256": "4e9d153cd5322f52b7143cf9f453b469b38924f8027dd6c785b6ef6e335fa3e5"
+  },
+  {
+    "path": "runs/vfr-long-terminal.mp4/tape/verification.json.gz",
+    "bytes": 37012,
+    "sha256": "3307428f099b8fa62fb14b54ae1a3d8293d86cc405cec58ae8a21dd2001c130d"
+  },
+  {
+    "path": "runs/vp9-sdr-10-full.mp4/preserve/verification.json.gz",
+    "bytes": 39576,
+    "sha256": "569042a7a1e7c1cf9a5bc0653d1e457678dd2e6479e5f6f25dd4b2b98e3d7293"
+  },
+  {
+    "path": "runs/vp9-sdr-10-full.mp4/tape/verification.json.gz",
+    "bytes": 39568,
+    "sha256": "07aefb3253015ae6600709c9004242ad6cea3e1978fead03fecbfa641676d7a5"
+  },
+  {
+    "path": "runs/vp9-vfr.webm/preserve/verification.json.gz",
+    "bytes": 36201,
+    "sha256": "64eeaa4021526f52263fa207353124d95960c74fcf752fe3ada7a839c689ce2b"
+  },
+  {
+    "path": "runs/vp9-vfr.webm/tape/verification.json.gz",
+    "bytes": 36197,
+    "sha256": "77b7fa7c5258a3129eb341a590d034434c93e62db5c74a850285eb26703d31fb"
+  },
+  {
+    "path": "runs/aperture-fractional.mp4/preserve/exports/deadpan-render-b6e6b2ef-ffaf-4b76-9b26-b8ecdf76a55a.json.gz",
+    "bytes": 32952,
+    "sha256": "de75cd89cd1ec17120f536f1f777cbd8811a4128897668e37e03e9b3e552d82e"
+  },
+  {
+    "path": "runs/aperture-fractional.mp4/tape/exports/deadpan-render-47b743d6-391b-43fe-962c-8a22c4135c50.json.gz",
+    "bytes": 32952,
+    "sha256": "03c7ca15869e29cbcefd9d11b930ece1030722a7ef0b0d24cd3d98be7134f576"
+  },
+  {
+    "path": "runs/av1-grain.mp4/preserve/exports/deadpan-render-f0463334-d5d5-4276-8d2e-edb9c01f5140.json.gz",
+    "bytes": 32928,
+    "sha256": "6db70e2eb8084c1f08ffedc928e4384f979dc8a30d167b55ef101b3410c7cb39"
+  },
+  {
+    "path": "runs/av1-grain.mp4/tape/exports/deadpan-render-2c6e3645-f01a-4553-8f27-f3e30a17599f.json.gz",
+    "bytes": 32928,
+    "sha256": "c45db0814a877ea33bbff6dd023f9cf40d54e3edabdaab26e157f35b452a207a"
+  },
+  {
+    "path": "runs/av1-sdr-10-limited.mp4/preserve/exports/deadpan-render-78395202-029a-4fac-8309-9b6c5f3d962d.json.gz",
+    "bytes": 32932,
+    "sha256": "5f4963f4513d60a9472baa136169ef96e21fe7b024aff61d8578984d46ddd441"
+  },
+  {
+    "path": "runs/av1-sdr-10-limited.mp4/tape/exports/deadpan-render-9ec3bbba-0714-46d7-bb8f-130810fbe7ce.json.gz",
+    "bytes": 32932,
+    "sha256": "517cd8f907773ca5aa0bb88d6cd788bcb19e09c0f174043c6a4b63fc6dcb198b"
+  },
+  {
+    "path": "runs/av1-sdr-8-limited.mp4/preserve/exports/deadpan-render-385d5ea2-efe3-4079-b0f8-3c62013eaaea.json.gz",
+    "bytes": 32931,
+    "sha256": "bf6c020d48e353868fa1ad0328b3c84b5ee0b600073aface95c21146639e6850"
+  },
+  {
+    "path": "runs/av1-sdr-8-limited.mp4/tape/exports/deadpan-render-d1a8dd8e-a2a8-4e5c-8313-9c159df996d5.json.gz",
+    "bytes": 32931,
+    "sha256": "bd4c860578411c2175414aad29e06810b0258ba2f021c9877e25b19564f8d47c"
+  },
+  {
+    "path": "runs/av1-vfr.mp4/preserve/exports/deadpan-render-5d86b055-f3f3-44b3-a120-9b8d2667d9e5.json.gz",
+    "bytes": 32921,
+    "sha256": "85e1969b247769f99b408a628daf7237981fd8b27b594ce90368e2c23b060fd7"
+  },
+  {
+    "path": "runs/av1-vfr.mp4/tape/exports/deadpan-render-c0ecfea0-2432-4338-a727-cb925928cb4f.json.gz",
+    "bytes": 32921,
+    "sha256": "a02938ae0502e3dbf6b26898123603f2d8f935b9ac9e77d6c3a7e192ea2cef17"
+  },
+  {
+    "path": "runs/av1-vfr.webm/preserve/exports/deadpan-render-80ccc161-2028-42c3-b434-dc5be2e889e8.json.gz",
+    "bytes": 32922,
+    "sha256": "8b11ead9b86e0d002bd2a9ee662833003482ddc5d913325cd7f8d2a4c773cada"
+  },
+  {
+    "path": "runs/av1-vfr.webm/tape/exports/deadpan-render-1b0b5f1d-47ce-4c76-931c-eada9c8368d0.json.gz",
+    "bytes": 32922,
+    "sha256": "c39229e02c555d5cded34734c6ddb885c8d11732892fb1d84881933188356dcd"
+  },
+  {
+    "path": "runs/cfr-bframes.mp4/preserve/exports/deadpan-render-8625e728-c41d-43ba-b956-91c40b937d3a.json.gz",
+    "bytes": 32944,
+    "sha256": "d4cddc03415975f420cf84ce8c1004b68ac13f707f4a19b6c66d12a3a3c1234c"
+  },
+  {
+    "path": "runs/cfr-bframes.mp4/tape/exports/deadpan-render-506ca2e5-9712-4ea4-b0f2-cc826af80d6d.json.gz",
+    "bytes": 32944,
+    "sha256": "d3d4096fb04d6de9096ea7609cecc17cc9dfe7d3d38243bd430e43f9ffdb21e6"
+  },
+  {
+    "path": "runs/fields-bff.mp4/preserve/exports/deadpan-render-0a36e888-2c2b-4811-a434-9adda6e97e63.json.gz",
+    "bytes": 32918,
+    "sha256": "e0a38a6cdd00c9bdd9494d16699ff09dd5e322bfe9844a1abd49a5f3a97d51fb"
+  },
+  {
+    "path": "runs/fields-bff.mp4/tape/exports/deadpan-render-e464e3f8-c738-42fc-a5e8-da5286a2ec5b.json.gz",
+    "bytes": 32918,
+    "sha256": "ae681682308bc7a2f9d6e2c85fc1fd89eba9c3dd2e291b45497d4c76ac0d1d10"
+  },
+  {
+    "path": "runs/fields-tff.mp4/preserve/exports/deadpan-render-2a6e9944-68f1-45df-bf0b-d253a0584bc4.json.gz",
+    "bytes": 32821,
+    "sha256": "918610e23b3a6f710a72869ccbd09d1286b78ad39408c730037972723b1d2284"
+  },
+  {
+    "path": "runs/fields-tff.mp4/tape/exports/deadpan-render-147f0d85-418a-4122-9dbb-5b89f3c41d02.json.gz",
+    "bytes": 32821,
+    "sha256": "2a556f1f1353a27277d0cf197310fd6823e942a4c5d2a1618e9cc188f011b7b0"
+  },
+  {
+    "path": "runs/h264-sdr-10-full.mp4/preserve/exports/deadpan-render-6984c559-3c86-42f5-af17-030ce0a495ea.json.gz",
+    "bytes": 32919,
+    "sha256": "17556f6e676c7b2534677cb1778d001a4b62048c18f2de63b7fb12973cbd9c6e"
+  },
+  {
+    "path": "runs/h264-sdr-10-full.mp4/tape/exports/deadpan-render-24660720-3ac3-4956-9776-4a92c7e7cf14.json.gz",
+    "bytes": 32919,
+    "sha256": "639346a2a56a1fb26c05a4efa7fd91fdfbc1456153cc1aced638282ea0b6f8ff"
+  },
+  {
+    "path": "runs/hevc-sdr-10-full.mp4/preserve/exports/deadpan-render-c847f1ef-6989-4d85-a8de-d797393e224d.json.gz",
+    "bytes": 32919,
+    "sha256": "5403dc1698171825e08d49eae0ff8b8725ac4e7240436503ac520a8d52ee7c2d"
+  },
+  {
+    "path": "runs/hevc-sdr-10-full.mp4/tape/exports/deadpan-render-9f046d87-5099-4795-acc6-cedc67968f70.json.gz",
+    "bytes": 32919,
+    "sha256": "e28bbf111e09af6f0ee8e0bf1443c57f47d875f373e8c68cf0fce1f38d66656e"
+  },
+  {
+    "path": "runs/hevc-sdr-8-limited.mp4/preserve/exports/deadpan-render-6ede2711-c4f7-4d03-bebf-2b8e838aee66.json.gz",
+    "bytes": 32921,
+    "sha256": "c20641306a53ad3b75fa048da8bdefec2fa5f72c804f722e696fe4dbbb325192"
+  },
+  {
+    "path": "runs/hevc-sdr-8-limited.mp4/tape/exports/deadpan-render-69ed7c47-4310-4f53-a1be-5fda6cbffdb1.json.gz",
+    "bytes": 32921,
+    "sha256": "6405a54771151db615688e58a85212ba926234158b1a83fd601bf28969ca3a51"
+  },
+  {
+    "path": "runs/prores-hq.mov/preserve/exports/deadpan-render-4b4f5490-eb99-4635-b6c5-57392da7be97.json.gz",
+    "bytes": 32912,
+    "sha256": "723e01ab2836392ac890a4539b9c163fb4bbc07df797b7de382308f3ff0651b8"
+  },
+  {
+    "path": "runs/prores-hq.mov/tape/exports/deadpan-render-bb4de465-9a00-4981-912b-1003a756307f.json.gz",
+    "bytes": 32912,
+    "sha256": "f6ef748592318423c706b2fbf51130f7d4fd8d8a4d8e28d697fe57e5bff878c2"
+  },
+  {
+    "path": "runs/prores-vfr.mov/preserve/exports/deadpan-render-3ceac113-3727-448e-bce1-698f7ae68f51.json.gz",
+    "bytes": 32913,
+    "sha256": "3998b8a2e6195090480c829ade9a53b20314007f2d822c0693a3ec7e5637b553"
+  },
+  {
+    "path": "runs/prores-vfr.mov/tape/exports/deadpan-render-0ce48098-4aa0-4e4e-832e-6695f47b035c.json.gz",
+    "bytes": 32913,
+    "sha256": "febca08167516daf546c618ab62d63d64b2a09f47cd4b51ed5be39f6d829f0c4"
+  },
+  {
+    "path": "runs/telecine-tff.mp4/preserve/exports/deadpan-render-8c026e70-0656-4157-a9bf-dfe6eb5f3ee5.json.gz",
+    "bytes": 32921,
+    "sha256": "ed1e9c340edb42df6b448ba5829ddd674aa564b3059d9f67e2004dd275d105bd"
+  },
+  {
+    "path": "runs/telecine-tff.mp4/tape/exports/deadpan-render-d1d8d00d-8ae7-448d-9f94-7e1821a819b7.json.gz",
+    "bytes": 32921,
+    "sha256": "9d215cbfac0b76e2dea304d8a55af030e0737ab592e072541c33107a16d87f11"
+  },
+  {
+    "path": "runs/vfr-long-terminal.mp4/preserve/exports/deadpan-render-4b79e53f-9fc1-4d7c-8700-64896c779312.json.gz",
+    "bytes": 32950,
+    "sha256": "e6cba34ffd2629b0b90e8b8a1fbe4690259b51b2888c61244a240e8d2be89b99"
+  },
+  {
+    "path": "runs/vfr-long-terminal.mp4/tape/exports/deadpan-render-f59ab085-bb70-4cb9-8871-0c81bfbe8bfa.json.gz",
+    "bytes": 32950,
+    "sha256": "5479b31a649515781117536ae4dfd7252dba2e7f9258dd7c5ca25ac04d7ba2c7"
+  },
+  {
+    "path": "runs/vp9-sdr-10-full.mp4/preserve/exports/deadpan-render-de456bb4-78e2-4b35-9b4a-fe3081f163bc.json.gz",
+    "bytes": 32918,
+    "sha256": "d5fea335bdb70a3a7de278643423ac0fd3ff75ce4da973f8845ff1d644b3d991"
+  },
+  {
+    "path": "runs/vp9-sdr-10-full.mp4/tape/exports/deadpan-render-b4bec88d-8d61-4912-bbc1-8c3d95425e6f.json.gz",
+    "bytes": 32918,
+    "sha256": "ef69f9159b2a69b590c878f9e4d1cc6dde9bfc9d977d15eb525a64fca13d96d0"
+  },
+  {
+    "path": "runs/vp9-vfr.webm/preserve/exports/deadpan-render-5317cf8a-c1da-4c6b-9b0f-712b160f1980.json.gz",
+    "bytes": 32813,
+    "sha256": "8293e07dd124def5393110e143fc5272e1c28635157ec0603f761509e0ec0726"
+  },
+  {
+    "path": "runs/vp9-vfr.webm/tape/exports/deadpan-render-c448d6a3-3469-477b-a38c-bdb8b93777a2.json.gz",
+    "bytes": 32813,
+    "sha256": "1bf21f2f316a0d7e3f777581d99197eabf77f20c43b9b3194d01c3bfc5483f45"
+  }
+]
