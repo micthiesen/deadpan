@@ -150,7 +150,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 
 | GUI | Headless | Checks | Status |
 |---|---|---|---|
-| `+` / `-`, `:gain ±dB`, `:gain +=dB`, `,m`, `:gain-mute`, `:saturate` | `set_audio` instruction (`trim`, `step`, `range_step`, `mute`, `saturation`) | R, D | Equivalent |
+| `+` / `-`, `:gain ±dB`, `:gain +=dB`, `,m`, `:gain-mute`, `:saturate`, `:balance` | `set_audio` instruction (`trim`, `step`, `range_step`, `mute`, `saturation`, `balance`) | R, D | Equivalent |
 | Gain sheet draft (Before/Draft audition, waveform) | interactive | - | GUI-only |
 | Gain sheet Apply, scoped gain | `command` `set_audio_treatments` / `edit_scoped` | R, D | Equivalent |
 | `:edge hard|auto …` | `set_audio_edges` instruction; `set_audio_edge` command | R, D | Equivalent |

@@ -303,6 +303,9 @@ impl Inspector {
                 ),
             ));
         }
+        if let Some(balance) = node.audio_treatments.balance() {
+            fields.push(("Balance", crate::gain::format_balance(Some(balance))));
+        }
         for (label, removed) in [("Cutaways", false), ("Picture removed", true)] {
             let ranges: Vec<_> = node
                 .cutaways

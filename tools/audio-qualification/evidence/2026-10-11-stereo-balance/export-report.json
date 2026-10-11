@@ -1,0 +1,2628 @@
+{
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBLOeea/exports/stereo-balance.mp4",
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBLOeea/stereo-balance/stereo-balance.deadpan",
+  "report": {
+    "audio": [
+      {
+        "blocks": {
+          "compared": 81,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.08540675076787352,
+          "max_silent_level_dbfs": -200.0,
+          "min_snr_block_start": 38400,
+          "min_snr_db": 29.572733080548687,
+          "silent": 19,
+          "sound_in_silence_blocks": 0
+        },
+        "decoded_peak_dbfs": -9.95657555575782,
+        "decoded_rms_dbfs": -16.510137114362365,
+        "error_rms_dbfs": -70.4731178184812,
+        "flags": [],
+        "kind": "signal",
+        "measured_offset_samples": 0,
+        "offset_status": "verified_zero",
+        "passed": true,
+        "project_samples": [
+          0,
+          48000
+        ],
+        "reference_peak_dbfs": -10.00000005838476,
+        "reference_rms_dbfs": -16.508874822272134,
+        "segments": [
+          {
+            "peak_correlation": 0.9999998896818723,
+            "peak_lag": -1056,
+            "secondary_correlation": 0.9999998896818443,
+            "secondary_lag": 2016,
+            "segment_samples": 4096,
+            "segment_start": 4096,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999998727515826
+          },
+          {
+            "peak_correlation": 0.9999998903661955,
+            "peak_lag": 1008,
+            "secondary_correlation": 0.9999998898648907,
+            "secondary_lag": 960,
+            "segment_samples": 4096,
+            "segment_start": 8192,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999998764975861
+          },
+          {
+            "peak_correlation": 0.999999890011725,
+            "peak_lag": 0,
+            "secondary_correlation": 0.9999998898568098,
+            "secondary_lag": -48,
+            "segment_samples": 4096,
+            "segment_start": 12288,
+            "status": "periodic",
+            "zero_lag_correlation": 0.999999890011725
+          },
+          {
+            "peak_correlation": 0.999988382219681,
+            "peak_lag": 0,
+            "secondary_correlation": 0.9936375462806472,
+            "secondary_lag": -48,
+            "segment_samples": 4096,
+            "segment_start": 16384,
+            "status": "verified_zero",
+            "zero_lag_correlation": 0.999988382219681
+          },
+          {
+            "peak_correlation": 0.9999998011844368,
+            "peak_lag": 2016,
+            "secondary_correlation": 0.9999998009065586,
+            "secondary_lag": 1968,
+            "segment_samples": 4096,
+            "segment_start": 20480,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999996251540355
+          },
+          {
+            "peak_correlation": 0.999999802053581,
+            "peak_lag": -1824,
+            "secondary_correlation": 0.9999998020471226,
+            "secondary_lag": 1248,
+            "segment_samples": 4096,
+            "segment_start": 24576,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999997768426386
+          },
+          {
+            "peak_correlation": 0.9999998017937671,
+            "peak_lag": 240,
+            "secondary_correlation": 0.9999998013953986,
+            "secondary_lag": -48,
+            "segment_samples": 4096,
+            "segment_start": 28672,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999998010538893
+          },
+          {
+            "peak_correlation": 0.9999998014282456,
+            "peak_lag": -768,
+            "secondary_correlation": 0.9999998012536652,
+            "secondary_lag": -816,
+            "segment_samples": 4096,
+            "segment_start": 32768,
+            "status": "periodic",
+            "zero_lag_correlation": 0.9999997645746829
+          }
+        ],
+        "snr_db": 53.96424299620907,
+        "uncovered_samples": 0,
+        "window": [
+          0,
+          48000
+        ]
+      },
+      {
+        "blocks": {
+          "compared": 1,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.004810070430089297,
+          "max_silent_level_dbfs": -77.21405738597898,
+          "min_snr_block_start": 67200,
+          "min_snr_db": 56.68651855496129,
+          "silent": 80,
+          "sound_in_silence_blocks": 0
+        },
+        "decoded_peak_dbfs": -2.5158534712488168,
+        "decoded_rms_dbfs": -48.94217719563514,
+        "error_rms_dbfs": -98.58114352413233,
+        "flags": [],
+        "kind": "signal",
+        "measured_offset_samples": 0,
+        "offset_status": "verified_zero",
+        "passed": true,
+        "project_samples": [
+          48000,
+          86486
+        ],
+        "reference_peak_dbfs": -2.509473258576313,
+        "reference_rms_dbfs": -48.93740081586284,
+        "segments": [
+          {
+            "peak_correlation": 0.9999947207613947,
+            "peak_lag": 0,
+            "secondary_correlation": 0.0012568827375178616,
+            "secondary_lag": -1541,
+            "segment_samples": 4096,
+            "segment_start": 64384,
+            "status": "verified_zero",
+            "zero_lag_correlation": 0.9999947207613947
+          }
+        ],
+        "snr_db": 49.6437427082695,
+        "uncovered_samples": 0,
+        "window": [
+          48000,
+          86486
+        ]
+      }
+    ],
+    "canvas": [
+      320,
+      180
+    ],
+    "document_sha256": "99f8dda96fee7df2090967746c658c7cce73a6ac4a02d448e2b11f73467adc77",
+    "failures": [],
+    "frame_rate": [
+      30000,
+      1001
+    ],
+    "movie": {
+      "audio": {
+        "first_pts": -2048,
+        "gaps": [],
+        "physical_samples": 89088,
+        "presented_end": 86486
+      },
+      "audio_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 2048,
+        "presented_media_ticks": 86486
+      },
+      "audio_track": 1,
+      "bytes": 37734,
+      "color": {
+        "chroma_location": "Left",
+        "container": [
+          1,
+          1,
+          1
+        ],
+        "container_full_range": false,
+        "decoded": "ColorMetadata { range: Limited, matrix: Bt709, transfer: Bt709, primaries: Bt709, mastering: None, content_light: None, ignored_static: IgnoredStaticMetadata { mastering: false, content_light: false } }",
+        "problems": []
+      },
+      "expected_audio_samples": 86486,
+      "expected_video_frames": 54,
+      "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBLOeea/exports/stereo-balance.mp4",
+      "picture_anomalies": [],
+      "video_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 0,
+        "presented_media_ticks": 54054
+      },
+      "video_frames": 54
+    },
+    "output_color": {
+      "hdr_sources": false,
+      "mastering": null,
+      "output": "sdr_rec709",
+      "reason": "sdr_sources",
+      "tone_map_peak_nits": 1000
+    },
+    "passed": true,
+    "picture_bits": 8,
+    "pictures": [
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 0,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": null,
+        "previous_luma_psnr_db": null,
+        "project_frame": 0,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 1,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 1,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 2,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 2,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 3,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 3,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 4,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 4,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 5,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 5,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 6,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 6,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 7,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 7,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 8,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 8,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 9,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 9,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 10,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 10,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 11,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 11,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 12,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 12,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 13,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 13,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.0,
+        "flags": [],
+        "local_luma_error": 0.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 100.0,
+        "output_frame": 14,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 100.0,
+        "project_frame": 14,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 15,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 15,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 16,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 16,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 17,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 17,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 18,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 18,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 19,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 19,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 20,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 20,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 21,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 21,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 83.69382861635196,
+        "output_frame": 22,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 22,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 16.00027777777778,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 83.43329088426141,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 9.704024275293463,
+        "output_frame": 23,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.0002777777777777778,
+            "psnr_db": 83.69382861635196
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          },
+          {
+            "max_abs_error": 0,
+            "mean_abs_error": 0.0,
+            "psnr_db": 100.0
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 0.0,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 83.69382861635196,
+        "project_frame": 23,
+        "provenance": {
+          "kind": "background"
+        },
+        "reference_mean_luma": 16.0,
+        "thumbnail_mad": 0.0002717391304347826
+      },
+      {
+        "decoded_mean_luma": 68.02151041666667,
+        "flags": [],
+        "local_luma_error": 1.125,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.914674831739415,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 24.10545271631902,
+        "output_frame": 24,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.05776041666666667,
+            "psnr_db": 58.00521393946159
+          },
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.14034722222222223,
+            "psnr_db": 54.20114864959314
+          },
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.12652777777777777,
+            "psnr_db": 54.63586981267329
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 83.43329088426141,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 9.706660643150137,
+        "project_frame": 24,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 12,
+          "source_pts": 12012
+        },
+        "reference_mean_luma": 68.02486111111111,
+        "thumbnail_mad": 0.03147078804347826
+      },
+      {
+        "decoded_mean_luma": 68.15145833333334,
+        "flags": [],
+        "local_luma_error": 1.5625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.18984863816733,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.829058032473373,
+        "output_frame": 25,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.017222222222222222,
+            "psnr_db": 64.29240070529131
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.04951388888888889,
+            "psnr_db": 60.776810909052166
+          },
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.05263888888888889,
+            "psnr_db": 60.451004063375045
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.914674831739415,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 24.095834283469845,
+        "project_frame": 25,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 13,
+          "source_pts": 13013
+        },
+        "reference_mean_luma": 68.14930555555556,
+        "thumbnail_mad": 0.009137228260869565
+      },
+      {
+        "decoded_mean_luma": 68.03246527777777,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.19959964333676,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.822912601630946,
+        "output_frame": 26,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.01626736111111111,
+            "psnr_db": 64.40922996631384
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.028958333333333332,
+            "psnr_db": 63.28978332721039
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.025277777777777777,
+            "psnr_db": 63.89379490051451
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.18984863816733,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.82647328345837,
+        "project_frame": 26,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 14,
+          "source_pts": 14014
+        },
+        "reference_mean_luma": 68.02512152777778,
+        "thumbnail_mad": 0.008542798913043478
+      },
+      {
+        "decoded_mean_luma": 68.39873263888889,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.589026719726986,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 26.132728744011793,
+        "output_frame": 27,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.011770833333333333,
+            "psnr_db": 66.33983591672504
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.008055555555555555,
+            "psnr_db": 68.85083022288411
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.011180555555555555,
+            "psnr_db": 67.38446742571006
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.19959964333676,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.822913302348127,
+        "project_frame": 27,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 15,
+          "source_pts": 15015
+        },
+        "reference_mean_luma": 68.39491319444444,
+        "thumbnail_mad": 0.006453804347826087
+      },
+      {
+        "decoded_mean_luma": 68.27569444444444,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.065361246473902,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.658117939438625,
+        "output_frame": 28,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.010659722222222221,
+            "psnr_db": 66.79186781606684
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.007638888888888889,
+            "psnr_db": 69.22224830292978
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.010902777777777779,
+            "psnr_db": 67.48726381815577
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.589026719726986,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 26.12399162212688,
+        "project_frame": 28,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 16,
+          "source_pts": 16016
+        },
+        "reference_mean_luma": 68.27208333333333,
+        "thumbnail_mad": 0.005876358695652174
+      },
+      {
+        "decoded_mean_luma": 67.6667013888889,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.48458431221987,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.903347720915022,
+        "output_frame": 29,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.010208333333333333,
+            "psnr_db": 67.01929908745244
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.008472222222222223,
+            "psnr_db": 68.37903944592942
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.012222222222222223,
+            "psnr_db": 66.70412857299179
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.065361246473902,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.661228525624804,
+        "project_frame": 29,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 17,
+          "source_pts": 17017
+        },
+        "reference_mean_luma": 67.66263888888889,
+        "thumbnail_mad": 0.005434782608695652
+      },
+      {
+        "decoded_mean_luma": 68.39163194444444,
+        "flags": [],
+        "local_luma_error": 1.125,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.540123404822587,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 27.679438122393517,
+        "output_frame": 30,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.0165625,
+            "psnr_db": 64.10341469314103
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.0075,
+            "psnr_db": 69.30050167804934
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.007361111111111111,
+            "psnr_db": 69.14538001626687
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.48458431221987,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.90341853440547,
+        "project_frame": 30,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 18,
+          "source_pts": 18018
+        },
+        "reference_mean_luma": 68.39236111111111,
+        "thumbnail_mad": 0.01046195652173913
+      },
+      {
+        "decoded_mean_luma": 68.2728125,
+        "flags": [],
+        "local_luma_error": 1.125,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.212896768582954,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.81565993224316,
+        "output_frame": 31,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.008368055555555556,
+            "psnr_db": 67.0899176323273
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.0077083333333333335,
+            "psnr_db": 68.74532839955104
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.007291666666666667,
+            "psnr_db": 68.81537741523762
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.540123404822587,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 27.673170345143436,
+        "project_frame": 31,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 19,
+          "source_pts": 19019
+        },
+        "reference_mean_luma": 68.27104166666666,
+        "thumbnail_mad": 0.004042119565217391
+      },
+      {
+        "decoded_mean_luma": 69.125625,
+        "flags": [],
+        "local_luma_error": 1.0,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.161017450569467,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.216326578575266,
+        "output_frame": 32,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.006736111111111111,
+            "psnr_db": 68.97724502617037
+          },
+          {
+            "max_abs_error": 1,
+            "mean_abs_error": 0.007638888888888889,
+            "psnr_db": 69.30050167804934
+          },
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.007152777777777778,
+            "psnr_db": 69.03256991216998
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.212896768582954,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.81474362115093,
+        "project_frame": 32,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 20,
+          "source_pts": 20020
+        },
+        "reference_mean_luma": 69.12322916666666,
+        "thumbnail_mad": 0.0034307065217391306
+      },
+      {
+        "decoded_mean_luma": 68.02739583333333,
+        "flags": [],
+        "local_luma_error": 0.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 19.27826613414414,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 22.428499298293435,
+        "output_frame": 33,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.004826388888888889,
+            "psnr_db": 70.87781417809542
+          },
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.00875,
+            "psnr_db": 67.6192783842053
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.008958333333333334,
+            "psnr_db": 66.6824679554267
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.161017450569467,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.21838365958062,
+        "project_frame": 33,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 21,
+          "source_pts": 21021
+        },
+        "reference_mean_luma": 68.02614583333333,
+        "thumbnail_mad": 0.0019021739130434783
+      },
+      {
+        "decoded_mean_luma": 68.51607638888889,
+        "flags": [],
+        "local_luma_error": 0.625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.911420383206243,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 24.092113592478892,
+        "output_frame": 34,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.006510416666666667,
+            "psnr_db": 69.35013587336485
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.008333333333333333,
+            "psnr_db": 66.8814162425961
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.009097222222222222,
+            "psnr_db": 65.32110159132897
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 19.27826613414414,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 22.425095326002182,
+        "project_frame": 34,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 22,
+          "source_pts": 22022
+        },
+        "reference_mean_luma": 68.51446180555556,
+        "thumbnail_mad": 0.0026324728260869565
+      },
+      {
+        "decoded_mean_luma": 68.63777777777777,
+        "flags": [],
+        "local_luma_error": 0.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.197642660408405,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.820516529873323,
+        "output_frame": 35,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.005989583333333334,
+            "psnr_db": 70.01794012482435
+          },
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.009166666666666667,
+            "psnr_db": 66.83641123032933
+          },
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.010555555555555556,
+            "psnr_db": 65.73502844291123
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.911420383206243,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 24.095883413982534,
+        "project_frame": 35,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 23,
+          "source_pts": 23023
+        },
+        "reference_mean_luma": 68.63605902777778,
+        "thumbnail_mad": 0.002666440217391304
+      },
+      {
+        "decoded_mean_luma": 68.5159375,
+        "flags": [],
+        "local_luma_error": 0.625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.205411246325955,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.817429449354975,
+        "output_frame": 36,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.0072743055555555556,
+            "psnr_db": 68.55001155423848
+          },
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.009652777777777777,
+            "psnr_db": 66.90409485715432
+          },
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.010833333333333334,
+            "psnr_db": 65.49838926093328
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.197642660408405,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.81942303122995,
+        "project_frame": 36,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 24,
+          "source_pts": 24024
+        },
+        "reference_mean_luma": 68.51463541666666,
+        "thumbnail_mad": 0.0034476902173913044
+      },
+      {
+        "decoded_mean_luma": 68.88112847222222,
+        "flags": [],
+        "local_luma_error": 0.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.586370356460993,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 26.12928904341047,
+        "output_frame": 37,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.006111111111111111,
+            "psnr_db": 69.89171619923592
+          },
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.011597222222222222,
+            "psnr_db": 65.64902672529205
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.012013888888888888,
+            "psnr_db": 64.11536227927047
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.205411246325955,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.816558244660893,
+        "project_frame": 37,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 25,
+          "source_pts": 25025
+        },
+        "reference_mean_luma": 68.87953125,
+        "thumbnail_mad": 0.002751358695652174
+      },
+      {
+        "decoded_mean_luma": 68.75991319444445,
+        "flags": [],
+        "local_luma_error": 0.8125,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.05872740694461,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.65628773489001,
+        "output_frame": 38,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.0065451388888888885,
+            "psnr_db": 69.13586644221272
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.012916666666666667,
+            "psnr_db": 64.63586981267329
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.013194444444444444,
+            "psnr_db": 63.105773749592906
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.586370356460993,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 26.12197007812757,
+        "project_frame": 38,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 26,
+          "source_pts": 26026
+        },
+        "reference_mean_luma": 68.75829861111112,
+        "thumbnail_mad": 0.003141983695652174
+      },
+      {
+        "decoded_mean_luma": 68.14942708333334,
+        "flags": [],
+        "local_luma_error": 0.625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.487046635889495,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.899322596590896,
+        "output_frame": 39,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.00546875,
+            "psnr_db": 70.23274491236029
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.014930555555555556,
+            "psnr_db": 63.430539229128485
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.01375,
+            "psnr_db": 62.3584395326498
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.05872740694461,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.660199063390735,
+        "project_frame": 39,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 27,
+          "source_pts": 27027
+        },
+        "reference_mean_luma": 68.14805555555556,
+        "thumbnail_mad": 0.002530570652173913
+      },
+      {
+        "decoded_mean_luma": 68.88081597222222,
+        "flags": [],
+        "local_luma_error": 1.0625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.540066578168386,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 27.6686811714985,
+        "output_frame": 40,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.008506944444444444,
+            "psnr_db": 67.32143373836267
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.016041666666666666,
+            "psnr_db": 62.96581712225348
+          },
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.015555555555555555,
+            "psnr_db": 64.37416746907024
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.487046635889495,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.89899167697177,
+        "project_frame": 40,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 28,
+          "source_pts": 28028
+        },
+        "reference_mean_luma": 68.87970486111111,
+        "thumbnail_mad": 0.004245923913043478
+      },
+      {
+        "decoded_mean_luma": 68.75963541666667,
+        "flags": [],
+        "local_luma_error": 1.0625,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.499782773239332,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.895634887856282,
+        "output_frame": 41,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.006128472222222223,
+            "psnr_db": 69.61779536283781
+          },
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.015277777777777777,
+            "psnr_db": 63.69382861635198
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.014097222222222223,
+            "psnr_db": 64.2861742600398
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.540066578168386,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 27.67345535641938,
+        "project_frame": 41,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 29,
+          "source_pts": 29029
+        },
+        "reference_mean_luma": 68.75795138888888,
+        "thumbnail_mad": 0.003345788043478261
+      },
+      {
+        "decoded_mean_luma": 69.24772569444444,
+        "flags": [],
+        "local_luma_error": 0.875,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.169135984015654,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.215217411517333,
+        "output_frame": 42,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.0071875,
+            "psnr_db": 69.12637366287254
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.015625,
+            "psnr_db": 63.09630167425898
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.014930555555555556,
+            "psnr_db": 63.19196511959837
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.499782773239332,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.894564484474856,
+        "project_frame": 42,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 30,
+          "source_pts": 30030
+        },
+        "reference_mean_luma": 69.24498263888889,
+        "thumbnail_mad": 0.0037703804347826086
+      },
+      {
+        "decoded_mean_luma": 68.15097222222222,
+        "flags": [],
+        "local_luma_error": 0.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 19.297309289984792,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 22.42020662085323,
+        "output_frame": 43,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 2,
+            "mean_abs_error": 0.004704861111111111,
+            "psnr_db": 71.06635223937013
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.01597222222222222,
+            "psnr_db": 62.57113093217927
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.015347222222222222,
+            "psnr_db": 62.63021952828447
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.169135984015654,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.215284137626462,
+        "project_frame": 43,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 31,
+          "source_pts": 31031
+        },
+        "reference_mean_luma": 68.15012152777778,
+        "thumbnail_mad": 0.001953125
+      },
+      {
+        "decoded_mean_luma": 68.63840277777778,
+        "flags": [],
+        "local_luma_error": 0.875,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.922060604359253,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 24.088216848626594,
+        "output_frame": 44,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.007517361111111111,
+            "psnr_db": 68.71934859235195
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.017222222222222222,
+            "psnr_db": 62.24808654025581
+          },
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.017430555555555557,
+            "psnr_db": 63.430539229128485
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 19.297309289984792,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 22.416850203494853,
+        "project_frame": 44,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 32,
+          "source_pts": 32032
+        },
+        "reference_mean_luma": 68.63598958333333,
+        "thumbnail_mad": 0.0036514945652173915
+      },
+      {
+        "decoded_mean_luma": 68.7590798611111,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.202951949410803,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.819981370176013,
+        "output_frame": 45,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.011458333333333333,
+            "psnr_db": 66.31991411656719
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.028194444444444446,
+            "psnr_db": 61.73483209225964
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.03256944444444444,
+            "psnr_db": 61.86825560330285
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 15.922060604359253,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 24.089242140723623,
+        "project_frame": 45,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 33,
+          "source_pts": 33033
+        },
+        "reference_mean_luma": 68.76039930555555,
+        "thumbnail_mad": 0.006419836956521739
+      },
+      {
+        "decoded_mean_luma": 68.63595486111112,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.213839113530724,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 20.81465325956824,
+        "output_frame": 46,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.011805555555555555,
+            "psnr_db": 66.06891857609187
+          },
+          {
+            "max_abs_error": 6,
+            "mean_abs_error": 0.02798611111111111,
+            "psnr_db": 61.72792207517891
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.03340277777777778,
+            "psnr_db": 61.171368111620794
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.202951949410803,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.818494025813216,
+        "project_frame": 46,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 34,
+          "source_pts": 34034
+        },
+        "reference_mean_luma": 68.63526041666667,
+        "thumbnail_mad": 0.006929347826086956
+      },
+      {
+        "decoded_mean_luma": 69.00059027777777,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.602054919513897,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 26.12261770554456,
+        "output_frame": 47,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.010885416666666667,
+            "psnr_db": 66.67706963923254
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.027569444444444445,
+            "psnr_db": 61.75562835619084
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.03395833333333333,
+            "psnr_db": 60.59220796430744
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 23.213839113530724,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 20.820242289055514,
+        "project_frame": 47,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 35,
+          "source_pts": 35035
+        },
+        "reference_mean_luma": 69.00119791666667,
+        "thumbnail_mad": 0.006199048913043478
+      },
+      {
+        "decoded_mean_luma": 68.87890625,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.070020500438268,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.658678686262434,
+        "output_frame": 48,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.009496527777777777,
+            "psnr_db": 67.37812272798696
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.028541666666666667,
+            "psnr_db": 61.47317019046611
+          },
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.03340277777777778,
+            "psnr_db": 61.954685218337914
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 12.602054919513897,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 26.124545965936573,
+        "project_frame": 48,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 36,
+          "source_pts": 36036
+        },
+        "reference_mean_luma": 68.87979166666666,
+        "thumbnail_mad": 0.006266983695652174
+      },
+      {
+        "decoded_mean_luma": 68.26914930555556,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.496523672049584,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.897471350879506,
+        "output_frame": 49,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.010572916666666666,
+            "psnr_db": 66.99021026591656
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.029027777777777777,
+            "psnr_db": 61.18962859326303
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.034305555555555554,
+            "psnr_db": 61.300833825083046
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 21.070020500438268,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.659434050747333,
+        "project_frame": 49,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 37,
+          "source_pts": 37037
+        },
+        "reference_mean_luma": 68.26930555555556,
+        "thumbnail_mad": 0.006980298913043478
+      },
+      {
+        "decoded_mean_luma": 69.00045138888889,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.548562467885796,
+          "status": "unobservable"
+        },
+        "next_luma_psnr_db": 27.668393084200865,
+        "output_frame": 50,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 5,
+            "mean_abs_error": 0.011302083333333334,
+            "psnr_db": 66.35483746814911
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.03013888888888889,
+            "psnr_db": 60.66186804214709
+          },
+          {
+            "max_abs_error": 8,
+            "mean_abs_error": 0.035416666666666666,
+            "psnr_db": 60.48198834332884
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 20.496523672049584,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.901385172948082,
+        "project_frame": 50,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 38,
+          "source_pts": 38038
+        },
+        "reference_mean_luma": 69.00192708333333,
+        "thumbnail_mad": 0.007218070652173913
+      },
+      {
+        "decoded_mean_luma": 68.87842013888888,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 26.55898408103493,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 19.6476540569027,
+        "output_frame": 51,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.008975694444444444,
+            "psnr_db": 67.74852198845853
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.030416666666666668,
+            "psnr_db": 60.309263680305925
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.03180555555555555,
+            "psnr_db": 60.68352865971217
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 10.548562467885796,
+          "status": "unobservable"
+        },
+        "previous_luma_psnr_db": 27.669020800127008,
+        "project_frame": 51,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 39,
+          "source_pts": 39039
+        },
+        "reference_mean_luma": 68.87996527777777,
+        "thumbnail_mad": 0.0053158967391304345
+      },
+      {
+        "decoded_mean_luma": 69.12081597222222,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.166852677790974,
+          "status": "observable"
+        },
+        "next_luma_psnr_db": 21.22043204007738,
+        "output_frame": 52,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.012118055555555556,
+            "psnr_db": 66.2411283764621
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.027708333333333335,
+            "psnr_db": 60.765731962179075
+          },
+          {
+            "max_abs_error": 4,
+            "mean_abs_error": 0.029930555555555554,
+            "psnr_db": 62.39854087776421
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 26.55898408103493,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 19.649200459308396,
+        "project_frame": 52,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 40,
+          "source_pts": 40040
+        },
+        "reference_mean_luma": 69.12272569444444,
+        "thumbnail_mad": 0.009001358695652174
+      },
+      {
+        "decoded_mean_luma": 68.02578125,
+        "flags": [],
+        "local_luma_error": 1.5,
+        "next_index": null,
+        "next_luma_psnr_db": null,
+        "output_frame": 53,
+        "passed": true,
+        "planes": [
+          {
+            "max_abs_error": 3,
+            "mean_abs_error": 0.007864583333333333,
+            "psnr_db": 68.40305579184553
+          },
+          {
+            "max_abs_error": 7,
+            "mean_abs_error": 0.02875,
+            "psnr_db": 60.793482502726796
+          },
+          {
+            "max_abs_error": 9,
+            "mean_abs_error": 0.03138888888888889,
+            "psnr_db": 61.453680502623335
+          }
+        ],
+        "previous_index": {
+          "max_error_luma_rms": 6.4053104003494274,
+          "reference_luma_rms": 22.166852677790974,
+          "status": "observable"
+        },
+        "previous_luma_psnr_db": 21.216405443008593,
+        "project_frame": 53,
+        "provenance": {
+          "asset": "5d8579d7-6c1e-40db-8f92-b898cc4c4b1d",
+          "kind": "original",
+          "source_frame": 41,
+          "source_pts": 41041
+        },
+        "reference_mean_luma": 68.02784722222222,
+        "thumbnail_mad": 0.005689538043478261
+      }
+    ],
+    "project_id": "70f7943b-569f-4932-9859-a8599c27c020",
+    "range": [
+      0,
+      54
+    ],
+    "raster": [
+      320,
+      180
+    ],
+    "revision_id": "437223bb-3304-48dc-966f-a9defca24163",
+    "schema_version": 3,
+    "scope": "diagnostic comparison of one emitted movie with its committed revision through the shared picture path and limited audition bus; grants no publication authority",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 82,
+      "index_observable_comparisons": 48,
+      "index_unobservable_comparisons": 58,
+      "max_block_level_db": 0.08540675076787352,
+      "max_local_luma_error": 1.5625,
+      "max_thumbnail_mad": 0.03147078804347826,
+      "min_block_snr_db": 29.572733080548687,
+      "min_chroma_psnr_db": 54.20114864959314,
+      "min_luma_psnr_db": 58.00521393946159,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 54,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "thresholds": {
+      "black_max_luma": 20.0,
+      "black_reference_min_luma": 32.0,
+      "block_floor_dbfs": -60.0,
+      "max_block_level_db": 3.0,
+      "max_hdr_local_luma_error": 40.0,
+      "max_thumbnail_mad": 4.0,
+      "min_alignment_correlation": 0.5,
+      "min_block_snr_db": 1.5,
+      "min_chroma_psnr_db": 32.0,
+      "min_hdr_chroma_psnr_db": 40.0,
+      "min_hdr_luma_psnr_db": 30.0,
+      "min_luma_psnr_db": 32.0,
+      "neighbor_psnr_margin_db": 0.5,
+      "silence_dbfs": -70.0,
+      "silent_block_max_dbfs": -60.0,
+      "silent_max_peak_dbfs": -50.0
+    }
+  }
+}

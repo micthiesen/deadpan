@@ -1,0 +1,40 @@
+{
+  "reviewer": "primary agent, single-session review under sole-agent instruction",
+  "scope": "complete source and generated-reference diff",
+  "checks": [
+    "bounded integer balance ingress and closed treatment order",
+    "gain, saturation and ranged-edit preservation",
+    "inner-to-outer voice processing and independent sound scope",
+    "frozen-context schema admission and transitive cache identity",
+    "captured revision and missing-target refusal",
+    "macro permission, recorded description, dot and occurrence isolation",
+    "unchanged center path and signed-zero sample comparisons",
+    "named-takes test waits for its actual request ticket"
+  ],
+  "findings_resolved": [
+    "ranged and scoped gain setters now preserve all stages",
+    "macro recorder permission and human-readable balance receipt were added",
+    "named-takes test helper no longer confuses unrelated idle status with command completion"
+  ],
+  "limits": [
+    "not an independent second-agent review",
+    "no live GUI, physical input or listening check",
+    "EQ, arbitrary sends, nonlinear group mixing and full mastering remain outside this change"
+  ],
+  "visual_review": {
+    "captures": [
+      "balance-inspector.png",
+      "waveform-compact.png",
+      "curve-compact.png",
+      "curve-default.png"
+    ],
+    "observations": [
+      "Balance value is readable beside the retained beat scope and timing",
+      "Repeated edit text names balance and direction",
+      "Compact waveform and envelope include both axes and the complete plot",
+      "Fixed Apply, Cancel and audition actions remain outside the scroll region",
+      "Inspector teaching text below the visible region remains in its scroll area"
+    ],
+    "verification": "offscreen Metal images; no native-window or physical-display claim"
+  }
+}

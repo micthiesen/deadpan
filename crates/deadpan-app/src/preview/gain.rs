@@ -273,7 +273,7 @@ impl DeadpanApp {
                     .map_err(|error| error.to_string())
                     .and_then(|treatments| {
                         if treatments == target.entry {
-                            Err("The beat already has that gain and saturation. No edit was made."
+                            Err("The beat already has those audio treatments. No edit was made."
                                 .into())
                         } else {
                             Ok(())
@@ -509,6 +509,46 @@ impl DeadpanApp {
                 }
                 edit.set_saturation(stage)?;
                 Ok((target, edit.recipe().clone()))
+            });
+        match result {
+            Ok((target, recipe)) => self.commit_gain(target, recipe),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// Captured balance follows the same revision and scope checks as gain.
+    /// Whole-beat edits use the semantic path for dot and macro replay.
+    pub(super) fn balance_command(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+        balance: Option<deadpan_core::StereoBalance>,
+    ) {
+        if let Some(Ok(captured)) = &target
+            && captured.scoped.is_none()
+        {
+            self.record_audio_change(
+                target,
+                macro_target,
+                deadpan_core::AudioChange::Balance { balance },
+            );
+            return;
+        }
+        if self.macros.recording() {
+            self.error = Some(
+                "Recording changes a whole beat's balance; leave the play scope with :scope all."
+                    .into(),
+            );
+            return;
+        }
+        let result = target
+            .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
+            .and_then(|target| {
+                let recipe = target
+                    .entry
+                    .with_balance(balance)
+                    .map_err(|error| error.to_string())?;
+                Ok((target, recipe))
             });
         match result {
             Ok((target, recipe)) => self.commit_gain(target, recipe),
@@ -1200,6 +1240,10 @@ impl DeadpanApp {
             ),
             None => "No saturation · :saturate 12dB drives a soft clipper".into(),
         });
+        ui.weak(format!(
+            "Balance {} · :balance -50% left / +50% right / center",
+            crate::gain::format_balance(edit.recipe().balance())
+        ));
     }
 }
 

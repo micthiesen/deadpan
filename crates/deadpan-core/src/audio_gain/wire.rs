@@ -238,11 +238,18 @@ pub(super) struct Treatments {
     clip_gain: Option<ClipGain>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     saturation: Option<Saturation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    balance: Option<StereoBalance>,
 }
 impl TryFrom<Treatments> for AudioTreatments {
     type Error = GainError;
     fn try_from(value: Treatments) -> Result<Self, Self::Error> {
-        Self::with_stages(value.order, value.clip_gain, value.saturation)
+        Self::with_all_stages(
+            value.order,
+            value.clip_gain,
+            value.saturation,
+            value.balance,
+        )
     }
 }
 impl From<AudioTreatments> for Treatments {
@@ -251,6 +258,7 @@ impl From<AudioTreatments> for Treatments {
             order: value.order,
             clip_gain: value.clip_gain,
             saturation: value.saturation,
+            balance: value.balance,
         }
     }
 }

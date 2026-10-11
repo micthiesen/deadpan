@@ -32,7 +32,7 @@ pub const MAX_GAIN_MUTE_RANGES: usize = 64;
 /// Document/plan integration must charge these independent aggregate limits.
 pub const MAX_GAIN_LAYERS: usize = 16;
 pub const MAX_GAIN_RECORDS: usize = 100_000;
-pub const MAX_AUDIO_TREATMENT_STAGES: usize = 2;
+pub const MAX_AUDIO_TREATMENT_STAGES: usize = 3;
 /// Saturation drive is authored in exact millidecibels from 0 through 24 dB, the authored gain ceiling.
 pub const MAX_SATURATION_DRIVE_MILLIDECIBELS: i32 = 24_000;
 /// Standalone JSON input/output cap. Enclosing documents and commands must also
@@ -42,6 +42,7 @@ pub const MAX_AUDIO_TREATMENTS_JSON_BYTES: usize = 512 * 1024;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GainError {
     ValueRange,
+    BalanceRange,
     TimeRange,
     Segments,
     StageOrder,
@@ -53,10 +54,13 @@ impl fmt::Display for GainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::ValueRange => "gain must be between -96000 and 24000 millidecibels",
+            Self::BalanceRange => {
+                "stereo balance must be an integer percent between -100 (left) and 100 (right)"
+            }
             Self::TimeRange => "gain ranges require nonnegative increasing exact owner times",
             Self::Segments => "gain segments must increase from the range start to its exact end",
             Self::StageOrder => {
-                "treatment order must list each present stage (ClipGain, Saturation) exactly once"
+                "treatment order must list each present stage exactly once, with StereoBalance last"
             }
             Self::Limit => "gain exceeds its declared collection or aggregate record limit",
             Self::Overflow => "gain arithmetic exceeds its bounded numeric representation",
@@ -430,6 +434,43 @@ impl ClipGain {
 pub enum AudioTreatmentStage {
     ClipGain,
     Saturation,
+    StereoBalance,
+}
+
+/// Stereo channel balance in whole percent: -100 keeps only left, zero
+/// preserves both channels, and +100 keeps only right. The favored channel
+/// stays at unity; DSP linearly attenuates the opposite channel. No crossfeed,
+/// normalization, timing change or implicit layout interpretation is involved.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "i16", into = "i16")]
+pub struct StereoBalance(i16);
+
+impl StereoBalance {
+    pub const CENTER: Self = Self(0);
+
+    pub fn new(percent: i16) -> Result<Self, GainError> {
+        if !(-100..=100).contains(&percent) {
+            return Err(GainError::BalanceRange);
+        }
+        Ok(Self(percent))
+    }
+
+    pub const fn percent(self) -> i16 {
+        self.0
+    }
+}
+
+impl TryFrom<i16> for StereoBalance {
+    type Error = GainError;
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
+        Self::new(value)
+    }
+}
+
+impl From<StereoBalance> for i16 {
+    fn from(value: StereoBalance) -> Self {
+        value.0
+    }
 }
 
 /// Intentional nonlinear drive (specification §8.3 "Saturation"): the signal
@@ -471,6 +512,7 @@ pub struct AudioTreatments {
     order: Vec<AudioTreatmentStage>,
     clip_gain: Option<ClipGain>,
     saturation: Option<Saturation>,
+    balance: Option<StereoBalance>,
 }
 
 impl AudioTreatments {
@@ -487,10 +529,20 @@ impl AudioTreatments {
         clip_gain: Option<ClipGain>,
         saturation: Option<Saturation>,
     ) -> Result<Self, GainError> {
+        Self::with_all_stages(order, clip_gain, saturation, None)
+    }
+
+    pub fn with_all_stages(
+        order: Vec<AudioTreatmentStage>,
+        clip_gain: Option<ClipGain>,
+        saturation: Option<Saturation>,
+        balance: Option<StereoBalance>,
+    ) -> Result<Self, GainError> {
         let result = Self {
             order,
             clip_gain,
             saturation,
+            balance,
         };
         result.validate()?;
         Ok(result)
@@ -500,6 +552,7 @@ impl AudioTreatments {
             order: vec![AudioTreatmentStage::ClipGain],
             clip_gain: Some(clip_gain),
             saturation: None,
+            balance: None,
         }
     }
     pub fn order(&self) -> &[AudioTreatmentStage] {
@@ -511,12 +564,29 @@ impl AudioTreatments {
     pub fn saturation(&self) -> Option<Saturation> {
         self.saturation
     }
+    pub fn balance(&self) -> Option<StereoBalance> {
+        self.balance
+    }
     pub fn is_empty(&self) -> bool {
-        self.clip_gain.is_none() && self.saturation.is_none()
+        self.clip_gain.is_none() && self.saturation.is_none() && self.balance.is_none()
+    }
+    /// Balance is the final per-owner treatment. Adding another treatment
+    /// later keeps it before balance; removing balance preserves that order.
+    pub fn with_balance(&self, balance: Option<StereoBalance>) -> Result<Self, GainError> {
+        let mut order: Vec<_> = self
+            .order
+            .iter()
+            .copied()
+            .filter(|stage| *stage != AudioTreatmentStage::StereoBalance)
+            .collect();
+        if balance.is_some() {
+            order.push(AudioTreatmentStage::StereoBalance);
+        }
+        Self::with_all_stages(order, self.clip_gain.clone(), self.saturation, balance)
     }
     /// The same recipe with `saturation` replaced or removed. A new stage is
-    /// appended after the existing ones, so it follows clip gain by default
-    /// (specification §10.2); removing it keeps the remaining order.
+    /// placed after clip gain and before balance by default (specification
+    /// §10.2); removing it keeps the remaining order.
     pub fn with_saturation(&self, saturation: Option<Saturation>) -> Result<Self, GainError> {
         let mut order: Vec<_> = self
             .order
@@ -525,9 +595,13 @@ impl AudioTreatments {
             .filter(|stage| *stage != AudioTreatmentStage::Saturation || saturation.is_some())
             .collect();
         if saturation.is_some() && !order.contains(&AudioTreatmentStage::Saturation) {
-            order.push(AudioTreatmentStage::Saturation);
+            let index = order
+                .iter()
+                .position(|stage| *stage == AudioTreatmentStage::StereoBalance)
+                .unwrap_or(order.len());
+            order.insert(index, AudioTreatmentStage::Saturation);
         }
-        Self::with_stages(order, self.clip_gain.clone(), saturation)
+        Self::with_all_stages(order, self.clip_gain.clone(), saturation, self.balance)
     }
     /// The same recipe with `clip_gain` replaced, keeping the existing order
     /// and placing a new clip-gain stage first.
@@ -536,7 +610,7 @@ impl AudioTreatments {
         if !order.contains(&AudioTreatmentStage::ClipGain) {
             order.insert(0, AudioTreatmentStage::ClipGain);
         }
-        Self::with_stages(order, Some(clip_gain), self.saturation)
+        Self::with_all_stages(order, Some(clip_gain), self.saturation, self.balance)
     }
     /// `with_clip_gain`, except that a unity, unmuted clip gain with no
     /// envelopes or mute ranges removes the stage, so undoing a change by
@@ -552,7 +626,7 @@ impl AudioTreatments {
             .copied()
             .filter(|stage| *stage != AudioTreatmentStage::ClipGain)
             .collect();
-        Self::with_stages(order, None, self.saturation)
+        Self::with_all_stages(order, None, self.saturation, self.balance)
     }
     pub fn validate(&self) -> Result<(), GainError> {
         if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {
@@ -561,6 +635,9 @@ impl AudioTreatments {
         let listed = |stage| self.order.iter().filter(|value| **value == stage).count();
         if listed(AudioTreatmentStage::ClipGain) != usize::from(self.clip_gain.is_some())
             || listed(AudioTreatmentStage::Saturation) != usize::from(self.saturation.is_some())
+            || listed(AudioTreatmentStage::StereoBalance) != usize::from(self.balance.is_some())
+            || (self.balance.is_some()
+                && self.order.last() != Some(&AudioTreatmentStage::StereoBalance))
         {
             return Err(GainError::StageOrder);
         }
@@ -570,11 +647,15 @@ impl AudioTreatments {
         if let Some(saturation) = self.saturation {
             Saturation::new(saturation.drive)?;
         }
+        if let Some(balance) = self.balance {
+            StereoBalance::new(balance.percent())?;
+        }
         Ok(())
     }
     pub fn record_count(&self) -> usize {
         self.clip_gain.as_ref().map_or(0, ClipGain::record_count)
             + usize::from(self.saturation.is_some())
+            + usize::from(self.balance.is_some())
     }
     /// Preserve existing effects when a physical owner gains a nonnegative
     /// whole-frame prefix: old material and every authored key move together.

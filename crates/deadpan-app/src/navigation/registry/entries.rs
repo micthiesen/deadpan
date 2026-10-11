@@ -1073,6 +1073,20 @@ pub static SPECS: &[Spec] = &[
         help: "Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive) after its clip gain and before the master limiter, as intentional distortion; off removes it. One Undo.",
     },
     Spec {
+        id: "balance",
+        name: "Stereo balance",
+        section: Section::Audio,
+        keys: &[],
+        commands: &[verb(
+            "balance",
+            ":balance -50% | +50% | left | right | center",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("set_audio instruction (balance)", AUDIO),
+        help: "Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. One Undo; dot and macros retain the chosen value.",
+    },
+    Spec {
         id: "audio-lag",
         name: "Offset sound from picture",
         section: Section::Audio,

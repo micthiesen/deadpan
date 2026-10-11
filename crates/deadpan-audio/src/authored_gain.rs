@@ -6,19 +6,25 @@ use deadpan_plan::AudioOwnerSupport;
 
 use super::*;
 
-/// Saturation stages one sample can pass through: at most one per owner layer.
-const MAX_SATURATION_STAGES: usize = deadpan_core::MAX_GAIN_LAYERS;
+/// At most one saturation and one balance stage per owner layer.
+const MAX_CHANNEL_STAGES: usize = 2 * deadpan_core::MAX_GAIN_LAYERS;
+
+#[derive(Clone, Copy)]
+enum ChannelStage {
+    Saturation(deadpan_core::Saturation),
+    Balance(deadpan_core::StereoBalance),
+}
 
 /// The authored treatment chain of one sample, evaluated inner owner first.
-/// Gain factors between nonlinear stages add exactly in Q32 millidecibels;
-/// each saturation stage closes the gain accumulated before it. Without a
-/// saturation stage the chain is one exact gain sum, as it always was.
+/// Gain factors between channel stages add exactly in Q32 millidecibels;
+/// each stage closes the gain accumulated before it. Without channel stages
+/// the chain is one exact gain sum, as it always was.
 #[derive(Clone, Default)]
 pub(super) struct GainSum {
     millidecibels_q32: i128,
     muted: bool,
-    /// Empty, and unallocated, unless an owner saturates.
-    saturations: Vec<(i128, deadpan_core::Saturation)>,
+    /// Empty, and unallocated, unless an owner saturates or balances.
+    stages: Vec<(i128, ChannelStage)>,
 }
 
 impl GainSum {
@@ -44,11 +50,11 @@ impl GainSum {
         Ok(())
     }
 
-    fn saturate(&mut self, stage: deadpan_core::Saturation) -> Result<(), GainError> {
-        if self.saturations.len() == MAX_SATURATION_STAGES {
+    fn channel_stage(&mut self, stage: ChannelStage) -> Result<(), GainError> {
+        if self.stages.len() == MAX_CHANNEL_STAGES {
             return Err(GainError::Limit);
         }
-        self.saturations.push((self.millidecibels_q32, stage));
+        self.stages.push((self.millidecibels_q32, stage));
         self.millidecibels_q32 = 0;
         Ok(())
     }
@@ -72,7 +78,14 @@ impl GainSum {
                 }
                 deadpan_core::AudioTreatmentStage::Saturation => {
                     if let Some(saturation) = treatment.saturation() {
-                        self.saturate(saturation)?;
+                        self.channel_stage(ChannelStage::Saturation(saturation))?;
+                    }
+                }
+                deadpan_core::AudioTreatmentStage::StereoBalance => {
+                    if let Some(balance) = treatment.balance()
+                        && balance != deadpan_core::StereoBalance::CENTER
+                    {
+                        self.channel_stage(ChannelStage::Balance(balance))?;
                     }
                 }
             }
@@ -123,9 +136,20 @@ impl GainSum {
             return Ok([0.0; 2]);
         }
         let mut result = sample.map(f64::from);
-        for (before, stage) in &self.saturations {
+        for (before, stage) in &self.stages {
             let gain = Self::factor(*before);
-            result = result.map(|value| stage.shape(value * gain));
+            result = result.map(|value| value * gain);
+            if !gain.is_finite() || result.iter().any(|value| !value.is_finite()) {
+                return Err(PreparationError::InvalidSamples.into());
+            }
+            match stage {
+                ChannelStage::Saturation(stage) => result = result.map(|value| stage.shape(value)),
+                ChannelStage::Balance(balance) => {
+                    let percent = balance.percent();
+                    let opposite = usize::from(percent < 0);
+                    result[opposite] *= f64::from(100 - percent.abs()) / 100.0;
+                }
+            }
         }
         if self.millidecibels_q32 == 0 {
             return Ok(result);

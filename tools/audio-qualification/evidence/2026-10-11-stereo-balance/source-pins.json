@@ -1,0 +1,31 @@
+{
+  "base_revision": "6601347d517eec6ee6cd66ca90e79a11ab18225b",
+  "files": {
+    "crates/deadpan-app/src/gain.rs": "ce9aae58f957c0cc2509c72aab3857a62f28636525ed6ca9a65d16fbbb652afe",
+    "crates/deadpan-app/src/navigation/command.rs": "32f0fc88d4b373eb5612349c456b120218303b53ab23d619fdaf15452bb0e049",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "5b1c6241b9aab2229c168d6d3431a761cb89ff8df9dfa3505c57dd1ace3f6c6d",
+    "crates/deadpan-app/src/navigation/registry/baseline.rs": "b615f1e9502b2c63f7050d71f564cc0b1131475dc1c680706d4d9ffe15964906",
+    "crates/deadpan-app/src/navigation/registry/entries.rs": "1255dff52b958447c6814f4abcf01d81bd29269c7122223a9b03b9552c73edc1",
+    "crates/deadpan-app/src/preview.rs": "754ee7cdea2f8e0f46fbda68a872522fb653826bfe09e45075eb11f6425a6c01",
+    "crates/deadpan-app/src/preview/gain.rs": "d93631a3a8e9a6b4fa85c4385c33288432c686e2eb5469b664c99b3fb5b99d10",
+    "crates/deadpan-app/src/preview/harness/audio_treatments.rs": "de55edc7cbf48323048f1e974a3a89f21b038744fd69f4e49c88915752ba87de",
+    "crates/deadpan-app/src/preview/inspector.rs": "ec323ed83e33388b280e0043a0762a89c2ec3c4f401fc8a17904939d5ea73f9c",
+    "crates/deadpan-app/src/preview/macros.rs": "8627e7f69fe08e84eb28ad0801205c8d6439308026695d707a4af3c9b7c93c8f",
+    "crates/deadpan-app/src/preview/semantic.rs": "eb0e930e9ceff7fabe2c98c85421701986e23e69a5cd18595e4ad72b06c5609c",
+    "crates/deadpan-app/src/preview/sound_events.rs": "1ab395be1cccb47a69187bff8eaa247e3dd3002c7aef44215b3fcbf187ea848c",
+    "crates/deadpan-app/src/project/scoped.rs": "9fdffa30f1d70465ac4a1e6dd70b2e3a48ba31f14d937c6882fc2015da4fe189",
+    "crates/deadpan-app/src/project/service/macros.rs": "1a9872683203d16528a3ab890dff425f72fcd69a1e18bc39ae76815a368ab701",
+    "crates/deadpan-app/src/project/tests/takes.rs": "1374fb46662ec1f88868c3154f422573b1d12557389906e0cf37fa2500a24979",
+    "crates/deadpan-audio/src/authored_gain.rs": "3bce593ad13d64aebebc34ca0d89dc7363ce1c3ef2c48ea9b7b2f6610288c274",
+    "crates/deadpan-audio/tests/stages/gain.rs": "580b1bb254ad419a6b51d8e38ddfa2b074b276da50d5d0c325e873597c7635cb",
+    "crates/deadpan-cli/tests/preview_export.rs": "3df2a0d381637ad212ea1f000467027aaab7cf63f76075a56dba5236678ac938",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "65fe67d6069a001f8f388afdf35d4e4a8ff5b65db5d04f3013641998b19e16fd",
+    "crates/deadpan-core/src/audio_context.rs": "3f1ed569df6bdde6303a8e738621520443e38ad3c62b5d3959026d125deb4c2d",
+    "crates/deadpan-core/src/audio_gain.rs": "432ec0ed333408c4748aaba93ed14553142d52bd5ab4503062c8ffb4e6e8b1f3",
+    "crates/deadpan-core/src/audio_gain/wire.rs": "3a35b2d4429a3ada33df681986c962ddce3dfaaa2c31d6dc0e9d6fc10b8aea1c",
+    "crates/deadpan-core/src/semantic/planner/tests/pause.rs": "a4c5c369b3935306b2ec8430c314e261e63c6eeeafbf3d6ff65aad3355553210",
+    "crates/deadpan-core/src/semantic/program.rs": "d36e1d6ab76751d457ccd1cb7659f6776f1700b16a392253114b10200ba72682",
+    "crates/deadpan-core/tests/audio_context.rs": "55e87ac38c9d47b8d5430e0e4643d7ec63cb71613489405270639ea8d5163e1f",
+    "crates/deadpan-core/tests/audio_gain.rs": "3ffccdafaf2b45df17b1534d766eec83dc23d4f54dfdc24c1e422aba0d24a405"
+  }
+}

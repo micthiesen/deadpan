@@ -614,6 +614,9 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
         }
         "audio-lag" => Some("Sound offset from picture: +80ms later, -2f earlier, 0 realigns"),
         "saturate" => Some("Saturation drive: 0 to 24 dB into a soft clipper · off removes it"),
+        "balance" => {
+            Some("Beat balance: -100% left to +100% right · center restores both channels")
+        }
         "gain" => {
             Some("Gain: 6dB sets the trim · +=3dB / -=3dB changes it · alone opens the draft")
         }

@@ -1251,6 +1251,9 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
         &document,
         selected.clone(),
         vec![
+            change(AudioChange::Balance {
+                balance: Some(crate::StereoBalance::new(50).unwrap()),
+            }),
             change(AudioChange::Saturation {
                 drive: Some(GainDb::new(12_000).unwrap()),
             }),
@@ -1269,7 +1272,8 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
         treatments.order(),
         &[
             AudioTreatmentStage::ClipGain,
-            AudioTreatmentStage::Saturation
+            AudioTreatmentStage::Saturation,
+            AudioTreatmentStage::StereoBalance,
         ]
     );
     assert_eq!(
@@ -1281,6 +1285,7 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
         12_000
     );
     assert_eq!(planned.document.duration(), document.duration());
+    assert_eq!(treatments.balance().unwrap().percent(), 50);
     let replay =
         crate::replay_compound::<EditError>(&document, planned.request.as_ref().unwrap(), |_| {
             Ok(())

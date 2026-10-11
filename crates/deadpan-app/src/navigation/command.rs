@@ -111,6 +111,8 @@ pub enum Entry {
     /// `:saturate 12dB` sets the selected beat's drive; `:saturate off`
     /// removes the stage.
     Saturate(Option<deadpan_core::Saturation>),
+    /// Signed whole-percent stereo balance; None restores center.
+    Balance(Option<deadpan_core::StereoBalance>),
     Scope(ScopeChoice),
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
@@ -683,6 +685,22 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 .map(|stage| Entry::Saturate(Some(stage)))
                 .map_err(|_| USAGE.to_owned());
         }
+        "balance" => {
+            const USAGE: &str = "Use :balance -50% for left, +50% for right (-100% to +100%), or :balance center. The opposite channel is attenuated.";
+            let argument = argument.ok_or(USAGE)?;
+            let percent = match argument {
+                "left" => -100,
+                "right" => 100,
+                "center" | "off" => 0,
+                _ => argument
+                    .strip_suffix('%')
+                    .ok_or(USAGE)?
+                    .parse::<i16>()
+                    .map_err(|_| USAGE)?,
+            };
+            let balance = deadpan_core::StereoBalance::new(percent).map_err(|_| USAGE)?;
+            return Ok(Entry::Balance((percent != 0).then_some(balance)));
+        }
         "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
         "proxies" => {
@@ -1226,6 +1244,37 @@ mod tests {
             "slip 3s",
             "slip +2f extra",
             "slip 9223372036854775808f",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn balance_commands_require_explicit_units_and_bounded_channel_direction() {
+        for (input, value) in [
+            (":balance -50%", -50),
+            ("balance +50%", 50),
+            ("balance left", -100),
+            ("balance right", 100),
+        ] {
+            assert_eq!(
+                parse(input),
+                Ok(Entry::Balance(Some(
+                    deadpan_core::StereoBalance::new(value).unwrap()
+                )))
+            );
+        }
+        for input in ["balance center", "balance 0%", "balance off"] {
+            assert_eq!(parse(input), Ok(Entry::Balance(None)));
+        }
+        for input in [
+            "balance",
+            "balance 50",
+            "balance 100.1%",
+            "balance -101%",
+            "balance 101%",
+            "balance NaN",
+            "balance left extra",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }

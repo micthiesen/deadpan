@@ -260,6 +260,7 @@ pub fn transfer(
     let old = before.clip_gain().unwrap_or(&empty);
     let new = treatments.clip_gain().unwrap_or(&empty);
     if before.saturation() != treatments.saturation()
+        || before.balance() != treatments.balance()
         || old.muted() != new.muted()
         || old.mute_ranges() != new.mute_ranges()
     {
@@ -303,15 +304,9 @@ pub fn transfer(
             .adjust_range(*range, step(new) - step(old))
             .map_err(|error| error.to_string())?;
     }
-    let mut order = other.audio_treatments.order().to_vec();
-    if !order.contains(&deadpan_core::AudioTreatmentStage::ClipGain) {
-        order.insert(0, deadpan_core::AudioTreatmentStage::ClipGain);
-    }
-    let treatments = deadpan_core::AudioTreatments::with_stages(
-        order,
-        Some(result),
-        other.audio_treatments.saturation(),
-    )
-    .map_err(|error| error.to_string())?;
+    let treatments = other
+        .audio_treatments
+        .with_clip_gain(result)
+        .map_err(|error| error.to_string())?;
     Ok(ScopedNodeEdit::SetAudioTreatments { treatments })
 }

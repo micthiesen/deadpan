@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+    "DEADPAN_PREVIEW_EXPORT_RESULTS=/tmp/deadpan-stereo-balance-20261011/export-report.json",
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "stereo_balance_keeps_channels_through_limited_preview_and_render",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 158.71593229239807,
+  "log_sha256": "de017716df56c40d82b4cc3530d30fc59d5bf7c98d5d085520067275ef11d536"
+}

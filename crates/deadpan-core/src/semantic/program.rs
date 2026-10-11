@@ -527,6 +527,10 @@ pub enum AudioChange {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         drive: Option<crate::GainDb>,
     },
+    /// Set stereo channel balance, or remove it (`:balance center`).
+    Balance {
+        balance: Option<crate::StereoBalance>,
+    },
     /// Mute or unmute the whole beat (`,m` without a range, `:gain-mute`),
     /// keeping its trim, envelopes and mute ranges.
     Mute { muted: bool },
@@ -548,6 +552,7 @@ impl AudioChange {
             Self::Saturation { drive } => {
                 current.with_saturation(drive.map(crate::Saturation::new).transpose()?)
             }
+            Self::Balance { balance } => current.with_balance(balance),
             Self::Mute { muted } => {
                 let clip = clip();
                 current.with_clip_gain_or_none(crate::ClipGain::new(

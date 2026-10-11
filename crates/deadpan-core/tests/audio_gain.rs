@@ -556,12 +556,67 @@ fn collection_limits_reject_typed_and_wire_growth_before_parsing_extra_records()
     assert!(error.to_string().contains("gain exceeds"), "{error}");
     assert!(
         serde_json::from_str::<AudioTreatments>(
-            r#"{"order":["clip_gain","saturation",{}],"clip_gain":null}"#
+            r#"{"order":["clip_gain","saturation","stereo_balance",{}],"clip_gain":null}"#
         )
         .unwrap_err()
         .to_string()
         .contains("gain exceeds")
     );
+}
+
+#[test]
+fn stereo_balance_preserves_other_stages_and_rejects_ambiguous_order() {
+    let balance = StereoBalance::new(-50).unwrap();
+    let recipe = AudioTreatments::default()
+        .with_balance(Some(balance))
+        .unwrap()
+        .with_saturation(Some(Saturation::new(gain(6000)).unwrap()))
+        .unwrap()
+        .with_clip_gain(ClipGain::default().with_trim(gain(-3000)))
+        .unwrap();
+    assert_eq!(
+        recipe.order(),
+        &[
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::Saturation,
+            AudioTreatmentStage::StereoBalance
+        ]
+    );
+    let wire = recipe.to_json().unwrap();
+    assert_eq!(AudioTreatments::from_json(&wire).unwrap(), recipe);
+    assert_eq!(recipe.balance(), Some(balance));
+    assert_eq!(
+        recipe.with_saturation(None).unwrap().balance(),
+        Some(balance)
+    );
+    assert_eq!(
+        recipe
+            .with_clip_gain_or_none(ClipGain::default())
+            .unwrap()
+            .balance(),
+        Some(balance)
+    );
+    assert_eq!(
+        recipe.with_balance(None).unwrap().saturation(),
+        recipe.saturation()
+    );
+    assert_eq!(recipe.record_count(), 4);
+    for value in [-101, 101, i16::MIN, i16::MAX] {
+        assert_eq!(StereoBalance::new(value), Err(GainError::BalanceRange));
+    }
+    for bad in [
+        json!({"order":["stereo_balance"],"clip_gain":null,"balance":101}),
+        json!({"order":["stereo_balance"],"clip_gain":null,"balance":0.5}),
+        json!({"order":["stereo_balance"],"clip_gain":null}),
+        json!({"order":[],"clip_gain":null,"balance":50}),
+        json!({"order":["stereo_balance","stereo_balance"],"clip_gain":null,"balance":50}),
+        json!({"order":["stereo_balance","saturation"],"clip_gain":null,"balance":50,"saturation":{"drive":6000}}),
+    ] {
+        assert!(
+            AudioTreatments::from_json(&bad.to_string()).is_err(),
+            "{bad}"
+        );
+    }
 }
 
 #[test]

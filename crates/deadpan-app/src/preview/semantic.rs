@@ -473,6 +473,9 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
             format!("Saturation drive {} dB", crate::gain::format_db(drive))
         }
         AudioChange::Saturation { drive: None } => "Saturation removed".into(),
+        AudioChange::Balance { balance } => {
+            format!("Stereo balance {}", crate::gain::format_balance(balance))
+        }
         AudioChange::Mute { muted: true } => "Beat muted".into(),
         AudioChange::Mute { muted: false } => "Beat unmuted".into(),
     }

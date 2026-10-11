@@ -9,6 +9,12 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+`:balance` adds signed-percent stereo balance with no new key chord. The
+2026-10-11 audio-treatment and Gain release replays each pass 21,884,016
+production routing cases against the 62 pinned Kestrel reservations. The live
+source was unavailable. The routing snapshot adds only three parser witnesses;
+existing key routes stay pinned. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
+
 `:sound-relink` adds an explicit catalog-file repair command without a new key
 chord. The 2026-10-11 sound recovery replay passes 21,884,016 production-router
 cases against all 62 pinned Kestrel reservations. The live source was unavailable.

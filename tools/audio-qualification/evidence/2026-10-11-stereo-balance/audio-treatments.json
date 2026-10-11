@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-stereo-balance-20261011/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "audio-treatments",
+    "--mode",
+    "visual",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-stereo-balance-20261011/audio-treatments"
+  ],
+  "exit": 0,
+  "seconds": 13.399278708267957,
+  "log_sha256": "97c641764bcb839a1c29b1324c56a60a3ab0496471a80588ec2e97810e5d2eef"
+}

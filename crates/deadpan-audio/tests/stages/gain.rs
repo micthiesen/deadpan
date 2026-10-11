@@ -159,6 +159,117 @@ fn overlapping_db_trim_and_exact_mute_follow_edges_without_changing_inspection()
 }
 
 #[test]
+fn balance_has_exact_center_and_endpoints_and_preserves_channel_identity() {
+    let base = source_document(256);
+    let mut provider = FixtureProvider::new();
+    let neutral = authored_all(&base, &mut provider, &[256]);
+    for (percent, left, right) in [
+        (-100, 1.0, 0.0),
+        (-50, 1.0, 0.5),
+        (0, 1.0, 1.0),
+        (50, 0.5, 1.0),
+        (100, 0.0, 1.0),
+    ] {
+        let recipe = AudioTreatments::default()
+            .with_balance(Some(StereoBalance::new(percent).unwrap()))
+            .unwrap();
+        let treated = changed(&base, &[("source", recipe)]);
+        let actual = authored_all(&treated, &mut provider, &[37, 1, 96]);
+        let expected: Vec<_> = neutral
+            .iter()
+            .map(|sample| {
+                [
+                    (f64::from(sample[0]) * left) as f32,
+                    (f64::from(sample[1]) * right) as f32,
+                ]
+            })
+            .collect();
+        for (a, e) in actual.iter().flatten().zip(expected.iter().flatten()) {
+            assert_eq!(a.to_bits(), e.to_bits(), "balance {percent}");
+        }
+        assert_eq!(treated.duration(), base.duration());
+    }
+}
+
+#[test]
+fn nested_balance_follows_saturation_and_survives_partitions_and_random_reads() {
+    let base = source_document(4096);
+    let drive = Saturation::new(GainDb::new(12_000).unwrap()).unwrap();
+    let child = AudioTreatments::default()
+        .with_saturation(Some(drive))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(-50).unwrap()))
+        .unwrap();
+    let parent = AudioTreatments::default()
+        .with_saturation(Some(drive))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(25).unwrap()))
+        .unwrap();
+    let treated = changed(&base, &[("source", child), ("root", parent)]);
+    let mut provider = FixtureProvider::new();
+    let neutral = authored_all(&base, &mut provider, &[256]);
+    let expected: Vec<_> = neutral
+        .iter()
+        .map(|s| {
+            [
+                (drive.shape(drive.shape(f64::from(s[0]))) * 0.75) as f32,
+                drive.shape(drive.shape(f64::from(s[1])) * 0.5) as f32,
+            ]
+        })
+        .collect();
+    assert_eq!(authored_all(&treated, &mut provider, &[256]), expected);
+    let divided = split_command(&treated, &id("source"), 2049, "balance-partition");
+    assert_eq!(
+        authored_all(&divided, &mut provider, &[1, 97, 256]),
+        expected
+    );
+    let plan = Arc::new(RenderPlan::compile(&divided).unwrap());
+    for (start, count) in [(3001, 251), (0, 17), (2039, 29), (997, 256)] {
+        let mut fresh = StageAudio::new(Arc::clone(&plan));
+        assert_eq!(
+            authored(&mut fresh, &mut provider, start, count).samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+    }
+}
+
+#[test]
+fn beat_balance_leaves_independent_sound_and_root_balance_reaches_it_once() {
+    let base = source_document(256);
+    let sounded = with_sound(&base);
+    let balanced = AudioTreatments::default()
+        .with_balance(Some(StereoBalance::new(-100).unwrap()))
+        .unwrap();
+    let treated = changed(&sounded, &[("source", balanced)]);
+    let mut provider = FixtureProvider::new();
+    let actual = authored_all(&treated, &mut provider, &[256]);
+    for (at, frame) in actual.iter().enumerate() {
+        assert_eq!(
+            frame[1],
+            scaled(fixture_sample(at as i64), 3000.0)[1],
+            "independent sound at {at}"
+        );
+    }
+    let root = AudioTreatments::default()
+        .with_balance(Some(StereoBalance::new(50).unwrap()))
+        .unwrap();
+    let source_muted = treatment(0, true, vec![], vec![]);
+    let treated = changed(&sounded, &[("source", source_muted), ("root", root)]);
+    let actual = authored_all(&treated, &mut provider, &[13, 119]);
+    let expected: Vec<_> = (0..256)
+        .map(|at| {
+            let source = fixture_sample(at);
+            let gain = 10.0_f64.powf(3000.0 / 20_000.0);
+            [
+                (f64::from(source[0]) * gain * 0.5) as f32,
+                (f64::from(source[1]) * gain) as f32,
+            ]
+        })
+        .collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn saturation_shapes_each_owner_output_inner_first_in_its_serialized_order() {
     use deadpan_core::{AudioTreatmentStage, Saturation};
     let base = source_document(256);

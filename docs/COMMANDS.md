@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-203 actions, 126 command verbs.
+204 actions, 127 command verbs.
 
 ## Start & View
 
@@ -140,6 +140,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Gain steps and trim** (`gain.step`)<br>Change the selected beat by 3 dB per count, or only the Edit range inside it (a constant step over exactly that range), or enter an exact absolute trim with :gain +6dB or a signed change with :gain +=3dB. :gain +3dB range=4-10 steps exactly those local frames. Bare :gain opens the Gain draft. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog focus never change a beat. | `+` (`gain.up`), `-` (`gain.down`) | `:gain +3dB \| +=3dB \| mute \| +3dB range=4-10` | Your edit (Normal and Visual), Placed sounds, Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction` |
 | **Mute** (`gain.mute`)<br>Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's true mute without a range. The beat keeps its timing; one Undo. | `,m` (`gain.mute`) | `:gain-mute` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (mute)` |
 | **Saturation** (`saturate`)<br>Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive) after its clip gain and before the master limiter, as intentional distortion; off removes it. One Undo. | - | `:saturate 12dB \| off` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (saturation)` |
+| **Stereo balance** (`balance`)<br>Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. One Undo; dot and macros retain the chosen value. | - | `:balance -50% \| +50% \| left \| right \| center` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (balance)` |
 | **Offset sound from picture** (`audio-lag`)<br>Offset the selected beat's sound from its picture: later with + (:audio-lag +80ms), earlier with - (-2f), 0 realigns. The beat keeps its picture and timing; the inspector shows the offset beside the link. | - | `:audio-lag 3f` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio_lag instruction` |
 | **Sound edges** (`edge`)<br>Choose the selected beat's sound edges: hard cuts without the short automatic fade, auto restores it. plays sets every play's start and end inside a selected Repeat (its loop seams); gaps sets its gap edges. Picture and timing are unchanged. One Undo. | - | `:edge hard\|auto [start\|end\|both]` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio_edges instruction` |
 

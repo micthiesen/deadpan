@@ -132,9 +132,9 @@ hits; gain mute does not grant silence/tail policy.
 
 ## Saturation
 
-`AudioTreatmentStage` admits two stages, `ClipGain` and `Saturation`, and a
-recipe serializes their order: each present stage is listed exactly once and
-no absent stage is listed (`MAX_AUDIO_TREATMENT_STAGES` is 2). `Saturation {
+`AudioTreatmentStage` admits `ClipGain`, `Saturation` and `StereoBalance`. A
+recipe serializes their order: each present stage is listed exactly once, no
+absent stage is listed, and balance is last (`MAX_AUDIO_TREATMENT_STAGES` is 3). `Saturation {
 drive }` holds an exact `GainDb` drive from 0 through 24 dB. Its transfer is
 the memoryless soft clipper `tanh(drive · x)`: small signals gain the drive,
 peaks approach ±1, digital silence stays exact silence, and because it keeps no
@@ -142,10 +142,10 @@ state it evaluates identically at any read or tile boundary in preview and
 export. A new stage is appended after clip gain (specification §10.2 order);
 a recipe authored with `Saturation` first trims after the clipper.
 
-Owners are evaluated innermost first. Between nonlinear stages, gain factors
+Owners are evaluated innermost first. Between channel stages, gain factors
 (trim, envelopes and Repeat escalation, which enters before the owner's own
-stages) still add exactly in Q32 millidecibels; each saturation closes the gain
-accumulated before it. Without a saturation stage the chain is the previous
+stages) still add exactly in Q32 millidecibels; each saturation or noncenter balance closes the gain
+accumulated before it. Without either channel stage the chain is the previous
 single exact gain sum, bit for bit. Saturation applies to each voice (the
 Original, a placed sound, a beat sound) through its owners before mixing and the
 shared limiter, not to a summed group bus. Mute still yields exact silence.
@@ -164,6 +164,37 @@ inspector lists the drive and its order; the gain section names it. Evidence:
 decoded PCM against an independent oracle in both orders), the
 `audio-treatments` replay and the `saturation` preview/export fixture. Oversampled
 shaping remains open: at high drive the memoryless clipper aliases.
+
+## Stereo balance
+
+`:balance -50%` favors left; `:balance +50%` favors right. The exact range is
+whole percent from -100 to +100, with `left` and `right` selecting the endpoints.
+`center`, `off` and `0%` remove balance without changing gain, saturation or time.
+The favored channel stays at unity. The opposite channel is multiplied by
+`(100 - abs(percent)) / 100`; no samples move between channels. Center preserves
+sample bits, including signed zero. This is stereo channel balance after the
+existing qualified layout-aware downmix, not a new layout interpretation.
+
+Balance follows gain and saturation within each owner. Owners remain ordered
+inner to outer, so a child's balance precedes a parent's saturation. It applies
+to each owned contribution, including beat sounds and effect tails; a root
+balance also reaches independent root sounds. Balancing one beat does not
+change an independent sound. Balance adds no state, read halo or cache. Its
+recipe participates in ordinary immutable plan and dependency identity, and
+frozen audio contexts now capture schema 9; older versions reject balance.
+
+The command captures the beat, scope and revision at entry and commits through
+the project service. Whole-beat balance is a `set_audio` semantic instruction
+with `{"type":"balance","balance":-50}`; JSON `null` removes the stage.
+It supports macros, semantic dot-repeat and one Undo. A selected Repeat play
+uses the existing isolated edit path. Multiple plays with different recipes
+refuse a balance replacement instead of discarding their individual treatments.
+The inspector and its Gain section show the direction; command help explains the law.
+Ranged gain and ordinary gain edits preserve balance.
+
+The treatment is shared by limited audition and Render. EQ/filtering, arbitrary
+sends and nonlinear group-bus processing remain open; this stage does not qualify
+the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps
 

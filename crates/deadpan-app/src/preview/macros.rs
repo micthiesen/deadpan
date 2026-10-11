@@ -505,12 +505,13 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
-            // Recorded as one semantic gain or saturation change.
+            // Recorded as one semantic audio-treatment change.
             Ok(
                 navigation::command::Entry::Gain(Some(_))
                 | navigation::command::Entry::GainStep(_)
                 | navigation::command::Entry::GainMute
-                | navigation::command::Entry::Saturate(_),
+                | navigation::command::Entry::Saturate(_)
+                | navigation::command::Entry::Balance(_),
             ) => self.macro_action_allowed(Action::GainStep(0)),
             // Recorded as one semantic caption, checked like a whole-beat cutaway.
             Ok(navigation::command::Entry::Caption(_)) => self.macro_action_allowed(Action::Edit(

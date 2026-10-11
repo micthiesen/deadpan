@@ -1,0 +1,20 @@
+{
+  "command": [
+    "env",
+    "DEADPAN_UPDATE_COMMANDS_MD=1",
+    "DEADPAN_UPDATE_ROUTING_BASELINE=1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--bin",
+    "deadpan-app",
+    "navigation::registry::tests"
+  ],
+  "exit": 101,
+  "seconds": 13.762029082980007,
+  "log_sha256": "0ab9b19dec0100036d3aa06a83a502c930432f2ad510f46f5c9ae5346cc3a19f"
+}

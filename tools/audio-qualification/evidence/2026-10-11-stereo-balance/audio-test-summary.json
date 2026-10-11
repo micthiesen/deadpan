@@ -1,0 +1,6 @@
+{
+  "passed": 481,
+  "ignored": 0,
+  "source_log": "core-audio.log",
+  "scope": "deadpan-audio lib and integration suites; enclosing command later failed the new core count expectation, resolved in core-final.log"
+}

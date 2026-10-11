@@ -33,6 +33,7 @@ fn describe(treatments: &AudioTreatments) -> Value {
         "order": treatments.order().iter().map(|stage| format!("{stage:?}")).collect::<Vec<_>>(),
         "trim": trim(treatments),
         "drive": drive(treatments),
+        "balance": treatments.balance().map(|balance| balance.percent()),
     })
 }
 
@@ -193,7 +194,184 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({}),
         describe(&treatments(d, &right)),
     )?;
-    pitch(d)
+    pitch(d)?;
+    balance(d)
+}
+
+fn balance(d: &mut Driver<'_>) -> Result<(), String> {
+    let right = selected(d)?;
+    let original = treatments(d, &right);
+    let length = d.app().sequence_length();
+    edit(d, "balance -50%")?;
+    d.step("Paint stereo balance in the inspector", true)?;
+    d.check(
+        "Balance is visible with its channel direction and preserves time",
+        treatments(d, &right).balance().map(|b| b.percent()) == Some(-50)
+            && d.app().sequence_length() == length
+            && !scenarios::text_paint_visibility(d, "50% left").is_empty(),
+        json!({"balance":-50,"frames":length}),
+        describe(&treatments(d, &right)),
+    )?;
+    d.capture("Stereo balance on the selected beat")?;
+    edit(d, "saturate 6dB")?;
+    edit(d, "gain -3dB")?;
+    d.check(
+        "Later gain and saturation retain balance as the last treatment",
+        treatments(d, &right).order()
+            == [
+                AudioTreatmentStage::ClipGain,
+                AudioTreatmentStage::Saturation,
+                AudioTreatmentStage::StereoBalance,
+            ]
+            && treatments(d, &right).balance().map(|b| b.percent()) == Some(-50),
+        json!(["ClipGain", "Saturation", "StereoBalance"]),
+        describe(&treatments(d, &right)),
+    )?;
+    edit(d, "balance center")?;
+    d.check(
+        "Center removes only balance",
+        treatments(d, &right).balance().is_none()
+            && trim(&treatments(d, &right)) == Some(-3000)
+            && drive(&treatments(d, &right)) == Some(6000),
+        json!("gain and saturation retained"),
+        describe(&treatments(d, &right)),
+    )?;
+    for _ in 0..4 {
+        undo(d)?;
+    }
+    d.check(
+        "Four undos restore the original recipe",
+        treatments(d, &right) == original,
+        describe(&original),
+        describe(&treatments(d, &right)),
+    )?;
+
+    edit(d, "balance right")?;
+    d.key(Key::K)?;
+    d.settled()?;
+    let left = selected(d)?;
+    let before = d.revision();
+    d.events(
+        "Dot repeats stereo balance",
+        stroke(Key::Period, Modifiers::NONE, Some(".")),
+    )?;
+    d.changed(&before)?;
+    d.settled()?;
+    d.check(
+        "Dot applies the balance to a new beat and keeps its existing treatments",
+        left != right
+            && treatments(d, &left).balance().map(|b| b.percent()) == Some(100)
+            && trim(&treatments(d, &left)) == Some(3000)
+            && drive(&treatments(d, &left)) == Some(6000),
+        json!({"balance":100,"trim":3000,"drive":6000}),
+        describe(&treatments(d, &left)),
+    )?;
+    undo(d)?;
+    undo(d)?;
+
+    d.key(Key::Q)?;
+    d.key(Key::B)?;
+    edit(d, "balance +25%")?;
+    d.key(Key::Q)?;
+    d.wait_for("The balance macro is saved", |app| {
+        !app.service.is_busy() && !app.macros.recording() && !app.macros.is_pending()
+    })?;
+    d.settled()?;
+    d.key(Key::J)?;
+    d.settled()?;
+    let before = d.revision();
+    let mut events = stroke(Key::Num2, Modifiers::SHIFT, Some("@"));
+    events.extend(stroke(Key::B, Modifiers::NONE, Some("b")));
+    d.events("Run balance macro b", events)?;
+    d.changed(&before)?;
+    d.settled()?;
+    d.check(
+        "Macro playback retains the exact balance",
+        selected(d)? == right && treatments(d, &right).balance().map(|b| b.percent()) == Some(25),
+        json!(25),
+        describe(&treatments(d, &right)),
+    )?;
+    undo(d)?;
+    d.check(
+        "One undo restores the recipe before the balance macro",
+        treatments(d, &right) == original,
+        describe(&original),
+        describe(&treatments(d, &right)),
+    )?;
+    let before = d.revision();
+    d.command("balance 101%")?;
+    d.settled()?;
+    d.check(
+        "Invalid balance refuses without an authored edit",
+        d.revision() == before && d.app().error.is_some(),
+        json!(before),
+        json!({"revision":d.revision(),"error":d.app().error}),
+    )?;
+    let target = d.app().capture_gain_target();
+    let macro_target = d.app().capture_macro_target();
+    edit(d, "gain -6dB")?;
+    let before = d.revision();
+    d.app_mut().balance_command(
+        Some(target),
+        Some(macro_target),
+        Some(deadpan_core::StereoBalance::new(-75).map_err(|e| e.to_string())?),
+    );
+    d.settled()?;
+    d.check(
+        "A captured balance command cannot cross a revision change",
+        d.revision() == before
+            && d.app().error.is_some()
+            && treatments(d, &right).balance().is_none(),
+        json!("stale refusal"),
+        json!({"revision":d.revision(),"error":d.app().error}),
+    )?;
+    d.app_mut().balance_command(
+        None,
+        None,
+        Some(deadpan_core::StereoBalance::new(75).map_err(|e| e.to_string())?),
+    );
+    d.settled()?;
+    d.check(
+        "Missing command-entry target cannot use a later selected beat",
+        d.revision() == before && d.app().error.is_some(),
+        json!("missing target refusal"),
+        json!({"revision":d.revision(),"error":d.app().error}),
+    )?;
+    edit(d, "wrap-repeat 3")?;
+    let repeat = selected(d)?;
+    d.key(Key::Enter)?;
+    d.command("scope play 2")?;
+    d.settled()?;
+    edit(d, "balance -75%")?;
+    let isolated = d.app().scoped_target()?.ok_or("Missing balanced play")?;
+    d.check(
+        "Balancing one Repeat play isolates it and leaves the shared voice unchanged",
+        isolated.target.node != right
+            && treatments(d, &isolated.target.node)
+                .balance()
+                .map(|b| b.percent())
+                == Some(-75)
+            && treatments(d, &right).balance().is_none()
+            && d.app().workspace.as_ref().is_some_and(|w| {
+                w.document
+                    .overrides()
+                    .get(&repeat)
+                    .is_some_and(|p| p.len() == 1)
+            }),
+        json!({"play":2,"balance":-75,"overrides":1}),
+        describe(&treatments(d, &isolated.target.node)),
+    )?;
+    undo(d)?;
+    d.check(
+        "Undo removes the balance and its occurrence isolation",
+        d.app()
+            .workspace
+            .as_ref()
+            .is_some_and(|w| w.document.overrides().is_empty())
+            && treatments(d, &right).balance().is_none(),
+        json!("shared voice restored"),
+        d.snapshot(),
+    )
 }
 
 fn pitch_of(d: &Driver<'_>) -> Option<(deadpan_core::PitchPolicy, i64, i64)> {

@@ -403,6 +403,14 @@ fn decimal_parts(input: &str) -> Option<(&str, &str)> {
     digits(whole).then_some((whole, fraction))
 }
 
+pub(crate) fn format_balance(balance: Option<deadpan_core::StereoBalance>) -> String {
+    match balance.map_or(0, deadpan_core::StereoBalance::percent) {
+        0 => "center".into(),
+        value if value < 0 => format!("{}% left", -value),
+        value => format!("{value}% right"),
+    }
+}
+
 fn digits(input: &str) -> bool {
     !input.is_empty() && input.bytes().all(|byte| byte.is_ascii_digit())
 }
@@ -419,11 +427,8 @@ pub(crate) fn ranged_step(
         .unwrap_or_default()
         .adjust_range(range, millidecibels)
         .map_err(|error| error.to_string())?;
-    let mut order = recipe.order().to_vec();
-    if !order.contains(&deadpan_core::AudioTreatmentStage::ClipGain) {
-        order.insert(0, deadpan_core::AudioTreatmentStage::ClipGain);
-    }
-    deadpan_core::AudioTreatments::with_stages(order, Some(clip), recipe.saturation())
+    recipe
+        .with_clip_gain(clip)
         .map_err(|error| error.to_string())
 }
 
@@ -431,6 +436,34 @@ pub(crate) fn ranged_step(
 mod tests {
     use super::*;
     use deadpan_core::{AudioTreatmentStage, GainClock, Saturation};
+
+    #[test]
+    fn gain_edits_preserve_balance_and_its_position() {
+        let balance = deadpan_core::StereoBalance::new(-50).unwrap();
+        let recipe = AudioTreatments::default()
+            .with_balance(Some(balance))
+            .unwrap();
+        let mut edit = GainEdit::new(recipe);
+        edit.set_trim(GainDb::new(-3000).unwrap()).unwrap();
+        edit.set_saturation(Some(Saturation::new(GainDb::new(6000).unwrap()).unwrap()))
+            .unwrap();
+        edit.set_muted(true).unwrap();
+        let ranged = ranged_step(
+            edit.recipe(),
+            deadpan_core::GainRange::new(ExactRatio::ZERO, ExactRatio::ONE).unwrap(),
+            3000,
+        )
+        .unwrap();
+        assert_eq!(ranged.balance(), Some(balance));
+        assert_eq!(
+            ranged.order(),
+            &[
+                AudioTreatmentStage::ClipGain,
+                AudioTreatmentStage::Saturation,
+                AudioTreatmentStage::StereoBalance
+            ]
+        );
+    }
 
     #[test]
     fn saturation_is_a_separate_ordered_stage_beside_clip_gain() {

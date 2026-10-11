@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Stereo balance](../qualification/stereo-balance-2026-10-11.md) adds exact
+signed-percent balance to captured native/headless commands, macros, dot and
+isolated Repeat plays. The shared voice stage preserves other treatments,
+channel identity and timing. Core/audio verification, 419 audio/Gain replay
+checks and actual AAC export pass; the separately decoded channel ratio is
+2.000574 for 50% right and full-left has exact right-channel silence. A take-test
+receipt race was corrected without production changes. Full voice processing
+and mastering remain open; this does not complete DP-09 or DP-16.
+
 [Gain scrolling verification](../qualification/gain-scroll-2026-10-11.md)
 resolves the waveform replay failure as incorrect input sequencing: corrective
 wheel events arrived before native smoothing finished. Complete trackpad

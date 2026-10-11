@@ -215,6 +215,9 @@ impl Service {
                             SemanticInstruction::SetAudio {
                                 change: deadpan_core::AudioChange::Saturation { .. },
                             } => "Change saturation",
+                            SemanticInstruction::SetAudio {
+                                change: deadpan_core::AudioChange::Balance { .. },
+                            } => "Change stereo balance",
                             SemanticInstruction::SetAudio { .. } => "Change gain",
                             SemanticInstruction::RoleRepeat {
                                 role: deadpan_core::MediaRole::Audio,

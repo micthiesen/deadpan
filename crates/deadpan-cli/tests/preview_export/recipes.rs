@@ -2329,6 +2329,39 @@ fn tone_window(index: i64) -> (i64, i64) {
     (((index * 12 + 4) * 16_016 + 5) / 10, 4_096)
 }
 
+/// Independent left-only and half-left balance witnesses on two identical tones.
+pub fn stereo_balance(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "stereo-balance")?;
+    tone_pauses(&mut project)?;
+    for (at, name, balance) in [(0, "tone-a", -100), (12, "tone-b", 50)] {
+        let saved = project.run_semantic(
+            json!([{"type":"set_audio","change":{"type":"balance","balance":balance}}]),
+            at,
+            Some(&node(name)?),
+        )?;
+        if saved.nodes()[&node(name)?]
+            .audio_treatments
+            .balance()
+            .map(|value| value.percent())
+            != Some(balance)
+        {
+            return Err("balance was not committed to the selected tone".into());
+        }
+    }
+    let mut fixture = project.finish(vec!["Stereo balance"], tone_expectations(), Vec::new())?;
+    for (index, low, high) in [(0, 0.31, 0.32), (1, 0.155, 0.16)] {
+        let (start, count) = tone_window(index);
+        fixture.signals.push(Signal {
+            start,
+            count,
+            crossings_per_second: Some((2000.0, 0.03)),
+            crest: Some((1.4, 1.43)),
+            peak: Some((low, high)),
+        });
+    }
+    Ok(fixture)
+}
+
 /// `:saturate 12dB` on the first of two -10 dBFS 1 kHz tone pauses, through
 /// the headless semantic path. tanh(3.98 · 0.316 · sin) flattens the sine:
 /// peak 0.851 and crest factor 1.288, against the untouched second tone's
@@ -2954,12 +2987,13 @@ const GENERATED: [(&str, Builder); 4] = {
 /// Build every fixture whose tools are available; return the others' names
 /// with the reason they were skipped.
 pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
-    let builders: [(&str, Builder); 38] = [
+    let builders: [(&str, Builder); 39] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
         ("range-gain", range_gain),
         ("saturation", saturation),
+        ("stereo-balance", stereo_balance),
         ("role-repeat", role_repeat),
         ("role-delete", role_delete),
         ("one-more-time-varied", one_more_time_varied),

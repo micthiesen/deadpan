@@ -3119,6 +3119,9 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Saturate(stage)) => {
                 self.saturate_command(gain_target, macro_target, stage)
             }
+            Ok(navigation::command::Entry::Balance(balance)) => {
+                self.balance_command(gain_target, macro_target, balance)
+            }
             Ok(navigation::command::Entry::Slip(amount)) => {
                 self.open_slip(slip_target, amount, context)
             }

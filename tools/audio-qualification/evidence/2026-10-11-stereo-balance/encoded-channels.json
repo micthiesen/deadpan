@@ -1,0 +1,49 @@
+{
+  "command": [
+    "ffmpeg",
+    "-nostdin",
+    "-v",
+    "error",
+    "-i",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBLOeea/exports/stereo-balance.mp4",
+    "-map",
+    "0:a:0",
+    "-f",
+    "f32le",
+    "/tmp/deadpan-stereo-balance-20261011/decoded-aac.f32le"
+  ],
+  "passed": true,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBLOeea/exports/stereo-balance.mp4",
+  "movie_sha256": "cc1b226be1ac4d32e4cf5c41653f22af89878e5f87def6ca138ee9feb8f3b1aa",
+  "pcm_sha256": "6f31bd0b8285344fb1c2dff3a572cf34a557aaa04a5ae47dfbc63fa4a135efd1",
+  "decoded_frames": 86486,
+  "windows": [
+    {
+      "start": 6406,
+      "count": 4096,
+      "peaks": [
+        0.316407173871994,
+        0.0
+      ],
+      "rms": [
+        0.22359798127508632,
+        0.0
+      ],
+      "right_over_left": 0.0
+    },
+    {
+      "start": 25626,
+      "count": 4096,
+      "peaks": [
+        0.15817749500274658,
+        0.31630411744117737
+      ],
+      "rms": [
+        0.11178840258870756,
+        0.22364100642882534
+      ],
+      "right_over_left": 2.0005743104823352
+    }
+  ],
+  "no_alignment_applied": true
+}

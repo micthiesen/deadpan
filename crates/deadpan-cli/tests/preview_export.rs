@@ -190,6 +190,47 @@ fn check_with_picture(fixture: &Fixture, picture: impl Fn(&Value) -> Result<Expe
 }
 
 #[test]
+fn stereo_balance_keeps_channels_through_limited_preview_and_render() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::stereo_balance(&root.join("stereo-balance"))?;
+    for (frame, ratio, peak) in [(4, 0.0, 0.316), (16, 2.0, 0.158)] {
+        let start = (frame * 16_016 + 5) / 10;
+        let audio = success(&[
+            "inspect-audio",
+            fixture.package.to_str().ok_or("UTF-8")?,
+            "--samples",
+            &start.to_string(),
+            &(start + 256).to_string(),
+            "--limited",
+        ])?;
+        let pairs = audio["audio"]["samples"].as_array().ok_or("samples")?;
+        let mut measured = 0.0_f64;
+        for pair in pairs {
+            let left = pair[0].as_f64().ok_or("left")?;
+            let right = pair[1].as_f64().ok_or("right")?;
+            assert_eq!(right, left * ratio, "frame {frame}: {pair}");
+            measured = measured.max(left.abs());
+        }
+        assert!((measured - peak).abs() < 0.002, "{measured}");
+    }
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    assert!(passed, "{report}");
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> Result {
     let scratch = tempfile::tempdir()?;
     // DEADPAN_PREVIEW_EXPORT_KEEP=1 retains the packages for inspection.
