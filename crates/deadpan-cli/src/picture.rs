@@ -1,8 +1,9 @@
 //! Fixed-revision picture preparation for sequential rendering workers.
 //!
 //! This host boundary opens a read-only store and verified media snapshots.
-//! It creates no GPU, thread, process, encoder or output file. Call it off the UI
-//! and audio threads. Final export still needs isolated worker supervision,
+//! It creates no GPU, host worker, process, encoder or output file. Interactive
+//! admission may enable bounded native codec threads. Call it off the UI and
+//! audio threads. Final export still needs isolated worker supervision,
 //! audio/mux qualification, verification and atomic publication.
 
 use std::path::Path;
@@ -28,7 +29,9 @@ pub use shared::{
     aspect_region, fill_canvas_aspect, render_layers, same_index_mapping, source_to_render_frame,
 };
 mod generated;
-pub use generated::{open_candidate_master, open_generated_picture};
+pub use generated::{
+    open_candidate_master, open_generated_picture, open_generated_picture_for_preview,
+};
 mod color;
 mod context;
 pub use color::{

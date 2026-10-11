@@ -1,0 +1,68 @@
+{
+  "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+  "request_playback": {
+    "content_sample": 1463764,
+    "domain": "sequence",
+    "generation": "Some(Generation { channel: 1, serial: 1 })",
+    "lap": 0,
+    "looping": false,
+    "phase": "Playing",
+    "sample": 1463764,
+    "window": [
+      0,
+      1464000
+    ]
+  },
+  "remaining_samples": 236,
+  "remaining_ms": 4.916666666666667,
+  "events": [
+    {
+      "outcome": "requested",
+      "request_elapsed_ms": null,
+      "stage": "picture_requested",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30744.990625
+    },
+    {
+      "outcome": "decoded",
+      "request_elapsed_ms": 0.014833,
+      "stage": "picture_worker_started",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30745.005458
+    },
+    {
+      "outcome": "decoded",
+      "request_elapsed_ms": 5.795708,
+      "stage": "picture_worker_finished",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30750.786333
+    },
+    {
+      "outcome": "decoded",
+      "request_elapsed_ms": 5.795916,
+      "stage": "picture_worker_published",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30750.786541
+    },
+    {
+      "outcome": "decoded",
+      "request_elapsed_ms": 10.282916,
+      "stage": "picture_received",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30755.273541000002
+    },
+    {
+      "outcome": "superseded",
+      "request_elapsed_ms": 10.305541,
+      "stage": "picture_superseded",
+      "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+      "wall_ms": 30755.296166
+    }
+  ],
+  "final_picture": {
+    "label": "Showing sequence frame 1830",
+    "location": "Project { session: 1, project: ProjectId(\"a4c4d143-4af3-497a-bad8-93b17f72ab11\"), revision: RevisionId(\"b40be20d-5ada-429f-917b-c34135851798\"), view: Sequence { frame: ProjectFrame(1829) }, empty_sequence: false }",
+    "ticket": "Ticket { transport: None, source: 1, request: 1834 }"
+  },
+  "note": "Final Original was requested while Playing, received then superseded at End, and shown later through a stopped request. The playback-coverage failure is retained."
+}

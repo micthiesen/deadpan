@@ -1,0 +1,21 @@
+{
+  "reviewer": "implementing agent; no additional agents",
+  "reviewed": [
+    "C and Rust work-structure field order and fixed-width layout",
+    "FFV1 slice-only admission preserves the existing one-frame configuration budget for every caller",
+    "existing FFmpeg 8.0.3 slice allocation and dispatch sources",
+    "preview-only thread policy; index and offline paths remain single-threaded",
+    "same six-object admission, immutable media keys, liveness and foreground cancellation",
+    "full metadata/pixel equality, reverse/random seeks and pre-call cancellation",
+    "no change to transport clocks, picture scheduling, proxies, generated acceptance or authored data"
+  ],
+  "decisions": [
+    "Four threads chosen from six measured counts; 8, 12 and 16 provide no useful improvement on the four accepted masters",
+    "Pass the preview thread count into admission rather than calling set_serving_threads afterwards: admission drops the measuring decoder before opening its replacement, while delayed reopen temporarily keeps both live",
+    "Retain the old intermittent failed playback and every run of the predetermined final series"
+  ],
+  "remaining": [
+    "Long ordinary playback loses final Original during End-to-stopped handoff; every Generated picture is displayed. Exact failed trace retained in terminal.json.",
+    "larger Generated masters, native-window presentation and physical/acoustic synchronization remain outside this qualification"
+  ]
+}

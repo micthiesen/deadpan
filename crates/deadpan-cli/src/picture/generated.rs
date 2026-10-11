@@ -35,6 +35,31 @@ pub fn open_generated_picture(
     artifact: &GeneratedArtifact,
     cancelled: &AtomicBool,
 ) -> Result<SourceSession, ProjectPictureError> {
+    open_generated(handle, document, artifact, cancelled, 1)
+}
+
+/// The same complete accepted-media admission for interactive preview. Four
+/// FFV1 slice threads reduce measured 768×320 decode p95 from 6.2–6.5 ms to
+/// 2.0 ms; larger thread counts do not improve these four-slice masters.
+/// Index measurement and offline rendering retain one thread. The native
+/// adapter enforces slice-only FFV1 decoding, with no extra frames in flight.
+pub fn open_generated_picture_for_preview(
+    handle: &GeneratedReadHandle,
+    document: &ProjectDocument,
+    artifact: &GeneratedArtifact,
+    cancelled: &AtomicBool,
+) -> Result<SourceSession, ProjectPictureError> {
+    let threads = std::thread::available_parallelism().map_or(1, |cores| cores.get().min(4) as u32);
+    open_generated(handle, document, artifact, cancelled, threads)
+}
+
+fn open_generated(
+    handle: &GeneratedReadHandle,
+    document: &ProjectDocument,
+    artifact: &GeneratedArtifact,
+    cancelled: &AtomicBool,
+    threads: u32,
+) -> Result<SourceSession, ProjectPictureError> {
     // Generated footage is always SDR sRGB. In an HDR-basis project its
     // presence makes the automatic branch SDR (see `decide_output_color`).
     let deadline = Instant::now() + OPEN_TIMEOUT;
@@ -111,6 +136,7 @@ pub fn open_generated_picture(
         .map_err(|_| invalid("generated input identity is invalid"))?;
     let contract = evidence.sampled_contract();
     let mut limits = SourceSessionLimits::default();
+    limits.decode.threads = threads;
     limits.decode.max_input_bytes = MAX_MEDIA_BYTES;
     limits.maximum_index_frames = usize::try_from(contract.frames)
         .map_err(|_| ProjectPictureError::Limits("generated frame count"))?;

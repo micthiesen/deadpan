@@ -1270,9 +1270,13 @@ fn admit_generated(
     let SessionKey::Generated { media, .. } = &key else {
         return Err("Generated admission requires an accepted media key.".into());
     };
-    let source =
-        deadpan_cli::picture::open_generated_picture(handle, document, &media.artifact, cancelled)
-            .map_err(|error| error.to_string())?;
+    let source = deadpan_cli::picture::open_generated_picture_for_preview(
+        handle,
+        document,
+        &media.artifact,
+        cancelled,
+    )
+    .map_err(|error| error.to_string())?;
     Ok(RetainedSession {
         key,
         source,

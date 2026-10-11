@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-media",
+    "--example",
+    "compare_ffv1_threads"
+  ],
+  "exit": 0,
+  "seconds": 1.670098999980837,
+  "log_sha256": "216558405736ddabdc2d65bb3129cdfaa0217bf43a2c44381cb1884661889082"
+}

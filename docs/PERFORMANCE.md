@@ -39,8 +39,11 @@ whole-replay footprint is about 768 MiB, not a worst-case decoder measurement.
 [Generated selection loops](qualification/generated-loops-2026-10-11.md)
 add 30 laps at 1080p60 and 4K30 with every picture shown. Preparing the missing
 Original before first entry reduces the 4K request from 64 ms to 8.7 ms.
-A separate nonloop control drops one early Generated picture; ordinary startup
-timing remains open.
+A separate nonloop control drops one early Generated picture.
+[FFV1 slice threading](qualification/generated-slices-2026-10-11.md) reduces
+standalone decode p95 from 6.2–6.5 ms to about 2 ms. Five ordinary 1080p60 runs,
+one 4K30 run and both loops present every picture. A longer run misses its final
+Original picture at the End-to-stopped handoff; terminal presentation stays open.
 A target without a measured workload is open, never passed.
 
 ## Run the suite

@@ -79,11 +79,64 @@ fn threaded_sequential_decode_matches_single_threaded_pictures() {
         let expected = reference(name);
         for threads in [2, 8, 16] {
             let mut decoder = open(name, threads);
+            if decoder.info().codec == "ffv1" {
+                let work = decoder.work();
+                assert_eq!(work.codec_threads, threads);
+                assert!(work.slice_threading);
+                assert!(!work.frame_threading, "one frame's bounded FFV1 contexts");
+            }
             let mut actual = Vec::new();
             while let Some(frame) = decoder.next_rgba(control()).unwrap() {
                 actual.push(picture(frame));
             }
             assert_eq!(actual, expected, "{name} with {threads} threads");
+        }
+    }
+}
+
+#[test]
+fn ffv1_slice_threads_preserve_reverse_seeks_and_pre_call_cancellation() {
+    for name in ["full709.mkv", "limited709.mkv"] {
+        let expected = reference(name);
+        for threads in [2, 8, 16] {
+            let mut decoder = open(name, threads);
+            assert_eq!(decoder.info().codec, "ffv1");
+            for target in (0..expected.len()).rev() {
+                let anchor = expected[..=target]
+                    .iter()
+                    .rposition(|picture| picture.keyframe)
+                    .unwrap();
+                decoder.seek(expected[anchor].pts, control()).unwrap();
+                loop {
+                    let frame = decoder.next_metadata(control()).unwrap().unwrap();
+                    if frame.pts >= expected[target].pts {
+                        break;
+                    }
+                }
+                assert_eq!(
+                    picture(decoder.copy_current_rgba(control()).unwrap()),
+                    expected[target],
+                    "{name} target {target}, {threads} slice threads"
+                );
+                assert!(!decoder.work().frame_threading);
+            }
+            let before = decoder.work();
+            let cancelled = AtomicBool::new(true);
+            let error = decoder
+                .next_metadata(DecodeControl {
+                    timeout: Duration::from_secs(1),
+                    cancelled: &cancelled,
+                })
+                .unwrap_err();
+            assert!(error.to_string().contains("cancel"), "{error}");
+            assert_eq!(decoder.work(), before, "cancelled before native work");
+            assert_eq!(
+                decoder.next_rgba(control()).unwrap().map(picture),
+                expected.get(1).cloned()
+            );
+            // Destruction joins every codec thread after its borrowed control
+            // has gone.
+            drop(decoder);
         }
     }
 }

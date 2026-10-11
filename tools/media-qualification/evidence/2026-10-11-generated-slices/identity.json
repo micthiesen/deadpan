@@ -1,0 +1,51 @@
+{
+  "base": "bfbdfe23b4d1e94bf4a60b16c369edca790d723f",
+  "libraries": {
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib": "ab05b025058f05f3c35b67061bb4c7b587db86d5e89cda1296e58dcd745d1779",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib": "fa1ac6944c4fcb5551f5794245a76b2d8887f0e3ed587278fe35fcc997ffa1b0",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib": "747add4f909d377d5d5d382c43c36fc2cbf73a3b56b173d22f3571afce821492",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib": "fc1470ede7231c87d51a0090ed465d3e39d4b2b3aca53f236df3ac90163a47ff",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib": "222b667e9ae7c26e2007dc75814487feb70782ec9bf269e6f7312428997f27cb"
+  },
+  "upstream_sources": {
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/ffmpeg-8.0.3/libavcodec/ffv1.c": "f657fa1019a2135eef28e99697fa35c6e685297931474fb40d1ba3aa2ec1a7db",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/ffmpeg-8.0.3/libavcodec/ffv1dec.c": "0064b2e123511762afb78bf80ebd5d9558264ac988c29f05aa6614f3fabd0907",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/ffmpeg-8.0.3/libavcodec/ffv1_parse.c": "33a43e22d91c5ac00b17e6bb77e5301c92d3649ad606130813408a0d4547515d",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/ffmpeg-8.0.3/libavcodec/pthread_slice.c": "f19301010e8ac589caa1023385f25436a0573f2653946c92b0b4a24cabb98a2f"
+  },
+  "test_binaries": {
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/deadpan_source-329cdacc4243af72": "e63f81e41945b2dca50c495977860e4dbabd0f74da29aabec13446e6f59cbea5",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/adversarial_decode-b1d1d7b34d9b4dd2": "224940055c9bcdf785fa0d6e51f1897cf39f93c1432fa069cf72f74b3f3aedc7",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/audio_decode-2812b4d04d8198ed": "ea6dfad0e4eaa899f83d064b53bd059eababfc5f27071c9f49fcea086ec2b396",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/av1-25200229abf6fd8b": "6639647dfa955c390c5f2d2db8fe4a9f900c6c5b35d83de95cab03b73516b143",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/clean_aperture-3365210b20006d7d": "035e17efddfde7adf9c456ddb3e8e502ac61fb46e2f6f1f19f329668d47aab2d",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/deinterlace-962146fc56389971": "9b1d574df28eb6fb8121e06ec4e2b15e29d5f90d89d030f0a4da36e2d32c3555",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/export_decode-7b7683f1266c4033": "73cc4e9db4ee78b36092aa54304c9117835f9a975d2e0a98c4c4258fdaf9170b",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/hardware_decode-6e3f545a61af8357": "efebbb6c637603e6d52d5a6cc7effaaf49a2b2a47c3ff19caf23f9b88631f86b",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/hdr_decode-41f07ebbac82ed59": "3f71f0abb4b12535854848f49fe641735d9f80b4f24472e5aba67a6b1e800e46",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/interpretation-6cc4026eed38e2a5": "3de2722997a2aa220921604d7157a2ec204384309a48e900348f39de266b6fab",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/mp3-036b502ae8365090": "b3a6f9ab15c9dd1e17416bfbfded88e56d48d53ab8142b5099ab50795808da3a",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/opus-1110f720b81f0d91": "12ec538f104d39e6699aed1164b2fc3391340ed9d57bf02e382b73b9ae192c0c",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/opus_mp4-8af3bb32648b85d6": "4ef8e182d5b63c9c2fbde14a46d881023a8a2686f087bfb956c2d1880b71502b",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/persistent_decode-3f65744341d7a769": "8fea79719f3c3673c137ab1feeb8605532175d9906ae7d4a34f0effda92c933e",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/prores-257d0a7f714a4633": "88062f0a5b52c3a2c0ae003dd247098e83fdf894796de7c5826859a5998c7ee8",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/remux_regions-91612619d0d65421": "1707b355db45ae2896bde6253c88db62bc4dfca41b462d8533c7e4db4b51dc7e",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/sdr_hevc-b9677c78e4698ee9": "d3cd17d6098848b1a7afae3cf4f96f4c085b55561ff5c2c2e1239c6ad9c13116",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/threaded_seek-8c58ff2d57891fea": "739a3e68379d005b2ee0de869f26d9ef542a667d7b992598faf6492d29d3f968",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/vp9-734f19cca8c70d58": "527193dfca4f77567423d77f75a9b1e6a5fdc218967324db1812d6bbfd0acb73",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/vp9_hdr-9faa0cc0434b31e8": "1d6933239984ce1b51b7be8f4334e67947e11b0652e7ea1a285376c4e141ec93",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/webm-744b8c2913940eb3": "72bbaa93a93c195f0e45fdf03a8bb266c3300ebf9e5509dc9dab1e2ae995916c",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/wide_pcm-8784657ce155efcc": "578f718e5e99b2402f682995219689142ae53ee18693d734f41f09453a7926ac",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/deadpan_app-be0dddda4f43ec2a": "8ea20270715e4619eec4a35e6ec26bd9c98ef579d47804a58f9d697ad431eeb9",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/deadpan_app-726759c2b235f232": "9b11ae6ecd65390b0356c921dfad26803e4daed451a1e9cbfe0a4e806b60e9b8",
+    "/tmp/deadpan-generated-slices-20261011/test-binaries/headless-84949f84c6434186": "cb950bc51b98909d6ed13457567cc1c388a777acf07808444900d6b4399054fe"
+  },
+  "fixtures": {
+    "1080p": "/tmp/deadpan-generated-transitions-20261011/two-holds.deadpan",
+    "4k": "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+    "long": "/tmp/deadpan-generated-playback-performance-20261011/1080p-fallback.deadpan"
+  },
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "hardware": "hw.model: Mac17,7\nhw.memsize: 137438953472\nhw.ncpu: 18\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+}

@@ -25,6 +25,67 @@ fn fixture_from(variable: &str) -> Fixture {
 }
 
 #[test]
+#[ignore = "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Generated Holds"]
+fn generated_preview_slices_equal_the_single_threaded_offline_reader() {
+    let fixture = fixture_from("DEADPAN_GENERATED_TRANSITIONS_PACKAGE");
+    let workspace = fixture.workspace(709);
+    let cancelled = AtomicBool::new(false);
+    let mut previous = None;
+    let mut providers = 0;
+    for frame in 0..workspace.plan.duration().frames() {
+        let deadpan_plan::Picture::Accepted {
+            generated: Some(artifact),
+            ..
+        } = workspace.plan.picture(ProjectFrame(frame)).unwrap().picture
+        else {
+            continue;
+        };
+        if previous.as_ref() == Some(&artifact) {
+            continue;
+        }
+        let key = SessionKey::Generated {
+            session: workspace.session,
+            media: Arc::new(GeneratedMediaKey::new(&workspace.document, &artifact).unwrap()),
+        };
+        let mut preview =
+            admit_generated(&workspace.generated, &workspace.document, key, &cancelled)
+                .unwrap()
+                .source;
+        let mut offline = deadpan_cli::picture::open_generated_picture(
+            &workspace.generated,
+            &workspace.document,
+            &artifact,
+            &cancelled,
+        )
+        .unwrap();
+        let threads = std::thread::available_parallelism().unwrap().get().min(4) as u32;
+        let work = preview.decode_work();
+        assert_eq!(work.codec_threads, threads);
+        assert_eq!(work.slice_threading, threads > 1);
+        assert!(!work.frame_threading);
+        assert_eq!(offline.decode_work().codec_threads, 1);
+        assert_eq!(preview.info(), offline.info());
+        assert_eq!(preview.index().index(), offline.index().index());
+        let frames: Vec<_> = offline
+            .index()
+            .index()
+            .frames()
+            .iter()
+            .map(|frame| frame.identity)
+            .collect();
+        for id in frames.iter().chain(frames.iter().rev()) {
+            let actual = preview.frame(*id, FRAME_TIMEOUT, &cancelled).unwrap();
+            let expected = offline.frame(*id, FRAME_TIMEOUT, &cancelled).unwrap();
+            assert_eq!(actual.metadata, expected.metadata);
+            assert_eq!(actual.rgba, expected.rgba);
+        }
+        providers += 1;
+        previous = Some(artifact);
+    }
+    assert_eq!(providers, 2);
+}
+
+#[test]
 #[ignore = "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"]
 fn starting_on_generated_prepares_original_and_revokes_stale_admissions() {
     for mode in ["adopt", "cancel", "different-session"] {

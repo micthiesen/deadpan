@@ -84,6 +84,7 @@ typedef struct {
     /* VideoToolbox pictures returned by the codec (including seek drains),
        and surfaces downloaded on demand for pixel access. */
     uint64_t hardware_frames, hardware_transfers;
+    uint32_t codec_threads, frame_threading, slice_threading;
 } DeadpanDecodeWork;
 typedef struct {
     uint32_t avcodec, avformat, avutil, swscale, avfilter;

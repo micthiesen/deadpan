@@ -65,8 +65,9 @@ pub struct DecodeLimits {
     pub max_dimension: u32,
     pub max_packets_per_frame: u32,
     /// Codec worker threads, 1 to 16. More than one enables FFmpeg frame and
-    /// slice threading, which returns the same pictures bit for bit; it adds
-    /// pipeline delay and memory, not different output.
+    /// slice threading, which returns the same pictures bit for bit. FFV1
+    /// uses slices only, preserving its one-frame allocation bound. Other
+    /// codecs can add pipeline delay and memory, not different output.
     pub threads: u32,
     /// Refuse interlaced or repeated fields instead of applying source
     /// presentation. Use for encoded exports, proxies and generated masters.
@@ -455,6 +456,10 @@ pub struct DecodeWork {
     /// VideoToolbox surfaces downloaded for requested pixels. Metadata-only
     /// preroll never downloads a surface; repeated copies reuse one download.
     pub hardware_transfers: u64,
+    /// Current codec configuration, independently observed after opening.
+    pub codec_threads: u32,
+    pub frame_threading: bool,
+    pub slice_threading: bool,
 }
 
 /// Actual linked-library version integers queried independently of any encoder.
@@ -1124,6 +1129,9 @@ mod ffi {
         pictures: u64,
         hardware_frames: u64,
         hardware_transfers: u64,
+        codec_threads: u32,
+        frame_threading: u32,
+        slice_threading: u32,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -1653,6 +1661,9 @@ mod ffi {
                 decoded_pictures: work.pictures,
                 hardware_frames: work.hardware_frames,
                 hardware_transfers: work.hardware_transfers,
+                codec_threads: work.codec_threads,
+                frame_threading: work.frame_threading != 0,
+                slice_threading: work.slice_threading != 0,
             }
         }
         /// Add descriptor reads since the last call to process diagnostics.

@@ -806,7 +806,13 @@ static int allocate_decoder(DeadpanSource *s) {
     // FFmpeg's frame and slice threading are deterministic: pictures match a
     // single-threaded decode bit for bit. Threads join in avcodec_free_context.
     s->decoder->thread_count = (int)s->limits.threads;
-    s->decoder->thread_type = s->limits.threads > 1 ? FF_THREAD_FRAME | FF_THREAD_SLICE : 0;
+    // FFV1 admission bounds one frame's slice contexts. Frame threading would
+    // multiply those contexts and add presentation delay; only split slices
+    // of the current frame across threads, including for untrusted Originals.
+    s->decoder->thread_type = s->limits.threads > 1
+        ? (stream->codecpar->codec_id == AV_CODEC_ID_FFV1
+            ? FF_THREAD_SLICE : FF_THREAD_FRAME | FF_THREAD_SLICE)
+        : 0;
     s->decoder->opaque = s;
     s->decoder->get_format = bounded_format;
     s->decoder->get_buffer2 = bounded_buffer;
@@ -1902,6 +1908,11 @@ int deadpan_source_copy_yuv420p10(DeadpanSource *s, uint64_t timeout, DeadpanCan
 void deadpan_source_work(const DeadpanSource *s, DeadpanDecodeWork *work) {
     *work = s->work;
     work->pictures = atomic_load(&((DeadpanSource *)s)->pictures);
+    if (s->decoder) {
+        work->codec_threads = (uint32_t)s->decoder->thread_count;
+        work->frame_threading = !!(s->decoder->active_thread_type & FF_THREAD_FRAME);
+        work->slice_threading = !!(s->decoder->active_thread_type & FF_THREAD_SLICE);
+    }
 }
 void deadpan_source_runtime(DeadpanDecoderRuntime *runtime) {
     *runtime = (DeadpanDecoderRuntime){

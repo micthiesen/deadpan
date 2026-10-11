@@ -55,7 +55,12 @@ Mac. The opt-in API and `compare_decode` media example support further measured
 qualification; this does not close DP-16's acceleration/performance work.
 
 `DecodeLimits::threads` (1 to 16, default 1) enables FFmpeg frame and slice
-threading above one. Both threading and skipping return pictures bit-identical
+threading above one. FFV1 always uses slice threading only, preserving its
+one-frame configuration-allocation bound and avoiding frame-pipeline delay.
+`DecodeWork` reports the actual codec thread count and active threading modes.
+Accepted Generated preview uses up to four slice threads; index and offline
+readers keep one. See the [FFV1 slice qualification](../../docs/qualification/generated-slices-2026-10-11.md).
+Both threading and skipping return pictures bit-identical
 to a sequential single-threaded decode (`tests/threaded_seek.rs`); they change
 latency and memory only. With frame threading, `get_format` and `get_buffer2`
 run on codec threads, possibly after an exported call has returned. They

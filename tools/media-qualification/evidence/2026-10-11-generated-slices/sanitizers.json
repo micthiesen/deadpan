@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/host/build_sanitized.py",
+    "--work",
+    "/tmp/deadpan-generated-slices-20261011/sanitizers",
+    "--package",
+    "deadpan-source"
+  ],
+  "exit": 0,
+  "seconds": 343.70382925029844,
+  "log_sha256": "1b7ceb90aa9dce00513c56d31ab9b21dfc8e05bbcc50277d6454aa5a067d6dee"
+}

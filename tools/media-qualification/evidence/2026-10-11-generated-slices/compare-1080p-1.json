@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/tmp/deadpan-generated-slices-20261011/compare_ffv1_threads",
+    "/tmp/deadpan-generated-transitions-20261011/two-holds.deadpan/Media/Generated/blake3-0503db61e94fef6ffd9e2346f324f6cc41d7611a4a26a4da7f4a43f7d6953f18",
+    "/tmp/deadpan-generated-slices-20261011/compare-1080p-1-report.json"
+  ],
+  "exit": 0,
+  "seconds": 5.019883334171027,
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

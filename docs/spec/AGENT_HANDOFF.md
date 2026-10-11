@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Generated slice decoding](../qualification/generated-slices-2026-10-11.md)
+uses four FFV1 slice threads for preview while preserving single-threaded
+index/export readers and the allocation bound. All 5,220 independent pixel
+comparisons, 183 native tests (also under ASan/UBSan), seven real-media app tests
+and strict checks pass. Five ordinary 1080p60 runs, one 4K30 run and both
+30-lap loops present all 3,752 pictures. The longer fixture presents every
+Generated picture but misses its final Original during the End-to-stopped
+handoff; that failure is retained and remains open under DP-16.
+
 [Generated selection loops](../qualification/generated-loops-2026-10-11.md)
 now prepare the missing Original decoder when playback starts on Generated.
 Thirty laps present all 1,830/930 pictures at 1080p60/4K30, plus the next lap's
