@@ -1,0 +1,16 @@
+from pathlib import Path
+import hashlib,json,subprocess
+r=Path(__file__).parent
+ffprobe=Path('/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/bin/ffprobe')
+rows=[]
+for name in ['quality-full-single-baseline','quality-full-parallel-baseline-0','quality-full-single-qmax24','quality-full-parallel-qmax24-0','quality-bounded-single','quality-bounded-parallel-0','quality-bounded-parallel-1','quality-bounded-software']:
+    path=r/(name+'.mp4')
+    cmd=[str(ffprobe),'-v','error','-select_streams','v:0','-show_packets','-show_entries','packet=pts,dts,duration,size','-of','json',str(path)]
+    data=json.loads(subprocess.check_output(cmd,text=True))
+    (r/(name+'-packets.json')).write_text(json.dumps(data,indent=2)+'\n')
+    packets=data['packets'];assert len(packets)==3506
+    sizes=[int(v['size']) for v in packets]
+    windows=[sum(sizes[i:i+24]) for i in range(len(sizes)-23)]
+    row=dict(name=name,movie_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),packets=len(packets),cut_bytes=sizes[3126],max_one_second_video_bytes=max(windows),max_one_second_video_bitrate=8*max(windows),max_window_first=windows.index(max(windows)))
+    print(json.dumps(row),flush=True);rows.append(row)
+(r/'quality-packet-rates.json').write_text(json.dumps(dict(ffprobe_sha256=hashlib.sha256(ffprobe.read_bytes()).hexdigest(),runs=rows),indent=2)+'\n')

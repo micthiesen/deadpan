@@ -67,20 +67,20 @@ The [runtime contract](AUTOMATIC_ENCODER_ADMISSION.md#loaded-runtime-identity)
 binds macOS mapped vnodes and loaded Mach-O UUIDs under trusted installed code;
 it does not attest resident memory, OS frameworks or drivers.
 
-The binding fixes policy version 1, raster, rational rate, encoder choice and
-resolved bitrate/GOP/B-frame/timescale controls. Native reconstruction uses
-`EncodeContract::new_v1`; `new` stays an alias of that frozen policy. Future
-policies require separate constructors. Runtime binding is carried by the
-private protocol and decision, without changing historical `EncodedManifest`
-bytes or checkpoint interpretation. Probe protocol 2 and report schema 2 are
-separate from this project-encode protocol.
+The binding fixes raster, rational rate, encoder choice and resolved controls.
+SDR reconstruction uses `EncodeContract::new_v2` and binding policy 2: v1
+starting targets and exact clocks plus a frame-QP ceiling of 24 and a one-second
+rate ceiling of three times the target. HDR remains policy 1. The native report
+retains the actual requested quality controls, and live admission rejects
+missing or altered values. `new`/`new_v1` remain frozen engineering constructors.
+Probe protocol 2 and report schema 2 are separate from the project-encode
+protocol and native ABI.
 
-The current native ABI and finished-file verification policy are version 2
-for [AAC preroll](NATIVE_ENCODING.md#exact-input-and-policy). SDR/HDR video
-policy constructors are unchanged. Retained ABI-1 manifests and decisions can
-still be read as historical data, but cannot grant fresh encoding or current
-finished-file verification authority. A prior-ABI candidate needs a fresh
-render to meet the current output contract.
+Current native ABI 3 adds quality controls; finished-file verification stays at
+policy 2 for [AAC preroll](NATIVE_ENCODING.md#exact-input-and-policy). ABI 3 does
+not add a third priming packet. Retained ABI-1/2 manifests and decisions remain
+historical evidence, without granting fresh encoding authority. A prior-ABI
+candidate needs a fresh render to meet the current output contract.
 
 The raw worker retains its 512 MiB/100,000-frame qualification limits. Encoded
 requests reconstruct the native contract and enforce native frame, sample,

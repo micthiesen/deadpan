@@ -1,0 +1,26 @@
+use std::io::Write;
+const WIDTH:usize=1280;
+const HEIGHT:usize=720;
+fn picture(ordinal: u64, bytes: &mut [u8]) {
+    bytes[WIDTH * HEIGHT..].fill(128);
+    for y in 0..HEIGHT {
+        for x in 0..WIDTH {
+            // Independent four-pixel cells stress high detail without reading
+            // external assets. Frame 24 is a hard cut with a different phase.
+            let cell = u64::try_from((y / 4) * (WIDTH / 4) + x / 4).unwrap();
+            let mut state = cell ^ ordinal.wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            state = (state ^ (state >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            state = (state ^ (state >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+            let grain = u8::try_from((state ^ (state >> 31)) % 160).unwrap();
+            bytes[y * WIDTH + x] = if (x + 3 * y) % 97 < 2 {
+                235
+            } else if ordinal < 24 {
+                40 + grain
+            } else {
+                215 - grain
+            };
+        }
+    }
+}
+
+fn main(){ let path=std::env::args().nth(1).unwrap(); let mut f=std::fs::File::create(path).unwrap(); let mut b=vec![0;WIDTH*HEIGHT*3/2]; for n in 0..48{picture(n,&mut b);f.write_all(&b).unwrap();} f.sync_all().unwrap(); }

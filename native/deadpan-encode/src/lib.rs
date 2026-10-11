@@ -100,6 +100,7 @@ impl EncodeError {
                 }
                 "output_io" | "output_seek" => EncodeFailureKind::Io,
                 "encoder_unsupported"
+                | "video_quality_unsupported"
                 | "incomplete_output"
                 | "invalid_packet"
                 | "mux_duration_evidence" => EncodeFailureKind::Evidence,
@@ -135,6 +136,9 @@ pub struct EncoderInfo {
     pub video_bitrate: u64,
     pub audio_bitrate: u64,
     pub maximum_moov_bytes: u64,
+    /// Absent in retained ABI 1/2 reports and unconstrained legacy/HDR output.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_rate_control: Option<VideoRateControl>,
 }
 
 /// Selected video encoder and declared stream properties, queried from the

@@ -1,0 +1,51 @@
+from pathlib import Path
+import gzip,hashlib,json,re,subprocess
+r=Path(__file__).parent;repo=Path('/Users/michael/Code/deadpan')
+out=repo/'tools/media-qualification/evidence/2026-10-10-encoder-quality';out.mkdir(parents=True,exist_ok=True)
+names=['quality-full-matrix.json','quality-bounded-matrix.json','quality-all-frames.json','quality-packet-rates.json','quality-probe-full-build.json','quality-probe-build.json','quality-matrix.json','extract-reference-resume.json','extract-reference-full.json','vt-quality-properties.log','quality-negative.json','quality-builds.json','quality-followup-checks.json','quality-source-identity.json','quality-public.json']
+scripts=['quality_probe_full.c','quality_probe.c','inspect_quality.c','encoder-qmax24.c','encoder-qmax24-bounded.c','full_quality_matrix.py','bounded_quality.py','inspect_matrix.py','packet_rates.py','extract_reference_resume.rs','extract_reference_full.rs','vt_quality_properties.c','quality_negative.py','quality_builds.py','quality_public.py','quality_followups.py','regenerate_quality_fixtures.py','reproduce_ignored_qp.py','retain_quality.py']
+for name in names:
+    if (r/name).is_file():(out/name).write_bytes((r/name).read_bytes())
+if (r/'quality-evidence-check.json').is_file():
+    (out/'quality-evidence-check.json').write_bytes((r/'quality-evidence-check.json').read_bytes())
+scripts.append('check_quality_evidence.py')
+scripts.append('public_packet_rates.py')
+scripts.append('capture_quality_public.py')
+if (r/'quality-bundle-hashes.json').is_file():
+    (out/'quality-bundle-hashes.json').write_bytes((r/'quality-bundle-hashes.json').read_bytes())
+if (r/'quality-public-packet-rates.json').is_file():
+    (out/'quality-public-packet-rates.json').write_bytes((r/'quality-public-packet-rates.json').read_bytes())
+for name in scripts:
+    (out/(name+'.txt')).write_bytes((r/name).read_bytes())
+for pattern in ['quality-*-all-frames.json','quality-*-packets.json','quality-*.log','quality-*.stderr']:
+    for path in r.glob(pattern):
+        (out/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+for name in ['quality-ignored-software','quality-public-release','quality-public-packaged','release-quality','quality-fixtures']:
+    origin=r/name
+    if not origin.is_dir():continue
+    target=out/name;target.mkdir(exist_ok=True)
+    for path in origin.iterdir():
+        if not path.is_file():continue
+        if path.suffix in ['.c','.h','.rs']:
+            (target/(path.name+'.txt')).write_bytes(path.read_bytes())
+        elif path.name in ['all-frames.json','packets.json'] or path.suffix in ['.log','.stdout','.stderr']:
+            (target/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+        elif path.suffix=='.json':
+            (target/path.name).write_bytes(path.read_bytes())
+sanitizer=Path('/tmp/deadpan-youtube-quality-asan-final-20261010/report.json')
+prior=json.loads(sanitizer.read_text())
+environment={key:prior[key] for key in ['scope','cflags','rust_flags','runtime','runtime_sha256','ffmpeg_prefix']}
+environment['scope']='native encoder C adapter and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented'
+log=(r/'quality-sanitizers.log').read_text()
+binaries=re.findall(r'Running [^\n]+ \((/[^\n]+)\)',log)
+environment['test_binaries']={name:hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in binaries}
+environment['passed_tests']=sum(map(int,re.findall(r'test result: ok\. (\d+) passed',log)))
+environment['run']=next(row for row in json.loads((r/'quality-builds.json').read_text()) if row['name']=='quality-sanitizers')
+(out/'sanitizer-environment.json').write_text(json.dumps(environment,indent=2)+'\n')
+for name in ['encoder.c','encoder.h']:
+    old=subprocess.check_output(['git','show','fdef263d:native/deadpan-encode/src/'+name],cwd=repo)
+    (out/('baseline-'+name+'.txt')).write_bytes(old)
+    if name=='encoder.c':assert hashlib.sha256(old).hexdigest()==json.loads((r/'quality-probe-full-build.json').read_text())[0]['source_sha256']
+manifest={str(p.relative_to(out)):dict(bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in sorted(out.rglob('*')) if p.is_file() and p.name!='manifest.json'}
+(out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print('retained',len(manifest),'files',sum(v['bytes'] for v in manifest.values()),'bytes')

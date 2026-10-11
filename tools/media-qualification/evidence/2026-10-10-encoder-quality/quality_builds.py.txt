@@ -1,0 +1,25 @@
+from pathlib import Path
+import hashlib,json,os,re,shutil,subprocess,time
+r=Path(__file__).parent;repo=Path('/Users/michael/Code/deadpan')
+prior=json.loads(Path('/tmp/deadpan-youtube-quality-asan-final-20261010/report.json').read_text())
+env=dict(os.environ,DEADPAN_FFMPEG_PREFIX=prior['ffmpeg_prefix'])
+rows=[]
+def run(name,cmd,environment=env):
+    print('START',name,flush=True);start=time.monotonic()
+    with (r/(name+'.log')).open('w') as log:v=subprocess.run(cmd,cwd=repo,env=environment,stdout=log,stderr=subprocess.STDOUT,timeout=2400)
+    row=dict(name=name,command=cmd,exit=v.returncode,seconds=time.monotonic()-start,log_sha256=hashlib.sha256((r/(name+'.log')).read_bytes()).hexdigest())
+    rows.append(row);(r/'quality-builds.json').write_text(json.dumps(rows,indent=2)+'\n')
+    print('FINISH',name,v.returncode,flush=True)
+    if v.returncode:raise SystemExit(v.returncode)
+paths=subprocess.check_output(['git','diff','--name-only','--','native','crates'],cwd=repo,text=True).splitlines()+['native/deadpan-encode/tests/sdr_quality.rs']
+(r/'quality-source-identity.json').write_text(json.dumps(dict(base=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),files={name:hashlib.sha256((repo/name).read_bytes()).hexdigest() for name in sorted(set(paths))}),indent=2)+'\n')
+asan=dict(env,CFLAGS=prior['cflags'],CARGO_ENCODED_RUSTFLAGS='\x1f'.join(prior['rust_flags']))
+asan.pop('RUSTFLAGS',None)
+run('quality-stdio-followup',['cargo','nextest','run','--locked','-p','deadpan-cli','--lib','--features','deadpan-cli/synthetic-worker','-E','test(encoded_render::protocol::tests::version_three_requires_explicit_binding_without_changing_persisted_manifest)'])
+run('quality-sanitizers',['cargo','test','--locked','-p','deadpan-encode','--target','aarch64-apple-darwin','--target-dir','/tmp/deadpan-youtube-quality-asan-final-20261010/target'],asan)
+run('quality-release-build',['cargo','build','--release','--locked','-p','deadpan-cli','-p','deadpan-media-worker'])
+out=r/'release-quality';out.mkdir(exist_ok=False)
+for name in ['deadpan-cli','deadpan-media-worker']:shutil.copy2(repo/'target/release'/name,out/name)
+(out/'hashes.json').write_text(json.dumps({name:hashlib.sha256((out/name).read_bytes()).hexdigest() for name in ['deadpan-cli','deadpan-media-worker']},indent=2)+'\n')
+run('quality-bundle-build',['cargo','xtask','bundle','--output','/tmp/deadpan-encoder-quality-bundle-20261010'])
+run('quality-bundle-verify',['cargo','xtask','bundle-verify','/tmp/deadpan-encoder-quality-bundle-20261010/Deadpan.app'])

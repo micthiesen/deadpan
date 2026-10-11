@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json,subprocess,time
+r=Path(__file__).parent
+rows=[]
+for name in ['quality-full-single-baseline','quality-full-parallel-baseline-0','quality-full-single-qmax24','quality-full-parallel-qmax24-0','quality-bounded-single']:
+    command=[str(r/'inspect-quality'),str(r/'quality-reference-full.i420'),str(r/(name+'.mp4'))]
+    start=time.monotonic()
+    with (r/(name+'-all-frames.json')).open('w') as out:
+        p=subprocess.run(command,stdout=out,stderr=subprocess.PIPE,text=True,timeout=300)
+    if p.returncode:raise RuntimeError((name,p.returncode,p.stderr))
+    frames=json.loads((r/(name+'-all-frames.json')).read_text())
+    row=dict(name=name,command=command,seconds=time.monotonic()-start,frames=len(frames),minimum_psnr=[min(v['psnr'][i] for v in frames) for i in range(3)],luma_below32=[v['frame'] for v in frames if v['psnr'][0]<32],max_mean_qp=max(v['qp'][1] for v in frames),max_block_qp=max(v['qp'][2] for v in frames),cut=frames[3126])
+    print(json.dumps(row),flush=True);rows.append(row)
+    (r/'quality-all-frames.json').write_text(json.dumps(dict(binary_sha256=hashlib.sha256((r/'inspect-quality').read_bytes()).hexdigest(),runs=rows),indent=2)+'\n')

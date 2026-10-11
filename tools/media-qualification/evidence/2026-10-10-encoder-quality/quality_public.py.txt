@@ -1,0 +1,43 @@
+from pathlib import Path
+import concurrent.futures,datetime,hashlib,json,os,shutil,subprocess,time
+r=Path(__file__).parent
+original=r/'packaged-final/work/youtube-av1.deadpan'
+rows=[]
+def one(mode,binary):
+    out=r/('quality-public-'+mode);out.mkdir(exist_ok=False)
+    home=out/'home';home.mkdir();work=out/'work';work.mkdir()
+    package=work/'project.deadpan';shutil.copytree(original,package)
+    destination=work/'export';destination.mkdir()
+    environment=dict(os.environ) if mode=='release' else dict(HOME=str(home),PATH='/usr/bin:/bin',TMPDIR=str(work),LANG='en_US.UTF-8')
+    hashes={name:hashlib.sha256(binary.with_name(name).read_bytes()).hexdigest() for name in ['deadpan-cli','deadpan-media-worker']}
+    commands=[]
+    def run(name,args):
+        cmd=[str(binary),*args];start=time.monotonic();started_at=datetime.datetime.now(datetime.timezone.utc).isoformat();print('START',mode,name,flush=True)
+        with (out/(name+'.stdout')).open('w') as stdout,(out/(name+'.stderr')).open('w') as stderr:
+            p=subprocess.run(cmd,cwd=work,env=environment,stdout=stdout,stderr=stderr,timeout=1800)
+        commands.append(dict(name=name,command=cmd,exit=p.returncode,seconds=time.monotonic()-start,started_at=started_at,finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat()))
+        (out/'commands.json').write_text(json.dumps(dict(binaries=hashes,commands=commands),indent=2)+'\n')
+        print('FINISH',mode,name,p.returncode,flush=True)
+        if p.returncode:raise RuntimeError((mode,name,(out/(name+'.stdout')).read_text()[-2000:]))
+        raw=(out/(name+'.stdout')).read_text();decoder=json.JSONDecoder();values=[]
+        while raw.strip():
+            value,n=decoder.raw_decode(raw.lstrip());values.append(value);raw=raw.lstrip()[n:]
+        return values[-1]
+    run('validate',['project','validate',str(package)])
+    result=run('render',['render',str(package),'--output',str(destination),'--name','movie.mp4'])
+    assert result['status']['outcome']=='published'
+    movie=Path(result['status']['receipt']['movie']);revision=result['status']['captured_revision']
+    assert revision=='23aa98c7-712d-4fcc-911b-a9c98a96d7ec'
+    report=run('verify',['verify-export',str(package),'--movie',str(movie),'--revision',revision])
+    assert report['passed'] and report['movie']['video_frames']==3506 and report['summary']['pictures_checked']==585 and report['summary']['nonzero_offsets']==0
+    # Exact raw reference covers every picture, independently of CLI sampling.
+    cmd=[str(r/'inspect-quality'),str(r/'quality-reference-full.i420'),str(movie)]
+    with (out/'all-frames.json').open('w') as stdout:subprocess.run(cmd,stdout=stdout,check=True,timeout=180)
+    frames=json.loads((out/'all-frames.json').read_text());assert len(frames)==3506
+    assert all(v['psnr'][0]>=32 and min(v['psnr'][1:])>=32 for v in frames)
+    row=dict(mode=mode,binaries=hashes,movie=str(movie),movie_sha256=hashlib.sha256(movie.read_bytes()).hexdigest(),movie_bytes=movie.stat().st_size,summary=report['summary'],all_frames=len(frames),minimum_psnr=[min(v['psnr'][i] for v in frames) for i in range(3)],maximum_block_qp=max(v['qp'][2] for v in frames),cut=frames[3126],commands=commands,all_frames_command=cmd,all_frames_binary_sha256=hashlib.sha256((r/'inspect-quality').read_bytes()).hexdigest())
+    (out/'report.json').write_text(json.dumps(row,indent=2)+'\n');print(json.dumps(row),flush=True);return row
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+    jobs=[pool.submit(one,'release',r/'release-quality/deadpan-cli'),pool.submit(one,'packaged',Path('/tmp/deadpan-encoder-quality-bundle-20261010/Deadpan.app/Contents/MacOS/deadpan-cli'))]
+    rows=[v.result() for v in jobs]
+(r/'quality-public.json').write_text(json.dumps(rows,indent=2)+'\n')

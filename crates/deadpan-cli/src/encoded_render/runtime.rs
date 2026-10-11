@@ -11,7 +11,7 @@ use std::{
 };
 
 use deadpan_encode::{
-    SDR_POLICY_VERSION_V1, SdrPolicy,
+    SdrPolicy,
     runtime::{self, MappedImageIdentity, RuntimeImageKind, RuntimePlatform},
 };
 use deadpan_jobs::Sha256;
@@ -306,7 +306,7 @@ impl EncodingBinding {
         let native = contract.native_contract()?;
         let binding = Self {
             schema_version: SCHEMA_VERSION,
-            policy_version: SDR_POLICY_VERSION_V1,
+            policy_version: native.policy_version(),
             raster: native.raster(),
             frame_rate: native.frame_rate(),
             choice: contract.choice,
@@ -321,7 +321,7 @@ impl EncodingBinding {
         self.runtime.validate()?;
         let native = contract.native_contract()?;
         if self.schema_version != SCHEMA_VERSION
-            || self.policy_version != SDR_POLICY_VERSION_V1
+            || self.policy_version != native.policy_version()
             || self.raster != native.raster()
             || self.frame_rate != native.frame_rate()
             || self.choice != contract.choice

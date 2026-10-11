@@ -1,0 +1,108 @@
+[
+  {
+    "name": "quality-fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 4.578017415944487,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "quality-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 9.773159957956523,
+    "log_sha256": "dbb7cba6c6061c05309f754f93abb29ff137ef07925aeeb972bd71c3a38df1aa"
+  },
+  {
+    "name": "quality-clippy-ui",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 7.267299207858741,
+    "log_sha256": "8c362203e0db6a3312a03dbada189defefc0cc462323041520090eda4d710ac0"
+  },
+  {
+    "name": "quality-followups",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "-p",
+      "deadpan-jobs",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "-E",
+      "package(deadpan-encode) | (package(deadpan-jobs) & test(render::admission)) | (package(deadpan-cli) & (test(encoded_render) | binary(encoded_render) | binary(encoded_verification)))",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 42.802926290780306,
+    "log_sha256": "95e131be9703de0ca9613f222889c1fc38b246ee39cf55fe9aa26a3963aa3f86"
+  },
+  {
+    "name": "quality-ui",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 274.1730097909458,
+    "log_sha256": "455e85a651faab1a9b853f313823dc810fa50f122abdb96e7fcc706c7f85cb2e"
+  },
+  {
+    "name": "quality-doc-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--locked",
+      "--doc",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 5.659321249928325,
+    "log_sha256": "429b6bdd7a76f1b2a662a1e347c4fa2d641fc680299ba32ae60b331b6522c118"
+  }
+]

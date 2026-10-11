@@ -1,0 +1,149 @@
+[
+  {
+    "name": "quality-full-single-baseline",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-single-baseline.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 17.985656125005335,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 37.910046004,
+      "bytes": 144572823
+    }
+  },
+  {
+    "name": "quality-full-parallel-baseline-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-baseline-0.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 24.244972500018775,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 30.544108149,
+      "bytes": 141083530
+    }
+  },
+  {
+    "name": "quality-full-parallel-baseline-1",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-baseline-1.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 24.25131716625765,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 30.544108149,
+      "bytes": 141083530
+    }
+  },
+  {
+    "name": "quality-full-single-qmax24",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-qmax24",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-single-qmax24.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 21.323477750178427,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 40.705073179,
+      "bytes": 196231043
+    }
+  },
+  {
+    "name": "quality-full-parallel-qmax24-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-qmax24",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-qmax24-0.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 26.778310666326433,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 40.627843222,
+      "bytes": 178069486
+    }
+  },
+  {
+    "name": "quality-full-parallel-qmax24-1",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-qmax24",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-qmax24-1.mp4",
+      "0",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 26.778364417143166,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 40.627843222,
+      "bytes": 178069486
+    }
+  },
+  {
+    "name": "quality-full-software-qmax24",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-qmax24",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-full-software-qmax24.mp4",
+      "0",
+      "0",
+      "1"
+    ],
+    "exit": 0,
+    "seconds": 37.952050749678165,
+    "result": {
+      "frames": 3506,
+      "cut": 3126,
+      "delay_ms": 0,
+      "mode": 1,
+      "luma_psnr_db": 45.034693925,
+      "bytes": 146594245
+    }
+  }
+]

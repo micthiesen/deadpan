@@ -177,7 +177,7 @@ The failed movie/report remain in `packaged-final/work/youtube-av1-export`
 and `packaged-final/youtube-av1-verify.stdout`; the cross-check is
 `cross-release-frame3126.json`. No threshold was lowered.
 
-The cause remains under investigation. A separate full packaged encode with
+At this milestone the cause remained under investigation. A separate full packaged encode with
 no other encode running passes all 585 sampled pictures and all 143 signal
 windows, with the same 36.97/40.11 dB minima as the release file; frame 3,126
 itself measures 37.91 dB. The first failure occurred while another full export
@@ -185,7 +185,12 @@ was running. That suggests a concurrency-related encoder variation, not a
 proven cause. The shorter scene-cut reproduction does not fail under either
 single or concurrent encoding. `isolated-render.json`,
 `isolated-full-verify.json` and the original failing artifacts retain both
-outcomes. Complete encoder-quality qualification remains open.
+outcomes. The [2026-10-10 encoder follow-up](encoder-quality-2026-10-10.md)
+reproduces the failure with the complete picture sequence and fixes it using
+supported QP and bounded-rate controls. Two concurrent release/packaged exports
+then pass every decoded picture and all signal windows, with the unchanged
+threshold. The original failed movies and reports remain retained. Complete
+encoder-quality qualification remains open.
 
 Live GUI inspection was not run. A user override for the assumed chroma position,
 broader codec profiles, above-1080p performance and clean/second-Mac acceptance

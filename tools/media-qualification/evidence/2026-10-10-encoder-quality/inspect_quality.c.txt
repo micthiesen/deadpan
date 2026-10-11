@@ -1,0 +1,55 @@
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/video_enc_params.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define W 1920
+#define H 1080
+#define N (W*H*3/2)
+int main(int argc,char **argv) {
+    if(argc!=3)return 2;
+    FILE *raw=fopen(argv[1],"rb");unsigned char *ref=malloc(N);
+    AVFormatContext *f=NULL;AVPacket *p=av_packet_alloc();AVFrame *v=av_frame_alloc();
+    if(!raw || !ref || avformat_open_input(&f,argv[2],NULL,NULL)<0 || avformat_find_stream_info(f,NULL)<0)return 3;
+    int s=av_find_best_stream(f,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0);if(s<0)return 4;
+    AVCodecContext *c=avcodec_alloc_context3(avcodec_find_decoder(AV_CODEC_ID_H264));if(!c)return 5;
+    if(avcodec_parameters_to_context(c,f->streams[s]->codecpar)<0)return 6;
+    c->export_side_data=AV_CODEC_EXPORT_DATA_VIDEO_ENC_PARAMS;
+    if(avcodec_open2(c,c->codec,NULL)<0)return 7;
+    int eof=0,frames=0;puts("[");
+    while(!eof) {
+        int r=av_read_frame(f,p);
+        if(r==AVERROR_EOF){eof=1;r=avcodec_send_packet(c,NULL);}
+        else if(r<0)return 8;
+        else if(p->stream_index==s)r=avcodec_send_packet(c,p);
+        else {av_packet_unref(p);continue;}
+        if(r<0)return 9;av_packet_unref(p);
+        while((r=avcodec_receive_frame(c,v))==0) {
+            if(v->width!=W || v->height!=H || v->format!=AV_PIX_FMT_YUV420P || fread(ref,1,N,raw)!=N)return 10;
+            if(av_rescale_q(v->pts,f->streams[s]->time_base,(AVRational){1,24})!=frames)return 11;
+            double psnr[3];size_t offset=0;
+            for(int plane=0;plane<3;plane++) {
+                int w=plane?W/2:W,h=plane?H/2:H;double sum=0;
+                for(int y=0;y<h;y++)for(int x=0;x<w;x++) {
+                    double d=(double)v->data[plane][y*v->linesize[plane]+x]-ref[offset+(size_t)y*w+x];sum+=d*d;
+                }
+                psnr[plane]=sum?10*log10(255.0*255.0*w*h/sum):100;offset+=(size_t)w*h;
+            }
+            AVFrameSideData *sd=av_frame_get_side_data(v,AV_FRAME_DATA_VIDEO_ENC_PARAMS);
+            if(!sd || sd->size<sizeof(AVVideoEncParams))return 12;
+            AVVideoEncParams *q=(AVVideoEncParams *)sd->data;
+            if(q->type!=AV_VIDEO_ENC_PARAMS_H264 || !q->nb_blocks)return 13;
+            int min=100,max=-100;double mean=0;
+            for(unsigned i=0;i<q->nb_blocks;i++) {
+                int qp=q->qp+av_video_enc_params_block(q,i)->delta_qp;
+                if(qp<min)min=qp;if(qp>max)max=qp;mean+=qp;
+            }
+            printf("%s{\"frame\":%d,\"psnr\":[%.9f,%.9f,%.9f],\"qp\":[%d,%.9f,%d]}",frames?",\n":"",frames,psnr[0],psnr[1],psnr[2],min,mean/q->nb_blocks,max);
+            frames++;av_frame_unref(v);
+        }
+        if(r!=AVERROR(EAGAIN)&&r!=AVERROR_EOF)return 14;
+    }
+    puts("\n]");fclose(raw);free(ref);av_frame_free(&v);av_packet_free(&p);avcodec_free_context(&c);avformat_close_input(&f);
+    return frames==3506?0:15;
+}

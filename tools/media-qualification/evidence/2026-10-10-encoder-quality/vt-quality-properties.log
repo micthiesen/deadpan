@@ -1,0 +1,15 @@
+com.apple.videotoolbox.videoencoder.ave.avc
+{
+    PropertyType = Number;
+    ReadWriteStatus = ReadWrite;
+}
+{
+    ReadWriteStatus = ReadWrite;
+}
+com.apple.videotoolbox.videoencoder.h264
+{
+}
+software=0 status=0
+qmax=1 rate=1
+software=1 status=0
+qmax=0 rate=1

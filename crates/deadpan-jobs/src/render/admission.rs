@@ -108,6 +108,16 @@ pub struct RenderEncoderInfo {
     pub video_bitrate: u64,
     pub audio_bitrate: u64,
     pub maximum_moov_bytes: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_rate_control: Option<RenderVideoRateControl>,
+}
+
+/// Queried native requests, not a quality measurement of the emitted movie.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenderVideoRateControl {
+    pub max_frame_qp: u32,
+    pub max_bitrate: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1204,7 +1214,8 @@ fn validate_encode_report(
             && report.audio_samples == config.audio_samples
             && report.video_packets == config.video_frames
             && report.audio_packets
-                == config.audio_samples.div_ceil(1024) + u64::from(report.info.abi_version)
+                == config.audio_samples.div_ceil(1024)
+                    + if report.info.abi_version == 1 { 1 } else { 2 }
             && packets <= MAX_PROBE_PACKETS
             && (1..=MAX_PROBE_BYTES).contains(&report.output_bytes)
             && report.packet_bytes >= packets
@@ -1226,7 +1237,16 @@ fn validate_encode_report(
     ensure(
         // Stored decisions retain their original encoding evidence. Current
         // live admission additionally checks the current native ABI.
-        matches!(info.abi_version, 1 | 2)
+        matches!(info.abi_version, 1..=3)
+            && info.video_rate_control
+                == if info.abi_version == 3 && color == ColorPolicy::SdrRec709 {
+                    Some(RenderVideoRateControl {
+                        max_frame_qp: 24,
+                        max_bitrate: settings.video_bitrate * 3,
+                    })
+                } else {
+                    None
+                }
             && [
                 info.avcodec_version,
                 info.avformat_version,
@@ -1268,8 +1288,10 @@ fn validate_verification(
     settings: &RenderSdrSettings,
 ) -> Result<(), RenderError> {
     let ticks = i64::from(config.frame_rate[1]);
+    // The video quality change in ABI 3 does not add another AAC preroll block.
+    let timing_policy = if encoded.info.abi_version == 1 { 1 } else { 2 };
     ensure(
-        report.policy_version == encoded.info.abi_version
+        report.policy_version == timing_policy
             && report.video_frames == config.video_frames
             && report.audio_samples == config.audio_samples
             && report.video_packets == encoded.video_packets
@@ -1286,8 +1308,8 @@ fn validate_verification(
             && report.video_edit_media_time >= 0
             && report.video_edit_media_time % ticks == 0
             && report.video_edit_media_time <= i64::from(settings.b_frames) * ticks
-            && report.audio_edit_media_time == i64::from(encoded.info.abi_version) * 1024
-            && report.manual_first_sample == -i64::from(encoded.info.abi_version) * 1024
+            && report.audio_edit_media_time == i64::from(timing_policy) * 1024
+            && report.manual_first_sample == -i64::from(timing_policy) * 1024
             && report.ordinary_first_sample == 0
             && report.manual_physical_samples == report.audio_packets * 1024
             && report.ordinary_physical_samples == config.audio_samples.div_ceil(1024) * 1024

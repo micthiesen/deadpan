@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <VideoToolbox/VideoToolbox.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavcodec/version.h>
@@ -213,6 +214,10 @@ static int validate_config(dp_encode_session *s) {
         c->maximum_packets == 0 || c->maximum_packets > DP_ENCODE_MAX_PACKETS ||
         c->maximum_packet_bytes == 0 || c->maximum_packet_bytes > DP_ENCODE_MAX_PACKET_BYTES)
         return fail(s, "invalid_config", "encoder contract exceeds native admission bounds");
+    if (!((c->video_max_frame_qp == -1 && c->video_max_bitrate == 0) ||
+          (!s->hdr_enabled && c->video_max_frame_qp == 24 &&
+           c->video_max_bitrate == c->video_bitrate * 3 && c->video_max_bitrate <= INT_MAX)))
+        return fail(s, "invalid_config", "encoder rate controls differ from the automatic policy");
     __int128 ticks = (__int128)c->video_frames * c->fps_den;
     if (ticks > INT64_MAX || ticks > (__int128)86400 * c->fps_num)
         return fail(s, "invalid_config", "encoder duration exceeds 24 hours or exact timestamp bounds");
@@ -410,6 +415,36 @@ static enum AVColorSpace picture_matrix(const dp_encode_session *s) {
     return s->hdr_enabled ? AVCOL_SPC_BT2020_NCL : AVCOL_SPC_BT709;
 }
 
+/* FFmpeg 8.0.3's set_encoder_int_property_or_log returns success even when
+ * VideoToolbox rejects qmax. Query the same hardware/software selection first
+ * instead of admitting that ignored request as quality-constrained output.
+ * This is capability evidence only; decoded output remains the quality oracle. */
+static int require_rate_control_support(dp_encode_session *s) {
+    if (s->config.video_max_frame_qp < 0) return 1;
+    const void *key = s->config.mode
+        ? kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
+        : kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder;
+    const void *value = s->config.mode ? kCFBooleanFalse : kCFBooleanTrue;
+    CFDictionaryRef specification = CFDictionaryCreate(NULL, &key, &value, 1,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    if (specification == NULL) return fail(s, "allocation_failure", "allocate encoder capability selection");
+    CFDictionaryRef properties = NULL;
+    OSStatus status = VTCopySupportedPropertyDictionaryForEncoder(
+        (int32_t)s->config.width, (int32_t)s->config.height, kCMVideoCodecType_H264,
+        specification, NULL, &properties);
+    CFRelease(specification);
+    int supported = status == noErr && properties != NULL &&
+        CFDictionaryContainsKey(properties, kVTCompressionPropertyKey_MaxAllowedFrameQP) &&
+        CFDictionaryContainsKey(properties, kVTCompressionPropertyKey_DataRateLimits);
+    if (properties != NULL) CFRelease(properties);
+    if (!check_control(s)) return 0;
+    if (status != noErr)
+        return fail(s, "encoder_unsupported", "query selected encoder quality controls: VideoToolbox %d", (int)status);
+    if (!supported)
+        return fail(s, "video_quality_unsupported", "selected SDR encoder does not support the required frame-QP and data-rate controls");
+    return 1;
+}
+
 static int open_codec(dp_encode_session *s, int audio) {
     const char *video_name = s->hdr_enabled ? "hevc_videotoolbox" : "h264_videotoolbox";
     const char *video_label = s->hdr_enabled ? "VideoToolbox HEVC" : "VideoToolbox H264";
@@ -435,6 +470,7 @@ static int open_codec(dp_encode_session *s, int audio) {
             fail(s, "encoder_unsupported", "AAC encoder cannot accept an exact short final frame"); goto done;
         }
     } else {
+        if (!require_rate_control_support(s)) goto done;
         codec->width = (int)s->config.width; codec->height = (int)s->config.height;
         codec->pix_fmt = s->hdr_enabled ? AV_PIX_FMT_P010LE : AV_PIX_FMT_YUV420P;
         /* VT consumes its private profile option but does not write this
@@ -446,6 +482,8 @@ static int open_codec(dp_encode_session *s, int audio) {
         codec->gop_size = (int)s->config.gop_frames;
         codec->max_b_frames = (int)s->config.b_frames;
         codec->bit_rate = (int64_t)s->config.video_bitrate;
+        codec->qmax = s->config.video_max_frame_qp;
+        codec->rc_max_rate = (int64_t)s->config.video_max_bitrate;
         codec->sample_aspect_ratio = (AVRational){1, 1};
         codec->field_order = AV_FIELD_PROGRESSIVE;
         codec->color_range = AVCOL_RANGE_MPEG;
@@ -550,6 +588,8 @@ static void observe_info(dp_encode_session *s) {
     s->info.requested_mode = s->config.mode;
     s->info.video_bitrate = s->video->bit_rate < 0 ? 0 : (uint64_t)s->video->bit_rate;
     s->info.audio_bitrate = s->audio->bit_rate < 0 ? 0 : (uint64_t)s->audio->bit_rate;
+    s->info.video_max_frame_qp = s->video->qmax;
+    s->info.video_max_bitrate = s->video->rc_max_rate < 0 ? 0 : (uint64_t)s->video->rc_max_rate;
 }
 
 static int open_session(int fd, const dp_encode_config *config, const dp_encode_hdr_config *hdr,

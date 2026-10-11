@@ -225,7 +225,7 @@ fn read_candidate(candidate: &mut EncodedCandidate) -> Vec<u8> {
 fn actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes() {
     for (name, frames, samples) in [
         ("nonzero", 1, 1601),
-        ("software-two", 43, 68869),
+        ("hardware-gops", 43, 68869),
         ("marker", 120, 96000),
     ] {
         let fixture = Fixture::new(name);
@@ -263,12 +263,10 @@ fn actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes(
             report.manual_physical_samples,
             report.ordinary_physical_samples + 2048
         );
-        if name == "software-two" {
-            assert!(report.maximum_b_run > 0 && report.maximum_b_run <= 2);
+        if name == "hardware-gops" {
             assert!(report.gops > 1);
-        } else {
-            assert_eq!(report.maximum_b_run, 0);
         }
+        assert_eq!(report.maximum_b_run, 0);
         let mut retained = Vec::new();
         verified
             .copy_to(&mut retained, &NOT_CANCELLED, deadline())
@@ -482,7 +480,7 @@ fn mutate(fixture: &Fixture, mutation: &str) -> Vec<u8> {
 
 #[test]
 fn recomputed_hashes_do_not_admit_altered_headers_clocks_or_h264_content() {
-    let fixture = Fixture::new("software-two");
+    let fixture = Fixture::new("hardware-gops");
     for mutation in [
         "geometry",
         "color",

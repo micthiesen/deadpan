@@ -16,10 +16,10 @@ fn contract(raster: [u32; 2], rate: [u32; 2], frames: u64, samples: u64) -> Enco
 }
 
 #[test]
-fn frozen_version_one_preserves_original_constructor_and_serialized_contract() {
+fn frozen_version_one_preserves_serialized_contract() {
     assert_eq!(SDR_POLICY_VERSION_V1, 1);
     let explicit = contract([1000, 1440], [30000, 1001], 45, 72072);
-    let original = EncodeContract::new(
+    let current = EncodeContract::new_v2(
         [1000, 1440],
         [30000, 1001],
         45,
@@ -28,7 +28,16 @@ fn frozen_version_one_preserves_original_constructor_and_serialized_contract() {
         BFramePolicy::TargetTwo,
     )
     .unwrap();
-    assert_eq!(explicit, original);
+    assert_eq!(explicit.policy(), current.policy());
+    assert_eq!(explicit.rate_control(), None);
+    assert_eq!(current.policy_version(), 2);
+    assert_eq!(
+        current.rate_control(),
+        Some(deadpan_encode::VideoRateControl {
+            max_frame_qp: 24,
+            max_bitrate: 19_050_000,
+        })
+    );
     let expected = concat!(
         r#"{"raster":[1000,1440],"frame_rate":[30000,1001],"video_frames":45,"#,
         r#""audio_samples":72072,"mode":"hardware","policy":{"video_bitrate":6350000,"#,
@@ -36,7 +45,37 @@ fn frozen_version_one_preserves_original_constructor_and_serialized_contract() {
         r#""picture_bytes":2160000}"#,
     );
     assert_eq!(serde_json::to_string(&explicit).unwrap(), expected);
-    assert_eq!(serde_json::to_string(&original).unwrap(), expected);
+}
+
+#[test]
+fn quality_policy_bounds_all_admitted_rasters_and_preserves_exact_clocks() {
+    for (raster, rate, frames, samples) in [
+        ([2, 2], [1, 2], 1, 96_000),
+        ([1920, 1080], [24, 1], 3506, 7_012_000),
+        ([1000, 1440], [30000, 1001], 45, 72_072),
+        ([8192, 4096], [60, 1], 1, 800),
+    ] {
+        let old = contract(raster, rate, frames, samples);
+        let new = EncodeContract::new_v2(
+            raster,
+            rate,
+            frames,
+            samples,
+            EncoderMode::Hardware,
+            BFramePolicy::TargetTwo,
+        )
+        .unwrap();
+        let control = new.rate_control().unwrap();
+        assert_eq!(new.policy(), old.policy());
+        assert_eq!(
+            new.picture_timing(frames - 1).unwrap(),
+            old.picture_timing(frames - 1).unwrap()
+        );
+        assert_eq!(new.audio_samples(), old.audio_samples());
+        assert_eq!(control.max_frame_qp, 24);
+        assert_eq!(control.max_bitrate, old.policy().video_bitrate * 3);
+        assert!(control.max_bitrate <= 720_000_000);
+    }
 }
 
 #[test]

@@ -1,0 +1,163 @@
+{
+  "binary_sha256": "be5f1e84ccfd9db405c1ea8bb741380f3a2e3b1bcfde6cd068d2914241249414",
+  "runs": [
+    {
+      "name": "quality-full-single-baseline",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/inspect-quality",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-full-single-baseline.mp4"
+      ],
+      "seconds": 19.179939709138125,
+      "frames": 3506,
+      "minimum_psnr": [
+        36.118285515,
+        40.111754756,
+        39.69440913
+      ],
+      "luma_below32": [],
+      "max_mean_qp": 34.222181373,
+      "max_block_qp": 47,
+      "cut": {
+        "frame": 3126,
+        "psnr": [
+          37.910046004,
+          42.493180533,
+          43.000154346
+        ],
+        "qp": [
+          20,
+          24.971813725,
+          28
+        ]
+      }
+    },
+    {
+      "name": "quality-full-parallel-baseline-0",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/inspect-quality",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-baseline-0.mp4"
+      ],
+      "seconds": 18.51834737509489,
+      "frames": 3506,
+      "minimum_psnr": [
+        30.544108149,
+        37.820814618,
+        38.075300506
+      ],
+      "luma_below32": [
+        3126,
+        3128
+      ],
+      "max_mean_qp": 38.480392157,
+      "max_block_qp": 48,
+      "cut": {
+        "frame": 3126,
+        "psnr": [
+          30.544108149,
+          37.820814618,
+          38.075300506
+        ],
+        "qp": [
+          32,
+          36.957107843,
+          40
+        ]
+      }
+    },
+    {
+      "name": "quality-full-single-qmax24",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/inspect-quality",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-full-single-qmax24.mp4"
+      ],
+      "seconds": 21.66345241572708,
+      "frames": 3506,
+      "minimum_psnr": [
+        40.705073179,
+        44.67616623,
+        44.95558685
+      ],
+      "luma_below32": [],
+      "max_mean_qp": 24.0,
+      "max_block_qp": 24,
+      "cut": {
+        "frame": 3126,
+        "psnr": [
+          40.705073179,
+          44.67616623,
+          44.95558685
+        ],
+        "qp": [
+          20,
+          22.632965686,
+          24
+        ]
+      }
+    },
+    {
+      "name": "quality-full-parallel-qmax24-0",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/inspect-quality",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-full-parallel-qmax24-0.mp4"
+      ],
+      "seconds": 20.89372087502852,
+      "frames": 3506,
+      "minimum_psnr": [
+        40.627843222,
+        44.381892304,
+        44.460276492
+      ],
+      "luma_below32": [],
+      "max_mean_qp": 24.0,
+      "max_block_qp": 24,
+      "cut": {
+        "frame": 3126,
+        "psnr": [
+          40.627843222,
+          44.381892304,
+          44.501249406
+        ],
+        "qp": [
+          24,
+          24.0,
+          24
+        ]
+      }
+    },
+    {
+      "name": "quality-bounded-single",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/inspect-quality",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-bounded-single.mp4"
+      ],
+      "seconds": 19.405011833179742,
+      "frames": 3506,
+      "minimum_psnr": [
+        40.627843222,
+        44.381892304,
+        44.136480212
+      ],
+      "luma_below32": [],
+      "max_mean_qp": 24.0,
+      "max_block_qp": 24,
+      "cut": {
+        "frame": 3126,
+        "psnr": [
+          40.627843222,
+          44.381892304,
+          44.501249406
+        ],
+        "qp": [
+          24,
+          24.0,
+          24
+        ]
+      }
+    }
+  ]
+}

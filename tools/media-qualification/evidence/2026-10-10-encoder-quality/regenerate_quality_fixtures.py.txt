@@ -1,0 +1,32 @@
+from pathlib import Path
+import hashlib,json,os,shutil,subprocess,time
+repo=Path('/Users/michael/Code/deadpan');r=Path(__file__).parent
+p=repo/'crates/deadpan-cli/tests/encoded_verification/fixtures'
+out=r/'quality-fixtures';out.mkdir(exist_ok=False)
+prior=json.loads((p/'provenance.json').read_text())
+binary=repo/'target/debug/examples/qualify'
+prefix='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix'
+cmd=['cargo','build','--locked','-p','deadpan-encode','--example','qualify']
+with (r/'quality-fixtures-build.log').open('w') as log:subprocess.run(cmd,cwd=repo,env=dict(os.environ,DEADPAN_FFMPEG_PREFIX=prefix),stdout=log,stderr=subprocess.STDOUT,check=True)
+archive=out/'qualify';shutil.copy2(binary,archive)
+source_paths=['Cargo.lock','rust-toolchain.toml','native/deadpan-encode/build.rs','native/deadpan-encode/examples/qualify.rs','native/deadpan-encode/src/encoder.c','native/deadpan-encode/src/encoder.h','native/deadpan-encode/src/ffi.rs','native/deadpan-encode/src/policy.rs','native/deadpan-encode/src/lib.rs']
+records=[]
+for name,old,n,d,frames,start in [('nonzero','nonzero',30000,1001,1,1),('hardware-gops','software-two',30000,1001,43,20),('marker','marker',60,1,120,0)]:
+    movie=out/(name+'.mp4');command=[str(archive),str(movie),'hardware','none',str(n),str(d),str(frames),str(start),'impulses','none','v2']
+    with (out/(name+'.stderr')).open('w') as err:
+        data=subprocess.check_output(command,stderr=err)
+    qualification=json.loads(data);assert qualification['report']['info']['abi_version']==3
+    assert qualification['report']['info']['video_rate_control']['max_frame_qp']==24
+    manifest=json.loads((p/(old+'.json')).read_text())
+    manifest['contract']['choice']=dict(mode='hardware',b_frames='none')
+    manifest['report']=qualification['report']
+    digest=hashlib.sha256(movie.read_bytes()).hexdigest()
+    manifest['movie'].update(sha256=digest,byte_length=movie.stat().st_size)
+    shutil.copy2(movie,p/(name+'.mp4'))
+    (p/(name+'.json')).write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+    (p/(name+'.qualification.json')).write_text(json.dumps(qualification,indent=2,sort_keys=True)+'\n')
+    records.append(dict(name=name,command=command,movie_bytes=movie.stat().st_size,movie_sha256=digest,manifest_sha256=hashlib.sha256((p/(name+'.json')).read_bytes()).hexdigest()))
+provenance=dict(date='2026-10-10',native_abi=3,scope=prior['scope'],producer=dict(source_base=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),source_sha256={name:hashlib.sha256((repo/name).read_bytes()).hexdigest() for name in source_paths},build=cmd,binary=str(archive),binary_sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),ffmpeg_prefix=prefix),files=records,previous_abi2_archive_commit='fdef263d',previous_abi2_provenance=prior,retained_abi2_fixture='software-two (unchanged; historical decoder coverage only)')
+(p/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
+(out/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
+print(json.dumps(records,indent=2),flush=True)

@@ -78,7 +78,7 @@ fn report(contract: &EncodedRenderContract, limits: EncodeLimits) -> EncodeRepor
     let policy = native.policy();
     EncodeReport {
         info: EncoderInfo {
-            abi_version: 2,
+            abi_version: deadpan_encode::ENCODER_ABI_VERSION,
             avcodec_version: 4_066_151,
             avformat_version: 4_064_103,
             avutil_version: 3_934_311,
@@ -99,6 +99,7 @@ fn report(contract: &EncodedRenderContract, limits: EncodeLimits) -> EncodeRepor
             video_bitrate: policy.video_bitrate,
             audio_bitrate: policy.audio_bitrate,
             maximum_moov_bytes: moov_bound(limits.maximum_packets).unwrap(),
+            video_rate_control: native.rate_control(),
         },
         video_frames: native.video_frames(),
         audio_samples: native.audio_samples(),
@@ -725,6 +726,9 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
         ("/info/audio_trailing_padding", json!(8193)),
         ("/info/requested_mode", json!("software")),
         ("/info/video_bitrate", json!(1)),
+        ("/info/video_rate_control/max_frame_qp", json!(25)),
+        ("/info/video_rate_control/max_bitrate", json!(1)),
+        ("/info/video_rate_control", Value::Null),
         ("/info/audio_bitrate", json!(128000)),
         ("/info/maximum_moov_bytes", json!(0)),
     ] {
@@ -741,6 +745,7 @@ fn completion_rejects_forged_native_counts_clocks_policy_and_drain_claims() {
 fn historical_codec_only_priming_cannot_enter_current_worker_admission() {
     let mut old = manifest();
     old.report.info.abi_version = 1;
+    old.report.info.video_rate_control = None;
     old.report.audio_packets -= 1;
     old.validate_retained().unwrap();
     assert!(old.validate().is_err());
@@ -755,6 +760,23 @@ fn historical_codec_only_priming_cannot_enter_current_worker_admission() {
     assert!(old.validate_retained().is_err());
     old.report.info.abi_version = 3;
     assert!(old.validate_retained().is_err());
+}
+
+#[test]
+fn quality_policy_requires_current_controls_without_changing_aac_preroll() {
+    let current = manifest();
+    current.validate().unwrap();
+    current.validate_retained().unwrap();
+    let mut old = current.clone();
+    old.report.info.abi_version = 2;
+    assert!(old.validate_retained().is_err());
+    old.report.info.video_rate_control = None;
+    old.validate_retained().unwrap();
+    assert!(old.validate().is_err());
+    // Claiming a third priming packet for the video-only ABI change is invalid.
+    let mut extra_audio = current;
+    extra_audio.report.audio_packets += 1;
+    assert!(extra_audio.validate().is_err());
 }
 
 #[test]

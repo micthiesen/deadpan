@@ -88,7 +88,17 @@ impl ProbeGenerator {
         b_frames: BFramePolicy,
     ) -> Result<EncodeContract, EncodeError> {
         match self {
-            Self::Sdr(probe) => probe.contract(mode, b_frames),
+            Self::Sdr(probe) => {
+                let config = probe.config();
+                EncodeContract::new_v2(
+                    config.raster,
+                    config.frame_rate,
+                    config.video_frames,
+                    config.audio_samples,
+                    mode,
+                    b_frames,
+                )
+            }
             Self::Hdr(probe) => probe.contract(mode, b_frames),
         }
     }

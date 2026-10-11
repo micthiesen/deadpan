@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,subprocess,time
+r=Path(__file__).parent;repo=Path('/Users/michael/Code/deadpan')
+p=Path('/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix')
+source=(repo/'native/deadpan-encode/tests/sdr_quality.rs').read_text()
+assert source.count('EncodeContract::new_v2(')==1
+negative=r/'sdr_quality_legacy.rs';negative.write_text(source.replace('EncodeContract::new_v2(','EncodeContract::new_v1('))
+deps=repo/'target/debug/deps'
+libs={name:max(deps.glob('lib'+name+'-*.rlib'),key=lambda x:x.stat().st_mtime) for name in ['deadpan_encode','deadpan_source','tempfile']}
+binary=r/'sdr-quality-legacy'
+cmd=['rustc','--test','--edition=2024','-C','opt-level=1',str(negative),'-L','dependency='+str(deps),'-L','native='+str(p/'lib'),'-C','link-arg=-Wl,-rpath,'+str(p/'lib'),'-o',str(binary)]
+for name,path in libs.items():cmd.extend(['--extern',name+'='+str(path)])
+with (r/'quality-negative-build.log').open('w') as log:subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,check=True)
+run=[str(binary),'sdr_quality_preserves_grain_and_edges_with_concurrent_hardware_sessions','--exact','--nocapture']
+start=time.monotonic()
+with (r/'quality-negative.log').open('w') as log:v=subprocess.run(run,stdout=log,stderr=subprocess.STDOUT,timeout=120)
+report=dict(build=cmd,command=run,exit=v.returncode,seconds=time.monotonic()-start,binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),source_sha256=hashlib.sha256(negative.read_bytes()).hexdigest(),dependencies={str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in libs.values()})
+(r/'quality-negative.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report),flush=True)
+assert v.returncode!=0, 'Legacy control unexpectedly meets the regression threshold; inspect evidence'

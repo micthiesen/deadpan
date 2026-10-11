@@ -55,10 +55,24 @@ pub(crate) fn inspect(
     limits: VerificationLimits,
     cancelled: &AtomicBool,
     deadline: Instant,
-    mut progress: impl FnMut(VerificationProgress) -> Result<()>,
+    progress: impl FnMut(VerificationProgress) -> Result<()>,
 ) -> Result<VerificationReport> {
     limits.validate()?;
     manifest.validate()?;
+    inspect_validated(file, manifest, limits, cancelled, deadline, progress)
+}
+
+// The production entry point above requires a current manifest. A retained
+// ABI-2 fixture also exercises this same decoder in the historical unit test;
+// it receives no VerifiedCandidate or publication authority.
+fn inspect_validated(
+    file: &File,
+    manifest: &EncodedManifest,
+    limits: VerificationLimits,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    mut progress: impl FnMut(VerificationProgress) -> Result<()>,
+) -> Result<VerificationReport> {
     let native = manifest.contract.native_contract()?;
     let pixels = super::decode_pixel_budget(native.raster(), native.video_format().is_hdr());
     let context = Context {
@@ -145,6 +159,38 @@ fn require(ok: bool, message: &'static str) -> Result<()> {
     } else {
         Err(format!("ExportVerificationFailed: {message}"))
     }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+#[test]
+fn retained_software_b_frames_keep_complete_decoder_coverage_without_live_authority() {
+    let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/encoded_verification/fixtures");
+    let manifest: EncodedManifest =
+        serde_json::from_slice(&std::fs::read(directory.join("software-two.json")).unwrap())
+            .unwrap();
+    manifest.validate_retained().unwrap();
+    assert!(manifest.validate().is_err());
+    let file = File::open(directory.join("software-two.mp4")).unwrap();
+    let limits = VerificationLimits::default();
+    limits.validate().unwrap();
+    let report = inspect_validated(
+        &file,
+        &manifest,
+        limits,
+        &AtomicBool::new(false),
+        Instant::now() + Duration::from_secs(60),
+        |_| Ok(()),
+    )
+    .unwrap();
+    report.validate_retained(limits, 2).unwrap();
+    assert_eq!(report.video_frames, 43);
+    assert_eq!(report.fresh_gop_frames, 43);
+    assert_eq!(report.audio_samples, 68_869);
+    assert_eq!(report.manual_first_sample, -2048);
+    assert_eq!(report.ordinary_first_sample, 0);
+    assert!(report.gops > 1);
+    assert!((1..=2).contains(&report.maximum_b_run));
 }
 
 fn scaled(value: u64, from: u32, to: u32) -> Result<u64> {

@@ -1,0 +1,44 @@
+{
+  "scope": "native encoder C adapter and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+  "cflags": "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all",
+  "rust_flags": [
+    "-C",
+    "link-arg=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+    "-C",
+    "link-arg=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin"
+  ],
+  "runtime": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+  "runtime_sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "test_binaries": {
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/deadpan_encode-f4c83aeaa2800dab": "e42fa2686bc127a8602a65b34b4586f1f29acd95968202f7732b6214e8fa674f",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/aac_opening-bf680b1b191764b8": "0e693b00bfa5653a465463c1d4970d18ce04b709a7f5923c66bfcb8295c2e269",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/failures-428d1e1352dd6b7c": "7138304b0de90f20dbd641e2877b07f06697746a21b83bb6ca73f4c91cd15726",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/hdr_encode-be71096c0fc8f1f6": "55d10050f275ae19beaad03255a5816cd2ec7c9a6e164d53a71aeea255932b8e",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/hdr_policy-1d7b840d8408dd3d": "1d7505142d01d3a6ac8b3ad0acf0bc32078642c43262e19e2e9705e38178d67f",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/hdr_probe-b4134274dba4808b": "d0d931161e32c21a4ad5348a7514f9120337676f6aa64933548f59d6da8792dd",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/policy-c911408e247b1f27": "4642e8010d65b6ae1f5840302abd2388556d52686319f3da2580d6b80c3b8724",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/probe-acb8862276d86a51": "e9fb1a4df71fcb8829cf229d135fce3cbe120b260a832ef6c986fb716c4c5ca0",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/runtime-79fa576e8ec679ad": "fe8015fc1639df4791fd8b68413251026f4736a596eb6486c1c6228b203531e1",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/sdr_bitstream_identity-b65359fe76f5ed68": "bd4d36a105960189b945ff79f8d34035dcd5efc4bdd177fbbc544ccaa264a168",
+    "/tmp/deadpan-youtube-quality-asan-final-20261010/target/aarch64-apple-darwin/debug/deps/sdr_quality-0e216dbd58b2eff8": "6ef5d32459671956fbad01b1cfaefa427be82b3331acc42f269d9af4aef1802c"
+  },
+  "passed_tests": 63,
+  "run": {
+    "name": "quality-sanitizers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--target",
+      "aarch64-apple-darwin",
+      "--target-dir",
+      "/tmp/deadpan-youtube-quality-asan-final-20261010/target"
+    ],
+    "exit": 0,
+    "seconds": 7.329813207965344,
+    "log_sha256": "51999af44ecb1bb838814a0acbb0174d27dc20cdc166d50049ad28b9a1b73e32"
+  }
+}

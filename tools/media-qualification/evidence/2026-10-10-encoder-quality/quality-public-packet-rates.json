@@ -1,0 +1,51 @@
+{
+  "ffprobe_sha256": "3097d381096de0b110381ca68daacab5b021d0489d809c46e6f1de6de4142f13",
+  "runs": [
+    {
+      "mode": "release",
+      "command": [
+        "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/bin/ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_packets",
+        "-show_streams",
+        "-show_entries",
+        "packet=pts,dts,duration,size:stream=time_base,r_frame_rate",
+        "-of",
+        "json",
+        "/private/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/export/movie.mp4"
+      ],
+      "movie_sha256": "90dab71375d52cbe43acebbdc6e37d7983782e0a9959377e35f72956e72a9d57",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 2884058,
+      "max_one_second_video_bitrate": 23072464,
+      "max_window_first": 3231
+    },
+    {
+      "mode": "packaged",
+      "command": [
+        "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/bin/ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_packets",
+        "-show_streams",
+        "-show_entries",
+        "packet=pts,dts,duration,size:stream=time_base,r_frame_rate",
+        "-of",
+        "json",
+        "/private/tmp/deadpan-youtube-quality-20261009/quality-public-packaged/work/export/movie.mp4"
+      ],
+      "movie_sha256": "9d74f692fecc793f5c6269f37a66a48d57366c3ff919bc304891e13c0c5c0562",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 2884055,
+      "max_one_second_video_bitrate": 23072440,
+      "max_window_first": 3231
+    }
+  ]
+}

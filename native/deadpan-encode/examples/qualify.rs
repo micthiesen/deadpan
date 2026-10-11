@@ -140,8 +140,8 @@ fn sample(position: u64, channel: u32, total: u64, edges: bool) -> f32 {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if !(8..=9).contains(&args.len()) {
-        return Err("usage: qualify OUTPUT hardware|software two|none FPS_NUM FPS_DEN FRAMES PROJECT_START impulses|edges [FAULT]".into());
+    if !(8..=10).contains(&args.len()) {
+        return Err("usage: qualify OUTPUT hardware|software two|none FPS_NUM FPS_DEN FRAMES PROJECT_START impulses|edges [FAULT [v1|v2]]".into());
     }
     let mode = match args[1].as_str() {
         "hardware" => EncoderMode::Hardware,
@@ -176,7 +176,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     if !(800..=120 * 48_000).contains(&samples) {
         return Err("fixture duration outside bounded sample range".into());
     }
-    let contract = EncodeContract::new(
+    let constructor = match args.get(9).map(String::as_str).unwrap_or("v1") {
+        "v1" => EncodeContract::new_v1,
+        "v2" => EncodeContract::new_v2,
+        _ => return Err("unknown SDR policy".into()),
+    };
+    let contract = constructor(
         [320, 180],
         [numerator, denominator],
         frames,

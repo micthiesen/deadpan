@@ -22,6 +22,7 @@ fn only_exact_video_capability_codes_receive_specific_classification() {
         ("encoder_unavailable", EncodeFailureKind::Native),
         ("encoder_failure", EncodeFailureKind::Native),
         ("encoder_unsupported", EncodeFailureKind::Evidence),
+        ("video_quality_unsupported", EncodeFailureKind::Evidence),
         ("invalid_packet", EncodeFailureKind::Evidence),
         ("future_encoder_error", EncodeFailureKind::Native),
     ] {

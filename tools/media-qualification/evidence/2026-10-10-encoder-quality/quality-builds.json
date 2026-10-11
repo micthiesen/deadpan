@@ -1,0 +1,79 @@
+[
+  {
+    "name": "quality-stdio-followup",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "-E",
+      "test(encoded_render::protocol::tests::version_three_requires_explicit_binding_without_changing_persisted_manifest)"
+    ],
+    "exit": 0,
+    "seconds": 0.33143558306619525,
+    "log_sha256": "96f9451079165f864a6f5f18225e079c90ffc06bac9b8cc5ea45f61c1c84171d"
+  },
+  {
+    "name": "quality-sanitizers",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--target",
+      "aarch64-apple-darwin",
+      "--target-dir",
+      "/tmp/deadpan-youtube-quality-asan-final-20261010/target"
+    ],
+    "exit": 0,
+    "seconds": 7.329813207965344,
+    "log_sha256": "51999af44ecb1bb838814a0acbb0174d27dc20cdc166d50049ad28b9a1b73e32"
+  },
+  {
+    "name": "quality-release-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "-p",
+      "deadpan-media-worker"
+    ],
+    "exit": 0,
+    "seconds": 150.57403958262876,
+    "log_sha256": "8f0b3f4735ccc84e883487e81e5e9ecf897777145bd2c8700a39b609075bda52"
+  },
+  {
+    "name": "quality-bundle-build",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-encoder-quality-bundle-20261010"
+    ],
+    "exit": 0,
+    "seconds": 234.61781308287755,
+    "log_sha256": "27745f571cdf235845725e9476e9daecf280966f81b5465b2891f5e5c4176efa"
+  },
+  {
+    "name": "quality-bundle-verify",
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-encoder-quality-bundle-20261010/Deadpan.app"
+    ],
+    "exit": 0,
+    "seconds": 29.530867541674525,
+    "log_sha256": "d518fbb98e8e49b0d7518ce234d3b183fd25660d6e448664abc0e855e78ad80f"
+  }
+]

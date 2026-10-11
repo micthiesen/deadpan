@@ -1,0 +1,17 @@
+use std::{path::Path, sync::atomic::AtomicBool, time::{Instant, Duration}, io::Write};
+fn main() {
+    let args: Vec<_> = std::env::args().collect();
+    let revision = serde_json::from_str(&serde_json::to_string(&args[2]).unwrap()).unwrap();
+    let mut output = std::fs::File::options().write(true).create_new(true).open(&args[3]).unwrap();
+    for start in (0..3506).step_by(30) {
+        let ordinals: Vec<u64> = (start..(start+30).min(3506)).collect();
+        let pictures = deadpan_cli::export_verification::reference_pictures(Path::new(&args[1]), &revision, &ordinals, &AtomicBool::new(false), Instant::now()+Duration::from_secs(90)).unwrap();
+        for picture in pictures {
+            assert_eq!((picture.planes.width,picture.planes.height,picture.planes.bits),(1920,1080,8));
+            let data: Vec<u8> = picture.planes.y.iter().chain(&picture.planes.cb).chain(&picture.planes.cr).map(|&n| u8::try_from(n).unwrap()).collect();
+            output.write_all(&data).unwrap();
+        }
+        if start%300==0 { println!("prepared through {}", (start+30).min(3506)); }
+    }
+    output.sync_all().unwrap();
+}

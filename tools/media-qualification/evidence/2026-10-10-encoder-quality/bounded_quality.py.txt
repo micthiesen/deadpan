@@ -1,0 +1,25 @@
+from pathlib import Path
+import concurrent.futures, hashlib, json, subprocess, time
+r=Path(__file__).parent
+p=Path('/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix')
+repo=Path('/Users/michael/Code/deadpan')
+source=(r/'encoder-qmax24.c').read_text()
+anchor='codec->qmax = 24; /* Qualification candidate only. */'
+assert source.count(anchor)==1
+source=source.replace(anchor,anchor+'\n        codec->rc_max_rate = codec->bit_rate * 3;')
+candidate=r/'encoder-qmax24-bounded.c';candidate.write_text(source)
+binary=r/'quality-probe-full-bounded'
+cmd=['cc','-O2','-std=c11','-Wall','-Wextra','-Werror','-I'+str(repo/'native/deadpan-encode/src'),'-I'+str(p/'include'),str(r/'quality_probe_full.c'),str(candidate),'-L'+str(p/'lib'),'-Wl,-rpath,'+str(p/'lib'),'-lavformat','-lavcodec','-lavutil','-o',str(binary)]
+subprocess.run(cmd,check=True)
+rows=[]
+def run(name,mode=0):
+    command=[str(binary),str(r/'quality-reference-full.i420'),str(r/(name+'.mp4')),'0','0',str(mode)]
+    start=time.monotonic();v=subprocess.run(command,capture_output=True,text=True,timeout=360)
+    (r/(name+'.stderr')).write_text(v.stderr)
+    row=dict(name=name,command=command,exit=v.returncode,seconds=time.monotonic()-start,stdout=v.stdout)
+    print(json.dumps(row),flush=True);return row
+rows.append(run('quality-bounded-single'))
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+    rows.extend(pool.map(run,['quality-bounded-parallel-0','quality-bounded-parallel-1']))
+rows.append(run('quality-bounded-software',1))
+(r/'quality-bounded-matrix.json').write_text(json.dumps(dict(build=cmd,source_sha256=hashlib.sha256(candidate.read_bytes()).hexdigest(),binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),runs=rows),indent=2)+'\n')

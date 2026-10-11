@@ -227,7 +227,9 @@ impl VerificationReport {
         encoder_abi: u32,
     ) -> Result<(), String> {
         match encoder_abi {
-            version @ (1 | 2) => self.validate_policy(limits, version),
+            1 => self.validate_policy(limits, 1),
+            // ABI 3 changes video rate control, retaining ABI 2's AAC preroll.
+            2 | 3 => self.validate_policy(limits, 2),
             _ => Err("unsupported retained verification policy".into()),
         }
     }

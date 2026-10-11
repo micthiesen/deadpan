@@ -50,6 +50,64 @@ fn stored_aac_preroll_evidence_requires_one_coherent_version() {
         .unwrap();
 }
 
+#[test]
+fn stored_quality_controls_bind_abi_three_to_sdr_without_an_extra_aac_block() {
+    let mut value = fixture();
+    let report = selected_mut(&mut value);
+    report.manifest.report.info.abi_version = 3;
+    report.manifest.report.info.video_rate_control = Some(RenderVideoRateControl {
+        max_frame_qp: 24,
+        max_bitrate: report.settings.video_bitrate * 3,
+    });
+    report.manifest.report.audio_packets += 1;
+    report.verification.policy_version = 2;
+    report.verification.audio_packets += 1;
+    report.verification.audio_edit_media_time = 2048;
+    report.verification.manual_first_sample = -2048;
+    report.verification.manual_physical_samples += 1024;
+    value
+        .validate_for(&intent(&value), &value.encoding_attempt_id)
+        .unwrap();
+    for field in 0..8 {
+        let mut changed = value.clone();
+        let report = selected_mut(&mut changed);
+        match field {
+            0 => report.manifest.report.info.video_rate_control = None,
+            1 => {
+                report
+                    .manifest
+                    .report
+                    .info
+                    .video_rate_control
+                    .as_mut()
+                    .unwrap()
+                    .max_frame_qp = 25
+            }
+            2 => {
+                report
+                    .manifest
+                    .report
+                    .info
+                    .video_rate_control
+                    .as_mut()
+                    .unwrap()
+                    .max_bitrate += 1
+            }
+            3 => report.manifest.report.info.abi_version = 2,
+            4 => report.verification.policy_version = 3,
+            5 => report.verification.audio_edit_media_time = 3072,
+            6 => report.verification.manual_first_sample = -3072,
+            _ => report.manifest.report.audio_packets += 1,
+        }
+        assert!(
+            changed
+                .validate_for(&intent(&changed), &changed.encoding_attempt_id)
+                .is_err(),
+            "accepted field {field}"
+        );
+    }
+}
+
 fn intent(value: &RenderEncodingDecision) -> RenderIntent {
     RenderIntent {
         schema_version: 2,

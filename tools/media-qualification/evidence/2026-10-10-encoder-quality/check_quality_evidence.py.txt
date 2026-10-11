@@ -1,0 +1,19 @@
+from pathlib import Path
+import hashlib,json,re
+r=Path(__file__).parent
+repo=Path('/Users/michael/Code/deadpan')
+def names(name,states):
+    text=(r/name).read_text()
+    pattern=r'^\s*(?:'+states+r')\s+\[[^\n]*?\]\s+\(\s*\d+/\d+\)\s+(.+)$'
+    return set(re.findall(pattern,text,re.M))
+failed=names('quality-gate-2.log','FAIL')
+passed=names('quality-followups.log','PASS|LEAK')
+assert len(failed)==28,(len(failed),failed)
+assert failed<=passed,failed-passed
+identity=json.loads((r/'quality-source-identity.json').read_text())
+for name,expected in identity['files'].items():
+    assert hashlib.sha256((repo/name).read_bytes()).hexdigest()==expected,name
+out=dict(workspace_failed=len(failed),corrected_followups=sorted(failed),
+         followup_tests=len(passed),verified_source_files=len(identity['files']))
+(r/'quality-evidence-check.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({key:value for key,value in out.items() if key!='corrected_followups'}))

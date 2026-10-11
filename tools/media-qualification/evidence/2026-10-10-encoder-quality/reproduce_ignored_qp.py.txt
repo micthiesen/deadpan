@@ -1,0 +1,32 @@
+from pathlib import Path
+import hashlib,json,subprocess
+r=Path(__file__).parent;repo=Path('/Users/michael/Code/deadpan')
+p=Path('/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix')
+out=r/'quality-ignored-software';out.mkdir(exist_ok=False)
+test=(repo/'native/deadpan-encode/tests/sdr_quality.rs').read_text()
+picture=test[test.index('fn picture('):test.index('\nfn measure(')]
+generator='use std::io::Write;\nconst WIDTH:usize=1280;\nconst HEIGHT:usize=720;\n'+picture+'\nfn main(){ let path=std::env::args().nth(1).unwrap(); let mut f=std::fs::File::create(path).unwrap(); let mut b=vec![0;WIDTH*HEIGHT*3/2]; for n in 0..48{picture(n,&mut b);f.write_all(&b).unwrap();} f.sync_all().unwrap(); }\n'
+(out/'reference.rs').write_text(generator)
+commands=[]
+def run(cmd,output=None):
+    commands.append(cmd)
+    with (out/'commands.log').open('ab') as log:
+        if output:
+            with (out/output).open('wb') as stdout:subprocess.run(cmd,stdout=stdout,stderr=log,check=True)
+        else:subprocess.run(cmd,stdout=log,stderr=log,check=True)
+run(['rustc','--edition=2024','-C','opt-level=3',str(out/'reference.rs'),'-o',str(out/'reference')])
+run([str(out/'reference'),str(out/'reference.i420')])
+(out/'encoder.h').write_bytes(subprocess.check_output(['git','show','fdef263d:native/deadpan-encode/src/encoder.h'],cwd=repo))
+(out/'encoder.c').write_bytes((r/'encoder-qmax24-bounded.c').read_bytes())
+probe=(r/'quality_probe_full.c').read_text().replace('#define WIDTH 1920','#define WIDTH 1280').replace('#define HEIGHT 1080','#define HEIGHT 720').replace('3126','24').replace('count=3506','count=48').replace('video_bitrate=8000000','video_bitrate=5000000')
+(out/'probe.c').write_text(probe)
+inspect=(r/'inspect_quality.c').read_text().replace('#define W 1920','#define W 1280').replace('#define H 1080','#define H 720').replace('frames==3506','frames==48')
+(out/'inspect.c').write_text(inspect)
+for name,sources in [('probe',['probe.c','encoder.c']),('inspect',['inspect.c'])]:
+    run(['cc','-O2','-std=c11','-Wall','-Wextra','-Werror','-I'+str(out),'-I'+str(p/'include'),*[str(out/s) for s in sources],'-L'+str(p/'lib'),'-Wl,-rpath,'+str(p/'lib'),'-lavformat','-lavcodec','-lavutil','-o',str(out/name)])
+run([str(out/'probe'),str(out/'reference.i420'),str(out/'ignored-software.mp4'),'0','0','1'],'probe.json')
+run([str(out/'inspect'),str(out/'reference.i420'),str(out/'ignored-software.mp4')],'all-frames.json')
+frames=json.loads((out/'all-frames.json').read_text());assert len(frames)==48
+report=dict(scope='ABI-2 experimental encoder requests qmax24 and rate ceiling; pinned FFmpeg ignores unsupported software QP',commands=commands,files={f.name:dict(bytes=f.stat().st_size,sha256=hashlib.sha256(f.read_bytes()).hexdigest()) for f in out.iterdir() if f.is_file()},minimum_psnr=[min(v['psnr'][i] for v in frames) for i in range(3)],maximum_block_qp=max(v['qp'][2] for v in frames))
+(out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report),flush=True)
+assert report['minimum_psnr'][0]<20 and report['maximum_block_qp']>24

@@ -66,7 +66,7 @@ fn manifest() -> EncodedManifest {
     let policy = native.policy();
     let report = EncodeReport {
         info: EncoderInfo {
-            abi_version: 2,
+            abi_version: deadpan_encode::ENCODER_ABI_VERSION,
             avcodec_version: 4_066_151,
             avformat_version: 4_064_103,
             avutil_version: 3_934_311,
@@ -87,6 +87,7 @@ fn manifest() -> EncodedManifest {
             video_bitrate: policy.video_bitrate,
             audio_bitrate: policy.audio_bitrate,
             maximum_moov_bytes: 1_048_576 + 256 * 128,
+            video_rate_control: native.rate_control(),
         },
         video_frames: native.video_frames(),
         audio_samples: native.audio_samples(),

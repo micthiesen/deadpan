@@ -1,0 +1,170 @@
+[
+  {
+    "name": "quality-single-6-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-single-6-0.mp4",
+      "6",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 0.3751663751900196,
+    "result": {
+      "frames": 36,
+      "cut": 18,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 2356309
+    }
+  },
+  {
+    "name": "quality-single-102-40",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-single-102-40.mp4",
+      "102",
+      "40",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 7.036808916833252,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 40,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 2457810
+    }
+  },
+  {
+    "name": "quality-single-102-80",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-single-102-80.mp4",
+      "102",
+      "80",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 12.299546249676496,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 80,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 2457810
+    }
+  },
+  {
+    "name": "quality-single-3018-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-single-3018-0.mp4",
+      "3018",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 7.385103624779731,
+    "result": {
+      "frames": 3048,
+      "cut": 3030,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 2997977
+    }
+  },
+  {
+    "name": "quality-parallel-0-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-parallel-0-0.mp4",
+      "102",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 0.8982967077754438,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 3662059
+    }
+  },
+  {
+    "name": "quality-parallel-0-1",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-parallel-0-1.mp4",
+      "102",
+      "0",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 0.8957330831326544,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 0,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 3662059
+    }
+  },
+  {
+    "name": "quality-parallel-80-0",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-parallel-80-0.mp4",
+      "102",
+      "80",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 12.397400207817554,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 80,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 3662059
+    }
+  },
+  {
+    "name": "quality-parallel-80-1",
+    "command": [
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline",
+      "/tmp/deadpan-youtube-quality-20261009/quality-reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-parallel-80-1.mp4",
+      "102",
+      "80",
+      "0"
+    ],
+    "exit": 0,
+    "seconds": 12.336050165817142,
+    "result": {
+      "frames": 132,
+      "cut": 114,
+      "delay_ms": 80,
+      "mode": 0,
+      "luma_psnr_db": 43.637307696,
+      "bytes": 3662059
+    }
+  }
+]

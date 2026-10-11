@@ -1,0 +1,50 @@
+[
+  {
+    "name": "baseline",
+    "command": [
+      "cc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-Inative/deadpan-encode/src",
+      "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+      "/tmp/deadpan-youtube-quality-20261009/quality_probe_full.c",
+      "native/deadpan-encode/src/encoder.c",
+      "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-lavformat",
+      "-lavcodec",
+      "-lavutil",
+      "-o",
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-baseline"
+    ],
+    "source_sha256": "30c7d73720b4e239d185c9c3a92291c36639dd7dd1875f1d7bd488d9814a38dc",
+    "binary_sha256": "56a856e363bfc3268b20597ee6823e9156987766911f6f146f7450a1cd3491ab"
+  },
+  {
+    "name": "qmax24",
+    "command": [
+      "cc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-Inative/deadpan-encode/src",
+      "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+      "/tmp/deadpan-youtube-quality-20261009/quality_probe_full.c",
+      "/tmp/deadpan-youtube-quality-20261009/encoder-qmax24.c",
+      "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-lavformat",
+      "-lavcodec",
+      "-lavutil",
+      "-o",
+      "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-qmax24"
+    ],
+    "source_sha256": "ba06d38d3a9a4e18aa506740a4943b440bc81dfb2649676db02c99cb0c995879",
+    "binary_sha256": "ed93e98572e0a822d0f6cc893bcd4b5ec4550fd105d831619cfecf333a466804"
+  }
+]

@@ -1,0 +1,21 @@
+from pathlib import Path
+from fractions import Fraction
+import hashlib,json,subprocess
+r=Path(__file__).parent
+ffprobe=Path('/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/bin/ffprobe')
+rows=[]
+for run in json.loads((r/'quality-public.json').read_text()):
+    path=Path(run['movie'])
+    cmd=[str(ffprobe),'-v','error','-select_streams','v:0','-show_packets','-show_streams','-show_entries','packet=pts,dts,duration,size:stream=time_base,r_frame_rate','-of','json',str(path)]
+    data=json.loads(subprocess.check_output(cmd,text=True))
+    (r/('quality-public-'+run['mode'])/'packets.json').write_text(json.dumps(data,indent=2)+'\n')
+    packets=data['packets'];assert len(packets)==3506
+    time_base=Fraction(data['streams'][0]['time_base'])
+    assert all(v['pts']==v['dts'] and v['duration']*time_base==Fraction(1,24) for v in packets)
+    assert all(v['pts']*time_base==Fraction(i,24) for i,v in enumerate(packets))
+    sizes=[int(v['size']) for v in packets]
+    windows=[sum(sizes[i:i+24]) for i in range(len(sizes)-23)]
+    row=dict(mode=run['mode'],command=cmd,movie_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),packets=len(packets),cut_bytes=sizes[3126],max_one_second_video_bytes=max(windows),max_one_second_video_bitrate=8*max(windows),max_window_first=windows.index(max(windows)))
+    assert row['max_one_second_video_bitrate']<=24_000_000,row
+    print(json.dumps(row),flush=True);rows.append(row)
+(r/'quality-public-packet-rates.json').write_text(json.dumps(dict(ffprobe_sha256=hashlib.sha256(ffprobe.read_bytes()).hexdigest(),runs=rows),indent=2)+'\n')

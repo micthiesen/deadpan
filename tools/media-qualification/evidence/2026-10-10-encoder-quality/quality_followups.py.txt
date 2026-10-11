@@ -1,0 +1,18 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+r=Path(__file__).parent
+env=dict(os.environ,DEADPAN_FFMPEG_PREFIX='/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix')
+rows=[]
+for name,cmd in [
+ ('quality-fmt',['cargo','fmt','--all','--','--check']),
+ ('quality-clippy',['cargo','clippy','--workspace','--all-targets','--features','deadpan-cli/synthetic-worker','--locked','--','-D','warnings']),
+ ('quality-clippy-ui',['cargo','clippy','-p','deadpan-app','--all-targets','--features','ui-harness','--locked','--','-D','warnings']),
+ ('quality-followups',['cargo','nextest','run','--locked','-p','deadpan-encode','-p','deadpan-jobs','-p','deadpan-cli','--features','deadpan-cli/synthetic-worker','-E','package(deadpan-encode) | (package(deadpan-jobs) & test(render::admission)) | (package(deadpan-cli) & (test(encoded_render) | binary(encoded_render) | binary(encoded_verification)))','--no-fail-fast']),
+ ('quality-ui',['cargo','nextest','run','-p','deadpan-app','--features','ui-harness','--locked','--no-fail-fast']),
+ ('quality-doc-tests',['cargo','test','--workspace','--features','deadpan-cli/synthetic-worker','--locked','--doc','--no-fail-fast']),
+]:
+    print('START',name,flush=True);start=time.monotonic()
+    with (r/(name+'.log')).open('w') as log:v=subprocess.run(cmd,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=1800)
+    rows.append(dict(name=name,command=cmd,exit=v.returncode,seconds=time.monotonic()-start,log_sha256=hashlib.sha256((r/(name+'.log')).read_bytes()).hexdigest()))
+    (r/'quality-followup-checks.json').write_text(json.dumps(rows,indent=2)+'\n');print('FINISH',name,v.returncode,flush=True)
+    if v.returncode:raise SystemExit(v.returncode)

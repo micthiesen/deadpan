@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/tmp/deadpan-youtube-quality-20261009/extract_reference_resume",
+    "/tmp/deadpan-youtube-quality-20261009/packaged-final/work/youtube-av1.deadpan",
+    "23aa98c7-712d-4fcc-911b-a9c98a96d7ec",
+    "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420"
+  ],
+  "exit": 0,
+  "seconds": 224.3021789160557,
+  "raw_sha256": "409a88377bf90eaaa99cc278f583dd69b598b78dcb90ae8b7abda9f96c4e820c",
+  "bytes": 10905062400,
+  "binary_sha256": "55b36bb062ff221cfc52ee3b2f3c696e3325caa5634a3195a7f2d92e91751038"
+}

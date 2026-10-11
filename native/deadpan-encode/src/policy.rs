@@ -20,6 +20,20 @@ const MAX_CODEC_INTEGER: u32 = 2_147_483_647;
 /// Frozen SDR control derivation used by `EncodeContract::new_v1`.
 /// Persist this identity alongside resolved controls when retaining a decision.
 pub const SDR_POLICY_VERSION_V1: u32 = 1;
+/// SDR v1 starting targets with a measured VideoToolbox frame-QP ceiling and
+/// a one-second data-rate ceiling of three times the starting target.
+pub const SDR_POLICY_VERSION_V2: u32 = 2;
+pub const ENCODER_ABI_VERSION: u32 = 3;
+
+/// Automatic rate-control requests, separate from emitted-picture evidence.
+/// The OS may distribute quantizers within a picture; max_frame_qp is the
+/// VideoToolbox frame property, not a claim about every coded macroblock.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VideoRateControl {
+    pub max_frame_qp: u32,
+    pub max_bitrate: u64,
+}
 
 /// Frozen HDR control derivation used by `EncodeContract::new_hdr_v1`: the SDR
 /// v1 clocks, GOP, AAC target and timescale with video bitrate x1.25 rounded
@@ -208,11 +222,13 @@ pub struct EncodeContract {
     /// Absent for SDR so the frozen v1 serialization is unchanged.
     #[serde(skip_serializing_if = "Option::is_none")]
     hdr: Option<HdrEncoding>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rate_control: Option<VideoRateControl>,
 }
 
 impl EncodeContract {
-    /// Construct using the original SDR policy. This entry point remains an
-    /// alias of `new_v1`; a later policy must have a separate constructor.
+    /// Legacy engineering entry point, frozen as policy 1. Production SDR
+    /// Render and admission explicitly use `new_v2`.
     pub fn new(
         raster: [u32; 2],
         frame_rate: [u32; 2],
@@ -323,7 +339,49 @@ impl EncodeContract {
             policy,
             picture_bytes: pixels * 3 / 2,
             hdr: None,
+            rate_control: None,
         })
+    }
+
+    /// Retain v1's exact clocks and starting targets, adding the qualified SDR
+    /// quality controls. Native admission requires advertised support because
+    /// pinned FFmpeg can ignore unsupported QP setters. Output still requires
+    /// independent decoding and verification.
+    pub fn new_v2(
+        raster: [u32; 2],
+        frame_rate: [u32; 2],
+        video_frames: u64,
+        audio_samples: u64,
+        mode: EncoderMode,
+        b_frames: BFramePolicy,
+    ) -> Result<Self, EncodeError> {
+        let mut contract = Self::new_v1(
+            raster,
+            frame_rate,
+            video_frames,
+            audio_samples,
+            mode,
+            b_frames,
+        )?;
+        contract.rate_control = Some(VideoRateControl {
+            max_frame_qp: 24,
+            // bitrate_v1 is bounded by 240 Mbit/s, independently of source
+            // bitrate. This stays below VideoToolbox's signed rate bound.
+            max_bitrate: contract.policy.video_bitrate * 3,
+        });
+        Ok(contract)
+    }
+
+    pub const fn rate_control(&self) -> Option<VideoRateControl> {
+        self.rate_control
+    }
+
+    pub const fn policy_version(&self) -> u32 {
+        if self.rate_control.is_some() {
+            SDR_POLICY_VERSION_V2
+        } else {
+            SDR_POLICY_VERSION_V1
+        }
     }
 
     /// Construct an HDR HEVC Main10 contract using frozen HDR policy version 1.

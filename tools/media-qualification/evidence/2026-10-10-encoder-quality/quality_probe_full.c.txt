@@ -1,0 +1,74 @@
+/* Development-only scene-cut encoder measurement. Input is retained I420
+ * from Deadpan's own committed-revision reference renderer. */
+#include "encoder.h"
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/pixdesc.h>
+#include <fcntl.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#define WIDTH 1920
+#define HEIGHT 1080
+#define BYTES (WIDTH*HEIGHT*3/2)
+static int not_cancelled(void *p) { (void)p; return 0; }
+static double compare(const char *path, uint64_t ordinal, const unsigned char *reference) {
+    AVFormatContext *f=NULL; AVCodecContext *c=NULL; AVPacket *p=av_packet_alloc(); AVFrame *frame=av_frame_alloc();
+    if(avformat_open_input(&f,path,NULL,NULL)<0 || avformat_find_stream_info(f,NULL)<0) exit(20);
+    int stream=av_find_best_stream(f,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0); if(stream<0) exit(21);
+    c=avcodec_alloc_context3(avcodec_find_decoder(AV_CODEC_ID_H264)); if(!c) exit(22);
+    if(avcodec_parameters_to_context(c,f->streams[stream]->codecpar)<0 || avcodec_open2(c,c->codec,NULL)<0) exit(23);
+    double psnr=-1; uint64_t frames=0; int eof=0;
+    while(!eof) {
+        int r=av_read_frame(f,p); if(r==AVERROR_EOF) {eof=1;r=avcodec_send_packet(c,NULL);} else if(r<0) exit(24);
+        else if(p->stream_index==stream) r=avcodec_send_packet(c,p); else {av_packet_unref(p);continue;}
+        if(r<0)exit(25); av_packet_unref(p);
+        while((r=avcodec_receive_frame(c,frame))==0) {
+            int64_t index=av_rescale_q(frame->pts,f->streams[stream]->time_base,(AVRational){1,24});
+            if(index!=(int64_t)frames++)exit(26);
+            if(index==(int64_t)ordinal) {
+                if(frame->format!=AV_PIX_FMT_YUV420P || frame->width!=WIDTH || frame->height!=HEIGHT)exit(27);
+                double sum=0; for(int y=0;y<HEIGHT;y++)for(int x=0;x<WIDTH;x++) {
+                    double d=(double)frame->data[0][y*frame->linesize[0]+x]-reference[y*WIDTH+x];sum+=d*d;
+                }
+                psnr=sum?10*log10(255.0*255.0*WIDTH*HEIGHT/sum):100;
+            }
+            av_frame_unref(frame);
+        }
+        if(r!=AVERROR(EAGAIN)&&r!=AVERROR_EOF)exit(28);
+    }
+    av_frame_free(&frame);av_packet_free(&p);avcodec_free_context(&c);avformat_close_input(&f);return psnr;
+}
+int main(int argc,char **argv) {
+    if(argc!=6)return 2;
+    unsigned prefix=(unsigned)strtoul(argv[3],NULL,10), delay=(unsigned)strtoul(argv[4],NULL,10), mode=(unsigned)strtoul(argv[5],NULL,10);
+    if(prefix>10000 || delay>1000 || mode>1)return 3;
+    unsigned char *pictures=malloc(BYTES), *reference=malloc(BYTES); if(!pictures || !reference)return 4;
+    FILE *input=fopen(argv[1],"rb");if(!input)return 5;
+    if(fseeko(input,(off_t)3126*BYTES,SEEK_SET) || fread(reference,1,BYTES,input)!=BYTES)return 6;
+    rewind(input);
+    uint64_t count=3506, samples=count*2000;
+    dp_encode_config config={.abi_version=DP_ENCODE_ABI_VERSION,.width=WIDTH,.height=HEIGHT,.fps_num=24,.fps_den=1,.video_frames=count,.audio_samples=samples,.video_bitrate=8000000,.gop_frames=12,.b_frames=0,.mode=mode,.maximum_output_bytes=1024*1024*1024,.maximum_packets=100000,.maximum_packet_bytes=33554432};
+    dp_encode_control control={.cancelled=not_cancelled,.timeout_millis=60000};dp_encode_info info;dp_encode_error error={0};dp_encode_session *s=NULL;
+    int fd=open(argv[2],O_RDWR|O_CREAT|O_EXCL,0600);if(fd<0)return 7;
+    if(!dp_encode_open(fd,&config,&control,&s,&info,&error))goto failed;
+    uint64_t v=0,a=0;float zero[1024]={0};
+    while(v<count || a<samples) {
+        if(v<count && (a>=samples || v*2000<=a)) {
+            if(fread(pictures,1,BYTES,input)!=BYTES)return 6;
+            if(!dp_encode_push_picture(s,v,v,1,pictures,BYTES,&control,&error))goto failed;
+            v++;if(delay){struct timespec t={delay/1000,(long)(delay%1000)*1000000};nanosleep(&t,NULL);}
+        } else {
+            uint32_t n=samples-a>1024?1024:(uint32_t)(samples-a);
+            if(!dp_encode_push_audio(s,a,zero,zero,n,&control,&error))goto failed;a+=n;
+        }
+    }
+    dp_encode_report report;if(!dp_encode_finish(s,&control,&report,&error))goto failed;dp_encode_close(s);close(fd);
+    double psnr=compare(argv[2],3126,reference);
+    printf("{\"frames\":%llu,\"cut\":%u,\"delay_ms\":%u,\"mode\":%u,\"luma_psnr_db\":%.9f,\"bytes\":%llu}\n",(unsigned long long)count,3126,delay,mode,psnr,(unsigned long long)report.output_bytes);free(pictures);free(reference);fclose(input);return psnr<0?9:0;
+failed:
+    fprintf(stderr,"%s: %s\n",error.code,error.message);dp_encode_close(s);close(fd);free(pictures);free(reference);fclose(input);return 10;
+}

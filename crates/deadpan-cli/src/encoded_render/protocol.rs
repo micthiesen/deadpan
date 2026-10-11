@@ -71,7 +71,7 @@ impl EncodedRenderContract {
         ];
         let transfer = match self.picture.color_policy {
             ColorPolicy::SdrRec709 => {
-                return EncodeContract::new_v1(
+                return EncodeContract::new_v2(
                     self.picture.raster,
                     rate,
                     self.picture.frame_count,
@@ -181,14 +181,14 @@ impl EncodedManifest {
     /// Admit bounded, internally consistent claims. This does not decode or
     /// verify the movie, its hash, emitted codec properties or audible timing.
     pub fn validate(&self) -> Result<(), String> {
-        self.validate_abi(2)
+        self.validate_abi(deadpan_encode::ENCODER_ABI_VERSION)
     }
 
     /// Validate historical data without granting current encoding or finished-
     /// file verification authority. ABI 1 used codec delay without input preroll.
     pub(super) fn validate_retained(&self) -> Result<(), String> {
         match self.report.info.abi_version {
-            version @ (1 | 2) => self.validate_abi(version),
+            version @ 1..=3 => self.validate_abi(version),
             _ => Err("unsupported retained encoder ABI".into()),
         }
     }
@@ -296,6 +296,8 @@ fn validate_report(
         .filter(|bytes| bytes.is_multiple_of(MOOV_BYTES_PER_PACKET))
         .map(|bytes| bytes / MOOV_BYTES_PER_PACKET);
     if info.abi_version != abi_version
+        || info.video_rate_control
+            != if abi_version >= 3 { contract.rate_control() } else { None }
         || [
             info.avcodec_version,
             info.avformat_version,

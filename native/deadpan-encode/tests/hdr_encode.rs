@@ -52,6 +52,7 @@ fn encode(
     assert_eq!(video.codec_tag, "hvc1");
     assert!(!video.mastering_display && !video.content_light);
     assert_eq!(session.info().video_profile, 2);
+    assert_eq!(session.info().video_rate_control, None);
     let mut picture = vec![0; usize::try_from(probe.config().picture_bytes).unwrap()];
     let mut left = [0.0; 1024];
     let mut right = [0.0; 1024];
@@ -417,7 +418,14 @@ fn sdr_sessions_keep_h264_declarations_and_reject_content_light() {
             (video.color_primaries, video.color_trc, video.colorspace),
             (1, 1, 1)
         );
-        assert_eq!(session.info().abi_version, 2);
+        assert_eq!(
+            session.info().abi_version,
+            deadpan_encode::ENCODER_ABI_VERSION
+        );
+        assert_eq!(
+            session.info().video_rate_control,
+            session.contract().rate_control()
+        );
         assert_eq!(session.info().video_profile, 100);
         let mut picture = vec![0; usize::try_from(probe.config().picture_bytes).unwrap()];
         let mut left = [0.0; 1024];

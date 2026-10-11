@@ -1,0 +1,128 @@
+{
+  "scope": "ABI-2 experimental encoder requests qmax24 and rate ceiling; pinned FFmpeg ignores unsupported software QP",
+  "commands": [
+    [
+      "rustc",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference.rs",
+      "-o",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference"
+    ],
+    [
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference.i420"
+    ],
+    [
+      "cc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I/tmp/deadpan-youtube-quality-20261009/quality-ignored-software",
+      "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/probe.c",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/encoder.c",
+      "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-lavformat",
+      "-lavcodec",
+      "-lavutil",
+      "-o",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/probe"
+    ],
+    [
+      "cc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I/tmp/deadpan-youtube-quality-20261009/quality-ignored-software",
+      "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/inspect.c",
+      "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+      "-lavformat",
+      "-lavcodec",
+      "-lavutil",
+      "-o",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/inspect"
+    ],
+    [
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/probe",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/ignored-software.mp4",
+      "0",
+      "0",
+      "1"
+    ],
+    [
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/inspect",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/reference.i420",
+      "/tmp/deadpan-youtube-quality-20261009/quality-ignored-software/ignored-software.mp4"
+    ]
+  ],
+  "files": {
+    "ignored-software.mp4": {
+      "bytes": 1850271,
+      "sha256": "17f112c04968d42bc67d1486290a215f88ec28b8005c68841ba84a5931f724a1"
+    },
+    "reference.i420": {
+      "bytes": 66355200,
+      "sha256": "5197e6613a6eeaea31293746f816513ba675abfe0e594e9e5e22a94f810f45b5"
+    },
+    "inspect": {
+      "bytes": 35080,
+      "sha256": "cbac3209d90834e88b74ea89955a3bddc85d7f6cb6faf41fb7d3eb2c9d7548ac"
+    },
+    "encoder.c": {
+      "bytes": 54818,
+      "sha256": "6eec32f9012888c5abf7c4e59c37b767f384b597511cc39566bc509e39bcf72f"
+    },
+    "inspect.c": {
+      "bytes": 2914,
+      "sha256": "2b7294d57a442bf9b52092bc683486acf202d0ae7ac93f1f9702615f74bb0983"
+    },
+    "commands.log": {
+      "bytes": 524,
+      "sha256": "a697fe957515a2eb12b31cbb528187c15b4e648452ee7d7582ed99e1f0fdd69a"
+    },
+    "all-frames.json": {
+      "bytes": 4313,
+      "sha256": "0a743246521d63276cbeceb7180d8a445598f5379b9481787c6c95e97e593389"
+    },
+    "probe.json": {
+      "bytes": 89,
+      "sha256": "96ad9415eea850cbcebef8d184c31d01f4d1df2078f7eec9ed9112c105142f17"
+    },
+    "encoder.h": {
+      "bytes": 7020,
+      "sha256": "f53512655cef5b090d77cbba531925031199e39c1c20d5d41518a7cd94e21872"
+    },
+    "reference.rs": {
+      "bytes": 1212,
+      "sha256": "6399ac29c5822dd4e6522134c02d25f3cd37ca49e08ccd98fadb025eb9139480"
+    },
+    "probe.c": {
+      "bytes": 4652,
+      "sha256": "2f3a60c115d9625252a481610b5108925a891d4e2e13b4e36b993dc19421c183"
+    },
+    "reference": {
+      "bytes": 464744,
+      "sha256": "f8aada78cf2363bd0c7f1001580d8e84df3d85d162f96a242c2f886906df181b"
+    },
+    "probe": {
+      "bytes": 57416,
+      "sha256": "667da8cefae93551833662ed17c6bd59231e932b1ebde04666ee8f7fc93f80e1"
+    }
+  },
+  "minimum_psnr": [
+    19.421099417,
+    100.0,
+    100.0
+  ],
+  "maximum_block_qp": 51
+}

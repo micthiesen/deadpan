@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define DP_ENCODE_ABI_VERSION 2U
+#define DP_ENCODE_ABI_VERSION 3U
 #define DP_ENCODE_MAX_DIMENSION 8192U
 #define DP_ENCODE_MAX_PIXELS 33554432ULL
 #define DP_ENCODE_MAX_FRAMES 1000000ULL
@@ -37,6 +37,8 @@ typedef struct {
     uint64_t maximum_output_bytes;
     uint64_t maximum_packets;
     uint64_t maximum_packet_bytes;
+    int32_t video_max_frame_qp; /* -1: legacy/HDR; 24: SDR quality policy 2. */
+    uint64_t video_max_bitrate; /* 0: legacy/HDR; SDR: 3x target, one second. */
 } dp_encode_config;
 
 /* The callback and opaque pointer are borrowed only until this call returns.
@@ -119,6 +121,8 @@ typedef struct {
     uint64_t video_bitrate;
     uint64_t audio_bitrate;
     uint64_t maximum_moov_bytes;
+    int32_t video_max_frame_qp;
+    uint64_t video_max_bitrate;
 } dp_encode_info;
 
 typedef struct {

@@ -12,8 +12,9 @@ use std::rc::Rc;
 use rustix::fs::{OFlags, fcntl_getfl, fstat};
 
 use crate::{
-    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, ContentLight, Control, EncodeContract, EncodeError,
-    EncodeLimits, EncodeReport, EncoderInfo, EncoderMode, HdrTransfer, VideoCodecInfo, VideoFormat,
+    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, ContentLight, Control, ENCODER_ABI_VERSION,
+    EncodeContract, EncodeError, EncodeLimits, EncodeReport, EncoderInfo, EncoderMode, HdrTransfer,
+    VideoCodecInfo, VideoFormat,
 };
 
 const HDR_ABI_VERSION: u32 = 1;
@@ -73,6 +74,8 @@ struct Config {
     maximum_output_bytes: u64,
     maximum_packets: u64,
     maximum_packet_bytes: u64,
+    video_max_frame_qp: i32,
+    video_max_bitrate: u64,
 }
 
 #[repr(C)]
@@ -106,6 +109,8 @@ struct Info {
     video_bitrate: u64,
     audio_bitrate: u64,
     maximum_moov_bytes: u64,
+    video_max_frame_qp: i32,
+    video_max_bitrate: u64,
 }
 
 #[repr(C)]
@@ -302,7 +307,7 @@ impl Encoder {
         let [width, height] = contract.raster();
         let [fps_num, fps_den] = contract.frame_rate();
         let config = Config {
-            abi_version: 2,
+            abi_version: ENCODER_ABI_VERSION,
             width,
             height,
             fps_num,
@@ -316,6 +321,12 @@ impl Encoder {
             maximum_output_bytes: limits.maximum_output_bytes,
             maximum_packets: limits.maximum_packets,
             maximum_packet_bytes: limits.maximum_packet_bytes,
+            video_max_frame_qp: contract.rate_control().map_or(-1, |control| {
+                i32::try_from(control.max_frame_qp).expect("bounded automatic frame QP")
+            }),
+            video_max_bitrate: contract
+                .rate_control()
+                .map_or(0, |control| control.max_bitrate),
         };
         let hdr = contract.hdr().map(|hdr| {
             let mastering = hdr.signal.mastering;
@@ -568,7 +579,7 @@ fn mode(mode: EncoderMode) -> u32 {
 }
 impl Info {
     fn admit(self, contract: &EncodeContract) -> Result<EncoderInfo, EncodeError> {
-        if self.abi_version != 2
+        if self.abi_version != ENCODER_ABI_VERSION
             || self.avcodec_version == 0
             || self.avformat_version == 0
             || self.avutil_version == 0
@@ -594,6 +605,14 @@ impl Info {
             || self.video_bitrate == 0
             || self.audio_bitrate != contract.policy().audio_bitrate
             || self.maximum_moov_bytes == 0
+            || self.video_max_frame_qp
+                != contract.rate_control().map_or(-1, |control| {
+                    i32::try_from(control.max_frame_qp).expect("bounded automatic frame QP")
+                })
+            || self.video_max_bitrate
+                != contract
+                    .rate_control()
+                    .map_or(0, |control| control.max_bitrate)
         {
             return Err(EncodeError::Evidence(
                 "native codec configuration differs from the required policy",
@@ -621,6 +640,7 @@ impl Info {
             video_bitrate: self.video_bitrate,
             audio_bitrate: self.audio_bitrate,
             maximum_moov_bytes: self.maximum_moov_bytes,
+            video_rate_control: contract.rate_control(),
         })
     }
 }

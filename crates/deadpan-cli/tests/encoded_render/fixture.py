@@ -177,7 +177,7 @@ video_packets = video_frames
 audio_packets = (audio_samples + 1023) // 1024 + 2
 report = {
     "info": {
-        "abi_version": 2, "avcodec_version": 4066151, "avformat_version": 4064103,
+        "abi_version": 3, "avcodec_version": 4066151, "avformat_version": 4064103,
         "avutil_version": 3934311, "movie_timescale": math.lcm(numerator, 48000),
         "video_time_base_num": 1, "video_time_base_den": numerator,
         "audio_time_base_num": 1, "audio_time_base_den": 48000,
@@ -188,6 +188,7 @@ report = {
         "requested_mode": choice["mode"], "video_bitrate": 1500000,
         "audio_bitrate": 384000,
         "maximum_moov_bytes": request["limits"]["maximum_packets"] * 128 + 1048576,
+        "video_rate_control": {"max_frame_qp": 24, "max_bitrate": 4500000},
     },
     "video_frames": video_frames, "audio_samples": audio_samples,
     "video_packets": video_packets, "audio_packets": audio_packets,

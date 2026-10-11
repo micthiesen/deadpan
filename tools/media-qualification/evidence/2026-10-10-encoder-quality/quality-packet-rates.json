@@ -1,0 +1,77 @@
+{
+  "ffprobe_sha256": "3097d381096de0b110381ca68daacab5b021d0489d809c46e6f1de6de4142f13",
+  "runs": [
+    {
+      "name": "quality-full-single-baseline",
+      "movie_sha256": "8a5bb6540fa7a14c428cc75c460b8d3f850901aec6b0654eb5832fdeea5d83b4",
+      "packets": 3506,
+      "cut_bytes": 143192,
+      "max_one_second_video_bytes": 2330915,
+      "max_one_second_video_bitrate": 18647320,
+      "max_window_first": 2383
+    },
+    {
+      "name": "quality-full-parallel-baseline-0",
+      "movie_sha256": "809075a9e9c370f58cbeadf1e446ae8e8edf6104ba66b41636cd18fbf6e0367b",
+      "packets": 3506,
+      "cut_bytes": 36212,
+      "max_one_second_video_bytes": 3199966,
+      "max_one_second_video_bitrate": 25599728,
+      "max_window_first": 49
+    },
+    {
+      "name": "quality-full-single-qmax24",
+      "movie_sha256": "5c6c0101351375b91d2d06cd5ace1c1093e4c436411925546e1698ef218c501b",
+      "packets": 3506,
+      "cut_bytes": 196806,
+      "max_one_second_video_bytes": 3133850,
+      "max_one_second_video_bitrate": 25070800,
+      "max_window_first": 3231
+    },
+    {
+      "name": "quality-full-parallel-qmax24-0",
+      "movie_sha256": "e852e4e521e90ef61b771465d4244bac3288dc2c08395eb9b484d282cd2104d8",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 3230400,
+      "max_one_second_video_bitrate": 25843200,
+      "max_window_first": 49
+    },
+    {
+      "name": "quality-bounded-single",
+      "movie_sha256": "1219394d3ef404740e28e1bc2e3c9ef1a31779c1c3ed2ec2fb8b53bd16d83fa1",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 2884058,
+      "max_one_second_video_bitrate": 23072464,
+      "max_window_first": 3231
+    },
+    {
+      "name": "quality-bounded-parallel-0",
+      "movie_sha256": "95756f2d76630772b6eb359c2c89db8c65a0a96ce780ccfaa99b3e1df7e0afec",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 2884055,
+      "max_one_second_video_bitrate": 23072440,
+      "max_window_first": 3231
+    },
+    {
+      "name": "quality-bounded-parallel-1",
+      "movie_sha256": "e32e0951508e0954a9a4f6aa13abba070cbb583a3cebb6d78946c5de748da794",
+      "packets": 3506,
+      "cut_bytes": 190937,
+      "max_one_second_video_bytes": 2884058,
+      "max_one_second_video_bitrate": 23072464,
+      "max_window_first": 3231
+    },
+    {
+      "name": "quality-bounded-software",
+      "movie_sha256": "e0711c33077969704685b869701fbcbf6070d3f6a73d2e86c4959f7fe419855f",
+      "packets": 3506,
+      "cut_bytes": 298426,
+      "max_one_second_video_bytes": 2852101,
+      "max_one_second_video_bitrate": 22816808,
+      "max_window_first": 49
+    }
+  ]
+}

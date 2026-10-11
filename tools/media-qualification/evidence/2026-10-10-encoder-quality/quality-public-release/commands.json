@@ -1,0 +1,53 @@
+{
+  "binaries": {
+    "deadpan-cli": "2f9544a0f1788d0cbf68cfc727755f495e2b54773822bf347fcdd07407528364",
+    "deadpan-media-worker": "5833c23c70a9b1948bb03ceb28167458d845f8e25b80af25463a992ed074ae33"
+  },
+  "commands": [
+    {
+      "name": "validate",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/release-quality/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/project.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.046919249929487705,
+      "started_at": "2026-10-11T06:19:37.965300+00:00",
+      "finished_at": "2026-10-11T06:19:38.012218+00:00"
+    },
+    {
+      "name": "render",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/release-quality/deadpan-cli",
+        "render",
+        "/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/project.deadpan",
+        "--output",
+        "/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/export",
+        "--name",
+        "movie.mp4"
+      ],
+      "exit": 0,
+      "seconds": 282.0996579588391,
+      "started_at": "2026-10-11T06:19:38.012456+00:00",
+      "finished_at": "2026-10-11T06:24:20.112381+00:00"
+    },
+    {
+      "name": "verify",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/release-quality/deadpan-cli",
+        "verify-export",
+        "/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/project.deadpan",
+        "--movie",
+        "/private/tmp/deadpan-youtube-quality-20261009/quality-public-release/work/export/movie.mp4",
+        "--revision",
+        "23aa98c7-712d-4fcc-911b-a9c98a96d7ec"
+      ],
+      "exit": 0,
+      "seconds": 174.05150241684169,
+      "started_at": "2026-10-11T06:24:20.150855+00:00",
+      "finished_at": "2026-10-11T06:27:14.202523+00:00"
+    }
+  ]
+}

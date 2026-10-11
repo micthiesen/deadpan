@@ -1,0 +1,39 @@
+{
+  "build": [
+    "rustc",
+    "--test",
+    "--edition=2024",
+    "-C",
+    "opt-level=1",
+    "/tmp/deadpan-youtube-quality-20261009/sdr_quality_legacy.rs",
+    "-L",
+    "dependency=/Users/michael/Code/deadpan/target/debug/deps",
+    "-L",
+    "native=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-C",
+    "link-arg=-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-o",
+    "/tmp/deadpan-youtube-quality-20261009/sdr-quality-legacy",
+    "--extern",
+    "deadpan_encode=/Users/michael/Code/deadpan/target/debug/deps/libdeadpan_encode-b3d8f8822719501d.rlib",
+    "--extern",
+    "deadpan_source=/Users/michael/Code/deadpan/target/debug/deps/libdeadpan_source-25cfe1a558f3098a.rlib",
+    "--extern",
+    "tempfile=/Users/michael/Code/deadpan/target/debug/deps/libtempfile-6aac307119a46934.rlib"
+  ],
+  "command": [
+    "/tmp/deadpan-youtube-quality-20261009/sdr-quality-legacy",
+    "sdr_quality_preserves_grain_and_edges_with_concurrent_hardware_sessions",
+    "--exact",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "seconds": 2.0654654167592525,
+  "binary_sha256": "f93d1bdcf654768b19a8f3e518afc20e8d2cd483a8a08d34dbfc8511d84df8be",
+  "source_sha256": "6922e5005fab29283c4b1b772c2e009207a90b4c1812c6d63b2ed03be0beef89",
+  "dependencies": {
+    "/Users/michael/Code/deadpan/target/debug/deps/libdeadpan_encode-b3d8f8822719501d.rlib": "ae0ba9e97fea0b0d105415e859b6738dadae131a9531560ef9cd743f2bb0c63e",
+    "/Users/michael/Code/deadpan/target/debug/deps/libdeadpan_source-25cfe1a558f3098a.rlib": "5d232a29de03a4818a7fc5a8f1eb6ebd3b779aa3aa5331b18ddb264fe7abcecd",
+    "/Users/michael/Code/deadpan/target/debug/deps/libtempfile-6aac307119a46934.rlib": "0a322f4351f3211b02a848d75c131ddbdccadae068f25e80ca68d975c26ec391"
+  }
+}

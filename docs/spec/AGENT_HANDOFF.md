@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[SDR encoder quality](../qualification/encoder-quality-2026-10-10.md) fixes
+the concurrent scene-cut failure below. Production probes and encodes use
+SDR policy 2/native ABI 3 with QP 24 and a three-times-target one-second rate
+ceiling. AAC stays at verification policy 2 with two priming packets; HDR's
+video policy is unchanged. The selected encoder must advertise both controls,
+because pinned FFmpeg silently ignores the unsupported OS software QP setter.
+That software path is refused explicitly. Two simultaneous release/packaged
+exports pass all 7,012 decoded pictures and 286 zero-offset signal windows;
+the failing cut improves from 30.54 to 40.63 dB with the original 32 dB gate.
+The regression gate completes in parts, 1,099 UI tests and 63 native encoder
+sanitizer tests pass, and the relocated bundle passes positive/tamper checks.
+Retained ABI-2 B-frame media still exercises the complete historical decoder
+without entering live admission. DP-17 stays partial for broader output and
+workflow qualification, including a qualified software quality fallback.
+
 [YouTube acquisition](../qualification/youtube-quality-2026-10-09.md) now
 selects qualified AV1/VP9/H.264 picture and Opus/AAC sound. Remux protocol 2
 preserves exact clocks, Opus gain/pre-skip/trim/offsets, coded content and color
@@ -13,13 +28,11 @@ chroma siting. Missing AV1/VP9 siting uses a recorded left interpretation;
 the viewer notice follows the successfully submitted picture. The gate
 completes in parts, 1,099 UI tests/replays and 242 native sanitizer tests pass,
 and the real app-job URL import passes. Both release exports pass; packaged
-import and relocation pass. The packaged export fails luma PSNR at scene-cut
-frame 3,126 (30.54 dB versus 32 dB), reproduced by the release verifier on the
-same saved movie. The imported Originals are byte-identical; the encoded
-packet differs. An isolated full packaged export passes all 585 picture checks
-and 143 signal windows, but a short scene-cut reproduction does not explain
-the original failure. Investigate encoder quality; retain both movies and
-keep the threshold. See the linked record for
+import and relocation pass. The initial concurrent packaged export failed
+luma PSNR at scene-cut frame 3,126 (30.54 dB versus 32 dB), reproduced by the
+release verifier on the same saved movie. An isolated export passed. Both
+original outcomes remain retained; the quality follow-up above reproduces and
+fixes the failure without changing thresholds. See the linked record for
 paths and exact evidence. Broader profiles, high-resolution performance, a source
 interpretation override and remaining URL workflow work stay open; DP-02,
 DP-14 and DP-16 remain partial.

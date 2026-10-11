@@ -36,7 +36,8 @@ reports the codec's actual 1024-sample delay. Complete packet count is
 `ceil(authored_samples / 1024) + 2`. Finished-file verification policy 2 checks
 both manual priming frames, ordinary decode from zero, equal presented PCM,
 and the exact emitted edit and terminal duration. Historical stored decisions
-retain their ABI-1 evidence; new native admission requires ABI 2.
+retain their ABI-1/2 evidence; current native admission requires ABI 3. ABI 3
+adds video rate-control fields without changing these AAC clocks or packet counts.
 
 The engineering policy derives video bitrate from specification 22.4's pixel
 classes and frame-rate band, interpolating by actual pixel count. It requests
@@ -44,6 +45,24 @@ High profile, progressive square pixels, left-sited limited Rec.709 I420, a GOP
 near half the frame rate, and AAC-LC stereo at 384 kbit/s. Hardware and OS software
 are separate attempts with explicit VideoToolbox options. No attempt silently
 switches encoder mode or B-frame policy.
+
+Production SDR uses `EncodeContract::new_v2`, retaining those starting targets
+and exact clocks while requesting VideoToolbox `MaxAllowedFrameQP` 24 and
+`DataRateLimits` of three times the target over one second. The latter becomes
+`floor(max_bitrate / 8)` bytes per second in pinned FFmpeg. These are bounded
+automatic settings, not user controls. The live binding records SDR policy 2;
+`EncoderInfo.video_rate_control` records the queried requested controls.
+`new`/`new_v1` remain frozen engineering constructors and HDR remains policy 1.
+
+Before a constrained attempt, native code queries VideoToolbox's supported
+property dictionary using the same required hardware or software selection.
+Missing QP/rate controls fail with `video_quality_unsupported`, classified as
+evidence failure rather than an encoder-absence fallback trigger. Pinned FFmpeg
+otherwise logs and ignores an unsupported QP setter. The measured OS software
+H.264 encoder lacks this property and cannot qualify for current automatic SDR;
+the hardware path supports it. A capability dictionary and codec fields are
+requests, not proof of emitted quality. The real-file and grain/edge regression
+measurements are in [encoder quality qualification](qualification/encoder-quality-2026-10-10.md).
 
 The pinned VideoToolbox adapter omits packet durations. This boundary assigns
 only missing video durations from the already authored CFR contract, rejects
@@ -121,7 +140,8 @@ stream tag and metadata attachment flags), admitted against the contract. It
 is separate from `EncoderInfo`/`EncodeReport`; HDR `EncoderInfo.video_profile`
 is 2 (HEVC Main10) instead of 100. The optional media-duration correction is
 omitted when no correction was needed, preserving those report bytes.
-The base C structs use ABI version 2 for the AAC preroll contract. HDR uses additive entry points
+The base C structs use ABI version 3; HDR retains ABI 2's AAC preroll contract
+and has no SDR quality-control extension. HDR uses additive entry points
 (`dp_encode_open_hdr`, `dp_encode_finish_hdr`, `dp_encode_query_video`) with
 extension structs versioned by `DP_ENCODE_HDR_ABI_VERSION` 1.
 

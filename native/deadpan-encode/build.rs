@@ -79,5 +79,7 @@ fn main() {
     for library_name in ["avformat", "avcodec", "avutil"] {
         println!("cargo:rustc-link-lib=dylib={library_name}");
     }
+    println!("cargo:rustc-link-lib=framework=VideoToolbox");
+    println!("cargo:rustc-link-lib=framework=CoreFoundation");
     println!("cargo:rustc-link-arg=-Wl,-rpath,{}", library.display());
 }

@@ -210,7 +210,7 @@ fn restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes() {
 
 #[test]
 fn owner_revocation_during_native_verification_cannot_admit_a_candidate() {
-    let fixture = Fixture::new("software-two");
+    let fixture = Fixture::new("hardware-gops");
     let (mut store, mut stage) = begin(&fixture);
     let prepared = retain(&fixture, &store, &stage);
     let checkpoint = commit_retention(&mut store, &mut stage, &prepared);

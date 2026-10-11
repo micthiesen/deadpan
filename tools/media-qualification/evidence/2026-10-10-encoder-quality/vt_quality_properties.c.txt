@@ -1,0 +1,22 @@
+#include <VideoToolbox/VideoToolbox.h>
+#include <stdio.h>
+int main(void) {
+    for(int software=0;software<2;software++) {
+        const void *key=software?kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder:kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder;
+        const void *value=software?kCFBooleanFalse:kCFBooleanTrue;
+        CFDictionaryRef spec=CFDictionaryCreate(NULL,&key,&value,1,&kCFTypeDictionaryKeyCallBacks,&kCFTypeDictionaryValueCallBacks), properties=NULL;
+        CFStringRef id=NULL;
+        OSStatus status=VTCopySupportedPropertyDictionaryForEncoder(1280,720,kCMVideoCodecType_H264,spec,&id,&properties);
+        printf("software=%d status=%d\n",software,(int)status);
+        if(id)CFShow(id);
+        if(properties) {
+            const void *qp=CFDictionaryGetValue(properties,kVTCompressionPropertyKey_MaxAllowedFrameQP);
+            const void *rate=CFDictionaryGetValue(properties,kVTCompressionPropertyKey_DataRateLimits);
+            printf("qmax=%d rate=%d\n",qp!=NULL,rate!=NULL);
+            if(qp)CFShow(qp);
+            if(rate)CFShow(rate);
+            CFRelease(properties);
+        }
+        if(id)CFRelease(id);CFRelease(spec);
+    }
+}

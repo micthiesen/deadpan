@@ -1,0 +1,13 @@
+from pathlib import Path
+import hashlib,json
+r=Path(__file__).parent
+for mode in ['release','packaged']:
+    out=r/('quality-public-'+mode)
+    result=json.loads((out/'render.stdout').read_text().splitlines()[-1])
+    status=result['status'];assert status['outcome']=='published'
+    receipt=status['receipt'];data=Path(receipt['report']).read_bytes()
+    assert hashlib.sha256(data).hexdigest()==receipt['report_sha256']
+    assert len(data)==receipt['report_bytes']
+    (out/'publication.json').write_bytes(data)
+bundle=Path('/tmp/deadpan-encoder-quality-bundle-20261010/Deadpan.app/Contents/MacOS')
+(r/'quality-bundle-hashes.json').write_text(json.dumps({name:hashlib.sha256((bundle/name).read_bytes()).hexdigest() for name in ['deadpan-app','deadpan-cli','deadpan-media-worker']},indent=2)+'\n')

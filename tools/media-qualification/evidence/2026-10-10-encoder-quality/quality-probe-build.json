@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cc",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Inative/deadpan-encode/src",
+    "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+    "/tmp/deadpan-youtube-quality-20261009/quality_probe.c",
+    "native/deadpan-encode/src/encoder.c",
+    "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-lavformat",
+    "-lavcodec",
+    "-lavutil",
+    "-o",
+    "/tmp/deadpan-youtube-quality-20261009/quality-probe-baseline"
+  ],
+  "source_sha256": "30c7d73720b4e239d185c9c3a92291c36639dd7dd1875f1d7bd488d9814a38dc",
+  "binary_sha256": "ef3a9ed4a3fb2cd842ce0aa55835e9062a57c7df917b2c7439ad5d6369d28c35"
+}

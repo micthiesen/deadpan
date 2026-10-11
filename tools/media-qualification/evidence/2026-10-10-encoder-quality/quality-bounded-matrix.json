@@ -1,0 +1,81 @@
+{
+  "build": [
+    "cc",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-I/Users/michael/Code/deadpan/native/deadpan-encode/src",
+    "-I/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/include",
+    "/tmp/deadpan-youtube-quality-20261009/quality_probe_full.c",
+    "/tmp/deadpan-youtube-quality-20261009/encoder-qmax24-bounded.c",
+    "-L/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-Wl,-rpath,/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib",
+    "-lavformat",
+    "-lavcodec",
+    "-lavutil",
+    "-o",
+    "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-bounded"
+  ],
+  "source_sha256": "6eec32f9012888c5abf7c4e59c37b767f384b597511cc39566bc509e39bcf72f",
+  "binary_sha256": "3d94bfbd32adcd2a3fc530904a66444b45f33cb2e2ca4b56a9b5c1f5dad35f19",
+  "runs": [
+    {
+      "name": "quality-bounded-single",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-bounded",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-bounded-single.mp4",
+        "0",
+        "0",
+        "0"
+      ],
+      "exit": 0,
+      "seconds": 25.13171754218638,
+      "stdout": "{\"frames\":3506,\"cut\":3126,\"delay_ms\":0,\"mode\":0,\"luma_psnr_db\":40.627843222,\"bytes\":158043736}\n"
+    },
+    {
+      "name": "quality-bounded-parallel-0",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-bounded",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-bounded-parallel-0.mp4",
+        "0",
+        "0",
+        "0"
+      ],
+      "exit": 0,
+      "seconds": 43.54772699996829,
+      "stdout": "{\"frames\":3506,\"cut\":3126,\"delay_ms\":0,\"mode\":0,\"luma_psnr_db\":40.627843222,\"bytes\":158043731}\n"
+    },
+    {
+      "name": "quality-bounded-parallel-1",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-bounded",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-bounded-parallel-1.mp4",
+        "0",
+        "0",
+        "0"
+      ],
+      "exit": 0,
+      "seconds": 43.54314354201779,
+      "stdout": "{\"frames\":3506,\"cut\":3126,\"delay_ms\":0,\"mode\":0,\"luma_psnr_db\":40.627843222,\"bytes\":158043736}\n"
+    },
+    {
+      "name": "quality-bounded-software",
+      "command": [
+        "/tmp/deadpan-youtube-quality-20261009/quality-probe-full-bounded",
+        "/tmp/deadpan-youtube-quality-20261009/quality-reference-full.i420",
+        "/tmp/deadpan-youtube-quality-20261009/quality-bounded-software.mp4",
+        "0",
+        "0",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 32.175152459181845,
+      "stdout": "{\"frames\":3506,\"cut\":3126,\"delay_ms\":0,\"mode\":1,\"luma_psnr_db\":45.034693925,\"bytes\":146594245}\n"
+    }
+  ]
+}

@@ -36,12 +36,20 @@ search. Diagnostic text never chooses a path. A later supervision fault
 invalidates a typed native claim. Unconfirmed cleanup takes precedence and
 cannot become a successful cancellation or an eligible rejection.
 
+Current SDR probes and project encodes use rate-control policy 2, native ABI 3:
+frame-QP ceiling 24 and a one-second bitrate ceiling of three times the existing
+starting target. Native capability admission requires both VideoToolbox
+properties. The measured OS software H.264 encoder does not expose the QP
+property, so it fails preflight instead of accepting FFmpeg's ignored setter.
+The selection order above is unchanged; quality-control rejection does not
+authorize another attempt. See [quality qualification](qualification/encoder-quality-2026-10-10.md).
+
 ## HDR admission (AutomaticHdrV1)
 
 A revision whose automatic color branch (`ProjectPictureSession::color_decision`,
 `picture::committed_color`) is PQ or HLG renders under `AutomaticHdrV1`. An SDR
 branch, including a tone-mapped fallback from an HDR basis, keeps
-`AutomaticSdrV1` byte-for-byte. The algorithm is chosen at job creation from
+`AutomaticSdrV1` selection with the current SDR rate controls above. The algorithm is chosen at job creation from
 the branch (`render::output_summary`/`committed_output_summary` report it with
 the color policy, reason, `hdr_sources`, tone-map peak and PQ mastering volume)
 and `capture_intent` refuses an automatic intent whose algorithm does not match
@@ -69,7 +77,7 @@ The content oracle (schema 2) decodes with `next_yuv420p10` and compares every
 10-bit codes: maximum 192 (SDR 48 x 4), MAE 6.000 (1.500 x 4) and MSE 256.000
 (16.000 x 16) per plane and per frame. Schema 1 SDR limits are unchanged. The
 encode report must show `video_profile` 2 (HEVC Main10) instead of 100;
-`abi_version` stays 1. Settings resolve through `RenderSdrSettings::automatic`,
+`abi_version` is now 3 with no SDR quality controls. Settings resolve through `RenderSdrSettings::automatic`,
 where `automatic_hdr_v1` equals `automatic_sdr_v1` except video bitrate
 `(sdr * 5 + 2) / 4`. PQ probe verification reports carry the verifier's
 `content_light` evidence; SDR and HLG reports omit it.
@@ -165,10 +173,10 @@ the helper after encoding. Any mismatch fails the attempt. The returned
 candidate; the ordinary finished-file verification and publication boundaries
 still apply. A passed probe cannot establish the validity of a project movie.
 
-SDR control derivation is frozen as `EncodeContract::new_v1`; `new` remains its
-alias. Future bitrate/GOP policies require a separate constructor and identity.
-The binding records version 1 and exact resolved controls without changing the
-historical `EncodedManifest` wire format or reinterpreting retained checkpoints.
+SDR's frozen engineering `EncodeContract::new_v1` remains available through
+`new`. Production uses the separate `new_v2` constructor and records binding
+policy 2 with ABI-3 quality-control observations; HDR retains policy 1. Retained
+ABI-1/2 observations are validated against their original video and AAC rules.
 Serialized runtime facts and decisions cannot recreate a live capability. Each
 new encoding attempt must qualify again.
 
