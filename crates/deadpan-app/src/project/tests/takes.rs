@@ -8,15 +8,25 @@ fn send(
     ticket: u64,
     operation: Operation,
 ) -> ProjectUpdate {
-    command(
-        service,
-        ProjectRequest::Takes(Request {
+    assert!(!service.is_busy());
+    let _ = service.take_update();
+    service
+        .submit(ProjectRequest::Takes(Request {
             ticket,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             operation,
-        }),
-    )
+        }))
+        .unwrap();
+    // A background status may be read just before this command finishes.
+    // Idle alone does not bind that already-read update to the take request.
+    wait(service, |update| {
+        !service.is_busy()
+            && update
+                .takes
+                .as_ref()
+                .is_some_and(|result| result.ticket == ticket)
+    })
 }
 
 fn receipt(update: &ProjectUpdate) -> &Receipt {
