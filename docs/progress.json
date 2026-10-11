@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T23:15:37Z",
+  "updated_at": "2026-10-11T23:54:10Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete future-stage audio prewarming and persistent cache lifecycle, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
+  "focus": "Complete preparation during active playback and persistent cache lifecycle, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Full voice processing and effects remain."
+      "note": "Playback, gain, sounds and timing work. Idle preparation shares bounded canonical caches with Play; preparation during playback, persistent cache reuse and full voice processing remain."
     },
     {
       "id": "analysis",
@@ -581,6 +581,14 @@
       "revision": "e8f4c865e95b7fb58179e3edf1b35d08b1e14cf9",
       "retrospective": false,
       "summary": "Native audio preparation now reports actual worker activity, stage-frame counts and request elapsed time while preserving heard clocks, cancellation and warm PCM reuse. All 503 audio, 73 playback and 21 transport tests pass; final regressions, strict checks, 963 initial UI replay checks and 61 final Sound checks pass. Visual review fixed narrow-card wrapping. DP-09 and DP-16 remain partial."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "61eba458",
+      "retrospective": false,
+      "summary": "Stopped-cursor audio now prepares a bounded horizon, including future Preserve stages, and shares its canonical cache with Play. Full playback, final warming and transport tests, 421 UI checks, strict Clippy and evidence audit pass. Preparation during active playback and persistent cache lifecycle remain open."
     }
   ]
 }
