@@ -16,8 +16,10 @@ and the real app-job URL import passes. Both release exports pass; packaged
 import and relocation pass. The packaged export fails luma PSNR at scene-cut
 frame 3,126 (30.54 dB versus 32 dB), reproduced by the release verifier on the
 same saved movie. The imported Originals are byte-identical; the encoded
-packet differs. An isolated full export is investigating repeatability;
-retain the failed movie and keep the threshold. See the linked record for
+packet differs. An isolated full packaged export passes all 585 picture checks
+and 143 signal windows, but a short scene-cut reproduction does not explain
+the original failure. Investigate encoder quality; retain both movies and
+keep the threshold. See the linked record for
 paths and exact evidence. Broader profiles, high-resolution performance, a source
 interpretation override and remaining URL workflow work stay open; DP-02,
 DP-14 and DP-16 remain partial.

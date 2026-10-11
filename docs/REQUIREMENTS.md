@@ -14,8 +14,10 @@ native sanitizer tests pass, and the real app-job AV1/Opus import completes
 in 13.8 seconds. Both release exports pass 1,170 sampled picture comparisons
 and 286 zero-offset audio windows. Packaged import and relocation pass, but
 the packaged export fails the unchanged luma-quality gate at scene-cut frame
-3,126; both verifiers reproduce it. Encoder quality is under investigation,
-with the failed movie retained in the linked qualification. Broader profiles, high-resolution performance, correctable
+3,126; both verifiers reproduce it. A separate full packaged encode without
+another encode running passes all 585 sampled pictures and 143 audio windows.
+Encoder quality remains under investigation, with both outcomes retained in
+the linked qualification. Broader profiles, high-resolution performance, correctable
 source interpretation and remaining URL workflow work keep DP-02, DP-14 and
 DP-16 partial; complete export-quality qualification remains open under DP-17.
 

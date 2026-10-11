@@ -175,9 +175,17 @@ hardware H.264 without B frames; this packet is 36,212 bytes in the failing
 movie versus 143,192 bytes and 37.91 dB in the passing release movie.
 The failed movie/report remain in `packaged-final/work/youtube-av1-export`
 and `packaged-final/youtube-av1-verify.stdout`; the cross-check is
-`cross-release-frame3126.json`. No threshold was lowered. The cause and an
-isolated-encode follow-up remain under investigation. This milestone proves
-the packaged import, not complete export-quality qualification.
+`cross-release-frame3126.json`. No threshold was lowered.
+
+The cause remains under investigation. A separate full packaged encode with
+no other encode running passes all 585 sampled pictures and all 143 signal
+windows, with the same 36.97/40.11 dB minima as the release file; frame 3,126
+itself measures 37.91 dB. The first failure occurred while another full export
+was running. That suggests a concurrency-related encoder variation, not a
+proven cause. The shorter scene-cut reproduction does not fail under either
+single or concurrent encoding. `isolated-render.json`,
+`isolated-full-verify.json` and the original failing artifacts retain both
+outcomes. Complete encoder-quality qualification remains open.
 
 Live GUI inspection was not run. A user override for the assumed chroma position,
 broader codec profiles, above-1080p performance and clean/second-Mac acceptance
