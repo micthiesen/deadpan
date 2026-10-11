@@ -1,0 +1,17 @@
+{
+  "binary": {
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-transcribe": "8bbd6b8729977d4d006593e215f345ade71b3f4b3f43a8e45ca63631fecd0529",
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-app": "49e57cae56dd086fdde32c7bcd16291896a4d2f4b3061541f9ebdf0d984445a7",
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-media-worker": "5d28aebff552ae1b3eb789a53906eaf57ff432855c9a8034992a9a221223edac",
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-track": "589fc5d6c39ca0b903eea2ba9f0c150521e4aeed2d9cb8585a2545105283064e",
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-cli": "f0455bcc8471ae667dd033626bcbe12d708ebbcbbfa29d82eb2b93fa6c81ee88"
+  },
+  "source": {
+    "crates/deadpan-app/src/worker.rs": "ce0b3ddaac77b43c11b21baa6d09385c2d702d46c378dfcb31deb35f4ccd574b",
+    "crates/deadpan-app/src/worker/playback_cache.rs": "7af22860e8263c28f44b60301d7d6e57bb44baac2919d672c721d31abea7a1c9",
+    "crates/deadpan-app/src/worker/generated_ahead.rs": "56e6afe5667fff1ae586bf600b3642cdac888945f3e7fc0e8aadf79475cf108c",
+    "crates/deadpan-app/src/preview/harness.rs": "968f654651fc2d5a9d9878c0770fd37e2241b12288add78da7a1432be1b38ba0",
+    "crates/deadpan-app/src/preview/harness/generated_playback.rs": "26d228e840337bf0f59669994d983d72e3e1bc51971d15a3939f52da15d41b12",
+    "crates/deadpan-app/src/ui_harness.rs": "2047d7df1fa1e76ca8ac561f30ceb2e615fcc04840e570d62594e6e2a68c0bc1"
+  }
+}

@@ -6,11 +6,13 @@
 //! temporarily off screen. No extra slot is retained after a stopped reply.
 
 use super::*;
+use provider_ahead::{Provider, ProviderAhead};
 
 #[derive(Default)]
 pub(super) struct PlaybackCache {
     parked: Option<RetainedSession>,
-    generated: generated_ahead::GeneratedAhead,
+    generated: ProviderAhead,
+    original: ProviderAhead,
 }
 
 impl PlaybackCache {
@@ -19,8 +21,14 @@ impl PlaybackCache {
         self.generated.finished()
     }
 
+    #[cfg(test)]
+    pub(super) fn original_finished(&self) -> bool {
+        self.original.finished()
+    }
+
     pub(super) fn clear(&mut self) {
         self.generated.clear();
+        self.original.clear();
         self.parked = None;
     }
 
@@ -45,6 +53,7 @@ impl PlaybackCache {
     ) -> Result<(), String> {
         if !playing {
             self.generated.clear();
+            self.original.clear();
         }
         // Ordinary stopped/candidate/copied readers keep the existing one-slot
         // policy. A first stopped request may recover the playback slot it
@@ -72,23 +81,12 @@ impl PlaybackCache {
         {
             self.clear();
         }
-        let generated = match view {
-            ProjectView::Source { .. } => false,
-            ProjectView::Sequence { frame } => match workspace.plan.picture(*frame) {
-                Ok(sample) => match sample.picture {
-                    deadpan_plan::Picture::Accepted {
-                        generated: Some(_), ..
-                    } => true,
-                    deadpan_plan::Picture::Source { .. } | deadpan_plan::Picture::Freeze { .. } => {
-                        false
-                    }
-                    // Background preserves both slots; unsupported/invalid
-                    // pictures still fail through the ordinary reader.
-                    _ => return Ok(()),
-                },
-                Err(_) => return Ok(()),
-            },
+        let Some(key) = provider_ahead::key(workspace, view)? else {
+            // Background preserves both slots; unsupported pictures still
+            // fail through the ordinary reader.
+            return Ok(());
         };
+        let generated = matches!(key, SessionKey::Generated { .. });
         let is_generated =
             |session: &RetainedSession| matches!(session.key, SessionKey::Generated { .. });
         let change = active
@@ -102,30 +100,15 @@ impl PlaybackCache {
         if change {
             std::mem::swap(active, &mut self.parked);
         }
-        if generated && playing {
-            let ProjectView::Sequence { frame } = view else {
-                unreachable!()
+        if playing && active.as_ref().is_none_or(|session| session.key != key) {
+            // Drop the old provider before adopting its prepared successor.
+            *active = None;
+            let prepared = if generated {
+                &mut self.generated
+            } else {
+                &mut self.original
             };
-            let sample = workspace
-                .plan
-                .picture(*frame)
-                .map_err(|error| error.to_string())?;
-            let deadpan_plan::Picture::Accepted {
-                generated: Some(artifact),
-                ..
-            } = sample.picture
-            else {
-                unreachable!()
-            };
-            let key = SessionKey::Generated {
-                session: workspace.session,
-                media: Arc::new(GeneratedMediaKey::new(&workspace.document, &artifact)?),
-            };
-            if active.as_ref().is_none_or(|session| session.key != key) {
-                // Drop the old provider before adopting its prepared successor.
-                *active = None;
-                *active = self.generated.take_for(&key, &request.cancelled)?;
-            }
+            *active = prepared.take_for(&key, &request.cancelled)?;
         }
         // This chooses a provider role only. The ordinary reader still checks
         // the complete key, media authority and liveness before using a slot.
@@ -143,30 +126,44 @@ impl PlaybackCache {
             Some(SessionKey::Project { .. }) => None,
             _ => return,
         };
-        let Some((workspace, frame, key)) = self.generated.target(request, serving) else {
-            self.generated.stop_job();
-            return;
-        };
-        if self
-            .parked
-            .as_ref()
-            .is_some_and(|session| session.key == key)
-        {
-            self.generated.stop_job();
-            return;
+        // Starting playback on Generated has no parked Original. Admit only
+        // that missing slot; an existing Original owns its own return look-ahead.
+        if serving.is_some() && self.parked.is_none() {
+            if let Some((workspace, frame, key)) = self.original.target(request, Provider::Original)
+            {
+                self.original.start(workspace, frame, key);
+            } else {
+                self.original.stop_job();
+            }
+        } else {
+            self.original.stop_job();
         }
-        // Keep Original and its return look-ahead while Generated is serving.
-        // An idle Generated can be replaced by the next admission instead.
-        if self
-            .parked
-            .as_ref()
-            .is_some_and(|session| matches!(session.key, SessionKey::Generated { .. }))
+        match self
+            .generated
+            .target(request, Provider::Generated { serving })
         {
-            self.parked = None;
+            Some((workspace, frame, key))
+                if self
+                    .parked
+                    .as_ref()
+                    .is_none_or(|session| session.key != key) =>
+            {
+                // Keep Original and its return look-ahead while Generated is
+                // serving. An idle Generated can be replaced by its successor.
+                if self
+                    .parked
+                    .as_ref()
+                    .is_some_and(|session| matches!(session.key, SessionKey::Generated { .. }))
+                {
+                    self.parked = None;
+                }
+                self.generated.start(workspace, frame, key);
+            }
+            _ => self.generated.stop_job(),
         }
-        self.generated.start(workspace, frame, key);
         let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
         mailbox.generated_ahead = self.generated.stop_flag();
+        mailbox.original_ahead = self.original.stop_flag();
         if mailbox.shutdown
             || mailbox.clear_requested
             || mailbox
@@ -179,6 +176,7 @@ impl PlaybackCache {
             })
         {
             mailbox.stop_generated_ahead();
+            mailbox.stop_original_ahead();
         }
     }
 

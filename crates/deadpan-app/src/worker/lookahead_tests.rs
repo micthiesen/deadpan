@@ -160,17 +160,24 @@ fn only_the_next_playback_picture_keeps_the_lookahead_running() {
     mailbox.lookahead = flag;
     let generated_stop = Arc::new(AtomicBool::new(false));
     mailbox.generated_ahead = Some(Arc::clone(&generated_stop));
+    let original_stop = Arc::new(AtomicBool::new(false));
+    mailbox.original_ahead = Some(Arc::clone(&original_stop));
     let mut playing = request(&workspace, sequence(3), 1);
     playing.ticket.transport = Some(generation);
     mailbox.submit(playing.ticket, playing.work);
     assert!(!stop.load(Ordering::Acquire), "the next playback picture");
     assert!(!generated_stop.load(Ordering::Acquire));
+    assert!(!original_stop.load(Ordering::Acquire));
     let stopped = request(&workspace, sequence(4), 2);
     mailbox.submit(stopped.ticket, stopped.work);
     assert!(stop.load(Ordering::Acquire), "a stopped picture");
     assert!(
         generated_stop.load(Ordering::Acquire),
         "stopped Generated admission"
+    );
+    assert!(
+        original_stop.load(Ordering::Acquire),
+        "stopped Original admission"
     );
 
     let (stop, flag) = running();

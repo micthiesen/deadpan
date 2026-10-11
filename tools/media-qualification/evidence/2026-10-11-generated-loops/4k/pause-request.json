@@ -1,0 +1,25 @@
+{
+  "protocol": 1,
+  "project_id": "102af5b4-8cea-4ce2-85ec-a1085ed2b9dd",
+  "expected_revision": "122c6037-109f-41b8-9309-6f27083e267e",
+  "expected_bank_version": 0,
+  "operation": {
+    "type": "apply",
+    "parent": "e61e3c9a-46ad-41f4-98fe-d9e44aa8b717",
+    "cursor": 46,
+    "selected_child": null,
+    "visual_selection": null,
+    "new_revision": "two-holds-pause",
+    "program": {
+      "instructions": [
+        {
+          "type": "insert_pause",
+          "length": {
+            "unit": "milliseconds",
+            "milliseconds": 500
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "time",
+    "-l",
+    "/tmp/deadpan-generated-loops-20261011/bin-baseline/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "generated-loop",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--project",
+    "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+    "--output",
+    "/tmp/deadpan-generated-loops-20261011/baseline-4k"
+  ],
+  "exit": 1,
+  "seconds": 44.136839209124446,
+  "log_sha256": "27ddefd5fdd69f50e554233dd04d94dc47d653e9a1d18131645a932c7fdf3ecf"
+}

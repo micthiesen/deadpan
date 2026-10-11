@@ -8,7 +8,7 @@ use egui_kittest::{Harness, kittest::NodeT as _};
 use serde_json::{Value, json};
 
 use super::*;
-use crate::ui_harness::{Options, gpu::Offscreen, report::*};
+use crate::ui_harness::{self, Options, gpu::Offscreen, report::*};
 
 mod accessibility;
 mod ai_insertion;
@@ -264,7 +264,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     .join("ai-pause-ready.deadpan");
                 copy_package(fixture, &copy)?;
                 copy
-            } else if name == "generated-playback" {
+            } else if ui_harness::real_playback(name) {
                 let root = documents.parent().ok_or("Replay Documents root has no parent")?;
                 std::fs::create_dir_all(root).map_err(|error| error.to_string())?;
                 let copy = root.join("generated-playback.deadpan");
@@ -357,7 +357,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             if options.project.is_some() { DialogKind::OpenProject } else { DialogKind::CreateProject },
                             Some(fixture.to_owned()),
                         )]);
-                        app.feedback.simulate_playback = name != "generated-playback";
+                        app.feedback.simulate_playback = !ui_harness::real_playback(name);
                         app.feedback.original_fixture = Some(fixture.to_owned());
                         app.gag_presets =
                             crate::gag_presets::GagPresets::at(replay_root.join("gag-presets.json"));
@@ -473,12 +473,12 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             driver.discards.install(&driver.harness.ctx);
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 driver.step("Initial workspace", true)?;
-                if name == "generated-playback" {
+                if ui_harness::real_playback(name) {
                     driver.click("Open project…  ⌘O")?;
                     driver.wait_for("Accepted playback fixture copy opened", |app| {
                         app.workspace.is_some() && !app.service.is_busy()
                     })?;
-                    return generated_playback::run(&mut driver);
+                    return generated_playback::run(&mut driver, name == "generated-loop");
                 }
                 if name == "generated-picture" {
                     driver.click("Open project…  ⌘O")?;

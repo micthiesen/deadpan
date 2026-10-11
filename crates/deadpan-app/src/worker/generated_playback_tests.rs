@@ -26,6 +26,118 @@ fn fixture_from(variable: &str) -> Fixture {
 
 #[test]
 #[ignore = "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"]
+fn starting_on_generated_prepares_original_and_revokes_stale_admissions() {
+    for mode in ["adopt", "cancel", "different-session"] {
+        let fixture = fixture_from("DEADPAN_GENERATED_TRANSITIONS_PACKAGE");
+        let workspace = fixture.workspace(707);
+        let generated = (0..workspace.plan.duration().frames())
+            .find(|frame| {
+                matches!(
+                    workspace
+                        .plan
+                        .picture(ProjectFrame(*frame))
+                        .unwrap()
+                        .picture,
+                    deadpan_plan::Picture::Accepted {
+                        generated: Some(_),
+                        ..
+                    }
+                )
+            })
+            .unwrap();
+        let original = (generated + 1..workspace.plan.duration().frames())
+            .find(|frame| {
+                matches!(
+                    workspace
+                        .plan
+                        .picture(ProjectFrame(*frame))
+                        .unwrap()
+                        .picture,
+                    deadpan_plan::Picture::Source { .. }
+                )
+            })
+            .unwrap();
+        let shared = Shared::default();
+        let mut cache = PlaybackCache::default();
+        let mut retained = None;
+        let (mut feed, _callback) = deadpan_output::channel().unwrap();
+        let generation = feed.restart(0).unwrap();
+        let mut entry = request(&workspace, sequence(generated), 1);
+        // Stopped preview starts with only the accepted provider admitted.
+        perform(&entry, &mut retained, &mut None).unwrap();
+        let generated_index = Arc::downgrade(&retained.as_ref().unwrap().source.shared_index());
+        entry.ticket.transport = Some(generation);
+        shared.mailbox.lock().unwrap().latest = Some(entry.ticket);
+        cache.prepare(&shared, &entry, &retained);
+        let stop = shared
+            .mailbox
+            .lock()
+            .unwrap()
+            .original_ahead
+            .clone()
+            .expect("Original admission began");
+        let generated_stop = shared
+            .mailbox
+            .lock()
+            .unwrap()
+            .generated_ahead
+            .clone()
+            .expect("next Generated admission began");
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while !cache.original_finished() || !cache.generated_finished() {
+            assert!(
+                Instant::now() < deadline,
+                "both providers prepare before the first Original request"
+            );
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        if mode == "cancel" {
+            shared.mailbox.lock().unwrap().cancel();
+            assert!(stop.load(Ordering::Acquire) && generated_stop.load(Ordering::Acquire));
+        }
+        let workspace = if mode == "different-session" {
+            fixture.workspace(708)
+        } else {
+            workspace
+        };
+        let mut next = request(&workspace, sequence(original), 2);
+        next.ticket.transport = Some(generation);
+        cache.select(&next, &mut retained, true).unwrap();
+        if mode == "adopt" {
+            let session = retained.as_ref().expect("prepared Original adopted");
+            assert!(matches!(session.key, SessionKey::Project { .. }));
+            let sample = workspace.plan.picture(ProjectFrame(original)).unwrap();
+            let id = sample
+                .picture
+                .select_source_frame(session.source.index().index())
+                .unwrap()
+                .identity;
+            assert_eq!(
+                session.source.decode_plan(id),
+                deadpan_media::source_session::DecodePlan::Current
+            );
+        } else {
+            assert!(
+                retained.is_none(),
+                "cancelled or stale Original was not adopted"
+            );
+            assert!(stop.load(Ordering::Acquire));
+        }
+        let actual = perform(&next, &mut retained, &mut None).unwrap();
+        let expected = perform(&next, &mut None, &mut None).unwrap();
+        assert_eq!(actual.id, expected.id);
+        assert_eq!(
+            actual.frame.unwrap().bytes(),
+            expected.frame.unwrap().bytes()
+        );
+        cache.release(&mut retained);
+        assert!(generated_stop.load(Ordering::Acquire));
+        assert!(generated_index.upgrade().is_none());
+    }
+}
+
+#[test]
+#[ignore = "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"]
 fn next_generated_provider_prepares_while_the_current_hold_serves() {
     let fixture = fixture_from("DEADPAN_GENERATED_TRANSITIONS_PACKAGE");
     let workspace = fixture.workspace(706);

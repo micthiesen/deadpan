@@ -1,0 +1,95 @@
+{
+  "copy": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "copy-portable",
+      "/tmp/deadpan-generated-export-20261011/chirp-v2-4k.deadpan",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan"
+    ],
+    "exit": 0,
+    "seconds": 0.21689608320593834,
+    "stdout_sha256": "1cf82ab1ee9eac6935263308c5096d941d9f0f6727f8efb776487ed7cf4e0e78",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "before": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.0123901660554111,
+    "stdout_sha256": "be39b911b4f704195a81f85bdcd1b0328f5e791131c2151fd637da499a37a34d",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "pause": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "macro",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--json",
+      "/tmp/deadpan-generated-loops-20261011/4k/pause-request.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03619987517595291,
+    "stdout_sha256": "436d4a3ba191913c7f662209412bdbe5454977f17caa8f7ab991429918bad219",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "fallback": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.012139665894210339,
+    "stdout_sha256": "785d88ddedd22d7f8bb6f5d5d2f0797055c5e60a77928acabab360031b3cb397",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "generate": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "generate-hold",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--hold",
+      "2ea0c3b4-999f-42d3-af7d-3c662558a0e7",
+      "--seed",
+      "816"
+    ],
+    "exit": 0,
+    "seconds": 81.21409995807335,
+    "stdout_sha256": "9f70bbd9c379b2958e50f70b164b29021e825a7989b5cbee9fda43639a66584d",
+    "stderr_sha256": "291ca9ac6c9ccf15b182e6b00ebef94e5af594ec1f3ff97ede2ac72721f610bc"
+  },
+  "accept": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "accept-hold",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--request",
+      "ai-hold-17aed4b25c0842aa9fa6e10d8e4e9201"
+    ],
+    "exit": 0,
+    "seconds": 0.07187758386135101,
+    "stdout_sha256": "c8ef8953616e041eeef59dc30907fd39573b55933adccf66beca35dde0c46179",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "accepted": {
+    "command": [
+      "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.01759758312255144,
+    "stdout_sha256": "f9be204ab11084a23e5beb3b1c898abae138f9c2cf5d0938e959facce81ab43f",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

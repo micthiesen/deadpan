@@ -1,0 +1,14 @@
+{
+  "completed_laps": 30,
+  "picture_count": 1831,
+  "missing": [],
+  "first_original": {
+    "frame": 90,
+    "lap": 0,
+    "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 38 }",
+    "worker_ms": 22.485334
+  },
+  "failed_checks": [
+    "Settled picture matches the current session, revision, context and cursor"
+  ]
+}

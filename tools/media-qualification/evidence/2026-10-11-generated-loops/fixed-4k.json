@@ -1,0 +1,21 @@
+{
+  "command": [
+    "time",
+    "-l",
+    "/tmp/deadpan-generated-loops-20261011/bin-fixed/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "generated-loop",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--project",
+    "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan",
+    "--output",
+    "/tmp/deadpan-generated-loops-20261011/fixed-4k"
+  ],
+  "exit": 0,
+  "seconds": 44.25891220802441,
+  "log_sha256": "c2dbac8ab78453df35651dc210f60a66c50be461fbdef3f49b0bb0574576e4fc"
+}

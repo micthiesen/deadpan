@@ -36,6 +36,11 @@ adds a second real accepted Hold separated by one Original picture: both
 1080p60 runs show all 180 pictures, and second entry falls from 190 ms to
 0.15–0.16 ms. The four-decoder bound includes one upcoming Generated admission;
 whole-replay footprint is about 768 MiB, not a worst-case decoder measurement.
+[Generated selection loops](qualification/generated-loops-2026-10-11.md)
+add 30 laps at 1080p60 and 4K30 with every picture shown. Preparing the missing
+Original before first entry reduces the 4K request from 64 ms to 8.7 ms.
+A separate nonloop control drops one early Generated picture; ordinary startup
+timing remains open.
 A target without a measured workload is open, never passed.
 
 ## Run the suite

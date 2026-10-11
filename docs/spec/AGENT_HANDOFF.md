@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Generated selection loops](../qualification/generated-loops-2026-10-11.md)
+now prepare the missing Original decoder when playback starts on Generated.
+Thirty laps present all 1,830/930 pictures at 1080p60/4K30, plus the next lap's
+first picture, without audio faults. The first 4K Original read falls from
+64 ms to 8.7 ms and its following skipped picture is recovered. Six real-media
+tests, the new 4K regression and strict checks pass. The ordinary nonloop
+control still exposes a separate first-Hold timing gap; DP-16 stays partial.
+
 [Closely spaced Generated providers](../qualification/generated-transitions-2026-10-11.md)
 now prepare the next accepted Hold while a different one plays. Two real LTX
 Holds separated by one Original picture present all 180 frames at 1080p60 in

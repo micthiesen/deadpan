@@ -1,0 +1,20 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "starting_on_generated_prepares_original",
+    "--",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 2.2170349159277976,
+  "log_sha256": "bd1315c1ef83a435c086ae0395e9c3a88cf6074df3cd9c9ad5c917247881975a"
+}

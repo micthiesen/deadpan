@@ -1,0 +1,31 @@
+{
+  "base": "c704b6e236c2858469fc303ffeb1414a7cafbc66",
+  "sources": {
+    "crates/deadpan-app/src/worker.rs": "5a118bfb2b61fe759655f9b225cdd6572c0e98d59b8bc2f62ef43f737da2c413",
+    "crates/deadpan-app/src/worker/provider_ahead.rs": "882bbbd36fe355a8b3f8047665657bf9d15429f55869452d6a34d254f85575b1",
+    "crates/deadpan-app/src/worker/playback_cache.rs": "70e619d35264d1b2183144208b6bf3b2d2ac7a20dab42ecf10e3063d2c06f5ae",
+    "crates/deadpan-app/src/worker/generated_playback_tests.rs": "6bf4af01f054dea818c0fcc527b3f964144b01a0d7ff7854e8335e2b4028f1bd",
+    "crates/deadpan-app/src/worker/lookahead_tests.rs": "b2ab78523a177f545d2acd9d16247f2ac8d137c2a79ee47893a0e9888dba1d52",
+    "crates/deadpan-app/src/preview/harness.rs": "968f654651fc2d5a9d9878c0770fd37e2241b12288add78da7a1432be1b38ba0",
+    "crates/deadpan-app/src/preview/harness/generated_playback.rs": "fd1bd02cb27f803e24d9ed6b5687ba71519897be1a9cfe9d7a5e03f23e2fcf30",
+    "crates/deadpan-app/src/ui_harness.rs": "2047d7df1fa1e76ca8ac561f30ceb2e615fcc04840e570d62594e6e2a68c0bc1"
+  },
+  "fixtures": {
+    "1080p": "/tmp/deadpan-generated-transitions-20261011/two-holds.deadpan",
+    "4k": "/tmp/deadpan-generated-loops-20261011/4k/two-holds.deadpan"
+  },
+  "test_executable": "/tmp/deadpan-generated-loops-20261011/release-tests",
+  "test_executable_sha256": "8ea20270715e4619eec4a35e6ec26bd9c98ef579d47804a58f9d697ad431eeb9",
+  "libraries": {
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib": "ab05b025058f05f3c35b67061bb4c7b587db86d5e89cda1296e58dcd745d1779",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib": "fa1ac6944c4fcb5551f5794245a76b2d8887f0e3ed587278fe35fcc997ffa1b0",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib": "747add4f909d377d5d5d382c43c36fc2cbf73a3b56b173d22f3571afce821492",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib": "fc1470ede7231c87d51a0090ed465d3e39d4b2b3aca53f236df3ac90163a47ff",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib": "222b667e9ae7c26e2007dc75814487feb70782ec9bf269e6f7312428997f27cb"
+  },
+  "old_control_app": "/tmp/deadpan-generated-transitions-20261011/bin/deadpan-app",
+  "old_control_app_sha256": "1a6f80dcbe7bfa296539068a96d734fa20058ef82d8fd1a1f8478e6b7ce685fe",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "hardware": "hw.model: Mac17,7\nhw.memsize: 137438953472\nhw.ncpu: 18\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+}

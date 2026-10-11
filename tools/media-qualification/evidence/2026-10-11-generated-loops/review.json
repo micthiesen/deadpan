@@ -1,0 +1,16 @@
+{
+  "reviewer": "implementing agent; no additional agents",
+  "reviewed": [
+    "complete source and documentation diff",
+    "four playback decoder bound with Original job occupying missing slot",
+    "provider scan scope, first-match selection, 1024-frame bound and loop wrapping",
+    "complete media keys, foreground authority checks and stale/cancelled rejection",
+    "mailbox signalling and worker-owned teardown",
+    "independent displayed-lap coverage, clock comparison and Stop picture retention",
+    "retained baseline failure and final real-device/GPU measurements"
+  ],
+  "remaining": [
+    "intermittent early first-Hold picture loss in ordinary nonloop control; old and repeated fixed controls pass",
+    "larger Generated masters, native-window and physical/acoustic checks not measured here"
+  ]
+}

@@ -18,8 +18,16 @@ of an accepted project. Run it with `--mode performance --project
 disables proxies, starts at Edit frame zero and records every displayed frame,
 device counters and Original/Generated coverage in `generated-playback.json`.
 Fixtures must fit within 32 seconds and include Original pictures on both sides
-of accepted Generated pictures. Ordinary replay batches skip it; all other
-scenarios retain their simulated delivery. No native window or screenshot
+of accepted Generated pictures. `generated-loop` uses the same explicit real
+audio setup, selects from the first through last Generated picture with zero
+audition context, previews its included start, then loops for at least 30 seconds.
+The selected window must contain at least two pictures and last at most eight
+seconds. `generated-loop.json` records each displayed lap independently;
+`missing_frames` contains zero-based picture ordinals across all requested laps,
+relative to `window_frames[0]`. Completion requires the first picture of the
+next lap and the device clock reaching that lap. Stopping must retain the last
+submitted picture.
+Ordinary replay batches skip both; all other scenarios retain their simulated delivery. No native window or screenshot
 readback is involved, and this does not measure physical display latency or
 listening.
 

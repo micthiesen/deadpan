@@ -45,10 +45,10 @@ pub const REFINE_DELAY: Duration = Duration::from_millis(150);
 pub const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 
 mod endpoints;
-mod generated_ahead;
 mod interpretation;
 mod playback_cache;
 mod proposed;
+mod provider_ahead;
 mod proxy;
 mod slice_view;
 pub use endpoints::{
@@ -205,6 +205,7 @@ struct Mailbox {
     /// it without waiting for the worker.
     lookahead: Option<Arc<AtomicBool>>,
     generated_ahead: Option<Arc<AtomicBool>>,
+    original_ahead: Option<Arc<AtomicBool>>,
     /// This worker's pending plus in-progress work in process diagnostics,
     /// including idle proxy preparation.
     depth: Option<deadpan_diagnostics::Share>,
@@ -240,6 +241,7 @@ impl Mailbox {
         {
             self.stop_lookahead();
             self.stop_generated_ahead();
+            self.stop_original_ahead();
         }
         self.latest = Some(ticket);
         self.pending = Some(Request {
@@ -320,10 +322,17 @@ impl Mailbox {
         }
     }
 
+    fn stop_original_ahead(&mut self) {
+        if let Some(stop) = self.original_ahead.take() {
+            stop.store(true, Ordering::Release);
+        }
+    }
+
     fn stop(&mut self) {
         self.shutdown = true;
         self.stop_lookahead();
         self.stop_generated_ahead();
+        self.stop_original_ahead();
         self.cancel_active();
         self.pending = None;
         self.reply = None;
@@ -339,6 +348,7 @@ impl Mailbox {
         self.cancel_active();
         self.stop_lookahead();
         self.stop_generated_ahead();
+        self.stop_original_ahead();
         self.latest = None;
         self.pending = None;
         self.reply = None;

@@ -1,7 +1,52 @@
-//! One cancellable admission of an upcoming accepted Hold. Its decoder is
-//! separate from the currently serving Generated provider, if any.
+//! One cancellable admission of an upcoming picture provider. The cache owns
+//! one job for Generated and, only without a retained Original, one for Original.
 
 use super::*;
+
+#[derive(Clone, PartialEq, Eq)]
+pub(super) enum Provider {
+    Original,
+    Generated {
+        serving: Option<Arc<deadpan_core::GeneratedArtifact>>,
+    },
+}
+
+/// The same complete immutable key used by the foreground picture reader.
+pub(super) fn key(workspace: &Workspace, view: &ProjectView) -> Result<Option<SessionKey>, String> {
+    let asset = match view {
+        ProjectView::Source { asset, .. } => asset.clone(),
+        ProjectView::Sequence { frame } => match workspace
+            .plan
+            .picture(*frame)
+            .map_err(|e| e.to_string())?
+            .picture
+        {
+            deadpan_plan::Picture::Source { asset, .. }
+            | deadpan_plan::Picture::Freeze { asset, .. } => asset,
+            deadpan_plan::Picture::Accepted {
+                generated: Some(artifact),
+                ..
+            } => {
+                return Ok(Some(SessionKey::Generated {
+                    session: workspace.session,
+                    media: Arc::new(GeneratedMediaKey::new(&workspace.document, &artifact)?),
+                }));
+            }
+            _ => return Ok(None),
+        },
+    };
+    let source = media_source(
+        PictureMedia::Committed(workspace),
+        &workspace.document,
+        &asset,
+    )?;
+    Ok(Some(SessionKey::Project {
+        session: workspace.session,
+        asset,
+        receipt: source.receipt.id().clone(),
+        interpretation: source.interpretation,
+    }))
+}
 
 #[derive(Clone, Copy)]
 struct Found {
@@ -69,18 +114,18 @@ struct ScanScope {
     window: Option<(i64, i64)>,
     /// Skip the provider already serving pictures. Changing it changes which
     /// entries are eligible, even within the same revision and generation.
-    serving: Option<Arc<deadpan_core::GeneratedArtifact>>,
+    provider: Provider,
 }
 
 #[derive(Default)]
-pub(super) struct GeneratedAhead {
+pub(super) struct ProviderAhead {
     job: Option<Job>,
     failed: Option<SessionKey>,
     scan: Scan,
     scope: Option<ScanScope>,
 }
 
-impl GeneratedAhead {
+impl ProviderAhead {
     pub(super) fn clear(&mut self) {
         self.stop_job();
         self.failed = None;
@@ -100,7 +145,7 @@ impl GeneratedAhead {
     pub(super) fn target(
         &mut self,
         request: &Request,
-        serving: Option<Arc<deadpan_core::GeneratedArtifact>>,
+        provider: Provider,
     ) -> Option<(Arc<Workspace>, i64, SessionKey)> {
         let Work::Project {
             workspace,
@@ -135,7 +180,7 @@ impl GeneratedAhead {
             revision: workspace.document.revision_id().clone(),
             generation,
             window,
-            serving: serving.clone(),
+            provider: provider.clone(),
         };
         if self.scope.as_ref() != Some(&scope) {
             self.scan = Scan::default();
@@ -147,31 +192,31 @@ impl GeneratedAhead {
                 workspace
                     .plan
                     .picture(ProjectFrame(frame))
-                    .map(|sample| {
-                        matches!(
+                    .map(|sample| match &provider {
+                        Provider::Original => matches!(
+                            sample.picture,
+                            deadpan_plan::Picture::Source { .. }
+                                | deadpan_plan::Picture::Freeze { .. }
+                        ),
+                        Provider::Generated { serving } => matches!(
                             sample.picture,
                             deadpan_plan::Picture::Accepted {
                                 generated: Some(artifact),
                                 ..
                             } if serving.as_ref() != Some(&artifact)
-                        )
+                        ),
                     })
                     .map_err(|error| error.to_string())
             })
             .ok()
             .flatten()?;
-        let sample = workspace.plan.picture(ProjectFrame(frame)).ok()?;
-        let deadpan_plan::Picture::Accepted {
-            generated: Some(artifact),
-            ..
-        } = sample.picture
-        else {
-            return None;
-        };
-        let key = SessionKey::Generated {
-            session: workspace.session,
-            media: Arc::new(GeneratedMediaKey::new(&workspace.document, &artifact).ok()?),
-        };
+        let key = key(
+            workspace,
+            &ProjectView::Sequence {
+                frame: ProjectFrame(frame),
+            },
+        )
+        .ok()??;
         Some((Arc::clone(workspace), frame, key))
     }
 
@@ -189,8 +234,24 @@ impl GeneratedAhead {
         let cancelled = Arc::clone(&stop);
         let prepared_key = key.clone();
         let thread = std::thread::Builder::new()
-            .name("generated-ahead".into())
+            .name("provider-ahead".into())
             .spawn(move || {
+                if matches!(prepared_key, SessionKey::Project { .. }) {
+                    let mut retained = None;
+                    project_picture(
+                        &workspace,
+                        &workspace.document,
+                        &workspace.plan,
+                        &ProjectView::Sequence {
+                            frame: ProjectFrame(frame),
+                        },
+                        &cancelled,
+                        &mut retained,
+                    )?;
+                    return retained
+                        .filter(|session| session.key == prepared_key)
+                        .ok_or_else(|| "Prepared Original has a different media key.".into());
+                }
                 let mut session = admit_generated(
                     &workspace.generated,
                     &workspace.document,
@@ -235,7 +296,7 @@ impl GeneratedAhead {
 
     /// The requested picture has caught the preparation. Finish the same
     /// admission, observing foreground cancellation instead of opening a
-    /// second Generated decoder. Every later read still rechecks authority.
+    /// second decoder. Every later read still rechecks authority.
     pub(super) fn take_for(
         &mut self,
         key: &SessionKey,
@@ -269,7 +330,7 @@ impl GeneratedAhead {
     }
 }
 
-impl Drop for GeneratedAhead {
+impl Drop for ProviderAhead {
     fn drop(&mut self) {
         self.stop_job();
     }

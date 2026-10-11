@@ -1,0 +1,70 @@
+{
+  ".writer.lock": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Media/Generated/blake3-0c78b0a93b5346009beb88b2b07fce0be825fbd2070bae7c4ce1d220dbd9d293": {
+    "bytes": 3331037,
+    "sha256": "98065d18353b4cc2aa48f3ffdf87da148ad142e38acbb13948c70c12a236f4a5"
+  },
+  "Media/Generated/blake3-200d24fafd7033844b1d8ce3587b150bcc3641b6fe4111716cba7909f2eeed7d": {
+    "bytes": 53692,
+    "sha256": "ff9a4f700eeb30f9956067d4ac8697d71eaaa1c80b391c2179ec4510b9eec916"
+  },
+  "Media/Generated/blake3-2f5618644969da4843d4205aad39ea3c2bf3aab6a86595e7678712f683ae65bf": {
+    "bytes": 2702,
+    "sha256": "692411a25141b49dc5a2327b1bca21ae7f60953830fc54d9c531fa312161aeb0"
+  },
+  "Media/Generated/blake3-47ecdb8d59fe9424f10bafbd05a3f72ea6cb2312b7ac0cd9b5f8924131567fd7": {
+    "bytes": 53367,
+    "sha256": "72cc029c05268dddaa908eed8f9a51b3d8dbf240f9ceb16cac25be4fc5497045"
+  },
+  "Media/Generated/blake3-602b8803aa0fd7ef66fecf19d3e658ee719b089edf79074ea56c5e8be4bc88f7": {
+    "bytes": 2806712,
+    "sha256": "94a53044fce436ce2867a3d942a46146b3444d557c2b52584c7069f1aaf0fcdb"
+  },
+  "Media/Generated/blake3-6580d9da56b0b13105a24288538691a84f38f6611714bc638842e7d03f3283c5": {
+    "bytes": 3024561,
+    "sha256": "c1dab545e0f8dfb7f18b5b85384356ee1967c7c9e532d26570d800a1193ac252"
+  },
+  "Media/Generated/blake3-85b47f89e771aa34ee302f9e4d24371ded172db86a9f53c573b93ea4a2418f06": {
+    "bytes": 2699,
+    "sha256": "768f63ea8ef6ff723d6571d9ebfc847b9ac970a23b474dd1b5fbc8e0428d7e10"
+  },
+  "Media/Generated/blake3-c6a9069de82cd654c2b5ec5d0037e8a0b89d3c6dd77a9aaffa4ccda71eaa7485": {
+    "bytes": 58128,
+    "sha256": "974c91472d73dd700ec39d52935d42d71841485b05f962340a2aba6cf1b692c6"
+  },
+  "Media/Generated/blake3-d10543ca7c19e058740a2af2b3b50646014847e1d641ff31cb715a7fe624c470": {
+    "bytes": 58082,
+    "sha256": "6398abd1f7a26fd36f17275f9666562d27327e8e24fe8acee5c9ec680c09579a"
+  },
+  "Media/Generated/blake3-ebc0332442ea2fe493b398dad7e9dee840e64c147b439da20837d1d5e8760040": {
+    "bytes": 3128744,
+    "sha256": "da0bd4bccdc7ff5098e70df62280f831a136d25a430c48d19f6204b67de8dbc4"
+  },
+  "Media/Generated/blake3-efbd8f4a4dc63c1dbe335e91d289dcfa65cb890c8ee6997936e1e01a19b01db4": {
+    "bytes": 53293,
+    "sha256": "fd108888f24fbaf445b8babbf9aacb6a21ef41086721701e3a561f17a75d5c92"
+  },
+  "Media/Originals/blake3-89e2a0e96eabc83dfc28981f7468d2db53b9c54485ca7496658a46ef99809a88": {
+    "bytes": 5171184,
+    "sha256": "8eb842d9ebe23c6eaa39d0a6b6c4d6fb8eea51b272889589f6c036116ba298f9"
+  },
+  "manifest.json": {
+    "bytes": 82,
+    "sha256": "7b5902d407e7897cb78ad4c6b70861c74ed0a4c197ddb064985e0199b06599b4"
+  },
+  "project.sqlite": {
+    "bytes": 581632,
+    "sha256": "a3270d9538ac070a320a6c21c6c40ae969334b94e1392915ca7f45e2068bb390"
+  },
+  "project.sqlite-shm": {
+    "bytes": 32768,
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+  },
+  "project.sqlite-wal": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "preview::harness::generated_playback::tests",
+    "--",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 191.87175958324224,
+  "log_sha256": "441450c75c7f2bc427c40e6300a359abdcd2c3b6ea965fe1c1a5843781d3fafc"
+}

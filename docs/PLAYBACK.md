@@ -283,6 +283,12 @@ project session. The foreground reader still validates it before use. If
 entry catches unfinished preparation, it waits for that same admission rather
 than opening another decoder. See the [Generated handoff](qualification/generated-playback-cache-2026-10-11.md)
 and [entry preparation](qualification/generated-prefetch-2026-10-11.md) records.
+Starting on Generated footage after stopped preview can leave no retained
+Original. The cache then prepares the next Original picture on a separate
+cancellable job, using the ordinary receipt-verified Original reader. The job
+occupies the missing Original slot; it cannot coexist with a retained Original
+and does not raise the four-decoder playback bound. Each provider scan examines
+at most 1,024 new frames per request and stays inside the captured horizon/window.
 The [closely spaced provider qualification](qualification/generated-transitions-2026-10-11.md)
 covers two real accepted Holds separated by one Original picture, with all
 180 pictures presented at 1080p60 in both final runs.
