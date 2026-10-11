@@ -1,0 +1,61 @@
+   Compiling objc2 v0.6.4
+   Compiling num-traits v0.2.19
+   Compiling errno v0.3.14
+   Compiling hashbrown v0.17.1
+   Compiling bytemuck v1.25.2
+   Compiling smallvec v1.16.1
+   Compiling uuid v1.26.1
+   Compiling rustix v1.1.5
+   Compiling hashlink v0.12.2
+   Compiling rusqlite v0.40.2
+   Compiling moxcms v0.8.1
+   Compiling tempfile v3.27.0
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling objc2-foundation v0.3.2
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+   Compiling image v0.25.10
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.87s
+────────────
+ Nextest run ID c3c810a3-54a7-4f03-ad45-e8f34994b275 with nextest profile: default
+    Starting 36 tests across 5 binaries
+        PASS [   0.616s] ( 1/36) deadpan-store::bookmarks records_without_a_bookmark_and_managed_copies_have_no_candidate
+        PASS [   0.751s] ( 2/36) deadpan-store::original_preparation prepared_retention_merges_current_locations_and_deduplicates
+        PASS [   0.751s] ( 3/36) deadpan-store::original_preparation delayed_linked_retention_cannot_replace_a_newer_location
+        PASS [   0.767s] ( 4/36) deadpan-store::original_preparation worker_prepares_without_borrowing_or_blocking_the_writer
+        PASS [   0.779s] ( 5/36) deadpan-store::original_media readonly_cancelled_oversized_and_special_inputs_do_not_create_records
+        PASS [   0.780s] ( 6/36) deadpan-store::original_media linked_original_relink_checks_content_and_monotonic_location_version
+        PASS [   0.780s] ( 7/36) deadpan-store::original_preparation cancellation_preserves_publication_without_registering_it
+        PASS [   0.817s] ( 8/36) deadpan-store::original_preparation database_rollback_keeps_published_bytes_and_the_prepared_token_can_retry
+        PASS [   0.820s] ( 9/36) deadpan-store::original_media same_filename_is_not_identity_and_inventory_pages_without_duplicates
+        PASS [   0.857s] (10/36) deadpan-store::bookmarks a_moved_file_whose_bytes_changed_is_never_relinked
+        PASS [   0.872s] (11/36) deadpan-store::original_media failed_database_commit_keeps_verified_object_and_retry_reuses_it
+        PASS [   0.872s] (12/36) deadpan-store::original_media tampered_record_and_managed_bytes_fail_verification
+        PASS [   0.876s] (13/36) deadpan-store::bookmarks a_moved_and_renamed_linked_file_is_found_and_relinked_after_verification
+        PASS [   0.958s] (14/36) deadpan-store::original_media managed_original_preserves_all_container_bytes_deduplicates_and_survives_relocation
+        PASS [   1.251s] (15/36) deadpan-store::original_preparation handles_and_tokens_are_writer_session_bound_and_do_not_keep_the_lock
+        PASS [   0.894s] (16/36) deadpan-store::prepared_relink cancelled_and_failed_transactions_preserve_inventory_and_managed_ownership
+        PASS [   0.858s] (17/36) deadpan-store::prepared_relink preparation_checks_version_identity_limits_and_cancellation_without_changes
+        PASS [   0.841s] (18/36) deadpan-store::prepared_relink serialized_record_does_not_grant_authority_over_current_inventory
+        PASS [   1.629s] (19/36) deadpan-store::original_preparation prepared_snapshots_keep_private_bytes_after_source_change_and_session_close
+        PASS [   0.878s] (20/36) deadpan-store::prepared_relink delayed_relink_cannot_replace_a_newer_location_or_bookmark
+        PASS [   0.936s] (21/36) deadpan-store::prepared_relink preparation_is_connection_free_and_commit_preserves_later_authored_edits
+        PASS [   1.220s] (22/36) deadpan-store::prepared_relink prepared_relink_is_bound_to_a_live_writable_owner_without_retaining_its_lock
+        PASS [   1.191s] (23/36) deadpan-store::single_source changed_original_cannot_initialize_from_a_retained_prepared_snapshot
+        PASS [   1.200s] (24/36) deadpan-store::single_source failing_baseline_publication_rolls_back_source_history_and_can_retry
+        PASS [   1.281s] (25/36) deadpan-store::single_source a_valid_generic_reimport_branch_cannot_be_forged_into_single_source_history
+        PASS [   1.328s] (26/36) deadpan-store::single_source full_original_is_atomic_and_undo_floor_survives_branch_and_reopen
+        PASS [   1.500s] (27/36) deadpan-store::single_source generic_projects_keep_source_import_undo_and_creation_collisions_are_specific
+        PASS [   0.822s] (28/36) deadpan-store::single_source shot_scan_progress_is_kept_only_for_the_ready_original
+        PASS [   0.865s] (29/36) deadpan-store::single_source takes_cannot_save_before_original_or_restore_before_protected_baseline
+        PASS [   1.761s] (30/36) deadpan-store::single_source initialization_rejects_generic_edits_audio_stale_cancelled_and_closed_preparation
+        PASS [   2.645s] (31/36) deadpan-store::original_preparation final_admission_rejects_unsafe_namespaces_and_objects
+        PASS [   2.766s] (32/36) deadpan-store::original_preparation prepared_retention_rejects_missing_replaced_and_in_place_modified_originals
+        PASS [   2.027s] (33/36) deadpan-store::prepared_relink final_commit_rejects_missing_replaced_modified_and_unsafe_replacements
+        PASS [   1.277s] (34/36) deadpan-store::single_source second_picture_is_rejected_after_delete_but_original_reuse_and_sounds_work
+        PASS [   2.164s] (35/36) deadpan-store::single_source initialized_projects_reopen_from_their_receipt_and_detect_qualification_tampering
+        PASS [   2.229s] (36/36) deadpan-store::single_source malformed_or_displaced_profile_is_rejected_on_reopen
+────────────
+     Summary [   3.481s] 36 tests run: 36 passed, 0 skipped

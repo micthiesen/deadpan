@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "checks": [
+    "same content/stream reuses catalog asset despite different proposed alias and label",
+    "video stream selected as audio fails without authored changes",
+    "explicit container audio stream adds sound only",
+    "import preserves all nodes, timing, Original, basis and placed mix",
+    "unchanged movie verifies against the new catalog revision"
+  ]
+}

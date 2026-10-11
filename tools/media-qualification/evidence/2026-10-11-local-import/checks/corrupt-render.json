@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+    "render",
+    "/tmp/deadpan-local-import-acceptance-20261011/Original.deadpan",
+    "--output",
+    "/tmp/deadpan-local-import-acceptance-20261011/output",
+    "--name",
+    "corrupt.mp4"
+  ],
+  "exit": 1,
+  "seconds": 0.7100793342106044,
+  "binary_sha256": "843934fc640fcd5a2169e4ba3a25cd686e75bbeb125764679448acbda4de2e9d",
+  "stdout_sha256": "531d44940a120c4bd513282f73cc6a5249c1cd2caf693fa0afe79ff9fb127f1b",
+  "stderr_sha256": "d38f67e1ae8d2413c985a91572c74c97975744fbd42b9637a4195659fb7c5d10"
+}

@@ -1,0 +1,35 @@
+{
+  "portable_copy": {
+    "destination": "/private/tmp/deadpan-local-import-acceptance-20261011/Portable.deadpan",
+    "generated": [],
+    "omitted_generated": 0,
+    "omitted_render_candidates": 2,
+    "originals": [
+      {
+        "bytes": 39157,
+        "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "from": "managed",
+        "label": "cfr-bframes.mp4",
+        "method": "cloned"
+      },
+      {
+        "bytes": 32832,
+        "content": "blake3:ea0f6c331dca8f5eb0f56c91fe99bb5bdbc74f5b07082cdee070ac57d11b08a7",
+        "from": "linked",
+        "label": "linked.wav",
+        "method": "cloned"
+      }
+    ],
+    "project_id": "9ca3683f-632c-42db-ad9e-7c6f83782033",
+    "revision_id": "f9354999-43c7-44df-976d-3f4de7356de1",
+    "schema_version": 1,
+    "source": "/private/tmp/deadpan-local-import-acceptance-20261011/Original.deadpan",
+    "total_bytes": 694581,
+    "verified_history": {
+      "replayed": 0,
+      "revisions": 4,
+      "verified_by_receipt": 4
+    }
+  },
+  "protocol": 1
+}

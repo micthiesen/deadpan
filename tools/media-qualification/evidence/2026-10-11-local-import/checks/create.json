@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "project",
+    "create-original",
+    "/tmp/deadpan-local-import-acceptance-20261011/Original.deadpan",
+    "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+  ],
+  "exit": 0,
+  "seconds": 0.12993070809170604,
+  "log_sha256": "aee6bafb11c7274cc7d1312f068936244f2341ec3b1b5eb1f48ab3d2b830bc3e"
+}

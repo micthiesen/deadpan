@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T13:43:59Z",
+  "updated_at": "2026-10-11T13:55:46Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing the local Original and external sound acceptance audit for DP-15.",
+  "focus": "Completing the remaining source and editing-operation qualification for DP-02 and DP-16.",
   "features": [
     {
       "id": "editing",
@@ -67,12 +67,12 @@
     {
       "id": "import",
       "name": "Video and sound import",
-      "status": "mostly",
+      "status": "done",
       "requirements": [
         "DP-14",
         "DP-15"
       ],
-      "note": "YouTube import is complete under the local verification scope. Selected sound repair, linked sound moves and Original picture recovery are verified. The broader local Original and sound acceptance audit remains."
+      "note": "YouTube and local import are complete under the local verification scope. Managed/linked Originals, sound repair, missing-media export refusal and portable sound export are verified."
     },
     {
       "id": "render",
@@ -429,6 +429,14 @@
       "revision": "e3cf4e0471c9f2d7f250688381845204b2273c6c",
       "retrospective": false,
       "summary": "Implemented selected sound repair and corrected missing-media recovery. Linked sound moves preserve history; 1,106 app tests across runs, strict Clippy and final Metal recovery replays pass."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 7,
+      "revision": "7fa6dd062dd75c94f94cef6cc2d306cc0f4c86e6",
+      "retrospective": false,
+      "summary": "Closed DP-15: verified missing/corrupt sound export refusal, identical repair, portable linked sound export, explicit container-audio import and deduplication. All 360 picture comparisons, six zero-offset signal windows and 36 focused store tests pass."
     }
   ]
 }

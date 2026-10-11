@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "revision": "f9354999-43c7-44df-976d-3f4de7356de1",
+  "checks": [
+    "catalog preserves picture, basis and Original",
+    "missing placed sound prevents publication without document changes",
+    "same-length corrupt placed sound prevents publication without document changes",
+    "identical restoration renders without document changes",
+    "portable copy renders with external sound absent and unchanged authored state",
+    "source package still refuses with external sound absent"
+  ]
+}

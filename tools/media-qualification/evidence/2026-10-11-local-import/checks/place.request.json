@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "expected_revision": "linked-sound-registration",
+  "edit": {
+    "type": "place",
+    "asset": "linked-sound",
+    "at": {
+      "frame": 10
+    }
+  }
+}

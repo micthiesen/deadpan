@@ -122,12 +122,14 @@ retained evidence are in [Requirements](REQUIREMENTS.md). A file-picker filter
 does not qualify an additional codec or container grammar. Exact source clocks,
 priming evidence, verified bytes and bounded decoding remain required.
 
-Native sound import chooses the first actual admitted audio track, including
+By default, native sound import chooses the first actual admitted audio track, including
 MP4 with video at stream 0 and audio at stream 1. `AudioSession::open_first_input`
 and `AudioDecoder::open_first` resolve it through the same bounded complete
 container admission pass as explicit selection, sharing opening byte/deadline
-budgets. They do not probe guessed streams or weaken allocation guards. Explicit
-stream selection remains available through the backend.
+budgets. They do not probe guessed streams or weaken allocation guards. The Sound
+import options panel also offers an explicit container stream index; choosing a
+non-audio stream fails without changing the edit. The headless registration
+request exposes the same explicit selection.
 
 Sound-event placement, analysis, local AI candidates with explicit acceptance,
 playback and export now have implemented paths and qualification records.

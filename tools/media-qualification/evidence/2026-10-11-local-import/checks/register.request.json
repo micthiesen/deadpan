@@ -1,0 +1,19 @@
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "538ffdfb-fd3d-4213-918b-13ab84bdd9d8",
+    "new_revision": "linked-sound-registration",
+    "original": {
+      "algorithm": "blake3",
+      "digest": "ea0f6c331dca8f5eb0f56c91fe99bb5bdbc74f5b07082cdee070ac57d11b08a7"
+    },
+    "new_asset_id": "linked-sound",
+    "label": "Linked sound",
+    "insertion": null
+  },
+  "streams": {
+    "type": "audio_only",
+    "stream": 0,
+    "interpretation": "stereo_left_right"
+  }
+}

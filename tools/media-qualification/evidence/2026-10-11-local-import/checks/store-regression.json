@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "single_source",
+    "--test",
+    "original_media",
+    "--test",
+    "original_preparation",
+    "--test",
+    "prepared_relink",
+    "--test",
+    "bookmarks"
+  ],
+  "exit": 0,
+  "seconds": 12.549025792162865,
+  "log_sha256": "97541c078196a2e927fb75e0a2eada7ef27370c7a6aed9976c3884307f68ec3f"
+}

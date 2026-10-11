@@ -1,0 +1,29 @@
+{
+  "created": {
+    "asset_id": "d91a258f-dc28-4161-b37a-c72891f9b9f6",
+    "byte_length": 39157,
+    "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+    "duration_frames": 120,
+    "node": "c5bdcf05-0584-48a7-8da9-a4ef02ef26b6",
+    "presentation_basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "height": 180,
+      "width": 320
+    },
+    "project_id": "9ca3683f-632c-42db-ad9e-7c6f83782033",
+    "revision_id": "538ffdfb-fd3d-4213-918b-13ab84bdd9d8",
+    "single_source": {
+      "asset": "d91a258f-dc28-4161-b37a-c72891f9b9f6",
+      "baseline_revision": "538ffdfb-fd3d-4213-918b-13ab84bdd9d8",
+      "initial_revision": "19c017a1-10c2-4759-ba4a-7d6d7b195f65",
+      "node": "c5bdcf05-0584-48a7-8da9-a4ef02ef26b6",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+      "state": "ready"
+    }
+  },
+  "protocol": 1
+}

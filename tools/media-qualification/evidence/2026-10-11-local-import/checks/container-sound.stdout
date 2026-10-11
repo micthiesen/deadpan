@@ -1,0 +1,53 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "container-sound",
+    "commit": {
+      "edit": {
+        "changed_ids": [],
+        "description": "Import source media",
+        "duration_delta": 0,
+        "forward": {
+          "assets": {
+            "container-sound": {
+              "after": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": null,
+                "label": "Container audio only",
+                "source_qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d",
+                "still_image": false,
+                "video": null
+              },
+              "before": null
+            }
+          },
+          "from_revision": "f9354999-43c7-44df-976d-3f4de7356de1",
+          "marks": {},
+          "nodes": {},
+          "overrides": {},
+          "project_id": "9ca3683f-632c-42db-ad9e-7c6f83782033",
+          "to_revision": "container-sound-registration"
+        }
+      },
+      "revision_id": "container-sound-registration"
+    },
+    "qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d"
+  },
+  "protocol": 1
+}

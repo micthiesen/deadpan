@@ -1,0 +1,53 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "linked-sound",
+    "commit": {
+      "edit": {
+        "changed_ids": [],
+        "description": "Import source media",
+        "duration_delta": 0,
+        "forward": {
+          "assets": {
+            "linked-sound": {
+              "after": {
+                "audio": {
+                  "end": {
+                    "ticks": 8197,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:ea0f6c331dca8f5eb0f56c91fe99bb5bdbc74f5b07082cdee070ac57d11b08a7",
+                "frame_count": null,
+                "label": "Linked sound",
+                "source_qualification": "4cc62c2933800b83484029a9e52c07a4de6398e058b8f962822c6ac5ea9b8364",
+                "still_image": false,
+                "video": null
+              },
+              "before": null
+            }
+          },
+          "from_revision": "538ffdfb-fd3d-4213-918b-13ab84bdd9d8",
+          "marks": {},
+          "nodes": {},
+          "overrides": {},
+          "project_id": "9ca3683f-632c-42db-ad9e-7c6f83782033",
+          "to_revision": "linked-sound-registration"
+        }
+      },
+      "revision_id": "linked-sound-registration"
+    },
+    "qualification": "4cc62c2933800b83484029a9e52c07a4de6398e058b8f962822c6ac5ea9b8364"
+  },
+  "protocol": 1
+}

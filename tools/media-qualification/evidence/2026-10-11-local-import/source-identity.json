@@ -1,0 +1,22 @@
+{
+  "source_revision": "7fa6dd062dd75c94f94cef6cc2d306cc0f4c86e6",
+  "binary_sha256": "843934fc640fcd5a2169e4ba3a25cd686e75bbeb125764679448acbda4de2e9d",
+  "files": {
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "crates/deadpan-store/tests/single_source.rs": "51610c8d6e6c6f9775711cff95a45270553081047e52e972cfd44b3362bfae3b",
+    "crates/deadpan-store/tests/original_media.rs": "bf42087f462aabef149962c43b0e20897d6f9a68c4c952304324837c2a3a4a90",
+    "crates/deadpan-store/tests/original_preparation.rs": "538a5f5b9aa377ac17a3283fab4c05fac9e271e40b85f1543ba0d4b06e198ab9",
+    "crates/deadpan-store/tests/prepared_relink.rs": "77c19de195fecf6768ece3781bcff7b459c2403027413211f3d10b96e651877f",
+    "crates/deadpan-store/tests/bookmarks.rs": "d829c167cf6002794e354eb5d060594482513094fa07046917f9d3f8ea60d23a"
+  },
+  "scratch": "/tmp/deadpan-local-import-acceptance-20261011",
+  "environment": {
+    "machine": "Apple M5 Max, 128 GiB",
+    "os": "macOS 26.5.2",
+    "rust": "1.97.1",
+    "ffmpeg": "8.0.3 (qualified-3 prefix)"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "f9354999-43c7-44df-976d-3f4de7356de1",
+    "new_revision": "container-sound-registration",
+    "original": {
+      "algorithm": "blake3",
+      "digest": "16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    "new_asset_id": "container-sound",
+    "label": "Container audio only",
+    "insertion": null
+  },
+  "streams": {
+    "type": "audio_only",
+    "stream": 0
+  }
+}

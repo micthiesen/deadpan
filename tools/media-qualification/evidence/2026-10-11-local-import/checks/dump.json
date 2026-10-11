@@ -1,0 +1,11 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "project",
+    "dump",
+    "/tmp/deadpan-local-import-acceptance-20261011/Original.deadpan"
+  ],
+  "exit": 1,
+  "seconds": 0.006729332730174065,
+  "log_sha256": "b1fa12ed1e00e72440a71b6738a79f45e61913bcc23c60d187afc7b65b5e5519"
+}

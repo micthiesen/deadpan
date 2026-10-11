@@ -1,0 +1,13 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "project",
+    "retain-original",
+    "/tmp/deadpan-local-import-acceptance-20261011/Original.deadpan",
+    "/tmp/deadpan-local-import-acceptance-20261011/linked.wav",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 0.04615799989551306,
+  "log_sha256": "f91803af0d1679d6d16b871d71785bdd5fadf66fab0363cebeb4eba368b98d5a"
+}
