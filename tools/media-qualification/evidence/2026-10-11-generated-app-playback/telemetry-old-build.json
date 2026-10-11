@@ -1,0 +1,13 @@
+{
+  "command": [
+    "rustc",
+    "--test",
+    "--edition=2024",
+    "/tmp/deadpan-generated-playback-performance-20261011/telemetry-old/test.rs",
+    "-o",
+    "/tmp/deadpan-generated-playback-performance-20261011/telemetry-old/tests"
+  ],
+  "exit": 0,
+  "seconds": 0.14179725013673306,
+  "log_sha256": "f112ce441ff088b3a73c48fe12525bbc4c61c3e54e59895ab5957affa3a7a5ab"
+}

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-generated-playback-performance-20261011/check.py"
+  ],
+  "exit": 0,
+  "seconds": 0.29150562500581145,
+  "log_sha256": "dd0a162311f656d37b2ba8ddf4a8c3dc1a71d3106379917589546165b0c6245a"
+}

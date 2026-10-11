@@ -278,6 +278,9 @@ project session. The foreground reader still validates it before use. If
 entry catches unfinished preparation, it waits for that same admission rather
 than opening another decoder. See the [Generated handoff](qualification/generated-playback-cache-2026-10-11.md)
 and [entry preparation](qualification/generated-prefetch-2026-10-11.md) records.
+The [actual app playback measurement](qualification/generated-app-playback-2026-10-11.md) uses real accepted LTX
+pictures, 1080p60/4K30 Originals, device audio and offscreen Metal: all
+1,830/615 frames are presented, without skips, proxy pictures or audio faults.
 `:diagnostics`
 counts look-ahead jobs started, reached, swapped and failed. See the
 [selection-loop qualification](qualification/loop-lookahead-2026-10-11.md).

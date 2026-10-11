@@ -166,6 +166,19 @@ pub struct Presentation {
 }
 
 impl Presentation {
+    /// Successfully submitted committed Edit picture, including transport identity.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn displayed_sequence(&self) -> Option<(deadpan_core::ProjectFrame, Ticket)> {
+        let picture = self.displayed.as_ref()?;
+        match picture.request.location {
+            Location::Project {
+                view: ProjectView::Sequence { frame },
+                ..
+            } => Some((frame, picture.request.ticket)),
+            _ => None,
+        }
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(crate) fn displayed_matches(
         &self,

@@ -4,14 +4,22 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Real Generated playback in the app](../qualification/generated-app-playback-2026-10-11.md)
+now qualifies the actual preview worker with real accepted LTX pictures,
+full-resolution Originals and device audio. All 1,830 frames at 1080p60 and
+615 frames at 4K30 reach offscreen Metal, with no skips, proxies, underruns or
+faults. A replay telemetry fix retains completion timing when the next decode
+is requested in the same UI pass. Full format/effects and broader transition
+stress remain open; DP-16 stays partial.
+
 [Cold Generated entry](../qualification/generated-prefetch-2026-10-11.md)
 now prepares the next accepted Hold before playback reaches it. One cancellable
 job verifies the retained objects, measures its master and decodes the first
 picture; the foreground reader revalidates before adoption. Four real-media
 tests, 44 ordinary worker tests, 60 media unit tests and strict Clippy pass.
-Prepared entry is 0.17–0.22 ms on the small fixture. Full-resolution measurements
-must use the actual preview worker, since the CLI perf reader does not exercise
-this app-owned cache. DP-16 remains partial.
+Prepared entry is 0.17–0.22 ms on the small fixture. The full-resolution app
+measurement above uses the actual preview worker; the CLI perf reader does not
+exercise this app-owned cache. DP-16 remains partial.
 
 [Generated playback decoder reuse](../qualification/generated-playback-cache-2026-10-11.md)
 keeps the Original and its companion across accepted Holds and reuses the
@@ -19,7 +27,7 @@ Generated decoder on later entry. Three selection-loop laps preserve all 90
 picture buffers and serve both Original returns ahead; 41 ordinary worker
 tests, both fixture tests and strict Clippy pass. Cancellation releases inactive
 playback decoders even without a new picture. The cold-entry follow-up is above;
-full-resolution device measurements remain open under DP-16.
+the full-resolution app/device measurement is also recorded above.
 
 [Selection-loop picture preparation](../qualification/loop-lookahead-2026-10-11.md)
 now covers Original and Edit, including measured VFR, partial-frame audition

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/tmp/deadpan-generated-playback-performance-20261011/smoke-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "generated-playback",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--project",
+    "/tmp/deadpan-generated-playback-performance-20261011/4k-fallback.deadpan",
+    "--output",
+    "/tmp/deadpan-generated-playback-performance-20261011/smoke-4k"
+  ],
+  "exit": 0,
+  "seconds": 34.33076841710135,
+  "log_sha256": "0321c765ce5192a8d20b25f9fbdf2eca5f53840ace5a8f4b07c43ca793ac4e8f"
+}

@@ -123,16 +123,21 @@ struct Request<T> {
     requested: Instant,
     input: Option<Instant>,
     decoded: bool,
-    submitted: bool,
 }
 
 pub(super) struct PictureTelemetry<T> {
     active: Option<Request<T>>,
+    /// A picture may already be submitted when this UI pass requests the next
+    /// decode. That request cannot revoke the pending composition measurement.
+    submitted: Option<Request<T>>,
 }
 
 impl<T> Default for PictureTelemetry<T> {
     fn default() -> Self {
-        Self { active: None }
+        Self {
+            active: None,
+            submitted: None,
+        }
     }
 }
 
@@ -148,6 +153,7 @@ impl<T: Copy + Eq> PictureTelemetry<T> {
         };
         let mut requested = None;
         let mut first_decode = false;
+        let mut submitted = false;
         if event.stage == "picture_requested" {
             if let Some(previous) = self.active.take() {
                 observed.events.push(Event {
@@ -164,7 +170,6 @@ impl<T: Copy + Eq> PictureTelemetry<T> {
                 requested: event.at,
                 input,
                 decoded: false,
-                submitted: false,
             });
         } else if event.outcome != Some(Outcome::Stale) {
             let active = self
@@ -188,11 +193,8 @@ impl<T: Copy + Eq> PictureTelemetry<T> {
                         name: "request_to_decode_delivery_ms",
                         elapsed_ms: milliseconds(event.at, request.requested),
                     });
-                } else if event.stage == "picture_submitted"
-                    && request.decoded
-                    && !request.submitted
-                {
-                    request.submitted = true;
+                } else if event.stage == "picture_submitted" && request.decoded {
+                    submitted = true;
                     observed.measurements.push(Measurement {
                         name: "request_to_picture_submission_ms",
                         elapsed_ms: milliseconds(event.at, request.requested),
@@ -208,6 +210,21 @@ impl<T: Copy + Eq> PictureTelemetry<T> {
                 });
             }
         }
+        if submitted {
+            // Only the final submitted picture can be visible in this UI
+            // composition. Merely requesting its successor does not replace it.
+            if let Some(previous) = self.submitted.take() {
+                observed.events.push(Event {
+                    stage: "picture_superseded",
+                    at: event.at,
+                    ticket: Some(previous.ticket),
+                    outcome: Some(Outcome::Superseded),
+                    request_elapsed_ms: Some(milliseconds(event.at, previous.requested)),
+                    worker_timing: None,
+                });
+            }
+            self.submitted = self.active.take();
+        }
         if event.stage == "picture_received" {
             observed.worker_timing(&event, requested, first_decode);
         }
@@ -221,14 +238,9 @@ impl<T: Copy + Eq> PictureTelemetry<T> {
             events: Vec::new(),
             measurements: Vec::new(),
         };
-        if !self
-            .active
-            .as_ref()
-            .is_some_and(|request| request.submitted)
-        {
+        let Some(request) = self.submitted.take() else {
             return observed;
-        }
-        let request = self.active.take().expect("submitted request checked");
+        };
         let elapsed_ms = milliseconds(at, request.requested);
         observed.events.push(Event {
             stage: "picture_composed",
@@ -532,6 +544,112 @@ mod tests {
         assert_eq!(completed.events[0].ticket, Some(2));
         assert_eq!(completed.measurements[0].elapsed_ms, 6.0);
         assert_eq!(completed.measurements[1].elapsed_ms, 9.0);
+    }
+
+    #[test]
+    fn next_decode_request_preserves_the_submitted_picture_until_composition() {
+        let base = Instant::now();
+        let mut telemetry = PictureTelemetry::default();
+        for (ms, stage, outcome) in [
+            (1, "picture_requested", Outcome::Requested),
+            (2, "picture_received", Outcome::Decoded),
+            (3, "picture_submitted", Outcome::Submitted),
+        ] {
+            telemetry.observe(event(base, ms, stage, 1, outcome), Some(base));
+        }
+        let next = telemetry.observe(
+            event(base, 4, "picture_requested", 2, Outcome::Requested),
+            None,
+        );
+        assert!(
+            next.events
+                .iter()
+                .all(|e| e.outcome != Some(Outcome::Superseded))
+        );
+        let first = telemetry.composed(base + Duration::from_millis(5));
+        assert_eq!(first.events[0].ticket, Some(1));
+        assert_eq!(
+            measured(&first),
+            vec![
+                ("request_to_picture_complete_ms", 4.0),
+                ("input_to_picture_complete_ms", 5.0)
+            ]
+        );
+        // Completing the previous composition must also preserve the new request.
+        telemetry.observe(
+            event(base, 6, "picture_received", 2, Outcome::Decoded),
+            None,
+        );
+        telemetry.observe(
+            event(base, 7, "picture_submitted", 2, Outcome::Submitted),
+            None,
+        );
+        let second = telemetry.composed(base + Duration::from_millis(8));
+        assert_eq!(second.events[0].ticket, Some(2));
+        assert_eq!(
+            measured(&second),
+            vec![("request_to_picture_complete_ms", 4.0)]
+        );
+    }
+
+    #[test]
+    fn a_new_submission_replaces_the_uncomposed_picture_but_a_failed_decode_does_not() {
+        for fails in [false, true] {
+            let base = Instant::now();
+            let mut telemetry = PictureTelemetry::default();
+            for ticket in [1, 2] {
+                let ms = ticket * 3;
+                telemetry.observe(
+                    event(base, ms, "picture_requested", ticket, Outcome::Requested),
+                    None,
+                );
+                telemetry.observe(
+                    event(
+                        base,
+                        ms + 1,
+                        "picture_received",
+                        ticket,
+                        if fails && ticket == 2 {
+                            Outcome::Failed
+                        } else {
+                            Outcome::Decoded
+                        },
+                    ),
+                    None,
+                );
+                if !fails || ticket == 1 {
+                    let submitted = telemetry.observe(
+                        event(
+                            base,
+                            ms + 2,
+                            "picture_submitted",
+                            ticket,
+                            Outcome::Submitted,
+                        ),
+                        None,
+                    );
+                    if ticket == 2 {
+                        assert_eq!(submitted.events[0].ticket, Some(1));
+                        assert_eq!(submitted.events[0].outcome, Some(Outcome::Superseded));
+                    }
+                }
+            }
+            let completed = telemetry.composed(base + Duration::from_millis(10));
+            assert_eq!(completed.events[0].ticket, Some(if fails { 1 } else { 2 }));
+            assert_eq!(
+                measured(&completed),
+                vec![(
+                    "request_to_picture_complete_ms",
+                    if fails { 7.0 } else { 4.0 }
+                )]
+            );
+            assert!(
+                telemetry
+                    .composed(base + Duration::from_millis(11))
+                    .events
+                    .is_empty()
+            );
+        }
     }
 
     #[test]

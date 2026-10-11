@@ -1,0 +1,38 @@
+{
+  "Media/Generated/blake3-33d0b03a9f09db0b0848d9cf6edc311173c3405fe01369f97caf8651007c8742": {
+    "bytes": 59311,
+    "sha256": "fe6a65445936e13fa098425c531159be1becbf69014c9ffc762c86e22d01ed50"
+  },
+  "Media/Generated/blake3-809d8d220de21228b0645c48e0a83a2769719084ec0ab7c76e033a4f46c62ff6": {
+    "bytes": 2711,
+    "sha256": "ea565a0e98a26e9b3ecc1098fef942ef30de51d481447e8623153b26b4d85c0b"
+  },
+  "Media/Generated/blake3-964f95faba38cb063d9d331d05b549c4e55b89f768bd58a5e4519e4d8110dda5": {
+    "bytes": 48782,
+    "sha256": "e15a4f1a92771bc2660a74998910ac61c68cb2a78671ea6adbdc63f8628a85a6"
+  },
+  "Media/Generated/blake3-9919f174b8e5718110ad73d542ba076646881d87de4d8e33ea4b9e9d70c9346b": {
+    "bytes": 5522864,
+    "sha256": "8fda25c27df11793a4b79b89aeff8fe50b8ae6e5c733a7631c69a7dff157cff8"
+  },
+  "Media/Generated/blake3-fb8f380f9c41b06cfef5682ffb89fc4ee4c98b3a1d0290977b12f8d89b0cf87b": {
+    "bytes": 3145466,
+    "sha256": "649b3cd8e11dfd775ba6127f3960e359489e7805717ca2ab4e5ccbe8da617229"
+  },
+  "Media/Generated/blake3-fc6810c425c2909daf2f1e4045f6461194699d4652906521faa41cccf9b0cc9c": {
+    "bytes": 48800,
+    "sha256": "deaa93648305b4df87aca5d63d51b36e89279721ef93ac997c7de40c88704bb1"
+  },
+  "Media/Originals/blake3-144902c04763939aed86f5af14bd825fe64cbec56a4eed604a44969fd41aad6f": {
+    "bytes": 31504988,
+    "sha256": "85377055f664e7203560fa5138406faf69454d0c190d88f82d80010dc249eb0b"
+  },
+  "manifest.json": {
+    "bytes": 82,
+    "sha256": "3182b2c47f3904944458ec363f299bd91d7ee516fe131c91140a4c17131b4ecf"
+  },
+  "project.sqlite": {
+    "bytes": 921600,
+    "sha256": "b5de06717c1a3958c8b46142856ae09b346a18daae6b79374000f66ada7e9a21"
+  }
+}

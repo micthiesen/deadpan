@@ -1,0 +1,182 @@
+{
+  "verified-4k": {
+    "frames": 615,
+    "generated_frames": 15,
+    "missing_frames": [],
+    "audio": {
+      "device_reports": 1925,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 16083,
+      "silent_padding_frames": 1600,
+      "underruns": 0
+    },
+    "ended": true,
+    "first_audio_ms": 169.157,
+    "elapsed_ms": 20682.0075,
+    "viewport": [
+      1280.0,
+      820.0
+    ],
+    "basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "height": 2160,
+      "width": 3840
+    },
+    "native_picture_counts": {
+      "exact": 600,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 615,
+      "skipped": 0
+    },
+    "transitions": [
+      {
+        "frame": 15,
+        "generated": true,
+        "heard_sample": 24676,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 19 }",
+        "wall_ms": 682.9078750000001,
+        "worker_ms": 0.203416,
+        "request_to_composed_ms": 12.955834
+      },
+      {
+        "frame": 30,
+        "generated": false,
+        "heard_sample": 48741,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 34 }",
+        "wall_ms": 1190.47075,
+        "worker_ms": 8.967916,
+        "request_to_composed_ms": 17.375542
+      }
+    ],
+    "worker_ms": {
+      "count": 615,
+      "p50": 8.923667,
+      "p95": 11.426416,
+      "max": 12.548333
+    },
+    "request_to_composed_ms": {
+      "count": 615,
+      "p50": 16.636374999999997,
+      "p95": 25.768708,
+      "max": 29.334334
+    },
+    "sampled_clock_lag_frames": {
+      "count": 615,
+      "p50": 0,
+      "p95": 0,
+      "max": 1
+    },
+    "checks": 8,
+    "failures": [],
+    "warnings": [
+      {
+        "message": "3 frame(s) settled their layout only on a second retry: [{\"frame\":43,\"input\":\"Command proxies off\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":45,\"input\":\"Command monitor 5%\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":47,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":41,\"input\":\"Accepted playback fixture copy opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":42,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":43,\"input\":\"Command proxies off\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":44,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":45,\"input\":\"Command monitor 5%\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":46,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":47,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]}]]",
+        "severity": "warning"
+      }
+    ]
+  },
+  "verified-1080p": {
+    "frames": 1830,
+    "generated_frames": 30,
+    "missing_frames": [],
+    "audio": {
+      "device_reports": 2862,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 11750,
+      "silent_padding_frames": 1344,
+      "underruns": 0
+    },
+    "ended": true,
+    "first_audio_ms": 162.603834,
+    "elapsed_ms": 30668.400209000003,
+    "viewport": [
+      1280.0,
+      820.0
+    ],
+    "basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 60
+      },
+      "height": 1080,
+      "width": 1920
+    },
+    "native_picture_counts": {
+      "exact": 1800,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 1830,
+      "skipped": 0
+    },
+    "transitions": [
+      {
+        "frame": 15,
+        "generated": true,
+        "heard_sample": 12692,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 19 }",
+        "wall_ms": 420.931959,
+        "worker_ms": 0.16333299999999998,
+        "request_to_composed_ms": 9.159375
+      },
+      {
+        "frame": 45,
+        "generated": false,
+        "heard_sample": 36697,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 49 }",
+        "wall_ms": 922.039834,
+        "worker_ms": 2.189958,
+        "request_to_composed_ms": 11.129958
+      }
+    ],
+    "worker_ms": {
+      "count": 1830,
+      "p50": 3.149625,
+      "p95": 5.649542,
+      "max": 6.560416
+    },
+    "request_to_composed_ms": {
+      "count": 1830,
+      "p50": 12.1595,
+      "p95": 13.997416000000001,
+      "max": 19.921583
+    },
+    "sampled_clock_lag_frames": {
+      "count": 1830,
+      "p50": 0,
+      "p95": 1,
+      "max": 1
+    },
+    "checks": 8,
+    "failures": [],
+    "warnings": [
+      {
+        "message": "3 frame(s) settled their layout only on a second retry: [{\"frame\":47,\"input\":\"Command proxies off\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":49,\"input\":\"Command monitor 5%\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":51,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":45,\"input\":\"Accepted playback fixture copy opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":46,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":47,\"input\":\"Command proxies off\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":48,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":49,\"input\":\"Command monitor 5%\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]},{\"frame\":50,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5617)\"]},{\"frame\":51,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5232)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5365)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3931)\"]}]]",
+        "severity": "warning"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "a4c4d143-4af3-497a-bad8-93b17f72ab11",
+  "expected_revision": "speech-freeze",
+  "new_revision": "1080p-half-second-hold",
+  "command": {
+    "command": "set_hold_duration",
+    "node": "freeze",
+    "duration": 30
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "target/release/deps/generated_joins-822f8b0389d703ae",
+    "accepted_ai_pause_meets_the_original_with_exact_hard_cuts",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 3.5289294589310884,
+  "log_sha256": "2df61852fa00026793e60ccd7cd56d2af5fadbcd256aa4a68712334c45bfbafc"
+}

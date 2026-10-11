@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/tmp/deadpan-generated-playback-performance-20261011/telemetry-old/tests",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 0.0035650827921926975,
+  "log_sha256": "68e72a27fc46de15ca9abe30884bdd6a1e82db44bc16bb6243fb36312432b02d"
+}

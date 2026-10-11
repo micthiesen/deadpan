@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-generated-playback-performance-20261011/bin-verified/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-playback",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-generated-playback-performance-20261011/control-sound"
+  ],
+  "exit": 0,
+  "seconds": 12.658722416963428,
+  "log_sha256": "f0e1a5c259b459b0a4c6a93f51fa55cd7ad49910ea131f03804e45cc0fb97478"
+}

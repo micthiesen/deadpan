@@ -26,9 +26,13 @@ retains Original decode-ahead across Generated Holds and reuses the Generated
 decoder on repeated entry. Its bounded fixture checks verify handoff and pixels;
 [Cold Generated preparation](qualification/generated-prefetch-2026-10-11.md)
 now admits and decodes the upcoming Hold before entry; its small-fixture
-prepared entry takes 0.17–0.22 ms. Full-resolution device measurements remain open.
-A target
-without a measured workload is open, never passed.
+prepared entry takes 0.17–0.22 ms. The [real app playback qualification](qualification/generated-app-playback-2026-10-11.md)
+then exercises real accepted LTX pictures and full-resolution 1080p60/4K30
+Originals through the app worker, real device audio and complete offscreen Metal
+UI. Every picture is presented, with zero skips, proxies, underruns or faults.
+The record separates worker time from complete UI composition and documents
+the timing bookkeeping correction. A target without a measured workload is
+open, never passed.
 
 ## Run the suite
 

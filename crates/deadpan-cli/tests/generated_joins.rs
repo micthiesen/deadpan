@@ -363,14 +363,19 @@ fn scenario(media: Media) -> Result<Option<Scenario>> {
     let fixture = root.path().canonicalize()?.join("fixture");
     let (package, base, freeze) = match media {
         Media::Counter => {
-            let fixture = recipes::freeze_hold(&fixture)?;
-            // freeze_hold commits two shortening deletions, then the insertion.
-            assert_eq!(fixture.revision, "freeze-hold-r03");
-            (
-                fixture.package.clone(),
-                RevisionId::new("freeze-hold-r02")?,
-                RevisionId::new(fixture.revision.clone())?,
-            )
+            if let Some(source) = std::env::var_os("DEADPAN_GENERATED_PREVIEW_SOURCE") {
+                std::fs::create_dir_all(&fixture)?;
+                insert_freeze(&fixture, Path::new(&source))?
+            } else {
+                let fixture = recipes::freeze_hold(&fixture)?;
+                // freeze_hold commits two shortening deletions, then the insertion.
+                assert_eq!(fixture.revision, "freeze-hold-r03");
+                (
+                    fixture.package.clone(),
+                    RevisionId::new("freeze-hold-r02")?,
+                    RevisionId::new(fixture.revision.clone())?,
+                )
+            }
         }
         Media::Speech => {
             std::fs::create_dir_all(&fixture)?;
@@ -378,6 +383,16 @@ fn scenario(media: Media) -> Result<Option<Scenario>> {
             insert_freeze(&fixture, &media)?
         }
     };
+    // Optional full-resolution qualification inputs use the same real import
+    // and pause command. Export before allocating any synthetic request so a
+    // later real-model run starts from an ordinary committed fallback.
+    if let Some(destination) = std::env::var_os("DEADPAN_GENERATED_FALLBACK_EXPORT") {
+        deadpan_store::portable::copy_portable(
+            &package,
+            Path::new(&destination),
+            &AtomicBool::new(false),
+        )?;
+    }
     let hold = NodeId::new("freeze")?;
     let base_frames = {
         let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;

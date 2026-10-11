@@ -11,6 +11,18 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The explicit `generated-playback` scenario exercises the real playback engine,
+app preview worker and complete offscreen Metal UI on a verified private copy
+of an accepted project. Run it with `--mode performance --project
+/absolute/accepted.deadpan --hz 120`. It opens device audio at 5% monitor gain,
+disables proxies, starts at Edit frame zero and records every displayed frame,
+device counters and Original/Generated coverage in `generated-playback.json`.
+Fixtures must fit within 32 seconds and include Original pictures on both sides
+of accepted Generated pictures. Ordinary replay batches skip it; all other
+scenarios retain their simulated delivery. No native window or screenshot
+readback is involved, and this does not measure physical display latency or
+listening.
+
 `cargo xtask replays` now replays every scenario from one harness build (see
 [All scenarios](#all-scenarios)). On 2026-10-04 with three jobs it ran 43
 scenarios (two fixture-only skips) in about 14 minutes wall, 5,838 checks; the

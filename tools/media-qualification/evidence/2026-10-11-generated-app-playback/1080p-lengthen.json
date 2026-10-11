@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "command",
+    "/tmp/deadpan-generated-playback-performance-20261011/1080p-fallback.deadpan",
+    "--json",
+    "/tmp/deadpan-generated-playback-performance-20261011/1080p-lengthen.json"
+  ],
+  "exit": 0,
+  "seconds": 0.042693416588008404,
+  "log_sha256": "833aa857e75292f48669f36edaf65db43c3dba8c15b58ca20d741c48d59d4a3a"
+}

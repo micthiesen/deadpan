@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "accept-hold",
+    "/tmp/deadpan-generated-playback-performance-20261011/4k-fallback.deadpan",
+    "--request",
+    "ai-hold-b8453d382cd240d79667dcdc0318933b"
+  ],
+  "exit": 0,
+  "seconds": 0.09044770803302526,
+  "log_sha256": "621d4c248556fbe9ed4ffc51a39dc4dc52e7bd1531ff090bd880003a2fec22f2"
+}

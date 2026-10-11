@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "generate-hold",
+    "/tmp/deadpan-generated-playback-performance-20261011/1080p-fallback.deadpan",
+    "--hold",
+    "freeze",
+    "--seed",
+    "812"
+  ],
+  "exit": 0,
+  "seconds": 81.9232061249204,
+  "log_sha256": "bbdf4f8061a2be35650c02e2dc48c0816a2754f5925e3931d330772c31d9c7a4"
+}

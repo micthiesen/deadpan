@@ -1,0 +1,20 @@
+{
+  "reviewer": "implementing agent only, as requested by the user",
+  "scope": [
+    "explicit real-audio replay opt-in and ordinary batch skipping",
+    "verified private project copies and unchanged authored revision",
+    "bounded plan scan, wall time, trace and frame coverage",
+    "device generation filtering and actual GPU submission identity",
+    "separate pending decode and submitted composition lifetimes",
+    "complete old/fixed regression evidence and source/binary provenance"
+  ],
+  "fixed_finding": "An upcoming decode request superseded an already submitted picture in replay telemetry. Keep one pending request and one submitted picture; only an actual replacement submission supersedes the latter.",
+  "limits": [
+    "No independent reviewer or additional agent was used.",
+    "Full-resolution test-pattern Originals feed the smaller native workspace viewer; no 4K display target is claimed.",
+    "Clock lag uses the UI-admitted device estimate before GPU completion, not listening or physical scanout.",
+    "Ordinary playthroughs do not qualify loops, multiple Generated objects or memory/inference stress.",
+    "Resource totals include fixture copying, trace collection and report generation."
+  ],
+  "result": "No remaining implementation finding in the reviewed change; final evidence checker must pass before commit."
+}
