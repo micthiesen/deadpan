@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T21:51:20Z",
+  "updated_at": "2026-10-11T22:17:48Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete independently timed group automation, EQ/filtering, arbitrary effect sends, oversampled shaping, long-source preparation, full mastering, remaining format/color and full-workflow/release obligations. DP-09 and DP-16 remain partial.",
+  "focus": "Complete disk-backed long-output preparation and background caches, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
   "features": [
     {
       "id": "editing",
@@ -557,6 +557,14 @@
       "revision": "541c45c1bfc8ad556d6114d14163218eb661ac00",
       "retrospective": false,
       "summary": "Fixed group saturation after fractional-sample moves: exact per-sample transfer agreement and conservative silent-Original routing. All 961 plan/audio/playback tests, archived regressions, strict Clippy and release AAC export verification pass."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "42e822bfbfdca1d0d5a699e912f2c395c67de6cd",
+      "retrospective": false,
+      "summary": "Streamed Preserve input removes the 21.8-second cap without changing canonical PCM. Two-minute decoded-WAV processing, 1,629 suite tests plus a dependency regression, ASan/UBSan and 150-picture/five-window release export checks pass. Output storage and total work remain bounded."
     }
   ]
 }
