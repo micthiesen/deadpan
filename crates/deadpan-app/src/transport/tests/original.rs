@@ -153,6 +153,57 @@ fn original_vfr_uses_measured_picture_boundaries_at_a_different_project_rate() {
 }
 
 #[test]
+fn original_loop_lookahead_uses_measured_vfr_and_offset_picture_windows() {
+    use deadpan_media::lookahead::LoopLookAhead;
+    for name in ["vfr.mp4", "offset-bframes.mp4"] {
+        let original = original(FrameRate::new(24, 1).unwrap(), qualified_receipt(name));
+        let domain = Domain::Original(original.clone());
+        let window = domain
+            .selection_window(3..10, AudioSample(0), AudioSample(0))
+            .unwrap();
+        let mut run = Run::with_domain(identity(), domain, window, window.start()).unwrap();
+        // These fixtures' selections are shorter than the four-second horizon.
+        assert_eq!(run.loop_lookahead().unwrap(), LoopLookAhead::new(3, 10, 10));
+        run.sample = AudioSample(window.end().0 - 1);
+        assert_eq!(run.loop_lookahead().unwrap(), LoopLookAhead::new(3, 10, 16));
+        run.sample = window.end();
+        assert_eq!(run.picture_frame().unwrap(), 3);
+        assert_eq!(run.loop_lookahead().unwrap(), LoopLookAhead::new(3, 10, 10));
+    }
+}
+
+#[test]
+fn last_original_picture_prepares_the_seam_before_a_long_hold_without_more_requests() {
+    use deadpan_media::lookahead::LoopLookAhead;
+    // A deliberately slow project rate leaves a long outward enclosure after
+    // this VFR Original. Like an audio tail or a long final VFR duration, it
+    // holds the last picture while the audible clock continues advancing.
+    let original = original(FrameRate::new(1, 20).unwrap(), qualified_receipt("vfr.mp4"));
+    let count = original.frame_count();
+    let last = original.sample_at_boundary(count - 1).unwrap();
+    let window = Window::new(AudioSample(0), original.end(), true).unwrap();
+    assert!(window.end().0 - last.0 > 5 * 48_000);
+    let mut run = Run::with_domain(identity(), Domain::Original(original), window, last).unwrap();
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let generation = feed.restart(last.0).unwrap();
+    run.generation = Some(generation);
+    run.phase = Phase::Playing;
+    assert_eq!(run.picture_frame().unwrap(), count - 1);
+    assert_eq!(run.picture(count - 1, false), Some(generation));
+    assert_eq!(
+        run.loop_lookahead().unwrap(),
+        LoopLookAhead::new(0, count as i64, count as i64)
+    );
+    run.sample.0 += 5 * 48_000;
+    assert_eq!(run.picture_frame().unwrap(), count - 1);
+    assert_eq!(
+        run.picture(count - 1, false),
+        None,
+        "no later request can schedule the seam"
+    );
+}
+
+#[test]
 fn offset_original_subrange_stops_before_out_and_keeps_leading_audio() {
     let receipt = qualified_receipt("offset-bframes.mp4");
     assert_eq!(

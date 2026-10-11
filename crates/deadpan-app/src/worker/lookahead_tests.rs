@@ -168,6 +168,17 @@ fn only_the_next_playback_picture_keeps_the_lookahead_running() {
 
     let (stop, flag) = running();
     mailbox.lookahead = flag;
+    let mut newer = request(&workspace, sequence(5), 3);
+    mailbox.latest = Some(playing.ticket);
+    newer.ticket.transport = Some(feed.restart(0).unwrap());
+    mailbox.submit(newer.ticket, newer.work);
+    assert!(
+        stop.load(Ordering::Acquire),
+        "a different output generation"
+    );
+
+    let (stop, flag) = running();
+    mailbox.lookahead = flag;
     mailbox.cancel();
     assert!(stop.load(Ordering::Acquire), "cancel");
 
@@ -180,4 +191,83 @@ fn only_the_next_playback_picture_keeps_the_lookahead_running() {
     mailbox.lookahead = flag;
     mailbox.stop();
     assert!(stop.load(Ordering::Acquire), "shutdown");
+}
+
+#[test]
+fn original_and_edit_selection_loops_swap_exact_decoders_on_every_lap() {
+    for original in [false, true] {
+        let fixture = Fixture::source("pyramid-bframes.mp4");
+        let workspace = fixture.workspace(1);
+        let shared = Shared::default();
+        let (mut feed, _callback) = deadpan_output::channel().unwrap();
+        let generation = feed.restart(0).unwrap();
+        let mut retained = None;
+        let mut proposal = None;
+        let mut proxy = ProxySlot::default();
+        let expected = exact(&workspace, 30);
+        for lap in 0..3 {
+            for frame in 30..60 {
+                let view = if original {
+                    ProjectView::Source {
+                        asset: asset(),
+                        frame: SourceFrameId(frame as u64),
+                    }
+                } else {
+                    sequence(frame)
+                };
+                let mut playing = request(&workspace, view, (lap * 30 + frame) as u64);
+                playing.ticket.transport = Some(generation);
+                playing.loop_ahead = LoopLookAhead::new(30, 60, frame + 30);
+                shared.mailbox.lock().unwrap().latest = Some(playing.ticket);
+                let picture = perform_with(
+                    &playing,
+                    &mut retained,
+                    &mut proposal,
+                    Some(ProxyUse::Playback {
+                        slot: &mut proxy,
+                        picture_period: None,
+                    }),
+                )
+                .unwrap();
+                assert_eq!(picture.id, SourceFrameId(frame as u64));
+                assert_eq!(picture.tier, PictureTier::Original);
+                if frame == 30 {
+                    assert_eq!(picture.frame.unwrap().bytes(), expected);
+                    if lap > 0 {
+                        assert_eq!(
+                            retained
+                                .as_ref()
+                                .unwrap()
+                                .ahead
+                                .lookahead
+                                .as_ref()
+                                .unwrap()
+                                .stats()
+                                .swaps,
+                            u64::try_from(lap).unwrap()
+                        );
+                    }
+                }
+                schedule_lookahead(&shared, &playing, &mut retained);
+            }
+            // Readiness is tested independently of machine load. Latency is
+            // measured by the real-device benchmark, not this pixel test.
+            let ahead = retained.as_mut().unwrap().ahead.lookahead.as_mut().unwrap();
+            let deadline = Instant::now() + Duration::from_secs(15);
+            while ahead.positioned() != Some(SourceFrameId(30)) {
+                assert!(Instant::now() < deadline, "loop start was not prepared");
+                ahead.poll();
+                std::thread::sleep(Duration::from_millis(2));
+            }
+            assert_eq!(ahead.stats().failed, 0);
+        }
+        retained
+            .as_mut()
+            .unwrap()
+            .ahead
+            .lookahead
+            .as_mut()
+            .unwrap()
+            .release();
+    }
 }

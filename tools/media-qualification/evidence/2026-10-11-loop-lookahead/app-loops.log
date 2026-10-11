@@ -1,0 +1,26 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 2m 59s
+     Running unittests src/lib.rs (target/release/deps/deadpan_app-8ebdd9737a2c6c35)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/release/deps/deadpan_app-2f3ab0fae53c8c4f)
+
+running 6 tests
+test keymap_file::tests::missing_symlink_target_is_absent_and_a_symlink_loop_is_an_error ... ok
+test preview::playback::tests::loop_context_is_exact_in_audio_samples_and_clamps_to_the_captured_domain ... ok
+test transport::tests::loop_laps_map_content_backwards_without_accepting_backwards_delivery ... ok
+test transport::tests::loop_lookahead_uses_context_and_partial_frame_sample_bounds ... ok
+test transport::tests::original::original_loop_lookahead_uses_measured_vfr_and_offset_picture_windows ... ok
+test transport::tests::original::original_resume_checks_source_receipt_view_rate_and_loop_window ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 0.32s
+
+     Running tests/headless.rs (target/release/deps/headless-b1fd8512acdd064b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

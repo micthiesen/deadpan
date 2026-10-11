@@ -15,7 +15,13 @@ records idle CPU. [pause-and-cold-seek-2026-10-06](qualification/pause-and-cold-
 supersedes edit latency on 10,000 beats and the cold, warm 4K and
 refinement seek rows, and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
 the playback rows (with and without proxy pictures, cut edits) and adds the
-stress runs. A target
+stress runs. [Selection-loop decode-ahead](qualification/loop-lookahead-2026-10-11.md)
+adds 30-second real-device comparisons at 1080p60 and 4K30: zero dropped
+pictures with loop preparation, versus 17 and 12 without it. Run a bounded
+loop with `perf playback PACKAGE --start-frame FIRST --loop-end EXCLUDED
+--seconds 30 --pictures original --lookahead on` and repeat with `off`.
+The report counts monotonic progress across wraps and records each seam.
+A target
 without a measured workload is open, never passed.
 
 ## Run the suite

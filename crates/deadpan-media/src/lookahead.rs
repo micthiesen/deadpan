@@ -56,8 +56,8 @@ pub fn continuous(previous: SourceFrameId, next: SourceFrameId) -> bool {
     next.0 >= previous.0 && next.0 - previous.0 <= MAX_FORWARD_STEP
 }
 
-/// A project picture that playback reaches only through a seek of the
-/// Original: its frame and the Original ordinal it shows.
+/// A playback picture that requires a seek of the Original: its coordinate
+/// in the scanned picture domain and the Original ordinal it shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Discontinuity {
     pub frame: i64,
@@ -81,11 +81,34 @@ struct Scanned {
 #[derive(Clone, Debug, Default)]
 pub struct DiscontinuityScan {
     state: Option<Scanned>,
+    loop_range: Option<(i64, i64)>,
+}
+
+/// A captured loop's half-open picture window and inclusive scan horizon.
+/// `through` uses a virtual continuation after `end`: frame `end` shows
+/// `start`, then the following frames of the next lap. The caller derives
+/// this horizon from the heard sample clock, including VFR and loop context.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LoopLookAhead {
+    start: i64,
+    end: i64,
+    through: i64,
+}
+
+impl LoopLookAhead {
+    pub fn new(start: i64, end: i64, through: i64) -> Option<Self> {
+        (start >= 0 && start < end && through >= start).then_some(Self {
+            start,
+            end,
+            through,
+        })
+    }
 }
 
 impl DiscontinuityScan {
     pub fn reset(&mut self) {
         self.state = None;
+        self.loop_range = None;
     }
 
     /// The first picture after `from`, through `through`, whose Original
@@ -100,6 +123,50 @@ impl DiscontinuityScan {
     /// discontinuity reuses it and examines only new frames. Every call
     /// examines at most [`MAX_SCAN_FRAMES`] frames.
     pub fn next<E>(
+        &mut self,
+        from: i64,
+        through: i64,
+        ordinal_at: impl FnMut(i64) -> Result<Option<SourceFrameId>, E>,
+    ) -> Result<Option<Discontinuity>, E> {
+        if self.loop_range.is_some() {
+            self.reset();
+        }
+        self.scan(from, through, ordinal_at)
+    }
+
+    /// Scan in playback order, considering cuts before the seam and then
+    /// the return to the loop start. Never visits excluded pictures or more
+    /// than one lap ahead. `Discontinuity::frame` is a virtual coordinate
+    /// after the seam; only its target is a source-picture identity.
+    pub fn next_loop<E>(
+        &mut self,
+        from: i64,
+        window: LoopLookAhead,
+        mut ordinal_at: impl FnMut(i64) -> Result<Option<SourceFrameId>, E>,
+    ) -> Result<Option<Discontinuity>, E> {
+        let range = Some((window.start, window.end));
+        if self.loop_range != range {
+            self.reset();
+            self.loop_range = range;
+        }
+        if !(window.start..window.end).contains(&from) {
+            self.reset();
+            return Ok(None);
+        }
+        let through = window
+            .through
+            .min(from.saturating_add(window.end - window.start));
+        self.scan(from, through, |frame| {
+            let frame = if frame >= window.end {
+                window.start + (frame - window.end)
+            } else {
+                frame
+            };
+            ordinal_at(frame)
+        })
+    }
+
+    fn scan<E>(
         &mut self,
         from: i64,
         through: i64,
@@ -589,6 +656,104 @@ mod tests {
         let mut scan = DiscontinuityScan::default();
         assert_eq!(scan.next(0, 5, ordinals(&plan)).unwrap(), None);
         assert_eq!(scan.next(1, 8, ordinals(&plan)).unwrap(), found);
+    }
+
+    #[test]
+    fn loop_scan_prioritizes_cuts_then_wraps_without_reading_excluded_frames() {
+        let mut scan = DiscontinuityScan::default();
+        let lookup = |frame: i64| -> Result<Option<SourceFrameId>, ()> {
+            assert!((10..20).contains(&frame));
+            Ok(Some(SourceFrameId(if frame < 15 {
+                frame as u64
+            } else {
+                frame as u64 + 30
+            })))
+        };
+        let window = LoopLookAhead::new(10, 20, 29).unwrap();
+        assert_eq!(
+            scan.next_loop(10, window, lookup).unwrap(),
+            Some(Discontinuity {
+                frame: 15,
+                target: SourceFrameId(45)
+            })
+        );
+        assert_eq!(
+            scan.next_loop(15, window, lookup).unwrap(),
+            Some(Discontinuity {
+                frame: 20,
+                target: SourceFrameId(10)
+            })
+        );
+        // The next lap must again prefer its internal cut to its later seam.
+        assert_eq!(
+            scan.next_loop(10, window, lookup).unwrap().unwrap().frame,
+            15
+        );
+    }
+
+    #[test]
+    fn loop_scan_obeys_the_horizon_and_rebinds_when_the_window_changes() {
+        let mut scan = DiscontinuityScan::default();
+        let lookup = |frame: i64| -> Result<Option<SourceFrameId>, ()> {
+            Ok(Some(SourceFrameId(frame as u64)))
+        };
+        assert_eq!(
+            scan.next_loop(10, LoopLookAhead::new(10, 20, 19).unwrap(), lookup)
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            scan.next_loop(11, LoopLookAhead::new(10, 20, 20).unwrap(), lookup)
+                .unwrap()
+                .unwrap()
+                .target,
+            SourceFrameId(10)
+        );
+        assert_eq!(
+            scan.next_loop(11, LoopLookAhead::new(11, 20, 20).unwrap(), lookup)
+                .unwrap()
+                .unwrap()
+                .target,
+            SourceFrameId(11)
+        );
+        // Leaving loop mode must not reuse its cached seam.
+        assert_eq!(scan.next(11, 25, lookup).unwrap(), None);
+        assert_eq!(
+            scan.next_loop(9, LoopLookAhead::new(10, 20, 20).unwrap(), lookup)
+                .unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn loop_scan_passes_background_at_the_seam_and_bounds_tiny_loops() {
+        let mut scan = DiscontinuityScan::default();
+        let plan = [None, None, Some(50), Some(51)];
+        assert_eq!(
+            scan.next_loop(2, LoopLookAhead::new(0, 4, 6).unwrap(), ordinals(&plan))
+                .unwrap(),
+            Some(Discontinuity {
+                frame: 6,
+                target: SourceFrameId(50)
+            })
+        );
+        let mut calls = 0;
+        assert_eq!(
+            scan.next_loop(
+                1,
+                LoopLookAhead::new(1, 2, i64::MAX).unwrap(),
+                |frame| -> Result<_, ()> {
+                    calls += 1;
+                    assert_eq!(frame, 1);
+                    Ok(Some(SourceFrameId(7)))
+                }
+            )
+            .unwrap(),
+            None
+        );
+        assert_eq!(calls, 2);
+        assert!(LoopLookAhead::new(-1, 2, 3).is_none());
+        assert!(LoopLookAhead::new(2, 2, 3).is_none());
     }
 
     #[test]

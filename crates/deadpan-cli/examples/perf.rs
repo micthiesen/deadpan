@@ -8,6 +8,7 @@
 //!             [--proxy-cache NEW_DIR --worker MEDIA_WORKER]
 //!   perf proxy-build PACKAGE --proxy-cache DIR --worker MEDIA_WORKER
 //!   perf playback PACKAGE [--seconds N] [--start-frame N]
+//!             [--loop-end EXCLUDED_FRAME --lookahead on|off]
 //!             [--pictures original|adaptive --proxy-cache DIR --worker MEDIA_WORKER]
 //!   perf make-cuts PACKAGE [--every N] [--plays N] [--seconds N]
 //!   perf make-long PACKAGE [--fragments N] [--every N] [--plays N]

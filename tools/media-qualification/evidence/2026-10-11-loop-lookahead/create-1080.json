@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "project",
+    "create-original",
+    "/tmp/deadpan-loop-lookahead-20261011/1080.deadpan",
+    "/tmp/deadpan-hardware-decode-20261011/1080p60.mp4"
+  ],
+  "exit": 0,
+  "seconds": 3.1946544996462762,
+  "log_sha256": "8645b12506439924239c7eef63ae5004b329fc8edcb987bf215d4ed346bc7bef"
+}

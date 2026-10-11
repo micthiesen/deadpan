@@ -4,6 +4,36 @@ mod original;
 mod sound;
 
 #[test]
+fn loop_lookahead_uses_context_and_partial_frame_sample_bounds() {
+    use deadpan_media::lookahead::LoopLookAhead;
+    let domain = Domain::Sequence {
+        rate: FrameRate::new(30, 1).unwrap(),
+        frames: 600,
+    };
+    // 5 seconds plus partial frames, longer than the four-second horizon.
+    let window = Window::new(AudioSample(16_099), AudioSample(256_001), true).unwrap();
+    let mut run = Run::with_domain(identity(), domain, window, window.start()).unwrap();
+    assert_eq!(
+        run.loop_lookahead().unwrap(),
+        LoopLookAhead::new(10, 161, 130)
+    );
+    run.sample = AudioSample(255_900);
+    assert_eq!(
+        run.loop_lookahead().unwrap(),
+        LoopLookAhead::new(10, 161, 280)
+    );
+    run.sample = AudioSample(256_001);
+    assert_eq!(run.picture_frame().unwrap(), 10);
+    assert_eq!(
+        run.loop_lookahead().unwrap(),
+        LoopLookAhead::new(10, 161, 130)
+    );
+    run.window = Window::new(window.start(), window.end(), false).unwrap();
+    run.sample = window.start();
+    assert_eq!(run.loop_lookahead().unwrap(), None);
+}
+
+#[test]
 fn proposed_updates_and_resume_require_exact_base_draft_and_change_identity() {
     let mut identity = identity();
     identity.content = ContentIdentity::Proposed {

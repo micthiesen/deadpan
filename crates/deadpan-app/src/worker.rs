@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 #[cfg(test)]
 use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
-use deadpan_media::lookahead::{DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead};
+use deadpan_media::lookahead::{DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead, LoopLookAhead};
 use deadpan_media::playback_pictures::{PictureClock, PictureSource, PlaybackPictures};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{
@@ -134,6 +134,9 @@ pub enum ProjectView {
 struct Request {
     ticket: Ticket,
     work: Work,
+    /// Scheduling hint from the same captured transport as `ticket`; never
+    /// changes the requested picture, its identity or the audio clock.
+    loop_ahead: Option<LoopLookAhead>,
     cancelled: Arc<AtomicBool>,
     /// When the viewer submitted it, which tells scrubbing from an isolated
     /// seek independently of how long the worker was busy.
@@ -212,17 +215,32 @@ impl Mailbox {
     }
 
     fn submit(&mut self, ticket: Ticket, work: Work) -> bool {
+        self.submit_with_lookahead(ticket, work, None)
+    }
+
+    fn submit_with_lookahead(
+        &mut self,
+        ticket: Ticket,
+        work: Work,
+        loop_ahead: Option<LoopLookAhead>,
+    ) -> bool {
         if self.shutdown {
             return false;
         }
         self.cancel_active();
-        if ticket.transport.is_none() || !matches!(work, Work::Project { .. }) {
+        if ticket.transport.is_none()
+            || !matches!(work, Work::Project { .. })
+            || self.latest.is_some_and(|latest| {
+                latest.transport != ticket.transport || latest.source != ticket.source
+            })
+        {
             self.stop_lookahead();
         }
         self.latest = Some(ticket);
         self.pending = Some(Request {
             ticket,
             work,
+            loop_ahead,
             cancelled: Arc::new(AtomicBool::new(false)),
             arrived: Instant::now(),
         });
@@ -371,6 +389,23 @@ impl PreviewWorker {
             .lock()
             .expect("preview mailbox")
             .submit(ticket, work)
+        {
+            self.shared.changed.notify_one();
+        }
+    }
+
+    pub fn submit_with_lookahead(
+        &self,
+        ticket: Ticket,
+        work: Work,
+        loop_ahead: Option<LoopLookAhead>,
+    ) {
+        if self
+            .shared
+            .mailbox
+            .lock()
+            .expect("preview mailbox")
+            .submit_with_lookahead(ticket, work, loop_ahead)
         {
             self.shared.changed.notify_one();
         }
@@ -765,8 +800,13 @@ struct RetainedSession {
 struct Ahead {
     lookahead: Option<LookAhead>,
     scan: DiscontinuityScan,
-    /// The workspace session and revision whose plan `scan` examined.
-    plan: Option<(u64, deadpan_core::RevisionId)>,
+    /// The captured workspace, generation and domain whose mapping was scanned.
+    plan: Option<(
+        u64,
+        deadpan_core::RevisionId,
+        deadpan_output::Generation,
+        bool,
+    )>,
 }
 
 /// Always the exact picture; see [`perform_with`] for proxy pictures.
@@ -1344,16 +1384,15 @@ fn swap_lookahead(retained: &mut Option<RetainedSession>, key: &SessionKey, id: 
     }
 }
 
-/// After a published edit playback picture, find the plan's next
-/// discontinuity within [`LOOKAHEAD_HORIZON`] and position the retained
+/// After a published playback picture, find the next edit cut or selection
+/// loop seam within [`LOOKAHEAD_HORIZON`] and position the retained
 /// Original's look-ahead decoder there (or stop it when there is none).
 /// Never decodes on this thread.
 fn schedule_lookahead(shared: &Shared, request: &Request, retained: &mut Option<RetainedSession>) {
-    let Work::Project {
-        workspace,
-        view: ProjectView::Sequence { frame },
-    } = &request.work
-    else {
+    let Work::Project { workspace, view } = &request.work else {
+        return;
+    };
+    let Some(generation) = request.ticket.transport else {
         return;
     };
     let Some(session) = retained.as_mut() else {
@@ -1371,7 +1410,25 @@ fn schedule_lookahead(shared: &Shared, request: &Request, retained: &mut Option<
         return;
     }
     let plan = &workspace.plan;
-    let revision = (workspace.session, plan.metadata().revision_id.clone());
+    let (frame, original) = match view {
+        ProjectView::Sequence { frame } => (frame.0, false),
+        ProjectView::Source {
+            asset: shown,
+            frame,
+        } if shown == asset => {
+            let Ok(frame) = i64::try_from(frame.0) else {
+                return;
+            };
+            (frame, true)
+        }
+        _ => return,
+    };
+    let revision = (
+        workspace.session,
+        plan.metadata().revision_id.clone(),
+        generation,
+        original,
+    );
     if session.ahead.plan.as_ref() != Some(&revision) {
         session.ahead.scan.reset();
         session.ahead.plan = Some(revision);
@@ -1382,19 +1439,27 @@ fn schedule_lookahead(shared: &Shared, request: &Request, retained: &mut Option<
     )
     .unwrap_or(i64::MAX);
     let through = frame
-        .0
         .saturating_add(horizon)
         .min(plan.duration().frames().saturating_sub(1));
     let index = session.source.shared_index();
-    let target = session
-        .ahead
-        .scan
-        .next(frame.0, through, |next| {
+    let ordinal_at = |next| {
+        if original {
+            Ok(u64::try_from(next)
+                .ok()
+                .filter(|next| *next < index.index().frames().len() as u64)
+                .map(SourceFrameId))
+        } else {
             lookahead_ordinal(plan, index.index(), asset, next)
-        })
-        .ok()
-        .flatten()
-        .map(|found| found.target);
+        }
+    };
+    let target = match request.loop_ahead {
+        Some(window) => session.ahead.scan.next_loop(frame, window, ordinal_at),
+        None if !original => session.ahead.scan.next(frame, through, ordinal_at),
+        None => Ok(None),
+    }
+    .ok()
+    .flatten()
+    .map(|found| found.target);
     let source = &session.source;
     let lookahead = session
         .ahead
@@ -1407,8 +1472,12 @@ fn schedule_lookahead(shared: &Shared, request: &Request, retained: &mut Option<
     if mailbox.shutdown
         || mailbox.clear_requested
         || mailbox
-            .latest
-            .is_none_or(|latest| latest.transport.is_none())
+            .pending
+            .as_ref()
+            .is_some_and(|pending| !matches!(pending.work, Work::Project { .. }))
+        || mailbox.latest.is_none_or(|latest| {
+            latest.transport != request.ticket.transport || latest.source != request.ticket.source
+        })
     {
         mailbox.stop_lookahead();
     }

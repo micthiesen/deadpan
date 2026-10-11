@@ -309,6 +309,50 @@ impl Run {
         Ok(self.position()?.picture)
     }
 
+    /// Decode-ahead follows the captured audible loop, including context.
+    /// Convert its exact sample horizon through the same domain mapping as
+    /// presentation; Original VFR ordinals never use the project frame rate.
+    pub fn loop_lookahead(
+        &self,
+    ) -> Result<Option<deadpan_media::lookahead::LoopLookAhead>, String> {
+        use deadpan_media::lookahead::{LOOKAHEAD_HORIZON, LoopLookAhead};
+        if !self.window.looping() || self.domain.is_audio_only() {
+            return Ok(None);
+        }
+        let frame = |sample| {
+            self.domain
+                .frame_at_sample(AudioSample(sample))
+                .and_then(|frame| i64::try_from(frame).map_err(|error| error.to_string()))
+        };
+        let start = self.window.start().0;
+        let end = self.window.end().0;
+        let first = frame(start)?;
+        let excluded = frame(end - 1)?
+            .checked_add(1)
+            .ok_or("Loop picture boundary is not representable.")?;
+        let content = self.content_sample()?.0;
+        let horizon =
+            i64::try_from(LOOKAHEAD_HORIZON.as_secs() * u64::from(deadpan_core::MIX_SAMPLE_RATE))
+                .map_err(|error| error.to_string())?
+                .min(end - start);
+        let remaining = end - content;
+        let mut through = if horizon < remaining {
+            frame(content + horizon)?
+        } else {
+            excluded
+                .checked_add(frame(start + horizon - remaining)? - first)
+                .ok_or("Loop picture horizon is not representable.")?
+        };
+        if matches!(self.domain, Domain::Original(_)) && frame(content)? == excluded - 1 {
+            // The last included picture can hold through an arbitrarily long
+            // VFR duration, audio tail or frame enclosure. Coalescing will not
+            // request it again as the clock advances, so this is the final
+            // opportunity to prepare the seam, even beyond the usual horizon.
+            through = through.max(excluded);
+        }
+        Ok(LoopLookAhead::new(first, excluded, through))
+    }
+
     fn position_at(&self, delivery: AudioSample) -> Result<Position, String> {
         let content = self
             .window

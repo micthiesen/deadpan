@@ -1,0 +1,24 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/worker/lookahead_tests.rs:172:
+     mailbox.latest = Some(playing.ticket);
+     newer.ticket.transport = Some(feed.restart(0).unwrap());
+     mailbox.submit(newer.ticket, newer.work);
+[31m-    assert!(stop.load(Ordering::Acquire), "a different output generation");
+(B[m[32m+    assert!(
+(B[m[32m+        stop.load(Ordering::Acquire),
+(B[m[32m+        "a different output generation"
+(B[m[32m+    );
+(B[m 
+     let (stop, flag) = running();
+     mailbox.lookahead = flag;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/worker/lookahead_tests.rs:172:
+     mailbox.latest = Some(playing.ticket);
+     newer.ticket.transport = Some(feed.restart(0).unwrap());
+     mailbox.submit(newer.ticket, newer.work);
+[31m-    assert!(stop.load(Ordering::Acquire), "a different output generation");
+(B[m[32m+    assert!(
+(B[m[32m+        stop.load(Ordering::Acquire),
+(B[m[32m+        "a different output generation"
+(B[m[32m+    );
+(B[m 
+     let (stop, flag) = running();
+     mailbox.lookahead = flag;

@@ -1,0 +1,9 @@
+{
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.11.103.dylib": "fa1ac6944c4fcb5551f5794245a76b2d8887f0e3ed587278fe35fcc997ffa1b0",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.3.103.dylib": "ab05b025058f05f3c35b67061bb4c7b587db86d5e89cda1296e58dcd745d1779",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.8.103.dylib": "747add4f909d377d5d5d382c43c36fc2cbf73a3b56b173d22f3571afce821492",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.1.103.dylib": "fc1470ede7231c87d51a0090ed465d3e39d4b2b3aca53f236df3ac90163a47ff",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.4.103.dylib": "222b667e9ae7c26e2007dc75814487feb70782ec9bf269e6f7312428997f27cb",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswresample.6.1.103.dylib": "146599c12fcf95cc16bd145260ef32d97ee85d8cf128c8e7ebfde25473237485",
+  "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavdevice.62.1.103.dylib": "b44c994203532c29923bda9f0a7adaecf5651eeb3085c14c42e01fc7c967d6ea"
+}

@@ -27,13 +27,15 @@ use std::time::{Duration, Instant};
 use deadpan_cli::picture::{render_layers, source_to_render_frame};
 use deadpan_cli::proxy::cache::ProxyCache;
 use deadpan_core::{AssetId, AudioSample, MIX_SAMPLE_RATE, ProjectFrame, SourceFrameId};
-use deadpan_media::lookahead::{DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead, MAX_FORWARD_STEP};
+use deadpan_media::lookahead::{
+    DiscontinuityScan, LOOKAHEAD_HORIZON, LookAhead, LoopLookAhead, MAX_FORWARD_STEP,
+};
 use deadpan_media::playback_pictures::{PictureClock, PictureSource, PlaybackPictures};
 use deadpan_media::source_session::{
     DecodePlan, RepositionProgress, SourceSession, SourceSessionLimits,
 };
 use deadpan_plan::{Picture, RenderPlan};
-use deadpan_playback::{Engine, Phase, Snapshot, SourceEntry};
+use deadpan_playback::{Engine, Phase, Snapshot, SourceEntry, Target, Window};
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
@@ -84,6 +86,17 @@ pub fn run(options: &Options) -> Result<Value> {
     let open_ms = ms(opened);
     let mut gpu = Gpu::new(basis.width, basis.height)?;
     let frames = pictures.plan.duration().frames();
+    let loop_end = options
+        .text("loop-end")
+        .map(str::parse::<i64>)
+        .transpose()?;
+    if start_frame < 0
+        || start_frame >= frames
+        || loop_end.is_some_and(|end| end <= start_frame || end > frames)
+    {
+        return Err("playback start/loop end must be a nonempty range inside the edit".into());
+    }
+    pictures.loop_frames = loop_end.map(|end| (start_frame, end));
     // Warm the picture decoder as the editor's stopped picture already has.
     pictures.present(&mut gpu, ProjectFrame(start_frame), false)?;
 
@@ -95,8 +108,24 @@ pub fn run(options: &Options) -> Result<Value> {
         signal.notify_all();
     }))?;
     let start_sample = rate.audio_boundary(ProjectFrame(start_frame))?;
+    let window = Window::new(
+        if loop_end.is_some() {
+            start_sample
+        } else {
+            AudioSample(0)
+        },
+        rate.audio_boundary(ProjectFrame(loop_end.unwrap_or(frames)))?,
+        loop_end.is_some(),
+    )?;
     let requested = Instant::now();
-    engine.play(1, snapshot, start_sample, MONITOR_GAIN)?;
+    engine.play_window(
+        1,
+        snapshot,
+        Target::Sequence,
+        window,
+        start_sample,
+        MONITOR_GAIN,
+    )?;
 
     let mut first_sound_ms = None;
     let mut phases: Vec<Value> = Vec::new();
@@ -106,6 +135,9 @@ pub fn run(options: &Options) -> Result<Value> {
     let mut presented = 0_u64;
     let mut dropped = 0_u64;
     let mut last_frame: Option<i64> = None;
+    let mut last_progress: Option<i64> = None;
+    let mut last_lap = 0;
+    let mut seams = Vec::new();
     let mut first_frame: Option<i64> = None;
     let mut terminal = None;
     let mut picture_ms = Vec::new();
@@ -117,10 +149,35 @@ pub fn run(options: &Options) -> Result<Value> {
     let mut pending = None;
     let limit = Duration::from_secs(seconds);
     let frame_of = |sample: AudioSample| -> Result<i64> {
-        Ok(i64::try_from(
+        let mut frame = i64::try_from(
             i128::from(sample.0) * i128::from(rate.numerator())
                 / (i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator())),
-        )?)
+        )?
+        .min(frames);
+        // Invert the rounded origin-based boundaries, including fractional
+        // frame rates. A rational floor alone can be one picture early.
+        while frame > 0 && rate.audio_boundary(ProjectFrame(frame))? > sample {
+            frame -= 1;
+        }
+        while frame < frames && rate.audio_boundary(ProjectFrame(frame + 1))? <= sample {
+            frame += 1;
+        }
+        Ok(frame)
+    };
+    let coordinate = |sample: AudioSample| -> Result<(i64, i64)> {
+        let content = window
+            .sample(sample)
+            .ok_or("heard sample outside playback window")?;
+        let frame = frame_of(content)?.min(loop_end.unwrap_or(frames) - 1);
+        let progress = if let Some(end) = loop_end {
+            i64::try_from(window.lap(sample).ok_or("invalid loop lap")?)?
+                .checked_mul(end - start_frame)
+                .and_then(|lap| lap.checked_add(frame - start_frame))
+                .ok_or("loop progress overflow")?
+        } else {
+            frame
+        };
+        Ok((frame, progress))
     };
     loop {
         if pending.is_some() {
@@ -181,18 +238,23 @@ pub fn run(options: &Options) -> Result<Value> {
         }
         let Some(sample) = heard else { continue };
         // Desired picture: the frame containing the latest heard sample.
-        let frame = frame_of(sample)?.min(frames - 1);
-        if last_frame == Some(frame) {
+        let (frame, progress) = coordinate(sample)?;
+        if last_progress == Some(progress) {
             continue;
         }
-        if let Some(previous) = last_frame
-            && frame > previous + 1
+        if let Some(previous) = last_progress
+            && progress > previous + 1
         {
-            dropped += u64::try_from(frame - previous - 1)?;
+            dropped += u64::try_from(progress - previous - 1)?;
         }
         let started = Instant::now();
         let shown = pictures.present(&mut gpu, ProjectFrame(frame), true)?;
         picture_ms.push(ms(started));
+        let lap = window.lap(sample).ok_or("invalid loop lap")?;
+        if lap > last_lap {
+            seams.push(json!({"lap": lap, "frame": frame, "delivery_sample": sample.0, "decode_and_gpu_ms": picture_ms.last()}));
+        }
+        last_lap = lap;
         // As the native worker does after publishing the picture.
         pictures.schedule_lookahead(ProjectFrame(frame));
         presented_at.push(ms(requested));
@@ -201,11 +263,12 @@ pub fn run(options: &Options) -> Result<Value> {
         // The update itself is handled at the top of the loop.
         pending = engine.poll();
         if let Some(now) = pending.as_ref().and_then(|update| update.sample).or(heard) {
-            lag_frames.push((frame_of(now)?.min(frames - 1) - frame) as f64);
+            lag_frames.push((coordinate(now)?.1 - progress) as f64);
         }
         presented += 1;
         first_frame.get_or_insert(frame);
         last_frame = Some(frame);
+        last_progress = Some(progress);
     }
     let heard_seconds =
         heard.map(|sample| (sample.0 - start_sample.0) as f64 / f64::from(MIX_SAMPLE_RATE));
@@ -251,16 +314,19 @@ pub fn run(options: &Options) -> Result<Value> {
     // a shorter project) and pictures must start at the start frame and reach
     // the heard end; a short or early-stopped run is not a sustained pass.
     let fps = f64::from(rate.numerator()) / f64::from(rate.denominator());
-    let available_seconds = (frames - start_frame) as f64 / fps;
+    let available_seconds = if loop_end.is_some() {
+        seconds as f64
+    } else {
+        (frames - start_frame) as f64 / fps
+    };
     let coverable_seconds = available_seconds.min(seconds as f64);
-    let heard_end_frame = heard.map(|sample| {
-        (i128::from(sample.0) * i128::from(rate.numerator())
-            / (i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()))) as i64
-    });
+    let heard_end = heard.map(coordinate).transpose()?;
+    let heard_end_frame = heard_end.map(|(frame, _)| frame);
     let leading_missed = first_frame.map(|first| first - start_frame);
-    let trailing_missed = heard_end_frame
-        .zip(last_frame)
-        .map(|(end, last)| (end.min(frames - 1) - last).max(0));
+    let trailing_missed = heard_end
+        .map(|(_, progress)| progress)
+        .zip(last_progress)
+        .map(|(end, last)| (end - last).max(0));
     let covered = heard_seconds.is_some_and(|heard| heard + 1.0 / fps >= coverable_seconds)
         && failure.is_none();
     let intervals: Vec<f64> = presented_at.windows(2).map(|w| w[1] - w[0]).collect();
@@ -272,6 +338,8 @@ pub fn run(options: &Options) -> Result<Value> {
         "monitor_gain": MONITOR_GAIN,
         "requested_seconds": seconds,
         "start_frame": start_frame,
+        "loop_end_frame": loop_end,
+        "loop_seams": seams,
         "picture_policy": policy,
         "picture_session_open_ms": round(open_ms),
         "playback_start_to_first_heard_ms": first_sound_ms.map(round),
@@ -396,6 +464,7 @@ struct Pictures {
     lookahead: Option<(LookAhead, DiscontinuityScan)>,
     /// Whether the look-ahead held a companion decoder while playing.
     lookahead_seen: bool,
+    loop_frames: Option<(i64, i64)>,
     cancelled: AtomicBool,
 }
 
@@ -495,6 +564,7 @@ impl Pictures {
             seek_pictures: 0,
             lookahead,
             lookahead_seen: false,
+            loop_frames: None,
             cancelled,
         })
     }
@@ -615,21 +685,33 @@ impl Pictures {
             .min(self.plan.duration().frames() - 1);
         let index = source.original.index().index();
         let plan = &self.plan;
-        let target = scan
-            .next(frame.0, through, |next| -> Result<Option<SourceFrameId>> {
-                let sample = plan.picture(ProjectFrame(next))?;
-                Ok(match &sample.picture {
-                    Picture::Source { asset, .. } | Picture::Freeze { asset, .. }
-                        if *asset == source.asset =>
-                    {
-                        Some(sample.picture.select_source_frame(index)?.identity)
-                    }
-                    _ => None,
-                })
+        let ordinal_at = |next| -> Result<Option<SourceFrameId>> {
+            let sample = plan.picture(ProjectFrame(next))?;
+            Ok(match &sample.picture {
+                Picture::Source { asset, .. } | Picture::Freeze { asset, .. }
+                    if *asset == source.asset =>
+                {
+                    Some(sample.picture.select_source_frame(index)?.identity)
+                }
+                _ => None,
             })
-            .ok()
-            .flatten()
-            .map(|found| found.target);
+        };
+        let target = match self.loop_frames {
+            Some((start, end)) => {
+                let Some(window) = LoopLookAhead::new(
+                    start,
+                    end,
+                    frame.0.saturating_add(horizon.min(end - start)),
+                ) else {
+                    return;
+                };
+                scan.next_loop(frame.0, window, ordinal_at)
+            }
+            None => scan.next(frame.0, through, ordinal_at),
+        }
+        .ok()
+        .flatten()
+        .map(|found| found.target);
         lookahead.request(target);
         self.lookahead_seen |= lookahead.holds_decoder();
     }

@@ -454,6 +454,7 @@ fn request(workspace: &Arc<Workspace>, view: ProjectView, serial: u64) -> Reques
             workspace: workspace.clone(),
             view,
         },
+        loop_ahead: None,
         cancelled: Arc::new(AtomicBool::new(false)),
         arrived: Instant::now(),
     }

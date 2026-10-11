@@ -1,0 +1,7 @@
+{
+  "native/deadpan-source/tests/fixtures/pyramid-bframes.mp4": "24220e03ddb8fb633f816f3b3be5cf4ef4a8c4033b405f0284a68859e3773080",
+  "native/deadpan-source/tests/fixtures/offset-bframes.mp4": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120",
+  "native/deadpan-source/tests/fixtures/vfr.mp4": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884",
+  "/tmp/deadpan-hardware-decode-20261011/1080p60.mp4": "85377055f664e7203560fa5138406faf69454d0c190d88f82d80010dc249eb0b",
+  "/tmp/deadpan-hardware-decode-20261011/4k30.mp4": "cf6dd21a097c7a75877596a3471d7a86b8c10c94b65f46e9f54e8436855f18ba"
+}

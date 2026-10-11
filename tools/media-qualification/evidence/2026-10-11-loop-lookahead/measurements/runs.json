@@ -1,0 +1,130 @@
+[
+  {
+    "case": "1080-off",
+    "command": [
+      "/tmp/deadpan-loop-lookahead-20261011/measurements/perf",
+      "playback",
+      "/tmp/deadpan-loop-lookahead-20261011/1080.deadpan",
+      "--seconds",
+      "30",
+      "--start-frame",
+      "197",
+      "--loop-end",
+      "341",
+      "--pictures",
+      "original",
+      "--lookahead",
+      "off"
+    ],
+    "exit": 0,
+    "seconds": 30.37163441674784,
+    "load_before": [
+      2.88818359375,
+      3.0771484375,
+      3.09765625
+    ],
+    "load_after": [
+      2.3193359375,
+      2.923828125,
+      3.041015625
+    ],
+    "report_sha256": "060531c2e2275c451f751df9df63df88052eda7701ff34f84d5dff1bef0673f3",
+    "log_sha256": "17ce4e9179488514ffb5913e4791922ac7547a673673e960b34ef546c834196f"
+  },
+  {
+    "case": "1080-on",
+    "command": [
+      "/tmp/deadpan-loop-lookahead-20261011/measurements/perf",
+      "playback",
+      "/tmp/deadpan-loop-lookahead-20261011/1080.deadpan",
+      "--seconds",
+      "30",
+      "--start-frame",
+      "197",
+      "--loop-end",
+      "341",
+      "--pictures",
+      "original",
+      "--lookahead",
+      "on"
+    ],
+    "exit": 0,
+    "seconds": 30.361457125283778,
+    "load_before": [
+      2.3193359375,
+      2.923828125,
+      3.041015625
+    ],
+    "load_after": [
+      2.14404296875,
+      2.83154296875,
+      3.0029296875
+    ],
+    "report_sha256": "e54252c9fd4e84f5039b5c3d01207b7402bd35e90e7f6974a4f6c520c22770f7",
+    "log_sha256": "9a702231d1972069512a1231c5844035b29ca7fb14ef9fbcbb9ccf8c49a58e03"
+  },
+  {
+    "case": "4k-off",
+    "command": [
+      "/tmp/deadpan-loop-lookahead-20261011/measurements/perf",
+      "playback",
+      "/tmp/deadpan-loop-lookahead-20261011/4k.deadpan",
+      "--seconds",
+      "30",
+      "--start-frame",
+      "107",
+      "--loop-end",
+      "179",
+      "--pictures",
+      "original",
+      "--lookahead",
+      "off"
+    ],
+    "exit": 0,
+    "seconds": 30.46265958296135,
+    "load_before": [
+      2.14404296875,
+      2.83154296875,
+      3.0029296875
+    ],
+    "load_after": [
+      2.53369140625,
+      2.84814453125,
+      3.00048828125
+    ],
+    "report_sha256": "f2c5040b2e78251522ab2ecd7d797941c0ed90f91cd105455ab200bf29af7791",
+    "log_sha256": "f840fd3889061cc6d1f2ff35ffbf5ad45bab4a21a023d0a8af3a12f9e47ca25f"
+  },
+  {
+    "case": "4k-on",
+    "command": [
+      "/tmp/deadpan-loop-lookahead-20261011/measurements/perf",
+      "playback",
+      "/tmp/deadpan-loop-lookahead-20261011/4k.deadpan",
+      "--seconds",
+      "30",
+      "--start-frame",
+      "107",
+      "--loop-end",
+      "179",
+      "--pictures",
+      "original",
+      "--lookahead",
+      "on"
+    ],
+    "exit": 0,
+    "seconds": 30.433040000032634,
+    "load_before": [
+      2.53369140625,
+      2.84814453125,
+      3.00048828125
+    ],
+    "load_after": [
+      2.3935546875,
+      2.79443359375,
+      2.9755859375
+    ],
+    "report_sha256": "1b452fa31896563a80ac210e27687873277ecb8e564736cb2c2de016b94d6ae9",
+    "log_sha256": "6be5d8e04857e17ce3f93711c958a0c430a2eeb8ddc1d4af9624041d29f81f83"
+  }
+]

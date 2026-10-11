@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf"
+  ],
+  "exit": 0,
+  "seconds": 123.06063391594216,
+  "log_sha256": "a77f17c6a4a6e835b6063fc1e77176fee52865438d478a809650a19e3282561c"
+}

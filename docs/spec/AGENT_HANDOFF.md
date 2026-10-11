@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Selection-loop picture preparation](../qualification/loop-lookahead-2026-10-11.md)
+now covers Original and Edit, including measured VFR, partial-frame audition
+context and a final Original picture held beyond the normal look-ahead horizon.
+Keep loop hints bound to the captured revision, domain and output generation;
+scan cuts before the seam and never inspect excluded frames. Real-device Edit
+loops drop zero pictures at 1080p60 and 4K30 (17 and 12 with look-ahead off),
+with zero underruns. Crossing Generated Holds remains open; DP-16 stays partial.
+
 [Optional VideoToolbox decoding](../qualification/hardware-decode-2026-10-11.md)
 is implemented behind `DecodeAcceleration::PreferVideoToolbox`. Keep normal
 preview/playback on software: real long-GOP comparisons found VideoToolbox

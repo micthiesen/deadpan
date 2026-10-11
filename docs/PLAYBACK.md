@@ -250,10 +250,21 @@ every picture still passes the receipt-index check. The proxy fallback
 stays for pictures the companion did not reach. A failed companion reopens
 its decoder on next use, a target whose positioning failed is not retried
 until the target changes, and two failed opens disable it for the session.
-Original audition (sequential) and selection-loop seams are not looked
-ahead, and crossing a Generated Hold closes the Original session as
-before. `:diagnostics` counts look-ahead jobs started, reached, swapped and
-failed.
+Original and Edit selection loops capture their exact audible window with
+each generation-bound picture request. The four-second horizon follows the
+same sample-to-picture mapping as presentation, including Original VFR,
+audio lead/tail and partial-frame audition context. The scanner visits cuts
+inside the window before its seam, then wraps to the first included picture;
+it never examines excluded edit pictures or more than one lap ahead. When the
+last included Original picture holds through a long VFR duration, audio tail
+or frame enclosure, its first request prepares the seam even beyond four
+seconds: coalescing will issue no further request for that held picture. A
+one-picture loop needs no second decoder. Changing the window, domain,
+revision or generation cannot reuse another scan's mapping. Sequential
+Original audition needs no look-ahead. Crossing a Generated Hold still closes
+the Original session and remains an open performance gap. `:diagnostics`
+counts look-ahead jobs started, reached, swapped and failed. See the
+[selection-loop qualification](qualification/loop-lookahead-2026-10-11.md).
 
 The current device adapter requires the default route's existing 48 kHz stereo
 float configuration. Automatic device-rate conversion, full route recovery,

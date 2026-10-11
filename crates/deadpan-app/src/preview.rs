@@ -710,7 +710,30 @@ impl DeadpanApp {
         self.presentation.request(ticket, &work);
         #[cfg(feature = "ui-harness")]
         self.feedback.picture_requested(ticket);
-        self.worker.submit(ticket, work);
+        let loop_ahead = self.transport.as_ref().and_then(|run| {
+            if transport.is_none() || run.generation != transport {
+                return None;
+            }
+            let Work::Project { workspace, view } = &work else {
+                return None;
+            };
+            if run.session != workspace.session || run.revision != *workspace.document.revision_id()
+            {
+                return None;
+            }
+            let same_domain = match (run.domain(), view) {
+                (crate::transport::Domain::Sequence { .. }, ProjectView::Sequence { .. }) => true,
+                (
+                    crate::transport::Domain::Original(original),
+                    ProjectView::Source { asset, .. },
+                ) => original.asset() == asset,
+                _ => false,
+            };
+            same_domain
+                .then(|| run.loop_lookahead().ok().flatten())
+                .flatten()
+        });
+        self.worker.submit_with_lookahead(ticket, work, loop_ahead);
     }
 
     fn receive(&mut self, context: &egui::Context) {

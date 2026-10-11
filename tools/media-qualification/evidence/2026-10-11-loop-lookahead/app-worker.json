@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-app",
+    "worker::",
+    "--",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 7.996369583066553,
+  "log_sha256": "8c05ad55b1c138261ed967e034f2d938fccb047e5eec35bc553bab4d254184cb"
+}
