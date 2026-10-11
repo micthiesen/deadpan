@@ -1,0 +1,18 @@
+{
+  "reviewer": "Primary session only; no subagents",
+  "source_pins": "pins.json",
+  "decisions": [
+    "End is admitted only for the captured nonloop window at its exact endpoint and generation. The playback controller pauses and tears down the device before publishing End.",
+    "The terminal path keeps one useful decode/GPU request, or schedules the final included frame once. Successful submission must match both the generation and the actual submitted serial.",
+    "Manual pause, navigation, edits and failures retain cancellation semantics. An ended run cannot resume from an older Playing/Preparing update, and terminal Space creates no resume token.",
+    "Original, committed Edit and proposed picture paths share the ticket gate; sound-only and Trim are excluded. Proxy completion still receives the stopped exact-refinement request.",
+    "The runtime has no new queue, worker or authored-state write. The End observation copy and per-picture classification are restricted to ui-harness.",
+    "Coverage through End is explicitly distinct from physical or acoustic timeliness. The previous missed-final-picture report remains an unchanged failure.",
+    "Gain waveform replay failure repeats byte-identically on the prior binary while transport is absent. It is retained as an open DP-20 observation, not treated as a successful regression test."
+  ],
+  "remaining_risks": [
+    "Physical display/acoustic timing unmeasured",
+    "Broader format, effects and master pipeline remain outside these fixtures",
+    "Gain compact waveform visibility replay remains unresolved"
+  ]
+}

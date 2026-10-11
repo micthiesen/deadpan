@@ -318,6 +318,9 @@ fn terminal_compare(d: &mut Driver<'_>, before_boundary: i64) -> Result<(), Stri
         ended,
         "Deliver completed Move audition at exact terminal sample B(N)",
     )?;
+    d.wait_for("Move's final picture finishes after audio End", |app| {
+        app.transport.is_none()
+    })?;
     d.check(
         "Ended Move audition retains the exact terminal sample",
         d.app().transport.is_none() && draft(d)?.position == Some(end),

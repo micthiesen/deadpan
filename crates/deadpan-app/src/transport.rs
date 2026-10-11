@@ -152,6 +152,7 @@ pub struct Run {
     pub generation: Option<Generation>,
     pub phase: Phase,
     requested_frame: Option<u64>,
+    submitted_picture: Option<u64>,
 }
 
 /// A paused device estimate survives only while its editorial location is
@@ -273,6 +274,7 @@ impl Run {
             generation: None,
             phase: Phase::Preparing,
             requested_frame: None,
+            submitted_picture: None,
         };
         run.position()?;
         Ok(run)
@@ -403,6 +405,11 @@ impl Run {
         {
             return Ok(None);
         }
+        // A completed device generation cannot resume while its final picture
+        // is finishing. Faults and explicit stops still revoke the handoff.
+        if self.phase == Phase::Ended && matches!(update.phase, Phase::Preparing | Phase::Playing) {
+            return Ok(None);
+        }
         if matches!(update.phase, Phase::Playing | Phase::Ended) && update.generation.is_none() {
             return Err("Playback has no admitted output generation.".into());
         }
@@ -431,7 +438,8 @@ impl Run {
     /// positions. Never repeatedly cancel a useful decode at the audio cadence.
     pub fn picture(&mut self, frame: u64, pipeline_busy: bool) -> Option<Generation> {
         if self.domain.is_audio_only()
-            || self.phase != Phase::Playing
+            || !matches!(self.phase, Phase::Playing | Phase::Ended)
+            || (self.phase == Phase::Ended && self.picture_frame().ok() != Some(frame))
             || pipeline_busy
             || self.requested_frame == Some(frame)
         {
@@ -449,7 +457,21 @@ impl Run {
         }
         deadpan_diagnostics::PLAYBACK_PICTURES.requested.increment();
         self.requested_frame = Some(frame);
+        self.submitted_picture = None;
         Some(generation)
+    }
+
+    /// Record the actual submitted request, not merely a scheduling decision.
+    pub fn picture_submitted(&mut self, request: u64) {
+        self.submitted_picture = Some(request);
+    }
+
+    /// Only this run's final included picture can complete automatic playback.
+    pub fn terminal_picture_request(&self) -> Option<(Generation, u64)> {
+        if self.phase != Phase::Ended || self.requested_frame != self.picture_frame().ok() {
+            return None;
+        }
+        Some((self.generation?, self.submitted_picture?))
     }
 
     #[cfg(test)]

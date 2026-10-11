@@ -624,18 +624,25 @@ impl DeadpanApp {
         transport: Option<deadpan_output::Generation>,
         picture: Option<u64>,
     ) {
+        let _ = self.submit_picture_for_transport_at(clear, transport, picture);
+    }
+
+    fn submit_picture_for_transport_at(
+        &mut self,
+        clear: bool,
+        transport: Option<deadpan_output::Generation>,
+        picture: Option<u64>,
+    ) -> Option<Ticket> {
         // Trim's exact boundary pair stays fixed throughout audition, pause,
         // and stop. Its endpoint worker owns both inspection pictures.
         if self.trim.is_some() {
-            return;
+            return None;
         }
         self.error = None;
         if clear {
             self.reset_picture();
         }
-        let Some(serial) = self.next_serial() else {
-            return;
-        };
+        let serial = self.next_serial()?;
         if clear {
             self.preview_source = serial;
         }
@@ -643,7 +650,7 @@ impl DeadpanApp {
             let Some(work) = self.slip_picture_work() else {
                 self.worker.cancel();
                 self.presentation.invalidate_pending();
-                return;
+                return None;
             };
             work
         } else if self.splice.is_some() {
@@ -653,7 +660,7 @@ impl DeadpanApp {
                 // unfinished decode while no replacement can be submitted.
                 self.worker.cancel();
                 self.presentation.invalidate_pending();
-                return;
+                return None;
             };
             work
         } else if let Some(work) = self.ai_picture_work(picture) {
@@ -663,11 +670,11 @@ impl DeadpanApp {
                 View::Source => {
                     let Some(asset) = &self.selected_source else {
                         self.clear_picture();
-                        return;
+                        return None;
                     };
                     if self.source_length() == 0 {
                         self.clear_picture();
-                        return;
+                        return None;
                     }
                     ProjectView::Source {
                         asset: asset.clone(),
@@ -700,7 +707,7 @@ impl DeadpanApp {
                     .min(self.source_length().saturating_sub(1)),
             ))
         } else {
-            return;
+            return None;
         };
         let ticket = Ticket {
             transport,
@@ -734,6 +741,7 @@ impl DeadpanApp {
                 .flatten()
         });
         self.worker.submit_with_lookahead(ticket, work, loop_ahead);
+        Some(ticket)
     }
 
     fn receive(&mut self, context: &egui::Context) {

@@ -1,0 +1,27 @@
+{
+  "base_revision": "de05213e6ef5593fb1c16aaf1c95c50f465ec998",
+  "binary": {
+    "deadpan-transcribe": "8bbd6b8729977d4d006593e215f345ade71b3f4b3f43a8e45ca63631fecd0529",
+    "deadpan-app": "06257df42aa1b44240001e4b06dffe0636099a69d980656622669e62e86f1bbe",
+    "deadpan-media-worker": "5d28aebff552ae1b3eb789a53906eaf57ff432855c9a8034992a9a221223edac",
+    "deadpan-track": "589fc5d6c39ca0b903eea2ba9f0c150521e4aeed2d9cb8585a2545105283064e",
+    "deadpan-cli": "f0455bcc8471ae667dd033626bcbe12d708ebbcbbfa29d82eb2b93fa6c81ee88"
+  },
+  "source": {
+    "crates/deadpan-app/src/presentation.rs": "0450f17e2c3f6fe142f36ccd6adf213000d8b9f55aca56c15ee0b1514b9f300b",
+    "crates/deadpan-app/src/presentation/tests.rs": "80deb4feb4c0682f72072a4897d80297e5a77eb7709ca74f3e9ed9eb2765ae06",
+    "crates/deadpan-app/src/preview.rs": "67f6f9de6214169ffda914a9c7ca642a80af2afeb30cf971a6bb0f5fe30a0aec",
+    "crates/deadpan-app/src/preview/gain.rs": "c4e845a391615031f1e9526be0153009b7a0862a8d5492cb6fd779cae8b41fc4",
+    "crates/deadpan-app/src/preview/harness.rs": "65cfd0b495669898b7517534e3dcea014b27d18039ea55ceeb14e6f18b9daf34",
+    "crates/deadpan-app/src/preview/harness/generated_playback.rs": "31d60067678e911fa857562160c83acf06d133362f4f34d4b22b153edd686c96",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "edd977d4639e460062584b63c2adc8ee5bc6046f276f11a9eab0ed168d04f523",
+    "crates/deadpan-app/src/preview/harness/splice/move_range.rs": "671be4e9e980700a83c2ee5b67be235b7b4ad6b536199a626cbda19d64765f2b",
+    "crates/deadpan-app/src/preview/playback.rs": "8dec6c9eab5b3e965c6356cdff451cc4be80b5570124a558806777ce7c9bdabb",
+    "crates/deadpan-app/src/preview/playback/controls.rs": "71b7ecd186311a6c5bda503d7466d058b4d8fd70e2737cf198ba6557cddb90a6",
+    "crates/deadpan-app/src/preview/splice/controls.rs": "bf2db4449e049e006750415687d0d9d4ed27f02f4db676fd17c9305a1b3635b9",
+    "crates/deadpan-app/src/transport.rs": "afc2ddfc41c655306dc2c7edd81740b7b76bd173b78f91e633de2631b0248850",
+    "crates/deadpan-app/src/transport/tests.rs": "0549f755dd9c3002f7b11d84849789471be3ddb3d0af7fb4778fd02067408ee0",
+    "crates/deadpan-app/src/ui_harness.rs": "846582fd2fefe0a37bb63b18235b7cd573131db6cd8c7aa9c4ef38864cc5ef9e",
+    "crates/deadpan-app/src/preview/harness/terminal_playback.rs": "6ec196fe060342cd5e2156d18e8f0bcdc6f02488c45d12dfdc9d5741077d1439"
+  }
+}

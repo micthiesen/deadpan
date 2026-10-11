@@ -94,6 +94,44 @@ fn source_interpretation_notice_follows_gpu_submission_and_retained_picture() {
 }
 
 #[test]
+fn terminal_handoff_requires_current_generation_request_and_gpu_submission() {
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let generation = feed.restart(0).unwrap();
+    let other = feed.restart(0).unwrap();
+    let mut state = Presentation::default();
+    let pending = Ticket {
+        transport: Some(generation),
+        ..ticket(1, 2)
+    };
+    state.request(pending, &Work::Frame(SourceFrameId(8)));
+    assert!(!state.presented_transport_request(generation, 2));
+    accept(&mut state, pending, picture(8));
+    assert!(!state.presented_transport_request(generation, 2));
+    state.presented();
+    assert!(state.presented_transport_request(generation, 2));
+    assert!(!state.presented_transport_request(other, 2));
+    assert!(!state.presented_transport_request(generation, 3));
+    state.render_failed("resized GPU submission failed".into());
+    assert!(!state.presented_transport_request(generation, 2));
+    state.invalidate_pending();
+    assert!(!state.presented_transport_request(generation, 2));
+    // A proxy can finish transport, but still needs the normal exact stopped
+    // request. Refinement arriving before submission must be painted first.
+    state.request(pending, &Work::Frame(SourceFrameId(8)));
+    let mut proxy = picture(8);
+    proxy.tier = PictureTier::Proxy;
+    accept(&mut state, pending, proxy);
+    state.presented();
+    assert!(state.presented_transport_request(generation, 2));
+    accept(&mut state, pending, picture(8));
+    assert!(!state.presented_transport_request(generation, 2));
+    state.presented();
+    assert!(state.presented_transport_request(generation, 2));
+    state.request(ticket(1, 3), &Work::Frame(SourceFrameId(9)));
+    assert!(!state.presented_transport_request(generation, 2));
+}
+
+#[test]
 fn transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode() {
     let (mut feed, _callback) = deadpan_output::channel().unwrap();
     let old_generation = feed.restart(0).unwrap();

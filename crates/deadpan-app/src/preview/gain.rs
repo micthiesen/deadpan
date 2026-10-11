@@ -926,6 +926,8 @@ impl DeadpanApp {
                     let status = self.transport.as_ref().map_or("Paused", |run| {
                         if run.phase == deadpan_playback::Phase::Preparing {
                             "Preparing audio"
+                        } else if run.phase == deadpan_playback::Phase::Ended {
+                            "Finishing picture"
                         } else {
                             "Playing"
                         }
@@ -966,11 +968,19 @@ impl DeadpanApp {
                             && (playing
                                 || (draft.selected_snapshot().is_some()
                                     && draft.controls.ready(&draft.edit))),
-                        egui::Button::new(if playing {
-                            "Pause · Space"
-                        } else {
-                            "Audition · Space"
-                        }),
+                        egui::Button::new(
+                            if self
+                                .transport
+                                .as_ref()
+                                .is_some_and(|run| run.phase == deadpan_playback::Phase::Ended)
+                            {
+                                "Stop · Space"
+                            } else if playing {
+                                "Pause · Space"
+                            } else {
+                                "Audition · Space"
+                            },
+                        ),
                     )
                     .clicked()
                 {

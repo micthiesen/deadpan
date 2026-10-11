@@ -138,13 +138,13 @@ impl DeadpanApp {
             self.stop_playback();
             return;
         };
-        let resume = run.resume(position.cursor);
+        let resume = (run.phase != Phase::Ended).then(|| run.resume(position.cursor));
         let sound = run.domain().is_audio_only();
         // Without a picture of its own (sound, Trim), a pause still replaces
         // a displayed proxy picture.
         let picture = !sound && self.trim.is_none();
         if self.stop_playback_with(!picture) {
-            self.resume = Some(resume);
+            self.resume = resume;
             // Cursor can name excluded Out, but the picture must not.
             if picture {
                 self.request_picture_for_transport_at(false, None, Some(position.picture));
@@ -440,6 +440,10 @@ impl DeadpanApp {
                 .play_window(ticket, snapshot, target, window, start, self.monitor_gain);
         match result {
             Ok(()) => {
+                #[cfg(feature = "ui-harness")]
+                {
+                    self.feedback.last_playback_update = None;
+                }
                 self.resume = None;
                 if !run.domain().is_audio_only() {
                     self.worker.cancel();
@@ -534,6 +538,10 @@ impl DeadpanApp {
                 return;
             }
         }
+        #[cfg(feature = "ui-harness")]
+        {
+            self.feedback.last_playback_update = Some(update.clone());
+        }
         let looping = run.window().looping();
         if let Some(draft) = &mut self.splice {
             draft.position = run.content_sample().ok();
@@ -545,6 +553,16 @@ impl DeadpanApp {
         }
         match update.phase {
             Phase::Preparing | Phase::Playing => {}
+            Phase::Ended
+                if self.trim.is_none()
+                    && !run.domain().is_audio_only()
+                    && update.error.is_none() =>
+            {
+                // The device has already stopped at the exact endpoint. Keep
+                // its final useful decode through GPU submission; cancellation
+                // here used to lose that picture and immediately seek it again.
+                self.resume = None;
+            }
             Phase::Stopped | Phase::Ended | Phase::Failed => {
                 self.pause_playback();
                 self.resume = None;
@@ -576,12 +594,35 @@ impl DeadpanApp {
             ));
             return;
         }
+        if self.transport.as_ref().is_some_and(|run| {
+            run.terminal_picture_request()
+                .is_some_and(|(generation, request)| {
+                    self.presentation
+                        .presented_transport_request(generation, request)
+                })
+        }) {
+            self.pause_playback();
+            self.follow_stopped_playback(false);
+            return;
+        }
         let busy = self.presentation.loading() || self.presentation.needs_render();
         if let Some(run) = self.transport.as_mut()
             && let Ok(frame) = run.picture_frame()
             && let Some(generation) = run.picture(frame, busy)
         {
-            self.request_picture_for_transport_at(false, Some(generation), Some(frame));
+            if let Some(ticket) =
+                self.submit_picture_for_transport_at(false, Some(generation), Some(frame))
+            {
+                if let Some(run) = &mut self.transport {
+                    run.picture_submitted(ticket.request);
+                }
+            } else {
+                let error = self.error.take().unwrap_or_else(|| {
+                    "Audition stopped because its picture could not be requested.".into()
+                });
+                self.stop_playback();
+                self.error = Some(error);
+            }
         }
     }
 

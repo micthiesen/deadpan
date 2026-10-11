@@ -166,6 +166,27 @@ pub struct Presentation {
 }
 
 impl Presentation {
+    /// The exact submitted request reached the GPU (or its explicit background
+    /// transition). A prior picture, pending decode or failed submission cannot
+    /// finish a transport. Proxy refinement remains the stopped path's job.
+    pub fn presented_transport_request(
+        &self,
+        generation: deadpan_output::Generation,
+        request: u64,
+    ) -> bool {
+        !self.loading
+            && self.error.is_none()
+            && !self.needs_render()
+            && self.requested.as_ref().is_some_and(|current| {
+                current.ticket.transport == Some(generation)
+                    && current.ticket.request == request
+                    && self
+                        .displayed
+                        .as_ref()
+                        .is_some_and(|shown| shown.request == *current)
+            })
+    }
+
     /// Successfully submitted committed Edit picture, including transport identity.
     #[cfg(feature = "ui-harness")]
     pub(crate) fn displayed_sequence(&self) -> Option<(deadpan_core::ProjectFrame, Ticket)> {

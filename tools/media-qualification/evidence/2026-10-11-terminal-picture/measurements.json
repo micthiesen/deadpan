@@ -1,0 +1,597 @@
+{
+  "play-long1080p-0": {
+    "ended": true,
+    "missing": [],
+    "pictures": 1830,
+    "after_audio_end": [],
+    "before_end_update": 1830,
+    "audio": {
+      "device_reports": 2862,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 12541,
+      "silent_padding_frames": 1344,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 1800,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 1830,
+      "skipped": 0
+    },
+    "last_sample": 1464000,
+    "duration_samples": 1464000,
+    "composition_ms": {
+      "count": 1830,
+      "p95": 13.972040999999999,
+      "max": 24.44
+    },
+    "clock_lag": {
+      "count": 1830,
+      "p95": 1,
+      "max": 1
+    },
+    "peak_bytes": 844792984,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 1827,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1462073,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1831 }",
+        "wall_ms": 30626.281875,
+        "worker_ms": 5.742041,
+        "composition_ms": 10.766
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1828,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1463046,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1832 }",
+        "wall_ms": 30645.958667,
+        "worker_ms": 5.104625,
+        "composition_ms": 13.088959000000001
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1829,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1463991,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+        "wall_ms": 30666.359167,
+        "worker_ms": 5.789000000000001,
+        "composition_ms": 12.876624999999999
+      }
+    ]
+  },
+  "play-long1080p-1": {
+    "ended": true,
+    "missing": [],
+    "pictures": 1830,
+    "after_audio_end": [],
+    "before_end_update": 1830,
+    "audio": {
+      "device_reports": 2862,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 12459,
+      "silent_padding_frames": 1344,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 1800,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 1830,
+      "skipped": 0
+    },
+    "last_sample": 1464000,
+    "duration_samples": 1464000,
+    "composition_ms": {
+      "count": 1830,
+      "p95": 13.922458,
+      "max": 20.773291
+    },
+    "clock_lag": {
+      "count": 1830,
+      "p95": 1,
+      "max": 1
+    },
+    "peak_bytes": 903709920,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 1827,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1462532,
+        "lap": 0,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1831 }",
+        "wall_ms": 30630.087625,
+        "worker_ms": 5.8407919999999995,
+        "composition_ms": 12.660958
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1828,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1462966,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1832 }",
+        "wall_ms": 30640.758958,
+        "worker_ms": 5.702959,
+        "composition_ms": 12.005292
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1829,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1463913,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+        "wall_ms": 30661.007958,
+        "worker_ms": 5.826041999999999,
+        "composition_ms": 13.892792
+      }
+    ]
+  },
+  "play-long1080p-2": {
+    "ended": true,
+    "missing": [],
+    "pictures": 1830,
+    "after_audio_end": [],
+    "before_end_update": 1830,
+    "audio": {
+      "device_reports": 2862,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 11541,
+      "silent_padding_frames": 1344,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 1800,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 1830,
+      "skipped": 0
+    },
+    "last_sample": 1464000,
+    "duration_samples": 1464000,
+    "composition_ms": {
+      "count": 1830,
+      "p95": 13.967917,
+      "max": 21.271458
+    },
+    "clock_lag": {
+      "count": 1830,
+      "p95": 1,
+      "max": 1
+    },
+    "peak_bytes": 907822304,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 1827,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1462367,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1831 }",
+        "wall_ms": 30628.879875,
+        "worker_ms": 4.756041,
+        "composition_ms": 12.086125
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1828,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1463380,
+        "lap": 0,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1832 }",
+        "wall_ms": 30648.378957999998,
+        "worker_ms": 4.758,
+        "composition_ms": 11.661542
+      },
+      {
+        "after_audio_end": false,
+        "frame": 1829,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 1463814,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1833 }",
+        "wall_ms": 30657.211666,
+        "worker_ms": 4.7214160000000005,
+        "composition_ms": 10.060375
+      }
+    ]
+  },
+  "play-long4k": {
+    "ended": true,
+    "missing": [],
+    "pictures": 615,
+    "after_audio_end": [],
+    "before_end_update": 615,
+    "audio": {
+      "device_reports": 1925,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 14416,
+      "silent_padding_frames": 1600,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 600,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 615,
+      "skipped": 0
+    },
+    "last_sample": 984000,
+    "duration_samples": 984000,
+    "composition_ms": {
+      "count": 615,
+      "p95": 25.221583,
+      "max": 26.184874999999998
+    },
+    "clock_lag": {
+      "count": 615,
+      "p95": 0,
+      "max": 0
+    },
+    "peak_bytes": 2010007544,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 612,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 979966,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 616 }",
+        "wall_ms": 20586.211709,
+        "worker_ms": 9.827375,
+        "composition_ms": 16.59675
+      },
+      {
+        "after_audio_end": false,
+        "frame": 613,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 981992,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 617 }",
+        "wall_ms": 20625.927334,
+        "worker_ms": 9.83175,
+        "composition_ms": 23.091207999999998
+      },
+      {
+        "after_audio_end": false,
+        "frame": 614,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 982860,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 618 }",
+        "wall_ms": 20646.591667,
+        "worker_ms": 9.850833,
+        "composition_ms": 16.063375
+      }
+    ]
+  },
+  "play-1080p": {
+    "ended": true,
+    "missing": [],
+    "pictures": 180,
+    "after_audio_end": [
+      {
+        "after_audio_end": true,
+        "frame": 179,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 144000,
+        "lap": 0,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 183 }",
+        "wall_ms": 3135.6049160000002,
+        "worker_ms": 5.587708,
+        "composition_ms": 15.323875000000001
+      }
+    ],
+    "before_end_update": 179,
+    "audio": {
+      "device_reports": 284,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 5375,
+      "silent_padding_frames": 1408,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 120,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 180,
+      "skipped": 0
+    },
+    "last_sample": 144000,
+    "duration_samples": 144000,
+    "composition_ms": {
+      "count": 180,
+      "p95": 14.7065,
+      "max": 21.407667
+    },
+    "clock_lag": {
+      "count": 180,
+      "p95": 1,
+      "max": 1
+    },
+    "peak_bytes": 808174768,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 177,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 142194,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 181 }",
+        "wall_ms": 3090.9828749999997,
+        "worker_ms": 4.788708,
+        "composition_ms": 11.686958
+      },
+      {
+        "after_audio_end": false,
+        "frame": 178,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 143160,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 182 }",
+        "wall_ms": 3113.702458,
+        "worker_ms": 5.062916,
+        "composition_ms": 14.777125
+      },
+      {
+        "after_audio_end": true,
+        "frame": 179,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 144000,
+        "lap": 0,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 183 }",
+        "wall_ms": 3135.6049160000002,
+        "worker_ms": 5.587708,
+        "composition_ms": 15.323875000000001
+      }
+    ]
+  },
+  "play-4k": {
+    "ended": true,
+    "missing": [],
+    "pictures": 90,
+    "after_audio_end": [],
+    "before_end_update": 90,
+    "audio": {
+      "device_reports": 284,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 5500,
+      "silent_padding_frames": 1408,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 60,
+      "lookahead_failed": 0,
+      "lookahead_started": 0,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 90,
+      "skipped": 0
+    },
+    "last_sample": 144000,
+    "duration_samples": 144000,
+    "composition_ms": {
+      "count": 90,
+      "p95": 27.735958,
+      "max": 42.474875000000004
+    },
+    "clock_lag": {
+      "count": 90,
+      "p95": 0,
+      "max": 1
+    },
+    "peak_bytes": 2042710056,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 87,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 140107,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 91 }",
+        "wall_ms": 3055.603708,
+        "worker_ms": 10.787875,
+        "composition_ms": 16.548582999999997
+      },
+      {
+        "after_audio_end": false,
+        "frame": 88,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 141579,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 92 }",
+        "wall_ms": 3088.0154580000003,
+        "worker_ms": 10.945832999999999,
+        "composition_ms": 16.600416
+      },
+      {
+        "after_audio_end": false,
+        "frame": 89,
+        "generated": false,
+        "heard_lap": 0,
+        "heard_sample": 143170,
+        "lap": 0,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 93 }",
+        "wall_ms": 3121.1727499999997,
+        "worker_ms": 11.147499999999999,
+        "composition_ms": 16.235917
+      }
+    ]
+  },
+  "loop-1080p": {
+    "ended": true,
+    "missing": [],
+    "pictures": 1831,
+    "after_audio_end": [],
+    "before_end_update": 1831,
+    "audio": {
+      "device_reports": 2864,
+      "faults": 0,
+      "generations": 1,
+      "max_callback_render_cost_ns": 12166,
+      "silent_padding_frames": 0,
+      "underruns": 0
+    },
+    "native": {
+      "exact": 30,
+      "lookahead_failed": 0,
+      "lookahead_started": 1,
+      "lookahead_swaps": 0,
+      "reduced": 0,
+      "requested": 1831,
+      "skipped": 0
+    },
+    "last_sample": 1512789,
+    "duration_samples": 144000,
+    "composition_ms": {
+      "count": 1831,
+      "p95": 12.8655,
+      "max": 14.255166999999998
+    },
+    "clock_lag": {
+      "count": 1831,
+      "p95": 1,
+      "max": 1
+    },
+    "peak_bytes": 924534008,
+    "errors": {
+      "app": null,
+      "picture": null,
+      "project": null
+    },
+    "final_pictures": [
+      {
+        "after_audio_end": false,
+        "frame": 119,
+        "generated": true,
+        "heard_lap": 29,
+        "heard_sample": 1511518,
+        "lap": 29,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1836 }",
+        "wall_ms": 30658.156708,
+        "worker_ms": 2.108167,
+        "composition_ms": 12.738334
+      },
+      {
+        "after_audio_end": false,
+        "frame": 120,
+        "generated": true,
+        "heard_lap": 30,
+        "heard_sample": 1512097,
+        "lap": 29,
+        "sampled_clock_lag_frames": 1,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1837 }",
+        "wall_ms": 30670.02525,
+        "worker_ms": 2.1167909999999996,
+        "composition_ms": 12.615834
+      },
+      {
+        "after_audio_end": false,
+        "frame": 60,
+        "generated": true,
+        "heard_lap": 30,
+        "heard_sample": 1512789,
+        "lap": 30,
+        "sampled_clock_lag_frames": 0,
+        "ticket": "Ticket { transport: Some(Generation { channel: 1, serial: 1 }), source: 1, request: 1838 }",
+        "wall_ms": 30681.940583,
+        "worker_ms": 0.958083,
+        "composition_ms": 12.663917
+      }
+    ]
+  }
+}

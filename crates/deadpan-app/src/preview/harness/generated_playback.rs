@@ -117,9 +117,11 @@ pub(super) fn run(d: &mut Driver<'_>, looping: bool) -> Result<(), String> {
         let step_started = Instant::now();
         d.step("Real accepted-project playback", false)?;
         if let Some(run) = d.app().transport.as_ref()
-            && run.phase == Phase::Playing
+            && matches!(run.phase, Phase::Playing | Phase::Ended)
         {
-            first_audio_ms.get_or_insert(started.elapsed().as_secs_f64() * 1000.0);
+            if run.phase == Phase::Playing {
+                first_audio_ms.get_or_insert(started.elapsed().as_secs_f64() * 1000.0);
+            }
             generation = run.generation;
             last_sample = Some(run.sample);
             last_content = Some(run.content_sample()?);
@@ -135,6 +137,21 @@ pub(super) fn run(d: &mut Driver<'_>, looping: bool) -> Result<(), String> {
                             .audio_boundary(ProjectFrame(excluded as i64))
                             .map_err(|e| e.to_string())?;
             }
+        }
+        let terminal_handoff = d
+            .app()
+            .feedback
+            .last_playback_update
+            .as_ref()
+            .is_some_and(|update| update.phase == Phase::Ended);
+        if terminal_handoff {
+            last_sample = d
+                .app()
+                .feedback
+                .last_playback_update
+                .as_ref()
+                .and_then(|update| update.sample);
+            last_content = last_sample;
         }
         if let Some((frame, ticket)) = d.app().presentation.displayed_sequence()
             && generation.is_some()
@@ -159,6 +176,7 @@ pub(super) fn run(d: &mut Driver<'_>, looping: bool) -> Result<(), String> {
                 "lap":lap,"heard_lap":heard_lap,
                 "wall_ms":started.elapsed().as_secs_f64()*1000.0,
                 "heard_sample":last_sample.map(|sample|sample.0),
+                "after_audio_end":terminal_handoff,
                 "sampled_clock_lag_frames":lag,
                 "ticket":format!("{ticket:?}"),
             }));
@@ -259,7 +277,7 @@ pub(super) fn run(d: &mut Driver<'_>, looping: bool) -> Result<(), String> {
         summary,
     )?;
     d.check(
-        "Every Original and Generated frame reaches Metal during playback",
+        "Every Original and Generated frame reaches Metal through the terminal handoff",
         missed.is_empty(),
         json!([]),
         json!(missed),

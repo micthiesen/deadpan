@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-terminal-picture-20261011/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "gain",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-terminal-picture-20261011/gain"
+  ],
+  "exit": 1,
+  "seconds": 12.481488917022943,
+  "log_sha256": "7b82ce8a0ee8f39d197224910b854af500326251d94915f1424910cf6f62e624"
+}

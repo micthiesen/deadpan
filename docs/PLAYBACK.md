@@ -206,6 +206,17 @@ Picture tickets retain the output generation; stop invalidates pending decode
 and GPU work while retaining the last actually submitted image and its geometry.
 Captions and accessibility labels advance only after successful GPU submission.
 
+Automatic nonloop completion first stops the device at its exact sample
+endpoint, then finishes the final included picture. An already submitted
+request keeps its generation through decode and GPU submission; if the final
+picture has not been requested, the scheduler requests it once after the
+current picture finishes. The clock stays at Out and the controls show
+`Finishing picture` with `Stop`. No audio or authored time is added. Only the
+matching request's successful submission completes this handoff, followed by
+normal stopped-picture refinement. Explicit stop, navigation, edits and
+picture/device faults still revoke pending work immediately. Sound-only and
+Trim audition have no transport picture to finish.
+
 Above 1080p, a picture whose exact Original decode would miss its budget
 (the keyframe seek after a cut or Repeat restart of a long-GOP Original)
 comes from the verified [preview proxy](PROXIES.md#playback-pictures) with

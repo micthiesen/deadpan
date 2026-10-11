@@ -335,6 +335,56 @@ fn picture_work_coalesces_while_busy_and_terminal_updates_are_exact() {
 }
 
 #[test]
+fn terminal_picture_waits_for_a_submitted_final_request_without_resuming_audio() {
+    for final_already_requested in [false, true] {
+        let mut run = sequence_window(10, 24, false);
+        let (mut feed, _callback) = deadpan_output::channel().unwrap();
+        let generation = feed.restart(run.sample.0).unwrap();
+        run.generation = Some(generation);
+        run.receive(&update(&run, 38_399)).unwrap();
+        let frame = if final_already_requested { 23 } else { 22 };
+        assert_eq!(run.picture(frame, false), Some(generation));
+        run.picture_submitted(101);
+        assert_eq!(run.terminal_picture_request(), None);
+        let mut terminal = update(&run, 38_400);
+        terminal.phase = Phase::Ended;
+        run.receive(&terminal).unwrap();
+        if !final_already_requested {
+            assert_eq!(run.terminal_picture_request(), None);
+            assert_eq!(run.picture(23, true), None);
+            assert_eq!(
+                run.picture(24, false),
+                None,
+                "excluded Out is never a picture"
+            );
+            assert_eq!(run.picture(23, false), Some(generation));
+            assert_eq!(
+                run.terminal_picture_request(),
+                None,
+                "submission must succeed"
+            );
+            run.picture_submitted(102);
+        }
+        assert_eq!(
+            run.terminal_picture_request(),
+            Some((generation, if final_already_requested { 101 } else { 102 }))
+        );
+        assert_eq!(
+            run.picture(23, false),
+            None,
+            "never duplicate the final request"
+        );
+        assert_eq!(run.receive(&update(&run, 38_400)).unwrap(), None);
+        assert_eq!(run.phase, Phase::Ended);
+        assert_eq!(run.sample, AudioSample(38_400));
+        terminal.phase = Phase::Failed;
+        run.receive(&terminal).unwrap();
+        assert_eq!(run.terminal_picture_request(), None);
+        assert_eq!(run.picture(23, false), None);
+    }
+}
+
+#[test]
 fn a_window_ends_at_its_own_boundary_and_keeps_out_out_of_the_picture() {
     let mut run = sequence_window(10, 24, false);
     let (mut feed, _callback) = deadpan_output::channel().unwrap();

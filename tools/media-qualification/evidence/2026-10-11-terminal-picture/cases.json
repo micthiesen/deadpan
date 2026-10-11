@@ -1,0 +1,37 @@
+[
+  [
+    "play-long1080p-0",
+    "generated-playback",
+    "long1080p"
+  ],
+  [
+    "play-long1080p-1",
+    "generated-playback",
+    "long1080p"
+  ],
+  [
+    "play-long1080p-2",
+    "generated-playback",
+    "long1080p"
+  ],
+  [
+    "play-long4k",
+    "generated-playback",
+    "long4k"
+  ],
+  [
+    "play-1080p",
+    "generated-playback",
+    "1080p"
+  ],
+  [
+    "play-4k",
+    "generated-playback",
+    "4k"
+  ],
+  [
+    "loop-1080p",
+    "generated-loop",
+    "1080p"
+  ]
+]

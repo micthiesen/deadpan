@@ -4,6 +4,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Final-picture handoff](../qualification/terminal-picture-2026-10-11.md)
+preserves the final useful decode through GPU submission after the exact audio
+endpoint. Twelve deterministic Original/Edit cases and seven real-device runs
+pass, presenting all 8,206 pictures without audio faults. One final picture
+completes after the admitted End update and is explicitly marked in the report;
+this fixes cancellation without claiming physical timeliness. Core checks and
+eight interaction replays pass. A Gain waveform visibility replay fails on
+both the previous and current binaries and remains open under DP-20.
+
 [Generated slice decoding](../qualification/generated-slices-2026-10-11.md)
 uses four FFV1 slice threads for preview while preserving single-threaded
 index/export readers and the allocation bound. All 5,220 independent pixel
@@ -11,7 +20,8 @@ comparisons, 183 native tests (also under ASan/UBSan), seven real-media app test
 and strict checks pass. Five ordinary 1080p60 runs, one 4K30 run and both
 30-lap loops present all 3,752 pictures. The longer fixture presents every
 Generated picture but misses its final Original during the End-to-stopped
-handoff; that failure is retained and remains open under DP-16.
+handoff; that failure is retained, with its cancellation addressed by the
+subsequent terminal-picture qualification above. DP-16 remains partial.
 
 [Generated selection loops](../qualification/generated-loops-2026-10-11.md)
 now prepare the missing Original decoder when playback starts on Generated.

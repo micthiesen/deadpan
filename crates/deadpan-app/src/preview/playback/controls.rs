@@ -33,8 +33,14 @@ impl Controls {
             .transport
             .as_ref()
             .is_some_and(|run| run.window().looping());
+        let finishing = app
+            .transport
+            .as_ref()
+            .is_some_and(|run| run.phase == Phase::Ended);
         let action = if preparing {
             "Cancel preparation"
+        } else if finishing {
+            "Stop"
         } else if active {
             "Pause"
         } else if app
@@ -67,7 +73,13 @@ impl Controls {
         );
         let status = app.transport.as_ref().map(|run| {
             let millis = run.content_sample().unwrap_or(run.sample).0 / 48;
-            let status = if preparing { "Preparing" } else { "Playing" };
+            let status = if preparing {
+                "Preparing"
+            } else if finishing {
+                "Finishing picture"
+            } else {
+                "Playing"
+            };
             let lap = if looping {
                 format!(" · loop {}", run.lap().unwrap_or(0) + 1)
             } else {

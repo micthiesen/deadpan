@@ -14,6 +14,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "delayed-preview" => delayed(d),
         "rapid-input" => rapid(d),
         "playback-feedback" => playback(d),
+        "terminal-playback" => super::terminal_playback::run(d),
         "large-project" => super::scale::run(d),
         "edit-latency" => super::edit_latency::run(d),
         "nested-pause" => super::nested_pause::run(d),

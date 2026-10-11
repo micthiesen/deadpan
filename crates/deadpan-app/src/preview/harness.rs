@@ -71,6 +71,7 @@ mod structure_copies;
 mod takes;
 mod targets;
 mod telemetry;
+mod terminal_playback;
 mod transcript;
 mod trim;
 mod wake;
@@ -97,6 +98,7 @@ pub(super) struct Feedback {
     pub release_junction: Option<crate::worker::EditJunctionReply>,
     pub simulate_playback: bool,
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
+    pub last_playback_update: Option<deadpan_playback::Update>,
     /// The scripted downloader behind the `youtube` replay's job seam.
     pub youtube: Option<Arc<crate::youtube::scripted::Scripted>>,
     /// The video the replay created its project from.
