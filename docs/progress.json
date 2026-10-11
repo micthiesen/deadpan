@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T15:53:04Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16 playback and rendering, beginning with keeping Original decode-ahead across Generated Holds.",
+  "updated_at": "2026-10-11T16:38:43Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Completing DP-16 playback and rendering: prepare cold Generated entry and measure full-resolution decoder handoffs.",
   "features": [
     {
       "id": "editing",
@@ -461,6 +461,14 @@
       "revision": "422ab1c810648d3282792c20851249532ccd807a",
       "retrospective": false,
       "summary": "Prepared Original and Edit loop return pictures. Real-device 1080p60 and 4K30 loops drop zero pictures; exact VFR, context, long-held-picture and decoder-swap regressions pass."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "919a2177cece9bdb66e4eaeedf9e41c4fe9636ec",
+      "retrospective": false,
+      "summary": "Retained Original decode-ahead across Generated Holds and reused accepted decoders on re-entry. Three selection-loop laps match all 90 reference pictures; both prepared returns, cleanup, 41 worker tests and strict Clippy pass. Cold Generated entry and full-resolution measurements remain open."
     }
   ]
 }
