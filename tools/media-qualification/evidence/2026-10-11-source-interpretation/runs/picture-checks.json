@@ -1,0 +1,45 @@
+[
+  {
+    "name": "cli-revision-pictures",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "picture::tests::source_interpretation_is_bound"
+    ],
+    "exit": 0,
+    "seconds": 19.69715075008571,
+    "sha256": "9a14ef9ecdbe635a247abc0ed2a1eeec4ffa55ea7cee94cbba9c0affaba7612d"
+  },
+  {
+    "name": "app-revision-pictures",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--lib",
+      "worker::project_tests::interpretation_changes"
+    ],
+    "exit": 0,
+    "seconds": 19.70862570917234,
+    "sha256": "721b66c8e29fea626f15f0e100a4565cd2a8cf97626f7e4d075f1f2ff25dba4c"
+  },
+  {
+    "name": "core-all",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core"
+    ],
+    "exit": 0,
+    "seconds": 91.0634692502208,
+    "sha256": "93cae4bb716fc524dfe3a8f606fc763deae6287da895eccc0ee2112a51d1d749"
+  }
+]

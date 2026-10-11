@@ -1,0 +1,372 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling libc v0.2.189
+   Compiling serde_json v1.0.151
+   Compiling memchr v2.8.3
+   Compiling serde v1.0.229
+   Compiling itoa v1.0.18
+   Compiling rustix v1.1.5
+   Compiling thiserror v2.0.20
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling bitflags v2.13.2
+   Compiling arrayvec v0.7.8
+   Compiling deadpan-diagnostics v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-diagnostics)
+   Compiling constant_time_eq v0.4.2
+   Compiling cc v1.4.7
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling errno v0.3.14
+   Compiling syn v3.0.6
+   Compiling blake3 v1.8.7
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling tempfile v3.27.0
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.31s
+     Running unittests src/lib.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/deadpan_source-3809e2ce21a82b14)
+
+running 66 tests
+test audio::ffi::evidence_tests::unknown_profile_remains_unknown_and_malformed_evidence_is_rejected ... ok
+test aperture::tests::rational_declarations_resolve_exact_pixel_edges_without_rounding ... ok
+test input::tests::cached_constant_size_work_still_observes_cancellation_and_limits_charge_reads ... ok
+test input::inspection::tests::unknown_durations_and_noncanonical_matrices_remain_explicit_observations ... ok
+test input::tests::committed_aac_h264_and_pcm_fixtures_pass_without_changing_descriptors ... ok
+test input::inspection::tests::contradictory_color_and_aspect_headers_are_retained_for_export_rejection ... ok
+test input::inspection::tests::sample_tables_yield_exact_reordered_and_primed_clocks_without_trimming ... ok
+test input::inspection::tests::movie_track_and_edit_observations_preserve_both_clock_versions_and_order ... ok
+test input::inspection::tests::varying_chunk_runs_and_compact_sample_sizes_preserve_packet_offsets ... ok
+test input::inspection::tests::nal_bounds_fail_closed_and_poison_further_traversal ... ok
+test input::tests::every_committed_mp4_passes_video_allocation_admission ... ok
+test input::tests::declared_video_geometry_obeys_dimension_and_pixel_limits ... ok
+test input::inspection::tests::signed_composition_offsets_and_source_empty_edits_are_never_rounded ... ok
+test input::inspection::tests::limits_and_control_apply_to_admission_and_each_packet_without_renewing_state ... ok
+test input::tests::compact_and_constant_sizes_and_wide_offsets_have_bounded_semantic_coverage ... ok
+test audio::opening_budget_tests::header_guard_and_ffmpeg_share_one_opening_io_allowance ... ok
+test input::tests::first_audio_uses_complete_admitted_inventory_without_extra_header_reads ... ok
+test input::tests::hevc_sps_size_governs_container_preflight_independently_of_the_sample_entry ... ok
+test input::tests::mdcv_converts_stored_green_blue_red_order_and_leaves_values_to_the_shared_rule ... ok
+test input::tests::sparse_large_table_is_rejected_before_reading_or_allocating_its_rows ... ok
+test input::tests::nested_descriptor_lengths_cannot_escape_a_small_codec_box ... ok
+test input::tests::sparse_huge_headers_and_compact_huge_sample_counts_fail_without_large_buffers ... ok
+test input::tests::hevc_sample_entries_reject_hev1_and_unqualified_children ... ok
+test matroska_input::tests::all_committed_matroska_fixtures_pass_allocation_admission ... ok
+test matroska_input::tests::configured_dimensions_packets_io_and_cancellation_are_enforced ... ok
+test input::tests::thousands_of_interleaved_chunk_and_size_reads_reuse_bounded_pages ... ok
+test input::inspection::tests::actual_registered_fixture_tables_are_observed_without_changing_import_admission ... ok
+test input::tests::counts_and_expansions_in_unselected_tracks_fail_before_ffmpeg ... ok
+test input::tests::hevc_sps_picture_size_is_checked_before_decoder_allocation ... ok
+test input::tests::wav_lengths_block_alignment_and_metadata_are_checked_before_demux ... ok
+test input::tests::malformed_extents_and_unsafe_metadata_never_reach_ffmpeg ... ok
+test input::tests::video_selection_requires_one_video_and_bounded_audio_inventory ... ok
+test input::tests::video_admission_checks_ignored_audio_counts_and_every_packet_size ... ok
+test matroska_input::tests::finite_complete_document_and_block_group_are_admitted ... ok
+test matroska_input::tests::sparse_oversized_block_is_rejected_without_reading_its_payload ... ok
+test matroska_input::tests::deferred_cues_and_seek_entries_require_actual_boundaries ... ok
+test matroska_input::vp9::tests::conflicting_subsampling_and_ignored_display_metadata_are_refused ... ok
+test matroska_input::vp9::tests::first_key_bounds_profile_depth_dimensions_and_every_header_bit ... ok
+test matroska_input::tests::mixed_tracks_preserve_stream_ordinals_and_cues_must_name_the_actual_track ... ok
+test matroska_input::vp9::tests::hdr_requires_ten_bit_limited_bt2020_ncl_and_preserves_static_declarations ... ok
+test matroska_input::tests::duplicate_unknown_and_unqualified_metadata_are_rejected_even_after_frames ... ok
+test matroska_input::tests::opus_discard_padding_requires_a_positive_sample_count_with_sub_nanosecond_error ... ok
+test video_codec::tests::committed_ffv1_configurations_admit_including_semantic_negatives ... ok
+test matroska_input::tests::metadata_conversion_cannot_expand_nested_language_tags_or_unbounded_flat_tags ... ok
+test input::tests::hvcc_admits_only_bounded_complete_main_and_main10_configurations ... ok
+test input::inspection::tests::malformed_edits_clocks_matrices_and_tables_fail_before_packet_traversal ... ok
+test video_codec::tests::range_scalars_preserve_signed_values_and_reject_exponent_overflow ... ok
+test opening_budget_tests::i420_allocation_timeout_preserves_the_retained_picture ... ok
+test matroska_input::tests::large_fields_and_laced_or_extra_payloads_fail_before_payload_reads ... ok
+test input::adversarial::ffv1_configuration_parser_survives_mutation ... ok
+test video_codec::tests::valid_large_slice_raster_and_context_expansion_fail_before_codec_open ... ok
+test video_codec::tests::unsupported_versions_and_reserved_fields_do_not_reach_codec_open ... ok
+test matroska_input::tests::unknown_sizes_truncation_and_overflowing_positions_are_rejected ... ok
+test video_codec::tests::every_truncation_and_configuration_corruption_is_rejected ... ok
+test matroska_input::tests::opus_headers_packet_framing_and_allocation_limits_are_checked_before_native_open ... ok
+test video_codec::tests::valid_synthesized_configurations_cover_coders_and_initial_states ... ok
+test opening_budget_tests::admission_and_controlled_first_frame_share_the_opening_io_budget ... ok
+test input::tests::extensible_pcm16_requires_exact_fields_and_declared_speaker_positions ... ok
+test input::adversarial::hevc_sps_parser_survives_mutation ... ok
+test video_codec::tests::truncated_range_streams_recomputed_crcs_and_extreme_inputs_are_bounded ... ok
+test video_codec::tests::compact_expanded_initial_states_have_a_binary_work_ceiling ... ok
+test matroska_input::tests::nested_tags_and_aggregate_metadata_have_hard_limits ... ok
+test input::adversarial::codec_configuration_records_survive_in_place_mutation ... ok
+test input::adversarial::audio_container_admission_survives_mutation ... ok
+test matroska_input::tests::twelve_thousand_sparse_blocks_do_not_spend_one_page_per_frame ... ok
+test input::adversarial::video_container_admission_survives_mutation ... ok
+
+test result: ok. 66 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+
+     Running tests/adversarial_decode.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/adversarial_decode-1f8f8326c0b0d196)
+
+running 1 test
+test adversarial_native_decoders_survive_payload_mutation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 53.90s
+
+     Running tests/audio_decode.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/audio_decode-8c149a8405bdf052)
+
+running 13 tests
+test unsupported_selection_and_invalid_sources_fail ... ok
+test unsupported_codec_garbage_and_truncated_packet_are_rejected ... ok
+test first_audio_does_not_fall_back_to_video_or_relax_admission ... ok
+test cancelled_and_invalid_requests_preserve_current_frame ... ok
+test allocation_deadline_does_not_advance_retained_audio ... ok
+test retained_descriptor_uses_pread_and_survives_unlinked_path ... ok
+test input_and_decode_budgets_fail_and_poison_failed_contexts ... ok
+test wav_packet_sizes_are_bounded_before_demux_allocation ... ok
+test both_modes_preserve_pcm_and_preflight_failure_semantics ... ok
+test pcm_exact_samples_keep_rate_channel_slots_and_non_aligned_endpoint ... ok
+test ordinary_aac_consumes_reported_priming_and_preserves_unreported_tail ... ok
+test aac_manual_skip_preserves_priming_duration_tail_and_original_pts ... ok
+test first_audio_selects_actual_stream_and_preserves_decoded_evidence ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/av1.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/av1-f0bfb71da9c56ab2)
+
+running 7 tests
+test av1_uses_limits_before_its_private_allocator ... ok
+test sequence_allocation_color_and_packet_grammar_fail_closed ... ok
+test an_empty_config_obu_list_bootstraps_from_the_first_guarded_packet ... ok
+test config_and_packet_hdr_metadata_are_retained_and_changes_are_rejected ... ok
+test temporal_units_preserve_pictures_pts_and_bound_decode_work ... ok
+test unspecified_chroma_is_recorded_and_matches_the_left_pixel_reference ... ok
+test main_profiles_color_grain_superres_and_both_containers_preserve_exact_pictures ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.32s
+
+     Running tests/clean_aperture.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/clean_aperture-5e799a29e135ac63)
+
+running 6 tests
+test aperture_never_reduces_the_decoder_allocation_admission_bound ... ok
+test malformed_apertures_fail_before_decode ... ok
+test hdr_aperture_preserves_sixteen_bit_rgba_raw_planes_and_fresh_gop_decode ... ok
+test fractional_apertures_retain_exact_geometry_and_unfiltered_backing_pixels ... ok
+test chroma_aligned_sdr_raw_planes_match_the_original ... ok
+test sdr_aperture_preserves_exact_pixels_pts_audio_and_reverse_threaded_seeks ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.57s
+
+     Running tests/deinterlace.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/deinterlace-25671f8b67abc104)
+
+running 8 tests
+test fields_obey_output_count_bounds_and_preflight_cancellation_preserves_pending_field ... ok
+test progressive_repeat_hints_do_not_add_time_beyond_container_intervals ... ok
+test variable_intervals_keep_exact_half_ticks_and_the_measured_final_duration ... ok
+test progressive_hrd_picture_timing_is_valid_output_and_retains_identical_source_pixels ... ok
+test progressive_telecine_declares_field_timing_before_its_first_repeated_picture ... ok
+test both_field_orders_retain_motion_at_field_cadence_including_single_picture_eof ... ok
+test telecine_preserves_two_three_fields_and_repeats_exactly_the_first_field ... ok
+test threaded_fields_and_backward_seeks_equal_sequential_pixels ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.60s
+
+     Running tests/export_decode.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/export_decode-d7b83f888ac4ca0f)
+
+running 5 tests
+test i420_rejects_an_unqualified_pixel_format_without_an_rgb_round_trip ... ok
+test fresh_gop_rejects_a_non_key_target_and_poisoned_sessions ... ok
+test cancellation_preserves_current_picture_and_does_not_restart_the_decoder ... ok
+test i420_observes_the_current_picture_without_converting_or_advancing ... ok
+test fresh_idr_decoders_match_linear_planes_and_keep_cumulative_work ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+
+     Running tests/hdr_decode.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/hdr_decode-8a17dc49359af274)
+
+running 11 tests
+test hevc_container_inspection_reports_configuration_static_metadata_and_irap_packets ... ok
+test eight_bit_sources_expand_to_sixteen_bits_without_changing_rgba8 ... ok
+test invalid_static_metadata_is_ignored_with_a_note_instead_of_refusing ... ok
+test hevc_fresh_keyframe_restart_requires_an_exact_irap ... ok
+test lossless_hevc_ten_bit_planes_are_returned_exactly_with_export_metadata ... ok
+test unqualified_hdr_and_depth_combinations_fail_with_explicit_codes ... ok
+test pq_and_hlg_hevc_main10_are_admitted_with_exact_interpretation_and_metadata ... ok
+test hev1_in_band_parameter_sets_and_reserved_nal_units_are_refused ... ok
+test sixteen_bit_rgba_matches_an_independent_bt2020_expectation ... ok
+test hevc_fresh_restart_refuses_a_cra_with_rasl_pictures ... ok
+test av_fixtures_decode_every_picture_and_seek_through_b_frames ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/interpretation.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/interpretation-606330703ce91932)
+
+running 5 tests
+test missing_yuv_range_is_recorded_correctable_and_never_export_evidence ... ok
+test unsupported_choices_and_raw_export_inspection_are_refused ... ok
+test chroma_override_matches_retained_planar_codes_and_keeps_source_evidence ... ok
+test receipt_choice_validation_agrees_with_native_conversion_admission ... ok
+[swscaler @ 0x62f000460400] deprecated pixel format used, make sure you did set range correctly
+test explicit_range_changes_pixels_without_relabelling_metadata_or_clocks ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/mp3.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/mp3-33453df38bacfa06)
+
+running 5 tests
+[mp3float @ 0x618000010880] CRC mismatch 1780!
+[mp3float @ 0x618000010880] Error while decoding MPEG audio frame.
+test crc_protected_mp3_corruption_fails_instead_of_returning_concealed_pcm ... ok
+test mp3_id3_allocation_grammar_rejects_transformed_and_unbounded_metadata ... ok
+test mp3_admission_rejects_truncated_forged_and_changing_frames_before_decode ... ok
+[mp3 @ 0x616000030680] Format mp3 detected only with low score of 25, misdetection possible!
+[mp3 @ 0x616000030980] Format mp3 detected only with low score of 25, misdetection possible!
+test all_mpeg_layer_three_rates_preserve_physical_frames_and_match_independent_pcm ... ok
+test long_mp3_admission_reads_sparse_headers_within_one_opening_allowance ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/opus.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/opus-2f3cd162e8eec03b)
+
+running 1 test
+[NULL @ 0x618000010480] Error parsing Opus packet header.
+[NULL @ 0x618000011080] Error parsing Opus packet header.
+[NULL @ 0x618000011c80] Error parsing Opus packet header.
+[NULL @ 0x618000012880] Error parsing Opus packet header.
+[NULL @ 0x618000014480] Error parsing Opus packet header.
+[NULL @ 0x618000015080] Error parsing Opus packet header.
+[NULL @ 0x618000017480] Error parsing Opus packet header.
+[NULL @ 0x618000018080] Error parsing Opus packet header.
+[NULL @ 0x618000019480] Error parsing Opus packet header.
+[NULL @ 0x61800001a880] Error parsing Opus packet header.
+[NULL @ 0x61800001e080] Error parsing Opus packet header.
+[NULL @ 0x61800001f480] Error parsing Opus packet header.
+[NULL @ 0x618000022480] Error parsing Opus packet header.
+[NULL @ 0x618000023880] Error parsing Opus packet header.
+[NULL @ 0x618000027880] Error parsing Opus packet header.
+[NULL @ 0x618000029480] Error parsing Opus packet header.
+[NULL @ 0x61800002f080] Error parsing Opus packet header.
+[NULL @ 0x61800002fc80] Error parsing Opus packet header.
+[NULL @ 0x618000030880] Error parsing Opus packet header.
+[NULL @ 0x618000031480] Error parsing Opus packet header.
+[NULL @ 0x618000032080] Error parsing Opus packet header.
+[NULL @ 0x618000032c80] Error parsing Opus packet header.
+[NULL @ 0x618000034880] Error parsing Opus packet header.
+[NULL @ 0x618000035480] Error parsing Opus packet header.
+test physical_opus_frames_preserve_skip_evidence_and_match_independent_libopus_pcm ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/opus_mp4.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/opus_mp4-36266c76075143c0)
+
+running 3 tests
+test mp4_opus_refuses_malformed_headers_packets_and_inexact_edits_before_decode ... ok
+test mp4_opus_preserves_physical_packets_and_exact_presentation_samples ... ok
+test opus_audio_tracks_preserve_copied_sdr_and_hdr_pictures ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.94s
+
+     Running tests/persistent_decode.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/persistent_decode-1ed9f101b50ea04c)
+
+running 15 tests
+test packet_byte_limits_are_validated_and_applied_before_decode ... ok
+test descriptor_byte_budget_and_external_playlist_fail_closed ... ok
+test stream_hdr_metadata_is_rejected_during_open_despite_sdr_transfer_tags ... ok
+[h264 @ 0x618000072080] decode_slice_header error
+test full_range_rgb_is_exact_and_pixels_outlive_session_reuse ... ok
+test yuv_matrix_and_range_are_applied_without_relabeling_transfer ... ok
+test anamorphic_samples_are_retained_and_tiny_interlaced_planes_are_refused ... ok
+test h264_packet_expansion_and_invalid_nal_lengths_fail_before_codec_submission ... ok
+test source_orientation_is_retained_and_unqualified_hdr_and_depth_fail ... ok
+test cancellation_before_call_preserves_session_and_invalid_timeouts_are_rejected ... ok
+test input_interpretation_and_resource_bounds_fail_explicitly ... ok
+test pixel_budget_rejects_sources_before_frame_decode ... ok
+test audio_inventory_reports_probe_observations_without_claiming_decoded_readiness ... ok
+test first_frame_probe_is_retained_counted_and_discarded_on_seek ... ok
+test vfr_terminal_duration_follows_video_timing_without_extending_to_audio ... ok
+test original_bframe_pts_vfr_and_offset_survive_persistent_reverse_seeks ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.00s
+
+     Running tests/prores.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/prores-313c129a7b2ac2c3)
+
+running 6 tests
+test apple_global_description_must_match_outer_geometry_color_and_field_order ... ok
+test quicktime_metadata_is_closed_and_cannot_override_packet_color_or_geometry ... ok
+test packet_envelopes_profiles_and_interpretation_fail_closed ... ok
+test quicktime_aac_keeps_identical_decoded_samples_and_priming ... ok
+test both_interlaced_orders_use_exact_field_times_and_separate_content ... ok
+test all_422_profiles_preserve_precision_color_clocks_and_threaded_seeks ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.12s
+
+     Running tests/remux_regions.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/remux_regions-1ad36ed0fa9a35b0)
+
+running 1 test
+test joined_regions_match_standalone_admission_and_refuse_boundary_escapes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sdr_hevc.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/sdr_hevc-aa933a5364bd6328)
+
+running 4 tests
+test previously_refused_ten_bit_sdr_is_now_admitted ... ok
+test high10_sdr_preserves_range_precision_and_repeated_seek_identity ... ok
+test main_and_main10_preserve_limited_full_code_values_and_b_frame_timing ... ok
+test repeated_hdr_seeks_discard_every_old_pending_picture_before_reusing_the_decoder ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 38.06s
+
+     Running tests/threaded_seek.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/threaded_seek-5692d58a45b15436)
+
+running 5 tests
+test thread_count_is_bounded_and_callback_failures_keep_their_codes ... ok
+test tiny_interlaced_planes_are_refused_at_every_thread_count ... ok
+test skipping_needs_a_declared_reorder_depth_and_frame_only_pictures ... ok
+test threaded_sequential_decode_matches_single_threaded_pictures ... ok
+test skipping_preroll_returns_the_exact_target_and_following_pictures ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.31s
+
+     Running tests/vp9.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/vp9-97cabf313c77053b)
+
+running 6 tests
+test malformed_superframes_and_multiple_visible_pictures_are_refused ... ok
+test malformed_configuration_and_packet_geometry_fail_before_unbounded_decode ... ok
+test vpcc_chroma_siting_changes_only_the_declared_sample_phase ... ok
+test show_existing_frame_has_its_own_pts_and_seeks_to_the_same_pixels ... ok
+test altref_superframes_keep_one_picture_per_sample_and_exact_reverse_seeks ... ok
+test profiles_zero_and_two_preserve_color_precision_timing_and_threaded_seeks ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests/vp9_hdr.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/vp9_hdr-089e2b86c929c0f5)
+
+running 3 tests
+test static_metadata_is_exact_or_recorded_as_ignored_never_silently_dropped ... ok
+test malformed_or_duplicate_vp9_full_boxes_are_refused ... ok
+test pq_hlg_keep_authored_ten_bit_planes_scalar_color_clocks_and_threaded_seeks ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+
+     Running tests/webm.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/webm-297aab517cae1803)
+
+running 2 tests
+test contradictory_or_missing_webm_interpretation_fails_before_decoding ... ok
+test webm_and_matroska_keep_pixels_measured_clocks_and_threaded_reverse_seeks ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.55s
+
+     Running tests/wide_pcm.rs (/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/wide_pcm-a56cee2b3dd76464)
+
+running 4 tests
+test float_wave_nan_and_infinities_fail_copy_and_poison_the_decoder ... ok
+test wide_wave_refuses_ambiguous_widths_forged_counts_and_unqualified_extensions ... ok
+test integer_and_float_wave_preserve_exact_clocks_layouts_and_scalar_pcm_in_both_modes ... ok
+test wide_pcm_packet_bounds_use_encoded_width_and_never_drop_partial_frames ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+   Doc-tests deadpan_source
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

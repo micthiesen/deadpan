@@ -91,6 +91,7 @@ impl From<Errno> for ProxyCacheError {
 pub struct ProxyKey {
     original_blake3: String,
     stream_index: u32,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 }
 
 impl ProxyKey {
@@ -107,7 +108,27 @@ impl ProxyKey {
         Ok(Self {
             original_blake3: original_blake3.to_owned(),
             stream_index,
+            interpretation: None,
         })
+    }
+
+    pub fn interpreted(
+        mut self,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
+    ) -> Result<Self, ProxyCacheError> {
+        if interpretation
+            .is_some_and(|choice| choice.range.is_none() && choice.chroma_location.is_none())
+        {
+            return Err(ProxyCacheError::Unsafe(
+                "empty source interpretation".into(),
+            ));
+        }
+        self.interpretation = interpretation;
+        Ok(self)
+    }
+
+    pub fn interpretation(&self) -> Option<deadpan_core::SourceInterpretation> {
+        self.interpretation
     }
 
     pub fn original_blake3(&self) -> &str {
@@ -120,10 +141,29 @@ impl ProxyKey {
 
     /// The entry directory name, including the recipe version.
     pub fn directory(&self) -> String {
-        format!(
+        let base = format!(
             "v{PROXY_RECIPE_VERSION}-{}-s{}",
             self.original_blake3, self.stream_index
-        )
+        );
+        let Some(choice) = self.interpretation else {
+            return base;
+        };
+        use deadpan_core::{SourceChromaLocation as Chroma, SourceColorRange as Range};
+        let range = match choice.range {
+            None => "auto",
+            Some(Range::Limited) => "limited",
+            Some(Range::Full) => "full",
+        };
+        let chroma = match choice.chroma_location {
+            None => "auto",
+            Some(Chroma::Left) => "left",
+            Some(Chroma::Center) => "center",
+            Some(Chroma::TopLeft) => "top-left",
+            Some(Chroma::Top) => "top",
+            Some(Chroma::BottomLeft) => "bottom-left",
+            Some(Chroma::Bottom) => "bottom",
+        };
+        format!("{base}-r{range}-c{chroma}")
     }
 }
 
@@ -443,6 +483,7 @@ impl ProxyCache {
             ProxySidecar::from_json(&bytes).map_err(|error| damaged("sidecar", &error))?;
         if sidecar.original.blake3 != key.original_blake3
             || sidecar.original.stream_index != key.stream_index
+            || sidecar.original.interpretation != key.interpretation
         {
             return Err(ProxyCacheError::Damaged(
                 "sidecar names another Original".into(),
@@ -594,6 +635,7 @@ impl ProxyCache {
     ) -> Result<ProxyEntry, ProxyCacheError> {
         if sidecar.original.blake3 != key.original_blake3
             || sidecar.original.stream_index != key.stream_index
+            || sidecar.original.interpretation != key.interpretation
             || sidecar.recipe != PROXY_RECIPE_VERSION
         {
             return Err(ProxyCacheError::Damaged(

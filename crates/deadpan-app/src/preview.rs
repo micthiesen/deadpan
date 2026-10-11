@@ -71,6 +71,7 @@ mod semantic;
 mod shots;
 mod slip;
 mod sound_events;
+mod source_interpretation;
 mod splice;
 mod storage;
 mod style;
@@ -179,6 +180,7 @@ pub struct DeadpanApp {
     sound_inspection: Option<sound_events::Inspection>,
     reveal_event: bool,
     sound_command_target: Option<sound_events::CommandTarget>,
+    source_interpretation_target: Option<Result<source_interpretation::Target, String>>,
     hold_command_target: Option<room_tone::CommandTarget>,
     room_tone: Option<room_tone::Draft>,
     /// `:correct`: the transcript and pause correction sheet.
@@ -382,6 +384,7 @@ impl DeadpanApp {
             sound_inspection: None,
             reveal_event: false,
             sound_command_target: None,
+            source_interpretation_target: None,
             hold_command_target: None,
             room_tone: None,
             correction: None,
@@ -716,6 +719,16 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(mut update) = update {
+            if let Some(saved) = &update.source_interpretation_saved
+                && update.workspace.as_ref().is_some_and(|workspace| {
+                    workspace.session == saved.session
+                        && workspace.document.project_id() == &saved.project
+                        && workspace.document.revision_id() == &saved.base
+                })
+                && let Some(error) = &saved.refresh_error
+            {
+                update.message = Some(error.clone());
+            }
             let scoped_before = self.scoped_target().ok().flatten();
             let scoped_commit_selects = update
                 .committed
@@ -839,6 +852,16 @@ impl DeadpanApp {
                     && Some(&saved.revision) == new_revision.as_ref()
             });
             let saved_target = self.targets.saved().filter(|_| target_save).cloned();
+            let saved_interpretation =
+                update.source_interpretation_saved.as_ref().filter(|saved| {
+                    old_session == Some(saved.session)
+                        && new_session == Some(saved.session)
+                        && old_revision.as_ref() == Some(&saved.base)
+                        && new_revision.as_ref() == Some(&saved.revision)
+                        && self.workspace.as_ref().is_some_and(|workspace| {
+                            workspace.document.project_id() == &saved.project
+                        })
+                });
             // Rebase scoped inspection first: a scoped Camera compares against it.
             self.reconcile_scoped(
                 scoped_before.as_ref(),
@@ -848,6 +871,7 @@ impl DeadpanApp {
                     .and_then(|commit| commit.scoped.as_ref()),
                 update.marks.saved.as_ref(),
                 saved_target.as_ref(),
+                saved_interpretation,
             );
             if target_save
                 && old_session == new_session
@@ -1016,12 +1040,13 @@ impl DeadpanApp {
                 completion = selection::Completion::None;
             }
             let committed_selection = completion == selection::Completion::Edit;
-            let preserve_picture = committed_selection
-                && old_session == new_session
-                && update
-                    .committed
-                    .as_ref()
-                    .is_some_and(|commit| commit.preserve_cursor);
+            let preserve_picture = saved_interpretation.is_some()
+                || committed_selection
+                    && old_session == new_session
+                    && update
+                        .committed
+                        .as_ref()
+                        .is_some_and(|commit| commit.preserve_cursor);
             self.view
                 .set(self.view.after_completion(&completion), &mut self.message);
             let mut committed_range = None;
@@ -1075,6 +1100,9 @@ impl DeadpanApp {
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
             self.rebase_mark_metadata(&update.marks);
+            if let Some(saved) = saved_interpretation {
+                self.edit_range.rebase_source_interpretation(saved);
+            }
             self.marks.reconcile(self.workspace.as_deref());
             self.reconcile_edit_range();
             if let Some(range) = committed_range {
@@ -1682,6 +1710,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.source_interpretation_target = Some(self.capture_source_interpretation());
         self.scoped_command_target = Some(self.scoped_target());
         self.marks.command = Some(self.capture_mark());
         self.placement_command_target = Some(self.capture_placement_target());
@@ -2836,6 +2865,7 @@ impl DeadpanApp {
 
     fn run_command(&mut self, context: &egui::Context) {
         let command = navigation::command::parse(&self.command);
+        let source_interpretation_target = self.source_interpretation_target.take();
         let scoped_target = self.scoped_command_target.take();
         let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
@@ -3172,6 +3202,9 @@ impl DeadpanApp {
                     ),
                     None => "Sounds without a speaker layout will be refused.".into(),
                 });
+            }
+            Ok(navigation::command::Entry::SourceInterpretation(input)) => {
+                self.interpret_source(source_interpretation_target, input);
             }
             Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
                 context,
@@ -4007,6 +4040,7 @@ impl DeadpanApp {
                             if response.clicked() { self.select_source(asset.clone()); }
                         }
                         ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).weak());
+                        self.source_interpretation_control(ui);
                         ui.add_space(8.0);
                         self.reuse_heading(ui);
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()

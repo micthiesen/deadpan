@@ -65,6 +65,7 @@ struct DeadpanSource {
     uint64_t presented;
     struct SwsContext *scaler;
     int stream, pixel_format, chroma_location, draining, ended, poisoned, inventory_ready;
+    int range_override, chroma_override;
     // Length-prefixed NAL width for H.264 (avcC) or HEVC (hvcC); hevc selects
     // the HEVC packet grammar. hdr is set once the first picture is admitted.
     int pending_first_frame, nal_length_bytes, hevc, hdr;
@@ -934,8 +935,14 @@ static int open_impl(DeadpanSource *s) {
     if (s->fresh_keyframe && check_fresh_keyframe(s) < 0) return -1;
     AVFrame *f = s->frame;
     s->first_source_pts = f->pts;
-    if (color(s, p->codec_id, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
+    // Only an absent range gets a heuristic: full for RGB, limited for YUV.
+    // Retain the absence in info and compare later raw declarations against
+    // it. Neither this nor an authored override modifies an AVFrame tag.
+    int assumed_range = f->color_range == AVCOL_RANGE_UNSPECIFIED;
+    int range = assumed_range && pixel ?
+        ((pixel->flags & AV_PIX_FMT_FLAG_RGB) ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG) : f->color_range;
+    if (color(s, p->codec_id, f->format, range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     int assumed_left = p->codec_id == AV_CODEC_ID_AV1 && !(s->av1_config[2] & 3) &&
                        f->chroma_location == AVCHROMA_LOC_UNSPECIFIED;
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
@@ -948,7 +955,8 @@ static int open_impl(DeadpanSource *s) {
     AVRational aspect = declared_aspect.num ? declared_aspect : sar(f->sample_aspect_ratio);
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
-    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info.range_assumed = assumed_range;
     s->info.chroma_assumed_left = assumed_left;
     s->info.bwdif_fields = !s->limits.progressive_only &&
         (s->h264_timing.field_cadence || f->repeat_pict == 1 || (f->flags & AV_FRAME_FLAG_INTERLACED) ||
@@ -1025,6 +1033,27 @@ int deadpan_source_open_at_keyframe(int fd, int64_t length, const DeadpanSourceL
                         DeadpanSourceInfo *info, DeadpanSourceError *error, int64_t pts) {
     return open_source(fd, length, limits, preflight_io_bytes, timeout, cancelled, opaque, out, info, error, 1, pts);
 }
+int deadpan_source_subsampled_yuv(const char *pixel_format) {
+    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(av_get_pix_fmt(pixel_format));
+    return pixel && !(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h);
+}
+int deadpan_source_interpret(DeadpanSource *s, int32_t range, int32_t chroma, uint64_t timeout,
+                            DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    if (!s->pending_first_frame || s->fresh_keyframe || s->scaler || range < 0 || range > 2 || chroma < 0 || chroma > 6)
+        return finish(s, fail(s, "invalid_configuration", "interpretation requires a newly opened source and supported choices"));
+    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(s->pixel_format);
+    if (!pixel || (chroma && ((pixel->flags & AV_PIX_FMT_FLAG_RGB) || !(pixel->log2_chroma_w || pixel->log2_chroma_h))))
+        return finish(s, fail(s, "unsupported_interpretation", "chroma positioning requires subsampled YUV"));
+    if (color(s, s->decoder->codec_id, s->pixel_format, range ? range : s->info.range,
+              s->info.matrix, s->info.transfer, s->info.primaries) < 0)
+        return finish(s, -1);
+    s->range_override = range;
+    s->chroma_override = chroma;
+    return finish(s, check(s));
+}
+static int conversion_range(const DeadpanSource *s) { return s->range_override ? s->range_override : s->info.range; }
+static int conversion_chroma(const DeadpanSource *s) { return s->chroma_override ? s->chroma_override : s->chroma_location; }
 static int check_frame(DeadpanSource *s) {
     AVFrame *f = s->frame;
     AVStream *stream = s->format->streams[s->stream];
@@ -1048,7 +1077,7 @@ static int check_frame(DeadpanSource *s) {
         if (result < 0) return fferror(s, "apply declared decoder crop", result);
     }
     if (f->width != s->info.width || f->height != s->info.height || f->format != s->pixel_format ||
-        (int)f->color_range != s->info.range || (int)f->colorspace != s->info.matrix || (int)f->color_trc != s->info.transfer || (int)f->color_primaries != s->info.primaries)
+        (int)f->color_range != (s->info.range_assumed ? AVCOL_RANGE_UNSPECIFIED : s->info.range) || (int)f->colorspace != s->info.matrix || (int)f->color_trc != s->info.transfer || (int)f->color_primaries != s->info.primaries)
         return fail(s, "stream_changed", "source geometry, pixel layout, or color interpretation changed");
     if ((int)f->chroma_location != (s->info.chroma_assumed_left ? AVCHROMA_LOC_UNSPECIFIED : s->chroma_location))
         return fail(s, "stream_changed", "source chroma location changed");
@@ -1119,7 +1148,7 @@ static struct SwsContext *scaler(DeadpanSource *s, enum AVPixelFormat output) {
     const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(s->pixel_format);
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
         int x, y;
-        if (av_chroma_location_enum_to_pos(&x, &y, s->chroma_location) < 0 ||
+        if (av_chroma_location_enum_to_pos(&x, &y, conversion_chroma(s)) < 0 ||
             av_opt_set_int(context, "src_h_chr_pos", x, 0) < 0 ||
             av_opt_set_int(context, "src_v_chr_pos", y, 0) < 0) {
             sws_freeContext(context);
@@ -1141,7 +1170,7 @@ static struct SwsContext *scaler(DeadpanSource *s, enum AVPixelFormat output) {
     // libswscale does only YUV matrix/range conversion here, preserving the
     // source transfer and primaries for the shared compositor's transform.
     const int *coefficients = sws_getCoefficients(matrix);
-    if (sws_setColorspaceDetails(context, coefficients, s->info.range == AVCOL_RANGE_JPEG,
+    if (sws_setColorspaceDetails(context, coefficients, conversion_range(s) == AVCOL_RANGE_JPEG,
         coefficients, 1, 0, 1 << 16, 1 << 16) < 0) {
         sws_freeContext(context);
         fail(s, "unsupported_conversion", "configure explicit source matrix and range");
@@ -1240,7 +1269,7 @@ static int rgba64(DeadpanSource *s, uint8_t *pixels, size_t length) {
     }
     double depth = (double)desc->comp[0].depth, scale = (double)(1 << (desc->comp[0].depth - 8));
     double y_offset, y_range, c_range;
-    if (s->info.range == AVCOL_RANGE_MPEG) { y_offset = 16 * scale; y_range = 219 * scale; c_range = 224 * scale; }
+    if (conversion_range(s) == AVCOL_RANGE_MPEG) { y_offset = 16 * scale; y_range = 219 * scale; c_range = 224 * scale; }
     else { y_offset = 0; y_range = pow(2, depth) - 1; c_range = y_range; }
     double c_offset = 128 * scale, kr = 0.2126, kb = 0.0722;
     switch (s->info.matrix) {
@@ -1250,7 +1279,7 @@ static int rgba64(DeadpanSource *s, uint8_t *pixels, size_t length) {
     }
     int x_position = 0, y_position = 0;
     if ((desc->log2_chroma_w || desc->log2_chroma_h) &&
-        av_chroma_location_enum_to_pos(&x_position, &y_position, s->chroma_location) < 0)
+        av_chroma_location_enum_to_pos(&x_position, &y_position, conversion_chroma(s)) < 0)
         return fail(s, "unsupported_conversion", "configure explicit source chroma location");
     int chroma_width = AV_CEIL_RSHIFT(width, desc->log2_chroma_w), chroma_height = AV_CEIL_RSHIFT(height, desc->log2_chroma_h);
     // Luma codes map through one table; horizontal taps depend only on x.

@@ -122,12 +122,62 @@ fn every_picture_is_measured_in_index_order_and_stored_outside_history() -> Resu
     assert_eq!(store.head_revision()?, head);
     let content = detected["key"]["content"].as_str().unwrap();
     assert_eq!(store.shot_analysis_keys_for_content(content)?.len(), 1);
-    let (key, analysis) = stored_shots(&store, content, 0, 120).unwrap();
+    let (key, analysis) = stored_shots(&store, content, 0, 120, None).unwrap();
     assert_eq!(key.signature_version, SIGNATURE_VERSION);
     assert_eq!(analysis.pictures(), 120);
     assert_eq!(analysis.change(0), Some([0, 0, 0]));
     // A count other than the Original's index length is never accepted.
-    assert!(stored_shots(&store, content, 0, 119).is_none());
+    assert!(stored_shots(&store, content, 0, 119, None).is_none());
+    Ok(())
+}
+
+#[test]
+fn correcting_the_source_selects_fresh_shots_and_undo_restores_the_previous_cache() -> Result {
+    use deadpan_core::{
+        Command as Edit, CommandRequest, RevisionId, SourceColorRange, SourceInterpretation,
+    };
+    let scratch = tempfile::tempdir()?;
+    let package = registered(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let before = success(&["detect-shots", path, "--asset", "clip"])?;
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: None,
+    };
+    {
+        let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+        let document = store.snapshot()?;
+        store.commit(&CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("corrected")?,
+            command: Edit::SetSourceInterpretation {
+                asset: AssetId::new("clip")?,
+                interpretation: Some(choice),
+            },
+        })?;
+    }
+    assert!(success(&["shots", path, "--asset", "clip"])?["analysis"].is_null());
+    let after = success(&["detect-shots", path, "--asset", "clip"])?;
+    assert_eq!(
+        after["key"]["interpretation"],
+        serde_json::to_value(choice)?
+    );
+    assert_eq!(after["pictures"], before["pictures"]);
+    assert!(after["resumed_from"].is_null());
+    {
+        let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+        let content = before["key"]["content"].as_str().unwrap();
+        assert_eq!(store.shot_analysis_keys_for_content(content)?.len(), 2);
+        let automatic = stored_shots(&store, content, 0, 120, None).unwrap();
+        let corrected = stored_shots(&store, content, 0, 120, Some(choice)).unwrap();
+        assert_ne!(automatic.1.measures(), corrected.1.measures());
+        store.undo(&RevisionId::new("corrected")?, RevisionId::new("undo")?)?;
+    }
+    assert_eq!(
+        success(&["shots", path, "--asset", "clip"])?["analysis"]["key"],
+        before["key"]
+    );
     Ok(())
 }
 
@@ -345,7 +395,7 @@ fn a_scan_resumed_from_any_checkpoint_equals_an_uninterrupted_scan() -> Result {
     assert_eq!(detected["decoded_pictures"], 70);
     let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
     assert!(stored_shot_progress(&reader, &input).is_none());
-    let (_, stored) = stored_shots(&reader, &input.key.content, 0, 120).unwrap();
+    let (_, stored) = stored_shots(&reader, &input.key.content, 0, 120, None).unwrap();
     assert_eq!(stored, whole.analysis);
     Ok(())
 }

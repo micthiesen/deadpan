@@ -5,6 +5,7 @@ use deadpan_core::FrameDuration;
 use super::{Action, BeatEdit, duration::DurationInput};
 
 pub(crate) mod generate;
+pub(crate) mod interpretation;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScopeChoice {
@@ -87,6 +88,7 @@ pub enum Entry {
     /// `:sound-channels mono|stereo|none`: how the next imported sound with
     /// unlabelled channels (such as a plain WAV) is heard; `none` refuses it.
     SoundChannels(Option<crate::project::AudioLayoutInterpretation>),
+    SourceInterpretation(interpretation::Input),
     Splice,
     Slip(i64),
     Trim(super::trim::TrimInput),
@@ -270,6 +272,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb.eq_ignore_ascii_case("generate") || verb.eq_ignore_ascii_case("generate-ai") {
         return generate::parse(Some(&input[verb.len()..]));
+    }
+    if verb.eq_ignore_ascii_case("source-interpret") {
+        return interpretation::parse(words).map(Entry::SourceInterpretation);
     }
     if verb.eq_ignore_ascii_case("hold-provider") {
         let provider = words

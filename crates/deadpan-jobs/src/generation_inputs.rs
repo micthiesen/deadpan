@@ -7,7 +7,7 @@
 use crate::{ConditioningMode, GenerationPlan};
 use deadpan_core::{
     AttentionTarget, ExactRatio, ExtensionDirection, FrameDuration, FrameRate, GeneratedObjectRef,
-    SourceFrameId, SourceQualificationId, TargetId,
+    SourceFrameId, SourceInterpretation, SourceQualificationId, TargetId,
 };
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,9 @@ pub enum GenerationPictureIdentity {
     Original {
         qualification: SourceQualificationId,
         frame: SourceFrameId,
+        /// Authored decoding choices are part of the model's pixel input.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        interpretation: Option<SourceInterpretation>,
     },
     Generated {
         sampled_object: GeneratedObjectRef,
@@ -44,6 +47,8 @@ impl<'de> Deserialize<'de> for GenerationPictureIdentity {
             Original {
                 qualification: SourceQualificationId,
                 frame: SourceFrameId,
+                #[serde(default)]
+                interpretation: Option<SourceInterpretation>,
             },
             Generated {
                 sampled_object: GeneratedObjectRef,
@@ -53,13 +58,15 @@ impl<'de> Deserialize<'de> for GenerationPictureIdentity {
             },
             AuthoredBlack {},
         }
-        Ok(match Wire::deserialize(deserializer)? {
+        let identity = match Wire::deserialize(deserializer)? {
             Wire::Original {
                 qualification,
                 frame,
+                interpretation,
             } => Self::Original {
                 qualification,
                 frame,
+                interpretation,
             },
             Wire::Generated {
                 sampled_object,
@@ -71,7 +78,17 @@ impl<'de> Deserialize<'de> for GenerationPictureIdentity {
                 content_aspect,
             },
             Wire::AuthoredBlack {} => Self::AuthoredBlack,
-        })
+        };
+        if let Self::Original {
+            interpretation: Some(choice),
+            ..
+        } = &identity
+            && choice.range.is_none()
+            && choice.chroma_location.is_none()
+        {
+            return Err(serde::de::Error::custom("empty source interpretation"));
+        }
+        Ok(identity)
     }
 }
 
@@ -244,6 +261,34 @@ impl GenerationInputBinding {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_interpretation_is_retained_and_automatic_wire_is_unchanged() {
+        let old = serde_json::json!({"kind":"original", "qualification":"a".repeat(64), "frame":7});
+        let automatic: GenerationPictureIdentity = serde_json::from_value(old.clone()).unwrap();
+        assert_eq!(serde_json::to_value(&automatic).unwrap(), old);
+        for choice in [
+            serde_json::json!({"range":"full"}),
+            serde_json::json!({"chroma_location":"center"}),
+            serde_json::json!({"range":"limited","chroma_location":"top_left"}),
+        ] {
+            let mut wire = old.clone();
+            wire["interpretation"] = choice;
+            let corrected: GenerationPictureIdentity =
+                serde_json::from_value(wire.clone()).unwrap();
+            assert_ne!(corrected, automatic);
+            assert_eq!(serde_json::to_value(corrected).unwrap(), wire);
+        }
+        for choice in [
+            serde_json::json!({}),
+            serde_json::json!({"range":"auto"}),
+            serde_json::json!({"range":"full","hidden":1}),
+        ] {
+            let mut wire = old.clone();
+            wire["interpretation"] = choice;
+            assert!(serde_json::from_value::<GenerationPictureIdentity>(wire).is_err());
+        }
+    }
 
     #[test]
     fn authored_black_identity_refuses_hidden_fields() {

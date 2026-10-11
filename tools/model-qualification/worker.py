@@ -26,7 +26,7 @@ ADAPTER_SOURCES = {name: hashlib.sha256((Path(__file__).resolve().parent / name)
                                 "runtime_source.py", "ltx-source-manifest.json"]}
 
 from worker_media import exact_keys, integer, validate_plan, validate_extension_plan, ratio, rate
-from worker_extension_context import MAX_SIGNATURE_BYTES, validate_continuity, validate_signature_bytes
+from worker_extension_context import MAX_SIGNATURE_BYTES, source_interpretation, validate_continuity, validate_signature_bytes
 from worker_protocol import (
     FrameRate,
     GenerateBridgeRequest,
@@ -203,6 +203,9 @@ def validate_context_geometry(context, native_width, native_height):
             "generated": [clock_field, "sampled_asset", "sampled_object", "provenance", "picture"],
             "authored_black": [clock_field],
         }[kind]
+        if kind == "original" and "interpretation" in payload:
+            fields.append("interpretation")
+            source_interpretation(payload["interpretation"])
         exact_keys(payload, fields)
         if clock_field == "project_frame":
             integer(payload["project_frame"], 0, (1 << 63) - 1)

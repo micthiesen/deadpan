@@ -37,6 +37,7 @@ fn boundary(pts: i64) -> BoundaryPicture {
         clock: crate::BoundaryClock::Project { frame: pts },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        interpretation: None,
         picture: DecodedBoundary {
             source_frame: SourceFrameId(7),
             pts: stamp(pts),

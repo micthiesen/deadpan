@@ -32,6 +32,7 @@ fn source_interpretation_notice_follows_gpu_submission_and_retained_picture() {
     let mut info = source.info().clone();
     info.chroma_assumed_left = true;
     interpreted.summary = Some(SourceSummary {
+        interpretation: deadpan_source::VideoInterpretation::SOURCE,
         info,
         frame_count: 12,
         first_pts: 0,
@@ -50,6 +51,7 @@ fn source_interpretation_notice_follows_gpu_submission_and_retained_picture() {
     state.request(ticket(2, 1), &Work::Frame(SourceFrameId(8)));
     let mut declared = picture(8);
     declared.summary = Some(SourceSummary {
+        interpretation: deadpan_source::VideoInterpretation::SOURCE,
         info: source.info().clone(),
         frame_count: 12,
         first_pts: 0,
@@ -64,6 +66,31 @@ fn source_interpretation_notice_follows_gpu_submission_and_retained_picture() {
         state.displayed_label().as_deref(),
         Some("Showing source frame 9")
     );
+    let mut corrected = picture(9);
+    let mut info = source.info().clone();
+    info.range_assumed = true;
+    info.chroma_assumed_left = true;
+    corrected.summary = Some(SourceSummary {
+        info,
+        interpretation: deadpan_source::VideoInterpretation {
+            range: Some(deadpan_source::ColorRange::Full),
+            chroma_location: Some(deadpan_source::ChromaLocation::Center),
+        },
+        frame_count: 12,
+        first_pts: 0,
+        terminal_pts: 24024,
+    });
+    state.request(ticket(2, 2), &Work::Frame(SourceFrameId(9)));
+    accept(&mut state, ticket(2, 2), corrected);
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing source frame 9")
+    );
+    state.presented();
+    let label = state.displayed_label().unwrap();
+    assert!(label.contains("Source range corrected to full"));
+    assert!(label.contains("Source chroma position corrected to center"));
+    assert!(!label.contains("unspecified"));
 }
 
 #[test]

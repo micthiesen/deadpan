@@ -1,0 +1,60 @@
+[
+  {
+    "name": "generation-format-tests",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.559475792106241,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "generation-jobs",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "generation_inputs"
+    ],
+    "exit": 0,
+    "passed": 3,
+    "seconds": 3.409507708158344,
+    "sha256": "ab326a85b9cad3e517cc3c77dc65d47f4f09368d8e42c7461f35d47e8cae9d98"
+  },
+  {
+    "name": "generation-store",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--lib",
+      "generation_pictures"
+    ],
+    "exit": 0,
+    "passed": 15,
+    "seconds": 6.52288558287546,
+    "sha256": "b2173fa01fc697dfa0086513ee7006d202b16e6268d10ca4e6e1258402db5920"
+  },
+  {
+    "name": "generation-models",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib"
+    ],
+    "exit": 101,
+    "passed": 0,
+    "seconds": 9.894935125019401,
+    "sha256": "9cb3239532d6e15f853a12a6e49de9d9c19dc4c56096b11519fa320fe3f3a0be"
+  }
+]

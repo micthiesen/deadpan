@@ -22,8 +22,8 @@ use std::sync::mpsc;
 
 use deadpan_cli::proxy::cache::{ProxyCache, ProxyCleanupPolicy};
 use deadpan_cli::proxy::{
-    BuildControl, ProxyProgress, ProxyStatus, build_proxy, media_worker, power_guard, proxy_key,
-    proxy_status,
+    BuildControl, ProxyProgress, ProxyStatus, ProxySubject, build_proxy, media_worker, power_guard,
+    proxy_key, proxy_status,
 };
 use deadpan_store::original_media::OriginalMediaLimits;
 
@@ -69,6 +69,7 @@ struct Settings {
 
 pub(super) struct ProxyJob {
     session: Option<u64>,
+    key: Option<deadpan_cli::proxy::cache::ProxyKey>,
     pub(super) state: ProxyState,
     events: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
@@ -97,6 +98,7 @@ impl Default for ProxyJob {
             .map(|home| home.join("Library/Application Support/Deadpan/proxies.json"));
         let mut job = Self {
             session: None,
+            key: None,
             state: ProxyState::Unchecked,
             events: None,
             cancel: Arc::default(),
@@ -113,6 +115,17 @@ impl Default for ProxyJob {
 }
 
 impl ProxyJob {
+    fn reconcile_identity(
+        &mut self,
+        session: Option<u64>,
+        key: Option<deadpan_cli::proxy::cache::ProxyKey>,
+    ) {
+        if self.session != session || self.key != key {
+            self.reset(session);
+            self.key = key;
+        }
+    }
+
     /// Read the per-user setting from `path` (absent means automatic).
     pub(super) fn use_settings(&mut self, path: Option<PathBuf>) {
         self.automatic = path
@@ -268,15 +281,23 @@ impl DeadpanApp {
             return None;
         };
         let registered = workspace.sources.get(asset)?;
-        proxy_key(&registered.original, registered.receipt.snapshot().video()?).ok()
+        proxy_key(
+            &registered.original,
+            registered.receipt.snapshot().video()?,
+            workspace
+                .document
+                .source_interpretations()
+                .get(asset)
+                .copied(),
+        )
+        .ok()
     }
 
     /// Advance the proxy build once per outer frame.
     pub(super) fn reconcile_proxies(&mut self, context: &egui::Context) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
-        if self.proxies.session != session {
-            self.proxies.reset(session);
-        }
+        let key = self.proxy_key();
+        self.proxies.reconcile_identity(session, key);
         // Playback and renders take priority: suspend the worker meanwhile.
         self.proxies.busy.store(
             self.transport.is_some() || self.render.blocking(),
@@ -335,6 +356,11 @@ impl DeadpanApp {
         };
         let worker = media_worker();
         let originals = workspace.originals.clone();
+        let interpretation = workspace
+            .document
+            .source_interpretations()
+            .get(asset)
+            .copied();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
         self.proxies.cancel = Arc::clone(&cancel);
@@ -358,6 +384,7 @@ impl DeadpanApp {
                 let state = build(
                     &cache,
                     &registered,
+                    interpretation,
                     &originals,
                     worker.as_deref(),
                     &cancel,
@@ -383,6 +410,7 @@ impl DeadpanApp {
 fn build(
     cache: &ProxyCache,
     registered: &Arc<crate::project::RegisteredSource>,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
     originals: &deadpan_store::original_media::OriginalImportHandle,
     worker: Option<&std::path::Path>,
     cancel: &AtomicBool,
@@ -393,12 +421,14 @@ fn build(
     let Some(video) = registered.receipt.snapshot().video() else {
         return ProxyState::NotNeeded;
     };
-    let Ok(key) = proxy_key(&registered.original, video) else {
-        return ProxyState::NotNeeded;
+    let subject = ProxySubject::of(&registered.original, video, interpretation);
+    let key = match subject.key() {
+        Ok(key) => key,
+        Err(error) => return ProxyState::Failed(error.to_string()),
     };
     // Abandoned staging, stale recipes and entries unused for a month.
     let _ = cache.cleanup(std::slice::from_ref(&key), ProxyCleanupPolicy::default());
-    match proxy_status(cache, &registered.original, video) {
+    match proxy_status(cache, &subject) {
         Ok(ProxyStatus::NotNeeded) => return ProxyState::NotNeeded,
         Ok(ProxyStatus::Ineligible(reason)) => {
             return ProxyState::Ineligible(ineligible_reason(&reason));
@@ -475,8 +505,7 @@ fn build(
         let original = registered.original.clone();
         let result = build_proxy(
             cache,
-            &registered.original,
-            video,
+            &subject,
             worker,
             Box::new(move |cancelled| {
                 let snapshot = originals.snapshot_original(
@@ -509,4 +538,50 @@ fn build(
             Err(error) => ProxyState::Failed(error.to_string()),
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn interpretation_change_cancels_previous_build_and_rejects_late_events() {
+        use deadpan_core::{SourceColorRange, SourceInterpretation};
+        let automatic = deadpan_cli::proxy::cache::ProxyKey::new(&"a".repeat(64), 0).unwrap();
+        let corrected = automatic
+            .clone()
+            .interpreted(Some(SourceInterpretation {
+                range: Some(SourceColorRange::Full),
+                chroma_location: None,
+            }))
+            .unwrap();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let (sender, receiver) = mpsc::channel();
+        let mut job = ProxyJob {
+            session: Some(1),
+            key: Some(automatic.clone()),
+            state: ProxyState::Building,
+            events: Some(receiver),
+            cancel: Arc::clone(&cancelled),
+            busy: Arc::default(),
+            threads: vec![],
+            cache: None,
+            cache_error: None,
+            settings: None,
+            automatic: true,
+        };
+        job.reconcile_identity(Some(1), Some(automatic.clone()));
+        assert!(!cancelled.load(Ordering::Acquire));
+        assert!(job.events.is_some());
+        job.reconcile_identity(Some(1), Some(corrected.clone()));
+        assert!(cancelled.load(Ordering::Acquire));
+        assert!(sender.send(Event::Done(ProxyState::Ready)).is_err());
+        assert_eq!(job.state, ProxyState::Unchecked);
+        assert!(job.events.is_none());
+        let current_cancel = Arc::clone(&job.cancel);
+        job.reconcile_identity(Some(1), Some(corrected));
+        assert!(!current_cancel.load(Ordering::Acquire));
+        job.reconcile_identity(Some(1), Some(automatic));
+        assert!(current_cancel.load(Ordering::Acquire));
+    }
 }

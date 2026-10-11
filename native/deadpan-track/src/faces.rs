@@ -106,8 +106,13 @@ fn detect(
     let control = || decode_control(cancelled, deadline);
     let file = open_source(source)?;
     verify_source(&file, source, cancelled, deadline)?;
-    let mut decoder = SourceDecoder::open(file, DecodeLimits::default(), control()?)
-        .map_err(|error| format!("open source: {error}"))?;
+    let mut decoder = SourceDecoder::open_interpreted(
+        file,
+        DecodeLimits::default(),
+        control()?,
+        stream.interpretation.map(Into::into).unwrap_or_default(),
+    )
+    .map_err(|error| format!("open source: {error}"))?;
     check_stream(decoder.info(), stream)?;
     decoder
         .seek(pts, control()?)

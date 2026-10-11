@@ -265,7 +265,13 @@ fn verify(staging: &ProxyStaging, original: &Original) -> Result<ProxySidecar> {
     Ok(verify_proxy(
         staging.movie(),
         &original.input,
-        &original.identity,
+        &deadpan_media::proxy::ProxyOriginal {
+            blake3: original.identity.clone(),
+            sha256: deadpan_media::proxy::hex(&original.input.identity().sha256()),
+            byte_length: original.input.identity().byte_length(),
+            stream_index: original.index.stream_index(),
+            interpretation: None,
+        },
         Arc::clone(&original.index),
         &original.info,
         ProxyReason::Requested,

@@ -402,6 +402,16 @@ fn validate_sources(
         {
             return Err(SnapshotError::InvalidAdmission);
         }
+        if let Some(choice) = document.source_interpretations().get(id) {
+            entry
+                .receipt
+                .snapshot()
+                .video()
+                .ok_or(SnapshotError::InvalidAdmission)?
+                .interpretation_support()
+                .validate((*choice).into())
+                .map_err(media_error)?;
+        }
     }
     if count != sources.len() {
         return Err(SnapshotError::InvalidAdmission);

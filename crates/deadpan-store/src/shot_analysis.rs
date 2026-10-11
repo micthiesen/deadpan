@@ -23,6 +23,7 @@ use deadpan_analysis::{
     MAX_SHOT_PICTURES, MEASURE_BYTES, PictureMeasure, ShotAnalysis, ShotProgress, ShotProgressTail,
     decode_measures, encode_measures,
 };
+use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 
@@ -43,6 +44,9 @@ pub struct ShotAnalysisKey {
     pub video_stream: u32,
     /// The picture measurement the changes come from.
     pub signature_version: String,
+    /// Authored interpretation of the Original samples used for measurement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpretation: Option<SourceInterpretation>,
 }
 
 impl ShotAnalysisKey {
@@ -57,8 +61,61 @@ impl ShotAnalysisKey {
                 "shot analysis key text is empty, oversized or has controls",
             ));
         }
+        if self
+            .interpretation
+            .is_some_and(|choice| choice.range.is_none() && choice.chroma_location.is_none())
+        {
+            return Err(invalid("empty source interpretation must be omitted"));
+        }
         Ok(())
     }
+
+    fn interpretation_code(&self) -> u8 {
+        let Some(choice) = self.interpretation else {
+            return 0;
+        };
+        let range = match choice.range {
+            None => 0,
+            Some(SourceColorRange::Limited) => 1,
+            Some(SourceColorRange::Full) => 2,
+        };
+        let chroma = match choice.chroma_location {
+            None => 0,
+            Some(SourceChromaLocation::Left) => 1,
+            Some(SourceChromaLocation::Center) => 2,
+            Some(SourceChromaLocation::TopLeft) => 3,
+            Some(SourceChromaLocation::Top) => 4,
+            Some(SourceChromaLocation::BottomLeft) => 5,
+            Some(SourceChromaLocation::Bottom) => 6,
+        };
+        range * 7 + chroma
+    }
+}
+
+fn decode_interpretation(code: i64) -> Result<Option<SourceInterpretation>, StoreError> {
+    if code == 0 {
+        return Ok(None);
+    }
+    let range = match code / 7 {
+        0 => None,
+        1 => Some(SourceColorRange::Limited),
+        2 => Some(SourceColorRange::Full),
+        _ => return Err(invalid("invalid shot source interpretation")),
+    };
+    let chroma_location = match code % 7 {
+        0 => None,
+        1 => Some(SourceChromaLocation::Left),
+        2 => Some(SourceChromaLocation::Center),
+        3 => Some(SourceChromaLocation::TopLeft),
+        4 => Some(SourceChromaLocation::Top),
+        5 => Some(SourceChromaLocation::BottomLeft),
+        6 => Some(SourceChromaLocation::Bottom),
+        _ => return Err(invalid("invalid shot source interpretation")),
+    };
+    Ok(Some(SourceInterpretation {
+        range,
+        chroma_location,
+    }))
 }
 
 impl ProjectStore {
@@ -73,15 +130,25 @@ impl ProjectStore {
         let transaction = self.connection.unchecked_transaction()?;
         let existing: bool = transaction.query_row(
             "SELECT EXISTS(SELECT 1 FROM shot_analysis WHERE content=?1 AND video_stream=?2
-                AND signature_version=?3)",
-            params![key.content, key.video_stream, key.signature_version],
+                AND signature_version=?3 AND interpretation=?4)",
+            params![
+                key.content,
+                key.video_stream,
+                key.signature_version,
+                key.interpretation_code()
+            ],
             |row| row.get(0),
         )?;
         // A newer measurement supersedes older ones of the same pictures.
         transaction.execute(
             "DELETE FROM shot_analysis WHERE content=?1 AND video_stream=?2
-                AND signature_version<>?3",
-            params![key.content, key.video_stream, key.signature_version],
+                AND signature_version<>?3 AND interpretation=?4",
+            params![
+                key.content,
+                key.video_stream,
+                key.signature_version,
+                key.interpretation_code()
+            ],
         )?;
         let count: i64 =
             transaction.query_row("SELECT count(*) FROM shot_analysis", [], |row| row.get(0))?;
@@ -90,22 +157,23 @@ impl ProjectStore {
         }
         let changes = encode_measures(analysis.measures());
         transaction.execute(
-            "INSERT INTO shot_analysis(content,video_stream,signature_version,pictures,changes)
-                VALUES(?1,?2,?3,?4,?5)
-                ON CONFLICT(content,video_stream,signature_version)
+            "INSERT INTO shot_analysis(content,video_stream,signature_version,pictures,changes,interpretation)
+                VALUES(?1,?2,?3,?4,?5,?6)
+                ON CONFLICT(content,video_stream,signature_version,interpretation)
                 DO UPDATE SET pictures=excluded.pictures, changes=excluded.changes",
             params![
                 key.content,
                 key.video_stream,
                 key.signature_version,
                 i64::try_from(analysis.pictures()).map_err(|_| invalid("shot picture count"))?,
-                changes
+                changes,
+                key.interpretation_code()
             ],
         )?;
         // The finished analysis supersedes any scan progress of its pictures.
         transaction.execute(
-            "DELETE FROM shot_scan_progress WHERE content=?1 AND video_stream=?2",
-            params![key.content, key.video_stream],
+            "DELETE FROM shot_scan_progress WHERE content=?1 AND video_stream=?2 AND interpretation=?3",
+            params![key.content, key.video_stream, key.interpretation_code()],
         )?;
         self.prune_foreign_progress(&transaction)?;
         transaction.commit()?;
@@ -189,15 +257,20 @@ impl ProjectStore {
         // One scan's progress at a time.
         transaction.execute(
             "DELETE FROM shot_scan_progress WHERE NOT (content=?1 AND video_stream=?2
-                AND signature_version=?3)",
-            params![key.content, key.video_stream, key.signature_version],
+                AND signature_version=?3 AND interpretation=?4)",
+            params![
+                key.content,
+                key.video_stream,
+                key.signature_version,
+                key.interpretation_code()
+            ],
         )?;
         let bytes = encode_measures(measures);
         if start == 0 {
             transaction.execute(
                 "INSERT INTO shot_scan_progress(content,video_stream,signature_version,pictures,
-                    next_picture,measures) VALUES(?1,?2,?3,?4,?5,?6)
-                    ON CONFLICT(content,video_stream,signature_version)
+                    next_picture,measures,interpretation) VALUES(?1,?2,?3,?4,?5,?6,?7)
+                    ON CONFLICT(content,video_stream,signature_version,interpretation)
                     DO UPDATE SET pictures=excluded.pictures, next_picture=excluded.next_picture,
                         measures=excluded.measures",
                 params![
@@ -206,7 +279,8 @@ impl ProjectStore {
                     key.signature_version,
                     count(pictures)?,
                     count(next)?,
-                    bytes
+                    bytes,
+                    key.interpretation_code()
                 ],
             )?;
         } else {
@@ -218,7 +292,8 @@ impl ProjectStore {
                 "UPDATE shot_scan_progress SET next_picture=?5,
                     measures=CAST(substr(measures,1,?6) || ?7 AS BLOB)
                     WHERE content=?1 AND video_stream=?2 AND signature_version=?3
-                    AND pictures=?4 AND next_picture>=?8 AND length(measures)>=?6",
+                    AND pictures=?4 AND next_picture>=?8 AND length(measures)>=?6
+                    AND interpretation=?9",
                 params![
                     key.content,
                     key.video_stream,
@@ -227,7 +302,8 @@ impl ProjectStore {
                     count(next)?,
                     count(start * MEASURE_BYTES)?,
                     bytes,
-                    count(start)?
+                    count(start)?,
+                    key.interpretation_code()
                 ],
             )?;
             if changed != 1 {
@@ -252,8 +328,8 @@ impl ProjectStore {
             .connection
             .query_row(
                 "SELECT pictures,next_picture,measures FROM shot_scan_progress
-                    WHERE content=?1 AND video_stream=?2 AND signature_version=?3",
-                params![key.content, key.video_stream, key.signature_version],
+                    WHERE content=?1 AND video_stream=?2 AND signature_version=?3 AND interpretation=?4",
+                params![key.content, key.video_stream, key.signature_version, key.interpretation_code()],
                 |row| {
                     Ok((
                         row.get::<_, i64>(0)?,
@@ -288,8 +364,13 @@ impl ProjectStore {
         key.validate()?;
         self.connection.execute(
             "DELETE FROM shot_scan_progress WHERE content=?1 AND video_stream=?2
-                AND signature_version=?3",
-            params![key.content, key.video_stream, key.signature_version],
+                AND signature_version=?3 AND interpretation=?4",
+            params![
+                key.content,
+                key.video_stream,
+                key.signature_version,
+                key.interpretation_code()
+            ],
         )?;
         Ok(())
     }
@@ -307,8 +388,8 @@ impl ProjectStore {
             .connection
             .query_row(
                 "SELECT pictures,changes FROM shot_analysis
-                    WHERE content=?1 AND video_stream=?2 AND signature_version=?3",
-                params![key.content, key.video_stream, key.signature_version],
+                    WHERE content=?1 AND video_stream=?2 AND signature_version=?3 AND interpretation=?4",
+                params![key.content, key.video_stream, key.signature_version, key.interpretation_code()],
                 |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Vec<u8>>(1)?)),
             )
             .optional()?;
@@ -336,19 +417,24 @@ impl ProjectStore {
         content: &str,
     ) -> Result<Vec<ShotAnalysisKey>, StoreError> {
         let mut statement = self.connection.prepare(
-            "SELECT content,video_stream,signature_version FROM shot_analysis
-                WHERE content=?1 ORDER BY video_stream,signature_version",
+            "SELECT content,video_stream,signature_version,interpretation FROM shot_analysis
+                WHERE content=?1 ORDER BY video_stream,signature_version,interpretation",
         )?;
         let rows = statement.query_map(params![content], |row| {
-            Ok(ShotAnalysisKey {
-                content: row.get(0)?,
-                video_stream: row.get(1)?,
-                signature_version: row.get(2)?,
-            })
+            Ok((
+                ShotAnalysisKey {
+                    content: row.get(0)?,
+                    video_stream: row.get(1)?,
+                    signature_version: row.get(2)?,
+                    interpretation: None,
+                },
+                row.get::<_, i64>(3)?,
+            ))
         })?;
         let mut keys = Vec::new();
         for row in rows {
-            let key = row?;
+            let (mut key, code) = row?;
+            key.interpretation = decode_interpretation(code)?;
             key.validate()?;
             keys.push(key);
         }
@@ -364,7 +450,8 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             signature_version TEXT NOT NULL,
             pictures INTEGER NOT NULL CHECK(pictures >= 0),
             changes BLOB NOT NULL,
-            PRIMARY KEY(content,video_stream,signature_version)
+            interpretation INTEGER NOT NULL DEFAULT 0 CHECK(interpretation BETWEEN 0 AND 20),
+            PRIMARY KEY(content,video_stream,signature_version,interpretation)
         ) STRICT;
         CREATE TABLE shot_scan_progress (
             content TEXT NOT NULL,
@@ -373,7 +460,8 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             pictures INTEGER NOT NULL CHECK(pictures >= 0),
             next_picture INTEGER NOT NULL CHECK(next_picture BETWEEN 0 AND pictures),
             measures BLOB NOT NULL,
-            PRIMARY KEY(content,video_stream,signature_version)
+            interpretation INTEGER NOT NULL DEFAULT 0 CHECK(interpretation BETWEEN 0 AND 20),
+            PRIMARY KEY(content,video_stream,signature_version,interpretation)
         ) STRICT;",
     )?;
     Ok(())
@@ -390,6 +478,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             length(CAST(content AS BLOB)) NOT BETWEEN 1 AND ?1
             OR length(CAST(signature_version AS BLOB)) NOT BETWEEN 1 AND ?1
             OR pictures > ?2
+            OR interpretation NOT BETWEEN 0 AND 20
             OR length(changes) > ?3)",
         params![
             MAX_KEY_TEXT_BYTES as i64,
@@ -413,6 +502,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             length(CAST(content AS BLOB)) NOT BETWEEN 1 AND ?1
             OR length(CAST(signature_version AS BLOB)) NOT BETWEEN 1 AND ?1
             OR pictures > ?2
+            OR interpretation NOT BETWEEN 0 AND 20
             OR length(measures) > ?3)",
         params![
             MAX_KEY_TEXT_BYTES as i64,

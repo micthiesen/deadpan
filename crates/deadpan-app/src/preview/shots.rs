@@ -39,6 +39,7 @@ enum Status {
 #[derive(Default)]
 pub(super) struct ShotJob {
     session: Option<u64>,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
     status: Status,
     events: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
@@ -58,16 +59,25 @@ pub(super) struct ShotJob {
     /// Packages whose scan failed in this app run. Reopening one shows the
     /// failure instead of copying and decoding the whole Original again; Try
     /// again removes it.
-    failed: Vec<(std::path::PathBuf, String)>,
+    failed: Vec<(
+        std::path::PathBuf,
+        Option<deadpan_core::SourceInterpretation>,
+        String,
+    )>,
 }
 
 impl ShotJob {
-    /// A new project session cancels the previous session's scan.
-    fn reset(&mut self, session: Option<u64>) {
+    /// A different session or interpretation cancels the previous scan.
+    fn reset(
+        &mut self,
+        session: Option<u64>,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
+    ) {
         self.cancel.store(true, Ordering::Release);
         self.threads.retain(|thread| !thread.is_finished());
         *self = Self {
             session,
+            interpretation,
             attempts: self.attempts,
             threads: std::mem::take(&mut self.threads),
             failed: std::mem::take(&mut self.failed),
@@ -118,6 +128,7 @@ impl ShotJob {
 /// Continues from the package's saved checkpoint when it has one.
 fn scan(
     package: &std::path::Path,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
     cancel: &AtomicBool,
     handle: &crate::jobs::JobHandle,
     send: impl Fn(Event),
@@ -130,6 +141,9 @@ fn scan(
     let store = ProjectStore::open(package, AccessMode::ReadOnly).map_err(|e| e.to_string())?;
     let input = deadpan_cli::shots::prepare_shot_input(&store, None, cancel, deadline)
         .map_err(|e| e.to_string())?;
+    if input.key.interpretation != interpretation {
+        return Err("The Original interpretation changed before scanning started".into());
+    }
     let resume = deadpan_cli::shots::stored_shot_progress(&store, &input);
     drop(store);
     let mut reported = 0;
@@ -169,8 +183,19 @@ impl DeadpanApp {
     /// Advance shot detection once per outer frame.
     pub(super) fn reconcile_shots(&mut self, context: &egui::Context) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
-        if self.shots.session != session {
-            self.shots.reset(session);
+        let interpretation = self.workspace.as_ref().and_then(|workspace| {
+            let Some(SingleSourceState::Ready { asset, .. }) = workspace.single_source.as_ref()
+            else {
+                return None;
+            };
+            workspace
+                .document
+                .source_interpretations()
+                .get(asset)
+                .copied()
+        });
+        if self.shots.session != session || self.shots.interpretation != interpretation {
+            self.shots.reset(session, interpretation);
         }
         while let Some(event) = self
             .shots
@@ -199,7 +224,9 @@ impl DeadpanApp {
                         }
                         Err(error) => {
                             if let Some(package) = self.shots.scanning.take() {
-                                self.shots.failed.push((package, error.clone()));
+                                self.shots
+                                    .failed
+                                    .push((package, interpretation, error.clone()));
                             }
                             self.shots.status = Status::Failed(error);
                         }
@@ -231,11 +258,11 @@ impl DeadpanApp {
             return;
         }
         let package = workspace.path.clone();
-        if let Some((_, error)) = self
+        if let Some((_, _, error)) = self
             .shots
             .failed
             .iter()
-            .find(|(failed, _)| *failed == package)
+            .find(|(failed, choice, _)| *failed == package && *choice == interpretation)
         {
             self.shots.status = Status::Failed(error.clone());
             return;
@@ -255,7 +282,7 @@ impl DeadpanApp {
         let spawned = std::thread::Builder::new()
             .name("deadpan-shots".into())
             .spawn(move || {
-                let result = scan(&package, &cancel, &handle, |event| {
+                let result = scan(&package, interpretation, &cancel, &handle, |event| {
                     let _ = sender.send(event);
                     repaint.request_repaint();
                 });
@@ -382,7 +409,10 @@ impl DeadpanApp {
             );
             if ui.add(style::row_action(ui, "Try again", "")).clicked() {
                 if let Some(package) = self.workspace.as_ref().map(|workspace| &workspace.path) {
-                    self.shots.failed.retain(|(failed, _)| failed != package);
+                    let interpretation = self.shots.interpretation;
+                    self.shots.failed.retain(|(failed, choice, _)| {
+                        failed != package || *choice != interpretation
+                    });
                 }
                 self.shots.status = Status::Unchecked;
             }

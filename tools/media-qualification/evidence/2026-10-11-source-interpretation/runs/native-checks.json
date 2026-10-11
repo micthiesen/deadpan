@@ -1,0 +1,32 @@
+[
+  {
+    "name": "native-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-source"
+    ],
+    "exit": 0,
+    "seconds": 47.88597441697493,
+    "log_sha256": "1d16e4d5d6f26da2dc5105883c859d7346e3e2ebdef02dac5a5b330cf11b38f1"
+  },
+  {
+    "name": "native-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-source",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 6.613982708193362,
+    "log_sha256": "c9cf1a91fbe1b22dd5659e68a9abddfc9d7c95fc73ce89545384dc0b1cfa43b7"
+  }
+]

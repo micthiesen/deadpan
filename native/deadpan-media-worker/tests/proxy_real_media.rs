@@ -127,9 +127,17 @@ fn vt_slot() -> File {
 }
 
 fn build(original: &Original, scratch: &Path) -> Result<(File, ProxySidecar)> {
+    build_interpreted(original, scratch, None)
+}
+
+fn build_interpreted(
+    original: &Original,
+    scratch: &Path,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
+) -> Result<(File, ProxySidecar)> {
     let plan = requested_plan(original);
     let frames = original.index.index().frames().len() as u64;
-    let request = proxy_request(
+    let mut request = proxy_request(
         original.input.identity().byte_length(),
         &original.info,
         frames,
@@ -137,6 +145,7 @@ fn build(original: &Original, scratch: &Path) -> Result<(File, ProxySidecar)> {
         Duration::from_secs(120),
     )
     .expect("SDR proxy request");
+    request.interpretation = interpretation;
     let cancelled = AtomicBool::new(false);
     // The production path: VideoToolbox's encoder service occasionally never
     // answers a synchronous request (see `VT_HANG` below), which the stall
@@ -158,10 +167,12 @@ fn build(original: &Original, scratch: &Path) -> Result<(File, ProxySidecar)> {
     drop(path);
     assert_eq!(report.frames, frames);
     assert_eq!(report.keyframes, frames);
+    let mut expected = identity(original);
+    expected.interpretation = interpretation;
     let sidecar = verify_proxy(
         &output,
         &original.input,
-        &original.blake3,
+        &expected,
         Arc::clone(&original.index),
         &original.info,
         plan.reason,
@@ -176,7 +187,56 @@ fn identity(original: &Original) -> ProxyOriginal {
         sha256: hex(&original.input.identity().sha256()),
         byte_length: original.input.identity().byte_length(),
         stream_index: original.index.stream_index(),
+        interpretation: None,
     }
+}
+
+#[test]
+fn corrected_proxies_verify_against_corrected_pixels_and_keep_exact_source_times() -> Result {
+    use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
+    let _slot = vt_slot();
+    let choice = Some(SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: Some(SourceChromaLocation::Center),
+    });
+    for name in ["hevc-sdr-8-limited.mp4", "hevc-sdr-10-limited.mp4"] {
+        let original = original(name)?;
+        let scratch = tempfile::tempdir()?;
+        let (file, sidecar) = build_interpreted(&original, scratch.path(), choice)?;
+        assert_eq!(sidecar.original.interpretation, choice);
+        let mut corrected = identity(&original);
+        corrected.interpretation = choice;
+        sidecar.validate_for(&corrected, original.index.index(), &original.info)?;
+        assert!(
+            sidecar
+                .validate_for(&identity(&original), original.index.index(), &original.info)
+                .is_err()
+        );
+        for (actual, expected) in sidecar
+            .index
+            .index()
+            .frames()
+            .iter()
+            .zip(original.index.index().frames())
+        {
+            assert_eq!(actual.pts, expected.pts);
+            assert_eq!(actual.reported_duration, expected.reported_duration);
+        }
+        let wrong = verify_proxy(
+            &file,
+            &original.input,
+            &identity(&original),
+            Arc::clone(&original.index),
+            &original.info,
+            ProxyReason::Requested,
+            control(&AtomicBool::new(false)),
+        );
+        assert!(
+            matches!(wrong, Err(ProxyError::Fidelity { .. })),
+            "{name}: automatic interpretation must not verify corrected pixels: {wrong:?}"
+        );
+    }
+    Ok(())
 }
 
 #[test]
@@ -499,7 +559,7 @@ fn build_in_ranges(
     Ok(verify_proxy(
         &output,
         &original.input,
-        &original.blake3,
+        &identity(original),
         Arc::clone(&original.index),
         &original.info,
         plan.reason,
@@ -969,7 +1029,7 @@ fn a_stalled_worker_is_torn_down_and_retried_once_in_a_fresh_output() -> Result 
     verify_proxy(
         &output,
         &original.input,
-        &original.blake3,
+        &identity(&original),
         Arc::clone(&original.index),
         &original.info,
         ProxyReason::Requested,

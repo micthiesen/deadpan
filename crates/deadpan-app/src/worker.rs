@@ -45,6 +45,7 @@ pub const REFINE_DELAY: Duration = Duration::from_millis(150);
 pub const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 
 mod endpoints;
+mod interpretation;
 mod proposed;
 mod proxy;
 mod slice_view;
@@ -141,6 +142,7 @@ struct Request {
 
 pub struct SourceSummary {
     pub info: SourceStreamInfo,
+    pub interpretation: deadpan_source::VideoInterpretation,
     pub frame_count: u64,
     pub first_pts: i64,
     pub terminal_pts: i64,
@@ -702,6 +704,7 @@ enum SessionKey {
         session: u64,
         asset: AssetId,
         receipt: SourceQualificationId,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
     },
     Generated {
         session: u64,
@@ -1202,13 +1205,30 @@ fn registered_source<'a>(
         &workspace.document,
         asset,
     )
+    .map(|source| source.registered)
+}
+
+/// Immutable media authority paired with the exact document's authored
+/// interpretation. Proposals and historical copied views can share a receipt
+/// while decoding different pixels, so the catalog alone is not the key.
+#[derive(Clone, Copy)]
+struct InterpretedSource<'a> {
+    registered: &'a Arc<RegisteredSource>,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
+}
+
+impl std::ops::Deref for InterpretedSource<'_> {
+    type Target = RegisteredSource;
+    fn deref(&self) -> &Self::Target {
+        self.registered
+    }
 }
 
 fn media_source<'a>(
     media: PictureMedia<'a>,
     document: &deadpan_core::ProjectDocument,
     asset: &AssetId,
-) -> Result<&'a Arc<RegisteredSource>, String> {
+) -> Result<InterpretedSource<'a>, String> {
     let registered = media
         .sources()
         .get(asset)
@@ -1228,7 +1248,10 @@ fn media_source<'a>(
     {
         return Err("Source media evidence disagrees with the selected project revision.".into());
     }
-    Ok(registered)
+    Ok(InterpretedSource {
+        registered,
+        interpretation: document.source_interpretations().get(asset).copied(),
+    })
 }
 
 /// Serve one Original picture through a progressively admitted session.
@@ -1241,7 +1264,7 @@ fn media_source<'a>(
 /// admits afresh.
 fn registered_picture(
     media: PictureMedia<'_>,
-    registered: &Arc<RegisteredSource>,
+    registered: InterpretedSource<'_>,
     id: SourceFrameId,
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
@@ -1252,6 +1275,7 @@ fn registered_picture(
         session: media.session(),
         asset: registered.asset.clone(),
         receipt: registered.receipt.id().clone(),
+        interpretation: registered.interpretation,
     };
     match proxy {
         // A proxy serves a random seek; an Original decoder already
@@ -1264,7 +1288,8 @@ fn registered_picture(
                 .as_ref()
                 .is_some_and(|session| session.key == key && session.source.is_step(id));
             if !stepping
-                && let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)?
+                && let Some(picture) =
+                    slot.picture(media, registered.registered, id, canvas, cancelled)?
             {
                 return Ok(picture);
             }
@@ -1415,7 +1440,7 @@ fn lookahead_ordinal(
 #[allow(clippy::too_many_arguments)]
 fn playback_proxy_picture(
     media: PictureMedia<'_>,
-    registered: &Arc<RegisteredSource>,
+    registered: InterpretedSource<'_>,
     id: SourceFrameId,
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
@@ -1439,7 +1464,7 @@ fn playback_proxy_picture(
         return Ok(None);
     }
     let started = Instant::now();
-    let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)? else {
+    let Some(picture) = slot.picture(media, registered.registered, id, canvas, cancelled)? else {
         return Ok(None);
     };
     session.costs.record_reduced(started.elapsed());
@@ -1458,7 +1483,7 @@ fn playback_proxy_picture(
 /// retained decoder's plan for later playback choices.
 fn exact_picture(
     media: PictureMedia<'_>,
-    registered: &Arc<RegisteredSource>,
+    registered: InterpretedSource<'_>,
     id: SourceFrameId,
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
@@ -1609,7 +1634,7 @@ pub(crate) mod tests_support {
 
 fn registered_picture_once(
     media: PictureMedia<'_>,
-    registered: &Arc<RegisteredSource>,
+    registered: InterpretedSource<'_>,
     id: SourceFrameId,
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
@@ -1631,7 +1656,7 @@ fn registered_picture_once(
         session
             .catalog
             .as_ref()
-            .is_none_or(|previous| !Arc::ptr_eq(previous, registered))
+            .is_none_or(|previous| !Arc::ptr_eq(previous, registered.registered))
     }) && (expected.asset() != &registered.asset
         || !same_index_mapping(expected, video.index().index(), || {
             cancelled.load(Ordering::Acquire)
@@ -1643,6 +1668,7 @@ fn registered_picture_once(
         session: media.session(),
         asset: registered.asset.clone(),
         receipt: registered.receipt.id().clone(),
+        interpretation: registered.interpretation,
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
@@ -1687,11 +1713,21 @@ fn registered_picture_once(
             cancelled,
         )
         .map_err(|error| error.to_string())?;
+        let source = source
+            .with_interpretation(
+                registered
+                    .interpretation
+                    .map(Into::into)
+                    .unwrap_or_default(),
+                FRAME_TIMEOUT,
+                cancelled,
+            )
+            .map_err(|error| error.to_string())?;
         check_picture_limits(&source)?;
         *retained = Some(RetainedSession {
             key,
             source,
-            catalog: Some(Arc::clone(registered)),
+            catalog: Some(Arc::clone(registered.registered)),
             costs: PlaybackPictures::default(),
             reposition: None,
             ahead: Ahead::default(),
@@ -1700,7 +1736,7 @@ fn registered_picture_once(
     let session = retained
         .as_mut()
         .ok_or("The source session could not be retained.")?;
-    session.catalog = Some(Arc::clone(registered));
+    session.catalog = Some(Arc::clone(registered.registered));
     let summary = Some(source_summary(&session.source));
     let decoded =
         session
@@ -1747,6 +1783,7 @@ fn source_summary(source: &SourceSession) -> SourceSummary {
     let index = source.index().index();
     SourceSummary {
         info: source.info().clone(),
+        interpretation: source.interpretation(),
         frame_count: index.frames().len() as u64,
         first_pts: index.frames()[0].pts,
         terminal_pts: index.terminal_end(),

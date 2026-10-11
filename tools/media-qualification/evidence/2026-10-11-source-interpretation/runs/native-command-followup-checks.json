@@ -1,0 +1,26 @@
+[
+  {
+    "name": "native-command-followup-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.483893083408475,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "native-command-followup-workspace",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "exit": 0,
+    "seconds": 4.711393291130662,
+    "sha256": "6f80594564c627d7a8d31c361a5756a1e0df196cbbc22a140a19cd2f961e97ef"
+  }
+]

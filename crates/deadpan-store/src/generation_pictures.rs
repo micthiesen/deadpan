@@ -239,13 +239,18 @@ impl<'a> QualifiedGenerationPictures<'a> {
                     "conditioning asset disagrees with its source qualification",
                 ));
             }
-            let index = cached
+            let video = cached
                 .receipt
                 .snapshot()
                 .video()
-                .ok_or_else(|| invalid("conditioning source has no selected picture stream"))?
-                .index()
-                .index();
+                .ok_or_else(|| invalid("conditioning source has no selected picture stream"))?;
+            if let Some(interpretation) = document.source_interpretations().get(asset) {
+                video
+                    .interpretation_support()
+                    .validate((*interpretation).into())
+                    .map_err(|error| invalid(&format!("conditioning interpretation: {error}")))?;
+            }
+            let index = video.index().index();
             observe(qualification, index)
         }
         #[cfg(not(any(target_os = "macos", target_os = "linux")))]
@@ -297,7 +302,12 @@ impl GenerationPictures for QualifiedGenerationPictures<'_> {
             }
             Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => self
                 .with_original_index(document, asset, |qualification, index| {
-                    original_identity(qualification, index, picture)
+                    original_identity(
+                        qualification,
+                        index,
+                        picture,
+                        document.source_interpretations().get(asset).copied(),
+                    )
                 }),
             Picture::Still { .. }
             | Picture::Accepted {
@@ -386,6 +396,7 @@ impl GenerationPictures for QualifiedGenerationPictures<'_> {
                     let identity = |frame| GenerationPictureIdentity::Original {
                         qualification: qualification.clone(),
                         frame,
+                        interpretation: document.source_interpretations().get(asset).copied(),
                     };
                     Ok(GenerationPictureSupport {
                         first: identity(first),
@@ -419,6 +430,7 @@ fn original_identity(
     qualification: &SourceQualificationId,
     index: &deadpan_core::SourceFrameIndex,
     picture: &Picture,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 ) -> Result<GenerationPictureIdentity, StoreError> {
     let picture = rebound_original(picture, index)?;
     let frame = picture
@@ -427,6 +439,7 @@ fn original_identity(
     Ok(GenerationPictureIdentity::Original {
         qualification: qualification.clone(),
         frame: frame.identity,
+        interpretation,
     })
 }
 

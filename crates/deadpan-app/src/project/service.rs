@@ -50,6 +50,7 @@ mod scoped;
 mod semantic;
 mod shots;
 mod slip;
+mod source_interpretation;
 mod splice;
 mod storage;
 mod takes;
@@ -77,6 +78,7 @@ struct Service {
     error: Option<recovery::CommandFailure>,
     message: Option<String>,
     committed: Option<CommittedEdit>,
+    source_interpretation_saved: Option<super::SourceInterpretationSaved>,
     semantic: semantic::State,
     macros: Option<super::macros::Update>,
     saved_macro: Option<(super::macros::Operation, super::macros::Receipt)>,
@@ -180,6 +182,7 @@ pub(super) fn run(
         error: None,
         message: None,
         committed: None,
+        source_interpretation_saved: None,
         semantic: semantic::State::default(),
         macros: None,
         saved_macro: None,
@@ -408,6 +411,7 @@ impl Service {
             error: self.error.as_ref().map(|error| error.message.clone()),
             message: self.message.clone(),
             committed: self.committed.clone(),
+            source_interpretation_saved: self.source_interpretation_saved.clone(),
             semantic: self.semantic.snapshot(),
             macros: self.macros.clone(),
             saved_macro: self
@@ -637,6 +641,12 @@ impl Service {
                 unreachable!("reported Open uses dispatch feedback")
             }
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
+            ProjectRequest::InterpretSource {
+                expected_session,
+                expected_revision,
+                asset,
+                interpretation,
+            } => self.interpret_source(expected_session, expected_revision, asset, interpretation),
             ProjectRequest::Takes(_) => unreachable!("takes use independent feedback"),
             ProjectRequest::Damaged(_) => {
                 unreachable!("damaged recovery uses independent feedback")
@@ -2161,7 +2171,11 @@ fn snapshot(
         Some(previous) => (
             previous.transcript.clone(),
             previous.speech_activity.clone(),
-            previous.shot_analysis.clone(),
+            if previous.document.source_interpretations() == document.source_interpretations() {
+                previous.shot_analysis.clone()
+            } else {
+                original_shots(store, single_source.as_ref(), &sources, &document)
+            },
             // The Original can become ready after the first workspace.
             previous
                 .corrections
@@ -2171,7 +2185,7 @@ fn snapshot(
         None => (
             original_transcript(store, single_source.as_ref(), &sources),
             original_activity(store, single_source.as_ref(), &sources),
-            original_shots(store, single_source.as_ref(), &sources),
+            original_shots(store, single_source.as_ref(), &sources, &document),
             original_corrections(store, single_source.as_ref(), &sources),
         ),
     };
@@ -2291,6 +2305,7 @@ fn original_shots(
     store: &ProjectStore,
     single_source: Option<&SingleSourceState>,
     sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
+    document: &ProjectDocument,
 ) -> Option<Arc<super::OriginalShots>> {
     let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
         return None;
@@ -2299,8 +2314,13 @@ fn original_shots(
     let video = receipt.snapshot().video()?;
     let pictures = video.index().index().frames().len();
     let content = receipt.original().content().to_string();
-    let (key, analysis) =
-        deadpan_cli::shots::stored_shots(store, &content, video.index().stream_index(), pictures)?;
+    let (key, analysis) = deadpan_cli::shots::stored_shots(
+        store,
+        &content,
+        video.index().stream_index(),
+        pictures,
+        document.source_interpretations().get(asset).copied(),
+    )?;
     Some(Arc::new(super::OriginalShots { key, analysis }))
 }
 

@@ -16,7 +16,7 @@ loading them never edits the project.
 | [`deadpan_analysis::shots`](../crates/deadpan-analysis/src/shots.rs) | Pure `PictureSignature` (32 × 18 cell means of integer Rec.601 YCbCr plus a 32-bin luma histogram), the 23-byte `PictureMeasure` (`deadpan-picture-signature-2`), the streaming `ShotMeasurer` with resumable `ShotProgress`, validated `ShotAnalysis`, hard cuts and the `deadpan-shots-2` rule with [gradual transitions](../crates/deadpan-analysis/src/shots/gradual.rs). |
 | [`deadpan_media::picture_scan`](../crates/deadpan-media/src/picture_scan.rs) | Decodes every picture of a verified snapshot in order, from the first picture or from any indexed picture through an exact seek, and checks each against its qualified index ordinal. |
 | [`deadpan_cli::shots`](../crates/deadpan-cli/src/shots.rs) | `prepare_shot_input`, `stored_shot_progress`, pipelined resumable `scan_shots`, `stored_shots`, the `detect-shots` and `shots` commands. |
-| [`deadpan-store`](../crates/deadpan-store/src/shot_analysis.rs) | `shot_analysis` and the operational `shot_scan_progress` table (database schema 66). |
+| [`deadpan-store`](../crates/deadpan-store/src/shot_analysis.rs) | `shot_analysis` and the operational `shot_scan_progress` table (database schema 77). |
 | [`preview::shots`](../crates/deadpan-app/src/preview/shots.rs) | Automatic background job, its checkpoints and the rail status. |
 
 ## Scan
@@ -34,7 +34,10 @@ PTS and reported duration of index ordinal `k`, and decoding must end exactly
 after the last indexed picture. A different PTS, a missing picture or an extra
 picture fails with the ordinal and both values; nothing is skipped, inserted
 or guessed. Bytes other than the qualified content are refused before
-decoding.
+decoding. The scan captures the document's authored range/chroma correction and
+applies it to this decoder without altering qualification. A resumed scan uses
+the same choice. Ten-bit source analyses remain RGBA8, while preview and export
+retain their RGBA64 precision.
 
 Fractional clean-aperture bounds must also match the qualification. Before
 handing a picture to the signature thread, `scan_shots` samples the clean image
@@ -151,18 +154,22 @@ the rule can be rerun exactly on any later read.
 
 ## Storage
 
-`shot_analysis` is keyed by Original content identity, qualified video stream
-and signature version. It stores the picture count and the measures as a BLOB
-of 23 bytes per picture (`encode_measures`). Saving replaces the row for its
-key, removes rows of the same pictures under an older signature version,
+`shot_analysis` is keyed by Original content identity, qualified video stream,
+signature version and authored range/chroma interpretation. It stores the picture
+count and the measures as a BLOB of 23 bytes per picture (`encode_measures`).
+Saving replaces the row for its key, removes rows of the same pictures and
+interpretation under an older signature version,
 never creates a revision or Undo step, and is limited to 16 rows per
 project. Every read takes the expected picture count (the Original's qualified
 index length), requires the stored count and BLOB length to agree with it and
 revalidates through `ShotAnalysis::new`. `stored_shots` reads only the current
-signature version and skips an unreadable or mismatched row, so the app scans
-again.
+signature version and captured interpretation, and skips an unreadable or
+mismatched row, so the app scans again. Correcting the source cancels its pending
+scan and rejects late results with another interpretation. Undo can reload the
+previously stored analysis. Tracking and speech navigation select shots using
+the same revision-bound choice.
 
-Database schema 66 adds the operational `shot_scan_progress` table under the
+Database schema 77 retains the operational `shot_scan_progress` table under the
 same key: picture count, next picture and the measures so far (a checkpoint's
 spans that reach past its measured pictures are zero, and reads check that).
 It is written outside history. `append_shot_scan_progress` takes a tail: one
@@ -180,8 +187,8 @@ removed). Generic projects keep progress of any registered source scanned
 with `--asset`. The Original of a single-Original project never changes
 (relinking requires identical content), so this removes only rows left by
 earlier development work or a generic `--asset` scan. Saving a key's final
-analysis also deletes that content and stream's progress in the same
-transaction. Both tables always exist in schema 66, so there are no
+analysis also deletes that content, stream and interpretation's progress in the
+same transaction. Both tables always exist in schema 77, so there are no
 missing-table branches. A read checks the picture
 count, the next picture against the BLOB and `ShotProgress::new`; an
 unreadable row is skipped and the scan starts over. Earlier development

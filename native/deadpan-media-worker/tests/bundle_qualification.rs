@@ -360,6 +360,7 @@ fn fixture_boundaries(native: &[u8]) -> [(Vec<u8>, BoundaryPicture); 2] {
             },
             asset: AssetId::new("original").unwrap(),
             qualification: deadpan_core::SourceQualificationId::new(sha256(native)).unwrap(),
+            interpretation: None,
             picture: DecodedBoundary {
                 source_frame: SourceFrameId(ordinal),
                 pts: frame.metadata().pts,

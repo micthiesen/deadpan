@@ -283,10 +283,16 @@ refers to a proxy.
 ```
 
 - **Key and sidecar.** The key is the recipe version, the Original object's
-  BLAKE3 content address and the stream index. The sidecar
+  BLAKE3 content address, stream index and authored source interpretation.
+  Automatic interpretation retains the directory spelling above; an explicit
+  choice adds `-r<auto|limited|full>-c<position>`. The same distinction applies
+  to failures and partial builds. Source correction cancels the old native job
+  and reader; Undo can reuse its verified entry. The worker and fidelity reader
+  both apply the captured choice to the Original, never to the proxy again.
+  The sidecar
   (`ProxySidecar`, schema 2) records:
   - schema, recipe, encoder and reason;
-  - the Original's BLAKE3, SHA-256, length and stream;
+  - the Original's BLAKE3, SHA-256, length, stream and optional authored interpretation;
   - the proxy file's SHA-256, BLAKE3 and length;
   - the proxy's measured stream interpretation and complete index;
   - the fidelity samples.

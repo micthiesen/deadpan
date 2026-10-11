@@ -1,0 +1,27 @@
+{
+  "deadpan-app": {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance/bin/deadpan-app",
+    "bytes": 66992624,
+    "sha256": "995772f4a3e7c24c2919232b90729430169580d57438939cffff0358e6f65160"
+  },
+  "deadpan-cli": {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance/bin/deadpan-cli",
+    "bytes": 44211616,
+    "sha256": "251761df1436d6ee424d51b2f451bf3947e443a4135418ada342bcd9d5acd544"
+  },
+  "deadpan-media-worker": {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance/bin/deadpan-media-worker",
+    "bytes": 1169232,
+    "sha256": "18c649158874d28780f97a706bfb0864e2294f41117e12de817bf9071d9b3635"
+  },
+  "deadpan-track": {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance/bin/deadpan-track",
+    "bytes": 1637808,
+    "sha256": "589fc5d6c39ca0b903eea2ba9f0c150521e4aeed2d9cb8585a2545105283064e"
+  },
+  "deadpan-transcribe": {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance/bin/deadpan-transcribe",
+    "bytes": 2603808,
+    "sha256": "8bbd6b8729977d4d006593e215f345ade71b3f4b3f43a8e45ca63631fecd0529"
+  }
+}

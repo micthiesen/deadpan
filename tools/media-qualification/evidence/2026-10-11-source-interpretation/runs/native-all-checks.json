@@ -1,0 +1,61 @@
+[
+  {
+    "name": "native-all-current",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-source"
+    ],
+    "exit": 0,
+    "seconds": 50.18426683405414,
+    "sha256": "917f6bdb506198c41df26dd6572162945b47175115c8ef55d7250e6b56621543"
+  },
+  {
+    "name": "media-sessions-current",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "source_session"
+    ],
+    "exit": 0,
+    "seconds": 2.8198014171794057,
+    "sha256": "53ceb7487a3d576e238d3de09205fe550be7248419a31bb5f37345e21cbda29f"
+  },
+  {
+    "name": "store-source-current",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "source_registration"
+    ],
+    "exit": 0,
+    "seconds": 10.624408375006169,
+    "sha256": "e40fa6b1eb2fc5b5960cd31e593c865a68b2e24342a5c2f69e80e6f24b465929"
+  },
+  {
+    "name": "workspace-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 101,
+    "seconds": 16.445954542141408,
+    "sha256": "12528df865390d13183be74f8cbddeb344963b7aeab867b82e5d8ae11e70490f"
+  }
+]

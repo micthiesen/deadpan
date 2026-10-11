@@ -10,7 +10,7 @@
 
 use deadpan_core::{
     AssetId, ExactRatio, GeneratedObjectRef, NodeId, ProjectId, RevisionId, SourceFrameId,
-    SourceQualificationId, SourceTimestamp,
+    SourceInterpretation, SourceQualificationId, SourceTimestamp,
 };
 use serde::{Deserialize, Serialize};
 
@@ -270,6 +270,7 @@ pub enum BoundaryPicture {
         clock: BoundaryClock,
         asset: AssetId,
         qualification: SourceQualificationId,
+        interpretation: Option<SourceInterpretation>,
         picture: DecodedBoundary,
     },
     /// A frame of an accepted generated Hold's sampled master.
@@ -299,6 +300,8 @@ enum BoundaryPictureWire {
         clock: BoundaryClock,
         asset: AssetId,
         qualification: SourceQualificationId,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        interpretation: Option<SourceInterpretation>,
         picture: DecodedBoundary,
     },
     /// A frame of an accepted generated Hold's sampled master.
@@ -320,6 +323,8 @@ enum LegacyBoundaryPictureWire<'a> {
         project_frame: i64,
         asset: &'a AssetId,
         qualification: &'a SourceQualificationId,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        interpretation: Option<SourceInterpretation>,
         picture: &'a DecodedBoundary,
     },
     Generated {
@@ -343,12 +348,14 @@ impl Serialize for BoundaryPicture {
             Self::Original {
                 asset,
                 qualification,
+                interpretation,
                 picture,
                 ..
             } => LegacyBoundaryPictureWire::Original {
                 project_frame: *frame,
                 asset,
                 qualification,
+                interpretation: *interpretation,
                 picture,
             },
             Self::Generated {
@@ -420,6 +427,15 @@ impl BoundaryPicture {
     }
 
     pub(crate) fn validate_shape(&self) -> Result<(), &'static str> {
+        if let Self::Original {
+            interpretation: Some(choice),
+            ..
+        } = self
+            && choice.range.is_none()
+            && choice.chroma_location.is_none()
+        {
+            return Err("empty source interpretation");
+        }
         match self.clock() {
             BoundaryClock::Project { frame } if *frame < 0 => {
                 return Err("negative boundary project frame");
@@ -582,6 +598,7 @@ mod tests {
             clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+            interpretation: None,
             picture: decoded.clone(),
         };
         original.validate_shape().unwrap();
@@ -613,6 +630,7 @@ mod tests {
             clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+            interpretation: None,
             picture: lying,
         };
         assert!(contradiction.validate_shape().is_err());
@@ -622,6 +640,7 @@ mod tests {
             clock: crate::BoundaryClock::Project { frame: 14 },
             asset: AssetId::new("asset").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+            interpretation: None,
             picture: wide,
         };
         assert!(unsupported.validate_shape().is_err());

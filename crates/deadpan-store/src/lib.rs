@@ -827,6 +827,8 @@ impl ProjectStore {
         let transaction = self.connection.unchecked_transaction()?;
         let plan = prepare_command(&transaction, &self.documents, request)?;
         compound::require_authored(&plan)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        source_registration::check_revision_assets(&transaction, &plan.current, &plan.next)?;
         Ok(plan.edit)
     }
 

@@ -174,11 +174,13 @@ fn picture_identity(picture: &BoundaryPicture) -> GenerationPictureIdentity {
     match picture {
         BoundaryPicture::Original {
             qualification,
+            interpretation,
             picture,
             ..
         } => GenerationPictureIdentity::Original {
             qualification: qualification.clone(),
             frame: picture.source_frame,
+            interpretation: *interpretation,
         },
         BoundaryPicture::Generated {
             sampled_object,
@@ -607,6 +609,7 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
         clock: value.context[8].picture.clock().clone(),
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        interpretation: None,
         picture: DecodedBoundary {
             source_frame: SourceFrameId(7),
             pts: stamp(200),
@@ -1119,6 +1122,7 @@ fn original_identity(ordinal: usize) -> GenerationPictureIdentity {
     GenerationPictureIdentity::Original {
         qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
         frame: deadpan_core::SourceFrameId(u64::try_from(ordinal).unwrap()),
+        interpretation: None,
     }
 }
 

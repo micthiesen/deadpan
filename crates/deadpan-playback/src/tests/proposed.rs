@@ -50,6 +50,38 @@ fn reference(snapshot: &Arc<Snapshot>, start: AudioSample, count: u32) -> Vec<f3
 }
 
 #[test]
+fn proposed_source_interpretation_must_match_the_qualified_pixel_contract() {
+    let _permit = resources::pcm();
+    for (name, admitted) in [("cfr-bframes.mp4", true), ("hdr-pq-av.mp4", false)] {
+        let directory = tempfile::tempdir().unwrap();
+        let mut store =
+            ProjectStore::create(&directory.path().join("interpretation.deadpan"), &empty())
+                .unwrap();
+        register_media(&mut store, name, true);
+        let base = snapshot(&store, 91);
+        let mut wire = serde_json::to_value(base.document.as_ref()).unwrap();
+        wire["revision_id"] = json!("proposal");
+        wire["source_interpretations"] = json!({"original":{"range":"full"}});
+        let proposed = Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap());
+        let result = Snapshot::proposed(&base, proposed, 1, 1);
+        if admitted {
+            let proposed = result.unwrap();
+            assert_eq!(
+                proposed.document.source_interpretations()[&AssetId::new("original").unwrap()]
+                    .range,
+                Some(SourceColorRange::Full)
+            );
+        } else {
+            assert!(
+                matches!(result, Err(SnapshotError::MediaAdmission(_))),
+                "HDR full range is refused before playback"
+            );
+        }
+        assert!(base.document.source_interpretations().is_empty());
+    }
+}
+
+#[test]
 fn proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_fields() {
     let permit = resources::pcm();
     let directory = tempfile::tempdir().unwrap();

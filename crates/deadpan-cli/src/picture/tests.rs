@@ -19,6 +19,63 @@ use super::*;
 
 mod extension;
 
+#[test]
+fn source_interpretation_is_bound_to_the_captured_revision_and_undo() -> Result {
+    use deadpan_core::{SourceColorRange, SourceInterpretation};
+    let mut fixture = Fixture::source("hevc-sdr-8-limited.mp4")?;
+    let before = fixture.store.snapshot()?;
+    let mut old = fixture.open(None)?;
+    let original = old.prepare(ProjectFrame(2), &active())?;
+    fixture.edit(
+        "interpret",
+        Command::SetSourceInterpretation {
+            asset: asset(),
+            interpretation: Some(SourceInterpretation {
+                range: Some(SourceColorRange::Full),
+                chroma_location: None,
+            }),
+        },
+    )?;
+    let mut corrected = fixture.open(None)?;
+    let picture = corrected.prepare(ProjectFrame(2), &active())?;
+    assert_eq!(decoded(&picture).0, decoded(&original).0);
+    assert_eq!(
+        decoded(&picture).1.metadata(),
+        decoded(&original).1.metadata()
+    );
+    assert_ne!(decoded(&picture).1.bytes(), decoded(&original).1.bytes());
+    // Both a retained decoder and a cold open of the old revision must keep
+    // the old pixels even after the current revision's interpretation changes.
+    assert_eq!(
+        decoded(&old.prepare(ProjectFrame(2), &active())?).1.bytes(),
+        decoded(&original).1.bytes()
+    );
+    let mut reopened_old =
+        ProjectPictureSession::open_revision(&fixture.path, before.revision_id(), None, &active())?;
+    assert_eq!(
+        decoded(&reopened_old.prepare(ProjectFrame(2), &active())?)
+            .1
+            .bytes(),
+        decoded(&original).1.bytes()
+    );
+    fixture
+        .store
+        .undo(&revision("interpret"), revision("undo"))?;
+    assert_eq!(
+        decoded(&fixture.open(None)?.prepare(ProjectFrame(2), &active())?)
+            .1
+            .bytes(),
+        decoded(&original).1.bytes()
+    );
+    assert_eq!(
+        decoded(&corrected.prepare(ProjectFrame(2), &active())?)
+            .1
+            .bytes(),
+        decoded(&picture).1.bytes()
+    );
+    Ok(())
+}
+
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn active() -> AtomicBool {

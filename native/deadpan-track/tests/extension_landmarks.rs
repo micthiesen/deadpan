@@ -124,6 +124,7 @@ impl Fixture {
                 cancellation_token: CancellationToken::new("cancel-1").unwrap(),
                 source: artifact("input/source.mkv", source),
                 stream: ExpectedStream {
+                    interpretation: None,
                     stream_index: 0,
                     width,
                     height,

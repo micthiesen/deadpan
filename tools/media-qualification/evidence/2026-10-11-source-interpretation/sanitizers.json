@@ -1,0 +1,55 @@
+{
+  "scope": "selected native C adapters and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+  "packages": [
+    "deadpan-source"
+  ],
+  "test_binary_sha256": {
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/deadpan_source-3809e2ce21a82b14": "e827484068c605f69ad59dcfc36a11b6422a993ee4c958e819bffee6c0170ec1",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/adversarial_decode-1f8f8326c0b0d196": "fcabf27d4b1ea462534e05065b7eb1fb21357796ce06dd978d1a07ca847e45ef",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/audio_decode-8c149a8405bdf052": "d68b6229ad5dc71a3fb12311f5bb719a10c861a0fde796748ea05a58d21b70f3",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/av1-f0bfb71da9c56ab2": "aeba7e217761b1000f30746362bb95014ae18899b64d772822e4a70e811c8783",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/clean_aperture-5e799a29e135ac63": "977b42d11387ad64ad6e3d56333a019e63f8b1f816d5ea1657cca2406f3c40c7",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/deinterlace-25671f8b67abc104": "b700ef7934ac0f709fa980a006c2bd0fc85fbf38f008900695c54b5535299b17",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/export_decode-d7b83f888ac4ca0f": "eef5dea736b488097a2aa45d4fd68bf91f28eb67e90dab577e26d40101f6217c",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/hdr_decode-8a17dc49359af274": "47fd3777d7d0b2873bc8dde30024a0597b8dc16fb75d7c8721bbbb22669304c4",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/interpretation-606330703ce91932": "6e43bf857b172a7c23e574d63435bfabe0bea34d00244feeb41d9a80ecbf2c1e",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/mp3-33453df38bacfa06": "67c7d81c219006d2eac29d6c0c0fa41ab1e1981e1528b1b3633f69aae5c11249",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/opus-2f3cd162e8eec03b": "c85eb8b020fc7dc960142a173fc08e1485d3773f747b94cc955bcc0a3b10d332",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/opus_mp4-36266c76075143c0": "4b708e54d2cfb16de993c7821e245ad00fa1e03b5220c914cf1cebc0c527e50f",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/persistent_decode-1ed9f101b50ea04c": "53b36c4249c86d80df027e8e245aae0c1027287e82eddfad598aae8876485f58",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/prores-313c129a7b2ac2c3": "a577bb20d57049b07bea0794d0184c91d9a5accd1d27410fea800690aa9de43b",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/remux_regions-1ad36ed0fa9a35b0": "de389176cb0b15d23c6abd66950610ee3acd63fae318991efe381773539d3a47",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/sdr_hevc-aa933a5364bd6328": "7ddbc9c699ae21119ad09b08afebcd529629458950f3df4f43c713414ab82c05",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/threaded_seek-5692d58a45b15436": "1564e25803bbf742661c2673758291649afa697103df906e5c09a5b84943320c",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/vp9-97cabf313c77053b": "eb644688f52d90aeb3edf9db1b88a3e6774691b2486d403792b2444e7d60bf0b",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/vp9_hdr-089e2b86c929c0f5": "a66219908553649684e196e4c492c9d483f90d52c98fec3ad85dc67391221148",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/webm-297aab517cae1803": "4a8f213b42216338c1e8ea16f6d8321e4ad8642628a67cf4c42a1013140ade25",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target/aarch64-apple-darwin/debug/deps/wide_pcm-a56cee2b3dd76464": "33387641ce688c0ddb405a7349b50b53a19878525a4d12a0f6c50d41b086e659"
+  },
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-source",
+    "--locked",
+    "--target",
+    "aarch64-apple-darwin",
+    "--target-dir",
+    "/private/tmp/deadpan-source-interpretation-20261010/source-sanitizers/target"
+  ],
+  "preparation": [],
+  "cflags": "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all",
+  "rust_flags": [
+    "-C",
+    "link-arg=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+    "-C",
+    "link-arg=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin"
+  ],
+  "runtime": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+  "runtime_sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "elapsed_seconds": 184.0343087092042,
+  "exit_code": 0,
+  "failure": null,
+  "test_log_sha256": "8f5ecd2ce9df01498ae5eacfe597c12488601aa4fc1da82facae308fe8c34aec"
+}

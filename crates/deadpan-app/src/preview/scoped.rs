@@ -16,6 +16,7 @@ impl DeadpanApp {
         receipt: Option<&crate::project::scoped::Commit>,
         saved_mark: Option<&crate::project::marks::Saved>,
         saved_target: Option<&crate::project::targets::Saved>,
+        saved_interpretation: Option<&crate::project::SourceInterpretationSaved>,
     ) {
         let Some(state) = &mut self.scoped else {
             return;
@@ -36,7 +37,9 @@ impl DeadpanApp {
             Some(receipt) => state.reconcile(workspace, receipt),
             None => Ok(
                 saved_mark.is_some_and(|saved| state.rebase_mark(workspace, saved))
-                    || saved_target.is_some_and(|saved| state.rebase_target(workspace, saved)),
+                    || saved_target.is_some_and(|saved| state.rebase_target(workspace, saved))
+                    || saved_interpretation
+                        .is_some_and(|saved| state.rebase_source_interpretation(workspace, saved)),
             ),
         };
         match result {

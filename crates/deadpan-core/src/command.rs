@@ -141,6 +141,12 @@ define_commands! {
     DeleteTarget {
         id: crate::TargetId,
     },
+    /// Change how immutable original picture samples are decoded. `None`
+    /// restores the qualified source interpretation without changing timing.
+    SetSourceInterpretation {
+        asset: AssetId,
+        interpretation: Option<crate::SourceInterpretation>,
+    },
     /// Permit one sound through one current silent-Hold occurrence.
     SetSoundAllowance {
         sound: crate::SoundId,
@@ -657,6 +663,12 @@ pub struct DocumentPatch {
     pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub source_interpretations: BTreeMap<AssetId, ValueChange<crate::SourceInterpretation>>,
     #[serde(deserialize_with = "unique_map")]
     pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
     #[serde(
@@ -729,6 +741,7 @@ impl DocumentPatch {
         )?;
         if self.nodes.len() > MAX_DOCUMENT_NODES
             || self.assets.len() > MAX_DOCUMENT_NODES
+            || self.source_interpretations.len() > crate::MAX_DOCUMENT_ASSETS
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.beat_sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
@@ -836,6 +849,10 @@ impl DocumentPatch {
             }
         }
         apply_changes(&mut result.assets, &self.assets)?;
+        apply_changes(
+            &mut result.source_interpretations,
+            &self.source_interpretations,
+        )?;
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.sounds, &self.sounds)?;
         apply_changes(&mut result.sound_routes, &self.sound_routes)?;
@@ -884,6 +901,7 @@ impl DocumentPatch {
             }
         }
         check_changes(&from.assets, &self.assets)?;
+        check_changes(&from.source_interpretations, &self.source_interpretations)?;
         check_changes(&from.marks, &self.marks)?;
         check_changes(&from.sounds, &self.sounds)?;
         check_changes(&from.sound_routes, &self.sound_routes)?;
@@ -906,6 +924,7 @@ impl DocumentPatch {
             root,
             nodes,
             assets,
+            source_interpretations,
             marks,
             sounds,
             beat_sounds,
@@ -930,6 +949,11 @@ impl DocumentPatch {
             && from.root == *root
             && patched_equals(&from.nodes, &self.nodes, nodes)
             && patched_equals(&from.assets, &self.assets, assets)
+            && patched_equals(
+                &from.source_interpretations,
+                &self.source_interpretations,
+                source_interpretations,
+            )
             && patched_equals(&from.marks, &self.marks, marks)
             && patched_equals(&from.sounds, &self.sounds, sounds)
             && patched_equals(&from.beat_sounds, &self.beat_sounds, beat_sounds)
@@ -956,6 +980,7 @@ impl DocumentPatch {
             }),
             nodes: inverse_changes(&self.nodes),
             assets: inverse_changes(&self.assets),
+            source_interpretations: inverse_changes(&self.source_interpretations),
             marks: inverse_changes(&self.marks),
             sounds: inverse_changes(&self.sounds),
             beat_sounds: inverse_changes(&self.beat_sounds),
@@ -1661,6 +1686,10 @@ fn net_transaction_known(
         }),
         nodes: diff(&document.nodes, &result.nodes),
         assets: diff(&document.assets, &result.assets),
+        source_interpretations: diff(
+            &document.source_interpretations,
+            &result.source_interpretations,
+        ),
         marks: diff(&document.marks, &result.marks),
         sounds: diff(&document.sounds, &result.sounds),
         beat_sounds: diff(&document.beat_sounds, &result.beat_sounds),
@@ -1999,6 +2028,22 @@ pub(crate) fn reduce(
         }
         Command::SetTarget { id, target } => {
             document.targets.insert(id.clone(), target.clone());
+        }
+        Command::SetSourceInterpretation {
+            asset,
+            interpretation,
+        } => {
+            crate::source_interpretation::validate_asset(document, asset)?;
+            match interpretation {
+                Some(interpretation) => {
+                    document
+                        .source_interpretations
+                        .insert(asset.clone(), *interpretation);
+                }
+                None => {
+                    document.source_interpretations.remove(asset);
+                }
+            }
         }
         Command::DeleteTarget { id } => {
             if document.targets.remove(id).is_none() {
@@ -3296,6 +3341,7 @@ fn description(command: &Command) -> &'static str {
         Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",
         Command::SetTarget { .. } => "Set target",
+        Command::SetSourceInterpretation { .. } => "Interpret source",
         Command::DeleteTarget { .. } => "Delete target",
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
@@ -3680,6 +3726,7 @@ mod binding_patch_tests {
             sound_routes: BTreeMap::new(),
             sound_allowances: BTreeMap::new(),
             targets: BTreeMap::new(),
+            source_interpretations: BTreeMap::new(),
             overrides: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),

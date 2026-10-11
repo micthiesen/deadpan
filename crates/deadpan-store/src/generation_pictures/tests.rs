@@ -66,6 +66,7 @@ fn identity(picture: &Picture) -> GenerationPictureIdentity {
         &SourceQualificationId::new("a".repeat(64)).unwrap(),
         &index(),
         picture,
+        None,
     )
     .unwrap()
 }
@@ -104,7 +105,8 @@ fn measured_selection_policy_is_applied_before_identity_comparison() {
         original_identity(
             &SourceQualificationId::new("a".repeat(64)).unwrap(),
             &index(),
-            &held
+            &held,
+            None,
         )
         .is_err()
     );
@@ -113,12 +115,12 @@ fn measured_selection_policy_is_applied_before_identity_comparison() {
 #[test]
 fn source_identity_refuses_missing_terminal_support_or_wrong_clock() {
     let qualification = SourceQualificationId::new("a".repeat(64)).unwrap();
-    assert!(original_identity(&qualification, &index(), &source(9, 25)).is_err());
+    assert!(original_identity(&qualification, &index(), &source(9, 25), None).is_err());
     let mut wrong = source(9, 24);
     if let Picture::Source { point, .. } = &mut wrong {
         point.time_base = SourceTimeBase::new(1, 30).unwrap();
     }
-    assert!(original_identity(&qualification, &index(), &wrong).is_err());
+    assert!(original_identity(&qualification, &index(), &wrong, None).is_err());
 }
 
 fn connection() -> Connection {
@@ -263,6 +265,7 @@ fn repeated_aliases_share_one_admitted_receipt_and_one_asset_contract() {
     let expected = GenerationPictureIdentity::Original {
         qualification: id.clone(),
         frame: SourceFrameId(1),
+        interpretation: None,
     };
     for _ in 0..128 {
         assert_eq!(

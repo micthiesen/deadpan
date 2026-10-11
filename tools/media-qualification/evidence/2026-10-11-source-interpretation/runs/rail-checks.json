@@ -1,0 +1,230 @@
+[
+  {
+    "name": "rail-fmt",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "seconds": 4.638234542217106,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "rail-base-clippy",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "seconds": 22.49035175004974,
+    "log_sha256": "edb3797970408482a2c5c8eacf2e3304520b2295c4c0ec69c9420ed668f20c28"
+  },
+  {
+    "name": "rail-harness-clippy",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "seconds": 7.623002250213176,
+    "log_sha256": "65702b4c91419f8b148f3c36a8594f0af43bc102ffa1ac51e2c47650135e11fb"
+  },
+  {
+    "name": "rail-base-tests",
+    "exit": 4,
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--lib",
+      "-E",
+      "test(transcript) | test(interpretation)"
+    ],
+    "seconds": 19.99709854228422,
+    "log_sha256": "5069891a9a9c49456d9568a8e571feb41b349a21749ffe95d4a152b052b7edee"
+  },
+  {
+    "name": "rail-base-tests-followup",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "-E",
+      "test(transcript) | test(interpretation)"
+    ],
+    "seconds": 11.059658833779395,
+    "log_sha256": "85a2b2bdd3292f27cb6381182c16debde28e8c45c0be50b6e7d3aeb92eb57776"
+  },
+  {
+    "name": "rail-harness-tests",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "-E",
+      "test(transcript) | test(interpretation)"
+    ],
+    "seconds": 6.714466167148203,
+    "log_sha256": "3f1de4dce5a654d23e7aeb9518c21d649e7c959ed10d37946be0f3cc105f2747"
+  },
+  {
+    "name": "rail-replays",
+    "exit": 1,
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "2",
+      "--scenario",
+      "transcript,source-interpretation,original-layout,original-layout-long,layouts",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/rail-replays"
+    ],
+    "seconds": 299.21761762490496,
+    "log_sha256": "9890dbc98b059748a2296ec593c85575135c701fffa9242cc8290834a6327773"
+  },
+  {
+    "name": "rail-fmt-followup",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "seconds": 4.570212167222053,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "rail-harness-clippy-followup",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "seconds": 9.728675125166774,
+    "log_sha256": "ae86df72ec903fe4aaf150eb7d7c4f3559ef7e93fe01fcc7630e7c67d1dea7b1"
+  },
+  {
+    "name": "rail-replays-followup",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "2",
+      "--scenario",
+      "transcript,original-layout,original-layout-long",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup"
+    ],
+    "seconds": 205.5699759167619,
+    "log_sha256": "c7aac520bff12f4c1ad06dc6231d49d93b849f3afecf5540e0de103e7a0cbb3e"
+  },
+  {
+    "name": "rail-performance-build",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "seconds": 119.37439791625366,
+    "log_sha256": "700da54a4ab98bce2d9c311ab23554c6671c0d22d073ff067f6bcd95a835eecf"
+  },
+  {
+    "name": "rail-performance",
+    "exit": 0,
+    "command": [
+      "deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "source-interpretation",
+      "--mode",
+      "performance",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/rail-performance"
+    ],
+    "seconds": 13.471151667181402,
+    "log_sha256": "68350dcacdc14470c9f1bec1bd38da21a90ea1f7a11ef3c9ed06738f7aaabde0",
+    "binary_sha256": "995772f4a3e7c24c2919232b90729430169580d57438939cffff0358e6f65160"
+  },
+  {
+    "name": "rail-bundle",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-source-interpretation-final-bundle-20261011"
+    ],
+    "seconds": 233.90461579198018,
+    "log_sha256": "f513966120176ea21dcd87f85d20942ae5787b5fac5dbe29d9b72c1e0747fe8a"
+  },
+  {
+    "name": "rail-bundle-verify",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-source-interpretation-final-bundle-20261011/Deadpan.app"
+    ],
+    "seconds": 29.4194889171049,
+    "log_sha256": "2ffefeb9dda64cb804c9bf3b64706cc7c112495e6255a06d490f8805dc1dbf4d"
+  }
+]

@@ -1449,6 +1449,7 @@ type ReceiptMetadata = (
     AssetRecord,
     Option<deadpan_core::PresentationBasis>,
     Option<(u32, u32)>,
+    Option<deadpan_media::source_qualification::VideoInterpretationSupport>,
 );
 
 fn receipt_metadata(receipt: &SourceQualificationReceipt) -> Result<ReceiptMetadata, StoreError> {
@@ -1467,18 +1468,35 @@ fn receipt_metadata(receipt: &SourceQualificationReceipt) -> Result<ReceiptMetad
         .ok()
         .flatten()
         .map(|candidate| (candidate.width, candidate.height));
-    Ok((receipt.asset_record(String::new())?, basis, geometry))
+    let interpretation = receipt
+        .snapshot
+        .video()
+        .map(|video| video.interpretation_support());
+    Ok((
+        receipt.asset_record(String::new())?,
+        basis,
+        geometry,
+        interpretation,
+    ))
 }
 
 /// Every qualified asset equals its immutable receipt's measured metadata, and
 /// source-derived presentation equals the primary receipt's measurements.
 /// With `previous`, records and presentation unchanged from that already
-/// checked revision are skipped: the check is a function of each record and
-/// of the presentation state alone.
+/// checked revision are skipped: the check is a function of each record,
+/// its authored interpretation and the presentation state.
 type AssetView<'a> = (
     &'a BTreeMap<AssetId, AssetRecord>,
     &'a deadpan_core::BasisState,
     &'a deadpan_core::PresentationBasis,
+    &'a BTreeMap<AssetId, deadpan_core::SourceInterpretation>,
+);
+
+type AssetSnapshot = (
+    BTreeMap<AssetId, AssetRecord>,
+    deadpan_core::BasisState,
+    deadpan_core::PresentationBasis,
+    BTreeMap<AssetId, deadpan_core::SourceInterpretation>,
 );
 
 fn asset_view(document: &ProjectDocument) -> AssetView<'_> {
@@ -1486,6 +1504,7 @@ fn asset_view(document: &ProjectDocument) -> AssetView<'_> {
         document.assets(),
         document.basis_state(),
         document.presentation_basis(),
+        document.source_interpretations(),
     )
 }
 
@@ -1498,7 +1517,7 @@ fn check_document_assets(
         let Some(id) = &asset.source_qualification else {
             continue;
         };
-        if previous.is_some_and(|(assets, _, _)| assets.get(asset_id) == Some(asset)) {
+        if previous.is_some_and(|(assets, _, _, _)| assets.get(asset_id) == Some(asset)) {
             continue;
         }
         let mut expected = metadata(id)?
@@ -1511,13 +1530,34 @@ fn check_document_assets(
             ));
         }
     }
-    if previous.is_some_and(|(_, basis_state, presentation)| {
+    for (asset_id, choice) in document.source_interpretations() {
+        let asset = document
+            .assets()
+            .get(asset_id)
+            .ok_or_else(|| invalid("interpreted asset is missing"))?;
+        if previous.is_some_and(|(assets, _, _, interpretations)| {
+            assets.get(asset_id) == Some(asset) && interpretations.get(asset_id) == Some(choice)
+        }) {
+            continue;
+        }
+        let id = asset
+            .source_qualification
+            .as_ref()
+            .ok_or_else(|| invalid("interpreted asset has no qualification receipt"))?;
+        let support = metadata(id)?
+            .and_then(|metadata| metadata.3)
+            .ok_or_else(|| invalid("source interpretation requires qualified video"))?;
+        support
+            .validate((*choice).into())
+            .map_err(|error| invalid(&error.to_string()))?;
+    }
+    if previous.is_some_and(|(_, basis_state, presentation, _)| {
         basis_state == document.basis_state() && presentation == document.presentation_basis()
     }) {
         return Ok(());
     }
     if let Some(primary) = &document.basis_state().primary {
-        let (_, basis, geometry) = metadata(&primary.qualification)?
+        let (_, basis, geometry, _) = metadata(&primary.qualification)?
             .ok_or_else(|| invalid("historical primary source has no qualification receipt"))?;
         if document.basis_state().rate_origin == FrameRateOrigin::PrimarySource
             && basis.as_ref().map(|basis| basis.frame_rate)
@@ -1571,28 +1611,26 @@ pub(crate) fn validate_store(connection: &Connection, from: usize) -> Result<(),
     }
     // Include abandoned branches, not only current head or active redo. Each
     // asset carries its own receipt ID even if its alias is reused after undo.
-    let mut previous: Option<(
-        BTreeMap<AssetId, AssetRecord>,
-        deadpan_core::BasisState,
-        deadpan_core::PresentationBasis,
-    )> = None;
+    let mut previous: Option<AssetSnapshot> = None;
     crate::validation::for_each_revision_document(connection, from, |document| {
         check_document_assets(
             document,
             previous
                 .as_ref()
-                .map(|(assets, basis_state, presentation)| (assets, basis_state, presentation)),
+                .map(|(assets, basis_state, presentation, interpretations)| {
+                    (assets, basis_state, presentation, interpretations)
+                }),
             |id| Ok(metadata.get(id).cloned()),
         )?;
         // Keep only what the next comparison reads.
-        if previous
-            .as_ref()
-            .is_none_or(|previous| asset_view(document) != (&previous.0, &previous.1, &previous.2))
-        {
+        if previous.as_ref().is_none_or(|previous| {
+            asset_view(document) != (&previous.0, &previous.1, &previous.2, &previous.3)
+        }) {
             previous = Some((
                 document.assets().clone(),
                 document.basis_state().clone(),
                 document.presentation_basis().clone(),
+                document.source_interpretations().clone(),
             ));
         }
         Ok(())

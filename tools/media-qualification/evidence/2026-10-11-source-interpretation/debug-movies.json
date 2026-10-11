@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpHIMBJc/fixture/original.mp4",
+    "bytes": 39157,
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  },
+  {
+    "path": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpHIMBJc/automatic/black-pause.mp4",
+    "bytes": 13148,
+    "sha256": "2855d57c4f409c1d4f9d103b0be62d5e28a5b7ebee0a9d87d380a5f5a0f02d46"
+  },
+  {
+    "path": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpHIMBJc/corrected/black-pause.mp4",
+    "bytes": 12702,
+    "sha256": "cfb7553ca5f92fec496b0d32cb4aec2fcfdd14bd7783a53cc3629aa2d5f5362a"
+  }
+]

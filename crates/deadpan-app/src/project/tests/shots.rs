@@ -87,6 +87,7 @@ fn saved_shots_are_published_carried_across_edits_and_reloaded() {
         content,
         video_stream: 0,
         signature_version: SIGNATURE_VERSION.into(),
+        interpretation: None,
     };
 
     // Stale sessions, other media and a wrong picture count never save.
@@ -176,6 +177,96 @@ fn saved_shots_are_published_carried_across_edits_and_reloaded() {
         workspace.shot_analysis.as_ref().unwrap()
     ));
 
+    // A picture correction invalidates the visible analysis and any late
+    // background save from the previous interpretation, without moving time.
+    let choice = deadpan_core::SourceInterpretation {
+        range: Some(deadpan_core::SourceColorRange::Full),
+        chroma_location: Some(deadpan_core::SourceChromaLocation::Center),
+    };
+    let change = |session, revision| ProjectRequest::InterpretSource {
+        expected_session: session,
+        expected_revision: revision,
+        asset: asset.clone(),
+        interpretation: Some(choice),
+    };
+    let stale = command(
+        &service,
+        change(
+            repeated.session + 1,
+            repeated.document.revision_id().clone(),
+        ),
+    );
+    assert!(stale.error.is_some());
+    let stale = command(
+        &service,
+        change(repeated.session, before.document.revision_id().clone()),
+    );
+    assert!(stale.error.is_some());
+    let changed = command(
+        &service,
+        change(repeated.session, repeated.document.revision_id().clone()),
+    );
+    assert!(changed.error.is_none(), "{:?}", changed.error);
+    assert!(
+        changed.committed.is_none(),
+        "source correction cannot retarget a selection"
+    );
+    let saved_interpretation = changed.source_interpretation_saved.unwrap();
+    assert_eq!(&saved_interpretation.base, repeated.document.revision_id());
+    let changed = changed.workspace.unwrap();
+    assert!(changed.shot_analysis.is_none());
+    assert_eq!(changed.document.nodes(), repeated.document.nodes());
+    assert_eq!(changed.document.assets(), repeated.document.assets());
+    assert!(Arc::ptr_eq(
+        &changed.sources[asset],
+        &repeated.sources[asset]
+    ));
+    assert!(
+        save(&service, changed.session, 10, &key, analysis(120))
+            .shot_save
+            .unwrap()
+            .error
+            .is_some()
+    );
+    let corrected_key = deadpan_store::ShotAnalysisKey {
+        interpretation: Some(choice),
+        ..key.clone()
+    };
+    assert!(
+        save(&service, changed.session, 11, &corrected_key, analysis(120))
+            .shot_save
+            .unwrap()
+            .error
+            .is_none()
+    );
+    let restored = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: changed.document.revision_id().clone(),
+        },
+    );
+    assert!(restored.error.is_none(), "{:?}", restored.error);
+    let restored = restored.workspace.unwrap();
+    assert_eq!(restored.shot_analysis.as_ref().unwrap().key, key);
+    assert!(restored.document.source_interpretations().is_empty());
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: restored.document.revision_id().clone(),
+        },
+    );
+    assert!(redone.error.is_none(), "{:?}", redone.error);
+    assert_eq!(
+        redone
+            .workspace
+            .as_ref()
+            .unwrap()
+            .shot_analysis
+            .as_ref()
+            .unwrap()
+            .key,
+        corrected_key
+    );
     let path = repeated.path.clone();
     let reopened = command(&service, ProjectRequest::Open(path));
     assert!(reopened.error.is_none(), "{:?}", reopened.error);
@@ -221,6 +312,7 @@ fn analysis_save_in_flight_never_refuses_a_user_command() {
             .to_string(),
         video_stream: 0,
         signature_version: SIGNATURE_VERSION.into(),
+        interpretation: None,
     };
     let save = |attempt| ProjectRequest::SaveShotAnalysis {
         expected_session: before.session,

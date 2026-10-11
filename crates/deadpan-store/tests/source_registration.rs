@@ -28,6 +28,8 @@ mod edited_slice;
 mod equivalence;
 #[path = "source_registration/hold_audio.rs"]
 mod hold_audio;
+#[path = "source_registration/interpretation.rs"]
+mod interpretation;
 #[path = "source_registration/registers.rs"]
 mod registers;
 #[path = "source_registration/roll.rs"]

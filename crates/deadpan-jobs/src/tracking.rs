@@ -38,6 +38,9 @@ const MAX_DIMENSION: u32 = 8_192;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExpectedStream {
+    /// Authored decoding choices for an Original; absent for generated masters.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpretation: Option<deadpan_core::SourceInterpretation>,
     pub stream_index: u32,
     pub width: u32,
     pub height: u32,
@@ -52,6 +55,12 @@ pub struct ExpectedStream {
 
 impl ExpectedStream {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        if self
+            .interpretation
+            .is_some_and(|choice| choice.range.is_none() && choice.chroma_location.is_none())
+        {
+            return Err("empty source interpretation must be omitted".into());
+        }
         if !(1..=MAX_DIMENSION).contains(&self.width)
             || !(1..=MAX_DIMENSION).contains(&self.height)
             || self.time_base_num == 0

@@ -57,6 +57,19 @@ pub struct Subject {
     pub document: deadpan_core::ProjectDocument,
 }
 
+impl Subject {
+    fn proxy_subject(&self) -> deadpan_cli::proxy::ProxySubject<'_> {
+        deadpan_cli::proxy::ProxySubject::of(
+            &self.original,
+            &self.video,
+            self.document
+                .source_interpretations()
+                .get(&self.asset)
+                .copied(),
+        )
+    }
+}
+
 pub fn subject(package: &Path) -> Result<(ProjectStore, Subject)> {
     let store = ProjectStore::open(package, AccessMode::ReadOnly)?;
     let document = store.snapshot()?;
@@ -100,8 +113,7 @@ pub fn build(package: &Path, cache: &ProxyCache, worker: &Path) -> Result<(Value
     let store_ref = &store;
     let status = build_proxy(
         cache,
-        &subject.original,
-        &subject.video,
+        &subject.proxy_subject(),
         worker,
         Box::new(move |cancelled| {
             let snapshot = store_ref.snapshot_original(
@@ -150,7 +162,7 @@ pub fn open(
     subject: &Subject,
     cancelled: &AtomicBool,
 ) -> Result<SourceSession> {
-    let (file, sidecar) = open_proxy_file(cache, &subject.original, &subject.video, cancelled)?
+    let (file, sidecar) = open_proxy_file(cache, &subject.proxy_subject(), cancelled)?
         .ok_or("published proxy was not found")?;
     let input = VerifiedSourceInput::from_verified_file(file, sidecar.content())?;
     Ok(SourceSession::open_input_indexed(
@@ -176,7 +188,7 @@ pub fn run(
         return Ok(json!({"status": status}));
     }
     let (_store, subject) = subject(package)?;
-    let entry = deadpan_cli::proxy::cached_proxy(cache, &subject.original, &subject.video)?
+    let entry = deadpan_cli::proxy::cached_proxy(cache, &subject.proxy_subject())?
         .ok_or("published proxy was not found")?;
     let sidecar = entry.sidecar().clone();
     let document = &subject.document;

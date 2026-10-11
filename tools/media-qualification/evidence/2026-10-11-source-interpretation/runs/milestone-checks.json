@@ -1,0 +1,83 @@
+[
+  {
+    "name": "production-release",
+    "command": [
+      "python3",
+      "/tmp/deadpan-source-interpretation-20261010/production_probe.py",
+      "release"
+    ],
+    "exit": 0,
+    "seconds": 7.956411040853709,
+    "log_sha256": "7308329de2282107967aca7283db9ea277d3ddce4f0e744e85de8afe706ce151"
+  },
+  {
+    "name": "production-bundle",
+    "command": [
+      "python3",
+      "/tmp/deadpan-source-interpretation-20261010/production_probe.py",
+      "bundle"
+    ],
+    "exit": 0,
+    "seconds": 7.821733291726559,
+    "log_sha256": "e4f95e1c36f58301b0655ee98883a6a8af191f80d35886ff202fe72f216873dd"
+  },
+  {
+    "name": "milestone-gate",
+    "command": [
+      "cargo",
+      "xtask",
+      "gate"
+    ],
+    "exit": 0,
+    "seconds": 1031.0910938750021,
+    "log_sha256": "436f98c0aa40c4ccfe2f8b234171bc208948828064051d9b6c061082230e262b"
+  },
+  {
+    "name": "milestone-replays",
+    "command": [
+      "cargo",
+      "xtask",
+      "replays",
+      "--jobs",
+      "2",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/milestone-replays"
+    ],
+    "exit": 1,
+    "seconds": 3768.209027083125,
+    "log_sha256": "7fa7d225e86cdbfbca07f13399065c2318dc0e14f0059bd643d95388f0486fd8"
+  },
+  {
+    "name": "milestone-performance-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "exit": 0,
+    "seconds": 230.581732083112,
+    "log_sha256": "bd6482ff5ad95a3e7876f5dce167da490d7209caf8483dbd5c46b612f986fcd5"
+  },
+  {
+    "name": "milestone-performance",
+    "command": [
+      "deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "source-interpretation",
+      "--mode",
+      "performance",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/milestone-performance"
+    ],
+    "exit": 1,
+    "seconds": 13.24110645800829,
+    "log_sha256": "b153dffe34ff8498d62fcb90d4ced6635aaf33acc7e25c77d8ded734b714cb6f",
+    "binary_sha256": "149369d0b614467416e77f6400793f1c218931b17e1558789223c6c75d5a161b"
+  }
+]

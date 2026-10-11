@@ -677,10 +677,15 @@ impl DeadpanApp {
             Status::NeedsModel => {
                 let pack = transcription_pack();
                 let size = pack.as_ref().map_or(0, PackManifest::total_bytes);
-                ui.weak(format!(
-                    "Transcription runs on this Mac. It needs a {} English model (MIT license), downloaded once.",
-                    crate::model_packs::format_bytes(size)
-                ));
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{} · MIT license",
+                        crate::model_packs::format_bytes(size)
+                    ))
+                    .size(12.0)
+                    .weak(),
+                )
+                .on_hover_text("English transcription runs on this Mac. The model downloads once.");
                 let id = pack.map(|pack| pack.pack_id).unwrap_or_default();
                 if self.model_pack_offer(ui, &id, "Install model…", ":models") {
                     self.offer_transcription_model(ui.ctx());

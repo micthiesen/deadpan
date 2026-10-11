@@ -18,6 +18,7 @@ fn boundary(decoded: bool, project_frame: i64) -> BoundaryPicture {
         },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        interpretation: None,
         picture: DecodedBoundary {
             source_frame: SourceFrameId(0),
             pts: SourceTimestamp {

@@ -957,6 +957,20 @@ pub static SPECS: &[Spec] = &[
         headless: eq("bleep instruction", HOLDS),
         help: "Bleep the Visual range (v{object.inner_word!} selects a word): its sound becomes a tone, 1 kHz at -10 dB unless given, with 2 ms ramps, while its pictures keep playing. The cut sound goes to the selected register. One continuous Original passage only. One Undo.",
     },
+    Spec {
+        id: "source.interpretation",
+        name: "Interpret source picture",
+        section: Section::Project,
+        keys: &[],
+        commands: &[verb(
+            "source-interpret",
+            ":source-interpret [range=auto|limited|full] [chroma=auto|left|center|top-left|top|bottom-left|bottom] | reset",
+        )],
+        contexts: C::EDITOR,
+        replay: Replay::NotRecorded,
+        headless: eq("set_source_interpretation command", PROJECT),
+        help: "Correct the Original's range or chroma position without changing its file or timing. An omitted parameter keeps its current choice; auto uses the qualified metadata or disclosed assumption. reset restores both. One Undo. Unsupported interpretations are refused. With no parameters, show the current choices. The Original pane's Interpret picture control opens those values for editing.",
+    },
     // FRAMING
     Spec {
         id: "camera",

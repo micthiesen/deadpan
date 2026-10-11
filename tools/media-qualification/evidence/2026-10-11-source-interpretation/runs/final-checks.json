@@ -1,0 +1,18 @@
+[
+  {
+    "name": "final-core-store",
+    "exit": 101,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-store"
+    ],
+    "passed": 1323,
+    "seconds": 134.0570335839875,
+    "log_sha256": "e191a9bcede3eab994662da4e2859ca2700d80daf4a5790098b6228c864e6f99"
+  }
+]

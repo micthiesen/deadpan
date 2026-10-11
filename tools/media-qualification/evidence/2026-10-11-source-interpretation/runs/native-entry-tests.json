@@ -1,0 +1,97 @@
+[
+  {
+    "name": "native-entry-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.461839042138308,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "native-entry-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 7.491609666030854,
+    "sha256": "311d8f75c65c06811331a85cf1851155f3f03c623b33135bd6d3329eb6f26ef2"
+  },
+  {
+    "name": "native-entry-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "interpretation"
+    ],
+    "exit": 0,
+    "passed": 6,
+    "seconds": 8.236522249877453,
+    "sha256": "700bdfe5d3e43a3e5d1f8dce83d9a01549c303dcd0eed4a93a9a926542630844"
+  },
+  {
+    "name": "native-entry-shots",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "shots"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 0.49665870796889067,
+    "sha256": "09008b26224780d97fba03f6fcafb67ec7cb8f6d76761c62cd1a33062a2499e7"
+  },
+  {
+    "name": "native-entry-readonly",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "readonly"
+    ],
+    "exit": 0,
+    "passed": 2,
+    "seconds": 0.6191708329133689,
+    "sha256": "044abe231357eac7b7acdc1c9298e28177ce20af12e6c4d04e1eb00fa53397c1"
+  },
+  {
+    "name": "native-entry-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 29.3088426659815,
+    "sha256": "4da7761abe7740fd66315f5ea91268938bbdab2c5f77c0588a7c039669c48290"
+  }
+]

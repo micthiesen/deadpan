@@ -4,7 +4,46 @@
 This bounds the admitted container's allocation requests; it does not establish
 editorial readiness, complete format support, or a process-wide heap ceiling.
 The decoder still validates actual frames and the host builds a measured index.
-Authored import remains separate work.
+Immutable qualification is separate from authored interpretation corrections.
+
+## Correcting picture interpretation
+
+`:source-interpret range=full chroma=center` corrects the registered Original's
+decoding choices in one undoable transaction. The Original pane's **Interpret
+picture…** control opens the current values. With no arguments the command shows
+them; an omitted parameter keeps its current choice. `range=auto` or `chroma=auto`
+restores that field's qualified interpretation, and `:source-interpret reset`
+restores both. Chroma positions are `left`, `center`, `top-left`, `top`,
+`bottom-left` and `bottom`. Command entry captures the source, session and revision,
+including absence, so a late import or project change cannot retarget it.
+
+Core schema 49 stores optional per-asset `source_interpretations` separately from
+immutable asset records and source receipts. The headless command is
+`set_source_interpretation`, with an `asset` and optional `interpretation` object
+(`range` and `chroma_location`, using snake-case enum names); `null` resets it.
+Corrections do not change source bytes, content identity, measured clocks, frame
+indexes, geometry, audio or the full-Original undo baseline. Existing historical
+revisions retain their own choices. A copied slice previews its captured choice;
+pasting it into an asset already present in the destination keeps that asset's
+current choice. Restoring an absent asset restores its captured choice too.
+
+An unspecified decoded range uses a disclosed heuristic: RGB is full range and
+YUV is limited range. `range_assumed` remains part of the immutable evidence.
+Other missing color metadata is still refused. The viewer labels assumptions and
+explicit corrections only when the corresponding picture reaches GPU submission.
+Explicit chroma corrections require subsampled YUV; RGB admits only full range,
+and the qualified HDR path admits only limited range. Invalid choices fail before
+commit. Raw I420 and 10-bit inspection refuse overrides and assumed range rather
+than misrepresenting raw samples.
+
+Preview, playback pictures, export, AI conditioning, shot scans, target tracking
+and face detection capture the same authored choice. AI boundary/support identities
+include it, so correction invalidates stale generation input bindings. Generated
+candidate masters keep their own interpretation. Proxy keys, sidecars, partial
+journals and remembered failures distinguish corrections, and verification uses
+the corrected Original pixels. Shot analyses and checkpoints do likewise in
+database schema 77. Undo can reuse the matching old analysis or proxy; a late
+completion cannot replace results for the current choice.
 
 ## Admitted containers
 

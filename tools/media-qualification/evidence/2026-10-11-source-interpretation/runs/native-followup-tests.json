@@ -1,0 +1,105 @@
+[
+  {
+    "name": "native-docs-generate",
+    "exit": 101,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "commands_reference_is_current"
+    ],
+    "passed": 0,
+    "expected_generator_exit": true,
+    "seconds": 9.726040792185813,
+    "log_sha256": "99ebf2826be31e4ab842360a3d2077b635821392070829bd8b758834a6dafb7c"
+  },
+  {
+    "name": "native-followup-fmt",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "passed": 0,
+    "expected_generator_exit": false,
+    "seconds": 4.539212500210851,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "native-followup-registry",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "navigation::registry"
+    ],
+    "passed": 11,
+    "expected_generator_exit": false,
+    "seconds": 0.819245083257556,
+    "log_sha256": "377dcab645a0d6144ce7d4a998b7d0725f1719bbe4ba95905c68c16fe58d3e30"
+  },
+  {
+    "name": "native-followup-playback",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-playback",
+      "--lib",
+      "proposed"
+    ],
+    "passed": 11,
+    "expected_generator_exit": false,
+    "seconds": 21.067060417030007,
+    "log_sha256": "c19c15926eee38a822f4923584bab176a3303c60c584fd2eb18628854e83e581"
+  },
+  {
+    "name": "native-followup-app",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app"
+    ],
+    "passed": 1060,
+    "expected_generator_exit": false,
+    "seconds": 230.4318969170563,
+    "log_sha256": "d618b22f3473494d367cae3d811414e80ae0823d8b96a349055cea3092807cbe"
+  },
+  {
+    "name": "native-followup-clippy",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "passed": 0,
+    "expected_generator_exit": false,
+    "seconds": 34.42111016670242,
+    "log_sha256": "274c2b4929d3787208935c610e14a543815151c7ba84fc287198077694455300"
+  }
+]

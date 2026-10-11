@@ -284,12 +284,14 @@ fn check_seam_identity(
             GenerationPictureIdentity::Original {
                 qualification: a,
                 frame: af,
+                interpretation: ai,
             },
             GenerationPictureIdentity::Original {
                 qualification: b,
                 frame: bf,
+                interpretation: bi,
             },
-        ) => a != b || af.0.abs_diff(bf.0) > 1,
+        ) => a != b || ai != bi || af.0.abs_diff(bf.0) > 1,
         (
             GenerationPictureIdentity::Generated {
                 sampled_object: a,

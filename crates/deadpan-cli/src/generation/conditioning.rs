@@ -449,6 +449,11 @@ fn boundary(
                     clock: clock.clone(),
                     asset: asset.clone(),
                     qualification: qualification.clone(),
+                    interpretation: session
+                        .document()
+                        .source_interpretations()
+                        .get(asset)
+                        .copied(),
                     picture,
                 },
                 Some(rgba(decoded)?),
@@ -732,6 +737,7 @@ mod tests {
         SourceStreamInfo {
             nominal_frame_duration_ns: None,
             chroma_assumed_left: false,
+            range_assumed: false,
             bwdif_fields: false,
             clean_aperture: None,
             width: 4,
@@ -794,6 +800,7 @@ mod tests {
             clock: BoundaryClock::Project { frame: 14 },
             asset: deadpan_core::AssetId::new("original").unwrap(),
             qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
+            interpretation: None,
             picture: decoded_boundary(
                 &info(sdr(ColorTransfer::Bt709, ColorPrimaries::Bt709)),
                 SourceFrameId(26),

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "generation-relevance-followup-completed",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "generation_context"
+    ],
+    "exit": 101,
+    "passed": 0,
+    "seconds": 2.7838478339836,
+    "sha256": "baa1f7690a2b7dff70f7cb584b8fd2195852496e4d5fcbed7e8fb37d944b290c"
+  }
+]

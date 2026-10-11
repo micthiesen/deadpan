@@ -1,0 +1,27 @@
+{
+  "deadpan-app": {
+    "initial_sha256": "fee13b1292cd56a9070f9310ffb2be105acb1906263b46692a02e3b6232a1aa4",
+    "final_sha256": "8b397733ea2ef3c5a9bdadd8b26750551d8faaa7c745f5eadbeb85a2ab920209",
+    "identical": false
+  },
+  "deadpan-cli": {
+    "initial_sha256": "adc0d4d75f12f5887b3639a1ba395664aab539a7f4cc0e37cacdb5b16a124a81",
+    "final_sha256": "adc0d4d75f12f5887b3639a1ba395664aab539a7f4cc0e37cacdb5b16a124a81",
+    "identical": true
+  },
+  "deadpan-media-worker": {
+    "initial_sha256": "f271e268cf0005b1866cdf2a01b26b375805203e7a62e11aa77dfacbaed9b312",
+    "final_sha256": "f271e268cf0005b1866cdf2a01b26b375805203e7a62e11aa77dfacbaed9b312",
+    "identical": true
+  },
+  "deadpan-track": {
+    "initial_sha256": "493630cbab949a14a3f8c78341ec2fae8aba46ec548a06504d210c7cd30b4a70",
+    "final_sha256": "493630cbab949a14a3f8c78341ec2fae8aba46ec548a06504d210c7cd30b4a70",
+    "identical": true
+  },
+  "deadpan-transcribe": {
+    "initial_sha256": "f644672062cfb9d59d0a06b3d14d452f20162e25abd363e909f6ad7aa45d08cd",
+    "final_sha256": "f644672062cfb9d59d0a06b3d14d452f20162e25abd363e909f6ad7aa45d08cd",
+    "identical": true
+  }
+}

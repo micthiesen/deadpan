@@ -469,6 +469,9 @@ impl StoredSpeech {
         let Ok(Some(SingleSourceState::Ready { asset, .. })) = store.single_source_state() else {
             return Err(not_ready("the project has no ready Original"));
         };
+        let document = store
+            .snapshot()
+            .map_err(|error| not_ready(&error.to_string()))?;
         let receipt = crate::transcription::analysed_receipt(store, None)
             .map_err(|error| not_ready(&error.to_string()))?;
         let qualified = receipt
@@ -509,6 +512,7 @@ impl StoredSpeech {
             &content,
             qualified.stream_index(),
             index.frames().len(),
+            document.source_interpretations().get(&asset).copied(),
         )
         .map(|(_, analysis)| analysis.boundaries());
         Ok(Self {

@@ -1,0 +1,33 @@
+{
+  "scope": "Transcript model offer clipping after source interpretation control; targeted follow-up after passing full gate",
+  "files": {
+    "crates/deadpan-app/src/preview/transcript.rs": {
+      "sha256": "259eb896509c0366b207f0351edb2a1e14cec93b3d1ae82e5f7bf114e8358092",
+      "original_review_sha256": null
+    },
+    "crates/deadpan-app/src/preview/source_interpretation.rs": {
+      "sha256": "62811a3b205da8b23da18d456ec68f2111cc315debe63b3ea0f45ce5ab346794",
+      "original_review_sha256": "bf64deec07468336c19ee47c963b64392139080e6d8fbecc5e261b80bb410de6"
+    },
+    "crates/deadpan-app/src/preview/harness/transcript.rs": {
+      "sha256": "85a2fdda4f605a0bee946c490dac55cfbd229a66e440da2b39965587d0c4425c",
+      "original_review_sha256": null
+    },
+    "crates/deadpan-app/src/preview/harness/source_interpretation.rs": {
+      "sha256": "46075fb8da0799322b4632f45e153cf881edcbd3bd2a7be28ce0c8173121883e",
+      "original_review_sha256": "6a6ae57fd92d61c6a2cbbc2dc65ecc77925caea35ad19cfb3b4ca772b847c7b2"
+    }
+  },
+  "review": {
+    "reviewer": "primary session, without subagents",
+    "reviewed_at": "2026-10-11T09:55:57.431204+00:00",
+    "findings": [],
+    "notes": [
+      "Transcript caption retains size and license; English/local/one-time explanation remains in its tooltip.",
+      "Interpretation parameters remain in the captured command and tooltip; removing the extra paragraph preserves sidebar space after a correction.",
+      "Replay assertion checks full painted label, license and complete clickable button rectangle against clip and viewport.",
+      "Source replay performs the check after leaving Visual mode with the correction still active."
+    ],
+    "verification": "First release performance check found the entire label visible but 9.3125 pixels of the button outside its clip. Further caption correction awaits targeted checks."
+  }
+}

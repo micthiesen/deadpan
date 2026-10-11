@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 48;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 49;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -560,6 +560,8 @@ pub struct ProjectDocument {
     pub(crate) root: NodeId,
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
     pub(crate) marks: BTreeMap<MarkId, Mark>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) sounds: BTreeMap<SoundId, crate::SoundEvent>,
@@ -596,6 +598,8 @@ struct DocumentWire {
     nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(default, deserialize_with = "unique_map")]
+    source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, Mark>,
     #[serde(default, deserialize_with = "unique_map")]
@@ -661,6 +665,7 @@ impl ProjectDocument {
             root: value.root,
             nodes: value.nodes,
             assets: value.assets,
+            source_interpretations: value.source_interpretations,
             marks: value.marks,
             sounds: value.sounds,
             beat_sounds: value.beat_sounds,
@@ -691,6 +696,7 @@ impl ProjectDocument {
             nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]),
             root,
             assets: BTreeMap::new(),
+            source_interpretations: BTreeMap::new(),
             marks: BTreeMap::new(),
             sounds: BTreeMap::new(),
             beat_sounds: BTreeMap::new(),
@@ -717,8 +723,9 @@ impl ProjectDocument {
     }
     /// Build a detached, validated view of one captured immutable source.
     /// The project, revision and presentation basis are retained, but authored
-    /// edits, bindings, marks and framing are not copied into this view. This
-    /// constructs no edit transaction and never changes the captured document.
+    /// structural edits, bindings, marks and framing are not copied into this
+    /// view. The selected asset's authored source interpretation is retained.
+    /// This constructs no edit transaction and never changes the captured document.
     pub fn source_view(
         &self,
         asset: &AssetId,
@@ -745,6 +752,10 @@ impl ProjectDocument {
             root.clone(),
         )?;
         view.assets.insert(asset.clone(), record.clone());
+        if let Some(interpretation) = self.source_interpretations.get(asset) {
+            view.source_interpretations
+                .insert(asset.clone(), *interpretation);
+        }
         view.nodes
             .insert(root, BeatNode::sequence("Original", vec![node.clone()]));
         view.nodes.insert(
@@ -786,6 +797,9 @@ impl ProjectDocument {
     }
     pub fn assets(&self) -> &BTreeMap<AssetId, AssetRecord> {
         &self.assets
+    }
+    pub fn source_interpretations(&self) -> &BTreeMap<AssetId, crate::SourceInterpretation> {
+        &self.source_interpretations
     }
     pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
         &self.marks
@@ -1099,6 +1113,7 @@ impl ProjectDocument {
         }
         self.validate_tails_outside_speed_stages()?;
         crate::target::validate_targets(&self.targets, &self.assets)?;
+        crate::source_interpretation::validate(self)?;
         crate::audio_gain::validate_document(self, gain_limit)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;

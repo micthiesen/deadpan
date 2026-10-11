@@ -218,12 +218,15 @@ fn at_frame(
     frame: SourceFrameId,
 ) -> GenerationPictureIdentity {
     match identity {
-        GenerationPictureIdentity::Original { qualification, .. } => {
-            GenerationPictureIdentity::Original {
-                qualification: qualification.clone(),
-                frame,
-            }
-        }
+        GenerationPictureIdentity::Original {
+            qualification,
+            interpretation,
+            ..
+        } => GenerationPictureIdentity::Original {
+            qualification: qualification.clone(),
+            frame,
+            interpretation: *interpretation,
+        },
         GenerationPictureIdentity::Generated {
             sampled_object,
             content_aspect,
@@ -246,12 +249,14 @@ fn check_seam_identity(
             GenerationPictureIdentity::Original {
                 qualification: a,
                 frame: af,
+                interpretation: ai,
             },
             GenerationPictureIdentity::Original {
                 qualification: b,
                 frame: bf,
+                interpretation: bi,
             },
-        ) => a != b || af.0.abs_diff(bf.0) > 1,
+        ) => a != b || ai != bi || af.0.abs_diff(bf.0) > 1,
         (
             GenerationPictureIdentity::Generated {
                 sampled_object: a,
@@ -281,6 +286,30 @@ mod tests {
         SourcePoint, SourceSpan, SourceTimeBase, SourceTimestamp, TerminalProvenance,
     };
     use deadpan_plan::Picture;
+
+    #[test]
+    fn interpretation_is_retained_across_context_frames_and_checked_at_seams() {
+        let choice = deadpan_core::SourceInterpretation {
+            range: Some(deadpan_core::SourceColorRange::Full),
+            chroma_location: None,
+        };
+        let first = GenerationPictureIdentity::Original {
+            qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
+            frame: SourceFrameId(7),
+            interpretation: Some(choice),
+        };
+        let next = at_frame(&first, SourceFrameId(8));
+        assert!(
+            matches!(&next, GenerationPictureIdentity::Original { interpretation: Some(value), .. } if *value == choice)
+        );
+        check_seam_identity(&first, &next).unwrap();
+        let mut changed = next;
+        let GenerationPictureIdentity::Original { interpretation, .. } = &mut changed else {
+            unreachable!()
+        };
+        *interpretation = None;
+        assert!(check_seam_identity(&first, &changed).is_err());
+    }
 
     #[test]
     fn measured_vfr_support_respects_direction_exact_endpoints_and_clamps() {

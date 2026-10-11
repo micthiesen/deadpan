@@ -22,6 +22,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "corrections" => super::corrections::run(d),
         "shots" => super::shots::run(d),
         "proxy-seek" => super::proxy::run(d),
+        "source-interpretation" => super::source_interpretation::run(d),
         "cutaway" => super::cutaway::run(d),
         "gags" => super::gags::run(d),
         "recipes" => super::recipes::run(d),
@@ -1381,6 +1382,71 @@ pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> 
             "opaque_rect_occluders":occluders,
         }))
     }).collect()
+}
+
+/// Scroll the actual Original rail before reading or clicking content below
+/// its fold. Accessibility retains offscreen rectangles, which are not hit
+/// targets until the corresponding paint and complete button are visible.
+pub(super) fn reveal_original_rail(
+    d: &mut Driver<'_>,
+    needle: &str,
+    button: bool,
+) -> Result<(), String> {
+    let visible = |d: &Driver<'_>| {
+        let paint = text_paint_visibility(d, needle);
+        !paint.is_empty()
+            && paint.iter().all(|item| item["fully_visible"] == true)
+            && (!button || {
+                let hits = super::sound_placement::control_hits(d, &[needle]);
+                hits[0]["complete_hit"] == true && hits[0]["enabled"] == true
+            })
+    };
+    if visible(d) {
+        return Ok(());
+    }
+    let state = (d.revision(), d.app().source_cursor, d.app().sequence_cursor);
+    d.report.findings.push(Finding {
+        severity: Severity::Warning,
+        message: format!("The Original rail needs scrolling to show {needle:?} completely; the replay includes that user step."),
+    });
+    let point = d.rect("Original and sounds pane")?.center() + egui::vec2(0.0, 100.0);
+    for attempt in 0..6 {
+        let above = d.harness.root().children_recursive().any(|node| {
+            let access = node.accesskit_node();
+            (access.label().as_deref() == Some(needle)
+                || access.value().is_some_and(|text| text.contains(needle)))
+                && node.rect().center().y < point.y
+        });
+        d.events(
+            &format!(
+                "Wheel Original rail to reveal {needle}, attempt {}",
+                attempt + 1
+            ),
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, if above { 80.0 } else { -80.0 }),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+        )?;
+        for _ in 0..8 {
+            d.step("Original rail scroll settles", false)?;
+        }
+        if visible(d) {
+            return d.check(
+                "Original rail scrolling reveals complete content without moving either editor clock",
+                state == (d.revision(), d.app().source_cursor, d.app().sequence_cursor),
+                json!({"state":state,"fully_visible":true}),
+                json!({"state":(d.revision(),d.app().source_cursor,d.app().sequence_cursor),"paint":text_paint_visibility(d,needle),"wheel_attempts":attempt+1}),
+            );
+        }
+    }
+    Err(format!(
+        "Original rail content {needle:?} did not become fully visible after bounded scrolling"
+    ))
 }
 
 pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String> {

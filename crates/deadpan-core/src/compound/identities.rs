@@ -200,6 +200,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetTarget { .. }
+        | Command::SetSourceInterpretation { .. }
         | Command::DeleteTarget { .. }
         | Command::SetSoundAllowance { .. }
         | Command::Delete { .. }

@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 
 use deadpan_source::{
     DecodeControl, DecodeLimits, DecodedRgbaFrame, SourceDecodeError, SourceDecoder,
+    VideoInterpretation,
 };
 
 use crate::source_input::VerifiedSourceInput;
@@ -22,6 +23,22 @@ use crate::source_qualification::QualifiedVideoSnapshot;
 /// Pictures decoded before the target after a seek, at most. Matches the
 /// preview session's seek bound.
 pub const MAX_PREROLL_PICTURES: usize = 10_000;
+
+/// Decode limits and revision-bound choices, independent of measured metadata.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PictureScanOptions {
+    pub decode: DecodeLimits,
+    pub interpretation: VideoInterpretation,
+}
+
+impl From<DecodeLimits> for PictureScanOptions {
+    fn from(decode: DecodeLimits) -> Self {
+        Self {
+            decode,
+            interpretation: VideoInterpretation::default(),
+        }
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum PictureScanError {
@@ -53,7 +70,7 @@ pub fn scan_pictures<E: std::fmt::Display>(
     scan_pictures_from(
         input,
         video,
-        limits,
+        limits.into(),
         deadline,
         cancelled,
         0,
@@ -71,7 +88,7 @@ pub fn scan_pictures<E: std::fmt::Display>(
 pub fn scan_pictures_from<E: std::fmt::Display>(
     input: &VerifiedSourceInput,
     video: &QualifiedVideoSnapshot,
-    limits: DecodeLimits,
+    options: PictureScanOptions,
     deadline: Instant,
     cancelled: &AtomicBool,
     start: usize,
@@ -107,8 +124,16 @@ pub fn scan_pictures_from<E: std::fmt::Display>(
             "the snapshot is not the qualified content".into(),
         ));
     }
-    let mut decoder =
-        SourceDecoder::open(input.decoder_file()?, limits, control()?).map_err(native)?;
+    video
+        .interpretation_support()
+        .validate(options.interpretation)?;
+    let mut decoder = SourceDecoder::open_interpreted(
+        input.decoder_file()?,
+        options.decode,
+        control()?,
+        options.interpretation,
+    )
+    .map_err(native)?;
     let info = decoder.info();
     let expected = video.interpretation();
     if info.stream_index != index.stream_index()

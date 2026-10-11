@@ -160,6 +160,8 @@ pub struct ProxyRange {
 #[serde(deny_unknown_fields)]
 pub struct ProxyRequest {
     pub protocol: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpretation: Option<deadpan_core::SourceInterpretation>,
     pub input_byte_length: u64,
     pub stream_index: u32,
     pub source_width: u32,
@@ -184,6 +186,12 @@ pub struct ProxyRequest {
 
 impl ProxyRequest {
     pub fn validate(&self) -> Result<(), ContractError> {
+        if self
+            .interpretation
+            .is_some_and(|choice| choice.range.is_none() && choice.chroma_location.is_none())
+        {
+            return Err(ContractError("empty source interpretation"));
+        }
         if self.protocol != PROXY_PROTOCOL_VERSION {
             return Err(ContractError("unsupported proxy protocol"));
         }
@@ -526,6 +534,7 @@ pub fn proxy_request(
         / MAX_BYTES_PER_PIXEL_DEN;
     Ok(ProxyRequest {
         protocol: PROXY_PROTOCOL_VERSION,
+        interpretation: None,
         input_byte_length,
         stream_index: info.stream_index,
         source_width: info.width,
@@ -711,8 +720,8 @@ pub fn presentation_info(
     Ok(info)
 }
 
-/// The Original bytes and stream a proxy belongs to. BLAKE3 is the retained
-/// object's content address; SHA-256 is the snapshot identity.
+/// The Original bytes, stream and authored interpretation a proxy belongs to.
+/// BLAKE3 is the retained object's content address; SHA-256 is the snapshot identity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProxyOriginal {
@@ -720,6 +729,8 @@ pub struct ProxyOriginal {
     pub sha256: String,
     pub byte_length: u64,
     pub stream_index: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpretation: Option<deadpan_core::SourceInterpretation>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -874,7 +885,17 @@ impl ProxySidecar {
             return Err(ProxyError::Sidecar("schema or recipe is not current"));
         }
         if &self.original != original {
-            return Err(ProxyError::Sidecar("it belongs to other Original bytes"));
+            return Err(ProxyError::Sidecar(
+                "it belongs to another Original or interpretation",
+            ));
+        }
+        if let Some(choice) = original.interpretation {
+            if choice.range.is_none() && choice.chroma_location.is_none() {
+                return Err(ProxyError::Sidecar("empty source interpretation"));
+            }
+            deadpan_source::VideoInterpretation::from(choice)
+                .validate_for(original_info)
+                .map_err(|_| ProxyError::Sidecar("unsupported source interpretation"))?;
         }
         let content = self.index.content();
         if hex(&content.sha256()) != self.file.sha256
@@ -1081,12 +1102,29 @@ pub fn sha256_file(file: &File, cancelled: &AtomicBool) -> Result<String, ProxyE
 pub fn verify_proxy(
     proxy: &File,
     original: &VerifiedSourceInput,
-    original_object_blake3: &str,
+    original_identity: &ProxyOriginal,
     original_index: Arc<SourceIndexSnapshot>,
     original_info: &SourceStreamInfo,
     reason: ProxyReason,
     control: VerifyControl<'_>,
 ) -> Result<ProxySidecar, ProxyError> {
+    if original_identity.sha256 != hex(&original.identity().sha256())
+        || original_identity.byte_length != original.identity().byte_length()
+        || original_identity.stream_index != original_index.stream_index()
+        || original.identity() != original_index.content()
+        || original_identity.blake3.len() != 64
+        || !original_identity
+            .blake3
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        || original_identity
+            .interpretation
+            .is_some_and(|choice| choice.range.is_none() && choice.chroma_location.is_none())
+    {
+        return Err(ProxyError::Correspondence(
+            "the Original snapshot is not the requested indexed source",
+        ));
+    }
     let cancelled = control.cancelled;
     let control = Control {
         end: std::cell::Cell::new(Instant::now() + control.timeout),
@@ -1112,17 +1150,6 @@ pub fn verify_proxy(
         original_index.index(),
         original_info,
     )?;
-    let original_identity = ProxyOriginal {
-        blake3: original_object_blake3.to_owned(),
-        sha256: hex(&original.identity().sha256()),
-        byte_length: original.identity().byte_length(),
-        stream_index: original_index.stream_index(),
-    };
-    if original.identity() != original_index.content() {
-        return Err(ProxyError::Correspondence(
-            "the Original snapshot is not the indexed bytes",
-        ));
-    }
     let mut original_session = SourceSession::open_input_indexed(
         original.clone(),
         Arc::clone(&original_index),
@@ -1131,6 +1158,14 @@ pub fn verify_proxy(
             opening_timeout: control.remaining()?,
             ..SourceSessionLimits::default()
         },
+        cancelled,
+    )?
+    .with_interpretation(
+        original_identity
+            .interpretation
+            .map(Into::into)
+            .unwrap_or_default(),
+        control.remaining()?.min(Duration::from_secs(60)),
         cancelled,
     )?;
     let count = original_index.index().frames().len() as u64;
@@ -1158,7 +1193,7 @@ pub fn verify_proxy(
         recipe: PROXY_RECIPE_VERSION,
         encoder: PROXY_ENCODER.to_owned(),
         reason,
-        original: original_identity,
+        original: original_identity.clone(),
         file: ProxyFileIdentity {
             sha256: hex(&sha256),
             blake3,
@@ -1351,6 +1386,7 @@ mod tests {
     fn requests_and_reports_are_bounded() {
         let request = ProxyRequest {
             protocol: PROXY_PROTOCOL_VERSION,
+            interpretation: None,
             input_byte_length: 10,
             stream_index: 0,
             source_width: 3840,

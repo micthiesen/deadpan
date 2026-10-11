@@ -21,6 +21,8 @@ use std::{
 mod aperture;
 pub mod audio;
 mod input;
+mod interpretation;
+pub use interpretation::{VideoInterpretation, VideoInterpretationSupport};
 mod matroska_input;
 pub use matroska_input::{
     MatroskaVideoMetadata, inspect_video_region as inspect_matroska_video_region,
@@ -276,6 +278,10 @@ pub struct SourceStreamInfo {
     /// places 4:2:0 chroma on the left, vertically between the luma rows.
     /// This is an interpretation, never a claim about the source declaration.
     pub chroma_assumed_left: bool,
+    /// The decoded stream omitted range. The qualified heuristic uses full
+    /// range for RGB and limited range for YUV; `color.range` records that
+    /// interpretation. The absent declaration remains absent in raw pictures.
+    pub range_assumed: bool,
     /// Original stream ticks. These are observations, not trusted frame endpoints.
     pub stream_start: Option<i64>,
     pub stream_duration: Option<i64>,
@@ -459,6 +465,7 @@ pub struct SourceDecoder {
     aperture: Option<aperture::CleanAperture>,
     coded: [u32; 2],
     max_pixels: u64,
+    interpretation: VideoInterpretation,
 }
 
 #[cfg(test)]
@@ -586,6 +593,47 @@ impl SourceDecoder {
     ) -> Result<Self, SourceDecodeError> {
         Self::open_with_keyframe(file, limits, control, None)
     }
+    /// Open with one explicit RGBA conversion choice. Source observations and
+    /// all picture clocks remain unchanged. The choice is fixed for this
+    /// decoder, including seeks; raw export-inspection methods refuse it.
+    pub fn open_interpreted(
+        file: File,
+        limits: DecodeLimits,
+        control: DecodeControl<'_>,
+        interpretation: VideoInterpretation,
+    ) -> Result<Self, SourceDecodeError> {
+        let started = Instant::now();
+        let native = interpretation.native()?;
+        let mut decoder = Self::open(file, limits, control)?;
+        if interpretation != VideoInterpretation::SOURCE {
+            let timeout = control
+                .timeout
+                .checked_sub(started.elapsed())
+                .filter(|timeout| !timeout.is_zero())
+                .ok_or_else(|| SourceDecodeError::Native {
+                    code: "deadline_exceeded".into(),
+                    message: "source interpretation exhausted the opening budget".into(),
+                })?;
+            decoder
+                .inner
+                .interpret(native, DecodeControl { timeout, ..control })?;
+            decoder.interpretation = interpretation;
+        }
+        Ok(decoder)
+    }
+
+    pub const fn interpretation(&self) -> VideoInterpretation {
+        self.interpretation
+    }
+
+    fn require_uninterpreted_inspection(&self) -> Result<(), SourceDecodeError> {
+        if self.interpretation != VideoInterpretation::SOURCE || self.info.range_assumed {
+            return Err(SourceDecodeError::InvalidConfiguration(
+                "raw export inspection requires a declared, unmodified source interpretation",
+            ));
+        }
+        Ok(())
+    }
     /// Open a new H.264 or HEVC decoder at an exact key PTS before decoding any
     /// packet. The first packet must contain only IDR (H.264) or IRAP (HEVC
     /// BLA/IDR/CRA) picture slices; the first picture must be key/I at `pts`. Container admission and this picture share the opening budget.
@@ -650,6 +698,7 @@ impl SourceDecoder {
             aperture,
             coded,
             max_pixels: limits.max_pixels,
+            interpretation: VideoInterpretation::SOURCE,
         })
     }
     pub fn info(&self) -> &SourceStreamInfo {
@@ -726,6 +775,7 @@ impl SourceDecoder {
         control: DecodeControl<'_>,
         copy: bool,
     ) -> Result<Option<DecodedYuv420p10Frame>, SourceDecodeError> {
+        self.require_uninterpreted_inspection()?;
         let started = Instant::now();
         ffi::preflight(control)?;
         if let Some(aperture) = self.aperture {
@@ -790,6 +840,7 @@ impl SourceDecoder {
         control: DecodeControl<'_>,
         copy: bool,
     ) -> Result<Option<DecodedI420Frame>, SourceDecodeError> {
+        self.require_uninterpreted_inspection()?;
         let started = Instant::now();
         ffi::preflight(control)?;
         if let Some(aperture) = self.aperture {
@@ -936,6 +987,18 @@ mod ffi {
         sync::atomic::Ordering,
     };
 
+    pub(super) fn subsampled_yuv(format: &str) -> bool {
+        if format.len() >= 32 {
+            return false;
+        }
+        let Ok(format) = std::ffi::CString::new(format) else {
+            return false;
+        };
+        // SAFETY: the bounded NUL-terminated string lives through this call.
+        // C only reads FFmpeg's immutable descriptors and retains no pointer.
+        unsafe { deadpan_source_subsampled_yuv(format.as_ptr()) != 0 }
+    }
+
     #[repr(C)]
     struct Limits {
         max_input_bytes: u64,
@@ -997,6 +1060,7 @@ mod ffi {
         max_fall: u16,
         bwdif_fields: i32,
         chroma_assumed_left: i32,
+        range_assumed: i32,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -1077,6 +1141,16 @@ mod ffi {
     }
     type Cancel = extern "C" fn(*const c_void) -> c_int;
     unsafe extern "C" {
+        fn deadpan_source_subsampled_yuv(pixel_format: *const c_char) -> c_int;
+        fn deadpan_source_interpret(
+            source: *mut c_void,
+            range: i32,
+            chroma: i32,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            error: *mut Error,
+        ) -> c_int;
         fn deadpan_source_open(
             fd: c_int,
             length: i64,
@@ -1266,6 +1340,32 @@ mod ffi {
         }
     }
     impl Decoder {
+        pub(super) fn interpret(
+            &mut self,
+            [range, chroma]: [i32; 2],
+            ctl: DecodeControl<'_>,
+        ) -> Result<(), SourceDecodeError> {
+            let (timeout, opaque) = control(ctl)?;
+            let mut error = Error::default();
+            // SAFETY: a live exclusively owned context, valid scalar choices
+            // and stack-borrowed control/error pointers. This bounded call
+            // reads the retained format and sets only conversion choices.
+            let result = unsafe {
+                deadpan_source_interpret(
+                    self.pointer.as_ptr(),
+                    range,
+                    chroma,
+                    timeout,
+                    cancelled,
+                    opaque,
+                    &mut error,
+                )
+            };
+            if result != 1 {
+                return Err(error.into_error());
+            }
+            Ok(())
+        }
         #[cfg(test)]
         pub(super) fn open(
             file: File,
@@ -1494,6 +1594,11 @@ mod ffi {
                 pixel_format: string(&info.pixel_format),
                 nominal_frame_duration_ns: None,
                 chroma_assumed_left: match info.chroma_assumed_left {
+                    0 => false,
+                    1 => true,
+                    _ => return Err(invalid_native()),
+                },
+                range_assumed: match info.range_assumed {
                     0 => false,
                     1 => true,
                     _ => return Err(invalid_native()),

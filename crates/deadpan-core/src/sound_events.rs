@@ -437,6 +437,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetTarget { .. }
+        | Command::SetSourceInterpretation { .. }
         | Command::DeleteTarget { .. }
         | Command::SetSoundAllowance { .. }
         | Command::SlipSource { .. }

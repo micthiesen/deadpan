@@ -150,13 +150,19 @@ fn validate_sample(
             GenerationPictureIdentity::Original {
                 qualification,
                 frame,
+                interpretation,
             },
             BoundaryPicture::Original {
                 qualification: expected,
+                interpretation: expected_interpretation,
                 picture,
                 ..
             },
-        ) => qualification == expected && *frame == picture.source_frame,
+        ) => {
+            qualification == expected
+                && interpretation == expected_interpretation
+                && *frame == picture.source_frame
+        }
         (
             GenerationPictureIdentity::Generated {
                 sampled_object,
@@ -264,13 +270,15 @@ fn same_provider(left: &GenerationPictureIdentity, right: &GenerationPictureIden
         (
             GenerationPictureIdentity::Original {
                 qualification: left,
+                interpretation: left_interpretation,
                 ..
             },
             GenerationPictureIdentity::Original {
                 qualification: right,
+                interpretation: right_interpretation,
                 ..
             },
-        ) => left == right,
+        ) => left == right && left_interpretation == right_interpretation,
         (
             GenerationPictureIdentity::Generated {
                 sampled_object: left,

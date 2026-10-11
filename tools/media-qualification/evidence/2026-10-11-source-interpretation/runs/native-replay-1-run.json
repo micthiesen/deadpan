@@ -1,0 +1,16 @@
+{
+  "command": [
+    "deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "source-interpretation",
+    "--mode",
+    "visual",
+    "--output",
+    "/tmp/deadpan-source-interpretation-20261010/native-replay-1",
+    "--retain-projects"
+  ],
+  "exit": 0,
+  "seconds": 89.0533160418272,
+  "binary_sha256": "27ce5abefd499c275bfa10df4edfb68006ce8a0b94e6fa5688cc5d92f1c50a15"
+}

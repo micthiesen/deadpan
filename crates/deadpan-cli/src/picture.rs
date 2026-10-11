@@ -641,6 +641,14 @@ impl ProjectPictureSession {
                 "decoded stream, interpretation or measured index differs",
             ));
         }
+        let interpretation = self
+            .document
+            .source_interpretations()
+            .get(asset)
+            .copied()
+            .map(Into::into)
+            .unwrap_or_default();
+        let source = source.with_interpretation(interpretation, FRAME_TIMEOUT, cancelled)?;
         check_cancel(cancelled)?;
         self.retained = Some(RetainedSource {
             asset: asset.clone(),

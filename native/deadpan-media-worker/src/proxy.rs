@@ -131,7 +131,14 @@ pub(super) fn run(request: &ProxyRequest) -> ProxyReply {
         threads: request.decode_threads,
         ..DecodeLimits::default()
     };
-    let mut decoder = match control().map(|control| SourceDecoder::open(input, limits, control)) {
+    let mut decoder = match control().map(|control| {
+        SourceDecoder::open_interpreted(
+            input,
+            limits,
+            control,
+            request.interpretation.map(Into::into).unwrap_or_default(),
+        )
+    }) {
         Ok(Ok(decoder)) => decoder,
         Ok(Err(error)) => return decode_failure(error),
         Err(reply) => return reply,

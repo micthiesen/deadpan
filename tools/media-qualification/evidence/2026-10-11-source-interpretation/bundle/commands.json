@@ -1,0 +1,518 @@
+[
+  {
+    "name": "cfr-bframes-create",
+    "args": [
+      "project",
+      "create-original",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.09119108272716403
+  },
+  {
+    "name": "cfr-bframes-before",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.010691750328987837
+  },
+  {
+    "name": "cfr-bframes-preview",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-command.json",
+      "--dry-run"
+    ],
+    "exit": 0,
+    "seconds": 0.009973667096346617
+  },
+  {
+    "name": "cfr-bframes-after-preview",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.008893083315342665
+  },
+  {
+    "name": "cfr-bframes-commit",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-command.json"
+    ],
+    "exit": 0,
+    "seconds": 0.030173833016306162
+  },
+  {
+    "name": "cfr-bframes-after",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.00909429183229804
+  },
+  {
+    "name": "cfr-bframes-render",
+    "args": [
+      "render",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-exports",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 1.6370552922599018
+  },
+  {
+    "name": "cfr-bframes-verify",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-exports/deadpan-6463a512-1b9e-46e3-b602-8a100dbba849.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.9775500842370093
+  },
+  {
+    "name": "cfr-bframes-undo",
+    "args": [
+      "project",
+      "undo",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.03847354184836149
+  },
+  {
+    "name": "cfr-bframes-undone",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.010900749824941158
+  },
+  {
+    "name": "cfr-bframes-historical",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-exports/deadpan-6463a512-1b9e-46e3-b602-8a100dbba849.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.9347390830516815
+  },
+  {
+    "name": "hevc-sdr-10-limited-create",
+    "args": [
+      "project",
+      "create-original",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/hevc-sdr-10-limited.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.07925220765173435
+  },
+  {
+    "name": "hevc-sdr-10-limited-before",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.012073457706719637
+  },
+  {
+    "name": "hevc-sdr-10-limited-preview",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-command.json",
+      "--dry-run"
+    ],
+    "exit": 0,
+    "seconds": 0.010936707723885775
+  },
+  {
+    "name": "hevc-sdr-10-limited-after-preview",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.009159124922007322
+  },
+  {
+    "name": "hevc-sdr-10-limited-commit",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-command.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03095812490209937
+  },
+  {
+    "name": "hevc-sdr-10-limited-after",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.009885708335787058
+  },
+  {
+    "name": "hevc-sdr-10-limited-render",
+    "args": [
+      "render",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-exports",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.931219041813165
+  },
+  {
+    "name": "hevc-sdr-10-limited-verify",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-exports/deadpan-388d16dd-dd0d-4452-8a2f-15b88a9dce4c.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.19384483341127634
+  },
+  {
+    "name": "hevc-sdr-10-limited-undo",
+    "args": [
+      "project",
+      "undo",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.03503100015223026
+  },
+  {
+    "name": "hevc-sdr-10-limited-undone",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.00998787535354495
+  },
+  {
+    "name": "hevc-sdr-10-limited-historical",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-exports/deadpan-388d16dd-dd0d-4452-8a2f-15b88a9dce4c.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.15161616681143641
+  },
+  {
+    "name": "av1-sdr-8-limited-create",
+    "args": [
+      "project",
+      "create-original",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/av1-sdr-8-limited.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.08130983402952552
+  },
+  {
+    "name": "av1-sdr-8-limited-before",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.011272166855633259
+  },
+  {
+    "name": "av1-sdr-8-limited-preview",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-command.json",
+      "--dry-run"
+    ],
+    "exit": 0,
+    "seconds": 0.010153166949748993
+  },
+  {
+    "name": "av1-sdr-8-limited-after-preview",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.008884750306606293
+  },
+  {
+    "name": "av1-sdr-8-limited-commit",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-command.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03006316674873233
+  },
+  {
+    "name": "av1-sdr-8-limited-after",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.00926624983549118
+  },
+  {
+    "name": "av1-sdr-8-limited-render",
+    "args": [
+      "render",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-exports",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.9202777501195669
+  },
+  {
+    "name": "av1-sdr-8-limited-verify",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-exports/deadpan-8ad692d0-029d-4c20-824b-c20a73be2f6f.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.18094920925796032
+  },
+  {
+    "name": "av1-sdr-8-limited-undo",
+    "args": [
+      "project",
+      "undo",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.034003375098109245
+  },
+  {
+    "name": "av1-sdr-8-limited-undone",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.010542332660406828
+  },
+  {
+    "name": "av1-sdr-8-limited-historical",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-exports/deadpan-8ad692d0-029d-4c20-824b-c20a73be2f6f.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.15960424998775125
+  },
+  {
+    "name": "hevc-pq-create",
+    "args": [
+      "project",
+      "create-original",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/hevc-pq.mp4"
+    ],
+    "exit": 0,
+    "seconds": 0.0791846658103168
+  },
+  {
+    "name": "hevc-pq-before",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.011351666878908873
+  },
+  {
+    "name": "hevc-pq-preview",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-command.json",
+      "--dry-run"
+    ],
+    "exit": 0,
+    "seconds": 0.009891791269183159
+  },
+  {
+    "name": "hevc-pq-after-preview",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.008821415714919567
+  },
+  {
+    "name": "hevc-pq-commit",
+    "args": [
+      "command",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-command.json"
+    ],
+    "exit": 0,
+    "seconds": 0.03038295777514577
+  },
+  {
+    "name": "hevc-pq-after",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.00914754206314683
+  },
+  {
+    "name": "hevc-pq-render",
+    "args": [
+      "render",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-exports",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.7044989578425884
+  },
+  {
+    "name": "hevc-pq-verify",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-exports/deadpan-f27b8ca0-8bcf-4c19-aad8-ca9c089497b2.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.08481095777824521
+  },
+  {
+    "name": "hevc-pq-undo",
+    "args": [
+      "project",
+      "undo",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--expected",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.03352416679263115
+  },
+  {
+    "name": "hevc-pq-undone",
+    "args": [
+      "project",
+      "dump",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.010361291002482176
+  },
+  {
+    "name": "hevc-pq-historical",
+    "args": [
+      "verify-export",
+      "/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq.deadpan",
+      "--movie",
+      "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-exports/deadpan-f27b8ca0-8bcf-4c19-aad8-ca9c089497b2.mp4",
+      "--revision",
+      "interpreted"
+    ],
+    "exit": 0,
+    "seconds": 0.05114212492480874
+  }
+]

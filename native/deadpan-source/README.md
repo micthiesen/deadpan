@@ -130,8 +130,13 @@ H.264 High10 in MP4, plus VP9/AV1 in MP4/WebM/Matroska, with optional exact stat
 `tests/hdr_decode.rs`. SDR also admits HEVC Main/Main10 eight/ten-bit and
 H.264 High10 ten-bit 4:2:0 and ProRes ten-bit 4:2:2 with RGBA64 picture output,
 tested by `tests/sdr_hevc.rs` and `tests/prores.rs`. Other admitted SDR inputs use eight-bit three-component
-pixels with explicit
-range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
+pixels with qualified range, matrix, transfer and primaries. An absent decoded
+range uses full range for RGB and limited range for YUV, recorded separately
+as `SourceStreamInfo::range_assumed`; later raw declarations must still match.
+An explicit `VideoInterpretation` changes only RGBA conversion and survives
+seeks, without relabeling source observations or changing picture clocks.
+Raw export inspection refuses an assumed range or an authored interpretation.
+RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,
 sRGB and linear, with BT.709/BT.2020/P3-D65 primaries retained for the shared
 renderer. libswscale applies the matrix/range transform into full-range RGBA8.

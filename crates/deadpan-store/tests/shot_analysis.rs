@@ -28,6 +28,7 @@ fn key(version: &str) -> ShotAnalysisKey {
         content: "blake3:original".into(),
         video_stream: 0,
         signature_version: version.into(),
+        interpretation: None,
     }
 }
 
@@ -88,6 +89,57 @@ fn shots_save_replace_and_reopen_without_touching_history() -> Result {
 }
 
 #[test]
+fn interpretation_separates_analyses_and_refuses_a_foreign_checkpoint_tail() -> Result {
+    use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
+    let scratch = tempfile::tempdir()?;
+    let path = project(&scratch)?;
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let automatic = key(SIGNATURE_VERSION);
+    let corrected = ShotAnalysisKey {
+        interpretation: Some(SourceInterpretation {
+            range: Some(SourceColorRange::Full),
+            chroma_location: Some(SourceChromaLocation::Center),
+        }),
+        ..automatic.clone()
+    };
+    let head = store.head_revision()?;
+    store.save_shot_analysis(&automatic, &analysis(90))?;
+    store.save_shot_analysis(&corrected, &analysis(10))?;
+    let mut newer = corrected.clone();
+    newer.signature_version = "newer".into();
+    store.save_shot_analysis(&newer, &analysis(20))?;
+    assert!(store.shot_analysis(&corrected, 20)?.is_none());
+    assert_eq!(store.shot_analysis(&automatic, 20)?, Some(analysis(90)));
+    let progress = ShotProgress::new(20, analysis(90).measures()[..5].to_vec())?;
+    store.save_shot_scan_progress(&automatic, &progress)?;
+    let tail = ShotProgressTail::new(20, 5, analysis(10).measures()[5..10].to_vec())?;
+    assert!(store.append_shot_scan_progress(&corrected, &tail).is_err());
+    assert_eq!(
+        store.shot_scan_progress(&automatic, 20)?,
+        Some(progress.clone())
+    );
+    assert!(store.shot_scan_progress(&corrected, 20)?.is_none());
+    // Completing another interpretation cannot erase the active scan's checkpoint.
+    store.save_shot_analysis(&corrected, &analysis(10))?;
+    assert_eq!(store.shot_scan_progress(&automatic, 20)?, Some(progress));
+    assert_eq!(store.head_revision()?, head);
+    drop(store);
+    let store = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    store.validate()?;
+    let keys = store.shot_analysis_keys_for_content(&automatic.content)?;
+    assert_eq!(keys, vec![automatic.clone(), corrected.clone()]);
+    assert_eq!(store.shot_analysis(&automatic, 20)?, Some(analysis(90)));
+    assert_eq!(store.shot_analysis(&corrected, 20)?, Some(analysis(10)));
+    let mut empty = corrected;
+    empty.interpretation = Some(SourceInterpretation {
+        range: None,
+        chroma_location: None,
+    });
+    assert!(store.shot_analysis(&empty, 20).is_err());
+    Ok(())
+}
+
+#[test]
 fn shot_keys_are_validated_and_the_count_is_bounded() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = project(&scratch)?;
@@ -99,10 +151,12 @@ fn shot_keys_are_validated_and_the_count_is_bounded() -> Result {
         },
         ShotAnalysisKey {
             signature_version: "x\u{1}".into(),
+            interpretation: None,
             ..key("v")
         },
         ShotAnalysisKey {
             signature_version: "v".repeat(129),
+            interpretation: None,
             ..key("v")
         },
     ] {

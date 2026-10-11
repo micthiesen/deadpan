@@ -58,6 +58,20 @@ def object_ref(value):
     return (digest(value["content"]["digest"]), integer(value["byte_length"], 1, U64_MAX))
 
 
+def source_interpretation(value):
+    """Canonical decoding choices, separate from immutable source metadata."""
+    if value is None:
+        return None
+    if not isinstance(value, dict) or value.keys() - {"range", "chroma_location"}:
+        raise ValueError("invalid source interpretation fields")
+    color_range, chroma = value.get("range"), value.get("chroma_location")
+    if (color_range not in (None, "limited", "full")
+            or chroma not in (None, "left", "center", "top_left", "top", "bottom_left", "bottom")
+            or (color_range is None and chroma is None)):
+        raise ValueError("invalid source interpretation")
+    return color_range, chroma
+
+
 def picture_identity(value):
     """Return a hashable provider plus ordinal, after validating its wire shape."""
     if not isinstance(value, dict):
@@ -67,8 +81,11 @@ def picture_identity(value):
         exact_keys(value, ["kind"])
         return (kind,), None
     if kind == "original":
-        exact_keys(value, ["kind", "qualification", "frame"])
-        provider = (kind, digest(value["qualification"]))
+        fields = ["kind", "qualification", "frame"]
+        if "interpretation" in value:
+            fields.append("interpretation")
+        exact_keys(value, fields)
+        provider = (kind, digest(value["qualification"]), source_interpretation(value.get("interpretation")))
     elif kind == "generated":
         exact_keys(value, ["kind", "sampled_object", "frame", "content_aspect"])
         aspect = value["content_aspect"]
@@ -98,7 +115,7 @@ def boundary_identity(boundary):
         return (kind,), None
     if kind == "original":
         _core_identifier(value["asset"], "Original asset")
-        provider = (kind, digest(value["qualification"]))
+        provider = (kind, digest(value["qualification"]), source_interpretation(value.get("interpretation")))
     else:
         _core_identifier(value["sampled_asset"], "sampled asset")
         object_ref(value["provenance"])

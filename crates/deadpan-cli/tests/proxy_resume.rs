@@ -108,6 +108,7 @@ impl Original {
             sha256: hex(&digest),
             byte_length: bytes.len() as u64,
             stream_index: index.stream_index(),
+            interpretation: None,
         };
         Ok(Self {
             info: session.info().clone(),
@@ -472,6 +473,48 @@ fn a_killed_host_resumes_from_its_journal() -> Result {
     Ok(())
 }
 
+/// Corrected pixels use their own verified proxy and do not reuse completed
+/// ranges from a different interpretation of the same source bytes.
+#[test]
+fn corrected_range_builds_publish_separate_verified_variants() -> Result {
+    use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
+    let worker = media_worker().ok_or("build deadpan-media-worker before this test")?;
+    let _slot = vt_slot();
+    let mut original = Original::load()?;
+    let scratch = tempfile::tempdir()?;
+    let cache = ProxyCache::at(&scratch.path().join("Proxies"))?;
+    let automatic_key = original.key();
+    let automatic = original.build(
+        &cache,
+        &worker,
+        &AtomicBool::new(false),
+        &ProxyProgress::default(),
+        60,
+    )?;
+    original.check_published(&cache, &automatic);
+    original.identity.interpretation = Some(SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: Some(SourceChromaLocation::Center),
+    });
+    let corrected_key = original.key();
+    assert_ne!(automatic_key, corrected_key);
+    let progress = ProxyProgress::default();
+    let corrected = original.build(&cache, &worker, &AtomicBool::new(false), &progress, 60)?;
+    original.check_published(&cache, &corrected);
+    assert_eq!(progress.snapshot().reused_ranges, 0);
+    assert_eq!(
+        corrected.sidecar().original.interpretation,
+        original.identity.interpretation
+    );
+    assert_ne!(
+        corrected.sidecar().file.sha256,
+        automatic.sidecar().file.sha256
+    );
+    assert!(cache.lookup(&automatic_key)?.is_some());
+    assert!(cache.lookup(&corrected_key)?.is_some());
+    Ok(())
+}
+
 /// (3)–(5) Cancellation keeps completed ranges; damaged ranges, a torn tail
 /// and a torn journal are never trusted; a journal for other Original
 /// bytes, another recipe or another range rule is discarded; a remembered
@@ -575,6 +618,11 @@ fn damaged_or_foreign_partial_state_is_encoded_again_never_trusted() -> Result {
     // plan is discarded whole, although its ranges are intact.
     for (field, value) in [
         ("/original/sha256", serde_json::json!("0".repeat(64))),
+        ("/original", {
+            let mut identity = serde_json::to_value(&original.identity)?;
+            identity["interpretation"] = serde_json::json!({"range":"full"});
+            identity
+        }),
         (
             "/original/byte_length",
             serde_json::json!(original.bytes.len() + 1),

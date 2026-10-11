@@ -107,6 +107,55 @@ fn encoded_face_fixture_baseline() {
 }
 
 #[test]
+fn authored_interpretation_is_captured_and_used_by_face_detection() {
+    use deadpan_core::{
+        Command, CommandRequest, RevisionId, SourceColorRange, SourceInterpretation,
+    };
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project(scratch.path());
+    let running = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite).unwrap();
+    let automatic = prepare_faces(&store, &request(0), &running, deadline).unwrap();
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: None,
+    };
+    let document = store.snapshot().unwrap();
+    store
+        .commit(&CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("corrected").unwrap(),
+            command: Command::SetSourceInterpretation {
+                asset: clip(),
+                interpretation: Some(choice),
+            },
+        })
+        .unwrap();
+    let corrected = prepare_faces(&store, &request(0), &running, deadline).unwrap();
+    assert_eq!(corrected.stream().interpretation, Some(choice));
+    assert_eq!(automatic.stream().interpretation, None);
+    assert_eq!(corrected.pts, automatic.pts);
+    assert_eq!(corrected.content, automatic.content);
+    let result = detect_faces(&runtime(), &corrected, "corrected", &running, deadline).unwrap();
+    assert_eq!(result.pts, corrected.pts);
+    assert_eq!(result.faces.len(), 2);
+    store
+        .undo(
+            &RevisionId::new("corrected").unwrap(),
+            RevisionId::new("undo").unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        prepare_faces(&store, &request(0), &running, deadline)
+            .unwrap()
+            .stream(),
+        automatic.stream()
+    );
+}
+
+#[test]
 fn fractional_aperture_excludes_the_hidden_face_and_reports_clean_coordinates() {
     let scratch = tempfile::tempdir().unwrap();
     let package = project_media(scratch.path(), true);

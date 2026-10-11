@@ -99,6 +99,12 @@ struct SliceWire {
     beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
     #[serde(deserialize_with = "crate::document::unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "crate::document::unique_map"
+    )]
+    source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
     #[serde(deserialize_with = "crate::document::unique_map")]
     marks: BTreeMap<MarkId, Mark>,
     #[serde(deserialize_with = "crate::document::unique_map")]
@@ -443,6 +449,12 @@ impl CapturedEditSlice {
                 .filter(|(owner, _)| selected.contains(*owner))
                 .map(|(owner, events)| (owner.clone(), events.clone()))
                 .collect(),
+            source_interpretations: document
+                .source_interpretations()
+                .iter()
+                .filter(|(id, _)| assets.contains(*id))
+                .map(|(id, value)| (id.clone(), *value))
+                .collect(),
             assets: assets
                 .into_iter()
                 .map(|id| (id.clone(), document.assets()[&id].clone()))
@@ -681,6 +693,7 @@ impl CapturedEditSlice {
         document.nodes.extend(value.nodes.clone());
         document.beat_sounds = value.beat_sounds.clone();
         document.assets = value.assets.clone();
+        document.source_interpretations = value.source_interpretations.clone();
         document.overrides = value.overrides.clone();
         document.gap_overrides = value.gap_overrides.clone();
         document.audio_lineage = value.audio_lineage.clone();

@@ -1,0 +1,63 @@
+[
+  {
+    "name": "core-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "source_interpretation"
+    ],
+    "exit": 0,
+    "seconds": 0.09709975030273199,
+    "log_sha256": "1fd3e4ded364108af62c43b1170b1844e250aad20b5e0121a4e0e924c29bed42"
+  },
+  {
+    "name": "native-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-source",
+      "--test",
+      "interpretation"
+    ],
+    "exit": 0,
+    "seconds": 1.213712291792035,
+    "log_sha256": "fe10618fd822ed50396dc971d63400539fc15d2d4b77ae6de51936fa2636a98e"
+  },
+  {
+    "name": "media-sessions",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "source_session"
+    ],
+    "exit": 0,
+    "seconds": 2.7076038336381316,
+    "log_sha256": "2fafc18df537608bac04acc5caeb06b04ee8abd03763d6c21dd994089b525347"
+  },
+  {
+    "name": "store-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "source_registration",
+      "interpretation::"
+    ],
+    "exit": 0,
+    "seconds": 4.767630666028708,
+    "log_sha256": "9b099a30d36c7efc6ef9cb66ab998db18ef427347f92535907900f1facb30039"
+  }
+]

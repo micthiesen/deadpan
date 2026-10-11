@@ -54,6 +54,7 @@ pub(crate) fn sidecar(key: &ProxyKey, bytes: &[u8]) -> ProxySidecar {
             sha256: "0".repeat(64),
             byte_length: 10,
             stream_index: 0,
+            interpretation: key.interpretation(),
         },
         file: ProxyFileIdentity {
             sha256: deadpan_media::proxy::hex(&sha),
@@ -63,6 +64,7 @@ pub(crate) fn sidecar(key: &ProxyKey, bytes: &[u8]) -> ProxySidecar {
         info: SourceStreamInfo {
             nominal_frame_duration_ns: None,
             chroma_assumed_left: false,
+            range_assumed: false,
             bwdif_fields: false,
             clean_aperture: None,
             width: 2,
@@ -117,6 +119,87 @@ fn publish(cache: &ProxyCache, key: &ProxyKey, bytes: &[u8]) -> ProxyEntry {
 
 fn not_cancelled() -> AtomicBool {
     AtomicBool::new(false)
+}
+
+#[test]
+fn interpretations_have_separate_entries_failures_and_partial_builds() {
+    use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
+    use std::io::Write;
+    let scratch = tempfile::tempdir().unwrap();
+    let cache = cache(scratch.path());
+    let automatic = key('a');
+    let mut names = std::collections::BTreeSet::from([automatic.directory()]);
+    let choices = [
+        None,
+        Some(SourceColorRange::Limited),
+        Some(SourceColorRange::Full),
+    ];
+    let chromas = [
+        None,
+        Some(SourceChromaLocation::Left),
+        Some(SourceChromaLocation::Center),
+        Some(SourceChromaLocation::TopLeft),
+        Some(SourceChromaLocation::Top),
+        Some(SourceChromaLocation::BottomLeft),
+        Some(SourceChromaLocation::Bottom),
+    ];
+    for range in choices {
+        for chroma_location in chromas {
+            let result = automatic.clone().interpreted(Some(SourceInterpretation {
+                range,
+                chroma_location,
+            }));
+            if range.is_none() && chroma_location.is_none() {
+                assert!(result.is_err());
+            } else {
+                assert!(names.insert(result.unwrap().directory()));
+            }
+        }
+    }
+    let corrected = automatic
+        .clone()
+        .interpreted(Some(SourceInterpretation {
+            range: Some(SourceColorRange::Full),
+            chroma_location: None,
+        }))
+        .unwrap();
+    publish(&cache, &automatic, b"automatic");
+    assert!(cache.lookup(&corrected).unwrap().is_none());
+    cache
+        .record_failure(&automatic, "old build failed")
+        .unwrap();
+    assert!(cache.failure(&corrected).is_none());
+    let old_partial = cache.partial(&automatic, &not_cancelled()).unwrap();
+    old_partial
+        .data()
+        .write_all(b"completed automatic range")
+        .unwrap();
+    let new_partial = cache.partial(&corrected, &not_cancelled()).unwrap();
+    assert_eq!(old_partial.data().metadata().unwrap().len(), 25);
+    assert_eq!(new_partial.data().metadata().unwrap().len(), 0);
+    drop((old_partial, new_partial));
+    let corrected_entry = publish(&cache, &corrected, b"corrected");
+    assert_eq!(
+        corrected_entry.sidecar().original.interpretation,
+        corrected.interpretation()
+    );
+    assert!(cache.lookup(&automatic).unwrap().is_some());
+    let staging = cache.stage().unwrap();
+    staging.movie().write_all(b"automatic").unwrap();
+    assert!(
+        cache
+            .publish(&corrected, staging, &sidecar(&automatic, b"automatic"))
+            .is_err()
+    );
+    let directory = scratch.path().join("Proxies").join(corrected.directory());
+    let path = directory.join(SIDECAR);
+    // Tampering cannot turn an automatic proxy into a corrected one.
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    std::fs::write(&path, sidecar(&automatic, b"corrected").to_json().unwrap()).unwrap();
+    assert!(matches!(
+        cache.lookup(&corrected),
+        Err(ProxyCacheError::Damaged(_))
+    ));
 }
 
 #[test]

@@ -33,6 +33,68 @@ mod stress_tests;
 mod lookahead_tests;
 
 #[test]
+fn interpretation_changes_invalidate_reused_original_and_edit_decoders() {
+    use deadpan_core::{SourceColorRange, SourceInterpretation};
+    let mut fixture = Fixture::source("hevc-sdr-8-limited.mp4");
+    let before = fixture.workspace(1);
+    let active = AtomicBool::new(false);
+    let mut retained = None;
+    let mut picture = |workspace: &Arc<Workspace>, view: ProjectView| {
+        project_picture(
+            workspace,
+            &workspace.document,
+            &workspace.plan,
+            &view,
+            &active,
+            &mut retained,
+        )
+        .unwrap()
+        .frame
+        .unwrap()
+    };
+    let original = picture(&before, source(2));
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: None,
+    };
+    fixture
+        .store
+        .commit(&CommandRequest {
+            project_id: before.document.project_id().clone(),
+            expected_revision: before.document.revision_id().clone(),
+            new_revision: revision("interpreted"),
+            command: Command::SetSourceInterpretation {
+                asset: asset(),
+                interpretation: Some(choice),
+            },
+        })
+        .unwrap();
+    let mut corrected = fixture.workspace(1);
+    // Source catalog entries legitimately survive authored revisions.
+    Arc::get_mut(&mut corrected).unwrap().sources = before.sources.clone();
+    let corrected_source = picture(&corrected, source(2));
+    assert_ne!(corrected_source.bytes(), original.bytes());
+    assert_eq!(corrected_source.metadata(), original.metadata());
+    assert_eq!(
+        picture(&corrected, sequence(2)).bytes(),
+        corrected_source.bytes()
+    );
+    assert_eq!(picture(&before, source(2)).bytes(), original.bytes());
+    assert_eq!(
+        picture(&corrected, source(2)).bytes(),
+        corrected_source.bytes()
+    );
+    fixture
+        .store
+        .undo(&revision("interpreted"), revision("undo"))
+        .unwrap();
+    assert_eq!(
+        picture(&fixture.workspace(1), source(2)).bytes(),
+        original.bytes()
+    );
+}
+
+#[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{
         AssetRecord, BridgeInterpolation, BridgeSamplingMap, GeneratedArtifact, GeneratedContentId,

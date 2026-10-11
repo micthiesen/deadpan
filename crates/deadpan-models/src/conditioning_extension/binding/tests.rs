@@ -138,6 +138,7 @@ fn original(frame: u64) -> GenerationPictureIdentity {
     GenerationPictureIdentity::Original {
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
         frame: SourceFrameId(frame),
+        interpretation: None,
     }
 }
 
@@ -177,8 +178,46 @@ fn original_boundary() -> BoundaryPicture {
         clock: clock(ExactRatio::integer(20)),
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        interpretation: None,
         picture: decoded(),
     }
+}
+
+#[test]
+fn interpretation_must_match_decoded_inputs_and_complete_support() {
+    let mut boundary = original_boundary();
+    let mut corrected = original(7);
+    let choice = Some(deadpan_core::SourceInterpretation {
+        range: Some(deadpan_core::SourceColorRange::Full),
+        chroma_location: None,
+    });
+    let GenerationPictureIdentity::Original { interpretation, .. } = &mut corrected else {
+        unreachable!()
+    };
+    *interpretation = choice;
+    let sample = RelativeGenerationPicture {
+        position: ExactRatio::ZERO,
+        picture: corrected.clone(),
+    };
+    assert!(validate_sample(&sample, &boundary, &boundary).is_err());
+    let BoundaryPicture::Original { interpretation, .. } = &mut boundary else {
+        unreachable!()
+    };
+    *interpretation = choice;
+    validate_sample(&sample, &boundary, &boundary).unwrap();
+    assert!(!same_provider(&corrected, &original(7)));
+    assert!(same_provider(&corrected, &corrected));
+    let support = GenerationInputSupport {
+        start: ExactRatio::ZERO,
+        end_exclusive: ExactRatio::ONE,
+        first: original(7),
+        last: original(7),
+    };
+    let terminal = RelativeGenerationPicture {
+        position: ExactRatio::ONE,
+        picture: corrected,
+    };
+    assert!(validate_support(&[sample, terminal.clone()], &[support], &terminal).is_err());
 }
 
 #[test]
@@ -300,6 +339,7 @@ fn original_and_generated_identity_fields_are_checked_without_inventing_crop_pro
             &sample(GenerationPictureIdentity::Original {
                 qualification: SourceQualificationId::new("b".repeat(64)).unwrap(),
                 frame: SourceFrameId(7),
+                interpretation: None,
             }),
             &boundary,
             &boundary
@@ -423,6 +463,7 @@ fn span_providers_start_identities_and_interior_ordinals_are_checked() {
     samples[1].picture = GenerationPictureIdentity::Original {
         qualification: SourceQualificationId::new("b".repeat(64)).unwrap(),
         frame: SourceFrameId(8),
+        interpretation: None,
     };
     assert!(validate_support(&samples, &[support()], samples.last().unwrap()).is_err());
     assert!(!same_provider(

@@ -58,6 +58,7 @@ typedef struct {
        ticks, including stream_start/duration. Audio clocks are unchanged. */
     int32_t bwdif_fields;
     int32_t chroma_assumed_left;
+    int32_t range_assumed;
 } DeadpanSourceInfo;
 typedef struct {
     int64_t pts, duration, dts;
@@ -91,6 +92,14 @@ int deadpan_source_open(int fd, int64_t length, const DeadpanSourceLimits *limit
 int deadpan_source_open_at_keyframe(int fd, int64_t length, const DeadpanSourceLimits *limits,
     uint64_t preflight_io_bytes, uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
     DeadpanSource **out, DeadpanSourceInfo *info, DeadpanSourceError *error, int64_t pts);
+/* Configure RGBA conversion before the first output. Zero retains the source;
+   range 1/2 is limited/full, chroma 1..6 is AVChromaLocation. Does not change
+   observed info or raw frame metadata. Fresh export inspection is excluded. */
+int deadpan_source_interpret(DeadpanSource *source, int32_t range, int32_t chroma,
+    uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
+    DeadpanSourceError *error);
+/* Query immutable FFmpeg format descriptors; unknown formats return zero. */
+int deadpan_source_subsampled_yuv(const char *pixel_format);
 int deadpan_source_next(DeadpanSource *source, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceFrame *frame,
     uint8_t *rgba, size_t rgba_length, DeadpanSourceError *error);

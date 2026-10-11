@@ -696,6 +696,100 @@ fn vfr_recipe_exports_match_independent_provenance_and_committed_preview() -> Re
     Ok(())
 }
 
+/// Source interpretation changes exported pixels while retaining exact picture
+/// and audio clocks. Historical revisions remain verifiable after Undo.
+#[test]
+fn source_interpretation_exports_are_revision_bound_and_undo_restores_picture_semantics() -> Result
+{
+    use deadpan_core::{
+        Command as Edit, CommandRequest, RevisionId, SourceChromaLocation, SourceColorRange,
+        SourceInterpretation,
+    };
+    use deadpan_store::{AccessMode, ProjectStore};
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("source interpretation export evidence: {}", root.display());
+    let automatic = recipes::black_pause(&root.join("fixture"))?;
+    let old_movie = render(&automatic, &root.join("automatic"))?;
+    let mut corrected = automatic.clone();
+    corrected.revision = "interpreted".into();
+    {
+        let mut store = ProjectStore::open(&automatic.package, AccessMode::ReadWrite)?;
+        let document = store.snapshot()?;
+        let Some(deadpan_store::single_source::SingleSourceState::Ready { asset, .. }) =
+            store.single_source_state()?
+        else {
+            return Err("missing Original".into());
+        };
+        store.commit(&CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new(&corrected.revision)?,
+            command: Edit::SetSourceInterpretation {
+                asset,
+                interpretation: Some(SourceInterpretation {
+                    range: Some(SourceColorRange::Full),
+                    chroma_location: Some(SourceChromaLocation::Center),
+                }),
+            },
+        })?;
+        let after = store.snapshot()?;
+        assert_eq!(after.nodes(), document.nodes());
+        assert_eq!(after.assets(), document.assets());
+    }
+    let new_movie = render(&corrected, &root.join("corrected"))?;
+    for (movie, revision) in [
+        (&old_movie, &automatic.revision),
+        (&new_movie, &corrected.revision),
+    ] {
+        let (report, passed) = verify(&corrected, movie, revision, &[])?;
+        std::fs::write(
+            root.join(format!("{revision}-verification.json")),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        assert!(passed, "{}", report["failures"]);
+        assert_eq!(report["summary"]["pictures_checked"], corrected.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        eprintln!(
+            "source interpretation {revision}: {}",
+            summary_row(&corrected, &report)
+        );
+    }
+    let (wrong, passed) = verify(&corrected, &old_movie, &corrected.revision, &[])?;
+    std::fs::write(
+        root.join("wrong-revision-verification.json"),
+        serde_json::to_vec_pretty(&wrong)?,
+    )?;
+    assert!(
+        !passed,
+        "an automatic-range movie cannot verify against corrected pixels: {wrong}"
+    );
+    {
+        let mut store = ProjectStore::open(&automatic.package, AccessMode::ReadWrite)?;
+        store.undo(
+            &RevisionId::new(&corrected.revision)?,
+            RevisionId::new("interpretation-undone")?,
+        )?;
+        assert!(store.snapshot()?.source_interpretations().is_empty());
+    }
+    let (restored, passed) = verify(&automatic, &old_movie, "interpretation-undone", &[])?;
+    std::fs::write(
+        root.join("restored-verification.json"),
+        serde_json::to_vec_pretty(&restored)?,
+    )?;
+    assert!(passed, "{}", restored["failures"]);
+    let (captured, passed) = verify(&corrected, &new_movie, &corrected.revision, &[])?;
+    std::fs::write(
+        root.join("historical-corrected-verification.json"),
+        serde_json::to_vec_pretty(&captured)?,
+    )?;
+    assert!(
+        passed,
+        "immutable corrected revision after Undo: {}",
+        captured["failures"]
+    );
+    Ok(())
+}
+
 /// Default-gate end-to-end check: one real export of a Section 8 recipe
 /// matches its committed preview, and a later same-duration reframe and gain
 /// change of that revision is reported against the old movie.

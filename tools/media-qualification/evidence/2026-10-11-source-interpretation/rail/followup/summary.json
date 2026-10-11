@@ -1,0 +1,71 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup/bin/deadpan-app",
+      "sha256": "69139223d8239cb59f7d800f4406707f53caca425abd966ddb53a9936267fa11",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup/bin/deadpan-media-worker",
+      "sha256": "a707813808712514f2bd83fecb639716774ce68780590a2e61e70f4466d35703",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup/bin/deadpan-track",
+      "sha256": "179509e2c35abb3f177b851afa2399a47e0cf88430f43121d584e0e95092c137",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup/bin/deadpan-transcribe",
+      "sha256": "491eeca8fe5f15f6515147a57cf465dd404709daf4d67600a7ce895866228633",
+      "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 9.53283025,
+  "jobs": 2,
+  "scenarios": [
+    {
+      "checks": 50,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "transcript",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 97.525312208,
+      "status": "PASS"
+    },
+    {
+      "checks": 304,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 6 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-layout",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 100.154528833,
+      "status": "PASS"
+    },
+    {
+      "checks": 323,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-layout-long",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 98.097428375,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 195.92135725
+}

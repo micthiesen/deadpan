@@ -108,6 +108,7 @@ pub(super) fn inspect(
         cancellation_token: CancellationToken::new("cancel-inspection").map_err(invalid)?,
         source,
         stream: landmarks::ExpectedStream {
+            interpretation: None,
             stream_index: 0,
             width: contract.width,
             height: contract.height,

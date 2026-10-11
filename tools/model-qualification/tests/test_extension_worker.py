@@ -524,6 +524,32 @@ class ExtensionContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing or unrelated"):
             self.validate(wire, context)
 
+    def test_interpretation_binds_samples_support_opposite_and_all_signatures(self):
+        wire = request_wire()
+        context = decoded_context(wire)
+        choice = {"range": "full", "chroma_location": "center"}
+        evidence = context["continuity"]
+        inputs = evidence["binding"]["inputs"]
+        identities = evidence["pictures"] + [item["picture"] for item in inputs["samples"]]
+        identities += [inputs["terminal"]["picture"], inputs["opposite"]["picture"]]
+        identities += [item[side] for item in inputs["support"] for side in ("first", "last")]
+        for identity in identities:
+            identity["interpretation"] = copy.deepcopy(choice)
+        for entry in context["context"] + [context["opposite"]]:
+            entry["picture"]["original"]["interpretation"] = copy.deepcopy(choice)
+        self.validate(wire, context)
+        for mutate in [
+            lambda c: c["context"][3]["picture"]["original"].pop("interpretation"),
+            lambda c: c["opposite"]["picture"]["original"].pop("interpretation"),
+            lambda c: c["continuity"]["pictures"][0].pop("interpretation"),
+            lambda c: c["continuity"]["binding"]["inputs"]["support"][0]["last"].pop("interpretation"),
+            lambda c: c["continuity"]["binding"]["inputs"]["samples"][0].get("picture").update(interpretation={}),
+        ]:
+            changed = copy.deepcopy(context)
+            mutate(changed)
+            with self.assertRaises(ValueError):
+                self.validate(wire, changed)
+
     def test_generated_crop_identity_and_record_mutations_fail(self):
         wire = request_wire()
         for aspect in ([24, 10], [0, 1], [True, 1], [1], "12:5"):

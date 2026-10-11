@@ -30,6 +30,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "corrections",
     "shots",
     "proxy-seek",
+    "source-interpretation",
     "cutaway",
     "gags",
     "recipes",

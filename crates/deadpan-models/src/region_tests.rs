@@ -68,6 +68,7 @@ fn fixture(
         },
         asset: AssetId::new("original").unwrap(),
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+        interpretation: None,
         picture: DecodedBoundary {
             source_frame: SourceFrameId(u64::from(right)),
             pts: SourceTimestamp {

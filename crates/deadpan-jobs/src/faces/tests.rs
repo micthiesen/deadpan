@@ -16,6 +16,7 @@ fn detect() -> HostMessage {
         )
         .unwrap(),
         stream: Box::new(ExpectedStream {
+            interpretation: None,
             stream_index: 0,
             width: 320,
             height: 180,

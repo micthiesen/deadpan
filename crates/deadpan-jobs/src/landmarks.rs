@@ -253,6 +253,9 @@ impl HostMessage {
                 version(*protocol)?;
                 validate_input(source, MAX_SOURCE_BYTES)?;
                 stream.validate()?;
+                if stream.interpretation.is_some() {
+                    return Err("generated masters cannot override source interpretation".into());
+                }
                 if stream.width > MAX_DIMENSION
                     || stream.height > MAX_DIMENSION
                     || u64::from(stream.width) * u64::from(stream.height) > MAX_PIXELS
@@ -314,6 +317,9 @@ impl HostMessage {
                 validate_input(source, MAX_SOURCE_BYTES)?;
                 validate_input(anchor, MAX_PNG_BYTES)?;
                 stream.validate()?;
+                if stream.interpretation.is_some() {
+                    return Err("generated masters cannot override source interpretation".into());
+                }
                 if stream.width > MAX_DIMENSION
                     || stream.height > MAX_DIMENSION
                     || u64::from(stream.width) * u64::from(stream.height) > MAX_PIXELS

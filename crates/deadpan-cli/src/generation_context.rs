@@ -61,8 +61,8 @@ fn identity_in(
         "duration": recipe.duration.frames(),
         "rate": [basis.frame_rate.numerator(), basis.frame_rate.denominator()],
         "canvas": [basis.width, basis.height],
-        "left": boundary_identity(boundaries.left.as_ref()),
-        "right": boundary_identity(boundaries.right.as_ref()),
+        "left": boundary_identity(document, boundaries.left.as_ref()),
+        "right": boundary_identity(document, boundaries.right.as_ref()),
     });
     if let Some(target) = target {
         // A correction can change the seed without changing either picture.
@@ -78,11 +78,21 @@ fn identity_in(
 
 /// Model input precedes editorial composition. Captured framing, gain and
 /// captions may change without invalidating the same raw conditioning picture.
-fn boundary_identity(sample: Option<&DefinitionPictureSample>) -> serde_json::Value {
-    sample.map_or(
-        serde_json::Value::Null,
-        |sample| serde_json::json!({ "picture": sample.picture }),
-    )
+fn boundary_identity(
+    document: &ProjectDocument,
+    sample: Option<&DefinitionPictureSample>,
+) -> serde_json::Value {
+    let Some(sample) = sample else {
+        return serde_json::Value::Null;
+    };
+    let mut identity = serde_json::json!({ "picture": sample.picture });
+    if let deadpan_plan::Picture::Source { asset, .. } | deadpan_plan::Picture::Freeze { asset, .. } =
+        &sample.picture
+        && let Some(interpretation) = document.source_interpretations().get(asset)
+    {
+        identity["interpretation"] = serde_json::json!(interpretation);
+    }
+    identity
 }
 
 /// The store resolver used by the app and CLI writers.

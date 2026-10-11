@@ -1,0 +1,49 @@
+[
+  {
+    "name": "generation-model-pack-isolated",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib",
+      "unexpected_resume_offsets_keep_the_partial_and_installs_are_exclusive"
+    ],
+    "exit": 0,
+    "passed": 1,
+    "seconds": 0.20581904100254178,
+    "sha256": "65caea336973222005280e153da714b417b45f4fb1b238160dabfd3cd3be1223"
+  },
+  {
+    "name": "generation-models-followup",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib"
+    ],
+    "exit": 0,
+    "passed": 183,
+    "seconds": 3.4612043341621757,
+    "sha256": "fd8a286abdedcdc469fd0be203146571e177e5e145de613d8e07932e5de5cc42"
+  },
+  {
+    "name": "generation-relevance-followup",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "generation_context"
+    ],
+    "exit": 101,
+    "passed": 0,
+    "seconds": 9.08896299963817,
+    "sha256": "39b734207d11b037c4902399d95699a9529bb22ef1a036897d5a87cde897c340"
+  }
+]

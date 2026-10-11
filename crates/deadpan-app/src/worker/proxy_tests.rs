@@ -31,6 +31,11 @@ fn publish_proxy(fixture: &Fixture, workspace: &Workspace, cache: &ProxyCache) {
     let registered = &workspace.sources[&asset()];
     let video = registered.receipt.snapshot().video().unwrap();
     let original = &registered.original;
+    let interpretation = workspace
+        .document
+        .source_interpretations()
+        .get(&asset())
+        .copied();
     let mut snapshot = fixture
         .store
         .snapshot_original(
@@ -57,7 +62,7 @@ fn publish_proxy(fixture: &Fixture, workspace: &Workspace, cache: &ProxyCache) {
     let sidecar = verify_proxy(
         staging.movie(),
         &input,
-        original.object().content().digest(),
+        &deadpan_cli::proxy::proxy_identity(original, video, interpretation),
         Arc::new(video.index().clone()),
         video.interpretation(),
         ProxyReason::Requested,
@@ -68,8 +73,77 @@ fn publish_proxy(fixture: &Fixture, workspace: &Workspace, cache: &ProxyCache) {
         },
     )
     .unwrap();
-    let key = deadpan_cli::proxy::proxy_key(original, video).unwrap();
+    let key = deadpan_cli::proxy::proxy_key(original, video, interpretation).unwrap();
     cache.publish(&key, staging, &sidecar).unwrap();
+}
+
+#[test]
+fn interpretation_switch_drops_old_proxy_and_undo_reopens_its_own_variant() {
+    use deadpan_core::{SourceColorRange, SourceInterpretation};
+    let mut fixture = Fixture::source("cfr-bframes.mp4");
+    let before = fixture.workspace(1);
+    let (_directory, cache) = cache();
+    publish_proxy(&fixture, &before, &cache);
+    let mut slot = ProxySlot::default();
+    slot.set_cache(Some(cache.clone()));
+    let active = AtomicBool::new(false);
+    let read = |slot: &mut ProxySlot, workspace: &Arc<Workspace>| {
+        slot.picture(
+            PictureMedia::Committed(workspace),
+            &workspace.sources[&asset()],
+            SourceFrameId(40),
+            None,
+            &active,
+        )
+        .unwrap()
+    };
+    assert!(read(&mut slot, &before).is_none());
+    slot.prepare(&active);
+    assert_eq!(read(&mut slot, &before).unwrap().tier, PictureTier::Proxy);
+    // Explicit limited range has the same pixels as this fixture's declared
+    // range, but remains a distinct authored identity and cache variant.
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Limited),
+        chroma_location: None,
+    };
+    fixture
+        .store
+        .commit(&CommandRequest {
+            project_id: before.document.project_id().clone(),
+            expected_revision: before.document.revision_id().clone(),
+            new_revision: revision("corrected-proxy"),
+            command: Command::SetSourceInterpretation {
+                asset: asset(),
+                interpretation: Some(choice),
+            },
+        })
+        .unwrap();
+    let mut after = fixture.workspace(1);
+    Arc::get_mut(&mut after).unwrap().sources = before.sources.clone();
+    assert!(read(&mut slot, &after).is_none());
+    slot.prepare(&active);
+    assert!(read(&mut slot, &after).is_none());
+    publish_proxy(&fixture, &after, &cache);
+    assert!(read(&mut slot, &after).is_none());
+    slot.prepare(&active);
+    let corrected = read(&mut slot, &after).unwrap();
+    assert_eq!(corrected.tier, PictureTier::Proxy);
+    assert_eq!(corrected.summary.unwrap().interpretation, choice.into());
+    fixture
+        .store
+        .undo(&revision("corrected-proxy"), revision("undo-proxy"))
+        .unwrap();
+    let undo = fixture.workspace(1);
+    assert!(read(&mut slot, &undo).is_none());
+    slot.prepare(&active);
+    assert_eq!(
+        read(&mut slot, &undo)
+            .unwrap()
+            .summary
+            .unwrap()
+            .interpretation,
+        deadpan_source::VideoInterpretation::SOURCE
+    );
 }
 
 /// The worker opens a proxy only while idle, after a request wanted one.
@@ -392,7 +466,7 @@ fn a_damaged_or_removed_proxy_falls_back_to_the_original_without_an_error() {
     publish_proxy(&fixture, &workspace, &cache);
     let registered = &workspace.sources[&asset()];
     let video = registered.receipt.snapshot().video().unwrap();
-    let key = deadpan_cli::proxy::proxy_key(&registered.original, video).unwrap();
+    let key = deadpan_cli::proxy::proxy_key(&registered.original, video, None).unwrap();
     // Corrupt the published sidecar in place.
     let directory = cache.path().join(key.directory());
     let sidecar = directory.join("proxy.json");

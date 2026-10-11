@@ -1,0 +1,26 @@
+[
+  {
+    "name": "generation-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 4.445040250197053,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "generation-workspace",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "exit": 0,
+    "seconds": 22.018606207799166,
+    "sha256": "f099c8ad4b76060b5a271f8f129b9f5e0ac4f280c13ecd0d7ce6ee8ac23c3182"
+  }
+]

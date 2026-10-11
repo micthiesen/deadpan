@@ -36,6 +36,7 @@ fn prepared(position: ExactRatio, ordinal: i64, region: (u32, u32)) -> PreparedB
             },
             asset: AssetId::new("original").unwrap(),
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
+            interpretation: None,
             picture: DecodedBoundary {
                 source_frame: SourceFrameId(u64::try_from(ordinal).unwrap()),
                 pts: stamp(ordinal),
@@ -153,6 +154,7 @@ fn fixture_continuity(
     let identity = |ordinal| GenerationPictureIdentity::Original {
         qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
         frame: SourceFrameId(ordinal),
+        interpretation: None,
     };
     let sample = |frame: &PreparedBoundary| {
         let BoundaryPicture::Original {

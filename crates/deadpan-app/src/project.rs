@@ -462,6 +462,8 @@ pub struct ProjectUpdate {
     /// Last selection-changing commit, retained through background progress.
     /// Cleared by the next user command; consumers deduplicate by revision.
     pub committed: Option<CommittedEdit>,
+    /// Proof of a source-only change, independent of selection-changing edits.
+    pub source_interpretation_saved: Option<SourceInterpretationSaved>,
     /// Last semantic edit follows durable head transitions, including failed refreshes.
     pub semantic: Option<semantic::Snapshot>,
     pub macros: Option<macros::Update>,
@@ -557,6 +559,15 @@ pub struct RetentionPassStatus {
     /// The latest Storage-panel clock confirmation of this session, matched
     /// by its request ticket.
     pub confirmation: Option<ClockConfirmation>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SourceInterpretationSaved {
+    pub session: u64,
+    pub project: deadpan_core::ProjectId,
+    pub base: RevisionId,
+    pub revision: RevisionId,
+    pub refresh_error: Option<String>,
 }
 
 /// The reply to [`ProjectRequest::ConfirmVariantClock`].
@@ -1113,6 +1124,12 @@ pub enum ProjectRequest {
         expected_session: u64,
         expected_revision: RevisionId,
         edit: ProjectSoundEdit,
+    },
+    InterpretSource {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        asset: AssetId,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
     },
     Undo {
         expected_revision: RevisionId,

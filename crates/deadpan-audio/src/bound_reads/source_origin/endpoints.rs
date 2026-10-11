@@ -77,6 +77,7 @@ fn endpoint_patch(
             },
         )]),
         assets: BTreeMap::new(),
+        source_interpretations: BTreeMap::new(),
         marks: BTreeMap::new(),
         sounds: BTreeMap::new(),
         beat_sounds: BTreeMap::new(),

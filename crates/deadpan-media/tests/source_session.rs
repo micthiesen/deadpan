@@ -36,6 +36,78 @@ fn open(bytes: &[u8], limits: SourceSessionLimits) -> SourceSession {
     .unwrap()
 }
 
+#[test]
+fn authored_interpretation_survives_thread_changes_companions_and_decode_recovery() {
+    use deadpan_media::source_qualification::DecodedSourceQualification;
+    use deadpan_source::{ColorRange, VideoInterpretation};
+    let bytes = std::fs::read(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-source/tests/fixtures/hevc-sdr-8-limited.mp4"),
+    )
+    .unwrap();
+    let active = AtomicBool::new(false);
+    let timeout = Duration::from_secs(10);
+    let mut ordinary = open(&bytes, SourceSessionLimits::default());
+    let choice = VideoInterpretation {
+        range: Some(ColorRange::Full),
+        ..VideoInterpretation::SOURCE
+    };
+    let mut source = open(&bytes, SourceSessionLimits::default())
+        .with_interpretation(choice, timeout, &active)
+        .unwrap();
+    assert_eq!(source.info(), ordinary.info());
+    assert_eq!(source.index(), ordinary.index());
+    assert!(DecodedSourceQualification::from_sessions(Some(&source), None).is_err());
+    let mut companion = source.companion().open(timeout, &active).unwrap();
+    let baseline = ordinary.frame(SourceFrameId(3), timeout, &active).unwrap();
+    let corrected = source.frame(SourceFrameId(3), timeout, &active).unwrap();
+    assert_ne!(corrected.rgba, baseline.rgba);
+    assert_eq!(corrected.metadata, baseline.metadata);
+    assert_eq!(companion.interpretation(), choice);
+    assert_eq!(
+        companion.frame(SourceFrameId(3), timeout, &active).unwrap(),
+        corrected
+    );
+    source.set_serving_threads(8).unwrap();
+    assert_eq!(
+        source.frame(SourceFrameId(3), timeout, &active).unwrap(),
+        corrected
+    );
+    assert!(source.frame(SourceFrameId(999), timeout, &active).is_err());
+    assert_eq!(
+        source.frame(SourceFrameId(3), timeout, &active).unwrap(),
+        corrected
+    );
+    let mut reset = source
+        .with_interpretation(VideoInterpretation::SOURCE, timeout, &active)
+        .unwrap();
+    assert_eq!(
+        reset.frame(SourceFrameId(3), timeout, &active).unwrap(),
+        baseline
+    );
+}
+
+#[test]
+fn missing_range_assumption_is_retained_in_immutable_qualification() {
+    use deadpan_media::source_qualification::{
+        DecodedSourceQualification, SourceQualificationSnapshot,
+    };
+    let bytes = std::fs::read(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-source/tests/fixtures/missing-range-yuv.mkv"),
+    )
+    .unwrap();
+    let session = open(&bytes, SourceSessionLimits::default());
+    let qualified = DecodedSourceQualification::from_sessions(Some(&session), None).unwrap();
+    let json = qualified.snapshot().to_json().unwrap();
+    let restored = SourceQualificationSnapshot::from_json(&json).unwrap();
+    assert_eq!(&restored, qualified.snapshot());
+    assert!(restored.video().unwrap().interpretation().range_assumed);
+    let mut wire: serde_json::Value = serde_json::from_slice(&json).unwrap();
+    wire["video"]["interpretation"]["color"]["range"] = serde_json::json!("full");
+    assert!(SourceQualificationSnapshot::from_json(&serde_json::to_vec(&wire).unwrap()).is_err());
+}
+
 // Original authored fixture formula, independent of FFmpeg's output routines.
 fn expected_rgba(frame: u64) -> Vec<u8> {
     let mut bytes = Vec::new();

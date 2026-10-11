@@ -1,0 +1,2882 @@
+{
+  "report": "/tmp/deadpan-source-interpretation-20261010/native-replay-1/report.json",
+  "report_sha256": "d1c305c89f931e70403131f07d72ca1ea990f890432681ff0bfa4c6ab6e590b5",
+  "failed": false,
+  "metadata": {
+    "binary_sha256": "27ce5abefd499c275bfa10df4edfb68006ce8a0b94e6fa5688cc5d92f1c50a15",
+    "build_profile": "debug",
+    "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+    "cargo_lock_sha256_at_run": "d220d29feb966aa7ad6e3bddb822f569aed37b8b08dbbb85a14eb509caafd5f3",
+    "fixture": "cfr-bframes.mp4",
+    "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "git_revision": "847ba82b50251e23f27cd8d7f83b80c576d78d39",
+    "git_status": "M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/registry/entries.rs\n M crates/deadpan-app/src/presentation.rs\n M crates/deadpan-app/src/presentation/tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/proxy.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/proxies.rs\n M crates/deadpan-app/src/preview/scoped.rs\n M crates/deadpan-app/src/preview/scoped/model.rs\n M crates/deadpan-app/src/preview/shots.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/service/readonly.rs\n M crates/deadpan-app/src/project/service/shots.rs\n M crates/deadpan-app/src/project/tests/shots.rs\n M crates/deadpan-app/src/project/tests/targets.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-app/src/worker.rs\n M crates/deadpan-app/src/worker/project_tests.rs\n M crates/deadpan-app/src/worker/proxy.rs\n M crates/deadpan-app/src/worker/proxy_tests.rs\n M crates/deadpan-audio/src/bound_reads/source_origin.rs\n M crates/deadpan-audio/src/bound_reads/source_origin/endpoints.rs\n M crates/deadpan-cli/examples/perf/proxy.rs\n M crates/deadpan-cli/src/faces.rs\n M crates/deadpan-cli/src/generation/attempt/tests.rs\n M crates/deadpan-cli/src/generation/conditioning.rs\n M crates/deadpan-cli/src/generation/conditioning/continuity.rs\n M crates/deadpan-cli/src/generation/conditioning/extension_tests.rs\n M crates/deadpan-cli/src/generation_context.rs\n M crates/deadpan-cli/src/generation_context/tests/measured.rs\n M crates/deadpan-cli/src/picture.rs\n M crates/deadpan-cli/src/picture/tests.rs\n M crates/deadpan-cli/src/proxy.rs\n M crates/deadpan-cli/src/proxy/cache.rs\n M crates/deadpan-cli/src/proxy/cache_tests.rs\n M crates/deadpan-cli/src/proxy/resume.rs\n M crates/deadpan-cli/src/shots.rs\n M crates/deadpan-cli/src/speech.rs\n M crates/deadpan-cli/src/tracking.rs\n M crates/deadpan-cli/tests/bridge_conditioning.rs\n M crates/deadpan-cli/tests/project_commands.rs\n M crates/deadpan-cli/tests/proxy_disk_full.rs\n M crates/deadpan-cli/tests/proxy_resume.rs\n M crates/deadpan-cli/tests/shots.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/command/patch_wire.rs\n M crates/deadpan-core/src/compound/identities.rs\n M crates/deadpan-core/src/document.rs\n M crates/deadpan-core/src/edit_slice.rs\n M crates/deadpan-core/src/edit_slice/rename.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-jobs/src/faces/tests.rs\n M crates/deadpan-jobs/src/generation_inputs.rs\n M crates/deadpan-jobs/src/landmarks.rs\n M crates/deadpan-jobs/src/landmarks/tests.rs\n M crates/deadpan-jobs/src/tracking.rs\n M crates/deadpan-jobs/src/tracking/tests.rs\n M crates/deadpan-media/src/picture_scan.rs\n M crates/deadpan-media/src/proxy.rs\n M crates/deadpan-media/src/source_qualification.rs\n M crates/deadpan-media/src/source_session.rs\n M crates/deadpan-media/tests/picture_scan.rs\n M crates/deadpan-media/tests/source_import_timing.rs\n M crates/deadpan-media/tests/source_session.rs\n M crates/deadpan-models/src/bridge_color.rs\n M crates/deadpan-models/src/conditioning_extension/binding.rs\n M crates/deadpan-models/src/conditioning_extension/binding/tests.rs\n M crates/deadpan-models/src/conditioning_extension/continuity.rs\n M crates/deadpan-models/src/conditioning_extension_tests.rs\n M crates/deadpan-models/src/conditioning_geometry_tests.rs\n M crates/deadpan-models/src/conditioning_region_tests.rs\n M crates/deadpan-models/src/landmark_inspection.rs\n M crates/deadpan-models/src/landmark_inspection/extension.rs\n M crates/deadpan-models/src/region_tests.rs\n M crates/deadpan-plan/tests/audio_reference.rs\n M crates/deadpan-playback/src/sources.rs\n M crates/deadpan-playback/src/tests/proposed.rs\n M crates/deadpan-store/src/generation_inputs/tests.rs\n M crates/deadpan-store/src/generation_pictures.rs\n M crates/deadpan-store/src/generation_pictures/tests.rs\n M crates/deadpan-store/src/generation_pictures/tests/support.rs\n M crates/deadpan-store/src/lib.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/shot_analysis.rs\n M crates/deadpan-store/src/source_registration.rs\n M crates/deadpan-store/tests/migration/development_break.rs\n M crates/deadpan-store/tests/shot_analysis.rs\n M crates/deadpan-store/tests/single_source.rs\n M crates/deadpan-store/tests/source_registration.rs\n M native/deadpan-media-worker/src/proxy.rs\n M native/deadpan-media-worker/tests/bundle_qualification.rs\n M native/deadpan-media-worker/tests/proxy_real_media.rs\n M native/deadpan-source/README.md\n M native/deadpan-source/src/decoder.c\n M native/deadpan-source/src/decoder.h\n M native/deadpan-source/src/lib.rs\n M native/deadpan-source/tests/fixtures/manifest.json\n M native/deadpan-track/src/faces.rs\n M native/deadpan-track/src/main.rs\n M native/deadpan-track/tests/extension_landmarks.rs\n M native/deadpan-track/tests/faces.rs\n M native/deadpan-track/tests/landmarks.rs\n M native/deadpan-track/tests/worker.rs\n M tools/model-qualification/tests/test_extension_worker.py\n M tools/model-qualification/tests/test_worker_protocol_v2.py\n M tools/model-qualification/worker.py\n M tools/model-qualification/worker_extension_context.py\n?? crates/deadpan-app/src/navigation/command/interpretation.rs\n?? crates/deadpan-app/src/preview/harness/source_interpretation.rs\n?? crates/deadpan-app/src/preview/source_interpretation.rs\n?? crates/deadpan-app/src/project/service/source_interpretation.rs\n?? crates/deadpan-app/src/worker/interpretation.rs\n?? crates/deadpan-core/src/source_interpretation.rs\n?? crates/deadpan-core/tests/source_interpretation.rs\n?? crates/deadpan-store/tests/source_registration/interpretation.rs\n?? native/deadpan-source/src/interpretation.rs\n?? native/deadpan-source/tests/fixtures/missing-range-yuv.mkv\n?? native/deadpan-source/tests/generate_interpretation_fixtures.py\n?? native/deadpan-source/tests/interpretation.rs",
+    "gpu_readback_in_timing_run": false,
+    "hardware": "Apple M5 Max",
+    "os": "26.5.2",
+    "physical_display_measured": false,
+    "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+    "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+    "replay_hz": 60,
+    "replay_wall_ms": 5928.930792,
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+    "started_unix_ms": 1791705475307,
+    "tracked_diff_sha256_at_run": "761ed0ee3904c7c0671b3b363153258a0d1513b7dedc8958599e43fe3326b1bc",
+    "viewport_points": [
+      1280,
+      820
+    ],
+    "wait_strategy": "egui_repaint_callback_v1"
+  },
+  "mode": "visual",
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "findings": [],
+      "skipped": [],
+      "checks": [
+        {
+          "actual": {
+            "conflicts": [],
+            "live_source_sha256": null,
+            "reserved_bindings": 62,
+            "routing_cases": 21884016,
+            "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+          },
+          "expected": {
+            "conflicts": 0,
+            "source_drift": false
+          },
+          "name": "Production key routing reserves all Kestrel globals",
+          "passed": true
+        }
+      ],
+      "timings": [],
+      "steps": []
+    },
+    {
+      "name": "source-interpretation",
+      "failed": false,
+      "findings": [
+        {
+          "message": "13 frame(s) settled their layout only on a second retry: [{\"frame\":10,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":12,\"input\":\"Command source\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":18,\"input\":\"Command source-interpret\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":20,\"input\":\"Command source-interpret range=full chroma=center\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":25,\"input\":\"Pointer release: Interpret picture\u2026  :source-interpret\",\"reasons\":[\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":26,\"input\":\"Key Modifiers::NONE Escape\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":28,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":35,\"input\":\"Command source-interpret chroma=top-left\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":43,\"input\":\"Submit correction captured before a concurrent revision\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":45,\"input\":\"Command source\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":48,\"input\":\"Command source-interpret reset\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":50,\"input\":\"Command close\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":55,\"input\":\"Submit interpretation entered without a source\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]}]",
+          "severity": "warning"
+        },
+        {
+          "message": "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":9,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":10,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":11,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":12,\"input\":\"Command source\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]}],[{\"frame\":17,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":18,\"input\":\"Command source-interpret\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":19,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":20,\"input\":\"Command source-interpret range=full chroma=center\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]}],[{\"frame\":25,\"input\":\"Pointer release: Interpret picture\u2026  :source-interpret\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":26,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":27,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":28,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]}],[{\"frame\":43,\"input\":\"Submit correction captured before a concurrent revision\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":44,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":45,\"input\":\"Command source\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]}],[{\"frame\":47,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":48,\"input\":\"Command source-interpret reset\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":49,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]},{\"frame\":50,\"input\":\"Command close\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5201)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5334)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":51,\"input\":\"Project closed\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:3900)\"]},{\"frame\":52,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5586)\"]}]]",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "checks": [
+        {
+          "actual": {
+            "cleanup_on_exit": false,
+            "documents_root": "/private/tmp/deadpan-source-interpretation-20261010/native-replay-1/projects/source-interpretation/Documents",
+            "exclusive_creation": true,
+            "scenario": "source-interpretation"
+          },
+          "expected": {
+            "cleanup_on_exit": false,
+            "exclusive_creation": true,
+            "scenario": "source-interpretation"
+          },
+          "name": "Private replay project root retained for native QA after worker shutdown",
+          "passed": true
+        },
+        {
+          "actual": "Apple M5 Max",
+          "expected": "Metal",
+          "name": "Metal renderer",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "source_frame": 0
+          },
+          "expected": {
+            "error": null,
+            "revision": "f67ea37b-0a20-4ff0-a19d-a8070e89e439",
+            "view": "Sequence { frame: ProjectFrame(0) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 2, request: 2 }"
+            },
+            "source_frame": 0
+          },
+          "expected": {
+            "error": null,
+            "revision": "f67ea37b-0a20-4ff0-a19d-a8070e89e439",
+            "view": "Sequence { frame: ProjectFrame(0) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "f67ea37b-0a20-4ff0-a19d-a8070e89e439",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "f67ea37b-0a20-4ff0-a19d-a8070e89e439",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "annotation_busy": false,
+            "beat_count": 1,
+            "busy": false,
+            "camera_open": false,
+            "camera_pending": false,
+            "command": "source-interpret",
+            "command_open": false,
+            "context": "Source",
+            "copied_moment": null,
+            "copied_slice": null,
+            "copy_pending": false,
+            "duration": 120,
+            "edit_selection": null,
+            "edit_selection_state": "None",
+            "edit_visual_active": false,
+            "error": null,
+            "focused_widget": "Id::new(\"sequence-pane\")",
+            "footer_bottom": [
+              794.0,
+              794.0
+            ],
+            "footer_command_open": false,
+            "help_open": false,
+            "import": {
+              "error": null,
+              "stage": "Complete"
+            },
+            "layout_passes": 3,
+            "message": "Source interpretation: range=auto chroma=auto. Use :source-interpret range=\u2026 chroma=\u2026 to change it, or reset.",
+            "original_selection": null,
+            "pane": "Sequence",
+            "pending_keys": "",
+            "picture": {
+              "decoded": {
+                "label": "Showing source frame 4",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+              },
+              "decoded_framing": "[]",
+              "decoded_geometry_revision": 0,
+              "decoded_tier": "Original",
+              "displayed": {
+                "label": "Showing source frame 4",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+              },
+              "displayed_tier": "Original",
+              "error": null,
+              "geometry_revision": 0,
+              "loading": false,
+              "needs_render": false,
+              "requested": {
+                "label": "Showing source frame 4",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"f67ea37b-0a20-4ff0-a19d-a8070e89e439\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 3, request: 6 }"
+              },
+              "source_frame": 3
+            },
+            "pixels_per_point": 1.0,
+            "playback": null,
+            "project_error": null,
+            "repeat_queue": {
+              "active": false,
+              "status": null,
+              "waiting": 0
+            },
+            "revision": "f67ea37b-0a20-4ff0-a19d-a8070e89e439",
+            "room_tone": null,
+            "scope_end": 120,
+            "scope_labels": [],
+            "scope_start": 0,
+            "scoped": null,
+            "selected_beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+            "selected_event": null,
+            "selected_sound": null,
+            "selected_source": "2663afc0-6b56-41c9-a4f2-cccedaaabdc2",
+            "sequence_cursor": 0,
+            "sequence_scope": [],
+            "slip": null,
+            "sound_cursor": 0,
+            "sound_events": {},
+            "sound_routes": {},
+            "source_cursor": 3,
+            "source_summary": {
+              "first_pts": 0,
+              "frame_count": 120,
+              "height": 180,
+              "terminal_pts": 120120,
+              "time_base": [
+                1,
+                30000
+              ],
+              "width": 320
+            },
+            "splice": null,
+            "trim": {
+              "abandon_count": 0,
+              "command_capture": null,
+              "draft": null,
+              "pair": {
+                "displayed": null,
+                "expected": null,
+                "gpu_pending": false,
+                "render_error": null,
+                "required_raster": null,
+                "worker_error": null
+              },
+              "prefix_capture": null
+            },
+            "viewport_points": [
+              1280.0,
+              820.0
+            ],
+            "visual_selection": false
+          },
+          "expected": "automatic interpretation; unchanged revision",
+          "name": "Inspecting interpretation reports the current values without editing",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "218126ed-304e-46f4-9a88-bb2bf49be771",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "218126ed-304e-46f4-9a88-bb2bf49be771",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"218126ed-304e-46f4-9a88-bb2bf49be771\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 3, request: 7 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "218126ed-304e-46f4-9a88-bb2bf49be771",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "caption": "Showing source frame 4 \u00b7 Source range corrected to full \u00b7 Source chroma position corrected to center",
+            "corrected_pixels": "9a486a6ed4f4b16cff54e69b9e3da7271423954b3ca15f2d0949f5e19304440e",
+            "original_pixels": "ef8e6a12a44fc605564d8b536cba1f9e4f56ba143e547481b6effe3afc361447",
+            "selection": {
+              "beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+              "edit": 0,
+              "pane": "Sequence",
+              "range": null,
+              "source": 3,
+              "view": "Source",
+              "visual": false
+            }
+          },
+          "expected": {
+            "changed_pixels": true,
+            "selection": {
+              "beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+              "edit": 0,
+              "pane": "Sequence",
+              "range": null,
+              "source": 3,
+              "view": "Source",
+              "visual": false
+            }
+          },
+          "name": "Correcting the Original changes its displayed pixels and label while retaining clocks, pane, beat and immutable media",
+          "passed": true
+        },
+        {
+          "actual": "source-interpret range=full chroma=center",
+          "expected": "source-interpret range=full chroma=center",
+          "name": "The Original control opens the current values in native command entry",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "source_frame": 4
+          },
+          "expected": {
+            "error": null,
+            "revision": "45504f9c-0f23-455c-b6bb-4efb794edd3e",
+            "view": "Sequence { frame: ProjectFrame(4) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"45504f9c-0f23-455c-b6bb-4efb794edd3e\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 13 }"
+            },
+            "source_frame": 4
+          },
+          "expected": {
+            "error": null,
+            "revision": "45504f9c-0f23-455c-b6bb-4efb794edd3e",
+            "view": "Sequence { frame: ProjectFrame(4) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+            "edit": 4,
+            "pane": "Sequence",
+            "range": {
+              "end": 4,
+              "start": 2
+            },
+            "source": 3,
+            "view": "Sequence",
+            "visual": true
+          },
+          "expected": {
+            "beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+            "edit": 4,
+            "pane": "Sequence",
+            "range": {
+              "end": 4,
+              "start": 2
+            },
+            "source": 3,
+            "view": "Sequence",
+            "visual": true
+          },
+          "name": "A chroma-only correction retains the existing range choice and Visual selection",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 5",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+            },
+            "source_frame": 4
+          },
+          "expected": {
+            "error": null,
+            "revision": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+            "view": "Sequence { frame: ProjectFrame(4) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "annotation_busy": false,
+            "beat_count": 1,
+            "busy": false,
+            "camera_open": false,
+            "camera_pending": false,
+            "command": "source-interpret range=full",
+            "command_open": false,
+            "context": "Sequence",
+            "copied_moment": null,
+            "copied_slice": null,
+            "copy_pending": false,
+            "duration": 120,
+            "edit_selection": null,
+            "edit_selection_state": "None",
+            "edit_visual_active": false,
+            "error": "The project changed after command entry. Open :source-interpret again; no edit was made.",
+            "focused_widget": "Id::new(\"sequence-pane\")",
+            "footer_bottom": [
+              793.0,
+              793.0
+            ],
+            "footer_command_open": false,
+            "help_open": false,
+            "import": {
+              "error": null,
+              "stage": "Complete"
+            },
+            "layout_passes": 3,
+            "message": "Source interpretation saved. Undo with u.",
+            "original_selection": null,
+            "pane": "Sequence",
+            "pending_keys": "",
+            "picture": {
+              "decoded": {
+                "label": "Showing sequence frame 5",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+              },
+              "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 9, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+              "decoded_geometry_revision": 0,
+              "decoded_tier": "Original",
+              "displayed": {
+                "label": "Showing sequence frame 5",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+              },
+              "displayed_tier": "Original",
+              "error": null,
+              "geometry_revision": 0,
+              "loading": false,
+              "needs_render": false,
+              "requested": {
+                "label": "Showing sequence frame 5",
+                "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(4) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 8, request: 14 }"
+              },
+              "source_frame": 4
+            },
+            "pixels_per_point": 1.0,
+            "playback": null,
+            "project_error": null,
+            "repeat_queue": {
+              "active": false,
+              "status": null,
+              "waiting": 0
+            },
+            "revision": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+            "room_tone": null,
+            "scope_end": 120,
+            "scope_labels": [],
+            "scope_start": 0,
+            "scoped": null,
+            "selected_beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+            "selected_event": null,
+            "selected_sound": null,
+            "selected_source": "2663afc0-6b56-41c9-a4f2-cccedaaabdc2",
+            "sequence_cursor": 4,
+            "sequence_scope": [],
+            "slip": null,
+            "sound_cursor": 0,
+            "sound_events": {},
+            "sound_routes": {},
+            "source_cursor": 3,
+            "source_summary": {
+              "first_pts": 0,
+              "frame_count": 120,
+              "height": 180,
+              "terminal_pts": 120120,
+              "time_base": [
+                1,
+                30000
+              ],
+              "width": 320
+            },
+            "splice": null,
+            "trim": {
+              "abandon_count": 0,
+              "command_capture": null,
+              "draft": null,
+              "pair": {
+                "displayed": null,
+                "expected": null,
+                "gpu_pending": false,
+                "render_error": null,
+                "required_raster": null,
+                "worker_error": null
+              },
+              "prefix_capture": null
+            },
+            "viewport_points": [
+              1280.0,
+              820.0
+            ],
+            "visual_selection": false
+          },
+          "expected": "stale command refused",
+          "name": "A stale command refuses without modifying the newer revision",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "decoded_framing": "[]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing source frame 4",
+              "location": "Project { session: 1, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 15, request: 15 }"
+            },
+            "source_frame": 3
+          },
+          "expected": {
+            "error": null,
+            "revision": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+            "view": "Source { asset: AssetId(\"2663afc0-6b56-41c9-a4f2-cccedaaabdc2\"), frame: SourceFrameId(3) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": "ef8e6a12a44fc605564d8b536cba1f9e4f56ba143e547481b6effe3afc361447",
+          "expected": "ef8e6a12a44fc605564d8b536cba1f9e4f56ba143e547481b6effe3afc361447",
+          "name": "Reset restores the same Original pixels at the retained Original cursor",
+          "passed": true
+        },
+        {
+          "actual": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+          "expected": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+          "name": "Resetting automatic interpretation again creates no history",
+          "passed": true
+        },
+        {
+          "actual": {
+            "annotation_busy": false,
+            "beat_count": 1,
+            "busy": false,
+            "camera_open": false,
+            "camera_pending": false,
+            "command": "source-interpret range=full",
+            "command_open": false,
+            "context": "Sequence",
+            "copied_moment": null,
+            "copied_slice": null,
+            "copy_pending": false,
+            "duration": 120,
+            "edit_selection": null,
+            "edit_selection_state": "None",
+            "edit_visual_active": false,
+            "error": "Open a project with a ready Original first.",
+            "focused_widget": "Id::new(\"sequence-pane\")",
+            "footer_bottom": [
+              793.0,
+              793.0
+            ],
+            "footer_command_open": false,
+            "help_open": false,
+            "import": null,
+            "layout_passes": 3,
+            "message": "Project opened",
+            "original_selection": null,
+            "pane": "Sequence",
+            "pending_keys": "",
+            "picture": {
+              "decoded": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 2, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 17, request: 17 }"
+              },
+              "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"34aff8e8-f6c3-4e16-bdbf-def801ccb506\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"52d3930e-f6d1-4a23-9969-7ef70b9fc077\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(120), pose: None, escalation: false }]",
+              "decoded_geometry_revision": 0,
+              "decoded_tier": "Original",
+              "displayed": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 2, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 17, request: 17 }"
+              },
+              "displayed_tier": "Original",
+              "error": null,
+              "geometry_revision": 0,
+              "loading": false,
+              "needs_render": false,
+              "requested": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 2, project: ProjectId(\"3bdfe97b-d143-417e-a4e2-3e114308c1b9\"), revision: RevisionId(\"80ee0e41-6de1-406a-976b-6ac47070c7aa\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 17, request: 17 }"
+              },
+              "source_frame": 0
+            },
+            "pixels_per_point": 1.0,
+            "playback": null,
+            "project_error": null,
+            "repeat_queue": {
+              "active": false,
+              "status": null,
+              "waiting": 0
+            },
+            "revision": "80ee0e41-6de1-406a-976b-6ac47070c7aa",
+            "room_tone": null,
+            "scope_end": 120,
+            "scope_labels": [],
+            "scope_start": 0,
+            "scoped": null,
+            "selected_beat": "34aff8e8-f6c3-4e16-bdbf-def801ccb506",
+            "selected_event": null,
+            "selected_sound": null,
+            "selected_source": "2663afc0-6b56-41c9-a4f2-cccedaaabdc2",
+            "sequence_cursor": 0,
+            "sequence_scope": [],
+            "slip": null,
+            "sound_cursor": 0,
+            "sound_events": {},
+            "sound_routes": {},
+            "source_cursor": 0,
+            "source_summary": {
+              "first_pts": 0,
+              "frame_count": 120,
+              "height": 180,
+              "terminal_pts": 120120,
+              "time_base": [
+                1,
+                30000
+              ],
+              "width": 320
+            },
+            "splice": null,
+            "trim": {
+              "abandon_count": 0,
+              "command_capture": null,
+              "draft": null,
+              "pair": {
+                "displayed": null,
+                "expected": null,
+                "gpu_pending": false,
+                "render_error": null,
+                "required_raster": null,
+                "worker_error": null
+              },
+              "prefix_capture": null
+            },
+            "viewport_points": [
+              1280.0,
+              820.0
+            ],
+            "visual_selection": false
+          },
+          "expected": "missing captured source refused",
+          "name": "A late project open cannot supply a source absent at command entry",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "name": "Every painted frame has a settled layout (no ignored retry)",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "name": "No layout retry repeats for three frames without new input",
+          "passed": true
+        }
+      ],
+      "timings": [
+        {
+          "name": "ui_frame_cpu_ms",
+          "samples": [
+            {
+              "elapsed_ms": 0.6915410000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.0161250000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.902667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 5.952542,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 92.32837500000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 200.118333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 15.059417,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 12.45075,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 13.365207999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 24.825,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.777832999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 39.401958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.901,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.022083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.112541,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 2.9645,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.426834,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 16.569457999999997,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.138167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 13.533542,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 11.038292,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 13.59975,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 7.994167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.024,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.483083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 11.082208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.350125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 32.4625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.5725,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 5.2208749999999995,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 28.12575,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 11.26625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.75275,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 12.926083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 27.268875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.59475,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.331209,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.345375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 7.864375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.141792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 4.951874999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.3894580000000003,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 23.016499999999997,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.870959,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 16.773333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.396459,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.115209,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 15.03675,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.157,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 12.941042,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 26.838292,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.475958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.2117090000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 27.240333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 24.889333999999998,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 200.118333,
+              "n": 55,
+              "p50_ms": 10.345375,
+              "p95_ms": 39.401958,
+              "p99_ms": 200.118333
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "ui_composition_submit_cpu_ms",
+          "samples": [
+            {
+              "elapsed_ms": 1.69975,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.6287499999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.524917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.654917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.684083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.059541,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.911,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.90275,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.764916,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.899458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7665000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.787792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.8150419999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.754333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.784667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7849579999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.768625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7745420000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.731834,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.851667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.960083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.857166,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.837125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.842541,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7560410000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.809458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7592500000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.069625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.9235829999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.886833,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.909875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.919709,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.902833,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7675409999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.9282090000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.024708,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.967375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.954958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.845542,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.8287089999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.901458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7609579999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.892375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.8139580000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.8675,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.808375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.754667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.7705000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.744375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.8343750000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.648458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.5663750000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.5861249999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.910792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.843708,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 1.69975,
+              "n": 55,
+              "p50_ms": 0.8287089999999999,
+              "p95_ms": 1.059541,
+              "p99_ms": 1.69975
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "ui_composition_complete_ms",
+          "samples": [
+            {
+              "elapsed_ms": 10.216708,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.446,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.3407090000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.578875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.615417,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.9772079999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.3062079999999998,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.3097079999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.144916,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.3114999999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.1588340000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.719708,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.635084,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.146833,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.17375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.168042,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.486167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.168792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.125125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.2596669999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.8490410000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.242041,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.21675,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.668041,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.136666,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.199875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.1028749999999998,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 2.0255,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.672666,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.6295000000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.67775,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.823625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.6291660000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.523666,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.352375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.8912499999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.357208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.363208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.24275,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.6493339999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.717208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.150917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.26125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.18475,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.759792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.180042,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.1371669999999998,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.1789999999999998,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.098208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.208125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.6082500000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.4039169999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.3674169999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.7075420000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 1.235458,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 10.216708,
+              "n": 55,
+              "p50_ms": 1.352375,
+              "p95_ms": 1.9772079999999999,
+              "p99_ms": 10.216708
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "input_to_state_ms",
+          "samples": [
+            {
+              "elapsed_ms": 1.0161250000000002,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.902667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 13.365207999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 24.825,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.777832999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 39.401958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.901,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.022083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.112541,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.426834,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 16.569457999999997,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.138167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 13.533542,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.024,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.483083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 11.082208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.350125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 32.4625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.5725,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 5.2208749999999995,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 28.12575,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 11.26625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.75275,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 12.926083,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 27.268875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.345375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 7.864375,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 23.016499999999997,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.870959,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 16.773333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.115209,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 15.03675,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 6.157,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 12.941042,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 10.475958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 24.889333999999998,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 39.401958,
+              "n": 36,
+              "p50_ms": 10.345375,
+              "p95_ms": 32.4625,
+              "p99_ms": 39.401958
+            },
+            "failed": 0,
+            "samples": 36,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "input_to_commit_ms",
+          "samples": [
+            {
+              "elapsed_ms": 337.811166,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 337.811166,
+              "n": 1,
+              "p50_ms": 337.811166,
+              "p95_ms": 337.811166,
+              "p99_ms": 337.811166
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "request_to_decode_delivery_ms",
+          "samples": [
+            {
+              "elapsed_ms": 285.77175,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 117.859166,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.981167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 84.33225,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 84.375917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 96.198166,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 114.160458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 94.18041600000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.666208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 95.293875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 92.379583,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 97.240208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 87.237209,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 96.570666,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 108.462,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 285.77175,
+              "n": 15,
+              "p50_ms": 95.293875,
+              "p95_ms": 285.77175,
+              "p99_ms": 285.77175
+            },
+            "failed": 0,
+            "samples": 15,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "request_to_worker_start_ms",
+          "samples": [
+            {
+              "elapsed_ms": 0.023167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.009541000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.007917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.005125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.006583,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.010665999999999998,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.009167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.0095,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.005833,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.010667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.008166,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.009333000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.011125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.009290999999999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.009292,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 0.023167,
+              "n": 15,
+              "p50_ms": 0.009292,
+              "p95_ms": 0.023167,
+              "p99_ms": 0.023167
+            },
+            "failed": 0,
+            "samples": 15,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "worker_execution_ms",
+          "samples": [
+            {
+              "elapsed_ms": 3.762292,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.517459,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.5354580000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.536834,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.544584,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 4.386709,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.905041,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.568625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.557417,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.541333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.565542,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 4.609583000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 3.358667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.870625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 2.76475,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 4.609583000000001,
+              "n": 15,
+              "p50_ms": 0.568625,
+              "p95_ms": 4.609583000000001,
+              "p99_ms": 4.609583000000001
+            },
+            "failed": 0,
+            "samples": 15,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "worker_publication_delay_ms",
+          "samples": [
+            {
+              "elapsed_ms": 0.010458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.0005,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.00041600000000000003,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.001458,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000917,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.0007080000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.0006670000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000583,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.0015,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.001167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000834,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.00075,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 0.010458,
+              "n": 15,
+              "p50_ms": 0.00075,
+              "p95_ms": 0.010458,
+              "p99_ms": 0.010458
+            },
+            "failed": 0,
+            "samples": 15,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "publication_to_decode_delivery_ms",
+          "samples": [
+            {
+              "elapsed_ms": 281.975833,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 117.331708,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.437167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 83.78979100000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 83.824334,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 91.79933299999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 113.245333,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 93.601416,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.10225,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 94.741208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 91.805292,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 92.619792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 83.86625000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 95.689916,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 105.687208,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 281.975833,
+              "n": 15,
+              "p50_ms": 92.619792,
+              "p95_ms": 281.975833,
+              "p99_ms": 281.975833
+            },
+            "failed": 0,
+            "samples": 15,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "request_to_picture_submission_ms",
+          "samples": [
+            {
+              "elapsed_ms": 294.309792,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 86.245875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 102.88825,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 114.693291,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 99.098958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 104.866625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 89.671625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 98.430291,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 131.971333,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 294.309792,
+              "n": 9,
+              "p50_ms": 102.88825,
+              "p95_ms": 294.309792,
+              "p99_ms": 294.309792
+            },
+            "failed": 0,
+            "samples": 9,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "request_to_picture_complete_ms",
+          "samples": [
+            {
+              "elapsed_ms": 302.058959,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.459208,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 110.952875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 118.41275,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 106.744625,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 108.83095800000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 91.697709,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 101.11087500000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 134.487583,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 302.058959,
+              "n": 9,
+              "p50_ms": 108.83095800000001,
+              "p95_ms": 302.058959,
+              "p99_ms": 302.058959
+            },
+            "failed": 0,
+            "samples": 9,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "input_to_picture_complete_ms",
+          "samples": [
+            {
+              "elapsed_ms": 639.910125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 88.560125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 118.54579199999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 106.85225,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 102.683917,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 639.910125,
+              "n": 5,
+              "p50_ms": 106.85225,
+              "p95_ms": 639.910125,
+              "p99_ms": 639.910125
+            },
+            "failed": 0,
+            "samples": 5,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "Original initialized and displayed",
+          "samples": [
+            {
+              "elapsed_ms": 560.021833,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 560.021833,
+              "n": 1,
+              "p50_ms": 560.021833,
+              "p95_ms": 560.021833,
+              "p99_ms": 560.021833
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "Project and picture settled",
+          "samples": [
+            {
+              "elapsed_ms": 0.001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000167,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 84.069875,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.00020800000000000001,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 97.752958,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.3e-05,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 0.000125,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 96.133709,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 4.1e-05,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 84.642,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 85.213667,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 8.4e-05,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 97.752958,
+              "n": 12,
+              "p50_ms": 0.00020800000000000001,
+              "p95_ms": 97.752958,
+              "p99_ms": 97.752958
+            },
+            "failed": 0,
+            "samples": 12,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "Committed revision changed",
+          "samples": [
+            {
+              "elapsed_ms": 96.21333299999999,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 97.2395,
+              "outcome": "completed"
+            },
+            {
+              "elapsed_ms": 174.34900000000002,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 174.34900000000002,
+              "n": 3,
+              "p50_ms": 97.2395,
+              "p95_ms": 174.34900000000002,
+              "p99_ms": 174.34900000000002
+            },
+            "failed": 0,
+            "samples": 3,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "Project closed",
+          "samples": [
+            {
+              "elapsed_ms": 107.093542,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 107.093542,
+              "n": 1,
+              "p50_ms": 107.093542,
+              "p95_ms": 107.093542,
+              "p99_ms": 107.093542
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        },
+        {
+          "name": "Project reopened while interpretation entry is pending",
+          "samples": [
+            {
+              "elapsed_ms": 190.429708,
+              "outcome": "completed"
+            }
+          ],
+          "summary": {
+            "completed": {
+              "max_ms": 190.429708,
+              "n": 1,
+              "p50_ms": 190.429708,
+              "p95_ms": 190.429708,
+              "p99_ms": 190.429708
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        }
+      ],
+      "steps": [
+        {
+          "input": "Initial workspace",
+          "screenshot": "source-interpretation-001.png",
+          "frame": 1,
+          "elapsed_wall_ms": 88.650875
+        },
+        {
+          "input": "Pointer press: Choose video\u2026  \u2318N",
+          "screenshot": "source-interpretation-002.png",
+          "frame": 2,
+          "elapsed_wall_ms": 168.286791
+        },
+        {
+          "input": "Pointer release: Choose video\u2026  \u2318N",
+          "screenshot": "source-interpretation-003.png",
+          "frame": 3,
+          "elapsed_wall_ms": 248.26279100000002
+        },
+        {
+          "input": "Original initialized and displayed",
+          "screenshot": "source-interpretation-004.png",
+          "frame": 4,
+          "elapsed_wall_ms": 334.222125
+        },
+        {
+          "input": "Original initialized and displayed",
+          "screenshot": "source-interpretation-005.png",
+          "frame": 5,
+          "elapsed_wall_ms": 505.919833
+        },
+        {
+          "input": "Original initialized and displayed",
+          "screenshot": "source-interpretation-006.png",
+          "frame": 6,
+          "elapsed_wall_ms": 791.812416
+        },
+        {
+          "input": "Original initialized and displayed",
+          "screenshot": null,
+          "frame": 7,
+          "elapsed_wall_ms": 808.2853749999999
+        },
+        {
+          "input": "Original ready",
+          "screenshot": "source-interpretation-007.png",
+          "frame": 8,
+          "elapsed_wall_ms": 903.818375
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-008.png",
+          "frame": 9,
+          "elapsed_wall_ms": 999.2607909999999
+        },
+        {
+          "input": "Command sequence",
+          "screenshot": "source-interpretation-009.png",
+          "frame": 10,
+          "elapsed_wall_ms": 1107.052166
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-010.png",
+          "frame": 11,
+          "elapsed_wall_ms": 1195.33775
+        },
+        {
+          "input": "Command source",
+          "screenshot": "source-interpretation-011.png",
+          "frame": 12,
+          "elapsed_wall_ms": 1316.539833
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-012.png",
+          "frame": 13,
+          "elapsed_wall_ms": 1405.567708
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-013.png",
+          "frame": 14,
+          "elapsed_wall_ms": 1489.941333
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-014.png",
+          "frame": 15,
+          "elapsed_wall_ms": 1574.35875
+        },
+        {
+          "input": "Project and picture settled",
+          "screenshot": "source-interpretation-015.png",
+          "frame": 16,
+          "elapsed_wall_ms": 1658.427333
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-016.png",
+          "frame": 17,
+          "elapsed_wall_ms": 1750.082208
+        },
+        {
+          "input": "Command source-interpret",
+          "screenshot": "source-interpretation-017.png",
+          "frame": 18,
+          "elapsed_wall_ms": 1847.6828329999998
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-018.png",
+          "frame": 19,
+          "elapsed_wall_ms": 1933.906
+        },
+        {
+          "input": "Command source-interpret range=full chroma=center",
+          "screenshot": "source-interpretation-019.png",
+          "frame": 20,
+          "elapsed_wall_ms": 2030.198708
+        },
+        {
+          "input": "Committed revision changed",
+          "screenshot": "source-interpretation-020.png",
+          "frame": 21,
+          "elapsed_wall_ms": 2126.411166
+        },
+        {
+          "input": "Project and picture settled",
+          "screenshot": "source-interpretation-021.png",
+          "frame": 22,
+          "elapsed_wall_ms": 2224.1645000000003
+        },
+        {
+          "input": "Corrected Original and discoverable interpretation control",
+          "screenshot": "source-interpretation-022.png",
+          "frame": 23,
+          "elapsed_wall_ms": 2320.3825829999996
+        },
+        {
+          "input": "Pointer press: Interpret picture\u2026  :source-interpret",
+          "screenshot": "source-interpretation-023.png",
+          "frame": 24,
+          "elapsed_wall_ms": 2405.796583
+        },
+        {
+          "input": "Pointer release: Interpret picture\u2026  :source-interpret",
+          "screenshot": "source-interpretation-024.png",
+          "frame": 25,
+          "elapsed_wall_ms": 2495.00925
+        },
+        {
+          "input": "Key Modifiers::NONE Escape",
+          "screenshot": "source-interpretation-025.png",
+          "frame": 26,
+          "elapsed_wall_ms": 2587.4884580000003
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-026.png",
+          "frame": 27,
+          "elapsed_wall_ms": 2674.2209580000003
+        },
+        {
+          "input": "Command sequence",
+          "screenshot": "source-interpretation-027.png",
+          "frame": 28,
+          "elapsed_wall_ms": 2790.008416
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-028.png",
+          "frame": 29,
+          "elapsed_wall_ms": 2884.2211660000003
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-029.png",
+          "frame": 30,
+          "elapsed_wall_ms": 2972.9525
+        },
+        {
+          "input": "Key Modifiers::NONE V",
+          "screenshot": "source-interpretation-030.png",
+          "frame": 31,
+          "elapsed_wall_ms": 3085.1647080000002
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-031.png",
+          "frame": 32,
+          "elapsed_wall_ms": 3180.4977910000002
+        },
+        {
+          "input": "Key Modifiers::NONE L",
+          "screenshot": "source-interpretation-032.png",
+          "frame": 33,
+          "elapsed_wall_ms": 3272.861125
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-033.png",
+          "frame": 34,
+          "elapsed_wall_ms": 3367.477875
+        },
+        {
+          "input": "Command source-interpret chroma=top-left",
+          "screenshot": "source-interpretation-034.png",
+          "frame": 35,
+          "elapsed_wall_ms": 3478.32175
+        },
+        {
+          "input": "Committed revision changed",
+          "screenshot": "source-interpretation-035.png",
+          "frame": 36,
+          "elapsed_wall_ms": 3575.56025
+        },
+        {
+          "input": "Project and picture settled",
+          "screenshot": "source-interpretation-036.png",
+          "frame": 37,
+          "elapsed_wall_ms": 3671.694708
+        },
+        {
+          "input": "Key Modifiers::NONE Escape",
+          "screenshot": "source-interpretation-037.png",
+          "frame": 38,
+          "elapsed_wall_ms": 3767.4634579999997
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-038.png",
+          "frame": 39,
+          "elapsed_wall_ms": 3857.235916
+        },
+        {
+          "input": "Committed revision changed",
+          "screenshot": "source-interpretation-039.png",
+          "frame": 40,
+          "elapsed_wall_ms": 3944.330458
+        },
+        {
+          "input": "Committed revision changed",
+          "screenshot": "source-interpretation-040.png",
+          "frame": 41,
+          "elapsed_wall_ms": 4031.5935830000003
+        },
+        {
+          "input": "Project and picture settled",
+          "screenshot": "source-interpretation-041.png",
+          "frame": 42,
+          "elapsed_wall_ms": 4116.236291
+        },
+        {
+          "input": "Submit correction captured before a concurrent revision",
+          "screenshot": "source-interpretation-042.png",
+          "frame": 43,
+          "elapsed_wall_ms": 4221.939666
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-043.png",
+          "frame": 44,
+          "elapsed_wall_ms": 4313.08675
+        },
+        {
+          "input": "Command source",
+          "screenshot": "source-interpretation-044.png",
+          "frame": 45,
+          "elapsed_wall_ms": 4411.171166
+        },
+        {
+          "input": "Project and picture settled",
+          "screenshot": "source-interpretation-045.png",
+          "frame": 46,
+          "elapsed_wall_ms": 4496.384125
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-046.png",
+          "frame": 47,
+          "elapsed_wall_ms": 4586.664666
+        },
+        {
+          "input": "Command source-interpret reset",
+          "screenshot": "source-interpretation-047.png",
+          "frame": 48,
+          "elapsed_wall_ms": 4683.081375000001
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-048.png",
+          "frame": 49,
+          "elapsed_wall_ms": 4769.95675
+        },
+        {
+          "input": "Command close",
+          "screenshot": "source-interpretation-049.png",
+          "frame": 50,
+          "elapsed_wall_ms": 4866.9000829999995
+        },
+        {
+          "input": "Project closed",
+          "screenshot": "source-interpretation-050.png",
+          "frame": 51,
+          "elapsed_wall_ms": 4974.00425
+        },
+        {
+          "input": "Key Modifiers::NONE Colon",
+          "screenshot": "source-interpretation-051.png",
+          "frame": 52,
+          "elapsed_wall_ms": 5063.6259580000005
+        },
+        {
+          "input": "Project reopened while interpretation entry is pending",
+          "screenshot": "source-interpretation-052.png",
+          "frame": 53,
+          "elapsed_wall_ms": 5145.585999999999
+        },
+        {
+          "input": "Project reopened while interpretation entry is pending",
+          "screenshot": "source-interpretation-053.png",
+          "frame": 54,
+          "elapsed_wall_ms": 5254.061250000001
+        },
+        {
+          "input": "Submit interpretation entered without a source",
+          "screenshot": "source-interpretation-054.png",
+          "frame": 55,
+          "elapsed_wall_ms": 5362.103166
+        }
+      ]
+    }
+  ]
+}

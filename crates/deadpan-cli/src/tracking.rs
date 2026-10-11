@@ -235,12 +235,18 @@ pub fn prepare_tracking(
     let content = receipt.original().content().to_string();
     let stream_index = video.index().stream_index();
     let stored = if request.stop_at_shots {
-        let stored = crate::shots::stored_shots(store, &content, stream_index, frames.len())
-            .ok_or_else(|| {
-                TrackingError::Unavailable(
-                    "no stored shot analysis; run detect-shots, or pass --through-shots".into(),
-                )
-            })?;
+        let stored = crate::shots::stored_shots(
+            store,
+            &content,
+            stream_index,
+            frames.len(),
+            document.source_interpretations().get(&asset).copied(),
+        )
+        .ok_or_else(|| {
+            TrackingError::Unavailable(
+                "no stored shot analysis; run detect-shots, or pass --through-shots".into(),
+            )
+        })?;
         Some(stored)
     } else {
         None
@@ -262,6 +268,7 @@ pub fn prepare_tracking(
     };
     let pictures: Vec<i64> = frames[start..end].iter().map(|frame| frame.pts).collect();
     let stream = ExpectedStream {
+        interpretation: document.source_interpretations().get(&asset).copied(),
         stream_index,
         width: interpretation.width,
         height: interpretation.height,

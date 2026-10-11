@@ -70,6 +70,7 @@ impl ProxyReader {
     fn open(
         cache: &ProxyCache,
         registered: &RegisteredSource,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
         cancelled: &AtomicBool,
     ) -> Result<Option<Self>, String> {
         let video = registered
@@ -77,9 +78,12 @@ impl ProxyReader {
             .snapshot()
             .video()
             .ok_or("no picture stream")?;
-        let Some((file, sidecar)) =
-            deadpan_cli::proxy::open_proxy_file(cache, &registered.original, video, cancelled)
-                .map_err(|error| error.to_string())?
+        let Some((file, sidecar)) = deadpan_cli::proxy::open_proxy_file(
+            cache,
+            &deadpan_cli::proxy::ProxySubject::of(&registered.original, video, interpretation),
+            cancelled,
+        )
+        .map_err(|error| error.to_string())?
         else {
             return Ok(None);
         };
@@ -123,6 +127,7 @@ struct SlotKey {
     session: u64,
     asset: AssetId,
     receipt: SourceQualificationId,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 }
 
 /// The retained proxy state of the main viewer's worker.
@@ -140,6 +145,7 @@ pub(super) struct ProxySlot {
 
 struct Wanted {
     registered: Arc<RegisteredSource>,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
     stamp: ProxyStamp,
 }
 
@@ -178,10 +184,16 @@ impl ProxySlot {
         let Some(video) = registered.receipt.snapshot().video() else {
             return Ok(None);
         };
+        let interpretation = workspace
+            .document
+            .source_interpretations()
+            .get(&registered.asset)
+            .copied();
         let key = SlotKey {
             session: workspace.session,
             asset: registered.asset.clone(),
             receipt: registered.receipt.id().clone(),
+            interpretation,
         };
         if self.key.as_ref() != Some(&key) {
             *self = Self {
@@ -190,7 +202,9 @@ impl ProxySlot {
                 ..Self::default()
             };
         }
-        let Ok(proxy_key) = deadpan_cli::proxy::proxy_key(&registered.original, video) else {
+        let Ok(proxy_key) =
+            deadpan_cli::proxy::proxy_key(&registered.original, video, interpretation)
+        else {
             return Ok(None);
         };
         let Some(reader) = self.reader.as_mut() else {
@@ -198,6 +212,7 @@ impl ProxySlot {
             if self.absent_at != Some(stamp) {
                 self.wanted = Some(Wanted {
                     registered: Arc::clone(registered),
+                    interpretation,
                     stamp,
                 });
             }
@@ -210,6 +225,7 @@ impl ProxySlot {
                 Ok(Some(Picture {
                     summary: Some(SourceSummary {
                         info: video.interpretation().clone(),
+                        interpretation: interpretation.map(Into::into).unwrap_or_default(),
                         frame_count: index.frames().len() as u64,
                         first_pts: index.frames()[0].pts,
                         terminal_pts: index.terminal_end(),
@@ -258,7 +274,7 @@ impl ProxySlot {
         let Some(cache) = self.cache.clone() else {
             return;
         };
-        match ProxyReader::open(&cache, &wanted.registered, cancelled) {
+        match ProxyReader::open(&cache, &wanted.registered, wanted.interpretation, cancelled) {
             Ok(Some(reader)) => self.reader = Some(reader),
             Err(_) if cancelled.load(Ordering::Acquire) => self.wanted = Some(wanted),
             // Absent, damaged or unverifiable: preview the Original until the

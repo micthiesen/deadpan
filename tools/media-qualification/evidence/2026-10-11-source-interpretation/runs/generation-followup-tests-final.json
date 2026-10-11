@@ -1,0 +1,67 @@
+[
+  {
+    "name": "generation-relevance-followup-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "generation_context"
+    ],
+    "exit": 0,
+    "passed": 13,
+    "seconds": 2.74475070880726,
+    "sha256": "999dba6e5487bf0a7e989262539b2b112e2ab28fd2ef905f9d8bc431581158e3"
+  },
+  {
+    "name": "generation-conditioning-followup-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "generation::conditioning"
+    ],
+    "exit": 0,
+    "passed": 18,
+    "seconds": 2.37385145900771,
+    "sha256": "2897dd77a5407f2c947221bcd7b894e521747934d95ec63176aa058643aea166"
+  },
+  {
+    "name": "generation-real-conditioning-followup-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "bridge_conditioning"
+    ],
+    "exit": 0,
+    "passed": 6,
+    "seconds": 10.202783625107259,
+    "sha256": "893320fe4edd6d8a034048c84d4bff77892dc1713f7bf117d6f93f5c6199422a"
+  },
+  {
+    "name": "generation-python-final",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/model-qualification/tests",
+      "-p",
+      "test_*.py"
+    ],
+    "exit": 0,
+    "passed": 126,
+    "seconds": 0.3979574996046722,
+    "sha256": "4348f6d28785fb406e2747c7edb3089ebe34e781a0b515cd7e20d6ae97840cfa"
+  }
+]

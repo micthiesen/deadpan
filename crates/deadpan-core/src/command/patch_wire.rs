@@ -241,6 +241,7 @@ fn is_reverse(inverse: &DocumentPatch, forward: &DocumentPatch) -> bool {
         presentation,
         nodes,
         assets,
+        source_interpretations,
         marks,
         sounds,
         beat_sounds,
@@ -264,6 +265,7 @@ fn is_reverse(inverse: &DocumentPatch, forward: &DocumentPatch) -> bool {
         }
         && swapped(nodes, &forward.nodes)
         && swapped(assets, &forward.assets)
+        && swapped(source_interpretations, &forward.source_interpretations)
         && swapped(marks, &forward.marks)
         && swapped(sounds, &forward.sounds)
         && swapped(beat_sounds, &forward.beat_sounds)

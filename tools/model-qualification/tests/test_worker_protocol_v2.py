@@ -354,6 +354,20 @@ class WorkerContextShapeTests(unittest.TestCase):
         worker.validate_context_shape(self.context())
         worker.validate_context_shape(self.schema1_context())
 
+    def test_original_interpretation_is_explicit_and_strict(self):
+        for make in (self.schema3_context, self.schema5_context):
+            for choice in ({"range": "full"}, {"chroma_location": "center"},
+                           {"range": "limited", "chroma_location": "top_left"}):
+                context = make()
+                context["boundaries"]["left"]["original"]["interpretation"] = choice
+                worker.validate_context_shape(context)
+            for choice in ({}, {"range": "auto"}, {"range": "full", "hidden": 1},
+                           {"chroma_location": "unspecified"}, {"range": []}):
+                context = make()
+                context["boundaries"]["left"]["original"]["interpretation"] = choice
+                with self.subTest(choice=choice), self.assertRaises(ValueError):
+                    worker.validate_context_shape(context)
+
     def schema3_context(self):
         context = self.context()
         context.update(

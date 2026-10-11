@@ -1,0 +1,66 @@
+[
+  {
+    "name": "media-sessions-followup",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "source_session"
+    ],
+    "exit": 0,
+    "passed": 12,
+    "seconds": 2.2361932923085988,
+    "sha256": "141ca0adc8e990b2e42f7830e42f0db078151c45c1fe4475086271d857e9a1ac"
+  },
+  {
+    "name": "app-interpretation-followup",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "interpretation"
+    ],
+    "exit": 0,
+    "passed": 3,
+    "seconds": 7.703774333931506,
+    "sha256": "95bdd12a2096206934c9cecd8be9109520c53eb25aaa05f659da745e3c28e811"
+  },
+  {
+    "name": "workspace-clippy-followup",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 19.146018667146564,
+    "sha256": "31d531406ff78736d85215f95e07001d16bfa4079deea9fa7985f6799dac2b76"
+  },
+  {
+    "name": "format-followup",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.706393625121564,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

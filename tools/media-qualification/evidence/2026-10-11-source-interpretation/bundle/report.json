@@ -1,0 +1,130 @@
+{
+  "mode": "bundle",
+  "cases": [
+    {
+      "fixture": "cfr-bframes.mp4",
+      "choice": {
+        "range": "full",
+        "chroma_location": "center"
+      },
+      "summary": {
+        "pictures_checked": 120,
+        "pictures_failed": 0,
+        "min_luma_psnr_db": 56.2071040124703,
+        "min_chroma_psnr_db": 54.168325677369964,
+        "max_thumbnail_mad": 0.06270380434782609,
+        "max_local_luma_error": 1.9375,
+        "min_neighbor_margin_db": 33.2922307054621,
+        "index_observable_comparisons": 164,
+        "index_unobservable_comparisons": 74,
+        "pictures_without_index_neighbors": 0,
+        "audio_windows_checked": 4,
+        "audio_windows_failed": 0,
+        "signal_windows": 3,
+        "blocks_compared": 4,
+        "min_block_snr_db": 29.534686653581982,
+        "max_block_level_db": 0.043817517907697834,
+        "offset_verified_windows": 3,
+        "offset_unobservable_windows": 0,
+        "nonzero_offsets": 0
+      },
+      "movie": "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/cfr-bframes-exports/deadpan-6463a512-1b9e-46e3-b602-8a100dbba849.mp4",
+      "movie_sha256": "51c92f03c3371acd03b6ad7fbc0361cc1654ba5b5c67458b0f19a095ad1f6359",
+      "historical_after_undo": true
+    },
+    {
+      "fixture": "hevc-sdr-10-limited.mp4",
+      "choice": {
+        "range": "full",
+        "chroma_location": "center"
+      },
+      "summary": {
+        "pictures_checked": 12,
+        "pictures_failed": 0,
+        "min_luma_psnr_db": 51.89743563347497,
+        "min_chroma_psnr_db": 60.30988628009468,
+        "max_thumbnail_mad": 0.08805338541666667,
+        "max_local_luma_error": 2.3125,
+        "min_neighbor_margin_db": 29.98151202247288,
+        "index_observable_comparisons": 22,
+        "index_unobservable_comparisons": 0,
+        "pictures_without_index_neighbors": 0,
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "signal_windows": 1,
+        "blocks_compared": 41,
+        "min_block_snr_db": 24.644585498124595,
+        "max_block_level_db": 0.3947787292880207,
+        "offset_verified_windows": 1,
+        "offset_unobservable_windows": 0,
+        "nonzero_offsets": 0
+      },
+      "movie": "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-sdr-10-limited-exports/deadpan-388d16dd-dd0d-4452-8a2f-15b88a9dce4c.mp4",
+      "movie_sha256": "d4d5136c44e8ad4b1e567b8ba069b33c75dacba7ab6096df849c0f0876a3cd2d",
+      "historical_after_undo": true
+    },
+    {
+      "fixture": "av1-sdr-8-limited.mp4",
+      "choice": {
+        "range": "full",
+        "chroma_location": "top_left"
+      },
+      "summary": {
+        "pictures_checked": 12,
+        "pictures_failed": 0,
+        "min_luma_psnr_db": 53.9403184458406,
+        "min_chroma_psnr_db": 50.89381030969335,
+        "max_thumbnail_mad": 0.08260091145833333,
+        "max_local_luma_error": 2.0625,
+        "min_neighbor_margin_db": 30.867572415518566,
+        "index_observable_comparisons": 22,
+        "index_unobservable_comparisons": 0,
+        "pictures_without_index_neighbors": 0,
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "signal_windows": 1,
+        "blocks_compared": 41,
+        "min_block_snr_db": 24.644585498124595,
+        "max_block_level_db": 0.3947787292880207,
+        "offset_verified_windows": 1,
+        "offset_unobservable_windows": 0,
+        "nonzero_offsets": 0
+      },
+      "movie": "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/av1-sdr-8-limited-exports/deadpan-8ad692d0-029d-4c20-824b-c20a73be2f6f.mp4",
+      "movie_sha256": "fae58b65e431f464dfca28835b23d790d80999178b25d8d6e57fdac1e9ecc898",
+      "historical_after_undo": true
+    },
+    {
+      "fixture": "hevc-pq.mp4",
+      "choice": {
+        "chroma_location": "center"
+      },
+      "summary": {
+        "pictures_checked": 8,
+        "pictures_failed": 0,
+        "min_luma_psnr_db": 69.96627468577182,
+        "min_chroma_psnr_db": 69.47664838141296,
+        "max_thumbnail_mad": 0.01572265625,
+        "max_local_luma_error": 0.9375,
+        "min_neighbor_margin_db": 38.438783451170934,
+        "index_observable_comparisons": 8,
+        "index_unobservable_comparisons": 6,
+        "pictures_without_index_neighbors": 0,
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "signal_windows": 0,
+        "blocks_compared": 0,
+        "min_block_snr_db": null,
+        "max_block_level_db": null,
+        "offset_verified_windows": 0,
+        "offset_unobservable_windows": 0,
+        "nonzero_offsets": 0
+      },
+      "movie": "/private/tmp/deadpan-source-interpretation-20261010/production-bundle/hevc-pq-exports/deadpan-f27b8ca0-8bcf-4c19-aad8-ca9c089497b2.mp4",
+      "movie_sha256": "130eb33fdc138fe1914074729308bbcbd356647115765fc8876dacc8fa1d9626",
+      "historical_after_undo": true
+    }
+  ],
+  "binary": "/tmp/deadpan-source-interpretation-bundle-20261011/Deadpan.app/Contents/MacOS/deadpan-cli",
+  "binary_sha256": "adc0d4d75f12f5887b3639a1ba395664aab539a7f4cc0e37cacdb5b16a124a81"
+}

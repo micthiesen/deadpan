@@ -1,0 +1,1 @@
+{"protocol": 1, "project_id": "a50be6e0-43f0-4cc3-aa6c-df4650c53b34", "expected_revision": "d160f7dc-bfc6-4435-b692-836e4e6c6f6c", "new_revision": "interpreted", "command": {"command": "set_source_interpretation", "asset": "ca07476f-bdcb-4c41-b561-ec00fedf3317", "interpretation": {"range": "full", "chroma_location": "center"}}}

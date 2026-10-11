@@ -1,0 +1,2564 @@
+[
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-check.log",
+    "bytes": 1789,
+    "sha256": "864488b44a6abad2cddc01d4d8a65e0aa213031fab3b145d43ade950621b426c",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-app.log",
+    "bytes": 1975,
+    "sha256": "c3b47c4b4ddef491e42a65e080aafa260bb613791347492fb0d0627dae05aa12",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-check.log",
+    "bytes": 861,
+    "sha256": "71c958560221c078436912618a47c421256d9f0a3a765c2a0e0e5c068e5e5425",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-cli.log",
+    "bytes": 1405,
+    "sha256": "d21d1475eee504e806bb48c551404bc6a495a9dc649fa3d536287da807a5ecea",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-faces.log",
+    "bytes": 34622,
+    "sha256": "b65ecfe74beefeb6983d208c609bd5f24e0e427b2ef990a5979a242777f12c78",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-jobs.log",
+    "bytes": 8562,
+    "sha256": "13aa6a95fab4b4a3c2d9d3263cd28f932a9b766ba8d0015958e75c94e61720e8",
+    "rust_summaries": [
+      [
+        "ok",
+        "88",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-media.log",
+    "bytes": 680,
+    "sha256": "8d74746400d1b11ce2af9525e9abb426a6509af6243fd548e582b8566cb96f22",
+    "rust_summaries": [
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-followup-tracker.log",
+    "bytes": 42336,
+    "sha256": "8c78635dfd000261776ce97270ca8aab173f486d7ca8d9f124561ce29fdc8cc9",
+    "rust_summaries": [
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-media.log",
+    "bytes": 1521,
+    "sha256": "c5b311c8dc24ca81b230d631165e3fc98d607ef1cc24bc7eea6024f017244a64",
+    "rust_summaries": [
+      [
+        "FAILED",
+        "3",
+        "1",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/analysis-store.log",
+    "bytes": 1315,
+    "sha256": "07b3bc94441e621754d04673597619be33baffca1c88e194a31c7305d93a981e",
+    "rust_summaries": [
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/app-interpretation-followup.log",
+    "bytes": 1790,
+    "sha256": "95bdd12a2096206934c9cecd8be9109520c53eb25aaa05f659da745e3c28e811",
+    "rust_summaries": [
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/app-interpretation.log",
+    "bytes": 676,
+    "sha256": "c25385f0674f6da706e69b52a4980c9dc69bc75737ccd687d9a9b32eeee16ceb",
+    "rust_summaries": [
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/app-revision-pictures.log",
+    "bytes": 1583,
+    "sha256": "721b66c8e29fea626f15f0e100a4565cd2a8cf97626f7e4d075f1f2ff25dba4c",
+    "rust_summaries": [
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/cli-revision-pictures.log",
+    "bytes": 1479,
+    "sha256": "9a14ef9ecdbe635a247abc0ed2a1eeec4ffa55ea7cee94cbba9c0affaba7612d",
+    "rust_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/core-all.log",
+    "bytes": 106303,
+    "sha256": "93cae4bb716fc524dfe3a8f606fc763deae6287da895eccc0ee2112a51d1d749",
+    "rust_summaries": [
+      [
+        "ok",
+        "385",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "36",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "50",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "17",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "53",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "72",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "19",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "22",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "19",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/core-interpretation.log",
+    "bytes": 589,
+    "sha256": "1fd3e4ded364108af62c43b1170b1844e250aad20b5e0121a4e0e924c29bed42",
+    "rust_summaries": [
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/export-build.log",
+    "bytes": 1398,
+    "sha256": "9692d17f50db9caa02f48f5e6d741471dec6ffa70abd26d14fe9ec41255bba6d",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/export-corrected.log",
+    "bytes": 2436,
+    "sha256": "63d600822fce392563ba9c65863d3897a4a647ae60fc1a31a2347374df8122bb",
+    "rust_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/export-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-bundle-verify.log",
+    "bytes": 24198,
+    "sha256": "e769a0827977ad046d752284188b27c27191585fab6f7d881c7d74b93cb04097",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-bundle.log",
+    "bytes": 2919,
+    "sha256": "3add6f63ea3b5544dff5a998228410f061c493252a7804ae6d372a62f0b7b959",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-cli-contracts.log",
+    "bytes": 5724,
+    "sha256": "8601b0597771fd696b732057b4f3f1be1178a60ecae1e1bc77368e88bae92f0c",
+    "rust_summaries": [
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "40",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "1"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-clippy.log",
+    "bytes": 777,
+    "sha256": "b712e756b71ffce859cd805a49f5752717b003b8e64fcc58958e9e4f9da9382a",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-core-store.log",
+    "bytes": 137492,
+    "sha256": "e191a9bcede3eab994662da4e2859ca2700d80daf4a5790098b6228c864e6f99",
+    "rust_summaries": [
+      [
+        "ok",
+        "385",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "36",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "50",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "17",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "53",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "72",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "19",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "22",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "19",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "249",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "16",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "FAILED",
+        "1",
+        "1",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-host-libraries.log",
+    "bytes": 91587,
+    "sha256": "80a8c3daaef45794689954fbd74a5dd469e5a9bc8d6c532e33e9519875c29706",
+    "rust_summaries": [
+      [
+        "ok",
+        "467",
+        "0",
+        "4"
+      ],
+      [
+        "ok",
+        "88",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "183",
+        "0",
+        "1"
+      ],
+      [
+        "ok",
+        "72",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-media.log",
+    "bytes": 16650,
+    "sha256": "71b8c0c8674c83474db7e2492faba297a91a6a2dc7bebfc37add568e5ad68fea",
+    "rust_summaries": [
+      [
+        "ok",
+        "57",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "30",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "22",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-model-python.log",
+    "bytes": 226,
+    "sha256": "e8bf00cfbc62bfd8348611b238d6b4c3d8cee81e5cde43f226a3462ea2e2ce93",
+    "rust_summaries": [],
+    "python_count": [
+      "126"
+    ]
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-original-layout-long.log",
+    "bytes": 123,
+    "sha256": "751fb017f1caac4be049bbaa300fdec9ec70a78a3a40cf366fa71eac2c1a7de3",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-original-layout.log",
+    "bytes": 113,
+    "sha256": "6a12f47a152abe0a5675c48c641efe628f6a518c7dd4fdf962618dca4d22eeda",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-release.log",
+    "bytes": 7379,
+    "sha256": "522126f6796ef8ed7215f929e799bdd0bb948a0c59ad741d729908c84b7ab73d",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-store-followup.log",
+    "bytes": 70193,
+    "sha256": "af4c6c27b6f4f851b898a5a51ea7b8c07b4128bd9330a4643dfd2bcd5186bbd5",
+    "rust_summaries": [
+      [
+        "ok",
+        "249",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "16",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "17",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "16",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "72",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "25",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "9",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "20",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "23",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "28",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "52",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/final-ui-build.log",
+    "bytes": 1564,
+    "sha256": "bfb98055b53cd63affce0f9ce3907d234af1f806140b8971c689dc2584c3582a",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/format-followup.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-conditioning-followup-final.log",
+    "bytes": 2435,
+    "sha256": "2897dd77a5407f2c947221bcd7b894e521747934d95ec63176aa058643aea166",
+    "rust_summaries": [
+      [
+        "ok",
+        "18",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-format-tests.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-jobs.log",
+    "bytes": 2051,
+    "sha256": "ab326a85b9cad3e517cc3c77dc65d47f4f09368d8e42c7461f35d47e8cae9d98",
+    "rust_summaries": [
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-model-pack-isolated.log",
+    "bytes": 369,
+    "sha256": "65caea336973222005280e153da714b417b45f4fb1b238160dabfd3cd3be1223",
+    "rust_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-models-followup.log",
+    "bytes": 19040,
+    "sha256": "fd8a286abdedcdc469fd0be203146571e177e5e145de613d8e07932e5de5cc42",
+    "rust_summaries": [
+      [
+        "ok",
+        "183",
+        "0",
+        "1"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-models.log",
+    "bytes": 19788,
+    "sha256": "9cb3239532d6e15f853a12a6e49de9d9c19dc4c56096b11519fa320fe3f3a0be",
+    "rust_summaries": [
+      [
+        "FAILED",
+        "182",
+        "1",
+        "1"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-python-final.log",
+    "bytes": 226,
+    "sha256": "4348f6d28785fb406e2747c7edb3089ebe34e781a0b515cd7e20d6ae97840cfa",
+    "rust_summaries": [],
+    "python_count": [
+      "126"
+    ]
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-real-conditioning-followup-final.log",
+    "bytes": 834,
+    "sha256": "893320fe4edd6d8a034048c84d4bff77892dc1713f7bf117d6f93f5c6199422a",
+    "rust_summaries": [
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-relevance-followup-completed.log",
+    "bytes": 2567,
+    "sha256": "baa1f7690a2b7dff70f7cb584b8fd2195852496e4d5fcbed7e8fb37d944b290c",
+    "rust_summaries": [
+      [
+        "FAILED",
+        "12",
+        "1",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-relevance-followup-final.log",
+    "bytes": 1871,
+    "sha256": "999dba6e5487bf0a7e989262539b2b112e2ab28fd2ef905f9d8bc431581158e3",
+    "rust_summaries": [
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-relevance-followup.log",
+    "bytes": 3328,
+    "sha256": "39b734207d11b037c4902399d95699a9529bb22ef1a036897d5a87cde897c340",
+    "rust_summaries": [
+      [
+        "FAILED",
+        "12",
+        "1",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-store.log",
+    "bytes": 2068,
+    "sha256": "b2173fa01fc697dfa0086513ee7006d202b16e6268d10ca4e6e1258402db5920",
+    "rust_summaries": [
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/generation-workspace.log",
+    "bytes": 1548,
+    "sha256": "f099c8ad4b76060b5a271f8f129b9f5e0ac4f280c13ecd0d7ce6ee8ac23c3182",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/media-sessions-current.log",
+    "bytes": 1614,
+    "sha256": "53ceb7487a3d576e238d3de09205fe550be7248419a31bb5f37345e21cbda29f",
+    "rust_summaries": [
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/media-sessions-followup.log",
+    "bytes": 1531,
+    "sha256": "141ca0adc8e990b2e42f7830e42f0db078151c45c1fe4475086271d857e9a1ac",
+    "rust_summaries": [
+      [
+        "ok",
+        "12",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/media-sessions.log",
+    "bytes": 1455,
+    "sha256": "2fafc18df537608bac04acc5caeb06b04ee8abd03763d6c21dd994089b525347",
+    "rust_summaries": [
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/milestone-gate.log",
+    "bytes": 1022642,
+    "sha256": "436f98c0aa40c4ccfe2f8b234171bc208948828064051d9b6c061082230e262b",
+    "rust_summaries": [
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/milestone-performance-build.log",
+    "bytes": 9651,
+    "sha256": "bd6482ff5ad95a3e7876f5dce167da490d7209caf8483dbd5c46b612f986fcd5",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/milestone-performance.log",
+    "bytes": 191,
+    "sha256": "b153dffe34ff8498d62fcb90d4ced6635aaf33acc7e25c77d8ded734b714cb6f",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/milestone-replays.log",
+    "bytes": 19981,
+    "sha256": "7fa7d225e86cdbfbca07f13399065c2318dc0e14f0059bd643d95388f0486fd8",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/missing-range-generate.log",
+    "bytes": 1824,
+    "sha256": "97e54305c9210a584836ef02bc1f4b688c5ea6fe9e0afd4675b02321d754691e",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-all-current.log",
+    "bytes": 21197,
+    "sha256": "917f6bdb506198c41df26dd6572162945b47175115c8ef55d7250e6b56621543",
+    "rust_summaries": [
+      [
+        "ok",
+        "66",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-clippy.log",
+    "bytes": 473,
+    "sha256": "c9cf1a91fbe1b22dd5659e68a9abddfc9d7c95fc73ce89545384dc0b1cfa43b7",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-command-followup-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-command-followup-workspace.log",
+    "bytes": 153,
+    "sha256": "6f80594564c627d7a8d31c361a5756a1e0df196cbbc22a140a19cd2f961e97ef",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-command-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-command-workspace.log",
+    "bytes": 3014,
+    "sha256": "5b32d075828882168d4d4842505c799342b0e9143acb955e684555d411572280",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-docs-generate.log",
+    "bytes": 2152,
+    "sha256": "99ebf2826be31e4ab842360a3d2077b635821392070829bd8b758834a6dafb7c",
+    "rust_summaries": [
+      [
+        "FAILED",
+        "0",
+        "1",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-build.log",
+    "bytes": 1564,
+    "sha256": "4da7761abe7740fd66315f5ea91268938bbdab2c5f77c0588a7c039669c48290",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-check.log",
+    "bytes": 153,
+    "sha256": "311d8f75c65c06811331a85cf1851155f3f03c623b33135bd6d3329eb6f26ef2",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-interpretation.log",
+    "bytes": 1020,
+    "sha256": "700bdfe5d3e43a3e5d1f8dce83d9a01549c303dcd0eed4a93a9a926542630844",
+    "rust_summaries": [
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-readonly.log",
+    "bytes": 492,
+    "sha256": "044abe231357eac7b7acdc1c9298e28177ce20af12e6c4d04e1eb00fa53397c1",
+    "rust_summaries": [
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-entry-shots.log",
+    "bytes": 778,
+    "sha256": "09008b26224780d97fba03f6fcafb67ec7cb8f6d76761c62cd1a33062a2499e7",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-followup-app.log",
+    "bytes": 112778,
+    "sha256": "d618b22f3473494d367cae3d811414e80ae0823d8b96a349055cea3092807cbe",
+    "rust_summaries": [
+      [
+        "ok",
+        "1060",
+        "0",
+        "2"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-followup-clippy.log",
+    "bytes": 1548,
+    "sha256": "274c2b4929d3787208935c610e14a543815151c7ba84fc287198077694455300",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-followup-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-followup-playback.log",
+    "bytes": 2679,
+    "sha256": "c19c15926eee38a822f4923584bab176a3303c60c584fd2eb18628854e83e581",
+    "rust_summaries": [
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-followup-registry.log",
+    "bytes": 1206,
+    "sha256": "377dcab645a0d6144ce7d4a998b7d0725f1719bbe4ba95905c68c16fe58d3e30",
+    "rust_summaries": [
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-interpretation.log",
+    "bytes": 848,
+    "sha256": "fe10618fd822ed50396dc971d63400539fc15d2d4b77ae6de51936fa2636a98e",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-replay-1.log",
+    "bytes": 113,
+    "sha256": "ee4f6fb8ad7d3462be94357cb07fb3f2f4492bab58e72193661f5996d917ae1f",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-replay-build.log",
+    "bytes": 539,
+    "sha256": "69eec6a91118edaec06a1baf61db4ba28a3c11b74b789923c869fcb6ae74746d",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-replay-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/native-tests.log",
+    "bytes": 20956,
+    "sha256": "1d16e4d5d6f26da2dc5105883c859d7346e3e2ebdef02dac5a5b330cf11b38f1",
+    "rust_summaries": [
+      [
+        "ok",
+        "66",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "13",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "7",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "8",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "11",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "15",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "6",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "3",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "4",
+        "0",
+        "0"
+      ],
+      [
+        "ok",
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/production-bundle.log",
+    "bytes": 2581,
+    "sha256": "e4f95e1c36f58301b0655ee98883a6a8af191f80d35886ff202fe72f216873dd",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/production-release.log",
+    "bytes": 2585,
+    "sha256": "7308329de2282107967aca7283db9ea277d3ddce4f0e744e85de8afe706ce151",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-cache.log",
+    "bytes": 2334,
+    "sha256": "06b54f73be0a39aae95b648511984812a7b45fea3066921ee8ebc66ebdd713ca",
+    "rust_summaries": [
+      [
+        "ok",
+        "10",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-followup-app.log",
+    "bytes": 1414,
+    "sha256": "6d3fa47356ba7dfa7ea0feb8c7daa8ddc5893bd5834d77f46212dfbb8b52e3f9",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-followup-clippy.log",
+    "bytes": 1940,
+    "sha256": "133aa50c52d2dd78e79f0ea594db326541d01efb406598f509480a97059cbb0a",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-followup-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-followup-native.log",
+    "bytes": 2106,
+    "sha256": "92c8ab4f754bb3179b382ecd3c9d0454404b5c255f1d26e49690092cbd64d81f",
+    "rust_summaries": [
+      [
+        "ok",
+        "17",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-followup-resume.log",
+    "bytes": 929,
+    "sha256": "48c88c6a958f0d3d5e32103ceafe74f15326b26b7b294a57e983fb9e1c5ccb62",
+    "rust_summaries": [
+      [
+        "ok",
+        "5",
+        "0",
+        "1"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-format.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-real-interpretation.log",
+    "bytes": 1172,
+    "sha256": "0dc3a61adf2f278a9e6bdaecaaf4ae4229f506218f2977d95fe879732184a913",
+    "rust_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/proxy-worker-interpretation.log",
+    "bytes": 1588,
+    "sha256": "0443ea4973ed9fec4aa3f69684943ec08622cc1d3279fb1c2ba3280f1636175c",
+    "rust_summaries": [
+      [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-base-clippy.log",
+    "bytes": 1549,
+    "sha256": "edb3797970408482a2c5c8eacf2e3304520b2295c4c0ec69c9420ed668f20c28",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-base-tests-followup.log",
+    "bytes": 1513,
+    "sha256": "85a2b2bdd3292f27cb6381182c16debde28e8c45c0be50b6e7d3aeb92eb57776",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-base-tests.log",
+    "bytes": 1863,
+    "sha256": "5069891a9a9c49456d9568a8e571feb41b349a21749ffe95d4a152b052b7edee",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-bundle-verify.log",
+    "bytes": 24204,
+    "sha256": "2ffefeb9dda64cb804c9bf3b64706cc7c112495e6255a06d490f8805dc1dbf4d",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-bundle.log",
+    "bytes": 11622,
+    "sha256": "f513966120176ea21dcd87f85d20942ae5787b5fac5dbe29d9b72c1e0747fe8a",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-fmt-followup.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-harness-clippy-followup.log",
+    "bytes": 484,
+    "sha256": "ae86df72ec903fe4aaf150eb7d7c4f3559ef7e93fe01fcc7630e7c67d1dea7b1",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-harness-clippy.log",
+    "bytes": 321,
+    "sha256": "65702b4c91419f8b148f3c36a8594f0af43bc102ffa1ac51e2c47650135e11fb",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-harness-tests.log",
+    "bytes": 1680,
+    "sha256": "3f1de4dce5a654d23e7aeb9518c21d649e7c959ed10d37946be0f3cc105f2747",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance-build.log",
+    "bytes": 144,
+    "sha256": "700da54a4ab98bce2d9c311ab23554c6671c0d22d073ff067f6bcd95a835eecf",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-performance.log",
+    "bytes": 114,
+    "sha256": "68350dcacdc14470c9f1bec1bd38da21a90ea1f7a11ef3c9ed06738f7aaabde0",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays-followup.log",
+    "bytes": 2213,
+    "sha256": "c7aac520bff12f4c1ad06dc6231d49d93b849f3afecf5540e0de103e7a0cbb3e",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/rail-replays.log",
+    "bytes": 3622,
+    "sha256": "9890dbc98b059748a2296ec593c85575135c701fffa9242cc8290834a6327773",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/source-sanitizers.log",
+    "bytes": 5861,
+    "sha256": "496c5c5b39b59c69216d748d25000c6e01156aa593fde3689c6275ab66cbe27f",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/store-interpretation.log",
+    "bytes": 553,
+    "sha256": "9b099a30d36c7efc6ef9cb66ab998db18ef427347f92535907900f1facb30039",
+    "rust_summaries": [
+      [
+        "ok",
+        "2",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/store-source-current.log",
+    "bytes": 5536,
+    "sha256": "e40fa6b1eb2fc5b5960cd31e593c865a68b2e24342a5c2f69e80e6f24b465929",
+    "rust_summaries": [
+      [
+        "ok",
+        "52",
+        "0",
+        "0"
+      ]
+    ],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/workspace-check.log",
+    "bytes": 859,
+    "sha256": "9fd4e9fdf6e398e253767d86a2e8b748219385dfb944eb65e987ce12971b05e7",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/workspace-clippy-followup.log",
+    "bytes": 947,
+    "sha256": "31d531406ff78736d85215f95e07001d16bfa4079deea9fa7985f6799dac2b76",
+    "rust_summaries": [],
+    "python_count": []
+  },
+  {
+    "path": "/tmp/deadpan-source-interpretation-20261010/workspace-clippy.log",
+    "bytes": 2182,
+    "sha256": "12528df865390d13183be74f8cbddeb344963b7aeab867b82e5d8ae11e70490f",
+    "rust_summaries": [],
+    "python_count": []
+  }
+]

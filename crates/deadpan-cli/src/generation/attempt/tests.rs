@@ -455,6 +455,7 @@ fn picture_inputs_for_frames(left_rgb: [u8; 3], right_rgb: [u8; 3], frames: i64)
                     conditioning::sha256(&png).unwrap().as_str().to_owned(),
                 )
                 .unwrap(),
+                interpretation: None,
                 picture: deadpan_models::DecodedBoundary {
                     source_frame: deadpan_core::SourceFrameId(0),
                     pts: deadpan_core::SourceTimestamp {

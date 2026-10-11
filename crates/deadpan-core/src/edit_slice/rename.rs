@@ -651,6 +651,7 @@ pub(super) fn validate_pools(
 pub(super) struct Imported {
     nodes: BTreeMap<NodeId, BeatNode>,
     assets: BTreeMap<AssetId, AssetRecord>,
+    source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
     marks: BTreeMap<MarkId, Mark>,
     overrides: BTreeMap<NodeId, PlayOverrides>,
     gap_overrides: BTreeMap<NodeId, PlayOverrides>,
@@ -671,6 +672,14 @@ impl Imported {
         document.audio_bindings = bindings;
         document.nodes.extend(self.nodes);
         document.beat_sounds.extend(self.beat_sounds);
+        // An existing asset follows the destination's current interpretation,
+        // including its deliberate absence. A newly restored asset brings
+        // its captured interpretation with it.
+        for (id, interpretation) in self.source_interpretations {
+            if !document.assets.contains_key(&id) {
+                document.source_interpretations.insert(id, interpretation);
+            }
+        }
         document.assets.extend(self.assets);
         // The destination's current target wins over a historical copy.
         for (id, target) in self.targets {
@@ -783,6 +792,7 @@ pub(super) fn prepare(
     )?;
     context.nodes.extend(slice.nodes.clone());
     context.assets = slice.assets.clone();
+    context.source_interpretations = slice.source_interpretations.clone();
     context.targets = slice.targets.clone();
     context.overrides = slice.overrides.clone();
     context.gap_overrides = slice.gap_overrides.clone();
@@ -918,6 +928,7 @@ pub(super) fn prepare(
         targets: slice.targets.clone(),
         nodes,
         assets: slice.assets.clone(),
+        source_interpretations: slice.source_interpretations.clone(),
         marks,
         overrides: rename.overrides(&slice.overrides, None)?,
         gap_overrides: rename.overrides(&slice.gap_overrides, None)?,

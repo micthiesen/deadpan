@@ -1,0 +1,64 @@
+[
+  {
+    "name": "proxy-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.469302874989808,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "proxy-cache",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "proxy::cache::tests"
+    ],
+    "exit": 0,
+    "passed": 10,
+    "seconds": 21.05226970789954,
+    "sha256": "06b54f73be0a39aae95b648511984812a7b45fea3066921ee8ebc66ebdd713ca"
+  },
+  {
+    "name": "proxy-worker-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "interpretation_switch"
+    ],
+    "exit": 0,
+    "passed": 1,
+    "seconds": 26.56957908300683,
+    "sha256": "0443ea4973ed9fec4aa3f69684943ec08622cc1d3279fb1c2ba3280f1636175c"
+  },
+  {
+    "name": "proxy-real-interpretation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media",
+      "corrected_proxies"
+    ],
+    "exit": 0,
+    "passed": 1,
+    "seconds": 14.028215250000358,
+    "sha256": "0dc3a61adf2f278a9e6bdaecaaf4ae4229f506218f2977d95fe879732184a913"
+  }
+]

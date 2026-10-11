@@ -18,6 +18,7 @@ fn request() -> HostMessage {
         cancellation_token: CancellationToken::new("cancel-1").unwrap(),
         source: artifact("input/source.mkv", 16_000),
         stream: ExpectedStream {
+            interpretation: None,
             stream_index: 0,
             width: 768,
             height: 320,
@@ -55,6 +56,19 @@ fn completed() -> WorkerMessage {
         decode_millis: 2,
         vision_millis: 8,
         elapsed_millis: 10,
+    }
+}
+
+#[test]
+fn generated_masters_refuse_original_interpretation_overrides() {
+    for message in [
+        request(),
+        extension_request(deadpan_core::ExtensionDirection::FromLeft),
+    ] {
+        let mut wire = serde_json::to_value(message).unwrap();
+        wire["stream"]["interpretation"] = serde_json::json!({"range":"full"});
+        let parsed: HostMessage = serde_json::from_value(wire).unwrap();
+        assert!(parsed.validate().unwrap_err().contains("generated masters"));
     }
 }
 

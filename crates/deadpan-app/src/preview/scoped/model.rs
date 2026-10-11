@@ -219,6 +219,26 @@ impl State {
         self.matches_identity(workspace.session, &workspace.document)
     }
 
+    pub fn rebase_source_interpretation(
+        &mut self,
+        workspace: &Workspace,
+        saved: &crate::project::SourceInterpretationSaved,
+    ) -> bool {
+        if workspace.session != saved.session
+            || self.session != saved.session
+            || workspace.document.project_id() != &saved.project
+            || workspace.document.revision_id() != &saved.revision
+            || self.index.document.project_id() != &saved.project
+            || self.index.document.revision_id() != &saved.base
+        {
+            return false;
+        }
+        let index = Arc::make_mut(&mut self.index);
+        index.document = workspace.document.clone();
+        index.plan = workspace.plan.clone();
+        true
+    }
+
     fn matches_identity(&self, session: u64, document: &ProjectDocument) -> bool {
         self.session == session
             && self.index.document.project_id() == document.project_id()

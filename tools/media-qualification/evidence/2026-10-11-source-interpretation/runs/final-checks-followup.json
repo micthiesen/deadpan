@@ -1,0 +1,216 @@
+[
+  {
+    "name": "final-store-followup",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store"
+    ],
+    "passed": 668,
+    "seconds": 237.13969199964777,
+    "log_sha256": "af4c6c27b6f4f851b898a5a51ea7b8c07b4128bd9330a4643dfd2bcd5186bbd5"
+  },
+  {
+    "name": "final-media",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media"
+    ],
+    "passed": 156,
+    "seconds": 16.458247375208884,
+    "log_sha256": "71b8c0c8674c83474db7e2492faba297a91a6a2dc7bebfc37add568e5ad68fea"
+  },
+  {
+    "name": "final-host-libraries",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "-p",
+      "deadpan-models",
+      "-p",
+      "deadpan-playback",
+      "-p",
+      "deadpan-jobs",
+      "--lib"
+    ],
+    "passed": 810,
+    "seconds": 108.05189616698772,
+    "log_sha256": "80a8c3daaef45794689954fbd74a5dd469e5a9bc8d6c532e33e9519875c29706"
+  },
+  {
+    "name": "final-cli-contracts",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "project_commands",
+      "--test",
+      "bridge_conditioning",
+      "--test",
+      "shots",
+      "--test",
+      "proxy_resume"
+    ],
+    "passed": 56,
+    "seconds": 22.682926500216126,
+    "log_sha256": "8601b0597771fd696b732057b4f3f1be1178a60ecae1e1bc77368e88bae92f0c"
+  },
+  {
+    "name": "final-model-python",
+    "exit": 0,
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/model-qualification/tests"
+    ],
+    "passed": 0,
+    "seconds": 0.3521197917871177,
+    "log_sha256": "e8bf00cfbc62bfd8348611b238d6b4c3d8cee81e5cde43f226a3462ea2e2ce93"
+  },
+  {
+    "name": "final-ui-build",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "passed": 0,
+    "seconds": 11.857425208669156,
+    "log_sha256": "bfb98055b53cd63affce0f9ce3907d234af1f806140b8971c689dc2584c3582a"
+  },
+  {
+    "name": "final-original-layout",
+    "exit": 0,
+    "command": [
+      "deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "original-layout",
+      "--mode",
+      "visual",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/final-original-layout",
+      "--retain-projects"
+    ],
+    "passed": 0,
+    "seconds": 97.92144679185003,
+    "log_sha256": "6a12f47a152abe0a5675c48c641efe628f6a518c7dd4fdf962618dca4d22eeda",
+    "binary_sha256": "11b56bc8c8a65d34ad872f6bbab8d5feed12baa3d904764ab3e86eb86b89bbbd"
+  },
+  {
+    "name": "final-original-layout-long",
+    "exit": 0,
+    "command": [
+      "deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "original-layout-long",
+      "--mode",
+      "visual",
+      "--output",
+      "/tmp/deadpan-source-interpretation-20261010/final-original-layout-long",
+      "--retain-projects"
+    ],
+    "passed": 0,
+    "seconds": 97.3492637919262,
+    "log_sha256": "751fb017f1caac4be049bbaa300fdec9ec70a78a3a40cf366fa71eac2c1a7de3",
+    "binary_sha256": "11b56bc8c8a65d34ad872f6bbab8d5feed12baa3d904764ab3e86eb86b89bbbd"
+  },
+  {
+    "name": "final-release",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--workspace"
+    ],
+    "passed": 0,
+    "seconds": 203.54916083300486,
+    "log_sha256": "522126f6796ef8ed7215f929e799bdd0bb948a0c59ad741d729908c84b7ab73d"
+  },
+  {
+    "name": "final-bundle",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle",
+      "--output",
+      "/tmp/deadpan-source-interpretation-bundle-20261011"
+    ],
+    "passed": 0,
+    "seconds": 226.5225974591449,
+    "log_sha256": "3add6f63ea3b5544dff5a998228410f061c493252a7804ae6d372a62f0b7b959"
+  },
+  {
+    "name": "final-bundle-verify",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "xtask",
+      "bundle-verify",
+      "/tmp/deadpan-source-interpretation-bundle-20261011/Deadpan.app"
+    ],
+    "passed": 0,
+    "seconds": 29.322399333119392,
+    "log_sha256": "e769a0827977ad046d752284188b27c27191585fab6f7d881c7d74b93cb04097"
+  },
+  {
+    "name": "final-fmt",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "passed": 0,
+    "seconds": 4.721346125006676,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "final-clippy",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "passed": 0,
+    "seconds": 15.818140250165015,
+    "log_sha256": "b712e756b71ffce859cd805a49f5752717b003b8e64fcc58958e9e4f9da9382a"
+  }
+]

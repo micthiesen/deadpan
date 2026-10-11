@@ -1,0 +1,126 @@
+[
+  {
+    "name": "analysis-followup-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.50088695762679,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "analysis-followup-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 7.7302141659893095,
+    "sha256": "71c958560221c078436912618a47c421256d9f0a3a765c2a0e0e5c068e5e5425"
+  },
+  {
+    "name": "analysis-followup-media",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "picture_scan"
+    ],
+    "exit": 0,
+    "passed": 4,
+    "seconds": 3.7006839998066425,
+    "sha256": "8d74746400d1b11ce2af9525e9abb426a6509af6243fd548e582b8566cb96f22"
+  },
+  {
+    "name": "analysis-followup-jobs",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "--lib"
+    ],
+    "exit": 0,
+    "passed": 88,
+    "seconds": 2.658538374584168,
+    "sha256": "13aa6a95fab4b4a3c2d9d3263cd28f932a9b766ba8d0015958e75c94e61720e8"
+  },
+  {
+    "name": "analysis-followup-cli",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "shots"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 14.21643212530762,
+    "sha256": "d21d1475eee504e806bb48c551404bc6a495a9dc649fa3d536287da807a5ecea"
+  },
+  {
+    "name": "analysis-followup-tracker",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-track",
+      "--test",
+      "worker"
+    ],
+    "exit": 0,
+    "passed": 6,
+    "seconds": 14.630623500328511,
+    "sha256": "8c78635dfd000261776ce97270ca8aab173f486d7ca8d9f124561ce29fdc8cc9"
+  },
+  {
+    "name": "analysis-followup-faces",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-track",
+      "--test",
+      "faces"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 1.4843218750320375,
+    "sha256": "b65ecfe74beefeb6983d208c609bd5f24e0e427b2ef990a5979a242777f12c78"
+  },
+  {
+    "name": "analysis-followup-app",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "shots"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 21.703830459155142,
+    "sha256": "c3b47c4b4ddef491e42a65e080aafa260bb613791347492fb0d0627dae05aa12"
+  }
+]

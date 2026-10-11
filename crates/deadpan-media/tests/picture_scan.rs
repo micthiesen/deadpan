@@ -50,6 +50,84 @@ fn later() -> Instant {
 }
 
 #[test]
+fn interpreted_scan_uses_corrected_pixels_and_resumes_with_the_same_choice() {
+    use deadpan_media::picture_scan::PictureScanOptions;
+    use deadpan_source::{ChromaLocation, ColorRange, VideoInterpretation};
+    for name in ["hevc-sdr-8-limited.mp4", "hevc-sdr-10-limited.mp4"] {
+        let input = input(name);
+        let qualification = qualified(&input);
+        let video = qualification.snapshot().video().unwrap();
+        let original = hashes(&input, video, 0, 1);
+        let options = PictureScanOptions {
+            decode: DecodeLimits::default(),
+            interpretation: VideoInterpretation {
+                range: Some(ColorRange::Full),
+                chroma_location: Some(ChromaLocation::Center),
+            },
+        };
+        let scan = |start| {
+            let mut seen = Vec::new();
+            scan_pictures_from(
+                &input,
+                video,
+                options,
+                later(),
+                &AtomicBool::new(false),
+                start,
+                |ordinal, picture| {
+                    assert_eq!(ordinal, start + seen.len());
+                    seen.push((picture.metadata.pts, Sha256::digest(&picture.rgba).into()));
+                    Ok::<_, String>(())
+                },
+            )
+            .unwrap();
+            seen
+        };
+        let corrected: Vec<(i64, [u8; 32])> = scan(0);
+        assert_eq!(
+            corrected.iter().map(|v| v.0).collect::<Vec<_>>(),
+            original.iter().map(|v| v.0).collect::<Vec<_>>()
+        );
+        assert_ne!(corrected, original, "{name}");
+        assert_eq!(scan(1), corrected[1..]);
+        // Eight-bit viewer pixels are identical. Ten-bit preview retains
+        // RGBA64 precision; the analysis scanner deliberately requests RGBA8.
+        let mut session = SourceSession::open_input(
+            input.clone(),
+            AssetId::new("scan").unwrap(),
+            SourceSessionLimits::default(),
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .with_interpretation(
+            options.interpretation,
+            Duration::from_secs(30),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        for (ordinal, (pts, expected)) in corrected.iter().enumerate() {
+            let picture = session
+                .frame(
+                    deadpan_core::SourceFrameId(ordinal as u64),
+                    Duration::from_secs(30),
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(picture.metadata.pts, *pts);
+            if picture.sample_bits == 8 {
+                assert_eq!(
+                    <[u8; 32]>::from(Sha256::digest(&picture.rgba)),
+                    *expected,
+                    "{name} picture {ordinal}"
+                );
+            } else {
+                assert_eq!(picture.sample_bits, 16);
+            }
+        }
+    }
+}
+
+#[test]
 fn every_indexed_picture_is_visited_once_in_order_with_its_pts() {
     for name in ["cfr-bframes.mp4", "vfr.mp4", "offset-bframes.mp4"] {
         let input = input(name);
@@ -143,7 +221,7 @@ fn hashes(
     let count = scan_pictures_from(
         input,
         video,
-        limits,
+        limits.into(),
         later(),
         &AtomicBool::new(false),
         start,
@@ -184,7 +262,7 @@ fn a_scan_from_any_picture_equals_the_tail_of_a_whole_scan_with_any_thread_count
             scan_pictures_from(
                 &input,
                 video,
-                DecodeLimits::default(),
+                DecodeLimits::default().into(),
                 later(),
                 &AtomicBool::new(false),
                 pictures,

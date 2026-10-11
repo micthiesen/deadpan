@@ -168,6 +168,7 @@ impl MeasuredPictures {
         GenerationPictureIdentity::Original {
             qualification: SourceQualificationId::new("a".repeat(64)).unwrap(),
             frame: SourceFrameId(frame),
+            interpretation: None,
         }
     }
 }

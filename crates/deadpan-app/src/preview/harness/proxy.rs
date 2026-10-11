@@ -54,7 +54,7 @@ fn publish_fixture_proxy(d: &Driver<'_>) -> Result<(), String> {
     let sidecar = deadpan_media::proxy::verify_proxy(
         staging.movie(),
         &input,
-        registered.original.object().content().digest(),
+        &deadpan_cli::proxy::proxy_identity(&registered.original, video, None),
         Arc::new(video.index().clone()),
         video.interpretation(),
         deadpan_media::proxy::ProxyReason::Requested,
@@ -65,8 +65,8 @@ fn publish_fixture_proxy(d: &Driver<'_>) -> Result<(), String> {
         },
     )
     .map_err(|e| e.to_string())?;
-    let key =
-        deadpan_cli::proxy::proxy_key(&registered.original, video).map_err(|e| e.to_string())?;
+    let key = deadpan_cli::proxy::proxy_key(&registered.original, video, None)
+        .map_err(|e| e.to_string())?;
     cache
         .publish(&key, staging, &sidecar)
         .map_err(|e| e.to_string())?;

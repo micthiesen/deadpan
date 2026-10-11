@@ -141,7 +141,7 @@ struct DecodedPicture {
     request: RequestedPicture,
     picture: Picture,
     geometry_revision: u64,
-    chroma_assumed_left: bool,
+    interpretation_note: Option<String>,
 }
 
 struct DisplayedPicture {
@@ -152,7 +152,7 @@ struct DisplayedPicture {
     source_frame: Option<SourceFrameId>,
     canvas: Option<(u32, u32)>,
     geometry_revision: u64,
-    chroma_assumed_left: bool,
+    interpretation_note: Option<String>,
 }
 
 #[derive(Default)]
@@ -279,14 +279,14 @@ impl Presentation {
         Some(match reply.picture {
             Ok(mut picture) => {
                 let summary = picture.summary.take();
-                let chroma_assumed_left = summary
+                let interpretation_note = summary
                     .as_ref()
-                    .is_some_and(|summary| summary.info.chroma_assumed_left);
+                    .and_then(SourceSummary::interpretation_note);
                 self.decoded = Some(DecodedPicture {
                     request: request.clone(),
                     picture,
                     geometry_revision: 0,
-                    chroma_assumed_left,
+                    interpretation_note,
                 });
                 Ok(summary)
             }
@@ -540,7 +540,7 @@ impl Presentation {
             source_frame: decoded.picture.frame.as_ref().map(|_| decoded.picture.id),
             canvas: decoded.picture.canvas,
             geometry_revision: decoded.geometry_revision,
-            chroma_assumed_left: decoded.chroma_assumed_left,
+            interpretation_note: decoded.interpretation_note.clone(),
         });
     }
 
@@ -555,8 +555,8 @@ impl Presentation {
             PictureTier::Original => label,
             PictureTier::Proxy => format!("{label} · proxy preview"),
         };
-        Some(if displayed.chroma_assumed_left {
-            format!("{label} · Source chroma position unspecified; interpreted as left")
+        Some(if let Some(note) = &displayed.interpretation_note {
+            format!("{label} · {note}")
         } else {
             label
         })

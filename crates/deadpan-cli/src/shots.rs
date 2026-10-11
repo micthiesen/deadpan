@@ -143,7 +143,44 @@ pub(crate) fn shot_receipt(
         .map_err(unavailable)
 }
 
-/// Copy the Original's retained bytes into a private verified snapshot.
+/// Capture the authored choice without changing the immutable receipt.
+fn shot_interpretation(
+    store: &deadpan_store::ProjectStore,
+    asset: Option<&deadpan_core::AssetId>,
+    receipt: &SourceQualificationReceipt,
+) -> Result<Option<deadpan_core::SourceInterpretation>, ShotScanError> {
+    let unavailable =
+        |error: deadpan_store::StoreError| ShotScanError::Unavailable(error.to_string());
+    let original;
+    let asset = match asset {
+        Some(asset) => asset,
+        None => {
+            let Some(deadpan_store::single_source::SingleSourceState::Ready { asset, .. }) =
+                store.single_source_state().map_err(unavailable)?
+            else {
+                return Err(ShotScanError::Unavailable(
+                    "the project has no ready Original".into(),
+                ));
+            };
+            original = asset;
+            &original
+        }
+    };
+    let document = store.snapshot().map_err(unavailable)?;
+    if document
+        .assets()
+        .get(asset)
+        .and_then(|record| record.source_qualification.as_ref())
+        != Some(receipt.id())
+    {
+        return Err(ShotScanError::Unavailable(
+            "the source receipt differs from the project head".into(),
+        ));
+    }
+    Ok(document.source_interpretations().get(asset).copied())
+}
+
+/// Copy the Original's retained bytes with its current authored interpretation.
 pub fn prepare_shot_input(
     store: &deadpan_store::ProjectStore,
     asset: Option<&deadpan_core::AssetId>,
@@ -151,6 +188,7 @@ pub fn prepare_shot_input(
     deadline: Instant,
 ) -> Result<ShotInput, ShotScanError> {
     let receipt = shot_receipt(store, asset)?;
+    let interpretation = shot_interpretation(store, asset, &receipt)?;
     let video = receipt.snapshot().video().ok_or_else(|| {
         ShotScanError::Unavailable("the Original has no qualified picture".into())
     })?;
@@ -184,6 +222,7 @@ pub fn prepare_shot_input(
     )
     .map_err(|e| failed(&e))?;
     let key = ShotAnalysisKey {
+        interpretation,
         content: receipt.original().content().to_string(),
         video_stream: video.index().stream_index(),
         signature_version: SIGNATURE_VERSION.into(),
@@ -293,7 +332,10 @@ pub fn scan_shots(
         scan_pictures_from(
             &input.input,
             video,
-            limits,
+            deadpan_media::picture_scan::PictureScanOptions {
+                decode: limits,
+                interpretation: input.key.interpretation.map(Into::into).unwrap_or_default(),
+            },
             deadline,
             cancelled,
             start,
@@ -363,13 +405,16 @@ pub fn stored_shots(
     content: &str,
     video_stream: u32,
     expected_pictures: usize,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 ) -> Option<(ShotAnalysisKey, ShotAnalysis)> {
     store
         .shot_analysis_keys_for_content(content)
         .ok()?
         .into_iter()
         .filter(|key| {
-            key.signature_version == SIGNATURE_VERSION && key.video_stream == video_stream
+            key.signature_version == SIGNATURE_VERSION
+                && key.video_stream == video_stream
+                && key.interpretation == interpretation
         })
         .find_map(|key| {
             let analysis = store.shot_analysis(&key, expected_pictures).ok()??;
@@ -498,6 +543,7 @@ pub fn run_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
         deadpan_store::AccessMode::ReadOnly,
     )?;
     let receipt = shot_receipt(&store, asset.as_ref())?;
+    let interpretation = shot_interpretation(&store, asset.as_ref(), &receipt)?;
     let video = receipt
         .snapshot()
         .video()
@@ -505,9 +551,13 @@ pub fn run_shots(arguments: &[&str]) -> Result<(), crate::CliError> {
     let index = video.index().index();
     let frames = index.frames();
     let content = receipt.original().content().to_string();
-    let Some((key, analysis)) =
-        stored_shots(&store, &content, video.index().stream_index(), frames.len())
-    else {
+    let Some((key, analysis)) = stored_shots(
+        &store,
+        &content,
+        video.index().stream_index(),
+        frames.len(),
+        interpretation,
+    ) else {
         return crate::write_json(&serde_json::json!({
             "protocol": 1,
             "rule": SHOT_RULE,

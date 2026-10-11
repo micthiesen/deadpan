@@ -201,8 +201,17 @@ fn track(
     let control = || decode_control(cancelled, request.deadline);
     let file = open_source(&request.source)?;
     verify_source(&file, &request.source, cancelled, request.deadline)?;
-    let mut decoder = SourceDecoder::open(file, DecodeLimits::default(), control()?)
-        .map_err(|error| format!("open source: {error}"))?;
+    let mut decoder = SourceDecoder::open_interpreted(
+        file,
+        DecodeLimits::default(),
+        control()?,
+        request
+            .stream
+            .interpretation
+            .map(Into::into)
+            .unwrap_or_default(),
+    )
+    .map_err(|error| format!("open source: {error}"))?;
     check_stream(decoder.info(), &request.stream)?;
     decoder
         .seek(request.start_pts, control()?)

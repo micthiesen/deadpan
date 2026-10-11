@@ -1,0 +1,62 @@
+[
+  {
+    "name": "analysis-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.4722828338854015,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "analysis-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 31.711260084062815,
+    "sha256": "864488b44a6abad2cddc01d4d8a65e0aa213031fab3b145d43ade950621b426c"
+  },
+  {
+    "name": "analysis-store",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "shot_analysis"
+    ],
+    "exit": 0,
+    "passed": 7,
+    "seconds": 8.777304582763463,
+    "sha256": "07b3bc94441e621754d04673597619be33baffca1c88e194a31c7305d93a981e"
+  },
+  {
+    "name": "analysis-media",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "picture_scan"
+    ],
+    "exit": 101,
+    "passed": 0,
+    "seconds": 3.802944416180253,
+    "sha256": "c5b311c8dc24ca81b230d631165e3fc98d607ef1cc24bc7eea6024f017244a64"
+  }
+]

@@ -4,6 +4,7 @@
 //! snapshot validates retained evidence, but cannot mint that live token. Neither
 //! type establishes original-file ownership, asset registration, or readiness.
 
+pub use deadpan_source::VideoInterpretationSupport;
 use std::io::Write;
 
 use deadpan_core::{
@@ -77,6 +78,11 @@ impl DecodedSourceQualification {
         // index. Validation below also counts the final canonical envelope.
         let mut indexed_bytes = 0_usize;
         if let Some(session) = video {
+            if session.interpretation() != deadpan_source::VideoInterpretation::SOURCE {
+                return Err(SourceQualificationError::Metadata(
+                    "source qualification requires the original interpretation",
+                ));
+            }
             let mut writer = BoundedWriter::new(MAX_SOURCE_INDEX_JSON_BYTES, false);
             write_json(session.index(), &mut writer)?;
             indexed_bytes = writer.length;
@@ -224,6 +230,9 @@ pub struct QualifiedVideoSnapshot {
 }
 
 impl QualifiedVideoSnapshot {
+    pub fn interpretation_support(&self) -> VideoInterpretationSupport {
+        VideoInterpretationSupport::for_qualified_stream(self.interpretation())
+    }
     pub fn index(&self) -> &SourceIndexSnapshot {
         &self.index
     }
@@ -506,6 +515,13 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
         || (matches!(info.codec.as_str(), "vp9" | "av1") && info.bwdif_fields)
         || (info.chroma_assumed_left && !matches!(info.codec.as_str(), "vp9" | "av1"))
+        || (info.range_assumed
+            && info.color.range
+                != if info.color.matrix == ColorMatrix::Rgb {
+                    ColorRange::Full
+                } else {
+                    ColorRange::Limited
+                })
         || !matches!(
             info.codec.as_str(),
             "h264" | "ffv1" | "hevc" | "vp9" | "prores" | "av1"
@@ -794,6 +810,8 @@ pub(crate) struct SourceStreamInfoWire {
     nominal_frame_duration_ns: Option<u64>,
     #[serde(default, skip_serializing_if = "is_false")]
     chroma_assumed_left: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    range_assumed: bool,
     #[serde(deserialize_with = "required_option")]
     stream_start: Option<i64>,
     #[serde(deserialize_with = "required_option")]

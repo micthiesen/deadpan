@@ -4,6 +4,18 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Source interpretation](../qualification/source-interpretation-2026-10-11.md)
+is now an authored, reversible per-asset choice in core schema 49/store schema
+77. `:source-interpret` and the Original pane's **Interpret picture…** control
+capture session, revision and source at entry. The shared decoder applies range
+and chroma choices without changing immutable admission evidence or clocks.
+Proxy variants, shot caches/checkpoints, tracking and AI conditioning include
+the choice; stale jobs cannot publish against a changed source interpretation.
+Undo and historical export restore the exact interpretation. An absent range
+uses a recorded RGB-full/YUV-limited heuristic; unsupported explicit choices
+are refused. See the qualification for pixel, workflow and release evidence.
+DP-02, DP-14 and DP-16 remain partial for broader coverage and URL workflow work.
+
 [SDR encoder quality](../qualification/encoder-quality-2026-10-10.md) fixes
 the concurrent scene-cut failure below. Production probes and encodes use
 SDR policy 2/native ABI 3 with QP 24 and a three-times-target one-second rate
@@ -33,8 +45,8 @@ luma PSNR at scene-cut frame 3,126 (30.54 dB versus 32 dB), reproduced by the
 release verifier on the same saved movie. An isolated export passed. Both
 original outcomes remain retained; the quality follow-up above reproduces and
 fixes the failure without changing thresholds. See the linked record for
-paths and exact evidence. Broader profiles, high-resolution performance, a source
-interpretation override and remaining URL workflow work stay open; DP-02,
+paths and exact evidence. Broader profiles, high-resolution performance and
+remaining URL workflow work stay open; DP-02,
 DP-14 and DP-16 remain partial.
 
 [MP4 Opus](../qualification/opus-mp4-2026-10-09.md) now admits mono/stereo

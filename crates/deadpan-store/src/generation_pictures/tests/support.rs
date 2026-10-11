@@ -65,10 +65,63 @@ fn original_support(
     let identity = |frame| GenerationPictureIdentity::Original {
         qualification: qualification.clone(),
         frame: SourceFrameId(frame),
+        interpretation: None,
     };
     GenerationPictureSupport {
         first: identity(first),
         last: identity(last),
+    }
+}
+
+#[test]
+fn interpretation_changes_identity_and_support_without_changing_or_duplicating_receipts() {
+    let connection = connection();
+    let (document, qualification, _) = original_document(&connection);
+    let pictures = QualifiedGenerationPictures::new(&connection);
+    let before = pictures.identity(&document, &source(9, 24)).unwrap();
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["source_interpretations"] = json!({"authored-alias":{"range":"full"}});
+    let corrected = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let choice = corrected.source_interpretations()[&AssetId::new("authored-alias").unwrap()];
+    let expected = GenerationPictureIdentity::Original {
+        qualification: qualification.clone(),
+        frame: SourceFrameId(1),
+        interpretation: Some(choice),
+    };
+    assert_ne!(before, expected);
+    assert_eq!(
+        pictures.identity(&corrected, &source(9, 24)).unwrap(),
+        expected
+    );
+    let span = observed_span(
+        &corrected,
+        source(0, 24),
+        PictureClockSlope::SourceTicks(ratio(1, 1)),
+        ratio(11, 1),
+    );
+    let support = pictures.support(&corrected, &span).unwrap();
+    assert_eq!(support.last, expected);
+    assert!(
+        matches!(support.first, GenerationPictureIdentity::Original { frame: SourceFrameId(0), interpretation: Some(value), .. } if value == choice)
+    );
+    let mut alias = source(9, 24);
+    if let Picture::Source { asset, .. } = &mut alias {
+        *asset = AssetId::new("other-alias").unwrap();
+    }
+    assert_eq!(pictures.identity(&corrected, &alias).unwrap(), before);
+    assert_eq!(
+        pictures.identity(&document, &source(9, 24)).unwrap(),
+        before
+    );
+    assert_eq!(pictures.receipts.borrow().contract_builds, 1);
+    for unsupported in [
+        json!({"range":"limited"}),
+        json!({"chroma_location":"center"}),
+    ] {
+        wire["source_interpretations"]["authored-alias"] = unsupported;
+        let invalid = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        assert!(pictures.identity(&invalid, &source(9, 24)).is_err());
+        assert!(pictures.support(&invalid, &span).is_err());
     }
 }
 

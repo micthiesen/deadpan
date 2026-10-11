@@ -98,6 +98,7 @@ fn picture_path(package: &Path, revision: &RevisionId, frame: i64) -> Result<Bou
             clock: clock.clone(),
             asset: asset.clone(),
             qualification: qualification.clone(),
+            interpretation: document.source_interpretations().get(asset).copied(),
             picture: decoded(*id, picture)?,
         },
         PreparedPicture::Generated {
@@ -273,6 +274,117 @@ fn manifest_records_the_measured_original_pictures_on_both_sides() -> Result {
     // Conditioning is deterministic for one revision.
     let again = conditioning::prepare(&fixture.package, &revision, &hold, &AtomicBool::new(false))?;
     assert_eq!(again.manifest, inputs.manifest);
+    Ok(())
+}
+
+#[test]
+fn corrected_conditioning_retains_pixels_identity_and_historical_inputs() -> Result {
+    use deadpan_core::{SourceChromaLocation, SourceColorRange, SourceInterpretation};
+    use deadpan_store::generation_inputs::GenerationInputCapture;
+    let root = tempfile::tempdir()?;
+    let fixture = recipes::black_pause(&root.path().join("fixture"))?;
+    let revision = RevisionId::new(fixture.revision.clone())?;
+    let hold = NodeId::new("black")?;
+    let active = AtomicBool::new(false);
+    let initial = conditioning::prepare(&fixture.package, &revision, &hold, &active)?;
+    let before_context = manifest(&initial)?;
+    let before_boundaries = before_context.boundaries().ok_or("boundaries")?;
+    let BoundaryPicture::Original { asset, .. } = &before_boundaries.left else {
+        return Err("original boundary required".into());
+    };
+    let target = ScopedNodeTarget {
+        node: hold.clone(),
+        repeats: vec![],
+    };
+    let mut store = ProjectStore::open(&fixture.package, AccessMode::ReadWrite)?;
+    let before = store.snapshot()?;
+    let binding = GenerationInputCapture::capture(&before, &target, &store.generation_pictures())?;
+    let corrected_revision = RevisionId::new("corrected-conditioning")?;
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: Some(SourceChromaLocation::Center),
+    };
+    store.commit(&CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: revision.clone(),
+        new_revision: corrected_revision.clone(),
+        command: Command::SetSourceInterpretation {
+            asset: asset.clone(),
+            interpretation: Some(choice),
+        },
+    })?;
+    let after = store.snapshot()?;
+    assert_eq!(before.assets(), after.assets());
+    assert_eq!(before.nodes(), after.nodes());
+    let changed_binding =
+        GenerationInputCapture::capture(&after, &target, &store.generation_pictures())?;
+    assert_ne!(changed_binding, binding);
+    drop(store);
+    let changed = conditioning::prepare(&fixture.package, &corrected_revision, &hold, &active)?;
+    assert_ne!(changed.left_png, initial.left_png);
+    assert_ne!(changed.right_png, initial.right_png);
+    assert_ne!(changed.manifest_sha256, initial.manifest_sha256);
+    let changed_context = manifest(&changed)?;
+    let changed_boundaries = changed_context.boundaries().ok_or("changed boundaries")?;
+    for (old, corrected, frame) in [
+        (&before_boundaries.left, &changed_boundaries.left, 14),
+        (&before_boundaries.right, &changed_boundaries.right, 27),
+    ] {
+        let BoundaryPicture::Original {
+            qualification: original_receipt,
+            picture: original_picture,
+            ..
+        } = old
+        else {
+            return Err("original before".into());
+        };
+        let BoundaryPicture::Original {
+            qualification,
+            picture,
+            interpretation,
+            ..
+        } = corrected
+        else {
+            return Err("original after".into());
+        };
+        assert_eq!(qualification, original_receipt);
+        assert_eq!(
+            picture, original_picture,
+            "observed metadata and clocks stay immutable"
+        );
+        assert_eq!(*interpretation, Some(choice));
+        assert_eq!(
+            picture_path(&fixture.package, &corrected_revision, frame)?,
+            *corrected
+        );
+        assert_eq!(
+            serde_json::from_slice::<BoundaryPicture>(&serde_json::to_vec(corrected)?)?,
+            *corrected
+        );
+        let mut legacy = corrected.clone();
+        if let BoundaryPicture::Original { clock, .. } = &mut legacy {
+            *clock = BoundaryClock::Project { frame };
+        }
+        assert_eq!(
+            serde_json::from_slice::<BoundaryPicture>(&serde_json::to_vec(&legacy)?)?,
+            legacy
+        );
+    }
+    let historical = conditioning::prepare(&fixture.package, &revision, &hold, &active)?;
+    assert_eq!(historical.manifest, initial.manifest);
+    assert_eq!(historical.left_png, initial.left_png);
+    assert_eq!(historical.right_png, initial.right_png);
+    let mut store = ProjectStore::open(&fixture.package, AccessMode::ReadWrite)?;
+    let reset_revision = RevisionId::new("undo-interpretation")?;
+    store.undo(&corrected_revision, reset_revision.clone())?;
+    assert_eq!(
+        GenerationInputCapture::capture(&store.snapshot()?, &target, &store.generation_pictures())?,
+        binding
+    );
+    drop(store);
+    let reset = conditioning::prepare(&fixture.package, &reset_revision, &hold, &active)?;
+    assert_eq!(reset.left_png, initial.left_png);
+    assert_eq!(reset.right_png, initial.right_png);
     Ok(())
 }
 

@@ -218,6 +218,7 @@ impl Service {
             | ProjectRequest::Generation(GenerationOperation::Accept { .. })
             | ProjectRequest::Edit { .. }
             | ProjectRequest::SoundEdit { .. }
+            | ProjectRequest::InterpretSource { .. }
             | ProjectRequest::Undo { .. }
             | ProjectRequest::Redo { .. }
             | ProjectRequest::SaveTranscript { .. }

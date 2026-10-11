@@ -633,6 +633,7 @@ fn catalog_focus(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     let state = editor_state(d);
     let revision = d.revision();
     let picture = d.app().presentation.diagnostic_snapshot()["displayed"].clone();
+    scenarios::reveal_original_rail(d, label, true)?;
     d.click(label)?;
     retained_submission(d, &picture)?;
     d.step(

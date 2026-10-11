@@ -163,6 +163,7 @@ pub fn prepare_faces(
         ));
     }
     let stream = ExpectedStream {
+        interpretation: document.source_interpretations().get(&asset).copied(),
         stream_index: video.index().stream_index(),
         width: interpretation.width,
         height: interpretation.height,

@@ -560,6 +560,7 @@ fn shot_scan_progress_is_kept_only_for_the_ready_original() -> Result {
         content: "blake3:foreign".into(),
         video_stream: 0,
         signature_version: SIGNATURE_VERSION.into(),
+        interpretation: None,
     };
     let progress = ShotProgress::new(30, Vec::new())?;
     // Before the Original is ready, progress is kept like a generic project's.

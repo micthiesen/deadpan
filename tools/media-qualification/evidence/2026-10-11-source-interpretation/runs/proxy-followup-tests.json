@@ -1,0 +1,82 @@
+[
+  {
+    "name": "proxy-followup-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 4.539072541985661,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "proxy-followup-app",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--bin",
+      "deadpan-app",
+      "interpretation"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 6.909884999971837,
+    "sha256": "6d3fa47356ba7dfa7ea0feb8c7daa8ddc5893bd5834d77f46212dfbb8b52e3f9"
+  },
+  {
+    "name": "proxy-followup-native",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-media-worker",
+      "--test",
+      "proxy_real_media"
+    ],
+    "exit": 0,
+    "passed": 17,
+    "seconds": 29.470270334277302,
+    "sha256": "92c8ab4f754bb3179b382ecd3c9d0454404b5c255f1d26e49690092cbd64d81f"
+  },
+  {
+    "name": "proxy-followup-resume",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "proxy_resume"
+    ],
+    "exit": 0,
+    "passed": 5,
+    "seconds": 13.294234375003725,
+    "sha256": "48c88c6a958f0d3d5e32103ceafe74f15326b26b7b294a57e983fb9e1c5ccb62"
+  },
+  {
+    "name": "proxy-followup-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "passed": null,
+    "seconds": 37.53010004200041,
+    "sha256": "133aa50c52d2dd78e79f0ea594db326541d01efb406598f509480a97059cbb0a"
+  }
+]

@@ -196,6 +196,7 @@ fn store_cut(fixture: &Fixture, cut: usize) -> Arc<Workspace> {
                 content,
                 video_stream: 0,
                 signature_version: SIGNATURE_VERSION.into(),
+                interpretation: None,
             },
             analysis: Arc::new(analysis),
         })

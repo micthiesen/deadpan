@@ -230,6 +230,86 @@ fn the_tracker_follows_the_square_and_stops_at_the_cut() {
 }
 
 #[test]
+fn interpretation_changes_require_matching_shots_and_reach_the_real_tracker() {
+    use deadpan_core::{
+        Command, CommandRequest, RevisionId, SourceColorRange, SourceInterpretation,
+    };
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project(scratch.path(), true);
+    let running = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite).unwrap();
+    let old = prepare_tracking(&store, &request(true, 1), &running, deadline).unwrap();
+    let choice = SourceInterpretation {
+        range: Some(SourceColorRange::Full),
+        chroma_location: None,
+    };
+    let document = store.snapshot().unwrap();
+    store
+        .commit(&CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("corrected").unwrap(),
+            command: Command::SetSourceInterpretation {
+                asset: clip(),
+                interpretation: Some(choice),
+            },
+        })
+        .unwrap();
+    assert!(matches!(
+        prepare_tracking(&store, &request(true, 1), &running, deadline),
+        Err(TrackingError::Unavailable(_))
+    ));
+    let input = prepare_shot_input(&store, Some(&clip()), &running, deadline).unwrap();
+    let scan = scan_shots(
+        &input,
+        &running,
+        deadline,
+        Default::default(),
+        |_, _| {},
+        |_| true,
+    )
+    .unwrap();
+    assert_eq!(scan.key.interpretation, Some(choice));
+    assert_eq!(scan.analysis.boundaries(), [CUT]);
+    store.save_shot_analysis(&scan.key, &scan.analysis).unwrap();
+    let corrected = prepare_tracking(&store, &request(true, 1), &running, deadline).unwrap();
+    assert_eq!(corrected.stream().interpretation, Some(choice));
+    assert_eq!(old.stream().interpretation, None);
+    assert_eq!(corrected.pictures(), old.pictures());
+    assert_eq!(
+        corrected.shots.as_ref().unwrap().interpretation,
+        Some(choice)
+    );
+    let result = track(
+        &runtime(),
+        &corrected,
+        TrackPolicy::default(),
+        "corrected",
+        &running,
+        deadline,
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(result.path.stop(), TrackStop::ShotBoundary { picture: CUT });
+    assert_eq!(result.path.samples().len(), CUT);
+    assert!(
+        result.path.samples()[1..12]
+            .iter()
+            .all(|s| s.state == TrackState::Tracked)
+    );
+    store
+        .undo(
+            &RevisionId::new("corrected").unwrap(),
+            RevisionId::new("undo").unwrap(),
+        )
+        .unwrap();
+    let restored = prepare_tracking(&store, &request(true, 1), &running, deadline).unwrap();
+    assert_eq!(restored.shots, old.shots);
+    assert_eq!(restored.stream(), old.stream());
+}
+
+#[test]
 fn tracking_through_the_cut_never_jumps_and_a_correction_retracks_only_its_range() {
     let scratch = tempfile::tempdir().unwrap();
     let package = project(scratch.path(), false);

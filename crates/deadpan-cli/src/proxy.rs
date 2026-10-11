@@ -211,27 +211,31 @@ impl<'a> BuildControl<'a> {
 pub fn proxy_key(
     original: &OriginalMediaRecord,
     video: &QualifiedVideoSnapshot,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 ) -> Result<ProxyKey, ProxyCacheError> {
     ProxyKey::new(
         original.object().content().digest(),
         video.index().stream_index(),
-    )
+    )?
+    .interpreted(interpretation)
 }
 
 pub fn proxy_identity(
     original: &OriginalMediaRecord,
     video: &QualifiedVideoSnapshot,
+    interpretation: Option<deadpan_core::SourceInterpretation>,
 ) -> ProxyOriginal {
     ProxyOriginal {
         blake3: original.object().content().digest().to_owned(),
         sha256: hex(&original.sha256()),
         byte_length: original.object().byte_length(),
         stream_index: video.index().stream_index(),
+        interpretation,
     }
 }
 
-/// What a proxy is built from: the Original's identity, its receipt's
-/// measured index and stream interpretation.
+/// What a proxy is built from: the Original's identity and authored decoding
+/// choices, plus its receipt's unchanged measured index and stream metadata.
 #[derive(Clone)]
 pub struct ProxySubject<'a> {
     pub identity: ProxyOriginal,
@@ -240,16 +244,26 @@ pub struct ProxySubject<'a> {
 }
 
 impl<'a> ProxySubject<'a> {
-    pub fn of(original: &OriginalMediaRecord, video: &'a QualifiedVideoSnapshot) -> Self {
+    pub fn of(
+        original: &OriginalMediaRecord,
+        video: &'a QualifiedVideoSnapshot,
+        interpretation: Option<deadpan_core::SourceInterpretation>,
+    ) -> Self {
         Self {
-            identity: proxy_identity(original, video),
+            identity: proxy_identity(original, video, interpretation),
             index: video.index(),
             info: video.interpretation(),
         }
     }
 
     pub fn key(&self) -> Result<ProxyKey, ProxyCacheError> {
-        ProxyKey::new(&self.identity.blake3, self.identity.stream_index)
+        if let Some(choice) = self.identity.interpretation {
+            deadpan_source::VideoInterpretation::from(choice)
+                .validate_for(self.info)
+                .map_err(|error| ProxyCacheError::Unsafe(error.to_string()))?;
+        }
+        ProxyKey::new(&self.identity.blake3, self.identity.stream_index)?
+            .interpreted(self.identity.interpretation)
     }
 }
 
@@ -257,18 +271,18 @@ impl<'a> ProxySubject<'a> {
 /// entry is reported as `Missing`, so a builder replaces it.
 pub fn proxy_status(
     cache: &ProxyCache,
-    original: &OriginalMediaRecord,
-    video: &QualifiedVideoSnapshot,
+    subject: &ProxySubject<'_>,
 ) -> Result<ProxyStatus, ProxyCacheError> {
-    let plan = match proxy_plan(video.interpretation(), video.index().index()) {
+    let key = subject.key()?;
+    let plan = match proxy_plan(subject.info, subject.index.index()) {
         Ok(Some(plan)) => plan,
         Ok(None) => return Ok(ProxyStatus::NotNeeded),
         Err(reason) => return Ok(ProxyStatus::Ineligible(reason)),
     };
-    if let Some(entry) = cached_proxy(cache, original, video)? {
+    if let Some(entry) = cached_proxy(cache, subject)? {
         return Ok(ProxyStatus::Ready(entry));
     }
-    if let Some(message) = cache.failure(&proxy_key(original, video)?) {
+    if let Some(message) = cache.failure(&key) {
         return Ok(ProxyStatus::Failed(message));
     }
     Ok(ProxyStatus::Missing(plan))
@@ -279,19 +293,14 @@ pub fn proxy_status(
 /// `None`.
 pub fn cached_proxy(
     cache: &ProxyCache,
-    original: &OriginalMediaRecord,
-    video: &QualifiedVideoSnapshot,
+    subject: &ProxySubject<'_>,
 ) -> Result<Option<ProxyEntry>, ProxyCacheError> {
-    let key = proxy_key(original, video)?;
+    let key = subject.key()?;
     match cache.lookup(&key) {
         Ok(Some(entry))
             if entry
                 .sidecar()
-                .validate_for(
-                    &proxy_identity(original, video),
-                    video.index().index(),
-                    video.interpretation(),
-                )
+                .validate_for(&subject.identity, subject.index.index(), subject.info)
                 .is_ok() =>
         {
             Ok(Some(entry))
@@ -313,20 +322,19 @@ pub type OpenOriginal<'a> =
 /// and recipe.
 pub fn build_proxy(
     cache: &ProxyCache,
-    original: &OriginalMediaRecord,
-    video: &QualifiedVideoSnapshot,
+    subject: &ProxySubject<'_>,
     worker: &Path,
     open_original: OpenOriginal<'_>,
     control: BuildControl<'_>,
 ) -> Result<ProxyStatus, ProxyBuildError> {
-    let plan = match proxy_status(cache, original, video)? {
+    let plan = match proxy_status(cache, subject)? {
         ProxyStatus::Missing(plan) => plan,
         ProxyStatus::Ready(entry) => match cache.open(&entry, control.cancelled) {
             // Verified once per file state; this repeats only after a change.
             Ok(_) => return Ok(ProxyStatus::Ready(entry)),
             Err(ProxyCacheError::Damaged(_)) => {
                 cache.remove(entry.key())?;
-                match proxy_plan(video.interpretation(), video.index().index()) {
+                match proxy_plan(subject.info, subject.index.index()) {
                     Ok(Some(plan)) => plan,
                     Ok(None) => return Ok(ProxyStatus::NotNeeded),
                     Err(reason) => return Ok(ProxyStatus::Ineligible(reason)),
@@ -336,15 +344,7 @@ pub fn build_proxy(
         },
         other => return Ok(other),
     };
-    build_subject(
-        cache,
-        &ProxySubject::of(original, video),
-        worker,
-        plan,
-        open_original,
-        control,
-    )
-    .map(ProxyStatus::Ready)
+    build_subject(cache, subject, worker, plan, open_original, control).map(ProxyStatus::Ready)
 }
 
 /// Build and publish `subject`'s proxy with an explicit plan, as
@@ -382,21 +382,13 @@ pub fn build_subject(
 /// recipe's raster for the Original, or verification refuses the result.
 pub fn build_proxy_with_plan(
     cache: &ProxyCache,
-    original: &OriginalMediaRecord,
-    video: &QualifiedVideoSnapshot,
+    subject: &ProxySubject<'_>,
     worker: &Path,
     plan: ProxyPlan,
     open_original: OpenOriginal<'_>,
     control: BuildControl<'_>,
 ) -> Result<ProxyEntry, ProxyBuildError> {
-    build_subject_with_plan(
-        cache,
-        &ProxySubject::of(original, video),
-        worker,
-        plan,
-        open_original,
-        control,
-    )
+    build_subject_with_plan(cache, subject, worker, plan, open_original, control)
 }
 
 /// [`build_proxy_with_plan`] for an explicit subject. Completed ranges of an
@@ -464,7 +456,7 @@ pub fn build_subject_with_plan(
     let sidecar = verify_proxy(
         staging.movie(),
         &input,
-        &subject.identity.blake3,
+        &subject.identity,
         Arc::new(subject.index.clone()),
         info,
         plan.reason,
@@ -517,11 +509,10 @@ fn remaining(started: Instant, control: &BuildControl<'_>) -> Result<Duration, P
 /// copied.
 pub fn open_proxy_file(
     cache: &ProxyCache,
-    original: &OriginalMediaRecord,
-    video: &QualifiedVideoSnapshot,
+    subject: &ProxySubject<'_>,
     cancelled: &AtomicBool,
 ) -> Result<Option<(File, Arc<ProxySidecar>)>, ProxyBuildError> {
-    let Some(entry) = cached_proxy(cache, original, video)? else {
+    let Some(entry) = cached_proxy(cache, subject)? else {
         return Ok(None);
     };
     let read = cache.open(&entry, cancelled)?;

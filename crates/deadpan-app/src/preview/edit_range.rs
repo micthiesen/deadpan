@@ -35,6 +35,18 @@ enum SelectionKind {
 }
 
 impl Selection {
+    pub(super) fn rebase_source_interpretation(
+        &mut self,
+        saved: &crate::project::SourceInterpretationSaved,
+    ) {
+        if let Some(identity) = &mut self.identity
+            && identity.session == saved.session
+            && identity.project == saved.project
+            && identity.revision == saved.base
+        {
+            identity.revision = saved.revision.clone();
+        }
+    }
     pub(super) fn object(&self) -> Option<&SemanticObjectSelection> {
         match &self.kind {
             Some(SelectionKind::Object { selection, .. }) => Some(selection),

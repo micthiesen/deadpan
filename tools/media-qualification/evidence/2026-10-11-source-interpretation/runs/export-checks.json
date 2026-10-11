@@ -1,0 +1,61 @@
+[
+  {
+    "name": "export-fmt",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "passed": 0,
+    "seconds": 4.479086040984839,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "export-build",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--workspace"
+    ],
+    "passed": 0,
+    "seconds": 18.300918040797114,
+    "log_sha256": "9692d17f50db9caa02f48f5e6d741471dec6ffa70abd26d14fe9ec41255bba6d"
+  },
+  {
+    "name": "export-corrected",
+    "exit": 0,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "source_interpretation_exports",
+      "--",
+      "--nocapture"
+    ],
+    "passed": 1,
+    "seconds": 66.83701262483373,
+    "log_sha256": "63d600822fce392563ba9c65863d3897a4a647ae60fc1a31a2347374df8122bb"
+  },
+  {
+    "name": "source-sanitizers",
+    "exit": 0,
+    "command": [
+      "python3",
+      "tools/media-qualification/host/build_sanitized.py",
+      "--work",
+      "/tmp/deadpan-source-interpretation-20261010/source-sanitizers",
+      "--package",
+      "deadpan-source"
+    ],
+    "passed": 0,
+    "seconds": 184.07948741689324,
+    "log_sha256": "496c5c5b39b59c69216d748d25000c6e01156aa593fde3689c6275ab66cbe27f"
+  }
+]

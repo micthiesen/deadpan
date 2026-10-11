@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-201 actions, 124 command verbs.
+202 actions, 125 command verbs.
 
 ## Start & View
 
@@ -207,6 +207,7 @@ Headless status links to [PARITY](PARITY.md).
 
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
+| **Interpret source picture** (`source.interpretation`)<br>Correct the Original's range or chroma position without changing its file or timing. An omitted parameter keeps its current choice; auto uses the qualified metadata or disclosed assumption. reset restores both. One Undo. Unsupported interpretations are refused. With no parameters, show the current choices. The Original pane's Interpret picture control opens those values for editing. | - | `:source-interpret [range=auto\|limited\|full] [chroma=auto\|left\|center\|top-left\|top\|bottom-left\|bottom] \| reset` | Every editor context | edits; not recorded | [Equivalent](PARITY.md#project-and-files): `set_source_interpretation command` |
 | **Render** (`render`)<br>Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing. | `⌘E` (native) | `:render` | Every editor context | not recorded | [Equivalent](PARITY.md#render-and-export): `render <p> --output <dir> [--expected <rev>]` |
 | **Named takes** (`takes`)<br>Save named versions of the current committed edit. Open, update, rename or delete a take. Opening is one undoable edit; label changes preserve the current edit. Tab moves between controls; Escape returns to editing. | - | `:takes` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project takes <p>; project take <p> --json <request>` |
 | **Saved renders** (`renders`)<br>Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing. | - | `:renders` | Every editor context | not recorded | [Equivalent](PARITY.md#render-and-export): `render status <p>` |

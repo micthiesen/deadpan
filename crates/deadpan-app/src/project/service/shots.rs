@@ -97,6 +97,12 @@ fn original_pictures(workspace: &Workspace, key: &deadpan_store::ShotAnalysisKey
     if receipt.original().content().to_string() != key.content
         || video.index().stream_index() != key.video_stream
         || key.signature_version != deadpan_analysis::SIGNATURE_VERSION
+        || key.interpretation
+            != workspace
+                .document
+                .source_interpretations()
+                .get(asset)
+                .copied()
     {
         return Err("The analysis belongs to different media than the project's Original".into());
     }

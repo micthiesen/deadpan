@@ -17,6 +17,7 @@ fn track() -> HostMessage {
         )
         .unwrap(),
         stream: Box::new(ExpectedStream {
+            interpretation: None,
             stream_index: 0,
             width: 320,
             height: 180,
@@ -40,6 +41,27 @@ fn with(change: impl FnOnce(&mut HostMessage)) -> HostMessage {
     let mut message = track();
     change(&mut message);
     message
+}
+
+#[test]
+fn source_interpretation_roundtrips_and_empty_choices_are_refused() {
+    let baseline = serde_json::to_value(track()).unwrap();
+    assert!(baseline["stream"].get("interpretation").is_none());
+    let mut wire = baseline.clone();
+    wire["stream"]["interpretation"] =
+        serde_json::json!({"range":"full","chroma_location":"center"});
+    let message: HostMessage = serde_json::from_value(wire.clone()).unwrap();
+    message.validate().unwrap();
+    assert_eq!(serde_json::to_value(message).unwrap(), wire);
+    wire["stream"]["interpretation"] = serde_json::json!({});
+    assert!(
+        serde_json::from_value::<HostMessage>(wire.clone())
+            .unwrap()
+            .validate()
+            .is_err()
+    );
+    wire["stream"]["interpretation"] = serde_json::json!({"range":"guess"});
+    assert!(serde_json::from_value::<HostMessage>(wire).is_err());
 }
 
 #[test]

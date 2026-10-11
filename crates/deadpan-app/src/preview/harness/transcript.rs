@@ -10,19 +10,36 @@ use deadpan_analysis::{
 };
 use egui::Key;
 
-pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn model_offer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Transcript status checked", |app| {
         app.transcription.status_name() != "unchecked"
     })?;
     let prompt = scenarios::text_paint_visibility(d, "Install model…");
+    let license = scenarios::text_paint_visibility(d, "MIT license");
+    let install = d.rect("Install model…  :models").ok();
+    let complete_button = install.is_some_and(|rect| {
+        d.harness.ctx.content_rect().contains_rect(rect)
+            && d.harness.output().shapes.iter().any(|clipped| {
+                matches!(&clipped.shape, egui::Shape::Text(text) if text.galley.text().contains("Install model…"))
+                    && clipped.clip_rect.contains_rect(rect)
+            })
+    });
     d.check(
         "Without an installed pack the rail offers the model with its size and license",
         d.app().transcription.status_name() == "needs_model"
+            && complete_button
             && !prompt.is_empty()
-            && !scenarios::text_paint_visibility(d, "MIT license").is_empty(),
+            && prompt.iter().all(|paint| paint["fully_visible"] == true)
+            && !license.is_empty()
+            && license.iter().all(|paint| paint["fully_visible"] == true),
         json!({"status":"needs_model","prompt":"Install model…"}),
-        json!({"status":d.app().transcription.status_name(),"prompt":prompt}),
+        json!({"status":d.app().transcription.status_name(),"prompt":prompt,"license":license,"complete_button":complete_button,"button":install.map(|r| [r.min.x,r.min.y,r.max.x,r.max.y])}),
     )?;
+    d.capture("Complete transcript model offer beside the interpretation control")
+}
+
+pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+    model_offer_visible(d)?;
     let revision = d.revision();
     let (key, transcript, index) = synthetic(d)?;
     let session = d.app().workspace.as_ref().ok_or("No project")?.session;
@@ -272,12 +289,17 @@ fn words_in_your_edit(
         json!({"removed":word.range.duration().frames(),"words":[0,2]}),
         json!({"removed":duration - shortened,"words":remaining}),
     )?;
+    scenarios::reveal_original_rail(d, "Your edit · 2 of 3 words kept", false)?;
     let alpha_paint = scenarios::text_paint_visibility(d, "alpha");
     let beta_paint = scenarios::text_paint_visibility(d, "beta");
     let caption = scenarios::text_paint_visibility(d, "Your edit · 2 of 3 words kept");
     d.check(
         "In Your edit the rail lists the edit's words, without the cut one",
-        !alpha_paint.is_empty() && beta_paint.is_empty() && !caption.is_empty(),
+        !alpha_paint.is_empty()
+            && alpha_paint.iter().all(|item| item["fully_visible"] == true)
+            && beta_paint.is_empty()
+            && !caption.is_empty()
+            && caption.iter().all(|item| item["fully_visible"] == true),
         json!({"alpha":"painted","beta":"absent","caption":"2 of 3 words kept"}),
         json!({"alpha":alpha_paint,"beta":beta_paint,"caption":caption}),
     )?;

@@ -206,6 +206,7 @@ pub struct CompanionSpec {
     input: VerifiedSourceInput,
     index: Arc<SourceIndexSnapshot>,
     info: SourceStreamInfo,
+    interpretation: deadpan_source::VideoInterpretation,
     decode_limits: DecodeLimits,
     maximum_seek_frames: usize,
     measurement: Option<Arc<BackgroundMeasurement>>,
@@ -228,10 +229,11 @@ impl CompanionSpec {
             end: Instant::now() + timeout,
             cancelled,
         };
-        let decoder = SourceDecoder::open(
+        let decoder = SourceDecoder::open_interpreted(
             self.input.decoder_file()?,
             self.decode_limits,
             control(&deadline)?,
+            self.interpretation,
         )?;
         if decoder.info() != &self.info || decoder.info().stream_index != self.index.stream_index()
         {
@@ -594,6 +596,71 @@ impl SourceSession {
         Ok(())
     }
 
+    /// Bind this serving session to a revision's picture interpretation.
+    /// Measurements, verified bytes and observed metadata remain unchanged.
+    /// A changed choice opens a fresh decoder within `timeout`; its companions
+    /// and later recovery opens retain that choice. Call before publishing the
+    /// session or caching its pictures under the revision's identity.
+    pub fn with_interpretation(
+        self,
+        interpretation: deadpan_source::VideoInterpretation,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, SourceSessionError> {
+        interpretation.validate_for(self.info())?;
+        if timeout.is_zero() || timeout > Duration::from_secs(60) {
+            return Err(SourceSessionError::Limits(
+                "interpretation timeout must be in (0, 60 seconds]",
+            ));
+        }
+        if interpretation == self.interpretation() {
+            return Ok(self);
+        }
+        let deadline = Deadline {
+            end: Instant::now() + timeout,
+            cancelled,
+        };
+        let Self {
+            decoder,
+            input,
+            decode_limits,
+            index,
+            maximum_seek_frames,
+            measurement,
+            reopen_decoder: _,
+            last_frame: _,
+            reposition: _,
+        } = self;
+        let info = decoder.info().clone();
+        // This API consumes the old session even on failure. Release its
+        // potentially threaded frame buffers before allocating a new decoder.
+        drop(decoder);
+        let decoder = SourceDecoder::open_interpreted(
+            input.decoder_file()?,
+            decode_limits,
+            control(&deadline)?,
+            interpretation,
+        )?;
+        if decoder.info() != &info {
+            return Err(SourceSessionError::IndexMismatch);
+        }
+        Ok(Self {
+            decoder,
+            input,
+            decode_limits,
+            index,
+            maximum_seek_frames,
+            measurement,
+            reopen_decoder: false,
+            last_frame: None,
+            reposition: None,
+        })
+    }
+
+    pub fn interpretation(&self) -> deadpan_source::VideoInterpretation {
+        self.decoder.interpretation()
+    }
+
     /// The verified private bytes this session decodes.
     pub fn input(&self) -> &VerifiedSourceInput {
         &self.input
@@ -606,6 +673,7 @@ impl SourceSession {
             input: self.input.clone(),
             index: Arc::clone(&self.index),
             info: self.decoder.info().clone(),
+            interpretation: self.interpretation(),
             decode_limits: self.decode_limits,
             maximum_seek_frames: self.maximum_seek_frames,
             measurement: self.measurement.clone(),
@@ -979,10 +1047,11 @@ impl SourceSession {
 
     fn reopen_if_needed(&mut self, deadline: &Deadline<'_>) -> Result<(), SourceSessionError> {
         if self.reopen_decoder {
-            let decoder = SourceDecoder::open(
+            let decoder = SourceDecoder::open_interpreted(
                 self.input.decoder_file()?,
                 self.decode_limits,
                 control(deadline)?,
+                self.interpretation(),
             )?;
             if decoder.info() != self.decoder.info() {
                 return Err(SourceSessionError::IndexMismatch);

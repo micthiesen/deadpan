@@ -343,7 +343,7 @@ pub(super) fn encode_by_ranges(
         for (start, end) in resume.missing() {
             control.wait_while_paused()?;
             let offset = resume.data_end();
-            let request = proxy_range_request(
+            let mut request = proxy_range_request(
                 input.identity().byte_length(),
                 subject.info,
                 index,
@@ -353,6 +353,7 @@ pub(super) fn encode_by_ranges(
                 offset,
                 remaining(started, control)?,
             )?;
+            request.interpretation = subject.identity.interpretation;
             let data = partial.data();
             let (_, report) = encode_proxy_retrying(
                 worker,

@@ -75,6 +75,7 @@ mod sound_routing;
 mod source_edit;
 mod source_edit_window;
 mod source_index;
+mod source_interpretation;
 mod source_mapping;
 mod source_roll;
 mod source_slip;
@@ -143,6 +144,7 @@ pub use sound_route::*;
 pub use sound_routing::*;
 pub use source_edit_window::SourceEditWindow;
 pub use source_index::*;
+pub use source_interpretation::*;
 pub use source_roll::{
     SourceRollLimit, SourceRollResolution, SourceRollSide, SourceRollSideResolution,
 };
