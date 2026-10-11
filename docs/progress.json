@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T17:58:28Z",
+  "updated_at": "2026-10-11T18:22:06Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Completing DP-16 playback and rendering: remaining format, effects and Generated transition coverage.",
+  "focus": "Completing DP-16 playback and rendering: remaining format, effects and Generated loop coverage.",
   "features": [
     {
       "id": "editing",
@@ -493,6 +493,14 @@
       "revision": "a8d119b5916c892a545b27696f9dec5872388f55",
       "retrospective": false,
       "summary": "Qualified real accepted LTX exports at 1080p60 and 4K30: all 225 pictures and six audio windows pass, with zero measured offset and exact pause/chirp probes. All 15 Generated frames reject the pre-acceptance Freeze. Periodic-audio and missing-color-tag failures are retained."
+    },
+    {
+      "date": "2026-10-11",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "a3c05b2755000b3a044e68af0e68ca550bd82160",
+      "retrospective": false,
+      "summary": "Fixed closely spaced Generated playback: both 1080p60 runs present every frame; second entry falls from 190 ms to 0.15 ms, with five real-media tests and strict checks passing."
     }
   ]
 }
