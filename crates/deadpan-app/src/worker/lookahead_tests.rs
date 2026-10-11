@@ -181,6 +181,10 @@ fn only_the_next_playback_picture_keeps_the_lookahead_running() {
     mailbox.lookahead = flag;
     mailbox.cancel();
     assert!(stop.load(Ordering::Acquire), "cancel");
+    assert!(
+        mailbox.release_requested,
+        "idle playback decoders are released"
+    );
 
     let (stop, flag) = running();
     mailbox.lookahead = flag;

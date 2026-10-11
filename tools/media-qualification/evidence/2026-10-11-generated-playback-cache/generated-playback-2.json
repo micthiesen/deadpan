@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-app",
+    "worker::project_tests::generated_playback_tests",
+    "--",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 265.24848649976775,
+  "log_sha256": "b167993da6dd8d2524ae24ed3455df9ba9eb78b4509d2fc1509c65b4987ca24f"
+}

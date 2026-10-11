@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--features",
+    "synthetic-worker",
+    "--test",
+    "generated_joins",
+    "accepted_ai_pause_meets_the_original_with_exact_hard_cuts",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 135.0814955830574,
+  "log_sha256": "f1d8271093bc44c0f169bac06ec80ebb84fa512cd90d2d5d12ac821672207469"
+}

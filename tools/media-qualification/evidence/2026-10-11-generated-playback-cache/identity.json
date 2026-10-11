@@ -1,0 +1,32 @@
+{
+  "base": "2dce75f319ffb75a6e0e86dc5c972fbca7b0fae7",
+  "source_sha256": {
+    "crates/deadpan-app/src/worker.rs": "f5ad25b00f5567f02eb48959ee813bd688d31207e99a3a507ede6e92d1b83597",
+    "crates/deadpan-app/src/worker/playback_cache.rs": "e332bd23c3fdab8122536e94ce5e21259efaac696b088156b8f54253f6b3900c",
+    "crates/deadpan-app/src/worker/generated_playback_tests.rs": "03cae4c84260c47e29012da841e80af10ef0677c5b65747df20f674e761fa5e4",
+    "crates/deadpan-app/src/worker/lookahead_tests.rs": "a976c098a3c87fc4ba1bd8b2c8cd363c5793f4e737c9a3efc667fa39948b1542",
+    "crates/deadpan-app/src/worker/project_tests.rs": "36e3e1dc8d606a58fd7aa4b30682b45e617d866d7ed100122033a66bc22ed714",
+    "crates/deadpan-cli/src/picture/generated.rs": "435ae1537ba6fbe800c6b0b2e6f010920e02f060b8e194e3238b2e94edceeebc",
+    "crates/deadpan-cli/tests/generated_joins.rs": "b6bfbf08088a1a7af6724ecf5b93d1b9cbba6d0c753269a718f06a950bf2f4cc"
+  },
+  "binary": "/tmp/deadpan-generated-lookahead-20261011/release-tests",
+  "binary_sha256": "ecd28bbd19c7a5475e24bf8bf1ff32a45c0bf6ce95fc7f5b97f3e077f683e62b",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "hardware": "hw.model: Mac17,7\nhw.memsize: 137438953472\nhw.ncpu: 18\nmachdep.cpu.brand_string: Apple M5 Max",
+  "linkage": "/tmp/deadpan-generated-lookahead-20261011/release-tests:\n\t/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit (compatibility version 45.0.0, current version 2685.60.104)\n\t/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox (compatibility version 1.0.0, current version 1000.0.0)\n\t/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio (compatibility version 1.0.0, current version 1.0.0)\n\t/System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61901.120.67)\n\t/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox (compatibility version 1.0.0, current version 3320.8.5)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5026.5.4)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)\n\t/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib (compatibility version 11.0.0, current version 11.4.103)\n\t/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices (compatibility version 1.0.0, current version 66.0.0)\n\t/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics (compatibility version 64.0.0, current version 1965.5.1)\n\t/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo (compatibility version 1.2.0, current version 734.4.0)\n\t/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon (compatibility version 2.0.0, current version 170.0.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5026.5.4)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n\t/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore (compatibility version 1.2.0, current version 1195.14.4)\n\t/System/Library/Frameworks/Metal.framework/Versions/A/Metal (compatibility version 1.0.0, current version 373.2.0)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)",
+  "tools_sha256": {
+    "/Users/michael/Code/deadpan/target/release/deadpan-cli": "e502893b91da7e8ce1e64bd4a71941c2324035664edf80ca4e17f11f7c013798",
+    "/Users/michael/Code/deadpan/target/release/deadpan-media-worker": "5d28aebff552ae1b3eb789a53906eaf57ff432855c9a8034992a9a221223edac",
+    "/Users/michael/Code/deadpan/target/release/deadpan-track": "589fc5d6c39ca0b903eea2ba9f0c150521e4aeed2d9cb8585a2545105283064e",
+    "/opt/homebrew/bin/ffmpeg": "9f5ddd4f8b36eb07b0c5d60ab6ea1e618bedd70bc45feab82b4dc23be1596ad1"
+  },
+  "fixture_source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "libraries_sha256": {
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavformat.62.dylib": "ab05b025058f05f3c35b67061bb4c7b587db86d5e89cda1296e58dcd745d1779",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavcodec.62.dylib": "fa1ac6944c4fcb5551f5794245a76b2d8887f0e3ed587278fe35fcc997ffa1b0",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavutil.60.dylib": "747add4f909d377d5d5d382c43c36fc2cbf73a3b56b173d22f3571afce821492",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libswscale.9.dylib": "fc1470ede7231c87d51a0090ed465d3e39d4b2b3aca53f236df3ac90163a47ff",
+    "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix/lib/libavfilter.11.dylib": "222b667e9ae7c26e2007dc75814487feb70782ec9bf269e6f7312428997f27cb"
+  }
+}

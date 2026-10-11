@@ -1,0 +1,1 @@
+{"protocol": 1, "project_id": "30e58466-db50-488f-bcab-b76689baa36a", "expected_revision": "accepted-second", "new_revision": "group", "command": {"command": "group", "parent": "ae7c968f-f218-4360-a7f0-b8e29ebe2e8b", "start": 0, "end": 2, "id": "group", "label": "Original and accepted pause"}}

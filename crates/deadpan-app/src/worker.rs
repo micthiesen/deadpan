@@ -46,6 +46,7 @@ pub const ISOLATED_REFINE_DELAY: Duration = Duration::from_millis(30);
 
 mod endpoints;
 mod interpretation;
+mod playback_cache;
 mod proposed;
 mod proxy;
 mod slice_view;
@@ -196,6 +197,7 @@ struct Mailbox {
     active: Option<Arc<AtomicBool>>,
     reply: Option<Reply>,
     clear_requested: bool,
+    release_requested: bool,
     shutdown: bool,
     /// The running look-ahead job's stop flag: anything other than the next
     /// playback picture (a stopped request, cancel, clear, shutdown) stops
@@ -329,6 +331,7 @@ impl Mailbox {
         self.latest = None;
         self.pending = None;
         self.reply = None;
+        self.release_requested = true;
         self.sync_depth();
     }
 }
@@ -433,6 +436,7 @@ impl PreviewWorker {
             .lock()
             .expect("preview mailbox")
             .cancel();
+        self.shared.changed.notify_one();
     }
 
     /// The preview-proxy cache this worker may read for stopped seeks. Only
@@ -463,6 +467,7 @@ impl Drop for PreviewWorker {
 
 fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
     let mut session = None;
+    let mut playback_cache = playback_cache::PlaybackCache::default();
     let mut proposal = None;
     let mut proxy = ProxySlot::default();
     // Prepare a proxy only after a stopped interactive request, never in the
@@ -482,7 +487,11 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
                     return;
                 }
                 if std::mem::take(&mut mailbox.clear_requested) {
+                    mailbox.release_requested = false;
                     break Next::Clear;
+                }
+                if std::mem::take(&mut mailbox.release_requested) {
+                    break Next::ReleasePlayback;
                 }
                 if let Some(request) = mailbox.start_next() {
                     break Next::Request(request);
@@ -499,10 +508,15 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         };
         let request = match next {
             Next::Request(request) => request,
+            Next::ReleasePlayback => {
+                playback_cache.release(&mut session);
+                continue;
+            }
             Next::Clear => {
                 // Native teardown and private snapshot deletion stay off the UI
                 // and outside the mailbox lock used for submitting requests.
                 session = None;
+                playback_cache.clear();
                 proposal = None;
                 proxy = ProxySlot::default();
                 continue;
@@ -553,13 +567,14 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
         } else {
             REFINE_DELAY
         };
+        playback_cache.select(&request, &mut session, playback);
         let picture = perform_with(&request, &mut session, &mut proposal, slot);
         let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
         let published = publish_reply(&shared, &context, &request, picture, started);
         if playback {
             // Position the look-ahead decoder at the edit's next
             // discontinuity, after this picture was published.
-            schedule_lookahead(&shared, &request, &mut session);
+            schedule_lookahead(&shared, &request, playback_cache.original(&mut session));
             // Between playback pictures, move the Original decoder toward a
             // picture ahead of the heard clock so exact pictures resume.
             if refine {
@@ -568,12 +583,7 @@ fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
             continue;
         }
         // Playback has ended: close the look-ahead decoder after the reply.
-        if let Some(lookahead) = session
-            .as_mut()
-            .and_then(|session| session.ahead.lookahead.as_mut())
-        {
-            lookahead.release();
-        }
+        playback_cache.release(&mut session);
         if !published || !refine {
             continue;
         }
@@ -700,6 +710,7 @@ enum ProxyUse<'a> {
 enum Next {
     Request(Request),
     Clear,
+    ReleasePlayback,
     Prepare(Arc<AtomicBool>),
 }
 

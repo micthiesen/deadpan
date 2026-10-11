@@ -1,0 +1,124 @@
+{
+  "protocol": 1,
+  "sample": {
+    "framing": [
+      {
+        "duration": 15,
+        "escalation": false,
+        "instance": {
+          "node": "freeze",
+          "repeats": [
+            {
+              "iteration": {
+                "allocation": "repeat",
+                "ordinal": 0
+              },
+              "node": "repeat"
+            }
+          ]
+        },
+        "local_position": {
+          "denominator": "2",
+          "numerator": "1"
+        },
+        "pose": null
+      },
+      {
+        "duration": 30,
+        "escalation": false,
+        "instance": {
+          "node": "group",
+          "repeats": [
+            {
+              "iteration": {
+                "allocation": "repeat",
+                "ordinal": 0
+              },
+              "node": "repeat"
+            }
+          ]
+        },
+        "local_position": {
+          "denominator": "2",
+          "numerator": "31"
+        },
+        "pose": null
+      },
+      {
+        "duration": 90,
+        "escalation": false,
+        "instance": {
+          "node": "repeat",
+          "repeats": []
+        },
+        "local_position": {
+          "denominator": "2",
+          "numerator": "31"
+        },
+        "pose": null
+      },
+      {
+        "duration": 105,
+        "escalation": false,
+        "instance": {
+          "node": "ae7c968f-f218-4360-a7f0-b8e29ebe2e8b",
+          "repeats": []
+        },
+        "local_position": {
+          "denominator": "2",
+          "numerator": "31"
+        },
+        "pose": null
+      }
+    ],
+    "gap_after": null,
+    "instance": {
+      "node": "freeze",
+      "repeats": [
+        {
+          "iteration": {
+            "allocation": "repeat",
+            "ordinal": 0
+          },
+          "node": "repeat"
+        }
+      ]
+    },
+    "local_position": {
+      "denominator": "2",
+      "numerator": "1"
+    },
+    "lookup": {
+      "iteration_run_comparisons": 1,
+      "sequence_comparisons": 4,
+      "visited_nodes": 4
+    },
+    "picture": {
+      "asset": "72ef3f5b-dc0f-4407-a4b8-67112faaf8d3",
+      "point": {
+        "ticks": {
+          "denominator": "1",
+          "numerator": "26026"
+        },
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      },
+      "type": "freeze"
+    },
+    "picture_context": {
+      "canvases": [
+        {
+          "fit": "fit",
+          "height": 180,
+          "layers": [],
+          "width": 320
+        }
+      ]
+    },
+    "project_frame": 15,
+    "project_id": "30e58466-db50-488f-bcab-b76689baa36a",
+    "revision_id": "repeat"
+  }
+}

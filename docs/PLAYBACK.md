@@ -261,8 +261,18 @@ or frame enclosure, its first request prepares the seam even beyond four
 seconds: coalescing will issue no further request for that held picture. A
 one-picture loop needs no second decoder. Changing the window, domain,
 revision or generation cannot reuse another scan's mapping. Sequential
-Original audition needs no look-ahead. Crossing a Generated Hold still closes
-the Original session and remains an open performance gap. `:diagnostics`
+Original audition needs no look-ahead. During committed playback, one inactive
+Original or Generated decoder stays parked while the other serves pictures.
+The Original's companion can prepare a return across a Generated Hold, and
+repeated entry reuses the accepted Generated decoder. Both slots retain their
+complete media-key and liveness checks. There is at most one Original, its one
+companion, and one Generated decoder. Stopped replies release the inactive
+slot and companion; cancellation also wakes the worker to release them when
+no new picture is requested. Native teardown stays outside the mailbox lock.
+The first Generated admission still verifies and measures its retained media
+on demand; preparing that cold entry remains open. See the
+[Generated handoff qualification](qualification/generated-playback-cache-2026-10-11.md).
+`:diagnostics`
 counts look-ahead jobs started, reached, swapped and failed. See the
 [selection-loop qualification](qualification/loop-lookahead-2026-10-11.md).
 

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-media-worker",
+    "--test",
+    "bundle_qualification",
+    "real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 121.38974000001326,
+  "log_sha256": "99dfea14f4fd006f24054fbd930131e2806cc8c0b0861d2bead22ee932968633"
+}

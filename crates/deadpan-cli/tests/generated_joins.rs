@@ -835,6 +835,16 @@ fn accepted_ai_pause_meets_the_original_with_exact_hard_cuts() -> Result {
         left,
         right,
     )?;
+    // Optional portable fixture for the app's real Generated/Original decoder
+    // handoff test. Keep all conditioning, acceptance and media verification
+    // above; the exported package has a genuine qualified Original.
+    if let Some(destination) = std::env::var_os("DEADPAN_GENERATED_PREVIEW_EXPORT") {
+        deadpan_store::portable::copy_portable(
+            &scenario.package,
+            Path::new(&destination),
+            &AtomicBool::new(false),
+        )?;
+    }
     Ok(())
 }
 

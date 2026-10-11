@@ -32,6 +32,9 @@ mod stress_tests;
 #[path = "lookahead_tests.rs"]
 mod lookahead_tests;
 
+#[path = "generated_playback_tests.rs"]
+mod generated_playback_tests;
+
 #[test]
 fn interpretation_changes_invalidate_reused_original_and_edit_decoders() {
     use deadpan_core::{SourceColorRange, SourceInterpretation};
@@ -365,6 +368,7 @@ pub(super) fn workspace_of(store: &ProjectStore, session: u64, path: PathBuf) ->
     let sources = document
         .assets()
         .iter()
+        .filter(|(_, record)| record.source_qualification.is_some())
         .map(|(asset, record)| {
             let receipt = store
                 .registered_source(document.revision_id(), asset)

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/time",
+    "-l",
+    "/tmp/deadpan-generated-lookahead-20261011/release-tests",
+    "worker::project_tests::generated_playback_tests",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9732795837335289,
+  "log_sha256": "0f0b23763efd98906303b9ae399f83fe89b23c78451e647b468027b167e81701"
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "args": [
+      "project",
+      "copy-portable",
+      "/tmp/deadpan-generated-lookahead-20261011/conditioned.deadpan",
+      "/tmp/deadpan-generated-lookahead-20261011/fixture-edit-check.deadpan"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"portable_copy\": {\n    \"destination\": \"/private/tmp/deadpan-generated-lookahead-20261011/fixture-edit-check.deadpan\",\n    \"generated\": [\n      {\n        \"bytes\": 113698,\n        \"digest\": \"15d4fedf8bf3e34b8aa72feef28b1ba7aa4828caa376c4ff0ad6b6e437e656f6\"\n      },\n      {\n        \"bytes\": 21466,\n        \"digest\": \"2a130ae7d4a1c56121f5c17dec36313bd7067cbd528cd96fb860635415331506\"\n      },\n      {\n        \"bytes\": 14049,\n        \"digest\": \"4c25d7875c477e880afee05ed8b42a196386f422fc1b7691373e1d53c68a75b2\"\n      },\n      {\n        \"bytes\": 114190,\n        \"digest\": \"502c5f5a001ef530b5c9c54fdc241abe5d75dc9aec233ad7abde07dd1adb71e7\"\n      },\n      {\n        \"bytes\": 101373,\n        \"digest\": \"6c75d8af7dda493490ddc1ddf58dc7f6aea47a2b3442f1f5930b4b4aac848a61\"\n      },\n      {\n        \"bytes\": 21466,\n        \"digest\": \"7e29292d96e1cfa1f6239ae37540b65c3d625d1b1af44860fdafd388b9009d49\"\n      },\n      {\n        \"bytes\": 14362,\n        \"digest\": \"e50ea4bf2c0726e0c72c2ddf09812ce4ded9aac249dfc6f6ed434cb3b1427c10\"\n      },\n      {\n        \"bytes\": 2707,\n        \"digest\": \"e51c20d858737285b907f940ef2b187155ecb021543bf5d0f7d1a698cbe12e95\"\n      },\n      {\n        \"bytes\": 100939,\n        \"digest\": \"ff982a7a72e36b525c4635086b8806d59f03a413c7acfd749fb1434d8c097d31\"\n      }\n    ],\n    \"omitted_generated\": 0,\n    \"omitted_render_candidates\": 0,\n    \"originals\": [\n      {\n        \"bytes\": 39157,\n        \"content\": \"blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1\",\n        \"from\": \"managed\",\n        \"label\": \"original.mp4\",\n        \"method\": \"cloned\"\n      }\n    ],\n    \"project_id\": \"30e58466-db50-488f-bcab-b76689baa36a\",\n    \"revision_id\": \"accepted-second\",\n    \"schema_version\": 1,\n    \"source\": \"/private/tmp/deadpan-generated-lookahead-20261011/conditioned.deadpan\",\n    \"total_bytes\": 1165999,\n    \"verified_history\": {\n      \"replayed\": 0,\n      \"revisions\": 8,\n      \"verified_by_receipt\": 8\n    }\n  },\n  \"protocol\": 1\n}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "command",
+      "/tmp/deadpan-generated-lookahead-20261011/fixture-edit-check.deadpan",
+      "--json",
+      "/tmp/deadpan-generated-lookahead-20261011/group-request.json"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "{\"error\":{\"code\":\"InvalidInput\",\"current_revision\":null,\"message\":\"missing field `command` at line 1 column 291\",\"recovery_backup\":null},\"schema_version\":1}\n"
+  }
+]

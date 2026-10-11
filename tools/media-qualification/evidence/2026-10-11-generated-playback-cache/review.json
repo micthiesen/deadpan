@@ -1,0 +1,29 @@
+{
+  "reviewer": "sole implementing agent; no subagents per user instruction",
+  "scope": [
+    "all changed production code and complete diff",
+    "fixture construction and exact-pixel comparisons",
+    "decoder limits, authority, cancellation and stale requests"
+  ],
+  "findings": [
+    {
+      "issue": "Stopping may issue no new picture, retaining inactive playback decoders indefinitely",
+      "resolution": "cancel now wakes the worker for ReleasePlayback; teardown stays outside the mailbox lock and preserves the active decoder"
+    },
+    {
+      "issue": "Lower-level accepted-bundle fixture has no actual conditioning Original and cannot be extended through normal store validation",
+      "resolution": "Retained the failed run; use generated_joins with real registered Original, conditioning, durable attempts, host qualification and acceptance. No validation bypass."
+    },
+    {
+      "issue": "Direct fixture edits refuse projects with current generation requests",
+      "resolution": "Build Group and Repeat with preview, acceptance::relevance_plan and commit_reconciled. An independent CLI copy passes both edits and complete history validation."
+    },
+    {
+      "issue": "Structural wrapping changes the accepted Hold context and reconciles it to the fallback, so the original repeated fixture never exercised Generated pictures",
+      "resolution": "Use three selection-loop laps of the unchanged accepted timeline [0,30). Retain the failed assertions and CLI history check. The tests require three actual Generated entries and exact reuse, so a fallback cannot pass."
+    }
+  ],
+  "authority": "Cache selects Original/Generated role only. Existing readers still validate complete media keys and GeneratedReadHandle liveness; different project sessions clear both slots.",
+  "bound": "One Original, its existing single companion, one Generated decoder. No extra proposal, endpoint, copied-view or stopped-reader cache.",
+  "open": "First Generated admission still verifies and measures its retained objects on demand. Full-resolution device measurement and cold entry preparation remain owed under DP-16."
+}

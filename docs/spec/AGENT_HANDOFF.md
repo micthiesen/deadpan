@@ -4,13 +4,22 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Generated playback decoder reuse](../qualification/generated-playback-cache-2026-10-11.md)
+keeps the Original and its companion across accepted Holds and reuses the
+Generated decoder on later entry. Three selection-loop laps preserve all 90
+picture buffers and serve both Original returns ahead; 41 ordinary worker
+tests, both fixture tests and strict Clippy pass. Cancellation releases inactive
+playback decoders even without a new picture. Cold Generated entry preparation
+and full-resolution device measurements remain open under DP-16.
+
 [Selection-loop picture preparation](../qualification/loop-lookahead-2026-10-11.md)
 now covers Original and Edit, including measured VFR, partial-frame audition
 context and a final Original picture held beyond the normal look-ahead horizon.
 Keep loop hints bound to the captured revision, domain and output generation;
 scan cuts before the seam and never inspect excluded frames. Real-device Edit
 loops drop zero pictures at 1080p60 and 4K30 (17 and 12 with look-ahead off),
-with zero underruns. Crossing Generated Holds remains open; DP-16 stays partial.
+with zero underruns. The subsequent Generated handoff work is recorded above;
+DP-16 stays partial.
 
 [Optional VideoToolbox decoding](../qualification/hardware-decode-2026-10-11.md)
 is implemented behind `DecodeAcceleration::PreferVideoToolbox`. Keep normal
