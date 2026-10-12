@@ -1,5 +1,5 @@
-//! Explicit sends into allocated hanging-tail pauses. Sends follow an owner's
-//! treatments and balance; they do not change its dry signal or allocate time.
+//! Bounded reverb/delay levels. The containing field declares their destination:
+//! allocated hanging-tail input or a continuous owner return. Neither adds time.
 
 use serde::{Deserialize, Serialize};
 
@@ -93,6 +93,65 @@ mod tests {
                 .with_level(TailEffect::Delay, None)
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn continuous_returns_are_distinct_reversible_and_survive_other_treatments() {
+        let tail = TailSends::default().with_level(TailEffect::Delay, Some(GainDb::UNITY));
+        let empty = AudioTreatments::default().with_tail_sends(tail);
+        let change = crate::AudioChange::WetSend {
+            effect: TailEffect::Reverb,
+            level: Some(GainDb::new(-6001).unwrap()),
+        };
+        let wet = change.apply(&empty).unwrap();
+        assert_eq!(wet.tail_sends(), tail);
+        assert_eq!(
+            wet.wet_sends()
+                .level(TailEffect::Reverb)
+                .unwrap()
+                .millidecibels(),
+            -6001
+        );
+        assert_eq!(wet.record_count(), 2);
+        assert_eq!(
+            AudioTreatments::from_json(&wet.to_json().unwrap()).unwrap(),
+            wet
+        );
+        let altered = wet
+            .with_clip_gain(
+                ClipGain::new(GainDb::new(-3000).unwrap(), false, vec![], vec![]).unwrap(),
+            )
+            .unwrap()
+            .with_saturation(Some(Saturation::new(GainDb::UNITY).unwrap()))
+            .unwrap()
+            .with_balance(Some(StereoBalance::new(25).unwrap()))
+            .unwrap()
+            .with_equalizer(Some(crate::EqualizerRecipe::default()))
+            .unwrap();
+        assert_eq!(altered.wet_sends(), wet.wet_sends());
+        let cleared = altered
+            .with_clip_gain_or_none(ClipGain::default())
+            .unwrap()
+            .with_saturation(None)
+            .unwrap()
+            .with_balance(None)
+            .unwrap()
+            .with_equalizer(None)
+            .unwrap();
+        assert_eq!(cleared, wet);
+        assert_eq!(
+            crate::AudioChange::WetSend {
+                effect: TailEffect::Reverb,
+                level: None
+            }
+            .apply(&cleared)
+            .unwrap(),
+            empty
+        );
+        for bad in [r#"{"reverb":24001}"#, r#"{"echo":0}"#, r#"{"delay":0.1}"#] {
+            let wire = format!(r#"{{"order":[],"clip_gain":null,"wet_sends":{bad}}}"#);
+            assert!(AudioTreatments::from_json(&wire).is_err());
+        }
     }
 
     #[test]

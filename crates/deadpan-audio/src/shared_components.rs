@@ -3,7 +3,7 @@
 //! every input. Its continuous limit at zero is the drive. EQ is linear and
 //! reads each contribution through the complete, jointly driven input prefix.
 
-use super::shared_mix::{MixedBlock, OwnerKey, Permissions};
+use super::shared_mix::{Contribution, MixedBlock, OwnerKey, Permissions, Temporal};
 use super::*;
 use deadpan_core::AudioTreatmentStage;
 use deadpan_plan::AudioOwnerClock;
@@ -16,11 +16,21 @@ struct Sample {
 
 struct Route<'plan> {
     voice: usize,
+    original: bool,
     sends: deadpan_core::TailSends,
     layers: Vec<(AudioOwnerClock<'plan>, usize)>,
     samples: Range<usize>,
     pcm: Vec<Sample>,
     event_gain: Option<i32>,
+}
+
+impl Route<'_> {
+    fn wet_allowed(&self, layer: usize) -> bool {
+        !self.original
+            || !self.layers[layer + 1..]
+                .iter()
+                .any(|(clock, _)| clock.is_explicit_tail_provider())
+    }
 }
 
 struct Owner<'plan> {
@@ -30,6 +40,7 @@ struct Owner<'plan> {
     clock: AudioOwnerClock<'plan>,
     until: usize,
     skipped: bool,
+    wet: bool,
 }
 
 pub(super) struct Components<'plan> {
@@ -60,9 +71,10 @@ impl<'plan> Components<'plan> {
 
     pub(super) fn route(
         &mut self,
-        voice: (usize, deadpan_core::TailSends),
+        voice: (usize, Contribution),
         layers: Vec<(AudioOwnerClock<'plan>, usize)>,
         samples: Range<usize>,
+        stop: Option<&OwnerKey>,
         control: WorkControl<'_>,
     ) -> Result<usize, StageAudioError> {
         let id = self.routes.len();
@@ -72,6 +84,9 @@ impl<'plan> Components<'plan> {
             let skipped = self.skip.contains(&authored_gain::identity(clock));
             let until = if skipped { 0 } else { *until };
             let key = OwnerKey::new(clock);
+            let wet = !skipped
+                && stop != Some(&key)
+                && until == clock.treatments().map_or(0, |r| r.order().len());
             if let Some(owner) = self.owners.get_mut(&key) {
                 if owner.parent != parent || owner.depth != depth {
                     return Err(PlanError::InvalidPlan("inconsistent contribution ancestry").into());
@@ -82,6 +97,7 @@ impl<'plan> Components<'plan> {
                 // and stage position, even when no delivery ranges overlap.
                 if owner.until != until
                     || owner.skipped != skipped
+                    || owner.wet != wet
                     || old.map(|r| r.order()) != recipe.map(|r| r.order())
                     || old.and_then(|r| r.saturation()) != recipe.and_then(|r| r.saturation())
                     || old.and_then(|r| r.equalizer()) != recipe.and_then(|r| r.equalizer())
@@ -99,6 +115,7 @@ impl<'plan> Components<'plan> {
                         clock: clock.clone(),
                         until,
                         skipped,
+                        wet,
                     },
                 );
             }
@@ -106,7 +123,11 @@ impl<'plan> Components<'plan> {
         }
         self.routes.push(Route {
             voice: voice.0,
-            sends: voice.1,
+            original: matches!(voice.1, Contribution::Original),
+            sends: match voice.1 {
+                Contribution::Original => Default::default(),
+                Contribution::Sound(sends) => sends,
+            },
             layers,
             samples,
             pcm: Vec::new(),
@@ -177,7 +198,7 @@ impl<'plan> Components<'plan> {
         control: WorkControl<'_>,
         mut equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
-            usize,
+            Temporal,
             AudioSample,
             Permissions,
             Option<usize>,
@@ -294,7 +315,7 @@ impl<'plan> Components<'plan> {
                                         eq_clock.as_ref().ok_or(PlanError::InvalidPlan(
                                             "shared EQ has no admitted clock",
                                         ))?,
-                                        stage,
+                                        Temporal::Equalizer(stage),
                                         sample,
                                         permissions,
                                         Some(route.voice),
@@ -339,6 +360,63 @@ impl<'plan> Components<'plan> {
                             let value = gains[id].send_sample(route.pcm[at].value, level)?;
                             for ch in 0..2 {
                                 sent[ch] += value[ch];
+                            }
+                        }
+                    }
+                }
+                if owner.wet {
+                    // The owner's return joins each contribution before its
+                    // parent sees the shared sum. Its temporal prefix stops
+                    // after this owner's dry chain, so it cannot feed itself.
+                    // A selected Tail provider blocks other incoming Original
+                    // returns. Keep allowed sounds independent, including the
+                    // voices driving nonlinear stages in their wet history.
+                    let mut wet_permissions = Permissions::default();
+                    let mut clock = None;
+                    for &(id, layer) in &owner.members {
+                        let route = &self.routes[id];
+                        if route.pcm[at].permitted && route.wet_allowed(layer) {
+                            wet_permissions.insert(route.voice)?;
+                            clock.get_or_insert_with(|| route.layers[layer].0.clone());
+                        }
+                    }
+                    for &(id, layer) in &owner.members {
+                        let route = &mut self.routes[id];
+                        if !route.pcm[at].permitted || !route.wet_allowed(layer) {
+                            continue;
+                        }
+                        let sends = route.layers[layer]
+                            .0
+                            .treatments()
+                            .map(|r| r.wet_sends())
+                            .unwrap_or_default();
+                        if sends.is_empty() {
+                            continue;
+                        }
+                        route.pcm[at].value =
+                            std::mem::take(&mut gains[id]).apply_wide(route.pcm[at].value)?;
+                        for effect in [
+                            deadpan_core::TailEffect::Reverb,
+                            deadpan_core::TailEffect::Delay,
+                        ] {
+                            if let Some(level) = sends.level(effect) {
+                                let wet = equalize(
+                                    clock.as_ref().ok_or(PlanError::InvalidPlan(
+                                        "wet return has no admitted clock",
+                                    ))?,
+                                    Temporal::Wet(effect),
+                                    sample,
+                                    wet_permissions,
+                                    Some(route.voice),
+                                )?;
+                                let wet =
+                                    authored_gain::GainSum::default().send_sample(wet, level)?;
+                                for (out, input) in route.pcm[at].value.iter_mut().zip(wet) {
+                                    *out += input;
+                                }
+                                if route.pcm[at].value.iter().any(|x| !x.is_finite()) {
+                                    return Err(PreparationError::InvalidSamples.into());
+                                }
                             }
                         }
                     }

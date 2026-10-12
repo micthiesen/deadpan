@@ -3146,7 +3146,10 @@ impl DeadpanApp {
                 self.balance_command(gain_target, macro_target, balance)
             }
             Ok(navigation::command::Entry::TailSend { effect, level }) => {
-                self.tail_send_command(gain_target, macro_target, effect, level)
+                self.tail_send_command(gain_target, macro_target, effect, level, false)
+            }
+            Ok(navigation::command::Entry::WetSend { effect, level }) => {
+                self.tail_send_command(gain_target, macro_target, effect, level, true)
             }
             Ok(navigation::command::Entry::Equalizer(recipe)) => {
                 self.equalizer_command(gain_target, macro_target, recipe)

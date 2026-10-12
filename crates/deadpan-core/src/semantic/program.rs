@@ -515,6 +515,11 @@ impl SplitEditKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AudioChange {
+    /// Add a continuous wet return after this owner's complete treatment chain.
+    WetSend {
+        effect: crate::TailEffect,
+        level: Option<crate::GainDb>,
+    },
     /// Send this beat's processed output into explicitly allocated tail pauses.
     TailSend {
         effect: crate::TailEffect,
@@ -556,6 +561,9 @@ impl AudioChange {
         let clip = || current.clip_gain().cloned().unwrap_or_default();
         match self {
             Self::Trim { gain } => current.with_clip_gain_or_none(clip().with_trim(gain)),
+            Self::WetSend { effect, level } => Ok(current
+                .clone()
+                .with_wet_sends(current.wet_sends().with_level(effect, level))),
             Self::TailSend { effect, level } => Ok(current
                 .clone()
                 .with_tail_sends(current.tail_sends().with_level(effect, level))),

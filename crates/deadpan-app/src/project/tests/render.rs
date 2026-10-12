@@ -798,7 +798,10 @@ fn native_render_admission_preserves_proposals_and_rejects_stale_targets() {
             .clone(),
     };
     let proposal_id = proposal.id();
-    let prepared = command(&harness.service, ProjectRequest::PrepareGain(proposal));
+    let prepared = command(
+        &harness.service,
+        ProjectRequest::PrepareGain(Box::new(proposal)),
+    );
     assert!(prepared.gain.as_ref().unwrap().result.is_ok());
     let mut stale = start(&initial, scratch.path(), "stale", 1);
     stale.context.session += 1;

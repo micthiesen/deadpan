@@ -183,6 +183,30 @@ impl<S: Copy> AudioOwnerClock<'_, S> {
         (self.kind == AudioOwnerKind::Node)
             .then(|| &self.plan.nodes[self.plan.by_id[&self.instance.node]].audio_treatments)
     }
+    /// An explicit Tail provider selects the Original return admitted during
+    /// its allocated pause. Ancestors must not add other incoming returns.
+    /// A default Repeat gap carries the same policy without a separate node.
+    pub fn is_explicit_tail_provider(&self) -> bool {
+        matches!(
+            (
+                self.kind,
+                &self.plan.nodes[self.plan.by_id[&self.instance.node]].kind
+            ),
+            (
+                AudioOwnerKind::Node,
+                CompiledKind::Hold {
+                    audio: deadpan_core::HoldAudio::Tail { .. },
+                    ..
+                }
+            ) | (
+                AudioOwnerKind::DefaultGap,
+                CompiledKind::Repeat {
+                    gap_audio: Some(deadpan_core::HoldAudio::Tail { .. }),
+                    ..
+                }
+            )
+        )
+    }
     /// A Repeat owner's escalation gain for this span's play, in exact
     /// millidecibels; zero for every other owner.
     pub fn escalation_millidecibels(&self) -> i64 {
@@ -258,6 +282,9 @@ impl RenderPlan {
 
     pub fn has_audio_treatments(&self) -> bool {
         self.has_audio_treatments
+    }
+    pub fn has_audio_wet_sends(&self) -> bool {
+        self.has_audio_wet_sends
     }
     pub fn has_audio_equalizers(&self) -> bool {
         self.has_audio_equalizers

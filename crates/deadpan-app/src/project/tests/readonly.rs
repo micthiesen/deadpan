@@ -586,7 +586,7 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
         treatments,
     };
     let id = proposal.id();
-    let update = command(service, ProjectRequest::PrepareGain(proposal));
+    let update = command(service, ProjectRequest::PrepareGain(Box::new(proposal)));
     assert_eq!(update.gain.as_ref().unwrap().id, id);
     assert!(update.gain.unwrap().result.is_ok());
     let proposal = slip::Proposal {

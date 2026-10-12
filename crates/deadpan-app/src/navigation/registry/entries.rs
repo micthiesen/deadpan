@@ -1104,6 +1104,17 @@ pub static SPECS: &[Spec] = &[
         help: "Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; a selected play is isolated. Time, other treatments and authored order stay intact. One Undo.",
     },
     Spec {
+        id: "wet-send",
+        name: "Beat reverb or delay",
+        section: Section::Audio,
+        keys: &[],
+        commands: &[verb("wet-send", ":wet-send reverb|delay -6dB|off")],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("set_audio instruction (wet_send)", AUDIO),
+        help: "Add a continuous wet reverb or 300 ms delay after the selected beat's treatments and before its parent's treatments. Levels are -96 to +24 dB; off removes one return. Groups process their permitted Original and attached sounds together. Silent Holds suppress incoming wet sound. No time is added. Whole-beat edits support dot/macros; a selected Repeat play isolates its recipe. One Undo.",
+    },
+    Spec {
         id: "tail-send",
         name: "Beat tail send",
         section: Section::Audio,

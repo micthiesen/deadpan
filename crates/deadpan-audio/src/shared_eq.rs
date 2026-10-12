@@ -1,10 +1,10 @@
-//! Recursive shared temporal processing. An EQ tile evaluates the complete
+//! Recursive shared temporal processing. Each EQ or wet tile evaluates the complete
 //! ordered bus prefix with the consuming sample's allowed contribution set.
 //! This keeps silence permissions distinct. Selected contribution reads retain
 //! the common saturation drive from all permitted inputs.
 
 use super::authored_eq::Context;
-use super::shared_mix::{Boundary, OwnerKey, Permissions, SharedMix};
+use super::shared_mix::{Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal};
 use super::*;
 use deadpan_core::{NodeId, SoundId};
 use deadpan_dsp::{
@@ -46,15 +46,18 @@ struct Node<'plan> {
     boundary: AudioTreatmentBoundary<'plan>,
     stop: Boundary,
     filter: Option<crate::Equalizer>,
+    kind: Temporal,
     tiles: BTreeMap<(i64, Permissions, Option<usize>), Arc<WideBlock>>,
 }
 struct Graph<'plan> {
     plan: &'plan RenderPlan,
     nodes: Vec<Node<'plan>>,
     resident: u64,
+    wet_filters: [Option<crate::FiniteWetEffect>; 2],
     voices: BTreeMap<Voice, usize>,
     sends: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
+    original_only: bool,
 }
 
 #[derive(Default)]
@@ -62,6 +65,7 @@ pub(super) struct InputSelection<'a> {
     pub(super) depth: usize,
     pub(super) sends: Option<deadpan_core::TailEffect>,
     pub(super) skip: &'a [authored_gain::OwnerIdentity],
+    pub(super) original_only: bool,
 }
 impl Graph<'_> {
     fn voice(&mut self, voice: Voice) -> Result<usize, StageAudioError> {
@@ -133,9 +137,11 @@ impl StageAudio {
             plan: &plan,
             nodes: Vec::new(),
             resident: 0,
+            wet_filters: std::array::from_fn(|_| None),
             voices: BTreeMap::new(),
             sends: selection.sends,
             skip: selection.skip.to_vec(),
+            original_only: selection.original_only,
         };
         let reservation = u64::from(frames) * 3;
         self.make_room(reservation, false, control)?;
@@ -143,7 +149,11 @@ impl StageAudio {
         let result = (|| {
             let context = Contexts {
                 original: Context::Root,
-                sounds: Sounds::Root,
+                sounds: if selection.original_only {
+                    Sounds::None
+                } else {
+                    Sounds::Root
+                },
             };
             let program = Program {
                 context: &context,
@@ -264,7 +274,7 @@ impl StageAudio {
             frames,
             program.stop.cloned(),
             program.output_voice,
-            plan.has_audio_component_automation(),
+            plan.has_audio_component_automation() || plan.has_audio_wet_sends(),
             program.stop.is_none().then_some(graph.sends).flatten(),
             &graph.skip,
         );
@@ -282,7 +292,7 @@ impl StageAudio {
                             mix.route(
                                 span.owners(),
                                 span.samples(),
-                                (original_id, Default::default()),
+                                (original_id, Contribution::Original),
                                 control,
                             )
                             .map(Some)
@@ -315,7 +325,7 @@ impl StageAudio {
                     mix.route(
                         std::slice::from_ref(root),
                         root_range.clone(),
-                        (id, sound.voice.event().tail_sends),
+                        (id, Contribution::Sound(sound.voice.event().tail_sends)),
                         control,
                     )
                 })
@@ -336,7 +346,7 @@ impl StageAudio {
                     mix.route(
                         occurrence.voice.gain_owners(),
                         occurrence.samples.clone(),
-                        (id, beat.event.tail_sends),
+                        (id, Contribution::Sound(beat.event.tail_sends)),
                         control,
                     )?,
                 ));
@@ -458,9 +468,10 @@ impl StageAudio {
             }
             let mixed = mix.finish(control, |owner, stage, at, permissions, voice| {
                 let id = self.shared_eq_node(graph, program, owner, at, stage, control)?;
+                let width = stage.output_frames();
                 let tile =
-                    at.0.div_euclid(OUTPUT as i64)
-                        .checked_mul(OUTPUT as i64)
+                    at.0.div_euclid(width as i64)
+                        .checked_mul(width as i64)
                         .ok_or(TimeError::Overflow)?;
                 let block = self.shared_eq_tile(
                     provider,
@@ -498,21 +509,23 @@ impl StageAudio {
         program: Program<'_, 'plan>,
         owner: &AudioOwnerClock<'plan>,
         at: AudioSample,
-        stage: usize,
+        kind: Temporal,
         control: WorkControl<'_>,
     ) -> Result<usize, StageAudioError> {
+        let stage = kind.boundary(owner);
         if let Some(id) = graph.nodes.iter().position(|node| {
             node.parent == program.parent
+                && node.kind == kind
                 && node.boundary.before_stage() == stage
                 && node.boundary.matches_clock_at(owner, at)
         }) {
             return Ok(id);
         }
         if graph.nodes.len() >= self.limits.maximum_prepared_stages as usize {
-            return Err(StageAudioError::Limit("EQ owner count"));
+            return Err(StageAudioError::Limit("temporal owner count"));
         }
         let key = OwnerKey::new(owner);
-        let sounds = if owner.kind() == deadpan_plan::AudioOwnerKind::Node {
+        let sounds = if !graph.original_only && owner.kind() == deadpan_plan::AudioOwnerKind::Node {
             let context = graph
                 .plan
                 .audio_sound_instance_context(owner.instance(), control.query_limits()?)?;
@@ -549,12 +562,17 @@ impl StageAudio {
         } else {
             return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
         };
-        let recipe = owner
-            .treatments()
-            .and_then(|recipe| recipe.equalizer())
-            .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
-        control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
-        let filter = crate::Equalizer::new(recipe, control.cancelled)?;
+        let filter = match kind {
+            Temporal::Equalizer(_) => {
+                let recipe = owner
+                    .treatments()
+                    .and_then(|r| r.equalizer())
+                    .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
+                control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+                Some(crate::Equalizer::new(recipe, control.cancelled)?)
+            }
+            Temporal::Wet(_) => None,
+        };
         control.check()?;
         graph.nodes.push(Node {
             parent: program.parent,
@@ -564,7 +582,8 @@ impl StageAudio {
                 owner: key,
                 before: stage,
             },
-            filter: Some(filter),
+            filter,
+            kind,
             tiles: BTreeMap::new(),
         });
         Ok(graph.nodes.len() - 1)
@@ -593,23 +612,56 @@ impl StageAudio {
             }
             return Ok(Arc::clone(block));
         }
+        let kind = graph.nodes[id].kind;
+        let (history, input, output) = match kind {
+            Temporal::Equalizer(_) => (RADIUS, INPUT, OUTPUT),
+            Temporal::Wet(effect) => {
+                let shape = crate::wet_effect_descriptor(effect);
+                (
+                    shape.history_frames,
+                    shape.history_frames + shape.output_frames,
+                    shape.output_frames,
+                )
+            }
+        };
         let begin = key
             .0
-            .checked_sub(RADIUS as i64)
+            .checked_sub(history as i64)
             .ok_or(TimeError::Overflow)?;
-        let end = begin.checked_add(INPUT as i64).ok_or(TimeError::Overflow)?;
+        let end = begin.checked_add(input as i64).ok_or(TimeError::Overflow)?;
         let context = graph.nodes[id].context.clone();
         let boundary = graph.nodes[id].stop.clone();
-        let mut filter = graph.nodes[id]
-            .filter
-            .take()
-            .ok_or(PlanError::InvalidPlan("recursive EQ cycle"))?;
-        let reservation = ((INPUT + OUTPUT * 2) * 2) as u64;
+        let mut filter = match kind {
+            Temporal::Equalizer(_) => Some(
+                graph.nodes[id]
+                    .filter
+                    .take()
+                    .ok_or(PlanError::InvalidPlan("recursive EQ cycle"))?,
+            ),
+            Temporal::Wet(_) => None,
+        };
+        let reservation = ((input + output * 2) * 2) as u64;
         let result = (|| {
-            self.reserve_eq_tile(reservation, control)?;
+            if input as u32 > self.limits.maximum_input_frames
+                || output as u32 > self.limits.maximum_output_frames
+            {
+                return Err(StageAudioError::Limit("temporal input/output frames"));
+            }
+            {
+                let mut work = control.work.borrow_mut();
+                work.prepared_frames = work
+                    .prepared_frames
+                    .checked_add((input + output) as u64)
+                    .ok_or(StageAudioError::Limit("prepared frames per read"))?;
+                if work.prepared_frames > self.limits.maximum_prepared_frames {
+                    return Err(StageAudioError::Limit("prepared frames per read"));
+                }
+            }
+            self.make_room(reservation, false, control)?;
+            self.active_frames += reservation;
             let result = (|| {
-                let mut left = vec![0.0; INPUT];
-                let mut right = vec![0.0; INPUT];
+                let mut left = vec![0.0; input];
+                let mut right = vec![0.0; input];
                 let mut dependencies = Dependencies::new();
                 let mut relative_depth = 1;
                 let mut at = begin;
@@ -639,22 +691,56 @@ impl StageAudio {
                     relative_depth = relative_depth.max(block.relative_depth + 1);
                     at += i64::from(count);
                 }
-                let mut out_left = vec![0.0; OUTPUT];
-                let mut out_right = vec![0.0; OUTPUT];
-                filter.process_tile(
-                    &left,
-                    &right,
-                    &mut out_left,
-                    &mut out_right,
-                    control.cancelled,
-                )?;
+                let mut out_left = vec![0.0; output];
+                let mut out_right = vec![0.0; output];
+                if let Some(filter) = &mut filter {
+                    filter.process_tile(
+                        &left,
+                        &right,
+                        &mut out_left,
+                        &mut out_right,
+                        control.cancelled,
+                    )?;
+                } else if let Temporal::Wet(effect) = kind {
+                    // Stateless kernels share one native workspace per effect
+                    // in this request, including nested owners. Acquire only
+                    // after recursive input preparation has finished.
+                    let slot = match effect {
+                        deadpan_core::TailEffect::Reverb => 0,
+                        deadpan_core::TailEffect::Delay => 1,
+                    };
+                    if graph.wet_filters[slot].is_none() {
+                        let resident = (crate::FiniteWetEffect::preparation_bytes_bound(effect)
+                            as u64)
+                            .div_ceil(8);
+                        control.spend_plan_work(
+                            crate::wet_effect_descriptor(effect).history_frames + 1,
+                        )?;
+                        self.make_room(resident, false, control)?;
+                        let processor = crate::FiniteWetEffect::new(effect, control.cancelled)?;
+                        control.check()?;
+                        self.active_frames += resident;
+                        graph.resident += resident;
+                        graph.wet_filters[slot] = Some(processor);
+                    }
+                    graph.wet_filters[slot]
+                        .as_mut()
+                        .ok_or(PlanError::InvalidPlan("wet processor absent"))?
+                        .process_tile(
+                            &left,
+                            &right,
+                            &mut out_left,
+                            &mut out_right,
+                            control.cancelled,
+                        )?;
+                }
                 let samples = out_left
                     .into_iter()
                     .zip(out_right)
                     .map(|(l, r)| [l, r])
                     .collect();
                 control.check()?;
-                let resident = (OUTPUT * 2) as u64;
+                let resident = (output * 2) as u64;
                 self.make_room(resident, false, control)?;
                 self.active_frames += resident;
                 graph.resident += resident;
@@ -670,7 +756,7 @@ impl StageAudio {
             self.active_frames -= reservation;
             result
         })();
-        graph.nodes[id].filter = Some(filter);
+        graph.nodes[id].filter = filter;
         result
     }
 }

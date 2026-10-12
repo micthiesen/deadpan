@@ -165,6 +165,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         Some(macro_capture),
         TailEffect::Delay,
         Some(GainDb::UNITY),
+        false,
     );
     d.settled()?;
     d.check(
@@ -174,7 +175,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.app_mut()
-        .tail_send_command(None, None, TailEffect::Delay, Some(GainDb::UNITY));
+        .tail_send_command(None, None, TailEffect::Delay, Some(GainDb::UNITY), false);
     d.settled()?;
     d.check(
         "An absent send capture cannot use a later target",

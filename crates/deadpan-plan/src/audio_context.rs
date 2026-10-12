@@ -247,6 +247,7 @@ impl RenderPlan {
             audio_context: true,
             has_audio_treatments: false,
             has_audio_equalizers: false,
+            has_audio_wet_sends: false,
             has_audio_component_automation: false,
             has_audio_editorial_edges: false,
             audio_bindings: Default::default(),
@@ -444,6 +445,10 @@ impl RenderPlan {
             audio_assets: context.assets().clone(),
             audio_context: true,
             has_audio_treatments: !context.audio_treatments().is_empty(),
+            has_audio_wet_sends: context
+                .audio_treatments()
+                .values()
+                .any(|r| !r.wet_sends().is_empty()),
             has_audio_equalizers: context
                 .audio_treatments()
                 .values()

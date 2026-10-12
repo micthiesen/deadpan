@@ -78,7 +78,7 @@ fn gain_proposals_leave_store_history_unchanged_and_apply_once_with_exact_undo()
             treatments: recipe(trim),
         };
         let id = proposal.id();
-        let update = command(&service, ProjectRequest::PrepareGain(proposal));
+        let update = command(&service, ProjectRequest::PrepareGain(Box::new(proposal)));
         assert!(update.error.is_none(), "{:?}", update.error);
         assert!(update.committed.is_none());
         assert!(Arc::ptr_eq(update.workspace.as_ref().unwrap(), &before));
@@ -143,12 +143,12 @@ fn gain_proposals_leave_store_history_unchanged_and_apply_once_with_exact_undo()
     assert_eq!(*no_op.workspace.unwrap().document, *after.document);
     let stale = command(
         &service,
-        ProjectRequest::PrepareGain(Proposal {
+        ProjectRequest::PrepareGain(Box::new(Proposal {
             target: captured,
             draft: 77,
             change: 3,
             treatments: recipe(9000),
-        }),
+        })),
     );
     let failure = stale.gain.unwrap();
     assert_eq!(failure.id.change, 3);
@@ -198,7 +198,7 @@ fn gain_proposal_failures_retain_identity_and_cannot_retarget_scope_recipe_or_se
             treatments: recipe(3000),
         };
         let id = proposal.id();
-        let update = command(&service, ProjectRequest::PrepareGain(proposal));
+        let update = command(&service, ProjectRequest::PrepareGain(Box::new(proposal)));
         assert!(update.error.is_none(), "case {case}");
         assert!(update.committed.is_none());
         let failure = update.gain.unwrap();

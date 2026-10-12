@@ -516,6 +516,7 @@ pub struct AudioTreatments {
     balance: Option<StereoBalance>,
     equalizer: Option<crate::EqualizerRecipe>,
     tail_sends: crate::TailSends,
+    wet_sends: crate::TailSends,
 }
 
 impl AudioTreatments {
@@ -560,6 +561,7 @@ impl AudioTreatments {
             balance,
             equalizer,
             tail_sends: crate::TailSends::default(),
+            wet_sends: crate::TailSends::default(),
         };
         result.validate()?;
         Ok(result)
@@ -572,6 +574,7 @@ impl AudioTreatments {
             balance: None,
             equalizer: None,
             tail_sends: crate::TailSends::default(),
+            wet_sends: crate::TailSends::default(),
         }
     }
     pub fn order(&self) -> &[AudioTreatmentStage] {
@@ -588,6 +591,15 @@ impl AudioTreatments {
     }
     pub fn equalizer(&self) -> Option<crate::EqualizerRecipe> {
         self.equalizer
+    }
+    /// Continuous wet returns follow this owner's complete treatment chain,
+    /// before parent processing, within permitted authored allocation.
+    pub fn wet_sends(&self) -> crate::TailSends {
+        self.wet_sends
+    }
+    pub fn with_wet_sends(mut self, sends: crate::TailSends) -> Self {
+        self.wet_sends = sends;
+        self
     }
     pub fn tail_sends(&self) -> crate::TailSends {
         self.tail_sends
@@ -630,7 +642,11 @@ impl AudioTreatments {
             self.balance,
             equalizer,
         )
-        .map(|recipe| recipe.with_tail_sends(self.tail_sends))
+        .map(|recipe| {
+            recipe
+                .with_tail_sends(self.tail_sends)
+                .with_wet_sends(self.wet_sends)
+        })
     }
     pub fn is_empty(&self) -> bool {
         self.clip_gain.is_none()
@@ -638,6 +654,7 @@ impl AudioTreatments {
             && self.balance.is_none()
             && self.equalizer.is_none()
             && self.tail_sends.is_empty()
+            && self.wet_sends.is_empty()
     }
     /// Balance is the final per-owner treatment. Adding another treatment
     /// later keeps it before balance; removing balance preserves that order.
@@ -658,7 +675,11 @@ impl AudioTreatments {
             balance,
             self.equalizer,
         )
-        .map(|recipe| recipe.with_tail_sends(self.tail_sends))
+        .map(|recipe| {
+            recipe
+                .with_tail_sends(self.tail_sends)
+                .with_wet_sends(self.wet_sends)
+        })
     }
     /// The same recipe with `saturation` replaced or removed. A new stage is
     /// placed after clip gain and before balance by default (specification
@@ -684,7 +705,11 @@ impl AudioTreatments {
             self.balance,
             self.equalizer,
         )
-        .map(|recipe| recipe.with_tail_sends(self.tail_sends))
+        .map(|recipe| {
+            recipe
+                .with_tail_sends(self.tail_sends)
+                .with_wet_sends(self.wet_sends)
+        })
     }
     /// The same recipe with `clip_gain` replaced, keeping the existing order
     /// and placing a new clip-gain stage first.
@@ -700,7 +725,11 @@ impl AudioTreatments {
             self.balance,
             self.equalizer,
         )
-        .map(|recipe| recipe.with_tail_sends(self.tail_sends))
+        .map(|recipe| {
+            recipe
+                .with_tail_sends(self.tail_sends)
+                .with_wet_sends(self.wet_sends)
+        })
     }
     /// `with_clip_gain`, except that a unity, unmuted clip gain with no
     /// envelopes or mute ranges removes the stage, so undoing a change by
@@ -716,8 +745,13 @@ impl AudioTreatments {
             .copied()
             .filter(|stage| *stage != AudioTreatmentStage::ClipGain)
             .collect();
-        Self::with_equalizer_stages(order, None, self.saturation, self.balance, self.equalizer)
-            .map(|recipe| recipe.with_tail_sends(self.tail_sends))
+        Self::with_equalizer_stages(order, None, self.saturation, self.balance, self.equalizer).map(
+            |recipe| {
+                recipe
+                    .with_tail_sends(self.tail_sends)
+                    .with_wet_sends(self.wet_sends)
+            },
+        )
     }
     pub fn validate(&self) -> Result<(), GainError> {
         if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {
@@ -750,6 +784,7 @@ impl AudioTreatments {
             + usize::from(self.balance.is_some())
             + usize::from(self.equalizer.is_some())
             + self.tail_sends.record_count()
+            + self.wet_sends.record_count()
     }
     /// Preserve existing effects when a physical owner gains a nonnegative
     /// whole-frame prefix: old material and every authored key move together.

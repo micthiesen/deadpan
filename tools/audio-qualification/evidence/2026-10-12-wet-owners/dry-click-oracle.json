@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "inspect-audio",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmphqrsWE/continuous-owner-return/continuous-owner-return.deadpan",
+    "--samples",
+    "28672",
+    "28928",
+    "--limited"
+  ],
+  "binary_sha256": "3f11f7071a41a22c5c421c970b0eba6a1ae536c68630603f581d380e8adb0329",
+  "dry_peak": 0.749076783657074,
+  "expected_echo_peak": 0.3754277209755036,
+  "declared_delay_samples": 14400,
+  "observed_echo_peak_before_fixture_correction": 0.3754277229309082
+}

@@ -11,6 +11,32 @@ use super::*;
 pub(super) const MAX_VOICES: usize = 4096;
 const WORDS: usize = MAX_VOICES / 64;
 
+#[derive(Clone, Copy)]
+pub(super) enum Contribution {
+    Original,
+    Sound(deadpan_core::TailSends),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Temporal {
+    Equalizer(usize),
+    Wet(deadpan_core::TailEffect),
+}
+impl Temporal {
+    pub(super) fn boundary(self, owner: &AudioOwnerClock<'_>) -> usize {
+        match self {
+            Self::Equalizer(stage) => stage,
+            Self::Wet(_) => owner.treatments().map_or(0, |r| r.order().len()),
+        }
+    }
+    pub(super) fn output_frames(self) -> usize {
+        match self {
+            Self::Equalizer(_) => deadpan_dsp::FINITE_FILTER_OUTPUT_FRAMES,
+            Self::Wet(_) => deadpan_dsp::CAUSAL_FILTER_OUTPUT_FRAMES,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Permissions([u64; WORDS]);
 
@@ -175,7 +201,7 @@ impl<'plan> SharedMix<'plan> {
         &mut self,
         owners: &[AudioOwnerClock<'plan>],
         range: Range<AudioSample>,
-        voice: (usize, deadpan_core::TailSends),
+        voice: (usize, Contribution),
         control: WorkControl<'_>,
     ) -> Result<Route<'plan>, StageAudioError> {
         deadpan_core::validate_audio_treatment_layers(
@@ -273,10 +299,13 @@ impl<'plan> SharedMix<'plan> {
             target: parent,
             layers,
             ignored: false,
-            component: Some(
-                self.components
-                    .route(voice, component_layers, start..end, control)?,
-            ),
+            component: Some(self.components.route(
+                voice,
+                component_layers,
+                start..end,
+                self.stop.as_ref().map(|s| &s.owner),
+                control,
+            )?),
         })
     }
 
@@ -459,7 +488,7 @@ impl<'plan> SharedMix<'plan> {
         control: WorkControl<'_>,
         mut equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
-            usize,
+            Temporal,
             AudioSample,
             Permissions,
             Option<usize>,
@@ -487,7 +516,13 @@ impl<'plan> SharedMix<'plan> {
                             .last()
                             .ok_or(PlanError::InvalidPlan("shared EQ owner absent"))?
                             .owner;
-                        equalize(owner, stage, clock, permissions[at], None)?
+                        equalize(
+                            owner,
+                            Temporal::Equalizer(stage),
+                            clock,
+                            permissions[at],
+                            None,
+                        )?
                     } else {
                         samples[at]
                     };

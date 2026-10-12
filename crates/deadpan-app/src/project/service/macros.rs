@@ -224,6 +224,9 @@ impl Service {
                             SemanticInstruction::SetAudio {
                                 change: deadpan_core::AudioChange::TailSend { .. },
                             } => "Change tail send",
+                            SemanticInstruction::SetAudio {
+                                change: deadpan_core::AudioChange::WetSend { .. },
+                            } => "Change wet return",
                             SemanticInstruction::SetAudio { .. } => "Change gain",
                             SemanticInstruction::RoleRepeat {
                                 role: deadpan_core::MediaRole::Audio,

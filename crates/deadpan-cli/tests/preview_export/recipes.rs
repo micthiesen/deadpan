@@ -3546,3 +3546,47 @@ pub fn clear_captions(fixture: &Fixture, at: i64) -> Result<String> {
     })?;
     Ok(saved.revision_id().to_string())
 }
+
+/// A continuous delay return through the normal semantic command and stored
+/// group recipe. The Original click at 28781 also sounds 14400 samples later.
+pub fn continuous_owner_return(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "continuous-owner-return")?;
+    project.shorten()?;
+    let group = node("wet-group")?;
+    project.apply(|_, document, _| {
+        Ok(Command::Group {
+            parent: document.root().clone(),
+            start: 0,
+            end: root_children(document)?.len(),
+            id: group.clone(),
+            label: "Continuous return".into(),
+        })
+    })?;
+    let saved = project.run_semantic(
+        json!([{"type":"set_audio","change":{"type":"wet_send","effect":"delay","level":-6000}}]),
+        0,
+        Some(&group),
+    )?;
+    if saved.nodes()[&group]
+        .audio_treatments
+        .wet_sends()
+        .level(deadpan_core::TailEffect::Delay)
+        != Some(GainDb::new(-6000)?)
+    {
+        return Err("continuous delay was not saved on its captured owner".into());
+    }
+    let mut fixture = project.finish(vec!["Continuous delay"],
+        (0..30).map(|frame| (frame,base(frame))).collect(),
+        vec!["A -6 dB group delay adds the Original click's echo at 43181 without adding time; preview and export use the stored owner return".into()])?;
+    fixture.audio = vec![(28672, true), (24000, false)];
+    fixture.signals.push(Signal {
+        start: 43008,
+        count: 256,
+        crossings_per_second: None,
+        crest: None,
+        // The Original click is about 0.75, so its first unity-wet echo
+        // at a -6 dB send is about 0.376, below the generic "loud" check.
+        peak: Some((0.37, 0.39)),
+    });
+    Ok(fixture)
+}

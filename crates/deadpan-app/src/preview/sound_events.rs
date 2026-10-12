@@ -621,6 +621,9 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
     match verb.to_ascii_lowercase().as_str() {
         "sound-at" => Some("Position: whole 48 kHz samples · 48,000 = 1 second"),
         "sound-gain" => Some("Gain: −96 to +24 dB · up to 3 decimal places"),
+        "wet-send" => {
+            Some("reverb|delay −96 to +24 dB or off · continuous return before parent treatments")
+        }
         "tail-send" | "sound-tail-send" => {
             Some("reverb|delay −96 to +24 dB or off · heard only in :tail input=sends pauses")
         }

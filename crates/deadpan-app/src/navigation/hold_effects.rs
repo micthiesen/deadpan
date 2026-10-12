@@ -144,10 +144,10 @@ pub fn parse_tail(
     ))
 }
 
-/// A send only changes the selected contribution to a later explicit tail.
+/// Parse one bounded effect level for continuous returns or allocated tails.
 pub fn parse_send(words: &[&str]) -> Result<(TailEffect, Option<deadpan_core::GainDb>), String> {
     const USAGE: &str =
-        "Use :tail-send reverb|delay -6dB|off (or :sound-tail-send for a placed sound).";
+        "Use reverb|delay -6dB|off after :wet-send, :tail-send or :sound-tail-send.";
     let [effect, level] = words else {
         return Err(USAGE.into());
     };

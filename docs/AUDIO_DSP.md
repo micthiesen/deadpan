@@ -8,8 +8,9 @@ does not download dependencies. Unsafe code is isolated in the `src/ffi` module.
 `CausalStereoFilter` also supplies independent finite stereo convolution with
 complete declared history, transactional output and measured native memory
 admission. The audio crate's [finite wet effects](FINITE_WET_EFFECTS.md) use it
-for random-access reverb/delay numerics; continuous authored returns and their
-owner/permission integration remain open.
+for random-access reverb/delay and stored owner returns through the shared
+contribution graph. Independent event sends and full application qualification
+remain open.
 
 `StereoPcm` owns two immutable planar 48 kHz channels. Admission requires equal,
 nonempty lengths of at most 1,048,576 frames, finite samples, and an absolute

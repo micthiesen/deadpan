@@ -78,6 +78,7 @@ mod terminal_playback;
 mod transcript;
 mod trim;
 mod wake;
+mod wet_returns;
 mod youtube;
 mod zoom;
 

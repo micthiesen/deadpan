@@ -1119,7 +1119,7 @@ pub enum ProjectRequest {
         ticket: u64,
         selection: RoomToneSelection,
     },
-    PrepareGain(gain::Proposal),
+    PrepareGain(Box<gain::Proposal>),
     Edit {
         expected_session: u64,
         expected_revision: RevisionId,

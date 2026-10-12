@@ -2,9 +2,12 @@
 
 `deadpan_audio::FiniteWetEffect` prepares wet-only stereo tiles with complete,
 finite input history. This is the numerical basis for specification §10.2's
-continuous returns and §17.4's random access. The authored mixer does not yet
-consume it. Existing selected sends still feed only the allocated
-[tail pauses](REVERSE_AND_TAILS.md); their sound and stored recipes are unchanged.
+continuous returns and §17.4's random access. Authored `wet_sends` on a beat or
+group now use it through the shared contribution mixer. Native
+`:wet-send reverb|delay -6dB|off` changes the captured beat or isolated Repeat
+play; whole-beat changes support Undo, dot and macros. The inspector shows both
+levels. Existing `tail_sends` separately feeds allocated
+[tail pauses](REVERSE_AND_TAILS.md); enabling a continuous return adds no time.
 
 ## Exact processing contract
 
@@ -63,21 +66,38 @@ The processor does not define arbitrary output partitioning: consumers read the
 same absolute tiles and then slice them. Different compiler/CPU floating-point
 results are subject to the documented numerical tolerance, not a bitwise claim.
 
-## Remaining mixer integration
+## Owner returns
 
-Returns must join the correct voice or owner bus before its parent treatments.
-Appending every return after the root would bypass parent EQ and saturation.
-The shared graph must preserve each contribution's current and retained clocks,
-process the complete permitted prefix, and gate incoming tails by the consuming
-sample's silence or explicit Tail policy. Selected output must retain shared
-nonlinear drive. Event sends and owner sends need distinct insertion boundaries;
-no return may implicitly feed itself.
+Each owner's send taps its complete ordered chain, including balance. The
+resulting wet signal joins that owner's dry signal before parent treatments.
+Child returns may feed a parent's effect; an owner's own return cannot feed
+itself. Its allocated-Tail send taps before its own continuous return.
+Contributions retain their separate automation clocks and selected output reads
+retain the shared nonlinear drive of all permitted inputs.
 
-Admit aggregate history work, native plans, temporary arrays and cached tiles
-through the existing deadline/depth/memory budgets. Preserve atomic refusals for
-unsupported partial sound-owner scope. Then qualify stored recipes, captured
-native authoring, cold seeks, Repeat/copy/Preserve clocks, loops and emitted files.
-These are still agent work. DP-09 and DP-16 remain partial.
+The consuming sample determines permissions for complete temporal history.
+A silent Hold excludes the Original return even when an allowed independent
+sound remains audible. An explicit Tail provider excludes other incoming
+ancestor Original returns, including in a Repeat default gap. It keeps its
+selected input/effect, its ordinary ancestor treatments and any effect authored
+on the Tail itself. Independent sounds keep their own permissions. Forbidden
+Original history cannot enter an allowed sound's wet return through saturation.
+
+The graph caches absolute fixed-grid tiles within one preparation request and
+shares one native workspace per effect across nested owners. Workspace creation
+follows recursive input preparation. It admits the complete preparation bound
+against the shared PCM-equivalent residency budget; temporary history/output
+arrays and cached tiles have separate reservations. Deadline, cancellation,
+prepared-frame, node-count, depth and plan-work limits remain active. A refusal
+does not publish partial PCM. This establishes bounded preparation, not live
+playback performance or persistent cache reuse.
+
+Core 51, store 79 and frozen audio context 12 retain continuous owner recipes.
+Older unused development packages are refused without modification under the
+owner's format-breaking authorization. Independent sound-event continuous
+sends, broader retained/copy/Preserve and loop qualification, partial attached
+sound-owner processing scope, persistent filtered caching and the rest of the
+voice/mastering graph remain agent work. DP-09 and DP-16 remain partial.
 
 The [qualification](qualification/finite-wet-2026-10-12.md) records the numerical
 tests, native allocation and sanitizer witness, measured cost, exact source

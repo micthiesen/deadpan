@@ -29,6 +29,9 @@ impl StageAudio {
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
+        if authored_gain && self.plan.has_audio_wet_sends() {
+            return self.read_shared_equalizers(provider, start, frames, control);
+        }
         if authored_gain
             && self.plan.has_audio_component_automation()
             && (!self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty())

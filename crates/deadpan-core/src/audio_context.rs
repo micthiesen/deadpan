@@ -15,8 +15,8 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-/// Schema 11 adds selected effect sends and explicit tail inputs.
-const AUDIO_CONTEXT_SCHEMA: u32 = 11;
+/// Schema 12 adds continuous owner wet returns.
+const AUDIO_CONTEXT_SCHEMA: u32 = 12;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -384,6 +384,16 @@ impl FrozenAudioContext {
         {
             return Err(invalid(
                 "a schema-9 or older audio context cannot contain EQ",
+            ));
+        }
+        if self.schema_version < 12
+            && self
+                .audio_treatments
+                .values()
+                .any(|r| !r.wet_sends().is_empty())
+        {
+            return Err(invalid(
+                "a schema-11 or older audio context cannot contain continuous wet returns",
             ));
         }
         if self.schema_version < 11

@@ -404,12 +404,12 @@ fn scoped_gain_proposals_preview_the_same_branches_and_commit_without_reusing_dr
     let rows = counts(&path);
     let unchanged = command(
         &service,
-        ProjectRequest::PrepareGain(crate::project::gain::Proposal {
+        ProjectRequest::PrepareGain(Box::new(crate::project::gain::Proposal {
             target: target.clone(),
             draft: 31,
             change: 1,
             treatments: target.entry.clone(),
-        }),
+        })),
     );
     let unchanged = unchanged.gain.unwrap().result.unwrap();
     assert_ne!(
@@ -420,12 +420,12 @@ fn scoped_gain_proposals_preview_the_same_branches_and_commit_without_reusing_dr
     assert_eq!(counts(&path), rows);
     let proposed = command(
         &service,
-        ProjectRequest::PrepareGain(crate::project::gain::Proposal {
+        ProjectRequest::PrepareGain(Box::new(crate::project::gain::Proposal {
             target: target.clone(),
             draft: 31,
             change: 2,
             treatments: gain(-4500),
-        }),
+        })),
     );
     assert!(proposed.error.is_none());
     assert!(proposed.committed.is_none());
@@ -478,12 +478,12 @@ fn scoped_gain_proposals_preview_the_same_branches_and_commit_without_reusing_dr
     assert!(mismatched.validate(&before).is_err());
     let stale = command(
         &service,
-        ProjectRequest::PrepareGain(crate::project::gain::Proposal {
+        ProjectRequest::PrepareGain(Box::new(crate::project::gain::Proposal {
             target,
             draft: 31,
             change: 3,
             treatments: gain(-3000),
-        }),
+        })),
     );
     assert!(stale.gain.unwrap().result.is_err());
     assert_eq!(*stale.workspace.unwrap().document, *after.document);

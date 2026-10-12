@@ -108,8 +108,9 @@ pub use routed::{RoutedRootBlock, RoutedSignalBlock};
 /// Small inspection and source reads retain their separate 256-frame limit.
 pub const MAX_EDGE_PREPARATION_FRAMES: u32 = 131_072;
 
-/// PCM residency limits, not a claim about total process memory or latency.
-/// Native FFT state, decoder caches and one bounded resampling halo are separate.
+/// PCM-equivalent residency limits, including continuous wet workspaces, not a
+/// claim about total process memory or latency. Other native FFT state, decoder
+/// caches and one bounded resampling halo are separate.
 #[derive(Debug, Clone, Copy)]
 pub struct StageLimits {
     pub maximum_input_frames: u32,
@@ -172,6 +173,8 @@ pub enum StageAudioError {
     #[error(transparent)]
     Filter(#[from] deadpan_dsp::FilterError),
     #[error(transparent)]
+    Wet(#[from] deadpan_dsp::CausalFilterError),
+    #[error(transparent)]
     Transfer(#[from] SignalTransferError),
     #[error("prepared audio cache I/O failed: {0}")]
     Cache(#[from] std::io::Error),
@@ -184,6 +187,7 @@ impl StageAudioError {
             Self::Preparation(PreparationError::Cancelled)
                 | Self::Dsp(deadpan_dsp::DspError::Cancelled)
                 | Self::Filter(deadpan_dsp::FilterError::Cancelled)
+                | Self::Wet(deadpan_dsp::CausalFilterError::Cancelled)
                 | Self::Transfer(SignalTransferError::Preparation(
                     PreparationError::Cancelled
                 ))
@@ -847,9 +851,10 @@ impl StageAudio {
         let independent = !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty();
         if authored_gain
             && (self.plan.has_audio_equalizers()
+                || self.plan.has_audio_wet_sends()
                 || (independent && self.plan.has_audio_component_automation()))
         {
-            let block = if independent {
+            let block = if independent || self.plan.has_audio_wet_sends() {
                 self.read_shared_equalizers(provider, start, frames, control)?
             } else {
                 self.read_authored_equalizers(provider, start, frames, control, 0, &[])?
@@ -2283,6 +2288,7 @@ impl StageAudio {
                     // The root reader, resampler, edge and bound readers all
                     // work in blocks of at most MAX_OUTPUT_FRAMES.
                     let maximum = if plan.has_audio_equalizers()
+                        || plan.has_audio_wet_sends()
                         || *tail_input == deadpan_core::TailInput::Sends
                     {
                         i64::from(MAX_EDGE_PREPARATION_FRAMES)
@@ -2291,7 +2297,9 @@ impl StageAudio {
                     };
                     let count = u32::try_from((origin.0 - cursor.0).min(maximum))
                         .map_err(|_| StageAudioError::Range)?;
-                    let (block, heard) = if *tail_input == deadpan_core::TailInput::Sends {
+                    let (block, heard) = if *tail_input == deadpan_core::TailInput::Sends
+                        || plan.has_audio_wet_sends()
+                    {
                         let block = self.read_shared_input(
                             provider,
                             cursor,
@@ -2299,8 +2307,10 @@ impl StageAudio {
                             control,
                             shared_eq::InputSelection {
                                 depth: depth + 1,
-                                sends: Some(effect),
+                                sends: (*tail_input == deadpan_core::TailInput::Sends)
+                                    .then_some(effect),
                                 skip: &shared,
+                                original_only: *tail_input == deadpan_core::TailInput::Original,
                             },
                         )?;
                         let heard = block

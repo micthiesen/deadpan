@@ -560,7 +560,10 @@ fn history_rejects_stale_sessions_and_invalid_queries_without_erasing_receipts()
             .audio_treatments
             .clone(),
     };
-    let gain = command(&harness.service, ProjectRequest::PrepareGain(proposal));
+    let gain = command(
+        &harness.service,
+        ProjectRequest::PrepareGain(Box::new(proposal)),
+    );
     let queried = history(
         &harness.service,
         context(&workspace),

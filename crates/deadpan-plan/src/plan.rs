@@ -150,6 +150,7 @@ pub struct RenderPlan {
     audio_context: bool,
     has_audio_treatments: bool,
     has_audio_equalizers: bool,
+    has_audio_wet_sends: bool,
     has_audio_component_automation: bool,
     has_audio_editorial_edges: bool,
     audio_bindings: deadpan_core::AudioBindingState,
@@ -879,6 +880,10 @@ impl RenderPlan {
                         } if escalation.gain_step != deadpan_core::GainDb::UNITY
                     )
             }),
+            has_audio_wet_sends: document
+                .nodes()
+                .values()
+                .any(|node| !node.audio_treatments.wet_sends().is_empty()),
             has_audio_equalizers: document
                 .nodes()
                 .values()

@@ -153,6 +153,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | `+` / `-`, `:gain ±dB`, `:gain +=dB`, `,m`, `:gain-mute`, `:saturate`, `:balance`, typed `:eq …` / `:eq off` | `set_audio` instruction (`trim`, `step`, `range_step`, `mute`, `saturation`, `balance`, `equalizer`) | R, D | Equivalent |
 | Gain/EQ sheet draft (Before/Draft audition, Gain waveform) | interactive | - | GUI-only |
 | Gain/EQ sheet Apply, scoped audio treatment | `command` `set_audio_treatments` / `edit_scoped` | R, D | Equivalent |
+| `:wet-send reverb\|delay LEVEL\|off` | `set_audio` instruction with `{"type":"wet_send","effect":"delay","level":-6000}` for the captured beat or group (millidecibels; null turns off) | R, D | Equivalent |
 | `:tail-send reverb\|delay LEVEL\|off` | `set_audio` instruction with `{"type":"tail_send","effect":"delay","level":-6000}` (millidecibels; null turns off) | R, D | Equivalent |
 | `:sound-tail-send reverb\|delay LEVEL\|off` | `command` `set_sound` with the complete current event and updated `tail_sends` | R, D | Equivalent |
 | `:edge hard|auto …` | `set_audio_edges` instruction; `set_audio_edge` command | R, D | Equivalent |

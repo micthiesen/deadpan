@@ -118,6 +118,10 @@ pub enum Entry {
         effect: deadpan_core::TailEffect,
         level: Option<deadpan_core::GainDb>,
     },
+    WetSend {
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    },
     EqualizerEdit,
     Equalizer(Option<deadpan_core::EqualizerRecipe>),
     Scope(ScopeChoice),
@@ -513,10 +517,12 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             },
         );
     }
-    if verb == "tail-send" || verb == "sound-tail-send" {
+    if verb == "wet-send" || verb == "tail-send" || verb == "sound-tail-send" {
         let arguments: Vec<&str> = words.collect();
         let (effect, level) = super::hold_effects::parse_send(&arguments)?;
-        return Ok(if verb == "tail-send" {
+        return Ok(if verb == "wet-send" {
+            Entry::WetSend { effect, level }
+        } else if verb == "tail-send" {
             Entry::TailSend { effect, level }
         } else {
             Entry::Action(Action::Sound(super::SoundAction::TailSend {

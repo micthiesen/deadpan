@@ -4,6 +4,30 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Continuous owner returns](../qualification/wet-owners-2026-10-12.md) now store
+`wet_sends` separately from allocated-Tail sends. `:wet-send` uses captured
+targets, durable Undo, whole-beat dot/macros and isolated Repeat plays. The shared
+graph inserts returns after each complete owner chain and before its parent,
+retaining contribution clocks and nonlinear drive. Silent Holds and explicit
+Tail providers gate incoming Original returns; independent sounds retain their
+own permissions. Native workspaces are shared per effect within a request and
+admitted together with histories and tiles against existing resource bounds.
+
+Core 51, store 79 and frozen context 12 carry the recipes. Continue independent
+sound-event continuous sends, wider copy/retained/Preserve/loop qualification,
+partial attached-sound processing scope, persistent filtered caches and remaining
+mastering/performance work. Do not weaken existing scope refusals. The primary
+agent works alone; DP-09/DP-16 and the full goal remain open. The qualification
+records the current verification evidence and limits.
+
+All 3,950 tests, final 320 service checks, strict workspace checks and release
+builds pass. Four offscreen replays pass 350 scenario checks plus shortcut audits;
+default/minimum captures were inspected. A real export verifies 30 pictures,
+two audio blocks and one zero-offset window. The initial Tail policy failure,
+generated-reference drift, stale schema assertions, request-enum size warning
+and two corrected fixture assumptions remain in evidence. No live GUI or audio
+device was used.
+
 [Finite wet-effect preparation](../qualification/finite-wet-2026-10-12.md)
 adds `FiniteWetEffect` and `CausalStereoFilter`: independent stereo kernels,
 four-second reverb/eight-second delay history, 4,096-sample fixed output tiles,
@@ -12,15 +36,10 @@ and warm tiles identical. All 622 audio/DSP tests, final focused tests, strict
 workspace checks and fatal ASan/UBSan pass. Three release processes reproduce
 the same kernel/input/output hashes. The primary agent worked alone.
 
-No authored mixer path consumes these processors yet. Continue with return
-insertion at the event or owner boundary before parent processing, per-voice
-incoming-tail permissions, retained clocks and aggregate work/memory admission.
-`shared_components` and `shared_eq` already preserve jointly driven prefixes;
-do not append wet audio after the root or flatten independent contributions.
-Existing `TailSends` still feeds allocated pauses only and remains unchanged.
-The full continuous feature, native authoring, playback/export qualification and
-remaining scope/cache work are owed; DP-09/DP-16 remain partial. Use the finished
-numerical processors for that integration instead of building another one.
+The owner integration described above now consumes these processors. Keep its
+returns before parent processing and preserve jointly driven prefixes. Existing
+`tail_sends` still feeds allocated pauses only. Independent event integration and
+the remaining scope/cache work stay open; DP-09/DP-16 remain partial.
 
 [Selected tail sends](../qualification/tail-sends-2026-10-12.md) now store
 independent reverb/delay levels on beat treatments and sound events. Explicit

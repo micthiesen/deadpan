@@ -702,15 +702,17 @@ impl DeadpanApp {
         macro_target: Option<Result<super::macros::Capture, String>>,
         effect: deadpan_core::TailEffect,
         level: Option<deadpan_core::GainDb>,
+        wet: bool,
     ) {
+        let change = if wet {
+            deadpan_core::AudioChange::WetSend { effect, level }
+        } else {
+            deadpan_core::AudioChange::TailSend { effect, level }
+        };
         if let Some(Ok(captured)) = &target
             && captured.scoped.is_none()
         {
-            self.record_audio_change(
-                target,
-                macro_target,
-                deadpan_core::AudioChange::TailSend { effect, level },
-            );
+            self.record_audio_change(target, macro_target, change);
             return;
         }
         if self.macros.recording() {
@@ -722,12 +724,11 @@ impl DeadpanApp {
         }
         let result = target
             .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
-            .map(|target| {
-                let treatments = target
-                    .entry
-                    .clone()
-                    .with_tail_sends(target.entry.tail_sends().with_level(effect, level));
-                (target, treatments)
+            .and_then(|target| {
+                change
+                    .apply(&target.entry)
+                    .map(|treatments| (target, treatments))
+                    .map_err(|e| e.to_string())
             });
         match result {
             Ok((target, treatments)) => self.commit_gain(target, treatments),
@@ -834,7 +835,10 @@ impl DeadpanApp {
         }
         let proposal = draft.proposal();
         let id = proposal.id();
-        match self.service.submit(ProjectRequest::PrepareGain(proposal)) {
+        match self
+            .service
+            .submit(ProjectRequest::PrepareGain(Box::new(proposal)))
+        {
             Ok(()) => {
                 draft.pending = Some(id);
                 draft.requested = Some(draft.change);
@@ -1371,6 +1375,31 @@ impl DeadpanApp {
         {
             self.open_equalizer(Some(Ok(target)), ui.ctx());
         }
+        ui.label("Continuous effects");
+        for effect in [
+            deadpan_core::TailEffect::Reverb,
+            deadpan_core::TailEffect::Delay,
+        ] {
+            let level = edit.recipe().wet_sends().level(effect).map_or_else(
+                || "off".into(),
+                |gain| format!("{}dB", crate::gain::format_db(gain)),
+            );
+            if ui
+                .add_enabled(
+                    ready && self.gain.is_none(),
+                    style::row_action(
+                        ui,
+                        format!("{} return: {level}", effect.name()),
+                        ":wet-send",
+                    ),
+                )
+                .reveal_on_focus()
+                .clicked()
+            {
+                self.open_command(format!("wet-send {} {level}", effect.name()), ui.ctx());
+            }
+        }
+        ui.weak("Wet sound follows this beat's treatments; silent Holds suppress it.");
         ui.label("Tail sends");
         for effect in [
             deadpan_core::TailEffect::Reverb,

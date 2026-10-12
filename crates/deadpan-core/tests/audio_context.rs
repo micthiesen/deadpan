@@ -4,6 +4,36 @@ use deadpan_core::*;
 use serde_json::{Value, json};
 
 #[test]
+fn continuous_returns_are_authenticated_and_require_context_schema_12() {
+    let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let treated = edit(
+        &base,
+        Command::SetAudioTreatments {
+            node: node("source"),
+            treatments: AudioTreatments::default().with_wet_sends(
+                TailSends::default()
+                    .with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap())),
+            ),
+        },
+    );
+    let context = FrozenAudioContext::capture(&treated).unwrap();
+    assert!(context.matches_document(&treated).unwrap());
+    assert!(!context.matches_document(&base).unwrap());
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let mut old = serde_json::to_value(&context).unwrap();
+    old["schema_version"] = json!(11);
+    assert!(
+        FrozenAudioContext::from_json(&old.to_string())
+            .unwrap_err()
+            .to_string()
+            .contains("continuous wet returns")
+    );
+}
+
+#[test]
 fn tail_sends_are_authenticated_and_require_context_schema_11() {
     let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
     let treated = edit(
@@ -420,7 +450,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(11));
+    assert_eq!(wire["schema_version"], json!(12));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -502,8 +532,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":11",
-        "\"schema_version\":11,\"schema_version\":11",
+        "\"schema_version\":12",
+        "\"schema_version\":12,\"schema_version\":12",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -804,7 +834,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(11));
+    assert_eq!(wire["schema_version"], json!(12));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);
@@ -920,7 +950,7 @@ fn equalizer_is_authenticated_and_requires_context_schema_10() {
         context
     );
     let mut wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(11));
+    assert_eq!(wire["schema_version"], json!(12));
     wire["schema_version"] = json!(9);
     let error = FrozenAudioContext::from_json(&wire.to_string()).unwrap_err();
     assert!(error.to_string().contains("cannot contain EQ"), "{error}");
@@ -986,7 +1016,7 @@ fn pitch_shifts_and_saturation_need_context_schema_8_and_validate_their_shape() 
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(11));
+    assert_eq!(wire["schema_version"], json!(12));
     let mut old = wire.clone();
     old["schema_version"] = json!(7);
     assert!(FrozenAudioContext::from_json(&old.to_string()).is_err());
