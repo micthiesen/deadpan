@@ -11,6 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use thiserror::Error;
 
+mod causal_filter;
 #[allow(unsafe_code)]
 mod ffi;
 mod finite_filter;
@@ -18,6 +19,11 @@ mod finite_peak;
 mod streaming;
 
 pub use streaming::{MAX_STREAM_WINDOW_FRAMES, StreamRecipe, StreamingStretch};
+
+pub use causal_filter::{
+    CAUSAL_FILTER_ENGINE_ID, CAUSAL_FILTER_MAX_TAPS, CAUSAL_FILTER_OUTPUT_FRAMES,
+    CausalFilterError, CausalStereoFilter,
+};
 
 pub use finite_filter::{
     FINITE_FILTER_ENGINE_ID, FINITE_FILTER_INPUT_FRAMES, FINITE_FILTER_OUTPUT_FRAMES,

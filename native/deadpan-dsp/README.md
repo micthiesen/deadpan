@@ -56,8 +56,20 @@ future context. The adapter deliberately neither fabricates missing samples
 nor determines owner routing. `FINITE_FILTER_ENGINE_ID` versions its numerical
 shape; cache identity must also retain coefficients, source and clock provenance.
 The [finite-filter qualification](../../docs/qualification/finite-filter-2026-10-11.md)
-covers this processor. Authored EQ/filter controls and voice/group integration
-remain unimplemented, so this is not completion of specification §10.2.
+covers this processor. The audio crate now supplies the
+[authored EQ](../../docs/EQUALIZER.md) consumers.
+
+`CausalStereoFilter` copies separate left/right kernels of 1 through 384,001
+coefficients. Lag zero is current input, with no look-ahead. Each read supplies
+`taps - 1` history samples plus 4,096 core samples per channel. It preserves
+signed f64, output labels and channel independence. Complete fixed-grid context
+makes cold and warm reads identical on one qualified build/machine. Native
+construction owns the FFT buffers; processing allocates nothing. Both boundaries
+validate lengths/finite bounds and preserve both output arrays on failure.
+`native_bytes_bound` gives a conservative per-plan bound; caller arrays and
+aggregate graph residency need separate admission. The
+[finite wet effects](../../docs/FINITE_WET_EFFECTS.md) use this numerical adapter.
+Continuous authored returns and incoming-tail policy remain unimplemented.
 
 Cancellation is cooperative between reads. The first read also runs the fixed
 negative-context priming schedule, up to 203 discarded quanta at the slowest

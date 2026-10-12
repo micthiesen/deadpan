@@ -4,6 +4,15 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Finite reverb/delay processors](qualification/finite-wet-2026-10-12.md) now
+declare complete history and prepare fixed tiles that match cold and linear
+reads. All 622 audio/DSP tests, final focused tests, strict workspace checks,
+fatal ASan/UBSan and allocation-failure checks pass. Three release processes
+measure and reproduce both kernels. This is numerical preparation only:
+continuous authored returns, incoming-tail policy and owner integration remain
+agent work. Existing selected Tail sends retain their behavior; DP-09/DP-16 stay
+partial and no feature or gate is newly complete.
+
 [Selected tail sends](qualification/tail-sends-2026-10-12.md) now route explicit
 beat, group and sound contributions into allocated reverb/delay pauses without
 changing dry audio or picture time. Native commands preserve captured targets,

@@ -176,10 +176,7 @@ pub fn render_tail(
     cancelled: &AtomicBool,
 ) -> Result<Vec<[f32; 2]>, PreparationError> {
     validate_input(source, cancelled)?;
-    let mut effect: Box<dyn Effect> = match recipe.effect {
-        TailEffect::Reverb => Box::new(Reverb::new()),
-        TailEffect::Delay => Box::new(Delay::new()),
-    };
+    let mut effect = effect_engine(recipe.effect);
     for chunk in source.chunks(MAX_OUTPUT_FRAMES as usize) {
         check_cancel(cancelled)?;
         for frame in chunk {
@@ -209,7 +206,14 @@ pub fn render_tail(
     Ok(output)
 }
 
-trait Effect {
+pub(super) fn effect_engine(effect: TailEffect) -> Box<dyn Effect> {
+    match effect {
+        TailEffect::Reverb => Box::new(Reverb::new()),
+        TailEffect::Delay => Box::new(Delay::new()),
+    }
+}
+
+pub(super) trait Effect {
     /// One stereo frame in, the wet stereo frame out.
     fn process(&mut self, input: [f64; 2]) -> [f64; 2];
 }

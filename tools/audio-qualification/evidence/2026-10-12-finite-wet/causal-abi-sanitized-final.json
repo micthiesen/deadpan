@@ -1,0 +1,73 @@
+{
+  "cases": [
+    {
+      "taps": 1,
+      "native_peak_bytes": 434720,
+      "native_resident_bytes": 434720,
+      "admission_bytes": 1572864,
+      "median_tile_ms": 0.158979,
+      "max_tile_ms": 0.167
+    },
+    {
+      "taps": 4096,
+      "native_peak_bytes": 803360,
+      "native_resident_bytes": 803360,
+      "admission_bytes": 2097152,
+      "median_tile_ms": 0.308438,
+      "max_tile_ms": 0.313083
+    },
+    {
+      "taps": 4097,
+      "native_peak_bytes": 803360,
+      "native_resident_bytes": 803360,
+      "admission_bytes": 2097152,
+      "median_tile_ms": 0.444229,
+      "max_tile_ms": 0.457333
+    },
+    {
+      "taps": 8192,
+      "native_peak_bytes": 1540640,
+      "native_resident_bytes": 1540640,
+      "admission_bytes": 3145728,
+      "median_tile_ms": 0.712708,
+      "max_tile_ms": 0.757
+    },
+    {
+      "taps": 16001,
+      "native_peak_bytes": 3015200,
+      "native_resident_bytes": 3015200,
+      "admission_bytes": 5242880,
+      "median_tile_ms": 1.468355,
+      "max_tile_ms": 1.997542
+    },
+    {
+      "taps": 48001,
+      "native_peak_bytes": 5964320,
+      "native_resident_bytes": 5964320,
+      "admission_bytes": 9437184,
+      "median_tile_ms": 3.284041,
+      "max_tile_ms": 4.302125
+    },
+    {
+      "taps": 192001,
+      "native_peak_bytes": 23659040,
+      "native_resident_bytes": 23659040,
+      "admission_bytes": 34603008,
+      "median_tile_ms": 16.764291,
+      "max_tile_ms": 17.819375
+    },
+    {
+      "taps": 384001,
+      "native_peak_bytes": 47252000,
+      "native_resident_bytes": 47252000,
+      "admission_bytes": 68157440,
+      "median_tile_ms": 38.673271,
+      "max_tile_ms": 42.834041
+    }
+  ],
+  "creation_allocation_failure_sites": 112,
+  "processed_tiles": 96,
+  "processing_allocations": 0,
+  "leaked_allocations": 0,
+  "guards": "passed"
+}

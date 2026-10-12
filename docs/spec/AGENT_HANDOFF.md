@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Finite wet-effect preparation](../qualification/finite-wet-2026-10-12.md)
+adds `FiniteWetEffect` and `CausalStereoFilter`: independent stereo kernels,
+four-second reverb/eight-second delay history, 4,096-sample fixed output tiles,
+zero latency and explicit memory bounds. Complete supplied history makes cold
+and warm tiles identical. All 622 audio/DSP tests, final focused tests, strict
+workspace checks and fatal ASan/UBSan pass. Three release processes reproduce
+the same kernel/input/output hashes. The primary agent worked alone.
+
+No authored mixer path consumes these processors yet. Continue with return
+insertion at the event or owner boundary before parent processing, per-voice
+incoming-tail permissions, retained clocks and aggregate work/memory admission.
+`shared_components` and `shared_eq` already preserve jointly driven prefixes;
+do not append wet audio after the root or flatten independent contributions.
+Existing `TailSends` still feeds allocated pauses only and remains unchanged.
+The full continuous feature, native authoring, playback/export qualification and
+remaining scope/cache work are owed; DP-09/DP-16 remain partial. Use the finished
+numerical processors for that integration instead of building another one.
+
 [Selected tail sends](../qualification/tail-sends-2026-10-12.md) now store
 independent reverb/delay levels on beat treatments and sound events. Explicit
 `input=sends` tails read the shared contribution graph with the same clocks,

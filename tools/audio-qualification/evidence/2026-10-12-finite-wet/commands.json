@@ -1,0 +1,673 @@
+[
+  {
+    "name": "dsp-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-dsp"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:13:20.148313+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "5abc52fe70eb05eecc0dc0b97e62798f474ab92cb4880f0d4cae8a87102730f0",
+    "untracked_sha256": {
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "0673f52ced83ff53cd9973b5fdc16cb28994a3c2a5e4a8280c0fb19509d8cb41"
+    },
+    "exit": 0,
+    "seconds": 10.712038584053516,
+    "log_sha256": "639aa5287e30c505074dafb4bcfae9ef46ede3143c4675604084c13fc9243eb6",
+    "binaries": {
+      "target/debug/deps/finite_peak-59d78a3921f1ac03": "be2c7eac411d7f521d6378fef9426a399400df405323cf8bcde6daad8abe0535",
+      "target/debug/deps/causal_filter-9fbf713840cb4c60": "8b429bc316a9eaaf6e1abf4b1cc8f101db82e2b12bf099445ecf35dd84f8b0c8",
+      "target/debug/deps/canonical-731427a43c587bd0": "ab2beb0ff2c6f3a8e7c1efd58b9fc4094d8f98698cb783ba28b80bce6ec7111a",
+      "target/debug/deps/streaming-52c5ba588e4b6054": "16a716db2b53cc4db8c4e383c94f1d6705dd66518099cf463242a1166b4b6352",
+      "target/debug/deps/finite_filter-38f3dfec557a06fc": "97e7f09fd2e269fc4f8a8523ab5f8f0a67dfa46ebbf9c4203ef1935c2c68fe30",
+      "target/debug/deps/deadpan_dsp-dfb4e5561bc70cc4": "a69edd94b67e1135efa67f2daaa3e81428cdbedaf24df938067c06571292598f"
+    }
+  },
+  {
+    "name": "causal-abi-build",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "native/deadpan-dsp/src",
+      "-I",
+      "native/deadpan-dsp/vendor/signalsmith-linear/include",
+      "native/deadpan-dsp/src/causal_filter.cpp",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp",
+      "-o",
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:13:47.922112+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "5abc52fe70eb05eecc0dc0b97e62798f474ab92cb4880f0d4cae8a87102730f0",
+    "untracked_sha256": {
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "0673f52ced83ff53cd9973b5fdc16cb28994a3c2a5e4a8280c0fb19509d8cb41"
+    },
+    "exit": 0,
+    "seconds": 0.9242426250129938,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi",
+    "command": [
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:13:53.778511+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "5abc52fe70eb05eecc0dc0b97e62798f474ab92cb4880f0d4cae8a87102730f0",
+    "untracked_sha256": {
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "0673f52ced83ff53cd9973b5fdc16cb28994a3c2a5e4a8280c0fb19509d8cb41"
+    },
+    "exit": 0,
+    "seconds": 0.35400808323174715,
+    "log_sha256": "a23bc2dc7607cba83cec931dd6eaabb2e40001a4bdbfd49630ee65ac5430ac39",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-sanitizer-build",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O1",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-omit-frame-pointer",
+      "-I",
+      "native/deadpan-dsp/src",
+      "-I",
+      "native/deadpan-dsp/vendor/signalsmith-linear/include",
+      "native/deadpan-dsp/src/causal_filter.cpp",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp",
+      "-o",
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-sanitized"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:14:04.593414+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "5abc52fe70eb05eecc0dc0b97e62798f474ab92cb4880f0d4cae8a87102730f0",
+    "untracked_sha256": {
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "0673f52ced83ff53cd9973b5fdc16cb28994a3c2a5e4a8280c0fb19509d8cb41"
+    },
+    "exit": 0,
+    "seconds": 1.126951124984771,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-sanitized",
+    "command": [
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-sanitized"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:14:12.976091+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "5abc52fe70eb05eecc0dc0b97e62798f474ab92cb4880f0d4cae8a87102730f0",
+    "untracked_sha256": {
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "0673f52ced83ff53cd9973b5fdc16cb28994a3c2a5e4a8280c0fb19509d8cb41"
+    },
+    "exit": 0,
+    "seconds": 1.122460833285004,
+    "log_sha256": "3ebcf3303c03c523b72bf2166f75c42b295c4b770f013f673521f6508f8a682e",
+    "binaries": {}
+  },
+  {
+    "name": "audio-dsp-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-dsp",
+      "-p",
+      "deadpan-audio"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:17:50.749668+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "64d4dbc2e0e919d860ff2d80e97ed38a8f4ed71f17ba5a187ea25b8177b6152e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "2c3a0c95047b6d4c20549620b16b7a0e55a971f378264bdac3c3d2087fef3c47",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 101,
+    "seconds": 14.300902250222862,
+    "log_sha256": "6c3589e15a7f905056260fc4f0d0c1167acb60a47d61de541a4f1ef439c5817e",
+    "binaries": {}
+  },
+  {
+    "name": "audio-dsp-tests-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-dsp",
+      "-p",
+      "deadpan-audio"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:18:43.735594+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "64d4dbc2e0e919d860ff2d80e97ed38a8f4ed71f17ba5a187ea25b8177b6152e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 143.92274937499315,
+    "log_sha256": "a53b1fd191347b70aeba6c35cfd04e7441ef6b86bd91f8875cb5596e911abac8",
+    "binaries": {
+      "target/debug/deps/finite_filter-8cb9823b325030e9": "ce0fc780f8c8be4f0a5b87cd4685fa42d12b17db978c197c03a241c9b18d3324",
+      "target/debug/deps/loudness-b75b99cefdaeb46b": "c713290116ba1180261a185e52d40ed8d83ae91e31a5933693fbfa61a7424c6d",
+      "target/debug/deps/gap_bindings-5ea3051df89b220e": "f7cac4008df87e0718a07db671b0d58dc0d1492f101131f1bbbddc131bbbf925",
+      "target/debug/deps/streaming-c34623fd6973ab7d": "52dd4657c99ace1a6eec5c55d0e594c883d84d101cee6534021d141b1874a0db",
+      "target/debug/deps/root_sound_trim-4514bec3ce23a1cb": "28a72908540f3ec271b4e95bf383d81d2cfa16c66e8991e41e76709f48f3b335",
+      "target/debug/deps/timing_representation-5fae6a57c7abd7ed": "be7f2c85bcdec7192464d3648bb073efd1a486a110774ff43fa8ebb5baaf5f77",
+      "target/debug/deps/audio_domain-a26776a625947a83": "14b38a03d5e664cb47f72d5cc6ba7d2b8a15134d42fd1d118a71d536d44d8ea5",
+      "target/debug/deps/sequence-12fb61af8c478980": "550d0c02d6b1874a4a0f8cf0d64ade359cbb291e2af2f08ba463d266d806e963",
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "529c4327ff68953070a37f330fc7171a7857496c105fce7f1ba07ed4a1738b8d",
+      "target/debug/deps/reference_policy-bc9a430f5c9c2600": "29727c0a42b701133af5cfca94123549c948dbc630b1f5e883018449ed62af3e",
+      "target/debug/deps/sound_events-436c6c1815c5fe37": "dcd9436a79132f6acb2743ddd4c3a7fd204d03476bb1489296165b2caf2c7483",
+      "target/debug/deps/causal_filter-86dae156fab16ffa": "a429728747187939c786244dba9cb4a7ec104a2db5f07b18e3854093c8f147ba",
+      "target/debug/deps/dormant_source-8d2c80c92a364ca4": "abfc36467a9a157158b27b5e5f1c0e3c4dfc5846962c2f54c9ec1a36d26b4e9c",
+      "target/debug/deps/canonical-c6afa30a883a2ef9": "471e2d0d158ce503bd26c061b2937b1badc387610b7c5911347b1cf271186153",
+      "target/debug/deps/finite_peak-e89ff9ffaa5f96a5": "48b59fc70ab29e6ab24f616968e1b98a172e54d3187472a6d0686e4513efe691",
+      "target/debug/deps/stages-429c1ebb1a965c8d": "5821d3f62067601dd6ef5474d8168865e641dc6ca883335dd2c9bd39c009dbeb",
+      "target/debug/deps/signal_transfer-59064ef2f71d37fb": "5c4738acaf80a46166961ea6155e30b81954d3660cd39371fe61f2675bfb4632",
+      "target/debug/deps/composite_insert-c3acd41a12e0b1d6": "13730a86e72745015e12caceb83533a61efaabd6906828cf1d9a84fa9099fd47",
+      "target/debug/deps/resample-817e9bc48158ada6": "cabc71fa04c34a9c2c3e9a62bd21fd7717692bfe272da95d27fdf76be0b83b03",
+      "target/debug/deps/deadpan_dsp-33005f68e565a4fb": "7c20a686836cbe6f2fd30d8864fae3258a9fa5169fd3dfe66052958eb2f29a08",
+      "target/debug/deps/limiter-6bdaa165df68ce14": "f5339a96903ddd2edf83b07bcc2cb39a6dc872e542110d4e074b614923c80f80",
+      "target/debug/deps/gap_definition-0553c4eb23bf4bd4": "0f822ab17d217450a0a8401fff68890fe4239d15291566f4b4d4c2ac05b135df",
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "c4dcff09199b796d40c8cd8a8cf21c7c9df56518fd0c5c19846aeadce2214b9f",
+      "target/debug/deps/audio_context-9855ed3286239240": "d14ab7cdc179eac279ea0d98c748dcf96f8b764598b5f6667501e1fb7f403936",
+      "target/debug/deps/true_peak-1b0d1ea73159198a": "1a45787193faa6cdd14c143a0669d457968be693612897c7b4b1a38b3bb28f58",
+      "target/debug/deps/session-a30b0e2ac2f2b414": "2dec7bc131b9f48c71f74deca51de7dcbeec92ad6047015b973e38dfc11c5b49",
+      "target/debug/deps/reanchors-44a7a0b5b08e9577": "804f7f101da928d0a8d959b8889b1ee53969c863bcd6a59efc6124b841d9b92c"
+    }
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:21:30.306121+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 101,
+    "seconds": 8.993724917061627,
+    "log_sha256": "b8bbf099315ad44d301586ee6980be77f50aa8afce8f4ab7a80a30b9881a214c",
+    "binaries": {}
+  },
+  {
+    "name": "clippy-final",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:22:23.542116+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 39.81501404102892,
+    "log_sha256": "ab848af54e264fc29ff08f61c565feca47ee8d1fafb27c63ec4579b647d783f0",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-sanitizer-build-final",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O1",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "-I",
+      "native/deadpan-dsp/src",
+      "-I",
+      "native/deadpan-dsp/vendor/signalsmith-linear/include",
+      "native/deadpan-dsp/src/causal_filter.cpp",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp",
+      "-o",
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-sanitized-final"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:18:44.954986+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "64d4dbc2e0e919d860ff2d80e97ed38a8f4ed71f17ba5a187ea25b8177b6152e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 1.5950765828602016,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-sanitized-final",
+    "command": [
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-sanitized-final"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:19:20.872604+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "64d4dbc2e0e919d860ff2d80e97ed38a8f4ed71f17ba5a187ea25b8177b6152e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 1.263663874939084,
+    "log_sha256": "483ddbf17636adb99dd97e3ac4868a371a93fd12cdf9d712012f3efbde093df2",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-build-final",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "native/deadpan-dsp/src",
+      "-I",
+      "native/deadpan-dsp/vendor/signalsmith-linear/include",
+      "native/deadpan-dsp/src/causal_filter.cpp",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp",
+      "-o",
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-final"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:20:01.165393+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "64d4dbc2e0e919d860ff2d80e97ed38a8f4ed71f17ba5a187ea25b8177b6152e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "c651688cf39edb9694c596a4d5028d54bbcf84b01e4e03c7e1fba3c550405dc2",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "7175d31d389c862814dc9ffaaab1923698fd3e5da99c0ebd26dbfc965eb88a4c",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 0.7965323748067021,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "causal-abi-final",
+    "command": [
+      "/tmp/deadpan-continuous-sends-20261012/causal-abi-final"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:22.260822+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 0.35197054222226143,
+    "log_sha256": "e17830d22a181d4647ef55381313a66be3ca430d1705a2dc50deaf0b1a330fae",
+    "binaries": {}
+  },
+  {
+    "name": "dsp-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-dsp"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:03.381866+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 2.822526208125055,
+    "log_sha256": "bc34eae4c992d8145951449cb39ffea228ed36ed0ecc936e92e8381075849d69",
+    "binaries": {
+      "target/debug/deps/finite_filter-38f3dfec557a06fc": "97e7f09fd2e269fc4f8a8523ab5f8f0a67dfa46ebbf9c4203ef1935c2c68fe30",
+      "target/debug/deps/finite_peak-59d78a3921f1ac03": "be2c7eac411d7f521d6378fef9426a399400df405323cf8bcde6daad8abe0535",
+      "target/debug/deps/streaming-52c5ba588e4b6054": "16a716db2b53cc4db8c4e383c94f1d6705dd66518099cf463242a1166b4b6352",
+      "target/debug/deps/deadpan_dsp-dfb4e5561bc70cc4": "a69edd94b67e1135efa67f2daaa3e81428cdbedaf24df938067c06571292598f",
+      "target/debug/deps/canonical-731427a43c587bd0": "ab2beb0ff2c6f3a8e7c1efd58b9fc4094d8f98698cb783ba28b80bce6ec7111a",
+      "target/debug/deps/causal_filter-9fbf713840cb4c60": "4b13554cc3152d6e1175a082ec29d444861a6a6b02f72a080f48d7df43adcad5"
+    }
+  },
+  {
+    "name": "wet-final",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "finite_wet::tests"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:06.233369+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 2.039700208697468,
+    "log_sha256": "004621660c48e09235cf91d15e292083d4aa4c6eb22b4a7dd391dfc82c1144fc",
+    "binaries": {
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "d5690c715cd58c195fd0659eedf0711e1b748586c1376e3912cb69b5444097ef"
+    }
+  },
+  {
+    "name": "wet-release-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-audio",
+      "--example",
+      "finite_wet_probe"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:08.317656+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 8.69937829207629,
+    "log_sha256": "14e0516713ebfa0388b3f43fadfb8f18311d716f65c126d31625b73107e43bf0",
+    "binaries": {}
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:17.041295+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 5.066350666806102,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:22.132051+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 0.10627983324229717,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "wet-probe-1",
+    "command": [
+      "target/release/examples/finite_wet_probe"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:22.636829+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 1.7428985419683158,
+    "log_sha256": "1bac85a43043e6b0b89db74f1284650d7def91037a943b49cf178a8185968957",
+    "binaries": {
+      "target/release/examples/finite_wet_probe": "986f134813a6a097165b2e9f99d92ccab01c9dbbe83e8dbd0643efca945fd5a9"
+    }
+  },
+  {
+    "name": "wet-probe-2",
+    "command": [
+      "target/release/examples/finite_wet_probe"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:24.405104+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 1.743219125084579,
+    "log_sha256": "31a887cc3638871244ab3c7d0944d26fee8f5b867074bb2ee5644da1ec4a14dd",
+    "binaries": {
+      "target/release/examples/finite_wet_probe": "986f134813a6a097165b2e9f99d92ccab01c9dbbe83e8dbd0643efca945fd5a9"
+    }
+  },
+  {
+    "name": "wet-probe-3",
+    "command": [
+      "target/release/examples/finite_wet_probe"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T10:23:26.172759+00:00",
+    "head": "2e730b12710178ab872998cd8ad715344cf83930",
+    "diff_sha256": "f6887248802054a0a26495fbeb7d2ac65d9e6b46c90e0a11484bbfb7422798de",
+    "untracked_sha256": {
+      "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+      "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+      "docs/FINITE_WET_EFFECTS.md": "c14570b6295dda06248428167a81d5f4c6519ba0b66e4b0ad34d9e4160536a74",
+      "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+      "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+      "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+      "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+      "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+      "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9"
+    },
+    "exit": 0,
+    "seconds": 1.7401736252941191,
+    "log_sha256": "2e04912c13345667adfbf04d69cb2847a7e97bfa2e4437d6b86f9388536e0a67",
+    "binaries": {
+      "target/release/examples/finite_wet_probe": "986f134813a6a097165b2e9f99d92ccab01c9dbbe83e8dbd0643efca945fd5a9"
+    }
+  }
+]

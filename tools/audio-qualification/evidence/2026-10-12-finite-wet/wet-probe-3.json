@@ -1,0 +1,49 @@
+{
+  "cases": [
+    {
+      "algorithm": "deadpan-wet-reverb-comb8-allpass4-48k-fir4s-fade50ms-v1",
+      "caller_input_output_bytes": 3203072,
+      "cold_warm_bit_identical": true,
+      "construction_ns": 7611292,
+      "direct_samples_compared": 20,
+      "effect": "reverb",
+      "history_frames": 192000,
+      "input_sha256_planar_f64le": "04d8420f2ecdf7153c12c94eafc85e5a42a423866751417f506f1072c25c1901",
+      "kernel_sha256_planar_f64le": "c4dd3770858c7c85372280d21d2c8110ff866bc11d150b0ebb93338da281bbdf",
+      "latency_frames": 0,
+      "maximum_direct_error": 8.881784197001252e-15,
+      "measured_tiles": 101,
+      "output_sha256_planar_f64le": "688a77643a39c9a5d85e45a1676e172c50d14a8d0a31ee1bfd21ea901b255378",
+      "preparation_admission_bytes": 38723600,
+      "tail_frames": 192000,
+      "tile_frames": 4096,
+      "tile_max_ns": 5274375,
+      "tile_p50_ns": 5166708,
+      "tile_p99_ns": 5256166
+    },
+    {
+      "algorithm": "deadpan-wet-delay-300ms-half-48k-fir8s-fade50ms-v1",
+      "caller_input_output_bytes": 6275072,
+      "cold_warm_bit_identical": true,
+      "construction_ns": 10268542,
+      "direct_samples_compared": 20,
+      "effect": "delay",
+      "history_frames": 384000,
+      "input_sha256_planar_f64le": "06d21df5bc05cbff11b5f0a378780f0f3ac14f44c1ef0064e027733714565816",
+      "kernel_sha256_planar_f64le": "2503068b0449ef4c9b12385a56100eb5b9bbf076d6098b316a9711be55002c86",
+      "latency_frames": 0,
+      "maximum_direct_error": 3.3306690738754696e-16,
+      "measured_tiles": 101,
+      "output_sha256_planar_f64le": "cd2f445543b0e416a2fae8abdbd1714598c44ed0e6e1f99953b1eaf1831a9c80",
+      "preparation_admission_bytes": 75350032,
+      "tail_frames": 384000,
+      "tile_frames": 4096,
+      "tile_max_ns": 10720167,
+      "tile_p50_ns": 10433125,
+      "tile_p99_ns": 10719750
+    }
+  ],
+  "format": "deadpan-finite-wet-probe-1",
+  "native_engine": "deadpan-causal-stereo-signalsmith-realfft-f64-t4096-pow2-v1",
+  "scope": "numerical kernels; no authored mixer, media, output device or export"
+}

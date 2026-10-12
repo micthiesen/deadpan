@@ -5,6 +5,12 @@ Rust API. The crate vendors the exact pinned Stretch 1.3.2 and Linear 0.3.1
 headers and complete MIT notices. Cargo builds C++17 with the portable FFT and
 does not download dependencies. Unsafe code is isolated in the `src/ffi` module.
 
+`CausalStereoFilter` also supplies independent finite stereo convolution with
+complete declared history, transactional output and measured native memory
+admission. The audio crate's [finite wet effects](FINITE_WET_EFFECTS.md) use it
+for random-access reverb/delay numerics; continuous authored returns and their
+owner/permission integration remain open.
+
 `StereoPcm` owns two immutable planar 48 kHz channels. Admission requires equal,
 nonempty lengths of at most 1,048,576 frames, finite samples, and an absolute
 peak no greater than 16.0. The ceiling rejects extreme input; it never normalizes

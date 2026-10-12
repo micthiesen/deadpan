@@ -1,0 +1,41 @@
+{
+  "base_revision": "2e730b12710178ab872998cd8ad715344cf83930",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "crates/deadpan-audio/Cargo.toml": "7f711d835ac4a429ed2122cb86b32b025711027bf021677c2a2a1920dcd30be2",
+    "crates/deadpan-audio/build.rs": "5c27d9fe67c3f25e8c2aa76b47e5ca94da57528367b467cc8b4e48818cdcec61",
+    "crates/deadpan-audio/examples/finite_wet_probe.rs": "466562192d9d1372bb6338242e9eb95811d52e1a99017f7ba6eeb9c9eaa137b9",
+    "crates/deadpan-audio/src/finite_wet.rs": "e3ffcdf9e223d2351e2a6db631eb492577604b6ccf854f37de396353bde55b59",
+    "crates/deadpan-audio/src/hold_effects.rs": "9720ad735a61ed6aaacd412092f00f8f85f1bbd364c6562b08e650bc6317faa7",
+    "crates/deadpan-audio/src/lib.rs": "6ded0332e78bb696770e3c8d2adb34f8351a5a7f49003114f723745f1e97a471",
+    "native/deadpan-dsp/Cargo.toml": "bdec9df31d1fe8d507b0c088d50f70c0a3790e0cf237cd37b5e04f23110f916f",
+    "native/deadpan-dsp/build.rs": "b94d1144e56e32e1720790b7dccb21fbcebf73830a53b2aa0d7364dfe37f967a",
+    "native/deadpan-dsp/src/causal_filter.cpp": "d4154e051ac53db7c00a06492d9db4d44c03c5c909600618a8bd090dc909ba50",
+    "native/deadpan-dsp/src/causal_filter.h": "f00e65f0632d183f820e6925827499e21f353a7a125c5b98e5f9f82100852329",
+    "native/deadpan-dsp/src/causal_filter.rs": "4dc7f376177098a50c1125ef0f14fd8b0b1d99e585357fa08f518971e1212177",
+    "native/deadpan-dsp/src/ffi.rs": "2944e0a2b67ca5a3466ccee986018413c7730b5ead2f5d377b46481fded99dff",
+    "native/deadpan-dsp/src/ffi/causal_filter.rs": "f7d0401147da44da93e8e0520e6287acb080617e5173569921d94e5adc20e6d8",
+    "native/deadpan-dsp/src/lib.rs": "5b141e6c09204c71fc1fe047861c5acc204b4f1aae83f1771e1537aea8187d71",
+    "native/deadpan-dsp/tests/causal_filter.rs": "989a23ad441aa10732c9659f1b9ebfc6a5b897b6548b459cb41d5a8c127fd851",
+    "native/deadpan-dsp/tests/causal_filter_abi_probe.cpp": "19e9d758d57a9d6b7127022aaad0e60151eecafb5c033208595103dedaa01ee9",
+    "native/deadpan-dsp/vendor/README.md": "c92f87eaa45d0aa04d50584bd5f7804965fc1be805c6a00dece5c55239189c3f",
+    "native/deadpan-dsp/vendor/SHA256SUMS": "8877e72bc6cbe989dc3ea44c938b23541ed7a6ceef3cbd8433acd485b2919135",
+    "native/deadpan-dsp/vendor/pins.json": "906805a9f29a50e07361d5138f4d68713eeaafb2a00593bb52cd6c551f325593",
+    "native/deadpan-dsp/vendor/signalsmith-linear/LICENSE.txt": "072b5e9eb5b22880bdf6256324654cf3ce53dba828edb911921121e1be09d9c3",
+    "native/deadpan-dsp/vendor/signalsmith-linear/fft.h": "e7b3d4d98fd4bc4b09740b82a374d4c87ad1d1a6ca28fcfec71800292b939ca2",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/fft.h": "98e7e64093b6fc8ccbba31f710370d5548243bad35beb489e8282de4dc25d76d",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/linear.h": "5c5d55810af0b7f8c8fe27ef1a36a87a4529f95cbebbb5e49f39845f6a2a0d5e",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/stft.h": "a323656e5ed80b271262106ea782d6150ef2f1c8b2f3c5896552b90b2ad6c17e",
+    "native/deadpan-dsp/vendor/signalsmith-linear/linear.h": "710aa61dbba376b256f22b1c28c20b5d56e068df408c9e5a77c778a226f8db1f",
+    "native/deadpan-dsp/vendor/signalsmith-linear/stft.h": "4e11e85e823aaf2ec9bd5bd6bd55e6665126de1de2604af84574009ed1f3b5f2",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/LICENSE.txt": "ee2ef82481ffb445ecdd4b3a4c1f82c0cddb2da8fe39d8e8dc384fffb3e7f06f",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/include/signalsmith-stretch/signalsmith-stretch.h": "869facc1853189bec91fb54960da2f59333284963d6b52a242d55a399d305e4d",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/signalsmith-stretch.h": "1188667959ac19dd40c0a6abbce694e44705615ec4f0e8db8af0f1cfb4c5dea7",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "binaries": {
+    "target/release/examples/finite_wet_probe": "986f134813a6a097165b2e9f99d92ccab01c9dbbe83e8dbd0643efca945fd5a9",
+    "/tmp/deadpan-continuous-sends-20261012/causal-abi-final": "ec6d4e76df2ff6bcec5ebb9aac92f73fa62770062c375d5117b962115f4adbf3",
+    "/tmp/deadpan-continuous-sends-20261012/causal-abi-sanitized-final": "0755b5610b7cb03700ca2a7ce2ff2d7e5ef63d006ecab7ab8b64218e8041a319"
+  }
+}

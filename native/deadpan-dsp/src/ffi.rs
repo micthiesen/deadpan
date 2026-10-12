@@ -10,6 +10,8 @@ mod streaming;
 pub(super) use streaming::StreamEngine;
 mod finite_filter;
 pub(super) use finite_filter::FilterEngine;
+mod causal_filter;
+pub(super) use causal_filter::CausalFilterEngine;
 
 unsafe extern "C" {
     fn dp_dsp_create(
