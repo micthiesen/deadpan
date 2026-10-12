@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T03:19:23Z",
+  "updated_at": "2026-10-12T03:40:52Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implement explicit treatment-stage inputs and the recursive EQ graph using retained history, transported edges and exact owner clocks. Preserve gain/mute order, group sums and per-voice silence/tail permissions; then add authored EQ, captured native commands and real preview/export. Complete the remaining mastering, sends, timing, format/color, workflow and release obligations.",
+  "focus": "Implement the recursive authored EQ voice/group graph and stored stage, preserving ordered gain/mute, exact retained history, group sums and per-voice silence/tail permission. Add captured native/semantic authoring, filtered cache admission and real shared preview/export. Complete remaining mastering, sends, timing, format/color, workflow and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Verified stretched audio survives restart. EQ DSP and retained input, edge and treatment history are verified; ordered authored EQ, group/tail integration and full voice processing remain."
+      "note": "Playback, gain, sounds and timing work. Verified stretched audio survives restart. Ordered EQ over current and retained Original owners is verified; stored EQ, recursive group/sound processing, tails and native integration remain."
     },
     {
       "id": "analysis",
@@ -621,6 +621,14 @@
       "revision": "1f5daaca",
       "retrospective": false,
       "summary": "Retained input now preserves creative fades, gain/mute clocks and ordered saturation/balance before current delivery. Cold PCM, PointCeil phase, silent-Hold policy and inherited resource limits pass; all 935 plan/audio tests and strict workspace Clippy pass. Authored EQ and the complete voice/group graph remain unfinished."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "1d1e1424",
+      "retrospective": false,
+      "summary": "Implemented ordered EQ over checked current and retained Original owners. Direct convolution, mute order, crops, Preserve, point clocks, silence and Repeat escalation pass; all 944 plan/audio tests and strict workspace Clippy pass. Authored EQ and full group/sound integration remain open."
     }
   ]
 }
